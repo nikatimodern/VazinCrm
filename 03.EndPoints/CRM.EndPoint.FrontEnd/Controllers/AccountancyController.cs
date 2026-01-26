@@ -1,4 +1,4 @@
-﻿using CRM.Core.Domain.Accountancies.Entities;
+using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
@@ -51,9 +51,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly UserManager<AppUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
 
+<<<<<<< 03.EndPoints/CRM.EndPoint.FrontEnd/Controllers/AccountancyController.cs
 
 
 
+=======
+>>>>>>> 03.EndPoints/CRM.EndPoint.FrontEnd/Controllers/AccountancyController.cs
         public AccountancyController(CrmSaveCahngeAsync crmSaveCahngeAsync, SmsServices SmsServ, UserManager<AppUser> userManager,
             RoleManager<IdentityRole> roleManager, Service GenService, FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db,
             UserContextDb Udb, TaskServices ts, IHubContext<TaskHub> hub, IVeiwRenderService vrs, LogSystemService logSystemService)
@@ -77,7 +80,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public IActionResult Index()
         {
 
+
             var c = 3413413;
+
             //try {
 
             //var pf = db.PreFactors.Where(f => f.Accepted).ToListAsync().Result;
