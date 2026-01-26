@@ -74,9 +74,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public IActionResult Index()
         {
 
-            var mohammad = "ksjdfh aklsdfklasdkas";
-            var mohammad = "ksjdfh aklsdfklasdkas";
-            var mohammad = "ksjdfh aklsdfklasdkas";
+
 
             //try {
 
