@@ -1,0 +1,33 @@
+@using CRM.Core.Domain.Supplies.Entities
+
+@model List<Supply>
+
+@if (Model.Count != 0) {
+    <table id="suppliesDetailsTable" class="paymentTable table table-striped table-bordered table-hover no-footer nowrap">
+        <thead>
+        <tr>
+            <th>عنوان</th>
+            <th>پیش‌فاکتور</th>
+            <th>تامین کننده</th>
+            <th>مقدار</th>
+            <th>بهای تمام شده</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model) {
+            <tr>
+                <td>@item.ItemTitle</td>
+                <td>@item.PfSerial</td>
+                <td>@item.SupplierTxt</td>
+                <td>@($"{int.Parse(item.Weight):n0}")</td>
+                <td>@($"{item.TotalAmount:n0}")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+} else {
+    <div class="d-flex flex-column align-items-center pb-4">
+        <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
+        <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ تامین کننده ای برای نمایش وجود ندارد!</div>
+    </div>
+}

@@ -1,0 +1,157 @@
+.email-container {
+  display: flex;
+  height: 100%;
+  border: 1px solid #d4dbde;
+}
+
+
+.email-sidebar {
+  width: 20%;
+  min-width: 210px;
+  max-width: 350px;
+  background-color: #fff;
+}
+
+
+.email-sidebar-item {
+  cursor: pointer;
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #e5e5e5;
+  transition: background-color .2s;
+}
+
+
+.email-sidebar-item:hover {
+  background-color: #f7f9fa;
+}
+
+
+.email-sidebar-item.active {
+  background-color: #eef5ff;
+  border-right: 3px solid #007bff;
+  font-family: IRANSansBold;
+}
+
+
+.email-list {
+  width: 30%;
+  min-width: 260px;
+  max-width: 620px;
+  background-color: #fdfdfd;
+  overflow-y: auto;
+  border-right: 1px solid #d4dbde;
+}
+
+
+.email-list-item {
+  border-bottom: 1px solid #e5e5e5;
+  padding: .5rem 1rem;
+  transition: background-color .2s;
+  cursor: pointer;
+}
+
+
+.email-list-item:hover {
+  background-color: #f7f9fa;
+}
+
+
+.email-list-item.new {
+  font-family: IRANSansBold;
+}
+
+
+/* .email-list-item.new:hover {
+  background-color: #91c7ff20;
+} */
+
+
+.email-list-item.active {
+  border-right: 3px solid #91c7ff;
+  background-color: #91c7ff0d;
+}
+
+
+.email-list-item.new .email-title:before {
+  content: "\25CF";
+  margin-left: 6px;
+  display: inline-block;
+}
+
+
+.email-list-item:not(.new) .email-title {
+  font-family: IRANSans;
+}
+
+
+
+.email-content {
+  flex: 2;
+  background-color: #f9f9f9;
+  overflow-y: auto;
+  border-right: 1px solid #d4dbde;
+}
+
+
+.email-content-wrapper {
+  background-color: #fff;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+
+.email-user-img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  outline: 1px solid rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+
+.email-title {
+  font-family: IRANSansBold;
+  color: #444;
+}
+
+
+.email-list-item .email-user-name {
+  font-size: 12px;
+  color: #777;
+}
+
+
+.email-content-wrapper .email-user-name {
+  font-size: 13px;
+  color: #333;
+  font-family: IRANSansBold;
+}
+
+
+.email-datetime {
+  font-size: 12px;
+  color: #777;
+  direction: ltr;
+}
+
+
+.email-message {
+  color: #555;
+  margin-top: 1rem;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+}
+
+
+@media screen and (max-width: 1199px) {
+  .email-sidebar, .email-list {
+    width: 100%;
+    max-width: none;
+    flex: 1;
+  }
+}

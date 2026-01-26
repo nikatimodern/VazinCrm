@@ -1,0 +1,1052 @@
+@{
+    ViewBag.Title = "title";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<div class="d-flex flex-column w-100">
+    <div class="row align-items-center justify-content-between flex-wrap mb-2 g-2">
+        <div class="d-flex col-lg-3">
+            <button class="buttonGreen0 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="toggleDealModal()">
+                <span style="line-height: 1">ثبت سفارش جدید</span>
+                <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
+            </button>
+        </div>
+        <div class="col-12 col-lg-5 d-flex align-items-center gap-2 flex-wrap">
+            <div class="d-flex align-items-center flex-grow-1 gap-2">
+                <input type="text" class="form-control form-control-sm" id="dealSearchId" placeholder="جستجو">
+                <div class="btnFilter d-lg-none" data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterDeal" data-filterContentId="ContentDealFilterId" data-filterInpSearchId="dealSearchId" data-filterVarSearch="dealSearchVal" onclick="ShowFilterPopup(this)">
+                    <svg style="width:24px;color:#333" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex align-items-start justify-content-start justify-content-lg-end gap-2 col-lg-3">
+            <div id="ContentDealFilterId" class="ContentFilter"></div>
+            @*<div>
+                <select class="form-select form-select-sm" style="background-position: left 6px center;padding-left:24px;" id="reportCountSelect">
+                    <option value="20">20</option>
+                    <option value="50" selected>50</option>
+                    <option value="100">100</option>
+                    <option value="200">200</option>
+                    <option value="0">همه</option>
+                </select>
+            </div>*@
+            <div class="btnFilter d-none d-lg-flex" data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterDeal" data-filterContentId="ContentDealFilterId" data-filterInpSearchId="dealSearchId" data-filterVarSearch="dealSearchVal" onclick="ShowFilterPopup(this)">
+                <svg style="width:24px;color:#333" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
+            </div>
+        </div>
+    </div>
+    <ul class="nav nav-tabs" id="dealTabs" role="tablist" style="display: none;">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active text-dark" style="margin-bottom:-2px;isolation:auto" id="openDealTab" data-bs-toggle="tab" data-bs-target="#openDealTab-pane" type="button" role="tab" aria-controls="openDealTab-pane" aria-selected="true">
+                سفارشات باز
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-dark" style="margin-bottom:-2px;isolation:auto" id="successDealTab" data-bs-toggle="tab" data-bs-target="#successDealTab-pane" type="button" role="tab" aria-controls="successDealTab-pane" aria-selected="false">
+                سفارشات موفق
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-dark" style="margin-bottom:-2px;isolation:auto" id="failedDealTab" data-bs-toggle="tab" data-bs-target="#failedDealTab-pane" type="button" role="tab" aria-controls="failedDealTab-pane" aria-selected="false">
+                سفارشات ناموفق
+            </button>
+        </li>
+    </ul>
+    <div id="allDealsContainer" class="d-xl-grid allTasksContainer">
+        <div class="show active border-0" id="openDealTab-pane" role="tabpanel" aria-labelledby="openDealTab" tabindex="0" style="flex-direction:column;width:100%">
+            <div class="tasks-container p-0" id="openDealsContainerId" style="border: none;background: none">
+                <div class="w-100 h-100 d-flex flex-column">
+                    <div class="deal-column-header open">
+                        سفارشات باز
+                        <span class="countDeal"></span>
+                    </div>
+                    <div class="deal-column-list d-flex flex-column gap-2 flex-grow-1 w-100" style="overflow-y:auto" data-status="1"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-0" id="successDealTab-pane" role="tabpanel" aria-labelledby="successDealTab" tabindex="0" style="flex-direction:column;width:100%">
+            <div class="tasks-container p-0" id="successDealsContainerId" style="border: none;background: none">
+                <div class="w-100 h-100 d-flex flex-column">
+                    <div class="deal-column-header success">
+                        سفارشات موفق
+                        <span class="countDeal"></span>
+                    </div>
+                    <div class="deal-column-list d-flex flex-column gap-2 flex-grow-1 w-100" style="overflow-y:auto" data-status="3"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-0" id="failedDealTab-pane" role="tabpanel" aria-labelledby="failedDealTab" tabindex="0" style="flex-direction:column;width:100%">
+            <div class="tasks-container p-0" id="failedDealsContainerId" style="border: none;background: none">
+                <div class="w-100 h-100 d-flex flex-column">
+                    <div class="deal-column-header failed">
+                        سفارشات ناموفق
+                        <span class="countDeal"></span>
+                    </div>
+                    <div class="deal-column-list d-flex flex-column gap-2 flex-grow-1 w-100" style="overflow-y:auto" data-status="2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal deal -->
+<div class="modal fade" id="dealModal" aria-modal="true" role="dialog" tabindex="-1" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content">
+            <div class="m-2 mb-0" style="height:30px;display:flex; justify-content:center; align-items:center;  background: linear-gradient(to bottom, #025751, #00302d); color:white;border-radius:5px">
+                <label class="fbold" id="dealModalTitle">ثبت سفارش</label>
+            </div>
+            <div class="modal-body" style="padding:12px">
+                <form id="formDeal" class="d-flex flex-wrap" style="border:1px solid #8b8b8b;border-radius:4px">
+                    <fieldset id="mainFormDeal" class="d-flex flex-column col-12 col-xl" style="padding:12px">
+                        <div class="d-flex flex-column gap-1">
+                            <label for="dealTitle" class="fbold">عنوان سفارش</label>
+                            <input class="form-control text-start" id="dealTitle" name="title" required style="padding: 2px 8px !important;" type="text">
+                        </div>
+                        <div class="mt-3 mb-2" style="width:100%;background-color: rgba(0,0,0,0.1);height:1px"></div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <div class="d-flex flex-column gap-1 col-12 col-sm">
+                                <div class="d-flex justify-content-between gap-1">
+                                    <label for="dealCustomersTomSelect" class="fbold">سفارش دهنده</label>
+                                    <div id="dealSexAlertRq" class="d-flex gap-3" style="line-height: 1">
+                                        <div class="d-flex align-items-center gap-1">
+                                            <label style="font-size:12px" for="cusSexMan">آقا</label>
+                                            <input class="valueNumber" type="radio" id="cusSexMan" name="cusSex" value="1" data-alertId="dealSexAlertRq" required />
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <label style="font-size:12px" for="cusSexWoman">خانم</label>
+                                            <input class="valueNumber" type="radio" id="cusSexWoman" name="cusSex" value="0" data-alertId="dealSexAlertRq" required />
+                                        </div>
+                                    </div>
+                                </div>
+                                <select id="dealCustomersTomSelect" name="customerId" required></select>
+
+                            </div>
+                            <div class="d-flex flex-column gap-1 col-12 col-sm" style="min-width: 140px">
+                                <label for="dealMobile" class="fbold">شماره موبایل</label>
+                                <input inputmode="numeric" class="h-100 form-control mobileNumber " id="dealMobile" name="mobileNumber" required>
+                                @* <textarea inputmode="numeric" id="dealMobile" class="form-control text-end mobileNumber" style="direction: ltr;padding: 2px 8px !important;height: auto" name="mobileNumber" placeholder="09123456789&#10;09000000000&#10;..." rows="3" required></textarea> *@
+                            </div>
+                        </div>
+                        <div class="mt-3 mb-2" style="width:100%;background-color: rgba(0,0,0,0.1);height:1px"></div>
+                        <div class="d-flex flex-column gap-1 flex-grow-1">
+                            <label for="dealDescription" class="fbold">توضیحات</label>
+                            <textarea class="form-control h-auto text-start flex-grow-1" id="dealDescription" name="commentText" rows="3" style="padding: 2px 8px !important;"></textarea>
+                        </div>
+
+
+                        <button type="button" id="toggleExtraInfo" class="btn btn-sm btn-outline-secondary mt-3">
+                            مشخصات بیشتر ...
+                        </button>
+                    </fieldset>
+                    <fieldset id="extraCustomerPanel" class="d-none col-12 col-xl border-start bg-light" style="padding:12px;border-radius: 4px 0 0 4px">
+                        <h6 class="fbold mb-2 text-center">مشخصات تکمیلی</h6>
+                        <div class="d-flex flex-column">
+                            <div class="row g-1 w-100">
+                                <div class="col-12">
+                                    <div class="d-flex gap-3">
+                                        <label for="juridicalDeal0" class="d-flex align-items-center gap-1">
+                                            <input class="valueNumber" type="radio" id="juridicalDeal0" name="cusJuridical" value="0" checked>
+                                            حقیقی
+                                        </label>
+                                        <label for="juridicalDeal1" class="d-flex align-items-center gap-1">
+                                            <input class="valueNumber" type="radio" id="juridicalDeal1" name="cusJuridical" value="1">
+                                            حقوقی
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="col-6">
+                                    <label for="meliCodeDeal" style="font-size:12px;">کد ملی:</label>
+                                    <input class="form-control digitNumberString" type="text" id="meliCodeDeal" name="cusMelliCode" />
+                                </div>
+
+                                <div class="col-6">
+                                    <label for="telDeal" style="font-size:12px;">تلفن:</label>
+                                    <input class="form-control mobileNumber" type="text" id="telDeal" name="cusTel" />
+                                </div>
+                            </div>
+
+                            <div class="row g-1 w-100 mt-2 border-top">
+                                <div class="col-6 col-lg-4">
+                                    <label for="acquaintanceWayDeal" style="font-size:12px;">طریقه آشنایی:</label>
+                                    <select id="acquaintanceWayDeal" name="cusAcquaintanceWay" class="w-100"></select>
+                                </div>
+
+                                <div class="col-6 col-lg-4">
+                                    <label for="workSenfIDDeal" style="font-size:12px;">صنف کاری:</label>
+                                    <select id="workSenfIDDeal" name="cusWorkSenf" class="w-100"></select>
+                                </div>
+
+                                <div class="col-12 col-lg-4">
+                                    <label for="workSenfDescriptionDeal" style="font-size:12px;">توضیحات صنف کاری:</label>
+                                    <input class="form-control" type="text" id="workSenfDescriptionDeal" name="cusWorkSenfDescription" />
+                                </div>
+                            </div>
+
+                            <div class="row g-1 w-100 mt-2 border-top d-none" id="juridicalInfoDeal">
+                                <div class="col-6 col-lg-3">
+                                    <label for="companyNameIdDeal" style="font-size:12px;">نام شرکت:</label>
+                                    <input class="form-control" type="text" id="companyNameIdDeal" name="cusCompanyName" />
+                                </div>
+                                <div class="col-6 col-lg-3">
+                                    <label for="shenaseMeliIdDeal" style="font-size:12px;">شناسه ملی:</label>
+                                    <input maxlength="11" class="form-control" type="text" id="shenaseMeliIdDeal" name="cusShenaseMeli" />
+                                </div>
+                                <div class="col-6 col-lg-3">
+                                    <label for="eghtesadiCodeIdDeal" style="font-size:12px;">کداقتصادی:</label>
+                                    <input maxlength="12" class="form-control" type="text" id="eghtesadiCodeIdDeal" name="cusEghtesadiCode" />
+                                </div>
+                                <div class="col-6 col-lg-3">
+                                    <label for="numberRegisterIdDeal" style="font-size:12px;">شماره ثبت:</label>
+                                    <input maxlength="6" class="form-control" type="text" id="numberRegisterIdDeal" name="cusNumberRegister" />
+                                </div>
+                            </div>
+
+
+                            <div class="row g-1 mt-2 border-top w-100">
+                                <div class="col-5 col-sm-4">
+                                    <label for="postalCodeDeal" style="font-size:12px">کد پستی:</label>
+                                    <input maxlength="10" class="form-control" type="text" id="postalCodeDeal" name="cusPostalCode" />
+                                </div>
+                                <div class="col-4 col-sm-4">
+                                    <label for="provinceDeal" style="font-size:12px">استان:</label>
+                                    <input class="form-control" type="text" id="provinceDeal" name="cusProvince" />
+                                </div>
+                                <div class="col-3 col-sm-4">
+                                    <label for="cityDeal" style="font-size:12px">شهر:</label>
+                                    <input class="form-control" type="text" id="cityDeal" name="cusCity" />
+                                </div>
+                                <div class="col-12 col-sm-12">
+                                    <label for="addressDeal" style="font-size:12px">آدرس:</label>
+                                    <input class="form-control" type="text" id="addressDeal" name="cusAddress" />
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                </form>
+            </div>
+            <div class="modal-footer" style="border-top:none;padding-top:0">
+                <button class="buttonCancel2 my-0" data-bs-dismiss="modal" onclick="toggleDealModal()" type="button">انصراف</button>
+                <button class="buttonGreen3 my-0" onclick="submitDeal()" type="button">ثبت</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal dealPreFactors -->
+<div class="modal fade" id="dealPreFactorsModal" aria-modal="true" role="dialog" tabindex="-1" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: 14px; overflow: hidden; box-shadow: 0 6px 20px rgba(0,0,0,0.25);">
+            <div class="m-2 d-flex align-items-center justify-content-center position-relative" style="height:28px;background: rebeccapurple; color:white;border-radius:6px;font-size:16px;">
+                <span class="fbold">پیش فاکتور ها</span>
+                <span id="dealPreFactorsRefresh" class="d-inline-flex align-items-center justify-content-center" style="position: absolute;left: 8px">
+                    <svg style="width: 18px;color: #f9fafb" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.433a.75.75 0 0 0 0-1.5H3.989a.75.75 0 0 0-.75.75v4.242a.75.75 0 0 0 1.5 0v-2.43l.31.31a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.449-.39Zm1.23-3.723a.75.75 0 0 0 .219-.53V2.929a.75.75 0 0 0-1.5 0V5.36l-.31-.31A7 7 0 0 0 3.239 8.188a.75.75 0 1 0 1.448.389A5.5 5.5 0 0 1 13.89 6.11l.311.31h-2.432a.75.75 0 0 0 0 1.5h4.243a.75.75 0 0 0 .53-.219Z" clip-rule="evenodd" /></svg>
+                </span>
+            </div>
+            <div class="modal-body" style="padding: 8px 14px">
+                <div class="d-flex align-items-center justify-content-between w-100 mb-3">
+                    <span id="dealPreFactorsTitle" class="fbold" style="font-size: 16px; color:#333"></span>
+                    <svg id="dealPreFactorsAdd" style="width: 20px;cursor: pointer" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                </div>
+                <div id="dealPreFactors" style="max-height: calc(100dvh - 220px);overflow: auto;padding: 20px 8px; background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb; box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);">
+                </div>
+            </div>
+
+            <div class="modal-footer justify-content-center" style="padding:12px;">
+                <button class="buttonCancel2 my-0" data-bs-dismiss="modal" type="button">انصراف</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal dealReports -->
+<div class="modal fade" id="dealReportsModal" aria-modal="true" role="dialog" tabindex="-1" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: 14px; overflow: hidden; box-shadow: 0 6px 20px rgba(0,0,0,0.25); background:#f9fafb;">
+            <div class="m-2 fbold d-flex align-items-center justify-content-center" style="height:28px;background: linear-gradient(135deg,#0f9d8d,#04776d);color:#fff;border-radius:6px;font-size:16px;">
+                گزارش ها
+            </div>
+            <div class="modal-body" style="padding: 8px 14px">
+                <div class="d-flex align-items-start justify-content-between w-100 mb-3">
+                    <span id="dealReportsTitle" class="fbold" style="font-size: 16px; color:#333;"></span>
+                    <button id="dealReportsAdd" class="buttonGreen0 d-flex align-items-center gap-1 flex-shrink-0" style="padding: 4px 10px;">
+                        <span>ثبت جدید</span>
+                        <svg style="width: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                    </button>
+                </div>
+
+                <div id="dealReports" style="max-height: calc(100dvh - 260px); overflow:auto; padding: 20px 8px; background:#fff; border-radius:8px; border:1px solid #e5e7eb; box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);">
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center" style="padding:12px;">
+                <button class="buttonCancel2 my-0" data-bs-dismiss="modal" type="button">انصراف</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal dealOrders -->
+<div class="modal fade" id="dealOrdersModal" aria-modal="true" role="dialog" tabindex="-1" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: 14px; overflow: hidden; box-shadow: 0 6px 20px rgba(0,0,0,0.25); background:#f9fafb;">
+            <div class="m-2 fbold d-flex align-items-center justify-content-center" style="height:28px;background: linear-gradient(135deg,#0f9d8d,#04776d);color:#fff;border-radius:6px;font-size:16px;">
+                حواله ها
+            </div>
+            <div class="modal-body" style="padding: 8px 14px">
+                <div class="d-flex align-items-center justify-content-between w-100 mb-3">
+                    <span id="dealOrdersTitle" class="fbold" style="font-size: 16px; color:#333;"></span>
+                </div>
+                <ul class="nav nav-tabs" id="ordersTabs" role="tablist">
+                    <li class="nav-item position-relative" role="presentation">
+                        <span id="dealOrderRegisteredCount" class="badgeCircle" style="left: 0;position: absolute;top: -8px;z-index: 10;color: #fff;display:none;"></span>
+                        <button class="nav-link active" style="margin-bottom:-2px;isolation:auto" id="dealOrderRegisteredTab" data-bs-toggle="tab" data-bs-target="#dealOrderRegisteredTab-pane" type="button" role="tab">
+                            ثبت اولیه دستور تولید
+                        </button>
+                    </li>
+                    <li class="nav-item position-relative" role="presentation">
+                        <span id="dealOrderProducingCount" class="badgeCircle" style="left: 0;position: absolute;top: -8px;z-index: 10;color: #fff;display:none;"></span>
+                        <button class="nav-link" style="margin-bottom:-2px;isolation:auto" id="dealOrderProducingTab" data-bs-toggle="tab" data-bs-target="#dealOrderProducingTab-pane" type="button" role="tab">
+                            مرحله تولید
+                        </button>
+                    </li>
+                    <li class="nav-item position-relative" role="presentation">
+                        <span id="dealOrderFinishedCount" class="badgeCircle" style="left: 0;position: absolute;top: -8px;z-index: 10;color: #fff;display:none;"></span>
+                        <button class="nav-link" style="margin-bottom:-2px;isolation:auto" id="dealOrderFinishedTab" data-bs-toggle="tab" data-bs-target="#dealOrderFinishedTab-pane" type="button" role="tab">
+                            آماده تحویل
+                        </button>
+                    </li>
+                    <li class="nav-item position-relative" role="presentation">
+                        <span id="dealOrderDeliveredCount" class="badgeCircle" style="left: 0;position: absolute;top: -8px;z-index: 10;color: #fff;display:none;"></span>
+                        <button class="nav-link" style="margin-bottom:-2px;isolation:auto" id="dealOrderDeliveredTab" data-bs-toggle="tab" data-bs-target="#dealOrderDeliveredTab-pane" type="button" role="tab">
+                            تحویل شده
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="dealOrderRegisteredTab-pane" role="tabpanel" tabindex="0"></div>
+                    <div class="tab-pane fade" id="dealOrderProducingTab-pane" role="tabpanel" tabindex="0"></div>
+                    <div class="tab-pane fade" id="dealOrderFinishedTab-pane" role="tabpanel" tabindex="0"></div>
+                    <div class="tab-pane fade" id="dealOrderDeliveredTab-pane" role="tabpanel" tabindex="0"></div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center" style="padding:12px;">
+                <button class="buttonCancel2 my-0" data-bs-dismiss="modal" type="button">انصراف</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+@section Scripts {
+    <script>
+        let modelDeal = { filt: null, serVal: null };
+        var filterDealConfig = {};
+        var dealSearchVal = null;
+        let currentDealData = {};
+        let isEditMode = false;
+        let selectTomCustomers;
+
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            FLshowLoading();
+
+            removeDealsTabsDesktop();
+            initSortableDeal();
+            showDealDropdown();
+            getAllOrders();
+            //await initSelectTom();
+            await getAllBankAccounts();
+            await showTaminDropdown();
+            await getAllDeals();
+
+            FLshowLoading(false);
+
+            document.getElementById("dealSearchId").addEventListener("keyup", async (e) => {
+                if (e.key === "Enter") {
+                    modelDeal.serVal = e.target.value.trim();
+                    await getAllDeals();
+                }
+            });
+        });
+
+        let openDealDropdownToggle = null;
+        function showDealDropdown() {
+            document.getElementById("allDealsContainer").addEventListener("click", function (e) {
+                const clickedToggle = e.target.closest(".deal-dropdown__toggle");
+                if (clickedToggle) {
+                    if (openDealDropdownToggle && openDealDropdownToggle !== clickedToggle && openDealDropdownToggle.dropdownInstance && openDealDropdownToggle.dropdownInstance.isOpen) {
+                        openDealDropdownToggle.dropdownInstance.close();
+                        openDealDropdownToggle = null;
+                    }
+
+                    if (!clickedToggle.dropdownInstance) {
+                        const currentDropdown = clickedToggle.nextElementSibling;
+                        clickedToggle.dropdownInstance = new Dropdown({
+                            button: clickedToggle,
+                            content: currentDropdown,
+                            transitionDuration: 200,
+                            originalDisplay: "flex",
+                            effect: "zoom",
+                        });
+                    }
+                    clickedToggle.dropdownInstance.toggle();
+
+                    openDealDropdownToggle = clickedToggle.dropdownInstance.isOpen ? clickedToggle : null;
+                } else {
+                    if (openDealDropdownToggle && openDealDropdownToggle.dropdownInstance && openDealDropdownToggle.dropdownInstance.isOpen) {
+                        openDealDropdownToggle.dropdownInstance.close();
+                        openDealDropdownToggle = null;
+                    }
+                }
+            });
+        }
+
+        const deleteDeal = (id) => {
+            openDealDropdownToggle.dropdownInstance.close();
+            Swal.fire({
+                title: "حذف!",
+                text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
+                icon: "warning",
+                showCancelButton: true,
+                cancelButtonColor: "#adadad",
+                confirmButtonColor: "#e64942",
+                cancelButtonText: "انصراف",
+                confirmButtonText: "بله، حذف شود",
+            }).then((willDelete) => {
+                if (willDelete.isConfirmed)
+                    deleteDealOk(id);
+            });
+        };
+
+        async function deleteDealOk(id) {
+            try {
+                FLshowLoading();
+                const res = await axios(`/Deal/DeleteDeal?id=${id}`);
+
+                if (res.status === 200) {
+                    await getAllDeals();
+                    toastifySuccess("سفارش با موفقیت حذف شد.");
+                    FLshowLoading(false);
+                }
+            } catch {
+                setTimeout(async () => await deleteDealOk(id), 3000);
+                toastifyError("خطای سرور!");
+            }
+        }
+
+        async function callbackFilterDeal() {
+            modelDeal.filt = window[filterVarConfig].filterVar;
+            modelDeal.serVal = window[filterVarConfig].varSearch;
+
+            await getAllDeals();
+        }
+
+        const getAllDeals = async () => {
+            try {
+                FLshowLoading();
+                const res = await axios.post(`/Deal/GetAllDeals`, modelDeal);
+                if (res.status === 200) {
+                    const items = res.data.items;
+                    createDomAllDeals(items.open, "#openDealsContainerId", res.data.isAdmin);
+                    createDomAllDeals(items.success, "#successDealsContainerId", res.data.isAdmin);
+                    createDomAllDeals(items.failed, "#failedDealsContainerId", res.data.isAdmin);
+                    FLshowLoading(false);
+                }
+            } catch (err) {
+                console.log(err);
+                //setTimeout(async () => await getAllDeals(), 3000);
+            }
+        };
+
+        const createDomAllDeals = (items, containersId, isAdmin) => {
+            const baseColors = { 1: "63,134,214", 2: "177,0,1", 3: "70,164,73" };
+
+            document.querySelector(`${containersId} .countDeal`).textContent = `(${items.length})`;
+            document.querySelector(`${containersId} .deal-column-list`).innerHTML = "";
+            items.forEach(item => {
+                const opacityColor = item.counts.preFactor || item.counts.report ? 1 : 0.6;
+                const colorStatus = `rgba(${baseColors[item.status]}, ${opacityColor})`;
+
+                const card = document.createElement("div");
+                card.className = "deal-card";
+                card.dataset.id = item.id;
+                card.style.borderRightColor = colorStatus;
+
+
+                card.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div>
+                            <span class="fbold" style="font-size:clamp(13px, 2vw, 14px);color: #333">${item.title}</span>
+                        </div>
+                            <div class="d-flex align-items-center gap-2" style="color: #555;">
+                              <span data-title-right="ثبت گزارش" class="d-flex addReport" style="cursor: pointer">
+                                <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+                              </span>
+                              <span data-title-right="ثبت پیش‌فاکتور" class="d-flex addPreFactor" style="cursor: pointer">
+                                <svg style="width: 18px;cursor: pointer" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
+                              </span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mb-2 mt-1" style="font-size:clamp(10px, 2vw, 11px);color: #555">
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="fMedium text-muted">شماره سفارش:</span>
+                                <span class="fbold" style="font-size:clamp(11px, 2vw, 12px)">${item.serialNumber}</span>
+                            </div>
+                            ${isAdmin ? `
+                            <span class="d-flex align-items-center gap-1">
+                                 <span class="fMedium text-muted">دراختیار:</span>
+                                 <span class="fbold">${item.userCreator}</span>
+                            </span>` : ""}
+                        </div>
+                        <p style="font-size:clamp(12px, 2vw, 13px);color:gray;min-height:12px;">${item.commentText.trim()}</p>
+                        <div class="d-flex w-100 justify-content-between align-items-end mt-2" style="column-gap:10px;row-gap:8px;color: #666">
+                            <div class="d-flex gap-2 gap-lg-3 align-items-end justify-content-between flex-grow-1" style="font-size:clamp(10px, 2vw, 11px)">
+                                <div class="d-flex gap-2 gap-lg-3 align-items-center flex-grow-1 flex-wrap" style="row-gap:.5rem !important">
+                                    <span class="d-flex align-items-center gap-1 ">
+                                        ${item.customerId
+                    ? `<svg class="icon-hover" style="width: 16px;flex-shrink: 0;color: ${colorStatus};cursor: pointer" onclick="openCustomerProfile('${item.customerId}')" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0Zm-5-2a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM8 9c-1.825 0-3.422.977-4.295 2.437A5.49 5.49 0 0 0 8 13.5a5.49 5.49 0 0 0 4.294-2.063A4.997 4.997 0 0 0 8 9Z" clip-rule="evenodd"/></svg>`
+                    : `<svg style="width: 16px;flex-shrink: 0" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0Zm-5-2a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM8 9c-1.825 0-3.422.977-4.295 2.437A5.49 5.49 0 0 0 8 13.5a5.49 5.49 0 0 0 4.294-2.063A4.997 4.997 0 0 0 8 9Z" clip-rule="evenodd"/></svg>`
+                }
+                                        <span>${item.customerName ?? ""}${item.customerCode ? " (کد مشتری: " + item.customerCode + ")" : ""}</span>
+                                    </span>
+                                     <span class="d-flex align-items-center gap-1 ">
+                                        <svg style="width: 16px;flex-shrink: 0" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="m3.855 7.286 1.067-.534a1 1 0 0 0 .542-1.046l-.44-2.858A1 1 0 0 0 4.036 2H3a1 1 0 0 0-1 1v2c0 .709.082 1.4.238 2.062a9.012 9.012 0 0 0 6.7 6.7A9.024 9.024 0 0 0 11 14h2a1 1 0 0 0 1-1v-1.036a1 1 0 0 0-.848-.988l-2.858-.44a1 1 0 0 0-1.046.542l-.534 1.067a7.52 7.52 0 0 1-4.86-4.859Z" clip-rule="evenodd" /></svg>
+                                        <span style="direction: ltr">${item.mobileNumber}</span>
+                                    </span>
+                                     <span class="d-flex align-items-center gap-1 ">
+                                        <svg style="width: 16px;flex-shrink: 0" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M4 1.75a.75.75 0 0 1 1.5 0V3h5V1.75a.75.75 0 0 1 1.5 0V3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2V1.75ZM4.5 6a1 1 0 0 0-1 1v4.5a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-7Z" clip-rule="evenodd" /></svg>
+                                        <span style="direction: ltr">${item.createDateTxt.slice(0, -3).split(" ").join(" | ")} </span>
+                                    </span>
+                                </div>
+                                <div class="d-flex align-items-center gap-1 d-xl-none">
+                                    <button class="${item.status === 1 ? "buttonGreen2" : "buttonBlue2"}" style="font-size: 11px" onclick="changeStatusDeal('${item.id}', ${item.status === 1 ? "3" : "1"})">
+                                        ${item.status === 1 ? "موفق" : "باز"}
+                                    </button>
+                                    <button class="${item.status === 2 ? "buttonGreen2" : "buttonCancel3"}" style="font-size: 11px" onclick="changeStatusDeal('${item.id}', ${item.status === 2 ? "3" : "2"})">
+                                        ${item.status === 2 ? "موفق" : "ناموفق"}
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="deal-dropdown__toggle d-flex align-items-center justify-content-center" style="cursor:pointer;color:${colorStatus}" tabindex="0">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-8 4.66a1 1 0 0 0 -1 1v6l.007 .117l.029 .149l.035 .105l.054 .113l.071 .111c.03 .04 .061 .077 .097 .112l.09 .08l.096 .067l.098 .052l.11 .044l.112 .03l.126 .017l6.075 .003l.117 -.007a1 1 0 0 0 .883 -.993l-.007 -.117a1 1 0 0 0 -.993 -.883h-3.586l4.293 -4.293l.083 -.094a1 1 0 0 0 -1.497 -1.32l-4.293 4.291v-3.584l-.007 -.117a1 1 0 0 0 -.993 -.883z"/></svg>
+                                </div>
+                                <div class="task-dropdown deal-dropdown__list" style="border: 1px solid #e5e5e5;">
+                                    <div class="task-dropdown__item justify-content-between itemGreen showPreFactors">
+                                        <div class="d-flex align-items-center" style="gap: 12px">
+                                          <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg>
+                                          <span>پیش‌فاکتور ها</span>
+                                        </div>
+                                        ${item.counts.preFactor ? `<span class="badgeCircle">${item.counts.preFactor}</span>` : ""}
+                                    </div>
+                                    <div class="task-dropdown__item justify-content-between itemGreen showFactors">
+                                        <div class="d-flex align-items-center" style="gap: 12px">
+                                            <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12h-5"/><path d="M15 8h-5"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg>
+                                            <span>فاکتور ها</span>
+                                        </div>
+                                        ${item.counts.factor ? `<span class="badgeCircle">${item.counts.factor}</span>` : ""}
+                                    </div>
+                                    <div class="task-dropdown__item justify-content-between itemGray showReports">
+                                        <div class="d-flex align-items-center" style="gap: 12px">
+                                            <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M12 2v4"/><path d="M16 2v4"/><rect width="16" height="18" x="4" y="4" rx="2"/><path d="M8 10h6"/><path d="M8 14h8"/><path d="M8 18h5"/></svg>
+                                            <span>گزارش ها</span>
+                                        </div>
+                                        ${item.counts.report ? `<span class="badgeCircle">${item.counts.report}</span>` : ""}
+                                    </div>
+                                    <div class="task-dropdown__item justify-content-between itemBlue showOrders">
+                                        <div class="d-flex align-items-center" style="gap: 12px">
+                                            <svg style="width: 16px" fill="currentColor" viewBox="0 0 256 256"><path d="M72,104a8,8,0,0,1,8-8h96a8,8,0,0,1,0,16H80A8,8,0,0,1,72,104Zm8,40h96a8,8,0,0,0,0-16H80a8,8,0,0,0,0,16ZM232,56V208a8,8,0,0,1-11.58,7.15L192,200.94l-28.42,14.21a8,8,0,0,1-7.16,0L128,200.94,99.58,215.15a8,8,0,0,1-7.16,0L64,200.94,35.58,215.15A8,8,0,0,1,24,208V56A16,16,0,0,1,40,40H216A16,16,0,0,1,232,56Zm-16,0H40V195.06l20.42-10.22a8,8,0,0,1,7.16,0L96,199.06l28.42-14.22a8,8,0,0,1,7.16,0L160,199.06l28.42-14.22a8,8,0,0,1,7.16,0L216,195.06Z"></path></svg>
+                                            <span>حواله ها</span>
+                                        </div>
+                                        ${item.counts.orderHead ? `<span class="badgeCircle">${item.counts.orderHead}</span>` : ""}
+                                    </div>
+                                    <div class="task-dropdown__item justify-content-between itemPurple showInvoices">
+                                        <div class="d-flex align-items-center" style="gap: 12px">
+                                            <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5"/><path d="M18 12h.01"/><path d="M19 22v-6"/><path d="m22 19-3-3-3 3"/><path d="M6 12h.01"/><circle cx="12" cy="12" r="2"/></svg>
+                                            <span>واریزی ها</span>
+                                        </div>
+                                        ${item.counts.accountancy ? `<span class="badgeCircle">${item.counts.accountancy}</span>` : ""}
+                                    </div>
+                                    <div class="task-dropdown__item itemGold" onclick="showTaskModal('${item.id}', 'Deal')">
+                                        <svg style="width:16px;" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"></path></svg>
+                                        <span>افزودن فعالیت</span>
+                                    </div>
+                                    <div class="task-dropdown__item itemGray" style="border-top: 1px solid #e3e3e3;" onclick="editDealModal('${item.id}')">
+                                        <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"></path></svg>
+                                        <span>ویرایش</span>
+                                    </div>
+                                    ${isAdmin ? `
+                                    <div class="task-dropdown__item itemRed" onclick="deleteDeal('${item.id}')">
+                                        <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"></path></svg>
+                                        <span>حذف</span>
+                                    </div>` : ""}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                @*<svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M17 20h-11a3 3 0 0 1 0 -6h11a3 3 0 0 0 0 6h1a3 3 0 0 0 3 -3v-11a2 2 0 0 0 -2 -2h-10a2 2 0 0 0 -2 2v8" /></svg>*@;
+                card.querySelector(".showPreFactors")?.addEventListener("click", () => showModalDealPreFactors(item));
+                card.querySelector(".addPreFactor")?.addEventListener("click", () => showModalAddPfactor(4, item.customerId, item));
+                card.querySelector(".showFactors")?.addEventListener("click", () => showModalDealFactors(item));
+                card.querySelector(".showReports")?.addEventListener("click", () => showModalDealReports(item));
+                card.querySelector(".addReport")?.addEventListener("click", () => {
+                    const model = item.customer ?? { agentName: item.customerName, mobile: item.mobileNumber };
+                    ShowModalReport(model, 4, item.id, item.serialNumber);
+                });
+                card.querySelector(".showOrders")?.addEventListener("click", () => showModalDealOrders(item));
+                card.querySelector(".showInvoices")?.addEventListener("click", () => showModalDealInvoices(item));
+
+                document.querySelector(`${containersId} .deal-column-list`).append(card);
+            });
+        };
+
+
+        const editDealModal = async (id) => {
+            FLshowLoading();
+            await toggleDealModal();
+            try {
+                const res = await axios(`/Deal/GetDeal/${id}`);
+                currentDealData = res.data;
+                isEditMode = true;
+                mySer.convertJsonToForm(currentDealData, "formDeal");
+
+                if (currentDealData.customerId === null) {
+                    const customId = `custom-${currentDealData.customerName}`;
+                    selectTomCustomers.addOption({ id: customId, text: currentDealData.customerName });
+                    selectTomCustomers.setValue(customId, true);
+                }
+
+            } catch (err) {
+                console.log(err);
+            }
+            FLshowLoading(false);
+        };
+
+        const extraCustomerPanel = document.getElementById("extraCustomerPanel");
+        let selectTomLoaded = false;
+        const toggleDealModal = async () => {
+            if (!selectTomLoaded) {
+                await initSelectTom();
+                selectTomLoaded = true;
+            }
+
+            $("#dealModal").modal("toggle");
+            isEditMode = false;
+            currentDealData = {};
+            mySer.emptyForm("formDeal");
+
+            if (!extraCustomerPanel.classList.contains("d-none")) {
+                extraCustomerPanel.classList.add("d-none");
+                document.querySelector("#dealModal .modal-dialog").classList.remove("modal-xl");
+            }
+        };
+
+        const submitDeal = async () => {
+            if (!await mySer.CheckValidForm("mainFormDeal")) return;
+
+            if (!await mySer.CheckValidForm("extraCustomerPanel")) {
+                toastifyError("مشخصات حقوقی شرکت را کامل وارد کنید");
+                if (extraCustomerPanel.classList.contains("d-none")) {
+                    extraCustomerPanel.classList.remove("d-none");
+                    document.querySelector("#dealModal .modal-dialog").classList.add("modal-xl");
+                }
+                return;
+            }
+            try {
+                FLshowLoading();
+
+                const data = mySer.convertFormToJSON("formDeal");
+                const model = { ...currentDealData, ...data };
+                if (model.customerId.startsWith("custom")) model.customerId = null;
+                if (!model.cusWorkSenf) model.cusWorkSenf = null;
+                if (!model.cusAcquaintanceWay) model.cusAcquaintanceWay = null;
+
+                const res = await axios.post(`/Deal/AddDeal`, model);
+                if (res.status === 200) {
+                    await getAllDeals();
+                    toastifySuccess(isEditMode ? "با موفقیت ویرایش شد" : "سفارش جدید ثبت شد");
+                    FLshowLoading(false);
+
+                    toggleDealModal();
+                } else if (res.status === 201) {
+                    toastifyError(res.data);
+                    FLshowLoading(false);
+                }
+            } catch {
+                setTimeout(async () => await submitDeal(), 3000);
+            }
+        };
+
+        const initSelectTom = async () => {
+            const [customerRes, workSenfRes, acquaintanceWayRes] = await Promise.all([
+                axios("/Order/GetCustomersOpId"),
+                axios("/BaseItem/GetItemsOp?typeCode=1"),
+                axios("/BaseItem/GetItemsOp?typeCode=2"),
+            ]);
+
+            const dealMobileElm = document.getElementById("dealMobile");
+            selectTomCustomers = new TomSelect("#dealCustomersTomSelect", {
+                options: customerRes.data,
+                valueField: "id",
+                maxItems: 1,
+                persist: false,
+                openOnFocus: false,
+                createOnBlur: true,
+                selectOnTab: true,
+                placeholder: "نام سفارش دهنده ...",
+
+                create: (input, callback) => callback({ id: `custom-${input}`, text: input }),
+
+                async onChange(value) {
+                    if (!value) return;
+
+                    if (!value.startsWith("custom")) {
+                        toggleElementsDisabled(dealMobileElm, true);
+                        selectTomCustomers.disable();
+
+                        const data = (await axios(`/Customer/GetCustomer/${value}`)).data;
+                        @*currentDealData.customerCode = data.customerCode;
+                        currentDealData.customerName = `${data.companyName ?? ""} ${data.agentName ?? ""}`.trim();*@;
+                        //dealMobileElm.value = data.mobile ?? "";
+
+                        const cusDealData = {
+                            cusNumberRegister: data.numberRegister,
+                            cusEghtesadiCode: data.eghtesadiCode,
+                            cusShenaseMeli: data.shenaseMeli,
+                            cusMelliCode: data.agentMeliCode,
+                            cusPostalCode: data.postalCode,
+                            cusJuridical: data.juridical,
+                            cusCompanyName: data.companyName,
+                            cusAddress: data.address,
+                            cusTel: data.tel,
+                            cusSex: data.sex,
+                            cusProvince: data.province,
+                            cusCity: data.city,
+                            cusWorkSenf: data.workSenf || null,
+                            cusWorkSenfTxt: data.workSenfTxt,
+                            cusWorkSenfDescription: data.workSenfDescription,
+                            cusAcquaintanceWay: data.acquaintanceWay || null,
+                            cusAcquaintanceWayTxt: data.acquaintanceWayTxt,
+                            mobileNumber: data.mobile ?? "",
+                            customerCode: data.customerCode,
+                            customerName: `${data.companyName ?? ""} ${data.agentName ?? ""}`.trim(),
+                        };
+
+                        mySer.convertJsonToForm(cusDealData, "formDeal");
+                        currentDealData = { ...currentDealData, ...cusDealData };
+
+
+                        selectTomCustomers.enable();
+                        toggleElementsDisabled(dealMobileElm, false);
+                    } else {
+                        const opt = selectTomCustomers.options[value];
+
+                        currentDealData.customerCode = null;
+                        currentDealData.customerName = opt.text.trim();
+                    }
+                },
+
+                onDelete(values) {
+                    const value = values[0];
+                    if (value.startsWith("custom")) {
+                        const opt = selectTomCustomers.options[value];
+
+                        selectTomCustomers.removeItem(value, true);
+                        selectTomCustomers.setTextboxValue(opt.text.trim());
+                        selectTomCustomers.refreshOptions(true);
+                        return false;
+                    }
+
+
+                    mySer.emptyForm("extraCustomerPanel");
+                    currentDealData.cusWorkSenfTxt = "";
+                    currentDealData.cusAcquaintanceWayTxt = "";
+
+                    currentDealData.customerCode = null;
+                    currentDealData.customerName = "";
+                    dealMobileElm.value = "";
+                    return true;
+                },
+            });
+
+            const selectTomWorkSenf = new TomSelect("#workSenfIDDeal", {
+                options: workSenfRes.data,
+                valueField: "id",
+                maxItems: 1,
+                selectOnTab: true,
+                onItemAdd(value) {
+                    const opt = selectTomWorkSenf.options[value];
+                    currentDealData.cusWorkSenfTxt = opt.text.trim();
+                },
+            });
+
+            const selectTomAcquaintanceWay = new TomSelect("#acquaintanceWayDeal", {
+                options: acquaintanceWayRes.data,
+                valueField: "id",
+                maxItems: 1,
+                selectOnTab: true,
+                onItemAdd(value) {
+                    const opt = selectTomAcquaintanceWay.options[value];
+                    currentDealData.cusAcquaintanceWayTxt = opt.text.trim();
+                },
+            });
+        };
+
+        function initSortableDeal() {
+            let tabSwitchTimer = null;
+            let isDragging = false;
+            const overlayElm = document.getElementById("overlay");
+
+            document.querySelectorAll(".deal-column-list").forEach(list => {
+                new Sortable(list, {
+                    group: "sharedDeal",
+                    draggable: ".deal-card",
+                    sort: false,
+                    animation: 150,
+                    touchStartThreshold: 120,
+                    swapThreshold: 0.7,
+                    delay: 500,
+                    delayOnTouchOnly: true,
+                    ghostClass: "lightGray-background-class",
+                    //disabled: window.innerWidth < 1200,
+                    onAdd: async (evt) => await changeStatusDeal(evt.item.dataset.id, Number(evt.to.dataset.status)),
+                    onChange: (evt) => {
+                        document.querySelectorAll(".deal-column-list").forEach(c => c.classList.remove("drop-target"));
+                        evt.to.classList.add("drop-target");
+                    },
+                    onEnd: () => {
+                        document.querySelectorAll(".deal-column-list").forEach(c => c.classList.remove("drop-target"));
+                        clearTimeout(tabSwitchTimer);
+                        tabSwitchTimer = null;
+                        if (window.innerWidth < 1200) {
+                            isDragging = false;
+                            overlayElm.classList.remove("show");
+                            document.body.classList.remove("drag-active");
+                        }
+                    },
+                    onStart: () => {
+                        if (window.innerWidth < 1200) {
+                            isDragging = true;
+                            overlayElm.classList.add("show");
+                            document.body.classList.add("drag-active");
+                        }
+                    },
+                });
+            });
+
+
+            const tabs = document.querySelectorAll("[data-bs-toggle=\"tab\"]");
+
+            tabs.forEach(tab => {
+                tab.addEventListener("dragover", (e) => {
+                    e.preventDefault();
+                    if (!tabSwitchTimer) {
+                        tabSwitchTimer = setTimeout(() => {
+                            const bsTab = new bootstrap.Tab(tab);
+                            bsTab.show();
+                            tabSwitchTimer = null;
+                        }, 500);
+                    }
+                });
+                tab.addEventListener("dragleave", () => {
+                    clearTimeout(tabSwitchTimer);
+                    tabSwitchTimer = null;
+                });
+            });
+
+            document.addEventListener("touchmove", (e) => {
+                if (!isDragging) return;
+                const touch = e.touches[0];
+                const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (!elem) return;
+                const tab = elem.closest("[data-bs-toggle=\"tab\"]");
+                if (tab) {
+                    if (!tabSwitchTimer) {
+                        tabSwitchTimer = setTimeout(() => {
+                            const bsTab = new bootstrap.Tab(tab);
+                            bsTab.show();
+                            tabSwitchTimer = null;
+                        }, 800);
+                    }
+                } else {
+                    clearTimeout(tabSwitchTimer);
+                    tabSwitchTimer = null;
+                }
+            });
+        }
+
+        async function changeStatusDeal(id, targetStatus) {
+            try {
+                FLshowLoading();
+                const res = await axios(`/Deal/ChangeStatusDeal?id=${id}&status=${targetStatus}`);
+                if (res.status === 200) {
+                    await getAllDeals();
+                    FLshowLoading(false);
+                }
+            } catch (err) {
+                setTimeout(async () => await changeStatusDeal(evt), 3000);
+            }
+        }
+
+        function removeDealsTabsDesktop() {
+            if (window.innerWidth >= 1200) {
+                document.getElementById("allDealsContainer").classList.remove("tab-content");
+                document.getElementById("openDealTab-pane").classList.remove("tab-pane", "fade");
+                document.getElementById("successDealTab-pane").classList.remove("tab-pane", "fade");
+                document.getElementById("failedDealTab-pane").classList.remove("tab-pane", "fade");
+            } else {
+                document.getElementById("allDealsContainer").classList.add("tab-content");
+                document.getElementById("openDealTab-pane").classList.add("tab-pane", "fade");
+                document.getElementById("successDealTab-pane").classList.add("tab-pane", "fade");
+                document.getElementById("failedDealTab-pane").classList.add("tab-pane", "fade");
+            }
+            window.addEventListener("resize", removeDealsTabsDesktop);
+        }
+
+        //Show modals
+        const showModalDealPreFactors = async (deal) => {
+            currentDealData = deal;
+            await getPreFactorFromDeal(deal.id);
+
+            //document.getElementById("dealPreFactorsTitle").textContent = `${deal.customerName}${deal.customerCode ? ` (کد مشتری: ${deal.customerCode})` : ""}`;
+            document.getElementById("dealPreFactorsTitle").textContent = `پیش‌فاکتورهای سفارش ${deal.serialNumber}`;
+            $("#dealPreFactorsModal").modal("toggle");
+        };
+
+        const showModalDealFactors = async (deal, sNumber) => {
+            await getAllFactorsModal(deal.id, 4, sNumber);
+
+            const factorsModalTitle = document.querySelector("#FactorsModal .modal-title");
+            factorsModalTitle.textContent = sNumber ? "فاکتورهای سپیداری" : "فاکتورها";
+            factorsModalTitle.style.backgroundColor = sNumber ? "#451377" : "#00302d";
+
+            document.getElementById("factorsTitleModal").textContent = `${deal.customerName}${deal.customerCode ? ` (کد مشتری: ${deal.customerCode})` : ""}`;
+            $("#FactorsModal").modal("toggle");
+        };
+
+        const showModalDealReports = async (deal) => {
+            currentDealData = deal;
+            document.getElementById("dealReportsTitle").textContent = `${deal.customerName}${deal.customerCode ? ` (کد مشتری: ${deal.customerCode})` : ""}`;
+            await getReportFromDeal(deal.id);
+            $("#dealReportsModal").modal("toggle");
+        };
+
+        const showModalDealOrders = async (deal) => {
+            document.getElementById("dealOrdersTitle").textContent = `${deal.customerName}${deal.customerCode ? ` (کد مشتری: ${deal.customerCode})` : ""}`;
+            await getOrdersFromDeal(deal.id);
+            $("#dealOrdersModal").modal("toggle");
+        };
+
+        const showModalDealInvoices = async (deal) => {
+            await getInvoicesFromDeal(deal.id);
+        };
+
+        //get
+        const getPreFactorFromDeal = async (dealId, isRefresh = false) => {
+            if (!dealId) return;
+            FLshowLoading();
+            const dealPreFactorsElm = document.getElementById("dealPreFactors");
+            if (isRefresh) dealPreFactorsElm.innerHTML = "";
+            const res = await axios(`/Customer/GetAllPreFactorPartial?dealId=${dealId}`);
+
+            if (res.status === 200) {
+                if (res.data.count) {
+                    dealPreFactorsElm.innerHTML = res.data.html;
+                } else {
+                    dealPreFactorsElm.innerHTML = `
+                        <div class="d-flex flex-column align-items-center pb-4">
+                            <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
+                            <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ پیش فاکتوری برای نمایش وجود ندارد!</div>
+                        </div>
+                    `;
+                    dealPreFactorsElm.style.background = "#fff";
+                }
+                FLshowLoading(false);
+            }
+        };
+
+
+        const getReportFromDeal = async (dealId) => {
+            FLshowLoading();
+            const res = await axios.post(`/Report/GetAllReportPartial?dealId=${dealId}`, {});
+            if (res.status === 200) {
+                document.getElementById("dealReports").innerHTML = res.data.html;
+                FLshowLoading(false);
+            }
+        };
+
+        const getOrdersFromDeal = async (dealId) => {
+            FLshowLoading();
+            const res = await axios(`/Order/GetAllDealOrdersPartial?dealId=${dealId}`);
+            if (res.status === 200) {
+                for (const [key, data] of Object.entries(res.data)) {
+                    const containerElm = document.getElementById(`${key}Tab-pane`);
+                    const CountElm = document.getElementById(`${key}Count`);
+                    if (data.count) {
+                        containerElm.innerHTML = data.html;
+                        CountElm.style.display = "flex";
+                        CountElm.textContent = data.count;
+                    } else {
+                        CountElm.style.display = "none";
+                        containerElm.innerHTML = `
+                            <div class="d-flex flex-column align-items-center justify-content-center h-100 pb-4">
+                                <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
+                                <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ حواله ای برای نمایش وجود ندارد!</div>
+                            </div>
+                        `;
+                    }
+                }
+
+                FLshowLoading(false);
+            }
+        };
+
+        const getInvoicesFromDeal = async (dealId) => {
+            await ShowModalListInvoice(dealId, 3, null, 4, dealId, true);
+        };
+
+        document.getElementById("dealPreFactorsRefresh").addEventListener("click", () => getPreFactorFromDeal(currentDealData.id, true));
+        document.getElementById("dealPreFactorsAdd").addEventListener("click", () =>
+            showModalAddPfactor(4, currentDealData.customerId, currentDealData));
+        document.getElementById("dealReportsAdd").addEventListener("click", () => {
+            const model = currentDealData.customer ?? { agentName: currentDealData.customerName, mobile: currentDealData.mobileNumber };
+            ShowModalReport(model, 4, currentDealData.id, currentDealData.serialNumber);
+        });
+
+        document.getElementById("toggleExtraInfo").addEventListener("click", () => {
+
+            const modalDialog = document.querySelector("#dealModal .modal-dialog");
+            const panel = document.getElementById("extraCustomerPanel");
+
+            if (panel.classList.contains("d-none")) {
+                panel.classList.remove("d-none");
+                modalDialog.classList.add("modal-xl");
+            } else {
+                panel.classList.add("d-none");
+                modalDialog.classList.remove("modal-xl");
+            }
+
+        });
+
+        document.querySelectorAll("#dealModal input[name='cusJuridical']").forEach((elm) => {
+            elm.addEventListener("change", (e) => {
+                const juridicalInfoElm = document.getElementById("juridicalInfoDeal");
+                const showJuridicalInfo = Number(e.target.value) === 1;
+                juridicalInfoElm.classList.toggle("d-none", !showJuridicalInfo);
+
+                toggleElementsRequired(juridicalInfoElm.querySelectorAll("input"), showJuridicalInfo);
+            });
+        });
+    </script>
+}

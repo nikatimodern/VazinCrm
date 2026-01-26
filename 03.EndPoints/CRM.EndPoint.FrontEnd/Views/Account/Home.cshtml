@@ -1,0 +1,25 @@
+@model List<CRM.EndPoint.FrontEnd.Models.ViewModel.Customer.CustomerPanelVModel>
+
+@{
+    ViewBag.Title = "title";
+    Layout = "_MainLayout";
+}
+
+
+
+<div class="d-flex flex-column align-items-center justify-content-center gap-3">
+    @foreach (var item in Model ?? []) {
+        <a asp-controller="Customer" asp-action="CustomerPanel" asp-route-id="@item?.CustomerId">
+            <button class="buttonPurple2 flex-center flex-column" style="width: 240px;height: 120px;font-size: 16px">
+                <span>پنل مشتری </span>
+                <span class="fMedium">@item?.CustomerName</span>
+            </button>
+        </a>
+    }
+
+    <a asp-controller="Chat" asp-action="Main">
+        <button class="buttonGreen2 flex-center" style="width: 240px;height: 120px; font-size: 16px">
+            پیام رسان
+        </button>
+    </a>
+</div>

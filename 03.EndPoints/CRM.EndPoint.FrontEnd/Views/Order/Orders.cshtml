@@ -1,0 +1,171 @@
+﻿@*@{
+    ViewData["Title"] = "Orders";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+ <div class="mx-auto pt-xl-3 px-2 px-md-3 px-xl-5 col-12 col-xxl-11" style="display:flex; flex-direction:column; justify-content:center; align-items:center; ">
+
+    <div style="width:100%; display:flex;justify-content:center; flex-direction:column;align-items:center;font-size:clamp(12px,2vw,14px) ">
+        <div class="w-100" style="display:flex">
+            <form id="headForm" class="w-100 d-flex flex-wrap">
+                <div class="col-12 col-sm-3 col-md-4 col-xl-1 p-1" style="text-align:center">
+                    <label>شماره سفارش</label>
+                    <input class="fbold form-control" style="font-size:clamp(13px,2vw,16px) !important; color:crimson;border:none !important" type="text" name="orderNumber" disabled />
+                </div>
+                <div class="col-12 col-sm-9 col-md-8 col-xl-4 p-1" style="text-align:center">
+                    <label>مشتری</label>
+                    <input class="fbold form-control" style="font-size:clamp(13px,2vw,16px) !important; color:crimson;border:none !important" type="text" name="customerTxt" disabled />
+                </div>
+                <div class="col-6 col-sm-3 col-md-3 col-xl-2 p-1" style="text-align:center">
+                    <label>کارشناس فروش</label>
+                    <input class="fbold form-control" style="font-size:clamp(13px,2vw,16px) !important; color:crimson;border:none !important" type="text" name="userCreator" disabled />
+                </div>
+                <div class="col-6 col-sm-3 col-md-3 col-xl-2 p-1" style="text-align:center">
+                    <label>کارشناس تامین</label>
+                    <input class="fbold form-control" style="font-size:clamp(13px,2vw,16px) !important; color:crimson;border:none !important" type="text" name="userTaminTxt" disabled />
+                </div>
+                <div class="col-6 col-sm-3 col-md-3 col-xl-2 p-1" style="text-align:center">
+                    <label>تلفن</label>
+                    <input class="fbold form-control" style="font-size:clamp(13px,2vw,16px) !important; color:crimson;border:none !important" type="text" name="tel" disabled />
+                </div>
+                <div class="col-6 col-sm-3 col-md-3 col-xl-1 p-1" style="text-align:center">
+                    <label>تاریخ</label>
+                    <input class="fbold form-control" style="font-size:clamp(13px,2vw,16px) !important; color:crimson;border:none !important" type="text" name="orderDate" disabled />
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="my-2 my-lg-3" style="background-color: rgba(0, 0, 0, 0.15); width: 100%;height:1px;margin-inline:auto"></div>
+
+    <div class="w-100 d-flex flex-column">
+        <div class="d-flex flex-column flex-xl-row align-items-center align-items-xl-end justify-content-between w-100 gap-1" style="font-size:clamp(12px,2vw,14px)">
+            <form id="OrderForm" class="d-flex flex-grow-1 flex-wrap justify-content-center justify-content-md-start">
+               
+                <div class="col-4 col-sm-3 col-md-2 col-xl p-1" >
+                    <label>نوع جنس</label>
+                    <input class=" form-control" type="text" name="productSmallName" tabindex="1" />
+                </div>
+                <div class="col-4 col-sm-3 col-md-2 col-xl p-1" >
+                    <label> ابعاد </label>
+                    <input class=" form-control" type="text" name="dimensions" tabindex="2" />
+                </div>
+                <div class="col-4 col-sm-3 col-md-2 col-xl p-1" >
+                    <label> نوع دسته </label>
+                    <input class=" form-control" type="text" name="categoryType" tabindex="3" />
+                </div>
+                <div class="col-4 col-sm-3 col-md-2 col-xl p-1" >
+                    <label>کاست</label>
+                    <input class=" form-control" type="text" name="caset" tabindex="4" />
+                </div>
+                <div class="col-4 col-sm-3 col-md-2 col-xl p-1" >
+                    <label>رنگ زمینه</label>
+                    <input class=" form-control" type="text" name="backgroundColor" tabindex="5" />
+                </div>
+                <div class="col-4 col-sm-3 col-md-2 col-xl p-1" >
+                    <label>رنگ چاپ</label>
+                    <input class=" form-control" type="text" name="printColor" tabindex="6" />
+                </div>
+                <div class="col-4 col-sm-3 col-md-2 col-xl p-1" >
+                    <label>تعداد رنگ</label>
+                    <input class=" form-control" type="text" name="countColor" tabindex="7" />
+                </div>
+                <div class="col-4 col-sm-3 col-md-2 col-xl p-1" >
+                    <label>نام طرح</label>
+                    <input class=" form-control" type="text" name="designName" tabindex="8" />
+                </div>
+                <div class="col-4 col-sm-3 col-md-2 col-xl p-1" >
+                    <label>مقدار</label>
+                    <input class="digitNumber form-control" type="text" name="weight" tabindex="9" />
+                </div>
+                <div class="col-4 col-sm-3 col-md-2  col-xl p-1" >
+                    <label>ضخامت</label>
+                    <input class=" form-control" type="text" name="thickness" tabindex="10" />
+                </div>
+
+            </form>
+            <div class="d-flex align-items-center justify-content-center">
+                <div id="DivAddOr" class="p-1" style="display:flex;justify-content:center;">
+                    <button id="btnIn" class="buttonGreen3 d-flex align-items-center justify-content-center px-4 px-xl-3"  onclick="AddItemCreator()" tabindex="6"><i class="mp fa fa-plus"></i></button>
+                </div>
+                <div id="DivUpOr" class="p-1 flex-row flex-lg-column gap-1" style="display:none;justify-content:center;">
+                    <button id="btnIn" class="buttonCancel2 d-flex align-items-center justify-content-center" style=" border-radius: 5px !important;padding-inline: 16px; " onclick="CancelUpOrder()"><i class="mp fas fa-times"></i></button>
+                    <button id="btnIn" class="buttonGreen3 d-flex align-items-center justify-content-center" style=" border-radius: 5px !important;padding-inline: 16px; " onclick="SubmitUpOrder()"><i class="mp fa fa-check"></i></button>
+                </div>
+            </div>
+       </div>
+
+
+        <div class="mt-2 mt-lg-4 mb-lg-3" style="background-color: rgba(0, 0, 0, 0.15); width: 100%;height:1px;margin-inline:auto"></div>
+
+        <div style="width:99%">
+            <table style="width:100%" class="table table-striped table-hover nowrap" id="OrdersTable">
+                <thead>
+                    <tr>
+                        <th>id</th>
+                        <th>ردیف</th>
+                        <th>نوع جنس</th>
+                        <th>ابعاد</th>
+                        <th>نوع دسته</th>
+                        <th>کاست</th>
+                        <th>رنگ زمینه</th>
+                        <th>رنگ چاپ</th>
+                        <th>تعداد رنگ</th>
+                        <th>نام طرح</th>
+                        <th>وزن</th>
+                        <th>ضخامت</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+
+            </table>
+
+        </div>
+
+        <div class="my-2 mt-lg-4 mb-lg-3" style="background-color: rgba(0, 0, 0, 0.15); width: 100%;height:1px;margin-inline:auto"></div>
+
+        <div  style="width:100%;height:auto !important; ">
+            <label>توضیحات</label>
+            <textarea class="form-control" id="descriptionOrder" name="Description" style="text-align:start; padding:10px !important; height:auto !important;" rows="4"> </textarea>
+        </div>
+
+
+
+    </div>
+    <div class="d-flex align-items-center w-100 justify-content-center justify-content-xl-end my-2 my-md-3">
+        <button class="buttonGreen2" style="padding: 6px 12px !important;font-size: clamp(13px,2vw,14px);" onclick="Preview()" tabindex="20">
+            پیش نمایش و چاپ
+        </button>
+    </div>
+
+</div>
+
+@section scripts {
+    <script>
+        var headorid = null;
+        
+        var UpOrderId = null;
+
+        $(document).ready( async () => {
+            headorid = `@ViewBag.headOrId`;
+            getHead();
+            getAllOrders();
+        })
+
+       
+
+        const getHead = () => {
+            $("#FLshowLoading").css("display", "");
+            $.get(baseUrl + "Order/GetHeadOrder/" + headorid, (res) => {
+                mySer.convertJsonToForm(res, "headForm");
+                $("#descriptionOrder").val(res.description);
+                $("#FLshowLoading").css("display", "none");
+
+            }).fail(() => {
+                getHead();
+            })
+        }
+
+
+    </script>
+}*@

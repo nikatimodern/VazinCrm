@@ -1,0 +1,355 @@
+﻿@model IList<CRM.Core.Domain.Customers.Entities.Customer>
+
+@{
+    Layout = null;
+}
+
+<div style="display:flex;flex-flow:wrap;justify-content:center;">
+
+    @if (Model.Any())
+    {
+        @foreach (var item in Model)
+        {
+
+
+            <div class="m-2" style="width:190px">
+
+                <div class="d-flex flex-column" style="border: 1px solid rgba(0, 0, 0, .125);border-radius:25px;  background-color:white; height:100%  ">
+                    <div class="image-content" style="padding: 10px 0;">
+                        @if (item.Juridical == 1)
+                        {
+                            <div class="overlay" style="padding:10px; color:aliceblue; font-size:12px;">
+                                <p class="fbold" style=" text-align:end; width:100%;">حقوقی</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="overlay" ></div>
+                        }
+                        <div class=" card-image">
+                            <img  style="width:100%" src="~/Img/User.png" class="rounded-circle" alt="...">
+                        </div>
+                    </div>
+
+                    <div class="card-content flex-grow-1" style="margin-block:6px;padding: 0px 6px;display:flex; flex-direction:column; justify-content:space-between; width:100%;  margin-top:10px !important">
+                        <div style=" height:100% ; width:100%; display:flex;flex-direction:column;justify-content:center;align-items:center  ">
+                            <div style="display:flex;flex-wrap:wrap"> <span> کد مشتری : </span> <span class="fbold text-center"> @item.CustomerCode </span>  </div>
+                            @if (item.Sex == 1)
+                            {
+                                <div style="display:flex;flex-wrap:wrap;justify-content:center;"> <span> نام: </span> <span class="fbold text-center">آقای @item.AgentName </span>  </div>
+                            }
+                            else if (item.Sex == 0)
+                            {
+                                <div style="display:flex;flex-wrap:wrap;justify-content:center;"><span> نام: </span><span class="fbold text-center">خانم @item.AgentName </span>  </div>
+                            }
+                            else
+                            {
+                                <div style=" display:flex;flex-wrap:wrap;justify-content:center;"><span> نام: </span><span class="fbold text-center">@item.AgentName </span>  </div>
+                            }
+
+                            <div style="display:flex;flex-wrap:wrap;justify-content:center;"><span> تلفن همراه : </span><span class="fbold text-center">@item.Mobile </span>  </div>
+                            @if (item.Juridical == 1)
+                            {
+                                <div style="display:flex;flex-wrap:wrap; justify-content:center"><span> شرکت: </span><span class="fbold text-center">@item.CompanyName </span>  </div>
+                                @* <div style="display:flex"><span> نوع: </span><span class="fbold">حقوقی</span>  </div> *@
+                            }
+                            else
+                            {
+                                @* <div style="display:flex"><span> نوع: </span><span class="fbold">حقیقی</span>  </div> *@
+                            }
+
+                        </div>
+                        <div style="padding:5px; height:100%; align-items:center;justify-content:end; width:100%; display:flex; flex-direction:column;gap: 4px ">
+                            <div class="Admin SalesAdmin" style="display:flex;flex-wrap:wrap; justify-content:center"><span> توسط: </span><span class="fbold text-center">@item.UserCreator</span>  </div>
+
+                            <div class="d-flex align-items-center justify-content-center" style="color:#fff;width:100%">
+                                <a style="  width:50%" class="mp buttonPurple buttonCusPartial " href="/Customer/CustomerDetail?Id=@item.Id" target="_blank"><i class="fa fa-search"></i></a>
+                            </div>
+
+                            @* @if (item.Accepted)
+                            {
+                                <div style="display:flex;justify-content:end;gap:5px; width:104px;margin-bottom:10px !important;color:#fff">
+                                    <a style=" width:50%" href="/Customer/CustomerProfile?Id=@item.Id" class="mp buttonGreen buttonCusPartial"><i class="fa fa-eye"></i></a>
+                                    <button style=" width:50%" class="mp buttonGreen buttonCusPartial " onclick="ShowModalUpCustomer('@item.Id')"><i class=" fa fa-pencil"></i></button>
+                                    <button style=" width:50%" class="mp buttonOrange buttonCusPartial " onclick="ShowModalReport('@item.Id','@item.CustomerCode','@item.CompanyName','@item.AgentName','@item.Sex','@item.Mobile')"><i class=" fa fa-text"></i></button>
+                                    @if (ViewBag.AccessAccepte)
+                                    {
+                                        <a style=" width:50%" class="mp buttonPurple buttonCusPartial " href="/Customer/CustomerDetail?Id=@item.Id" target="_blank"><i class="fa fa-search"></i></a>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div style="display:flex;flex-direction:column; justify-content:center; align-items:center;">
+                                    <p class="mp fbold text-center" style=" color: var(--color25); font-family:'IRANSansBold'; ">در انتظار تایید</p>
+                                    @if (ViewBag.AccessAccepte)
+                                    {
+                                        <div style="display:flex;margin-bottom:10px !important; width:100%; justify-content:space-around">
+                                            <button style="  width:30px" class="mp buttonPurple buttonCusPartial " title="تایید" onclick="AcceptCus('@item.Id')"><i class=" fa fa-check"></i></button>
+                                            <button style=" width:30px;font-size:18px" class="mp buttonPurple buttonCusPartial " title="عدم تایید" onclick="AbortCus('@item.Id')">×</button>
+                                            <a style="    width:30px" class="mp buttonPurple buttonCusPartial " title="مشاهده جزئیات" href="/Customer/CustomerDetail?Id=@item.Id" target="_blank"><i class="fa fa-search"></i></a>
+
+                                        </div>
+                                    }
+                                </div>
+                            } *@
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* <div class="slide-container swiper" style=" padding:15px 0 !important;  width:190px !important;  ">
+                <div class="slide-content" >
+                    <div class="card-wrapper swiper-wrapper" >
+                        <div class="card swiper-slide" style="height: 100%">
+                            <div class="image-content">
+                                @if (item.Juridical == 1)
+                                {
+                                    <span class="overlayJuri" ></span>
+                                }
+                                else
+                                {
+                                    <span class="overlay" ></span>
+                                }
+                                <div class="card-image">
+                                    <img  style="width:100%" src="~/Img/User.png" class="rounded-circle" alt="...">
+                                </div>
+                            </div>
+
+                            <div class="card-content mp" style="margin-block:10px !important">
+                                <div style="display:flex"><span> کد مشتری: </span><span class="fbold">@item.CustomerCode </span>  </div>
+                                <div style="display:flex"><span> نام: </span><span class="fbold">@item.AgentName </span>  </div>
+                                <div style="display:flex"><span> تلفن همراه : </span><span class="fbold">@item.Mobile </span>  </div>
+                                @if (item.Juridical == 1)
+                                {
+                                    <div style="display:flex"><span> شرکت: </span><span class="fbold">@item.CompanyName </span>  </div>
+                                    <div style="display:flex"><span> نوع: </span><span class="fbold">حقوقی</span>  </div>
+                                }
+                                else
+                                {
+                                    <div style="display:flex"><span> نوع: </span><span class="fbold">حقیقی</span>  </div>
+                                }
+                                <div style="display:flex"><span> توسط: </span><span class="fbold">@item.UserCreator</span>  </div>
+
+                                <div  style="width:100%; display:flex; justify-content:center; flex-wrap:wrap; ">
+                                    <a style="color:#fff;  width:50%" class="mp buttonPurple buttonCusPartial " href="/Customer/CustomerDetail?Id=@item.Id" target="_blank"><i class="fa fa-search"></i></a>
+
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+
+            </div>
+ *@
+
+        }
+
+
+    }
+    else
+    {
+        <div style=" height:200px;width:100%;display:flex;flex-direction:column;align-items:center; justify-content:center ">
+
+            <h1>یافت نشد!</h1>
+            <h5>هیچ مشتری یافت نشد</h5>
+
+            @*           <section class="mp  test">
+        <div class="four_zero_four_bg">
+        </div>
+
+        </section>*@
+        </div>
+    }
+</div>
+
+<style>
+
+    .test {
+        border-radius: 10px !important;
+        width: 30%;
+        background-color: palevioletred;
+    }
+
+    .four_zero_four_bg {
+        background-image: url(https://cdn.dribbble.com/users/285475/screenshots/2083086/dribbble_1.gif);
+        height: 400px;
+        background-position: center;
+    }
+
+
+
+
+
+
+
+
+
+
+
+    .slide-container {
+        max-width: 1120px;
+        width: 100%;
+        padding: 40px 0;
+    }
+
+    .slide-content {
+        margin: 0 5px;
+        overflow: hidden;
+        border-radius: 25px;
+    }
+
+    .card {
+        border-radius: 25px;
+        background-color: #FFF;
+    }
+
+    .image-content,
+    .card-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px 14px;
+    }
+
+    .image-content {
+        position: relative;
+        row-gap: 5px;
+        padding: 25px 0;
+    }
+
+
+    .overlayJuri {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 100%;
+        background-color: #9042f5;
+        border-radius: 25px 25px 0 25px;
+    }
+
+       /*  .overlayJuri::before,
+        .overlayJuri::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            bottom: -40px;
+            height: 40px;
+            width: 40px;
+            background-color: #9042f5;
+        }
+
+        .overlayJuri::after {
+            border-radius: 0 25px 0 0;
+            background-color: #FFF;
+        } */
+
+    /*////////*/
+
+
+    .overlay {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 100%;
+        background: linear-gradient(to bottom, var(--color7), var(--color8));
+        border-radius: 24px 24px 0 20px;
+    }
+
+        /* .overlay::before,
+        .overlay::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            bottom: -40px;
+            height: 40px;
+            width: 40px;
+            background-color: #4070F4;
+        }
+
+        .overlay::after {
+            border-radius: 0 25px 0 0;
+            background-color: #FFF;
+        }
+ */
+    .card-image {
+        position: relative;
+        height: 70px;
+        width: 70px;
+        border-radius: 50%;
+        background: #FFF;
+        padding: 3px;
+    }
+
+        .card-image .card-img {
+            height: 100%;
+            width: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 4px solid #4070F4;
+        }
+
+    .name {
+        font-size: 18px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .description {
+        font-size: 14px;
+        color: #707070;
+        text-align: center;
+    }
+
+    .button {
+        border: none;
+        font-size: 16px;
+        color: #FFF;
+        padding: 8px 16px;
+        background-color: #4070F4;
+        border-radius: 6px;
+        margin: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .button:hover {
+            background: #265DF2;
+        }
+
+    .swiper-navBtn {
+        color: #6E93f7;
+        transition: color 0.3s ease;
+    }
+
+        .swiper-navBtn:hover {
+            color: #4070F4;
+        }
+
+        .swiper-navBtn::before,
+        .swiper-navBtn::after {
+            font-size: 35px;
+        }
+
+    .swiper-button-next {
+        right: 0;
+    }
+
+    .swiper-button-prev {
+        left: 0;
+    }
+
+    .swiper-pagination-bullet {
+        background-color: #6E93f7;
+        opacity: 1;
+    }
+
+    .swiper-pagination-bullet-active {
+        background-color: #4070F4;
+    }
+
+</style>

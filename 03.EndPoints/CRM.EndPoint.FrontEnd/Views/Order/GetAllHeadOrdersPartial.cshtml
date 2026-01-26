@@ -1,0 +1,87 @@
+﻿@using CRM.Core.Domain.Orders.Enums
+@model List<OrderHead>
+@{
+    Layout = null;
+}
+
+@foreach (var item in Model) {
+    <div class="orderBox @($"orderBox_col{(int)item.Status}")" data-id="@item.Id">
+        <div class="d-flex flex-column justify-content-between p-2 w-100" style="column-gap:14px">
+            <div class="mp flex-column" style=" display:flex;justify-content:space-between; width:100%;">
+
+                <div class="col-12 d-flex flex-wrap justify-content-around" style="row-gap:.5rem;column-gap:10px;">
+
+                    <div class="justify-content-between" style=" display:flex;align-items:center;gap:6px">
+                        <label style="color:gray">شماره:</label>
+                        <label style="font-family:'IRANSansBold'">@item.OrderNumber</label>
+                    </div>
+                    <div class="justify-content-between" style="display:flex;align-items:center;gap:6px">
+                        <label style="color:gray">پیش‌فاکتور:</label>
+                        <label class="hoverLink" style="font-family:'IRANSansBold'" onclick="ShowPreviewPfactor('@item.Prefactor')">@item.PrefactorSer</label>
+                    </div>
+                    <div class="justify-content-between" style="display:flex;align-items:center; gap:6px">
+                        <label style="color:gray">تاریخ:</label>
+                        <label style="font-family:'IRANSansBold'">@item.OrderDate</label>
+                    </div>
+
+                </div>
+
+                <div class="my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                <div class="d-flex flex-column" style="row-gap:.5rem;column-gap:10px;">
+                    <div class="col-12 d-flex flex-wrap justify-content-around" style="text-align:center;row-gap:.5rem;column-gap:10px;">
+                        <div style=" display:flex;align-items:center;gap:8px">
+                            <label style="color:gray">نام مشتری:</label>
+                            <label style="text-align:center; font-family:'IRANSansBold'">@(item.CustomerTxt)</label>
+                        </div>
+                        <div style=" display:flex;align-items:center;gap:8px">
+                            <label style="color:gray">کد مشتری:</label>
+                            <label class="@(item.CustomerCode != null ? "hoverLink" : "") text-center fbold" onclick="openCustomerProfile('@item.Customer')">@(item.CustomerCode?.ToString() ?? "-")</label>
+                        </div>
+                    </div>
+                    <div class="col-12 d-flex flex-wrap justify-content-around" style="text-align:center;row-gap:.5rem;column-gap:10px;">
+                        <div style=" display:flex;align-items:center; gap:8px">
+                            <label style="color:gray">کارشناس فروش:</label>
+                            <label style="text-align:center; font-family:'IRANSansBold'">@item.UserCreator</label>
+                        </div>
+                        <div style=" display:flex;align-items:center; gap:8px">
+                            <label style="color:gray">کارشناس تامین:</label>
+                            <label style="text-align:center; font-family:'IRANSansBold'">@item.UserTaminTxt</label>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+            <div class="my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+            <div class="d-flex align-items-center">
+                <div class="align-items-center flex-grow-1" style=" display:flex; justify-content:space-evenly !important;row-gap:8px;font-size:14px">
+                    <button class="mp d-flex justify-content-center align-items-center" data-title="مشاهده" style="color:var(--DarkColor);border:none;background-color:transparent" onclick="PreviewOrderPrint('@item.Id')">
+                        <i class="mp fa fa-eye"></i>
+                    </button>
+                    <button class="mp d-flex justify-content-center align-items-center" data-title="ویرایش" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="ShowUpdateHeadOrder('@item.Id', @ViewBag.PassType, '@item.DealId')">
+                        <i class="mp fa fa-pencil"></i>
+                    </button>
+                    <button class="mp d-flex justify-content-center align-items-center" data-title="حذف" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="DelHeadOrderItem('@item.Id', @ViewBag.PassType, '@item.DealId')">
+                        <i class="mp fa fa-trash"></i>
+                    </button>
+                </div>
+                <div class="pe-2 d-flex align-items-center gap-2">
+                    @if (item.Status == OrderHeadStatusEnum.تولید || item.Status == OrderHeadStatusEnum.آماده_تحویل) {
+                        <button class="buttonGray @(ViewBag.PassType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', @(item.Status == OrderHeadStatusEnum.تولید ? 1 : 2), @((int)item.Status), @ViewBag.PassType, '@item.DealId')">مرحله قبل</button>
+                    }
+                    @if (item.Status == OrderHeadStatusEnum.ثبت_اولیه) {
+                        <button class="buttonGreen2 @(ViewBag.PassType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', 2, @((int)item.Status), @ViewBag.PassType, '@item.DealId')">طراحی و تولید</button>
+                    } else if (item.Status == OrderHeadStatusEnum.تولید) {
+                        <button class="buttonGreen2 @(ViewBag.PassType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', 3, @((int)item.Status), @ViewBag.PassType, '@item.DealId')">آماده تحویل</button>
+                    } else if (item.Status == OrderHeadStatusEnum.آماده_تحویل) {
+                        <button class="buttonGreen2" onclick="changeStatusHd('@item.Id', 4, @((int)item.Status), @ViewBag.PassType, '@item.DealId')">تحویل شد</button>
+                    } else if (item.Status == OrderHeadStatusEnum.تحویل_شده) {
+                        <button class="buttonGray" onclick="changeStatusHd('@item.Id', 3, @((int)item.Status), @ViewBag.PassType, '@item.DealId')">مرحله قبل</button>
+                    }
+                </div>
+            </div>
+
+        </div>
+    </div>
+}

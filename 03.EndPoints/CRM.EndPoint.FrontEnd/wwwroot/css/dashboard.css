@@ -1,0 +1,419 @@
+﻿.dashGridContainer {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  /*    grid-template-rows: auto auto;*/
+  gap: 12px;
+  width: 100%;
+}
+
+
+.dashGridItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  box-shadow: rgba(33, 33, 33, 0.14) 0 1px 2px 0, rgba(0, 0, 0, 0.14) 0 0 1px 0;
+  border-radius: 6px;
+}
+
+
+.dashGridItem.gridItemReports {
+  /*    grid-row: 2 / 3;*/
+  grid-column: span 2;
+  border-top: 1px solid #00678b;
+  max-height: 350px;
+}
+
+
+.dashGridItem.gridItemTasks {
+  /*    grid-row: 2 / 3;*/
+  grid-column: span 2;
+  border-top: 1px solid #6767fd;
+  max-height: 350px;
+}
+
+
+.dashGridItem.gridItemLogs {
+  grid-column: span 4;
+  border-top: 1px solid #1f857c;
+  max-height: 298px;
+  /* height: calc(100dvh - 557px); */
+}
+
+
+.dashGridItem.gridItemTarget {
+  grid-row: span 2;
+  /*    grid-column: -2 / -1;*/
+}
+
+
+.dashCardItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  gap: clamp(12px, 4.4cqw, 16px);
+  padding: 10px clamp(10px, 3.8cqw, 14px);
+}
+
+
+.dashCardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: clamp(42px, 14.06cqw, 48px);
+  height: clamp(42px, 14.06cqw, 48px);
+  border-radius: 50%;
+  padding: 9px;
+  border-width: 2px;
+  border-style: solid;
+}
+
+
+.dashCardContent {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  height: 100%;
+  gap: .1rem;
+  justify-content: space-between;
+}
+
+
+#allReportsDashboardId .reporter-image {
+  width: clamp(33px, 2.6vw, 36px);
+}
+
+
+#allReportsDashboardId .report-wrapper {
+  gap: 13px;
+}
+
+
+#allReportsDashboardId .report-box {
+  padding-right: 8px;
+}
+
+
+#allReportsDashboardId .report-box::before {
+  top: 16px;
+}
+
+
+#allReportsDashboardId .report-info {
+  column-gap: 13px;
+}
+
+
+#allReportsDashboardId .report-text {
+  padding-left: 8px;
+}
+
+
+#allReportsDashboardId .report-badge {
+  padding: 3px 8px;
+}
+
+
+.dash-readMore {
+  display: flex;
+  align-items: center;
+  align-self: end;
+  gap: 4px;
+  cursor: pointer;
+  transition: transform 0.3s;
+  margin-bottom: -2px;
+  user-select: none;
+}
+
+
+.dash-readMore:hover, .dash-readMore:focus {
+  transform: translateX(-3px);
+  filter: brightness(0.6);
+}
+
+
+#infoFactors-dropdown {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  border: 1px solid rgba(180, 180, 180, .4);
+  border-radius: 6px;
+  box-shadow: 0 4px 8px rgba(97, 115, 161, .2);
+}
+
+
+.user__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 10px;
+  user-select: none;
+  width: 100%;
+  min-width: max-content;
+  gap: 48px;
+  border-bottom: 1px solid rgba(180, 180, 180, .2)
+}
+
+
+.infoFactors-firstItem .imgUser {
+  width: 40px !important;
+}
+
+
+.infoFactors-firstItem span {
+  font-family: IRANSansBold;
+  font-size: 15px !important;
+}
+
+
+/*@media (max-width: 1399px) {
+    .dashGridContainer {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    .dashGridItem.gridItemReports,
+    .dashGridItem.gridItemTasks {
+        grid-column: span 3;
+    }
+    .dashGridItem.gridItemReports {
+        grid-row : 2 / 3
+    }
+    .dashGridItem.gridItemTasks {
+        grid-row: 3 / 4
+    }
+
+    .dashGridItem.gridItemTarget {
+        grid-column: -2 / -1;
+    }
+}
+@media (max-width: 1199px) {
+    .dashGridContainer {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .dashGridItem.gridItemReports,
+    .dashGridItem.gridItemTasks {
+        grid-column: span 2;
+        grid-row: unset
+    }
+    .dashGridItem.gridItemTarget {
+        grid-row: 4 / 5;
+        grid-column: span 2;
+    }
+    .dashCardItem {
+        gap: 14px
+    }
+}
+@media (max-width: 767px) {
+    .dashGridContainer {
+        grid-template-columns: 1fr;
+    }
+    .dashGridItem.gridItemReports,
+    .dashGridItem.gridItemTasks,
+    .dashGridItem.gridItemTarget {
+        grid-column: unset;
+    }
+    .dashGridItem.gridItemTarget {
+        grid-row: 6 / 7;
+        grid-column: span 1;
+    }
+
+    .dashGridItem.gridItemReports > div,
+    .dashGridItem.gridItemTasks > div,
+    .dashGridItem.gridItemTarget > div {
+        padding-inline: 8px !important;
+    }
+   
+}
+*/
+
+@media (max-width: 767px) {
+  .user__item {
+    padding: 8px 6px;
+    gap: 10px;
+  }
+  
+  .user__item .imgUser {
+    width: 33px !important;
+  }
+  
+  .user__item .imgUser ~ span {
+    font-size: 11px !important;
+  }
+  
+  .user__item .infoFactors-firstItem span {
+    font-size: 13px !important;
+  }
+  
+  .user__item .infoFactors-firstItem .imgUser {
+    width: 36px !important;
+  }
+  
+  .user__item .badgeGray, .user__item .badgeGreen {
+    font-size: 10px;
+    padding-inline: 9px;
+  }
+  
+  .user__item .badgeGray span, .user__item .badgeGreen span {
+    font-size: 11px !important;
+  }
+}
+
+
+@container mainWrapper (max-width: 1280px) {
+  .dashGridContainer {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .dashGridItem.gridItemReports,
+  .dashGridItem.gridItemTasks {
+    grid-column: span 3;
+  }
+  
+  .dashGridItem.gridItemReports {
+    grid-row: 2 / 3;
+  }
+  
+  .dashGridItem.gridItemTasks {
+    grid-row: 3 / 4;
+  }
+  
+  .dashGridItem.gridItemLogs {
+    grid-row: 4 / 5;
+  }
+  
+  /* .dashGridItem.gridItemLogs {
+    grid-column: span 3;
+  } */
+  .dashGridItem.gridItemTarget {
+    grid-column: -2 / -1;
+  }
+}
+
+
+@container mainWrapper (max-width: 1090px) {
+  .dashGridContainer {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .dashGridItem.gridItemReports,
+  .dashGridItem.gridItemTasks,
+  .dashGridItem.gridItemLogs {
+    grid-column: span 2;
+    grid-row: unset;
+  }
+  
+  .dashGridItem.gridItemTarget {
+    grid-row: 4 / 5;
+    grid-column: span 2;
+  }
+  
+  .dashCardItem {
+    gap: 14px;
+  }
+}
+
+
+@container mainWrapper (max-width: 650px) {
+  .dashGridContainer {
+    grid-template-columns: 1fr;
+  }
+  
+  .dashGridItem.gridItemReports,
+  .dashGridItem.gridItemTasks,
+  .dashGridItem.gridItemTarget,
+  .dashGridItem.gridItemLogs {
+    grid-column: unset;
+  }
+  
+  .dashGridItem.gridItemTarget {
+    grid-row: 6 / 7;
+    grid-column: span 1;
+  }
+  
+  .dashGridItem.gridItemReports > div,
+  .dashGridItem.gridItemTasks > div,
+  .dashGridItem.gridItemTarget > div,
+  .dashGridItem.gridItemLogs > div {
+    padding-inline: 8px !important;
+  }
+}
+
+
+#LogSystemId ul,#LogSystemId  li {
+  list-style: none;
+  padding: 0;
+}
+
+
+#LogSystemId li {
+  &.logAction-1 {
+    --log-color: #1f857c;
+  }
+  
+  &.logAction-2 {
+    --log-color: #d99313;
+  }
+  
+  &.logAction-3,
+  &.logAction-9 {
+    --log-color: #cf2210;
+  }
+  
+  &.logAction-4 {
+    --log-color: #2980b9;
+  }
+  
+  &.logAction-5,
+  &.logAction-6 {
+    --log-color: #7f8c8d;
+  }
+  
+  &.logAction-7,
+  &.logAction-8 {
+    --log-color: #8e44ad;
+  }
+  
+  
+  & {
+    padding-bottom: 20px;
+    padding-right: 20px;
+    border-right: 1px dashed var(--log-color, #1f857c);
+    position: relative;
+    margin-right: 10px;
+  }
+  
+  &:last-child {
+    padding-bottom: 0;
+  }
+  
+  &:before {
+    content: "";
+    width: 15px;
+    height: 15px;
+    background: white;
+    border: 1px solid var(--log-color, #1f857c);
+    box-shadow: -3px 3px 0 color-mix(in srgb, var(--log-color, #1f857c) 50%, transparent);
+    border-radius: 50%;
+    position: absolute;
+    right: -8px;
+    top: 0;
+  }
+  
+}
+
+
+#LogSystemId .logSystem-time {
+  color: #2a2839;
+  font-family: IRANSansMedium;
+  direction: ltr;
+  display: inline-block;
+}
+
+
+#LogSystemId .logSystem-desc {
+  color: #4f4f4f;
+  line-height: 1.5;
+  margin-top: 0.4rem;
+}

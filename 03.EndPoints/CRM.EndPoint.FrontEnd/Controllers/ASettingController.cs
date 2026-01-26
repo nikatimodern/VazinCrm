@@ -1,0 +1,485 @@
+﻿using CRM.Core.Domain.AppUsers.Entities;
+using CRM.Core.Domain.ASettings.Entities;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.Home;
+using CRM.EndPoint.FrontEnd.Models.ViewModel;
+using CRM.EndPoint.FrontEnd.Services;
+using Generics.Infrastructures.Sql;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Threading.Tasks;
+using CRM.Core.Domain;
+using CRM.Core.Domain.Accountancies.Enum;
+using CRM.Core.Domain.Customers.Entities;
+using CRM.Core.Domain.LogSystems.Entities;
+using CRM.Core.Domain.PreFactors.Entities;
+using Microsoft.EntityFrameworkCore.Query.Internal;
+
+namespace CRM.EndPoint.FrontEnd.Controllers {
+    [Authorize]
+    public class ASettingController : Controller {
+        private readonly UserManager<AppUser> userManager;
+        private readonly Service genService;
+        private readonly FileSaver fileSaver;
+        private readonly DateTimeServices dtService;
+        private readonly CRMContextDb db;
+        private readonly LogSystemService _logSystemService;
+
+        public ASettingController(UserManager<AppUser> userManager, Service GenService, FileSaver fileSaver,
+            DateTimeServices dtService, CRMContextDb db, LogSystemService logSystemService)
+        {
+            this.userManager = userManager;
+            genService = GenService;
+            this.fileSaver = fileSaver;
+            this.dtService = dtService;
+            this.db = db;
+            _logSystemService = logSystemService;
+        }
+
+        [Authorize(Roles = "مدیر ارشد")]
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+
+        [Authorize(Roles = "مدیر ارشد")]
+        public async Task<IActionResult> RecycleBin()
+        {
+            return View();
+        }
+
+        [Authorize(Roles = "مدیر ارشد")]
+        [HttpPost]
+        public async Task<IActionResult> GetAllDeleted()
+        {
+            try
+            {
+                var modelF = JsonConvert.DeserializeObject<filterVModel>(Request.Form["modelF"].FirstOrDefault());
+                var draw = Request.Form["draw"].FirstOrDefault();
+                var start = Request.Form["start"].FirstOrDefault();
+                var length = Request.Form["length"].FirstOrDefault();
+                var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
+                var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
+                var searchValue = Request.Form["search[value]"].FirstOrDefault();
+                int pageSize = length != null ? Convert.ToInt32(length) : 0;
+                int skip = start != null ? Convert.ToInt32(start) : 0;
+                int recordsTotal = 0;
+
+                var model = new List<AllDeletedVmodel>();
+
+                /// customer
+                var Qcus = db.Customers.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted == true).AsQueryable();
+                recordsTotal += Qcus.Count();
+
+
+                var cus = new List<Customer>();
+                if (pageSize == -1)
+                    cus = await Qcus.OrderByDescending(f => f.ModifyDate).Skip(skip).ToListAsync();
+                else
+                    cus = await Qcus.OrderByDescending(f => f.ModifyDate).Skip(skip).Take(pageSize).ToListAsync();
+
+
+                foreach (var item in cus)
+                {
+                    model.Add(new AllDeletedVmodel() {
+                        EntityId = item.Id,
+                        EntityType = EntityTypeEnum.Customer,
+                        EntityTypeTxt = "مشتری",
+                        title = item.CompanyName + " " + item.AgentName,
+                        ModifyDate = item.ModifyDate.Value,
+                        ModifyDateTxt = string.Join(" | ", item.ModifyDateTxt.Substring(0, 16).Split(' ').Reverse()),
+                        CodeNumber = item.CustomerCode.ToString(),
+                        ModifyUser = item.UserModify
+                    });
+                }
+
+                ////endCustomer
+
+
+                IQueryable<AllDeletedVmodel> dataF;
+                dataF = model.AsQueryable();
+
+
+                if (!(string.IsNullOrEmpty(sortColumn) && string.IsNullOrEmpty(sortColumnDirection)))
+                {
+                    if (sortColumnDirection == "asc")
+                    {
+                        switch (sortColumn)
+                        {
+                            case "dateSh":
+                                dataF = dataF.OrderBy(f => f.ModifyDateTxt);
+                                break;
+
+                            default:
+                                dataF = dataF.OrderBy(f => f.ModifyDateTxt);
+                                break;
+                        }
+                    } else
+                    {
+                        switch (sortColumn)
+                        {
+                            case "dateSh":
+                                dataF = dataF.OrderByDescending(f => f.ModifyDateTxt);
+                                break;
+
+                            default:
+                                dataF = dataF.OrderByDescending(f => f.ModifyDateTxt);
+                                break;
+                        }
+                    }
+                }
+
+                if (modelF.filt != null)
+                {
+                    var fd = dtService.GetDateMiladi(modelF.filt.fromDate);
+                    var td = dtService.GetDateMiladi(modelF.filt.toDate);
+                    fd = fd == null ? dtService.GetDateMiladi("1000/01/01") : fd;
+                    td = td == null ? DateTime.Now : td;
+                    //if (modelF.filt.CusFilterChd == true)
+                    //    dataF = dataF.Where(f => f.CustomerId == modelF.filt.customerFilter).AsQueryable();
+                    if (modelF.filt.DateFilterChk == true)
+                        dataF = dataF.Where(f => f.ModifyDate >= fd && f.ModifyDate <= td)
+                            .OrderByDescending(f => f.ModifyDate).AsQueryable();
+                    //if (modelF.filt.SelFilterChd == true)
+                    //    dataF = dataF.Where(f => f.UserCreatorID == modelF.filt.selFilter.ToString()).AsQueryable();
+                }
+
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    dataF = dataF.Where(m =>
+                            m.CodeNumber.ToString() == searchValue
+                        //m.Contains(searchValue) ||
+                        //m.CustomerCode.ToString() == searchValue ||
+                        //m.BankAccountTxt.Contains(searchValue) ||
+                        //m.credit.ToString() == (searchValue)
+                    ).AsQueryable();
+                }
+
+
+                //recordsTotal = dataF.Count();
+                List<AllDeletedVmodel> data = null;
+                //if (pageSize == -1)
+                //    data =  dataF.Skip(skip).ToList();
+                //else
+                //    data =  dataF.Skip(skip).Take(pageSize).ToList();
+
+                data = dataF.ToList();
+
+                var jsonData = new { draw, recordsFiltered = recordsTotal, recordsTotal, data };
+                return Ok(jsonData);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        [Authorize(Roles = "مدیر ارشد")]
+        public async Task<ActionResult> GetRecycleItems(int skip = 0, int take = 10, string search = "", int recycleType = -1)
+        {
+            try
+            {
+                var model = new List<AllDeletedVmodel>();
+
+                async Task AddEntities<T>(IQueryable<T> query, Func<T, AllDeletedVmodel> map)
+                {
+                    var list = await query.ToListAsync();
+                    model.AddRange(list.Select(map));
+                }
+
+                if (recycleType == -1 || recycleType == 1)
+                {
+                    var query = db.Customers.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted);
+                    if (!string.IsNullOrWhiteSpace(search))
+                    {
+                        query = query.Where(f =>
+                            f.CompanyName.Contains(search) || f.AgentName.Contains(search) ||
+                            f.CustomerCode.ToString() == search || f.UserModify.Contains(search));
+                    }
+
+                    await AddEntities(query.Select(f => new {
+                            f.Id,
+                            f.CompanyName,
+                            f.AgentName,
+                            f.ModifyDate,
+                            f.ModifyDateTxt,
+                            f.CustomerCode,
+                            f.UserModify
+                        }),
+                        item => new AllDeletedVmodel {
+                            EntityId = item.Id,
+                            EntityType = EntityTypeEnum.Customer,
+                            EntityTypeTxt = "مشتری",
+                            title = $"{item.CompanyName} {item.AgentName}",
+                            ModifyDate = item.ModifyDate ?? DateTime.MinValue,
+                            ModifyDateTxt = FormatDateTime(item.ModifyDateTxt),
+                            CodeNumber = item.CustomerCode.ToString(),
+                            ModifyUser = item.UserModify ?? "-"
+                        });
+                }
+
+                if (recycleType == -1 || recycleType == 2)
+                {
+                    var query = db.PreFactors.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted);
+                    if (!string.IsNullOrWhiteSpace(search))
+                    {
+                        query = query.Where(f =>
+                            f.Customer.Contains(search) ||
+                            f.AgentName.Contains(search) ||
+                            f.SerialNumber.ToString() == search ||
+                            (f.CustomerEntity != null && f.CustomerEntity.CustomerCode.ToString() == search)
+                            || f.UserModify.Contains(search));
+                    }
+
+
+                    await AddEntities(query.Select(f => new {
+                            f.Id,
+                            f.Customer,
+                            f.AgentName,
+                            f.ModifyDate,
+                            f.ModifyDateTxt,
+                            f.SerialNumber,
+                            f.UserModify,
+                            CustomerCode = f.CustomerEntity != null ? f.CustomerEntity.CustomerCode : (int?)null
+                        }),
+                        item => new AllDeletedVmodel {
+                            EntityId = item.Id,
+                            EntityType = EntityTypeEnum.PreFactor,
+                            EntityTypeTxt = "پیش فاکتور",
+                            title = $"{item.Customer} {item.AgentName} ({item.CustomerCode?.ToString() ?? "-"})",
+                            ModifyDate = item.ModifyDate ?? DateTime.MinValue,
+                            ModifyDateTxt = FormatDateTime(item.ModifyDateTxt),
+                            CodeNumber = item.SerialNumber.ToString(),
+                            ModifyUser = item.UserModify ?? "-"
+                        });
+                }
+
+                if (recycleType == -1 || recycleType == 3)
+                {
+                    var query = db.Factors.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted);
+                    if (!string.IsNullOrWhiteSpace(search))
+                    {
+                        query = query.Where(f =>
+                            f.Customer.Contains(search) || f.AgentName.Contains(search) ||
+                            f.SerialNumber.ToString() == search || f.CustomerCode.ToString() == search
+                            || f.UserModify.Contains(search));
+                    }
+
+                    await AddEntities(query.Select(f => new {
+                            f.Id,
+                            f.Customer,
+                            f.AgentName,
+                            f.ModifyDate,
+                            f.ModifyDateTxt,
+                            f.SerialNumber,
+                            f.UserModify,
+                            f.CustomerCode
+                        }),
+                        item => new AllDeletedVmodel {
+                            EntityId = item.Id,
+                            EntityType = EntityTypeEnum.Factor,
+                            EntityTypeTxt = "فاکتور",
+                            title = $"{item.Customer} {item.AgentName} ({item.CustomerCode?.ToString() ?? "-"})",
+                            ModifyDate = item.ModifyDate ?? DateTime.MinValue,
+                            ModifyDateTxt = FormatDateTime(item.ModifyDateTxt),
+                            CodeNumber = item.SerialNumber.ToString(),
+                            ModifyUser = item.UserModify ?? "-"
+                        });
+                }
+
+                if (recycleType == -1 || recycleType == 4)
+                {
+                    var query = db.OrderHeads.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted);
+                    if (!string.IsNullOrWhiteSpace(search))
+                    {
+                        query = query.Where(f =>
+                            f.CustomerTxt.Contains(search)
+                            || f.OrderNumber.ToString() == search
+                            || f.CustomerCode.ToString() == search
+                            || f.UserModify.Contains(search));
+                    }
+
+                    await AddEntities(query.Select(f => new {
+                            f.Id,
+                            f.CustomerTxt,
+                            f.ModifyDate,
+                            f.ModifyDateTxt,
+                            f.OrderNumber,
+                            f.UserModify,
+                            f.CustomerCode
+                        }),
+                        item => new AllDeletedVmodel {
+                            EntityId = item.Id,
+                            EntityType = EntityTypeEnum.OrderHead,
+                            EntityTypeTxt = "دستور تولید",
+                            title = $"{item.CustomerTxt} ({item.CustomerCode})",
+                            ModifyDate = item.ModifyDate ?? DateTime.MinValue,
+                            ModifyDateTxt = FormatDateTime(item.ModifyDateTxt),
+                            CodeNumber = item.OrderNumber.ToString(),
+                            ModifyUser = item.UserModify ?? "-"
+                        });
+                }
+
+                int total = model.Count;
+                var pagedData = model.OrderByDescending(f => f.ModifyDate).Skip(skip).Take(take).ToList();
+
+                return Json(new { total, data = pagedData });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { total = 0, data = new List<AllDeletedVmodel>(), error = ex.Message });
+            }
+        }
+
+        private string FormatDateTime(string datetime)
+        {
+            return (datetime != null && (datetime).Length >= 16)
+                ? string.Join(" | ", (datetime).Substring(0, 16).Split(' ').Reverse())
+                : (datetime ?? "-");
+        }
+
+
+        [Authorize(Roles = "مدیر ارشد")]
+        [HttpGet]
+        public async Task<IActionResult> RestoreEntity(Guid EId, EntityTypeEnum EType)
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var dataNow = DateTime.Now;
+            var dataNowPersian = dtService.GetDateTimePersian();
+
+            void SetMainFields(dynamic entity)
+            {
+                entity.IsDeleted = false;
+                entity.UserModify = user.FullName;
+                entity.UserModifyID = user.Id;
+                entity.ModifyDate = dataNow;
+                entity.ModifyDateTxt = dataNowPersian;
+            }
+
+            switch (EType)
+            {
+                case EntityTypeEnum.Customer:
+                {
+                    var customer = await db.Customers.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == EId);
+                    await _logSystemService.LogChange(customer, null, LogActionEnum.بازیابی, user);
+                    SetMainFields(customer);
+
+                    await db.SaveChangesAsync();
+                    break;
+                }
+                case EntityTypeEnum.PreFactor:
+                {
+                    var preF = await db.PreFactors.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == EId);
+                    await _logSystemService.LogChange(preF, null, LogActionEnum.بازیابی, user);
+                    SetMainFields(preF);
+                    preF.CommentText = null;
+                    preF.Pftype = preF.PrePftype ?? 0;
+                    preF.PftypeTxt = Service.GetTypeTxtPfactor(preF.Pftype);
+
+                    if (preF.CustomerId != null)
+                    {
+                        var cus = await db.Customers.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == preF.CustomerId);
+                        if (cus.IsDeleted)
+                        {
+                            await _logSystemService.LogChange(cus, null, LogActionEnum.بازیابی, user);
+                            cus.IsDeleted = false;
+                            cus.ModifyDate = dataNow;
+                            cus.ModifyDateTxt = dataNowPersian;
+                        }
+                    }
+
+                    var accS = await db.Accountancies.Where(f =>
+                        f.pfid == preF.Id
+                        && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
+                        && (f.AccType == AcEnum.واریزی || f.AccType == AcEnum.برگشتی)
+                    ).ToListAsync();
+
+                    foreach (var acc in accS)
+                        acc.Wallet = false;
+
+                    await db.SaveChangesAsync();
+                    break;
+                }
+                case EntityTypeEnum.Factor:
+                {
+                    var fac = await db.Factors.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == EId);
+                    await _logSystemService.LogChange(fac, null, LogActionEnum.بازیابی, user);
+                    SetMainFields(fac);
+
+                    if (fac.CustomerId != null)
+                    {
+                        var cusf = await db.Customers.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == fac.CustomerId);
+                        if (cusf.IsDeleted)
+                        {
+                            await _logSystemService.LogChange(cusf, null, LogActionEnum.بازیابی, user);
+                            cusf.IsDeleted = false;
+                            cusf.ModifyDate = dataNow;
+                            cusf.ModifyDateTxt = dataNowPersian;
+                        }
+                    }
+
+                    /*
+                    var ac = await db.Accountancies.IgnoreQueryFilters().Where(f => f.fid == EId).FirstOrDefaultAsync();
+                    if (ac != null)
+                        ac.IsDeleted = false;
+                    */
+
+                    await db.SaveChangesAsync();
+                    break;
+                }
+                case EntityTypeEnum.OrderHead:
+                {
+                    var orderH = await db.OrderHeads.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == EId);
+                    await _logSystemService.LogChange(orderH, null, LogActionEnum.بازیابی, user);
+                    SetMainFields(orderH);
+
+                    await db.SaveChangesAsync();
+                    break;
+                }
+            }
+
+            return Ok();
+        }
+
+
+        [Authorize(Roles = "مدیر ارشد")]
+        public async Task<IActionResult> upSetting(ASetting model)
+        {
+            try
+            {
+                db.ASettings.Update(model);
+                await db.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        public async Task<IActionResult> GetSetting()
+        {
+            try
+            {
+                if (db.ASettings.Count() != 0)
+                {
+                    var data = await db.ASettings.FirstOrDefaultAsync();
+                    return Ok(data);
+                }
+
+                return Ok(null);
+            }
+            catch
+            {
+                return BadRequest();
+            }
+        }
+    }
+}

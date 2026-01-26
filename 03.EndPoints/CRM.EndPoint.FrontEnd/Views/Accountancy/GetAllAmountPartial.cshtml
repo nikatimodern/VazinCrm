@@ -1,0 +1,45 @@
+﻿@using CRM.EndPoint.FrontEnd.Models.ViewModel.AccountanciesVm;
+@model PaymentListViewModel
+
+<div class="d-flex flex-column align-items-center justify-content-between w-100">
+
+    <div class="flex-column d-flex align-items-center justify-content-between w-100 flex-lg-row flex-wrap">
+        <div class="col-9 col-lg-5 d-flex align-items-center justify-content-between gap-2 justify-content-lg-center">
+            <label style="display:flex;flex-direction:row-reverse; text-align:end; color:gray">مبلغ پیش‌فاکتور :</label>
+            <label class="fbold">@string.Format("{0:n0}", Model.SumTotalAmount) <span style="font-size: 11px"> ریال</span></label>
+        </div>
+        <div class="col-9 col-lg-4 d-flex align-items-center justify-content-between gap-2 justify-content-lg-center">
+            <label style="text-align:end; color:gray">مالیات :</label>
+            <label class="fbold">@string.Format("{0:n0}", Model.TotalTax) <span style="font-size: 11px"> ریال</span></label>
+        </div>
+        <div class="col-9 col-lg-3 d-flex align-items-center justify-content-between gap-2 justify-content-lg-center">
+            <label style="text-align:end; color:gray">تخفیف :</label>
+            <label class="fbold">@string.Format("{0:n0}", Model.Discount) <span style="font-size: 11px"> ریال</span></label>
+        </div>
+    </div>
+
+    <div class="my-2" style="width:90%; height:1px; background-color:rgba(0, 0,0,0.15)"></div>
+
+    <div class="d-flex align-items-center justify-content-between w-100 flex-column flex-lg-row flex-wrap">
+        <div class="col-9 col-lg-5 gap-2 d-flex align-items-center justify-content-between justify-content-lg-center px-1">
+            <label style="text-align:end; color:gray;">مبلغ پیش‌فاکتور با مالیات :</label>
+            <label class="fbold">@string.Format("{0:n0}", Model.SumTotalAmountTax)<span style="font-size: 11px"> ریال</span></label>
+        </div>
+        <div class="col-9 col-lg-4 gap-2 justify-content-lg-center px-1" style="display:flex;align-items:center; justify-content:space-between">
+            <label style="text-align:end; color:gray;">واریزی :</label>
+            <label class="fbold">@string.Format("{0:n0}", Model.ReciveAmount) <span style="font-size: 11px"> ریال</span></label>
+        </div>
+        <div class="col-9 col-lg-3 gap-2 justify-content-lg-center px-1" style="display:flex;align-items:center; justify-content:space-between">
+            <label style="text-align:end; color:gray;">برگشتی :</label>
+            <label class="fbold">@string.Format("{0:n0}", Model.BackwardAmount) <span style="font-size: 11px"> ریال</span></label>
+        </div>
+        <div class="my-2 mx-auto" style="width:90%; height:1px; background-color:rgba(0, 0,0,0.15)"></div>
+
+        <div class="col-9 col-lg-12 gap-2 justify-content-lg-center px-1 fMedium" style="display:flex;align-items:center; justify-content:space-between;font-size: 16px;">
+            <label style="text-align:end; color:gray">مانده :</label>
+            <label class="fbold">@string.Format("{0:n0}", Model.PaymentAmount) <span style="font-size: 13px"> ریال</span></label>
+        </div>
+    </div>
+
+
+</div>

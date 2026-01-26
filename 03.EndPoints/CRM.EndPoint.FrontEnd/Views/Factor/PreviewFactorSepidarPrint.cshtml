@@ -1,0 +1,286 @@
+﻿@model SepidarFactorViewModel
+@{
+    Layout = null;
+    var isOfficial = @Model.invoice.Tax != 0;
+}
+
+<!DOCTYPE html>
+
+<html lang="fa">
+<head>
+    <meta charset="utf-8">
+    <title>فاکتور @Model.invoice.Number</title>
+
+    <link rel="stylesheet" href="~/lib/Bootstrap/bootstrap5.3.rtl.min.css" />
+    <link rel="stylesheet" href="~/css/site.css?v=2.9.1" />
+    <link rel="stylesheet" href="~/css/normalize.min.css">
+    <link rel="stylesheet" href="~/css/paper.css?v=2.9.1">
+</head>
+
+<body dir="rtl" class="A4 landscape">
+<section class="sheet d-flex" style="border-radius:12px">
+    <article class="d-flex flex-column flex-grow-1 m-3" style="border: 2px solid gray; border-radius:8px; padding: 10px">
+
+
+        <div class="d-flex justify-content-between align-items-center w-100">
+            <div style="width: 120px">
+                @* <img src="@Model.Logo" style="width:100%" alt="Logo" /> *@
+            </div>
+            <p class="fbold" style="font-size:24px">صورت حساب فروش کالاوخدمات</p>
+            <div class="py-2" style="width:135px">
+                <div class="d-flex align-items-center w-100">
+                    <label class="w-50 text-muted text-end">شماره سریال:</label>
+                    <label class="w-50 fbold text-center">@Model.invoice.Number</label>
+                </div>
+                <div class="d-flex align-items-center w-100">
+                    <label class="w-50 text-muted text-end">تاریخ:</label>
+                    <label class="w-50 fbold text-center">@Model.invoice.DateTXT</label>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <p class="w-100 text-center fbold" style="border-radius:5px; border:2px solid gray; background-color:lightgray;">
+                مشخصات فروشنده
+            </p>
+            <div class="px-1">
+                <div class="d-flex align-items-center w-100">
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">نام فروشنده: </label>
+                        <label class="fbold">@(isOfficial ? Model.Company.CompanyName : Model.Company.CompanyBrandName)</label>
+                    </div>
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">شماره اقتصادی: </label>
+                        <label class="fbold">@(isOfficial ? Model.Company.EghtesadiCode : "")</label>
+                    </div>
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">شماره ملی/شماره ثبت: </label>
+                        <label class="fbold">@(isOfficial ? Model.Company.NumberRegister : "")</label>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center w-100">
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">شناسه ملی: </label>
+                        <label class="fbold">@(isOfficial ? Model.Company.ShenaseMeli : "")</label>
+                    </div>
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">کدپستی: </label>
+                        <label class="fbold">@Model.Company.PostalCode</label>
+                    </div>
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">تلفن: </label>
+                        <label class="fbold">@Model.Company.Mobile @Model.Company.Tel</label>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center w-100">
+                    <div class="col-12 d-flex align-items-center gap-2">
+                        <label class="text-muted">نشانی: </label>
+                        <label class="fbold">@Model.Company.Address</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @*////////////////*@
+
+        <div>
+            <p class="w-100 text-center fbold" style="border-radius:5px; border:2px solid gray; background-color:lightgray">
+                مشخصات خریدار
+            </p>
+
+            <div class="px-1">
+                <div class="d-flex align-items-center w-100">
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">نام خریدار: </label>
+                        <label class="fbold">@Model.invoice.CustomerPartyName</label>
+                    </div>
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">شماره اقتصادی: </label>
+                        <label class="fbold">@Model.invoice.CustomerEconomicCode</label>
+                    </div>
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">شماره ملی/شماره ثبت: </label>
+                        <label class="fbold">@Model.invoice.CustomerIdentificationCode</label>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center w-100">
+                    @*<div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">شناسه ملی: </label>
+                        <label class="fbold">@Model._Customer.ShenaseMeli</label>
+                    </div>*@
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">کدپستی: </label>
+                        <label class="fbold">@Model.invoice.CustomerZipCode</label>
+                    </div>
+                    @*<div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">تلفن: </label>
+                        <label class="fbold">@Model._Customer.Mobile  @Model._Customer.Tel</label>
+                    </div>*@
+                </div>
+                <div class="d-flex align-items-center w-100">
+                    <div class="col-12 d-flex align-items-center gap-2">
+                        <label class="text-muted">نشانی: </label>
+                        <label class="fbold">@Model.invoice.PartyAddress</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @*////////////////*@
+
+        <div>
+            <p class="w-100 text-center fbold" style="border-radius:5px; border:2px solid gray; background-color:lightgray;">
+                مشخصات کالا یا خدمات مورد معامله
+            </p>
+            <div class="w-100">
+                <table class="table table-bordered table-hover m-0 w-100 @(Model.invoice.InvoiceItems?.Count >= 5 ? "table-sm" : "")" style="border-color: gray">
+                    <thead>
+                    <tr>
+                        <th>ردیف</th>
+                        <th>کد کالا</th>
+                        <th>شرح کالا/خدمت</th>
+                        <th>تعداد/مقدار</th>
+                        <th>واحد اندازه گیری</th>
+                        <th>مبلغ واحد</th>
+                        <th>مبلغ کل</th>
+                        <th>مبلغ تخفیف</th>
+                        <th>مبلغ اضافات</th>
+                        <th>مبلغ کل پس از <br /> تخفیف و اضافات</th>
+                        <th>جمع مالیات و <br /> ارزش افزوده</th>
+                        <th>خالص فاکتور</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var item in Model.invoice.InvoiceItems) {
+                        <tr>
+                            <td>@item.RowID </td>
+                            <td>@item.ItemCode</td>
+                            <td>@item.ItemTitle</td>
+                            <td>@item.Quantity.ToString("0.####")</td>
+                            <td>@item.UnitTitle</td>
+                            <td>@($"{item.Fee:n0}") <span style="font-size:10px;">ريال</span></td>
+                            <td>@($"{item.Price:n0}") <span style="font-size:10px;">ريال</span></td>
+                            <td>@($"{item.Discount:n0}") <span style="font-size:10px;">ريال</span></td>
+                            <td>@($"{item.AdditionFactor:n0}") <span style="font-size:10px;">ريال</span></td>
+                            <td>@($"{item.PriceInBaseCurrency:n0}") <span style="font-size:10px;">ريال</span></td>
+                            <td>@($"{item.Tax:n0}") <span style="font-size:10px;">ريال</span></td>
+                            <td>@($"{item.NetPrice:n0}") <span style="font-size:10px;">ريال</span></td>
+                        </tr>
+                    }
+                    </tbody>
+                    <tfoot>
+                    <tr class="fbold">
+                        <td style="background-color:#eee" colspan="6">جمع کل</td>
+                        <td style="background-color:#eee">
+                            @($"{Model.invoice.InvoiceItems.Sum(f => f.Price):n0}") <span style="font-size:11px;">ريال</span>
+                        </td>
+                        <td style="background-color:#eee">
+                            @($"{Model.invoice.InvoiceItems.Sum(f => f.Discount):n0}") <span style="font-size:11px;">ريال</span>
+                        </td>
+                        <td style="background-color:#eee">
+                            @($"{Model.invoice.InvoiceItems.Sum(f => f.AdditionFactor):n0}") <span style="font-size:11px;">ريال</span>
+                        </td>
+                        <td style="background-color:#eee">
+                            @($"{Model.invoice.InvoiceItems.Sum(f => f.PriceInBaseCurrency):n0}") <span style="font-size:11px;">ريال</span>
+                        </td>
+                        <td style="background-color:#eee">
+                            @($"{Model.invoice.InvoiceItems.Sum(f => f.Tax):n0}") <span style="font-size:11px;">ريال</span>
+                        </td>
+                        <td style="background-color:#eee">
+                            @($"{Model.invoice.InvoiceItems.Sum(f => f.NetPrice):n0}") <span style="font-size:11px;">ريال</span>
+                        </td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        @*<div class="mp" style="width:100%">
+            <div class="mp" style="width:40%;background-color:lightgray">
+                <div class="mp" style="border:1px solid gray !important; width:100%; display:flex;justify-content:start;">
+                    <label class="mp" style="width:50%; text-align:center;">:جمع </label>
+                    <label class="mp" style="display:flex;justify-content:center; width:50%;text-align:center;font-family:'IRANSansBold' "><span> ریال &nbsp;</span><span>@string.Format("{0:n0}", Model.invoice.Price)</span>
+                    </label>
+                </div>
+                <div class="mp" style="border:1px solid gray !important;width:100%; display:flex;justify-content:start;">
+                    <label class="mp" style="width:50%; text-align:center;">:تخفیف </label>
+                    <label class="mp" style="display:flex;justify-content:center; width:50%;text-align:center;font-family:'IRANSansBold' "><span> ریال &nbsp;</span><span>@string.Format("{0:n0}", Model.invoice.Discount)</span></label>
+                </div>
+                <div class="mp" style="border:1px solid gray !important;width:100%; display:flex;justify-content:start;">
+                    <label class="mp" style="width:50%; text-align:center;">:مالیات و عوارض </label>
+                    <label class="mp" style="display:flex;justify-content:center;width:50%;text-align:center;font-family:'IRANSansBold' "><span> ریال &nbsp;</span><span>@string.Format("{0:n0}", Model.invoice.Tax)</span>
+                    </label>
+                </div>
+                <div class="mp" style="border:1px solid gray !important;width:100%; display:flex;justify-content:start;">
+                    <label class="mp" style="width:50%; text-align:center;">:جمع کل</label>
+                    <label class="mp" style="display:flex;justify-content:center;width:50%;text-align:center;font-family:'IRANSansBold' "><span> ریال &nbsp;</span><span>@string.Format("{0:n0}", Model.invoice.NetPrice)</span>
+                    </label>
+                </div>
+            </div>
+        </div>*@
+
+        <div class="d-flex align-items-center justify-content-between w-100 fbold">
+            <div class="col-4 d-flex align-items-center justify-content-around" style="padding:4px 8px; background-color:lightgray">
+                <label>شرایط فروش</label>
+                <div class="d-flex align-items-center gap-1">
+                    <label>نقدی</label>
+                    <input type="radio" name="cash" />
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                    <label>غیر نقدی</label>
+                    <input type="radio" name="cash" />
+                </div>
+            </div>
+            <p class="col-6 text-center">@Model.priceTxt ریال</p>
+        </div>
+
+        <div class="d-flex flex-column flex-grow-1" style="border:1px solid gray">
+            <div class="d-flex flex-column" style="border-bottom:1px solid gray">
+                <label class="fbold ps-1 py-1">توضیحات:</label>
+                @*<ul style="padding-right: 22px">
+                    @foreach (var item in Model.Factor.Descriptions) {
+                        <li>@item.Text</li>
+                    }
+                </ul>*@
+            </div>
+
+            <div class="d-flex flex-grow-1">
+                <div class="d-flex flex-column align-items-center col-6" style="border-left:1px solid gray ">
+                    <label class="mb-2">مهر و امضای فروشنده</label>
+                    @if (isOfficial) {
+                        <img style="width:120px;" src="@Model.MohrR" />
+                    } else {
+                        @* <img style="width:120px;" src="@Model.Mohr" /> *@
+                    }
+                </div>
+                <div class="d-flex flex-column align-items-center col-6">
+                    <label class="mb-2">مهر و امضای خریدار</label>
+                    @*<img style="width:30%;" src="@Model.Siq" />
+                    <label class="fbold mt-2">@Model.Factor.SignatureDes</label>*@
+                </div>
+            </div>
+        </div>
+
+    </article>
+</section>
+
+
+<div class="d-flex flex-column align-items-center justify-content-center w-100" style="position:fixed;top:80%;" id="previewPrintBtns">
+    <div class="btn-group">
+        <button class="btn buttonCancel fbold" style="width: 100px" onclick="window.close()">انصراف</button>
+        <button class="btn buttonCancel fbold justify-content-between" style="width: 100px" onclick="window.print()">
+            <span>چاپ</span>
+            <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 2.75C5 1.784 5.784 1 6.75 1h6.5c.966 0 1.75.784 1.75 1.75v3.552c.377.046.752.097 1.126.153A2.212 2.212 0 0 1 18 8.653v4.097A2.25 2.25 0 0 1 15.75 15h-.241l.305 1.984A1.75 1.75 0 0 1 14.084 19H5.915a1.75 1.75 0 0 1-1.73-2.016L4.492 15H4.25A2.25 2.25 0 0 1 2 12.75V8.653c0-1.082.775-2.034 1.874-2.198.374-.056.75-.107 1.127-.153L5 6.25v-3.5Zm8.5 3.397a41.533 41.533 0 0 0-7 0V2.75a.25.25 0 0 1 .25-.25h6.5a.25.25 0 0 1 .25.25v3.397ZM6.608 12.5a.25.25 0 0 0-.247.212l-.693 4.5a.25.25 0 0 0 .247.288h8.17a.25.25 0 0 0 .246-.288l-.692-4.5a.25.25 0 0 0-.247-.212H6.608Z" clip-rule="evenodd" /></svg>
+        </button>
+    </div>
+</div>
+
+<div class="Brand" id="BanerId">
+    <a style="color: rgb(2, 142, 213); display:flex;flex-direction:column-reverse;align-items:center;" href="//www.natix.ir" target="_blank">
+        <span>WWW.NATIX.IR</span><span>طراحی و تولید توسط شرکت مهندسی نرم افزاری نـاتیـکس</span>
+    </a>
+</div>
+
+<script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js"></script>
+</body>
+</html>

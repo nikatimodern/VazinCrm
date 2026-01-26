@@ -1,0 +1,266 @@
+﻿@{
+    ViewData["Title"] = "RecycleBin";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="d-flex flex-column align-items-center justify-content-center">
+    <div class="d-flex flex-wrap w-100 align-items-center justify-content-between" style="column-gap: 1rem;row-gap: .5rem;margin-bottom: 12px">
+        <div class="col-12 col-md-auto">
+            <input type="text" class="form-control form-control-sm " id="recycleSearchId" placeholder="جستجو">
+        </div>
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-1 flex-grow-1">
+            <ul class="filter-switch">
+                <li class="filter-switch-item">
+                    <input type="radio" name="recRadio" id="recRadio-all" value="-1" checked>
+                    <label for="recRadio-all">همه</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="recRadio" id="recRadio-customer" value="1">
+                    <label for="recRadio-customer">مشتری</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="recRadio" id="recRadio-preFactor" value="2">
+                    <label for="recRadio-preFactor">پیش فاکتور</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="recRadio" id="recRadio-factor" value="3">
+                    <label for="recRadio-factor">فاکتور</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="recRadio" id="recRadio-orderH" value="4">
+                    <label for="recRadio-orderH">دستور تولید</label>
+                </li>
+            </ul>
+
+
+            <div class="d-flex align-items-baseline gap-1 flex-grow-1 justify-content-end">
+                <span>تعداد: </span>
+                <span id="countRecycle" class="fbold" style="font-size: 16px"></span>
+            </div>
+        </div>
+    </div>
+
+    <div id="recycleContainerId" class="w-100" style="display: grid;gap: 10px;max-height: calc(100dvh - 300px);overflow: auto"></div>
+    <div id="recyclePaginationControls" style="display: flex; justify-content: start; margin-top: 10px;"></div>
+</div>
+
+
+
+
+@section Scripts {
+
+    <script>
+        let modelRec = { serVal: null, filt: null };
+        let HeadRecycleTbl;
+        document.addEventListener("DOMContentLoaded", async () => {
+            loadRecycleCards();
+        });
+
+        const cardColumns = getCardColumns();
+        let take = 3 * cardColumns;
+        let skip = 0;
+        let totalItems = 0;
+        let searchValue = "";
+        let recycleType = -1;
+
+        function loadRecycleCards() {
+            document.getElementById("FLshowLoading").style.display = "";
+
+            fetch(`/ASetting/GetRecycleItems?skip=${skip}&take=${take}&search=${searchValue}&recycleType=${recycleType}`)
+                .then(res => res.json())
+                .then(res => {
+                    totalItems = res.total;
+                    document.getElementById("countRecycle").textContent = totalItems;
+                    const container = document.getElementById("recycleContainerId");
+                    container.scrollTop = 0;
+                    container.innerHTML = "";
+                    const fragment = document.createDocumentFragment();
+                    res.data.forEach(item => {
+                        const card = document.createElement("div");
+                        card.style = "border: 1px solid #ccc; border-radius: 8px; font-size: 13px; background: #fff; overflow: hidden;display: flex;flex-direction: column";
+
+                        let headerColor = "#162636";
+                        if (item.entityType === 1) {
+                            headerColor = "#04857c";
+                        } else if (item.entityType === 2) {
+                            headerColor = "#6c757d";
+                        } else if (item.entityType === 3) {
+                            headerColor = "#25282b";
+                        } else if (item.entityType === 4) {
+                            headerColor = "#00678b";
+                        }
+
+                        card.innerHTML = `
+                            <div style="background: ${headerColor}; color: #fff; padding: 6px 10px;" class="fbold">${item.entityTypeTxt}</div>
+                            <div class="flex-grow-1 d-flex flex-column justify-content-between" style="padding: 12px; gap: 6px;">
+                                <div class="d-flex flex-column" style="gap: 6px;">
+                                    <div><b>عنوان:</b> ${item.title}</div>
+                                    <div><b>کد / سریال:</b> ${item.codeNumber ?? "-"}</div>
+                                    <div><b>تاریخ حذف:</b> ${item.modifyDateTxt}</div>
+                                    <div><b>کاربر حذف کننده:</b> ${item.modifyUser ?? "-"}</div>
+                                </div>
+                                <div style="display: flex; gap: 6px; margin-top: 6px; justify-content: end;">
+                                    <button onclick="restoreRecycleItem('${item.entityId}', '${item.entityType}', '${item.entityTypeTxt}', ${item.codeNumber})" type="button" data-title="بازیابی" style="padding: 4px 6px;box-shadow: none;font-size: 13px" class="buttonGreen2 d-flex justify-content-center align-items-center">
+
+                                        <svg style="width: 14px;height: 14px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" />
+                                        </svg>
+                                    </button>
+                                    <button onclick="showRecycleItem('${item.entityId}', '${item.entityType}')" type="button" data-title="مشاهده" class="buttonGray d-flex justify-content-center align-items-center" style="padding: 4px 8px;box-shadow: none;font-size: 13px">
+                                        <svg style="width: 14px;height: 14px" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                                            <path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 0 1 0-1.113ZM17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0Z" clip-rule="evenodd" />
+                                        </svg>
+
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        fragment.appendChild(card);
+                    });
+                    container.appendChild(fragment);
+                    renderPagination();
+                    document.getElementById("FLshowLoading").style.display = "none";
+                })
+                .catch(() => {
+                    loadRecycleCards();
+                });
+
+        }
+
+        function renderPagination() {
+            const pagination = document.getElementById("recyclePaginationControls");
+            pagination.innerHTML = "";
+
+            const totalPages = Math.ceil(totalItems / take);
+            const currentPage = Math.floor(skip / take);
+
+            if (totalPages <= 1) return;
+
+            const prevBtn = document.createElement("button");
+            prevBtn.innerHTML = "&laquo;";
+            prevBtn.disabled = currentPage === 0;
+            prevBtn.style = `min-width:32px;margin-right: -1px;padding: 5px 10px;font-size: 13px;border: 1px solid #ccc;background: #fff;color: #000;cursor: pointer;`;
+            prevBtn.onclick = () => {
+                if (currentPage > 0) {
+                    skip = (currentPage - 1) * take;
+                    loadRecycleCards();
+                }
+            };
+            pagination.appendChild(prevBtn);
+
+            const maxVisible = 4;
+            let startPage = Math.max(0, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible);
+
+            if (endPage - startPage < maxVisible) {
+                startPage = Math.max(0, endPage - maxVisible);
+            }
+
+            if (startPage > 0) {
+                addPageButton(pagination, 0);
+                if (startPage > 1) {
+                    const dots = document.createElement("span");
+                    dots.textContent = "...";
+                    dots.style = "padding: 0 6px;";
+                    pagination.appendChild(dots);
+                }
+            }
+
+            for (let i = startPage; i < endPage; i++) {
+                addPageButton(pagination, i);
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const dots = document.createElement("span");
+                    dots.textContent = "...";
+                    dots.style = "padding: 0 6px;";
+                    pagination.appendChild(dots);
+                }
+                addPageButton(pagination, totalPages - 1);
+            }
+
+            const nextBtn = document.createElement("button");
+            nextBtn.innerHTML = "&raquo;";
+            nextBtn.disabled = currentPage >= totalPages - 1;
+            nextBtn.style = `min-width:32px;margin-right: -1px;padding: 5px 10px;font-size: 13px;border: 1px solid #ccc;background: #fff;color: #000;cursor: pointer;`;
+            nextBtn.onclick = () => {
+                if (currentPage < totalPages - 1) {
+                    skip = (currentPage + 1) * take;
+                    loadRecycleCards();
+                }
+            };
+            pagination.appendChild(nextBtn);
+
+            function addPageButton(container, pageIndex) {
+                const btn = document.createElement("button");
+                btn.textContent = pageIndex + 1;
+                const isActive = pageIndex === currentPage;
+                btn.style = `min-width:32px;margin-right: -1px;padding: 5px 10px;font-size: 13px;border: 1px solid #ccc;background: ${isActive ? "#01504B" : "#fff"};color: ${isActive ? "#fff" : "#000"};cursor: pointer;`;
+                btn.onclick = () => {
+                    skip = pageIndex * take;
+                    loadRecycleCards();
+                };
+                container.appendChild(btn);
+            }
+
+
+        }
+
+        function getCardColumns() {
+            if (window.innerWidth < 768) return 2;
+            if (window.innerWidth < 1200) return 3;
+            if (window.innerWidth < 1400) return 4;
+            if (window.innerWidth < 1600) return 5;
+            return 6;
+        }
+
+
+        @*document.getElementById("recycleRowCount").addEventListener("change", async (e) => {
+            skip = 0;
+            const rowCount = Number(e.target.value);
+            take = rowCount;
+            //take = rowCount !== -1 ? rowCount * cardColumns : -1;
+            loadRecycleCards();
+        });*@;
+
+        document.getElementById("recycleSearchId").addEventListener("keyup", async (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                skip = 0;
+                searchValue = e.target.value;
+                loadRecycleCards();
+            }
+        });
+        document.querySelectorAll("input[name='recRadio']").forEach(radio => {
+            radio.addEventListener("change", async (e) => {
+                recycleType = e.target.value;
+                loadRecycleCards();
+            });
+        });
+
+
+        const showRecycleItem = (entityId, entityType) => {
+            if (entityType == 1) {
+                openCustomerProfile(entityId);
+            } else if (entityType == 2) {
+                ShowPreviewPfactor(entityId);
+            } else if (entityType == 3) {
+                //ShowPreviewFactor(entityId)
+            } else if (entityType == 4) {
+                //PreviewOrderPrint(entityId)
+            }
+        };
+        const restoreRecycleItem = async (entityId, entityType, entityTypeTxt, codeNumber) => {
+            const res = await fetch(`/ASetting/RestoreEntity?EId=${entityId}&EType=${entityType}`);
+            if (res.ok) {
+                toastifySuccess(`${entityTypeTxt} با کد ${codeNumber} بازیابی شد `, 5000);
+                loadRecycleCards();
+                //HeadRecycleTbl.ajax.reload();
+            } else {
+                toastifyError("خطای سرور!");
+            }
+        };
+    </script>
+}

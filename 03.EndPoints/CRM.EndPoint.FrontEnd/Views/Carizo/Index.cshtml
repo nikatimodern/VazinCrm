@@ -1,0 +1,1148 @@
+﻿@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="d-flex flex-column w-100">
+    <div style="padding-bottom:8px;">
+        <ul class="filter-switch">
+            <li class="filter-switch-item">
+                <input type="radio" name="isSystematicTask" id="isSystematicTask0" value="0" checked>
+                <label for="isSystematicTask0">همه</label>
+            </li>
+            <li class="filter-switch-item">
+                <input type="radio" name="isSystematicTask" id="isSystematicTask1" value="1">
+                <label for="isSystematicTask1">سیستمی</label>
+            </li>
+            <li class="filter-switch-item">
+                <input type="radio" name="isSystematicTask" id="isSystematicTask2" value="2">
+                <label for="isSystematicTask2">غیر سیستمی</label>
+            </li>
+        </ul>
+    </div>
+    <ul class="nav nav-tabs" id="tasksTabs" role="tablist" style="display: none;">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active text-dark" style="margin-bottom:-2px;isolation:auto" id="todoTaskTab" data-bs-toggle="tab" data-bs-target="#todoTaskTab-pane" type="button" role="tab" aria-controls="todoTaskTab-pane" aria-selected="true">
+                تمام فعالیت ها
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-dark" style="margin-bottom:-2px;isolation:auto" id="todayTaskTab" data-bs-toggle="tab" data-bs-target="#todayTaskTab-pane" type="button" role="tab" aria-controls="todayTaskTab-pane" aria-selected="false">
+                کارهای امروز من
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-dark" style="margin-bottom:-2px;isolation:auto" id="finishedTaskTab" data-bs-toggle="tab" data-bs-target="#finishedTaskTab-pane" type="button" role="tab" aria-controls="finishedTaskTab-pane" aria-selected="false">
+                کارهای انجام شده
+            </button>
+        </li>
+    </ul>
+
+
+    <div id="allCarizoContainer" class="d-xl-grid allTasksContainer">
+
+        <div class=" show active border-0" id="todoTaskTab-pane" role="tabpanel" aria-labelledby="todoTaskTab"
+             tabindex="0" style="flex-direction:column;width:100%">
+            <div class="d-flex flex-column gap-1 h-100">
+                <div class="fbold d-flex align-items-center justify-content-end justify-content-xl-between w-100 px-2">
+                    <div class="d-none d-xl-flex align-items-end">
+                        <span style="font-size:16px">تمام فعالیت ها</span>
+                    </div>
+
+                    <div class="fbold" style="font-size: 14px">
+                        <span>تعداد:</span>
+                        <span id="todoTaskCount"></span>
+                    </div>
+
+                </div>
+
+                <div class="tasks-container">
+                    @* <span class="carizo-badge fbold">تمام فعالیت ها</span> *@
+                    <div class="p-2 w-100 d-flex align-items-center justify-content-center mb-2">
+
+                        <div class="taskForm-container">
+                            <div id="addTask-plusIcon" class="addTaskPlus">
+                                <svg fill="currentColor" style="width: 24px; height: 24px" viewBox="0 0 24 24"
+                                     >
+                                    <path clip-rule="evenodd"
+                                          d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z"
+                                          fill-rule="evenodd" />
+                                </svg>
+                            </div>
+
+                            <form id="taskFormId">
+                                <input id="taskTitle-input" name="title" placeholder="ثبت فعالیت جدید" required type="text" />
+
+                                <div class="actionTask-buttons">
+                                    <span id="cancelTask-btn" onclick="resetAndCloseFormTask()" style="color: darkred">
+                                        <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width: 22px; height: 22px" viewBox="0 0 24 24" ><path d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                    </span>
+                                    <button id="submitTask-btn" onclick="submitTask()" style="color: darkgreen;border: none;background: none;padding: 0;">
+                                        <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width: 30px; height: 30px" viewBox="0 0 24 24" ><path d="m9 12.75 3 3m0 0 3-3m-3 3v-7.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                    </button>
+                                </div>
+
+                                <div id="schedulerTask">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <label class="sdate gap-1 d-flex align-items-center justify-content-center" style=" cursor: pointer"
+                                               data-onSelect="onSelectTaskDate" data-title="تاریخ" data-x="" data-y="-200" id="taskDateIcon">
+                                            <svg fill="none" stroke="currentColor" stroke-width="1.5"
+                                                 style="width: 22px; height: 22px;" viewBox="0 0 24 24"
+                                                 >
+                                                <path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
+                                                      stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                            <span class="fbold schedulerTask-title" style="display:none">تاریخ</span>
+                                        </label>
+                                        <div style="display: none; position: relative;">
+                                            <input class="calenderTxt" id="taskDate" name="date" style="max-width: 68px" />
+                                            <div class="removeSchedulerItem d-flex align-items-center justify-content-center"
+                                                 onclick="removeSchedulerItem('taskDate')"
+                                                 style="position: absolute; top: -6px; right: -7px">
+                                                <svg fill="currentColor"
+                                                     style="width: 12px; height: 12px; color: darkred"
+                                                     viewBox="0 0 16 16" >
+                                                    <path clip-rule="evenodd"
+                                                          d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm2.78-4.22a.75.75 0 0 1-1.06 0L8 9.06l-1.72 1.72a.75.75 0 1 1-1.06-1.06L6.94 8 5.22 6.28a.75.75 0 0 1 1.06-1.06L8 6.94l1.72-1.72a.75.75 0 1 1 1.06 1.06L9.06 8l1.72 1.72a.75.75 0 0 1 0 1.06Z"
+                                                          fill-rule="evenodd" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        @* <input class="sdate calenderTxt" id="taskDate" name="date" style="max-width: 70px" type="hidden" /> *@
+                                    </div>
+
+                                    <div class="d-flex align-items-center gap-2" style="position: relative">
+                                        <div class="repeatBtn-toggle" data-title="تکرار" style="cursor: pointer">
+                                            <svg fill="none" stroke="currentColor" stroke-width="1.5"
+                                                 style="width: 22px; height: 22px" viewBox="0 0 24 24"
+                                                 >
+                                                <path d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3-3 3"
+                                                      stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                            <span class="fbold schedulerTask-title" style="display:none">تکرار</span>
+                                        </div>
+
+                                        <div class="align-items-center gap-2" style="display: none">
+                                            <span id="repeatType-span"></span>
+                                            <div id="untilRemind-outerDiv" style="display: none">
+                                                <span>تا</span>
+                                                <input class="calenderTxt" id="untilRemind-outerInp" style="max-width: 68px" />
+                                            </div>
+                                            <div class="removeSchedulerItem d-flex align-items-center justify-content-center"
+                                                 onclick="removeSchedulerItem('repeatUntilRemind')"
+                                                 style="position: absolute; top: -4px; right: 18px">
+                                                <svg fill="currentColor"
+                                                     style="width: 12px; height: 12px; color: darkred"
+                                                     viewBox="0 0 16 16" >
+                                                    <path clip-rule="evenodd"
+                                                          d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm2.78-4.22a.75.75 0 0 1-1.06 0L8 9.06l-1.72 1.72a.75.75 0 1 1-1.06-1.06L6.94 8 5.22 6.28a.75.75 0 0 1 1.06-1.06L8 6.94l1.72-1.72a.75.75 0 1 1 1.06 1.06L9.06 8l1.72 1.72a.75.75 0 0 1 0 1.06Z"
+                                                          fill-rule="evenodd" />
+                                                </svg>
+                                            </div>
+                                        </div>
+
+                                        <div class="repeatTask-dropdown" style="font-size: 14px">
+                                            <div class="repeatTask-dropdown-items" data-value="daily">
+                                                <svg class="checkIcon" fill="none" stroke="currentColor"
+                                                     stroke-width="1.5" style="width: 18px; height: 18px"
+                                                     viewBox="0 0 24 24" >
+                                                    <path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                                          stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                                <span>هر روز</span>
+                                            </div>
+                                            <div class="repeatTask-dropdown-items" data-value="weekly">
+                                                <svg class="checkIcon" fill="none" stroke="currentColor"
+                                                     stroke-width="1.5" style="width: 18px; height: 18px"
+                                                     viewBox="0 0 24 24" >
+                                                    <path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                                          stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                                <span>هر هفته</span>
+                                            </div>
+                                            <div class="repeatTask-dropdown-items" data-value="monthly">
+                                                <svg class="checkIcon" fill="none" stroke="currentColor"
+                                                     stroke-width="1.5" style="width: 18px; height: 18px"
+                                                     viewBox="0 0 24 24" >
+                                                    <path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                                          stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                                <span>هر ماه</span>
+                                            </div>
+
+                                            <div class="repeatTask-dropdown__custom">
+                                                <div class="repeatTask-dropdown-items" data-value="custom">
+                                                    <svg class="checkIcon" fill="none" stroke="currentColor"
+                                                         stroke-width="1.5" style="width: 18px; height: 18px"
+                                                         viewBox="0 0 24 24" >
+                                                        <path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                                              stroke-linecap="round" stroke-linejoin="round" />
+                                                    </svg>
+                                                    <span>سفارشی</span>
+                                                </div>
+                                                <svg fill="none" stroke="currentColor" stroke-width="1.5"
+                                                     style="width: 18px; height: 18px" viewBox="0 0 24 24"
+                                                     >
+                                                    <path d="M15.75 19.5 8.25 12l7.5-7.5" stroke-linecap="round"
+                                                          stroke-linejoin="round" />
+                                                </svg>
+                                                <div class="subDropdown-customRepeat__container">
+                                                    <div class="subDropdown-customRepeat__item">
+                                                        <input id="Sat" style="cursor: pointer" type="checkbox" />
+                                                        <label class="w-100" for="Sat"
+                                                               style="cursor: pointer">شنبه</label>
+                                                    </div>
+                                                    <div class="subDropdown-customRepeat__item">
+                                                        <input id="Sun" style="cursor: pointer" type="checkbox" />
+                                                        <label class="w-100" for="Sun"
+                                                               style="cursor: pointer">یکشنبه</label>
+                                                    </div>
+                                                    <div class="subDropdown-customRepeat__item">
+                                                        <input id="Mon" style="cursor: pointer" type="checkbox" />
+                                                        <label class="w-100" for="Mon"
+                                                               style="cursor: pointer">دوشنبه</label>
+                                                    </div>
+                                                    <div class="subDropdown-customRepeat__item">
+                                                        <input id="Tue" style="cursor: pointer" type="checkbox" />
+                                                        <label class="w-100" for="Tue" style="cursor: pointer">
+                                                            سه شنبه
+                                                        </label>
+                                                    </div>
+                                                    <div class="subDropdown-customRepeat__item">
+                                                        <input id="Wed" style="cursor: pointer" type="checkbox" />
+                                                        <label class="w-100" for="Wed"
+                                                               style="cursor: pointer">چهارشنبه</label>
+                                                    </div>
+                                                    <div class="subDropdown-customRepeat__item">
+                                                        <input id="Thu" style="cursor: pointer" type="checkbox" />
+                                                        <label class="w-100" for="Thu"
+                                                               style="cursor: pointer">پنجشنبه</label>
+                                                    </div>
+                                                    <div class="subDropdown-customRepeat__item">
+                                                        <input id="Fri" style="cursor: pointer" type="checkbox" />
+                                                        <label class="w-100" for="Fri"
+                                                               style="cursor: pointer">جمعه</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex gap-3 align-items-center" style="border-top: 1px solid rgba(0, 0, 0, 0.2); padding: 8px;user-select: none">
+                                                <label class="sdate d-flex align-items-center justify-content-between gap-2" data-onSelect="onSelectUntilRemind" data-x="" data-y="-200" for="untilRemind" style="cursor: pointer; min-width: max-content">
+                                                    <span class="flex-shrink-0">تا چه تاریخی</span>
+                                                    <svg class="flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 18px; height: 18px" viewBox="0 0 24 24" ><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                                </label>
+                                                <div style="position: relative">
+                                                    <span class="calenderTxt" id="untilRemindSpan" style="width: 70px">همیشه</span>
+
+                                                    <div class="align-items-center justify-content-center" onclick="removeSchedulerItem('untilRemind')" style="display: none; position: absolute; top: -6px;right: -10px">
+                                                        <svg fill="currentColor" style="width: 12px; height: 12px; color: darkred" viewBox="0 0 16 16" ><path clip-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm2.78-4.22a.75.75 0 0 1-1.06 0L8 9.06l-1.72 1.72a.75.75 0 1 1-1.06-1.06L6.94 8 5.22 6.28a.75.75 0 0 1 1.06-1.06L8 6.94l1.72-1.72a.75.75 0 1 1 1.06 1.06L9.06 8l1.72 1.72a.75.75 0 0 1 0 1.06Z" fill-rule="evenodd" /></svg>
+                                                    </div>
+                                                </div>
+
+                                                @* <input class="calenderTxt flex-shrink-0" id="untilRemind" name="repeatUntil" style="width: 70px" type="hidden" value="همیشه" /> *@
+                                            </div>
+                                        </div>
+                                        <input class="calenderTxt" id="untilRemind" name="repeatUntil" style="width: 70px" value="همیشه" type="hidden" />
+                                        <input id="repeatType-input" name="repeatType" type="hidden" />
+                                    </div>
+
+                                    <div class="d-flex align-items-center gap-2">
+                                        <label class="stime d-flex align-items-center justify-content-center"
+                                               data-date="00:00" data-onSelect="onSelectTimeRemind" data-title="یادآوری"
+                                               data-x="" data-y="-200" style="cursor: pointer" id="timeRemindIcon">
+                                            <svg fill="none" stroke="currentColor" stroke-width="1.5"
+                                                 style="width: 22px; height: 22px" viewBox="0 0 24 24"
+                                                 >
+                                                <path d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0M3.124 7.5A8.969 8.969 0 0 1 5.292 3m13.416 0a8.969 8.969 0 0 1 2.168 4.5"
+                                                      stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                            <span class="fbold schedulerTask-title" style="display:none">یادآوری</span>
+                                        </label>
+                                        <div style="display: none; position: relative">
+                                            <input class="calenderTxt" id="timeRemind" name="remindTime"
+                                                   style="max-width: 34px" />
+                                            <div class="removeSchedulerItem d-flex align-items-center justify-content-center"
+                                                 onclick="removeSchedulerItem('timeRemind')"
+                                                 style="position: absolute; top: -6px; right: -7px">
+                                                <svg fill="currentColor"
+                                                     style="width: 12px; height: 12px; color: darkred"
+                                                     viewBox="0 0 16 16" >
+                                                    <path clip-rule="evenodd"
+                                                          d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm2.78-4.22a.75.75 0 0 1-1.06 0L8 9.06l-1.72 1.72a.75.75 0 1 1-1.06-1.06L6.94 8 5.22 6.28a.75.75 0 0 1 1.06-1.06L8 6.94l1.72-1.72a.75.75 0 1 1 1.06 1.06L9.06 8l1.72 1.72a.75.75 0 0 1 0 1.06Z"
+                                                          fill-rule="evenodd" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        @* <input class="calenderTxt" id="timeRemind" name="remindTime" style="width: 55px" type="hidden" /> *@
+                                    </div>
+
+                                    <div data-class="d-flex"
+                                         class="align-items-center gap-2 Admin SalesAdmin TaminAdmin FinancialAdmin ManagingDirector"
+                                         style="display:none;position: relative">
+                                        <div class="dropdown-assignUser__toggle" style="cursor: pointer"
+                                             data-title="انتخاب کاربر" id="assignUserIcon">
+                                            <svg fill="none" stroke="currentColor" stroke-width="1.5"
+                                                 style="width: 22px; height: 22px" viewBox="0 0 24 24"
+                                                 >
+                                                <path d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z"
+                                                      stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                            <span class="fbold schedulerTask-title" style="display:none">انتخاب کاربر</span>
+                                        </div>
+                                        <div>
+                                            <sapn class="align-items-center justify-content-center" id="assignUserCount"
+                                                  style="display: none; padding-top: 3px; border-radius: 50%; width: 22px; height: 22px; background-color: #8b8b8b; color: white"></sapn>
+                                        </div>
+                                        <div id="assignList" class="dropdown-assignUser__List"></div>
+
+                                    </div>
+
+                                    @* <div style="cursor:pointer">
+                                        <svg style="width: 22px; height: 22px"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-paint"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M5 3m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" /><path d="M19 6h1a2 2 0 0 1 2 2a5 5 0 0 1 -5 5l-5 0v2" /><path d="M10 15m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z" /></svg>
+                                    </div> *@
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="w-100 flex-grow-1 px-2" style="height: 100%;overflow:auto">
+                        <div id="todoTaskId" class="d-flex flex-column gap-2" style="width:100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class=" border-0" id="todayTaskTab-pane" role="tabpanel" aria-labelledby="todayTaskTab" tabindex="0"
+             style="flex-direction:column;width:100%">
+            <div class="d-flex flex-column gap-1 h-100">
+
+                <div class="fbold d-flex align-items-center justify-content-end justify-content-xl-between w-100 px-2">
+                    <div class="d-none d-xl-flex align-items-end">
+                        <span style="font-size:16px">کارهای امروز من</span>
+                    </div>
+                    <div class="fbold" style="font-size: 14px">
+                        <span>تعداد:</span>
+                        <span id="todayTaskCount"></span>
+                    </div>
+
+                </div>
+
+                <div class="tasks-container">
+                    <div class="w-100 p-2" style="height: 100%;overflow:auto">
+                        <div id="todayTaskId" class="d-flex flex-column gap-2" style="width:100%"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class=" border-0" id="finishedTaskTab-pane" role="tabpanel" aria-labelledby="finishedTaskTab" tabindex="0"
+             style="flex-direction:column;width:100%">
+            <div class="d-flex flex-column gap-1 h-100">
+
+                <div class="fbold d-flex align-items-center justify-content-between w-100 px-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="d-none d-xl-flex" style="font-size:16px">کارهای انجام شده</span>
+                        <button id="showDeletedTaskIcon" style="border:none;padding:0" class="ms-1" data-title="آرشیو" onclick="showDeletedTask(this)">
+                            <svg id="closedEyeIcon" style="width:16px;height:16px;display:block"  viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l14.5 14.5a.75.75 0 1 0 1.06-1.06l-1.745-1.745a10.029 10.029 0 0 0 3.3-4.38 1.651 1.651 0 0 0 0-1.185A10.004 10.004 0 0 0 9.999 3a9.956 9.956 0 0 0-4.744 1.194L3.28 2.22ZM7.752 6.69l1.092 1.092a2.5 2.5 0 0 1 3.374 3.373l1.091 1.092a4 4 0 0 0-5.557-5.557Z" clip-rule="evenodd" /><path d="m10.748 13.93 2.523 2.523a9.987 9.987 0 0 1-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 0 1 0-1.186A10.007 10.007 0 0 1 2.839 6.02L6.07 9.252a4 4 0 0 0 4.678 4.678Z" /></svg>
+                            <svg id="openEyeIcon" style="width:16px;height:16px;display:none"  viewBox="0 0 20 20" fill="currentColor"><path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" /><path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </div>
+                    <div class="fbold" style="font-size: 14px">
+                        <span>تعداد:</span>
+                        <span id="finishedTaskCount"></span>
+                    </div>
+                </div>
+
+                <div class="tasks-container">
+
+                    <div class="w-100 p-2" style="height: 100%;overflow:auto">
+                        <div id="finishedTaskId" class="d-flex flex-column gap-2" style="width:100%"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+@section Scripts {
+
+
+    <script>
+        let selectedCustomRepeat = [];
+
+        let editSelectedUsers = [];
+        let selectedUsers = [];
+        let users = [];
+        let systematicTask = 0;
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            removeTasksTabsDesktop();
+            document.getElementById("FLshowLoading").style.display = "";
+            await Promise.all([getAllTask(0, systematicTask), getAllTask(1, systematicTask), getAllTask(2, systematicTask)]);
+
+            users = await CrmSer.getUsers(1);
+            users = users.filter(u => !u.target && u.text !== "مدیر ارشد");
+
+            showAssigmentUser();
+            document.getElementById("FLshowLoading").style.display = "none";
+            handleTaskAction();
+            handleRepeatDropdown();
+            handleRepeatSubDropdown();
+            showTaskDropdown();
+            showTaskUsersDropdown();
+            setupPlaceholderEditableElems();
+            MaskTime();
+        });
+
+        async function handleNotifAndBellIcon(id, type, typeToggle) {
+            const indexId = taskList.findIndex(f => f === id);
+            if (indexId !== -1) taskList.splice(indexId, 1);
+
+            try {
+                const res = await axios(`/Carizo/TaskToggle?id=${id}&btnC=${typeToggle}`);
+
+                if (res.status === 200) {
+                    await getAllTask(Number(type), systematicTask);
+                    await getRemind();
+
+                }
+
+            } catch (err) {
+                console.log(err);
+                toastifyError("خطا: لطفا مجددا تلاش کنید!");
+            }
+        }
+
+
+        window.onSelectEditTaskDate = async function (pickerInstance, id) {
+            const newDate = pickerInstance.model.inputElement.value;
+
+            if (pickerInstance && id) {
+                try {
+                    const model = await getTask(id);
+                    if (model.date === newDate) return;
+                    model.date = newDate;
+
+                    const res = await fetch(baseUrl + "Carizo/AddTask", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(model),
+                    });
+
+                    if (res.ok) {
+                        toastifySuccess(`تاریخ تسک ویرایش شد.`);
+                        // await getAllTask(0);
+                        // await getAllTask(1);
+                    } else {
+                        throw new Error();
+                    }
+                } catch (error) {
+                    toastifyError("خطا در ویرایش تسک");
+                    console.log(error);
+                }
+            }
+        };
+
+        window.onSelectTaskDate = function (pickerInstance) {
+            document.getElementById("taskDate").value = pickerInstance.model.inputElement.value;
+            document.getElementById("taskDate").parentElement.style.display = "inline-block";
+        };
+
+        window.onSelectTimeRemind = function (pickerInstance) {
+            document.getElementById("timeRemind").parentElement.style.display = "inline-block";
+            document.getElementById("timeRemind").value = pickerInstance.model.inputElement.value;
+        };
+
+        window.onSelectUntilRemind = function (pickerInstance) {
+            const anySelected = Array.from(document.querySelectorAll(".repeatTask-dropdown-items")).some((op) => {
+                return op.classList.contains("selected");
+            });
+            if (!anySelected) {
+                document.querySelector(".repeatTask-dropdown-items[data-value='daily']").classList.add("selected");
+                document.querySelector(".repeatTask-dropdown-items[data-value='daily']").querySelector(".checkIcon").classList.add("selected");
+                document.getElementById("repeatType-input").value = "daily";
+                document.getElementById("repeatType-span").innerText = "هر روز";
+            }
+
+            document.getElementById("untilRemindSpan").innerText = pickerInstance.model.inputElement.value;
+            document.querySelector("#untilRemindSpan ~ div").style.display = "flex";
+            document.getElementById("untilRemind").value = pickerInstance.model.inputElement.value;
+
+            document.getElementById("untilRemind-outerInp").value = pickerInstance.model.inputElement.value;
+            document.getElementById("untilRemind-outerDiv").style.display = "inline-block";
+            document.getElementById("untilRemind-outerDiv").parentElement.style.display = "flex";
+        };
+
+        function setupPlaceholderEditableElems() {
+            document.getElementById("allCarizoContainer").addEventListener("input", function (e) {
+                if (e.target.hasAttribute("contenteditable")) {
+                    if (e.target.innerHTML === "<br>") {
+                        e.target.innerHTML = "";
+                    }
+                }
+            });
+        }
+
+
+        const addTaskPlusIcon = document.getElementById("addTask-plusIcon");
+        const taskTitleInput = document.getElementById("taskTitle-input");
+        const schedulerTask = document.getElementById("schedulerTask");
+        const taskFormContainer = document.querySelector(".taskForm-container");
+        const actionTaskButtons = document.querySelector(".actionTask-buttons");
+
+        function resetAndCloseFormTask() {
+            taskTitleInput.style.display = "none";
+            actionTaskButtons.style.display = "none";
+            schedulerTask.style.display = "none";
+            taskFormContainer.classList.remove("focused");
+            addTaskPlusIcon.style.display = "flex";
+
+            document.querySelector(".repeatTask-dropdown").classList.remove("show");
+            document.getElementById("assignUserCount").innerText = "";
+            document.getElementById("assignUserCount").style.display = "none";
+            selectedUsers.length = 0;
+            selectedCustomRepeat.length = 0;
+            mySer.emptyForm("taskFormId");
+            removeSchedulerItem();
+        }
+
+        addTaskPlusIcon.addEventListener("click", () => {
+            addTaskPlusIcon.style.display = "none";
+            taskFormContainer.classList.add("focused");
+            taskTitleInput.style.display = "inline-block";
+            taskTitleInput.focus();
+            actionTaskButtons.style.display = "flex";
+            schedulerTask.style.display = "flex";
+        });
+        taskTitleInput.addEventListener("invalid", (e) => e.preventDefault());
+
+
+        function handleTaskAction() {
+            taskTitleInput.addEventListener("keydown", async (e) => {
+                if (e.code === "Enter") {
+                    await submitTask();
+
+                } else if (e.code === "Escape") {
+                    resetAndCloseFormTask();
+                }
+            });
+        }
+
+        function handleRepeatDropdown() {
+            const toggleEl = document.querySelector(".repeatBtn-toggle");
+            const dropdown = document.querySelector(".repeatTask-dropdown");
+
+            toggleEl.addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (!toggleEl.dropdownInstance) {
+                    toggleEl.dropdownInstance = new Dropdown({
+                        button: toggleEl,
+                        content: dropdown,
+                        originalDisplay: "flex",
+                        effect: "slide",
+                        placement: "right",
+                    });
+                }
+                toggleEl.dropdownInstance.toggle();
+            });
+
+
+            document.addEventListener("click", function (e) {
+                if (toggleEl.dropdownInstance && toggleEl.dropdownInstance.isOpen && !dropdown.contains(e.target) && !toggleEl.contains(e.target)) {
+                    toggleEl.dropdownInstance.close();
+                }
+            });
+
+
+            document.querySelectorAll(".repeatTask-dropdown-items").forEach((option) => {
+                option.addEventListener("click", () => {
+                    if (!option.parentElement.classList.contains("repeatTask-dropdown__custom")) {
+                        document.querySelectorAll(".repeatTask-dropdown-items").forEach((op) => {
+                            op.classList.remove("selected");
+                            op.querySelector(".checkIcon").classList.remove("selected");
+                        });
+
+                        document.querySelectorAll(".subDropdown-customRepeat__container input").forEach((cb) => (cb.checked = false));
+
+                        option.classList.add("selected");
+                        option.querySelector(".checkIcon").classList.add("selected");
+                        document.getElementById("repeatType-input").value = option.getAttribute("data-value");
+                        document.getElementById("repeatType-span").innerText = option.querySelector("span").innerText;
+                        document.getElementById("repeatType-span").parentElement.style.display = "flex";
+                    }
+
+                });
+            });
+        }
+
+        function handleRepeatSubDropdown() {
+
+            document.querySelectorAll(".subDropdown-customRepeat__container input").forEach((checkBox) => {
+                checkBox.addEventListener("change", (e) => {
+                    const dropdownCustomItem = document.querySelector(".repeatTask-dropdown__custom .repeatTask-dropdown-items");
+                    const checkIcon = document.querySelector(".repeatTask-dropdown__custom .checkIcon");
+                    const isAnyChecked = Array.from(document.querySelectorAll(".subDropdown-customRepeat__container input")).some((cb) => cb.checked);
+
+                    if (e.target.checked) {
+                        if (!selectedCustomRepeat.includes(e.target.id)) {
+                            selectedCustomRepeat.push(e.target.id);
+                        }
+                    } else {
+                        const index = selectedCustomRepeat.indexOf(e.target.id);
+                        if (index !== -1) {
+                            selectedCustomRepeat.splice(index, 1);
+                        }
+                    }
+
+                    if (isAnyChecked) {
+                        document.querySelectorAll(".repeatTask-dropdown-items").forEach((op) => {
+                            op.classList.remove("selected");
+                            op.querySelector(".checkIcon").classList.remove("selected");
+                        });
+                        checkIcon.classList.add("selected");
+                        dropdownCustomItem.classList.add("selected");
+
+                        document.getElementById("repeatType-input").value = dropdownCustomItem.getAttribute("data-value");
+                        document.getElementById("repeatType-span").innerText = dropdownCustomItem.querySelector("span").innerText;
+                        document.getElementById("repeatType-span").parentElement.style.display = "flex";
+                    } else {
+                        checkIcon.classList.remove("selected");
+                        dropdownCustomItem.classList.remove("selected");
+
+                        document.getElementById("repeatType-input").value = "";
+                        document.getElementById("repeatType-span").innerText = "";
+                        removeSchedulerItem("repeatUntilRemind");
+                    }
+                });
+            });
+        }
+
+        function showAssigmentUser(isEditModal = false) {
+            const toggleSelector = isEditModal ? ".editDropdown-assignUser__toggle" : ".dropdown-assignUser__toggle";
+            const toggleEl = document.querySelector(toggleSelector);
+            const dropdown = isEditModal ? toggleEl.nextElementSibling : document.getElementById("assignList");
+
+
+            if (!toggleEl.dropdownInstance) {
+                toggleEl.dropdownInstance = new Dropdown({
+                    button: toggleEl,
+                    content: dropdown,
+                    originalDisplay: "flex",
+                    effect: isEditModal ? "slide" : "zoom",
+                    transitionDuration: isEditModal ? 300 : 200,
+                    zIndex: isEditModal ? 1080 : 10,
+                });
+
+                toggleEl.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    toggleEl.dropdownInstance.toggle();
+                    if (!isEditModal) {
+                        document.querySelector("#assignList input[name='taskType'][value='2']").checked = true;
+                    }
+                });
+
+                document.addEventListener("click", function (e) {
+                    if (toggleEl.dropdownInstance && toggleEl.dropdownInstance.isOpen && !dropdown.contains(e.target) && !toggleEl.contains(e.target)) {
+                        toggleEl.dropdownInstance.close();
+                    }
+                });
+            }
+
+            createAssigmentUserElm(isEditModal);
+
+        }
+
+        function createAssigmentUserElm(isEditModal = false) {
+            const listEl = document.getElementById(isEditModal ? "editAssignList" : "assignList");
+            listEl.innerHTML = "";
+
+            const targetList = isEditModal ? editSelectedUsers : selectedUsers;
+            const countElement = document.getElementById(isEditModal ? "editAssignUserCount" : "assignUserCount");
+
+            const updateCount = () => {
+                const count = targetList.filter(su => !su.isDeleted).length;
+                countElement.innerText = count > 0 ? `${count}+` : isEditModal ? "بدون کاربر" : "";
+                if (!isEditModal) countElement.style.display = count > 0 ? "flex" : "none";
+            };
+            updateCount();
+
+
+            const fragment = document.createDocumentFragment();
+            const radioContainer = document.createElement("div");
+            radioContainer.className = "p-2 d-flex align-items-center justify-content-around w-100 taskType-container";
+            radioContainer.style.borderBottom = "1px solid rgba(0,0,0,0.1)";
+            radioContainer.innerHTML = `
+                    <div class="d-flex align-items-center gap-1">
+                          <label for="${isEditModal ? "edit" : ""}personal">اختصاصی</label>
+                          <input type="radio" name="taskType" id="${isEditModal ? "edit" : ""}personal" value="2" checked />
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                          <label for="${isEditModal ? "edit" : ""}shared">اشتراکی</label>
+                          <input type="radio" name="taskType" id="${isEditModal ? "edit" : ""}shared" value="3" />
+                    </div>
+               `;
+            fragment.appendChild(radioContainer);
+
+
+            const usersContainer = document.createElement("div");
+            usersContainer.className = "assign-users-container";
+
+            users.forEach((user, index) => {
+                const userId = (isEditModal ? "editUser" : "user") + index;
+
+                const dropdownItem = document.createElement("div");
+                dropdownItem.className = "dropdown-assignUser__item";
+                dropdownItem.innerHTML = `
+                    <label for="${userId}">
+                        <input type="checkbox" id="${userId}" value="${user.text}"
+                                ${targetList.some(su => (su.userId === user.id && !su.isDeleted)) ? "checked" : ""} />
+                        <span>${user.text}</span>
+                    </label>
+                `;
+
+                dropdownItem.querySelector("input").addEventListener("change", function (e) {
+                    if (e.target.checked) {
+                        const idx = targetList.findIndex(su => su.userId === user.id);
+                        if (idx === -1) {
+                            targetList.push({ fullName: user.text, userId: user.id, isDeleted: false });
+                        } else {
+                            targetList[idx].isDeleted = false;
+                        }
+                    } else {
+                        const idx = targetList.findIndex(su => su.userId === user.id);
+                        if (idx !== -1) {
+                            if (isEditModal && targetList[idx].id) {
+                                targetList[idx].isDeleted = true;
+                            } else {
+                                targetList.splice(idx, 1);
+                            }
+                        }
+
+                    }
+                    updateCount();
+                });
+
+                usersContainer.appendChild(dropdownItem);
+            });
+
+            fragment.appendChild(usersContainer);
+
+            listEl.appendChild(fragment);
+        }
+
+        let openTaskDropdownToggle = null;
+        function showTaskDropdown() {
+            document.getElementById("allCarizoContainer").addEventListener("click", function (e) {
+                const clickedToggle = e.target.closest(".task-dropdown__toggle");
+
+                if (clickedToggle) {
+
+                    if (openTaskDropdownToggle && openTaskDropdownToggle !== clickedToggle && openTaskDropdownToggle.dropdownInstance && openTaskDropdownToggle.dropdownInstance.isOpen) {
+                        openTaskDropdownToggle.dropdownInstance.close();
+                        openTaskDropdownToggle = null;
+                    }
+
+                    if (!clickedToggle.dropdownInstance) {
+                        const currentDropdown = clickedToggle.nextElementSibling;
+                        clickedToggle.dropdownInstance = new Dropdown({
+                            button: clickedToggle,
+                            content: currentDropdown,
+                            transitionDuration: 200,
+                            originalDisplay: "flex",
+                            effect: "zoom",
+                        });
+                    }
+                    clickedToggle.dropdownInstance.toggle();
+
+                    openTaskDropdownToggle = clickedToggle.dropdownInstance.isOpen ? clickedToggle : null;
+
+                } else {
+                    if (openTaskDropdownToggle && openTaskDropdownToggle.dropdownInstance && openTaskDropdownToggle.dropdownInstance.isOpen) {
+                        openTaskDropdownToggle.dropdownInstance.close();
+                        openTaskDropdownToggle = null;
+                    }
+                }
+            });
+        }
+
+        async function showEditTaskModal(id, editFullAccess) {
+            openTaskDropdownToggle.dropdownInstance.close();
+
+            if (editFullAccess === "0") {
+                document.getElementById("editTaskTitle").setAttribute("disabled", true);
+                document.getElementById("editTaskDescription").setAttribute("disabled", true);
+                // document.getElementById("editRepeatType").setAttribute('disabled', true)
+                // document.getElementById("editUntilRemind").setAttribute('disabled', true)
+            }
+
+            $("#editTaskModal").modal("toggle");
+            document.getElementById("FLshowLoading").style.display = "";
+            dataTask = await getTask(id);
+
+            document.getElementById("FLshowLoading").style.display = "none";
+
+            document.getElementById("editTaskTitle").value = dataTask.title;
+
+            const descriptionTempDiv = document.createElement("div");
+            descriptionTempDiv.innerHTML = dataTask.description;
+
+            document.getElementById("editTaskDescription").value = descriptionTempDiv.innerText;
+
+            document.getElementById("editTaskDate").value = dataTask.date;
+            document.getElementById("editTimeRemind").value = dataTask.remindTime;
+            document.getElementById("editUntilRemind").value = dataTask.repeatUntil;
+            document.getElementById("editRepeatType").value = dataTask.repeatType || "none";
+
+            // document.getElementById("editUntilRemind").nextElementSibling.style.display = dataTask.repeatUntil === 'همیشه' ? 'none' : 'flex'
+            // document.getElementById("editTimeRemind").nextElementSibling.style.display = !dataTask.remindTime ? 'none' : 'flex'
+            // document.getElementById("editTaskDate").nextElementSibling.style.display = !dataTask.date ? 'none' : 'flex'
+
+
+            const customOptionsEl = document.getElementById("customRepeatOptions");
+            const toggleCustomOptions = () => {
+                const editRepeatTypeVal = document.getElementById("editRepeatType").value;
+
+                customOptionsEl.style.display = editRepeatTypeVal === "custom" ? "flex" : "none";
+                document.getElementById("divEditUntilRemind").style.display = editRepeatTypeVal !== "none" ? "flex" : "none";
+            };
+            toggleCustomOptions();
+            document.getElementById("editRepeatType").removeEventListener("change", toggleCustomOptions);
+            document.getElementById("editRepeatType").addEventListener("change", toggleCustomOptions);
+            if (dataTask.repeatDays) {
+                editSelectedCustomRepeat = dataTask.repeatDays.split(",");
+            }
+
+
+            customOptionsEl.querySelectorAll("input").forEach(ch => {
+                ch.addEventListener("change", (e) => {
+                    if (e.target.checked) {
+                        if (!editSelectedCustomRepeat.includes(e.target.value)) {
+                            editSelectedCustomRepeat.push(e.target.value);
+                        }
+                    } else {
+                        const index = editSelectedCustomRepeat.indexOf(e.target.value);
+                        if (index !== -1) {
+                            editSelectedCustomRepeat.splice(index, 1);
+                        }
+                    }
+                });
+            });
+
+
+            const weekDays = dataTask.repeatDays?.split(",");
+            document.querySelectorAll("#customRepeatOptions input").forEach((item) => {
+                item.checked = weekDays?.includes(item.value);
+            });
+
+
+            editSelectedUsers = dataTask.taskUsers;
+
+            showAssigmentUser(true);
+            if (dataTask.taskType !== 1) {
+                document.querySelector(`#editAssignList input[name="taskType"][value='${dataTask.taskType}']`).checked = true;
+            } else {
+                document.querySelector(`#editAssignList input[name="taskType"][value='2']`).checked = true;
+            }
+
+        }
+
+        function handleFocusEditable(elm, updatedFieldName) {
+            elm.dataset.originalText = (updatedFieldName === "remindTime" || updatedFieldName === "date") ? elm.value : elm.innerText.trim();
+        }
+
+        async function handleBlurEditable(id, elm, updatedFieldName, type = "") {
+            const originalText = elm.dataset.originalText;
+            const currentText = (updatedFieldName === "remindTime" || updatedFieldName === "date") ? elm.value : elm.innerText.trim();
+
+            if (currentText !== originalText) {
+                if (updatedFieldName === "title" || updatedFieldName === "description") {
+                    try {
+                        if (updatedFieldName === "title" && !elm.innerText) {
+                            toastifyError("خطا! فیلد عنوان نمی تواند خالی باشد");
+                            await getAllTask(0, systematicTask);
+                            await getAllTask(1, systematicTask);
+                            return;
+                        }
+                        const model = await getTask(id);
+                        model[updatedFieldName] = elm.innerText;
+
+                        const res = await fetch(baseUrl + "Carizo/AddTask", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify(model),
+                        });
+
+                        if (res.ok) {
+                            toastifySuccess(`${updatedFieldName === "description" ? "توضیحات" : "عنوان"} تسک ویرایش شد.`);
+                        } else {
+                            throw new Error();
+                        }
+                    } catch (error) {
+                        toastifyError("خطا در ویرایش تسک");
+                        console.log(error);
+                    }
+                } else if (updatedFieldName === "remindTime" && elm.value.length === 5) {
+                    try {
+                        const res = await fetch(baseUrl + `Carizo/UpdateTaskTime?id=${id}&_Time=${elm.value}`);
+
+                        if (res.status === 200) {
+                            await getRemind();
+
+                            // await getAllTask(Number(type))
+                            toastifySuccess(`زمان تسک ویرایش شد.`);
+                        } else {
+                            throw new Error();
+                        }
+                    } catch (error) {
+                        toastifyError("خطا در ویرایش تسک");
+                        console.log(error);
+                    }
+                } else if (updatedFieldName === "date" && elm.value.length === 10) {
+                    try {
+                        const model = await getTask(id);
+                        if (model.date === elm.value) return;
+                        model.date = elm.value;
+
+                        const res = await fetch(baseUrl + "Carizo/AddTask", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify(model),
+                        });
+
+                        if (res.ok) {
+                            toastifySuccess(` تاریخ تسک ویرایش شد.`);
+                        } else {
+                            throw new Error();
+                        }
+                    } catch (error) {
+                        toastifyError("خطا در ویرایش تسک");
+                        console.log(error);
+                    }
+                }
+            }
+        }
+
+
+        async function submitTask() {
+
+            var button = document.getElementById("submitTask-btn");
+            button.setAttribute("disabled", "true");
+
+            if (await mySer.CheckValidForm("taskFormId")) {
+                let model = mySer.convertFormToJSON("taskFormId");
+                model.taskUsers = [];
+                model.taskType = 1;
+
+                model.repeatDays = "";
+                model.remind = false;
+                model.remindDismiss = true;
+
+                if (model.remindTime) {
+                    model.remind = true;
+                    model.remindDismiss = false;
+                }
+                if (model.repeatType && model.repeatType !== "none") {
+                    model.repeat = true;
+                } else {
+                    model.repeatType = "";
+                    model.repeat = false;
+                }
+
+                if (selectedCustomRepeat.length > 0 && model.repeatType === "custom") {
+                    model.repeatDays = selectedCustomRepeat.join(",");
+                }
+
+                // model.colorTask = colorTask;
+
+                model.taskUsers = selectedUsers;
+                model.description = "";
+
+                if (model.taskUsers.length > 0) {
+                    model.taskType = Number(document.querySelector("#assignList input[name=\"taskType\"]:checked").value);
+                }
+
+                try {
+                    const res = await fetch(baseUrl + "Carizo/AddTask", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(model),
+                    });
+
+                    if (res.ok) {
+                        resetAndCloseFormTask();
+                        button.removeAttribute("disabled");
+
+                        toastifySuccess("تسک با موفقیت ثبت شد.");
+
+                        await getRemind();
+
+
+                    } else {
+                        throw new Error();
+                    }
+                } catch (error) {
+                    toastifyError("خطا در ثبت تسک جدید");
+                    console.log(error);
+                    if (from === "carizo") button.removeAttribute("disabled");
+                    if (from === "report") document.getElementById("FLshowLoading").style.display = "none";
+                    setTimeout(async () => await submitTask(), 3000);
+                }
+            } else {
+                taskTitleInput.classList.add("required");
+                setTimeout(() => {
+                    taskTitleInput.classList.remove("required");
+                }, 650);
+                button.removeAttribute("disabled");
+                toastifyError("عنوان فعالیت نمیتواند خالی باشد!", 3000);
+            }
+        }
+
+
+        async function unCheckTask(id, button) {
+            document.querySelectorAll("#allCarizoContainer button").forEach(btn => btn.setAttribute("disabled", "true"));
+
+            try {
+                const res = await axios(`/Carizo/unCheckTask/${id}`);
+                if (res.data.status === 200) {
+                    document.querySelectorAll("#allCarizoContainer button").forEach(btn => btn.removeAttribute("disabled"));
+                    toastifySuccess("تسک به انجام نشده ها منتقل شد!");
+                } else if (res.data.status === 201) {
+                    document.querySelectorAll("#allCarizoContainer button").forEach(btn => btn.removeAttribute("disabled"));
+                    toastifyError(res.data.error);
+                }
+
+                await getRemind();
+
+
+            } catch (error) {
+                console.log(error);
+                document.querySelectorAll("#allCarizoContainer button").forEach(btn => btn.removeAttribute("disabled"));
+                toastifyError("خطا: تسک به انجام شده ها منتقل نشد!");
+            }
+        }
+
+        function delTask(id, type) {
+            openTaskDropdownToggle.dropdownInstance.close();
+            Swal.fire({
+                title: "حذف!",
+                text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
+                icon: "warning",
+                showCancelButton: true,
+                cancelButtonColor: "#adadad",
+                confirmButtonColor: "#e64942",
+                cancelButtonText: "انصراف",
+                confirmButtonText: "بله، حذف شود",
+            }).then((willDelete) => {
+                if (willDelete.isConfirmed)
+                    delTaskOk(id, type);
+            });
+        }
+
+        async function delTaskOk(id, type) {
+            document.getElementById("FLshowLoading").style.display = "";
+
+            try {
+                const res = await axios.delete(`/Carizo/delTask/${id}`);
+
+                if (res.status === 200) {
+                    document.getElementById("FLshowLoading").style.display = "none";
+                    toastifySuccess("تسک با موفقیت حذف شد.");
+                }
+                if (Number(type) === 1) {
+                    await getRemind();
+
+                }
+                // await getAllTask(Number(type));
+
+            } catch (error) {
+                console.log(error);
+                toastifyError("خطا در حذف تسک!");
+            }
+        }
+
+
+        const MaskTime = () => {
+            document.getElementById("allCarizoContainer").addEventListener("input", function (e) {
+
+                if (e.target.matches("input[placeholder='--:--'][data-slots]")) {
+                    let value = e.target.value.replace(/\D/g, "");
+
+                    let hours = value.slice(0, 2);
+                    let minutes = value.slice(2, 4);
+
+                    if (hours > 23) hours = "23";
+                    if (minutes > 59) minutes = "59";
+                    e.target.value = `${hours}:${minutes}`;
+
+                    e.target.value = `${hours}${minutes ? ":" + minutes : ""}`;
+                }
+            });
+
+        };
+
+
+        const showDeletedTask = async (btn) => {
+            btn.setAttribute("disabled", "true");
+            const openIcon = document.querySelector("#showDeletedTaskIcon #openEyeIcon");
+            const closedIcon = document.querySelector("#showDeletedTaskIcon #closedEyeIcon");
+            if (openIcon.style.display !== "none") {
+                openIcon.style.display = "none";
+                closedIcon.style.display = "block";
+                document.getElementById("showDeletedTaskIcon").setAttribute("data-title", "آرشیو");
+                await getAllTask(2, systematicTask);
+            } else {
+                openIcon.style.display = "block";
+                closedIcon.style.display = "none";
+                document.getElementById("showDeletedTaskIcon").setAttribute("data-title", "مخفی کردن آرشیو");
+                await getAllTask(3, systematicTask);
+            }
+            btn.removeAttribute("disabled");
+        };
+
+        function removeTasksTabsDesktop() {
+            if (window.innerWidth >= 1200) {
+                document.getElementById("allCarizoContainer").classList.remove("tab-content");
+                document.getElementById("todoTaskTab-pane").classList.remove("tab-pane", "fade");
+                document.getElementById("todayTaskTab-pane").classList.remove("tab-pane", "fade");
+                document.getElementById("finishedTaskTab-pane").classList.remove("tab-pane", "fade");
+            } else {
+                document.getElementById("allCarizoContainer").classList.add("tab-content");
+                document.getElementById("todoTaskTab-pane").classList.add("tab-pane", "fade");
+                document.getElementById("todayTaskTab-pane").classList.add("tab-pane", "fade");
+                document.getElementById("finishedTaskTab-pane").classList.add("tab-pane", "fade");
+            }
+            window.addEventListener("resize", removeTasksTabsDesktop);
+
+        }
+
+        document.querySelectorAll("input[type='radio'][name='isSystematicTask']").forEach(elm => {
+            elm.addEventListener("change", async (e) => {
+                systematicTask = e.target.value;
+                document.querySelectorAll("input[type='radio'][name='isSystematicTask']").forEach(elm => elm.setAttribute("disabled", "true"));
+                await Promise.all([getAllTask(0, e.target.value), getAllTask(1, e.target.value), getAllTask(2, e.target.value)]);
+                document.querySelectorAll("input[type='radio'][name='isSystematicTask']").forEach(elm => elm.removeAttribute("disabled"));
+            });
+        });
+
+    </script>
+}

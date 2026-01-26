@@ -1,0 +1,29 @@
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace CRM.Infrastructures.Sql.Migrations.UserContextDbMigrations
+{
+    /// <inheritdoc />
+    public partial class _140407211102 : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.AddColumn<Guid>(
+                name: "PersonId",
+                table: "AspNetUsers",
+                type: "uniqueidentifier",
+                nullable: true);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropColumn(
+                name: "PersonId",
+                table: "AspNetUsers");
+        }
+    }
+}

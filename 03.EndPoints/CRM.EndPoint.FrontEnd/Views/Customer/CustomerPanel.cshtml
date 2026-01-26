@@ -1,0 +1,161 @@
+@model CRM.EndPoint.FrontEnd.Models.ViewModel.Customer.CustomerPanelVModel
+
+@{
+    ViewBag.Title = "CustomerPanel";
+    Layout = "_CustomerLayout";
+}
+
+<div id="customerProfile-wrapper" class="d-flex flex-column" style="height: calc(100dvh - 88px);">
+    <div class="d-flex col-12 flex-wrap gap-1 flex-xxl-column fbold pb-1 pb-xxl-0">
+        <div class="d-flex flex-column" style="font-size:clamp(14px,2vw,18px)">
+            <p>پنل مشتری @Model.CustomerName</p>
+        </div>
+        <div class="d-flex align-items-center justify-content-end justify-content-xxl-start gap-1 flex-grow-1 flex-xxl-grow-0" style="font-size:clamp(11px,2vw,13px)">
+            <span>کارشناس فروش: </span>
+            <span>@Model.SelExpertRel</span>
+        </div>
+    </div>
+
+    <div class="d-flex flex-column align-items-center flex-grow-1 w-100 overflow-hidden">
+        <ul class="nav nav-tabs" id="TabFactors" role="tablist" style="display: none;">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active text-dark" style="margin-bottom:-2px;isolation:auto" id="preFactorTab" data-bs-toggle="tab" data-bs-target="#preFactorTab-pane" type="button" role="tab">پیش فاکتورها</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link text-dark" style="margin-bottom:-2px;isolation:auto" id="factorTab" data-bs-toggle="tab" data-bs-target="#factorTab-pane" type="button" role="tab">فاکتورها</button>
+            </li>
+        </ul>
+
+        <div class="parent-factors tab-content mt-xxl-2" id="tabContentFactors" style=" width:100%; justify-content:space-between;display:flex;min-height: 0;">
+            <div class="tab-pane fade show active border-0 flex-grow-1" id="preFactorTab-pane" role="tabpanel" aria-labelledby="preFactorTab" tabindex="0" style="display: flex;flex-direction:column;width:100%">
+                <div class="mb-1 d-flex justify-content-between w-100">
+                    <div class="mp d-flex align-items-center gap-3">
+                        <label class="d-none d-xxl-inline-block fbold" style="font-size:20px">پیش فاکتور ها</label>
+                    </div>
+                </div>
+                <div class="InfoData w-100 overflow-auto" id="PreFactorDivList">
+                </div>
+            </div>
+
+            <div class="tab-pane fade border-0 flex-grow-1" id="factorTab-pane" role="tabpanel" aria-labelledby="factorTab" tabindex="0" style="display: flex;flex-direction:column;width:100%">
+                <div style="display:none;flex-direction:column;justify-content:center;align-items:center;width:100%;min-height: 0;" id="DivFacListId">
+                    <div class="fbold mb-1 d-flex align-items-center gap-2" style="font-size:20px" id="FactorDivTitleId">
+                    </div>
+                    <div class="InfoData w-100 overflow-auto" id="DetailDivList">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="buttonDiv mt-2">
+        <div class="d-flex justify-content-center w-100">
+            <div class="flex-center flex-column w-100">
+                <div class="buttonDivContent">
+                    <div class="gap-2 gap-lg-3 flex-column flex-lg-row" style="font-size:clamp(12px,2vw,14px);align-items:center; width:100%; display:flex; justify-content:space-between ">
+                        <div class="col flex-wrap gap-2 w-100" style="display:flex; justify-content:space-around " id="wallet-details">
+                            <div class="gap-1 gap-lg-2 flex-center">
+                                <label style="color:lightgray">مبلغ کل فاکتورها: </label>
+                                <div class="fbold d-flex align-items-baseline gap-1" style="color:white;">
+                                    <span id="AllFacAmountId" style="font-size:clamp(14px,1.5vw,18px);">-</span>
+                                    <span style="color:white;font-size:clamp(12px,2vw,13px);">ريال</span>
+                                </div>
+                            </div>
+                            <div class="gap-1 gap-lg-2 flex-center">
+                                <label style="color:lightgray">پرداخت شده:</label>
+                                <div class="fbold d-flex align-items-baseline gap-1" style="color:white;">
+                                    <span id="AllFacPaymentId" style="font-size:clamp(14px,1.5vw,18px);">-</span>
+                                    <span style="color:white;font-size:clamp(12px,2vw,13px);">ريال</span>
+                                </div>
+                            </div>
+                            <div class="gap-1 gap-lg-2 flex-center">
+                                <label style="color:lightgray" id="AllreminedTitleId">مانده بدهی:</label>
+                                <div class="fbold d-flex align-items-baseline gap-1" style="color:white;">
+                                    <span id="AllRemainedId" style="font-size:clamp(14px,1.5vw,18px);">-</span>
+                                    <span style="color:white;font-size:clamp(12px,2vw,13px);">ريال</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="walledNotCredit" id="wallet-balance" style="min-width: 280px;width: auto">
+                            <div class="d-flex align-items-center justify-content-around gap-1 gap-lg-2">
+                                <span class="fMedium" style="color:lightgray">اعتبار کیف پول: </span>
+                                <span class="fbold d-flex align-items-baseline gap-1 gap-xl-2" style="color:white;">
+                                    <span id="WalletId" style="font-size:22px;">-</span>
+                                    <span style="color:white;font-size:clamp(13px,2vw,14px);">ريال</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            customerId = '@Model.CustomerId';
+            await getAllPreFactor();
+            getAllDetailAmount();
+            removeTabFactorsDesktop();
+        });
+
+
+        const removeTabFactorsDesktop = () => {
+            if (window.innerWidth >= 1400) {
+                document.getElementById("tabContentFactors").classList.remove("tab-content");
+                document.getElementById("preFactorTab-pane").classList.remove("tab-pane", "fade");
+                document.getElementById("factorTab-pane").classList.remove("tab-pane", "fade");
+            } else {
+                document.getElementById("tabContentFactors").classList.add("tab-content");
+                document.getElementById("preFactorTab-pane").classList.add("tab-pane", "fade");
+                document.getElementById("factorTab-pane").classList.add("tab-pane", "fade");
+            }
+            window.addEventListener("resize", removeTabFactorsDesktop);
+        };
+
+
+
+
+        const getAllDetailAmount = () => {
+            axios(`/Factor/GetDetailAmount?cusId=${customerId}`).then((res) => {
+                document.getElementById("AllFacAmountId").textContent = res.data.facAmount.toLocaleString();
+                document.getElementById("AllFacPaymentId").textContent = res.data.allPrePayment.toLocaleString();
+                document.getElementById("AllRemainedId").textContent = res.data.remained.toLocaleString();
+                document.getElementById("WalletId").textContent = res.data.wallet.toLocaleString();
+
+                const walletBalance = document.getElementById("wallet-balance");
+                if (res.data.wallet > 0) {
+                    walletBalance.classList.remove("walledNotCredit");
+                    walletBalance.classList.add("walledCredit");
+                } else {
+                    walletBalance.classList.remove("walledCredit");
+                    walletBalance.classList.add("walledNotCredit");
+                }
+            });
+        };
+
+
+        const getAllPreFactor = async () => {
+            try {
+                FLshowLoading();
+                const res = await axios(`/Customer/GetAllPreFactorPartial?customerId=${customerId}`);
+                if (res.status === 200) {
+                    document.getElementById("PreFactorDivList").innerHTML = res.data.html;
+                }
+
+            } catch (err) {
+                document.getElementById("PreFactorDivList").innerHTML = "خطای بارگذاری!";
+            } finally {
+                FLshowLoading(false);
+            }
+        };
+
+
+    </script>
+
+}
+
+

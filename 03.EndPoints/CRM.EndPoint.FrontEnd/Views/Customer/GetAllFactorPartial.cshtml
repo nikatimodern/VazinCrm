@@ -1,0 +1,110 @@
+﻿@model IList<Factor>
+
+@{
+    Layout = null;
+}
+
+<div style="display:none;justify-content:center" id="loadingSendToId">
+    <i style="font-size:30px" class="fas fa-spinner fa-spin"></i>
+</div>
+
+<div style="width:100%;display:flex;flex-direction:column;gap:5px ">
+    @foreach (var item in Model.OrderByDescending(f=>f.DateMiladi) )
+    {
+        <div class="mp" style="width:100%;display:flex; ">
+            @if (item.OfficialType == 1)
+            {
+                <div class="mp InfoDataHead_PrefactorRasmi" style="display:flex">
+                    <label style="transform: rotate(90deg)">رسمی</label>
+                </div>
+            }
+            else
+            {
+                <div class="mp InfoDataHead_PrefactorNonRasmi" style="display:flex">
+                    <label style="transform: rotate(90deg)">غیررسمی</label>
+                </div>
+            }
+
+            @if (item.Export == true)
+            {
+                <div style="background-color:lightgreen; width:3%; display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
+                    <label style="font-family:'IRANSansBold'; transform: rotate(90deg)">صـادراتی</label>
+                </div>
+            }
+
+            <div class="mp InfoDataItem_Prefactor" style=" display:flex;justify-content:space-between; width:100%; height:120px;direction:rtl;">
+                <div style="width:20%; display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
+                    <label style="color:gray"> سریال فاکتور:</label>
+                    <label style="font-family:'IRANSansBold'">@item.SerialNumber</label>
+                </div>
+                <div style="width:20%; display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
+                    <label style="color:gray"> سریال پیش فاکتور:</label>
+                    <label style="font-family:'IRANSansBold'">@item.PfactorSerialNumber</label>
+                </div>
+                <div style="width:20%; display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
+                    <label style="color:gray"> شماره فاکتور مالی:</label>
+                    <label style="font-family:'IRANSansBold'"> @item.SnFinancial </label>
+                </div>
+                <div style="width:20%; display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
+                    <label style="color:gray">تاریخ ثبت:</label>
+                    <label style="font-family:'IRANSansBold'">@item.Date</label>
+                </div>
+
+                @*<div style="width:20%; display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
+                        <label style="color:gray">تاریخ تکمیل وجه:</label>
+                        <label style="font-family:'IRANSansBold'">@item.DateCompletedTxt</label>
+                </div>*@
+
+                <div style="width:30%; display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
+                    <div>
+                        <label style="color:gray">مبلغ:</label>
+                        <label style="font-family:'IRANSansBold'">@($"{(item.SumTotalAmount + item.TotalTax):n0}") @(item.CurrencyTypeTxt ?? "ريال")</label>
+                    </div>
+                    <div>
+                        <label style="color:gray">پرداخت شده:</label>
+                        <label style="font-family:'IRANSansBold'">@($"{item.ReciveAmount:n0}") @(item.CurrencyTypeTxt ?? "ريال")</label>
+                    </div>
+                    <div>
+                        <label style="color:gray">مانده:</label>
+                        <label style="font-family:'IRANSansBold'">@($"{item.PaymentAmount:n0}") @(item.CurrencyTypeTxt ?? "ريال")</label>
+                    </div>
+                </div>
+
+                <div style="width:30%; display:flex;align-items:center; justify-content:center">
+                    <label title="نمایش پرداختی ها" class="buttonPurple" style=" height:fit-content !important; border-radius:5px; cursor:pointer; width:85%;font-family:'IRANSansBold'" onclick="ShowModalListInvoice('@item.Id',2,'@item.SerialNumber', null, null, true)">صورت حساب</label>
+                    @* <label title="ثبت واریزی" class="mp buttonPurple" style="height:fit-content !important; border-radius:5px; cursor:pointer; width:10%;font-family:'IRANSansBold'" onclick="ShowModalInvoice('@item.Id',2,'@item.SerialNumber')">+</label> *@
+                </div>
+
+
+                <div class=" mp" style="width:5%; display:flex;flex-direction:column; justify-content:space-evenly !important">
+                    @*<button class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="_delPfactor('@item.Id',1)"><i class="mp fa fa-trash"></i></button>*@
+                    <button class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="upfactor('@item.Id','@item.CustomerId',1)"><i class="mp fa fa-pencil"></i></button>
+                    <button class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="ShowPreviewFactor('@item.Id',1)"><i class="mp fa fa-eye"></i></button>
+                    @*<button class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="_AttachDoc('@item.Id')"><i style="font-size:15px" class="mp fa fa-paperclip"></i></button>*@
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+
+@*@section Scripts {
+    <script>
+        const gotoCartable = async (entity, entityId, user, rol) => {
+            var model = {
+                entityName: entity,
+                entityId: entityId,
+                user: user,
+                rol: rol
+            }
+            return new Promise((resolve, reject) => {
+                $.post(baseUrl + "Cartable/GotoCartable", model, (res) => {
+                    resolve(true);
+                })
+                    .fail(() => {
+                        reject(false);
+                    })
+            });
+        };
+    </script>
+}*@

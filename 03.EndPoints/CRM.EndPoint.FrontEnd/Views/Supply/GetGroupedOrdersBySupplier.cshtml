@@ -1,0 +1,28 @@
+@model List<CRM.EndPoint.FrontEnd.Models.ViewModel.Supply.GroupedOrdersBySupplierVModal>
+
+@foreach (var item in Model) {
+    <div class="card border-0 shadow-sm">
+        <div class="card-header border-bottom text-center">
+            <span class="text-muted me-1">تامین‌کننده:</span>
+            <span class="fw-bold text-dark">@item.SupplierTxt</span>
+        </div>
+
+        <div class="card-body">
+            <div class="d-flex flex-column gap-2">
+                @foreach (var product in item.Products)
+                {
+                    <div class="d-flex align-items-center justify-content-between border-bottom pb-1">
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="text-muted small">محصول:</span>
+                            <span class="fw-semibold text-dark">@product.ProductSmallName</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="text-muted small">مقدار:</span>
+                            <span class="fw-semibold text-dark">@product.SumWeight @product.UnitTxt</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}

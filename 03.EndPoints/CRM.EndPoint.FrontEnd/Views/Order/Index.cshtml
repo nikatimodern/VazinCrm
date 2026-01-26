@@ -1,0 +1,294 @@
+﻿@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="mx-auto col-12">
+    <div class="d-flex flex-column align-items-start justify-content-center w-100">
+
+        <div class="col-12 col-md-auto d-flex align-items-center gap-2 mb-2 flex-wrap">
+            <div class="d-flex align-items-center gap-2 flex-grow-1">
+                <input type="text" class="form-control form-control-sm" id="orderSearchId" placeholder="جستجو">
+
+                <div data-filterVarConfig="filterOrderConfig" data-filterCallBack="callbackFilterOrder" data-filterContentId="ContentOrderFilterId" data-filterInpSearchId="orderSearchId" data-filterVarSearch="orderSearchVal" onclick="ShowFilterPopup(this)" class="btnFilter">
+                    <svg style="width:24px;height:24px;color:#333"  viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
+                </div>
+            </div>
+            <ul class="filter-switch">
+                <li class="filter-switch-item">
+                    <input type="radio" name="factorStatus" value="-1" id="factorStatus-all" checked>
+                    <label for="factorStatus-all">همه</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="factorStatus" value="1" id="factorStatus-yes">
+                    <label for="factorStatus-yes">فاکتورشده</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="factorStatus" value="2" id="factorStatus-no">
+                    <label for="factorStatus-no">فاکتورنشده</label>
+                </li>
+            </ul>
+            <div id="ContentOrderFilterId" class="ContentFilter"></div>
+        </div>
+
+
+        <div class="d-flex flex-column w-100">
+            <ul class="nav nav-tabs" id="ordersTabs" role="tablist" style="display: none;">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active text-dark" style="margin-bottom:-2px;isolation:auto" id="registeredOrderTab" data-bs-toggle="tab" data-bs-target="#registeredOrderTab-pane" type="button" role="tab" aria-controls="registeredOrderTab-pane" aria-selected="true">
+                        ثبت اولیه دستور تولید
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-dark" style="margin-bottom:-2px;isolation:auto" id="producingOrderTab" data-bs-toggle="tab" data-bs-target="#producingOrderTab-pane" type="button" role="tab" aria-controls="producingOrderTab-pane" aria-selected="false">
+                        مرحله تولید
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-dark" style="margin-bottom:-2px;isolation:auto" id="finishedOrderTab" data-bs-toggle="tab" data-bs-target="#finishedOrderTab-pane" type="button" role="tab" aria-controls="finishedOrderTab-pane" aria-selected="false">
+                        آماده تحویل
+                    </button>
+                </li>
+            </ul>
+
+
+            <div id="allOrdersContainer" class="d-xl-grid">
+                <div class="show active border-0" style="flex-direction:column;width:100%" id="registeredOrderTab-pane" role="tabpanel" aria-labelledby="registeredOrderTab" tabindex="0">
+                    <div class="d-flex flex-column gap-1 h-100">
+                        <div class="fbold d-flex align-items-center justify-content-end justify-content-xl-between w-100 px-2">
+                            <div class="d-none d-xl-flex align-items-end">
+                                <span style="font-size:16px">ثبت اولیه دستور تولید</span>
+                            </div>
+                            <div class="fbold" style="font-size: 14px">
+                                <span>تعداد:</span>
+                                <span id="registeredOrderCount"></span>
+                            </div>
+                        </div>
+
+                        <div id="registeredOrderId" data-statuscolumn="1" class="orders-container"></div>
+                    </div>
+                </div>
+
+                <div class="border-0" style="flex-direction:column;width:100%" id="producingOrderTab-pane" role="tabpanel" aria-labelledby="producingOrderTab" tabindex="0">
+                    <div class="d-flex flex-column gap-1 h-100">
+
+                        <div class="fbold d-flex align-items-center justify-content-end justify-content-xl-between w-100 px-2">
+                            <div class="d-none d-xl-flex align-items-end">
+                                <span style="font-size:16px">مرحله تولید</span>
+                            </div>
+                            <div class="fbold" style="font-size: 14px">
+                                <span>تعداد:</span>
+                                <span id="producingOrderCount"></span>
+                            </div>
+                        </div>
+
+                        <div id="producingOrderId" data-statusColumn="2" class="orders-container"></div>
+
+                    </div>
+                </div>
+
+                <div class="border-0" style="flex-direction:column;width:100%" id="finishedOrderTab-pane" role="tabpanel" aria-labelledby="finishedOrderTab" tabindex="0">
+                    <div class="d-flex flex-column gap-1 h-100">
+
+                        <div class="d-flex align-items-center justify-content-between w-100 px-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="fbold d-none d-xl-flex align-items-end">
+                                    <span id="finishedOrderTitle" style="font-size:16px">آماده تحویل</span>
+                                </div>
+                                <div id="showFinishedOrderIcon" style="cursor:pointer;position: relative" class="ms-1" data-title="نمایش تحویل شده ها" onclick="showFinishedOrders()">
+                                    <span id="hiddenOrdersCount" class="badgeCircle" style="left: -18px;position: absolute;top: -8px;color: #fff;cursor: auto;display: none"></span>
+                                    <svg id="closedEyeIcon" style="width:16px;height:16px;display:block" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l14.5 14.5a.75.75 0 1 0 1.06-1.06l-1.745-1.745a10.029 10.029 0 0 0 3.3-4.38 1.651 1.651 0 0 0 0-1.185A10.004 10.004 0 0 0 9.999 3a9.956 9.956 0 0 0-4.744 1.194L3.28 2.22ZM7.752 6.69l1.092 1.092a2.5 2.5 0 0 1 3.374 3.373l1.091 1.092a4 4 0 0 0-5.557-5.557Z" clip-rule="evenodd" /><path d="m10.748 13.93 2.523 2.523a9.987 9.987 0 0 1-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 0 1 0-1.186A10.007 10.007 0 0 1 2.839 6.02L6.07 9.252a4 4 0 0 0 4.678 4.678Z" /></svg>
+                                    <svg id="openEyeIcon" style="width:16px;height:16px;display:none" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" /><path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" clip-rule="evenodd" /></svg>
+                                </div>
+                            </div>
+                            <div class="fbold" style="font-size: 14px">
+                                <span>تعداد:</span>
+                                <span id="finishedOrderCount"></span>
+                            </div>
+                        </div>
+
+                        <div id="finishedOrderId" data-statusColumn="3" class="orders-container"></div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        var modelOrder = { filt: null, serVal: null, _type: 1 };
+        let fStatus = -1;
+
+        let showHidden = false;
+        var orderSearchVal = null;
+        var filterOrderConfig = {};
+        let filConfigSession = {};
+        const openIcon = document.querySelector("#showFinishedOrderIcon #openEyeIcon");
+        const closedIcon = document.querySelector("#showFinishedOrderIcon #closedEyeIcon");
+
+        document.addEventListener("DOMContentLoaded", async () => {
+
+            getAllOrders();
+
+            const fFilterFromDash = JSON.parse(sessionStorage.getItem("fFilterFromDash"));
+            if (fFilterFromDash) {
+                sessionStorage.removeItem("fFilterFromDash");
+                filConfigSession = {
+                    ContentFilterDiv: "ContentOrderFilterId",
+                    filterCallBack: "callbackFilterOrder",
+                    txtSercheId: "orderSearchId",
+                    varSearch: "",
+                    filterVar: { ...fFilterFromDash.filt },
+                    filterVarConfig: "filterOrderConfig",
+                };
+                await FilterAccepted(filConfigSession);
+            } else {
+                await refreshOrders();
+            }
+
+            document.getElementById("orderSearchId").addEventListener("keyup", async (e) => {
+                if (e.key === "Enter") {
+                    modelOrder.serVal = e.target.value;
+                    await refreshOrders();
+                    if (e.target.value.trim() && !showHidden) {
+                        await getHiddenOrdersCount();
+                    }
+                }
+            });
+
+            document.querySelectorAll("input[name='factorStatus']").forEach(radio => {
+                radio.addEventListener("change", async (e) => {
+                    fStatus = e.target.value;
+                    await refreshOrders();
+                    if (Number(e.target.value) !== -1 && !showHidden) {
+                        await getHiddenOrdersCount();
+                    }
+                });
+            });
+            initSortableOrders();
+            removeOrdersTabsDesktop();
+        });
+
+
+        async function getAllHeadOrders(type = 1) {
+            modelOrder._type = type;
+            document.getElementById("FLshowLoading").style.display = "";
+
+            try {
+                const res = await axios.post(`/order/GetAllHeadOrdersPartial?fStatus=${fStatus}`, modelOrder);
+                if (res.status === 200) {
+                    const containerName = type === 1 ? "registeredOrder" : type === 2 ? "producingOrder" : "finishedOrder";
+
+                    document.getElementById(containerName + "Id").innerHTML = res.data.html;
+                    document.getElementById(containerName + "Count").innerHTML = res.data.count;
+                    document.getElementById("FLshowLoading").style.display = "none";
+                }
+
+            } catch (e) {
+                console.log(e);
+                toastifyError("خطا در دریافت اطلاعات!");
+                document.getElementById("FLshowLoading").style.display = "none";
+            }
+        }
+
+        async function getHiddenOrdersCount() {
+            modelOrder._type = 4;
+            const res = await axios.post(`/order/GetAllHeadOrdersPartial?fStatus=${fStatus}`, modelOrder);
+            if (res.data.count > 0) {
+                document.getElementById("hiddenOrdersCount").style.display = "flex";
+                document.getElementById("hiddenOrdersCount").innerText = res.data.count;
+            } else {
+                document.getElementById("hiddenOrdersCount").style.display = "none";
+            }
+        }
+
+
+        async function callbackFilterOrder() {
+            modelOrder.filt = window[filterVarConfig].filterVar;
+            modelOrder.serVal = window[filterVarConfig].varSearch;
+
+            await refreshOrders();
+            if (modelOrder.filt && !showHidden) {
+                await getHiddenOrdersCount();
+            }
+        }
+
+
+        function removeOrdersTabsDesktop() {
+            if (window.innerWidth >= 1200) {
+                document.getElementById("allOrdersContainer").classList.remove("tab-content");
+                document.getElementById("registeredOrderTab-pane").classList.remove("tab-pane", "fade");
+                document.getElementById("producingOrderTab-pane").classList.remove("tab-pane", "fade");
+                document.getElementById("finishedOrderTab-pane").classList.remove("tab-pane", "fade");
+            } else {
+                document.getElementById("allOrdersContainer").classList.add("tab-content");
+                document.getElementById("registeredOrderTab-pane").classList.add("tab-pane", "fade");
+                document.getElementById("producingOrderTab-pane").classList.add("tab-pane", "fade");
+                document.getElementById("finishedOrderTab-pane").classList.add("tab-pane", "fade");
+            }
+            window.addEventListener("resize", removeOrdersTabsDesktop);
+        }
+
+
+        const refreshOrders = async () => {
+            document.getElementById("hiddenOrdersCount").style.display = "none";
+            await getAllHeadOrders(1);
+            await getAllHeadOrders(2);
+            showHidden ? await getAllHeadOrders(4) : await getAllHeadOrders(3);
+        };
+
+        function initSortableOrders() {
+            document.querySelectorAll(".orders-container").forEach(list => {
+                new Sortable(list, {
+                    group: "sharedOrders",
+                    draggable: ".orderBox",
+                    sort: false,
+                    animation: 350,
+                    swapThreshold: 0.7,
+                    ghostClass: "lightGray-background-class",
+                    disabled: window.innerWidth < 1200,
+
+                    onAdd: async function (evt) {
+                        const draggedItem = evt.item;
+                        const itemId = draggedItem.dataset.id;
+
+                        const sourceColumn = evt.from.closest(".orders-container");
+                        const targetColumn = evt.to.closest(".orders-container");
+
+                        if (!sourceColumn || !targetColumn || !itemId) return;
+
+                        const sourceStatus = Number(sourceColumn.dataset.statuscolumn);
+                        const status = Number(targetColumn.dataset.statuscolumn);
+
+                        await changeStatusHd(itemId, status, sourceStatus, 1, null, true, draggedItem, sourceColumn);
+                    },
+                    onChange: (evt) => evt.item.classList.add("drop-item"),
+                    onEnd: (evt) => evt.item.classList.remove("drop-item"),
+                });
+            });
+        }
+
+
+        const showFinishedOrders = async () => {
+            if (showHidden) {
+                openIcon.style.display = "none";
+                closedIcon.style.display = "block";
+                document.getElementById("showFinishedOrderIcon").setAttribute("data-title", "نمایش تحویل شده");
+                document.getElementById("finishedOrderTitle").innerText = "آماده تحویل";
+                document.getElementById("finishedOrderTab").innerText = "آماده تحویل";
+            } else {
+                openIcon.style.display = "block";
+                closedIcon.style.display = "none";
+                document.getElementById("showFinishedOrderIcon").setAttribute("data-title", "نمایش آماده تحویل");
+                document.getElementById("finishedOrderTitle").innerText = "تحویل شده";
+                document.getElementById("finishedOrderTab").innerText = "تحویل شده";
+            }
+            showHidden = !showHidden;
+            showHidden ? await getAllHeadOrders(4) : await getAllHeadOrders(3);
+        };
+
+    </script>
+
+}

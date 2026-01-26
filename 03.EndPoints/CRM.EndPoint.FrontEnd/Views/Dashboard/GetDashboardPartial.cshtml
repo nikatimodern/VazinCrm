@@ -1,0 +1,93 @@
+﻿@using CRM.EndPoint.FrontEnd.Models.Dashboard
+@model DashboardViewModel
+@{
+    Layout = null;
+}
+
+<link rel="stylesheet" href="~/lib/FontAwesome.Pro.5.15.1.Web/css/font-awesome-animation.min.css">
+<script src="~/lib/FontAwesome.Pro.5.15.1.Web/js/fontawesome.min.js"></script>
+
+<div class="text-center" style=" display:flex;flex-direction:column; ">
+
+    <div  style=" width:100%; display:flex;padding:10px;justify-content:center ">
+        <div class="DCustomer" style="display:flex; flex-direction:column;align-items:center;justify-content:space-between">
+            <div style="width:100%; display:flex; padding:12px ;justify-content:space-between ">
+                <label style="text-align:start; color:white; font-size:20px">مشتریان:</label>
+                <label style="font-family:iransansbold; text-align:start; color:white; font-size:25px">@Model.AllCustomers نفر  </label>
+            </div>
+            <div style="width:100%; display:flex; padding:12px ;justify-content:space-between ">
+                <div style="width:50%; display:flex;flex-direction:column;justify-content:center;align-items:center ">
+                    <label style="text-align:start; color:white; font-size:15px">حقوقی:</label>
+                    <label style="font-family:iransansbold; text-align:start; color:white; font-size:20px">@Model.CustomerJur نفر</label>
+                </div>
+                <div style="width:50%; display:flex;flex-direction:column;justify-content:center;align-items:center">
+                    <label style="text-align:start; color:white; font-size:15px">حقیقی:</label>
+                    <label style="font-family:iransansbold; text-align:start; color:white; font-size:20px">@Model.CustomerNotJur نفر</label>
+                </div>
+            </div>
+        </div>
+        <div class="DCustomer" style="display:flex; flex-direction:column;align-items:center;justify-content:space-between">
+            <div style="width:100%; display:flex; padding:12px ;justify-content:space-between ">
+                <label style="text-align:start; color:white; font-size:20px">کل پیش فاکتور ها:</label>
+                <label style="font-family:iransansbold; text-align:start; color:white; font-size:25px">@Model.AllPrefactor</label>
+            </div>
+            <div style="width:100%; display:flex; padding:12px ;justify-content:space-between ">
+                <div style="width:100%; display:flex;flex-direction:column;justify-content:center;align-items:center ">
+                    <label style="text-align:start; color:white; font-size:15px">مبلغ کل:</label>
+                    <label style="font-family:iransansbold; text-align:start; color:white; font-size:20px"> @string.Format("{0:n0}",Model.AllPrefactorAmount) ریال</label>
+                </div>
+            </div>
+        </div>
+        <div class="DCustomer" style="display:flex; flex-direction:column;align-items:center;justify-content:space-between">
+            <div style="width:100%; display:flex; padding:12px ;justify-content:space-between ">
+                <label style="text-align:start; color:white; font-size:20px">پیش فاکتورهای تاییدشده:</label>
+                <label style="font-family:iransansbold; text-align:start; color:white; font-size:25px">  @Model.AllPrefactorAccepted</label>
+            </div>
+            <div style="width:100%; display:flex; padding:12px ;justify-content:space-between ">
+                <div style="width:100%; display:flex;flex-direction:column;justify-content:center;align-items:center ">
+                    <label style="text-align:start; color:white; font-size:15px">مبلغ کل:</label>
+                    <label style="font-family:iransansbold; text-align:start; color:white; font-size:20px"> @string.Format("{0:n0}",Model.AllPrefactorAcceptedAmount) ریال</label>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    @*<p class="mt-5 display-6" style="color:rgb(2 109 106); font-family:'IRANSansBold'">سامانه  مدیریت مشتری </p>*@
+</div>
+<script>
+    $('.sdate').persianDatepicker({
+        onSelect: function(dateText) {
+
+            if ($(this.model.inputElement).val().length > 0) {
+               
+                $(this.model.inputElement).removeClass("AlertReq")
+            }
+
+            //console.log("Selected date: " + dateText + "; input's current value: " + this.value);
+        },
+        initialValueType: 'persian',
+        initialValue: false,
+        observer: false,
+        format: 'YYYY/MM/DD',
+        autoClose: true,
+        "calendar": {
+            "persian": {
+                "locale": "fa",
+                "showHint": false,
+                "leapYearMode": "algorithmic"
+            },
+            "gregorian": {
+                "locale": "en",
+                "showHint": false
+            }
+        },
+        "toolbox": {
+            "enabled": true,
+            "calendarSwitch": {
+                "enabled": false
+            }
+        }
+    });
+
+
+</script>

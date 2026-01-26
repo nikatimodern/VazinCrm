@@ -1,0 +1,33 @@
+﻿@{
+    ViewData["Title"] = "Create";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<div style="display:flex; justify-content:center" >
+    <div class="col-12 col-md-7 mt-2">
+        <div ><h4>افزودن نقش</h4></div>
+        <div asp-validation-summary=" All" class="text-danger"></div>
+        <form asp-action="Create" method="post">
+            <div class="mb-2">
+                @* <label for="Name"></label> *@
+                <input name="Name" id="Name" class="form-control" />
+            </div>
+            <div class="d-flex align-items-center justify-content-end gap-1" style="color: #fff">
+                <a asp-action="Index" class="buttonCancel2" style="display: inline-block">انصراف</a>
+                <button type="submit" class="buttonGreen3">ثبت</button>
+            </div>
+        </form>
+    </div>
+
+
+</div>
+
+
+
+@section scripts{
+    <script>
+        $(document).ready(async () => {
+        });
+    </script>
+}

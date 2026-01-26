@@ -1,0 +1,61 @@
+﻿@using CRM.EndPoint.FrontEnd.Models.ViewModel.RemainedPf;
+@model IList<AllItemsDetailViewModel>
+
+<div class="p-2" style="width:100%;direction:rtl; max-height: calc(100dvh - 400px);overflow-y: auto;overflow-x: hidden;">
+
+    <table id="AllItemsFactorDetailTable" class="table table-striped table-hover nowrap table-bordered" style="width:100%">
+        <thead>
+        <tr>
+            <th>نام محصول</th>
+            <th>شماره فاکتور</th>
+            <th>تاریخ</th>
+            <th>وزن</th>
+            <th>مبلغ</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        @foreach (var item in Model) {
+            <tr>
+                <td>@item.Product</td>
+                <td>
+                   <span class="hoverLink" style="color: blue;font-family: IRANSans" onclick="ShowPreviewFactor('@item.facId')"> @item.FserialNumber</span>
+                </td>
+                <td>@item.Date</td>
+                <td>@item.FWeightCount </td>
+                <td>@string.Format("{0:n0}", item.Amount) ریال</td>
+            </tr>
+        }
+
+        </tbody>
+    </table>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $("#AllItemsFactorDetailTable").DataTable({
+            paging: false,
+            scrollCollapse: true,
+            //scrollY: "calc(100dvh - 400px)",
+            responsive: true,
+            ordering: false,
+            searching: false,
+            language: {
+                emptyTable: "هیچ رکوردی موجود نمی باشد.",
+                info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
+                infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
+                infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
+                lengthMenu: "نمایش _MENU_ ردیف",
+                loadingRecords: "در حال بارگزاری...",
+                search: "",
+                zeroRecords: "رکوردی با این مشخصات پیدا نشد",
+                aria: {
+                    sortAscending: ": فعال سازی نمایش به صورت صعودی",
+                    sortDescending: ": فعال سازی نمایش به صورت نزولی",
+                },
+            },
+            layout: null,
+        });
+    });
+
+</script>

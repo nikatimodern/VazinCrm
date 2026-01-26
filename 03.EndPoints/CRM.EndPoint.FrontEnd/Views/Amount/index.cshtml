@@ -1,0 +1,187 @@
+﻿
+@{
+    ViewData["Title"] = "index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="my-2 mb-md-3 col-8 offset-2 col-md-6 offset-md-3">
+    <form onsubmit="searchProduct(event, 'amountIndex')">
+
+        <input class="form-control" style="font-size:1rem !important;min-height:34px" type="text" name="search" placeholder="جستجو نام محصول" />
+    </form>
+</div>
+<div id="ListProductId" class="col-12" style="max-height:80dvh;overflow:auto">
+
+
+</div>
+
+
+<!-- Modal Amount -->
+<div class="mp modal fade" dir="rtl" id="EditAmountModel" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class=" modal-dialog modal-dialog-centered" style="max-width: 600px;">
+        <div class=" mp modal-content d-flex flex-row" style="font-size:clamp(14px,2vw,16px);border-radius: 10px">
+            <div style="display:flex; justify-content:center; align-items:center;  background: linear-gradient(to bottom, #025751, #00302d); color:white;border-radius: 0 9px 9px 0;width: 48px;flex-shrink: 0">
+                <label class=" fbold" id="TitleTxt" style="writing-mode:vertical-lr;transform:rotate(180deg)"></label>
+            </div>
+            <div class="modal-body p-0" id="EditAmountBodyId" style="display: flex;flex-direction: column;align-items: end;">
+
+                <form class="InfoData" id="formAmount" style="margin:10px !important;display:flex; flex-direction:column; align-items:center; justify-content:center">
+
+                    <div class="col-12 d-flex flex-column justify-content-center align-items-center mb-3" style="padding:5px !important">
+                        <label class="fbold mp col  align-self-start ">وزن</label>
+                        <div class="d-flex col  align-items-center justify-content-between gap-2 flex-wrap flex-sm-nowrap">
+                            <div class="col-12 col-sm-4" style="display:flex; flex-direction:column; justify-content:center;align-items:center">
+                                <label class="mp">از</label>
+                                <input inputmode="numeric" type="text" required class="mp digitNumber form-control" style=" font-size:clamp(15px,2vw,18px) !important" name="from" id="weightFrom" />
+                            </div>
+                            <div class="col-12  col-sm-4" style="display:flex; flex-direction:column;justify-content:center;align-items:center">
+                                <label class="mp">تا</label>
+                                <input inputmode="numeric" type="text" required class="mp digitNumber form-control" style=" font-size:clamp(15px,2vw,18px) !important" name="to" id="weightTo" />
+                            </div>
+                            <div class="col-12 col-sm" style="display:flex;flex-direction:column; justify-content:center;align-items:center">
+                                <label class="mp">واحد</label>
+                                <select class="py-0 form-select pe-2 " style="height:2rem" name="unit">
+                                    @* <option value="کیلوگرم">کیلوگرم</option>
+                                    <option value="گرم">گرم</option>
+                                    <option value="عدد">عدد</option>
+                                    <option value="متر مربع">متر مربع</option>
+                                    <option value="متر طول">متر طول</option>
+                                    <option value="شاخه">شاخه</option> *@
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group col-12 mb-3">
+                        <label class="fbold">رسمی</label>
+                        <input type="text" inputmode="numeric" required class="currencyNumber  form-control" style="padding:5px!important; font-size:clamp(15px,2vw,18px) !important" name="rasmiAmount" id="RasmiAmount" />
+                    </div>
+                    <div class="form-group col-12">
+                        <label class="fbold"> غیر رسمی</label>
+                        <input type="text" inputmode="numeric" required class="currencyNumber  form-control" style="padding:5px!important; font-size:clamp(15px,2vw,18px) !important" name="nonRasmiAmount" id="NonRasmiAmount" />
+                    </div>
+
+
+                    <div class="align-self-end" style="padding:0 5px 5px;margin-top:1.5rem; display:flex;justify-content:center;align-items:end;gap:4px">
+                        <button type="button" class="buttonCancel2 py-0 fs-6" style="padding-inline:15px !important;  height: 32px !important;" onclick="$('#EditAmountModel').modal('toggle') ">
+                            انصراف
+                        </button>
+                        <button id="registerButtonModal" type="button" class=" buttonGreen3 py-0 fs-6" style="padding-inline:15px !important; height: 32px !important;" onclick="registerAmount()">ثبت</button>
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    <script>
+        let ProductId;
+        let AmountId;
+        let isEditAmountModal;
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            //await Promise.all([getAndSetAllProduct("amountIndex"),GetUserLogin()]);
+            await getAndSetAllProduct("amountIndex");
+            Unit(3, "formAmount", 2);
+        });
+
+        const showRegisterAmountModal = (ProId, Title) => {
+            document.getElementById("formAmount").reset();
+            document.getElementById("TitleTxt").textContent = Title;
+            ProductId = ProId;
+
+            isEditAmountModal = false;
+
+            $("#EditAmountModel").modal("toggle");
+        };
+
+        const showEditAmountModal = (ProId, Id, title, rasmiAmount, nonRasmiAmount, from, to, unit) => {
+
+            document.getElementById("formAmount").reset();
+            document.getElementById("TitleTxt").textContent = title;
+            ProductId = ProId;
+
+            isEditAmountModal = true;
+
+            AmountId = Id;
+            const product = {
+                Id,
+                title,
+                rasmiAmount: Number(rasmiAmount).toLocaleString(),
+                nonRasmiAmount: Number(nonRasmiAmount).toLocaleString(),
+                from,
+                to,
+                unit,
+            };
+
+            mySer.convertJsonToForm(product, "formAmount");
+
+            $("#EditAmountModel").modal("toggle");
+        };
+
+        const showDeleteAmountModal = (AmountId) => {
+            Swal.fire({
+                title: "حذف!",
+                text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
+                icon: "warning",
+                showCancelButton: true,
+                cancelButtonColor: "#adadad",
+                confirmButtonColor: "#e64942",
+                cancelButtonText: "انصراف",
+                confirmButtonText: "بله، حذف شود",
+            }).then((willDelete) => {
+                if (willDelete.isConfirmed) {
+                    document.getElementById("FLshowLoading").style.display = "";
+                    fetch(`/Amount/DelAmount/${AmountId}`)
+                        .then(async () => {
+                            await getAndSetAllProduct("amountIndex");
+                            document.getElementById("FLshowLoading").style.display = "none";
+                            toastifySuccess("با موفقیت حذف شد");
+                        });
+                }
+            });
+        };
+
+        const registerAmount = async () => {
+            if (await mySer.CheckValidForm("#formAmount")) {
+
+                const model = mySer.convertFormToJSON("formAmount");
+                model["ProductId"] = ProductId;
+                model.unitTxt = document.querySelector("#formAmount [name='unit']")?.selectedOptions[0].innerText;
+                if (isEditAmountModal)
+                    model["Id"] = AmountId;
+
+                document.getElementById("FLshowLoading").style.display = "";
+                fetch("/Amount/AddAmount", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(model),
+                })
+                    .then(async () => {
+
+                        await getAndSetAllProduct("amountIndex");
+
+                        document.getElementById("FLshowLoading").style.display = "none";
+                        $("#EditAmountModel").modal("toggle");
+                        toastifySuccess("با موفقیت ثبت شد");
+
+                    }).catch(() => {
+                    setTimeout(async () => {
+                        await registerAmount();
+                    }, 2000);
+
+                });
+
+            }
+
+        };
+
+
+    </script>
+}

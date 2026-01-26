@@ -1,0 +1,21 @@
+﻿using CRM.Framework.Domain;
+using System;
+using CRM.Core.Domain.Reports.Enum;
+
+namespace CRM.Core.Domain.Reports.Entities {
+    public class Report : BaseEntity {
+        public ReportTypeEnum ReportType { get; set; }
+        public string ReportTypeTxt { get; set; }
+        public string RepTel { get; set; }
+        public Guid? CustomerId { get; set; }
+        public int? CustomerCode { get; set; }
+        public string CustomerTxt { get; set; }
+        public string ReportText { get; set; }
+        public DateTime RegDate { get; set; }
+        public string RegDateTxt { get; set; }
+        public string RegTimeTxt { get; set; }
+
+        public Guid? DealId { get; set; }
+        public int? DealSerialNumber { get; set; }
+    }
+}

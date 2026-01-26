@@ -1,0 +1,89 @@
+@using CRM.Core.Domain.Accountancies.Entities;
+@using CRM.Core.Domain.Accountancies.Enum
+
+@model IList<Accountancy>
+
+@if (Model.Any()) {
+    <table id="allWalletTable" class="paymentTable table table-striped table-bordered table-hover no-footer nowrap">
+        <thead>
+        <tr>
+            <th>شماره ثبت</th>
+            <th>تاریخ ثبت</th>
+            <th>نوع</th>
+            <th>مبلغ</th>
+            <th>تاریخ واریز</th>
+            <th>ثبت توسط</th>
+            <th>عملیات</th>
+            <th>وضعیت</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model.OrderByDescending(f => f.CreateDate)) {
+            <tr class="@((item.PayType == PayTypeEnum.اعتباری || item.PayType == PayTypeEnum.چکی) && item.Vosoled ? "payment-vosoled" : "")">
+                <td>@item.SerialNum</td>
+                <td>@string.Join(" | ", item.CreateDateTxt?.Substring(0, 16).Split(' ').Reverse())</td>
+                <td>
+                    <span>@item.PayTypeTxt</span>
+                    @if (item.AccType == AcEnum.برگشتی) {
+                        <span style="color: darkred">(@item.AccTypeTxt)</span>
+                    }
+                </td>
+                <td class="fbold">
+                    @($"{(item.AccType == AcEnum.برگشتی ? item.BackWard : item.credit):n0}")
+                    <span style="font-size: 11px"> ریال</span>
+                </td>
+                <td>@item.VosolDate</td>
+                <td>@item.UserCreator</td>
+                <td>
+                    <span class="d-inline-flex flex-column align-items-center justify-content-center gap-2">
+                        <button class="buttonGray" onclick="showPayment('@item.Id')">مشاهده</button>
+                        <button class="buttonBlue2" onclick="addInvoiceWalletToPf('@item.Id')">افزودن</button>
+                    </span>
+                </td>
+                <td>
+                    <span class="paymentTable-statusCol d-inline-flex align-items-center justify-content-center gap-2">
+                        @if (!string.IsNullOrEmpty(item.CommentText)) {
+                            <span data-bs-toggle="popover" data-bs-title="توضیحات" data-bs-content="@Html.Raw(item.CommentText)">
+                                <svg style="width: 20px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg>
+                            </span>
+                        }
+                        @switch (item.Status) {
+                            case AccStatusEnum.ثبت_اولیه:
+                                <span class="fbold" style="color:#777">در دست ارسال</span>
+                                break;
+
+                            case AccStatusEnum.در_دست_تایید:
+                                <span class="fbold" style="color: #CC9900">در دست تایید</span>
+                                break;
+                            case AccStatusEnum.تایید_شده:
+                                if (!string.IsNullOrEmpty(item.AcceptedUser)) {
+                                    var text = "تایید شده توسط " + item.AcceptedUser;
+                                    <span data-bs-toggle="popover" data-bs-content="@Html.Raw(text)">
+                                        <svg style="width: 14px;color: #666" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM9 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.75 8a.75.75 0 0 0 0 1.5h.75v1.75a.75.75 0 0 0 1.5 0v-2.5A.75.75 0 0 0 8.25 8h-1.5Z" clip-rule="evenodd" /></svg>
+                                    </span>
+                                }
+
+                                if ((item.PayType == PayTypeEnum.اعتباری || item.PayType == PayTypeEnum.چکی) && item.Vosoled) {
+                                    <span class="fbold hoverLink" style="color:#0074bb" onclick="showPayment('@item.Id', true)">وصول شده</span>
+                                } else {
+                                    <span class="fbold" style="color:darkgreen">تایید شده</span>
+                                }
+
+                                break;
+                            case AccStatusEnum.رد_شده:
+                                <span class="fbold" style="color:darkred">رد شده</span>
+                                break;
+                        }
+                    </span>
+
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+} else {
+    <div style="margin:0 auto 16px; width:100%; height:2px; background-color:rgba(0, 0, 0, 0.4);"></div>
+    <div style="display:flex;justify-content:center;width:100%;text-align:center;align-items:center">
+        <div class="mb-0 py-2" style="font-size:clamp(18px, 2vw, 22px)">هیچ صورت‌حسابی یافت نشد.</div>
+    </div>
+}

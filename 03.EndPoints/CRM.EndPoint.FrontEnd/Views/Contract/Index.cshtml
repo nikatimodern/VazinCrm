@@ -1,0 +1,384 @@
+﻿@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<style>
+
+</style>
+
+
+<div class=" " style="display:flex;justify-content:center; align-items:center; flex-direction:column ">
+    <div style="width:50% ;margin-bottom:10px;">
+        <button class="buttonGreen " onclick="showModalAdd()">قرارداد جدید</button>
+
+    </div>
+
+    <div style=" width:50% ;height:200px;">
+        <div class="   " id="ContractsId">
+        </div>
+    </div>
+
+</div>
+
+
+<!-- Modal AddContractModal -->
+<div class="modal fade bd-example-modal-lg" dir="ltr" id="AddContractModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class=" modal-dialog modal-dialog-centered modal-lg " style="width:100%">
+        <div class="mycontainer modal-content col-12" style="padding:10px;direction:rtl">
+            <div style="width:100%; padding:5px; margin-bottom:10px; display:flex; justify-content:center;     background: linear-gradient(to bottom, #025751, #00302d);color:white;border-radius:5px">
+                <label class="fbold">ثبت قرارداد جدید</label>
+            </div>
+            <div class=" modal-body" style=" display:flex;flex-direction:column; justify-content:center;align-items:center; width:100% !important;">
+                <form class=" InfoData row col-md-12" id="FormContractId" style="justify-content:center; padding:10px; ">
+                    <div class="form-group col-md-4">
+                        <label>عنوان قرارداد</label>
+                        <input class=" form-control" type="text" name="cTitle" required />
+                    </div>
+
+                    <div class="form-group col-md-2">
+                        <label>پیمانکار</label>
+                        <input class=" form-control" type="text" name="contractor" required />
+                    </div>
+
+                    <div class="form-group col-md-2">
+                        <label>کارفرما</label>
+                        <input class=" form-control" type="text" name="employer" required />
+                    </div>
+                    @*            <div class="col-md-3">
+
+                    <label>مشتری</label>
+                    <select class="form-control " id="customer" name="customer" placeholder="نام مشتری" required tabindex="1">
+                    </select>
+
+                    </div>*@
+
+                    <div class="form-group col-md-2">
+                        <label>از تاریخ</label>
+                        <input class="sdate form-control " style="direction:ltr;" type="text" placeholder="yyyy/mm/dd" data-slots="ymd" data-name="dtp2-text" name="fromDateSh" required />
+                        @* <input  type="text"  class="sdate mp form-control" id="VisitLocationId" name="FirstVisitDate"> *@
+                    </div>
+
+ 
+
+
+                    <div class="form-group col-md-2">
+                        <label>تا تاریخ</label>
+                        <input class="sdate form-control" style="direction:ltr;" type="text" placeholder="yyyy/mm/dd" data-slots="ymd" data-name="dtp2-text" name="toDateSh" required />
+                    </div>
+                    <div class="form-group col-md-12">
+                        <label>توضیحات</label>
+                        <textarea class="form-control" name="description" style=" text-align:start; height:100px !important" ></textarea>
+                    </div>
+                    <div class="form-group col-12" style="margin-top:10px;">
+                        <div class="fmp ">
+                            <div style="display:flex;justify-content:center">
+                                <div class="mp col-12" >
+                                    <div class="mp col-md-12 container-uploader">
+                                        <input type="file" class="uploadBtn" data-varList="Attachments" data-showList="AddimageDisplayContract" id="AddContractAtID" multiple accept="*" />
+                                        <label for="AddContractAtID">
+                                            <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                            <span>فایل قرارداد</span>
+                                        </label>
+                                        <div class="image-display" id="AddimageDisplayContract"></div>
+                                    </div>
+                                </div>
+                                <button class="AddFile_Btn buttonGreen" id="AddFile_BtnId" style="display:none"><i class="fas fa-plus AttachBt "></i></button>
+                            </div>
+
+                        </div>
+                    </div>
+
+
+
+                </form>
+
+                <div style="margin-top:10px; width:100%; display:flex;justify-content:center">
+                    <button class="button" style="border-radius:5px" onclick="$('#AddContractModal').modal('toggle') ">انصراف</button>
+                    <button class="buttonGreen" style="border-radius:5px" onclick="SubmitContract()">ثبت</button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal upContractModal -->
+<div class="modal fade bd-example-modal-lg" dir="ltr" id="upContractModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class=" modal-dialog modal-dialog-centered modal-lg " style="width:100%">
+        <div class="mycontainer modal-content col-12" style="padding:10px;direction:rtl">
+            <div style="width:100%; padding:5px; margin-bottom:10px; display:flex; justify-content:center;background: linear-gradient(to bottom, #025751, #00302d);color:white;border-radius:5px">
+                <label class="fbold">ویرایش قرارداد</label>
+            </div>
+            <div class=" modal-body" style=" display:flex;flex-direction:column; justify-content:center;align-items:center; width:100% !important;">
+                <form class=" InfoData row col-md-12" id="upFormContractId" style="justify-content:center; padding:10px; ">
+                    <div class="form-group col-md-4">
+                        <label>عنوان قرارداد</label>
+                        <input class=" form-control" type="text" name="cTitle" required />
+                    </div>
+
+                    <div class="form-group col-md-2">
+                        <label>پیمانکار</label>
+                        <input class=" form-control" type="text" name="contractor" required />
+                    </div>
+
+                    <div class="form-group col-md-2">
+                        <label>کارفرما</label>
+                        <input class=" form-control" type="text" name="employer" required />
+                    </div>
+                    @*<div class="col-md-3">
+
+                        <label>مشتری</label>
+                        <select class="form-control " id="customer" name="customer" placeholder="نام مشتری" required tabindex="1">
+                        </select>
+
+                    </div>*@
+
+                    <div class="form-group col-md-2">
+                        <label>از تاریخ</label>
+                        <input class="sdate form-control " style="direction:ltr;" type="text" placeholder="yyyy/mm/dd" data-slots="ymd" data-name="dtp2-text" name="fromDateSh" required />
+                        @* <input  type="text"  class="sdate mp form-control" id="VisitLocationId" name="FirstVisitDate"> *@
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label>تا تاریخ</label>
+                        <input class="sdate form-control" style="direction:ltr;" type="text" placeholder="yyyy/mm/dd" data-slots="ymd" data-name="dtp2-text" name="toDateSh" required />
+                    </div>
+
+
+
+
+                    <div class="form-group col-md-12">
+                        <label>توضیحات</label>
+                        <textarea class="form-control" name="description" style=" text-align:start; height:100px !important"></textarea>
+                    </div>
+                    <div class="form-group col-12" style="margin-top:10px;">
+                        <div class="fmp ">
+                            <div style="display:flex;justify-content:center">
+                                <div class="mp col-12" >
+                                    <div class="mp col-md-12 container-uploader">
+                                        <input type="file" class="uploadBtn" data-varList="Attachments" data-showList="imageDisplayContract" id="ContractAtID" multiple accept="*" />
+                                        <label for="ContractAtID">
+                                            <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                            <span>فایل قرارداد</span>
+                                        </label>
+                                        <div class="image-display" id="imageDisplayContract"></div>
+                                    </div>
+                                </div>
+                                <button class="AddFile_Btn buttonGreen" id="AddFile_BtnId" style="display:none"><i class="fas fa-plus AttachBt "></i></button>
+                            </div>
+
+                        </div>
+                    </div>
+
+
+
+                </form>
+
+                <div style="margin-top:10px; width:100%; display:flex;justify-content:center">
+                    <button class="button" style="border-radius:5px" onclick="$('#upContractModal').modal('toggle') ">انصراف</button>
+                    <button class="buttonGreen" style="border-radius:5px" onclick="UpSubmitContract()">ویرایش</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@section scripts{
+    <script>
+        var upCont = null;
+        var Attachments = [];
+       
+        $(document).ready(() => {
+            GetAllContract();
+            //GetCustomersOpId();
+       
+
+        })
+
+        class Contract {
+            constructor() {
+
+            }
+
+            async getContract(id) {
+                return new Promise((resolve, reject) => {
+
+                    document.getElementById("FLshowLoading").style.display = "";
+
+                    $.get(baseUrl + `Contract/GetContract/${id}`, (res) => {
+                        document.getElementById("FLshowLoading").style.display = "none";
+                        Attachments = res.attachments;
+                        resolve(res);
+                    })
+
+
+                })
+            }
+            ShowContract(con) {
+                mySer.convertJsonToForm(con, "upFormContractId");
+
+                FileUpReload("ContractAtID");
+
+                $('#upContractModal').modal('toggle');
+
+            }
+
+
+
+            async del(cid) {
+                return new Promise(async (resolve, reject) => {
+
+                    document.getElementById("FLshowLoading").style.display = "";
+
+                    $.get(baseUrl + `contract/delContract/${cid}`, (res) => {
+
+                        GetAllContract();
+                        resolve()
+
+                    })
+                        .fail(async () => {
+                           
+                            await this.del(cid)
+                        })
+
+
+
+                })
+            }
+
+        }
+
+
+        const delContract = (id) => {
+
+            Swal.fire({
+                title: "حذف!",
+                text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
+                icon: "warning",
+                showCancelButton: true,
+                cancelButtonColor: "#adadad",
+                confirmButtonColor: "#e64942",
+                cancelButtonText: "انصراف",
+                confirmButtonText: "بله، حذف شود",
+            })
+                .then(async (willDelete) => {
+
+                    if (willDelete.isConfirmed) {
+                        var co = new Contract();
+                        upCont = await co.del(id)
+                    }
+
+                });
+
+
+
+
+        }
+
+        const editContract = async (id) => {
+
+
+            var co = new Contract();
+            upCont = await co.getContract(id)
+            await co.ShowContract(upCont)
+
+        }
+        const showModalAdd = () => {
+            mySer.emptyForm("FormContractId");
+            $("#AddContractModal").modal('show')
+
+        }
+        const SubmitContract = async () => {
+
+            // var ssss = await ser.CheckValidForm("#FormContractId");
+            
+            // console.log("testSSS:"+ssss);
+
+            if (await mySer.CheckValidForm("#FormContractId")) {
+
+                document.getElementById("FLshowLoading").style.display = "";
+                var data = mySer.convertFormToJSON("#FormContractId");
+                data.Attachments = Attachments;
+
+                $.post(baseUrl + "Contract/AddContract", data, (res) => {
+                    document.getElementById("FLshowLoading").style.display = "none";
+                    if (res.status) {
+                        toastifySuccess("ثبت شد")
+                        mySer.emptyForm("FormContractId");
+                        Attachments = [];
+                        $('#AddContractModal').modal('toggle')
+                        document.getElementById("imageDisplayContract").innerHTML = "";
+                        GetAllContract();
+                    }
+                    else {
+                        toastifyError("مقادیر اجباری را وارد کنید")
+                    }
+                })
+                    .fail(() => {
+                        SubmitContract();
+                    })
+            }
+        }
+        const GetCustomersOpId = () => {
+            $.get(baseUrl + "order/GetCustomersOpId", (res) => {
+                $("#customer").select2({
+                    data: res,
+                    dir: "rtl",
+                    placeholder: "انتخاب",
+                    selectionCssClass: "form-control"
+                });
+                $("#customer").val(null).trigger('change');
+            })
+        }
+        const GetAllContract = () => {
+
+            document.getElementById("FLshowLoading").style.display = "";
+
+
+            document.getElementById("ContractsId").innerHTML = "";
+
+            $.get(baseUrl + "contract/GetAllContract", (res) => {
+
+
+                $("#ContractsId").append(res);
+                document.getElementById("FLshowLoading").style.display = "none";
+
+            })
+
+
+
+        }
+
+        const UpSubmitContract =async () => {
+
+            if (await mySer.CheckValidForm("#upFormContractId")) {
+                document.getElementById("FLshowLoading").style.display = "";
+                var data = mySer.convertFormToJSON("#upFormContractId");
+                data.id = upCont.id;
+                data.Attachments = Attachments;
+
+                $.post(baseUrl + "Contract/AddContract", data, (res) => {
+                    document.getElementById("FLshowLoading").style.display = "none";
+                    if (res.status) {
+                        toastifySuccess("ویرایش انجام شد")
+                        mySer.emptyForm("upFormContractId");
+                        $('#upContractModal').modal('toggle')
+                        GetAllContract();
+                    }
+                    else {
+                        toastifyError("مقادیر اجباری را وارد کنید")
+                    }
+                })
+                    .fail(() => {
+                        UpSubmitContract();
+                    })
+
+            }
+
+
+        }
+
+
+    </script>
+}

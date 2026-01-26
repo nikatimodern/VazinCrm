@@ -1,0 +1,219 @@
+﻿@model AdminViewModel
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="col-md-12 d-flex flex-column align-items-center justify-content-center">
+    <div class="col-12 col-md-12">
+        <div class="mb-2 d-flex justify-content-between align-items-center">
+            <p class="fmp" style="font-size:16px; font-family:'IRANSansBold'">لیست کاربران ثبت شده</p>
+            <div class="d-flex align-items-center gap-2">
+                <button class="buttonGreen0 d-flex align-items-center gap-1" onclick="goTo('/Admin/create')">
+                    <i class="fa fa-plus"></i> کاربر جدید
+                </button>
+                <button class="buttonGray2 d-flex align-items-center gap-1" onclick="goTo('/RoleManager/index')">
+                    <i class="fa fa-user"></i> نقش جدید
+                </button>
+            </div>
+        </div>
+
+        <div style="width: 99%">
+            <table id="usersTable" class="table-hover table table-bordered table-striped display responsive nowrap pt-2 w-100">
+                <thead>
+                <tr>
+                    <th>نام</th>
+                    <th>نام خانوادگی</th>
+                    <th>نام کاربری</th>
+                    <th>نقش ها</th>
+                    <th>تلفن همراه</th>
+                    <th>پست الکترونیکی</th>
+                    <th>شماره داخلی</th>
+                    <th>عملیات</th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (!Model.Users.Any()) {
+                    <tr>
+                        <td colspan="6" class="text-center">کاریری بافت نشد</td>
+                    </tr>
+                } else {
+                    foreach (var user in Model.Users) {
+                        var isLock = user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow;
+                        <tr class="@(isLock ? "tableRow-bgRed" : user.IsEmployee ? "tableRow-bgGreen" : "")">
+                            <td>@user.FirstName</td>
+                            <td>@user.LastName</td>
+                            <td>@user.UserName</td>
+                            <td>
+                                <span class="d-flex align-items-center flex-wrap gap-1">
+                                    @if (user.RolsUsers.Any()) {
+                                        foreach (var item in user.RolsUsers) {
+                                            <span class="buttonGray d-flex align-items-center gap-1">
+                                                <span class="d-flex align-items-center justify-content-center border-0 cursor-pointer" onclick="DelUserRole('@user.Id','@item')">
+                                                    <svg style="width: 16px;height: 16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                                                </span>
+                                                @item
+                                            </span>
+                                        }
+                                    }
+                                </span>
+                            </td>
+                            <td>@user.PhoneNumber</td>
+                            <td>@user.Email</td>
+                            <td>@user.InternalTels</td>
+                            <td style="color:#02615a">
+
+                                <a style="cursor: pointer;color: #04857c" asp-action="Edit" asp-route-id="@user.Id">
+                                    <i class="fa fa-pencil" style="font-size: 16px;"></i>
+                                </a>
+                                <span style="color: #631617;">
+                                    <span style="color: #9d0000;cursor: pointer" onclick="deleteUser('@user.Id')">
+                                        <i class="fa fa-trash" style="font-size: 16px;"></i>
+                                    </span>
+                                </span>
+                                <span style="cursor: pointer;color: #04857c" onclick="$('#ModalRols').modal('show'); $('#userName').val('@user.UserName')">
+                                    <i class="fa fa-user" style="font-size: 16px"></i>
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal Roles -->
+<div class="modal fade" id="ModalRols" tabindex="-1" role="dialog" data-bs-focus="false" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="direction:rtl;background-color:lightgray">
+                <h1 class="modal-title fs-5">انتخاب نقش</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-sm table-bordered" style="text-align:center">
+                    <tr style="font-family:'IRANSansBold'">
+
+                        <th>نام</th>
+                        <th>عملیات</th>
+                    </tr>
+                    @if (!Model.Users.Any()) {
+                        <tr>
+                            <td colspan="3" class="text-center">کاربری یافت نشد</td>
+                        </tr>
+                    } else {
+                        foreach (var item in Model.Rols) {
+                            <tr style="font-family: 'IRANSans'">
+                                <td>@item.Name</td>
+                                <td>
+                                    <button class="btn btn-outline-primary" onclick="$('#roleName').val('@item.Name')">
+                                        انتخاب
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </table>
+            </div>
+            <div class="modal-footer">
+                <form asp-action="AddUserToRole" method="post" class="w-100">
+                    <div class="row mp" dir="rtl">
+                        <div class="col-6 form-group ps-0">
+                            <label>نام کاربری</label>
+                            <input type="text" name="userName" id="userName" class="form-control" />
+                        </div>
+                        <div class="col-6 form-group pe-0">
+                            <label>نام نقش</label>
+                            <input type="text" name="roleName" Id="roleName" class="form-control" />
+                        </div>
+                    </div>
+                    <div style="text-align:end; margin-top:10px;">
+                        <button type="button" class="buttonCancel2" data-bs-dismiss="modal">بستن</button>
+                        <button type="submit" class="buttonGreen3">ثبت</button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    <script defer>
+        $("#usersTable").DataTable({
+            pageLength: 10,
+            lengthMenu: [5, 10, 20, 50, { label: "همه", value: -1 }],
+            scrollCollapse: true,
+            scrollY: "70dvh",
+            responsive: true,
+            order: [[1, "asc"]],
+            language: {
+                emptyTable: "هیچ رکوردی موجود نمی باشد.",
+                info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
+                infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
+                infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
+                lengthMenu: "نمایش _MENU_ ردیف",
+                loadingRecords: "در حال بارگزاری...",
+                search: "",
+                zeroRecords: "رکوردی با این مشخصات پیدا نشد",
+                aria: {
+                    sortAscending: ": فعال سازی نمایش به صورت صعودی",
+                    sortDescending: ": فعال سازی نمایش به صورت نزولی",
+                },
+            },
+            columnDefs: [
+                {
+                    targets: [4, 5, 3],
+                    orderable: false,
+                },
+            ],
+            layout: {
+                bottomEnd: "info",
+                bottomStart: {
+                    paging: {
+                        type: "simple_numbers",
+                    },
+                },
+                topEnd: {
+                    pageLength: true,
+                },
+                topStart: {
+                    search: {
+                        placeholder: "جستجو",
+                    },
+                },
+            },
+        });
+        function DelUserRole(id, role) {
+            const txt = `<form action="DelUserRol" method="post">
+                            <input type="hidden" name="id" value="${id}"/>
+                            <input type="hidden" name="role" value="${role}"/>
+                          </form >`;
+            $(txt).appendTo("body").submit();
+        }
+        function deleteUser(id) {
+            Swal.fire({
+                title: "حذف دائمی!",
+                text: "آیا از حذف این کاربر مطمئن هستید؟ این عمل غیرقابل بازگشت است و کاربر برای همیشه پاک می‌شود.",
+                icon: "warning",
+                showCancelButton: true,
+                cancelButtonColor: "#adadad",
+                confirmButtonColor: "#e64942",
+                cancelButtonText: "انصراف",
+                confirmButtonText: "بله، حذف شود",
+                theme: "dark"
+            }).then((willDelete) => {
+                if (willDelete.isConfirmed) {
+                    window.location.href = `/Admin/Delete?id=${id}`;
+                }
+            });
+        }
+
+    </script>
+
+
+}
+

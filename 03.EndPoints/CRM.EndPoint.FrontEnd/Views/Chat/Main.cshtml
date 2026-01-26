@@ -1,0 +1,243 @@
+@{
+    Layout = "_ChatLayout";
+}
+
+
+<div style="padding-bottom: 10px;height: 100%">
+    <div class="email-container">
+        <div id="chatList" class="email-list d-md-block" style="min-height: calc(100dvh - 90px);">
+            <div class="p-2 ps-1 ps-xl-2 border-bottom d-flex align-items-center justify-content-center">
+
+                <button class="buttonGreen1" onclick="showUsersModal()">پیام جدید</button>
+            </div>
+            <div id="chatListContainer" style="max-height: calc(100dvh - 160px);"></div>
+        </div>
+
+        <div id="chatContainer" class="d-none d-md-block email-content" style="height: calc(100dvh - 90px);background-color: #f9f9f9"></div>
+    </div>
+</div>
+
+
+
+
+
+@section Scripts {
+    <script>
+        var chatAttachment = [];
+        const chatContainerElm = document.getElementById("chatContainer");
+        const chatListElm = document.getElementById("chatList");
+        const otherInputElm = document.getElementById("otherInput");
+        const addChatModal = document.getElementById("addChatModal");
+
+        document.addEventListener("UserLoginReady", () => {
+            const isOthers = currentUser.rollNames.length === 0 || currentUser.rollNames.some(item => item.name === "Customer");
+            const vazinLogoLink = document.querySelector("#customerLogo a");
+            if (isOthers) {
+                vazinLogoLink.href = "https://www.vazinplast.com/";
+                vazinLogoLink.target = "_blank";
+
+                addChatModal.querySelector("#addChatOthersWrapper")?.remove();
+                addChatModal.querySelector("#othersContainer")?.remove();
+            } else {
+                vazinLogoLink.href = "/Dashboard/Index";
+                vazinLogoLink.target = "_self";
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            FLshowLoading();
+            await getSalesExpertUsers();
+            await showListChats();
+
+
+            addChatModal.querySelectorAll("input[type='radio'][name='addChat']").forEach(elm => {
+                elm.addEventListener("change", (e) => {
+                    if (e.target.value === "1") {
+                        document.getElementById("salesExpertsContainer").classList.remove("d-none");
+                        document.getElementById("othersContainer").classList.add("d-none");
+                    } else {
+                        document.getElementById("salesExpertsContainer").classList.add("d-none");
+                        document.getElementById("othersContainer").classList.remove("d-none");
+                    }
+                });
+            });
+
+            chatContainerElm.addEventListener("keydown", (e) => {
+                if (!e.target.closest("textarea#chatInput")) return;
+                if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendChat();
+                }
+            });
+
+            otherInputElm?.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    submitOtherInput();
+                }
+            });
+
+
+            FLshowLoading(false);
+        });
+
+        function backChatList() {
+            chatListElm.classList.remove("d-none");
+            chatContainerElm.classList.add("d-none");
+        }
+
+        function showUsersModal() {
+            ModalToggle(addChatModal);
+        }
+
+        async function getSalesExpertUsers() {
+            const res = await axios("/Chat/GetSalesExperts");
+            const data = res.data;
+
+            const salesExpertsList = addChatModal.querySelector("#salesExpertsContainer");
+            salesExpertsList.innerHTML = "";
+            const container = initDomUsers(data, 2);
+            salesExpertsList.appendChild(container);
+        }
+
+        function initDomUsers(users, type) {
+            const container = document.createElement("div");
+            users.forEach((item) => {
+                const wrapper = document.createElement("div");
+                wrapper.className = "user__item";
+                wrapper.innerHTML = `
+                    <div class="d-flex align-items-center gap-2"">
+                        <img class="imgUser" style="width:36px;outline-color: #ccc" src="${item.personImageUrl || "/Img/User.png"}" alt="">
+                        <span style="font-size:13px">${item.fullName}</span>
+                    </div>
+                    ${type === 1 && item.countNotRead ? `<span class="badgeCircle text-white">${item.countNotRead ?? ""}</span>` : ""}
+				`;
+
+                if (type === 1 && item.mainChatId === currentMainChatId) {
+                    chatListElm.querySelectorAll(".user__item").forEach(el => el.classList.remove("active"));
+                    wrapper.classList.add("active");
+                }
+
+                wrapper.addEventListener("click", () => {
+                    if (type === 1) {
+                        showChat(item.mainChatId);
+                        showListChats();
+                    } else if (type === 2) {
+                        createMainChat(item.id, item.fullName);
+                        ModalToggle(addChatModal, "hide");
+                    }
+
+                    if (window.innerWidth < 768) {
+                        chatListElm.classList.add("d-none");
+                        chatContainerElm.classList.remove("d-none");
+                    }
+                });
+
+                container.appendChild(wrapper);
+            });
+
+            return container;
+        }
+
+
+        async function showChat(mainChatId, showLoading = true) {
+            currentMainChatId = mainChatId;
+
+            showLoading && FLshowLoading();
+            const res = await axios(`/Chat/ShowChat?mainChatId=${mainChatId}`);
+            if (res.status === 200) {
+                chatContainerElm.innerHTML = res.data;
+
+                const chatWrapper = document.getElementById("chatWrapper");
+                chatWrapper.scrollTop = chatWrapper.scrollHeight;
+                if (window.innerWidth < 768) {
+                    chatListElm.classList.add("d-none");
+                    chatContainerElm.classList.remove("d-none");
+                }
+
+            } else {
+                toastifyError("خطای سرور!");
+            }
+            showLoading && FLshowLoading(false);
+        }
+
+
+        async function createMainChat(userId, userTxt = "") {
+            FLshowLoading();
+            const res = await axios(`/Chat/CreateMainChat?toUserId=${userId}&toUserTxt=${userTxt}`);
+            if (res.status === 200) {
+                await showChat(res.data);
+                await showListChats();
+            } else {
+                toastifyError("خطای سرور!");
+            }
+            FLshowLoading(false);
+        }
+
+
+        async function sendChat() {
+            const chatInput = chatContainerElm.querySelector("#chatInput");
+            if (!chatInput.value.trim() && !chatAttachment.length) return;
+
+            const model = {
+                chat: {
+                    text: chatInput.value,
+                },
+                attachments: chatAttachment,
+            };
+
+            const res = await axios.post(`/Chat/SendChat`, model);
+            if (res.status === 200) {
+                chatInput.value = "";
+                await showChat(currentMainChatId, false);
+                showListChats();
+
+                chatContainerElm.querySelector("#chatInput").focus();
+            } else {
+                toastifyError("خطای سرور!");
+            }
+        }
+
+        async function submitOtherInput() {
+            if (otherInputElm.value.length < 9) {
+                toastifyError("شماره موبایل معتبر نیست!");
+                return;
+            }
+            const mobileNumber = "09" + otherInputElm.value;
+            await createMainChat(mobileNumber);
+            cancelAddEmailModal();
+        }
+
+        function cancelAddEmailModal() {
+            ModalToggle(addChatModal, "hide");
+            otherInputElm.value = "";
+        }
+
+
+        async function showListChats() {
+            const data = (await axios(`/Chat/ShowListChats`)).data;
+
+            const chatListContainer = chatListElm.querySelector("#chatListContainer");
+            const container = initDomUsers(data, 1);
+
+            chatListContainer.innerHTML = "";
+            chatListContainer.appendChild(container);
+        }
+
+
+        function toggleAttachChatModal() {
+            const attachChatModalElm = document.getElementById("AttachChatModal");
+
+            ModalToggle(attachChatModalElm);
+            chatAttachment = [];
+            attachChatModalElm.querySelector("#imgDisplayChatAttach").innerHTML = "";
+            attachChatModalElm.querySelector("#chatAttachInp").value = "";
+        }
+
+
+        function submitChatAttach() {
+            sendChat();
+            toggleAttachChatModal();
+        }
+
+    </script>
+}
