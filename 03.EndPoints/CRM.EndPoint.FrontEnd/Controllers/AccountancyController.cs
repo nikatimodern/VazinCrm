@@ -73,6 +73,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [Authorize(Policy = "NotCustomerOnly")]
         public IActionResult Index()
         {
+
+            var mohammad = "ksjdfh aklsdfklasdkas";
+
             //try {
 
             //var pf = db.PreFactors.Where(f => f.Accepted).ToListAsync().Result;
