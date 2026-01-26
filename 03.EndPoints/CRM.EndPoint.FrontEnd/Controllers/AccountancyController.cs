@@ -83,9 +83,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public IActionResult Index()
         {
 
-
-            var c = 3413413;
-
+            var d = 9;
 
             //try {
 
