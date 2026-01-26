@@ -8,59 +8,60 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <Compile Remove="Services\UserMangaer\**"/>
-    <Content Remove="Services\UserMangaer\**"/>
-    <EmbeddedResource Remove="Services\UserMangaer\**"/>
-    <None Remove="Services\UserMangaer\**"/>
-    <Content Remove="wwwroot\Uploaded\UserImg\e64ffa3a-76de-4a0e-94fd-99a17c9cff7a.jpg"/>
-    <Content Remove="wwwroot\Uploaded\UserImg\763fbe0d-ab87-4bf8-bbd8-b5262818d7cc.jpg"/>
-    <Content Remove="wwwroot\Uploaded\UserImg\0787ee6d-c507-44fd-a240-3cdefd951c59.jpg"/>
-    <Content Remove="wwwroot\Uploaded\UserImg\968b46cc-28ad-4a02-8e55-8c17c74f5c99.jpg"/>
-    <Content Remove="wwwroot\Uploaded\UserImg\42bdf392-5ae2-45ef-99d2-cb73d66109fb.jpg"/>
-    <Content Remove="wwwroot\Uploaded\UserImg\cf7e8cb7-1342-4fe6-af0b-e3aa24ae3bcd.jpg"/>
-    <Content Remove="wwwroot\Uploaded\UserImg\a4314721-cd16-4b03-b712-2d294b727ca2.jpg"/>
-    <Content Remove="wwwroot\Uploaded\UserImg\85ff9c9b-118d-44fc-9bf6-94ba8ba659ac.jpg"/>
-    <Content Remove="wwwroot\Uploaded\UserImg\76b0cfc2-7eb3-46f1-9f36-50733a9d1a43.jpg"/>
-    <Content Remove="wwwroot\Uploaded\UserImg\2d77e393-2dbb-4864-9667-57755dc4c70c.jpg"/>
-    <Content Remove="wwwroot\Uploaded\UserImg\4fe8722d-1ec5-4b5c-b554-ae9b3dc1ac8f.jpg"/>
+    <Compile Remove="Services\UserMangaer\**" />
+    <Content Remove="Services\UserMangaer\**" />
+    <EmbeddedResource Remove="Services\UserMangaer\**" />
+    <None Remove="Services\UserMangaer\**" />
+    <Content Remove="wwwroot\Uploaded\UserImg\e64ffa3a-76de-4a0e-94fd-99a17c9cff7a.jpg" />
+    <Content Remove="wwwroot\Uploaded\UserImg\763fbe0d-ab87-4bf8-bbd8-b5262818d7cc.jpg" />
+    <Content Remove="wwwroot\Uploaded\UserImg\0787ee6d-c507-44fd-a240-3cdefd951c59.jpg" />
+    <Content Remove="wwwroot\Uploaded\UserImg\968b46cc-28ad-4a02-8e55-8c17c74f5c99.jpg" />
+    <Content Remove="wwwroot\Uploaded\UserImg\42bdf392-5ae2-45ef-99d2-cb73d66109fb.jpg" />
+    <Content Remove="wwwroot\Uploaded\UserImg\cf7e8cb7-1342-4fe6-af0b-e3aa24ae3bcd.jpg" />
+    <Content Remove="wwwroot\Uploaded\UserImg\a4314721-cd16-4b03-b712-2d294b727ca2.jpg" />
+    <Content Remove="wwwroot\Uploaded\UserImg\85ff9c9b-118d-44fc-9bf6-94ba8ba659ac.jpg" />
+    <Content Remove="wwwroot\Uploaded\UserImg\76b0cfc2-7eb3-46f1-9f36-50733a9d1a43.jpg" />
+    <Content Remove="wwwroot\Uploaded\UserImg\2d77e393-2dbb-4864-9667-57755dc4c70c.jpg" />
+    <Content Remove="wwwroot\Uploaded\UserImg\4fe8722d-1ec5-4b5c-b554-ae9b3dc1ac8f.jpg" />
   </ItemGroup>
   
   
   <ItemGroup>
-    <PackageReference Include="ClosedXML" Version="0.105.0"/>
+    <PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="Dapper" Version="2.1.66" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0"/>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="10.0.0"/>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0"/>
-    <PackageReference Include="Microsoft.Build" Version="18.0.2"/>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0"/>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Build" Version="18.0.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.0.0" />
 <!--    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="5.0.0"/>-->
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0"/>
-    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.15.0"/>
-    <PackageReference Include="nClam" Version="9.0.0"/>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4"/>
-    <PackageReference Include="System.Drawing.Common" Version="10.0.0"/>
-    <PackageReference Include="System.Linq.Dynamic.3.5" Version="1.0.0"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.15.0" />
+    <PackageReference Include="nClam" Version="9.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.0" />
+    <PackageReference Include="System.Linq.Dynamic.3.5" Version="1.0.0" />
+    <PackageReference Include="WebPush" Version="1.0.12" />
     <!--<PackageReference Include="System.Text.Json" Version="8.0.5" />-->
   </ItemGroup>
   
   <ItemGroup>
-    <Folder Include="wwwroot\lib\Signature\"/>
-    <Folder Include="wwwroot\Uploaded\CompanyImage\"/>
-    <Folder Include="wwwroot\Uploaded\LoginImg\"/>
+    <Folder Include="wwwroot\lib\Signature\" />
+    <Folder Include="wwwroot\Uploaded\CompanyImage\" />
+    <Folder Include="wwwroot\Uploaded\LoginImg\" />
   </ItemGroup>
   
   
   <ItemGroup>
-    <ProjectReference Include="..\..\00.Framework\CRM.Framework\CRM.Framework.csproj"/>
-    <ProjectReference Include="..\..\01.Core\CRM.Core.Domain\CRM.Core.Domain.csproj"/>
-    <ProjectReference Include="..\..\02.Infrastructures\CRM.Infrastructures.Sql\Generics.Infrastructures.Sql\CRM.Infrastructures.Sql.csproj"/>
+    <ProjectReference Include="..\..\00.Framework\CRM.Framework\CRM.Framework.csproj" />
+    <ProjectReference Include="..\..\01.Core\CRM.Core.Domain\CRM.Core.Domain.csproj" />
+    <ProjectReference Include="..\..\02.Infrastructures\CRM.Infrastructures.Sql\Generics.Infrastructures.Sql\CRM.Infrastructures.Sql.csproj" />
   </ItemGroup>
   
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

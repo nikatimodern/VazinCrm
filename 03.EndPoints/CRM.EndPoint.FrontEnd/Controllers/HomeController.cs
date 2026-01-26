@@ -26,6 +26,7 @@ using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
+using WebPush;
 
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
@@ -66,23 +67,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
+/*
 
-
-
-
-                /*var crmFactors = await db.Factors.AsNoTracking().Where(f => f.SepidarId != null && f.status == FactorStatus.تایید_شده)
-                    .ToListAsync();
-
-                foreach (var fItem in crmFactors)
-                {
-                    var crmCustomer = await db.Customers.Where(f => f.Id == fItem.CustomerId).FirstOrDefaultAsync();
-                    var sepidarFactor = await S1db.vwInvoice.Where(f => f.InvoiceId == fItem.SepidarId).AsNoTracking().FirstOrDefaultAsync();
-
-                    crmCustomer.FinancialCustomerId = sepidarFactor.CustomerPartyRef;
-                    crmCustomer.FinancialCustomerName = sepidarFactor.CustomerPartyName;
-                }
-
-                await db.SaveChangesAsync();
+                var vapidKeys = VapidHelper.GenerateVapidKeys();
+                Console.WriteLine(vapidKeys.PublicKey);
+                Console.WriteLine(vapidKeys.PrivateKey);
 */
 
 
@@ -95,6 +84,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await trans.RollbackAsync();
                 return BadRequest(e.Message);
             }
+        }
+
+        [HttpPost("subscribe")]
+        public IActionResult Subscribe([FromBody] PushSubscription subscription)
+        {
+            // ذخیره در DB
+            return Ok();
         }
 
 

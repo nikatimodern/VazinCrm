@@ -20,8 +20,38 @@ if ("@Url.Action(\"\", \"\")" == "/") {
     baseUrl = "@Url.Action(\"\", \"\")/";
 }
 
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker
+                 .register("/sw.js")
+                 .then(() => console.log("Service Worker Registered"))
+                 .catch(err => console.error("SW failed", err));
+    });
+}
+Notification.requestPermission().then(permission => {
+    console.log(permission);
+});
+
+async function subscribeUser() {
+    const registration = await navigator.serviceWorker.ready;
+    console.log(registration);
+    
+    const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: "PUBLIC_VAPID_KEY"
+    });
+    console.log(subscription);
+    // بفرست به بک‌اند
+    await fetch(`/Home/Subscribe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(subscription)
+    });
+}
+
 
 document.addEventListener("DOMContentLoaded", () => {
+    subscribeUser();
     Mask();
     MaskDate();
 });
