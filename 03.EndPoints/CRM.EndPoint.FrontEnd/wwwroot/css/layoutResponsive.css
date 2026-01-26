@@ -1,0 +1,212 @@
+﻿.imgUser {
+  width: 44px;
+  aspect-ratio: 1;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 50%;
+  outline: 1px solid rgba(0, 0, 0, 0.2)
+}
+
+
+#mainContent {
+  padding-inline: 14px;
+  flex-grow: 1;
+}
+#mainContent > main {
+  height: 100%;
+}
+
+
+#PreFactor #PreFacItem, #Factor #FacItem {
+  display: grid;
+  grid-template-columns: 2.1fr 3.2fr 1fr 1fr 1.6fr 1.6fr 0.4fr;
+  gap: 4px;
+}
+
+
+@media all and (max-width: 1199px) {
+  #PreFactor #PreFacItem, #Factor #FacItem {
+    grid-template-columns: 2.3fr 3.2fr 1fr 1fr 1.6fr 1.6fr 0.4fr;
+  }
+}
+
+
+@media (min-width: 992px) {
+  #FactorItemId, #preFactorItemId {
+    height: 240px !important;
+    min-height: unset !important;
+    max-height: unset !important;
+  }
+}
+
+
+@media all and (max-width: 991px) {
+  #preFactorItemId, #FactorItemId {
+    border: none;
+    border-block: 2px solid rebeccapurple;
+    border-radius: unset;
+  }
+}
+
+
+@media all and (max-width: 767px) {
+  body {
+    font-size: small !important;
+  }
+  
+  #FLshowLoading svg {
+    font-size: 72px !important;
+  }
+  
+  #menuId, #expandMenuIcon {
+    display: none !important;
+  }
+  
+  #mobileMenuId {
+    display: block;
+    overflow: auto
+  }
+  
+  #mainWrapper {
+    margin-right: 0 !important;
+  }
+  
+  #mainContent {
+    padding-bottom: 53px !important;
+    padding-inline: 8px;
+  }
+  
+  #navbarNavMobile svg {
+    font-size: 17px !important
+  }
+  
+  #navbarNavMobile span {
+    font-size: 11px !important
+  }
+  
+  #navbarNavMobile .menuBox {
+    width: auto;
+    row-gap: 4px;
+    flex-direction: column;
+    /*        min-width: 64px;*/
+    /*        height: 100% !important;*/
+    /*        padding: 0 !important;*/
+    min-width: 0;
+    padding: 4px 8px !important;
+  }
+  
+  #mainHeader {
+    padding-inline: 8px;
+    margin-bottom: 8px;
+    height: 48px;
+  }
+  
+  #ImgUser {
+    width: 33px !important;
+  }
+  
+  .loader {
+    height: 36px;
+  }
+  
+  #navbarNavMobile #moreMenuDropdown {
+    position: fixed;
+    bottom: 60px;
+    left: 0;
+    right: 0;
+    margin-inline: 40px;
+    border-radius: 6px;
+    background: linear-gradient(to bottom, #025751, #00302d);
+    color: #fff;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-around;
+    padding: 6px;
+    gap: 12px;
+    
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.3s;
+  }
+  
+  #navbarNavMobile #moreMenuDropdown.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+  
+  
+}
+
+
+.envelope, #amountsIcon, #notification-icon, #reportIcon {
+  transition: all 0.2s;
+}
+
+
+.envelope:hover, #amountsIcon:hover, #notification-icon:hover, #reportIcon:hover {
+  color: var(--color8) !important;
+}
+
+
+/*reminder carizo*/
+
+#notification-dropdown {
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid rgba(97, 115, 161, .4);
+  box-shadow: 0 4px 8px rgba(97, 115, 161, .2);
+  display: none;
+  flex-direction: column;
+  width: calc(100vw - 64px);
+  max-width: 390px;
+}
+
+
+.snooze-notification {
+  padding: 4px 8px;
+  transition: all 0.2s;
+  border-radius: 8px;
+}
+
+
+.snooze-notification:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+
+#notification-dropdown.show {
+  visibility: visible;
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+
+.notification-icon-badge {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  top: -4px;
+  right: -4px;
+  border-radius: 50%;
+  background-color: rgba(128, 0, 0);
+  animation: pulse-badge 2500ms infinite;
+}
+
+
+@keyframes pulse-badge {
+  0% {
+    box-shadow: 0 0 0 0 rgba(128, 0, 0, 0.4);
+  }
+  
+  70% {
+    box-shadow: 0 0 0 8px rgba(128, 0, 0, 0);
+  }
+  
+  100% {
+    box-shadow: 0 0 0 0 rgba(128, 0, 0, 0);
+  }
+}
+

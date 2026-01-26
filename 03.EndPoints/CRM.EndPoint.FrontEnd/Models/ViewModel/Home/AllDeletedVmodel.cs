@@ -1,0 +1,19 @@
+﻿using CRM.Core.Domain.PreFactors.Entities;
+using System;
+using CRM.Core.Domain;
+
+namespace CRM.EndPoint.FrontEnd.Models.ViewModel.Home
+{
+    public class AllDeletedVmodel
+    {
+        
+        public Guid EntityId { get; set; }
+        public EntityTypeEnum EntityType { get; set; }
+        public string EntityTypeTxt { get; set; }
+        public string CodeNumber { get; set; }
+        public string title { get; set; }
+        public DateTime ModifyDate { get; set; }
+        public string ModifyDateTxt { get; set; }
+        public string ModifyUser { get; set; }
+    }
+}

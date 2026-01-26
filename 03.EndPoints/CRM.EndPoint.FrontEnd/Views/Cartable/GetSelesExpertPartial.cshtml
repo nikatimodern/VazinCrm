@@ -1,0 +1,346 @@
+﻿@using CRM.Core.Domain.PreFactors.Enum
+@model IList<PreFactor>
+@{
+    Layout = null;
+    var rejectedPfList = Model.Where(f => f.AcceptedFinancial == false).ToList();
+    var acceptingList = Model.Where(f => f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مشتری).ToList();
+    var financialSendedList = Model.Where(f => f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش).ToList();
+    var notValidTabList = Model.Where(f => f.Pftype == (int)PreFactorEnum.فاقد_اعتبار).ToList();
+}
+
+<div class="d-flex flex-column w-100">
+    <ul class="nav nav-tabs w-100 flex-wrap justify-content-center" id="salesExpertsTabs" role="tablist" style="display: none;">
+        <li class="nav-item col-6 col-sm" role="presentation">
+            <button class="nav-link active text-dark w-100" style="border-bottom:1px solid var(--DarkColor) !important" id="rejectedPfTab" data-bs-toggle="tab" data-bs-target="#rejectedPfTab-pane" type="button" role="tab">
+                رد شده ها
+                @if (rejectedPfList.Count != 0) {
+                    <span class="badgeCircle d-inline-flex" style="color: #fff">@rejectedPfList.Count</span>
+                }
+            </button>
+        </li>
+        <li class="nav-item col-6 col-sm" role="presentation">
+            <button class="nav-link text-dark w-100" style="border-inline:1px solid var(--DarkColor) !important;border-bottom:1px solid var(--DarkColor) !important" id="acceptingTab" data-bs-toggle="tab" data-bs-target="#acceptingTab-pane" type="button" role="tab" aria-controls="acceptingTab-pane" aria-selected="false">
+                در دست تایید
+            </button>
+        </li>
+        <li class="nav-item col-6 col-sm" role="presentation">
+            <button class="nav-link text-dark w-100" id="FinancialSendedTab" data-bs-toggle="tab" data-bs-target="#FinancialSendedTab-pane" type="button" role="tab" aria-controls="FinancialSendedTab-pane" aria-selected="false">
+                در انتظار تایید
+            </button>
+        </li>
+        <li class="nav-item col-6 col-sm" role="presentation">
+            <button class="nav-link text-dark w-100" style="border-right:1px solid var(--DarkColor) !important;border-bottom:1px solid var(--DarkColor) !important" id="notValidTab" data-bs-toggle="tab" data-bs-target="#notValidTab-pane" type="button" role="tab" aria-controls="notValidTab-pane" aria-selected="false">
+                فاقد اعتبار
+            </button>
+        </li>
+    </ul>
+    <div class="parent-all-salesExperts p-2 tab-content d-xxl-grid" style="grid-template-columns:repeat(4,1fr);gap:6px;width:100%;" id="tabContentSalesExperts">
+        <div class="tab-pane fade show active border-0" id="rejectedPfTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
+            <div class="CSalesExpert-Part d-flex flex-column gap-2" id="rejectedPf">
+                <label class="d-none d-xxl-inline-block">
+                    <span> رد شده ها:</span>
+                    @if (rejectedPfList.Count != 0) {
+                        <span class="badgeCircle d-inline-flex" style="color: #fff">@rejectedPfList.Count</span>
+                    }
+                </label>
+                <div class="InfoData d-flex flex-column gap-2 salesExperts-list" style="width:100%;height:77dvh; overflow:auto;">
+                    @foreach (var item in rejectedPfList) {
+                        bool isInvalid = item.Pftype is (int)PreFactorEnum.فاقد_اعتبار or (int)PreFactorEnum.بسته_شده
+                            or (int)PreFactorEnum.حذف_شده or (int)PreFactorEnum.برگشت_خورده_از_طرف_مدیر_فروش;
+
+
+                        <div class="mp" style="width:100%;display:flex;">
+                            @if (item.OfficialType == 1) {
+                                <div class="mp InfoDataHead_PrefactorRasmi" style="width:18px !important;font-size:13px;">
+                                    <label class="mp" style="transform: rotate(90deg)"> رسمی</label>
+                                </div>
+                            } else {
+                                <div class="mp InfoDataHead_PrefactorNonRasmi" style="width:18px !important;font-size:13px;">
+                                    <label class="mp" style="transform: rotate(90deg)"> غیررسمی</label>
+                                </div>
+                            }
+                            <div class="mp InfoDataItem_Prefactor" style="padding:5px !important;  display:flex;width:100%;direction:rtl;">
+
+                                <div class="d-flex flex-column w-100">
+                                    <div class="py-md-3 py-xxl-0 d-flex flex-column flex-md-row flex-xxl-column justify-content-around align-items-center w-100">
+                                        <div class="col-12 col-md d-flex flex-wrap column-gap-3 row-gap-2 px-2 justify-content-around">
+                                            <div class="d-flex align-items-center gap-1">
+                                                <label style="color:gray">سریال:</label>
+                                                <label class="fbold">@item.SerialNumber</label>
+                                            </div>
+                                            @if (item.DealSerialNumber != null) {
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <label style="color:gray">سفارش:</label>
+                                                    <label class="fbold">@item.DealSerialNumber</label>
+                                                </div>
+                                            }
+                                        </div>
+
+                                        <div class="my-2 d-md-none d-xxl-block" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                                        <div class="d-flex flex-row  align-items-center justify-content-center col column-gap-3 px-2 flex-wrap" style="min-width:120px">
+                                            <div class="d-flex align-items-center justify-content-center column-gap-2 flex-wrap">
+                                                <label style=" color:gray">کد مشتری:</label>
+                                                <label class="text-center fbold">@(item.CustomerEntity?.CustomerCode.ToString() ?? "-") </label>
+                                            </div>
+                                            <div class="d-flex align-items-center justify-content-center column-gap-2 flex-wrap">
+                                                <label style=" color:gray">مشتری:</label>
+                                                <label class="text-center fbold">
+                                                    @item.Customer
+                                                    @(string.IsNullOrWhiteSpace(item.Customer) || string.IsNullOrWhiteSpace(item.AgentName) ? "" : " | ")
+                                                    @item.AgentName
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class=" my-2 d-md-none d-xxl-block" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                                        <div class="col px-2 d-flex flex-column gap-2 align-items-center justify-content-around">
+                                            <span class="d-flex align-items-center justify-content-center fbold" style="color: darkred">
+                                                @item.PftypeTxt
+                                            </span>
+                                            <button class="buttonPurple p-0 fMedium h-auto" style="border-radius:5px;font-size: 13px;width: 130px" onclick="ShowModalListInvoice('@item.Id', 1,'@item.SerialNumber', 3, '@item.DealId', @isInvalid.ToString().ToLower())">
+                                                صورت حساب
+                                            </button>
+                                        </div>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(item.CommentText)) {
+                                        <div class="my-2 mx-auto" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px"></div>
+
+                                        <div class="px-2 d-flex justify-content-around gap-1">
+                                            <label style="color:gray">توضیحات:</label>
+                                            <span class="flex-grow-1" style="white-space: pre-line">@Html.Raw(item.CommentText)</span>
+                                        </div>
+                                    }
+                                </div>
+                                <div style=" display:flex;flex-direction:column;  justify-content:space-evenly !important">
+                                    <button class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="نمایش پیش فاکتور" onclick="ShowPreviewPfactor('@item.Id')">
+                                        <i class="mp fa fa-eye"></i>
+                                    </button>
+                                    @if (item.CustomerId != null) {
+                                        <button class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="پروفایل" onclick="openCustomerProfile('@item.CustomerId')">
+                                            <i class="mp fa fa-user"></i>
+                                        </button>
+                                    }
+                                    <button class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="پیوست ها" onclick="AttachDoc('@item.Id')">
+                                        <i class="mp fa fa-paperclip"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane fade border-0" id="acceptingTab-pane" role="tabpanel" aria-labelledby="acceptingTab" tabindex="0" style="flex-direction:column;width:100%">
+            <div class="CSalesExpert-Part d-flex flex-column gap-2" id="accepting">
+                <label class="d-none d-xxl-inline-block">در دست تایید:</label>
+                <div class="InfoData d-flex flex-column gap-2 salesExperts-list" style="width:100%;height:77dvh; overflow:auto">
+                    @foreach (var item in acceptingList) {
+                        <div class="mp" style=" width:100%;display:flex; ">
+                            @if (item.OfficialType == 1) {
+                                <div class="mp InfoDataHead_PrefactorRasmi" style="width:18px !important;font-size:13px;">
+                                    <label class="mp" style="transform: rotate(90deg);"> رسمی</label>
+                                </div>
+                            } else {
+                                <div class="mp InfoDataHead_PrefactorNonRasmi" style="width:18px !important;font-size:13px;">
+                                    <label class="mp" style="transform: rotate(90deg);"> غیررسمی</label>
+                                </div>
+                            }
+                            <div class="mp InfoDataItem_Prefactor" style="padding:5px !important;  display:flex;width:100%;direction:rtl;">
+
+                                <div class="py-md-3 py-xxl-0 flex-column flex-md-row flex-xxl-column" style="display:flex;justify-content:space-around;width:100%;align-items:center;">
+
+                                    <div class=" col col-md-3 col-xxl-auto px-2" style="display:flex;align-items:center; justify-content:start;gap:8px">
+                                        <label style="color:gray;min-width:44px">سریال:</label>
+                                        <label style="font-family:'IRANSansBold';text-align:center">@item.SerialNumber</label>
+                                    </div>
+
+                                    <div class="my-2 d-md-none d-xxl-block " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                                    <div class="d-flex flex-column align-items-center justify-content-center col gap-1 px-2 flex-wrap" style="min-width:120px">
+                                        <div style="display:flex;align-items:center; justify-content:center;gap:8px">
+                                            <label style="color:gray;min-width:44px">مشتری:</label>
+                                            <label class="fbold text-center">@(string.IsNullOrEmpty(item.Customer) ? "-" : item.Customer)</label>
+                                        </div>
+                                        <div style="display:flex;align-items:center; justify-content:center;gap:8px">
+                                            <label style="color:gray;min-width:44px">نماینده:</label>
+                                            <label class="fbold text-center">@(string.IsNullOrEmpty(item.AgentName) ? "-" : item.AgentName)</label>
+                                        </div>
+                                    </div>
+
+                                    <div class=" my-2 d-md-none d-xxl-block" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                                    <div class="col px-2 d-flex flex-wrap gap-2 align-items-center justify-content-around">
+                                        <button style="height:auto; width:auto;padding:4px 8px;font-size:14px;" id="BtnSendToId" class="d-flex gap-2 align-items-center justify-content-center ToSend" onclick="CA_showMobileModal('@item.Id')">
+                                            <i class="mp fa fa-paper-plane" aria-hidden="true"></i> ارسال مجدد
+                                        </button>
+                                        <button style="height:auto; width:auto;padding:4px 8px;font-size:14px;" id="BtnSendToId" class="ToSend" onclick="CA_HandAccepting('@item.Id')"> تایید به صورت دستی</button>
+                                    </div>
+
+                                    <div class=" my-2 d-md-none d-xxl-block" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                                    <div class=" col col-md-4 col-xxl-auto px-2" style="display:flex;align-items:center;justify-content:start;gap:8px">
+                                        <label style="color:gray;min-width:44px">مبلغ:</label>
+                                        <label class="text-center" style="color:crimson; font-size:14px; font-family:'IRANSansBold'">@string.Format("{0:n0}", item.PaymentAmount) <span style="font-size: 12px"> @(item.CurrencyTypeTxt ?? "ريال")</span></label>
+                                    </div>
+
+                                </div>
+                                <div style=" display:flex;flex-direction:column;  justify-content:space-evenly !important">
+                                    <button class="mp d-flex justify-content-center align-items-center" data-title-right="نمایش پیش فاکتور" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="ShowPreviewPfactor('@item.Id')">
+                                        <i class="mp fa fa-eye"></i></button>
+                                    @if (item.CustomerId != null) {
+                                        <button class="mp " style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="پروفایل" onclick="openCustomerProfile('@item.CustomerId')">
+                                            <i class="mp fa fa-user"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane fade border-0" id="FinancialSendedTab-pane" role="tabpanel" aria-labelledby="FinancialSendedTab" tabindex="0" style="flex-direction:column;width:100%">
+            <div class="CSalesExpert-Part d-flex flex-column gap-2" id="FinancialSended">
+                <label class="d-none d-xxl-inline-block">در انتظار تایید مدیر فروش:</label>
+                <div class="InfoData d-flex flex-column gap-2 salesExperts-list" style="width:100%;height:77dvh; overflow:auto">
+                    @foreach (var item in financialSendedList) {
+                        <div class="mp" style="width:100%;display:flex;">
+                            @if (item.OfficialType == 1) {
+                                <div class="mp InfoDataHead_PrefactorRasmi" style="width:18px !important;font-size:13px;">
+                                    <label class="mp" style="transform: rotate(90deg);"> رسمی</label>
+                                </div>
+                            } else {
+                                <div class="mp InfoDataHead_PrefactorNonRasmi" style="width:18px !important;font-size:13px;">
+                                    <label class="mp" style="transform: rotate(90deg);"> غیررسمی</label>
+                                </div>
+                            }
+                            <div class="mp InfoDataItem_Prefactor" style="padding:5px !important;width:100%; display:flex;direction:rtl;">
+                                <div class="py-md-3 py-xxl-0 flex-column flex-md-row flex-xxl-column" style="display:flex;justify-content:space-around;width:100%;align-items:center;">
+                                    <div class=" col col-md-3 col-xxl-auto px-2" style=" display:flex;align-items:center; justify-content:start;gap:8px">
+                                        <label style="color:gray;min-width:44px">سریال:</label>
+                                        <label style="font-family:'IRANSansBold'">@item.SerialNumber</label>
+                                    </div>
+
+                                    @*<div style=" width:20%; display:flex;flex-direction:column;align-items:center;justify-content:center">
+                                        <label style="color:gray">تاریخ:</label>
+                                        <label style="font-family:'IRANSansBold'">@item.Date</label>
+                                        <label style="color:gray">اعتبار :</label>
+                                        <label style="font-family:'IRANSansBold'">@item.ValidityDade</label>
+                                        </div>
+                                        *@
+
+                                    <div class="my-2 d-md-none d-xxl-block" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                                    <div class="d-flex flex-column align-items-center justify-content-center col gap-1 px-2 flex-wrap" style="min-width:120px">
+                                        <div style="display:flex;align-items:center; justify-content:center;gap:8px">
+                                            <label style="color:gray;min-width:44px">مشتری:</label>
+                                            <label style="text-align:center; font-family:'IRANSansBold'">@(string.IsNullOrEmpty(item.Customer) ? "-" : item.Customer)</label>
+                                        </div>
+                                        <div style="display:flex;align-items:center; justify-content:center;gap:8px">
+                                            <label style="color:gray;min-width:44px">نماینده:</label>
+                                            <label style="text-align:center; font-family:'IRANSansBold'">@(string.IsNullOrEmpty(item.AgentName) ? "-" : item.AgentName)</label>
+                                        </div>
+                                    </div>
+
+                                    <div class=" my-2 d-md-none d-xxl-block" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                                    <div class=" col col-md-4 col-xxl-auto px-2" style="display:flex;align-items:center;justify-content:start;gap:8px">
+                                        <label style="color:gray;min-width:44px">مبلغ:</label>
+                                        <label class="text-center" style="color:crimson; font-size:14px; font-family:'IRANSansBold'">@string.Format("{0:n0}", item.PaymentAmount) <span style="font-size: 12px"> @(item.CurrencyTypeTxt ?? "ريال")</span></label>
+                                    </div>
+                                </div>
+
+                                <div style=" display:flex;flex-direction:column;  justify-content:space-evenly !important">
+                                    <button class=" mp d-flex justify-content-center align-items-center" data-title-right="نمایش پیش فاکتور" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="ShowPreviewPfactor('@item.Id')">
+                                        <i class="mp fa fa-eye"></i>
+                                    </button>
+                                    @if (item.CustomerId != null) {
+                                        <button class="mp " style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="پروفایل" onclick="openCustomerProfile('@item.CustomerId')">
+                                            <i class="mp fa fa-user"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane fade border-0" id="notValidTab-pane" role="tabpanel" aria-labelledby="notValidTab" tabindex="0" style="flex-direction:column;width:100%">
+            <div class="CSalesExpert-Part d-flex flex-column gap-2" id="notValid">
+                <label class="d-none d-xxl-inline-block">فاقد اعتبار:</label>
+                <div class="InfoData d-flex flex-column gap-2 salesExperts-list" style="width:100%;height:77dvh; overflow:auto">
+
+                    @foreach (var item in notValidTabList) {
+                        <div class="mp" style="width:100%;display:flex;">
+                            @if (item.OfficialType == 1) {
+                                <div class="mp InfoDataHead_PrefactorRasmi" style="width:18px !important;font-size:13px; ">
+                                    <label class="mp" style="transform: rotate(90deg);"> رسمی</label>
+                                </div>
+                            } else {
+                                <div class="mp InfoDataHead_PrefactorNonRasmi" style="width:18px !important;font-size:13px;">
+                                    <label class="mp" style="transform: rotate(90deg);"> غیررسمی</label>
+                                </div>
+                            }
+                            <div class="mp InfoDataItem_Prefactor" style="padding:5px !important;  display:flex;width:100%;direction:rtl;">
+
+                                <div class="py-md-3 py-xxl-0 flex-column flex-md-row flex-xxl-column" style="display:flex;justify-content:space-around;width:100%;align-items:center;">
+
+                                    <div class=" col col-md-3 col-xxl-auto px-2" style="display:flex;align-items:center; justify-content:start;gap:8px">
+                                        <label style="color:gray;min-width:44px">سریال:</label>
+                                        <label style="font-family:'IRANSansBold';text-align:center">@item.SerialNumber</label>
+                                    </div>
+
+                                    @*                        <div style=" width:20%; display:flex;flex-direction:column;align-items:center;justify-content:center">
+                                <label style="color:gray">تاریخ:</label>
+                                <label style="font-family:'IRANSansBold'">@item.Date</label>
+                                <label style="color:gray">اعتبار :</label>
+                                <label style="font-family:'IRANSansBold'">@item.ValidityDade</label>
+                                </div>*@
+
+                                    <div class="my-2 d-md-none d-xxl-block" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                                    <div class="d-flex flex-column align-items-center justify-content-center col gap-1 px-2 flex-wrap" style="min-width:120px">
+                                        <div style="display:flex;align-items:center; justify-content:center;gap:8px">
+                                            <label style="color:gray;min-width:44px">مشتری:</label>
+                                            <label style="text-align:center; font-family:'IRANSansBold';">@(string.IsNullOrEmpty(item.Customer) ? "-" : item.Customer)</label>
+                                        </div>
+                                        <div style="display:flex;align-items:center; justify-content:center;gap:8px">
+                                            <label style="color:gray;min-width:44px">نماینده:</label>
+                                            <label style="text-align:center; font-family:'IRANSansBold'">@(string.IsNullOrEmpty(item.AgentName) ? "-" : item.AgentName)</label>
+                                        </div>
+                                    </div>
+
+                                    <div class=" my-2 d-md-none d-xxl-block" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                                    <div class=" col col-md-4 col-xxl-auto px-2" style="display:flex;align-items:center;justify-content:start;gap:8px">
+                                        <label style="color:gray;min-width:44px">مبلغ:</label>
+                                        <label class="text-center" style="color:crimson; font-size:14px; font-family:'IRANSansBold'">@string.Format("{0:n0}", item.PaymentAmount) <span style="font-size: 12px"> ریال</span></label>
+                                    </div>
+                                </div>
+
+                                <div style=" display:flex;flex-direction:column;justify-content:space-evenly !important">
+                                    <button class="mp d-flex justify-content-center align-items-center" data-title-right="نمایش پیش فاکتور" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="ShowPreviewPfactor('@item.Id')">
+                                        <i class="mp fa fa-eye"></i></button>
+                                    @if (item.CustomerId != null) {
+                                        <button class="mp " style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="پروفایل" onclick="openCustomerProfile('@item.CustomerId')">
+                                            <i class="mp fa fa-user"></i>
+                                        </button>
+                                    }
+                                    <button class="mp d-flex justify-content-center align-items-center" data-title-right="بستن پیش فاکتور" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="ShowModalExpireDescription('@item.Id','@string.Format("{0:n0}", item.PaymentAmount)','@item.SerialNumber','@item.Customer @item.AgentName',4 )">
+                                        <i style="font-size:18px" class="mp fa fa-times"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+

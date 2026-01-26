@@ -1,0 +1,146 @@
+﻿@model AppUser
+@{
+    ViewData["Title"] = "Create";
+    //Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    //Layout = "~/Views/Shared/_LoginLayout.cshtml";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var isLock = Model.LockoutEnd.HasValue && Model.LockoutEnd.Value > DateTime.UtcNow;
+}
+
+<div class="col-12 col-md-7 col-xl-4 mx-auto my-3">
+    <div class="card">
+        <div class="card-header text-center" style="font-size:x-large; font-family:IRANSansBold">
+            ویرایش کاربر
+        </div>
+        <div class="card-body position-relative" dir="rtl" style="text-align:start">
+            <div asp-validation-summary=" All" class="text-danger"></div>
+            <form asp-action="Edit" method="post" class="d-flex flex-column gap-2" autocomplete="off">
+                <button id="toggleUserLockoutBtn" type="button" class="position-absolute @(isLock ? "buttonGreen2" : "buttonCancel3")" style="top: 10px; left: 14px;"
+                        onclick="ToggleUserLockout()">
+                    @(isLock ? "فعال‌سازی حساب" : "غیرفعال‌سازی حساب")
+                </button>
+
+                <div style="display:none">
+                    <label asp-for="Id"></label>
+                    <input asp-for="Id" class="form-control" />
+                </div>
+                <div>
+                    <label asp-for="FirstName">نام:</label>
+                    <input asp-for="FirstName" class="form-control" required />
+                </div>
+                <div>
+                    <label asp-for="LastName">نام خانوادگی:</label>
+                    <input asp-for="LastName" class="form-control" required />
+                </div>
+                <div>
+                    <label asp-for="PhoneNumber">تلفن همراه:</label>
+                    <input asp-for="PhoneNumber" class="form-control" style="direction: ltr" required />
+                </div>
+                <div>
+                    <label asp-for="Email">پست الکترونیکی:</label>
+                    <input asp-for="Email" class="form-control" placeholder="example@vazinplast.com" style="direction: ltr" />
+                </div>
+                <div>
+                    <label asp-for="UserName">نام کاربری:</label>
+                    <input asp-for="UserName" class="form-control" style="direction: ltr" autocomplete="new-password" required />
+                </div>
+                <div>
+                    <label>رمزعبور:</label>
+                    <input asp-for="PasswordHash" class="form-control" style="direction: ltr" type="password" autocomplete="new-password" />
+                </div>
+                <div>
+                    <label>شماره‌های داخلی:</label>
+                    @* <textarea asp-for="InternalTels" class="form-control" style="direction: ltr;height: 68px" placeholder="" ></textarea> *@
+                    <select id="internalsSelect" name="InternalTelsArray" class="form-control" multiple="multiple">
+                        @foreach (var item in (Model.InternalTels ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)) {
+                            <option selected="selected">@item</option>
+                        }
+                    </select>
+
+                </div>
+                <div style="text-align:end;color: #fff">
+                    <a asp-action="Index" class="buttonCancel2 d-inline-block">انصراف</a>
+                    <button type="submit" class="buttonGreen3">ثبت</button>
+                </div>
+            </form>
+        </div>
+        <div class="card-footer text-muted" style="text-align:start" dir="rtl">
+            لطفا در وارد کردن تلفن همراه برای بازیابی رمز عبور دقت فرمائید.
+        </div>
+    </div>
+</div>
+
+@*<div class="col-12 col-md-7 col-xl-7 mx-auto my-3">
+    <div class=" ">
+        <div class="mb-2" style="font-size:x-large; font-family:IRANSansBold">
+            ویرایش کاربر
+        </div>
+        <div  style="background-color: #fff;padding: 24px 40px;border-radius: .5rem;border: 1px solid #f3f4f6">
+
+            <div asp-validation-summary="All" class="text-danger mb-2"></div>
+            <form asp-action="Edit" method="post" class="d-flex flex-column gap-3" autocomplete="off">
+                <input asp-for="Id" type="hidden" />
+                <div style="display: grid;grid-template-columns: 100px 1fr 1fr;gap: 12px;padding-bottom: 12px;border-bottom: 1px solid #f3f4f6">
+                    <label asp-for="FirstName" >نام:</label>
+                    <input asp-for="FirstName" class="form-control" required />
+                </div>
+                <div style="display: grid;grid-template-columns: 100px 1fr 1fr;gap: 12px;padding-block: 12px;border-bottom: 1px solid #f3f4f6">
+                    <label asp-for="LastName" >نام خانوادگی:</label>
+                    <input asp-for="LastName" class="form-control" required />
+                </div>
+                <div style="display: grid;grid-template-columns: 100px 1fr 1fr;gap: 12px;padding-block: 12px;border-bottom: 1px solid #f3f4f6">
+                    <label asp-for="PhoneNumber" >تلفن همراه:</label>
+                    <input asp-for="PhoneNumber" class="form-control" style="direction: ltr;" required />
+                </div>
+                <div style="display: grid;grid-template-columns: 100px 1fr 1fr;gap: 12px;padding-block: 12px;border-bottom: 1px solid #f3f4f6">
+                    <label asp-for="Email" >پست الکترونیکی:</label>
+                    <input asp-for="Email" class="form-control" placeholder="example@vazinplast.com" style="direction: ltr;" />
+                </div>
+                <div style="display: grid;grid-template-columns: 100px 1fr 1fr;gap: 12px;padding-block: 12px;border-bottom: 1px solid #f3f4f6">
+                    <label asp-for="UserName" >نام کاربری:</label>
+                    <input asp-for="UserName" class="form-control" style="direction: ltr;" autocomplete="new-username" required />
+                </div>
+                <div style="display: grid;grid-template-columns: 100px 1fr 1fr;gap: 12px;padding-block: 12px;border-bottom: 1px solid #f3f4f6">
+                    <label asp-for="PasswordHash" >رمز عبور:</label>
+                    <input asp-for="PasswordHash" class="form-control" style="direction: ltr;" type="password" autocomplete="new-password" />
+                </div>
+                <div class="text-end">
+                    <a asp-action="Index" class="buttonCancel2 d-inline-block">انصراف</a>
+                    <button type="submit" class="buttonGreen3">ثبت</button>
+                </div>
+            </form>
+
+        </div>
+        <div class="card-footer text-muted" style="text-align:start" dir="rtl">
+            لطفا در وارد کردن تلفن همراه برای بازیابی رمز عبور دقت فرمائید.
+        </div>
+    </div>
+</div>*@
+
+
+@section scripts{
+    <script defer>
+        $("#internalsSelect").select2({
+            tags: true,
+            tokenSeparators: [",", " "],
+        });
+
+        async function ToggleUserLockout() {
+            const userId = '@Model.Id';
+            try {
+                FLshowLoading();
+                const res = await axios(`/Account/ToggleUserLockout?userId=${userId}`);
+                if (res.status === 200) {
+                    window.location.reload();
+                    FLshowLoading(false);
+                }
+            } catch (err) {
+                toastifyError("عملیات با خطا مواجه شد.");
+                console.log(err);
+                FLshowLoading(false);
+            }
+        }
+
+    </script>
+}
+

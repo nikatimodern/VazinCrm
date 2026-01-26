@@ -1,0 +1,1195 @@
+﻿using CRM.Core.Domain.Accountancies.Enum;
+using CRM.Core.Domain.AppUsers.Entities;
+using CRM.Core.Domain.Customers.Entities;
+using CRM.Core.Domain.Customers.Enum;
+using CRM.Core.Domain.Factors.Entities;
+using CRM.Core.Domain.LogSystems.Entities;
+using CRM.Core.Domain.PreFactors.Entities;
+using CRM.Core.Domain.Sepidar.Invoices.Entities;
+using CRM.EndPoint.FrontEnd.ISerives;
+using CRM.EndPoint.FrontEnd.Models.ViewModel;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.Customer;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.PreFactorVm;
+using CRM.EndPoint.FrontEnd.Services;
+using CRM.EndPoint.FrontEnd.Services.Factor;
+using CRM.EndPoint.FrontEnd.Services.SignalR;
+using CRM.Infrastructures.Sql;
+using Generics.Infrastructures.Sql;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+
+namespace CRM.EndPoint.FrontEnd.Controllers {
+    [Authorize]
+    public class CustomerController : Controller {
+        private readonly SepidarService sps;
+        private readonly UserManager<AppUser> userManager;
+        private readonly Service genService;
+        private readonly FileSaver fileSaver;
+        private readonly DateTimeServices dtService;
+        private readonly CRMContextDb db;
+        private readonly UserContextDb udb;
+        private readonly Sepidar1ContextDb S1db;
+        private readonly Sepidar2ContextDb S2db;
+        private readonly IHubContext<TaskHub> hub;
+        private readonly IVeiwRenderService vrs;
+        private readonly LogSystemService _logSystemService;
+
+        public CustomerController(SepidarService sps, UserManager<AppUser> userManager, Service GenService, FileSaver fileSaver,
+            DateTimeServices dtService, CRMContextDb db, UserContextDb udb, Sepidar1ContextDb S1db, Sepidar2ContextDb S2db,
+            IHubContext<TaskHub> hub, IVeiwRenderService vrs, LogSystemService logSystemService)
+        {
+            this.sps = sps;
+            this.userManager = userManager;
+            genService = GenService;
+            this.fileSaver = fileSaver;
+            this.dtService = dtService;
+            this.db = db;
+            this.udb = udb;
+            this.S1db = S1db;
+            this.S2db = S2db;
+            this.hub = hub;
+            this.vrs = vrs;
+            _logSystemService = logSystemService;
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        public async Task<IActionResult> Index()
+        {
+            //           await NormalizeAllCustomers();
+
+            ViewBag.SubTitle = " فرم ثبت مشتری";
+            ViewBag.Head = "Customer";
+
+            var user = await userManager.GetUserAsync(User);
+            return View(user);
+        }
+
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        [HttpPost]
+        public async Task<IActionResult> RemoveUserCustomer([FromBody] UserCustomer model)
+        {
+            var user = userManager.GetUserAsync(HttpContext.User).Result;
+            var cu = await db.UserCustomers.Where(f => f.UserId == model.UserId && f.CustomerId == model.CustomerId).FirstOrDefaultAsync();
+            //var cus = await db.Customers.AsNoTracking().Where(f => f.Id == model.CustomerId).Include(f => f.UserCustomers).FirstOrDefaultAsync();
+            //await _logSystemService.LogChange(cu, null, logActionEnum.حذف ,user.FullName);
+
+            db.UserCustomers.Remove(cu);
+            await db.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        [HttpPost]
+        public async Task<IActionResult> AddSelsToCustomers([FromBody] SelsCustomerVModel model)
+        {
+            var user = userManager.GetUserAsync(HttpContext.User).Result;
+            //var cus = await db.Customers.AsNoTracking().Where(f => f.Id == model.customerId).Include(f => f.UserCustomers).FirstOrDefaultAsync();
+            //await _logSystemService.LogChange(cus, logActionEnum.ویرایش ,user.FullName);
+
+            foreach (var item in model.selExperts)
+            {
+                db.UserCustomers.Add(new UserCustomer {
+                    CustomerId = model.customerId,
+                    UserId = item
+                });
+            }
+
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        [HttpGet]
+        public async Task<IActionResult> GetCustomerOp(string search)
+        {
+            if (search == null)
+                return Ok(null);
+            else
+            {
+                var data = await (from cus in db.Customers
+                        where EF.Functions.Like(cus.AgentName, "%" + search + "%") ||
+                              EF.Functions.Like(cus.CompanyName, "%" + search + "%") ||
+                              EF.Functions.Like(cus.CustomerCode.ToString(), "%" + search + "%")
+                        select cus)
+                    .Select(g => new SelectOptionGuidDto() {
+                        id = g.Id,
+                        text = g.CompanyName + " " + g.AgentName + " کد مشتری: " + g.CustomerCode
+                    }).Take(20).ToListAsync();
+
+                return Ok(data);
+            }
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        [HttpGet]
+        public async Task<IActionResult> GetSuppliers()
+        {
+            var data = await db.Customers
+                .Where(f => f.RoleType == RoleTypeEnum.تامین_کننده || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری)
+                .Select(f => new { f.Id, f.CompanyName, f.AgentName, f.CustomerCode })
+                .ToListAsync();
+
+            return Ok(data);
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        [HttpGet]
+        public async Task<IActionResult> GetCustomerRel(Guid Id)
+        {
+            var cus = await db.Customers.Where(f => f.Id == Id).FirstOrDefaultAsync();
+            IQueryable<Customer> customers;
+            if (cus.Juridical == 1)
+            {
+                customers = (from _customers in db.Customers
+                    where
+                        ((_customers.ShenaseMeli == cus.ShenaseMeli && cus.ShenaseMeli != null)
+                         || (_customers.EghtesadiCode == cus.EghtesadiCode && cus.EghtesadiCode != null)
+                         || (_customers.NumberRegister == cus.NumberRegister && cus.NumberRegister != null)
+                        )
+                        && _customers.Id != cus.Id
+                    select _customers).AsQueryable();
+            } else
+            {
+                customers = (from _customers in db.Customers
+                    where
+                        EF.Functions.Like(_customers.AgentName, "%" + cus.AgentName + "%") ||
+                        //EF.Functions.Like(_customers.CompanyName, "%" + cus.CompanyName + "%") ||
+                        (_customers.Mobile == cus.Mobile && cus.Mobile != null)
+                        && (_customers.Id != cus.Id)
+                    select _customers).AsQueryable();
+            }
+
+            var d = await customers.ToListAsync();
+            if (customers.Any())
+            {
+                return PartialView("DuplicatePartialDetail", await customers.ToListAsync());
+            } else
+            {
+                return Ok(null);
+            }
+        }
+
+        [HttpGet]
+        public async Task<ActionResult> CustomerProfile(Guid Id)
+        {
+            var data = await db.Customers.Include(f => f.UserCustomers).IgnoreQueryFilters().Where(f => f.Id == Id).FirstOrDefaultAsync();
+            if (data == null)
+            {
+                return NotFound();
+            }
+
+            if (Id != Guid.Empty)
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var rols = await userManager.GetRolesAsync(user);
+
+                var sexTxt = data.Sex == 1 ? "جناب آقای" : "سرکار خانم";
+                ViewBag.SubTitle = "پنل مشتری" + " " + data.CustomerCode + " " + data.CompanyName + " (" + sexTxt + " " + data.AgentName + ")";
+                ViewBag.CustomerId = Id;
+                ViewBag.SelExpertRel = await GetUsersRel(data);
+
+                if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش"))
+                {
+                    return View();
+                }
+
+                var customersForUser = await db.UserCustomers.Where(f => f.UserId == Guid.Parse(user.Id)).Select(f => f.CustomerId).ToArrayAsync();
+
+                if (customersForUser.Contains(Id))
+                {
+                    return View();
+                }
+            }
+
+            //return RedirectToAction("AccessDenied", "Account", new { returnUrl = "/Cartable/Index", accesDenid = true });
+            return NoContent();
+            //return RedirectToAction("AccessDenied", "Account", new { showNotifyOnly = true });
+        }
+
+        [HttpGet]
+        public async Task<ActionResult> CustomerPanel(Guid Id)
+        {
+            if (Id == Guid.Empty)
+                return BadRequest();
+
+            var cus = await db.Customers.AsNoTracking().Include(f => f.UserCustomers).Where(f => f.Id == Id).FirstOrDefaultAsync();
+            if (cus == null)
+                return NotFound();
+
+            var selExpertRel = await GetUsersRel(cus);
+
+            var customer = new CustomerPanelVModel {
+                CustomerId = Id,
+                CustomerName = $"{cus.CustomerCode} {cus.CompanyName} ({(cus.Sex == 1 ? "جناب آقای" : "سرکار خانم")} {cus.AgentName})",
+                SelExpertRel = selExpertRel
+            };
+
+            return View(customer);
+        }
+
+
+        [Authorize(Roles = "مدیر ارشد ,مدیر فروش")]
+        [HttpGet]
+        public async Task<ActionResult> CustomerDetail(Guid Id)
+        {
+            if (Id != Guid.Empty)
+            {
+                var user = userManager.GetUserAsync(HttpContext.User).Result;
+                var rols = userManager.GetRolesAsync(user).Result.ToArray();
+
+                if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش"))
+                {
+                    var data = await db.Customers.Where(f => f.Id == Id).FirstOrDefaultAsync();
+                    string sexTxt = "";
+                    if (data.Sex == 1)
+                        sexTxt = "جناب آقای";
+                    else if (data.Sex == 0)
+                        sexTxt = "سرکار خانم";
+                    ViewBag.SubTitle = data.CompanyName + " (" + sexTxt + " " + data.AgentName + ")" + " " + data.CustomerCode;
+                    ViewBag.CustomerId = Id;
+                    ViewBag.rol = "";
+                    return View();
+                } else
+                {
+                    return RedirectToAction("AccessDenied", "Account");
+                }
+            }
+
+            return RedirectToAction("AccessDenied", "Account");
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        public async Task<IActionResult> Customers()
+        {
+            ViewBag.SubTitle = "لیست مشتریان من";
+            ViewBag.Head = "Customers";
+            return View();
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        [HttpGet]
+        public async Task<IActionResult> AbortCustomer(Guid cid)
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var cu = await db.Customers.Include(f => f.PreFactors).ThenInclude(f => f.Factors).Where(f => f.Id == cid).FirstOrDefaultAsync();
+
+            await _logSystemService.LogChange(cu, null, LogActionEnum.حذف, user);
+
+            cu.IsDeleted = true;
+            cu.UserModify = user.FullName;
+            cu.UserModifyID = user.Id;
+
+            foreach (var item in cu.PreFactors)
+            {
+                item.IsDeleted = true;
+                foreach (var it in item.Factors)
+                {
+                    it.IsDeleted = true;
+                    it.ModifyDate = DateTime.Now;
+                    it.ModifyDateTxt = dtService.GetDateTimePersian();
+                    it.UserModify = user.FullName;
+                    it.UserModifyID = user.Id;
+                }
+
+                item.ModifyDate = DateTime.Now;
+                item.ModifyDateTxt = dtService.GetDateTimePersian();
+                item.UserModify = user.FullName;
+                item.UserModifyID = user.Id;
+            }
+
+            cu.ModifyDate = DateTime.Now;
+            cu.ModifyDateTxt = dtService.GetDateTimePersian();
+
+
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+
+
+        [Authorize(Roles = "مدیر ارشد ,مدیر فروش")]
+        [HttpGet]
+        public async Task<IActionResult> AcceptCustomer(Guid cid)
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var oldCu = await db.Customers.AsNoTracking().Where(f => f.Id == cid).FirstOrDefaultAsync();
+            var cu = await db.Customers.Where(f => f.Id == cid).FirstOrDefaultAsync();
+
+            cu.Accepted = true;
+            cu.DateSort = DateTime.Now;
+            cu.DateSortTxt = dtService.GetDateTimePersian();
+            cu.ModifyDate = DateTime.Now;
+            cu.ModifyDateTxt = dtService.GetDateTimePersian();
+
+            await _logSystemService.LogChange(oldCu, cu, LogActionEnum.تایید_و_تغییر_وضعیت, user);
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        [HttpGet]
+        public async Task<IActionResult> AddToMyCustomer(Guid id)
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+
+            var customer = await db.Customers.Where(f => f.Id == id).FirstOrDefaultAsync();
+            customer.Accepted = false;
+
+
+            var uc = db.UserCustomers.Where(f => f.UserId == Guid.Parse(user.Id) && f.CustomerId == id).Any();
+            if (!uc)
+            {
+                db.UserCustomers.Add(new UserCustomer() {
+                    CustomerId = id,
+                    UserId = Guid.Parse(user.Id)
+                });
+                await db.SaveChangesAsync();
+                return Ok(1);
+            }
+
+            return Ok(0);
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        [HttpPost]
+        public async Task<IActionResult> CheckCus(Customer model)
+        {
+            if (model.Juridical == 1)
+            {
+                var cus = await db.Customers.Where(f =>
+                    f.CompanyName == model.CompanyName ||
+                    f.EghtesadiCode == f.EghtesadiCode ||
+                    f.NumberRegister == f.NumberRegister ||
+                    f.ShenaseMeli == f.ShenaseMeli
+                ).ToListAsync();
+
+                if (cus.Any())
+                {
+                    return Ok(new { Status = 500, error = "مشتری قبلا در سیستم ثبت شده است" });
+                } else
+                {
+                    return Ok(new { Status = 200, error = "" });
+                }
+            }
+
+
+            return Ok();
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        [HttpPost]
+        public async Task<IActionResult> CheckDuplicate(Customer model)
+        {
+            IQueryable<Customer> data = null;
+
+            if (model.Juridical == 1)
+            {
+                data = from c in db.Customers
+                    where
+                        c.AgentName == model.AgentName ||
+                        c.CompanyName == model.CompanyName ||
+                        c.ShenaseMeli == model.ShenaseMeli ||
+                        c.EghtesadiCode == model.EghtesadiCode ||
+                        c.NumberRegister == model.NumberRegister
+                    select c;
+            } else
+            {
+                data = from c in db.Customers
+                    where
+                        EF.Functions.Like(c.AgentName, "%" + model.AgentName + "%") ||
+                        c.Mobile == model.Mobile
+                    select c;
+            }
+
+            if (data.Any())
+            {
+                return PartialView("DuplicatePartial", await data.ToListAsync());
+            } else
+            {
+                return Ok(null);
+            }
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        [HttpPost]
+        public async Task<IActionResult> UpCustomer([FromBody] Customer model)
+        {
+            try
+            {
+                var user = userManager.GetUserAsync(HttpContext.User).Result;
+                var oldModel = await db.Customers.AsNoTracking().Where(f => f.Id == model.Id).FirstOrDefaultAsync();
+
+                model.RoleTypeTxt = Service.GetTypeTxtRoleType((int)model.RoleType);
+                model.Accepted = false;
+                model.UserModifyID = user.Id;
+                model.UserModify = user.FullName;
+                model.ModifyDate = DateTime.Now;
+                model.ModifyDateTxt = dtService.GetDateTimePersian();
+                model.DateSort = DateTime.Now;
+                model.DateSortTxt = dtService.GetDateTimePersian();
+                model.NormalizedCompanyName = TextService.NormalizeText(model.CompanyName);
+                model.NormalizedAgentName = TextService.NormalizeText(model.AgentName);
+
+                model.CustomerCode = oldModel.CustomerCode;
+                model.UserCreator = oldModel.UserCreator;
+                model.UserCreatorID = oldModel.UserCreatorID;
+                model.CreateDate = oldModel.CreateDate;
+                model.CreateDateTxt = oldModel.CreateDateTxt;
+
+                model.Success = await genService.IsCustomerActive(model.Id);
+                model.Export = await genService.IsCustomerExport(model.Id);
+
+                db.Customers.Update(model);
+
+                db.Entry(model).Property(f => f.CustomerCode).IsModified = false;
+                db.Entry(model).Property(f => f.UserCreator).IsModified = false;
+                db.Entry(model).Property(f => f.UserCreatorID).IsModified = false;
+                db.Entry(model).Property(f => f.CreateDate).IsModified = false;
+                db.Entry(model).Property(f => f.CreateDateTxt).IsModified = false;
+                db.Entry(model).Property(f => f.AcquaintanceWay).IsModified = false;
+                db.Entry(model).Property(f => f.AcquaintanceWayTxt).IsModified = false;
+
+
+                var deals = await db.Deals.Where(f => f.CustomerId == model.Id).ToListAsync();
+                if (deals.Count != 0)
+                {
+                    foreach (var deal in deals)
+                    {
+                        deal.CustomerName = $"{model.CompanyName ?? ""} {model.AgentName ?? ""}".Trim();
+                        deal.MobileNumber = model.Mobile;
+
+                        deal.CusCompanyName = model.CompanyName;
+                        deal.CusNumberRegister = model.NumberRegister;
+                        deal.CusEghtesadiCode = model.EghtesadiCode;
+                        deal.CusShenaseMeli = model.ShenaseMeli;
+                        deal.CusMelliCode = model.AgentMeliCode;
+                        deal.CusPostalCode = model.PostalCode;
+                        deal.CusJuridical = model.Juridical;
+                        deal.CusAddress = model.Address;
+                        deal.CusTel = model.Tel;
+                        deal.CusSex = model.Sex;
+                        deal.CusProvince = model.Province;
+                        deal.CusCity = model.City;
+                        deal.CusWorkSenf = model.WorkSenf;
+                        deal.CusWorkSenfTxt = model.WorkSenfTxt;
+                        deal.CusWorkSenfDescription = model.WorkSenfDescription;
+                        deal.CusAcquaintanceWay = model.AcquaintanceWay;
+                        deal.CusAcquaintanceWayTxt = model.AcquaintanceWayTxt;
+
+                        await genService.UpdateChildEntityDeal(deal.Id, model);
+                    }
+                }
+
+
+                await _logSystemService.LogChange(oldModel, model, LogActionEnum.ویرایش, user);
+
+                await db.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        [HttpPost]
+        public async Task<IActionResult> AddCustomer(Customer model)
+        {
+            try
+            {
+                var sm = db.ASettings.FirstOrDefaultAsync().Result.SmallOffice;
+                await using var transaction = await db.Database.BeginTransactionAsync();
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                model.UserCreator = user.FullName;
+                model.UserCreatorID = user.Id;
+                //model.CreateDate = DateTime.Now;
+                //model.CreateDateTxt = dtService.GetDateTimePersian();
+                model.RoleTypeTxt = Service.GetTypeTxtRoleType((int)model.RoleType);
+
+                if (sm)
+                    model.Accepted = true;
+
+
+                bool addStatus = true;
+
+                if (model.Juridical == 1)
+                {
+                    bool chShenaseMeli = db.Customers.Any(f => f.ShenaseMeli == model.ShenaseMeli);
+                    bool chEghtesadiCode = db.Customers.Any(f => f.EghtesadiCode == model.EghtesadiCode);
+                    bool chNumberRegister = db.Customers.Any(f => f.NumberRegister == model.NumberRegister);
+                }
+
+                model.NormalizedCompanyName = TextService.NormalizeText(model.CompanyName);
+                model.NormalizedAgentName = TextService.NormalizeText(model.AgentName);
+
+                if (addStatus)
+                    db.Customers.Add(model);
+
+
+                UserCustomer us = new UserCustomer() {
+                    UserId = Guid.Parse(user.Id),
+                    CustomerId = model.Id
+                };
+                db.UserCustomers.Add(us);
+
+                await db.SaveChangesAsync();
+                await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
+
+                await db.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(model.Id);
+            }
+            catch
+            {
+                return BadRequest();
+            }
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        [HttpPost]
+        public async Task<ActionResult> GetAllCustomerJuridical()
+        {
+            try
+            {
+                var draw = Request.Form["draw"].FirstOrDefault();
+                var start = Request.Form["start"].FirstOrDefault();
+                var length = Request.Form["length"].FirstOrDefault();
+                var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
+                var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
+                var searchValue = Request.Form["search[value]"].FirstOrDefault();
+                int pageSize = length != null ? Convert.ToInt32(length) : 0;
+                int skip = start != null ? Convert.ToInt32(start) : 0;
+                int recordsTotal = 0;
+                var dataF = db.Customers.Where(f => f.Juridical == 1).AsQueryable();
+
+                if (!(string.IsNullOrEmpty(sortColumn) && string.IsNullOrEmpty(sortColumnDirection)))
+                {
+                    if (sortColumnDirection == "asc")
+                    {
+                        switch (sortColumn)
+                        {
+                            case "AgentName":
+                                dataF = dataF.OrderBy(f => f.AgentName);
+                                break;
+                            default:
+                                dataF = dataF.OrderBy(f => f.CreateDate);
+                                break;
+                        }
+                    } else
+                    {
+                        switch (sortColumn)
+                        {
+                            case "AgentName":
+                                dataF = dataF.OrderByDescending(f => f.AgentName);
+                                break;
+                            default:
+                                dataF = dataF.OrderByDescending(f => f.CreateDate);
+                                break;
+                        }
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    dataF = dataF.Where(m =>
+                        m.AgentName.Contains(searchValue)
+                    );
+                }
+
+                recordsTotal = dataF.Count();
+                var data = await dataF.Skip(skip).Take(pageSize).ToListAsync();
+                var jsonData = new { draw, recordsFiltered = recordsTotal, recordsTotal, data };
+                return Ok(jsonData);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        [HttpPost]
+        public async Task<ActionResult> GetAllCustomerNonJuridical()
+        {
+            try
+            {
+                var draw = Request.Form["draw"].FirstOrDefault();
+                var start = Request.Form["start"].FirstOrDefault();
+                var length = Request.Form["length"].FirstOrDefault();
+                var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
+                var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
+                var searchValue = Request.Form["search[value]"].FirstOrDefault();
+                int pageSize = length != null ? Convert.ToInt32(length) : 0;
+                int skip = start != null ? Convert.ToInt32(start) : 0;
+                int recordsTotal = 0;
+                var dataF = db.Customers.Where(f => f.Juridical == 0).AsQueryable();
+
+                if (!(string.IsNullOrEmpty(sortColumn) && string.IsNullOrEmpty(sortColumnDirection)))
+                {
+                    if (sortColumnDirection == "asc")
+                    {
+                        switch (sortColumn)
+                        {
+                            case "AgentName":
+                                dataF = dataF.OrderBy(f => f.AgentName);
+                                break;
+                            default:
+                                dataF = dataF.OrderBy(f => f.CreateDate);
+                                break;
+                        }
+                    } else
+                    {
+                        switch (sortColumn)
+                        {
+                            case "AgentName":
+                                dataF = dataF.OrderByDescending(f => f.AgentName);
+                                break;
+                            default:
+                                dataF = dataF.OrderByDescending(f => f.CreateDate);
+                                break;
+                        }
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    dataF = dataF.Where(m =>
+                        m.AgentName.Contains(searchValue)
+                    );
+                }
+
+                recordsTotal = dataF.Count();
+                var data = await dataF.Skip(skip).Take(pageSize).ToListAsync();
+                var jsonData = new { draw, recordsFiltered = recordsTotal, recordsTotal, data };
+                return Ok(jsonData);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+        /*public async Task<ActionResult> GetAllCustomerPartial(int count)
+        {
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var rols = await userManager.GetRolesAsync(user);
+                IList<Customer> list;
+
+                ViewBag.AccessAccepte = false;
+
+                if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش"))
+                {
+                    if (count == 0)
+                    {
+                        var data = db.Customers.OrderBy(f => f.Accepted)
+                            .ThenByDescending(f=>f.ModifyDate).AsQueryable();
+                        list = await data.ToListAsync();
+                    }
+                    else
+                    {
+                        var data = db.Customers.OrderBy(f => f.Accepted)
+                            .ThenByDescending(f => f.ModifyDate).AsQueryable();
+                        list = await data.Take(count).ToListAsync();
+                    }
+
+                    ViewBag.AccessAccepte = true;
+
+                }
+                else
+                {
+                    var customers = await db.UserCustomers
+                                    .Where(f => f.UserId == Guid.Parse(user.Id))
+                                    .Select(f => f.CustomerId).ToArrayAsync();
+                    if (count == 0)
+                    {
+                        var data = db.Customers
+                            .Where(f => customers.Contains(f.Id))
+                            .OrderBy(f => f.Accepted)
+                            .ThenByDescending(f => f.ModifyDate)
+                            .AsQueryable();
+                        list = await data.ToListAsync();
+                    }
+                    else
+                    {
+                        var data = db.Customers.Where(f => customers.Contains(f.Id))
+                           .OrderBy(f => f.Accepted)
+                            .ThenByDescending(f=>f.ModifyDate).Take(count).AsQueryable();
+                        list = await data.ToListAsync();
+                    }
+                }
+                return PartialView(list);
+            }
+            catch
+            {
+                return null;
+            }
+        }*/
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        public async Task<ActionResult> GetAllCustomerPartial(int skip = 0, int take = 10, int roleType = -1)
+        {
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var rols = await userManager.GetRolesAsync(user);
+                ViewBag.AccessAccepte = false;
+                IQueryable<Customer> query;
+                if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش"))
+                {
+                    query = db.Customers;
+                    ViewBag.AccessAccepte = true;
+                } else
+                {
+                    var customers = await db.UserCustomers
+                        .Where(f => f.UserId == Guid.Parse(user.Id))
+                        .Select(f => f.CustomerId).ToArrayAsync();
+                    query = db.Customers.Where(f => customers.Contains(f.Id));
+                }
+
+                query = query.OrderBy(f => f.Accepted).ThenByDescending(f => f.ModifyDate);
+                if (roleType == 1)
+                {
+                    query = query.Where(f => f.RoleType == RoleTypeEnum.مشتری || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری);
+                } else if (roleType == 2)
+                {
+                    query = query.Where(f => f.RoleType == RoleTypeEnum.تامین_کننده || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری);
+                }
+
+                var result = await query.Skip(skip).Take(take).Include(f => f.UserCustomers).ToListAsync();
+
+                foreach (var item in result)
+                {
+                    var uu = item.UserCustomers.Select(d => d.UserId.ToString()).ToArray();
+
+                    var users = await udb.Users.Where(f => uu.Contains(f.Id)).Select(f => f.FullName).ToArrayAsync();
+
+                    item.SelExpertRel = string.Join(" _ ", users);
+                }
+
+
+                return PartialView(result);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public async Task<string> GetUsersRel(Customer cus)
+        {
+            var uu = cus.UserCustomers.Select(d => d.UserId.ToString()).ToList();
+
+            var users = await udb.Users.AsNoTracking().Where(f => uu.Contains(f.Id)).Select(f => f.FullName).ToArrayAsync();
+
+            return string.Join(" _ ", users);
+        }
+
+
+        public async Task NormalizeAllCustomers()
+        {
+            var customers = await db.Customers.ToListAsync();
+
+            foreach (var c in customers)
+            {
+                c.NormalizedAgentName = TextService.NormalizeText(c.AgentName);
+                c.NormalizedCompanyName = TextService.NormalizeText(c.CompanyName);
+            }
+
+            await db.SaveChangesAsync();
+        }
+
+        private static readonly HashSet<string> StopWords = ["از", "در", "به", "که", "با", "را", "و", "یا", "تا", "برای", "این", "آن"];
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        public async Task<ActionResult> SearchAllCustomerPartial(string val)
+        {
+            try
+            {
+                val = TextService.NormalizeText(val);
+
+                var keywords = val.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(k => !StopWords.Contains(k)).Distinct().ToList();
+                ViewBag.AccessAccepte = true;
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var rols = await userManager.GetRolesAsync(user);
+                IQueryable<Customer> customerQuery = db.Customers.Include(f => f.UserCustomers);
+
+                if (!(rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش")))
+                {
+                    var ids = await db.UserCustomers
+                        .Where(u => u.UserId == Guid.Parse(user.Id))
+                        .Select(u => u.CustomerId).ToListAsync();
+
+                    customerQuery = customerQuery.Where(c => ids.Contains(c.Id));
+                    ViewBag.AccessAccepte = false;
+                }
+
+                var data = await customerQuery
+                    .Where(c =>
+                        keywords.Any(k =>
+                            c.NormalizedCompanyName.Contains(k) ||
+                            c.NormalizedAgentName.Contains(k)
+                        ) || c.CustomerCode.ToString() == val).Select(c => new {
+                        Customer = c,
+                        Score =
+                            (c.NormalizedCompanyName == val ? 100 : 0) +
+                            (c.NormalizedAgentName == val ? 100 : 0) +
+                            (c.NormalizedCompanyName.StartsWith(val) ? 50 : 0) +
+                            (c.NormalizedAgentName.StartsWith(val) ? 50 : 0) +
+                            keywords.Count(k =>
+                                c.NormalizedAgentName.Contains(k) ||
+                                c.NormalizedCompanyName.Contains(k)) * 10
+                    })
+                    .OrderByDescending(x => x.Score)
+                    .ThenByDescending(x => x.Customer.ModifyDate)
+                    .Select(x => x.Customer)
+                    .ToListAsync();
+
+                foreach (var item in data)
+                {
+                    var uu = item.UserCustomers.Select(d => d.UserId.ToString()).ToArray();
+
+                    var users = await udb.Users.Where(f => uu.Contains(f.Id)).Select(f => f.FullName).ToArrayAsync();
+
+                    item.SelExpertRel = string.Join(" _ ", users);
+                }
+
+
+                return PartialView("GetAllCustomerPartial", data);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        public async Task<IActionResult> GetCustomer(Guid id)
+        {
+            var data2 = await db.BaseItems
+                .Where(f => f.TypeCode == 1)
+                .Select(g => new SelectOptionGuidDto() {
+                    id = g.Id,
+                    text = g.Title
+                }).ToListAsync();
+            var data = await db.Customers.Where(f => f.Id == id).FirstOrDefaultAsync();
+            return Ok(data);
+        }
+
+        [Authorize(Roles = "مدیر ارشد ,مدیر فروش")]
+        [HttpGet]
+        public async Task<IActionResult> GetCustomerSelRelation(Guid id)
+        {
+            var cusUsers = await db.UserCustomers.AsNoTracking().Where(f => f.CustomerId == id).ToListAsync();
+            //var cus = await db.Customers.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
+            var user = await udb.Users.ToListAsync();
+
+            var data = (from _user in user
+                join cUser in cusUsers
+                    on _user.Id equals cUser.UserId.ToString()
+                select _user).ToList();
+
+
+            return Ok(data);
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        [HttpGet]
+        public async Task<IActionResult> GetFactorsSepidar(Guid customerId, Guid pfId, int sNumber)
+        {
+            try
+            {
+                ViewBag.PassType = 1;
+                //Quotation q1 = S1db.vwQuotation.Where(f => f.Number == sNumber).FirstOrDefault();
+
+                List<Invoice> s1 = await S1db.vwInvoice.Include(f => f.InvoiceItems).Where(f => f.QuotationNumber == sNumber).ToListAsync();
+
+                foreach (var item in s1)
+                {
+                    item.ExtraDescription = sps.getNoteFactor(item.InvoiceId);
+                }
+
+
+                //Invoice s2 = S2db.vwInvoice.Where(f => f.Number == s1.Number && f.Date==s1.Date ).FirstOrDefault();
+                var html = await vrs.RenderToStringAsync("GetFactorsSepidar", s1);
+
+                return Ok(new { count = s1.Count, html });
+                //return PartialView(s1);
+            }
+            catch
+            {
+                return BadRequest();
+            }
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllFactorPartial(Guid customerId, Guid pfid, int sNumber)
+        {
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var rols = await userManager.GetRolesAsync(user);
+                ViewBag.EditAccess = false;
+
+                //if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش"))
+                //{
+                //    ViewBag.EditAccess = true;
+                //}
+
+                IList<Factor> data;
+                if (rols.Contains("مدیر ارشد"))
+                {
+                    data = await (from s in db.Factors
+                        where s.CustomerId == customerId
+                        orderby s.CreateDate descending
+                        select s).ToListAsync();
+                } else
+                {
+                    data = await (from s in db.Factors
+                        where s.CustomerId == customerId && s.UserCreatorID == user.Id
+                        orderby s.CreateDate descending
+                        select s).ToListAsync();
+                }
+
+                if (pfid != Guid.Empty)
+                {
+                    data = data.Where(f => f.PfactorID == pfid).ToList();
+                }
+
+
+                return PartialView(data);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllPreFactorPartial(Guid? customerId, Guid? dealId, bool showDeleted = false)
+        {
+            try
+            {
+                var setting = await db.ASettings.FirstOrDefaultAsync();
+                var taminUsers = await userManager.GetUsersInRoleAsync("کارشناس تامین");
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var rols = await userManager.GetRolesAsync(user);
+
+                ViewBag.EditAccess = false;
+                ViewBag.AdminForosh = false;
+                ViewBag.SmallOffice = setting.SmallOffice;
+                ViewBag.PassType = dealId == null ? 1 : 4;
+
+                IQueryable<PreFactor> qData = null;
+                IList<PreFactor> data;
+
+                if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش"))
+                {
+                    ViewBag.EditAccess = true;
+                    ViewBag.AdminForosh = true;
+
+                    if (dealId != null)
+                    {
+                        qData = db.PreFactors.Where(s => s.DealId == dealId).OrderByDescending(s => s.CreateDate);
+                    } else if (customerId != null)
+                    {
+                        qData = db.PreFactors.Where(s => s.CustomerId == customerId).OrderByDescending(s => s.CreateDate);
+                    }
+                } else if (rols.Contains("مشتری"))
+                {
+                    if (dealId != null)
+                    {
+                        qData = db.PreFactors.Where(s => s.DealId == dealId).OrderByDescending(s => s.CreateDate);
+                    } else if (customerId != null)
+                    {
+                        qData = db.PreFactors.Where(s => s.CustomerId == customerId).OrderByDescending(s => s.CreateDate);
+                    }
+                } else
+                {
+                    if (dealId != null)
+                    {
+                        qData = db.PreFactors.Where(s => s.DealId == dealId && s.UserCreatorID == user.Id).OrderByDescending(s => s.CreateDate);
+                    } else if (customerId != null)
+                    {
+                        qData = db.PreFactors.Where(s => s.CustomerId == customerId && s.UserCreatorID == user.Id)
+                            .OrderByDescending(s => s.CreateDate);
+                    }
+                }
+
+                if (showDeleted)
+                {
+                    data = await qData.IgnoreQueryFilters().ToListAsync();
+                } else
+                {
+                    data = await qData.ToListAsync();
+                }
+
+
+                List<Invoice> invoices = null;
+                if (setting.Sepidar == true && data.Any())
+                {
+                    var ser = data.Select(f => f.SerialNumber).Cast<int?>().ToArray();
+                    invoices = S1db.vwInvoice.AsEnumerable().Where(f => ser.Contains(f.QuotationNumber)).ToList();
+                }
+
+                foreach (var item in data)
+                {
+                    /*decimal ac = db.Accountancies.AsNoTracking()
+                        .Where(f => f.pfid == item.Id && f.AccType == AcEnum.واریزی && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور)
+                        .Sum(f => f.credit) ?? 0;
+                    decimal acReturn = db.Accountancies.AsNoTracking()
+                        .Where(f => f.pfid == item.Id && f.AccType == AcEnum.برگشتی && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور)
+                        .Sum(f => f.BackWard) ?? 0;
+
+                    item.ReciveAmount = ac - acReturn;*/
+                    item.ReciveAmount = await db.Accountancies.AsNoTracking()
+                        .Where(f =>
+                            f.pfid == item.Id
+                            && (f.AccType == AcEnum.واریزی || f.AccType == AcEnum.برگشتی)
+                            && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
+                            && (
+                                (f.PayType != PayTypeEnum.اعتباری && f.PayType != PayTypeEnum.چکی) ||
+                                ((f.PayType == PayTypeEnum.اعتباری || f.PayType == PayTypeEnum.چکی) && f.Vosoled == false)
+                            )
+                        ).SumAsync(f => f.AccType == AcEnum.واریزی ? f.credit : -f.BackWard) ?? 0;
+
+
+                    item.PaymentAmount = (item.SumTotalAmount + item.TotalTax - item.Discount - item.ReciveAmount);
+                    item.SumTotalAmountTax = (item.SumTotalAmount + item.TotalTax - item.Discount);
+                    if (setting.Sepidar == true)
+                        item.CountFactorSepidar = invoices.Count(f => f.QuotationNumber == item.SerialNumber);
+                    if (setting.CrmFactors == true)
+                        item.CountFactor = db.Factors.Count(f => f.PfactorID == item.Id);
+                }
+
+                var model = new PrefactorViewModel() {
+                    data = data,
+                    UserTamin = taminUsers,
+                    rols = rols,
+                    _Setting = setting
+                };
+
+                var html = await vrs.RenderToStringAsync("GetAllPreFactorPartial", model,
+                    new Dictionary<string, object> {
+                        { "EditAccess", ViewBag.EditAccess },
+                        { "AdminForosh", ViewBag.AdminForosh },
+                        { "SmallOffice", ViewBag.SmallOffice },
+                        { "PassType", ViewBag.PassType },
+                    });
+
+                return Ok(new { count = model.data.Count, html });
+                //return PartialView(model);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        [Authorize(Roles = "مدیر ارشد")]
+        [HttpGet]
+        public async Task<IActionResult> GetUsersForCustomer(Guid cusId, Guid pfId)
+        {
+            var cusUsers = await db.UserCustomers.Where(f => f.CustomerId == cusId).Select(f => f.UserId.ToString()).ToListAsync();
+            var userCreatorId = await db.PreFactors.Where(f => f.Id == pfId).Select(g => g.UserCreatorID).FirstOrDefaultAsync();
+
+
+            var result = await udb.Users.Where(u => cusUsers.Contains(u.Id))
+                .Select(u => new SelectOptionGuidDto {
+                    id = Guid.Parse(u.Id),
+                    text = u.FullName,
+                    Target = u.Id == userCreatorId
+                }).ToListAsync();
+
+
+            return Ok(result);
+        }
+
+        [Authorize(Roles = "مدیر ارشد")]
+        [HttpGet]
+        public async Task<IActionResult> ChangeUserPf(Guid pfId, Guid userId, string userFullName)
+        {
+            var pf = await db.PreFactors.Where(f => f.Id == pfId).FirstOrDefaultAsync();
+            //var userFullName = await udb.Users.Where(f => f.Id == userId.ToString()).Select(g => g.FullName).FirstOrDefaultAsync();
+            pf.UserCreatorID = userId.ToString();
+            pf.UserCreator = userFullName;
+
+            var factors = await db.Factors.Where(f => f.PfactorID == pf.Id).ToListAsync();
+            foreach (var item in factors ?? Enumerable.Empty<Factor>())
+            {
+                item.SelerFullName = userFullName;
+                item.SelerId = userId.ToString();
+            }
+
+
+            await db.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        [HttpGet]
+        public IActionResult GetPhonebook(string search = "")
+        {
+            var query = db.Customers
+                .Select(c => new {
+                    c.Id,
+                    Name = c.CompanyName + " " + c.AgentName,
+                    phone = c.Tel,
+                    c.CustomerCode,
+                    c.Mobile,
+                    c.ModifyDate,
+                    c.NormalizedAgentName,
+                    c.NormalizedCompanyName
+                });
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                search = TextService.NormalizeText(search);
+                var keywords = search.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(k => k.Length > 2).Distinct().ToList();
+
+                query = query
+                    .Where(c =>
+                        keywords.Any(k =>
+                            c.NormalizedCompanyName.Contains(k) ||
+                            c.NormalizedAgentName.Contains(k) ||
+                            c.phone.Contains(search) || c.Mobile.Contains(search)
+                        ) || c.CustomerCode.ToString() == search).Select(c => new {
+                        Customer = c,
+                        Score =
+                            (c.NormalizedCompanyName == search ? 100 : 0) +
+                            (c.NormalizedAgentName == search ? 100 : 0) +
+                            (c.NormalizedCompanyName.StartsWith(search) ? 50 : 0) +
+                            (c.NormalizedAgentName.StartsWith(search) ? 50 : 0) +
+                            keywords.Count(k =>
+                                c.NormalizedAgentName.Contains(k) ||
+                                c.NormalizedCompanyName.Contains(k)) * 10
+                    })
+                    .OrderByDescending(x => x.Score)
+                    .ThenByDescending(x => x.Customer.ModifyDate)
+                    .Select(x => x.Customer);
+            } else
+            {
+                query = query.OrderByDescending(c => c.ModifyDate).Take(50);
+            }
+
+            var data = query.ToList();
+
+            return Ok(data);
+        }
+    }
+}

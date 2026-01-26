@@ -1,0 +1,939 @@
+﻿@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div style="width:100%;">
+    <div class="col-12" style="display:flex; flex-flow:wrap">
+        <div class="col-12 col-xl-4 pt-0" style="padding:4px">
+            <label style="font-family:IRANSansBold!important;font-size:large">اصناف</label>
+            <div class="InfoData" style="width:100%;min-height:430px;">
+
+                <form id="formSenfId" class="flex-grow-1 w-100 mt-2 d-flex gap-2">
+                    <input class="form-control w-auto flex-grow-1" type="text" name="Title" placeholder="ثبت صنف" required/>
+                    <span class="buttonGreen2 d-flex align-items-center justify-content-center" style="width: 3rem" onclick="formSenfSubmit()">ثبت</span>
+                </form>
+
+                <div class="line my-3" style="border-bottom-color: #aaa"></div>
+                <table class="table-hover table table-bordered table-striped" id="SenfTable">
+                    <thead>
+                    <tr>
+                        <th style="display: none">id</th>
+                        <th>عنوان</th>
+                        <th>عملیات</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-4 pt-xl-0" style="padding:4px">
+            <label style="font-family:IRANSansBold!important;font-size:large">طریقه آشنایی</label>
+            <div class="InfoData" style="width:100%;min-height:430px;">
+                <form id="formFamilyWay" class="flex-grow-1 w-100 mt-2 d-flex gap-2">
+                    <input class="form-control  w-auto flex-grow-1" type="text" name="Title" placeholder="ثبت طریقه آشنایی" required/>
+                    <span class="buttonGreen2 d-flex align-items-center justify-content-center" style="width: 3rem" onclick="formFamilyWaySubmit()">ثبت</span>
+                </form>
+
+                <div class="line my-3" style="border-bottom-color: #aaa"></div>
+                <table class="table-hover table table-bordered table-striped" id="FamillyWayTable">
+                    <thead>
+                    <tr>
+                        <th style="display: none">id</th>
+                        <th>عنوان</th>
+                        <th>عملیات</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-4 pt-xl-0" style="padding:4px">
+            <label style="font-family:IRANSansBold!important;font-size:large">محصولات</label>
+            <div class="InfoData" style="width:100%;min-height:430px;">
+                <form id="formProductId" class="flex-grow-1 w-100 mt-2 d-flex gap-2">
+                    <input class="form-control w-auto flex-grow-1" type="text" name="Title" placeholder="ثبت محصول" required/>
+                    <span class="buttonGreen2 d-flex align-items-center justify-content-center" style="width: 3rem" onclick="formProductSubmit()">ثبت</span>
+                </form>
+
+                <div class="line my-3" style="border-bottom-color: #aaa"></div>
+                <table class="table-hover table table-bordered table-striped" id="ProductTable">
+                    <thead>
+                    <tr>
+                        <th style="display: none">id</th>
+                        <th>عنوان</th>
+                        <th>عملیات</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="col-12" style="padding:4px">
+            <label class="fbold" style="font-size:large">اطلاعات حساب های شرکت</label>
+            <div class="InfoData" style="width:100%;">
+                <form style="display:flex; flex-flow:wrap; width:100%; " id="bankAccountForm">
+                    <div class="col-12 col-sm-6 col-lg-4 col-xl-2 form-group">
+                        <label>نام حساب</label>
+                        <input class="form-control" name="accountName" type="text" required />
+                    </div>
+                    <div class="col-12 col-sm-6 col-lg-4 col-xl-1 form-group">
+                        <label>نام بانک</label>
+                        <input class="form-control" name="bankName" type="text" required />
+                    </div>
+                    <div class="col-12 col-sm-6 col-lg-4 col-xl-2 form-group">
+                        <label>شماره کارت</label>
+                        <input class="form-control" name="cartNumber" type="text" required />
+                    </div>
+                    <div class="col-12 col-sm-6 col-lg-4 col-xl-2 form-group">
+                        <label>شماره حساب</label>
+                        <input class="form-control" name="accountNumber" type="text" required />
+                    </div>
+                    <div class="col-12 col-sm form-group">
+                        <label>شماره شبا</label>
+                        <input class="form-control" name="shebaNumber" type="text" required />
+                    </div>
+
+                    <div class="col-12 col-xl-auto form-group d-flex flex-column justify-content-between">
+                        <label>نوع حساب</label>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="d-flex align-items-center gap-1">
+                                <label for="officialTypeBank1">رسمی</label>
+                                <input class="valueNumber" type="radio" name="officialType" id="officialTypeBank1" value="1" required />
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <label for="officialTypeBank0">غیر رسمی</label>
+                                <input class="valueNumber" type="radio" name="officialType" id="officialTypeBank0" value="0" required />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-auto" style="display:flex;justify-content:center;align-items:end;padding: 5px 0 5px 5px">
+                        <span id="submitBankAccountFormId" class="buttonGreen2 align-items-center justify-content-center" style="display: flex;height: 2rem;width: 3rem" type="button" onclick="submitBankAccountForm()">ثبت</span>
+                        <div id="UpBankAccountFormId" class="flex-lg-column gap-1 gap-lg-0" style="display:none;">
+                            <button class="buttonGreen2" onclick="UpBankAccountItem()" type="button" style="display:flex;justify-content:center; align-items:center;height: 24px;padding-inline: 10px">
+                                <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                            </button>
+                            <button class="buttonCancel2" onclick="UpBankAccountItemCancel()" type="button" style="display:flex;justify-content:center; align-items:center;height: 24px;padding-inline: 10px">
+                                <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="line mb-3 mt-2 mt-lg-3" style="border-bottom-color: #aaa"></div>
+                <table class="table-hover table table-bordered table-striped" id="bankAccountTable">
+                    <thead>
+                    <tr>
+                        <th style="display: none">id</th>
+                        <th>نام حساب</th>
+                        <th>نام بانک</th>
+                        <th>شماره کارت</th>
+                        <th>شماره حساب</th>
+                        <th>شماره شبا</th>
+                        <th>نوع حساب</th>
+                        <th>وضعیت</th>
+                        <th>عملیات</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="col-12" style="padding: 4px">
+            <label style="font-family:IRANSansBold!important;font-size:large">اطلاعات شرکت یا فروشگاه </label>
+
+            <div class="InfoData" style="display:flex; flex-flow:wrap; width:100%; ">
+                <form style="display:flex; flex-flow:wrap; width:100%; " id="companyForm">
+                    <div class="col-12 col-sm-6 col-md-3 col-xl-2 form-group">
+                        <label>نام رسمی</label>
+                        <input class="form-control" name="companyName" type="text" />
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-md-3 col-xl-2 form-group">
+                        <label>نام غیر رسمی (برند)</label>
+                        <input class="form-control" name="companyBrandName" type="text" />
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-md-3 col-xl-2 form-group">
+                        <label>شناسه ملی</label>
+                        <input class="form-control" name="shenaseMeli" type="text" />
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3 col-xl-2 form-group">
+                        <label>کد اقتصادی</label>
+                        <input class="form-control" name="eghtesadiCode" type="text" />
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3 col-xl-2 form-group">
+                        <label>شماره ثبت</label>
+                        <input class="form-control" name="numberRegister" type="text" />
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3 col-xl-2 form-group">
+                        <label>تلفن</label>
+                        <input class="form-control" name="tel" type="text" />
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3 col-xl-2 form-group">
+                        <label>موبایل</label>
+                        <input class="form-control" name="mobile" type="text" />
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3 col-xl-2 form-group">
+                        <label>کد پستی</label>
+                        <input class="form-control" name="postalCode" type="text" />
+                    </div>
+                    <div class="col-12 col-md form-group">
+                        <label>آدرس</label>
+                        <input class="form-control" name="address" type="text" />
+                    </div>
+
+                    <div class="col-12 form-group d-flex flex-wrap mt-2">
+                        <div class="col-12 col-md-4 ps-md-0 form-group">
+                            <div style="display:flex;justify-content:center">
+                                <div class="col-12">
+                                    <div class="container-uploader">
+                                        <input type="file" class="uploadBtn" data-varList="logo" data-showList="imageDisplayLogo" id="LogoID" accept="*" />
+                                        <label for="LogoID">
+                                            <span>تصویر نماد یا لوگو</span>
+                                            <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                                        </label>
+                                        <div class="image-display" id="imageDisplayLogo"></div>
+                                    </div>
+                                </div>
+                                <button class="AddFile_Btn buttonGreen" id="AddFile_BtnId" style="display:none">
+                                    <i class="fas fa-plus AttachBt "></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-4 form-group">
+                            <div style="display:flex;justify-content:center">
+                                <div class="col-12">
+                                    <div class="container-uploader">
+                                        <input type="file" class="uploadBtn" data-varList="MohrR" data-showList="imageDisplayMohrR" id="MohrRID" accept="*" />
+                                        <label for="MohrRID">
+                                            <span>تصویر مهر رسمی</span>
+                                            <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                                        </label>
+                                        <div class="image-display" id="imageDisplayMohrR"></div>
+                                    </div>
+                                </div>
+                                <button class="AddFile_Btn buttonGreen" id="AddFile_BtnId" style="display:none">
+                                    <i class="fas fa-plus AttachBt "></i></button>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-4 pe-md-0 form-group">
+                            <div style="display:flex;justify-content:center">
+                                <div class="col-12">
+                                    <div class="container-uploader">
+                                        <input type="file" class="uploadBtn" data-varList="Mohr" data-showList="imageDisplayMohr" id="MohrID" accept="*" />
+                                        <label for="MohrID">
+                                            <span>تصویر مهر غیر رسمی</span>
+                                            <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                                        </label>
+                                        <div class="image-display" id="imageDisplayMohr"></div>
+                                    </div>
+                                </div>
+                                <button class="AddFile_Btn buttonGreen" id="AddFile_BtnId" style="display:none">
+                                    <i class="fas fa-plus AttachBt "></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <div style="width:100%; display:flex;flex-direction:column;justify-content:center;align-items:end;padding-inline: 5px">
+                    <button class="buttonGreen2" style="border-radius:5px;height: 2rem;width: 4rem" onclick="submitCompanyForm()">ثبت</button>
+                </div>
+
+            </div>
+
+
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts{
+    <script>
+
+        var AllSenfTbl = null;
+        var AllFamilyTbl = null;
+        var AllBankAccountTbl = null;
+
+        var AllImageUp = [];
+        var logo = [];
+        var MohrR = [];
+        var Mohr = [];
+
+        var companyId = null;
+
+
+        $(document).ready(async () => {
+            getAllSenf();
+            getAllFamilyWay();
+            getAllProductBase();
+            getAllBankAccount();
+            getCompany();
+        });
+
+
+        const delimageComp = (item) => {
+
+
+            if (item == "logo") {
+                logo = null;
+
+            }
+            if (item == "MohrR") {
+                MohrR = null;
+
+            }
+            if (item == "Mohr") {
+                Mohr = null;
+
+            }
+
+            var sss = "image-display_" + item;
+
+            document.getElementById(sss).innerHTML = "";
+
+
+        };
+
+        const getCompany = () => {
+
+            $.get(baseUrl + "baseItem/getCompany", (res) => {
+
+
+                if (res != null) {
+                    companyId = res.id;
+                    mySer.convertJsonToForm(res, "companyForm");
+
+                    Array.from(res.companyFiles).forEach((item, index) => {
+
+                        if (item.filename == "Logo") {
+
+
+                            logo[0] = {
+                                filename: item.filename,
+                                filetype: item.filetype,
+                                fileExten: item.fileExten,
+                                file: item.file,
+                                isDeleted: false,
+                            };
+
+                            FileUpReload("LogoID");
+
+
+                        }
+                        if (item.filename == "MohrR") {
+                            MohrR[0] = {
+                                filename: item.filename,
+                                filetype: item.filetype,
+                                fileExten: item.fileExten,
+                                file: item.file,
+                                isDeleted: false,
+                            };
+                            FileUpReload("MohrRID");
+
+                        }
+                        if (item.filename == "Mohr") {
+                            Mohr[0] = {
+                                filename: item.filename,
+                                filetype: item.filetype,
+                                fileExten: item.fileExten,
+                                file: item.file,
+                                isDeleted: false,
+                            };
+                            FileUpReload("MohrID");
+                        }
+
+
+                    });
+
+
+                }
+
+
+            });
+
+        };
+
+
+        const DelSenfItem = (id) => {
+            //$.get(baseUrl + "");
+
+        };
+
+        const DelFamilyWayItem = (id) => {
+            //$.get(baseUrl + "");
+
+        };
+        const DelProductItem = (id) => {
+            //$.get(baseUrl + "");
+
+        };
+
+
+        const getAllProductBase = () => {
+            AllProductTbl = $("#ProductTable").DataTable(
+                {
+                    lengthMenu: [5, 10, 25, 50, 100],
+                    processing: true,
+                    serverSide: true,
+                    filter: true,
+                    order: [[1, "asc"]],
+                    scrollCollapse: true,
+                    scrollY: "245px",
+                    ajax: {
+                        "url": baseUrl + "BaseItem/getAllProduct",
+                        "type": "POST",
+                        "datatype": "json",
+                    },
+                    language: {
+                        emptyTable: "هیچ رکوردی موجود نمی باشد.",
+                        info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
+                        infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
+                        infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
+                        lengthMenu: "نمایش _MENU_ ردیف",
+                        loadingRecords: "در حال بارگزاری...",
+                        search: "",
+                        zeroRecords: "رکوردی با این مشخصات پیدا نشد",
+                        aria: {
+                            sortAscending: ": فعال سازی نمایش به صورت صعودی",
+                            sortDescending: ": فعال سازی نمایش به صورت نزولی",
+                        },
+                    },
+
+                    columnDefs: [
+                        {
+                            targets: 0,
+                            visible: false,
+                            searchable: false,
+                        },
+                        {
+                            targets: 2,
+                            orderable: false,
+                        },
+                    ],
+
+                    columns: [
+
+                        { data: "id", name: "Id", autoWidth: true },
+                        { data: "title", name: "Title", autoWidth: true },
+                        {
+                            "render": function (data, type, row) {
+                                var _co = "<span class='d-flex align-items-center justify-content-center'>";
+                                _co += "<button id='BtnUpdate' type='button' title='حذف' class='Admin buttonCancel3 d-flex align-items-center justify-content-center' style='padding: 6px' onclick='DelProductItem(\"" + row.id + "\",this)' ><i class='fa fa-trash '></i></button>";
+                                _co += "</span>";
+                                return _co;
+
+                            },
+                        },
+                    ],
+                    layout: {
+                        bottomEnd: "info",
+                        bottomStart: {
+                            paging: {
+                                type: "simple_numbers",
+                                buttons: 4,
+                            },
+                        },
+                        topEnd: "pageLength",
+                        topStart: {
+                            search: {
+                                placeholder: "جستجو",
+                            },
+                        },
+                    },
+                });
+            $("[name=\"ProductTable\"]").addClass("form-control");
+            $("input[type='search']").addClass("form-control");
+        };
+
+
+        const getAllSenf = () => {
+
+            AllSenfTbl = $("#SenfTable").DataTable(
+                {
+                    lengthMenu: [5, 10, 25, 50, 100],
+                    processing: true,
+                    serverSide: true,
+                    filter: true,
+                    order: [[1, "asc"]],
+                    scrollCollapse: true,
+                    scrollY: "245px",
+                    "ajax": {
+                        "url": baseUrl + "BaseItem/GetAllSenf",
+                        "type": "POST",
+                        "datatype": "json",
+                    },
+                    language: {
+                        emptyTable: "هیچ رکوردی موجود نمی باشد.",
+                        info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
+                        infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
+                        infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
+                        lengthMenu: "نمایش _MENU_ ردیف",
+                        loadingRecords: "در حال بارگزاری...",
+                        search: "",
+                        zeroRecords: "رکوردی با این مشخصات پیدا نشد",
+                        aria: {
+                            sortAscending: ": فعال سازی نمایش به صورت صعودی",
+                            sortDescending: ": فعال سازی نمایش به صورت نزولی",
+                        },
+                    },
+
+                    columnDefs: [
+                        {
+                            targets: 0,
+                            visible: false,
+                            searchable: false,
+                        },
+                        {
+                            targets: 2,
+                            orderable: false,
+                        },
+                    ],
+
+                    columns: [
+
+                        { data: "id", name: "Id", autoWidth: true },
+                        { data: "title", name: "Title", autoWidth: true },
+                        {
+                            render: function (data, type, row) {
+                                var _co = "<span class='d-flex align-items-center justify-content-center'>";
+
+                                _co += "<button id='BtnUpdate' type='button' title='حذف' class='Admin buttonCancel3 d-flex align-items-center justify-content-center' style='padding: 6px' onclick='DelSenfItem(\"" + row.id + "\",this)' ><i class='fa fa-trash '></i></button>";
+                                _co += "</div>";
+                                return _co;
+                            },
+                        },
+                    ],
+                    layout: {
+                        bottomEnd: "info",
+                        bottomStart: {
+                            paging: {
+                                type: "simple_numbers",
+                                buttons: 4,
+                            },
+                        },
+                        topEnd: "pageLength",
+                        topStart: {
+                            search: {
+                                placeholder: "جستجو",
+                            },
+                        },
+                    },
+                });
+            $("[name=\"SenfTable\"]").addClass("form-control");
+            $("input[type='search']").addClass("form-control");
+
+
+        };
+        const getAllFamilyWay = () => {
+            AllFamilyTbl = $("#FamillyWayTable").DataTable(
+                {
+                    lengthMenu: [5, 10, 25, 50, 100],
+                    processing: true,
+                    serverSide: true,
+                    filter: true,
+                    scrollCollapse: true,
+                    scrollY: "245px",
+                    order: [[1, "asc"]],
+                    "ajax": {
+                        "url": baseUrl + "BaseItem/GetAllFamillyWay",
+                        "type": "POST",
+                        "datatype": "json",
+                    },
+                    language: {
+                        emptyTable: "هیچ رکوردی موجود نمی باشد.",
+                        info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
+                        infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
+                        infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
+                        lengthMenu: "نمایش _MENU_ ردیف",
+                        loadingRecords: "در حال بارگزاری...",
+                        search: "",
+                        zeroRecords: "رکوردی با این مشخصات پیدا نشد",
+                        aria: {
+                            sortAscending: ": فعال سازی نمایش به صورت صعودی",
+                            sortDescending: ": فعال سازی نمایش به صورت نزولی",
+                        },
+                    },
+
+                    columnDefs: [
+                        {
+                            targets: 0,
+                            visible: false,
+                            searchable: false,
+                        },
+                        {
+                            targets: 2,
+                            orderable: false,
+                        },
+                    ],
+
+                    columns: [
+
+                        { data: "id", name: "Id", autoWidth: true },
+                        { data: "title", name: "Title", autoWidth: true },
+                        {
+                            render: function (data, type, row) {
+                                var _co = "<span class='d-flex align-items-center justify-content-center'>";
+
+                                _co += "<button id='BtnUpdate' type='button' title='حذف' class='Admin buttonCancel3 d-flex align-items-center justify-content-center' style='padding: 6px' onclick='DelFamilyWayItem(\"" + row.id + "\",this)' ><i class='fa fa-trash '></i></button>";
+                                _co += "</div>";
+                                return _co;
+                            },
+                        },
+                    ],
+                    layout: {
+                        bottomEnd: "info",
+                        bottomStart: {
+                            paging: {
+                                type: "simple_numbers",
+                                buttons: 4,
+                            },
+                        },
+                        topEnd: "pageLength",
+                        topStart: {
+                            search: {
+                                placeholder: "جستجو",
+                            },
+                        },
+                    },
+                });
+            $("[name=\"FamillyWayTable\"]").addClass("form-control");
+            $("input[type='search']").addClass("form-control");
+        };
+
+        const getAllBankAccount = () => {
+            AllBankAccountTbl = $("#bankAccountTable").DataTable(
+                {
+                    lengthMenu: [5, 10, 25, 50, 100],
+                    processing: true,
+                    serverSide: true,
+                    filter: true,
+                    scrollCollapse: true,
+                    scrollY: "245px",
+                    ordering: false,
+                    order: [[1, "asc"]],
+                    "ajax": {
+                        "url": baseUrl + "Accountancy/GetAllBankAccount",
+                        "type": "POST",
+                        "datatype": "json",
+                    },
+                    language: {
+                        emptyTable: "هیچ رکوردی موجود نمی باشد.",
+                        info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
+                        infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
+                        infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
+                        lengthMenu: "نمایش _MENU_ ردیف",
+                        loadingRecords: "در حال بارگزاری...",
+                        search: "",
+                        zeroRecords: "رکوردی با این مشخصات پیدا نشد",
+                        aria: {
+                            sortAscending: ": فعال سازی نمایش به صورت صعودی",
+                            sortDescending: ": فعال سازی نمایش به صورت نزولی",
+                        },
+                    },
+
+                    columnDefs: [
+                        {
+                            targets: 0,
+                            visible: false,
+                            searchable: false,
+                        },
+                        {
+                            targets: [2],
+                            orderable: false,
+                        },
+                    ],
+
+                    columns: [
+                        { data: "id", name: "Id", autoWidth: true },
+                        { data: "accountName", name: "AccountName", autoWidth: true },
+                        { data: "bankName", name: "BankName", autoWidth: true },
+                        { data: "cartNumber", name: "CartNumber", autoWidth: true },
+                        { data: "accountNumber", name: "AccountNumber", autoWidth: true },
+                        { data: "shebaNumber", name: "ShebaNumber", autoWidth: true },
+                        {
+                            data: "officialType", name: "OfficialType", autoWidth: true,
+                            render: function (data) {
+                                return data === 1 ? "رسمی" : "غیر رسمی";
+                            },
+                        },
+                        {
+                            data: "active", name: "Active", autoWidth: true,
+                            render: function (data, type, row) {
+                                return `
+                                <div class="d-flex flex-column justify-content-between align-items-center gap-2">
+                                    <label class="form-check-label ${data ? "" : "text-muted"}" for="activeBank">${data ? "فعال" : "غیرفعال"}</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="activeBank" ${data ? "checked" : ""} onchange="updateBankAccountActive(this, '${row.id}')">
+                                    </div>
+                                </div>`;
+                            },
+                        },
+                        {
+                            data: null,
+                            render: function (data, type, row) {
+                                return `
+                                <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                                    <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 d-flex justify-content-center align-items-center" onclick='ShowUpdateBankAccountItem("${row.id}", "${row.active}")'><i class="fa fa-pencil"></i></button>
+                                    <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="Admin buttonCancel2 d-flex justify-content-center align-items-center" onclick='DelBankAccountItem("${row.id}")'><i class="fa fa-trash"></i></button>
+                                </div>
+                            `;
+                            },
+                        },
+                    ],
+                    layout: null,
+                    /*layout: {
+                        bottomEnd: "info",
+                        bottomStart: {
+                            paging: {
+                                type: "simple_numbers",
+                                buttons: 4,
+                            },
+                        },
+                        topEnd: "pageLength",
+                        topStart: {
+                            search: {
+                                placeholder: "جستجو",
+                            },
+                        },
+                    },*/
+                });
+            $("[name=\"FamillyWayTable\"]").addClass("form-control");
+            $("input[type='search']").addClass("form-control");
+        };
+
+
+        const formProductSubmit = () => {
+            if (document.querySelector("#formProductId input").value.trim()) {
+                let model = mySer.convertFormToJSON("#formProductId");
+
+                $.post(baseUrl + "BaseItem/AddProduct", model, (res) => {
+                    AllProductTbl.ajax.reload(null, false);
+                    mySer.emptyForm("formProductId");
+
+                })
+                 .fail(() => {
+                     setTimeout(() => {
+                         formProductSubmit();
+                     }, 1000);
+                 });
+            }
+        };
+
+
+        const formSenfSubmit = () => {
+            if (document.querySelector("#formSenfId input").value.trim()) {
+                let model = mySer.convertFormToJSON("#formSenfId");
+                model.TypeCode = 1;
+                model.TypeTxt = "صنف";
+                $.post(baseUrl + "BaseItem/AddItem", model, (res) => {
+                    AllSenfTbl.ajax.reload(null, false);
+                    mySer.emptyForm("formSenfId");
+
+                })
+                 .fail(() => {
+                     setTimeout(() => {
+                         formSenfSubmit();
+                     }, 1000);
+                 });
+            }
+        };
+
+
+        const formFamilyWaySubmit = () => {
+            if (document.querySelector("#formFamilyWay input").value.trim()) {
+                let model = mySer.convertFormToJSON("#formFamilyWay");
+                model.TypeCode = 2;
+                model.TypeTxt = "طریقه آشنایی";
+                $.post(baseUrl + "BaseItem/AddItem", model, (res) => {
+                    AllFamilyTbl.ajax.reload(null, false);
+                    mySer.emptyForm("formFamilyWay");
+                })
+                 .fail(() => {
+                     setTimeout(() => {
+                         formFamilyWaySubmit();
+                     }, 1000);
+                 });
+            }
+        };
+
+        const submitCompanyForm = () => {
+            AllImageUp = [];
+            if (logo.length != 0) {
+                logo[0].filename = "Logo";
+                AllImageUp.push(logo[0]);
+            }
+            if (Mohr.length != 0) {
+                Mohr[0].filename = "Mohr";
+                AllImageUp.push(Mohr[0]);
+            }
+
+            if (MohrR.length != 0) {
+                MohrR[0].filename = "MohrR";
+                AllImageUp.push(MohrR[0]);
+            }
+
+            var model = mySer.convertFormToJSON("#companyForm");
+            model.CompanyFiles = AllImageUp;
+            model.id = companyId;
+            document.getElementById("FLshowLoading").style.display = "";
+
+            $.post(baseUrl + "baseItem/addCompany", model, () => {
+                toastifySuccess("ثبت انجام شد");
+                document.getElementById("FLshowLoading").style.display = "none";
+            })
+             .fail(() => {
+                 submitCompanyForm();
+             });
+        };
+
+        const submitBankAccountForm = async () => {
+            if (await mySer.CheckValidForm("bankAccountForm")) {
+                let model = mySer.convertFormToJSON("bankAccountForm");
+                try {
+                    document.getElementById("FLshowLoading").style.display = "";
+                    const res = await axios.post("/Accountancy/AddBankAccount", model);
+
+                    if (res.status === 200) {
+                        document.getElementById("FLshowLoading").style.display = "none";
+                        AllBankAccountTbl.ajax.reload();
+                        document.getElementById("bankAccountForm").reset();
+                        toastifySuccess("اطلاعات حساب با موفقیت ثبت شد");
+                    }
+                } catch (err) {
+                    console.log(err);
+                    setTimeout(async () => await submitBankAccountForm(), 2000);
+                }
+            }
+
+        };
+
+        const updateBankAccountActive = async (elm, id) => {
+            try {
+                FLshowLoading();
+                const data = { id, active: elm.checked };
+                const res = await axios.post(`/Accountancy/UpBankAccount`, data);
+                if (res.status === 200) {
+                    FLshowLoading(false);
+                    AllBankAccountTbl.ajax.reload();
+                    toastifySuccess("با موفقیت ویرایش شد");
+                }
+            } catch (err) {
+                console.log(err);
+                setTimeout(async () => await updateBankAccountActive(), 3000);
+            }
+        };
+
+        document.querySelector("#formFamilyWay").addEventListener("submit", (e) => {
+            e.preventDefault();
+            //formFamilyWaySubmit();
+        });
+        document.querySelector("#formSenfId").addEventListener("submit", (e) => {
+            e.preventDefault();
+            //formSenfSubmit();
+        });
+        document.querySelector("#formProductId").addEventListener("submit", (e) => {
+            e.preventDefault();
+            //formProductSubmit();
+        });
+
+
+        const DelBankAccountItem = async (id) => {
+            Swal.fire({
+                title: "حذف!",
+                text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
+                icon: "warning",
+                showCancelButton: true,
+                cancelButtonColor: "#adadad",
+                confirmButtonColor: "#e64942",
+                cancelButtonText: "انصراف",
+                confirmButtonText: "بله، حذف شود",
+            })
+                .then(async (willDelete) => {
+                    if (willDelete.isConfirmed) {
+                        $("#FLshowLoading").css("display", "");
+
+                        await DelBankAccountItemOk(id);
+
+                    } else {
+                        $("#FLshowLoading").css("display", "none");
+                    }
+                });
+        };
+        const DelBankAccountItemOk = async (id) => {
+
+            $("#FLshowLoading").css("display", "");
+            axios(`/Accountancy/DelBankAccountItem/${id}`).then(async (res) => {
+                if (res.status === 200) {
+                    AllBankAccountTbl.ajax.reload();
+                    toastifySuccess("با موفقیت حذف شد!");
+                }
+                $("#FLshowLoading").css("display", "none");
+
+            }).catch(() => {
+                setTimeout(() => DelBankAccountItemOk(id), 3000);
+            });
+
+        };
+
+        let UpBankAccountItemId;
+        let UpBankAccountItemActive;
+        const ShowUpdateBankAccountItem = async (id, active) => {
+            UpBankAccountItemActive = toBoolean(active);
+            UpBankAccountItemId = id;
+            $("#FLshowLoading").css("display", "");
+            const res = await axios(`/Accountancy/GetBankAccount/${id}`);
+            if (res.status === 200) {
+                mySer.convertJsonToForm(res.data, "bankAccountForm");
+                $("#FLshowLoading").css("display", "none");
+            }
+
+            $("#UpBankAccountFormId").css("display", "flex");
+            $("#submitBankAccountFormId").css("display", "none");
+        };
+        const UpBankAccountItem = async () => {
+
+            if (await mySer.CheckValidForm("bankAccountForm")) {
+                $("#FLshowLoading").css("display", "");
+                const data = mySer.convertFormToJSON("bankAccountForm");
+                data.Id = UpBankAccountItemId;
+                data.active = UpBankAccountItemActive;
+
+                try {
+                    const res = await axios.post(`/Accountancy/UpBankAccount`, data);
+                    if (res.status === 200) {
+                        $("#FLshowLoading").css("display", "none");
+                        AllBankAccountTbl.ajax.reload();
+                        toastifySuccess("با موفقیت ویرایش شد");
+                        UpBankAccountItemCancel();
+                    }
+                } catch (err) {
+                    console.log(err);
+                    setTimeout(async () => await UpBankAccountItem(), 3000);
+                }
+
+            }
+        };
+        const UpBankAccountItemCancel = () => {
+            UpBankAccountItemId = null;
+            $("#submitBankAccountFormId").css("display", "flex");
+            $("#UpBankAccountFormId").css("display", "none");
+            document.getElementById("bankAccountForm").reset();
+
+        };
+
+
+    </script>
+}

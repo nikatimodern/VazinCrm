@@ -1,0 +1,17 @@
+﻿using CRM.Core.Domain.Sepidar.ExtraDataes;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace CRM.Infrastructures.Sql.Sepidar.ExtraDataes.Configs
+{
+    public class ExtraDataConfigs : IEntityTypeConfiguration<ExtraData>
+    {
+        public void Configure(EntityTypeBuilder<ExtraData> builder)
+        {
+           
+        }
+    }
+}

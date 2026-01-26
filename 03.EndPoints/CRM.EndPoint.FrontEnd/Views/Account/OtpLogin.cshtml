@@ -1,0 +1,223 @@
+@{
+    //ViewBag.Title = "title";
+    Layout = "_LoginLayout";
+}
+
+<div class="d-flex flex-column align-items-center" style="width:80%; ">
+    <p class="mb-3" style="color: #5811b4">
+        <span class="fbold" style="font-size:24px;">
+            @(ViewBag.type switch {
+                "Forgot" => "بازنشانی رمز عبور",
+                _ => "ورود به سامانه وزین پلاست",
+            })
+        </span>
+        @* <span style="font-size: 10px !important;">ندنرمبیدربنم</span> *@
+    </p>
+
+    <div class="w-100">
+        <form id="otpLoginForm">
+            <div class="form-group mb-2 p-0">
+                <span class="fbold" style="position: absolute;left: 8px;top: 50%;transform: translateY(-50%);font-size: 15px">09</span>
+                <input inputmode="numeric" autocomplete="off" class="form-group__input form-group__input--ltr IranMobileNumber" style="padding-inline: 22px" type="text" autofocus name="mobile" placeholder="شماره موبایل" required />
+                <span class="form-group__icon">
+                    <svg style="width: 26px;height: 26px;color: #787c83" fill="none" viewBox="0 0 24 24" stroke-width="1.25" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
+                </span>
+            </div>
+            <button id="confirmCodeOtpLoginBtn" type="submit" class="col-12 buttonGreen2 login-btn d-flex justify-content-center align-items-center" style="font-size: 16px;height: 38px">ارسال کد ورود</button>
+            @if (ViewBag.type != "Forgot") {
+                <div class="d-flex align-items-center justify-content-end fs-6">
+                    <a asp-controller="Account" asp-action="Login" class="link-gray fMedium">ورود با نام کاربری</a>
+                </div>
+            }
+        </form>
+        <div id="otpSection" style="display:none;">
+            <p class="text-muted fMedium" style="text-align:right;">کد یکبار مصرف به شماره <strong id="phoneNumberLoginOtp"></strong> ارسال شد</p>
+            <div class="form-group mb-2 p-0">
+                <span class="form-group__icon">
+                    <svg style="width: 26px;height: 26px;color: #787c83" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" /></svg>
+                </span>
+                <input inputmode="numeric" class="form-group__input form-group__input--ltr digitNumber" id="otpLoginInp" name="otp" autocomplete="one-time-code" type="text" autofocus maxlength="4" placeholder="کد تایید" />
+            </div>
+            <button id="verifyOtpBtn" class="col-12 buttonGreen2 login-btn justify-content-center align-items-center" style="font-size: 16px;height: 38px;display: flex">تایید کد</button>
+        </div>
+        <div class="d-flex align-items-center justify-content-between w-100 mt-2" style="direction: rtl;">
+            <p class="errorLoginText  mt-0" id="otpLoginMsg"></p>
+            <button id="resendOtpBtn" class="buttonPurple2" style="display: none">ارسال مجدد کد</button>
+            <p class="text-muted" id="remainingCodeOtpLoginId" style="display: none;align-items: baseline;gap: 4px;direction: rtl;justify-content: end">
+                <span>زمان باقی‌مانده: </span>
+                <strong id="remainingSecondsOtpLogin"></strong>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts {
+
+    <script defer>
+        let intervalId;
+        let mobileVerified;
+        let selectedUserId;
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            const input = document.querySelector("#otpSection input[autocomplete='one-time-code']");
+            const btn = document.getElementById("verifyOtpBtn");
+            await readOtp(input, btn);
+        });
+
+
+        document.getElementById("otpLoginForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+            if (this.mobile.value.length < 9) {
+                document.getElementById("otpLoginMsg").textContent = "شماره موبایل معتبر نیست!";
+                return;
+            }
+            const mobile = "09" + this.mobile.value;
+
+            fetch(`/Account/RequestOtp?type=@ViewBag.type`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ mobile }),
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 200) {
+                        mobileVerified = mobile;
+                        document.getElementById("otpLoginMsg").innerText = "";
+                        document.getElementById("phoneNumberLoginOtp").innerText = mobileVerified;
+                        document.getElementById("otpLoginForm").style.display = "none";
+                        document.getElementById("otpSection").style.display = "block";
+                        document.getElementById("otpLoginInp").value = "";
+                        document.getElementById("otpLoginInp").focus();
+                        document.getElementById("remainingCodeOtpLoginId").style.display = "flex";
+
+                        toastifySuccess(data.message);
+                        startOtpTimer();
+                    } else {
+                        document.getElementById("otpLoginMsg").innerText = data.message;
+                    }
+                });
+        });
+
+        document.getElementById("verifyOtpBtn").addEventListener("click", () => verifyOtp());
+        document.getElementById("otpLoginInp").addEventListener("keyup", (e) => {
+            if (e.target.value.length >= 4 || e.key === "Enter") {
+                verifyOtp();
+            }
+        });
+
+        const otpLoginMsgElm = document.getElementById("otpLoginMsg");
+        function verifyOtp() {
+            const mobile = "09" + document.querySelector("input[name='mobile']").value;
+            const OtpCode = document.querySelector("input[name='otp']").value;
+
+            fetch(`/Account/VerifyOtpGeneric?type=@ViewBag.type`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ mobile, OtpCode }),
+            }).then(res => res.json())
+              .then(data => {
+                  if (data.status === 300) {
+                      mobileVerified = mobile;
+                      showAccountModal(data.accounts);
+                  } else if (data.status === 200) {
+                      otpLoginMsgElm.innerText = "";
+                      goTo(data.url);
+                  } else if (data.status === 405) {
+                      data.errors.forEach(err => {
+                          const pElm = document.createElement("p");
+                          pElm.innerText = err;
+                          otpLoginMsgElm.appendChild(pElm);
+                      });
+                  } else {
+                      otpLoginMsgElm.innerText = data.message;
+                  }
+              });
+        }
+
+        let otpIntervalId;
+        function startOtpTimer() {
+            otpIntervalId = setInterval(() => {
+                fetch(`/Account/CheckTimerCode?type=@ViewBag.type`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status) {
+                            document.getElementById("remainingSecondsOtpLogin").innerText = data.elsapsTime + " ثانیه";
+                            document.getElementById("resendOtpBtn").style.display = "none";
+                            document.getElementById("remainingCodeOtpLoginId").style.display = "flex";
+                            document.getElementById("verifyOtpBtn").style.display = "flex";
+                        } else {
+                            clearInterval(otpIntervalId);
+                            document.getElementById("resendOtpBtn").style.display = "flex";
+                            document.getElementById("remainingCodeOtpLoginId").style.display = "none";
+                            document.getElementById("verifyOtpBtn").style.display = "none";
+                        }
+                    })
+                    .catch(err => {
+                        console.log(err);
+                    });
+            }, 1000);
+        }
+
+
+        document.getElementById("resendOtpBtn").addEventListener("click", () => {
+            fetch(`/Account/RequestOtp?type=@ViewBag.type`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ mobile: mobileVerified, userId: selectedUserId }),
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 200) {
+                        document.getElementById("otpLoginMsg").innerText = "";
+                        document.getElementById("otpLoginInp").value = "";
+                        document.getElementById("otpLoginInp").focus();
+                        toastifySuccess("کد یکبار مصرف مجددا ارسال شد");
+                        startOtpTimer();
+                    } else {
+                        document.getElementById("otpLoginMsg").innerText = data.message;
+                    }
+                });
+        });
+
+
+        function showAccountModal(accounts) {
+            const listContainer = document.getElementById("accountList");
+            listContainer.innerHTML = "";
+
+            accounts.forEach(acc => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "list-group-item list-group-item-action";
+                btn.innerHTML = `
+                    <span class="fbold" style="font-size: 14px">${acc.userName}</span>
+                    <br>
+                    <span style="font-size: 11px">${acc.fullName || ""}</span>
+                `;
+
+                btn.addEventListener("click", () => {
+
+                    fetch(`/Account/SelectAccount?userId=${acc.id}&type=@ViewBag.type`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status === 200) {
+                                selectedUserId = acc.id;
+                                $("#selectAccountModal").modal("toggle");
+                                goTo(data.url);
+
+                            } else {
+                                toastifyError(data.message);
+                            }
+                        });
+                });
+
+                listContainer.appendChild(btn);
+            });
+
+            $("#selectAccountModal").modal("toggle");
+        }
+
+
+    </script>
+}

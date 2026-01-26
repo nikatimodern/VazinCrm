@@ -1,0 +1,302 @@
+.table > :not(:last-child) > :last-child > * {
+  border-bottom-color: currentColor;
+  
+}
+
+
+.table > :not(caption) > * > * {
+  padding: 10px 10px;
+}
+
+
+div.dt-scroll-body {
+  border-bottom-color: currentColor;
+  border-bottom-width: 3px;
+}
+
+
+.wrap-text {
+  white-space: pre-wrap !important;
+  min-width: 200px;
+}
+
+
+table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before,
+table.dataTable.dtr-inline.collapsed > tbody > tr > th.dtr-control:before {
+  margin-left: 0.5em;
+  margin-right: unset !important;
+  border-left: 0 solid transparent !important;
+  border-right: 10px solid rgba(0, 0, 0, 0.5) !important;
+}
+
+
+table.dataTable.dtr-inline.collapsed > tbody > tr.dtr-expanded > td.dtr-control:before,
+table.dataTable.dtr-inline.collapsed > tbody > tr.dtr-expanded > th.dtr-control:before {
+  border-top: 10px solid rgba(0, 0, 0, 0.5) !important;
+  border-bottom: 0 solid transparent !important;
+  border-left: 5px solid transparent !important;
+  border-right: 5px solid transparent !important;
+}
+
+
+div.dt-processing > div:last-child > div {
+  background: #aaa !important;
+}
+
+
+.dtr-title {
+  font-family: "IRANSansBold";
+}
+
+
+.dtr-details li {
+  text-align: start;
+}
+
+
+div.dt-container div.dt-processing {
+  /*    width: 140px;*/
+  border-radius: 100px
+}
+
+
+div.dt-container tbody td, div.dt-container tbody th {
+  padding: 12px 10px !important;
+  vertical-align: middle;
+}
+
+
+div.dt-container > div:first-child .dt-layout-start,
+div.dt-container > div:first-child {
+  margin-top: 0 !important
+}
+
+
+div.dt-container .active {
+  border: none;
+}
+
+
+div.dt-container .page-link {
+  color: #01504B
+}
+
+
+div.dt-container .page-link:focus {
+  box-shadow: 0 0 0 .25rem rgba(1, 80, 75, .25);
+}
+
+
+div.dt-container .page-item.active .page-link {
+  background-color: #01504B;
+  border-color: #01504B;
+  color: #fff
+}
+
+
+div.dt-container th, div.dt-container td {
+  text-align: center !important;
+}
+
+
+#OrdersTable_wrapper table.table.dataTable.table-striped > tbody > tr:nth-of-type(2n+1) > * {
+  box-shadow: inset 0 0 0 9999px rgb(26 45 65 / 6%);
+}
+
+
+#OrdersTable_wrapper table.table.dataTable.table-hover > tbody > tr:hover > * {
+  box-shadow: inset 0 0 0 9999px rgb(26 45 65 / 8%);
+}
+
+
+#OrdersTable_wrapper th {
+  box-shadow: inset 0 0 0 9999px rgb(26 45 65 / 12%);
+}
+
+
+#AllItemsFactorDetailTable_wrapper .table > thead:not(caption) > * > *,
+#AllItemsFactorTable_wrapper .table > thead:not(caption) > * > *,
+.paymentTable.table > thead:not(caption) > * > * {
+  background-color: #c1c1c1;
+}
+
+
+#OrdersTable_wrapper thead tr th:first-child {
+  border-top-right-radius: 6px;
+}
+
+
+#OrdersTable_wrapper thead tr th:last-child {
+  border-top-left-radius: 6px;
+}
+
+
+#SenfTable_wrapper div.dt-scroll-body,
+#FamillyWayTable_wrapper div.dt-scroll-body,
+#ProductTable_wrapper div.dt-scroll-body,
+#bankAccountTable_wrapper div.dt-scroll-body {
+  border-bottom: none;
+}
+
+
+#OrdersTable_wrapper div.dt-scroll-body .child {
+  border: none
+}
+
+
+div.dt-container table.dataTable > tbody > tr.child ul.dtr-details > li:not(:last-child) {
+  border-bottom: 1px solid #1a2d41;
+}
+
+
+div.dt-container div.dt-search {
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+}
+
+
+div.dt-container div.dt-length {
+  text-align: left !important;
+  display: flex;
+  align-content: center;
+  gap: 8px;
+}
+
+
+div.dt-container div.dt-search input {
+  width: 100%;
+}
+
+
+body.dt-print-view {
+  direction: rtl;
+}
+
+
+body.dt-print-view h1 {
+  text-align: right;
+  margin: 1rem;
+  font-size: 1.5rem;
+}
+
+
+body.dt-print-view table thead tr th {
+  text-align: center;
+}
+
+
+div.dt-container > div:first-child .dt-layout-end {
+  gap: 8px;
+  display: flex;
+  flex-wrap: wrap
+}
+
+
+div.dt-container div.dt-layout-end > *:not(:first-child),
+div.dt-container div.dt-layout-start > *:not(:last-child) {
+  margin: 0
+}
+
+
+div.dt-container div.dt-buttons {
+  width: auto
+}
+
+
+@media screen and (min-width: 576px) {
+  div.dt-container > div:first-child .dt-layout-start,
+  div.dt-container > div:first-child .dt-layout-end {
+    flex: 0 0 auto;
+    width: auto;
+  }
+  
+  div.dt-container div.dt-search input {
+    width: auto;
+  }
+}
+
+
+#allPaymentTable55_wrapper div.dt-scroll-body,
+#allPaymentTable56_wrapper div.dt-scroll-body {
+  max-height: clamp(150px, calc(100dvh - 280px), 100dvh) !important;
+}
+
+
+@media screen and (max-width: 767px) {
+  #AcTable_wrapper div.dt-scroll-body,
+  #supplyProfitTable_wrapper div.dt-scroll-body,
+  #supplyDemandTable_wrapper div.dt-scroll-body {
+    max-height: none !important;
+  }
+  
+  #OrdersTable_wrapper div.dt-scroll-body {
+    max-height: clamp(150px, calc(100dvh - 560px), 100dvh) !important;
+  }
+  
+  #allPaymentTable55_wrapper div.dt-scroll-body,
+  #allPaymentTable56_wrapper div.dt-scroll-body {
+    max-height: calc(100dvh - 337px) !important;
+  }
+  
+  div.dt-container > div.dt-layout-table {
+    margin-top: 0 !important;
+  }
+  
+  div.dt-container > div.dt-layout-table > div {
+    margin-top: 2px !important;
+  }
+  
+  .paymentTable.table td.wrap-text {
+    min-width: 100px;
+  }
+  
+  .paymentTable.table .btn-accept {
+    min-width: 34px;
+    padding: 4px 15px !important;
+  }
+  
+  #allPaymentTable55_wrapper .paymentTable.table .buttonGray,
+  #allPaymentTable56_wrapper .paymentTable.table .buttonGray {
+    padding-block: 4px;
+  }
+  
+  #allPaymentTable55_wrapper .paymentTable-statusCol,
+  #allPaymentTable56_wrapper .paymentTable-statusCol {
+    gap: 10px !important;
+  }
+  
+}
+
+
+table.supplyItemsTable {
+  border-color: #ededed;
+  margin-block: 0;
+}
+
+
+table.supplyItemsTable td, table.supplyItemsTable th {
+  background-color: transparent;
+  vertical-align: middle;
+}
+
+
+table.supplyItemsTable.table > :not(caption) > * > * {
+  padding: 4px;
+}
+
+
+table tr.tableRow-bgRed > td, table tr.tableRow-bgRed > th {
+  background-color: #ffe6e6 !important;
+  box-shadow: none !important;
+}
+table tr.tableRow-bgGreen > td, table tr.tableRow-bgGreen > th {
+  background-color: #ecffe6 !important;
+  box-shadow: none !important;
+}
+
+
+/*
+#AcTable_wrapper > div.row {
+  margin-inline: auto;
+}*/

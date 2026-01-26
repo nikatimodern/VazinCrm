@@ -1,0 +1,57 @@
+@model CRM.Core.Domain.Chats.Entities.MainChat
+
+<div class="d-flex flex-column h-100">
+    <div class="p-2 border-bottom flex-center position-relative bg-white" style="height: 40px">
+        <div class="me-1 d-flex d-md-none align-items-center justify-content-center cursor-pointer" style="position: absolute;right: 4px" id="back-chatList" onclick="backChatList()">
+            <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg>
+        </div>
+        <span class="fMedium">@(ViewBag.FromUserId == Model.ToUserId ? Model.FromUserTxt : Model.ToUserTxt)</span>
+    </div>
+    <div class="d-flex flex-column-reverse justify-content-between h-100 position-relative" style="overflow: hidden">
+        @if (Model.Chats != null) {
+            <div class="d-flex flex-column gap-2 p-2 p-md-3" style="overflow: auto;margin-bottom: 68px;" id="chatWrapper">
+                @foreach (var item in Model.Chats) {
+                    <div class="report-wrapper @(item.UserCreatorID != ViewBag.FromUserId ? "flex-row-reverse" : "")">
+                        <img class="reporter-image" src="@(string.IsNullOrEmpty(item.UserImage) ? "/Img/User.png" : item.UserImage)" />
+
+                        <div class="report-box w-auto @(item.UserCreatorID != ViewBag.FromUserId ? "" : "bgLightBlue")">
+                            <span class="reporter-name">@item.UserCreator</span>
+                            <div class="d-flex align-items-center mb-2">
+                                <p class="report-text mb-0" style="white-space: break-spaces">@item.Text?.Trim()</p>
+                                @if (item.FileAddress != null) {
+                                    <span style="color: blue">
+                                        <a href="@item.FileAddress" download="file">دانلود</a>
+                                    </span>
+                                }
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-end gap-1 gap-md-4">
+                                <div class="report-info">
+                                    <div class="d-flex align-items-center gap-1 gap-md-2">
+                                        <svg style="width: 14px; height: 14px" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd" /></svg>
+                                        <span>@item.CreateDateTxt</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        } else {
+            <div style="padding: 10px; color: #777;">هیچ پیامی یافت نشد.</div>
+        }
+
+        <div class="position-absolute" style="bottom: 6px;left: 6px;right: 6px">
+            <div class="position-relative">
+                <textarea id="chatInput" placeholder="پیام..." class="form-control text-start" style="height: 60px;padding: 2px 8px 2px 64px;resize: none;border-color: #d4dbde;border-radius: 8px"></textarea>
+                <span class="cursor-pointer flex-center" style="position: absolute;top: 10px;left: 50px;" onclick="toggleAttachChatModal()">
+                    <i style="font-size: 16px" class="mp fa fa-paperclip"></i>
+                </span>
+                <span id="chatSendBtn" class="cursor-pointer" style="position: absolute;top: 4px;left: 4px;" onclick="sendChat()">
+                    <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width: 34px; height: 34px;transform: rotate(90deg);color: #008077" viewBox="0 0 24 24"><path d="m9 12.75 3 3m0 0 3-3m-3 3v-7.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </span>
+            </div>
+        </div>
+
+    </div>
+</div>

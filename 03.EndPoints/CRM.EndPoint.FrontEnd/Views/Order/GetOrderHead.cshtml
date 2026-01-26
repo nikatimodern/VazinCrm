@@ -1,0 +1,41 @@
+﻿@using CRM.Core.Domain.Orders.Enums
+@model List<OrderHead>
+
+@{
+    Layout = null;
+}
+
+@if (Model.Any()) {
+    <div class="order-table-grid">
+        <div class="order-row order-header">
+            <div class="order-cell">شماره</div>
+            <div class="order-cell">پیش‌فاکتور</div>
+            <div class="order-cell">تاریخ</div>
+            <div class="order-cell">وضعیت</div>
+            <div class="order-cell">عملیات</div>
+        </div>
+
+        @foreach (var item in Model) {
+            <div class="order-row">
+                <div class="order-cell">@item.OrderNumber</div>
+                <div class="order-cell">@item.PrefactorSer</div>
+                <div class="order-cell">@item.OrderDate</div>
+                <div class="order-cell">@item.Status.ToString()?.Replace("_", " ")</div>
+                <div class="order-cell align-items-stretch gap-2 flex-wrap">
+                    <button data-title="مشاهده" class="buttonGray d-flex align-items-center justify-content-center py-1 px-2" onclick="PreviewOrderPrint('@item.Id')">
+                        <i class="fa fa-eye"></i>
+                    </button>
+                    @if (ViewBag.PassType == 2) {
+                        <button class="buttonGreen2" onclick="changeStatusHd('@item.Id', 4, 3, 2)">تحویل شد</button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+} else {
+    <p class="empty-msg">دستور تولیدی برای این پیش فاکتور ثبت نشده!</p>
+}
+
+
+
+

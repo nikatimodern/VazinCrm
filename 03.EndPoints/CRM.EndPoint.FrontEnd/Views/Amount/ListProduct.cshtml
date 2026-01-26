@@ -1,0 +1,98 @@
+﻿@using CRM.Core.Domain.Products.Entities
+@using Microsoft.IdentityModel.Tokens
+@model List<Product>
+@* @{
+    ViewData["Title"] = "Index";
+    
+} *@
+
+
+
+<div class="pe-2" style="font-size:medium; display:flex;">
+    <div style="width:100% !important;">
+        <div class="list-product__grid">
+            @foreach (var item in Model) {
+                <div class="list-product__box">
+                    <div class="d-flex justify-content-between align-items-center " style="margin-bottom:12px">
+                        <div style="font-size:clamp(15px,2vw,16px)">
+                            <span class="d-none d-sm-inline">نام محصول: </span>
+                            <span class="fbold text-dark text-center">@item.Title</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            @if (ViewBag.hasAccess && ViewBag.from == "amountIndex") {
+                                <button class="buttonGreen" style="border-radius:5px;font-size:clamp(12px,2vw,14px);padding: 4px 10px !important;height:auto !important" onclick="showRegisterAmountModal('@item.Id','@item.Title')">ثبت قیمت</button>
+                            }
+                        </div>
+                    </div>
+                    <div class="list-product__priceTable" style="grid-template-columns:@(ViewBag.hasAccess && ViewBag.from == "amountIndex" ? "repeat(5, auto)" : "auto repeat(3, 1fr)")">
+                        @if (item.ProductAmounts.Any()) {
+                            <div class="header d-none d-md-flex justify-content-center align-items-center">وزن</div>
+                            <div class="header d-none d-md-flex justify-content-center align-items-center">قیمت رسمی</div>
+                            <div class="header d-none d-md-flex justify-content-center align-items-center">قیمت غیررسمی</div>
+                            if (ViewBag.hasAccess && ViewBag.from == "amountIndex") {
+                                <div id="list-product__action" class="header d-none d-md-flex justify-content-center align-items-center">عملیات</div>
+                            }
+
+                            <div style="background-color: #ccc;" class="header d-none d-md-flex justify-content-center align-items-center">آخرین بروزرسانی</div>
+                        }
+                        @foreach (var Am in item.ProductAmounts) {
+                            <div class="d-flex justify-content-between d-md-flex justify-content-md-center gap-3 list-p-weight-bg-mobile">
+                                <div class="d-md-none fMedium" style="color: #495057;">
+                                    وزن
+                                </div>
+                                <span class="d-flex justify-content-center align-items-center"> @Am.From تا @Am.To @Am.UnitTxt</span>
+                                @if (ViewBag.hasAccess && ViewBag.from == "amountIndex") {
+                                    <div class="d-flex d-md-none gap-2 justify-content-center">
+                                        <span class="text-secondary d-flex justify-content-center align-items-center" style="cursor: pointer" data-title="ویرایش" onclick="showEditAmountModal('@item.Id', '@Am.Id', '@item.Title','@Am.RasmiAmount','@Am.NonRasmiAmount','@Am.From', '@Am.To', '@Am.Unit')">
+                                            <i class="fas fa-pen"></i>
+                                        </span>
+                                        <span class="text-secondary d-flex justify-content-center align-items-center" style="cursor: pointer" data-title="حذف" onclick="showDeleteAmountModal('@Am.Id')">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </span>
+                                    </div>
+                                }
+                            </div>
+                            <div class="d-flex justify-content-between justify-content-md-center gap-3">
+                                <div class="d-md-none fMedium" style="color: #495057;">
+                                    رسمی
+                                </div>
+                                <span> @string.Format("{0:n0}", Am.RasmiAmount)</span>
+                            </div>
+
+                            <div class="d-flex justify-content-between justify-content-md-center gap-3">
+                                <div class="d-md-none fMedium" style="color: #495057;">
+                                    غیررسمی
+                                </div>
+                                <span> @string.Format("{0:n0}", Am.NonRasmiAmount)</span>
+                            </div>
+                            if (ViewBag.hasAccess && ViewBag.from == "amountIndex") {
+                                <div class="d-none d-md-flex gap-2 justify-content-center">
+                                    <span class="text-secondary d-flex justify-content-center align-items-center" style="cursor: pointer" data-title="ویرایش" onclick="showEditAmountModal('@item.Id', '@Am.Id', '@item.Title','@Am.RasmiAmount','@Am.NonRasmiAmount','@Am.From', '@Am.To', '@Am.Unit')">
+                                        <i class="fas fa-pen"></i>
+                                    </span>
+                                    <span class="text-secondary d-flex justify-content-center align-items-center" style="cursor: pointer" data-title="حذف" onclick="showDeleteAmountModal('@Am.Id')">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </span>
+                                </div>
+                            }
+
+                            <div class="d-flex justify-content-between justify-content-md-center gap-3" style="background-color: #ebebeb;font-size: 12px;padding-block: 4px">
+                                <div class="d-md-none fMedium" style="color: #495057;">
+                                    آخرین بروزرسانی
+                                </div>
+                                <span> @Am.ElapsTime</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+

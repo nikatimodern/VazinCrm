@@ -1,0 +1,256 @@
+﻿@using CRM.Core.Domain.PreFactors.Enum
+@model PrefactorViewModel ;
+
+@{
+    Layout = null;
+}
+
+<div style="width:100%;display:flex;flex-direction:column;gap:5px ">
+
+    @if (Model != null) {
+        foreach (var item in Model.data ?? Enumerable.Empty<PreFactor>()) {
+            bool isInvalid = item.Pftype is (int)PreFactorEnum.فاقد_اعتبار or (int)PreFactorEnum.بسته_شده
+                or (int)PreFactorEnum.حذف_شده or (int)PreFactorEnum.برگشت_خورده_از_طرف_مدیر_فروش;
+
+            <div class="mp" style=" width:100%;display:flex;">
+                @if (item.OfficialType == 1) {
+                    <div class="mp InfoDataHead_PrefactorRasmi" style="display:flex;width:24px !important">
+                        <label style="transform: rotate(90deg)">رسمی</label>
+                    </div>
+                } else {
+                    <div class="mp InfoDataHead_PrefactorNonRasmi" style="display:flex;width:24px !important">
+                        <label style="transform: rotate(90deg)">غیررسمی</label>
+                    </div>
+                }
+                @if (item.Export == true) {
+                    <div class="" style="background-color:lightgreen;border-block: 2px solid darkgreen; width:24px; display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
+                        <label style="font-family:'IRANSansBold'; transform: rotate(90deg)">صـادراتی</label>
+                    </div>
+                }
+                <div class="d-flex flex-column InfoDataItem_Prefactor flex-grow-1 flex-sm-row justify-content-between w-100 py-2">@*@(isInvalid ? "bgLightGray" : "")*@
+                    <div class="d-flex flex-column w-100">
+                        <div class="mp flex-column flex-md-row" style=" display:flex;justify-content:space-between; width:100%;direction:rtl;">
+                            <div class="col-12 col-md-3 d-flex flex-row flex-md-column flex-wrap column-gap-3 row-gap-2 px-2 pe-md-0 justify-content-around">
+                                <div class="d-flex align-items-center gap-1">
+                                    <label style="color:gray">سریال:</label>
+                                    <label class="fbold">@item.SerialNumber</label>
+                                </div>
+                                @if (item.DealSerialNumber != null) {
+                                    <div class="d-flex align-items-center gap-1">
+                                        <label style="color:gray">سفارش:</label>
+                                        <label class="fbold">@item.DealSerialNumber</label>
+                                    </div>
+                                }
+                                <div class="d-flex align-items-center gap-1">
+                                    <label style="color:gray">تاریخ:</label>
+                                    <label class="fbold">@item.Date</label>
+                                </div>
+                                <div class="d-flex align-items-center gap-1">
+                                    <label style="color:gray">اعتبار:</label>
+                                    <label class="fbold">@item.ValidityDade</label>
+                                </div>
+                            </div>
+
+                            <div class="d-md-none my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                            <div class="col-12 col-md-3 flex-wrap gap-2 px-2 ps-md-0" style="text-align:center; display:flex;align-items:center;justify-content:space-around">
+                                <div class="flex-row flex-md-column" style=" display:flex;align-items:center; justify-content:center;width:180px;gap:6px">
+                                    <label style="color:gray">مبلغ کل:</label>
+                                    <span class="fbold">@($"{(item.SumTotalAmount + item.TotalTax):n0}") <span style="font-size: 12px"> @(item.CurrencyTypeTxt ?? "ريال")</span></span>
+                                </div>
+                                <div class="flex-row flex-md-column" style=" display:flex;align-items:center; justify-content:center;width:180px;gap:6px">
+                                    <label style="color:gray">پرداخت شده:</label>
+                                    @{
+                                        bool isHideAddInvoiceBtns = isInvalid || (!Model.rols.Contains("مدیر ارشد") && !Model.rols.Contains("مدیر فروش") && ViewBag.UserId != item.UserCreatorID);
+                                    }
+                                    <span class="fbold hoverLink" onclick="ShowModalListInvoice('@item.Id', 1,'@item.SerialNumber', 2, '@item.DealId', @isHideAddInvoiceBtns.ToString().ToLower())">
+                                        @($"{item.ReciveAmount:n0}")<span style="font-size: 12px"> @(item.CurrencyTypeTxt ?? "ريال")</span>
+                                    </span>
+
+                                </div>
+                                <div class="flex-row flex-md-column" style=" display:flex;align-items:center; justify-content:center;width:180px;gap:6px">
+                                    <label style="color:gray">باقی مانده:</label>
+                                    <span class="d-flex align-items-baseline gap-1 fbold">
+                                        <span style="direction: ltr">@($"{item.PaymentAmount:n0}")</span>
+                                        <span style="font-size: 12px"> @(item.CurrencyTypeTxt ?? "ريال")</span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="d-md-none my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                            <div class="col-12 col-md-4 flex-row flex-md-column flex-wrap gap-2 px-2 px-md-0" style=" display:flex;align-items:center;justify-content:space-around">
+
+                                <div class="d-flex flex-row flex-md-column align-items-center justify-content-center gap-2 gap-md-0">
+                                    <label style=" color:gray">کد مشتری:</label>
+                                    <label class="text-center" style=" font-family:'IRANSansBold'">@(item.CustomerEntity?.CustomerCode.ToString() ?? "-") </label>
+                                </div>
+                                <div class="d-flex flex-row flex-md-column align-items-center justify-content-center gap-2 gap-md-0">
+                                    <label style=" color:gray">مشتری:</label>
+                                    <label class="text-center fbold">
+                                        @item.Customer
+                                        @(string.IsNullOrWhiteSpace(item.Customer) || string.IsNullOrWhiteSpace(item.AgentName) ? "" : " | ")
+                                        @item.AgentName
+                                    </label>
+                                </div>
+
+                                <div class="d-flex flex-row flex-md-column align-items-center justify-content-center gap-2 gap-md-0">
+                                    <label style="color:gray">کارشناس فروش:</label>
+                                    <label class="text-center" style="font-family:'IRANSansBold'">@item.UserCreator</label>
+                                </div>
+                            </div>
+
+                            <div class="d-md-none my-2 " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                            <div class="col-12 col-md-2 px-2 flex-row flex-md-column gap-2 flex-wrap" style=" font-size: 13px;display:flex;align-items:center;justify-content:space-evenly">
+                                @if (Model._Setting.CrmFactors == true) {
+                                    if (item.CountFactor == 0) {
+                                        <button disabled style="display:flex;flex-direction:column;justify-content:center;align-items:center; border-radius:4px;height:auto;width: 80px;padding: 0 4px;">
+                                            <span>فاکتور CRM </span>
+                                            <span style="display:flex;justify-content:center;gap: 2px"> <span> @item.CountFactor </span> <span>عدد</span></span>
+                                        </button>
+                                    } else {
+                                        <button class="buttonGreen" style="display:flex;flex-direction:column;justify-content:center;align-items:center; border-radius:4px;height:auto;padding: 0 6px;width: 80px" onclick="GetFactorPartial(null, '@item.Id',this)">
+                                            <span>فاکتور CRM </span>
+                                            <span style="display:flex;justify-content:center;gap: 2px"> <span> @item.CountFactor </span> <span>عدد</span></span>
+                                        </button>
+                                    }
+                                }
+
+                                @if (Model._Setting.Sepidar == true) {
+                                    if (item.CountFactorSepidar == 0) {
+                                        <button disabled style="display:flex;flex-direction:column;justify-content:center;align-items:center; border-radius:4px;height:auto;width: 80px;padding: 0 4px;">
+                                            <span>فاکتور سپیدار </span>
+                                            <span style="display:flex;justify-content:center;gap: 2px"> <span> @item.CountFactorSepidar </span> <span>عدد</span></span>
+                                        </button>
+                                    } else {
+                                        <button style="display:flex;flex-direction:column;justify-content:center;align-items:center; border-radius:4px;height:auto;padding: 0 6px;width: 80px" class="buttonPurple" onclick="getFacSepidar('@item.Id', '@item.SerialNumber', this, 0)">
+                                            <span>فاکتور سپیدار </span>
+                                            <span style="display:flex;justify-content:center;gap: 2px"> <span> @item.CountFactorSepidar </span> <span>عدد</span></span>
+                                        </button>
+                                    }
+                                }
+                            </div>
+                            <div class="d-sm-none mt-2 " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+                        </div>
+
+                        @{
+                            var steps = new List<(int type, string label)> {
+                                ((int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین, "واگذاری تامین"),
+                                ((int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین, "تایید تامین"),
+                                ((int)PreFactorEnum.در_انتظار_ارسال_به_مشتری, "ارسال به مشتری"),
+                                ((int)PreFactorEnum.در_انتظار_تایید_مشتری, "تایید مشتری"),
+                                ((int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش, "تایید مدیرفروش"),
+                                ((int)PreFactorEnum.در_انتظار_تایید_مالی, "تایید مالی"),
+//                            ((int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش, "تایید مدیرفروش"),
+                                ((int)PreFactorEnum.در_انتظار_تولید, "تولید"),
+                                ((int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد, "تحویل مشتری")
+                            };
+
+                            int stepOrder = steps.FindIndex(s => s.type == item.Pftype);
+                            double progressValue = (stepOrder - 0.3) / (steps.Count - 1.0);
+                        }
+
+                        <div class="progressTracker">
+                            <div class="@(stepOrder <= 3 ? "progressTrackerFilledYellow" : "progressTrackerFilled")" style="width: @(stepOrder == steps.Count - 1 ? "100%" : $"calc(100% * {progressValue})")"></div>
+
+                            <div class="d-flex justify-content-between w-100" style="height: 18px;top:-6px">
+                                @for (int i = 0; i < steps.Count; i++) {
+                                    var (type, label) = steps[i];
+                                    bool isCompleted = stepOrder > i || item.Pftype == (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد;
+                                    bool isActive = stepOrder == i && item.Pftype != (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد;
+                                    bool isRejected = type == (int)PreFactorEnum.در_انتظار_تایید_مالی && (item.AcceptedFinancial == false);
+                                    bool isYellow = stepOrder <= 3;
+
+                                    var dotClass = "progressTrackerDots";
+                                    dotClass += isRejected
+                                        ? " rejectedTrack"
+                                        : isCompleted
+                                            ? isYellow ? " completedTrackYellow" : " completedTrack"
+                                            : "";
+                                    dotClass += isActive ? " activeTrack" : "";
+
+                                    <div class="d-flex align-items-center justify-content-between flex-column position-relative">
+                                        <div class="@dotClass">
+                                            <svg class="completed-svg" style="width:100%;height:100%;display:none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" /></svg>
+                                            <svg class="rejected-svg" style="width:100%;height:100%;display:none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clip-rule="evenodd" /></svg>
+                                        </div>
+                                        <span style="position:absolute;width: max-content;top: 100%;">
+                                            <span class="d-none @(!isInvalid ? "d-md-inline-block" : "")">@label</span>
+                                            @if (!Model.rols.Contains("مشتری") && type == (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین && item.UserTaminId != null) {
+                                                var text = "کارشناس تامین: " + item.UserTaminTxt;
+                                                <span data-bs-toggle="popover" data-bs-content="@Html.Raw(text)">
+                                                    <svg style="width: 12px;color: #666" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM9 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.75 8a.75.75 0 0 0 0 1.5h.75v1.75a.75.75 0 0 0 1.5 0v-2.5A.75.75 0 0 0 8.25 8h-1.5Z" clip-rule="evenodd" /></svg>
+                                                </span>
+                                            }
+                                        </span>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="mt-3 @(isInvalid ? "d-md-inline-flex" : "d-md-none") flex-center position-absolute" style="top: 0; left: 0; right: 0">
+                                <label class="fbold" style="font-size: 13px">
+                                    @item.PftypeTxt @(item.Pftype == (int)PreFactorEnum.بسته_شده ? $"({item.ExpireValidateDesc})" : "")
+                                </label>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(item.CommentText)) {
+                            <div class="my-2 mt-md-3 mx-auto" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px"></div>
+                            <div class="d-flex flex-wrap">
+                                <div class="px-2 d-flex justify-content-around gap-1">
+                                    <label style="color:gray">توضیحات:</label>
+                                    <span class="flex-grow-1" style="white-space: pre-line">@Html.Raw(item.CommentText)</span>
+                                </div>
+                            </div>
+                        }
+                        <div class="d-sm-none mt-3" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+                    </div>
+
+
+                    <div class="flex-row flex-sm-column mt-2 mt-sm-0 mx-0 mx-sm-2 align-items-center" style=" display:flex; justify-content:space-evenly !important;row-gap:8px;font-size:15px">
+                        @if (Model.rols.Contains("مدیر ارشد") || Model.rols.Contains("مدیر فروش") || (item.UserCreatorID == ViewBag.UserId && item.Pftype != (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد)) {
+                            if (item.Pftype <= (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین || Model.rols.Contains("مدیر ارشد")) {
+                                <button class="mp d-flex justify-content-center align-items-center" data-title-right="حذف" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="delPfactor('@item.Id', 3)">
+                                    <i class="mp fa fa-trash"></i>
+                                </button>
+                                <button class="mp d-flex justify-content-center align-items-center" data-title-right="ویرایش" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="upPfactor('@item.Id', 3)">
+                                    <i class="mp fa fa-pencil"></i>
+                                </button>
+                            }
+                        }
+
+                        @if (item.CustomerId != null) {
+                            <button class="mp d-flex justify-content-center align-items-center" data-title-right="پروفایل" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="openCustomerProfile('@item.CustomerId')">
+                                <i class="mp fa fa-user"></i>
+                            </button>
+                        }
+                        @if (item.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین) {
+                            <button class="mp d-flex justify-content-center align-items-center" data-title-right="نمایش پیش فاکتور" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="ShowPreviewPfactor('@item.Id')">
+                                <i class="mp fa fa-eye"></i>
+                            </button>
+                        }
+                        <button class="mp d-flex justify-content-center align-items-center" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="AttachDoc('@item.Id')">
+                            <i style="font-size:15px" class="mp fa fa-paperclip"></i>
+                        </button>
+                        @if (item.Pftype is (int)PreFactorEnum.در_انتظار_تایید_مالی or (int)PreFactorEnum.در_انتظار_تولید or (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد) {
+                            <button class="mp d-flex justify-content-center align-items-center taminDropdownToggle" data-title-right="دستور تولیدها" style="color:var(--DarkColor); border:none;background-color:transparent" data-pfId="@item.Id">
+                                <i class="mp fas fa-industry"></i>
+                            </button>
+                            <div class="taminDropdown"></div>
+                            if ((Model.rols.Contains("کارشناس مالی") || Model.rols.Contains("مدیر مالی") || Model.rols.Contains("مدیر ارشد")) && item.Pftype != (int)PreFactorEnum.در_انتظار_تایید_مالی) {
+                                <button class="mp d-flex justify-content-center align-items-center" data-title-right="ثبت فاکتور جدید" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="AddFactor('@item.Id',0)">
+                                    <i class="fa fa-arrow-left"></i>
+                                </button>
+                            }
+                        }
+                        @if (item.Pftype == (int)PreFactorEnum.فاقد_اعتبار) {
+                            <button class="mp d-flex justify-content-center align-items-center" data-title-right="بازگشت" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="Backward('@item.Id', 2, '@item.DealId')">
+                                <i style="font-size:15px" class="mp fa fa-forward"></i>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>

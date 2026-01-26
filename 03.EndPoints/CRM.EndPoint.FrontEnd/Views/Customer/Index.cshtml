@@ -1,0 +1,992 @@
+﻿@model AppUser
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="mp" style="align-items:center; flex-direction:column; width:100% ; display:flex;margin-top:0 !important">
+    <div class="w-100">
+        <div class="d-flex flex-column flex-wrap flex-lg-row gap-3 align-items-center justify-content-center mt-md-2">
+            @if (Model.NormalizedUserName == "R.SALAMI") {
+                <div id="AddCustBtnID">
+                    <button class="buttonGreen1 gap-2" onclick="showFormCustomer()" id="btnNew">
+                        <i class="fa fa-user" style="font-size:14px;" aria-hidden="true"></i>
+                        ثبت جدید
+                    </button>
+                    <button class="buttonCancel2" onclick="hideFormCustomer()" id="btnCancel" style="display:none;padding: 8px 16px;border-radius: 50px;line-height: 1;">انصراف</button>
+                </div>
+            }
+            <div id="searchInput" class="col-12 col-lg-7" style="display:flex;justify-content:center;flex-direction:column; align-items:center;  ">
+                <div style="width:100%; display:flex; justify-content:center; flex-direction:column;align-items:center; ">
+                    <input class="form-control form-control-lg" id="SearchInp" type="text" placeholder="جستجو برحسب (نام مشتری ، کد مشتری)" />
+                </div>
+            </div>
+            <div id="roleTypeRadios">
+                <ul class="filter-switch Admin SalesAdmin TaminAdmin TaminExpert FinancialAdmin FinancialExpert" style="display: none">
+                    <li class="filter-switch-item">
+                        <input type="radio" name="roleTypeChange" value="-1" id="roleType-all" checked>
+                        <label for="roleType-all">همه</label>
+                    </li>
+                    <li class="filter-switch-item">
+                        <input type="radio" name="roleTypeChange" value="1" id="roleType-customer">
+                        <label for="roleType-customer">مشتری</label>
+                    </li>
+                    <li class="filter-switch-item">
+                        <input type="radio" name="roleTypeChange" value="2" id="roleType-supplier">
+                        <label for="roleType-supplier">تامین کننده</label>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="formAddCustom" class="mt-4 pt-md-2" style="display:none">
+            <div style="display:flex;justify-content:center ">
+                <div class="col-11 col-lg-9 mx-auto" style=" display:flex;flex-wrap:wrap;">
+                    <div style="padding:0 !important;margin:0 !important; width:100% !important;height:2px; background-color:gray; border-radius:20px; ">
+                    </div>
+                    <div style=" display:flex;flex-direction:row-reverse; justify-content:space-between; margin-top:-9px !important; width:100%;">
+                        <div class="PStepStart">
+                            <div class="step ac" id="hStep1">
+                            </div>
+                            <p>پایه</p>
+                        </div>
+                        <div class="PStep">
+                            <div class="step " id="hStep2">
+                            </div>
+                            <p>اطلاعات صنف کاری</p>
+                        </div>
+                        <div class="PStepEnd">
+                            <div class="step " id="hStep3">
+                            </div>
+                            <p>آدرس</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="mt-3" dir="rtl">
+                <div style="width:100%; display:flex; justify-content:space-between; margin-top:0 ">
+                    <p class="fmp" style="font-size:large; font-family:'IRANSansBold'">ثبت مشتری:</p>
+                </div>
+                <div class=" InfoData mt-1">
+                    <div id="CuInfoFormId">
+                        @*Step1 اطلاعات اولیه*@
+                        <form id="Step1" style="display:flex;flex-direction:column;justify-content:center;align-items:center;  ">
+                            <div class="d-flex align-items-center flex-column mb-2">
+                                <div id="customerSupplierAlertRq" style="display:flex;width:100%; justify-content:center;">
+                                    <div class="form-group d-flex align-items-center gap-1" style="margin-left: 10px">
+                                        <input type="radio" data-alertId="customerSupplierAlertRq" name="roleType" id="customerSupplier1" value="1" checked required />
+                                        <label class="fbold" for="customerSupplier1">مشتری</label>
+                                    </div>
+                                    <div class="form-group d-flex align-items-center gap-1" style="margin-left: 10px">
+                                        <input type="radio" data-alertId="customerSupplierAlertRq" name="roleType" id="customerSupplier2" value="2" required />
+                                        <label class="fbold" for="customerSupplier2">تامین کننده</label>
+                                    </div>
+                                    <div class="form-group d-flex align-items-center gap-1">
+                                        <input type="radio" data-alertId="customerSupplierAlertRq" name="roleType" id="customerSupplier3" value="3" required />
+                                        <label class="fbold" for="customerSupplier3">تامین کننده - مشتری</label>
+                                    </div>
+                                </div>
+                                <div id="juridicalAlertRq" style="display:flex;width:100%; justify-content:center;direction:ltr ">
+                                    <div class="form-group d-flex align-items-center gap-1" style="margin:10px">
+                                        <label class="fbold" for="JuridicalA">حقیقی</label>
+                                        <input type="radio" data-alertId="juridicalAlertRq" name="juridical" id="JuridicalA" value="0" checked required />
+                                    </div>
+                                    <div class="form-group d-flex align-items-center gap-1" style="margin:10px">
+                                        <label class="fbold" for="JuridicalB">حقوقی</label>
+                                        <input type="radio" data-alertId="juridicalAlertRq" name="juridical" id="JuridicalB" value="1" required />
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div class="row col-11 col-md-9 mx-auto col-lg-8" style="justify-content:center;">
+                                <div class="form-group col-12 col-xl-4 d-flex flex-column justify-content-end">
+                                    <div style="display:flex;justify-content:space-between">
+                                        <label class=" fmp tText" style="text-align:end" id="nameTxt">
+                                            نام:
+                                        </label>
+                                        <div id="sexAlertRq" style="display:flex; justify-content:space-around;width:40%">
+                                            <div class="mp d-flex align-items-center gap-1">
+                                                <label style="cursor:pointer" class="mp tText" for="man">آقا</label>
+                                                <input style="cursor:pointer" data-alertId="sexAlertRq" class="mp" type="radio" id="man" name="sex" value="1" required />
+                                            </div>
+                                            <div class="mp d-flex align-items-center gap-1">
+                                                <label style="cursor:pointer" class="mp tText" for="woman">خانم</label>
+                                                <input style="cursor:pointer" data-alertId="sexAlertRq" type="radio" id="woman" name="sex" value="0" required />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <input class="form-control" type="text" id="agentNameId" name="agentName" placeholder="نام" required />
+                                </div>
+
+                                <div class=" form-group col-12 col-lg-6 col-xl-4">
+                                    <label class=" fmp tText" style="text-align:end;" id="mobileTxt">تلفن همراه(موبایل):</label>
+                                    <input inputmode="numeric" class="form-control mobileNumber" type="text" id="mobile" name="mobile" placeholder="موبایل" required />
+                                </div>
+                                <div class=" form-group col-12 col-lg-6 col-xl-4">
+                                    <label class=" fmp tText" style="text-align:end" id="melliTxt">کد ملی :</label>
+                                    <input class="form-control" type="text" id="agentMeliCode" name="agentMeliCode" placeholder="کد ملی" />
+                                </div>
+
+                            </div>
+                            <div class="row col-11 col-md-9 mx-auto col-lg-8" style="display:none;" id="JuridicalDiv">
+                                <div class=" form-group col-12 col-lg-6 col-xl-3">
+                                    <label class=" fmp tText" style="text-align:end"> نام شرکت : </label>
+                                    <input class="hog  form-control Jreq" type="text" id="companyNameId" name="companyName" placeholder="نام شرکت" />
+
+                                </div>
+                                <div class=" form-group col-12 col-lg-6 col-xl-3">
+                                    <label class=" fmp tText" style="text-align:end">شناسه ملی شرکت: </label>
+                                    <input maxlength="11" class=" hog form-control Jreq" type="text" id="shenaseMeliId" name="shenaseMeli" placeholder="شناسه ملی" />
+                                </div>
+                                <div class=" form-group col-12 col-lg-6 col-xl-3">
+                                    <label class=" fmp tText" style="text-align:end">کداقتصادی شرکت: </label>
+                                    <input maxlength="12" class="  form-control Jreq" type="text" id="eghtesadiCodeId" name="eghtesadiCode" placeholder="کد اقتصادی" />
+                                </div>
+                                <div class=" form-group col-12 col-lg-6 col-xl-3">
+                                    <label class=" fmp tText" style="text-align:end">شماره ثبت شرکت: </label>
+                                    <input maxlength="6" class=" hog form-control Jreq" type="text" id="numberRegisterId" name="numberRegister" placeholder="شماره ثبت" />
+                                </div>
+                            </div>
+
+                        </form>
+                        @*Step2 اطلاعات شرکت مربوط به حقوقی*@
+                        @*                                <div id="Step2" style="display:none;width:100%;justify-content:center;">
+                        </div>*@
+                        @*Step3 اطلاعات صنف کاری*@
+                        <form id="Step2" class="row col-11 col-md-9 mx-auto col-lg-8" style="display:none;justify-content:center; ">
+                            <div class="form-group col-12 col-lg-6 col-xl-4">
+                                <label class=" fmp tText " style=" text-align:end" id="WorkSenfTxt">صنف کاری:</label>
+
+                                <div class="fmp" style="display:flex;">
+                                    <select id="workSenf" name="workSenf" class="Lbox form-control" style="width:100%" required>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group col-12 col-lg-6 col-xl-4">
+                                <label class=" fmp tText" style="text-align:end" id="َAddressTxt">توضیحات صنف کاری:</label>
+                                <input class="form-control" type="text" id="workSenfDescription" name="workSenfDescription" placeholder="توضیحات صنف کاری" />
+                            </div>
+
+                            <div class="form-group col-12 col-lg-6 col-xl-4">
+                                <label class=" fmp tText" style="text-align:end" id="َAddressTxt">طریقه آشنایی:</label>
+                                <select id="AcquaintanceWay" name="AcquaintanceWay" class="Lbox form-control" style="width:100%">
+                                </select>
+                            </div>
+
+
+                        </form>
+                        @*Step4 اطلاعات آدرس*@
+                        <form id="Step3" style="display:none;justify-content:center;">
+                            <div style="display:flex;" class="row col-11 col-md-9 mx-auto col-lg-8 p-0">
+                                <div class="form-group col-12 col-lg-6 col-xl-3">
+                                    <label class=" fmp tText" style="text-align:end" id="َAddressTxt">کد پستی:</label>
+                                    <input maxlength="10" class="form-control" type="text" id="postalCode" name="postalCode" placeholder="کد پستی" />
+                                </div>
+                                <div class="form-group col-6 col-lg-3 col-xl-2">
+                                    <label class=" fmp tText" style="text-align:end" id="َProvinceTxt">استان:</label>
+                                    <input class="form-control" type="text" id="province" name="province" placeholder="استان" required />
+                                </div>
+                                <div class="form-group col-6 col-lg-3 col-xl-2">
+                                    <label class=" fmp tText" style="text-align:end" id="CityTxt">شهر:</label>
+                                    <input class="form-control" type="text" id="city" name="city" placeholder="شهر" required />
+                                </div>
+                                <div class="form-group col-12 col-xl-5">
+                                    <label class=" fmp tText" style="text-align:end" id="َAddressTxt">آدرس:</label>
+                                    <input class="form-control" type="text" id="address" name="address" placeholder="آدرس" required />
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="InBtnNonJuridicalDiv" class="mp" style="width:100% !important; display:flex; direction: ltr; justify-content:center ">
+                        <div style="width:100%; display:flex; justify-content:start; margin-top:20px;  ">
+                            <button class="btnGroupBase btnLeft" onclick="backStep()">قبلی</button>
+                            <button class="btnGroupBase btnRight fbold" id="btnIn" style="margin-left:5px; " onclick="submitformCustomerBase()">تایید و بعدی</button>
+                            @*<button class=" btnRight" onclick="nextStep()"><i class="fas fa-angle-right"></i></button>*@
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="DivNoneJuridicalTBL" style="margin-top:10px !important; display:none" dir="rtl">
+                <p class="fmp" style="font-size:large; font-family:'IRANSansBold'">لیست مشتریان حقیقی:</p>
+                <div class="row InfoData mp" style="overflow-x: auto;">
+                    <table style=" width:100% " class="table  table-bordered table-hover table-striped; " id="NoneJuridicalTBL">
+                        <thead style="text-align:center">
+                        <tr>
+                            <th>Id</th>
+                            <th>نام</th>
+                            <th>نام خانوادگی</th>
+                            <th>موبایل</th>
+                            <th>عملیات</th>
+                        </tr>
+                        </thead>
+                    </table>
+                </div>
+
+            </div>
+
+            <div id="DivJuridicalTBL" style="margin-top:10px !important; display:none" dir="rtl">
+                <p class="fmp" style="font-size:large; font-family:'IRANSansBold'">لیست مشتریان حقوقی:</p>
+                <div class="row InfoData mp" style="overflow-x: auto;">
+                    <table class="table  table-bordered table-hover table-striped" id="JuridicalTBL">
+                        <thead style="text-align:center">
+                        <tr>
+                            <th>Id</th>
+                            <th>نام شرکت</th>
+                            <th>شناسه ملی</th>
+                            <th>نام نماینده</th>
+                            <th>نام خانوادگی نماینده</th>
+                            <th>عملیات</th>
+                        </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="mt-3 mt-md-4 pt-md-2" style=" width:100%; display:flex;flex-direction:column;position:relative" id="CuParId">
+            <div style="display:flex; justify-content:center;position:absolute;left:0;right:0;z-index:1" id="LoadingCusPartId">
+                <i style="font-size:45px" class="fas fa-spinner fa-pulse"></i>
+            </div>
+            <div style="max-height: calc(100dvh - 210px); overflow-y: auto; padding-bottom: 10px;">
+                <div id="CustomerPartial" class="parent px-2 px-md-0 col-sm-8 offset-sm-2 col-lg-12 offset-lg-0" style="display: grid; gap: 1rem;">
+                </div>
+                <div id="btnShowAllId" style="display: none; justify-content: center; margin-top: 1rem;">
+                    <button onclick="ShowAllCustomer()" class="buttonGreen1 p-0" style="width: 36px; height: 36px;border-radius: 50%;">
+                        @* <i class="fa fa-angle-down" aria-hidden="true"></i> *@
+                        <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal AlertRegister -->
+<div class="modal fade" id="AlertRegister" tabindex="-1" role="dialog" data-bs-backdrop="static" data-bs-focus="false" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content rounded-3 shadow-sm">
+
+            <div style="background-color: #f1f3f5; border-bottom: 1px solid #dee2e6; padding: 20px 20px 18px; text-align: center;">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg height="24px" width="24px"  fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" /></svg>
+                    <h5 class="m-0">نام‌های مشابه قبلا در سیستم ثبت شده‌اند</h5>
+                </div>
+                <p class="mt-3 mb-1">با کلیک روی <b>اضافه به مشتری من</b>، آن را به لیست مشتریان خود اضافه کنید.</p>
+                <p>اگر مشتری جدید است، روی دکمه «انصراف» کلیک کنید و ادامه ثبت را انجام دهید.</p>
+            </div>
+
+            <div id="alertRegisterLoading" class="justify-content-center align-items-center py-4" style="display: flex;">
+                <div class="fa-3x">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+            </div>
+
+            <div id="contentAlertRegister" style="max-height: calc(100dvh - 400px); overflow-y: auto;background-color: #f9f9f9;"></div>
+
+            <div class="d-flex justify-content-center p-3 border-top">
+                <button class="buttonCancel2" data-bs-dismiss="modal">انصراف</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+@section Scripts {
+    <script>
+
+        var JuridicalTBL;
+        var NoneJuridicalTBL;
+        var JuridicalFlag = false;
+        var CurrentStep = 1;
+        var allStep = 3;
+        var flagStep1 = false;
+        var flagStep2 = false;
+        var flagStep3 = false;
+
+        var flagSubmit = true;
+
+        let roleType = -1;
+
+        const SearchInp = document.getElementById("SearchInp");
+
+        document.addEventListener("DOMContentLoaded", () => {
+            FormCode = 1;
+
+            var le = $("input[type='radio'][name='juridical'] ");
+            le.map((index, li) => {
+                li.addEventListener("change", (res) => {
+                    JuridicalFlag = $("input[type='radio'][name='juridical']:checked")[0].value;
+                    ChangeForm();
+                });
+            });
+
+
+            //I_GetFamillyWayOp();
+
+
+            SearchInp.addEventListener("keyup", (e) => {
+                if (e.key === "Enter") {
+                    if (e.target.value.trim().length !== 0)
+                        SearchAllCustomer(e.target.value);
+                    else {
+                        //getAllCustomerPartialTop();
+                        loadCustomers();
+                    }
+                }
+            });
+
+        });
+
+        window.addEventListener("pageshow", () => {
+            if (SearchInp.value.trim().length !== 0) {
+                SearchAllCustomer(SearchInp.value);
+            } else {
+                //getAllCustomerPartialTop();
+                loadCustomers();
+                document.getElementById("btnShowAllId").style.display = "flex";
+            }
+        });
+
+
+        const addToMycustomer = (id) => {
+
+            $.get(baseUrl + "Customer/AddToMyCustomer?id=" + id, (res) => {
+
+                if (res == 1) {
+                    toastifySuccess("به لسیت مشتریان من اضافه شد");
+                    $("#AlertRegister").modal("toggle");
+                    hideFormCustomer();
+                    //getAllCustomerPartialTop();
+                    if (SearchInp.value.trim().length !== 0)
+                        SearchAllCustomer(SearchInp.value);
+                    else {
+                        loadCustomers();
+                    }
+
+                } else {
+                    toastifyError("در لیست مشتریان موجود است");
+                }
+
+            }).fail(() => {
+                setTimeout(() => {
+                    addToMycustomer(id);
+                }, 2000);
+            });
+
+        };
+
+        let opLoaded = false;
+        const showFormCustomer = () => {
+            if (!opLoaded) {
+                GetSenfOp();
+                GetAcquaintanceWayOp();
+                opLoaded = true;
+            }
+
+
+            $("#btnCancel").css("display", "");
+            $("#btnNew").css("display", "none");
+            $("#CuParId").css("display", "none");
+            gotoStep(1);
+            $("#formAddCustom").css("display", "");
+            $("#searchInput").css("display", "none");
+            $("#roleTypeRadios").css("display", "none");
+        };
+        const hideFormCustomer = () => {
+            $("#btnNew").css("display", "");
+            $("#CuParId").css("display", "flex");
+            $("#searchInput").css("display", "block");
+            $("#roleTypeRadios").css("display", "block");
+            $("#btnCancel").css("display", "none");
+            $("#formAddCustom").css("display", "none");
+            document.getElementById("btnIn").innerText = "تایید و بعدی";
+
+
+            mySer.emptyForm("Step1");
+            mySer.emptyForm("Step2");
+            mySer.emptyForm("Step3");
+        };
+
+
+        const backStep = () => {
+            CurrentStep = CurrentStep - 1;
+            if (CurrentStep <= 0)
+                CurrentStep = 1;
+            gotoStep(CurrentStep);
+
+            document.getElementById("btnIn").innerText = CurrentStep === 1 || CurrentStep === 2 ? "تایید و بعدی" : "ثبت";
+        };
+        const nextStep = () => {
+            CurrentStep = CurrentStep + 1;
+            if (CurrentStep >= allStep)
+                CurrentStep = allStep;
+            gotoStep(CurrentStep);
+        };
+        const gotoStep = (step) => {
+            deactive();
+            CurrentStep = step;
+            $("#hStep" + step).addClass("ac");
+            ShowDivStep();
+        };
+        const deactive = () => {
+            $("#hStep1").removeClass("ac");
+            $("#hStep2").removeClass("ac");
+            $("#hStep3").removeClass("ac");
+        };
+
+        const ShowDivStep = () => {
+            HodeDivStep();
+            $("#Step" + CurrentStep).css("display", "flex");
+        };
+        const HodeDivStep = () => {
+            $("#Step1").css("display", "none");
+            $("#Step2").css("display", "none");
+            $("#Step3").css("display", "none");
+            $("#Step4").css("display", "none");
+        };
+
+        const ChangeForm = () => {
+            JuridicalFlag = $("input[type='radio'][name='juridical']:checked")[0].value;
+            //اگر True بود حقوقی هست
+            if (JuridicalFlag == 1) {
+                $("#JuridicalDiv").css("display", "flex");
+                $("#nameTxt").text("نام نماینده");
+                document.getElementById("agentNameId").placeholder = "نام نماینده";
+                //$("#PStep2").css("display", "");
+                //$("#hStep2").removeClass("dac");
+                addReq();
+            } else {
+                $("#nameTxt").text("نام و نام خانوادگی");
+                document.getElementById("agentNameId").placeholder = "نام و نام خانوادگی";
+                $("#حقیقی").css("display", "none");
+                $("#JuridicalDiv").css("display", "none");
+                //$("#PStep2").css("display", "none");
+                //$("#hStep2").addClass("dac");
+                removeReq();
+            }
+        };
+
+        const GetSenfOp = () => {
+            return new Promise(resolve => {
+                $.get(baseUrl + "BaseItem/GetItemsOp?typeCode=1", (res) => {
+                    $("#workSenf").select2({
+                        data: res,
+                        dir: "rtl",
+                        placeholder: "انتخاب",
+                        selectionCssClass: "form-control",
+                    });
+                    $("#workSenf").val(null).trigger("change");
+                    resolve();
+                })
+                 .fail((err) => {
+                     console.log(err);
+                     setTimeout(() => {
+                         GetSenfOp();
+                     }, 3000);
+                 });
+            });
+        };
+
+        const setDefaultWorkSenf = () => {
+            $("#WorkSenf").val(null).trigger("change");
+        };
+
+
+        const GetAcquaintanceWayOp = () => {
+            return new Promise(resolve => {
+                $.get(baseUrl + "BaseItem/GetItemsOp?typeCode=2", (res) => {
+                    $("#AcquaintanceWay").select2({
+                        data: res,
+                        dir: "rtl",
+                        placeholder: "انتخاب",
+                        selectionCssClass: "form-control",
+                    });
+                    $("#AcquaintanceWay").val(null).trigger("change");
+                    resolve();
+                })
+                 .fail(() => {
+                     setTimeout(() => {
+                         GetAcquaintanceWayOp();
+                     }, 1000);
+                 });
+            });
+        };
+
+
+        const getAllCustomerPartial = () => {
+
+            //$("#FLshowLoading").css("display", "");
+            $("#LoadingCusPartId").css("display", "flex");
+            $("#CustomerPartial").children().remove();
+            $.get(baseUrl + "Customer/GetAllCustomerPartial", (res) => {
+
+                $("#CustomerPartial").append(res);
+                $("#LoadingCusPartId").css("display", "none");
+
+            }).fail(() => {
+                setTimeout(() => {
+                    getAllCustomerPartial();
+                }, 1000);
+            });
+        };
+
+
+        const getCountOfCustomerPartialTop = () => {
+            if (window.innerWidth < 1200) {
+                return 2;
+            } else if (window.innerWidth >= 1200 && window.innerWidth < 1500) {
+                return 3;
+            } else if (window.innerWidth >= 1500 && window.innerWidth < 1830) {
+                return 4;
+            } else {
+                return 5;
+            }
+        };
+
+        const getAllCustomerPartialTop = () => {
+            document.getElementById("LoadingCusPartId").style.display = "flex";
+            const count = getCountOfCustomerPartialTop();
+
+            fetch(baseUrl + `Customer/GetAllCustomerPartial?skip=0&take=${count}`)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById("CustomerPartial").innerHTML = data;
+
+                    document.getElementById("btnShowAllId").style.display = "flex";
+                    document.getElementById("LoadingCusPartId").style.display = "none";
+                })
+                .catch(() => {
+                    setTimeout(() => {
+                        getAllCustomerPartialTop();
+                    }, 1000);
+                });
+        };
+
+        document.querySelectorAll("input[name='roleTypeChange']").forEach(radio => {
+            radio.addEventListener("change", async (e) => {
+                allLoaded = false;
+                roleType = e.target.value;
+                loadCustomers();
+            });
+        });
+
+
+        let skipCus;
+        let takeCus;
+        const ShowAllCustomer = () => {
+            loadCustomers(skipCus, takeCus);
+            skipCus += takeCus;
+        };
+
+        let isLoading = false;
+        function loadCustomers(skip = 0, take) {
+            if (isLoading) return;
+            if (take === undefined) {
+                take = getCountOfCustomerPartialTop();
+                takeCus = take * 12;
+                skipCus = 0;
+            }
+            isLoading = true;
+            document.getElementById("LoadingCusPartId").style.display = "flex";
+            document.getElementById("btnShowAllId").style.display = "flex";
+
+            fetch(`${baseUrl}Customer/GetAllCustomerPartial?skip=${skip}&take=${take}&roleType=${roleType}`)
+                .then(res => res.text())
+                .then(html => {
+                    const trimmed = html.trim();
+                    if (trimmed.includes("no-customer-found")) {
+                        document.getElementById("btnShowAllId").style.display = "none";
+                        if (skip === 0) {
+                            document.getElementById("CustomerPartial").innerHTML = trimmed;
+                        }
+                        return;
+                    }
+
+                    const container = document.getElementById("CustomerPartial");
+                    if (skip === 0) {
+                        container.innerHTML = trimmed;
+                    } else {
+                        const temp = document.createElement("div");
+                        temp.innerHTML = trimmed;
+
+                        Array.from(temp.children).forEach(el => container.appendChild(el));
+                    }
+                })
+                .catch(err => {
+                    console.error("خطا در بارگذاری مشتری:", err);
+                    setTimeout(() => loadCustomers(), 2000);
+                })
+                .finally(() => {
+                    isLoading = false;
+                    document.getElementById("LoadingCusPartId").style.display = "none";
+                });
+        }
+
+
+        const SearchAllCustomer = (val) => {
+            $("#LoadingCusPartId").css("display", "flex");
+            $("#CustomerPartial").children().remove();
+            $.get(baseUrl + "Customer/SearchAllCustomerPartial?val=" + val, (res) => {
+                $("#CustomerPartial").append(res);
+                $("#btnShowAllId").css("display", "none");
+                $("#LoadingCusPartId").css("display", "none");
+            })
+             .fail(() => {
+                 setTimeout(() => {
+                     SearchAllCustomer();
+                 }, 3000);
+             });
+        };
+
+
+        const removeReq = () => {
+            var items = document.getElementsByClassName("hog");
+
+            $.each(items, (index, item) => {
+                item.removeAttribute("required");
+            });
+        };
+
+        const addReq = () => {
+            var items = document.getElementsByClassName("hog");
+            $.each(items, (index, item) => {
+                item.setAttribute("required", "");
+            });
+        };
+
+
+        const checkDuplicate = () => {
+
+
+            // return new Promise((resolve) => {
+
+
+            //     var Step1Model = mySer.convertFormToJSON("#Step1")
+
+            //     $("#FLshowLoading").css("display", "");
+            //     $.post(baseUrl + "Customer/CheckCus", Step1Model, (res) => {
+            //         if (res != null) {
+
+            //         }
+            //         $("#FLshowLoading").css("display", "none");
+            //     })
+            //         .fail(() => {
+            //             setTimeout(() => {
+
+            //             }, 1000)
+            //         })
+
+
+            // })
+
+
+            if ($("#mobile").val().length > 0 && $("#agentNameId").val().length > 0) {
+                var Step1Model = mySer.convertFormToJSON("#Step1");
+                $("#FLshowLoading").css("display", "");
+                $.post(baseUrl + "Customer/CheckDuplicate", Step1Model, (res) => {
+                    if (res != null) {
+                        $("#AlertRegister").modal("toggle");
+                        $("#alertRegisterLoading").css("display", "none");
+                        $("#contentAlertRegister").children().remove();
+                        $("#contentAlertRegister").append(res);
+                    }
+                    $("#FLshowLoading").css("display", "none");
+                })
+                 .fail(() => {
+                     setTimeout(() => {
+                         checkDuplicate();
+                     }, 1000);
+                 });
+
+                return false;
+            } else {
+                return true;
+            }
+        };
+
+
+        const submitformCustomerBase = async () => {
+
+            switch (CurrentStep) {
+                case 1:
+                    if (await mySer.CheckValidForm("#Step1")) {
+                        nextStep();
+                        checkDuplicate();
+                        flagStep1 = true;
+                        document.getElementById("btnIn").innerText = "تایید و بعدی";
+                    }
+                    break;
+                case 2:
+                    if (await mySer.CheckValidForm("#Step2")) {
+                        nextStep();
+                        flagStep2 = true;
+                        document.getElementById("btnIn").innerText = "ثبت";
+                    }
+                    break;
+                case 3:
+                    if (await mySer.CheckValidForm("#Step3")) {
+                        nextStep();
+                        flagStep3 = true;
+                    }
+                    break;
+            }
+
+
+            if (flagStep1 == true && flagStep2 == true && flagStep3 == true) {
+                $("#FLshowLoading").css("display", "");
+                var model = {
+                    ...mySer.convertFormToJSON("#Step1"),
+                    ...mySer.convertFormToJSON("#Step2"),
+                    ...mySer.convertFormToJSON("#Step3"),
+                };
+
+                var e = document.getElementById("workSenf");
+
+                var e1 = document.getElementById("AcquaintanceWay");
+
+                if (model.workSenf)
+                    model.workSenfTxt = e.options[e.selectedIndex].text;
+                if (model.AcquaintanceWay)
+                    model.AcquaintanceWayTxt = e1.options[e1.selectedIndex].text;
+
+                $.post(baseUrl + "Customer/AddCustomer", model, (res) => {
+                    //getAllCustomerPartialTop();
+                    if (SearchInp.value.trim().length !== 0)
+                        SearchAllCustomer(SearchInp.value);
+                    else {
+                        loadCustomers();
+                    }
+                    mySer.emptyForm("Step1");
+                    mySer.emptyForm("Step2");
+                    mySer.emptyForm("Step3");
+
+                    flagStep1 = false;
+                    flagStep2 = false;
+                    flagStep3 = false;
+
+                    hideFormCustomer();
+                    $("#FLshowLoading").css("display", "none");
+                    toastifySuccess("ثبت مشتری با موفقیت انجام شد");
+                })
+                    //.done(function() {
+                    //    alert("second success");
+                    //})
+                 .fail(() => {
+                     setTimeout(async () => {
+                         await submitformCustomerBase();
+                     }, 2000);
+                 });
+            }
+
+        };
+
+        const DelCustomerItem = (id) => {
+
+            alert(id);
+
+        };
+
+
+        function getAllCustomerNonJuridical() {
+
+            NoneJuridicalTBL = $("#NoneJuridicalTBL").DataTable(
+                {
+                    "lengthMenu": [5, 10, 25, 50, 100],
+                    "processing": true,
+                    "serverSide": true,
+                    "filter": true,
+                    "ajax": {
+                        "url": baseUrl + "Customer/GetAllCustomerNonJuridical",
+                        "type": "POST",
+                        "datatype": "json",
+                    },
+                    "language": {
+                        "sEmptyTable": "هیچ مشتری موجود نمی باشد.",
+                        "sInfo": "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
+                        "sInfoEmpty": "نمایش 0 تا 0 از 0 ردیف",
+                        "sInfoFiltered": "(فیلتر شده از _MAX_ ردیف)",
+                        "sInfoPostFix": "",
+                        "sInfoThousands": ",",
+                        "sLengthMenu": "نمایش _MENU_ ردیف",
+                        "sLoadingRecords": "در حال بارگزاری...",
+                        "sProcessing": "در حال بروز رسانی جدول...",
+                        "sSearch": "جستجو:",
+                        "sZeroRecords": "رکوردی با این مشخصات پیدا نشد",
+                        "oPaginate": {
+                            "sFirst": "برگه‌ی نخست",
+                            "sLast": "برگه‌ی آخر",
+                            "sNext": "بعدی",
+                            "sPrevious": "قبلی",
+                        },
+                        "oAria": {
+                            "sSortAscending": ": فعال سازی نمایش به صورت صعودی",
+                            "sSortDescending": ": فعال سازی نمایش به صورت نزولی",
+                        },
+                    },
+
+                    "columnDefs": [
+                        {
+                            "targets": [0],
+                            "visible": false,
+                            "searchable": false,
+                        },
+                    ],
+
+                    "columns": [
+
+                        { "data": "id", "name": "Id", "autoWidth": true },
+                        { "data": "agentName", "name": "AgentName", "autoWidth": true },
+                        { "data": "agentFamily", "name": "AgentFamily", "autoWidth": true },
+                        { "data": "mobile", "name": "Mobile", "autoWidth": true },
+                        {
+                            "render": function (data, type, row) {
+                                var _co = "<div>";
+                                //_co += "<button id='BtnUpdate' type='button' title='بروزرسانی' class='buttonGreen ' onclick='ShowUpdatePerson(\"" + row.id + "\",this)' ><i class='fa fa-pencil '></i></button>"
+                                //if (row.statusAcceptUserCode == 1) {
+                                //    _co += "<button type = 'button' title = 'چاپ رضایتنامه' data-toggle='modal' class='buttonGreen' onclick ='GenerateReport(\"" + row.id + "\")'> <i class='fa fa-file'></i></button>"
+                                //}
+                                _co += "<button style='height: 100%; width: 50%;' id='BtnUpdate' type='button' title='حذف' class='Admin buttonGreen' onclick='DelCustomerItem(\"" + row.id + "\",this)' ><i class='fa fa-trash '></i></button>";
+                                _co += "</div>";
+                                return _co;
+                                //+ "<button title='لیست ویزیت ها'  class=' btn btn- outline-info mp' onclick='ToSportManProFile(\"" + row.id + "\")' ><i class='fss fa fa-file'></i></button></td></tr>"
+                                //+ "<button title='ویزیت جدید'  class=' btn btn- outline-info mp' onclick='ToVisit(\"" + row.id + "\")' ><i class='fss fa fa-check'></i></button></td></tr>"
+                                //+ "<button title='حساب کاربری'  class=' btn btn- outline-info mp' onclick='ShowModalAccount(\"" + row.id + "\")' ><i class='fss fa fa-user'></i></button></td></tr>"
+                            },
+                        },
+                    ],
+
+                    "order": [[1, "desc"]],
+                });
+            $("[name=\"NoneJuridicalTBL\"]").addClass("form-control");
+            $("input[type='search']").addClass("form-control");
+            //$("#PhenoTb_filter").children().children().attr("onkeyup", "ShowTBL()");
+            //$("#PhenoTb_filter").children().children().attr("type", "text");
+            //$("#PhenoTb").hide(0)
+            //$("#PhenoTb_paginate").hide(0)
+            //$("#PhenoTb_info").hide(0)
+            //$("#PhenoTb_length").hide(0)
+
+
+        }
+
+
+        function getAllCustomerJuridical() {
+
+            JuridicalTBL = $("#JuridicalTBL").DataTable(
+                {
+                    "lengthMenu": [5, 10, 25, 50, 100],
+                    "processing": true,
+                    "serverSide": true,
+                    "filter": true,
+                    "ajax": {
+                        "url": baseUrl + "Customer/GetAllCustomerJuridical",
+                        "type": "POST",
+                        "datatype": "json",
+                    },
+                    "language": {
+                        "sEmptyTable": "هیچ مشتری موجود نمی باشد.",
+                        "sInfo": "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
+                        "sInfoEmpty": "نمایش 0 تا 0 از 0 ردیف",
+                        "sInfoFiltered": "(فیلتر شده از _MAX_ ردیف)",
+                        "sInfoPostFix": "",
+                        "sInfoThousands": ",",
+                        "sLengthMenu": "نمایش _MENU_ ردیف",
+                        "sLoadingRecords": "در حال بارگزاری...",
+                        "sProcessing": "در حال بروز رسانی جدول...",
+                        "sSearch": "جستجو:",
+                        "sZeroRecords": "رکوردی با این مشخصات پیدا نشد",
+                        "oPaginate": {
+                            "sFirst": "برگه‌ی نخست",
+                            "sLast": "برگه‌ی آخر",
+                            "sNext": "بعدی",
+                            "sPrevious": "قبلی",
+                        },
+                        "oAria": {
+                            "sSortAscending": ": فعال سازی نمایش به صورت صعودی",
+                            "sSortDescending": ": فعال سازی نمایش به صورت نزولی",
+                        },
+                    },
+
+                    "columnDefs": [
+                        {
+                            "targets": [0],
+                            "visible": false,
+                            "searchable": false,
+                        },
+                    ],
+                    "columns": [
+
+                        { "data": "id", "name": "Id", "autoWidth": true },
+                        { "data": "companyName", "name": "CompanyName", "autoWidth": true },
+                        { "data": "shenaseMeli", "name": "ShenaseMeli", "autoWidth": true },
+                        { "data": "agentName", "name": "AgentName", "autoWidth": true },
+                        { "data": "agentFamily", "name": "AgentFamily", "autoWidth": true },
+
+                        {
+                            "render": function (data, type, row) {
+                                var _co = "<div>";
+                                //_co += "<button id='BtnUpdate' type='button' title='بروزرسانی' class='buttonGreen ' onclick='ShowUpdatePerson(\"" + row.id + "\",this)' ><i class='fa fa-pencil '></i></button>"
+                                //if (row.statusAcceptUserCode == 1) {
+                                //    _co += "<button type = 'button' title = 'چاپ رضایتنامه' data-toggle='modal' class='buttonGreen' onclick ='GenerateReport(\"" + row.id + "\")'> <i class='fa fa-file'></i></button>"
+                                //}
+                                _co += "<button style='height: 100%; width: 50%;' id='BtnUpdate' type='button' title='حذف' class='Admin buttonGreen' onclick='DelCustomerItem(\"" + row.id + "\",this)' ><i class='fa fa-trash '></i></button>";
+                                _co += "</div>";
+                                return _co;
+                                //+ "<button title='لیست ویزیت ها'  class=' btn btn- outline-info mp' onclick='ToSportManProFile(\"" + row.id + "\")' ><i class='fss fa fa-file'></i></button></td></tr>"
+                                //+ "<button title='ویزیت جدید'  class=' btn btn- outline-info mp' onclick='ToVisit(\"" + row.id + "\")' ><i class='fss fa fa-check'></i></button></td></tr>"
+                                //+ "<button title='حساب کاربری'  class=' btn btn- outline-info mp' onclick='ShowModalAccount(\"" + row.id + "\")' ><i class='fss fa fa-user'></i></button></td></tr>"
+                            },
+                        },
+                    ],
+
+                    "order": [[1, "desc"]],
+                });
+            $("[name=\"JuridicalTBL\"]").addClass("form-control");
+            $("input[type='search']").addClass("form-control");
+            //$("#PhenoTb_filter").children().children().attr("onkeyup", "ShowTBL()");
+            //$("#PhenoTb_filter").children().children().attr("type", "text");
+            //$("#PhenoTb").hide(0)
+            //$("#PhenoTb_paginate").hide(0)
+            //$("#PhenoTb_info").hide(0)
+            //$("#PhenoTb_length").hide(0)
+
+
+        }
+
+
+        function I_GetFamillyWayOp() {
+            $.get(baseUrl + "BaseItem/GetItemsOp?typeCode=2", (res) => {
+                $("#FamillyWay").select2({
+                    data: res,
+                    dir: "rtl",
+                    placeholder: "انتخاب",
+                    selectionCssClass: "form-control",
+                });
+                $("#FamillyWay").val(null).trigger("change");
+            })
+             .fail(() => {
+                 setTimeout(() => {
+                     I_GetFamillyWayOp();
+                 }, 1000);
+             });
+
+        }
+
+
+    </script>
+}
+
+
+

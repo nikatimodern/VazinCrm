@@ -1,0 +1,82 @@
+﻿@model CreateModel
+@{
+    ViewData["Title"] = "Create";
+    //Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<div class="col-12 col-md-7 col-xl-4 mx-auto my-3">
+    <div class="card ">
+        @*<div class="col-md-6 text-center" style="font-size:xx-large; text-align:center; font-family:IRANSansBold">
+            <label>ساخت کاربر جدید </label>
+            </div>*@
+        <div class="card-header text-center" style="font-size:x-large; font-family:IRANSansBold">
+            افزودن کاربر
+        </div>
+        <div class="card-body" dir="rtl" style="text-align:start">
+
+            <div asp-validation-summary=" All" class="text-danger"></div>
+            <form asp-action="Create" method="post" class="col-12 d-flex flex-column gap-2 " autocomplete="off">
+                <div>
+                    <label>نام:<span style="color:red">*</span></label>
+                    <input asp-for="FirstName" class="form-control" required
+                           oninvalid="this.setCustomValidity('لطفا نام را وارد کنید.')"
+                           oninput="this.setCustomValidity('')" />
+                </div>
+                <div>
+
+                    <label>نام خانوادگی:<span style="color:red">*</span></label>
+                    <input asp-for="LastName" class="form-control" required
+                           oninvalid="this.setCustomValidity('لطفا نام خانوادگی را وارد کنید.')"
+                           oninput="this.setCustomValidity('')" />
+                </div>
+                <div>
+
+                    <label>تلفن همراه:<span style="color:red">*</span></label>
+                    <input asp-for="PhoneNumber" class="form-control" style="direction: ltr" required
+                           oninvalid="this.setCustomValidity('لطفا شماره تلفن همراه خود را وارد کنید.')"
+                           oninput="this.setCustomValidity('')" />
+                </div>
+                <div>
+                    <label>پست الکترونیکی:</label>
+                    <input asp-for="Email" class="form-control" placeholder="example@vazinplast.com" style="direction: ltr"
+                           oninvalid="this.setCustomValidity('لطفا پست الکترونیکی خود را وارد کنید.')"
+                           oninput="this.setCustomValidity('')" />
+                </div>
+                <div>
+
+                    <label>نام کاربری:<span style="color:red">*</span></label>
+                    <input asp-for="UserName" class="form-control" style="direction: ltr" required
+                           autocomplete="new-username"
+                           oninvalid="this.setCustomValidity('لطفا نام کاربری را وارد کنید.')"
+                           oninput="this.setCustomValidity('')" />
+                </div>
+                <div>
+
+                    <label>رمزعبور:<span style="color:red">*</span></label>
+                    <input asp-for="Password" class="form-control" style="direction: ltr" type="password" required
+                           autocomplete="new-password"
+                           oninvalid="this.setCustomValidity('لطفا رمز عبور را وارد کنید.')"
+                           oninput="this.setCustomValidity('')" />
+
+                </div>
+
+                <div style="text-align:end;color: #fff">
+                    <a asp-action="Index" class="buttonCancel2 d-inline-block">انصراف</a>
+                    <button type="submit" class="buttonGreen3">ثبت</button>
+                </div>
+            </form>
+        </div>
+        <div class="card-footer text-muted" style="text-align:start" dir="rtl">
+            لطفا در وارد کردن تلفن همراه برای بازیابی رمز عبور دقت فرمائید.
+        </div>
+    </div>
+
+</div>
+
+
+
+
+
+

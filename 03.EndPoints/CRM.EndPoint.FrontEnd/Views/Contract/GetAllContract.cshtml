@@ -1,0 +1,62 @@
+﻿@model IList<Contract>
+@{
+    Layout = null;
+}
+
+<div class="mp" style=" width:100%; display:flex;flex-wrap:wrap; ">
+    @foreach (var item in Model ?? Enumerable.Empty<Contract>())
+    {
+        <div class=" contract_Box" >
+            <div class="contract_Detail col-md-12">
+                <label >عنوان:</label>
+                <label class="fbold">@item.CTitle</label>
+            </div>
+            <div class="contract_Detail col-md-12">
+                <label>کارفرما:</label>
+                <label class="fbold">@item.Employer</label>
+            </div>
+            <div class="contract_Detail col-md-12">
+                <label>پیمانکار:</label>
+                <label class="fbold">@item.Contractor</label>
+            </div>
+            <div class="contract_Detail col-md-12">
+                <label>تاریخ شروع:</label>
+                <label class="fbold">@item.fromDateSh</label>
+            </div>
+            <div class="contract_Detail col-md-12">
+                <label>تاریخ پایان:</label>
+                <label class="fbold">@item.toDateSh</label>
+            </div>
+            <div class="col-md-12" style="margin-top:15px; display:flex;justify-content:left;align-items:center">
+                <div style="display:flex;justify-content:space-between; width:30% ;align-items:center;">
+                    <button style="   width:48%" class="mp buttonGreen buttonCusPartial " onclick="editContract('@item.Id')"><i class=" fa fa-eye "></i> </button>
+                    <button style="   width:48%" class="mp buttonGreen buttonCusPartial " onclick="delContract('@item.Id')"> <i class=" fa fa-trash"></i> </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+
+<style>
+    .contract_Box {
+        width: 24%;
+        padding: 7px;
+        margin: 1px;
+        display: flex;
+        flex-direction: column;
+        background-color:white;
+        border-radius: 5px;
+        border: 2px solid gray;
+
+    }
+    .contract_Detail {
+        display: flex;
+        justify-content: space-evenly;
+        text-align: start;
+    }
+
+        .contract_Detail label {
+            width: 50%;
+        }
+</style>

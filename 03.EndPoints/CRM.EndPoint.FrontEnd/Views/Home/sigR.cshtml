@@ -1,0 +1,48 @@
+﻿@{
+    ViewData["Title"] = "چت با SignalR";
+}
+
+<h2>چت با SignalR</h2>
+
+<input id="username" type="text" placeholder="نام شما">
+<input id="message" type="text" placeholder="پیام شما">
+<button onclick="sendMessage()">ارسال پیام</button>
+
+<div id="chat"></div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/3.1.19/signalr.min.js"></script>
+
+    <script>
+        // اتصال به SignalR Hub
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub") // آدرس SignalR Hub
+            .build();
+
+        connection.start()
+            .then(() => console.log("اتصال به SignalR برقرار شد!"))
+            .catch(err => console.error("خطا: " + err));
+
+        // ارسال پیام به سرور
+        function sendMessage() {
+            let user = document.getElementById("username").value;
+            let message = document.getElementById("message").value;
+            connection.invoke("SendMessage", user, message,"123")
+                .catch(err => console.error(err));
+        }
+
+        // دریافت پیام از سرور و نمایش در صفحه
+        connection.on("ReceiveMessage", (user, message,id) => {
+           alert(id)
+            let chatBox = document.getElementById("chat");
+            chatBox.innerHTML += `<p><strong>${user}:</strong> ${message}</p>`;
+        });
+
+        connection.on("mo", (user, message,id) => {
+           alert(id)
+
+        });
+
+
+    </script>
+}

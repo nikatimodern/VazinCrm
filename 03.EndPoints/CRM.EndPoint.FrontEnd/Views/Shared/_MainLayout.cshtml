@@ -1,0 +1,91 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=8, IE=9" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="robots" content="noindex" />
+    <meta name="googlebot" content="noindex" />
+    <meta name="googlebot-news" content="noindex" />
+    <meta name="slurp" content="noindex" />
+    <meta name="msnbot" content="noindex" />
+    <meta property="og:title" content="CRM">
+    <meta property="og:description" content="سامانه مدیریت ارتباط با مشتری">
+    <meta property="og:locale" content="fa_IR">
+    <meta property="og:image" content="/Img/consent.png">
+    <meta name="twitter:card" content="summary">
+    <meta name="msapplication-TileImage" content="/Img/consent.png">
+    <link rel="apple-touch-icon" sizes="57x57" href="/Img/consent.png">
+    <link rel="icon" type="image/x-icon" href="/Img/consent.png">
+
+    <title>&rlm;سامانه مدیریت مشتری&zwnj;&rlm;</title>
+
+
+    <link rel="stylesheet" href="~/lib/Bootstrap/bootstrap5.3.rtl.min.css" />
+    <link rel="stylesheet" href="~/lib/toastify/toastify.min.css" />
+
+    <link rel="stylesheet" href="~/css/site.css?v=2.9.1" />
+    <link rel="stylesheet" href="~/css/login.css?v=2.9.1" />
+
+</head>
+<body dir="rtl">
+<div id="FLshowLoading" style="z-index: 9000;position: fixed;inset: 0;height:100dvh;display:none">
+    <div>
+        <div class="loader"></div>
+    </div>
+</div>
+
+<div class="parentLogin">
+    <div class="d-none p-2" id="historyBackIcon"  onclick="window.history.back()">
+        <svg style="color: #fff" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+    </div>
+    <div class="loginRenderBody">
+        @RenderBody()
+    </div>
+    <div class="d-none d-lg-flex justify-content-start align-items-center" style="width: 50%;">
+        @* <img src="~/uploaded/loginimg/img.png" style="width:90%;" /> *@
+        @* <img src="~/Img/question.gif" style="width:80%;" /> *@
+        <div class="flex-center flex-wrap gap-2">
+            <img src="/Img/logo-vazinplast1.png" style="height: 80px" alt="">
+            <img src="/Img/logo-vazinplast2.png" style="height: 80px" alt="">
+        </div>
+    </div>
+</div>
+
+
+
+<div class="modal fade" id="selectAccountModal" tabindex="-1" style="direction: rtl" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">انتخاب حساب کاربری</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <p class="mb-3 text-muted fMedium" style="direction: rtl;text-align:right">
+                    چند حساب با این شماره یافت شد. لطفاً یکی را انتخاب کنید:
+                </p>
+                <div id="accountList" class="list-group"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById("historyBackIcon").classList.toggle("d-none", window.location.pathname === "/");
+</script>
+
+<script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js"></script>
+<script src="~/lib/jquery/jquery.min.js"></script>
+<script src="~/lib/toastify/toastify-js.js"></script>
+
+<script src="~/js/site.js?v=2.9.1"></script>
+
+
+
+@await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>

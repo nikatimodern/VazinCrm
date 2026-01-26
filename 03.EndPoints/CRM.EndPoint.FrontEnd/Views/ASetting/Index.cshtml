@@ -1,0 +1,124 @@
+﻿@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div style="display:flex;width:100%; justify-content:center;  ">
+    <div class="InfoData col-12 col-md-8 col-xl-6">
+        <form id="SettingFormId" class="mx-2 mx-md-3 my-3" style="display:flex;justify-content:end;flex-direction:column;align-items:start;gap:8px;font-size: clamp(14px,1.6vw,16px)">
+            <div class="d-flex align-items-center gap-1">
+                <input type="checkbox" id="smallOffice" name="smallOffice" value="true" />
+                <label style="cursor:pointer;" for="smallOffice">سازمان کوچک</label>
+            </div>
+
+            <div class="d-flex align-items-center gap-1">
+                <input type="checkbox" id="attAcceptHanding" name="attAcceptHanding" value="true" />
+                <label style="cursor:pointer;" for="attAcceptHanding">اجباری بودن سند تاییدی برای تایید دستی پیش فاکتور</label>
+            </div>
+
+            <div class="d-flex align-items-center gap-1">
+                <input type="checkbox" id="attPfPayment" name="attPfPayment" value="true" />
+                <label style="cursor:pointer;" for="attPfPayment">اجباری بودن سند پرداختی پیش فاکتور</label>
+            </div>
+
+            <div class="d-flex align-items-center gap-1">
+                <input type="checkbox" id="attFPayment" name="attFPayment" value="true" />
+                <label style="cursor:pointer;" for="attFPayment">اجباری بودن سند پرداختی فاکتور</label>
+            </div>
+
+            <div class="d-flex align-items-center gap-1">
+                <input type="checkbox" id="accountancyRequired" name="accountancyRequired" value="true" />
+                <label style="cursor:pointer;" for="accountancyRequired">اجباری بودن پیش پرداخت پیش فاکتور</label>
+            </div>
+
+            <div class="d-flex align-items-center gap-1">
+                <input type="checkbox" id="sepidar" name="sepidar" value="true" />
+                <label style="cursor:pointer;" for="sepidar">ارتباط با نرم افزار حسابداری سپیدار</label>
+            </div>
+
+            <div class="d-flex align-items-center gap-1">
+                <input type="checkbox" id="crmFactors" name="crmFactors" value="true" />
+                <label style="cursor:pointer;" for="crmFactors">صدور فاکتور درون برنامه</label>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+                <input type="checkbox" id="FactorTowStep" name="factorTowStep" value="true" />
+                <label style="cursor:pointer;" for="FactorTowStep">صدور فاکتور دو مرحله ای</label>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+                <input type="checkbox" id="customerCanChooseInvoiceType" name="customerCanChooseInvoiceType" value="true" />
+                <label style="cursor:pointer;" for="customerCanChooseInvoiceType">انتخاب نوع فاکتور توسط مشتری</label>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+                <input type="checkbox" id="financialConfirm" name="financialConfirm" value="true" />
+                <label style="cursor:pointer;" for="financialConfirm">تایید مالی پیش فاکتور</label>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+                <input type="checkbox" id="setSupplyAmountByTamin" name="setSupplyAmountByTamin" value="true" />
+                <label style="cursor:pointer;" for="setSupplyAmountByTamin">ورود بهای تامین</label>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+                <input type="checkbox" id="setSupplyByTamin" name="setSupplyByTamin" value="true" />
+                <label style="cursor:pointer;" for="setSupplyByTamin">ورود تامین کننده</label>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+                <label for="setAmountByRoleType" class="flex-shrink-0">ورود مبلغ توسط: </label>
+                <select class="form-select form-select-sm" name="setAmountByRoleType" id="setAmountByRoleType">
+                    <option value="1">فروش</option>
+                    <option value="2">تامین</option>
+                    <option value="3">فروش و تامین</option>
+                </select>
+            </div>
+            @*             <div  style="display:flex; direction:rtl">
+                <label style="width:fit-content; cursor:pointer;" for="smallOffice">ارزش افزوده:</label>
+               
+                <input type="text" pattern="\d*" maxlength="4">
+                <input class="form-control " style="width:50px" type="number" id="smallOffice" name="smallOffice"  maxlength="2" />
+                <label style="cursor:pointer;" for="smallOffice">درصد</label>
+
+            </div> *@
+
+        </form>
+        <div style="display:flex;justify-content:end">
+            <buttom class="buttonGreen3" style="line-height: 1" onclick="submitSetting()">ثبت</buttom>
+        </div>
+
+
+    </div>
+
+</div>
+
+
+@section Scripts{
+
+    <script>
+        $(document).ready(async () => {
+            document.getElementById("FLshowLoading").style.display = "";
+            setting = await GetSetting();
+            mySer.convertJsonToForm(setting, "SettingFormId");
+
+
+            document.getElementById("FLshowLoading").style.display = "none";
+        });
+
+        const submitSetting = () => {
+
+            const data = mySer.convertFormToJSON("SettingFormId");
+
+            if (setting != null) {
+                data.id = setting.id;
+            }
+            console.log(data);
+            document.getElementById("FLshowLoading").style.display = "";
+            $.post(baseUrl + "ASetting/upSetting", data, async (res) => {
+
+                setting = await GetSetting();
+
+                toastifySuccess("عملیات با موفقیت انجام شد");
+                document.getElementById("FLshowLoading").style.display = "none";
+
+            });
+        };
+
+    </script>
+
+}

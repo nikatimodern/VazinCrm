@@ -1,0 +1,225 @@
+@{
+    Layout = "_Layout";
+}
+
+<div style="padding-bottom: 10px;height: 100%">
+    <div class="email-container">
+        <div id="emailSidebar" class="d-none d-xl-block h-100 email-sidebar">
+            <div class="d-flex flex-column align-items-center pb-3 justify-content-between h-100">
+                <div class="d-flex flex-column w-100">
+                    <div class="email-sidebar-item active" data-type="1">
+                        <svg style="width: 20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12" /><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /></svg>
+                        <div class="d-flex align-items-center justify-content-between flex-grow-1">
+                            <span>پیام های دریافتی</span>
+                            <span class="badgeCircle d-none" style="background-color: #007bff;color: #fff"></span>
+                        </div>
+                    </div>
+
+                    <div class="email-sidebar-item" data-type="2">
+                        <svg style="width: 20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" /><path d="m21.854 2.147-10.94 10.939" /></svg>
+                        <span>پیام های ارسالی</span>
+                    </div>
+                </div>
+                @*<div>
+                    <button class="buttonGreen1" onclick="showModalAddEmail()">جدید</button>
+                </div>*@
+            </div>
+        </div>
+
+        <div id="emailList" class="email-list">
+            <div class="p-2 ps-1 ps-xl-2 border-bottom d-flex align-items-center">
+                <div class="me-1 d-flex d-xl-none align-items-center justify-content-center cursor-pointer" id="back-emailList">
+                    <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg>
+                </div>
+                <input id="emailListSearch" type="search" class="form-control" name="search" placeholder="جستجو..">
+            </div>
+            <div id="emailListContainer" style="max-height: calc(100dvh - 160px);"></div>
+        </div>
+
+        <div id="emailContent" class="d-none d-md-block email-content"></div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script>
+        const emailSidebarContainer = document.getElementById("emailSidebar");
+        const emailListContainer = document.getElementById("emailListContainer");
+        const emailContentContainer = document.getElementById("emailContent");
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            emailSidebarContainer.addEventListener("click", (e) => {
+                const item = e.target.closest(".email-sidebar-item");
+                if (!item) return;
+
+                emailContentContainer.innerHTML = "";
+                emailSidebarContainer.querySelectorAll(".email-sidebar-item").forEach(el => el.classList.remove("active"));
+                emailListContainer.querySelectorAll(".email-list-item").forEach(el => el.classList.remove("active"));
+                item.classList.add("active");
+
+                if (window.innerWidth < 1200) {
+                    document.getElementById("emailList").classList.remove("d-none");
+                    document.getElementById("emailSidebar").classList.add("d-none");
+                }
+                const type = Number(item.dataset.type);
+                getAllEmails(type);
+            });
+
+            document.getElementById("emailListSearch").addEventListener("search", (e) => {
+                const active = emailSidebarContainer.querySelector(".email-sidebar-item.active");
+                const type = Number(active.dataset.type);
+
+                getAllEmails(type, e.target.value.trim());
+            });
+
+            document.getElementById("back-emailList").addEventListener("click", () => {
+                document.getElementById("emailList").classList.add("d-none");
+                document.getElementById("emailSidebar").classList.remove("d-none");
+            });
+
+            await getAllEmails();
+        });
+
+        async function getAllEmails(type = 1, searchValue = "") {
+            try {
+                FLshowLoading();
+                const data = (await axios(`/Email/GetAllEmails?type=${type}&search=${searchValue}`)).data;
+                const emails = data.emails;
+                setCountNotSeen(data.countNotSeen);
+
+                emailListContainer.innerHTML = "";
+                if (emails.length) {
+                    const wrapper = document.createElement("div");
+                    wrapper.classList.add("vstack");
+                    emails.forEach(item => {
+                        const lItem = document.createElement("div");
+                        lItem.classList.add("email-list-item");
+                        lItem.classList.toggle("new", type === 1 && !item.seen);
+                        lItem.innerHTML = `
+                            <div class="d-flex align-items-center justify-content-between w-100">
+                                <span class="email-user-name">${type === 1 ? `از: ${item.fromName}` : `به: ${item.toName}`}</span>
+                                <span class="email-datetime">${item.createDateTxt.slice(0, -3).split(" ").join(" | ")}</span>
+                            </div>
+                            <div class="mt-2 email-title">${item.title}</div>
+                        `;
+
+                        lItem.addEventListener("click", async () => {
+                            emailListContainer.querySelectorAll(".email-list-item").forEach(el => el.classList.remove("active"));
+                            lItem.classList.add("active");
+                            if (window.innerWidth < 768) {
+                                document.getElementById("emailList").classList.add("d-none");
+                                document.getElementById("emailContent").classList.remove("d-none");
+                            }
+                            if (await showEmailContent(item.id, type)) lItem.classList.remove("new");
+                        });
+
+                        wrapper.append(lItem);
+                    });
+
+                    emailListContainer.appendChild(wrapper);
+                } else {
+                    emailListContainer.innerHTML = `<div style="padding: 10px; color: #777;">هیچ پیامی یافت نشد.</div>`;
+                }
+
+            } catch (err) {
+                console.log(err);
+                emailListContainer.innerHTML = `<div style="padding: 10px; color: #777;">خطا در دریافت پیام‌ها!</div>`;
+            } finally {
+                FLshowLoading(false);
+            }
+        }
+
+        async function showEmailContent(id, type) {
+            emailContentContainer.innerHTML = "";
+            const wrapper = document.createElement("div");
+            wrapper.classList.add("email-content-wrapper");
+            try {
+                FLshowLoading();
+                const data = (await axios(`/Email/GetEmail?id=${id}&type=${type}`)).data;
+                const email = data.email;
+                setCountNotSeen(data.countNotSeen);
+
+                wrapper.innerHTML = `
+                    <div class="d-flex gap-2 mb-4">
+                        <div class="d-flex d-md-none align-items-center cursor-pointer" id="back-emailContent">
+                            <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg>
+                        </div>
+                        <img class="email-user-img" src="${email.userImage || "/Img/User.png"}" alt="">
+                        <div class="d-flex flex-column justify-content-between">
+                            <div class="email-user-name">${type === 1 ? email.fromName : email.toName}</div>
+                            <div class="email-datetime">${email.createDateTxt.slice(0, -3).split(" ").join(" | ")}</div>
+                        </div>
+                    </div>
+                    <div class="email-title" style="font-size: 15px">${email.title}</div>
+                    <div class="email-message">
+                        <span>${email.message}</span>
+                    </div>
+                    <div class="d-flex justify-content-end mt-2">
+                        <button class="buttonGray" id="showEmailDetailsModalBtn">مشاهده</button>
+                    </div>
+                `;
+
+                wrapper.querySelector("#showEmailDetailsModalBtn").addEventListener("click", async () => {
+                    await showEmailDetailsModal(email.entityId, email.entityName);
+                });
+
+                return true;
+            } catch (err) {
+                console.log(err);
+                wrapper.innerHTML = `
+                    <div class="d-flex d-md-none align-items-center cursor-pointer mb-3" id="back-emailContent">
+                        <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg>
+                    </div>
+                    <p>خطا در دریافت پیام!</p>
+                `;
+
+                return false;
+            } finally {
+                wrapper.querySelector("#back-emailContent").addEventListener("click", () => {
+                    document.getElementById("emailList").classList.remove("d-none");
+                    document.getElementById("emailContent").classList.add("d-none");
+                });
+                emailContentContainer.appendChild(wrapper);
+                FLshowLoading(false);
+            }
+        }
+
+
+        async function showEmailDetailsModal(entityId, entityName) {
+            FLshowLoading();
+            if (entityName === "Factor") {
+                await getAllFactorsModal(entityId, 6);
+                ModalToggle("#FactorsModal");
+            } else if (entityName === "Accountancy") {
+                await getAllBankAccounts();
+                try {
+                    const res = (await axios(`/Accountancy/getAccountancy/${entityId}`)).data;
+                    const data = res.accData;
+                    await ShowModalListInvoice(data.pfid, 1, data.pfSerialNumber, 6, data.dealId);
+                } catch (err) {
+                    if (err.status === 404) {
+                        toastifyError(`خطا: ${err.response.data}`);
+                    }
+                    console.log(err);
+                }
+            }
+            FLshowLoading(false);
+        }
+
+        function setCountNotSeen(countNotSeen) {
+            const emailSidebarItem1 = emailSidebarContainer.querySelector(".email-sidebar-item[data-type='1'] .badgeCircle");
+            emailSidebarItem1.classList.toggle("d-none", !Boolean(countNotSeen));
+            emailSidebarItem1.textContent = countNotSeen;
+
+
+            const countEmailElm = document.getElementById("CountEmailId");
+            if (!countEmailElm) return;
+
+            countEmailElm.classList.toggle("d-none", !Boolean(countNotSeen));
+            countEmailElm.textContent = countNotSeen || "";
+            // document.querySelector(".envelope-icon-open").classList.toggle("d-none", Boolean(countNotSeen))
+            // document.querySelector(".envelope-icon-close").classList.toggle("d-none", !Boolean(countNotSeen))
+
+        }
+    </script>
+}

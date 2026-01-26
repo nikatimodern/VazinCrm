@@ -1,0 +1,106 @@
+﻿@model IList<Invoice>
+
+@{
+    Layout = null;
+}
+
+<div style="width:100%;display:flex;flex-direction:column;gap:5px;">
+    @if (Model.Any()) {
+        foreach (var item in Model) {
+            <div class="mp" style="width:100%;display:flex;">
+                @if (item.Tax != 0) {
+                    <div class="mp InfoDataHead_PrefactorRasmi" style="display:flex;width:24px !important">
+                        <label style="writing-mode: vertical-lr">رسمی</label>
+                    </div>
+                } else {
+                    <div class="mp InfoDataHead_PrefactorNonRasmi" style="display:flex;width:24px !important">
+                        <label style="writing-mode: vertical-lr">غیررسمی</label>
+                    </div>
+                }
+
+                @if (false) {
+                    <div style="background-color:lightgreen; width:24px !important; display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
+                        <label style="font-family:'IRANSansBold'; transform: rotate(90deg)">صـادراتی</label>
+                    </div>
+                }
+                <div class="p-2 gap-sm-3 InfoDataItem_Prefactor" style=" display:flex;flex-direction:column; justify-content:space-between; width:100%; direction:rtl;">
+
+                    <div class="d-flex align-items-center">
+                        <div class="d-sm-flex gap-md-2 flex-grow-1">
+                            <div class="mp flex-column gap-sm-3 flex-sm-row align-items-center flex-wrap justify-content-around" style=" display:flex; width:100%; direction:rtl;">
+
+                                <div class="flex-wrap gap-3 justify-content-center" style=" display:flex">
+                                    <div style="min-width:115px;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
+                                        <label class="text-center" style="color:gray"> سریال پیش فاکتور:</label>
+                                        <label class="text-center" style="font-family:'IRANSansBold'">@item.QuotationNumber</label>
+                                    </div>
+
+                                    <div style="min-width:90px;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
+                                        <label class="text-center" style="color:gray"> شماره فاکتور :</label>
+                                        <label class="text-center" style="font-family:'IRANSansBold'"> @item.Number </label>
+                                    </div>
+
+                                    <div style="min-width:90px;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
+                                        <label class="text-center" style="color:gray">تاریخ ثبت:</label>
+                                        <label class="text-center" style="font-family:'IRANSansBold'">@item.DateTXT</label>
+                                    </div>
+                                </div>
+
+                                <div class="d-md-none my-2 " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                                <div style="min-width:135px;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
+                                    <label class="text-center" style="color:gray">نام مشتری :</label>
+                                    <label class="text-center" style="font-family:'IRANSansBold'">@item.CustomerPartyName </label>
+                                </div>
+
+                                <div class="d-md-none my-2 " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                                <div style="min-width:160px;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
+                                    <label class="text-center" style="color:gray">مبلغ:</label>
+                                    <label class="text-center" style="font-family:'IRANSansBold'">@string.Format("{0:n0}", (item.NetPrice))<span style="font-size: 12px"> ریال</span></label>
+                                </div>
+                            </div>
+                            <div class="d-sm-none my-2 " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                        </div>
+                        <div class="pe-2 d-flex" style="flex-direction:column; justify-content:space-evenly !important">
+                            <button class="mp d-flex" data-title-right="نمایش فاکتور" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="ShowPreviewFactorSepidar('@item.InvoiceId')">
+                                <i class="mp fa fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mp flex-column flex-sm-row" style="direction:rtl; display:flex;justify-content:space-between;align-items:center; ">
+                        <p class="col-9 text-center text-sm-start pb-2 pb-sm-0 pe-sm-2">@item.ExtraDescription</p>
+
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="direction:ltr; display:flex;gap:10px;flex-shrink:0">
+                                @if (item.State == 2) {
+                                    <p style="color:darkred" class="fbold me-2">ابطال شده</p>
+                                } else {
+                                    <img style="width:20px;height:20px" class="mp" src="~/img/Green-Light.gif" alt=""/>
+                                    <p style="color:gray; font-size:small;" class="mp">فاکتور سپیدار</p>
+                                }
+                            </div>
+                            @if (ViewBag.PassType == 2) {
+                                <div class="ms-2">
+                                    <button class="buttonBlue" onclick="updateFactorFinancial(@item.InvoiceId)">
+                                        انتخاب
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        }
+    } else {
+        <div class="d-flex flex-column align-items-center pb-4">
+            <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px);" alt="">
+            <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ فاکتوری در سپیدار ثبت نشده است!</div>
+        </div>
+    }
+</div>
+
+

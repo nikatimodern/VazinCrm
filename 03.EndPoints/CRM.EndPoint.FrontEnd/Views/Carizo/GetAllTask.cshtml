@@ -1,0 +1,147 @@
+﻿@using CRM.Core.Domain.Carizos.Enum
+@using CRM.EndPoint.FrontEnd.Models.ViewModel.CarizoVm
+@model CarizoViewModel
+@{
+    Layout = null;
+}
+@foreach (var item in Model.Data) {
+    <div class="w-100 py-2 px-lg-3" style="padding-inline:10px;border-radius:8px;background-color:@(Model._Type < 2 ? "rgba(128,128,255,.15)" : Model._Type == 2 ? "rgba(0,0,0,.10)" : "rgba(0,0,0,.20)") ;border:1px solid @(Model._Type < 2 ? "rgba(128,128,255,.2)" : Model._Type == 2 ? "rgba(0,0,0,.08)" : "rgba(0,0,0,.18)");border-right:4px solid @(Model._Type < 2 ? "rgb(128,128,255)" : Model._Type == 2 ? "rgb(140,140,140)" : "rgb(70,70,70)"); box-shadow:-1px 2px 8px rgba(10, 10, 10, .1);">
+        <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
+
+            @if (item.UserCreatorID == Model.CurrentUser.Id && Model._Type < 2 && Model.loc != 2 && !item.Systematic) {
+                <span class="carizo-title fbold" style="font-size:clamp(13px, 2vw, 14px)" contenteditable="true" onfocus="handleFocusEditable(this)" onblur="handleBlurEditable('@item.Id',this,'title')">@item.Title</span>
+            } else {
+                <span class="carizo-title fbold" style="font-size:clamp(13px, 2vw, 14px)">@item.Title</span>
+            }
+
+            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                @if (Model._Type < 2 && Model.loc != 2) {
+                    <div class="d-flex align-items-center gap-1">
+                        @if (item.RemindTime?.Length > 0) {
+                            <span class="d-flex align-items-center justify-content-center">
+								<svg style="width: 18px; height: 18px" viewBox="0 0 24 24" fill=@(!item.RemindDismiss ? "gold" : "rgba(0,0,0,.15)") onclick="handleNotifAndBellIcon('@item.Id', '@Model._Type', '2')" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M12 13m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M12 10l0 3l2 0" /><path d="M7 4l-2.75 2" /><path d="M17 4l2.75 2" /></svg>
+							</span>
+                        }
+                        <input class="input-time" value="@(item.RemindTime?.Length > 0 ? item.RemindTime : "")" placeholder="--:--" data-slots onfocus="handleFocusEditable(this, from = 'remindTime')" onblur="handleBlurEditable('@item.Id',this,'remindTime', '@Model._Type')">
+                        @if (item.RemindTime?.Length > 0) {
+                            <span class="d-flex align-items-center justify-content-center">
+								<svg style="width: 16px; height: 16px" fill=@(Model._Type < 2 && item.Remind == true ? "gold" : "rgba(0,0,0,.15)") onclick="handleNotifAndBellIcon('@item.Id', '@Model._Type', '1')" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" ><path d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0M3.124 7.5A8.969 8.969 0 0 1 5.292 3m13.416 0a8.969 8.969 0 0 1 2.168 4.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+							</span>
+                        }
+                    </div>
+                } else if (item.RemindTime?.Length > 0) {
+                    <div class="d-flex align-items-center gap-2">
+                        <span style="font-size:clamp(12px, 2vw, 13px);line-height: 1">@item.RemindTime</span>
+                        <svg style="width: 16px; height: 16px" fill=@(Model._Type < 2 && item.Remind == true ? "gold" : "rgba(0,0,0,.15)") stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" ><path d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0M3.124 7.5A8.969 8.969 0 0 1 5.292 3m13.416 0a8.969 8.969 0 0 1 2.168 4.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    </div>
+                }
+                @if (Model._Type < 2 && Model.loc != 2) {
+                    <input class="input-date fbold sdate" data-onSelect="onSelectEditTaskDate" data-id="@item.Id" value="@(item.Date != null && item.Date.Length > 0 ? item.Date : "")" placeholder="تاریخ" data-mask-date onfocus="handleFocusEditable(this, from = 'date')" onblur="handleBlurEditable('@item.Id',this,'date', '@Model._Type')">
+                } else {
+                    <span class="fbold">@item.Date</span>
+                }
+            </div>
+        </div>
+        @if (item.UserCreatorID == Model.CurrentUser.Id && Model._Type < 2 && Model.loc != 2 && !item.Systematic) {
+            <p class="carizo-desc" style="font-size:clamp(12px, 2vw, 13px);color:gray;min-height:12px;white-space: pre-line;" contenteditable="true" onfocus="handleFocusEditable(this)" onblur="handleBlurEditable('@item.Id',this,'description')">@item.Description</p>
+        } else {
+            <p class="carizo-desc" style="font-size:clamp(12px, 2vw, 13px);color:gray;min-height:12px;white-space: pre-line;">@Html.Raw(item.Description)</p>
+        }
+
+        <div class="d-flex w-100 justify-content-between align-items-center mt-3 flex-wrap" style="column-gap:18px;row-gap:8px;">
+            <div class="d-flex justify-content-between align-items-end" style="margin-bottom: -3px;">
+                <div class="d-flex gap-2 gap-lg-3 align-items-center" style="font-size:clamp(11px, 2vw, 12px);">
+                    <span>دراختیار: <span class="fbold"> @item.UserCreator </span></span>
+                    @if (item.TaskType != TaskTypeEnum.تکی) {
+                        <div>
+                            <div class="@(item.TaskUsers.Count > 0 ? "taskUsers-dropdown__toggle" : "") d-flex align-items-center justify-content-center" style="@((item.TaskUsers.Count > 0 && item.TaskType == TaskTypeEnum.اختصاصی) ? (item.TaskUsers.All(t => t?.completed == true) ? "color:#04857c;transform:scale(1.2)" : "color:#6c757d") : "color:#6c757d");" tabindex="0">
+                                <svg style="width: 18px; height: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM1.49 15.326a.78.78 0 0 1-.358-.442 3 3 0 0 1 4.308-3.516 6.484 6.484 0 0 0-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 0 1-2.07-.655ZM16.44 15.98a4.97 4.97 0 0 0 2.07-.654.78.78 0 0 0 .357-.442 3 3 0 0 0-4.308-3.517 6.484 6.484 0 0 1 1.907 3.96 2.32 2.32 0 0 1-.026.654ZM18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5.304 16.19a.844.844 0 0 1-.277-.71 5 5 0 0 1 9.947 0 .843.843 0 0 1-.277.71A6.975 6.975 0 0 1 10 18a6.974 6.974 0 0 1-4.696-1.81Z" /></svg>
+                            </div>
+                            @if (item.TaskUsers.Count > 0) {
+                                <div class="taskUsers-dropdown">
+                                    @foreach (var user in item.TaskUsers) {
+                                        <div class="taskUsers-dropdown__item">
+                                            <div class="d-flex align-items-center gap-1">
+                                                <svg style="width: 15px; height: 15px;color:#6c757d" viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM12.735 14c.618 0 1.093-.561.872-1.139a6.002 6.002 0 0 0-11.215 0c-.22.578.254 1.139.872 1.139h9.47Z" /></svg>
+                                                <span style="font-size:clamp(12px, 2vw, 13px)">@user.FullName</span>
+                                            </div>
+
+                                            @if (user.completed) {
+                                                <span style="font-size:clamp(10px, 2vw, 11px);background-color:#04857c;padding: 3px 5px;font-weight:normal" class="badge">
+													انجام شد
+													<svg style="width:17px;height:17px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+												</span>
+                                            } else if (!item.TaskStatus) {
+                                                <span style="font-size:clamp(10px, 2vw, 11px); padding: 6px 5px;font-weight:normal" class="badge bg-secondary">در حال انجام</span>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="d-flex flex-grow-1 justify-content-end">
+                <div class="d-flex @(Model.loc < 2 && !item.Systematic ? "gap-1" : "gap-2") align-items-center" style="font-size:clamp(12px, 2vw, 13px);">
+                    @if (item.Repeat == true) {
+                        <div class="d-flex align-items-center gap-1">
+                            <span style="font-size:clamp(10px, 2vw, 11px);margin-bottom: -3px;">@item.RepeatTypeTxt @(item.RepeatUntil != "همیشه" ? $"تا {item.RepeatUntil}" : "")</span>
+                            <div class="d-flex align-items-center justify-content-center">
+                                <svg style="width: 16px; height: 16px;color:@(Model._Type < 2 ? "darkgreen" : "rgb(60,60,60)")"  viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 4.5c1.215 0 2.417.055 3.604.162a.68.68 0 0 1 .615.597c.124 1.038.208 2.088.25 3.15l-1.689-1.69a.75.75 0 0 0-1.06 1.061l2.999 3a.75.75 0 0 0 1.06 0l3.001-3a.75.75 0 1 0-1.06-1.06l-1.748 1.747a41.31 41.31 0 0 0-.264-3.386 2.18 2.18 0 0 0-1.97-1.913 41.512 41.512 0 0 0-7.477 0 2.18 2.18 0 0 0-1.969 1.913 41.16 41.16 0 0 0-.16 1.61.75.75 0 1 0 1.495.12c.041-.52.093-1.038.154-1.552a.68.68 0 0 1 .615-.597A40.012 40.012 0 0 1 10 4.5ZM5.281 9.22a.75.75 0 0 0-1.06 0l-3.001 3a.75.75 0 1 0 1.06 1.06l1.748-1.747c.042 1.141.13 2.27.264 3.386a2.18 2.18 0 0 0 1.97 1.913 41.533 41.533 0 0 0 7.477 0 2.18 2.18 0 0 0 1.969-1.913c.064-.534.117-1.071.16-1.61a.75.75 0 1 0-1.495-.12c-.041.52-.093 1.037-.154 1.552a.68.68 0 0 1-.615.597 40.013 40.013 0 0 1-7.208 0 .68.68 0 0 1-.615-.597 39.785 39.785 0 0 1-.25-3.15l1.689 1.69a.75.75 0 0 0 1.06-1.061l-2.999-3Z" clip-rule="evenodd" /></svg>
+                            </div>
+                        </div>
+                    }
+                    <div class="d-flex gap-1 align-items-center">
+                        @if (Model.loc < 2 && !item.Systematic) {
+                            <div class="d-flex align-items-center gap-2 align-self-end" style="position:relative">
+                                <div class="task-dropdown__toggle" style="cursor:pointer" tabindex="0">
+                                    <svg style="width:18px;height:18px"  fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" /></svg>
+                                </div>
+                                <div class="task-dropdown">
+                                    @if (Model._Type < 2) {
+                                        <div class="task-dropdown__item itemGray" onclick="showEditTaskModal('@item.Id', '@((item.UserCreatorID == Model.CurrentUser.Id && !item.Systematic) ? 1 : 0)')">
+                                            <svg style="width:16px;height:16px"  fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
+                                            <span>ویرایش</span>
+                                        </div>
+                                    }
+                                    @if (item.UserCreatorID == Model.CurrentUser.Id || Model._Type == 2) {
+                                        <div class="task-dropdown__item itemRed" style="color:darkred" onclick="delTask('@item.Id','@Model._Type')">
+                                            <svg style="width:16px;height:16px"  fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+                                            <span>حذف</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @if (item.TaskStatus) {
+                            if (item.CompleteTaskUserId == Model.CurrentUser.Id || item.UserCreatorID == Model.CurrentUser.Id) {
+                                <button onclick="unCheckTask('@item.Id',this)" style="border: none;background: none;padding: 0;">
+                                    <svg class="unCheckTaskIcon"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                                </button>
+                            } else {
+                                <div style="font-size:clamp(10px, 2vw, 11px); padding: 6px 5px;font-weight:normal" class="badge bg-secondary">
+                                    <span>انجام شده توسط :</span>
+                                    <span>@item.CompleteTaskUser</span>
+                                </div>
+                            }
+                        } else {
+                            <div class="d-flex align-items-center gap-2">
+                                @if (item.EntityType == "Acc") {
+                                    <button class="buttonGray" onclick="readNotifAction('@item.Id', '', '@item.EntityType', '@item.EntityId')">مشاهده</button>
+                                }
+                                <button class="buttonGreen2 d-flex align-items-center" onclick="finishTask('@item.Id','@Model._Type',this,'@Model.loc')">
+                                    <sapn>انجام شد</sapn>
+                                    <div style="display:none" class="spinner-border spinner-border-sm ms-2" role="status"></div>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+

@@ -1,0 +1,154 @@
+﻿@using CRM.Core.Domain.PreFactors.Enum
+@model List<PreFactorSalesAdminViewModel>;
+
+@{
+    Layout = null;
+}
+
+<div style="width:100%;display:flex;flex-direction:column;gap:5px ">
+    @foreach (var item in Model) {
+        var pf = item.PreFactor;
+
+        <div class="mp" style="width:100%;display:flex;">
+            @if (pf.OfficialType == 1) {
+                <div class="mp InfoDataHead_PrefactorRasmi" style="width:24px">
+                    <label class="mp" style="transform: rotate(90deg);"> رسمی</label>
+                </div>
+            } else {
+                <div class="mp InfoDataHead_PrefactorNonRasmi" style="width:24px">
+                    <label class="mp" style="transform: rotate(90deg);"> غیررسمی</label>
+                </div>
+            }
+            @if (pf.Export == true) {
+                <div style="background-color:lightgreen;border-block: 2px solid darkgreen; width:24px; display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
+                    <label style="font-family:'IRANSansBold'; transform: rotate(90deg)">صـادراتی</label>
+                </div>
+            }
+
+
+            <div class="InfoDataItem_Prefactor py-2 pb-sm-2 flex-column flex-sm-row" style=" display:flex; width:100%;  ">
+                <div class="w-100 d-flex flex-column">
+                    <div class="flex-column flex-md-row" style=" display:flex;justify-content:space-between; ">
+
+                        <div class="flex-row flex-md-column col-12 col-md-3 px-2 gap-md-2 flex-wrap" style="display:flex; justify-content:space-around;row-gap:.5rem;column-gap:1rem; ">
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <label style="color:gray;flex-shrink:0">سریال:</label>
+                                <label class="text-center fbold">@pf.SerialNumber</label>
+                            </div>
+
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <label style="color:gray;flex-shrink:0">تاریخ:</label>
+                                <label class="text-center fbold">@pf.Date</label>
+                            </div>
+
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <label style="color:gray;flex-shrink:0">تاریخ تایید:</label>
+                                <label class="text-center fbold">@pf.AcceptedDateTxt?.Substring(0, 10)</label>
+                            </div>
+                        </div>
+
+                        <div class="d-md-none my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                        <div class="flex-row flex-md-column col-12 col-md-3 gap-md-2 px-2 ps-md-0 flex-wrap" style="display:flex;justify-content:space-around;row-gap:.5rem;column-gap:1rem;">
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <label style="color:gray;flex-shrink:0">شرکت:</label>
+                                <label class="text-center fbold">@(string.IsNullOrEmpty(pf.Customer) ? "-" : pf.Customer)</label>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <label style="color:gray;flex-shrink:0">نماینده:</label>
+                                <label class="text-center fbold">@(string.IsNullOrEmpty(pf.AgentName) ? "-" : pf.AgentName)</label>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <label style="color:gray;flex-shrink:0">مبلغ:</label>
+                                <span class="d-flex align-items-baseline gap-1 fbold">
+                                    <span style="direction: ltr">@($"{item.SumTotalAmountTax:n0}")</span>
+                                    <span style="font-size: 12px"> @(pf.CurrencyTypeTxt ?? "ريال")</span>
+                                </span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <label style="color:gray;flex-shrink:1">پیش پرداخت:</label>
+                                <label class="text-center fbold" style="color:darkgreen">
+                                    @string.Format("{0:n0}", item.ReceiveAmount)
+                                    <span style="font-size: 12px"> @(pf.CurrencyTypeTxt ?? "ريال")</span>
+                                </label>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <label style="color:gray;flex-shrink:1">مانده حساب :</label>
+                                <label class="text-center fbold" style="color:crimson">
+                                    @string.Format("{0:n0}", item.PaymentAmount)
+                                    <span style="font-size: 12px"> @(pf.CurrencyTypeTxt ?? "ريال")</span>
+                                </label>
+                                <span>*</span>
+                            </div>
+                        </div>
+
+                        <div class="d-md-none my-2 " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                        <div class="flex-row flex-md-column flex-wrap col-12 col-md-3 px-4 px-md-0 gap-2" style=" display:flex;justify-content:space-around;align-items:center ">
+                            <div class="d-flex flex-column align-items-center justify-content-center">
+                                <label style="text-align:center;color:gray">ثبت شده توسط:</label>
+                                <label style="text-align:center;font-family:'IRANSansBold'">@pf.UserCreator</label>
+                            </div>
+                        </div>
+
+                        <div class="d-md-none my-2 " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                        <div class="d-flex flex-row flex-md-column col-12 col-md-3 px-2 gap-3 flex-wrap align-items-center justify-content-evenly">
+
+                            <div class="flex-center text-center flex-row flex-md-column column-gap-1">
+                                <span style="color:gray">وضعیت:</span>
+                                <span class="fbold">@(pf.AcceptedFinancial == false ? "رد شده از طرف مالی" : pf.PftypeTxt)</span>
+                            </div>
+                            @if (pf.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش) {
+                                <div class="flex-row flex-md-column gap-2" style="display:flex;align-items:center;justify-content:center ">
+                                    <button class="mp btn btn-secondary" style="width:90px" onclick="acceptSalesAdmin('@pf.Id')">تایید</button>
+                                    <button class="mp btn btn-outline-secondary" style="width:90px;" onclick="showModalNotAccept('@pf.Id', 14)">عدم تایید</button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(pf.CommentText)) {
+                        <div class="my-2 mt-md-3 mx-auto" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px"></div>
+
+                        <div class="px-2 d-flex justify-content-around gap-1">
+                            <label style="color:gray">توضیحات:</label>
+                            <span class="flex-grow-1" style="white-space: pre-line">@Html.Raw(pf.CommentText)</span>
+                        </div>
+                    }
+                </div>
+
+
+                <div class="d-sm-none my-2 " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                <div class="mx-sm-2 d-flex flex-row flex-sm-column justify-content-evenly gap-2" style="font-size:15px">
+                    @*@if (item.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش) {
+                        <span class="cursor-pointer flex-center" style="color:var(--DarkColor)" data-title-right="ویرایش" onclick="upPfactor('@item.Id',3)">
+                            <i class="mp fa fa-pencil"></i>
+                        </span>
+                    }*@
+                    @if (pf.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین) {
+                        <span class="cursor-pointer flex-center" style="color:var(--DarkColor)" data-title-right="نمایش پیش فاکتور" onclick="ShowPreviewPfactor('@pf.Id')">
+                            <i class="mp fa fa-eye"></i>
+                        </span>
+                    }
+                    @if (pf.CustomerId != null) {
+                        <span class="cursor-pointer flex-center" style="color:var(--DarkColor)" data-title-right="پروفایل" onclick="openCustomerProfile('@pf.CustomerId')">
+                            <i class="mp fa fa-user"></i>
+                        </span>
+                    }
+                    <span class="cursor-pointer flex-center" style="color:var(--DarkColor)" data-title-right="پیوست ها" onclick="AttachDoc('@pf.Id')">
+                        <i class="mp fa fa-paperclip"></i>
+                    </span>
+                    <span class="cursor-pointer flex-center" style="color:var(--DarkColor)" data-title-right="بستن پیش فاکتور" onclick="ShowModalExpireDescription('@pf.Id','@string.Format("{0:n0}", pf.PaymentAmount)','@pf.SerialNumber','@pf.Customer @pf.AgentName',3 )">
+                        <i class="mp fa fa-times" style="font-size: 18px;"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+
+
+
+

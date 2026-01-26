@@ -1,0 +1,72 @@
+﻿
+.list-product__box {
+  border: solid 1px #01a7a5;
+  border-radius: 8px;
+  padding: 14px;
+  background-color: #ffffff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+
+.list-product__priceTable {
+  display: grid;
+  font-size: 14px;
+  gap: 6px;
+  /*    align-items: center;*/
+}
+
+
+.list-product__priceTable > div {
+  border: 1px solid #dee2e6;
+  
+  padding: 8px;
+  text-align: center;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.list-product__priceTable .header {
+  /* font-family: IRANSansBold; */
+  font-family: IRANSansMedium;
+  background-color: #02a3832e;
+  /* font-size: 15px; */
+}
+
+
+.list-product__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+  padding-block: 4px;
+}
+
+
+@media (max-width: 1199px) {
+  .list-product__grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
+@media (max-width: 767px) {
+  .list-product__priceTable {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .list-p-weight-bg-mobile {
+    background-color: #02a3832e !important;
+  }
+  
+  #ListProductId {
+    max-height: calc(100dvh - 171px) !important;
+  }
+  
+  #ListAmountBodyId {
+    max-height: calc(100dvh - 280px) !important;
+  }
+}
