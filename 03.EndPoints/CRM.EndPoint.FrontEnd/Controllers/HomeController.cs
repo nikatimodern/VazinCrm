@@ -86,13 +86,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        [HttpPost("subscribe")]
-        public IActionResult Subscribe([FromBody] PushSubscription subscription)
-        {
-            // ذخیره در DB
-            return Ok();
-        }
-
 
         public IActionResult sigR()
         {

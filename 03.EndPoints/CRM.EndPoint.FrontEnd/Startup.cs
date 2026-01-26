@@ -131,6 +131,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IVeiwRenderService, VeiwRenderService>();
             services.AddScoped<LogSystemService>();
+            services.AddScoped<IPushService, PushService>();
 
 
             var mvc = services.AddControllersWithViews();

@@ -22,21 +22,58 @@ self.addEventListener("fetch", event => {
 
 
 self.addEventListener("push", event => {
-    const data = event.data?.json();
+    if (!event.data) return;
+    const data = event.data.json();
     console.log("push", event);
-    self.registration.showNotification(data.title, {
-        body: data.body,
-        //icon: "/icons/icon-192.png",
+    
+    const options = {
+        body: data.body || "",
+       // icon: "/icons/icon-192.png",
+       // badge: "/icons/badge.png",
         data: {
-            url: data.url
-        }
-    }).then(r => console.log(r));
+            url: data.url || "/"
+        },
+        actions: [
+            {
+                action: "open",
+                title: "مشاهده"
+            },
+           /* {
+                action: "dismiss",
+                title: "بستن"
+            }*/
+        ],
+        tag: data.tag || "general",
+        renotify: true,
+        silent: false,
+    };
+    event.waitUntil(
+        self.registration.showNotification(
+            data.title || "پیام جدید",
+            options
+        )
+    );
 });
 
 self.addEventListener("notificationclick", event => {
     console.log("notificationclick", event);
     event.notification.close();
+    
+    const targetUrl = event.notification.data?.url || "/";
+    /*event.waitUntil(
+        clients.openWindow(targetUrl)
+    );*/
     event.waitUntil(
-        clients.openWindow(event.notification.data.url)
+        clients.matchAll({ type: "window", includeUncontrolled: true })
+               .then(clientList => {
+                   for (const client of clientList) {
+                       if (client.url === targetUrl && "focus" in client) {
+                           return client.focus();
+                       }
+                   }
+                   if (clients.openWindow) {
+                       return clients.openWindow(targetUrl);
+                   }
+               })
     );
 });
