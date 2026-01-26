@@ -77,7 +77,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public IActionResult Index()
         {
 
-            var c = 2;
+            var c = 3413413;
             //try {
 
             //var pf = db.PreFactors.Where(f => f.Accepted).ToListAsync().Result;
