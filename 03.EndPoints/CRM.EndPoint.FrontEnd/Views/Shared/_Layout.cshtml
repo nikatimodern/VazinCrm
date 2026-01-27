@@ -56,19 +56,19 @@
     <link rel="stylesheet" href="~/lib/Awesomplete/Awesomplete.css" />
     <link rel="stylesheet" href="~/lib/TomSelect/tom-select.min.css" />
 
-    <link rel="stylesheet" href="~/css/site.css?v=3.0.0" />
-    <link rel="stylesheet" href="~/css/table.css?v=3.0.0" />
-    <link rel="stylesheet" href="~/css/layoutResponsive.css?v=3.0.0" />
-    <link rel="stylesheet" href="~/css/customerIndexResponsive.css?v=3.0.0" />
-    <link rel="stylesheet" href="~/css/customerProfileResponsive.css?v=3.0.0" />
-    <link rel="stylesheet" href="~/css/listProduct.css?v=3.0.0" />
-    <link rel="stylesheet" href="~/css/carizo.css?v=3.0.0" />
-    <link rel="stylesheet" href="~/css/reports.css?v=3.0.0" />
-    <link rel="stylesheet" href="~/css/dashboard.css?v=3.0.0" />
-    <link rel="stylesheet" href="~/css/order.css?v=3.0.0" />
-    <link rel="stylesheet" href="~/css/deal.css?v=3.0.0" />
-    <link rel="stylesheet" href="~/css/cartableStyle.css?v=3.0.0" />
-    <link rel="stylesheet" href="~/css/email.css?v=3.0.0" />
+    <link rel="stylesheet" href="~/css/site.css?v=3.0.3" />
+    <link rel="stylesheet" href="~/css/table.css?v=3.0.3" />
+    <link rel="stylesheet" href="~/css/layoutResponsive.css?v=3.0.3" />
+    <link rel="stylesheet" href="~/css/customerIndexResponsive.css?v=3.0.3" />
+    <link rel="stylesheet" href="~/css/customerProfileResponsive.css?v=3.0.3" />
+    <link rel="stylesheet" href="~/css/listProduct.css?v=3.0.3" />
+    <link rel="stylesheet" href="~/css/carizo.css?v=3.0.3" />
+    <link rel="stylesheet" href="~/css/reports.css?v=3.0.3" />
+    <link rel="stylesheet" href="~/css/dashboard.css?v=3.0.3" />
+    <link rel="stylesheet" href="~/css/order.css?v=3.0.3" />
+    <link rel="stylesheet" href="~/css/deal.css?v=3.0.3" />
+    <link rel="stylesheet" href="~/css/cartableStyle.css?v=3.0.3" />
+    <link rel="stylesheet" href="~/css/email.css?v=3.0.3" />
 </head>
 
 
@@ -2868,6 +2868,56 @@
 </div>
 
 
+<div class="modal fade" id="pwaInstallModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content pwa-modal">
+
+            <div class="modal-body text-center">
+                @* <div class="pwa-icon">📲</div> *@
+
+                <h5 class="mb-3">نصب اپلیکیشن سامانه وزین پلاست</h5>
+                <p class="text-muted small mt-2">
+                    با نصب اپلیکیشن، سریع‌تر وارد شوید و اعلان‌ها را دریافت کنید.
+                </p>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button id="pwaInstallBtn" class="btn btn-primary w-100">
+                        نصب
+                    </button>
+                    <button class="btn btn-light w-100" data-bs-dismiss="modal">
+                        بعداً
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="iosPwaInstallModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content pwa-modal">
+            <div class="modal-body text-center">
+                <h5 class="mb-3">نصب اپلیکیشن سامانه وزین پلاست</h5>
+                <p class="text-muted small mt-2">
+                    برای نصب اپلیکیشن روی ios:
+                    <br>
+                    دکمه <strong>Share</strong> را بزنید
+                    و گزینه <strong>Add to Home Screen</strong> را انتخاب کنید.
+                </p>
+
+                <button class="btn btn-primary w-100 mt-3" data-bs-dismiss="modal">
+                    فهمیدم
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+
 <div id="overlay"></div>
 <div id="dropdown-portal"></div>
 <div id="layoutPortal"></div>
@@ -2895,14 +2945,14 @@
 <script src="~/lib/Awesomplete/awesomplete.min.js"></script>
 <script src="~/lib/TomSelect/tom-select.complete.min.js"></script>
 
-<script src="~/js/pwa.js?v=3.0.0"></script>
-<script src="~/js/site.js?v=3.0.0"></script>
-<script src="~/js/UploadFile.js?v=3.0.0"></script>
-<script src="~/js/PublicFunction.js?v=3.0.0"></script>
-<script src="~/js/DateValidate.js?v=3.0.0"></script>
-<script src="~/js/TaskSignalR.js?v=3.0.0"></script>
-@* <script src="~/js/dashboard.js?v=3.0.0"></script> *@
-<script src="~/js/Layout.js?v=3.0.0" defer></script>
+<script src="~/js/pwa.js?v=3.0.3"></script>
+<script src="~/js/site.js?v=3.0.3"></script>
+<script src="~/js/UploadFile.js?v=3.0.3"></script>
+<script src="~/js/PublicFunction.js?v=3.0.3"></script>
+<script src="~/js/DateValidate.js?v=3.0.3"></script>
+<script src="~/js/TaskSignalR.js?v=3.0.3"></script>
+@* <script src="~/js/dashboard.js?v=3.0.3"></script> *@
+<script src="~/js/Layout.js?v=3.0.3" defer></script>
 
 <script>
     var baseUrl;

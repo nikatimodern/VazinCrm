@@ -1,16 +1,72 @@
 // Service Worker Registration
-if ("serviceWorker" in navigator) {
-    window.addEventListener("load", async () => {
+
+window.addEventListener("load", async () => {
+    const swRegistered = await registerServiceWorker();
+    if (!swRegistered) return;
+    await navigator.serviceWorker.ready;
+    
+    initInstallPrompt();
+    await initPush()
+    await showIosPwaInstall();
+});
+
+
+async function registerServiceWorker() {
+    if ("serviceWorker" in navigator) {
         try {
             await navigator.serviceWorker.register("/sw.js");
             console.log("Service Worker registered");
-            await initPush();
-            console.log(await axios.post(`/Push/TestPush/`));
+            return true;
         } catch (err) {
             console.error("Service Worker registration failed", err);
+            return false;
         }
+    }
+    return false;
+}
+
+
+let deferredPrompt = null;
+function initInstallPrompt() {
+    window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        if (sessionStorage.getItem("pwa-install-shown")) return;
+        
+        setTimeout(() => {
+            ModalToggle("#pwaInstallModal");
+            sessionStorage.setItem("pwa-install-shown", "1");
+        }, 1000);
     });
 }
+
+
+async function showIosPwaInstall() {
+    if (!isIos()) return;
+    if (window.navigator.standalone === true) return;
+    if (sessionStorage.getItem("pwaios-install-shown")) return;
+    
+    setTimeout(() => {
+        ModalToggle("#iosPwaInstallModal");
+        sessionStorage.setItem("pwaios-install-shown", "1");
+    }, 2000);
+}
+
+
+document.getElementById("pwaInstallBtn")?.addEventListener("click", async () => {
+    if (!deferredPrompt) return;
+    
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    console.log("Install result:", outcome);
+    
+    deferredPrompt = null;
+    ModalToggle("#pwaInstallModal", "hide");
+});
+
+
 
 // Push Init
 async function initPush() {
@@ -44,12 +100,16 @@ async function subscribeUser(registration) {
     
     const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey
+        applicationServerKey,
     });
     
     console.log("New subscription", subscription);
     
-    await axios.post("/Push/Subscribe", subscription);
+    const res = await axios.post("/Push/Subscribe", subscription);
+    console.log(res);
+    if (res.status === 200) {
+        console.log("Subscribed successfully", res);
+    }
 }
 
 // Utils
@@ -63,3 +123,6 @@ function urlBase64ToUint8Array(base64String) {
     return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
 }
 
+function isIos() {
+    return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}

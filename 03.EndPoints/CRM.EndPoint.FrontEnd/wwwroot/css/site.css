@@ -4902,3 +4902,16 @@ table tr.payment-vosoled > td {
   font-weight: bold;
   line-height: normal;
 }
+
+.pwa-modal {
+  border-radius: 16px;
+  border: none;
+  padding: 10px;
+}
+
+.pwa-modal p {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+
