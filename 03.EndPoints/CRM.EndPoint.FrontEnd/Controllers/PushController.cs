@@ -1,6 +1,9 @@
+using System.Security.Claims;
 using System.Threading.Tasks;
+using CRM.Core.Domain.AppUsers.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using WebPush;
 
@@ -17,14 +20,10 @@ public class PushController(IPushService pushService) : Controller {
     [HttpPost]
     public async Task<IActionResult> Subscribe([FromBody] PushSubscriptionDto model)
     {
-        await pushService.SubscribeAsync(model);
-        return Ok();
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> TestPush()
-    {
-        await pushService.SendTestAsync();
+        var userId = User.Identity?.IsAuthenticated == true
+            ? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            : null;
+        await pushService.SubscribeAsync(model, userId);
         return Ok();
     }
 

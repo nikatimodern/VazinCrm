@@ -40,6 +40,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly CRMContextDb db;
         private readonly UserContextDb udb;
         private readonly Sepidar1ContextDb s1Db;
+        private readonly IPushService pushService;
         private readonly IVeiwRenderService vrs;
         private readonly UserManager<AppUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
@@ -47,7 +48,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         public CartableController(IVeiwRenderService vrs, UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager, Service GenService,
-            FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb s1db)
+            FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb s1db, IPushService pushService)
         {
             this.vrs = vrs;
             this.userManager = userManager;
@@ -58,6 +59,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.db = db;
             udb = Udb;
             s1Db = s1db;
+            this.pushService = pushService;
             this._setting = db.ASettings.FirstOrDefault();
         }
 
@@ -113,6 +115,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
+
+                await pushService.SendToAllAsync("سلام وزین پلاستی", "این یک پوش نوتیف تست است", "/");
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var roles = await userManager.GetRolesAsync(user);
 

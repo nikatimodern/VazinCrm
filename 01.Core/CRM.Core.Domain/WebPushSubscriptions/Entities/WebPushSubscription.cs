@@ -1,8 +1,8 @@
 using System;
 
-namespace CRM.Core.Domain.PushSubscriptions.Entities;
+namespace CRM.Core.Domain.WebPushSubscriptions.Entities;
 
-public class PushSubscription {
+public class WebPushSubscription {
     public Guid Id { get; set; }
     public string UserId { get; set; }
     public string Endpoint { get; set; }

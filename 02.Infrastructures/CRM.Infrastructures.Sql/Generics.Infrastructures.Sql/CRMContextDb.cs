@@ -26,6 +26,7 @@ using System.Threading.Tasks;
 using CRM.Core.Domain.Cartables.Entities;
 using CRM.Core.Domain.Chats.Entities;
 using CRM.Core.Domain.Emails.Entities;
+using CRM.Core.Domain.WebPushSubscriptions.Entities;
 
 namespace Generics.Infrastructures.Sql
 {
@@ -81,6 +82,7 @@ namespace Generics.Infrastructures.Sql
         public DbSet<Email> Emails { get; set; }
         public DbSet<Chat> Chats { get; set; }
         public DbSet<MainChat> MainChats { get; set; }
+        public DbSet<WebPushSubscription> WebPushSubscriptions { get; set; }
 
 
 

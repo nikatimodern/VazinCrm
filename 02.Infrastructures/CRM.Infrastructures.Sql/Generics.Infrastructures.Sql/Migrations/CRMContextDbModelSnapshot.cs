@@ -2908,6 +2908,44 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("SystemWarnings");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.WebPushSubscriptions.Entities.WebPushSubscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Auth")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Endpoint")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("P256dh")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Endpoint")
+                        .IsUnique();
+
+                    b.ToTable("WebPushSubscriptions");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Accountancies.Entities.Accountancy", b =>
                 {
                     b.HasOne("CRM.Core.Domain.Accountancies.Entities.BankAccount", null)

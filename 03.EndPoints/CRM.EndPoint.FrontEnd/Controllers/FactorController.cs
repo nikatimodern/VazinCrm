@@ -38,6 +38,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Supplies.Entities;
+using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Accountency;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 
@@ -51,6 +52,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly Sepidar1ContextDb S1db;
         private readonly IHubContext<TaskHub> hub;
         private readonly LogSystemService _logSystemService;
+        private readonly IPushService pushService;
         private readonly CrmSaveCahngeAsync crmSaveCahngeAsync;
         private readonly TaskServices ts;
         private readonly SepidarService sps;
@@ -63,7 +65,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, RoleManager<IdentityRole> roleManager, Service GenService,
             FileSaver fileSaver,
             DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb S1db,
-            IHubContext<TaskHub> hub, LogSystemService logSystemService)
+            IHubContext<TaskHub> hub, LogSystemService logSystemService, IPushService pushService)
         {
             this.crmSaveCahngeAsync = crmSaveCahngeAsync;
             this.ts = ts;
@@ -80,6 +82,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.S1db = S1db;
             this.hub = hub;
             _logSystemService = logSystemService;
+            this.pushService = pushService;
         }
 
         [Authorize(Policy = "NotCustomerOnly")]
@@ -198,7 +201,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await _logSystemService.LogChange(oldFac, fac, action, user);
 
             await db.SaveChangesAsync();
-
             return Ok();
         }
 
