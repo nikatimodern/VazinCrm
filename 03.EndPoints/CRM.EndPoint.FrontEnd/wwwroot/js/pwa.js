@@ -5,7 +5,7 @@ if ("serviceWorker" in navigator) {
             await navigator.serviceWorker.register("/sw.js");
             console.log("Service Worker registered");
             await initPush();
-            await axios.post(`/Push/TestPush/`)
+            console.log(await axios.post(`/Push/TestPush/`));
         } catch (err) {
             console.error("Service Worker registration failed", err);
         }

@@ -57,8 +57,8 @@ public class PushService : IPushService {
 
         await SendAsync(
             _lastSubscription,
-            "🎉 تست پوش نوتیفیکیشن",
-            "اگه اینو دیدی یعنی همه چیز درسته",
+            "تست پوش نوتیفیکیشن",
+            "چطوری؟",
             "/"
         );
     }

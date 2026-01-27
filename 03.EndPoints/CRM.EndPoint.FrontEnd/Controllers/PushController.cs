@@ -25,7 +25,7 @@ public class PushController(IPushService pushService) : Controller {
     public async Task<IActionResult> TestPush()
     {
         await pushService.SendTestAsync();
-        return Ok("Push sent");
+        return Ok();
     }
 
 }
