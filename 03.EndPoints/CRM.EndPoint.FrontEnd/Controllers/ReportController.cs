@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Reports.Enum;
 using CRM.EndPoint.FrontEnd.ISerives;
@@ -52,6 +53,44 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public IActionResult Index()
         {
             return View();
+        }
+
+
+        public async Task<IActionResult> GetBaseItemsReport()
+        {
+            try
+            {
+                var items = await db.BaseItems
+                    .Where(f =>
+                        f.TypeCode == BaseItemEnum.نتیجه_تماس
+                        || f.TypeCode == BaseItemEnum.نتیجه_نهایی
+                        || f.TypeCode == BaseItemEnum.علت_انصراف
+                    )
+                    .ToListAsync();
+
+                var result = new {
+                    ResultCall = items
+                        .Where(x => x.TypeCode == BaseItemEnum.نتیجه_تماس)
+                        .Select(x => new { Value = x.Id, Text = x.Title })
+                        .ToList(),
+
+                    FinalResultCall = items
+                        .Where(x => x.TypeCode == BaseItemEnum.نتیجه_نهایی)
+                        .Select(x => new { Value = x.Id, Text = x.Title })
+                        .ToList(),
+
+                    ReasonCancel = items
+                        .Where(x => x.TypeCode == BaseItemEnum.علت_انصراف)
+                        .Select(x => new { Value = x.Id, Text = x.Title })
+                        .ToList()
+                };
+
+                return Ok(result);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
 
 

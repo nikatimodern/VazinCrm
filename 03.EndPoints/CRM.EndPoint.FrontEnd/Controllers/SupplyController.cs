@@ -258,7 +258,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var queryFirst = from deal in db.Deals.AsNoTracking()
                     join pf in db.PreFactors.AsNoTracking()
                         on deal.Id equals pf.DealId
-                    where pf.Pftype != (int)PreFactorEnum.فاقد_اعتبار && pf.Factors.Any(f => f.status == FactorStatus.تایید_شده)
+                    where pf.Pftype != (int)PreFactorEnum.فاقد_اعتبار && pf.Factors.Any() //f => f.status == FactorStatus.تایید_شده
                     group new { deal, pf } by deal.Id
                     into g
                     select new {

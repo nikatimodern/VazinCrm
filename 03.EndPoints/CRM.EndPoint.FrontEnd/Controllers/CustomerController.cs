@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Core.Domain.BaseItems.Enums;
 
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
@@ -879,7 +880,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public async Task<IActionResult> GetCustomer(Guid id)
         {
             var data2 = await db.BaseItems
-                .Where(f => f.TypeCode == 1)
+                .Where(f => f.TypeCode == BaseItemEnum.صنف)
                 .Select(g => new SelectOptionGuidDto() {
                     id = g.Id,
                     text = g.Title
