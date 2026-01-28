@@ -17,5 +17,13 @@ namespace CRM.Core.Domain.Reports.Entities {
 
         public Guid? DealId { get; set; }
         public int? DealSerialNumber { get; set; }
+
+        public Guid? ResultCallId { get; set; }
+        public string ResultCallTxt { get; set; }
+        public Guid? FinalResultCallId { get; set; }
+        public string FinalResultCallTxt { get; set; }
+        public Guid? ReasonCancelId { get; set; }
+        public string ReasonCancelTxt { get; set; }
     }
 }
+

@@ -355,18 +355,18 @@
 
 
 <!-- Modal Report -->
-<div class="modal fade" dir="ltr" id="ModalReport" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+<div class="modal fade" id="ModalReport" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
         <div class="modal-content col-12" style="padding:10px!important">
 
             <div style="height:30px;margin-bottom:10px;  display:flex; justify-content:center; align-items:center;  background: linear-gradient(to bottom, #025751, #00302d); color:white;border-radius:5px">
                 <label class="fbold">گزارش روزانه</label>
             </div>
 
-            <div class=" InfoData mx-lg-1">
-                <form id="ReportFormId" style="direction:rtl">
-                    <div class="gap-3 mt-2" style="display:flex;flex-direction:column;justify-content:center;align-items:center;">
-                        <div id="repTypeId" class="form-group d-flex align-items-center justify-content-center flex-wrap gap-3 gap-sm-5" style="row-gap: .5rem !important;">
+            <div class="modal-body InfoData mx-lg-1">
+                <form id="ReportFormId">
+                    <div class="gap-3 mt-2 flex-center flex-column">
+                        <div id="repTypeId" class="form-group flex-center flex-wrap column-gap-3 column-gap-sm-5 row-gap-2">
                             <div class="d-flex align-items-center gap-1">
                                 <label for="telType">گزارش تماس ورودی</label>
                                 <input type="radio" data-alertid="repTypeId" id="telType" name="reportType" value="2" required />
@@ -383,12 +383,12 @@
 
                         <div class="col-12" style="display:flex;flex-flow:wrap ">
                             <div class="form-group col-12 col-sm-3">
-                                <label>شماره تلفن تماس:</label>
+                                <label class="text-dark">شماره تلفن تماس:</label>
                                 <input type="text" class="form-control" name="repTel" id="repTel" required />
                             </div>
 
                             <div class="form-group col-12 col-sm-9" id="roDivCustId">
-                                <label>نام مشتری:</label>
+                                <label class="text-dark">نام مشتری:</label>
                                 <select id="repCustomerTxt" name="repCustomerTxt" class="Lbox form-control" style="width:100%" required>
                                 </select>
                             </div>
@@ -400,40 +400,27 @@
                             </div>
                             *@
 
-                            <div id="resultFollowUpContainer" class="form-group col-12 d-none">
-                                <div id="resultCallWrapper">
-                                    <label for="resultCallId">نتیجه تماس:</label>
-                                    <select class="form-select" name="resultCall" id="resultCallId">
-                                        <option value="">انتخاب</option>
-                                        <option value="1">بدون پاسخ</option>
-                                        <option value="2">دریافت نمونه</option>
-                                        <option value="3">اخذ قیمت</option>
-                                        <option value="4">عدم نیاز</option>
-                                        <option value="5">عدم رضایت از خرید قبلی</option>
+                            <div id="resultFollowUpContainer" class="form-group col-12 d-flex flex-wrap gap-2 d-none">
+                                <div id="resultCallWrapper" class="flex-fill">
+                                    <label for="resultCall" class="text-dark">نتیجه تماس:</label>
+                                    <select class="form-select" name="resultCallId" id="resultCall">
                                     </select>
                                 </div>
-                                <div id="finalResultCallWrapper" class="mt-2 d-none">
-                                    <label for="finalResultCallId">نتیجه نهایی:</label>
-                                    <select class="form-select" name="finalResultCall" id="finalResultCallId">
-                                        <option value="">انتخاب</option>
-                                        <option value="1">فروش انجام شد</option>
-                                        <option value="2">انصراف از خرید</option>
+                                <div id="finalResultCallWrapper" class="d-none flex-fill">
+                                    <label for="finalResultCall" class="text-dark">نتیجه نهایی:</label>
+                                    <select class="form-select" name="finalResultCallId" id="finalResultCall">
                                     </select>
                                 </div>
-                                <div id="reasonCancelWrapper" class="mt-2 d-none">
-                                    <label for="reasonCancelId">علت انصراف:</label>
-                                    <select class="form-select" name="reasonCancel" id="reasonCancelId">
-                                        <option value="">انتخاب</option>
-                                        <option value="1">قیمت بالا</option>
-                                        <option value="2">زمان تحویل</option>
-                                        <option value="3">نحوه تسویه</option>
+                                <div id="reasonCancelWrapper" class="d-none flex-fill">
+                                    <label for="reasonCancel" class="text-dark">علت انصراف:</label>
+                                    <select class="form-select" name="reasonCancelId" id="reasonCancel">
                                     </select>
                                 </div>
                             </div>
 
 
                             <div class="form-group col-12">
-                                <label>توضیحات:</label>
+                                <label class="text-dark">توضیحات:</label>
                                 <textarea class="form-control" id="reportText" name="reportText" style="text-align:right; direction:rtl; min-height:200px" required></textarea>
                             </div>
                         </div>
@@ -451,8 +438,8 @@
             </div>
 
             <div style="margin-block:16px 8px !important; display:flex;justify-content:center;align-items:center;gap:4px">
-                <button class="buttonGreen3" onclick="SubmitReportForm()">ثبت</button>
                 <button class="buttonCancel2" onclick="closeModalReport()">انصراف</button>
+                <button class="buttonGreen3" onclick="SubmitReportForm()">ثبت</button>
             </div>
         </div>
     </div>

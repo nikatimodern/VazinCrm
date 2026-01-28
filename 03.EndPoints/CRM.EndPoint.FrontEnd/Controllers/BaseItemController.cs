@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Core.Domain.BaseItems.Enums;
 
 namespace CRM.EndPoint.FrontEnd.Controllers
 {
@@ -54,7 +55,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         public async Task<IActionResult> GetItemsOp(int typeCode)
         {
             var data = await db.BaseItems
-                .Where(f => f.TypeCode == typeCode)
+                .Where(f => f.TypeCode == (BaseItemEnum)typeCode)
                 .Select(g => new SelectOptionGuidDto()
                 {
                     id = g.Id,
@@ -139,7 +140,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                 int pageSize = length != null ? Convert.ToInt32(length) : 0;
                 int skip = start != null ? Convert.ToInt32(start) : 0;
                 int recordsTotal = 0;
-                var dataF = db.BaseItems.Where(f => f.TypeCode == 2).AsQueryable();
+                var dataF = db.BaseItems.Where(f => f.TypeCode == BaseItemEnum.طریقه_آشنایی).AsQueryable();
 
                 if (!(string.IsNullOrEmpty(sortColumn) && string.IsNullOrEmpty(sortColumnDirection)))
                 {
@@ -204,7 +205,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                 int pageSize = length != null ? Convert.ToInt32(length) : 0;
                 int skip = start != null ? Convert.ToInt32(start) : 0;
                 int recordsTotal = 0;
-                var dataF = db.BaseItems.Where(f => f.TypeCode == 1).AsQueryable();
+                var dataF = db.BaseItems.Where(f => f.TypeCode == BaseItemEnum.صنف).AsQueryable();
 
                 if (!(string.IsNullOrEmpty(sortColumn) && string.IsNullOrEmpty(sortColumnDirection)))
                 {
