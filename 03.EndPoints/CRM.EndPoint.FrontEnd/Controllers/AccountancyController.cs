@@ -51,6 +51,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly UserManager<AppUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
 
+
         public AccountancyController(CrmSaveCahngeAsync crmSaveCahngeAsync, SmsServices SmsServ, UserManager<AppUser> userManager,
             RoleManager<IdentityRole> roleManager, Service GenService, FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db,
             UserContextDb Udb, TaskServices ts, IHubContext<TaskHub> hub, IVeiwRenderService vrs, LogSystemService logSystemService)
@@ -73,6 +74,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [Authorize(Policy = "NotCustomerOnly")]
         public IActionResult Index()
         {
+
+            var mohammad = "ksjdfh aklsdfklasdkas";
+
 
             var d = 9;
 
