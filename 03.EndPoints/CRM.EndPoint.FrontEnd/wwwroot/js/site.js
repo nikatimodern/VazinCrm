@@ -1163,7 +1163,41 @@ const SubmitReportForm = async () => {
     
 };
 
-// document.querySelectorAll("#repTypeId input[name='']")
+function initReportModal() {
+    const ReportFormElm = document.getElementById("ReportFormId")
+    const finalResultCallWrapper = ReportFormElm.querySelector("#finalResultCallWrapper")
+    const finalResultCallSelect = finalResultCallWrapper.querySelector("select")
+    const reasonCancelWrapper = ReportFormElm.querySelector("#reasonCancelWrapper")
+    const reasonCancelSelect = reasonCancelWrapper.querySelector("select")
+    
+    ReportFormElm.querySelectorAll("input[name='reportType']").forEach(elm => elm.addEventListener("change", (e) => {
+        const showResultFollowUpContainer = Number(e.target.value) === 1;
+        ReportFormElm.querySelector("#resultFollowUpContainer").classList.toggle("d-none", !showResultFollowUpContainer);
+    }));
+    
+    ReportFormElm.querySelector("select#resultCallId").addEventListener("change", (e) => {
+        const value = Number(e.target.value)
+        const showFinalResult = value === 2 || value === 3 || value === 5;
+        const showReasonCancel = value === 5;
+        
+        
+        finalResultCallWrapper.classList.toggle("d-none", !showFinalResult)
+        reasonCancelWrapper.classList.toggle("d-none", !showReasonCancel)
+        
+        finalResultCallSelect.value = showReasonCancel ? "2" : "";
+        reasonCancelSelect.value = "";
+        toggleElementsDisabled(finalResultCallSelect, showReasonCancel)
+    })
+    
+    finalResultCallSelect.addEventListener("change", (e) => {
+        const value = Number(e.target.value)
+        const showReasonCancel = value === 2;
+        
+        reasonCancelSelect.value = "";
+        reasonCancelWrapper.classList.toggle("d-none", !showReasonCancel)
+    })
+}
+initReportModal()
 
 
 const initCustomerOpReport = () => {

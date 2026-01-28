@@ -368,12 +368,12 @@
                     <div class="gap-3 mt-2" style="display:flex;flex-direction:column;justify-content:center;align-items:center;">
                         <div id="repTypeId" class="form-group d-flex align-items-center justify-content-center flex-wrap gap-3 gap-sm-5" style="row-gap: .5rem !important;">
                             <div class="d-flex align-items-center gap-1">
-                                <label for="followTelType">گزارش تماس ورودی</label>
-                                <input type="radio" data-alertid="repTypeId" id="followTelType" name="reportType" value="2" required />
+                                <label for="telType">گزارش تماس ورودی</label>
+                                <input type="radio" data-alertid="repTypeId" id="telType" name="reportType" value="2" required />
                             </div>
                             <div class="d-flex align-items-center gap-1">
-                                <label for="telType">گزارش پیگیری</label>
-                                <input type="radio" data-alertid="repTypeId" id="telType" name="reportType" value="1" required />
+                                <label for="followTelType">گزارش پیگیری</label>
+                                <input type="radio" data-alertid="repTypeId" id="followTelType" name="reportType" value="1" required />
                             </div>
                             <div class="d-flex align-items-center gap-1">
                                 <label for="satisfactionType">گزارش رضایتمندی</label>
@@ -400,6 +400,38 @@
                             </div>
                             *@
 
+                            <div id="resultFollowUpContainer" class="form-group col-12 d-none">
+                                <div id="resultCallWrapper">
+                                    <label for="resultCallId">نتیجه تماس:</label>
+                                    <select class="form-select" name="resultCall" id="resultCallId">
+                                        <option value="">انتخاب</option>
+                                        <option value="1">بدون پاسخ</option>
+                                        <option value="2">دریافت نمونه</option>
+                                        <option value="3">اخذ قیمت</option>
+                                        <option value="4">عدم نیاز</option>
+                                        <option value="5">عدم رضایت از خرید قبلی</option>
+                                    </select>
+                                </div>
+                                <div id="finalResultCallWrapper" class="mt-2 d-none">
+                                    <label for="finalResultCallId">نتیجه نهایی:</label>
+                                    <select class="form-select" name="finalResultCall" id="finalResultCallId">
+                                        <option value="">انتخاب</option>
+                                        <option value="1">فروش انجام شد</option>
+                                        <option value="2">انصراف از خرید</option>
+                                    </select>
+                                </div>
+                                <div id="reasonCancelWrapper" class="mt-2 d-none">
+                                    <label for="reasonCancelId">علت انصراف:</label>
+                                    <select class="form-select" name="reasonCancel" id="reasonCancelId">
+                                        <option value="">انتخاب</option>
+                                        <option value="1">قیمت بالا</option>
+                                        <option value="2">زمان تحویل</option>
+                                        <option value="3">نحوه تسویه</option>
+                                    </select>
+                                </div>
+                            </div>
+
+
                             <div class="form-group col-12">
                                 <label>توضیحات:</label>
                                 <textarea class="form-control" id="reportText" name="reportText" style="text-align:right; direction:rtl; min-height:200px" required></textarea>
@@ -425,6 +457,7 @@
         </div>
     </div>
 </div>
+
 
 
 <!-- Modal updateCustomer -->
