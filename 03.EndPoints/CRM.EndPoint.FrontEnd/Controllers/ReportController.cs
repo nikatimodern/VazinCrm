@@ -297,8 +297,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
 
             var data = await qData.AsNoTracking().ToListAsync();
-
-            var userIds = data.Select(r => r.UserCreatorID).Distinct().ToList();
+                        var userIds = data.Select(r => r.UserCreatorID).Distinct().ToList();
             var userImages = await udb.Users
                 .Where(u => userIds.Contains(u.Id))
                 .ToDictionaryAsync(u => u.Id, u => u.PersonImageUrl);
