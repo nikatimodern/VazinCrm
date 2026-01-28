@@ -1187,6 +1187,8 @@ const initCustomerOpReport = () => {
 
 let customerOpLoaded = false;
 const ShowModalReport = async (model, passType = 0, dealId = null, dealSerialNumber = null) => {
+    const repTelElm = document.getElementById("repTel");
+    const selectElm = document.getElementById("repCustomerTxt");
     
     if (!customerOpLoaded) {
         initCustomerOpReport();
@@ -1196,9 +1198,10 @@ const ShowModalReport = async (model, passType = 0, dealId = null, dealSerialNum
     dealIdReport = dealId;
     dealSerialNumberReport = dealSerialNumber;
     typeReportSubmit = passType;
-    if (model != null) {
+    
+    if (model) {
         let { id = null, agentName, companyName, customerCode, mobile } = model;
-        document.getElementById("repTel").value = mobile;
+        repTelElm.value = mobile;
         
         const customerCodeText = customerCode ? ` (کد مشتری ${customerCode})` : "";
         const data = {
@@ -1207,8 +1210,9 @@ const ShowModalReport = async (model, passType = 0, dealId = null, dealSerialNum
         };
         
         const newOption = new Option(data.text, data.id, true, true);
-        $("#repCustomerTxt").append(newOption).trigger("change");
+        $(selectElm).append(newOption).trigger("change");
     }
+    toggleElementsDisabled([selectElm, repTelElm], Boolean(model));
     
     createRating("reportRate", {
         count: 10,
@@ -2468,13 +2472,13 @@ document.querySelectorAll(".chip").forEach(chip => {
 });
 
 
-const toggleElementsDisabled = (elms, isDisabled) => {
-    const items = elms instanceof NodeList ? elms : [elms];
+const toggleElementsDisabled = (elms, isDisabled = true) => {
+    const items = elms instanceof NodeList || elms instanceof Array ? elms : [elms];
     items.forEach(el => el.disabled = isDisabled);
 };
 
 const toggleElementsRequired = (elms, isRequired) => {
-    const items = elms instanceof NodeList ? elms : [elms];
+    const items = elms instanceof NodeList || elms instanceof Array ? elms : [elms];
     items.forEach(el => el.toggleAttribute("required", isRequired));
 };
 
