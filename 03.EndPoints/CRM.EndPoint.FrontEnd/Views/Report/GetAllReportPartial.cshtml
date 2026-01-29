@@ -26,7 +26,7 @@
                     @if (!string.IsNullOrEmpty(item.ResultCallTxt) || !string.IsNullOrEmpty(item.FinalResultCallTxt) || !string.IsNullOrEmpty(item.ReasonCancelTxt)) {
                         <p class="d-flex gap-2">
                             @if (!string.IsNullOrEmpty(item.ResultCallTxt)) {
-                                <span>(@item.ResultCallTxt)</span>
+                                <span>(نتیجه تماس: @item.ResultCallTxt)</span>
                             }
                             @if (!string.IsNullOrEmpty(item.FinalResultCallTxt)) {
                                 <span>(نتیجه نهایی: @item.FinalResultCallTxt)</span>
