@@ -24,7 +24,7 @@
                 <div class="report-text">
                     <span>@item.ReportText</span>
                     @if (!string.IsNullOrEmpty(item.ResultCallTxt) || !string.IsNullOrEmpty(item.FinalResultCallTxt) || !string.IsNullOrEmpty(item.ReasonCancelTxt)) {
-                        <p class="d-flex gap-2">
+                        <p class="d-flex flex-wrap column-gap-2">
                             @if (!string.IsNullOrEmpty(item.ResultCallTxt)) {
                                 <span>(نتیجه تماس: @item.ResultCallTxt)</span>
                             }
