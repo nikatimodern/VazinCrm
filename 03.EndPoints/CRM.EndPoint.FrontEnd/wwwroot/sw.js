@@ -1,18 +1,45 @@
-const CACHE_NAME = "pwa-cache-v1";
-const URLS_TO_CACHE = [
-    "/",
-    "/css/site.css",
-    "/js/site.js"
+const CACHE_NAME = "offline-only-v1";
+const OFFLINE_URL = [
+    "/static/offline.html",
+    "/static/noNet.png",
 ];
 
-self.addEventListener("install", () => self.skipWaiting());
-
-self.addEventListener("activate", () => self.clients.claim());
-
-self.addEventListener("fetch", event => {
-    event.respondWith(fetch(event.request));
+self.addEventListener("install", (event) => {
+    event.waitUntil(
+        caches.open(CACHE_NAME).then(cache => {
+            return cache.addAll(OFFLINE_URL);
+        }),
+    );
+    self.skipWaiting();
+});
+self.addEventListener("activate", event => {
+    event.waitUntil(
+        caches.keys().then(keys =>
+            Promise.all(
+                keys
+                    .filter(k => k !== CACHE_NAME)
+                    .map(k => caches.delete(k))
+            )
+        )
+    );
+    self.clients.claim();
 });
 
+self.addEventListener("fetch", event => {
+    
+    // فقط navigation (load صفحه)
+    if (event.request.mode === "navigate") {
+        event.respondWith(
+            fetch(event.request)
+                .then(response => {
+                    return response;
+                })
+                .catch(error => {
+                    return caches.match(OFFLINE_URL[0]);
+                }),
+        );
+    }
+});
 
 
 self.addEventListener("push", event => {
@@ -22,20 +49,20 @@ self.addEventListener("push", event => {
     
     const options = {
         body: data.body || "",
-       // icon: "/icons/icon-192.png",
-       // badge: "/icons/badge.png",
+        // icon: "/icons/icon-192.png",
+        // badge: "/icons/badge.png",
         data: {
-            url: data.url || "/"
+            url: data.url || "/",
         },
         actions: [
             {
                 action: "open",
-                title: "مشاهده"
+                title: "مشاهده",
             },
-           /* {
-                action: "dismiss",
-                title: "بستن"
-            }*/
+            /* {
+                 action: "dismiss",
+                 title: "بستن"
+             }*/
         ],
         tag: data.tag || "general",
         renotify: true,
@@ -44,8 +71,8 @@ self.addEventListener("push", event => {
     event.waitUntil(
         self.registration.showNotification(
             data.title || "پیام جدید",
-            options
-        )
+            options,
+        ),
     );
 });
 
@@ -65,6 +92,6 @@ self.addEventListener("notificationclick", event => {
                    if (clients.openWindow) {
                        return clients.openWindow(targetUrl);
                    }
-               })
+               }),
     );
 });

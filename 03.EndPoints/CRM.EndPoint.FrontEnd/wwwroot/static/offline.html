@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>اتصال قطع است</title>
+  
+  <style>
+    :root {
+      --primary: #004944;
+      --bg: #ffffff;
+      --text: #1f2937;
+    }
+    
+    
+    @font-face {
+      font-family: "IRANSans";
+      src: url("../Fonts/IRANSans/woff2/IRANSansWeb(FaNum).woff2");
+      font-weight: normal;
+    }
+    
+    
+    @font-face {
+      font-family: "IRANSansBold";
+      src: url("../Fonts/IRANSans/woff2/IRANSansWeb(FaNum)_Bold.woff2");
+      font-weight: bold;
+    }
+    
+    
+    @font-face {
+      font-family: "IRANSansMedium";
+      src: url("../Fonts/IRANSans/woff2/IRANSansWeb(FaNum)_Medium.woff2");
+      font-weight: 500;
+    }
+    
+    
+    * {
+      box-sizing: border-box;
+      font-family: IRANSans, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    
+    
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    
+    .container {
+      width: 100%;
+      max-width: 420px;
+      padding: 24px;
+      text-align: center;
+    }
+    
+    
+    .icon {
+      /* width: 88px;
+      height: 88px;
+      background: rgba(0, 73, 68, 0.1); */
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    
+    .icon img {
+      width: 100%;
+    }
+    
+    
+    h1 {
+      margin: 0 0 12px;
+      font-size: 20px;
+      color: var(--primary);
+      font-family: IRANSansBold;
+    }
+    
+    
+    p {
+      margin: 0 0 24px;
+      font-size: 14px;
+      line-height: 1.8;
+      color: #4b5563;
+    }
+    
+    
+    button {
+      all: unset;
+      cursor: pointer;
+      display: inline-block;
+      padding: 12px 28px;
+      border-radius: 10px;
+      background: var(--primary);
+      color: #fff;
+      font-size: 14px;
+      transition: transform .1s ease, box-shadow .1s ease;
+    }
+    
+    
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .15) inset;
+    }
+    
+    
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 18px;
+      }
+      
+      p {
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="icon">
+    <!-- <svg viewBox="0 0 24 24">
+      <path d="M12 18a2 2 0 1 0 0.001-3.999A2 2 0 0 0 12 18zm6.36-6.64a9 9 0 0 0-12.72 0l1.42 1.42a7 7 0 0 1 9.88 0l1.42-1.42zM12 2a14 14 0 0 0-9.9 4.1l1.42 1.42a12 12 0 0 1 16.96 0l1.42-1.42A14 14 0 0 0 12 2z" />
+    </svg> -->
+    <img src="/static/noNet.png" alt="no-internet">
+  </div>
+  
+  <h1>اتصال به اینترنت برقرار نیست</h1>
+  <p>
+    به نظر می‌رسد ارتباط شما قطع شده است.
+    لطفاً اتصال اینترنت را بررسی کرده و دوباره تلاش کنید.
+  </p>
+  
+  <button onclick="location.reload()">
+    تلاش مجدد
+  </button>
+</div>
+
+</body>
+</html>
