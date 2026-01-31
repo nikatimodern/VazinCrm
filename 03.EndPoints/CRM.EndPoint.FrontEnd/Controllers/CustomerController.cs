@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Core.Domain.BaseItems.Enums;
 
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
@@ -814,7 +815,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private static readonly HashSet<string> StopWords = ["از", "در", "به", "که", "با", "را", "و", "یا", "تا", "برای", "این", "آن"];
 
         [Authorize(Policy = "NotCustomerOnly")]
-        public async Task<ActionResult> SearchAllCustomerPartial(string val)
+        public async Task<ActionResult> SearchAllCustomerPartial(string val, int roleType = -1)
         {
             try
             {
@@ -825,6 +826,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var rols = await userManager.GetRolesAsync(user);
                 IQueryable<Customer> customerQuery = db.Customers.Include(f => f.UserCustomers);
+
+                if (roleType == 1)
+                {
+                    customerQuery = customerQuery.Where(f => f.RoleType == RoleTypeEnum.مشتری || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری);
+                } else if (roleType == 2)
+                {
+                    customerQuery = customerQuery.Where(f => f.RoleType == RoleTypeEnum.تامین_کننده || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری);
+                }
 
                 if (!(rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش")))
                 {
@@ -879,7 +888,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public async Task<IActionResult> GetCustomer(Guid id)
         {
             var data2 = await db.BaseItems
-                .Where(f => f.TypeCode == 1)
+                .Where(f => f.TypeCode == BaseItemEnum.صنف)
                 .Select(g => new SelectOptionGuidDto() {
                     id = g.Id,
                     text = g.Title

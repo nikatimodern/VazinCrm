@@ -37,6 +37,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Accountency;
@@ -920,7 +921,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
 
                 var customer = await db.Customers.Where(f => f.Id == preFactor.CustomerId).FirstOrDefaultAsync();
-                var workSenf = await db.BaseItems.Where(f => f.TypeCode == 1).OrderBy(f => f.Title).ToListAsync();
+                var workSenf = await db.BaseItems.Where(f => f.TypeCode == BaseItemEnum.صنف).OrderBy(f => f.Title).ToListAsync();
                 var bankAccList = await db.BankAccounts.Where(f => f.OfficialType == preFactor.OfficialType && f.Active).ToListAsync();
 
                 ViewBag.isLogin = 0;
@@ -1092,7 +1093,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
 
 
-                var workSenf = await db.BaseItems.Where(f => f.TypeCode == 1).OrderBy(f => f.Title).ToListAsync();
+                var workSenf = await db.BaseItems.Where(f => f.TypeCode == BaseItemEnum.صنف).OrderBy(f => f.Title).ToListAsync();
                 var bankAccList = await db.BankAccounts.Where(f => f.OfficialType == pf.OfficialType && f.Active).ToListAsync();
 
                 ViewBag.isLogin = 0;

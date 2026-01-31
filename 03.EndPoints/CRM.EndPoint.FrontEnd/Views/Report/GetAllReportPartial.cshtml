@@ -21,7 +21,22 @@
                 <span class="report-badge">@item.ReportTypeTxt</span>
                 <span class="reporter-name">@item.CustomerTxt</span>
 
-                <p class="report-text">@item.ReportText</p>
+                <div class="report-text">
+                    <span>@item.ReportText</span>
+                    @if (!string.IsNullOrEmpty(item.ResultCallTxt) || !string.IsNullOrEmpty(item.FinalResultCallTxt) || !string.IsNullOrEmpty(item.ReasonCancelTxt)) {
+                        <p class="d-flex gap-2">
+                            @if (!string.IsNullOrEmpty(item.ResultCallTxt)) {
+                                <span>(نتیجه تماس: @item.ResultCallTxt)</span>
+                            }
+                            @if (!string.IsNullOrEmpty(item.FinalResultCallTxt)) {
+                                <span>(نتیجه نهایی: @item.FinalResultCallTxt)</span>
+                            }
+                            @if (!string.IsNullOrEmpty(item.ReasonCancelTxt)) {
+                                <span>(علت انصراف: @item.ReasonCancelTxt)</span>
+                            }
+                        </p>
+                    }
+                </div>
 
                 <div class="d-flex justify-content-between align-items-end gap-1 gap-md-4">
                     <div class="report-info">

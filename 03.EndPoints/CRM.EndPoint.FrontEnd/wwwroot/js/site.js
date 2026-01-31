@@ -20,8 +20,8 @@ if ("@Url.Action(\"\", \"\")" == "/") {
     baseUrl = "@Url.Action(\"\", \"\")/";
 }
 
+
 document.addEventListener("DOMContentLoaded", () => {
-    
     Mask();
     MaskDate();
 });
@@ -1137,6 +1137,13 @@ const SubmitReportForm = async () => {
             oldReport = null;
         }
         
+        
+        const resultCall = document.getElementById("resultCall");
+        const finalResultCall = document.getElementById("finalResultCall");
+        const reasonCancel = document.getElementById("reasonCancel");
+        data.resultCallTxt = resultCall.value ? resultCall.options[resultCall.selectedIndex].text : "";
+        data.finalResultCallTxt = finalResultCall.value ? finalResultCall.options[finalResultCall.selectedIndex].text : "";
+        data.reasonCancelTxt = reasonCancel.value ? reasonCancel.options[reasonCancel.selectedIndex].text : "";
         FLshowLoading();
         $.post(`/Report/AddReport`, data, async (res) => {
             if (res.status === 200) {
@@ -1152,10 +1159,7 @@ const SubmitReportForm = async () => {
                 toastifyError(res.message);
             }
             FLshowLoading(false);
-            
-            
-            mySer.emptyForm("ReportFormId");
-            $("#ModalReport").modal("toggle");
+            closeModalReport();
         }).fail(() => {
             setTimeout(async () => await SubmitReportForm(), 3000);
         });
@@ -1163,7 +1167,79 @@ const SubmitReportForm = async () => {
     
 };
 
-// document.querySelectorAll("#repTypeId input[name='']")
+const getBaseItemsReport = async () => {
+    try {
+        const res = await axios(`/Report/GetBaseItemsReport`);
+        if (res.status === 200) {
+            return res.data;
+            /*return res.data.reduce((acc, cur) => {
+                if (cur.typeCode === 4) return { ...acc, resultCall: [...acc.resultCall, { value: cur.id, text: cur.title }] };
+                if (cur.typeCode === 5) return { ...acc, finalResultCall: [...acc.finalResultCall, { value: cur.id, text: cur.title }] };
+                if (cur.typeCode === 6) return { ...acc, reasonCancel: [...acc.reasonCancel, { value: cur.id, text: cur.title }] };
+            }, { resultCall: [], finalResultCall: [], reasonCancel: [] });*/
+        }
+    } catch (err) {
+        console.log(err);
+    }
+};
+
+
+async function initReportModal() {
+    const baseItem = await getBaseItemsReport();
+    createOption("resultCall", baseItem.resultCall);
+    createOption("finalResultCall", baseItem.finalResultCall);
+    createOption("reasonCancel", baseItem.reasonCancel);
+    
+    
+    const ReportFormElm = document.getElementById("ReportFormId");
+    
+    const resultCallWrapper = ReportFormElm.querySelector("#resultCallWrapper");
+    const finalResultCallWrapper = ReportFormElm.querySelector("#finalResultCallWrapper");
+    const reasonCancelWrapper = ReportFormElm.querySelector("#reasonCancelWrapper");
+    
+    const resultCallSelect = resultCallWrapper.querySelector("select");
+    const finalResultCallSelect = finalResultCallWrapper.querySelector("select");
+    const reasonCancelSelect = reasonCancelWrapper.querySelector("select");
+    
+    ReportFormElm.querySelectorAll("input[name='reportType']").forEach(elm => elm.addEventListener("change", (e) => {
+        const showResultFollowUpContainer = Number(e.target.value) === 1;
+        ReportFormElm.querySelector("#resultFollowUpContainer").classList.toggle("d-none", !showResultFollowUpContainer);
+        toggleElementsRequired(resultCallSelect, showResultFollowUpContainer);
+        toggleElementsRequired([finalResultCallSelect, reasonCancelSelect], false);
+        finalResultCallWrapper.classList.toggle("d-none", true);
+        reasonCancelWrapper.classList.toggle("d-none", true);
+        resultCallSelect.value = "";
+        finalResultCallSelect.value = "";
+        reasonCancelSelect.value = "";
+    }));
+    
+    ReportFormElm.querySelector("select#resultCall").addEventListener("change", (e) => {
+        const value = e.target.value;
+        const showFinalResult = value === "ed0feaf4-9264-4028-b8cf-1a268bfc1c9a"
+            || value === "310df88c-b65b-4f26-9f1e-ab72f489bc1e"
+            || value === "986e7e82-9853-402f-a7f6-36252965ff82";
+        const showReasonCancel = value === "986e7e82-9853-402f-a7f6-36252965ff82";
+        
+        
+        finalResultCallWrapper.classList.toggle("d-none", !showFinalResult);
+        reasonCancelWrapper.classList.toggle("d-none", !showReasonCancel);
+        toggleElementsRequired(finalResultCallSelect, showFinalResult);
+        
+        finalResultCallSelect.value = showReasonCancel ? "82769710-880f-43aa-bd83-f5c6016ce38c" : "";
+        toggleElementsDisabled(finalResultCallSelect, showReasonCancel);
+        reasonCancelSelect.value = "";
+        toggleElementsRequired(reasonCancelSelect, showReasonCancel);
+    });
+    
+    finalResultCallSelect.addEventListener("change", (e) => {
+        const value = e.target.value;
+        const showReasonCancel = value === "82769710-880f-43aa-bd83-f5c6016ce38c";
+        
+        reasonCancelSelect.value = "";
+        reasonCancelWrapper.classList.toggle("d-none", !showReasonCancel);
+        toggleElementsRequired(reasonCancelSelect, showReasonCancel);
+    });
+}
 
 
 const initCustomerOpReport = () => {
@@ -1185,20 +1261,24 @@ const initCustomerOpReport = () => {
     });
 };
 
-let customerOpLoaded = false;
+let reportModalLoaded = false;
 const ShowModalReport = async (model, passType = 0, dealId = null, dealSerialNumber = null) => {
+    const repTelElm = document.getElementById("repTel");
+    const selectElm = document.getElementById("repCustomerTxt");
     
-    if (!customerOpLoaded) {
+    if (!reportModalLoaded) {
+        await initReportModal();
         initCustomerOpReport();
-        customerOpLoaded = true;
+        reportModalLoaded = true;
     }
     
     dealIdReport = dealId;
     dealSerialNumberReport = dealSerialNumber;
     typeReportSubmit = passType;
-    if (model != null) {
+    
+    if (model) {
         let { id = null, agentName, companyName, customerCode, mobile } = model;
-        document.getElementById("repTel").value = mobile;
+        repTelElm.value = mobile;
         
         const customerCodeText = customerCode ? ` (کد مشتری ${customerCode})` : "";
         const data = {
@@ -1207,8 +1287,9 @@ const ShowModalReport = async (model, passType = 0, dealId = null, dealSerialNum
         };
         
         const newOption = new Option(data.text, data.id, true, true);
-        $("#repCustomerTxt").append(newOption).trigger("change");
+        $(selectElm).append(newOption).trigger("change");
     }
+    toggleElementsDisabled([selectElm, repTelElm], Boolean(model));
     
     createRating("reportRate", {
         count: 10,
@@ -1225,7 +1306,8 @@ const ShowModalReport = async (model, passType = 0, dealId = null, dealSerialNum
 const closeModalReport = () => {
     oldReport = null;
     $("#repCustomerTxt").val(null).trigger("change");
-    $("#ModalReport").modal("toggle");
+    document.getElementById("resultFollowUpContainer").classList.add("d-none");
+    ModalToggle("#ModalReport");
     mySer.emptyForm("ReportFormId");
 };
 
@@ -1278,9 +1360,10 @@ async function getAllReports(data = {}, showLoading = true) {
 }
 
 const ShowUpdateReport = async (id, passType = 0) => {
-    if (!customerOpLoaded) {
+    if (!reportModalLoaded) {
+        await initReportModal();
         initCustomerOpReport();
-        customerOpLoaded = true;
+        reportModalLoaded = true;
     }
     
     typeReportSubmit = passType;
@@ -2468,13 +2551,13 @@ document.querySelectorAll(".chip").forEach(chip => {
 });
 
 
-const toggleElementsDisabled = (elms, isDisabled) => {
-    const items = elms instanceof NodeList ? elms : [elms];
+const toggleElementsDisabled = (elms, isDisabled = true) => {
+    const items = elms instanceof NodeList || elms instanceof Array ? elms : [elms];
     items.forEach(el => el.disabled = isDisabled);
 };
 
 const toggleElementsRequired = (elms, isRequired) => {
-    const items = elms instanceof NodeList ? elms : [elms];
+    const items = elms instanceof NodeList || elms instanceof Array ? elms : [elms];
     items.forEach(el => el.toggleAttribute("required", isRequired));
 };
 
@@ -2748,6 +2831,40 @@ function ShowTab(target) {
 }
 
 
+/**
+ * createOption.
+ * @param {string|HTMLElement} targetSelect - select ID or element.
+ * @param {Array<text: String, value: String>} optionItems - optionItems
+ * @param {boolean} [addDefault=true] - add default "انتخاب" option
+ */
+function createOption(targetSelect, optionItems, addDefault = true) {
+    let selectElm;
+    if (typeof targetSelect === "string") {
+        selectElm = document.getElementById(targetSelect.replace("#", ""));
+    } else if (targetSelect instanceof HTMLElement) {
+        selectElm = targetSelect;
+    }
+    
+    if (!selectElm || selectElm.tagName !== "SELECT") {
+        throw new Error("عنوان select پیدا نشد");
+    }
+    
+    if (addDefault) {
+        const o = document.createElement("option");
+        o.innerText = "انتخاب";
+        o.value = "";
+        selectElm.appendChild(o);
+    }
+    
+    optionItems.forEach((item) => {
+        const o = document.createElement("option");
+        o.innerText = item.text;
+        o.value = item.value;
+        selectElm.appendChild(o);
+    });
+}
+
+
 const toEnglishDigits = (val) => {
     if (val === null || val === undefined) return val;
     
@@ -2786,7 +2903,6 @@ function setUrlParams(paramsObj, options = { replace: true }) {
         history.pushState(history.state, "", url);
     }
 }
-
 
 
 

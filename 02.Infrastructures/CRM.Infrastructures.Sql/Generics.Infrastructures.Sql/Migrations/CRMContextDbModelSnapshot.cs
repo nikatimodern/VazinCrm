@@ -2525,6 +2525,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<int?>("DealSerialNumber")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("FinalResultCallId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FinalResultCallTxt")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -2532,6 +2538,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("ReasonCancelId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ReasonCancelTxt")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("RegDate")
@@ -2553,6 +2565,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("ReportTypeTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("ResultCallId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ResultCallTxt")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserCreator")
