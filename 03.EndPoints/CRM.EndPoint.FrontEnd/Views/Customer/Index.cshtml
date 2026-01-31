@@ -638,7 +638,7 @@
         const SearchAllCustomer = (val) => {
             $("#LoadingCusPartId").css("display", "flex");
             $("#CustomerPartial").children().remove();
-            $.get(baseUrl + "Customer/SearchAllCustomerPartial?val=" + val, (res) => {
+            $.get(`/Customer/SearchAllCustomerPartial?val=${val}&roleType=${roleType}`, (res) => {
                 $("#CustomerPartial").append(res);
                 $("#btnShowAllId").css("display", "none");
                 $("#LoadingCusPartId").css("display", "none");
