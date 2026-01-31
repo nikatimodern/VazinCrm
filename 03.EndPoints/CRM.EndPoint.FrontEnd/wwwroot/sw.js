@@ -25,7 +25,7 @@ self.addEventListener("activate", event => {
     self.clients.claim();
 });
 
-self.addEventListener("fetch", event => {
+/*self.addEventListener("fetch", event => {
     
     // فقط navigation (load صفحه)
     if (event.request.mode === "navigate") {
@@ -39,7 +39,26 @@ self.addEventListener("fetch", event => {
                 }),
         );
     }
+});*/
+self.addEventListener("fetch", event => {
+    const req = event.request;
+    
+    // صفحه‌ها
+    if (req.mode === "navigate") {
+        event.respondWith(
+            fetch(req).catch(() => caches.match(OFFLINE_URL[0]))
+        );
+        return;
+    }
+    
+    // تصاویر (برای offline page)
+    if (req.destination === "image") {
+        event.respondWith(
+            caches.match(req).then(res => res || fetch(req))
+        );
+    }
 });
+
 
 
 self.addEventListener("push", event => {
