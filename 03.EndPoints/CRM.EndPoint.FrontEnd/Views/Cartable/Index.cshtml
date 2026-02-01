@@ -617,8 +617,7 @@
                 <form id="addItemSupplyForm" class="d-flex flex-column gap-2">
                     <div>
                         <label for="supplierIdMobile">تامین‌ کننده</label>
-                        <select name="supplierId" id="supplierIdMobile" class="form-select form-select-sm" required>
-                            <option value="">انتخاب تامین کننده</option>
+                        <select name="supplierId" id="supplierIdMobile" required>
                         </select>
                     </div>
                     <div>
@@ -661,14 +660,12 @@
                     <div>
                         <label for="addExtraItemSupplyTitle">عنوان</label>
                         <select id="addExtraItemSupplyTitle" name="pfItemId" class="form-select form-select-sm" required>
-                            <option value="">انتخاب</option>
                         </select>
                     </div>
 
                     <div>
                         <label for="addExtraItemSupplierId">تامین‌ کننده</label>
-                        <select name="supplierId" id="addExtraItemSupplierId" class="form-select form-select-sm">
-                            <option value="">انتخاب تامین کننده</option>
+                        <select name="supplierId" id="addExtraItemSupplierId">
                         </select>
                     </div>
 
@@ -857,7 +854,7 @@
 
 
             //const tabId = location.hash?.split("=")[1];
-            const {tab = "TPrefactorFactorId"} = getUrlParams();
+            const { tab = "TPrefactorFactorId" } = getUrlParams();
             if (document.getElementById(tab)) {
                 await GetCartable(tab);
             }
@@ -1358,11 +1355,11 @@
             const salesContainer = setAmountTaminModal.querySelector("#amountSalesContainer");
 
             if (step === 1) {
-                setAmountTaminModal.querySelector("#setAmountTaminTitle").innerText = "ورود مبلغ پیش فاکتور " + taminPreFac.serialNumber;
+                setAmountTaminModal.querySelector("#setAmountTaminTitle").innerText = "ورود مبلغ پیش‌فاکتور " + taminPreFac.serialNumber;
                 taminContainer.style.display = "none";
                 salesContainer.style.display = "block";
             } else if (step === 2) {
-                setAmountTaminModal.querySelector("#setAmountTaminTitle").innerText = "تعیین تامین کننده";
+                setAmountTaminModal.querySelector("#setAmountTaminTitle").innerText = "تعیین تامین‌کننده پیش‌فاکتور "+ taminPreFac.serialNumber;
                 salesContainer.style.display = "none";
                 taminContainer.style.display = "flex";
             }
@@ -1418,8 +1415,6 @@
 
         let taminPreFac;
         let suppliesData = [];
-        let suppliers;
-        let extraBaseItems;
         let hasSupplyAmountSetting;
         let hasSupplySetting;
         const showModalSetAmount = async (pfId, hasSupplyAmount = true, hasSupply = true) => {
@@ -1427,23 +1422,24 @@
             hasSupplyAmountSetting = hasSupplyAmount;
             hasSupplySetting = hasSupply;
             totalStepsTaminModal = 2;
-            taminPreFac = (await axios(`/Factor/GetPFactor?id=${pfId}`)).data;
-            const supplyData = (await axios(`/Supply/GetSupplies?pfId=${pfId}`)).data;
-            extraBaseItems = (await axios("/BaseItem/GetItemsOp?typeCode=3")).data;
-            suppliers = supplyData.suppliers;
+            const [{ data: pFactorData }, { data: supplyData }] = await Promise.all([
+                axios(`/Factor/GetPFactor?id=${pfId}`),
+                axios(`/Supply/GetSupplies?pfId=${pfId}`),
+            ]);
+
+            taminPreFac = pFactorData;
 
             gotoStepTaminModal(1);
-            renderSupplyModal(supplyData.suppliesItems);
+            renderSupplyModal(supplyData);
             createSetAmountSalesItem();
             renderProgressTracker();
 
-            setAmountTaminModal.querySelector("#setAmountTaminTitle").innerText = "ورود مبلغ پیش فاکتور " + taminPreFac.serialNumber;
             setAmountTaminModal.querySelector("#amountTaminOfficial").innerText = taminPreFac.officialType ? "رسمی" : "غیر رسمی";
             setAmountTaminModal.querySelector("#amountTaminOfficial").style.backgroundColor = taminPreFac.officialType ? "#162636" : "#3f5f80";
             setAmountTaminModal.querySelector("#amountTaminExport").style.display = taminPreFac.export ? "flex" : "none";
 
             FLshowLoading(false);
-            $(setAmountTaminModal).modal("toggle");
+            ModalToggle(setAmountTaminModal);
         };
 
         function createSetAmountSalesItem() {
@@ -1539,7 +1535,7 @@
             const extraItems = model.filter(x => x.supplyType === 2);
             const wasteItems = model.filter(x => x.supplyType === 3);
 
-            createSupplyItemModal();
+            setupSupplyItemModal();
             createSetAmountTaminItems(normalItems);
             if (hasSupplyAmountSetting) {
                 createSetAmountTaminExtras(extraItems);
@@ -1553,49 +1549,59 @@
         const addItemSupplyModal = document.getElementById("addItemSupplyModal");
         const weightInputSupplyItemModal = addItemSupplyModal.querySelector("#weightMobile");
 
-        function createSupplyItemModal() {
-            const supplierSelect = addItemSupplyModal.querySelector("#supplierIdMobile");
-            const totalPriceInput = addItemSupplyModal.querySelector("#totalAmountMobile");
-            const unitPriceInput = addItemSupplyModal.querySelector("#unitAmountMobile");
+        let isSetupSupplyModal = false;
+        function setupSupplyItemModal() {
+            if (isSetupSupplyModal) return;
 
-
-            supplierSelect.innerHTML = `<option value="">انتخاب تامین کننده</option>`;
-            suppliers.forEach(sup => {
-                const option = document.createElement("option");
-                option.value = sup.id;
-                option.text = `${sup.companyName || ""} ${sup.agentName || ""} (${sup.customerCode})`;
-                supplierSelect.appendChild(option);
-            });
-
-            if (hasSupplyAmountSetting) {
-                unitPriceInput.addEventListener("input", () => {
-                    totalPriceInput.value = calculateTotalPrice(weightInputSupplyItemModal.value, unitPriceInput.value);
+            async function setupSelectOptions() {
+                const data = (await axios("/Supply/GetSupplyBaseData")).data;
+                ["#supplierIdMobile", "#addExtraItemSupplierId"].forEach(id => {
+                    new TomSelect(id, {
+                        options: data.suppliers,
+                        placeholder: "انتخاب تامین کننده",
+                        maxItems: 1,
+                        selectOnTab: true,
+                        // dropdownParent
+                    });
                 });
+
+                createOption("#addExtraItemSupplyTitle", data.extraBaseItems);
             }
 
-            weightInputSupplyItemModal.addEventListener("input", (e) => {
-                /*const remain = parseFloat(e.target.max) || 0;
-                if (parseFloat(e.target.value) > remain) {
-                    e.target.value = remain;
-                } else if (parseFloat(e.target.value) < 0) {
-                    e.target.value = 0;
-                }*/
+            function setupEventListener() {
+                const totalPriceInput = addItemSupplyModal.querySelector("#totalAmountMobile");
+                const unitPriceInput = addItemSupplyModal.querySelector("#unitAmountMobile");
+                const addItemSupplyForm = addItemSupplyModal.querySelector("#addItemSupplyForm");
 
                 if (hasSupplyAmountSetting) {
-                    totalPriceInput.value = calculateTotalPrice(weightInputSupplyItemModal.value, unitPriceInput.value);
+                    unitPriceInput.addEventListener("input", () => {
+                        totalPriceInput.value = calculateTotalPrice(weightInputSupplyItemModal.value, unitPriceInput.value);
+                    });
                 }
-            });
-        }
 
-        addItemSupplyModal.querySelector("#addItemSupplyForm").addEventListener("submit", (e) => {
-            e.preventDefault();
-            submitTaminItemFromModal();
-        });
+                weightInputSupplyItemModal.addEventListener("input", (e) => {
+                    /*const remain = parseFloat(e.target.max) || 0;
+                    if (parseFloat(e.target.value) > remain) {
+                        e.target.value = remain;
+                    } else if (parseFloat(e.target.value) < 0) {
+                        e.target.value = 0;
+                    }*/
 
-        function calculateTotalPrice(weight, unitPrice) {
-            const w = parseFloat(weight.replace(/,/g, "")) || 0;
-            const u = parseFloat(unitPrice.replace(/,/g, "")) || 0;
-            return (w * u) ? (w * u).toLocaleString() : "";
+                    if (hasSupplyAmountSetting) {
+                        totalPriceInput.value = calculateTotalPrice(weightInputSupplyItemModal.value, unitPriceInput.value);
+                    }
+                });
+
+
+                addItemSupplyForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    submitTaminItemFromModal();
+                });
+            }
+            setupSelectOptions();
+            setupEventListener();
+
+            isSetupSupplyModal = true;
         }
 
 
@@ -1603,22 +1609,23 @@
             const pfItem = taminPreFac.preFactorItems[supplyIndex];
             addItemSupplyModal.querySelector("#weightTxtMobile").textContent = pfItem.unitTxt;
 
-         /*   const supplyItems = suppliesData[supplyIndex] || [];
-            const total = supplyItems.filter((i, idx) => !i.isDeleted && idx !== excludeIdx).reduce((sum, x) => sum + (parseFloat(x.weight) || 0), 0);
+            /*   const supplyItems = suppliesData[supplyIndex] || [];
+               const total = supplyItems.filter((i, idx) => !i.isDeleted && idx !== excludeIdx).reduce((sum, x) => sum + (parseFloat(x.weight) || 0), 0);
 
-            const remain = pfItem.weightCount - total;
-            weightInputSupplyItemModal.max = remain > 0 ? remain : 0;
-            weightInputSupplyItemModal.placeholder = `حداکثر ${remain}`;
-            //weightInputSupplyItemModal.value = remain;
+               const remain = pfItem.weightCount - total;
+               weightInputSupplyItemModal.max = remain > 0 ? remain : 0;
+               weightInputSupplyItemModal.placeholder = `حداکثر ${remain}`;
+               //weightInputSupplyItemModal.value = remain;
 
-            if (parseFloat(weightInputSupplyItemModal.value) > remain) {
-                weightInputSupplyItemModal.value = remain;
-            }*/
+               if (parseFloat(weightInputSupplyItemModal.value) > remain) {
+                   weightInputSupplyItemModal.value = remain;
+               }*/
         }
 
 
         function toggleSupplyItemModal(index = null) {
-            addItemSupplyModal.querySelector("#addItemSupplyForm").reset();
+            mySer.emptyForm("addItemSupplyForm");
+            //addItemSupplyModal.querySelector("#addItemSupplyForm").reset();
 
             addItemSupplyModal.dataset.editIndex = "";
 
@@ -1631,7 +1638,7 @@
                 weightInputSupplyItemModal.placeholder = "";
             }
 
-            $(addItemSupplyModal).modal("toggle");
+            ModalToggle(addItemSupplyModal);
         }
 
         function handleDeleteSupplyItem(divPfItemId, supplyItemIndex) {
@@ -1659,8 +1666,7 @@
             addItemSupplyModal.dataset.editIndex = supplyItemIndex;
 
             setWeightInput(supplyIndex, supplyItemIndex);
-
-            $(addItemSupplyModal).modal("show");
+            ModalToggle(addItemSupplyModal, "show");
         }
 
         async function submitTaminItemFromModal() {
@@ -1824,26 +1830,8 @@
         function createSetAmountTaminExtras(extraItems) {
             supplyItemsExtra = [...extraItems];
 
-            const extraTitle = addExtraItemSupplyModal.querySelector("#addExtraItemSupplyTitle");
-            extraTitle.innerHTML = `<option value="">انتخاب</option>`;
-            extraBaseItems.forEach(item => {
-                const option = document.createElement("option");
-                option.value = item.id;
-                option.text = item.text;
-                extraTitle.appendChild(option);
-            });
-
-
+            const extraSelect = addExtraItemSupplyModal.querySelector("#addExtraItemSupplyTitle");
             const supplierSelect = addExtraItemSupplyModal.querySelector("#addExtraItemSupplierId");
-            supplierSelect.innerHTML = `<option value="">انتخاب تامین کننده</option>`;
-            suppliers.forEach(sup => {
-                const option = document.createElement("option");
-                option.value = sup.id;
-                option.text = `${sup.companyName || ""} ${sup.agentName || ""} (${sup.customerCode})`;
-                supplierSelect.appendChild(option);
-            });
-
-
             const infoContainerExtras = setAmountTaminModal.querySelector(".infoContainerExtras");
             const submitBtnExtra = addExtraItemSupplyModal.querySelector("#addExtraItemSupplyForm .addExtraItemSupplySubmitBtn");
 
@@ -1874,10 +1862,10 @@
                     <td>${supplyItemExtra.totalAmount?.toLocaleString() ?? 0}</td>
                     <td>
                         <span class="d-flex gap-2 justify-content-center align-items-center" style="font-size: 13px">
-                            <button class="mp deleteBtnExtra" type="button" style="display:flex;justify-content:center;align-items:center;color:#333;border:none;background-color:transparent">
+                            <button class="mp deleteBtnExtra flex-center" type="button" style="color:#333;border:none;background-color:transparent">
                               <i class="mp fa fa-trash"></i>
                             </button>
-                            <button class="mp editBtnExtra" type="button" style="display:flex;justify-content:center;align-items:center;color:#333;border:none;background-color:transparent">
+                            <button class="mp editBtnExtra flex-center" type="button" style="color:#333;border:none;background-color:transparent">
                               <i class="mp fa fa-pencil"></i>
                             </button>
                         </span>
@@ -1918,11 +1906,11 @@
                 if (!await mySer.CheckValidForm("addExtraItemSupplyForm")) return;
                 const editIndex = addExtraItemSupplyModal.dataset.index;
 
-                const selectTitle = addExtraItemSupplyModal.querySelector("#addExtraItemSupplyTitle");
                 const selectedOptionSupTxt = supplierSelect.options[supplierSelect.selectedIndex];
+                const selectedOptionExtraTxt = extraSelect.options[extraSelect.selectedIndex];
                 const data = {
                     ...mySer.convertFormToJSON("addExtraItemSupplyForm"),
-                    itemTitle: selectTitle.options[selectTitle.selectedIndex].text,
+                    itemTitle: selectedOptionExtraTxt.text,
                     supplierTxt: selectedOptionSupTxt.value ? selectedOptionSupTxt.text : null,
                     pfId: taminPreFac.id,
                     pfSerial: taminPreFac.serialNumber.toString(),

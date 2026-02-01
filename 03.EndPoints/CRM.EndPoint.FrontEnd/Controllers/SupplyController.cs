@@ -12,6 +12,7 @@ using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.ASettings.Entities;
+using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Customers.Enum;
 using CRM.Core.Domain.Deals.Entities;
@@ -20,6 +21,7 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
+using CRM.Core.Domain.Supplies.Enums;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Reports;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
@@ -60,6 +62,27 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return View();
         }
 
+
+        public async Task<IActionResult> GetSupplyBaseData()
+        {
+            var extraBaseItems = await db.BaseItems
+                .Where(f => f.TypeCode == BaseItemEnum.هزینه_اضافی_تولید)
+                .Select(f => new {
+                    Value = f.Id,
+                    Text = f.Title
+                }).ToListAsync();
+
+            var suppliers = await db.Customers
+                .Where(f => f.RoleType == RoleTypeEnum.تامین_کننده || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری)
+                .Select(f => new {
+                    Value = f.Id,
+                    Text = $"{f.CompanyName ?? ""} {f.AgentName ?? ""} ({f.CustomerCode})".Trim(),
+                })
+                .ToListAsync();
+
+            var model = new { extraBaseItems, suppliers };
+            return Ok(model);
+        }
 
         public async Task<IActionResult> GetGroupedOrdersBySupplier()
         {
@@ -161,14 +184,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> GetSupplies(Guid pfId)
         {
-            var suppliesItems = await db.Supplies.Where(f => f.PfId == pfId).ToListAsync();
-            var suppliers = await db.Customers
-                .Where(f => f.RoleType == RoleTypeEnum.تامین_کننده || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری)
-                .Select(f => new { f.Id, f.CompanyName, f.AgentName, f.CustomerCode })
-                .ToListAsync();
+            var data = await db.Supplies.Where(f => f.PfId == pfId).ToListAsync();
 
-            var model = new { suppliesItems, suppliers };
-            return Ok(model);
+            return Ok(data);
         }
 
         [HttpPost]

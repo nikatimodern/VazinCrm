@@ -1030,7 +1030,7 @@ const AddFactor = async (pfId = null, type = 1) => {
     
     baseDesFactor = await getbaseDescription();
     const pfData = (await axios(`/Factor/GetPFactor/${pfId}`)).data;
-    supplyData = (await axios(`/Supply/GetSupplies?pfId=${pfId}`)).data.suppliesItems;
+    supplyData = (await axios(`/Supply/GetSupplies?pfId=${pfId}`)).data;
     if (!supplyData?.length) {
         toastifyError("بهای تامینی ثبت نشده است!");
         FLshowLoading(false);

@@ -39,6 +39,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Supplies.Entities;
+using CRM.Core.Domain.Supplies.Enums;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Accountency;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 
