@@ -71,14 +71,17 @@
                             </div>
 
                             <form id="taskFormId">
-                                <input id="taskTitle-input" name="title" placeholder="ثبت فعالیت جدید" required type="text" />
+                                <div>
+                                    <input id="taskTitle-input" name="title" placeholder="عنوان فعالیت" required type="text" />
+                                    <textarea name="description" id="taskDescription-input" placeholder="توضیحات"></textarea>
+                                </div>
 
                                 <div class="actionTask-buttons">
                                     <span id="cancelTask-btn" onclick="resetAndCloseFormTask()" style="color: darkred">
-                                        <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width: 22px; height: 22px" viewBox="0 0 24 24" ><path d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                        <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width: 22px; height: 22px" viewBox="0 0 24 24"><path d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                     </span>
                                     <button id="submitTask-btn" onclick="submitTask()" style="color: darkgreen;border: none;background: none;padding: 0;">
-                                        <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width: 30px; height: 30px" viewBox="0 0 24 24" ><path d="m9 12.75 3 3m0 0 3-3m-3 3v-7.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                        <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width: 30px; height: 30px" viewBox="0 0 24 24"><path d="m9 12.75 3 3m0 0 3-3m-3 3v-7.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                     </button>
                                 </div>
 
@@ -87,24 +90,23 @@
                                         <label class="sdate gap-1 d-flex align-items-center justify-content-center" style=" cursor: pointer"
                                                data-onSelect="onSelectTaskDate" data-title="تاریخ" data-x="" data-y="-200" id="taskDateIcon">
                                             <svg fill="none" stroke="currentColor" stroke-width="1.5"
-                                                 style="width: 22px; height: 22px;" viewBox="0 0 24 24"
-                                                 >
+                                                 style="width: 22px; height: 22px;" viewBox="0 0 24 24">
                                                 <path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
-                                                      stroke-linecap="round" stroke-linejoin="round" />
+                                                      stroke-linecap="round" stroke-linejoin="round"/>
                                             </svg>
                                             <span class="fbold schedulerTask-title" style="display:none">تاریخ</span>
                                         </label>
                                         <div style="display: none; position: relative;">
-                                            <input class="calenderTxt" id="taskDate" name="date" style="max-width: 68px" />
+                                            <input class="calenderTxt" id="taskDate" name="date" style="max-width: 68px"/>
                                             <div class="removeSchedulerItem d-flex align-items-center justify-content-center"
                                                  onclick="removeSchedulerItem('taskDate')"
                                                  style="position: absolute; top: -6px; right: -7px">
                                                 <svg fill="currentColor"
                                                      style="width: 12px; height: 12px; color: darkred"
-                                                     viewBox="0 0 16 16" >
+                                                     viewBox="0 0 16 16">
                                                     <path clip-rule="evenodd"
                                                           d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm2.78-4.22a.75.75 0 0 1-1.06 0L8 9.06l-1.72 1.72a.75.75 0 1 1-1.06-1.06L6.94 8 5.22 6.28a.75.75 0 0 1 1.06-1.06L8 6.94l1.72-1.72a.75.75 0 1 1 1.06 1.06L9.06 8l1.72 1.72a.75.75 0 0 1 0 1.06Z"
-                                                          fill-rule="evenodd" />
+                                                          fill-rule="evenodd"/>
                                                 </svg>
                                             </div>
                                         </div>
@@ -114,10 +116,9 @@
                                     <div class="d-flex align-items-center gap-2" style="position: relative">
                                         <div class="repeatBtn-toggle" data-title="تکرار" style="cursor: pointer">
                                             <svg fill="none" stroke="currentColor" stroke-width="1.5"
-                                                 style="width: 22px; height: 22px" viewBox="0 0 24 24"
-                                                 >
+                                                 style="width: 22px; height: 22px" viewBox="0 0 24 24">
                                                 <path d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3-3 3"
-                                                      stroke-linecap="round" stroke-linejoin="round" />
+                                                      stroke-linecap="round" stroke-linejoin="round"/>
                                             </svg>
                                             <span class="fbold schedulerTask-title" style="display:none">تکرار</span>
                                         </div>
@@ -126,17 +127,17 @@
                                             <span id="repeatType-span"></span>
                                             <div id="untilRemind-outerDiv" style="display: none">
                                                 <span>تا</span>
-                                                <input class="calenderTxt" id="untilRemind-outerInp" style="max-width: 68px" />
+                                                <input class="calenderTxt" id="untilRemind-outerInp" style="max-width: 68px"/>
                                             </div>
                                             <div class="removeSchedulerItem d-flex align-items-center justify-content-center"
                                                  onclick="removeSchedulerItem('repeatUntilRemind')"
                                                  style="position: absolute; top: -4px; right: 18px">
                                                 <svg fill="currentColor"
                                                      style="width: 12px; height: 12px; color: darkred"
-                                                     viewBox="0 0 16 16" >
+                                                     viewBox="0 0 16 16">
                                                     <path clip-rule="evenodd"
                                                           d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm2.78-4.22a.75.75 0 0 1-1.06 0L8 9.06l-1.72 1.72a.75.75 0 1 1-1.06-1.06L6.94 8 5.22 6.28a.75.75 0 0 1 1.06-1.06L8 6.94l1.72-1.72a.75.75 0 1 1 1.06 1.06L9.06 8l1.72 1.72a.75.75 0 0 1 0 1.06Z"
-                                                          fill-rule="evenodd" />
+                                                          fill-rule="evenodd"/>
                                                 </svg>
                                             </div>
                                         </div>
@@ -145,27 +146,27 @@
                                             <div class="repeatTask-dropdown-items" data-value="daily">
                                                 <svg class="checkIcon" fill="none" stroke="currentColor"
                                                      stroke-width="1.5" style="width: 18px; height: 18px"
-                                                     viewBox="0 0 24 24" >
+                                                     viewBox="0 0 24 24">
                                                     <path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                                          stroke-linecap="round" stroke-linejoin="round" />
+                                                          stroke-linecap="round" stroke-linejoin="round"/>
                                                 </svg>
                                                 <span>هر روز</span>
                                             </div>
                                             <div class="repeatTask-dropdown-items" data-value="weekly">
                                                 <svg class="checkIcon" fill="none" stroke="currentColor"
                                                      stroke-width="1.5" style="width: 18px; height: 18px"
-                                                     viewBox="0 0 24 24" >
+                                                     viewBox="0 0 24 24">
                                                     <path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                                          stroke-linecap="round" stroke-linejoin="round" />
+                                                          stroke-linecap="round" stroke-linejoin="round"/>
                                                 </svg>
                                                 <span>هر هفته</span>
                                             </div>
                                             <div class="repeatTask-dropdown-items" data-value="monthly">
                                                 <svg class="checkIcon" fill="none" stroke="currentColor"
                                                      stroke-width="1.5" style="width: 18px; height: 18px"
-                                                     viewBox="0 0 24 24" >
+                                                     viewBox="0 0 24 24">
                                                     <path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                                          stroke-linecap="round" stroke-linejoin="round" />
+                                                          stroke-linecap="round" stroke-linejoin="round"/>
                                                 </svg>
                                                 <span>هر ماه</span>
                                             </div>
@@ -174,52 +175,51 @@
                                                 <div class="repeatTask-dropdown-items" data-value="custom">
                                                     <svg class="checkIcon" fill="none" stroke="currentColor"
                                                          stroke-width="1.5" style="width: 18px; height: 18px"
-                                                         viewBox="0 0 24 24" >
+                                                         viewBox="0 0 24 24">
                                                         <path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                                              stroke-linecap="round" stroke-linejoin="round" />
+                                                              stroke-linecap="round" stroke-linejoin="round"/>
                                                     </svg>
                                                     <span>سفارشی</span>
                                                 </div>
                                                 <svg fill="none" stroke="currentColor" stroke-width="1.5"
-                                                     style="width: 18px; height: 18px" viewBox="0 0 24 24"
-                                                     >
+                                                     style="width: 18px; height: 18px" viewBox="0 0 24 24">
                                                     <path d="M15.75 19.5 8.25 12l7.5-7.5" stroke-linecap="round"
-                                                          stroke-linejoin="round" />
+                                                          stroke-linejoin="round"/>
                                                 </svg>
                                                 <div class="subDropdown-customRepeat__container">
                                                     <div class="subDropdown-customRepeat__item">
-                                                        <input id="Sat" style="cursor: pointer" type="checkbox" />
+                                                        <input id="Sat" style="cursor: pointer" type="checkbox"/>
                                                         <label class="w-100" for="Sat"
                                                                style="cursor: pointer">شنبه</label>
                                                     </div>
                                                     <div class="subDropdown-customRepeat__item">
-                                                        <input id="Sun" style="cursor: pointer" type="checkbox" />
+                                                        <input id="Sun" style="cursor: pointer" type="checkbox"/>
                                                         <label class="w-100" for="Sun"
                                                                style="cursor: pointer">یکشنبه</label>
                                                     </div>
                                                     <div class="subDropdown-customRepeat__item">
-                                                        <input id="Mon" style="cursor: pointer" type="checkbox" />
+                                                        <input id="Mon" style="cursor: pointer" type="checkbox"/>
                                                         <label class="w-100" for="Mon"
                                                                style="cursor: pointer">دوشنبه</label>
                                                     </div>
                                                     <div class="subDropdown-customRepeat__item">
-                                                        <input id="Tue" style="cursor: pointer" type="checkbox" />
+                                                        <input id="Tue" style="cursor: pointer" type="checkbox"/>
                                                         <label class="w-100" for="Tue" style="cursor: pointer">
                                                             سه شنبه
                                                         </label>
                                                     </div>
                                                     <div class="subDropdown-customRepeat__item">
-                                                        <input id="Wed" style="cursor: pointer" type="checkbox" />
+                                                        <input id="Wed" style="cursor: pointer" type="checkbox"/>
                                                         <label class="w-100" for="Wed"
                                                                style="cursor: pointer">چهارشنبه</label>
                                                     </div>
                                                     <div class="subDropdown-customRepeat__item">
-                                                        <input id="Thu" style="cursor: pointer" type="checkbox" />
+                                                        <input id="Thu" style="cursor: pointer" type="checkbox"/>
                                                         <label class="w-100" for="Thu"
                                                                style="cursor: pointer">پنجشنبه</label>
                                                     </div>
                                                     <div class="subDropdown-customRepeat__item">
-                                                        <input id="Fri" style="cursor: pointer" type="checkbox" />
+                                                        <input id="Fri" style="cursor: pointer" type="checkbox"/>
                                                         <label class="w-100" for="Fri"
                                                                style="cursor: pointer">جمعه</label>
                                                     </div>
@@ -229,21 +229,21 @@
                                             <div class="d-flex gap-3 align-items-center" style="border-top: 1px solid rgba(0, 0, 0, 0.2); padding: 8px;user-select: none">
                                                 <label class="sdate d-flex align-items-center justify-content-between gap-2" data-onSelect="onSelectUntilRemind" data-x="" data-y="-200" for="untilRemind" style="cursor: pointer; min-width: max-content">
                                                     <span class="flex-shrink-0">تا چه تاریخی</span>
-                                                    <svg class="flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 18px; height: 18px" viewBox="0 0 24 24" ><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                                    <svg class="flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 18px; height: 18px" viewBox="0 0 24 24"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                                 </label>
                                                 <div style="position: relative">
                                                     <span class="calenderTxt" id="untilRemindSpan" style="width: 70px">همیشه</span>
 
                                                     <div class="align-items-center justify-content-center" onclick="removeSchedulerItem('untilRemind')" style="display: none; position: absolute; top: -6px;right: -10px">
-                                                        <svg fill="currentColor" style="width: 12px; height: 12px; color: darkred" viewBox="0 0 16 16" ><path clip-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm2.78-4.22a.75.75 0 0 1-1.06 0L8 9.06l-1.72 1.72a.75.75 0 1 1-1.06-1.06L6.94 8 5.22 6.28a.75.75 0 0 1 1.06-1.06L8 6.94l1.72-1.72a.75.75 0 1 1 1.06 1.06L9.06 8l1.72 1.72a.75.75 0 0 1 0 1.06Z" fill-rule="evenodd" /></svg>
+                                                        <svg fill="currentColor" style="width: 12px; height: 12px; color: darkred" viewBox="0 0 16 16"><path clip-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm2.78-4.22a.75.75 0 0 1-1.06 0L8 9.06l-1.72 1.72a.75.75 0 1 1-1.06-1.06L6.94 8 5.22 6.28a.75.75 0 0 1 1.06-1.06L8 6.94l1.72-1.72a.75.75 0 1 1 1.06 1.06L9.06 8l1.72 1.72a.75.75 0 0 1 0 1.06Z" fill-rule="evenodd"/></svg>
                                                     </div>
                                                 </div>
 
                                                 @* <input class="calenderTxt flex-shrink-0" id="untilRemind" name="repeatUntil" style="width: 70px" type="hidden" value="همیشه" /> *@
                                             </div>
                                         </div>
-                                        <input class="calenderTxt" id="untilRemind" name="repeatUntil" style="width: 70px" value="همیشه" type="hidden" />
-                                        <input id="repeatType-input" name="repeatType" type="hidden" />
+                                        <input class="calenderTxt" id="untilRemind" name="repeatUntil" style="width: 70px" value="همیشه" type="hidden"/>
+                                        <input id="repeatType-input" name="repeatType" type="hidden"/>
                                     </div>
 
                                     <div class="d-flex align-items-center gap-2">
@@ -251,25 +251,24 @@
                                                data-date="00:00" data-onSelect="onSelectTimeRemind" data-title="یادآوری"
                                                data-x="" data-y="-200" style="cursor: pointer" id="timeRemindIcon">
                                             <svg fill="none" stroke="currentColor" stroke-width="1.5"
-                                                 style="width: 22px; height: 22px" viewBox="0 0 24 24"
-                                                 >
+                                                 style="width: 22px; height: 22px" viewBox="0 0 24 24">
                                                 <path d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0M3.124 7.5A8.969 8.969 0 0 1 5.292 3m13.416 0a8.969 8.969 0 0 1 2.168 4.5"
-                                                      stroke-linecap="round" stroke-linejoin="round" />
+                                                      stroke-linecap="round" stroke-linejoin="round"/>
                                             </svg>
                                             <span class="fbold schedulerTask-title" style="display:none">یادآوری</span>
                                         </label>
                                         <div style="display: none; position: relative">
                                             <input class="calenderTxt" id="timeRemind" name="remindTime"
-                                                   style="max-width: 34px" />
+                                                   style="max-width: 34px"/>
                                             <div class="removeSchedulerItem d-flex align-items-center justify-content-center"
                                                  onclick="removeSchedulerItem('timeRemind')"
                                                  style="position: absolute; top: -6px; right: -7px">
                                                 <svg fill="currentColor"
                                                      style="width: 12px; height: 12px; color: darkred"
-                                                     viewBox="0 0 16 16" >
+                                                     viewBox="0 0 16 16">
                                                     <path clip-rule="evenodd"
                                                           d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm2.78-4.22a.75.75 0 0 1-1.06 0L8 9.06l-1.72 1.72a.75.75 0 1 1-1.06-1.06L6.94 8 5.22 6.28a.75.75 0 0 1 1.06-1.06L8 6.94l1.72-1.72a.75.75 0 1 1 1.06 1.06L9.06 8l1.72 1.72a.75.75 0 0 1 0 1.06Z"
-                                                          fill-rule="evenodd" />
+                                                          fill-rule="evenodd"/>
                                                 </svg>
                                             </div>
                                         </div>
@@ -282,10 +281,9 @@
                                         <div class="dropdown-assignUser__toggle" style="cursor: pointer"
                                              data-title="انتخاب کاربر" id="assignUserIcon">
                                             <svg fill="none" stroke="currentColor" stroke-width="1.5"
-                                                 style="width: 22px; height: 22px" viewBox="0 0 24 24"
-                                                 >
+                                                 style="width: 22px; height: 22px" viewBox="0 0 24 24">
                                                 <path d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z"
-                                                      stroke-linecap="round" stroke-linejoin="round" />
+                                                      stroke-linecap="round" stroke-linejoin="round"/>
                                             </svg>
                                             <span class="fbold schedulerTask-title" style="display:none">انتخاب کاربر</span>
                                         </div>
@@ -500,12 +498,14 @@
 
         const addTaskPlusIcon = document.getElementById("addTask-plusIcon");
         const taskTitleInput = document.getElementById("taskTitle-input");
+        const taskDescriptionInput = document.getElementById("taskDescription-input");
         const schedulerTask = document.getElementById("schedulerTask");
         const taskFormContainer = document.querySelector(".taskForm-container");
         const actionTaskButtons = document.querySelector(".actionTask-buttons");
 
         function resetAndCloseFormTask() {
             taskTitleInput.style.display = "none";
+            taskDescriptionInput.style.display = "none";
             actionTaskButtons.style.display = "none";
             schedulerTask.style.display = "none";
             taskFormContainer.classList.remove("focused");
@@ -524,6 +524,7 @@
             addTaskPlusIcon.style.display = "none";
             taskFormContainer.classList.add("focused");
             taskTitleInput.style.display = "inline-block";
+            taskDescriptionInput.style.display = "inline-block";
             taskTitleInput.focus();
             actionTaskButtons.style.display = "flex";
             schedulerTask.style.display = "flex";
@@ -942,8 +943,7 @@
 
 
         async function submitTask() {
-
-            var button = document.getElementById("submitTask-btn");
+            const button = document.getElementById("submitTask-btn");
             button.setAttribute("disabled", "true");
 
             if (await mySer.CheckValidForm("taskFormId")) {
@@ -973,7 +973,7 @@
                 // model.colorTask = colorTask;
 
                 model.taskUsers = selectedUsers;
-                model.description = "";
+               // model.description = "";
 
                 if (model.taskUsers.length > 0) {
                     model.taskType = Number(document.querySelector("#assignList input[name=\"taskType\"]:checked").value);
