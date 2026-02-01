@@ -99,6 +99,20 @@ p[contenteditable]:empty:before {
   display: none;
 }
 
+#taskDescription-input {
+  padding-right: 4px !important;
+  padding-top: 8px !important;
+  padding-bottom: 12px;
+  width: 100%;
+  text-align: start;
+  border: none;
+  outline: none;
+  background-color: transparent;
+  display: none;
+  resize: none;
+  border-top: 1px solid #b1b1b1;
+}
+
 
 #taskTitle-input.required {
   animation: requiredInput 0.6s;
