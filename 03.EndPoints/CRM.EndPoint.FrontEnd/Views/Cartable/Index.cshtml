@@ -1149,7 +1149,7 @@
         };
 
         const GetPreFactorPartial = async (val = null, type = 0, filt = null, showLoading = true) => {
-            modelPreFactor.serVal = val;
+            modelPreFactor.serVal = val?.trim();
             modelPreFactor._type = type;
             modelPreFactor.filt = filt;
 
@@ -1187,7 +1187,7 @@
         };
 
         const GetPreFactorSalesAdmin = async () => {
-            const val = document.getElementById("SalesAdminSearchId").value ?? "";
+            const val = document.getElementById("SalesAdminSearchId").value.trim() ?? "";
             const type = document.querySelector("input[type='radio'][name='SalesAdminFilter']:checked").value;
             if (type === undefined) return;
             try {
@@ -1208,7 +1208,7 @@
 
 
         const GetPreFactorTaminExpert = async () => {
-            const val = document.getElementById("TSearchId")?.value ?? "";
+            const val = document.getElementById("TSearchId")?.value.trim() ?? "";
             const type = document.querySelector("input[type='radio'][name='TFilter']:checked")?.value;
             if (type === undefined) return;
             try {
@@ -1226,7 +1226,7 @@
         };
 
         const GetPreFactorManagingDirector = async () => {
-            const val = document.getElementById("ManagingDirectorSearchId").value ?? "";
+            const val = document.getElementById("ManagingDirectorSearchId")?.value.trim() ?? "";
             const type = document.querySelector("input[type='radio'][name='managingDirectorFilter']:checked")?.value;
             if (type === undefined) return;
             try {
@@ -1245,7 +1245,7 @@
 
 
         const GetInvoicesManagingDirector = async () => {
-            const val = document.getElementById("ManagingDirectorSearchId").value ?? "";
+            const val = document.getElementById("ManagingDirectorSearchId")?.value.trim() ?? "";
             const type = document.querySelector("input[type='radio'][name='managingDirectorFilter']:checked")?.value;
             if (type === undefined) return;
             try {
@@ -1263,7 +1263,7 @@
         };
 
         const GetPreFactorFinancialExpert = async () => {
-            const val = document.getElementById("FinancialExpertSearchId")?.value ?? "";
+            const val = document.getElementById("FinancialExpertSearchId")?.value.trim() ?? "";
             const type = document.querySelector("input[type='radio'][name='financialExpertFilter']:checked")?.value;
             if (type === undefined) return;
 
@@ -1288,7 +1288,7 @@
 
 
         const GetInvoicesFinancialExpert = async () => {
-            const val = document.getElementById("FinancialExpertInvoiceSearchId")?.value ?? "";
+            const val = document.getElementById("FinancialExpertInvoiceSearchId")?.value.trim() ?? "";
             const type = document.querySelector("input[type='radio'][name='financialExpertInvoiceFilter']:checked")?.value;
             if (type === undefined) return;
 
