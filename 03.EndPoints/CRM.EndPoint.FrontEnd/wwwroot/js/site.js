@@ -2835,9 +2835,10 @@ function ShowTab(target) {
  * createOption.
  * @param {string|HTMLElement} targetSelect - select ID or element.
  * @param {Array<text: String, value: String>} optionItems - optionItems
- * @param {boolean} [addDefault=true] - add default "انتخاب" option
+ * @param {boolean} [addDefault=true] - add default option
+ * @param {string} [defaultText="انتخاب"] - default Text
  */
-function createOption(targetSelect, optionItems, addDefault = true) {
+function createOption(targetSelect, optionItems, addDefault = true, defaultText = "انتخاب") {
     let selectElm;
     if (typeof targetSelect === "string") {
         selectElm = document.getElementById(targetSelect.replace("#", ""));
@@ -2849,9 +2850,10 @@ function createOption(targetSelect, optionItems, addDefault = true) {
         throw new Error("عنوان select پیدا نشد");
     }
     
+    selectElm.innerHTML = "";
     if (addDefault) {
         const o = document.createElement("option");
-        o.innerText = "انتخاب";
+        o.innerText = defaultText;
         o.value = "";
         selectElm.appendChild(o);
     }
@@ -2872,6 +2874,12 @@ const toEnglishDigits = (val) => {
         .replace(/[۰-۹]/g, d => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))) // Persian
         .replace(/[٠-٩]/g, d => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));// Arabic
 };
+
+function calculateTotalPrice(weight, unitPrice) {
+    const w = parseFloat(SeparatedNumberRemove(weight)) || 0;
+    const u = parseFloat(SeparatedNumberRemove(unitPrice)) || 0;
+    return (w * u) ? (w * u).toLocaleString() : "";
+}
 
 
 function getUrlParams() {

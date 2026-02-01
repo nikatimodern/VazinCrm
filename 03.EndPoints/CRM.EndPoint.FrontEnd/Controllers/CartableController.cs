@@ -26,6 +26,7 @@ using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.Supplies.Entities;
+using CRM.Core.Domain.Supplies.Enums;
 using CRM.EndPoint.FrontEnd.Models.PreFactorVm;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 
