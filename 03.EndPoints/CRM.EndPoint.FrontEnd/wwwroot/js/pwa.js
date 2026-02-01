@@ -42,7 +42,7 @@ function initInstallPrompt() {
 
 async function showIosPwaInstall() {
     if (!isIos()) return;
-    if (window.navigator.standalone === true) return;
+    if (isRunningInPwa) return;
     if (sessionStorage.getItem("pwaios-install-shown")) return;
     
     setTimeout(() => {

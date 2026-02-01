@@ -15,16 +15,16 @@
   "theme_color": "#004944",
   "icons": [
     {
-      "src": "/Img/icons/logo-vazinplast1-192.png",
+      "src": "/Img/icons/logo-vazinplast-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
-      "src": "/Img/icons/logo-vazinplast1-512.png",
+      "src": "/Img/icons/logo-vazinplast-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ],
 

@@ -18,9 +18,9 @@ self.addEventListener("activate", event => {
             Promise.all(
                 keys
                     .filter(k => k !== CACHE_NAME)
-                    .map(k => caches.delete(k))
-            )
-        )
+                    .map(k => caches.delete(k)),
+            ),
+        ),
     );
     self.clients.claim();
 });
@@ -46,7 +46,7 @@ self.addEventListener("fetch", event => {
     // صفحه‌ها
     if (req.mode === "navigate") {
         event.respondWith(
-            fetch(req).catch(() => caches.match(OFFLINE_URL[0]))
+            fetch(req).catch(() => caches.match(OFFLINE_URL[0])),
         );
         return;
     }
@@ -54,11 +54,10 @@ self.addEventListener("fetch", event => {
     // تصاویر (برای offline page)
     if (req.destination === "image") {
         event.respondWith(
-            caches.match(req).then(res => res || fetch(req))
+            caches.match(req).then(res => res || fetch(req)),
         );
     }
 });
-
 
 
 self.addEventListener("push", event => {
@@ -68,7 +67,7 @@ self.addEventListener("push", event => {
     
     const options = {
         body: data.body || "",
-        // icon: "/icons/icon-192.png",
+        icon: "/Img/icons/logo-vazinplast-192.png",
         // badge: "/icons/badge.png",
         data: {
             url: data.url || "/",
@@ -87,6 +86,7 @@ self.addEventListener("push", event => {
         renotify: true,
         silent: false,
     };
+    console.log(options);
     event.waitUntil(
         self.registration.showNotification(
             data.title || "پیام جدید",
