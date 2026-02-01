@@ -1,5 +1,3 @@
-// Service Worker Registration
-
 window.addEventListener("load", async () => {
     const swRegistered = await registerServiceWorker();
     if (!swRegistered) return;
@@ -8,7 +6,6 @@ window.addEventListener("load", async () => {
     initInstallPrompt();
     await initPush()
     await showIosPwaInstall();
-    await initRunInAppPrompt();
 });
 
 
@@ -25,43 +22,6 @@ async function registerServiceWorker() {
     }
     return false;
 }
-
-async function isPwaInstalled() {
-    if (!('getInstalledRelatedApps' in navigator)) return false;
-    const apps = await navigator.getInstalledRelatedApps();
-    return apps.length > 0;
-}
-
-function isRunningInPwa() {
-    return window.matchMedia('(display-mode: standalone)').matches
-        || window.navigator.standalone === true;
-}
-
-
-
-async function initRunInAppPrompt() {
-    
-    if (isRunningInPwa()) return;
-    
-    const installed = await isPwaInstalled();
-    if (!installed) return;
-    
-    if (sessionStorage.getItem("open-in-app-shown")) return;
-    
-    setTimeout(() => {
-        ModalToggle("#openInAppModal");
-        sessionStorage.setItem("open-in-app-shown", "1");
-    }, 1500);
-}
-
-document.getElementById("openInAppBtn")?.addEventListener("click", () => {
-    window.open(
-        location.origin + location.pathname,
-        '_blank',
-        'noopener,noreferrer'
-    );
-});
-
 
 
 let deferredPrompt = null;
@@ -163,4 +123,9 @@ function urlBase64ToUint8Array(base64String) {
 
 function isIos() {
     return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+function isRunningInPwa() {
+    return window.matchMedia('(display-mode: standalone)').matches
+        || window.navigator.standalone === true;
 }
