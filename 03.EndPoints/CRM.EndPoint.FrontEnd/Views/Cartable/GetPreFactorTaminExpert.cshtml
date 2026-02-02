@@ -91,9 +91,13 @@
                                 <label class="text-center fbold">@item.PftypeTxt</label>
                             </div>
                             <div class="d-flex flex-column align-items-center justify-content-center flex-wrap gap-2">
-                                @if (Model.Setting.SetAmountByRoleType != SetAmountRoleEnum.فروش) {
-                                    <button class="px-2 py-0 btn @(item.SupplyMismatch ? "btn-outline-danger" : item.NoSupply ? "btn-outline-secondary" : "btn-outline-success")" style="min-width: 90px" id="showModalSetAmountTaminId" onclick="showModalSetAmount('@item.Id', @Model.Setting.SetSupplyAmountByTamin.ToString().ToLower(), @Model.Setting.SetSupplyByTamin.ToString().ToLower())">
-                                        ورود مبلغ
+                                @if (item.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین &&Model.Setting.SetAmountByRoleType != SetAmountRoleEnum.فروش) {
+                                    <button class="px-2 py-0 btn @(item.SupplyMismatch ? "btn-outline-danger" : item.NoSupply ? "btn-outline-secondary" : "btn-outline-success")" style="min-width: 90px"
+                                            onclick="showSetSupplyModal('@item.Id', @Model.Setting.SetSupplyAmountByTamin.ToString().ToLower(), @Model.Setting.SetSupplyByTamin.ToString().ToLower())">
+                                        بهای تامین
+                                    </button>
+                                    <button class="px-2 py-0 btn btn-outline-secondary" style="min-width: 90px" onclick="showModalSetAmount('@item.Id', false)">
+                                        بهای فروش
                                     </button>
                                 }
                                 <div class="d-flex flex-md-column align-items-center justify-content-center gap-2">
@@ -103,10 +107,10 @@
                                         </button>
                                         if (Model.Setting.SetAmountByRoleType != SetAmountRoleEnum.فروش) {
                                             if (item.PreFactorItems.All(f => f.TotalAmount > 0)) {
-                                                <button class="px-2 py-0 btn btn-secondary" style="min-width: 90px" onclick="acceptTaminExpert('@item.Id')">تایید</button>
+                                                <button class="px-2 py-0 btn btn-secondary" style="min-width: 90px" onclick="showModalSetAmount('@item.Id')">تایید</button>
                                             }
                                         } else {
-                                            <button class="px-2 py-0 btn btn-secondary" style="min-width: 90px" onclick="acceptTaminExpert('@item.Id')">تایید</button>
+                                            <button class="px-2 py-0 btn btn-secondary" style="min-width: 90px" onclick="showModalSetAmount('@item.Id')">تایید</button>
                                         }
                                     } else if (item.Pftype == (int)PreFactorEnum.در_انتظار_ارسال_به_مشتری || item.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مشتری) {
                                         <button class="px-2 py-0 btn btn-outline-secondary" style="min-width: 90px" onclick="rejectPreFactor('@item.Id', 13)">
@@ -120,7 +124,9 @@
 
                                 @if (item.Pftype == (int)PreFactorEnum.در_انتظار_تولید) {
                                     @*<button style="border-radius:5px;height:fit-content; " class="buttonGreen " onclick="CreateOrder('@item.Id','@item.CustomerId','@item.OfficialType' )">حواله تولید</button>*@
-                                    <button style="border-radius:5px;height:fit-content; " class="buttonGreen" onclick="showModalCreateOrder(@((int)Model.Setting.SetAmountByRoleType),'@item.Id','@item.CustomerId')">حواله تولید</button>
+                                    <button style="border-radius:5px;height:fit-content; " class="buttonGreen" onclick="showModalCreateOrder(@((int)Model.Setting.SetAmountByRoleType),'@item.Id','@item.CustomerId')">
+                                        حواله تولید
+                                    </button>
                                 }
                             </div>
 

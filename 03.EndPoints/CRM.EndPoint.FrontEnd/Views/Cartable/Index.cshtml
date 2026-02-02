@@ -523,12 +523,12 @@
 <div class="modal fade" id="setAmountTaminModal" tabindex="-1" data-bs-focus="false" role="dialog" data-bs-backdrop="static" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content col-12" style="padding:8px!important;">
-            <div class="d-flex align-items-center justify-content-center position-relative" style="height:34px; background: #02514C; color:white;border-radius:5px">
-                <span id="setAmountTaminTitle" style="font-size: 16px;" class="fbold">ورود مبلغ</span>
+            <div class="d-flex align-items-center justify-content-center position-relative" style="height:32px; background: #02514C; color:white;border-radius:5px">
+                <span class="modal-title fbold" style="font-size: 16px;">ورود مبلغ</span>
 
-                <div data-bs-theme="dark" class="d-flex align-items-center justify-content-center top-0 bottom-0" style="position: absolute;left: 6px">
-                    <button type="button" class="btn-close opacity-100" onclick="cancelTaminModal()"></button>
-                </div>
+                @*<div data-bs-theme="dark" class="d-flex align-items-center justify-content-center top-0 bottom-0" style="position: absolute;left: 6px">
+                    <button type="button" class="btn-close opacity-100" onclick="toggleSupplyModal()"></button>
+                </div>*@
             </div>
 
             <div class="modal-body pb-0 px-1 px-md-2" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
@@ -536,18 +536,11 @@
                     <div class="d-flex flex-column gap-2">
                         <div class="d-flex align-items-center justify-content-between gap-5">
                             <div class="d-flex gap-2 fbold" style="color: #fff">
-                                <span class="badgeGray" id="amountTaminOfficial"></span>
-                                <span class="badgeGreen" id="amountTaminExport">صادراتی</span>
-                            </div>
-                            <div class="col col-lg-6">
-                                <div id="progressiveTrackerTaminModal" class="w-100"></div>
+                                <span class="badgeGray pf-official-badge"></span>
+                                <span class="badgeGreen pf-export-badge">صادراتی</span>
                             </div>
                         </div>
-                        <div id="amountSalesContainer">
-                            <form id="setAmountSalesForm" class="py-2 d-flex flex-column w-100" style="max-height: calc(100dvh - 230px);overflow: auto;width:100%;">
-                            </form>
-                        </div>
-                        <div id="amountTaminContainer" class="flex-column align-items-center w-100" style="display: none;max-height: calc(100dvh - 230px);overflow: auto;">
+                        <div id="amountTaminContainer" class="d-flex flex-column align-items-center w-100 overflow-auto" style="max-height: calc(100dvh - 230px)">
                             <div id="setAmountTaminWrapper" class="py-2 d-flex flex-column w-100">
                             </div>
 
@@ -595,10 +588,51 @@
                 </div>
                 <div class="mx-auto my-3" style="width:98%; height:2px; background-color:#1a2d41;"></div>
                 <div class="d-flex justify-content-center gap-1">
-                    <button class="btnGroupBase btnRight btnRightRed" type="button" onclick="backStepTaminModal()">انصراف</button>
-                    <button class="btnGroupBase btnCenter btnLeftGreen fMedium" style="line-height: 1.1" type="button" onclick="submitSupplyModal()">ثبت</button>
-                    <button class="btnGroupBase btnLeft btnLeftGreen fMedium" style="line-height: 1.1" type="button" onclick="nextStepTaminModal()">ثبت و بعدی</button>
+                    <button class="btnGroupBase btnRight btnRightRed" type="button" onclick="toggleSupplyModal()">انصراف</button>
+                    <button class="btnGroupBase btnLeft btnLeftGreen fMedium" style="line-height: 1.1" type="button" onclick="submitSupplyModal()">ثبت</button>
+                    @* <button class="btnGroupBase btnLeft btnLeftGreen fMedium" style="line-height: 1.1" type="button" onclick="nextStepTaminModal()">ثبت و بعدی</button> *@
                     @* <button id="submitAndAcceptPreFactorBtn" class="btnGroupBase btnLeftGreen btnLeft fMedium" style="line-height: 1.1" type="button" onclick="submitAndAcceptPreFactor()">ثبت و تایید پیش‌فاکتور</button> *@
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal SetAmountTamin -->
+<div class="modal fade" id="setAmountSalesModal" tabindex="-1" data-bs-focus="false" role="dialog" data-bs-backdrop="static" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content col-12" style="padding:8px!important;">
+            <div class="flex-center position-relative" style="height:32px; background: #02514C; color:white;border-radius:5px">
+                <span class="modal-title fbold" style="font-size: 16px;"></span>
+
+                @*
+                <div data-bs-theme="dark" class="flex-center top-0 bottom-0 position-absolute" style="left: 6px">
+                    <button type="button" class="btn-close opacity-100" data-bs-dismiss="modal"></button>
+                </div>*@
+            </div>
+
+            <div class="modal-body pb-0 px-1 px-md-2" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
+                <div class="col-12 d-flex flex-column" style="font-size:clamp(12px,2vw,14px)">
+                    <div class="d-flex flex-column gap-2">
+                        <div class="d-flex align-items-center justify-content-between gap-5">
+                            <div class="d-flex gap-2 fbold" style="color: #fff">
+                                <span class="badgeGray pf-official-badge"></span>
+                                <span class="badgeGreen pf-export-badge">صادراتی</span>
+                            </div>
+                        </div>
+                        <div id="amountSalesContainer">
+                            <form id="setAmountSalesForm" class="py-2 d-flex flex-column w-100 overflow-auto" style="max-height: calc(100dvh - 230px)">
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="mx-auto my-3" style="width:98%; height:2px; background-color:#1a2d41;"></div>
+                <div class="d-flex justify-content-center gap-1">
+                    <button class="btnGroupBase btnRight btnRightRed" type="button" onclick="toggleSalesModal()">انصراف</button>
+                    <button class="btnGroupBase btnLeft btnLeftGreen fMedium" style="line-height: 1.1" type="button" onclick="submitSalesModal()">
+                        تایید
+                    </button>
                 </div>
 
             </div>
@@ -1330,80 +1364,7 @@
         };
 
 
-        const setAmountTaminModal = document.getElementById("setAmountTaminModal");
-
-        let currentStepTaminModal = 1;
-        let totalStepsTaminModal;
-        const backStepTaminModal = () => {
-            if (currentStepTaminModal > 1) {
-                gotoStepTaminModal(currentStepTaminModal - 1);
-            } else {
-                cancelTaminModal();
-            }
-        };
-
-        const nextStepTaminModal = async () => {
-            if (currentStepTaminModal > totalStepsTaminModal) return;
-
-            if (currentStepTaminModal === 1) {
-                if (await submitAmountSalesModal()) {
-                    gotoStepTaminModal(currentStepTaminModal + 1);
-                }
-
-            } else if (currentStepTaminModal === totalStepsTaminModal) {
-                await submitAndAcceptPreFactor();
-            }
-        };
-
-        const submitSupplyModal = async () => {
-            if (currentStepTaminModal === 1) {
-                if (await submitAmountSalesModal()) {
-                    toastifySuccess("ثبت شد");
-                    cancelTaminModal();
-                }
-
-            } else if (currentStepTaminModal === totalStepsTaminModal) {
-                if (await submitAmountTaminModal()) {
-                    cancelTaminModal();
-                }
-            }
-        };
-
-        const submitAndAcceptPreFactor = async () => {
-            if (hasSupplySetting) {
-                if (!await submitAmountTaminModal()) return;
-            }
-            if (await acceptTaminExpert(taminPreFac.id)) {
-                cancelTaminModal();
-            }
-        };
-
-        const gotoStepTaminModal = (step) => {
-            currentStepTaminModal = step;
-            const taminContainer = setAmountTaminModal.querySelector("#amountTaminContainer");
-            const salesContainer = setAmountTaminModal.querySelector("#amountSalesContainer");
-
-            if (step === 1) {
-                setAmountTaminModal.querySelector("#setAmountTaminTitle").innerText = "ورود مبلغ پیش‌فاکتور " + taminPreFac.serialNumber;
-                taminContainer.style.display = "none";
-                salesContainer.style.display = "block";
-            } else if (step === 2) {
-                setAmountTaminModal.querySelector("#setAmountTaminTitle").innerText = "تعیین تامین‌کننده پیش‌فاکتور " + taminPreFac.serialNumber;
-                salesContainer.style.display = "none";
-                taminContainer.style.display = "flex";
-            }
-
-            const btnLeft = setAmountTaminModal.querySelector(".btnLeft");
-            const btnRight = setAmountTaminModal.querySelector(".btnRight");
-            const btnCenter = setAmountTaminModal.querySelector(".btnCenter");
-
-            btnRight.innerText = step === 1 ? "انصراف" : "قبلی";
-            btnRight.classList.toggle("btnRightRed", step === 1);
-            btnLeft.innerText = step === totalStepsTaminModal ? "ثبت و تایید پیش‌فاکتور" : "ثبت و بعدی";
-            btnLeft.classList.toggle("d-none", (step === totalStepsTaminModal && taminPreFac.pftype !== 1));
-        };
-
-        function renderProgressTracker() {
+        /*function renderProgressTracker() {
             const steps = [
                 { type: 1, label: "تعیین مبلغ فروش" },
                 { type: 2, label: "تعیین تامین کننده" },
@@ -1438,40 +1399,36 @@
                     </div>
                 </div>
             `;
-        }
+        }*/
 
 
+
+        /*------------- SALES MODAL -------------*/
+        const setAmountSalesModal = document.getElementById("setAmountSalesModal");
         let taminPreFac;
-        let suppliesData = [];
-        let hasSupplyAmountSetting;
-        let hasSupplySetting;
-        const showModalSetAmount = async (pfId, hasSupplyAmount = true, hasSupply = true) => {
+
+        let submitSalesModalWithAcceptPf;
+        const showModalSetAmount = async (pfId, withAcceptPf = true) => {
+            submitSalesModalWithAcceptPf = withAcceptPf;
             FLshowLoading();
-            hasSupplyAmountSetting = hasSupplyAmount;
-            hasSupplySetting = hasSupply;
-            totalStepsTaminModal = 2;
-            const [{ data: pFactorData }, { data: supplyData }] = await Promise.all([
-                axios(`/Factor/GetPFactor?id=${pfId}`),
-                axios(`/Supply/GetSupplies?pfId=${pfId}`),
-            ]);
+            taminPreFac = (await axios(`/Factor/GetPFactor?id=${pfId}`)).data;
 
-            taminPreFac = pFactorData;
-
-            gotoStepTaminModal(1);
-            renderSupplyModal(supplyData);
             createSetAmountSalesItem();
-            renderProgressTracker();
-
-            setAmountTaminModal.querySelector("#amountTaminOfficial").innerText = taminPreFac.officialType ? "رسمی" : "غیر رسمی";
-            setAmountTaminModal.querySelector("#amountTaminOfficial").style.backgroundColor = taminPreFac.officialType ? "#162636" : "#3f5f80";
-            setAmountTaminModal.querySelector("#amountTaminExport").style.display = taminPreFac.export ? "flex" : "none";
+            initSalesModal();
 
             FLshowLoading(false);
-            ModalToggle(setAmountTaminModal);
+            toggleSalesModal();
         };
 
+        function initSalesModal() {
+            setAmountSalesModal.querySelector(".modal-title").innerText = "تایید پیش‌فاکتور " + taminPreFac.serialNumber;
+            setAmountSalesModal.querySelector(".pf-official-badge").innerText = taminPreFac.officialType ? "رسمی" : "غیر رسمی";
+            setAmountSalesModal.querySelector(".pf-official-badge").style.backgroundColor = taminPreFac.officialType ? "#162636" : "#3f5f80";
+            setAmountSalesModal.querySelector(".pf-export-badge").style.display = taminPreFac.export ? "flex" : "none";
+        }
+
         function createSetAmountSalesItem() {
-            const container = setAmountTaminModal.querySelector("#setAmountSalesForm");
+            const container = setAmountSalesModal.querySelector("#setAmountSalesForm");
             container.innerHTML = "";
 
             taminPreFac.preFactorItems.forEach((item, index) => {
@@ -1509,11 +1466,29 @@
 
                 fieldset.querySelector("input[name='unitAmount']").addEventListener("input", (e) => {
                     fieldset.querySelector("input[name='totalAmount']").value = calculateTotalPrice(item.weightCount, e.target.value);
+                    setAmountSalesModal.querySelector(".btnLeft").textContent = "ثبت و تایید";
                 });
 
                 container.appendChild(fieldset);
             });
         }
+
+        const toggleSalesModal = () => {
+            ModalToggle(setAmountSalesModal);
+            setAmountSalesModal.querySelector(".btnLeft").textContent = "تایید";
+        };
+
+        const submitSalesModal = async () => {
+            if (!await submitAmountSalesModal()) return;
+
+            if (submitSalesModalWithAcceptPf) {
+                if (!await acceptTaminExpert(taminPreFac.id)) return;
+            } else {
+                toastifySuccess("با موفقیت ثبت شد");
+            }
+            toggleSalesModal();
+            await GetPreFactorTaminExpert();
+        };
 
         async function submitAmountSalesModal() {
             if (!await mySer.CheckValidForm("setAmountSalesForm")) return false;
@@ -1533,21 +1508,11 @@
                     model.push(item);
                 }
 
-                if (!hasChange) {
-                    if (taminPreFac.taminStep === 1) {
-                        taminPreFac.taminStep = 2;
-                        taminPreFac.taminStepTxt = "تعیین تامین کننده";
-                        renderProgressTracker();
-                    }
-                    return true;
-                }
+                if (!hasChange) return true;
+
                 FLshowLoading();
                 const res = await axios.post(`/Factor/UpdatePrefactorItems`, model);
                 if (res.status === 200) {
-                    taminPreFac = res.data;
-
-                    // await GetPreFactorTaminExpert();
-                    renderProgressTracker();
                     FLshowLoading(false);
                     return true;
                 }
@@ -1558,11 +1523,44 @@
         }
 
 
-        function renderSupplyModal(model) {
-            const normalItems = model.filter(x => x.supplyType === 1);
-            const extraItems = model.filter(x => x.supplyType === 2);
-            const wasteItems = model.filter(x => x.supplyType === 3);
+        /*------------- SUPPLY MODAL -------------*/
 
+        const setAmountTaminModal = document.getElementById("setAmountTaminModal");
+        let suppliesData = [];
+
+        const submitSupplyModal = async () => {
+            if (!await submitAmountTaminModal()) return;
+
+            toggleSupplyModal();
+        };
+
+        const submitAndAcceptPreFactor = async () => {
+            if (hasSupplySetting) {
+                if (!await submitAmountTaminModal()) return;
+            }
+            if (!await acceptTaminExpert(taminPreFac.id)) return;
+            await GetPreFactorTaminExpert();
+            toggleSupplyModal();
+        };
+
+
+        let hasSupplyAmountSetting;
+        let hasSupplySetting;
+        async function showSetSupplyModal(pfId, hasSupplyAmount = true, hasSupply = true) {
+            hasSupplyAmountSetting = hasSupplyAmount;
+            hasSupplySetting = hasSupply;
+            const [{ data: pFactorData }, { data: supplyData }] = await Promise.all([
+                axios(`/Factor/GetPFactor?id=${pfId}`),
+                axios(`/Supply/GetSupplies?pfId=${pfId}`),
+            ]);
+            taminPreFac = pFactorData;
+
+            const normalItems = supplyData.filter(x => x.supplyType === 1);
+            const extraItems = supplyData.filter(x => x.supplyType === 2);
+            const wasteItems = supplyData.filter(x => x.supplyType === 3);
+
+            toggleSupplyModal();
+            initSupplyModal();
             setupSupplyItemModal();
             createSetAmountTaminItems(normalItems);
             if (hasSupplyAmountSetting) {
@@ -1571,8 +1569,24 @@
             } else {
                 addItemSupplyModal.querySelector("#supplierAmountInputsWrapper")?.remove();
                 setAmountTaminModal.querySelector("#showExtraTaminWrapperBtn").classList.add("d-none");
+                setAmountTaminModal.querySelector("#showWasteTaminWrapperBtn").classList.add("d-none");
             }
         }
+
+        function initSupplyModal() {
+            setAmountTaminModal.querySelector(".modal-title").innerText = "بهای تامین پیش‌فاکتور " + taminPreFac.serialNumber;
+            setAmountTaminModal.querySelector(".pf-official-badge").innerText = taminPreFac.officialType ? "رسمی" : "غیر رسمی";
+            setAmountTaminModal.querySelector(".pf-official-badge").style.backgroundColor = taminPreFac.officialType ? "#162636" : "#3f5f80";
+            setAmountTaminModal.querySelector(".pf-export-badge").style.display = taminPreFac.export ? "flex" : "none";
+        }
+
+        function toggleSupplyModal() {
+            suppliesData = [];
+            supplyItemsExtra = [];
+            supplyItemsWaste = [];
+            ModalToggle(setAmountTaminModal);
+        }
+
 
         const addItemSupplyModal = document.getElementById("addItemSupplyModal");
         const weightInputSupplyItemModal = addItemSupplyModal.querySelector("#weightMobile");
@@ -1799,7 +1813,6 @@
             container.innerHTML = "";
             suppliesData.length = 0;
 
-
             taminPreFac.preFactorItems.forEach((item, index) => {
                 const divPfItem = document.createElement("div");
                 divPfItem.id = `setAmountTaminItems-${index}`;
@@ -1809,11 +1822,11 @@
                     <div class="d-flex flex-column align-items-center justify-content-around setAmountSalesItem ${index % 2 ? "bgPurple" : "bgGreen"}" style="border: 1px solid;border-radius: 6px;overflow: hidden">
                         <div class="d-flex flex-column col-12 flex-grow-1">
                             <div class="d-flex col-12 justify-content-around p-1 px-2" style="background-color: ${index % 2 ? "rebeccapurple" : "#04857c"};color: #fff">
-                                <div class="d-flex align-items-center justify-content-center gap-1 pe-2">
+                                <div class="flex-center gap-1 pe-2">
                                     <span class="flex-shrink-0" style="color: #e1e1e1">شرح کالا: </span>
                                     <span class="fMedium text-center">${item.productSmallName ?? ""} ${item.product ?? ""} ${item.printable ? "<span class='fbold'>(چاپدار)</span>" : ""}</span>
                                 </div>
-                                <div class="d-flex align-items-center justify-content-center gap-1">
+                                <div class="flex-center gap-1">
                                     <span class="flex-shrink-0" style="color: #e1e1e1">مقدار: </span>
                                     <span class="fMedium text-center" style="white-space: nowrap">
                                         <span>${item.weightCount ?? ""} </span>
@@ -1825,7 +1838,7 @@
                         <div class="d-flex flex-column gap-2 align-items-center justify-content-center w-100 p-2 px-1 px-sm-2 px-lg-3">
                             <div class="infoContainerSupply col-12" style="font-size:clamp(11px,2.5vw,13px)">
                             </div>
-                            <button onclick="toggleSupplyItemModal(${index})" class="gap-1 ${index % 2 ? "buttonPurple2" : "buttonGreen2"}" style="display:flex;justify-content:center;align-items:center;height: 26px;font-size: 12px;padding-inline: 10px !important;" type="button">
+                            <button type="button" onclick="toggleSupplyItemModal(${index})" class="flex-center gap-1 ${index % 2 ? "buttonPurple2" : "buttonGreen2"}" style="height: 26px;font-size: 12px;padding-inline: 10px !important;" >
                                 افزودن تامین
                                 <svg style="width: 16px;height: 16px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
                             </button>
@@ -1834,13 +1847,14 @@
                     ${index !== taminPreFac.preFactorItems.length - 1 ? `<div style="width: 95%;height:1px; margin: 10px auto;background-color:darkviolet"></div>` : ""}
                 `;
 
-
                 const supplyItems = normalItems.filter(x => x.pfItemId === item.id);
                 suppliesData.push(supplyItems);
+
                 refreshInfoItemsSupplies(divPfItem, supplyItems);
 
                 container.appendChild(divPfItem);
             });
+            console.log(suppliesData);
         }
 
 
@@ -2104,7 +2118,7 @@
                 FLshowLoading();
                 const res = await axios.post(`/Supply/AddSupply`, model);
                 if (res.status === 200) {
-                    toastifySuccess("تامین کننده با موفقیت ثبت شد");
+                    toastifySuccess("بهای تامین با موفقیت ثبت شد");
                     GetPreFactorTaminExpert();
                     FLshowLoading(false);
                     return true;
@@ -2112,15 +2126,9 @@
             } catch (err) {
                 console.log(err);
                 setTimeout(async () => await submitAmountTaminModal(), 3000);
+                return false;
             }
 
-        };
-
-        const cancelTaminModal = () => {
-            suppliesData = [];
-            supplyItemsExtra = [];
-            supplyItemsWaste = [];
-            $("#setAmountTaminModal").modal("toggle");
         };
 
         const acceptTaminExpert = async (id) => {
@@ -2129,7 +2137,6 @@
                 const res = await axios(`/Factor/AcceptTaminExpert/${id}`);
                 if (res.status === 200) {
                     toastifySuccess("پیش فاکتور تایید شد.");
-                    await GetPreFactorTaminExpert();
                     FLshowLoading(false);
                     return true;
                 }
