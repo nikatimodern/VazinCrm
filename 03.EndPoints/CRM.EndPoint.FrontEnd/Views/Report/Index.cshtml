@@ -5,7 +5,7 @@
 
 <div class="mx-auto col-12">
     <div style="width:100%">
-        <div class="w-100">
+        <div class="report-page-header w-100">
             <div class="d-flex justify-content-between align-items-start flex-wrap" style="column-gap:.5rem;row-gap: .25rem">
                 <div class="col-12 col-md-auto d-flex align-items-center gap-2 flex-wrap" style="flex:unset">
                     <div class="d-flex align-items-center justify-content-between flex-grow-1 flex-wrap flex-lg-nowrap" style="gap:4px">
@@ -69,20 +69,20 @@
                 </div>
             </div>
             <div>
-                <div id="resultFollowUpContainer" class="form-group col-12 d-flex flex-wrap gap-2">
-                    <div id="resultCallWrapper">
-                        <label for="resultCallFilter" class="text-dark">نتیجه تماس:</label>
-                        <select class="form-select" name="resultCallId" id="resultCallFilter">
+                <div id="resultFollowUpFilterContainer" class="d-flex flex-wrap gap-2 mt-2 d-none">
+                    <div class="resultCallWrapper">
+                        <label for="resultCallFilter" style="color: #444">نتیجه تماس:</label>
+                        <select class="form-select form-select-sm" name="resultCallId" id="resultCallFilter">
                         </select>
                     </div>
-                    <div id="finalResultCallWrapper" class="d-none">
-                        <label for="finalResultCallFilter" class="text-dark">نتیجه نهایی:</label>
-                        <select class="form-select" name="finalResultCallId" id="finalResultCallFilter">
+                    <div class="finalResultCallWrapper">
+                        <label for="finalResultCallFilter" style="color: #444">نتیجه نهایی:</label>
+                        <select class="form-select form-select-sm" name="finalResultCallId" id="finalResultCallFilter">
                         </select>
                     </div>
-                    <div id="reasonCancelWrapper" class="d-none">
-                        <label for="reasonCancelFilter" class="text-dark">علت انصراف:</label>
-                        <select class="form-select" name="reasonCancelId" id="reasonCancelFilter">
+                    <div class="reasonCancelWrapper">
+                        <label for="reasonCancelFilter" style="color: #444">علت انصراف:</label>
+                        <select class="form-select form-select-sm" name="reasonCancelId" id="reasonCancelFilter">
                         </select>
                     </div>
                 </div>
@@ -133,19 +133,7 @@
                 await getAllReports(filterReportConfig);
             });
 
-
-            document.querySelectorAll("input[name='reportStatus']").forEach(radio => {
-                radio.addEventListener("change", async (e) => {
-                    filterReportConfig._type = Number(e.target.value);
-                    await getAllReports(filterReportConfig);
-                });
-            });
-
-
-            const baseItem = await getBaseItemsReport();
-            createOption("resultCallFilter", baseItem.resultCall);
-            createOption("finalResultCallFilter", baseItem.finalResultCall);
-            createOption("reasonCancelFilter", baseItem.reasonCancel);
+            await initReportHeader();
         });
 
 
@@ -155,12 +143,12 @@
             const data = filterReportConfig || {};
 
             const model = {
+                ...data,
                 filt: data.filterVar,
                 serVal: data.varSearch,
                 _type: filterReportConfig._type ?? -1,
                 count: filterReportConfig.count ?? 50,
             };
-
 
             fetch("/Report/ExportExcelReport", {
                 method: "POST",
@@ -191,6 +179,77 @@
                     console.error("Error:", error);
                 });
         };
+
+
+        async function initReportHeader() {
+            const baseItem = await getBaseItemsReport();
+            createOption("resultCallFilter", baseItem.resultCall, true, "همه");
+            createOption("finalResultCallFilter", baseItem.finalResultCall, true, "همه");
+            createOption("reasonCancelFilter", baseItem.reasonCancel, true, "همه");
+
+            const container = document.querySelector(".report-page-header");
+
+            const resultCallWrapper = container.querySelector(".resultCallWrapper");
+            const finalResultCallWrapper = container.querySelector(".finalResultCallWrapper");
+            const reasonCancelWrapper = container.querySelector(".reasonCancelWrapper");
+
+            const resultCallSelect = resultCallWrapper.querySelector("select");
+            const finalResultCallSelect = finalResultCallWrapper.querySelector("select");
+            const reasonCancelSelect = reasonCancelWrapper.querySelector("select");
+
+            container.querySelectorAll("input[name='reportStatus']").forEach(elm => elm.addEventListener("change", (e) => {
+                const showResultFollowUpContainer = Number(e.target.value) === 1;
+                container.querySelector("#resultFollowUpFilterContainer").classList.toggle("d-none", !showResultFollowUpContainer);
+                reasonCancelWrapper.classList.toggle("d-none", true);
+                resultCallSelect.value = "";
+                finalResultCallSelect.value = "";
+                reasonCancelSelect.value = "";
+
+                callReports();
+            }));
+
+            resultCallSelect.addEventListener("change", (e) => {
+                const value = e.target.value;
+                const showFinalResult = value === "ed0feaf4-9264-4028-b8cf-1a268bfc1c9a"
+                    || value === "310df88c-b65b-4f26-9f1e-ab72f489bc1e"
+                    || value === "986e7e82-9853-402f-a7f6-36252965ff82";
+                const showReasonCancel = value === "986e7e82-9853-402f-a7f6-36252965ff82";
+
+                if (showReasonCancel) {
+                    finalResultCallSelect.value = "82769710-880f-43aa-bd83-f5c6016ce38c";
+                }
+                reasonCancelWrapper.classList.toggle("d-none", finalResultCallSelect.value !== "82769710-880f-43aa-bd83-f5c6016ce38c");
+
+                toggleElementsDisabled(finalResultCallSelect, showReasonCancel);
+
+                callReports();
+            });
+
+            finalResultCallSelect.addEventListener("change", (e) => {
+                const value = e.target.value;
+                const showReasonCancel = value === "82769710-880f-43aa-bd83-f5c6016ce38c";
+
+                reasonCancelSelect.value = "";
+                reasonCancelWrapper.classList.toggle("d-none", !showReasonCancel);
+                toggleElementsRequired(reasonCancelSelect, showReasonCancel);
+
+                callReports();
+            });
+
+            reasonCancelSelect.addEventListener("change", () => {
+                callReports();
+            });
+
+            function callReports() {
+                const reportType = container.querySelector("input[name='reportStatus']:checked").value;
+                filterReportConfig._type = Number(reportType);
+                filterReportConfig.resultCallId = resultCallSelect.value || null;
+                filterReportConfig.reasonCancelId = reasonCancelSelect.value || null;
+                filterReportConfig.finalResultCallId = finalResultCallSelect.value || null;
+                getAllReports(filterReportConfig);
+            }
+        }
+
 
     </script>
 }
