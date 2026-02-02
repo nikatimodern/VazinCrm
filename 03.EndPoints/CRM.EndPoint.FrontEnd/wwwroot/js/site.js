@@ -1172,11 +1172,13 @@ const getBaseItemsReport = async () => {
         const res = await axios(`/Report/GetBaseItemsReport`);
         if (res.status === 200) {
             return res.data;
-            /*return res.data.reduce((acc, cur) => {
+            /*
+            return res.data.reduce((acc, cur) => {
                 if (cur.typeCode === 4) return { ...acc, resultCall: [...acc.resultCall, { value: cur.id, text: cur.title }] };
                 if (cur.typeCode === 5) return { ...acc, finalResultCall: [...acc.finalResultCall, { value: cur.id, text: cur.title }] };
                 if (cur.typeCode === 6) return { ...acc, reasonCancel: [...acc.reasonCancel, { value: cur.id, text: cur.title }] };
-            }, { resultCall: [], finalResultCall: [], reasonCancel: [] });*/
+            }, { resultCall: [], finalResultCall: [], reasonCancel: [] });
+            */
         }
     } catch (err) {
         console.log(err);
@@ -1189,7 +1191,6 @@ async function initReportModal() {
     createOption("resultCall", baseItem.resultCall);
     createOption("finalResultCall", baseItem.finalResultCall);
     createOption("reasonCancel", baseItem.reasonCancel);
-    
     
     const ReportFormElm = document.getElementById("ReportFormId");
     
@@ -1300,8 +1301,7 @@ const ShowModalReport = async (model, passType = 0, dealId = null, dealSerialNum
         },
     });
     
-    
-    $("#ModalReport").modal("toggle");
+    ModalToggle("#ModalReport")
 };
 const closeModalReport = () => {
     oldReport = null;

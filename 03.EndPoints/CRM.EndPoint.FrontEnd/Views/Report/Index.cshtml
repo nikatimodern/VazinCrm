@@ -5,7 +5,7 @@
 
 <div class="mx-auto col-12">
     <div style="width:100%">
-        <div style="width:100%;">
+        <div class="w-100">
             <div class="d-flex justify-content-between align-items-start flex-wrap" style="column-gap:.5rem;row-gap: .25rem">
                 <div class="col-12 col-md-auto d-flex align-items-center gap-2 flex-wrap" style="flex:unset">
                     <div class="d-flex align-items-center justify-content-between flex-grow-1 flex-wrap flex-lg-nowrap" style="gap:4px">
@@ -34,6 +34,7 @@
                             <label for="reportStatus-satisfaction">رضایتمندی</label>
                         </li>
                     </ul>
+
                     <div id="ContentReportFilterId" class="ContentFilter"></div>
                 </div>
                 <div class="d-flex justify-content-between flex-grow-1 gap-2 flex-wrap">
@@ -64,6 +65,25 @@
                                 <i class="fa fa-plus"></i>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div id="resultFollowUpContainer" class="form-group col-12 d-flex flex-wrap gap-2">
+                    <div id="resultCallWrapper">
+                        <label for="resultCallFilter" class="text-dark">نتیجه تماس:</label>
+                        <select class="form-select" name="resultCallId" id="resultCallFilter">
+                        </select>
+                    </div>
+                    <div id="finalResultCallWrapper" class="d-none">
+                        <label for="finalResultCallFilter" class="text-dark">نتیجه نهایی:</label>
+                        <select class="form-select" name="finalResultCallId" id="finalResultCallFilter">
+                        </select>
+                    </div>
+                    <div id="reasonCancelWrapper" class="d-none">
+                        <label for="reasonCancelFilter" class="text-dark">علت انصراف:</label>
+                        <select class="form-select" name="reasonCancelId" id="reasonCancelFilter">
+                        </select>
                     </div>
                 </div>
             </div>
@@ -120,6 +140,12 @@
                     await getAllReports(filterReportConfig);
                 });
             });
+
+
+            const baseItem = await getBaseItemsReport();
+            createOption("resultCallFilter", baseItem.resultCall);
+            createOption("finalResultCallFilter", baseItem.finalResultCall);
+            createOption("reasonCancelFilter", baseItem.reasonCancel);
         });
 
 
