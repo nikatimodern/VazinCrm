@@ -12,6 +12,13 @@ namespace CRM.EndPoint.FrontEnd.Models.ViewModel
         public filterV? filt { get; set; }
     }
     
+    public class ReportFilterVModel : filterVModel
+    {
+        public Guid? ResultCallId { get; set; }
+        public Guid? FinalResultCallId { get; set; }
+        public Guid? ReasonCancelId { get; set; }
+    }
+
     public class AccfilterVModel : filterVModel
     {
         public int PayType { get; set; }
