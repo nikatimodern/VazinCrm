@@ -96,103 +96,69 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> ExportExcelReport([FromBody] filterVModel model)
+        public async Task<IActionResult> ExportExcelReport([FromBody] ReportFilterVModel model)
         {
             try
             {
-                var user = await userManager.GetUserAsync(HttpContext.User);
-                using (var workbook = new XLWorkbook())
+                using var workbook = new XLWorkbook();
+                //workbook.ColumnWidth = 30;
+                var worksheet = workbook.Worksheets.Add("Reports");
+                worksheet.Columns().AdjustToContents();
+
+                worksheet.RightToLeft = true;
+                var currentRow = 1;
+
+                worksheet.Row(currentRow).Style.Fill.SetBackgroundColor(XLColor.LightGreen);
+                worksheet.Row(currentRow).Style.Font.Bold = true;
+                worksheet.Cell(currentRow, 1).Value = "ردیف";
+                worksheet.Cell(currentRow, 2).Value = "تاریخ";
+                worksheet.Cell(currentRow, 3).Value = "نوع";
+                worksheet.Cell(currentRow, 4).Value = "مشتری";
+                worksheet.Cell(currentRow, 5).Value = "تلفن";
+                worksheet.Cell(currentRow, 6).Value = "متن گزارش";
+                worksheet.Cell(currentRow, 7).Value = "کارشناس فروش";
+                if (model._type == (int)ReportTypeEnum.گزارش_پیگیری)
                 {
-                    //workbook.ColumnWidth = 30;
-                    var worksheet = workbook.Worksheets.Add("Reports");
-                    worksheet.Columns().AdjustToContents();
-
-                    worksheet.RightToLeft = true;
-                    var currentRow = 1;
-
-                    worksheet.Row(currentRow).Style.Fill.SetBackgroundColor(XLColor.LightGreen);
-                    worksheet.Row(currentRow).Style.Font.Bold = true;
-                    worksheet.Cell(currentRow, 1).Value = "ردیف";
-                    worksheet.Cell(currentRow, 2).Value = "تاریخ";
-                    worksheet.Cell(currentRow, 3).Value = "نوع";
-                    worksheet.Cell(currentRow, 4).Value = "مشتری";
-                    worksheet.Cell(currentRow, 5).Value = "تلفن";
-                    worksheet.Cell(currentRow, 6).Value = "متن گزارش";
-                    worksheet.Cell(currentRow, 7).Value = "کارشناس فروش";
+                    worksheet.Cell(currentRow, 8).Value = "نتیجه تماس";
+                    worksheet.Cell(currentRow, 9).Value = "نتیجه نهایی";
+                    worksheet.Cell(currentRow, 10).Value = "علت انصراف";
+                }
 
 
-                    IQueryable<Report> Qreps = null;
+                var data = await GetAllReports(model);
 
-
-                    //DateTime fdate = DateTime.Parse(dts.GetDateMiladi(model.fromDate).ToString()).Date ;
-                    //DateTime tdate = DateTime.Parse(dts.GetDateMiladi(model.toDate).ToString()).Date;
-
-                    //Qreps = db.Reports.Where(f => f.RegDate.Date >= fd && f.RegDate.Date <= td).AsQueryable();
-                    List<Report> reps = null;
-
-                    if (userManager.IsInRoleAsync(user, "مدیر ارشد").Result || userManager.IsInRoleAsync(user, "مدیر فروش").Result)
+                foreach (var item in data)
+                {
+                    currentRow++;
+                    if (currentRow % 2 == 0)
+                        worksheet.Row(currentRow).Style.Fill.SetBackgroundColor(XLColor.LightCyan);
+                    worksheet.Cell(currentRow, 1).Value = currentRow;
+                    worksheet.Cell(currentRow, 2).Value = TextService.ToEnglishNumber(item.RegDateTxt + " " + item.RegTimeTxt);
+                    worksheet.Cell(currentRow, 3).Value = item.ReportTypeTxt;
+                    worksheet.Cell(currentRow, 4).Value = item.CustomerTxt;
+                    worksheet.Cell(currentRow, 5).Value = item.RepTel;
+                    worksheet.Cell(currentRow, 6).Value = item.ReportText;
+                    worksheet.Cell(currentRow, 7).Value = item.UserCreator;
+                    if (model._type == (int)ReportTypeEnum.گزارش_پیگیری)
                     {
-                        Qreps = db.Reports.AsQueryable();
-                    } else
-                    {
-                        Qreps = db.Reports.Where(f => f.UserCreatorID == user.Id).AsQueryable();
-                    }
-
-                    Qreps = Qreps.Where(r =>
-                        (EF.Functions.Like(r.CustomerTxt, "%" + model.serVal + "%") ||
-                         EF.Functions.Like(r.ReportText, "%" + model.serVal + "%")) &&
-                        (model._type == -1 || r.ReportType == (ReportTypeEnum)model._type)
-                    ).AsQueryable();
-
-                    if (model.filt != null)
-                    {
-                        var fd = dts.GetDateMiladi(model.filt.fromDate);
-                        var td = dts.GetDateMiladi(model.filt.toDate);
-                        fd = fd == null ? dts.GetDateMiladi("1000/01/01") : fd;
-                        td = td == null ? DateTime.Now : td;
-                        if (model.filt.CusFilterChd == true)
-                            Qreps = Qreps.Where(f => f.CustomerId == model.filt.customerFilter).AsQueryable();
-                        if (model.filt.DateFilterChk == true)
-                            Qreps = Qreps.Where(f => f.RegDate >= fd && f.RegDate <= td).OrderByDescending(f => f.CreateDate).AsQueryable();
-                        if (model.filt.SelFilterChd == true)
-                            Qreps = Qreps.Where(f => f.UserCreatorID == model.filt.selFilter.ToString()).AsQueryable();
-                    }
-
-
-                    if (model.Count == 0)
-                        reps = Qreps.OrderByDescending(f => f.CreateDate).ToList();
-                    else
-                        reps = Qreps.OrderByDescending(f => f.CreateDate).Take(model.Count).ToList();
-
-
-                    foreach (var item in reps)
-                    {
-                        currentRow++;
-                        if (currentRow % 2 == 0)
-                            worksheet.Row(currentRow).Style.Fill.SetBackgroundColor(XLColor.LightCyan);
-                        worksheet.Cell(currentRow, 1).Value = currentRow;
-                        worksheet.Cell(currentRow, 2).Value = TextService.ToEnglishNumber(item.RegDateTxt + " " + item.RegTimeTxt);
-                        worksheet.Cell(currentRow, 3).Value = item.ReportTypeTxt;
-                        worksheet.Cell(currentRow, 4).Value = item.CustomerTxt;
-                        worksheet.Cell(currentRow, 5).Value = item.RepTel;
-                        worksheet.Cell(currentRow, 6).Value = item.ReportText;
-                        worksheet.Cell(currentRow, 7).Value = item.UserCreator;
-                    }
-
-                    worksheet.Columns().AdjustToContents();
-                    worksheet.Columns().Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                    worksheet.Columns().Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-
-                    using (var stream = new MemoryStream())
-                    {
-                        workbook.SaveAs(stream);
-                        var content = stream.ToArray();
-                        return File(
-                            content,
-                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            "Reports.xlsx");
+                        worksheet.Cell(currentRow, 8).Value = item.ResultCallTxt;
+                        worksheet.Cell(currentRow, 9).Value = item.FinalResultCallTxt;
+                        worksheet.Cell(currentRow, 10).Value = item.ReasonCancelTxt;
                     }
                 }
+
+                worksheet.Columns().AdjustToContents();
+                worksheet.Columns().Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                worksheet.Columns().Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+                using var stream = new MemoryStream();
+                workbook.SaveAs(stream);
+                var content = stream.ToArray();
+                return File(
+                    content,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "Reports.xlsx"
+                );
             }
             catch (Exception e)
             {
@@ -241,7 +207,30 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [HttpPost]
-        public async Task<IActionResult> GetAllReportPartial([FromBody] filterVModel model, [FromQuery] Guid? dealId = null)
+        public async Task<IActionResult> GetAllReportPartial([FromBody] ReportFilterVModel model, [FromQuery] Guid? dealId = null)
+        {
+            var data = await GetAllReports(model, dealId);
+
+            var userIds = data.Select(r => r.UserCreatorID).Distinct().ToList();
+            var userImages = await udb.Users
+                .Where(u => userIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u.PersonImageUrl);
+
+            foreach (var r in data)
+            {
+                if (userImages.TryGetValue(r.UserCreatorID, out var img))
+                    r.UserImage = img;
+            }
+
+            var html = await vrs.RenderToStringAsync("GetAllReportPartial", data,
+                new Dictionary<string, object> {
+                    { "PassType", ViewBag.PassType }
+                });
+
+            return Ok(new { count = data.Count, html });
+        }
+
+        private async Task<List<Report>> GetAllReports(ReportFilterVModel model, Guid? dealId = null)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var rols = await userManager.GetRolesAsync(user);
@@ -266,6 +255,24 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (model._type != -1)
                 {
                     qData = qData.Where(r => r.ReportType == (ReportTypeEnum)model._type);
+                }
+
+                if (model._type == 1)
+                {
+                    if (model.ResultCallId != null)
+                    {
+                        qData = qData.Where(f => f.ResultCallId == model.ResultCallId);
+                    }
+
+                    if (model.FinalResultCallId != null)
+                    {
+                        qData = qData.Where(f => f.FinalResultCallId == model.FinalResultCallId);
+                    }
+
+                    if (model.ReasonCancelId != null)
+                    {
+                        qData = qData.Where(f => f.ReasonCancelId == model.ReasonCancelId);
+                    }
                 }
 
 
@@ -297,23 +304,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
 
             var data = await qData.AsNoTracking().ToListAsync();
-                        var userIds = data.Select(r => r.UserCreatorID).Distinct().ToList();
-            var userImages = await udb.Users
-                .Where(u => userIds.Contains(u.Id))
-                .ToDictionaryAsync(u => u.Id, u => u.PersonImageUrl);
-
-            foreach (var r in data)
-            {
-                if (userImages.TryGetValue(r.UserCreatorID, out var img))
-                    r.UserImage = img;
-            }
-
-            var html = await vrs.RenderToStringAsync("GetAllReportPartial", data,
-                new Dictionary<string, object> {
-                    { "PassType", ViewBag.PassType }
-                });
-
-            return Ok(new { count = data.Count, html });
+            return data;
         }
 
 
