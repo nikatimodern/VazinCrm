@@ -576,9 +576,12 @@
 
         document.querySelectorAll("input[name='roleTypeChange']").forEach(radio => {
             radio.addEventListener("change", async (e) => {
-                allLoaded = false;
                 roleType = e.target.value;
-                loadCustomers();
+                if (SearchInp.value.trim().length !== 0)
+                    SearchAllCustomer(SearchInp.value);
+                else {
+                    loadCustomers();
+                }
             });
         });
 
@@ -638,7 +641,7 @@
         const SearchAllCustomer = (val) => {
             $("#LoadingCusPartId").css("display", "flex");
             $("#CustomerPartial").children().remove();
-            $.get(baseUrl + "Customer/SearchAllCustomerPartial?val=" + val, (res) => {
+            $.get(`/Customer/SearchAllCustomerPartial?val=${val}&roleType=${roleType}`, (res) => {
                 $("#CustomerPartial").append(res);
                 $("#btnShowAllId").css("display", "none");
                 $("#LoadingCusPartId").css("display", "none");

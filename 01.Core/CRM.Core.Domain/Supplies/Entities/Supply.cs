@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Supplies.Enums;
 
 namespace CRM.Core.Domain.Supplies.Entities {
     public class Supply : BaseEntity {
@@ -20,11 +21,5 @@ namespace CRM.Core.Domain.Supplies.Entities {
         public decimal TotalAmount { get; set; }
         public SupplyTypeEnum SupplyType { get; set; }
         public string SupplyTypeTxt { get; set; }
-    }
-
-    public enum SupplyTypeEnum {
-        هزینه_تولید = 1,
-        هزینه_اضافی = 2,
-        ضایعات = 3
     }
 }

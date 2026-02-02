@@ -4902,3 +4902,30 @@ table tr.payment-vosoled > td {
   font-weight: bold;
   line-height: normal;
 }
+/*  */
+
+.item-preview-box {
+  background: #f3f4f5;
+  border: 1px dashed #adb5bd;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  margin: .5rem .5rem 0;
+}
+
+.item-preview-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.item-preview-label {
+  color: #6c757d;
+  white-space: nowrap;
+}
+
+.item-preview-value {
+  font-family: IRANSansBold;
+  color: #212529;
+  text-align: left;
+}

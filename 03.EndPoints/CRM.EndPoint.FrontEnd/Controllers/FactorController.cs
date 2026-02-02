@@ -39,6 +39,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Supplies.Entities;
+using CRM.Core.Domain.Supplies.Enums;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Accountency;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 
@@ -2943,7 +2944,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var setting = await db.ASettings.FirstOrDefaultAsync();
 
             var preFactorId = model.First()?.PrefactorId;
-            var oldPreFactor = await db.PreFactors.AsNoTracking().Where(f => f.Id == preFactorId).Include(f => f.PreFactorItems)
+            var oldPreFactor = await db.PreFactors.AsNoTracking().Where(f => f.Id == preFactorId)
+                .Include(f => f.PreFactorItems)
                 .FirstOrDefaultAsync();
             var preFactor = await db.PreFactors.Where(f => f.Id == preFactorId).FirstOrDefaultAsync();
 
@@ -2956,7 +2958,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (preFactor.TaminStep != TaminStepEnum.تایید_شده)
                 {
                     preFactor.TaminStep = TaminStepEnum.تعیین_تامین_کننده;
-                    preFactor.TaminStepTxt = TaminStepEnum.تعیین_تامین_کننده.ToString().Replace("_", " ");
+                    preFactor.TaminStepTxt = nameof(TaminStepEnum.تعیین_تامین_کننده).Replace("_", " ");
                 }
             }
 
@@ -2974,8 +2976,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await _logSystemService.LogChange(oldPreFactor, preFactor, LogActionEnum.ویرایش, user, ["PreFactorItems"]);
             await db.SaveChangesAsync();
 
-            var updatedPreFactor = await db.PreFactors.Include(f => f.PreFactorItems).FirstOrDefaultAsync(f => f.Id == preFactorId);
-            return Ok(updatedPreFactor);
+            //var updatedPreFactor = await db.PreFactors.Include(f => f.PreFactorItems).FirstOrDefaultAsync(f => f.Id == preFactorId);
+            return Ok();
         }
 
 
