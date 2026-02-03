@@ -21,14 +21,16 @@ public class PushService : IPushService {
     private readonly CRMContextDb db;
     private readonly UserContextDb udb;
     private readonly UserManager<AppUser> userManager;
+    private readonly WebPushClient client;
     private static PushSubscription _lastSubscription;
 
-    public PushService(IConfiguration config, CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager)
+    public PushService(IConfiguration config, CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, WebPushClient client)
     {
         _config = config;
         this.db = db;
         this.udb = udb;
         this.userManager = userManager;
+        this.client = client;
     }
 
     public string GetPublicKey()
@@ -93,7 +95,7 @@ public class PushService : IPushService {
 
     private async Task SendInternalAsync(IEnumerable<WebPushSubscription> subs, string title, string body, string url, string tag)
     {
-        await Parallel.ForEachAsync(subs, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async (sub, ct) => {
+        await Parallel.ForEachAsync(subs, new ParallelOptions { MaxDegreeOfParallelism = 3 }, async (sub, ct) => {
             try
             {
                 await SendAsync(
@@ -110,27 +112,50 @@ public class PushService : IPushService {
             }
         });
 
+        /*foreach (var sub in subs)
+               {
+                   try
+                   {
+                       await SendAsync(
+                           new PushSubscription(sub.Endpoint, sub.P256dh, sub.Auth),
+                           title,
+                           body,
+                           url,
+                           tag
+                       );
+                   }
+                   catch (WebPushException ex) when (ex.StatusCode == HttpStatusCode.Gone)
+                   {
+                       sub.IsActive = false;
+                   }
+               }*/
 
         await db.SaveChangesAsync();
     }
 
     private async Task SendAsync(PushSubscription sub, string title, string body, string url, string tag = "general")
     {
-        var vapidDetails = new VapidDetails(
-            "mailto:it@vazinplast.com",
-            _config["Vapid:PublicKey"],
-            _config["Vapid:PrivateKey"]
-        );
+        try
+        {
+            var vapidDetails = new VapidDetails(
+                "mailto:it@vazinplast.com",
+                _config["Vapid:PublicKey"],
+                _config["Vapid:PrivateKey"]
+            );
 
-        var client = new WebPushClient();
+            var payload = JsonConvert.SerializeObject(new {
+                title,
+                body,
+                url,
+                tag
+            });
 
-        var payload = JsonConvert.SerializeObject(new {
-            title,
-            body,
-            url,
-            tag
-        });
-
-        await client.SendNotificationAsync(sub, payload, vapidDetails);
+            await client.SendNotificationAsync(sub, payload, vapidDetails);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            throw;
+        }
     }
 }

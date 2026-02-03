@@ -51,7 +51,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         public CartableController(IVeiwRenderService vrs, UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager, Service GenService,
-            FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb s1db, IPushQueue pushQueue)
+            FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb s1db, IPushQueue pushQueue, IPushService pushService)
         {
             this.vrs = vrs;
             this.userManager = userManager;
@@ -125,6 +125,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     Body = "این یک پوش نوتیف تست جدید است، اینو فرستادم که در جریان اتفاقات ما باشی!",
                     Url = "/"
                 });
+                //await pushService.SendToAllAsync("سلام وزین پلاستی", "این یک پوش نوتیف تست است", "/", null);
+
+
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var roles = await userManager.GetRolesAsync(user);
 

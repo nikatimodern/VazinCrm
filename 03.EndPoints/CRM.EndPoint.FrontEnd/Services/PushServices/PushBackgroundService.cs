@@ -41,7 +41,7 @@ public class PushBackgroundService : BackgroundService {
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex);
             }
         }
     }

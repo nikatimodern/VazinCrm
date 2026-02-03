@@ -25,6 +25,9 @@ using System;
 using System.Security.Claims;
 using CRM.EndPoint.FrontEnd.Services.PushServices;
 
+using System.Net;
+using System.Net.Http;
+using WebPush;
 
 namespace CRM.EndPoint.FrontEnd {
     public class Startup {
@@ -40,6 +43,7 @@ namespace CRM.EndPoint.FrontEnd {
         {
             return EnCodeDeCode.Decrypt(EncodeText);
         }
+
 
 
         public void ConfigureServices(IServiceCollection services)
@@ -136,6 +140,24 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddSingleton<IPushQueue, PushQueue>();
             services.AddHostedService<PushBackgroundService>();
             services.AddScoped<IPushService, PushService>();
+
+            services.AddSingleton<WebPushClient>(sp =>
+            {
+                var handler = new SocketsHttpHandler
+                {
+                    EnableMultipleHttp2Connections = false,
+                    PooledConnectionLifetime = TimeSpan.FromMinutes(5)
+                };
+
+                var httpClient = new HttpClient(handler)
+                {
+                    Timeout = TimeSpan.FromSeconds(10)
+                };
+
+                return new WebPushClient(httpClient);
+            });
+
+
 
 
             var mvc = services.AddControllersWithViews();

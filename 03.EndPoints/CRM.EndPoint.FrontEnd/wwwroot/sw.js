@@ -25,21 +25,6 @@ self.addEventListener("activate", event => {
     self.clients.claim();
 });
 
-/*self.addEventListener("fetch", event => {
-    
-    // فقط navigation (load صفحه)
-    if (event.request.mode === "navigate") {
-        event.respondWith(
-            fetch(event.request)
-                .then(response => {
-                    return response;
-                })
-                .catch(error => {
-                    return caches.match(OFFLINE_URL[0]);
-                }),
-        );
-    }
-});*/
 self.addEventListener("fetch", event => {
     const req = event.request;
     
@@ -61,15 +46,22 @@ self.addEventListener("fetch", event => {
 
 
 self.addEventListener("push", event => {
+    console.log(event);
     if (!event.data) return;
     const data = event.data.json();
     
     const options = {
         body: data.body || "",
         icon: "/Img/icons/logo-vazinplast-192.png",
-        // badge: "/icons/badge.png",
-        image: "/static/noNet.png",
-        
+        //badge: "/Img/icons/logo-vazinplast-72.png",
+        //image: "/static/noNet.png",
+        tag: data.tag || "general",
+        renotify: true,
+        silent: false,
+        vibrate: [200, 50, 200, 50, 200],
+        requireInteraction: false,
+        dir: "rtl",
+        lang: "fa-IR",
         data: {
             url: data.url || "/",
         },
@@ -78,17 +70,7 @@ self.addEventListener("push", event => {
                 action: "open",
                 title: "مشاهده",
             },
-            /* {
-                 action: "dismiss",
-                 title: "بستن"
-             }*/
         ],
-        tag: data.tag || "general",
-        renotify: true,
-        silent: false,
-        requireInteraction: true,
-        dir: "rtl",
-        lang: "fa-IR"
     };
     event.waitUntil(
         self.registration.showNotification(
@@ -99,14 +81,20 @@ self.addEventListener("push", event => {
 });
 
 self.addEventListener("notificationclick", event => {
-    console.log("notificationclick", event);
     event.notification.close();
     
     const targetUrl = event.notification.data?.url || "/";
+    
+   /* if (event.action === "dismiss") {
+        return;
+    }*/
+    
     event.waitUntil(
         clients.matchAll({ type: "window", includeUncontrolled: true })
                .then(clientList => {
                    for (const client of clientList) {
+                       console.log(client.url);
+                       console.log(targetUrl);
                        if (client.url === targetUrl && "focus" in client) {
                            return client.focus();
                        }
