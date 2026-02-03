@@ -2,21 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.WebPushSubscriptions.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
-using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
 using Generics.Infrastructures.Sql;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using WebPush;
 
-namespace CRM.EndPoint.FrontEnd.Services;
+namespace CRM.EndPoint.FrontEnd.Services.PushServices;
 
 public class PushService : IPushService {
     private readonly IConfiguration _config;
@@ -64,58 +62,59 @@ public class PushService : IPushService {
     }
 
 
-
-    public async Task SendToUserAsync(string userId, string title, string body, string url)
+    public async Task SendToUserAsync(string userId, string title, string body, string url, string tag)
     {
         var subs = await db.WebPushSubscriptions
             .Where(x => x.UserId == userId && x.IsActive)
             .ToListAsync();
 
-        await SendInternalAsync(subs, title, body, url);
+        await SendInternalAsync(subs, title, body, url, tag);
     }
 
-    public async Task SendToRoleAsync(string roleName, string title, string body, string url)
+    public async Task SendToRoleAsync(string roleName, string title, string body, string url, string tag)
     {
-        var usersIds = (await userManager.GetUsersInRoleAsync(roleName)).Select(f => f.Id).ToArray();
+        var userIds = (await userManager.GetUsersInRoleAsync(roleName)).Select(u => u.Id).ToHashSet();
+
         var subs = await db.WebPushSubscriptions
-            .Where(x => usersIds.Contains(x.UserId) && x.IsActive)
+            .Where(s => s.IsActive && userIds.Contains(s.UserId))
             .ToListAsync();
 
-        await SendInternalAsync(subs, title, body, url);
+        await SendInternalAsync(subs, title, body, url, tag);
     }
 
-    public async Task SendToAllAsync(string title, string body, string url)
+    public async Task SendToAllAsync(string title, string body, string url, string tag)
     {
         var subs = db.WebPushSubscriptions
             .Where(x => x.IsActive)
             .ToList();
 
-        await SendInternalAsync(subs, title, body, url);
+        await SendInternalAsync(subs, title, body, url, tag);
     }
 
-    private async Task SendInternalAsync(IEnumerable<WebPushSubscription> subs, string title, string body, string url)
+    private async Task SendInternalAsync(IEnumerable<WebPushSubscription> subs, string title, string body, string url, string tag)
     {
-        foreach (var sub in subs.Where(x => x.IsActive))
-        {
+        await Parallel.ForEachAsync(subs, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async (sub, ct) => {
             try
             {
                 await SendAsync(
                     new PushSubscription(sub.Endpoint, sub.P256dh, sub.Auth),
                     title,
                     body,
-                    url
+                    url,
+                    tag
                 );
             }
             catch (WebPushException ex) when (ex.StatusCode == HttpStatusCode.Gone)
             {
                 sub.IsActive = false;
             }
-        }
+        });
+
 
         await db.SaveChangesAsync();
     }
 
-    private async Task SendAsync(PushSubscription sub, string title, string body, string url)
+    private async Task SendAsync(PushSubscription sub, string title, string body, string url, string tag = "general")
     {
         var vapidDetails = new VapidDetails(
             "mailto:it@vazinplast.com",
@@ -128,7 +127,8 @@ public class PushService : IPushService {
         var payload = JsonConvert.SerializeObject(new {
             title,
             body,
-            url
+            url,
+            tag
         });
 
         await client.SendNotificationAsync(sub, payload, vapidDetails);

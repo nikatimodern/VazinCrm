@@ -63,12 +63,13 @@ self.addEventListener("fetch", event => {
 self.addEventListener("push", event => {
     if (!event.data) return;
     const data = event.data.json();
-    console.log("push", event);
     
     const options = {
         body: data.body || "",
         icon: "/Img/icons/logo-vazinplast-192.png",
         // badge: "/icons/badge.png",
+        image: "/static/noNet.png",
+        
         data: {
             url: data.url || "/",
         },
@@ -85,8 +86,10 @@ self.addEventListener("push", event => {
         tag: data.tag || "general",
         renotify: true,
         silent: false,
+        requireInteraction: true,
+        dir: "rtl",
+        lang: "fa-IR"
     };
-    console.log(options);
     event.waitUntil(
         self.registration.showNotification(
             data.title || "پیام جدید",

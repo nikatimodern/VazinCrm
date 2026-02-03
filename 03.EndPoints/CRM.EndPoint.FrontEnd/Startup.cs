@@ -23,6 +23,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Security.Claims;
+using CRM.EndPoint.FrontEnd.Services.PushServices;
 
 
 namespace CRM.EndPoint.FrontEnd {
@@ -131,6 +132,9 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IVeiwRenderService, VeiwRenderService>();
             services.AddScoped<LogSystemService>();
+
+            services.AddSingleton<IPushQueue, PushQueue>();
+            services.AddHostedService<PushBackgroundService>();
             services.AddScoped<IPushService, PushService>();
 
 

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using WebPush;

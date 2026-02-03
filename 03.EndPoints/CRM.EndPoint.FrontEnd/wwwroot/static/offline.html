@@ -7,9 +7,6 @@
   
   <style>
     :root {
-      --primary: #004944;
-      --bg: #ffffff;
-      --text: #1f2937;
       font-size: 14px;
     }
     
@@ -43,9 +40,9 @@
     
     body {
       margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
+      background: #fff;
+      color: #1f2937;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -61,9 +58,6 @@
     
     
     .icon {
-      /* width: 88px;
-      height: 88px;
-      background: rgba(0, 73, 68, 0.1); */
       margin: 0 auto 20px;
       border-radius: 50%;
       display: flex;
@@ -80,7 +74,7 @@
     h1 {
       margin: 0 0 12px;
       font-size: 20px;
-      color: var(--primary);
+      color: #004944;
       font-family: IRANSansBold, serif;
     }
     
@@ -99,7 +93,7 @@
       display: inline-block;
       padding: .5rem 1rem;
       border-radius: .5rem;
-      background: var(--primary);
+      background: #004944;
       color: #fff;
       font-size: 1rem;
       transition: transform .1s ease, box-shadow .1s ease;
@@ -127,16 +121,12 @@
 
 <div class="container">
   <div class="icon">
-    <!-- <svg viewBox="0 0 24 24">
-      <path d="M12 18a2 2 0 1 0 0.001-3.999A2 2 0 0 0 12 18zm6.36-6.64a9 9 0 0 0-12.72 0l1.42 1.42a7 7 0 0 1 9.88 0l1.42-1.42zM12 2a14 14 0 0 0-9.9 4.1l1.42 1.42a12 12 0 0 1 16.96 0l1.42-1.42A14 14 0 0 0 12 2z" />
-    </svg> -->
     <img src="/static/noNet.png" alt="no-internet">
   </div>
   
-  <h1>اتصال به اینترنت برقرار نیست</h1>
+  <h1>ارتباط قطع شده است</h1>
   <p>
-    به نظر می‌رسد ارتباط شما قطع شده است.
-    لطفاً اتصال اینترنت را بررسی کرده و دوباره تلاش کنید.
+    لطفاً اتصال اینترنت خود را بررسی کرده و دوباره تلاش کنید.
   </p>
   
   <button onclick="location.reload()">

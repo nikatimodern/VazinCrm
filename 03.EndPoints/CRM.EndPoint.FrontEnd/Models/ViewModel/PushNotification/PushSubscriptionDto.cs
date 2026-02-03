@@ -1,4 +1,4 @@
-namespace CRM.EndPoint.FrontEnd.Models;
+namespace CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
 
 public class PushSubscriptionDto
 {
