@@ -1172,11 +1172,13 @@ const getBaseItemsReport = async () => {
         const res = await axios(`/Report/GetBaseItemsReport`);
         if (res.status === 200) {
             return res.data;
-            /*return res.data.reduce((acc, cur) => {
+            /*
+            return res.data.reduce((acc, cur) => {
                 if (cur.typeCode === 4) return { ...acc, resultCall: [...acc.resultCall, { value: cur.id, text: cur.title }] };
                 if (cur.typeCode === 5) return { ...acc, finalResultCall: [...acc.finalResultCall, { value: cur.id, text: cur.title }] };
                 if (cur.typeCode === 6) return { ...acc, reasonCancel: [...acc.reasonCancel, { value: cur.id, text: cur.title }] };
-            }, { resultCall: [], finalResultCall: [], reasonCancel: [] });*/
+            }, { resultCall: [], finalResultCall: [], reasonCancel: [] });
+            */
         }
     } catch (err) {
         console.log(err);
@@ -1190,20 +1192,19 @@ async function initReportModal() {
     createOption("finalResultCall", baseItem.finalResultCall);
     createOption("reasonCancel", baseItem.reasonCancel);
     
+    const container = document.getElementById("ReportFormId");
     
-    const ReportFormElm = document.getElementById("ReportFormId");
-    
-    const resultCallWrapper = ReportFormElm.querySelector("#resultCallWrapper");
-    const finalResultCallWrapper = ReportFormElm.querySelector("#finalResultCallWrapper");
-    const reasonCancelWrapper = ReportFormElm.querySelector("#reasonCancelWrapper");
+    const resultCallWrapper = container.querySelector(".resultCallWrapper");
+    const finalResultCallWrapper = container.querySelector(".finalResultCallWrapper");
+    const reasonCancelWrapper = container.querySelector(".reasonCancelWrapper");
     
     const resultCallSelect = resultCallWrapper.querySelector("select");
     const finalResultCallSelect = finalResultCallWrapper.querySelector("select");
     const reasonCancelSelect = reasonCancelWrapper.querySelector("select");
     
-    ReportFormElm.querySelectorAll("input[name='reportType']").forEach(elm => elm.addEventListener("change", (e) => {
+    container.querySelectorAll("input[name='reportType']").forEach(elm => elm.addEventListener("change", (e) => {
         const showResultFollowUpContainer = Number(e.target.value) === 1;
-        ReportFormElm.querySelector("#resultFollowUpContainer").classList.toggle("d-none", !showResultFollowUpContainer);
+        container.querySelector("#resultFollowUpContainer").classList.toggle("d-none", !showResultFollowUpContainer);
         toggleElementsRequired(resultCallSelect, showResultFollowUpContainer);
         toggleElementsRequired([finalResultCallSelect, reasonCancelSelect], false);
         finalResultCallWrapper.classList.toggle("d-none", true);
@@ -1213,7 +1214,7 @@ async function initReportModal() {
         reasonCancelSelect.value = "";
     }));
     
-    ReportFormElm.querySelector("select#resultCall").addEventListener("change", (e) => {
+    resultCallSelect.addEventListener("change", (e) => {
         const value = e.target.value;
         const showFinalResult = value === "ed0feaf4-9264-4028-b8cf-1a268bfc1c9a"
             || value === "310df88c-b65b-4f26-9f1e-ab72f489bc1e"
@@ -1300,8 +1301,7 @@ const ShowModalReport = async (model, passType = 0, dealId = null, dealSerialNum
         },
     });
     
-    
-    $("#ModalReport").modal("toggle");
+    ModalToggle("#ModalReport")
 };
 const closeModalReport = () => {
     oldReport = null;
@@ -1313,8 +1313,6 @@ const closeModalReport = () => {
 
 
 async function getAllReports(data = {}, showLoading = true) {
-    
-    
     const allReportsDashboardElm = document.getElementById("allReportsDashboardId");
     const allReportsElm = document.getElementById("allReportsId");
     if (!allReportsElm && !allReportsDashboardElm) return;
@@ -1322,13 +1320,13 @@ async function getAllReports(data = {}, showLoading = true) {
     return new Promise(async (resolve, reject) => {
         
         const model = {
+            ...data,
             filt: data.filterVar,
             serVal: data.varSearch,
             count: data.count ?? 50,
             _type: data._type ?? -1,
         };
         try {
-            
             showLoading && FLshowLoading();
             
             const res = await axios.post("/Report/GetAllReportPartial", model);
