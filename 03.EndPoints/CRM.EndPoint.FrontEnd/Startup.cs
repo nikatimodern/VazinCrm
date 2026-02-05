@@ -213,20 +213,28 @@ namespace CRM.EndPoint.FrontEnd {
 
             if (env.IsDevelopment())
             {
-                app.UseDeveloperExceptionPage();
+                app.UseExceptionHandler("/Error/500"); // فقط برای exceptionهای واقعی (500+)
+                app.UseStatusCodePagesWithReExecute("/Error/{0}"); // برای status code ها مثل 404 / 401 / 403
+               // app.UseDeveloperExceptionPage();
             } else
             {
-                app.UseExceptionHandler("/Home/Error");
+                app.UseExceptionHandler("/Error/500"); // فقط برای exceptionهای واقعی (500+)
+                app.UseStatusCodePagesWithReExecute("/Error/{0}"); // برای status code ها مثل 404 / 401 / 403
+
+                // app.UseExceptionHandler("/Home/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+
             app.UseRouting();
+
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseSession();
+
             app.UseEndpoints(endpoints => {
                 endpoints.MapControllerRoute(
                     name: "account-otp",

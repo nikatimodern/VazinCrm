@@ -3,9 +3,15 @@
 }
 
 
+* {
+  box-sizing: border-box;
+}
+
+
 body {
   font-family: IRANSans;
   background-color: rgb(240, 241, 247);
+  margin: 0;
 }
 
 
@@ -4868,28 +4874,35 @@ table tr.payment-vosoled > td {
   direction: rtl;
 }
 
+
 .error-list {
   padding-right: 0;
   margin: 0;
 }
+
 
 .error-list .error-item {
   position: relative;
   padding-right: 22px;
   color: #333;
 }
+
+
 .error-list .error-item:not(:last-child) {
   margin-bottom: 1rem;
 }
+
 
 .error-list .error-item h6 {
   font-family: IRANSansBold;
   margin-bottom: .5rem;
 }
 
+
 .error-list .error-item p {
   font-size: .85rem;
 }
+
 
 .error-list .error-item::before {
   content: "✕";
@@ -4902,6 +4915,8 @@ table tr.payment-vosoled > td {
   font-weight: bold;
   line-height: normal;
 }
+
+
 /*  */
 
 .item-preview-box {
@@ -4913,16 +4928,19 @@ table tr.payment-vosoled > td {
   margin: .5rem .5rem 0;
 }
 
+
 .item-preview-row {
   display: flex;
   justify-content: space-between;
   gap: 6px;
 }
 
+
 .item-preview-label {
   color: #6c757d;
   white-space: nowrap;
 }
+
 
 .item-preview-value {
   font-family: IRANSansBold;
@@ -4930,11 +4948,13 @@ table tr.payment-vosoled > td {
   text-align: left;
 }
 
+
 .pwa-modal {
   border-radius: 16px;
   border: none;
   padding: 10px;
 }
+
 
 .pwa-modal p {
   font-size: 14px;

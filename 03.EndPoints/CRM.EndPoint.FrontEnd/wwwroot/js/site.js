@@ -1103,13 +1103,13 @@ const MaskDate = () => {
 
 
 const ShowPreviewPfactor = (id) => {
-    window.open("/factor/PreviewPfactorPrint/" + id);
+    window.open("/factor/PreviewPfactorPrint/" + id, "_blank", "noopener,noreferrer");
 };
 const ShowPreviewFactor = (id) => {
-    window.open("/factor/PreviewFactorPrint/" + id);
+    window.open("/factor/PreviewFactorPrint/" + id, "_blank", "noopener,noreferrer");
 };
 const ShowPreviewFactorSepidar = (id) => {
-    window.open("/factor/PreviewFactorSepidarPrint/" + id);
+    window.open("/factor/PreviewFactorSepidarPrint/" + id, "_blank", "noopener,noreferrer");
 };
 const getAllProduct = async (searchValue = "", from) => {
     try {
@@ -1301,7 +1301,7 @@ const ShowModalReport = async (model, passType = 0, dealId = null, dealSerialNum
         },
     });
     
-    ModalToggle("#ModalReport")
+    ModalToggle("#ModalReport");
 };
 const closeModalReport = () => {
     oldReport = null;
@@ -2909,7 +2909,6 @@ function setUrlParams(paramsObj, options = { replace: true }) {
         history.pushState(history.state, "", url);
     }
 }
-
 
 
 /*

@@ -63,8 +63,8 @@
   }
   
   #mobileMenuId {
-    display: block;
-    overflow: auto
+    display: block !important;
+    overflow: auto !important;
   }
   
   #mainWrapper {
@@ -73,7 +73,7 @@
   
   #mainContent {
     padding-bottom: 53px !important;
-    padding-inline: 8px;
+    padding-inline: 8px !important;
   }
   
   #navbarNavMobile svg {

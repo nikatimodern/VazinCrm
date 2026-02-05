@@ -778,7 +778,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 //                    .Where(f => f.Id == id).FirstOrDefaultAsync();
                 //var customer = await db.Customers.Where(f => f.Id == factor.CustomerId).FirstOrDefaultAsync();
 
-                Invoice s1 = await S1db.vwInvoice.Include(f => f.InvoiceItems).Where(f => f.InvoiceId == id).FirstOrDefaultAsync();
+                var s1 = await S1db.vwInvoice.Include(f => f.InvoiceItems).Where(f => f.InvoiceId == id).FirstOrDefaultAsync();
+
+                if (s1 == null) return NotFound();
+
                 s1.ExtraDescription = sps.getNoteFactor(s1.InvoiceId);
 
                 var myCompany = await db.Companies.Include(f => f.CompanyFiles).FirstOrDefaultAsync();
@@ -817,6 +820,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     .Include(f => f.FactorItems)
                     .Include(f => f.Descriptions)
                     .Where(f => f.Id == id).FirstOrDefaultAsync();
+
+                if (factor == null) return NotFound();
+
                 var customer = await db.Customers.Where(f => f.Id == factor.CustomerId).FirstOrDefaultAsync();
                 var myCompany = await db.Companies.Include(f => f.CompanyFiles).FirstOrDefaultAsync();
                 FactorViewModel model = new FactorViewModel() {
@@ -852,6 +858,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     .Include(f => f.PreFactorItems.Where(f => f.IsDeleted == false))
                     .Include(f => f.Descriptions.Where(f => f.IsDeleted == false))
                     .Where(f => f.Id == id).FirstOrDefaultAsync();
+
+
+                if (pfactor == null) return NotFound();
+
 
                 var set = await db.ASettings.FirstOrDefaultAsync();
                 var myCompany = await db.Companies.Include(f => f.CompanyFiles).FirstOrDefaultAsync();

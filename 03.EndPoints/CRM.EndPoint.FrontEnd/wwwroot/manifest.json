@@ -54,19 +54,19 @@
   ],
   "screenshots": [
     {
-      "src": "/Img/screenshots/mobile-1.png",
+      "src": "/static/screenshots/mobile-1.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow"
     },
     {
-      "src": "/Img/screenshots/mobile-2.png",
+      "src": "/static/screenshots/mobile-2.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow"
     },
     {
-      "src": "/Img/screenshots/desktop-1.png",
+      "src": "/static/screenshots/desktop-1.png",
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide"
