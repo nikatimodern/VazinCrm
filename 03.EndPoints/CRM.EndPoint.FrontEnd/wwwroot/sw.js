@@ -1,14 +1,23 @@
-const CACHE_NAME = "offline-only-v1";
-const OFFLINE_URL = [
-    "/static/offline.html",
+const CACHE_VERSION = 1;
+
+const CACHE_NAME = `static-fallback-v${CACHE_VERSION}`;
+
+const STATIC_PAGES = {
+    OFFLINE: "/static/offline.html",
+};
+
+const STATIC_ASSETS = [
     "/static/noNet.png",
 ];
 
 self.addEventListener("install", (event) => {
     event.waitUntil(
-        caches.open(CACHE_NAME).then(cache => {
-            return cache.addAll(OFFLINE_URL);
-        }),
+        caches.open(CACHE_NAME).then(cache =>
+            cache.addAll([
+                ...Object.values(STATIC_PAGES),
+                ...STATIC_ASSETS,
+            ]),
+        ),
     );
     self.skipWaiting();
 });
@@ -17,8 +26,8 @@ self.addEventListener("activate", event => {
         caches.keys().then(keys =>
             Promise.all(
                 keys
-                    .filter(k => k !== CACHE_NAME)
-                    .map(k => caches.delete(k)),
+                    .filter(key => key !== CACHE_NAME)
+                    .map(key => caches.delete(key)),
             ),
         ),
     );
@@ -31,7 +40,7 @@ self.addEventListener("fetch", event => {
     // صفحه‌ها
     if (req.mode === "navigate") {
         event.respondWith(
-            fetch(req).catch(() => caches.match(OFFLINE_URL[0])),
+            fetch(req).catch(() => caches.match(STATIC_PAGES.OFFLINE)),
         );
         return;
     }
@@ -85,9 +94,9 @@ self.addEventListener("notificationclick", event => {
     
     const targetUrl = event.notification.data?.url || "/";
     
-   /* if (event.action === "dismiss") {
-        return;
-    }*/
+    /* if (event.action === "dismiss") {
+         return;
+     }*/
     
     event.waitUntil(
         clients.matchAll({ type: "window", includeUncontrolled: true })

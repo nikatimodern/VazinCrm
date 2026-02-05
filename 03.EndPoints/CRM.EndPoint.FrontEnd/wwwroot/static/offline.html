@@ -25,13 +25,6 @@
     }
     
     
-    @font-face {
-      font-family: "IRANSansMedium";
-      src: url("../Fonts/IRANSans/woff2/IRANSansWeb(FaNum)_Medium.woff2");
-      font-weight: 500;
-    }
-    
-    
     * {
       box-sizing: border-box;
       font-family: IRANSans, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -51,14 +44,14 @@
     
     .container {
       width: 100%;
-      max-width: 420px;
+      max-width: 400px;
       padding: 24px;
       text-align: center;
     }
     
     
     .icon {
-      margin: 0 auto 20px;
+      margin: 0 auto 16px;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -109,6 +102,10 @@
     @media (max-width: 480px) {
       h1 {
         font-size: 18px;
+      }
+      
+      .icon img {
+        max-width: 280px;
       }
       
       p {
