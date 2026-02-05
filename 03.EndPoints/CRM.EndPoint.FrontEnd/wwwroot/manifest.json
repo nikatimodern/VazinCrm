@@ -4,30 +4,54 @@
   "description": "وزین پلاست | مدیریت مشتری",
   "lang": "fa-IR",
   "dir": "rtl",
-
   "start_url": "/",
   "scope": "/",
   "id": "/",
-
   "display": "standalone",
-  "display_override": ["standalone", "window-controls-overlay"],
+  "display_override": [
+    "standalone",
+    "window-controls-overlay"
+  ],
   "background_color": "#ffffff",
   "theme_color": "#004944",
   "icons": [
     {
-      "src": "/Img/icons/logo-vazinplast-192.png",
+      "src": "/static/icons/logo-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icons/logo-48x48.png",
+      "sizes": "48x48",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icons/logo-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icons/logo-180x180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icons/logo-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/Img/icons/logo-vazinplast-512.png",
+      "src": "/static/icons/logo-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
-
   "screenshots": [
     {
       "src": "/Img/screenshots/mobile-1.png",

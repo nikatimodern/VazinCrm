@@ -52,8 +52,8 @@ self.addEventListener("push", event => {
     
     const options = {
         body: data.body || "",
-        icon: "/Img/icons/logo-vazinplast-192.png",
-        //badge: "/Img/icons/logo-vazinplast-72.png",
+        icon: "/static/icons/logo-192x192.png",
+        badge: "/static/icons/logo-72x72.png",
         //image: "/static/noNet.png",
         tag: data.tag || "general",
         renotify: true,
