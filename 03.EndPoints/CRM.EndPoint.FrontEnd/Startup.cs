@@ -151,7 +151,7 @@ namespace CRM.EndPoint.FrontEnd {
 
                 var httpClient = new HttpClient(handler)
                 {
-                    Timeout = TimeSpan.FromSeconds(10)
+                    Timeout = TimeSpan.FromSeconds(30)
                 };
 
                 return new WebPushClient(httpClient);
@@ -213,9 +213,7 @@ namespace CRM.EndPoint.FrontEnd {
 
             if (env.IsDevelopment())
             {
-                app.UseExceptionHandler("/Error/500"); // فقط برای exceptionهای واقعی (500+)
-                app.UseStatusCodePagesWithReExecute("/Error/{0}"); // برای status code ها مثل 404 / 401 / 403
-               // app.UseDeveloperExceptionPage();
+                app.UseDeveloperExceptionPage();
             } else
             {
                 app.UseExceptionHandler("/Error/500"); // فقط برای exceptionهای واقعی (500+)

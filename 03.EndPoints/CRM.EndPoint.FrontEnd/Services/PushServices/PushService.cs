@@ -95,7 +95,8 @@ public class PushService : IPushService {
 
     private async Task SendInternalAsync(IEnumerable<WebPushSubscription> subs, string title, string body, string url, string tag)
     {
-        await Parallel.ForEachAsync(subs, new ParallelOptions { MaxDegreeOfParallelism = 3 }, async (sub, ct) => {
+        foreach (var sub in subs.Where(x => x.IsActive))
+        {
             try
             {
                 await SendAsync(
@@ -110,32 +111,57 @@ public class PushService : IPushService {
             {
                 sub.IsActive = false;
             }
-        });
 
-        /*foreach (var sub in subs)
-               {
-                   try
-                   {
-                       await SendAsync(
-                           new PushSubscription(sub.Endpoint, sub.P256dh, sub.Auth),
-                           title,
-                           body,
-                           url,
-                           tag
-                       );
-                   }
-                   catch (WebPushException ex) when (ex.StatusCode == HttpStatusCode.Gone)
-                   {
-                       sub.IsActive = false;
-                   }
-               }*/
+            await Task.Delay(50);
+        }
 
         await db.SaveChangesAsync();
     }
 
     private async Task SendAsync(PushSubscription sub, string title, string body, string url, string tag = "general")
     {
-        try
+        const int maxRetries = 3;
+        var delay = TimeSpan.FromMilliseconds(500);
+        for (int attempt = 1; attempt <= maxRetries; attempt++)
+        {
+            try
+            {
+                var vapidDetails = new VapidDetails(
+                    "mailto:it@vazinplast.com",
+                    _config["Vapid:PublicKey"],
+                    _config["Vapid:PrivateKey"]
+                );
+
+                var payload = JsonConvert.SerializeObject(new {
+                    title,
+                    body,
+                    url,
+                    tag
+                });
+
+                await client.SendNotificationAsync(sub, payload, vapidDetails);
+                return;
+            }
+            catch (WebPushException ex) when (ex.StatusCode == HttpStatusCode.Gone)
+            {
+                throw;
+            }
+            catch (Exception ex) when (attempt < maxRetries)
+            {
+                Console.WriteLine($"Attempt {attempt} failed, retrying...");
+
+                await Task.Delay(delay);
+                delay += delay;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
+
+
+
+        /*try
         {
             var vapidDetails = new VapidDetails(
                 "mailto:it@vazinplast.com",
@@ -155,7 +181,6 @@ public class PushService : IPushService {
         catch (Exception ex)
         {
             Console.WriteLine(ex);
-            throw;
-        }
+        }*/
     }
 }

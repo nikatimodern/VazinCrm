@@ -22,11 +22,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Cartables.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
+using CRM.EndPoint.FrontEnd.Services.PushServices;
 
 namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
     public class TimedHostedService : IHostedService, IDisposable {
         private readonly ILogger<TimedHostedService> _logger;
         private readonly IServiceScopeFactory serviceScopeFactory;
+        private readonly PushQueue pushQueue;
 
         private Timer _timerShowNotif;
         private Timer _timerPrefactors;

@@ -4962,3 +4962,37 @@ table tr.payment-vosoled > td {
 }
 
 
+.header-icon-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0;
+  cursor: auto !important;
+  transition: background-color .15s ease, color .15s ease;
+}
+
+
+.back-btn {
+  display: none;
+}
+
+
+.header-icon-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+
+.header-icon-btn:active {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+
+.header-icon-btn svg {
+  display: block;
+}

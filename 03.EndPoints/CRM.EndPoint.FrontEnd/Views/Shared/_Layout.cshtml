@@ -27,6 +27,7 @@
 
     <meta name="apple-mobile-web-app-title" content="VazinCRM">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
     <meta name="theme-color" content="#004944">
@@ -277,7 +278,6 @@
 
     <div id="mainWrapper" style="container-type: inline-size;container-name: mainWrapper; min-height:100dvh;position:relative">
         <header id="mainHeader">
-
             <div class="h-100 w-100 align-items-center" style="display:flex;justify-content:space-between">
                 <div id="expandMenuIcon" onclick="toggleMenu()" style="cursor:pointer;margin-left:8px">
                     <svg style="width:20px;height:20px;" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
@@ -289,6 +289,14 @@
                     <span id="NameUser" class="fbold" style="font-size:clamp(12px, 2vw, 13px);white-space:nowrap"></span>
                 </div>
                 <div class="d-flex flex-row-reverse align-items-center gap-1 flex-grow-1">
+                    <div class="header-actions d-flex align-items-center d-none">
+                        <button class="header-icon-btn" onclick="window.location.reload()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-reload"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M19.933 13.041a8 8 0 1 1 -9.925 -8.788c3.899 -1 7.935 1.007 9.425 4.747" /><path d="M20 4v5h-5" /></svg>
+                        </button>
+                        <button class="header-icon-btn back-btn" onclick="goBack()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-left"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0"/><path d="M5 12l6 6"/><path d="M5 12l6 -6"/></svg>
+                        </button>
+                    </div>
 
                     <div class="dateTime d-none d-md-flex fbold ms-1" style="justify-content:start;align-items:center;font-size:15px; ">
                         <p style="margin-left: 6px;">امروز :</p>

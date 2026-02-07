@@ -4,7 +4,7 @@ window.addEventListener("load", async () => {
     await navigator.serviceWorker.ready;
     
     initInstallPrompt();
-    await initPush()
+    await initPush();
     await showIosPwaInstall();
 });
 
@@ -63,7 +63,6 @@ document.getElementById("pwaInstallBtn")?.addEventListener("click", async () => 
     deferredPrompt = null;
     ModalToggle("#pwaInstallModal", "hide");
 });
-
 
 
 // Push Init
@@ -126,6 +125,32 @@ function isIos() {
 }
 
 function isRunningInPwa() {
-    return window.matchMedia('(display-mode: standalone)').matches
+    return window.matchMedia("(display-mode: standalone)").matches
         || window.navigator.standalone === true;
 }
+
+function isDesktop () {
+    if (navigator.userAgentData) {
+        return !navigator.userAgentData.mobile;
+    }
+    
+    return !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+function goBack() {
+    if (document.referrer && document.referrer.startsWith(location.origin)) {
+        history.back();
+    } else {
+        location.href = "/";
+    }
+}
+
+if (isRunningInPwa() && isDesktop()) {
+    document.querySelector(".header-actions")?.classList.remove("d-none");
+    
+    if (document.referrer && document.referrer !== location.href) {
+        const backBtn = document.querySelector(".back-btn");
+        if (backBtn) backBtn.style.display = "flex";
+    }
+}
+

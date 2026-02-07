@@ -25,6 +25,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.BaseItems.Enums;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
+using CRM.EndPoint.FrontEnd.Services.PushServices;
 
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
@@ -42,10 +44,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly IHubContext<TaskHub> hub;
         private readonly IVeiwRenderService vrs;
         private readonly LogSystemService _logSystemService;
+        private readonly IPushQueue pushQueue;
 
         public CustomerController(SepidarService sps, UserManager<AppUser> userManager, Service GenService, FileSaver fileSaver,
             DateTimeServices dtService, CRMContextDb db, UserContextDb udb, Sepidar1ContextDb S1db, Sepidar2ContextDb S2db,
-            IHubContext<TaskHub> hub, IVeiwRenderService vrs, LogSystemService logSystemService)
+            IHubContext<TaskHub> hub, IVeiwRenderService vrs, LogSystemService logSystemService, IPushQueue pushQueue)
         {
             this.sps = sps;
             this.userManager = userManager;
@@ -59,6 +62,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.hub = hub;
             this.vrs = vrs;
             _logSystemService = logSystemService;
+            this.pushQueue = pushQueue;
         }
 
         [Authorize(Policy = "NotCustomerOnly")]
@@ -334,6 +338,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             await _logSystemService.LogChange(oldCu, cu, LogActionEnum.تایید_و_تغییر_وضعیت, user);
             await db.SaveChangesAsync();
+            pushQueue.Enqueue(new PushQueueItem {
+                UserId = cu.UserCreatorID,
+                Title = "مشتری تایید شد",
+                Body = $"مشتری {cu.CustomerCode} {cu.CompanyName} ({cu.AgentName}) توسط {user.FullName} تایید شد.".Trim(),
+                Url = "/Customer/Index",
+                Tag = "accept-customer"
+            });
             return Ok();
         }
 

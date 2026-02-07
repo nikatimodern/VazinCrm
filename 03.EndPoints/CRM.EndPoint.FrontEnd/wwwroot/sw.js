@@ -55,7 +55,6 @@ self.addEventListener("fetch", event => {
 
 
 self.addEventListener("push", event => {
-    console.log(event);
     if (!event.data) return;
     const data = event.data.json();
     
@@ -104,7 +103,8 @@ self.addEventListener("notificationclick", event => {
                    for (const client of clientList) {
                        console.log(client.url);
                        console.log(targetUrl);
-                       if (client.url === targetUrl && "focus" in client) {
+                       console.log(client.url.toLowerCase().includes(targetUrl.toLowerCase()))
+                       if (client.url.toLowerCase().includes(targetUrl.toLowerCase()) && "focus" in client) {
                            return client.focus();
                        }
                    }
