@@ -240,6 +240,7 @@ const canselModalItemPreFactor = () => {
     mySer.emptyForm("PreFacItem");
     $("#ItemPreFactorModal").modal("hide");
 };
+
 const canselModalItemFactor = () => {
     mySer.emptyForm("FacItem");
     $("#ItemFactorModal").modal("hide");
@@ -3633,7 +3634,6 @@ async function handleNotifAction(id, isRemindOff) {
     if (idx !== -1) taskList.splice(idx, 1);
     
     const url = isRemindOff ? `Carizo/ShowTask?id=${id}` : `Carizo/DismissTask?id=${id}`;
-    
     try {
         const res = await fetch(baseUrl + url);
         
@@ -3676,9 +3676,9 @@ async function readNotifAction(id, btn, entityType = null, entityId = null) {
 }
 
 async function dismissNotif(id = null, btn) {
-    if (id) {
+    /*if (id) {
         await handleNotifAction(id, false);
-    }
+    }*/
     if (btn) {
         const closeBtn = btn.closest(".toastify").querySelector(".toast-close");
         closeBtn.click();

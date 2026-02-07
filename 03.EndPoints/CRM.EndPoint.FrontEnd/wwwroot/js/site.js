@@ -713,7 +713,7 @@ const notification = (id, title, description, dateMiladi, entityType, entityId) 
             i--;
             notifDiv.querySelector("#counterNotif").innerText = i;
             if (i <= 0) {
-                clearAllInterval();
+                //clearAllInterval();
                 toastInstance.hideToast();
             }
         }
@@ -724,6 +724,7 @@ const notification = (id, title, description, dateMiladi, entityType, entityId) 
     
     const clearAllInterval = () => {
         clearInterval(counterNotifId);
+        handleNotifAction(id, false);
         //clearInterval(updateTimeId);
     };
     
@@ -1301,7 +1302,7 @@ const ShowModalReport = async (model, passType = 0, dealId = null, dealSerialNum
         },
     });
     
-    ModalToggle("#ModalReport")
+    ModalToggle("#ModalReport");
 };
 const closeModalReport = () => {
     oldReport = null;
