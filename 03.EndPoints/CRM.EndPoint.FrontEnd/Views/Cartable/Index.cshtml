@@ -912,7 +912,6 @@
         });
 
         const CarPfExportExcel = () => {
-
             $("#FLshowLoading").css("display", "");
 
             const model = {};
@@ -2110,10 +2109,10 @@
 
         const submitAmountTaminModal = async () => {
             const model = [...suppliesData.flat(), ...supplyItemsExtra, ...supplyItemsWaste];
-            if (!suppliesData.every(arr => arr.some(x => !x.isDeleted))) {
+            /*if (!suppliesData.every(arr => arr.some(x => !x.isDeleted))) {
                 toastifyError("لطفا اطلاعات همه آیتم‌ها را وارد کنید.");
                 return false;
-            }
+            }*/
             try {
                 FLshowLoading();
                 const res = await axios.post(`/Supply/AddSupply`, model);
