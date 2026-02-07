@@ -4475,10 +4475,36 @@ async function showModalPhonebook() {
 }
 
 
-document.addEventListener("input", (e) => {
+/*document.addEventListener("input", (e) => {
     if (e.target.matches("input, textarea")) {
         e.target.value = toEnglishDigits(e.target.value);
     }
+});*/
+
+
+document.addEventListener("input", (e) => {
+    if (!e.target.matches("input, textarea")) return;
+    
+    const el = e.target;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    
+    const newValue = normalizeNumber(el.value);
+    
+    if (el.value !== newValue) {
+        el.value = newValue;
+        el.setSelectionRange(start, end);
+    }
 });
 
-
+const normalizeNumber = (val) => {
+    if (val == null) return val;
+    
+    return String(val)
+        // Persian digits
+        .replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d))
+        // Arabic digits
+        .replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d))
+        // Persian / Arabic decimal separator → .
+        .replace(/[٫٬]/g, '.');
+};
