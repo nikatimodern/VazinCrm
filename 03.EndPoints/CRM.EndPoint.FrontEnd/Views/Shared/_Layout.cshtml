@@ -25,7 +25,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/logo-180x180.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="/manifest.json?v=3.2.6">
 
     <meta name="apple-mobile-web-app-title" content="VazinCRM">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -157,10 +157,10 @@
                         </span>
 
                         <ul class="submenu text-white">
-                            <a class="menuLink text-white" href="/Supply/Profit">
+                            <a class="menuLink text-white" asp-controller="Supply" asp-action="Profit">
                                 <li>بهای تمام شده</li>
                             </a>
-                            <a class="menuLink text-white" href="/Supply/Demand">
+                            <a class="menuLink text-white" asp-controller="Supply" asp-action="Demand">
                                 <li>مطالبات</li>
                             </a>
                         </ul>
@@ -206,6 +206,7 @@
                 <div id="navMenuBar" class="w-100 h-100" style=" color:#fff;display:flex; justify-content:space-around ;align-items:center ">
                         <span id="moreMenuBtn" class="menuBox">
                             <i class="mp fa fa-bars" style="width:100% ;font-size:30px" aria-hidden="true"></i>
+                            <span style="width:100%;font-size:15px" class="mp">بیشتر</span>
                         </span>
 
                     <a class="menuBox MyBtn menuLink Admin SalesExpert TaminExpert " style="display:none" href="/Report/Index">

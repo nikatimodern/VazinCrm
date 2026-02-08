@@ -148,9 +148,9 @@ function goBack() {
 if (isRunningInPwa() && isDesktop()) {
     document.querySelector(".header-actions")?.classList.remove("d-none");
     
-    if (document.referrer && document.referrer !== location.href) {
+    /*if (document.referrer && document.referrer !== location.href) {
         const backBtn = document.querySelector(".back-btn");
         if (backBtn) backBtn.style.display = "flex";
-    }
+    }*/
 }
 

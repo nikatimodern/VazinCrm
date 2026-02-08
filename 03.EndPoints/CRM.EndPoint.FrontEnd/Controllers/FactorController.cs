@@ -330,10 +330,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     : $"{pf.CustomerCode} {pf.Customer} ({pf.AgentName})";
                 await hub.Clients.User(pf.UserCreatorID).SendAsync("notifInfo",
                     $"پیش فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusText} توسط <b>{user.FullName}</b>، <b style='font-size: 15px; color:darkred'>عدم تایید</b> خورد!",
-                    $"/Customer/CustomerProfile?Id={pf.CustomerId}");
+                    $"/Customer/CustomerProfile?Id={pf.CustomerId}"
+                );
                 pushQueue.Enqueue(new PushQueueItem {
                     UserId = pf.UserCreatorID,
-                    Title = "❌ عدم تایید پیش‌فاکتور",
+                    Title = "عدم تایید پیش‌فاکتور",
                     Body = $"پیش فاکتور {pf.SerialNumber} توسط {user.FullName}، عدم تایید خورد!",
                     Url = $"/Customer/CustomerProfile?Id={pf.CustomerId}",
                     Tag = "notAcceptPf-salesAdmin" + pf.SerialNumber
@@ -640,7 +641,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 pushQueue.Enqueue(new PushQueueItem {
                     UserId = pf.UserCreatorID,
-                    Title = "❌ عدم تایید پیش‌فاکتور",
+                    Title = "عدم تایید پیش‌فاکتور",
                     Body = $"پیش فاکتور {pf.SerialNumber} توسط {user.FullName}، عدم تایید خورد!",
                     Url = pf.CustomerId != null ? $"/Customer/CustomerProfile?Id={pf.CustomerId}" : "/Deal/Index",
                     Tag = "notAcceptPf-taminExpert" + pf.SerialNumber
@@ -771,14 +772,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 pushQueue.Enqueue(new PushQueueItem {
                     UserId = pf.UserCreatorID,
-                    Title = "❌ عدم تایید پیش‌فاکتور",
+                    Title = "عدم تایید پیش‌فاکتور",
                     Body = $"پیش فاکتور {pf.SerialNumber} توسط {user.FullName}، عدم تایید خورد!",
                     Url = $"/Customer/CustomerProfile?Id={pf.CustomerId}",
                     Tag = "notAcceptPf-financial" + pf.SerialNumber
                 });
                 pushQueue.Enqueue(new PushQueueItem {
                     RoleName = "مدیر فروش",
-                    Title = "❌ عدم تایید پیش‌فاکتور",
+                    Title = "عدم تایید پیش‌فاکتور",
                     Body = $"پیش فاکتور {pf.SerialNumber} توسط {user.FullName}، عدم تایید خورد!",
                     Url = "/Cartable/Index?tab=TSalesAdminId",
                     Tag = "notAcceptPf-financial" + pf.SerialNumber
