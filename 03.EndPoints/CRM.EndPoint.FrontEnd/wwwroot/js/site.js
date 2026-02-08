@@ -1314,41 +1314,34 @@ const closeModalReport = () => {
 
 
 async function getAllReports(data = {}, showLoading = true) {
-    const allReportsDashboardElm = document.getElementById("allReportsDashboardId");
-    const allReportsElm = document.getElementById("allReportsId");
-    if (!allReportsElm && !allReportsDashboardElm) return;
-    
+    const containerReport = document.getElementById("allReportsId");
+    if (!containerReport) return;
+    console.log(filterReportConfig);
     return new Promise(async (resolve, reject) => {
         
         const model = {
-            ...data,
-            filt: data.filterVar,
-            serVal: data.varSearch,
-            count: data.count ?? 50,
-            _type: data._type ?? -1,
+            ...filterReportConfig,
+            filt: filterReportConfig.filterVar,
+            serVal: filterReportConfig.varSearch,
+            count: filterReportConfig.count ?? 50,
+            _type: filterReportConfig._type ?? -1,
         };
         try {
             showLoading && FLshowLoading();
             
             const res = await axios.post("/Report/GetAllReportPartial", model);
             if (res.status === 200) {
-                if (allReportsDashboardElm) {
-                    allReportsDashboardElm.innerHTML = res.data.html;
-                } else if (allReportsElm) {
-                    allReportsElm.innerHTML = res.data.html;
-                    document.querySelector("#reportCountSelect option:last-child").textContent = data.count === 0 ? `همه (${res.data.count})` : "همه";
-                }
+                containerReport.innerHTML = res.data.html;
+                document.querySelector("#reportCountSelect option:last-child").textContent = data.count === 0 ? `همه (${res.data.count})` : "همه";
             }
             
             showLoading && FLshowLoading(false);
             
             return resolve();
-            
-            
         } catch (err) {
             console.error(err);
             containerReport.innerHTML = "خطا در دریافت گزارش ها :(";
-            showLoading && FLshowLoading(false);
+            FLshowLoading(false);
             return reject();
         }
         

@@ -33,6 +33,8 @@ var varList2 = {};//موارد فیلترینگ
 var CartablePfSearchVal = null;//متن جستجو
 var CartableFSearchVal = null;//متن جستجو
 
+var filterReportConfig = {};
+
 //
 // var mySer = null;
 // var CrmSer = null;
