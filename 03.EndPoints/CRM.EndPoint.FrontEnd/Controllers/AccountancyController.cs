@@ -29,6 +29,7 @@ using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.LogSystem;
 using CRM.EndPoint.FrontEnd.Models.Payment;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.EndPoint.FrontEnd.Services.TaskServices;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
@@ -46,6 +47,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly IHubContext<TaskHub> hub;
         private readonly IVeiwRenderService _vrs;
         private readonly LogSystemService _logSystemService;
+        private readonly IPushQueue pushQueue;
         private readonly CrmSaveCahngeAsync crmSaveCahngeAsync;
         private readonly SmsServices smsServ;
         private readonly UserManager<AppUser> userManager;
@@ -54,7 +56,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         public AccountancyController(CrmSaveCahngeAsync crmSaveCahngeAsync, SmsServices SmsServ, UserManager<AppUser> userManager,
             RoleManager<IdentityRole> roleManager, Service GenService, FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db,
-            UserContextDb Udb, TaskServices ts, IHubContext<TaskHub> hub, IVeiwRenderService vrs, LogSystemService logSystemService)
+            UserContextDb Udb, TaskServices ts, IHubContext<TaskHub> hub, IVeiwRenderService vrs, LogSystemService logSystemService,
+            IPushQueue pushQueue)
         {
             this.crmSaveCahngeAsync = crmSaveCahngeAsync;
             smsServ = SmsServ;
@@ -69,12 +72,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.hub = hub;
             _vrs = vrs;
             _logSystemService = logSystemService;
+            this.pushQueue = pushQueue;
         }
 
         [Authorize(Policy = "NotCustomerOnly")]
         public IActionResult Index()
         {
-
             var d = 9;
 
             //try {
@@ -945,6 +948,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await genService.AddEmail(
                     $"{acc.AccTypeTxt} نیاز به اصلاح", message, user, acc.UserCreatorID, acc.UserCreator, EntityTypeEnum.Accountancy, acc.Id
                 );
+                pushQueue.Enqueue(new PushQueueItem {
+                    UserId = acc.UserCreatorID,
+                    Title = "واریزی نیاز به اصلاح",
+                    Body = $"{acc.AccTypeTxt} مربوط به پیش‌فاکتور {acc.pfSerialNumber} نیاز به اصلاح دارد.",
+                    Url = "/Email/Index",
+                    Tag = "rejectAcc" + acc.SerialNum
+                });
             }
 
 

@@ -5,6 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewData["Title"] - پروفایل مشتری</title>
 
+    <meta property="og:title" content="CRM">
+    <meta property="og:description" content="سامانه مدیریت ارتباط با مشتری">
+    <meta property="og:locale" content="fa_IR">
+    <meta property="og:image" content="/static/icons/logo-180x180.png">
+    <meta name="twitter:card" content="summary">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/logo-180x180.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
+    <link rel="manifest" href="/manifest.json">
+
+    <meta name="apple-mobile-web-app-title" content="VazinCRM">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+    <meta name="theme-color" content="#004944">
 
     <link rel="stylesheet" href="~/lib/Bootstrap/bootstrap5.3.rtl.min.css" />
     <link rel="stylesheet" href="~/lib/FontAwesome.Pro.5.15.1.Web/css/solid.min.css" />
@@ -383,6 +400,8 @@
 <script src="~/lib/Signalr/signalr.min.js"></script>
 <script src="~/lib/Sortable/Sortable.min.js"></script>
 
+
+<script src="~/js/pwa.js?v=3.2.5"></script>
 <script src="~/js/site.js?v=3.2.5"></script>
 <script src="~/js/UploadFile.js?v=3.2.5"></script>
 <script src="~/js/PublicFunction.js?v=3.2.5"></script>
@@ -400,6 +419,7 @@
         baseUrl = '@Url.Action("", "")/';
     }
 </script>
+
 
 @await RenderSectionAsync("Scripts", required: false)
 

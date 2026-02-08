@@ -119,12 +119,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                pushQueue.Enqueue(new PushQueueItem {
+                /*pushQueue.Enqueue(new PushQueueItem {
                     SendToAll = true,
                     Title = "سلام وزین پلاستی",
                     Body = "این یک پوش نوتیف تست جدید است، اینو فرستادم که در جریان اتفاقات ما باشی!",
                     Url = "/"
-                });
+                });*/
                 //await pushService.SendToAllAsync("سلام وزین پلاستی", "این یک پوش نوتیف تست است", "/", null);
 
 

@@ -336,14 +336,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             cu.ModifyDate = DateTime.Now;
             cu.ModifyDateTxt = dtService.GetDateTimePersian();
 
+            var customerText = string.IsNullOrWhiteSpace(cu.CompanyName)
+                ? $"{cu.CustomerCode} ({cu.AgentName})"
+                : $"{cu.CustomerCode} {cu.CompanyName} ({cu.AgentName})";
+
             await _logSystemService.LogChange(oldCu, cu, LogActionEnum.تایید_و_تغییر_وضعیت, user);
             await db.SaveChangesAsync();
             pushQueue.Enqueue(new PushQueueItem {
                 UserId = cu.UserCreatorID,
-                Title = "مشتری تایید شد",
-                Body = $"مشتری {cu.CustomerCode} {cu.CompanyName} ({cu.AgentName}) توسط {user.FullName} تایید شد.".Trim(),
+                Title = "تایید مشتری",
+                Body = $"مشتری {customerText} توسط {user.FullName} تایید شد.",
                 Url = "/Customer/Index",
-                Tag = "accept-customer"
+                Tag = "accept-customer" + cu.CustomerCode
             });
             return Ok();
         }
