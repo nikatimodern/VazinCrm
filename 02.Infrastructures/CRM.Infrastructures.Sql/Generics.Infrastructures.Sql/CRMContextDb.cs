@@ -81,6 +81,8 @@ namespace Generics.Infrastructures.Sql
         public DbSet<Email> Emails { get; set; }
         public DbSet<Chat> Chats { get; set; }
         public DbSet<MainChat> MainChats { get; set; }
+        public DbSet<SupplyFactor> SupplyFactors { get; set; }
+        public DbSet<SupplyOrderHead> SupplyOrderHeads { get; set; }
 
 
 
@@ -130,6 +132,11 @@ namespace Generics.Infrastructures.Sql
             modelBuilder.Entity<Email>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<Chat>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<MainChat>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<SupplyFactor>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<SupplyOrderHead>().HasQueryFilter(f => f.IsDeleted == false);
+
+
+
             modelBuilder.Entity<Order>().Ignore(f => f.Row);
             modelBuilder.Entity<PreFactor>().Ignore(f => f.Emza);
 
