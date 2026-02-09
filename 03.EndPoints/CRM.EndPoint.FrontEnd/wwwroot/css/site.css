@@ -103,12 +103,12 @@ u, .text-decoration-underline {
 }
 
 
-.filter-switch.filter-switch-light {
+.filter-switch.filter-switch-sm {
   padding: 2px;
 }
 
 
-.filter-switch.filter-switch-light label {
+.filter-switch.filter-switch-sm label {
   min-height: 22px;
   padding: 0 8px;
   font-size: 12.5px;

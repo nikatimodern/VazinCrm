@@ -740,7 +740,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }*/
 
         [Authorize(Policy = "NotCustomerOnly")]
-        public async Task<ActionResult> GetAllCustomerPartial(int skip = 0, int take = 10, int roleType = -1)
+        public async Task<ActionResult> GetAllCustomerPartial(int skip = 0, int take = 10, int roleType = -1, int juridica = -1)
         {
             try
             {

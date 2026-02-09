@@ -21,8 +21,8 @@
                     <input class="form-control form-control-lg" id="SearchInp" type="text" placeholder="جستجو برحسب (نام مشتری ، کد مشتری)" />
                 </div>
             </div>
-            <div id="roleTypeRadios">
-                <ul class="filter-switch Admin SalesAdmin TaminAdmin TaminExpert FinancialAdmin FinancialExpert" style="display: none">
+            <div id="roleTypeRadios" class="flex-center flex-wrap gap-2">
+                <ul class="filter-switch filter-switch-sm Admin SalesAdmin TaminAdmin TaminExpert FinancialAdmin FinancialExpert" style="display: none">
                     <li class="filter-switch-item">
                         <input type="radio" name="roleTypeChange" value="-1" id="roleType-all" checked>
                         <label for="roleType-all">همه</label>
@@ -34,6 +34,20 @@
                     <li class="filter-switch-item">
                         <input type="radio" name="roleTypeChange" value="2" id="roleType-supplier">
                         <label for="roleType-supplier">تامین کننده</label>
+                    </li>
+                </ul>
+                <ul class="filter-switch filter-switch-sm">
+                    <li class="filter-switch-item">
+                        <input type="radio" name="juridicalChange" value="-1" id="juridical-all" checked>
+                        <label for="juridical-all">همه</label>
+                    </li>
+                    <li class="filter-switch-item">
+                        <input type="radio" name="juridicalChange" value="1" id="juridical-1">
+                        <label for="juridical-1">حقوقی</label>
+                    </li>
+                    <li class="filter-switch-item">
+                        <input type="radio" name="juridicalChange" value="0" id="juridical-0">
+                        <label for="juridical-0">حقیقی</label>
                     </li>
                 </ul>
             </div>
@@ -574,7 +588,18 @@
                 });
         };
 
-        document.querySelectorAll("input[name='roleTypeChange']").forEach(radio => {
+        document.querySelectorAll("input[name='roleTypeChange']")?.forEach(radio => {
+            radio.addEventListener("change", async (e) => {
+                roleType = e.target.value;
+                if (SearchInp.value.trim().length !== 0)
+                    SearchAllCustomer(SearchInp.value);
+                else {
+                    loadCustomers();
+                }
+            });
+        });
+
+        document.querySelectorAll("input[name='juridicalChange']")?.forEach(radio => {
             radio.addEventListener("change", async (e) => {
                 roleType = e.target.value;
                 if (SearchInp.value.trim().length !== 0)
