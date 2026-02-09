@@ -502,6 +502,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var rols = await userManager.GetRolesAsync(user);
 
+                var model = new TaminViewModel {
+                    UserId = user.Id,
+                    Setting = _setting,
+                    IsAdmin = rols.Contains("مدیر ارشد") || rols.Contains("مدیر تامین")
+                };
+
+
                 var query = db.PreFactors.AsQueryable();
                 switch (type)
                 {
@@ -519,17 +526,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     query = query.Where(s =>
                         EF.Functions.Like(s.AgentName, $"%{serVal}%") ||
                         EF.Functions.Like(s.Customer, $"%{serVal}%") ||
-                        s.SerialNumber == serialVal);
-                }
+                        s.SerialNumber == serialVal
+                    );
 
-                if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر تامین"))
-                {
-                    ViewBag.Admin = true;
-                } else
+                } else if (!rols.Contains("مدیر ارشد") && !rols.Contains("مدیر تامین"))
                 {
                     query = query.Where(f => f.UserTaminId == Guid.Parse(user.Id));
-                    ViewBag.Admin = false;
                 }
+
 
                 var preFactors = await query.OrderByDescending(f => f.ModifyDate).Take(100).Include(f => f.PreFactorItems).ToListAsync();
 
@@ -563,11 +567,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     pf.SupplyMismatch = s.totalItems != pfItemsCount; //|| s.totalWeight != pfItemsWeight;
                 }
 
-
-                var model = new TaminViewModel {
-                    PreFactors = preFactors,
-                    Setting = _setting,
-                };
+                model.PreFactors = preFactors;
 
 
                 var html = await vrs.RenderToStringAsync("GetPreFactorTaminExpert", model);
