@@ -7,11 +7,7 @@ namespace CRM.Core.Domain.Supplies.Entities
 {
     public class SupplyOrderHead: BaseEntity
     {
-
-
         public Guid SupplyFactorId { get; set; }
         public Guid OrderHeadId { get; set; }
-
-
     }
 }
