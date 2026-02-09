@@ -1439,45 +1439,8 @@ const delReportOk = (item, passType, dealId) => {
     });
 };
 
-const AbortCus = (id) => {
-    return new Promise(resolve => {
-        $.get(`${baseUrl}Customer/AbortCustomer?cid=${id}`, () => {
-            if ($("#SearchInp").val().trim().length !== 0)
-                SearchAllCustomer($("#SearchInp").val());
-            else {
-                //getAllCustomerPartialTop();
-                loadCustomers();
-            }
-            toastifySuccess("مشتری حذف شد");
-            resolve();
-        })
-         .fail(() => {
-             toastifyError("خطا در انجام عملیات مجدد سعی کنید.");
-         });
-    });
-};
 
-const AcceptCus = (id) => {
-    
-    return new Promise(resolve => {
-        $.get(`${baseUrl}Customer/AcceptCustomer?cid=${id}`, (res) => {
-            if ($("#SearchInp").val().trim().length !== 0)
-                SearchAllCustomer($("#SearchInp").val());
-            else {
-                //getAllCustomerPartialTop();
-                loadCustomers();
-            }
-            
-            toastifySuccess("تایید شد");
-            resolve();
-        })
-         .fail(() => {
-             setTimeout(() => AcceptCus(id), 3000);
-             toastifyError("خطا در انجام عملیات مجدد سعی کنید.");
-         });
-    });
-    
-};
+
 
 const goTo = (url, blank = false) => {
     if (blank) {
@@ -2908,7 +2871,6 @@ function getUrlParams() {
 
 function setUrlParams(paramsObj, options = { replace: true }) {
     const url = new URL(window.location.href);
-    
     Object.entries(paramsObj).forEach(([key, value]) => {
         if (value === null || value === "") {
             url.searchParams.delete(key);
@@ -2916,7 +2878,6 @@ function setUrlParams(paramsObj, options = { replace: true }) {
             url.searchParams.set(key, value.toString());
         }
     });
-    
     if (options.replace) {
         history.replaceState(history.state, "", url);
     } else {

@@ -24,7 +24,7 @@
             <div id="roleTypeRadios" class="flex-center flex-wrap gap-2">
                 <ul class="filter-switch filter-switch-sm Admin SalesAdmin TaminAdmin TaminExpert FinancialAdmin FinancialExpert" style="display: none">
                     <li class="filter-switch-item">
-                        <input type="radio" name="roleTypeChange" value="-1" id="roleType-all" checked>
+                        <input type="radio" name="roleTypeChange" value="-1" id="roleType-all">
                         <label for="roleType-all">همه</label>
                     </li>
                     <li class="filter-switch-item">
@@ -38,7 +38,7 @@
                 </ul>
                 <ul class="filter-switch filter-switch-sm">
                     <li class="filter-switch-item">
-                        <input type="radio" name="juridicalChange" value="-1" id="juridical-all" checked>
+                        <input type="radio" name="juridicalChange" value="-1" id="juridical-all">
                         <label for="juridical-all">همه</label>
                     </li>
                     <li class="filter-switch-item">
@@ -278,7 +278,6 @@
                 </div>
             </div>
         </div>
-
     </div>
 </div>
 
@@ -289,7 +288,7 @@
 
             <div style="background-color: #f1f3f5; border-bottom: 1px solid #dee2e6; padding: 20px 20px 18px; text-align: center;">
                 <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <svg height="24px" width="24px"  fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" /></svg>
+                    <svg height="24px" width="24px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" /></svg>
                     <h5 class="m-0">نام‌های مشابه قبلا در سیستم ثبت شده‌اند</h5>
                 </div>
                 <p class="mt-3 mb-1">با کلیک روی <b>اضافه به مشتری من</b>، آن را به لیست مشتریان خود اضافه کنید.</p>
@@ -331,11 +330,21 @@
 
         var flagSubmit = true;
 
-        let roleType = -1;
 
         const SearchInp = document.getElementById("SearchInp");
+        const LoadingCustomer = document.getElementById("LoadingCusPartId");
+        const ShowAllBtn = document.getElementById("btnShowAllId");
+
+        (function initFiltersFromUrl () {
+            const { juridicalType = -1, roleType = -1, search = "" } = getUrlParams();
+            document.querySelector(`input[name='roleTypeChange'][value='${roleType}']`).checked = true;
+            document.querySelector(`input[name='juridicalChange'][value='${juridicalType}']`).checked = true;
+            SearchInp.value = search;
+        })()
+
 
         document.addEventListener("DOMContentLoaded", () => {
+            getAllCustomers();
             FormCode = 1;
 
             var le = $("input[type='radio'][name='juridical'] ");
@@ -352,27 +361,32 @@
 
             SearchInp.addEventListener("keyup", (e) => {
                 if (e.key === "Enter") {
-                    if (e.target.value.trim().length !== 0)
-                        SearchAllCustomer(e.target.value);
-                    else {
-                        //getAllCustomerPartialTop();
-                        loadCustomers();
-                    }
+                    const searchValue = e.target.value.trim();
+                    setUrlParams({ search: searchValue ? searchValue : null });
+                    getAllCustomers();
                 }
             });
 
-        });
 
-        window.addEventListener("pageshow", () => {
-            if (SearchInp.value.trim().length !== 0) {
-                SearchAllCustomer(SearchInp.value);
-            } else {
-                //getAllCustomerPartialTop();
-                loadCustomers();
-                document.getElementById("btnShowAllId").style.display = "flex";
-            }
-        });
+            document.querySelectorAll("input[name='roleTypeChange']")?.forEach(radio => {
+                radio.addEventListener("change", async (e) => {
+                    const rType = Number(e.target.value);
+                    setUrlParams({ roleType: rType !== -1 ? rType : null });
 
+                    getAllCustomers();
+                });
+            });
+
+            document.querySelectorAll("input[name='juridicalChange']")?.forEach(radio => {
+                radio.addEventListener("change", async (e) => {
+                    const jType = Number(e.target.value);
+                    setUrlParams({ juridicalType: jType !== -1 ? jType : null });
+
+                    getAllCustomers();
+                });
+            });
+
+        });
 
         const addToMycustomer = (id) => {
 
@@ -382,12 +396,7 @@
                     toastifySuccess("به لسیت مشتریان من اضافه شد");
                     $("#AlertRegister").modal("toggle");
                     hideFormCustomer();
-                    //getAllCustomerPartialTop();
-                    if (SearchInp.value.trim().length !== 0)
-                        SearchAllCustomer(SearchInp.value);
-                    else {
-                        loadCustomers();
-                    }
+                    getAllCustomers();
 
                 } else {
                     toastifyError("در لیست مشتریان موجود است");
@@ -538,25 +547,6 @@
             });
         };
 
-
-        const getAllCustomerPartial = () => {
-
-            //$("#FLshowLoading").css("display", "");
-            $("#LoadingCusPartId").css("display", "flex");
-            $("#CustomerPartial").children().remove();
-            $.get(baseUrl + "Customer/GetAllCustomerPartial", (res) => {
-
-                $("#CustomerPartial").append(res);
-                $("#LoadingCusPartId").css("display", "none");
-
-            }).fail(() => {
-                setTimeout(() => {
-                    getAllCustomerPartial();
-                }, 1000);
-            });
-        };
-
-
         const getCountOfCustomerPartialTop = () => {
             if (window.innerWidth < 1200) {
                 return 2;
@@ -568,47 +558,6 @@
                 return 5;
             }
         };
-
-        const getAllCustomerPartialTop = () => {
-            document.getElementById("LoadingCusPartId").style.display = "flex";
-            const count = getCountOfCustomerPartialTop();
-
-            fetch(baseUrl + `Customer/GetAllCustomerPartial?skip=0&take=${count}`)
-                .then(response => response.text())
-                .then(data => {
-                    document.getElementById("CustomerPartial").innerHTML = data;
-
-                    document.getElementById("btnShowAllId").style.display = "flex";
-                    document.getElementById("LoadingCusPartId").style.display = "none";
-                })
-                .catch(() => {
-                    setTimeout(() => {
-                        getAllCustomerPartialTop();
-                    }, 1000);
-                });
-        };
-
-        document.querySelectorAll("input[name='roleTypeChange']")?.forEach(radio => {
-            radio.addEventListener("change", async (e) => {
-                roleType = e.target.value;
-                if (SearchInp.value.trim().length !== 0)
-                    SearchAllCustomer(SearchInp.value);
-                else {
-                    loadCustomers();
-                }
-            });
-        });
-
-        document.querySelectorAll("input[name='juridicalChange']")?.forEach(radio => {
-            radio.addEventListener("change", async (e) => {
-                roleType = e.target.value;
-                if (SearchInp.value.trim().length !== 0)
-                    SearchAllCustomer(SearchInp.value);
-                else {
-                    loadCustomers();
-                }
-            });
-        });
 
 
         let skipCus;
@@ -627,15 +576,15 @@
                 skipCus = 0;
             }
             isLoading = true;
-            document.getElementById("LoadingCusPartId").style.display = "flex";
-            document.getElementById("btnShowAllId").style.display = "flex";
+            LoadingCustomer.style.display = "flex";
 
-            fetch(`${baseUrl}Customer/GetAllCustomerPartial?skip=${skip}&take=${take}&roleType=${roleType}`)
+            const { juridicalType = -1, roleType = -1 } = getUrlParams();
+            fetch(`/Customer/GetAllCustomerPartial?skip=${skip}&take=${take}&roleType=${roleType}&juridical=${juridicalType}`)
                 .then(res => res.text())
                 .then(html => {
                     const trimmed = html.trim();
                     if (trimmed.includes("no-customer-found")) {
-                        document.getElementById("btnShowAllId").style.display = "none";
+                        ShowAllBtn.style.display = "none";
                         if (skip === 0) {
                             document.getElementById("CustomerPartial").innerHTML = trimmed;
                         }
@@ -658,26 +607,35 @@
                 })
                 .finally(() => {
                     isLoading = false;
-                    document.getElementById("LoadingCusPartId").style.display = "none";
+                    LoadingCustomer.style.display = "none";
                 });
+
+            ShowAllBtn.style.display = "flex";
         }
 
 
-        const SearchAllCustomer = (val) => {
-            $("#LoadingCusPartId").css("display", "flex");
-            $("#CustomerPartial").children().remove();
-            $.get(`/Customer/SearchAllCustomerPartial?val=${val}&roleType=${roleType}`, (res) => {
-                $("#CustomerPartial").append(res);
-                $("#btnShowAllId").css("display", "none");
-                $("#LoadingCusPartId").css("display", "none");
-            })
-             .fail(() => {
-                 setTimeout(() => {
-                     SearchAllCustomer();
-                 }, 3000);
-             });
+        const SearchAllCustomer = (search) => {
+            LoadingCustomer.style.display = "flex";
+            const container = document.getElementById("CustomerPartial");
+
+            const { juridicalType = -1, roleType = -1 } = getUrlParams();
+            axios(`/Customer/SearchAllCustomerPartial?val=${search}&roleType=${roleType}&juridical=${juridicalType}`).then((res) => {
+                LoadingCustomer.style.display = "none";
+                ShowAllBtn.style.display = "none";
+                container.innerHTML = res.data;
+            }).catch(() => {
+                setTimeout(() => SearchAllCustomer(), 3000);
+            });
         };
 
+        function getAllCustomers() {
+            const { search = "" } = getUrlParams();
+            if (search.length !== 0)
+                SearchAllCustomer(search);
+            else {
+                loadCustomers();
+            }
+        }
 
         const removeReq = () => {
             var items = document.getElementsByClassName("hog");
@@ -790,12 +748,7 @@
                     model.AcquaintanceWayTxt = e1.options[e1.selectedIndex].text;
 
                 $.post(baseUrl + "Customer/AddCustomer", model, (res) => {
-                    //getAllCustomerPartialTop();
-                    if (SearchInp.value.trim().length !== 0)
-                        SearchAllCustomer(SearchInp.value);
-                    else {
-                        loadCustomers();
-                    }
+                    getAllCustomers();
                     mySer.emptyForm("Step1");
                     mySer.emptyForm("Step2");
                     mySer.emptyForm("Step3");
@@ -1012,6 +965,104 @@
 
         }
 
+        const AbortCus = (id) => {
+            return new Promise(resolve => {
+                $.get(`${baseUrl}Customer/AbortCustomer?cid=${id}`, () => {
+                    getAllCustomers();
+                    toastifySuccess("مشتری حذف شد");
+                    resolve();
+                })
+                 .fail(() => {
+                     toastifyError("خطا در انجام عملیات مجدد سعی کنید.");
+                 });
+            });
+        };
+
+
+        const AcceptCus = (id) => {
+
+            return new Promise(resolve => {
+                $.get(`${baseUrl}Customer/AcceptCustomer?cid=${id}`, (res) => {
+                    getAllCustomers();
+
+                    toastifySuccess("تایید شد");
+                    resolve();
+                })
+                 .fail(() => {
+                     setTimeout(() => AcceptCus(id), 3000);
+                     toastifyError("خطا در انجام عملیات مجدد سعی کنید.");
+                 });
+            });
+
+        };
+
+
+        let senfLoaded = false;
+        const ShowModalUpCustomer = (id) => {
+            if (!senfLoaded) {
+                GetUpSenfOp();
+                senfLoaded = true;
+            }
+
+            customerIdUp = id;
+            $("#loadingModalUp").css("display", "flex");
+            $.get(baseUrl + "Customer/GetCustomer?id=" + id, (res) => {
+                changeJur(res.juridical);
+                mySer.convertJsonToForm(res, "CuInfoUpFormId");
+                $("#loadingModalUp").css("display", "none");
+            });
+            $("#updateCustomerModal").modal("toggle");
+
+        };
+
+        const SubmitUpFormCustomer = async () => {
+            if (await mySer.CheckValidForm("#CuInfoUpFormId")) {
+                const data = mySer.convertFormToJSON("#CuInfoUpFormId");
+                data.id = customerIdUp;
+
+                const workSelect = document.getElementById("workSenfID");
+                if (data.workSenf) data.workSenfTxt = workSelect.options[workSelect.selectedIndex].text;
+
+                FLshowLoading();
+
+                try {
+                    const res = await axios.post("/Customer/UpCustomer", data);
+                    if (res.status === 200) {
+                        toastifySuccess("ویرایش مشتری با موفقیت انجام شد");
+                        FLshowLoading(false);
+                        closeModalUpdate();
+                        getAllCustomers();
+                    }
+
+                } catch (error) {
+                    console.error(error);
+                    setTimeout(async () => await SubmitUpFormCustomer(), 3000);
+                }
+            }
+        };
+
+        const closeModalUpdate = () => {
+            $("#updateCustomerModal").modal("toggle");
+            cancelUpCustomer();
+            customerIdUp = null;
+        };
+
+
+        const GetUpSenfOp = () => {
+            const select = document.getElementById("workSenfID");
+
+            return axios("/BaseItem/GetItemsOp?typeCode=1").then(res => {
+                $(select).select2({
+                    data: res.data,
+                    dir: "rtl",
+                    placeholder: "انتخاب",
+                    selectionCssClass: "form-control",
+                    dropdownParent: $("#updateCustomerModal"),
+                });
+
+                $(select).val(null).trigger("change");
+            });
+        };
 
     </script>
 }

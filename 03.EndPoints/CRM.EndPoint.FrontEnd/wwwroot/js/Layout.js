@@ -3013,53 +3013,8 @@ const openCustomerProfile = async (id) => {
 };
 
 
-const GetUpSenfOp = () => {
-    const select = document.getElementById("workSenfID");
-    
-    return axios("/BaseItem/GetItemsOp?typeCode=1").then(res => {
-        $(select).select2({
-            data: res.data,
-            dir: "rtl",
-            placeholder: "انتخاب",
-            selectionCssClass: "form-control",
-            dropdownParent: $("#updateCustomerModal"),
-        });
-        
-        $(select).val(null).trigger("change");
-    });
-};
 
 
-const SubmitUpFormCustomer = async () => {
-    if (await mySer.CheckValidForm("#CuInfoUpFormId")) {
-        const data = mySer.convertFormToJSON("#CuInfoUpFormId");
-        data.id = customerIdUp;
-        
-        const workSelect = document.getElementById("workSenfID");
-        if (data.workSenf) data.workSenfTxt = workSelect.options[workSelect.selectedIndex].text;
-        
-        FLshowLoading();
-        
-        try {
-            const res = await axios.post("/Customer/UpCustomer", data);
-            if (res.status === 200) {
-                toastifySuccess("ویرایش مشتری با موفقیت انجام شد");
-                FLshowLoading(false);
-                closeModalUpdate();
-                //getAllCustomerPartialTop();
-                if ($("#SearchInp").val().trim().length !== 0) {
-                    SearchAllCustomer($("#SearchInp").val());
-                } else {
-                    loadCustomers(0);
-                }
-            }
-            
-        } catch (error) {
-            console.error(error);
-            setTimeout(async () => await submitCustomer(data), 3000);
-        }
-    }
-};
 
 
 const removeReqUp = () => {
@@ -3094,11 +3049,7 @@ const changeJur = (val) => {
 };
 
 
-const closeModalUpdate = () => {
-    $("#updateCustomerModal").modal("toggle");
-    cancelUpCustomer();
-    customerIdUp = null;
-};
+
 
 const cancelUpCustomer = () => {
     mySer.emptyForm("CuInfoUpFormId");
@@ -3107,23 +3058,6 @@ const cancelUpCustomer = () => {
     
 };
 
-let senfLoaded = false;
-const ShowModalUpCustomer = (id) => {
-    if (!senfLoaded) {
-        GetUpSenfOp();
-        senfLoaded = true;
-    }
-    
-    customerIdUp = id;
-    $("#loadingModalUp").css("display", "flex");
-    $.get(baseUrl + "Customer/GetCustomer?id=" + id, (res) => {
-        changeJur(res.juridical);
-        mySer.convertJsonToForm(res, "CuInfoUpFormId");
-        $("#loadingModalUp").css("display", "none");
-    });
-    $("#updateCustomerModal").modal("toggle");
-    
-};
 
 const OpenCloseMenu = () => {
     if (showFlag == 0) {
@@ -4464,7 +4398,7 @@ async function showModalPhonebook() {
             }
             document.getElementById("FLshowLoading").style.display = "none";
         } catch (err) {
-        
+            console.log(err);
         }
     }
     document.getElementById("PhoneBookSearchInp").addEventListener("keyup", async (e) => {
