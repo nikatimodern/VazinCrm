@@ -52,7 +52,7 @@
                                 <option value="50" selected>50</option>
                                 <option value="100">100</option>
                                 <option value="200">200</option>
-                                <option value="0">همه</option>
+                                <option value="-1">همه</option>
                             </select>
                             گزارش
                         </label>
@@ -103,7 +103,7 @@
             reportElement.checked = selFilterChd;
             reportElement.parentElement.classList.toggle("d-none", selFilterChd);
 
-            await getAllReports(filterReportConfig);
+            await getAllReports();
         }
 
 
@@ -114,7 +114,7 @@
                 if (e.key === "Enter") {
                     e.preventDefault();
                     filterReportConfig.varSearch = e.target.value;
-                    await getAllReports(filterReportConfig);
+                    await getAllReports();
                 }
             });
 
@@ -124,12 +124,12 @@
                     SelFilterChd: e.target.checked,
                     selFilter: e.target.checked ? currentUser.id : null,
                 };
-                await getAllReports(filterReportConfig);
+                await getAllReports();
             });
 
             document.getElementById("reportCountSelect").addEventListener("change", async (e) => {
                 filterReportConfig.count = Number(e.target.value);
-                await getAllReports(filterReportConfig);
+                await getAllReports();
             });
 
         });
@@ -200,7 +200,7 @@
                 filterReportConfig.resultCallId = resultCallSelect.value || null;
                 filterReportConfig.reasonCancelId = reasonCancelSelect.value || null;
                 filterReportConfig.finalResultCallId = finalResultCallSelect.value || null;
-                getAllReports(filterReportConfig);
+                getAllReports();
             }
         }
 
@@ -213,8 +213,8 @@
                 ...data,
                 filt: data.filterVar,
                 serVal: data.varSearch,
-                _type: filterReportConfig._type ?? -1,
-                count: filterReportConfig.count ?? 50,
+                _type: data._type ?? -1,
+                count: data.count ?? 50,
             };
 
             fetch("/Report/ExportExcelReport", {
