@@ -1149,7 +1149,12 @@ const SubmitReportForm = async () => {
         $.post(`/Report/AddReport`, data, async (res) => {
             if (res.status === 200) {
                 if (typeReportSubmit === 0) {
-                    await getAllReports();
+                    const currentPath = window.location.pathname.toLowerCase();
+                    if (currentPath.includes("report")) {
+                        await getAllReports();
+                    } else if (currentPath.includes("dashboard")) {
+                        await getDashReports();
+                    }
                 } else if (typeReportSubmit === 4) {
                     await getReportFromDeal(dealIdReport);
                     await getAllDeals();
@@ -1313,12 +1318,12 @@ const closeModalReport = () => {
 };
 
 
-async function getAllReports(data = {}, showLoading = true) {
-    const allReportsDashboardElm = document.getElementById("allReportsDashboardId");
-    const allReportsElm = document.getElementById("allReportsId");
-    if (!allReportsElm && !allReportsDashboardElm) return;
+async function getAllReports(showLoading = true) {
+    const containerReport = document.getElementById("allReportsId");
+    if (!containerReport) return;
     
     return new Promise(async (resolve, reject) => {
+        const data = filterReportConfig || {};
         
         const model = {
             ...data,
@@ -1327,35 +1332,41 @@ async function getAllReports(data = {}, showLoading = true) {
             count: data.count ?? 50,
             _type: data._type ?? -1,
         };
+        
         try {
             showLoading && FLshowLoading();
             
             const res = await axios.post("/Report/GetAllReportPartial", model);
             if (res.status === 200) {
-                if (allReportsDashboardElm) {
-                    allReportsDashboardElm.innerHTML = res.data.html;
-                } else if (allReportsElm) {
-                    allReportsElm.innerHTML = res.data.html;
-                    document.querySelector("#reportCountSelect option:last-child").textContent = data.count === 0 ? `همه (${res.data.count})` : "همه";
+                containerReport.innerHTML = res.data.html;
+                
+                const select = document.getElementById("reportCountSelect");
+                const lastOption = select?.querySelector("option[value='-1']");
+                const totalCount = res.data.count ?? 0;
+                
+                if (select && lastOption) {
+                    lastOption.textContent = select.value === "-1" ? `همه (${totalCount})` : "همه";
+                    
+                    if (!data.count) {
+                        if (totalCount < 50) {
+                            select.value = "-1";
+                            lastOption.textContent = `همه (${totalCount})`;
+                        } else {
+                            select.value = "50";
+                        }
+                    }
                 }
             }
             
-            showLoading && FLshowLoading(false);
-            
             return resolve();
-            
-            
         } catch (err) {
             console.error(err);
             containerReport.innerHTML = "خطا در دریافت گزارش ها :(";
-            showLoading && FLshowLoading(false);
             return reject();
+        } finally {
+            FLshowLoading(false);
         }
-        
-        
     });
-    
-    
 }
 
 const ShowUpdateReport = async (id, passType = 0) => {
@@ -1404,13 +1415,16 @@ const DelReport = (item, passType = 0, dealId = null) => {
 
 
 const delReportOk = (item, passType, dealId) => {
-    document.getElementById("FLshowLoading").style.display = "";
+    FLshowLoading();
     $.get(baseUrl + "Report/DelReport/" + item, async function (res) {
         if (res.status === 200) {
             if (passType === 0) {
-                const data = window[filterVarConfig] || {};
-                data.varSearch = document.getElementById("reportSearchId")?.value;
-                await getAllReports(data);
+                const currentPath = window.location.pathname.toLowerCase();
+                if (currentPath.includes("report")) {
+                    await getAllReports();
+                } else if (currentPath.includes("dashboard")) {
+                    await getDashReports();
+                }
             } else if (passType === 4) {
                 await getReportFromDeal(dealId);
             }
@@ -1418,53 +1432,15 @@ const delReportOk = (item, passType, dealId) => {
             toastifySuccess(res.message);
         } else if (res.status === 201) {
             toastifyError(res.message);
-            
         }
-        document.getElementById("FLshowLoading").style.display = "none";
+        FLshowLoading(false);
     }).fail(() => {
         setTimeout(() => delReportOk(item, passType, dealId), 3000);
     });
 };
 
-const AbortCus = (id) => {
-    return new Promise(resolve => {
-        $.get(`${baseUrl}Customer/AbortCustomer?cid=${id}`, () => {
-            if ($("#SearchInp").val().trim().length !== 0)
-                SearchAllCustomer($("#SearchInp").val());
-            else {
-                //getAllCustomerPartialTop();
-                loadCustomers();
-            }
-            toastifySuccess("مشتری حذف شد");
-            resolve();
-        })
-         .fail(() => {
-             toastifyError("خطا در انجام عملیات مجدد سعی کنید.");
-         });
-    });
-};
 
-const AcceptCus = (id) => {
-    
-    return new Promise(resolve => {
-        $.get(`${baseUrl}Customer/AcceptCustomer?cid=${id}`, (res) => {
-            if ($("#SearchInp").val().trim().length !== 0)
-                SearchAllCustomer($("#SearchInp").val());
-            else {
-                //getAllCustomerPartialTop();
-                loadCustomers();
-            }
-            
-            toastifySuccess("تایید شد");
-            resolve();
-        })
-         .fail(() => {
-             setTimeout(() => AcceptCus(id), 3000);
-             toastifyError("خطا در انجام عملیات مجدد سعی کنید.");
-         });
-    });
-    
-};
+
 
 const goTo = (url, blank = false) => {
     if (blank) {
@@ -2895,7 +2871,6 @@ function getUrlParams() {
 
 function setUrlParams(paramsObj, options = { replace: true }) {
     const url = new URL(window.location.href);
-    
     Object.entries(paramsObj).forEach(([key, value]) => {
         if (value === null || value === "") {
             url.searchParams.delete(key);
@@ -2903,7 +2878,6 @@ function setUrlParams(paramsObj, options = { replace: true }) {
             url.searchParams.set(key, value.toString());
         }
     });
-    
     if (options.replace) {
         history.replaceState(history.state, "", url);
     } else {
