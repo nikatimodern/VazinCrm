@@ -3,7 +3,9 @@ window.addEventListener("load", async () => {
     if (!swRegistered) return;
     await navigator.serviceWorker.ready;
     
-    initInstallPrompt();
+    
+    
+    //initInstallPrompt();
     await initPush();
     await showIosPwaInstall();
 });
@@ -42,9 +44,8 @@ function initInstallPrompt() {
 
 async function showIosPwaInstall() {
     if (!isIos()) return;
-    if (isRunningInPwa) return;
+    if (isRunningInPwa()) return;
     if (sessionStorage.getItem("pwaios-install-shown")) return;
-    
     setTimeout(() => {
         ModalToggle("#iosPwaInstallModal");
         sessionStorage.setItem("pwaios-install-shown", "1");
