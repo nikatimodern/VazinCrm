@@ -128,7 +128,8 @@
                             </div>
                             <div class="d-flex flex-column gap-1 col-12 col-sm" style="min-width: 140px">
                                 <label for="dealMobile" class="fbold">شماره موبایل</label>
-                                <input inputmode="numeric" class="h-100 form-control mobileNumber " id="dealMobile" name="mobileNumber" required>
+                                <select inputmode="numeric" class="h-100 mobileNumber " id="dealMobile" name="mobileNumber" required></select>
+                                @* <input inputmode="numeric" class="h-100 form-control mobileNumber " id="dealMobile" name="mobileNumber" required> *@
                                 @* <textarea inputmode="numeric" id="dealMobile" class="form-control text-end mobileNumber" style="direction: ltr;padding: 2px 8px !important;height: auto" name="mobileNumber" placeholder="09123456789&#10;09000000000&#10;..." rows="3" required></textarea> *@
                             </div>
                         </div>
@@ -345,8 +346,6 @@
 </div>
 
 
-
-
 @section Scripts {
     <script>
         let modelDeal = { filt: null, serVal: null };
@@ -364,7 +363,7 @@
             initSortableDeal();
             showDealDropdown();
             getAllOrders();
-            //await initSelectTom();
+
             await getAllBankAccounts();
             await showTaminDropdown();
             await getAllDeals();
@@ -464,7 +463,6 @@
                 }
             } catch (err) {
                 console.log(err);
-                //setTimeout(async () => await getAllDeals(), 3000);
             }
         };
 
@@ -641,7 +639,7 @@
                 selectTomLoaded = true;
             }
 
-            $("#dealModal").modal("toggle");
+            ModalToggle("#dealModal");
             isEditMode = false;
             currentDealData = {};
             mySer.emptyForm("formDeal");
@@ -688,18 +686,18 @@
             }
         };
 
+        const dealMobileElm = document.getElementById("dealMobile");
         const initSelectTom = async () => {
             const [customerRes, workSenfRes, acquaintanceWayRes] = await Promise.all([
-                axios("/Order/GetCustomersOpId"),
+                axios("/Customer/GetAllCustomers"),
                 axios("/BaseItem/GetItemsOp?typeCode=1"),
                 axios("/BaseItem/GetItemsOp?typeCode=2"),
             ]);
-
-            const dealMobileElm = document.getElementById("dealMobile");
             selectTomCustomers = new TomSelect("#dealCustomersTomSelect", {
                 options: customerRes.data,
                 valueField: "id",
                 maxItems: 1,
+                searchField: ["text", "mobile"],
                 persist: false,
                 openOnFocus: false,
                 createOnBlur: true,
@@ -715,37 +713,8 @@
                         toggleElementsDisabled(dealMobileElm, true);
                         selectTomCustomers.disable();
 
-                        const data = (await axios(`/Customer/GetCustomer/${value}`)).data;
-                        @*currentDealData.customerCode = data.customerCode;
-                        currentDealData.customerName = `${data.companyName ?? ""} ${data.agentName ?? ""}`.trim();*@;
-                        //dealMobileElm.value = data.mobile ?? "";
-
-                        const cusDealData = {
-                            cusNumberRegister: data.numberRegister,
-                            cusEghtesadiCode: data.eghtesadiCode,
-                            cusShenaseMeli: data.shenaseMeli,
-                            cusMelliCode: data.agentMeliCode,
-                            cusPostalCode: data.postalCode,
-                            cusJuridical: data.juridical,
-                            cusCompanyName: data.companyName,
-                            cusAddress: data.address,
-                            cusTel: data.tel,
-                            cusSex: data.sex,
-                            cusProvince: data.province,
-                            cusCity: data.city,
-                            cusWorkSenf: data.workSenf || null,
-                            cusWorkSenfTxt: data.workSenfTxt,
-                            cusWorkSenfDescription: data.workSenfDescription,
-                            cusAcquaintanceWay: data.acquaintanceWay || null,
-                            cusAcquaintanceWayTxt: data.acquaintanceWayTxt,
-                            mobileNumber: data.mobile ?? "",
-                            customerCode: data.customerCode,
-                            customerName: `${data.companyName ?? ""} ${data.agentName ?? ""}`.trim(),
-                        };
-
-                        mySer.convertJsonToForm(cusDealData, "formDeal");
-                        currentDealData = { ...currentDealData, ...cusDealData };
-
+                        const res = await axios(`/Customer/GetCustomer/${value}`);
+                        setDealDataByCustomer(res.data);
 
                         selectTomCustomers.enable();
                         toggleElementsDisabled(dealMobileElm, false);
@@ -780,6 +749,40 @@
                 },
             });
 
+            const mobileTom = new TomSelect(dealMobileElm, {
+                options: customerRes.data,
+                valueField: "mobile",
+                openOnFocus: false,
+                searchField: ["mobile"],
+                labelField: "mobile",
+                maxItems: 1,
+                create: true,
+                createOnBlur: true,
+                placeholder: "...شماره موبایل",
+                dropdownParent: "dealModal",
+
+                onChange(value) {
+                    if (!value) return;
+                    const customer = customerRes.data.find(x => x.mobile === value);
+                    if (!customer) return;
+
+                    selectTomCustomers.setValue(customer.id);
+                },
+
+                onType(str) {
+                    let numeric = str.replace(/\D/g, "");
+
+                    if (numeric.length > 16) {
+                        numeric = numeric.slice(0, 16);
+                    }
+
+                    if (numeric !== str) {
+                        mobileTom.setTextboxValue(numeric);
+                    }
+                },
+            });
+
+
             const selectTomWorkSenf = new TomSelect("#workSenfIDDeal", {
                 options: workSenfRes.data,
                 valueField: "id",
@@ -802,6 +805,83 @@
                 },
             });
         };
+
+        const setDealDataByCustomer = (data) => {
+            const cusDealData = {
+                cusNumberRegister: data.numberRegister,
+                cusEghtesadiCode: data.eghtesadiCode,
+                cusShenaseMeli: data.shenaseMeli,
+                cusMelliCode: data.agentMeliCode,
+                cusPostalCode: data.postalCode,
+                cusJuridical: data.juridical,
+                cusCompanyName: data.companyName,
+                cusAddress: data.address,
+                cusTel: data.tel,
+                cusSex: data.sex,
+                cusProvince: data.province,
+                cusCity: data.city,
+                cusWorkSenf: data.workSenf || null,
+                cusWorkSenfTxt: data.workSenfTxt,
+                cusWorkSenfDescription: data.workSenfDescription,
+                cusAcquaintanceWay: data.acquaintanceWay || null,
+                cusAcquaintanceWayTxt: data.acquaintanceWayTxt,
+                mobileNumber: data.mobile ?? "",
+                customerCode: data.customerCode,
+                customerName: `${data.companyName ?? ""} ${data.agentName ?? ""}`.trim(),
+            };
+
+            selectTomCustomers.setValue(data.id, true);
+            mySer.convertJsonToForm(cusDealData, "formDeal");
+            currentDealData = { ...currentDealData, ...cusDealData };
+        };
+
+        @*dealMobileElm.addEventListener("keydown", async (e) => {
+            if (e.key === "Enter" && e.target.value.length > 8) {
+                const mobile = e.target.value;
+                const res = await axios(`/Customer/GetCustomerByMobile?mobile=${mobile}`);
+                if (res.status === 200) {
+                    showExistingCustomerToast(res.data);
+                }
+            }
+        });*@;
+
+        @*dealMobileElm.addEventListener("blur", async (e) => {
+            if (e.target.value.length > 8) {
+                const mobile = e.target.value;
+                const res = await axios(`/Customer/GetCustomerByMobile?mobile=${mobile}`);
+                if (res.status === 200) {
+                    showExistingCustomerToast(res.data);
+                }
+            }
+        });*@
+
+        function showExistingCustomerToast(cus) {
+            const wrapper = document.createElement("div");
+            const cusName = `مشتری ${cus.customerCode ?? ""} ${cus.companyName ?? ""} (${(cus.Sex === 1 ? "جناب آقای" : "سرکار خانم")} ${cus.agentName ?? ""})`;
+
+            wrapper.innerHTML = `
+                <div class="text-center" style="line-height:1.8">
+                  <div class="fMedium" style="font-size: 16px">مشتری با این شماره موبایل قبلا در سیستم ثبت شده است!</div>
+                  <div>${cusName}</div>
+                  <div class="d-flex justify-content-center gap-2 mt-2">
+                    <button id="toastAddBtn" class="btn btn-sm btn-light">افزودن</button>
+                    <button id="toastCancelBtn" class="btn btn-sm btn-outline-light">انصراف</button>
+                  </div>
+                </div>
+            `;
+
+            const toast = toastifyError2("", { node: wrapper, duration: -1, style: { cursor: "auto" } });
+
+            wrapper.querySelector("#toastAddBtn").onclick = () => {
+                setDealDataByCustomer(cus);
+                toast.hideToast();
+            };
+
+            wrapper.querySelector("#toastCancelBtn").onclick = () => {
+                toast.hideToast();
+            };
+        }
+
 
         function initSortableDeal() {
             let tabSwitchTimer = null;

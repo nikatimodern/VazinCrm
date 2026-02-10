@@ -921,6 +921,48 @@ const toastifyInfo = (text, duration = 3000) => {
     }).showToast();
 };
 
+const toastifyInfo2 = (text, options = {}) => {
+    const defaultStyle = {
+        background: "linear-gradient(135deg, rgba(110,73,0,1) 18%, rgba(185,124,0,1) 100%)",
+        borderRadius: "8px",
+    };
+    
+    const toast = Toastify({
+        text: text,
+        node: options.node,
+        duration: options.duration ?? 5000,
+        close: options.close ?? false,
+        gravity: options.gravity ?? "top",
+        position: options.position ?? "center",
+        stopOnFocus: options.stopOnFocus ?? true,
+        style: { ...defaultStyle, ...(options.style || {}) },
+    });
+    
+    toast.showToast();
+    return toast;
+};
+
+const toastifyError2 = (text, options = {}) => {
+    const defaultStyle = {
+        background: "linear-gradient(135deg, rgba(121,9,9,1) 21%, rgba(78,0,0,0.9) 100%)",
+        borderRadius: "8px",
+    };
+    
+    const toast = Toastify({
+        text: text,
+        node: options.node,
+        duration: options.duration ?? 5000,
+        close: options.close ?? false,
+        gravity: options.gravity ?? "top",
+        position: options.position ?? "center",
+        stopOnFocus: options.stopOnFocus ?? true,
+        style: { ...defaultStyle, ...(options.style || {}) },
+    });
+    
+    toast.showToast();
+    return toast;
+};
+
 
 const checkAccess = async (elId) => {
     let rols = JSON.parse(sessionStorage.getItem("Rols"));
@@ -1438,8 +1480,6 @@ const delReportOk = (item, passType, dealId) => {
         setTimeout(() => delReportOk(item, passType, dealId), 3000);
     });
 };
-
-
 
 
 const goTo = (url, blank = false) => {
@@ -1988,7 +2028,12 @@ class MyService {
                 case "textarea":
                 case "number":
                 case "tel":
-                    elm.value = defVal ?? "";
+                    if (elm.tomselect) {
+                        elm.tomselect.clear(true);
+                        if (defVal != null) elm.tomselect.setValue(defVal, true);
+                    } else {
+                        elm.value = defVal ?? "";
+                    }
                     break;
                 
                 case "select-one":
@@ -2116,7 +2161,11 @@ class MyService {
                     case "textarea":
                     case "number":
                     case "tel":
-                        elm.value = value;
+                        if (elm.tomselect) {
+                            elm.tomselect.setValue(value, true);
+                        } else {
+                            elm.value = value;
+                        }
                         break;
                     case "select-one":
                         if (elm.tomselect) {

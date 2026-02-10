@@ -4954,3 +4954,32 @@ table tr.payment-vosoled > td {
   z-index: 20;
   border-radius: inherit;
 }
+
+
+.custom-customer-modal{
+  border-radius:14px;
+}
+
+.customer-card{
+  border:1px solid #eee;
+  border-radius:10px;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  font-size:14px;
+}
+
+.customer-row{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+}
+
+.customer-label{
+  color:#6c757d;
+}
+
+.customer-value{
+  font-weight:600;
+}

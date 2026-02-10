@@ -895,15 +895,35 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [Authorize(Policy = "NotCustomerOnly")]
+        public async Task<IActionResult> GetAllCustomers()
+        {
+            var data = await db.Customers.Where(f =>
+                f.RoleType == RoleTypeEnum.مشتری || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری
+            ).Select(f => new {
+                f.Id,
+                f.Mobile,
+                text = $"{f.CompanyName} {f.AgentName} _ (کد مشتری  {f.CustomerCode})".Trim(),
+            }).ToListAsync();
+            return Ok(data);
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
         public async Task<IActionResult> GetCustomer(Guid id)
         {
-            var data2 = await db.BaseItems
+            /*var data2 = await db.BaseItems
                 .Where(f => f.TypeCode == BaseItemEnum.صنف)
                 .Select(g => new SelectOptionGuidDto() {
                     id = g.Id,
                     text = g.Title
-                }).ToListAsync();
+                }).ToListAsync();*/
             var data = await db.Customers.Where(f => f.Id == id).FirstOrDefaultAsync();
+            return Ok(data);
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        public async Task<IActionResult> GetCustomerByMobile(string mobile)
+        {
+            var data = await db.Customers.Where(f => f.Mobile == mobile).FirstOrDefaultAsync();
             return Ok(data);
         }
 

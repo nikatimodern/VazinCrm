@@ -122,8 +122,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
             var data = await db.Customers.Where(f =>
-                usCu.Contains(f.Id)
-                && (f.RoleType == RoleTypeEnum.مشتری || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری)
+                usCu.Contains(f.Id) && (f.RoleType == RoleTypeEnum.مشتری || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری)
             ).Select(g => new SelectOptionGuidDto {
                 id = g.Id,
                 text = $"{g.CompanyName} {g.AgentName} _ (کد مشتری  {g.CustomerCode})"

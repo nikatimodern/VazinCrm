@@ -7,7 +7,7 @@
 <div class="mp" style="align-items:center; flex-direction:column; width:100% ; display:flex;margin-top:0 !important">
     <div class="w-100">
         <div class="d-flex flex-column flex-wrap flex-lg-row gap-3 align-items-center justify-content-center mt-md-2">
-            @if (Model.NormalizedUserName == "R.SALAMI") {
+            @* @if (Model.NormalizedUserName == "R.SALAMI") { *@
                 <div id="AddCustBtnID">
                     <button class="buttonGreen1 gap-2" onclick="showFormCustomer()" id="btnNew">
                         <i class="fa fa-user" style="font-size:14px;" aria-hidden="true"></i>
@@ -15,7 +15,7 @@
                     </button>
                     <button class="buttonCancel2" onclick="hideFormCustomer()" id="btnCancel" style="display:none;padding: 8px 16px;border-radius: 50px;line-height: 1;">انصراف</button>
                 </div>
-            }
+            @* } *@
             <div id="searchInput" class="col-12 col-lg-7" style="display:flex;justify-content:center;flex-direction:column; align-items:center;  ">
                 <div style="width:100%; display:flex; justify-content:center; flex-direction:column;align-items:center; ">
                     <input class="form-control form-control-lg" id="SearchInp" type="text" placeholder="جستجو برحسب (نام مشتری ، کد مشتری)" />
