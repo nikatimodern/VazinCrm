@@ -13,10 +13,22 @@ namespace CRM.Infrastructures.Sql.Supplies.Configs
         {
             builder.HasKey(x => x.Id);
 
-            builder.HasMany(f => f.OrderHeads)
+            builder.HasMany(f => f.SupplyFactorOrderHeads)
                 .WithOne()
-                .HasPrincipalKey(f => f.SupplierId)
+                .HasForeignKey(f => f.SupplyFactorId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(f => f.RequestAmountSupplyFactor)
+                .WithOne()
+                .HasForeignKey(f => f.SupplyFactorId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(f => f.PaymentSupplyFactors)
+                .WithOne()
+                .HasForeignKey(f => f.SupplyFactorID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
 
 
         }

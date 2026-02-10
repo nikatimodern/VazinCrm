@@ -7,11 +7,11 @@ using System.Text;
 
 namespace CRM.Infrastructures.Sql.Supplies.Configs
 {
-    public class SupplyOrderHeadConfigs : IEntityTypeConfiguration<SupplyOrderHead>
+    public class SupplyFactorOrderHeadConfigs : IEntityTypeConfiguration<SupplyFactorOrderHead>
     {
-        public void Configure(EntityTypeBuilder<SupplyOrderHead> builder)
+        public void Configure(EntityTypeBuilder<SupplyFactorOrderHead> builder)
         {
-            builder.HasKey(x => x.Id);
+            builder.HasKey(x =>new {x.SupplyFactorId,x.OrderHeadId } );
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿using CRM.Framework.Domain;
+﻿using CRM.Core.Domain.Payments.Entities;
+using CRM.Core.Domain.RequestAmounts.Entities;
+using CRM.Framework.Domain;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -15,6 +17,12 @@ namespace CRM.Core.Domain.Supplies.Entities
         public DateTime FactorDate { get; set; }
         public string  FactorDateTxt { get; set; }
 
-        public IList<SupplyOrderHead> OrderHeads { get; set; }
+        public IList<SupplyFactorOrderHead> SupplyFactorOrderHeads { get; set; }
+        public IList<RequestAmountSupplyFactor> RequestAmountSupplyFactor { get; set; }
+        public IList<PaymentSupplyFactor> PaymentSupplyFactors { get; set; }
+
+
+
+
     }
 }
