@@ -128,7 +128,7 @@
                             </div>
                             <div class="d-flex flex-column gap-1 col-12 col-sm" style="min-width: 140px">
                                 <label for="dealMobile" class="fbold">شماره موبایل</label>
-                                <select inputmode="numeric" class="h-100 mobileNumber " id="dealMobile" name="mobileNumber" required></select>
+                                <select inputmode="numeric" class="mobileNumber" id="dealMobile" name="mobileNumber" required></select>
                                 @* <input inputmode="numeric" class="h-100 form-control mobileNumber " id="dealMobile" name="mobileNumber" required> *@
                                 @* <textarea inputmode="numeric" id="dealMobile" class="form-control text-end mobileNumber" style="direction: ltr;padding: 2px 8px !important;height: auto" name="mobileNumber" placeholder="09123456789&#10;09000000000&#10;..." rows="3" required></textarea> *@
                             </div>
@@ -759,7 +759,6 @@
                 create: true,
                 createOnBlur: true,
                 placeholder: "...شماره موبایل",
-                dropdownParent: "dealModal",
 
                 onChange(value) {
                     if (!value) return;
@@ -781,6 +780,8 @@
                     }
                 },
             });
+
+            document.getElementById("dealMobile-ts-control").setAttribute("inputmode", "numeric");
 
 
             const selectTomWorkSenf = new TomSelect("#workSenfIDDeal", {
