@@ -1,4 +1,4 @@
-const CACHE_VERSION = 1;
+const CACHE_VERSION = 2;
 
 const CACHE_NAME = `static-fallback-v${CACHE_VERSION}`;
 

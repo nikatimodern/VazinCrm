@@ -213,7 +213,10 @@ namespace CRM.EndPoint.FrontEnd {
 
             if (env.IsDevelopment())
             {
-                app.UseDeveloperExceptionPage();
+                app.UseExceptionHandler("/Error/500"); // فقط برای exceptionهای واقعی (500+)
+                app.UseStatusCodePagesWithReExecute("/Error/{0}"); // برای status code ها مثل 404 / 401 / 403
+
+                //app.UseDeveloperExceptionPage();
             } else
             {
                 app.UseExceptionHandler("/Error/500"); // فقط برای exceptionهای واقعی (500+)

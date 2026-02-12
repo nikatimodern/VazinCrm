@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
   <title>اتصال قطع است</title>
   
   <style>
@@ -35,7 +37,7 @@
       margin: 0;
       background: #fff;
       color: #1f2937;
-      min-height: 100dvh;
+      min-height: 80dvh;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -44,28 +46,29 @@
     
     .container {
       width: 100%;
-      max-width: 400px;
+      max-width: 650px;
       padding: 24px;
-      text-align: center;
+      /* text-align: center; */
     }
     
     
     .icon {
-      margin: 0 auto 16px;
+      margin: 0 auto 20px;
       border-radius: 50%;
       display: flex;
       align-items: center;
-      justify-content: center;
+      /* justify-content: center; */
     }
     
     
     .icon img {
       width: 100%;
+      max-width: 160px;
     }
     
     
     h1 {
-      margin: 0 0 12px;
+      margin: 0 0 4px;
       font-size: 20px;
       color: #004944;
       font-family: IRANSansBold, serif;
@@ -73,8 +76,8 @@
     
     
     p {
-      margin: 0 0 24px;
-      font-size: 14px;
+      margin: 0 0 14px;
+      font-size: 15px;
       line-height: 1.8;
       color: #4b5563;
     }
@@ -84,11 +87,11 @@
       all: unset;
       cursor: pointer;
       display: inline-block;
-      padding: .5rem 1rem;
-      border-radius: .5rem;
+      padding: 8px 18px;
+      border-radius: 8px;
       background: #004944;
       color: #fff;
-      font-size: 1rem;
+      font-size: 15px;
       transition: transform .1s ease, box-shadow .1s ease;
     }
     
@@ -101,17 +104,29 @@
     
     @media (max-width: 480px) {
       h1 {
-        font-size: 18px;
+        font-size: 16px;
       }
       
       .icon img {
-        max-width: 280px;
+        max-width: 120px;
       }
       
       p {
         font-size: 13px;
       }
+      
+      button {
+        font-size: 14px;
+      }
     }
+    
+    
+    @media (max-width: 767px) and (min-width: 480px) {
+      .container {
+        padding-inline: 10%;
+      }
+    }
+  
   </style>
 </head>
 <body>

@@ -7,6 +7,7 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>خطای @statusCode</title>
     <link rel="stylesheet" href="~/css/site.css">
     <style>
@@ -30,21 +31,21 @@
 
             & .icon img {
                 width: 100%;
-                max-width: 320px;
+                max-width: 280px;
             }
 
 
             & h1 {
-                margin: 0 0 16px;
+                margin: 0 0 14px;
                 font-size: 32px;
-                color: #1f2937;
+                color: #00433f;
                 font-family: IRANSansBold, serif;
             }
 
             & h3 {
                 margin: 0 0 32px;
                 font-size: 18px;
-                color: #1f2937;
+                color: #00433f;
                 font-family: IRANSansMedium, serif;
                 font-weight: normal;
             }
@@ -87,7 +88,7 @@
                 }
 
                 & .icon img {
-                    max-width: 280px;
+                    max-width: 220px;
                 }
 
                 & p {
@@ -108,7 +109,7 @@
     <h1>خطای @statusCode</h1>
     @switch (statusCode) {
         case 404: {
-            <h3>@(string.IsNullOrEmpty(errorMessage) ? "صفحه‌ای که دنبال آن بودید پیدا نشد!" : errorMessage)</h3>
+            <h3>@(string.IsNullOrEmpty(errorMessage) ? "متاسفانه صفحه مورد نظر شما یافت نشد!" : errorMessage)</h3>
             <a href="/">
                 <button>بازگشت به صفحه اصلی</button>
             </a>
