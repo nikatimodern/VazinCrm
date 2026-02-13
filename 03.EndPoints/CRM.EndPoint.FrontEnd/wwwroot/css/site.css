@@ -4941,6 +4941,8 @@ table tr.payment-vosoled > td {
   color: #212529;
   text-align: left;
 }
+
+
 /*  */
 
 .disabled-overlay {
@@ -4956,30 +4958,13 @@ table tr.payment-vosoled > td {
 }
 
 
-.custom-customer-modal{
-  border-radius:14px;
+@keyframes FillFlash {
+  0%   { background-color: #e3f2fd; }
+  70%  { background-color: #f3f9ff; }
+  100% { background-color: transparent; }
 }
 
-.customer-card{
-  border:1px solid #eee;
-  border-radius:10px;
-  padding:10px;
-  display:flex;
-  flex-direction:column;
-  gap:4px;
-  font-size:14px;
+.fill-flash {
+  animation: FillFlash 1.2s ease;
 }
 
-.customer-row{
-  display:flex;
-  justify-content:space-between;
-  gap:8px;
-}
-
-.customer-label{
-  color:#6c757d;
-}
-
-.customer-value{
-  font-weight:600;
-}

@@ -2161,11 +2161,7 @@ class MyService {
                     case "textarea":
                     case "number":
                     case "tel":
-                        if (elm.tomselect) {
-                            elm.tomselect.setValue(value, true);
-                        } else {
-                            elm.value = value;
-                        }
+                        elm.value = value;
                         break;
                     case "select-one":
                         if (elm.tomselect) {
@@ -2191,6 +2187,7 @@ class MyService {
                 console.log(err);
             }
         }
+        
         
         const allAmounts = form.querySelectorAll(".inpAmount");
         allAmounts.forEach(item => {
@@ -2932,6 +2929,28 @@ function setUrlParams(paramsObj, options = { replace: true }) {
     } else {
         history.pushState(history.state, "", url);
     }
+}
+
+/**
+ * Flash highlight
+ * @param {HTMLElement} el
+ * @param {{duration?: number}, {className?: string}} options
+ * @param {number} options.duration - animation duration in ms
+ * @param {string} options.className - CSS class to apply
+ */
+function flashItem(el, options = {}) {
+    if (!el) return;
+    
+    const { duration = 1200, className = "fill-flash" } = options;
+    
+    el.classList.remove(className);
+    
+    // ری‌فلو برای ری‌استارت شدن انیمیشن
+    void el.offsetWidth;
+    
+    el.classList.add(className);
+    
+    setTimeout(() => el.classList.remove(className), duration);
 }
 
 

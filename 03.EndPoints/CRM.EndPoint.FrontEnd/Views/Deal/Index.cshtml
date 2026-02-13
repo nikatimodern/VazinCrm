@@ -651,6 +651,14 @@
         };
 
         const submitDeal = async () => {
+            console.log(document.getElementById("dealCustomersTomSelect").value);
+            console.log(document.getElementById("acquaintanceWayDeal").value);
+            console.log(document.getElementById("workSenfIDDeal").value);
+            console.log(document.getElementById("dealMobile").value);
+            const data = mySer.convertFormToJSON("formDeal");
+            const model = { ...currentDealData, ...data };
+            if (model.customerId.startsWith("custom")) model.customerId = null;
+            console.log(model);
             if (!await mySer.CheckValidForm("mainFormDeal")) return;
 
             if (!await mySer.CheckValidForm("extraCustomerPanel")) {
@@ -697,7 +705,6 @@
                 options: customerRes.data,
                 valueField: "id",
                 maxItems: 1,
-                searchField: ["text", "mobile"],
                 persist: false,
                 openOnFocus: false,
                 createOnBlur: true,
@@ -707,8 +714,8 @@
                 create: (input, callback) => callback({ id: `custom-${input}`, text: input }),
 
                 async onChange(value) {
-                    if (!value) return;
 
+                    if (!value) return;
                     if (!value.startsWith("custom")) {
                         toggleElementsDisabled(dealMobileElm, true);
                         selectTomCustomers.disable();
@@ -744,13 +751,15 @@
 
                     currentDealData.customerCode = null;
                     currentDealData.customerName = "";
-                    dealMobileElm.value = "";
+                    // dealMobileElm.value = "";
+                    dealMobileElm.tomselect.clear(true);
                     return true;
                 },
             });
 
-            const mobileTom = new TomSelect(dealMobileElm, {
-                options: customerRes.data,
+
+            const mobileTom = new TomSelect("#dealMobile", {
+                options: customerRes.data.map(f => ({ mobile: f.mobile })),
                 valueField: "mobile",
                 openOnFocus: false,
                 searchField: ["mobile"],
@@ -766,6 +775,10 @@
                     if (!customer) return;
 
                     selectTomCustomers.setValue(customer.id);
+                    //highlightInput(selectTomCustomers.control);
+                    // selectTomCustomers.control.classList.add("input-flash");
+                    //setTimeout(() => selectTomCustomers.control.classList.remove("input-flash"), 1200);
+                    flashItem(selectTomCustomers.control);
                 },
 
                 onType(str) {
@@ -829,9 +842,10 @@
                 mobileNumber: data.mobile ?? "",
                 customerCode: data.customerCode,
                 customerName: `${data.companyName ?? ""} ${data.agentName ?? ""}`.trim(),
+                customerId: data.id,
             };
 
-            selectTomCustomers.setValue(data.id, true);
+            //selectTomCustomers.setValue(data.id, true);
             mySer.convertJsonToForm(cusDealData, "formDeal");
             currentDealData = { ...currentDealData, ...cusDealData };
         };
@@ -854,7 +868,7 @@
                     showExistingCustomerToast(res.data);
                 }
             }
-        });*@
+        });*@;
 
         function showExistingCustomerToast(cus) {
             const wrapper = document.createElement("div");
