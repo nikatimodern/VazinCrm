@@ -36,7 +36,7 @@
                         </div>
                         <div style=" display:flex;align-items:center;gap:8px">
                             <label style="color:gray">کد مشتری:</label>
-                            <label class="@(item.CustomerCode != null ? "hoverLink" : "") text-center fbold" onclick="openCustomerProfile('@item.Customer')">@(item.CustomerCode?.ToString() ?? "-")</label>
+                            <label class="@(item.CustomerCode != null ? "hoverLink" : "") text-center fbold" onclick="openCustomerProfile('@item.Customer', '@item.PrefactorSer')">@(item.CustomerCode?.ToString() ?? "-")</label>
                         </div>
                     </div>
                     <div class="col-12 d-flex flex-wrap justify-content-around" style="text-align:center;row-gap:.5rem;column-gap:10px;">

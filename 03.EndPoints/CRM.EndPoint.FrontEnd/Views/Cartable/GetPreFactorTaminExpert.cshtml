@@ -196,7 +196,7 @@
                     </button>
 
                     @if (item.CustomerId != null) {
-                        <button class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="پروفایل" onclick="openCustomerProfile('@item.CustomerId')">
+                        <button class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="پروفایل" onclick="openCustomerProfile('@item.CustomerId', '@item.SerialNumber')">
                             <i class="mp fa fa-user"></i>
                         </button>
                     }
