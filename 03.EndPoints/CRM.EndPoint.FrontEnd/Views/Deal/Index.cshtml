@@ -651,14 +651,6 @@
         };
 
         const submitDeal = async () => {
-            console.log(document.getElementById("dealCustomersTomSelect").value);
-            console.log(document.getElementById("acquaintanceWayDeal").value);
-            console.log(document.getElementById("workSenfIDDeal").value);
-            console.log(document.getElementById("dealMobile").value);
-            const data = mySer.convertFormToJSON("formDeal");
-            const model = { ...currentDealData, ...data };
-            if (model.customerId.startsWith("custom")) model.customerId = null;
-            console.log(model);
             if (!await mySer.CheckValidForm("mainFormDeal")) return;
 
             if (!await mySer.CheckValidForm("extraCustomerPanel")) {
@@ -758,13 +750,14 @@
             });
 
 
-            const mobileTom = new TomSelect("#dealMobile", {
+            const mobileTom = new TomSelect(dealMobileElm, {
                 options: customerRes.data.map(f => ({ mobile: f.mobile })),
                 valueField: "mobile",
                 openOnFocus: false,
                 searchField: ["mobile"],
                 labelField: "mobile",
                 maxItems: 1,
+                persist: false,
                 create: true,
                 createOnBlur: true,
                 placeholder: "...شماره موبایل",
@@ -775,9 +768,6 @@
                     if (!customer) return;
 
                     selectTomCustomers.setValue(customer.id);
-                    //highlightInput(selectTomCustomers.control);
-                    // selectTomCustomers.control.classList.add("input-flash");
-                    //setTimeout(() => selectTomCustomers.control.classList.remove("input-flash"), 1200);
                     flashItem(selectTomCustomers.control);
                 },
 
