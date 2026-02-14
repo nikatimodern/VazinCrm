@@ -7,7 +7,7 @@ window.addEventListener("load", async () => {
     
     //initInstallPrompt();
     await initPush();
-    await showIosPwaInstall();
+    //await showIosPwaInstall();
 });
 
 
