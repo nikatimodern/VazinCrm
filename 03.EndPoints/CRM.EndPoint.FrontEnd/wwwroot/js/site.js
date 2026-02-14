@@ -2934,23 +2934,26 @@ function setUrlParams(paramsObj, options = { replace: true }) {
 /**
  * Flash highlight
  * @param {HTMLElement} el
- * @param {{duration?: number}, {className?: string}} options
+ * @param {{duration?: number}, {color?: string}} options
  * @param {number} options.duration - animation duration in ms
  * @param {string} options.className - CSS class to apply
  */
 function flashItem(el, options = {}) {
     if (!el) return;
     
-    const { duration = 1200, className = "fill-flash" } = options;
+    const {
+        duration = 1200,
+        color = "#e3f2fd",
+    } = options;
     
-    el.classList.remove(className);
+    el.style.setProperty("--flash-duration", duration + "ms");
+    el.style.setProperty("--flash-color", color);
     
-    // ری‌فلو برای ری‌استارت شدن انیمیشن
+    el.classList.remove("fill-flash");
     void el.offsetWidth;
+    el.classList.add("fill-flash");
     
-    el.classList.add(className);
-    
-    setTimeout(() => el.classList.remove(className), duration);
+    setTimeout(() => el.classList.remove("fill-flash"), duration);
 }
 
 
