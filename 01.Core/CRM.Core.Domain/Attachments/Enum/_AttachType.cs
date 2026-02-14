@@ -10,6 +10,7 @@ namespace CRM.Core.Domain.Attachments.Enum {
         DocPayPreFactor = 4, //سند پرداختی برای پیش فاکتور
         UploadCustomerPf = 5,  //  تصاویر بارگزاری شده از طرف مشتری برای واریزی پیش فاکتور
         UploadSalesExpertPf = 6,  //  تصاویر بارگزاری شده از طرف کارشناس برای واریزی پیش فاکتور
-        Chat = 7  //  تصاویر بارگزاری شده پیام رسان
+        Chat = 7,  //  تصاویر بارگزاری شده پیام رسان
+        SupplyFactor=8 // تصویر بارگزاری شده فاکتور تامین
     }
 }

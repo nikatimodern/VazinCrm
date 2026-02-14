@@ -384,15 +384,10 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("_AttachTypeTxt")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("contractId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("fileExten")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("contractId");
 
                     b.ToTable("Attachments");
                 });
@@ -3057,9 +3052,6 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("FactorDateTxt")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FactorFileUrl")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("FactorSerial")
                         .HasColumnType("nvarchar(max)");
 
@@ -3191,14 +3183,6 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.HasOne("CRM.Core.Domain.Customers.Entities.Customer", null)
                         .WithMany("Accountancies")
                         .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
-            modelBuilder.Entity("CRM.Core.Domain.Attachments.Entities.Attachment", b =>
-                {
-                    b.HasOne("CRM.Core.Domain.Contracts.Entities.Contract", null)
-                        .WithMany("Attachments")
-                        .HasForeignKey("contractId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
@@ -3455,11 +3439,6 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Company.Entities.Company", b =>
                 {
                     b.Navigation("CompanyFiles");
-                });
-
-            modelBuilder.Entity("CRM.Core.Domain.Contracts.Entities.Contract", b =>
-                {
-                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Customers.Entities.Agent", b =>

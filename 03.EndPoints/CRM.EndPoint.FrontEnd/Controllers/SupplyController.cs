@@ -12,6 +12,7 @@ using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.ASettings.Entities;
+using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Customers.Enum;
@@ -39,15 +40,23 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly UserManager<AppUser> userManager;
         private readonly Service genService;
         private readonly LogSystemService _logSystemService;
+        private readonly FileSaver fileSaver;
 
         public SupplyController(CRMContextDb db, UserManager<AppUser> userManager, DateTimeServices dtService, Service genService,
-            LogSystemService logSystemService)
+            LogSystemService logSystemService ,FileSaver fileSaver)
         {
             this.db = db;
             this.dtService = dtService;
             this.userManager = userManager;
             this.genService = genService;
             _logSystemService = logSystemService;
+            this.fileSaver = fileSaver;
+        }
+
+        [Authorize(Roles = "مدیر ارشد, مدیر اجرایی")]
+        public IActionResult SupplyFactor() // فاکتور تامین
+        {
+            return View();
         }
 
         [Authorize(Roles = "مدیر ارشد, مدیر اجرایی")]
@@ -60,6 +69,39 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public IActionResult Demand() // مطالبات
         {
             return View();
+        }
+
+           [HttpPost]
+        public async Task<IActionResult> AddSupplyFactor([FromBody] SupplyFactor model)
+        {
+            if (model == null) return BadRequest();
+
+
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+
+                model.UserCreator = user.FullName;
+                model.UserCreatorID = user.Id;
+                model.FactorDate = dtService.GetDateMiladi(model.FactorDateTxt) ?? DateTime.Now;
+                db.SupplyFactors.Add(model);
+
+
+                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.SupplyFactor);
+                foreach (var att in attach)
+                {
+                    att.EntityId = model.Id;
+                }
+                db.Attachments.AddRange(attach);
+
+
+                await db.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
 
 

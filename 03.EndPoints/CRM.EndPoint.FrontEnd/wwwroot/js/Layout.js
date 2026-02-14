@@ -1579,7 +1579,7 @@ async function isSMSNotificationConfirmed() {
     return result.isConfirmed;
 }
 
-async function changeStatusHd(id, status, sourceStatus, passType, dealId, fromDrop = false, draggedItem = null, sourceColumn = null) {
+async function changeStatusHd(id, status, sourceStatus, passType, dealId = null, fromDrop = false, draggedItem = null, sourceColumn = null) {
     let sendSms = false;
     if (status === 3 && sourceStatus !== 4) {
         sendSms = await isSMSNotificationConfirmed();

@@ -30,7 +30,6 @@ namespace CRM.Infrastructures.Sql.Supplies.Configs
 
 
 
-
         }
     }
 }

@@ -3,6 +3,7 @@ using CRM.Framework.Domain;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
 namespace CRM.Core.Domain.Contracts.Entities
@@ -25,6 +26,8 @@ namespace CRM.Core.Domain.Contracts.Entities
         [Required]
         public string toDateSh { get; set; }
         public string description { get; set; }
+
+        [NotMapped]
         public IList<Attachment> Attachments { get; set; }
 
     }
