@@ -4941,6 +4941,8 @@ table tr.payment-vosoled > td {
   color: #212529;
   text-align: left;
 }
+
+
 /*  */
 
 .disabled-overlay {
@@ -4954,3 +4956,34 @@ table tr.payment-vosoled > td {
   z-index: 20;
   border-radius: inherit;
 }
+
+
+/* @keyframes FillFlash {
+  0%   { background-color: #e3f2fd; }
+  70%  { background-color: #f3f9ff; }
+  100% { background-color: transparent; }
+}
+
+.fill-flash {
+  animation: FillFlash 1.2s ease;
+} */
+
+@keyframes FillFlash {
+  0% {
+    background-color: var(--flash-color);
+  }
+  70% {
+    background-color: color-mix(in srgb, var(--flash-color) 60%, white);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+
+.fill-flash {
+  --flash-color: #e3f2fd;
+  --flash-duration: 1.2s;
+  animation: FillFlash var(--flash-duration) ease;
+}
+

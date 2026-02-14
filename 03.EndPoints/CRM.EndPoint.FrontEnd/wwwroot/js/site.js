@@ -921,6 +921,48 @@ const toastifyInfo = (text, duration = 3000) => {
     }).showToast();
 };
 
+const toastifyInfo2 = (text, options = {}) => {
+    const defaultStyle = {
+        background: "linear-gradient(135deg, rgba(110,73,0,1) 18%, rgba(185,124,0,1) 100%)",
+        borderRadius: "8px",
+    };
+    
+    const toast = Toastify({
+        text: text,
+        node: options.node,
+        duration: options.duration ?? 5000,
+        close: options.close ?? false,
+        gravity: options.gravity ?? "top",
+        position: options.position ?? "center",
+        stopOnFocus: options.stopOnFocus ?? true,
+        style: { ...defaultStyle, ...(options.style || {}) },
+    });
+    
+    toast.showToast();
+    return toast;
+};
+
+const toastifyError2 = (text, options = {}) => {
+    const defaultStyle = {
+        background: "linear-gradient(135deg, rgba(121,9,9,1) 21%, rgba(78,0,0,0.9) 100%)",
+        borderRadius: "8px",
+    };
+    
+    const toast = Toastify({
+        text: text,
+        node: options.node,
+        duration: options.duration ?? 5000,
+        close: options.close ?? false,
+        gravity: options.gravity ?? "top",
+        position: options.position ?? "center",
+        stopOnFocus: options.stopOnFocus ?? true,
+        style: { ...defaultStyle, ...(options.style || {}) },
+    });
+    
+    toast.showToast();
+    return toast;
+};
+
 
 const checkAccess = async (elId) => {
     let rols = JSON.parse(sessionStorage.getItem("Rols"));
@@ -1438,8 +1480,6 @@ const delReportOk = (item, passType, dealId) => {
         setTimeout(() => delReportOk(item, passType, dealId), 3000);
     });
 };
-
-
 
 
 const goTo = (url, blank = false) => {
@@ -1988,7 +2028,12 @@ class MyService {
                 case "textarea":
                 case "number":
                 case "tel":
-                    elm.value = defVal ?? "";
+                    if (elm.tomselect) {
+                        elm.tomselect.clear(true);
+                        if (defVal != null) elm.tomselect.setValue(defVal, true);
+                    } else {
+                        elm.value = defVal ?? "";
+                    }
                     break;
                 
                 case "select-one":
@@ -2142,6 +2187,7 @@ class MyService {
                 console.log(err);
             }
         }
+        
         
         const allAmounts = form.querySelectorAll(".inpAmount");
         allAmounts.forEach(item => {
@@ -2883,6 +2929,31 @@ function setUrlParams(paramsObj, options = { replace: true }) {
     } else {
         history.pushState(history.state, "", url);
     }
+}
+
+/**
+ * Flash highlight
+ * @param {HTMLElement} el
+ * @param {{duration?: number}, {color?: string}} options
+ * @param {number} options.duration - animation duration in ms
+ * @param {string} options.className - CSS class to apply
+ */
+function flashItem(el, options = {}) {
+    if (!el) return;
+    
+    const {
+        duration = 1200,
+        color = "#e3f2fd",
+    } = options;
+    
+    el.style.setProperty("--flash-duration", duration + "ms");
+    el.style.setProperty("--flash-color", color);
+    
+    el.classList.remove("fill-flash");
+    void el.offsetWidth;
+    el.classList.add("fill-flash");
+    
+    setTimeout(() => el.classList.remove("fill-flash"), duration);
 }
 
 
