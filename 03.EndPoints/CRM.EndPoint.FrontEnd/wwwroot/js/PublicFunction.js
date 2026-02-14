@@ -1036,16 +1036,21 @@ const AddFactor = async (pfId = null, type = 1) => {
         FLshowLoading(false);
         return;
     }
-    pfData.preFactorItems.forEach(pfItem => {
+   
+    _factorItems = pfData.preFactorItems
+    
+    _factorItems = _factorItems.filter(pfItem => supplyData.some(sup => sup.pfItemId === pfItem.id));
+    _factorItems.forEach(pfItem => {
         pfItem.weightCount = supplyData.filter(sup => sup.pfItemId === pfItem.id).reduce((sum, cur) => sum + Number(cur.weight), 0);
         pfItem.totalAmount = calcTotalAmount(pfItem.weightCount, pfItem.unitAmount);
     });
+    
     
     Array.from(pfData.descriptions).forEach((item) => {
         item.id = null;
     });
     
-    Array.from(pfData.preFactorItems).forEach((item) => {
+    Array.from(_factorItems).forEach((item) => {
         item.pfItemId = item.id;
         item.id = null;
     });
@@ -1056,8 +1061,8 @@ const AddFactor = async (pfId = null, type = 1) => {
     factor.pfactorSerialNumber = pfData.serialNumber;
     factor.serialNumber = null;
     factor.id = null;
-    factor.factorItems = pfData.preFactorItems;
-    _factorItems = pfData.preFactorItems;
+    factor.factorItems = _factorItems;
+    
     factor.officialType = pfData.officialType;
     f_officialType = pfData.officialType;
     
@@ -1178,7 +1183,7 @@ const submitPrefactorOK = async (type) => {
                     await GetPreFactorSalesAdmin();
                 } else if (type === 3) { // PreFactor/Factor
                     await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
-                } else if (type === 4) { //deal
+                } else if (type === 4) { //Deal
                     await getPreFactorFromDeal(dealData.id);
                     await getAllDeals();
                     if (!document.getElementById("dealPreFactorsModal").classList.contains("show")) {

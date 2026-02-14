@@ -151,7 +151,20 @@
 
             // await  getAllFactor();
             document.getElementById("FLshowLoading").style.display = "none";
+            focusTargetPf();
         });
+
+        function focusTargetPf() {
+            const targetPf = sessionStorage.getItem("targetPf");
+            if (!targetPf) return;
+            sessionStorage.removeItem("targetPf");
+
+            const el = document.querySelector(`[data-serialnumber="${targetPf}"]`);
+            if (!el) return;
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+
+            flashItem(el, { duration: 2500 });
+        }
 
 
         const removeTabFactorsDesktop = () => {

@@ -3086,14 +3086,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (supplies.Count == 0)
             {
                 errorList.Add(MapError(21));
-            } else
+            } /*else
             {
                 var pfItemsCount = await db.PreFactors.Where(f => f.Id == pfId).SumAsync(f => f.PreFactorItems.Count);
                 if (pfItemsCount != supplies.Count)
                 {
                     errorList.Add(MapError(22));
                 }
-            }
+            }*/
 
             var accS = db.Accountancies.Where(a => a.pfid == pfId && a.AccType == AcEnum.واریزی && a.InvoiceType == InvoiceTypeEnum.پیش_فاکتور);
             var hasAnyAcc = await accS.AnyAsync();

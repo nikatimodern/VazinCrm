@@ -52,7 +52,7 @@
                                 <option value="50" selected>50</option>
                                 <option value="100">100</option>
                                 <option value="200">200</option>
-                                <option value="0">همه</option>
+                                <option value="-1">همه</option>
                             </select>
                             گزارش
                         </label>
@@ -95,7 +95,6 @@
 @section scripts {
     <script defer>
         var ReportTBL = null;
-        var filterReportConfig = {};
         var reportSearchVal = null;
 
         async function callbackFilterReport() {
@@ -104,18 +103,18 @@
             reportElement.checked = selFilterChd;
             reportElement.parentElement.classList.toggle("d-none", selFilterChd);
 
-            await getAllReports(filterReportConfig);
+            await getAllReports();
         }
 
 
         document.addEventListener("DOMContentLoaded", async () => {
-            await getAllReports();
+            await Promise.all([getAllReports(), initReportHeader()]);
 
             document.getElementById("reportSearchId").addEventListener("keyup", async (e) => {
                 if (e.key === "Enter") {
                     e.preventDefault();
                     filterReportConfig.varSearch = e.target.value;
-                    await getAllReports(filterReportConfig);
+                    await getAllReports();
                 }
             });
 
@@ -125,60 +124,15 @@
                     SelFilterChd: e.target.checked,
                     selFilter: e.target.checked ? currentUser.id : null,
                 };
-                await getAllReports(filterReportConfig);
+                await getAllReports();
             });
 
             document.getElementById("reportCountSelect").addEventListener("change", async (e) => {
                 filterReportConfig.count = Number(e.target.value);
-                await getAllReports(filterReportConfig);
+                await getAllReports();
             });
 
-            await initReportHeader();
         });
-
-
-        const ExportExcelReport = async () => {
-            $("#FLshowLoading").css("display", "");
-
-            const data = filterReportConfig || {};
-
-            const model = {
-                ...data,
-                filt: data.filterVar,
-                serVal: data.varSearch,
-                _type: filterReportConfig._type ?? -1,
-                count: filterReportConfig.count ?? 50,
-            };
-
-            fetch("/Report/ExportExcelReport", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(model),
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    } else {
-                        $("#FLshowLoading").css("display", "none");
-                        return response.blob(); // تبدیل پاسخ به Blob
-                    }
-                })
-                .then(blob => {
-                    const url = window.URL.createObjectURL(blob); // ایجاد URL برای Blob
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = "ReportsExcel.xlsx"; // نام و فرمت دلخواه فایل
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    window.URL.revokeObjectURL(url); // پاکسازی URL Blob پس از دانلود
-                })
-                .catch(error => {
-                    console.error("Error:", error);
-                });
-        };
 
 
         async function initReportHeader() {
@@ -215,11 +169,11 @@
                     || value === "986e7e82-9853-402f-a7f6-36252965ff82";
                 const showReasonCancel = value === "986e7e82-9853-402f-a7f6-36252965ff82";
 
-                if (showReasonCancel) {
-                    finalResultCallSelect.value = "82769710-880f-43aa-bd83-f5c6016ce38c";
-                }
+                // if (showReasonCancel) {
+                finalResultCallSelect.value = showReasonCancel ? "82769710-880f-43aa-bd83-f5c6016ce38c" : "";
+                // }
                 reasonCancelWrapper.classList.toggle("d-none", finalResultCallSelect.value !== "82769710-880f-43aa-bd83-f5c6016ce38c");
-
+                reasonCancelSelect.value = "";
                 toggleElementsDisabled(finalResultCallSelect, showReasonCancel);
 
                 callReports();
@@ -246,9 +200,52 @@
                 filterReportConfig.resultCallId = resultCallSelect.value || null;
                 filterReportConfig.reasonCancelId = reasonCancelSelect.value || null;
                 filterReportConfig.finalResultCallId = finalResultCallSelect.value || null;
-                getAllReports(filterReportConfig);
+                getAllReports();
             }
         }
+
+        const ExportExcelReport = async () => {
+            $("#FLshowLoading").css("display", "");
+
+            const data = filterReportConfig || {};
+
+            const model = {
+                ...data,
+                filt: data.filterVar,
+                serVal: data.varSearch,
+                _type: data._type ?? -1,
+                count: data.count ?? 50,
+            };
+
+            fetch("/Report/ExportExcelReport", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(model),
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    } else {
+                        $("#FLshowLoading").css("display", "none");
+                        return response.blob(); // تبدیل پاسخ به Blob
+                    }
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob); // ایجاد URL برای Blob
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "ReportsExcel.xlsx"; // نام و فرمت دلخواه فایل
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url); // پاکسازی URL Blob پس از دانلود
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                });
+        };
 
 
     </script>

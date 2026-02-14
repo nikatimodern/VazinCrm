@@ -740,7 +740,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }*/
 
         [Authorize(Policy = "NotCustomerOnly")]
-        public async Task<ActionResult> GetAllCustomerPartial(int skip = 0, int take = 10, int roleType = -1)
+        public async Task<ActionResult> GetAllCustomerPartial(int skip = 0, int take = 10, int roleType = -1, int juridical = -1)
         {
             try
             {
@@ -767,6 +767,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 } else if (roleType == 2)
                 {
                     query = query.Where(f => f.RoleType == RoleTypeEnum.تامین_کننده || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری);
+                }
+
+                if (juridical != -1)
+                {
+                    query = query.Where(f => f.Juridical == juridical);
                 }
 
                 var result = await query.Skip(skip).Take(take).Include(f => f.UserCustomers).ToListAsync();
@@ -815,7 +820,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private static readonly HashSet<string> StopWords = ["از", "در", "به", "که", "با", "را", "و", "یا", "تا", "برای", "این", "آن"];
 
         [Authorize(Policy = "NotCustomerOnly")]
-        public async Task<ActionResult> SearchAllCustomerPartial(string val, int roleType = -1)
+        public async Task<ActionResult> SearchAllCustomerPartial(string val, int roleType = -1, int juridical = -1)
         {
             try
             {
@@ -825,14 +830,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 ViewBag.AccessAccepte = true;
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var rols = await userManager.GetRolesAsync(user);
-                IQueryable<Customer> customerQuery = db.Customers.Include(f => f.UserCustomers);
+                IQueryable<Customer> cusQuery = db.Customers.Include(f => f.UserCustomers);
 
                 if (roleType == 1)
                 {
-                    customerQuery = customerQuery.Where(f => f.RoleType == RoleTypeEnum.مشتری || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری);
+                    cusQuery = cusQuery.Where(f => f.RoleType == RoleTypeEnum.مشتری || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری);
                 } else if (roleType == 2)
                 {
-                    customerQuery = customerQuery.Where(f => f.RoleType == RoleTypeEnum.تامین_کننده || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری);
+                    cusQuery = cusQuery.Where(f => f.RoleType == RoleTypeEnum.تامین_کننده || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری);
+                }
+
+                if (juridical != -1)
+                {
+                    cusQuery = cusQuery.Where(f => f.Juridical == juridical);
                 }
 
                 if (!(rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش")))
@@ -841,11 +851,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         .Where(u => u.UserId == Guid.Parse(user.Id))
                         .Select(u => u.CustomerId).ToListAsync();
 
-                    customerQuery = customerQuery.Where(c => ids.Contains(c.Id));
+                    cusQuery = cusQuery.Where(c => ids.Contains(c.Id));
                     ViewBag.AccessAccepte = false;
                 }
 
-                var data = await customerQuery
+                var data = await cusQuery
                     .Where(c =>
                         keywords.Any(k =>
                             c.NormalizedCompanyName.Contains(k) ||
@@ -885,15 +895,35 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [Authorize(Policy = "NotCustomerOnly")]
+        public async Task<IActionResult> GetAllCustomers()
+        {
+            var data = await db.Customers.Where(f =>
+                f.RoleType == RoleTypeEnum.مشتری || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری
+            ).Select(f => new {
+                f.Id,
+                f.Mobile,
+                text = $"{f.CompanyName} {f.AgentName} _ (کد مشتری  {f.CustomerCode})".Trim(),
+            }).ToListAsync();
+            return Ok(data);
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
         public async Task<IActionResult> GetCustomer(Guid id)
         {
-            var data2 = await db.BaseItems
+            /*var data2 = await db.BaseItems
                 .Where(f => f.TypeCode == BaseItemEnum.صنف)
                 .Select(g => new SelectOptionGuidDto() {
                     id = g.Id,
                     text = g.Title
-                }).ToListAsync();
+                }).ToListAsync();*/
             var data = await db.Customers.Where(f => f.Id == id).FirstOrDefaultAsync();
+            return Ok(data);
+        }
+
+        [Authorize(Policy = "NotCustomerOnly")]
+        public async Task<IActionResult> GetCustomerByMobile(string mobile)
+        {
+            var data = await db.Customers.Where(f => f.Mobile == mobile).FirstOrDefaultAsync();
             return Ok(data);
         }
 
@@ -1169,7 +1199,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (!string.IsNullOrWhiteSpace(search))
             {
                 search = TextService.NormalizeText(search);
-                var keywords = search.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(k => k.Length > 2).Distinct().ToList();
+                var keywords = search.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(k => !StopWords.Contains(k)).Distinct().ToList();
 
                 query = query
                     .Where(c =>
@@ -1177,16 +1207,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             c.NormalizedCompanyName.Contains(k) ||
                             c.NormalizedAgentName.Contains(k) ||
                             c.phone.Contains(search) || c.Mobile.Contains(search)
-                        ) || c.CustomerCode.ToString() == search).Select(c => new {
+                        ) || c.CustomerCode.ToString() == search
+                    ).Select(c => new {
                         Customer = c,
                         Score =
                             (c.NormalizedCompanyName == search ? 100 : 0) +
                             (c.NormalizedAgentName == search ? 100 : 0) +
                             (c.NormalizedCompanyName.StartsWith(search) ? 50 : 0) +
                             (c.NormalizedAgentName.StartsWith(search) ? 50 : 0) +
-                            keywords.Count(k =>
-                                c.NormalizedAgentName.Contains(k) ||
-                                c.NormalizedCompanyName.Contains(k)) * 10
+                            keywords.Count(k => c.NormalizedAgentName.Contains(k) || c.NormalizedCompanyName.Contains(k)) * 10
                     })
                     .OrderByDescending(x => x.Score)
                     .ThenByDescending(x => x.Customer.ModifyDate)

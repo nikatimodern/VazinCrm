@@ -40,7 +40,7 @@ connection.on("countPreFactorToAccept", (countObj) => {
     //setCountEnvelope(countObj);
 });
 connection.on("ShowReport", async () => {
-    await getAllReports({}, false);
+    await getAllReports(false);
 });
 
 connection.on("ShowAccessDeniedMessage", function (message) {

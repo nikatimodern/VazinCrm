@@ -299,7 +299,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 qData = qData.OrderByDescending(f => f.CreateDate);
 
-                if (model.Count > 0)
+                if (model.Count != -1)
                     qData = qData.Take(model.Count);
             }
 

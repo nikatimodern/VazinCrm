@@ -713,7 +713,7 @@ const notification = (id, title, description, dateMiladi, entityType, entityId) 
             i--;
             notifDiv.querySelector("#counterNotif").innerText = i;
             if (i <= 0) {
-                clearAllInterval();
+                //clearAllInterval();
                 toastInstance.hideToast();
             }
         }
@@ -724,6 +724,7 @@ const notification = (id, title, description, dateMiladi, entityType, entityId) 
     
     const clearAllInterval = () => {
         clearInterval(counterNotifId);
+        handleNotifAction(id, false);
         //clearInterval(updateTimeId);
     };
     
@@ -918,6 +919,48 @@ const toastifyInfo = (text, duration = 3000) => {
             borderRadius: "8px",
         },
     }).showToast();
+};
+
+const toastifyInfo2 = (text, options = {}) => {
+    const defaultStyle = {
+        background: "linear-gradient(135deg, rgba(110,73,0,1) 18%, rgba(185,124,0,1) 100%)",
+        borderRadius: "8px",
+    };
+    
+    const toast = Toastify({
+        text: text,
+        node: options.node,
+        duration: options.duration ?? 5000,
+        close: options.close ?? false,
+        gravity: options.gravity ?? "top",
+        position: options.position ?? "center",
+        stopOnFocus: options.stopOnFocus ?? true,
+        style: { ...defaultStyle, ...(options.style || {}) },
+    });
+    
+    toast.showToast();
+    return toast;
+};
+
+const toastifyError2 = (text, options = {}) => {
+    const defaultStyle = {
+        background: "linear-gradient(135deg, rgba(121,9,9,1) 21%, rgba(78,0,0,0.9) 100%)",
+        borderRadius: "8px",
+    };
+    
+    const toast = Toastify({
+        text: text,
+        node: options.node,
+        duration: options.duration ?? 5000,
+        close: options.close ?? false,
+        gravity: options.gravity ?? "top",
+        position: options.position ?? "center",
+        stopOnFocus: options.stopOnFocus ?? true,
+        style: { ...defaultStyle, ...(options.style || {}) },
+    });
+    
+    toast.showToast();
+    return toast;
 };
 
 
@@ -1148,7 +1191,12 @@ const SubmitReportForm = async () => {
         $.post(`/Report/AddReport`, data, async (res) => {
             if (res.status === 200) {
                 if (typeReportSubmit === 0) {
-                    await getAllReports();
+                    const currentPath = window.location.pathname.toLowerCase();
+                    if (currentPath.includes("report")) {
+                        await getAllReports();
+                    } else if (currentPath.includes("dashboard")) {
+                        await getDashReports();
+                    }
                 } else if (typeReportSubmit === 4) {
                     await getReportFromDeal(dealIdReport);
                     await getAllDeals();
@@ -1301,7 +1349,7 @@ const ShowModalReport = async (model, passType = 0, dealId = null, dealSerialNum
         },
     });
     
-    ModalToggle("#ModalReport")
+    ModalToggle("#ModalReport");
 };
 const closeModalReport = () => {
     oldReport = null;
@@ -1312,12 +1360,12 @@ const closeModalReport = () => {
 };
 
 
-async function getAllReports(data = {}, showLoading = true) {
-    const allReportsDashboardElm = document.getElementById("allReportsDashboardId");
-    const allReportsElm = document.getElementById("allReportsId");
-    if (!allReportsElm && !allReportsDashboardElm) return;
+async function getAllReports(showLoading = true) {
+    const containerReport = document.getElementById("allReportsId");
+    if (!containerReport) return;
     
     return new Promise(async (resolve, reject) => {
+        const data = filterReportConfig || {};
         
         const model = {
             ...data,
@@ -1326,35 +1374,41 @@ async function getAllReports(data = {}, showLoading = true) {
             count: data.count ?? 50,
             _type: data._type ?? -1,
         };
+        
         try {
             showLoading && FLshowLoading();
             
             const res = await axios.post("/Report/GetAllReportPartial", model);
             if (res.status === 200) {
-                if (allReportsDashboardElm) {
-                    allReportsDashboardElm.innerHTML = res.data.html;
-                } else if (allReportsElm) {
-                    allReportsElm.innerHTML = res.data.html;
-                    document.querySelector("#reportCountSelect option:last-child").textContent = data.count === 0 ? `همه (${res.data.count})` : "همه";
+                containerReport.innerHTML = res.data.html;
+                
+                const select = document.getElementById("reportCountSelect");
+                const lastOption = select?.querySelector("option[value='-1']");
+                const totalCount = res.data.count ?? 0;
+                
+                if (select && lastOption) {
+                    lastOption.textContent = select.value === "-1" ? `همه (${totalCount})` : "همه";
+                    
+                    if (!data.count) {
+                        if (totalCount < 50) {
+                            select.value = "-1";
+                            lastOption.textContent = `همه (${totalCount})`;
+                        } else {
+                            select.value = "50";
+                        }
+                    }
                 }
             }
             
-            showLoading && FLshowLoading(false);
-            
             return resolve();
-            
-            
         } catch (err) {
             console.error(err);
             containerReport.innerHTML = "خطا در دریافت گزارش ها :(";
-            showLoading && FLshowLoading(false);
             return reject();
+        } finally {
+            FLshowLoading(false);
         }
-        
-        
     });
-    
-    
 }
 
 const ShowUpdateReport = async (id, passType = 0) => {
@@ -1403,13 +1457,16 @@ const DelReport = (item, passType = 0, dealId = null) => {
 
 
 const delReportOk = (item, passType, dealId) => {
-    document.getElementById("FLshowLoading").style.display = "";
+    FLshowLoading();
     $.get(baseUrl + "Report/DelReport/" + item, async function (res) {
         if (res.status === 200) {
             if (passType === 0) {
-                const data = window[filterVarConfig] || {};
-                data.varSearch = document.getElementById("reportSearchId")?.value;
-                await getAllReports(data);
+                const currentPath = window.location.pathname.toLowerCase();
+                if (currentPath.includes("report")) {
+                    await getAllReports();
+                } else if (currentPath.includes("dashboard")) {
+                    await getDashReports();
+                }
             } else if (passType === 4) {
                 await getReportFromDeal(dealId);
             }
@@ -1417,53 +1474,13 @@ const delReportOk = (item, passType, dealId) => {
             toastifySuccess(res.message);
         } else if (res.status === 201) {
             toastifyError(res.message);
-            
         }
-        document.getElementById("FLshowLoading").style.display = "none";
+        FLshowLoading(false);
     }).fail(() => {
         setTimeout(() => delReportOk(item, passType, dealId), 3000);
     });
 };
 
-const AbortCus = (id) => {
-    return new Promise(resolve => {
-        $.get(`${baseUrl}Customer/AbortCustomer?cid=${id}`, () => {
-            if ($("#SearchInp").val().trim().length !== 0)
-                SearchAllCustomer($("#SearchInp").val());
-            else {
-                //getAllCustomerPartialTop();
-                loadCustomers();
-            }
-            toastifySuccess("مشتری حذف شد");
-            resolve();
-        })
-         .fail(() => {
-             toastifyError("خطا در انجام عملیات مجدد سعی کنید.");
-         });
-    });
-};
-
-const AcceptCus = (id) => {
-    
-    return new Promise(resolve => {
-        $.get(`${baseUrl}Customer/AcceptCustomer?cid=${id}`, (res) => {
-            if ($("#SearchInp").val().trim().length !== 0)
-                SearchAllCustomer($("#SearchInp").val());
-            else {
-                //getAllCustomerPartialTop();
-                loadCustomers();
-            }
-            
-            toastifySuccess("تایید شد");
-            resolve();
-        })
-         .fail(() => {
-             setTimeout(() => AcceptCus(id), 3000);
-             toastifyError("خطا در انجام عملیات مجدد سعی کنید.");
-         });
-    });
-    
-};
 
 const goTo = (url, blank = false) => {
     if (blank) {
@@ -2011,7 +2028,12 @@ class MyService {
                 case "textarea":
                 case "number":
                 case "tel":
-                    elm.value = defVal ?? "";
+                    if (elm.tomselect) {
+                        elm.tomselect.clear(true);
+                        if (defVal != null) elm.tomselect.setValue(defVal, true);
+                    } else {
+                        elm.value = defVal ?? "";
+                    }
                     break;
                 
                 case "select-one":
@@ -2165,6 +2187,7 @@ class MyService {
                 console.log(err);
             }
         }
+        
         
         const allAmounts = form.querySelectorAll(".inpAmount");
         allAmounts.forEach(item => {
@@ -2894,7 +2917,6 @@ function getUrlParams() {
 
 function setUrlParams(paramsObj, options = { replace: true }) {
     const url = new URL(window.location.href);
-    
     Object.entries(paramsObj).forEach(([key, value]) => {
         if (value === null || value === "") {
             url.searchParams.delete(key);
@@ -2902,12 +2924,36 @@ function setUrlParams(paramsObj, options = { replace: true }) {
             url.searchParams.set(key, value.toString());
         }
     });
-    
     if (options.replace) {
         history.replaceState(history.state, "", url);
     } else {
         history.pushState(history.state, "", url);
     }
+}
+
+/**
+ * Flash highlight
+ * @param {HTMLElement} el
+ * @param {{duration?: number}, {color?: string}} options
+ * @param {number} options.duration - animation duration in ms
+ * @param {string} options.className - CSS class to apply
+ */
+function flashItem(el, options = {}) {
+    if (!el) return;
+    
+    const {
+        duration = 1200,
+        color = "#e3f2fd",
+    } = options;
+    
+    el.style.setProperty("--flash-duration", duration + "ms");
+    el.style.setProperty("--flash-color", color);
+    
+    el.classList.remove("fill-flash");
+    void el.offsetWidth;
+    el.classList.add("fill-flash");
+    
+    setTimeout(() => el.classList.remove("fill-flash"), duration);
 }
 
 

@@ -33,6 +33,8 @@ var varList2 = {};//موارد فیلترینگ
 var CartablePfSearchVal = null;//متن جستجو
 var CartableFSearchVal = null;//متن جستجو
 
+var filterReportConfig = {};
+
 //
 // var mySer = null;
 // var CrmSer = null;
@@ -240,6 +242,7 @@ const canselModalItemPreFactor = () => {
     mySer.emptyForm("PreFacItem");
     $("#ItemPreFactorModal").modal("hide");
 };
+
 const canselModalItemFactor = () => {
     mySer.emptyForm("FacItem");
     $("#ItemFactorModal").modal("hide");
@@ -2999,10 +3002,11 @@ const HandAccepting = async (id, type, dealId) => {
     }
 };
 
-const openCustomerProfile = async (id) => {
+const openCustomerProfile = async (id, pfSerialNum) => {
     if (!id) return;
     const res = await axios(`/Customer/CustomerProfile?Id=${id}`);
     if (res.status === 200) {
+        sessionStorage.setItem("targetPf", pfSerialNum);
         window.open("/Customer/CustomerProfile?Id=" + id);
     } else if (res.status === 204) {
         toastifyError("شما به این صفحه دسترسی ندارید!");
@@ -3010,53 +3014,8 @@ const openCustomerProfile = async (id) => {
 };
 
 
-const GetUpSenfOp = () => {
-    const select = document.getElementById("workSenfID");
-    
-    return axios("/BaseItem/GetItemsOp?typeCode=1").then(res => {
-        $(select).select2({
-            data: res.data,
-            dir: "rtl",
-            placeholder: "انتخاب",
-            selectionCssClass: "form-control",
-            dropdownParent: $("#updateCustomerModal"),
-        });
-        
-        $(select).val(null).trigger("change");
-    });
-};
 
 
-const SubmitUpFormCustomer = async () => {
-    if (await mySer.CheckValidForm("#CuInfoUpFormId")) {
-        const data = mySer.convertFormToJSON("#CuInfoUpFormId");
-        data.id = customerIdUp;
-        
-        const workSelect = document.getElementById("workSenfID");
-        if (data.workSenf) data.workSenfTxt = workSelect.options[workSelect.selectedIndex].text;
-        
-        FLshowLoading();
-        
-        try {
-            const res = await axios.post("/Customer/UpCustomer", data);
-            if (res.status === 200) {
-                toastifySuccess("ویرایش مشتری با موفقیت انجام شد");
-                FLshowLoading(false);
-                closeModalUpdate();
-                //getAllCustomerPartialTop();
-                if ($("#SearchInp").val().trim().length !== 0) {
-                    SearchAllCustomer($("#SearchInp").val());
-                } else {
-                    loadCustomers(0);
-                }
-            }
-            
-        } catch (error) {
-            console.error(error);
-            setTimeout(async () => await submitCustomer(data), 3000);
-        }
-    }
-};
 
 
 const removeReqUp = () => {
@@ -3091,11 +3050,7 @@ const changeJur = (val) => {
 };
 
 
-const closeModalUpdate = () => {
-    $("#updateCustomerModal").modal("toggle");
-    cancelUpCustomer();
-    customerIdUp = null;
-};
+
 
 const cancelUpCustomer = () => {
     mySer.emptyForm("CuInfoUpFormId");
@@ -3104,23 +3059,6 @@ const cancelUpCustomer = () => {
     
 };
 
-let senfLoaded = false;
-const ShowModalUpCustomer = (id) => {
-    if (!senfLoaded) {
-        GetUpSenfOp();
-        senfLoaded = true;
-    }
-    
-    customerIdUp = id;
-    $("#loadingModalUp").css("display", "flex");
-    $.get(baseUrl + "Customer/GetCustomer?id=" + id, (res) => {
-        changeJur(res.juridical);
-        mySer.convertJsonToForm(res, "CuInfoUpFormId");
-        $("#loadingModalUp").css("display", "none");
-    });
-    $("#updateCustomerModal").modal("toggle");
-    
-};
 
 const OpenCloseMenu = () => {
     if (showFlag == 0) {
@@ -3633,7 +3571,6 @@ async function handleNotifAction(id, isRemindOff) {
     if (idx !== -1) taskList.splice(idx, 1);
     
     const url = isRemindOff ? `Carizo/ShowTask?id=${id}` : `Carizo/DismissTask?id=${id}`;
-    
     try {
         const res = await fetch(baseUrl + url);
         
@@ -3676,9 +3613,9 @@ async function readNotifAction(id, btn, entityType = null, entityId = null) {
 }
 
 async function dismissNotif(id = null, btn) {
-    if (id) {
+    /*if (id) {
         await handleNotifAction(id, false);
-    }
+    }*/
     if (btn) {
         const closeBtn = btn.closest(".toastify").querySelector(".toast-close");
         closeBtn.click();
@@ -4462,7 +4399,7 @@ async function showModalPhonebook() {
             }
             document.getElementById("FLshowLoading").style.display = "none";
         } catch (err) {
-        
+            console.log(err);
         }
     }
     document.getElementById("PhoneBookSearchInp").addEventListener("keyup", async (e) => {
@@ -4475,10 +4412,36 @@ async function showModalPhonebook() {
 }
 
 
-document.addEventListener("input", (e) => {
+/*document.addEventListener("input", (e) => {
     if (e.target.matches("input, textarea")) {
         e.target.value = toEnglishDigits(e.target.value);
     }
+});*/
+
+
+document.addEventListener("input", (e) => {
+    if (!e.target.matches("input, textarea")) return;
+    
+    const el = e.target;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    
+    const newValue = normalizeNumber(el.value);
+    
+    if (el.value !== newValue) {
+        el.value = newValue;
+        el.setSelectionRange(start, end);
+    }
 });
 
-
+const normalizeNumber = (val) => {
+    if (val == null) return val;
+    
+    return String(val)
+        // Persian digits
+        .replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d))
+        // Arabic digits
+        .replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d))
+        // Persian / Arabic decimal separator → .
+        .replace(/[٫٬]/g, '.');
+};

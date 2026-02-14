@@ -3,15 +3,9 @@
 }
 
 
-* {
-  box-sizing: border-box;
-}
-
-
 body {
   font-family: IRANSans;
   background-color: rgb(240, 241, 247);
-  margin: 0;
 }
 
 
@@ -4964,55 +4958,6 @@ table tr.payment-vosoled > td {
 }
 
 
-.pwa-modal {
-  border-radius: 16px;
-  border: none;
-  padding: 10px;
-}
-
-
-.pwa-modal p {
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-
-.header-icon-btn {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: transparent;
-  color: #333;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  padding: 0;
-  cursor: auto !important;
-  transition: background-color .15s ease, color .15s ease;
-}
-
-
-/* .back-btn {
-  display: none;
-} */
-
-
-.header-icon-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-
-.header-icon-btn:active {
-  background: rgba(0, 0, 0, 0.1);
-}
-
-
-.header-icon-btn svg {
-  display: block;
-}
-
-
 /* @keyframes FillFlash {
   0%   { background-color: #e3f2fd; }
   70%  { background-color: #f3f9ff; }
@@ -5037,7 +4982,7 @@ table tr.payment-vosoled > td {
 
 
 .fill-flash {
-  --flash-color: #c3eeff;
+  --flash-color: #e3f2fd;
   --flash-duration: 1.2s;
   animation: FillFlash var(--flash-duration) ease;
 }
