@@ -623,7 +623,12 @@
                     const customId = `custom-${currentDealData.customerName}`;
                     selectTomCustomers.addOption({ id: customId, text: currentDealData.customerName });
                     selectTomCustomers.setValue(customId, true);
+
+                    const mobileNumber = currentDealData.mobileNumber;
+                    dealMobileElm.tomselect.addOption({ mobile: mobileNumber });
+                    dealMobileElm.tomselect.setValue(mobileNumber, true);
                 }
+
 
             } catch (err) {
                 console.log(err);
