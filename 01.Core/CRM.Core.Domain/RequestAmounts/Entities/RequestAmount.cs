@@ -2,14 +2,19 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+// ReSharper disable InconsistentNaming
 
 namespace CRM.Core.Domain.RequestAmounts.Entities
 {
     public class RequestAmount:BaseEntity
     {
-        public string Amount { get; set; }
-        public RequestAmountDocType? DocType { get; set; }
-        public string DocTypeTXT { get; set; }
+        public int RequestNumber { get; set; }
+        public decimal Amount { get; set; }
+        public RequestAmountDocType DocType { get; set; }
+        public string DocTypeTxt { get; set; }
+        public RequestStatusEnum RequestStatus { get; set; } = RequestStatusEnum.در_دست_تایید;
+        public string RequestStatusTxt { get; set; }
+        public decimal AcceptedAmount { get; set; }
 
         public IList<RequestAmountSupplyFactor> RequestAmountSupplyFactor { get; set; }
 
@@ -17,8 +22,13 @@ namespace CRM.Core.Domain.RequestAmounts.Entities
 
     public enum RequestAmountDocType
     {
-        چکی,
-        نقدی
+        نقدی = 1,
+        چکی = 2
     }
 
+    public enum RequestStatusEnum
+    {
+        تایید_شده = 1,
+        در_دست_تایید = 2
+    }
 }

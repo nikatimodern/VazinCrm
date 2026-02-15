@@ -7,9 +7,17 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.LogSystems.Entities;
+using CRM.Core.Domain.RequestAmounts.Entities;
+using CRM.EndPoint.FrontEnd.Models.ViewModel;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.Amount;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.Reports;
+using Dapper;
+using Microsoft.Data.SqlClient;
+using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize(Roles = " کارشناس فروش ,مدیر فروش , مدیر تامین ,  مدیر ارشد , کارشناس تامین")]
@@ -25,7 +33,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly LogSystemService _logSystemService;
 
         public AmountController(UserManager<AppUser> userManager, Service GenService, FileSaver fileSaver,
-            DateTimeServices dtService, CRMContextDb db, UserContextDb udb,LogSystemService logSystemService) {
+            DateTimeServices dtService, CRMContextDb db, UserContextDb udb, LogSystemService logSystemService)
+        {
             this.userManager = userManager;
             genService = GenService;
             this.fileSaver = fileSaver;
@@ -36,20 +45,139 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        public async Task<IActionResult> index() {
+        public IActionResult RequestAmount()
+        {
+            return View();
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> AddRequestAmount([FromBody] RequestAmount model)
+        {
+            if (model == null) return BadRequest();
+
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+
+                model.UserCreator = user.FullName;
+                model.UserCreatorID = user.Id;
+                model.RequestStatusTxt = model.RequestStatus.ToString().Replace("_", " ");
+                model.DocTypeTxt = model.DocType.ToString().Replace("_", " ");
+                db.RequestAmounts.Add(model);
+
+                await db.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+
+        public async Task<IActionResult> GetAllRequestAmountsPartial()
+        {
+            try
+            {
+                var data = await db.RequestAmounts.AsNoTracking().OrderByDescending(f => f.CreateDate)
+                    .Select(ra => new RequestAmountVModel {
+                        RequestAmount = ra,
+                        SupplyFactorSerials = ra.RequestAmountSupplyFactor
+                            .Join(db.SupplyFactors,
+                                raSf => raSf.SupplyFactorId,
+                                sf => sf.Id,
+                                (raSf, sf) => sf.FactorSerial
+                            )
+                            .ToList()
+                    })
+                    .ToListAsync();
+                return PartialView(data);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        public async Task<IActionResult> GetAllRequestAmountsDt()
+        {
+            try
+            {
+                var draw = Request.Form["draw"].FirstOrDefault();
+                var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
+                var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
+                var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
+                var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
+                var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
+                var searchValue = Request.Form["search[value]"].FirstOrDefault()?.ToLower().Trim();
+
+                var query = db.RequestAmounts.OrderByDescending(f => f.CreateDate).AsNoTracking();
+
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    query = query.Where(f =>
+                        f.Amount == TextService.convertToInt(searchValue)
+                    );
+                }
+
+                var recordsTotal = query.Count();
+
+
+                if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortColumnDirection))
+                {
+                    var isAscending = sortColumnDirection == "asc";
+                    query = sortColumn switch {
+                        "Amount" => isAscending
+                            ? query.OrderBy(f => f.Amount)
+                            : query.OrderByDescending(f => f.Amount),
+                        "AcceptedAmount" => isAscending
+                            ? query.OrderBy(f => f.AcceptedAmount)
+                            : query.OrderByDescending(f => f.AcceptedAmount),
+                        "DocType" => isAscending
+                            ? query.OrderBy(f => f.DocType)
+                            : query.OrderByDescending(f => f.DocType),
+                        _ => query
+                    };
+                }
+
+
+                if (length != -1)
+                    query = query.Skip(start).Take(length);
+
+                var data = await query.ToListAsync();
+
+                return Json(new {
+                    draw,
+                    recordsTotal,
+                    recordsFiltered = recordsTotal,
+                    data,
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+        public async Task<IActionResult> index()
+        {
             return View();
         }
 
 
         [HttpGet]
-        public async Task<IActionResult> ListProduct(string searchValue, string from = "amountIndex") {
-            try {
+        public async Task<IActionResult> ListProduct(string searchValue, string from = "amountIndex")
+        {
+            try
+            {
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var roles = await userManager.GetRolesAsync(user);
 
                 ViewBag.hasAccess = false;
                 ViewBag.from = from;
-                if (roles.Contains("مدیر ارشد") || roles.Contains("مدیر فروش")  || roles.Contains("مدیر تامین")  || roles.Contains("کارشناس تامین") )
+                if (roles.Contains("مدیر ارشد") || roles.Contains("مدیر فروش") || roles.Contains("مدیر تامین") || roles.Contains("کارشناس تامین"))
                 {
                     ViewBag.hasAccess = true;
                 }
@@ -58,8 +186,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     where EF.Functions.Like(mo.Title, "%" + searchValue + "%")
                     select mo).Include(f => f.ProductAmounts).ToListAsync();
 
-                foreach (var item in pr) {
-                    foreach (var pa in item.ProductAmounts) {
+                foreach (var item in pr)
+                {
+                    foreach (var pa in item.ProductAmounts)
+                    {
                         if (pa.ModifyDate == null)
                             pa.ElapsTime = dtService.ElapsTime(pa.CreateDate);
                         else
@@ -71,17 +201,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 //var products = await db.Products.Include(f=>f.ProductAmounts).ToListAsync();
                 return PartialView(pr);
             }
-            catch {
+            catch
+            {
                 return BadRequest();
             }
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddAmount([FromBody] ProductAmount model) {
+        public async Task<IActionResult> AddAmount([FromBody] ProductAmount model)
+        {
             var user = userManager.GetUserAsync(HttpContext.User).Result;
 
-            if (model.Id != Guid.Empty) {
-
+            if (model.Id != Guid.Empty)
+            {
                 var oldModel = await db.ProductAmounts.AsNoTracking().Where(f => f.Id == model.Id).FirstOrDefaultAsync();
 
                 model.ModifyDateTxt = dtService.GetDateTimePersian();
@@ -97,8 +229,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 db.Entry(model).Property(f => f.UserCreatorID).IsModified = false;
 
                 await _logSystemService.LogChange(oldModel, model, LogActionEnum.ویرایش, user);
-            }
-            else {
+            } else
+            {
                 model.UserCreator = user.FullName;
                 model.UserCreatorID = user.Id;
 
@@ -111,7 +243,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [HttpGet]
-        public async Task<IActionResult> DelAmount(Guid id) {
+        public async Task<IActionResult> DelAmount(Guid id)
+        {
             var user = userManager.GetUserAsync(HttpContext.User).Result;
             var pro = await db.ProductAmounts.Where(f => f.Id == id).FirstOrDefaultAsync();
             await _logSystemService.LogChange(pro, null, LogActionEnum.حذف, user);

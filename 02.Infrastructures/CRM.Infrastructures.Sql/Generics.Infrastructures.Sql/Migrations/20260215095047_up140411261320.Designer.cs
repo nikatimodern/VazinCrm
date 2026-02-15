@@ -9,11 +9,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
+namespace CRM.Infrastructures.Sql.Migrations
 {
     [DbContext(typeof(CRMContextDb))]
-    [Migration("20260214095024_1404112514317")]
-    partial class _1404112514317
+    [Migration("20260215095047_up140411261320")]
+    partial class up140411261320
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -387,15 +387,10 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Property<string>("_AttachTypeTxt")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("contractId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("fileExten")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("contractId");
 
                     b.ToTable("Attachments");
                 });
@@ -2055,7 +2050,7 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Payment");
+                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Payments.Entities.PaymentSupplyFactor", b =>
@@ -2085,7 +2080,7 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
                     b.HasIndex("SupplyFactorID");
 
-                    b.ToTable("PaymentSupplyFactor");
+                    b.ToTable("PaymentSupplyFactors");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.PreFactors.Entities.BaseDescription", b =>
@@ -2682,8 +2677,13 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Amount")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<decimal>("AcceptedAmount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
 
                     b.Property<string>("CommentText")
                         .HasColumnType("nvarchar(max)");
@@ -2694,10 +2694,10 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Property<string>("CreateDateTxt")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("DocType")
+                    b.Property<int>("DocType")
                         .HasColumnType("int");
 
-                    b.Property<string>("DocTypeTXT")
+                    b.Property<string>("DocTypeTxt")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
@@ -2707,6 +2707,12 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RequestStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RequestStatusTxt")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserCreator")
@@ -2723,7 +2729,7 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("RequestAmount");
+                    b.ToTable("RequestAmounts");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountSupplyFactor", b =>
@@ -2753,7 +2759,7 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
                     b.HasIndex("RequestAmountId");
 
-                    b.ToTable("RequestAmountSupplyFactor");
+                    b.ToTable("RequestAmountSupplyFactors");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.ExtraDataes.ExtraData", b =>
@@ -3043,7 +3049,8 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
 
                     b.Property<string>("CommentText")
                         .HasColumnType("nvarchar(max)");
@@ -3058,9 +3065,6 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("FactorDateTxt")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FactorFileUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FactorSerial")
@@ -3125,7 +3129,7 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
                     b.HasIndex("OrderHeadId");
 
-                    b.ToTable("SupplyOrderHeads");
+                    b.ToTable("SupplyFactorOrderHeads");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.SystemWarnings.Entities.SystemWarning", b =>
@@ -3194,14 +3198,6 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.HasOne("CRM.Core.Domain.Customers.Entities.Customer", null)
                         .WithMany("Accountancies")
                         .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
-            modelBuilder.Entity("CRM.Core.Domain.Attachments.Entities.Attachment", b =>
-                {
-                    b.HasOne("CRM.Core.Domain.Contracts.Entities.Contract", null)
-                        .WithMany("Attachments")
-                        .HasForeignKey("contractId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
@@ -3458,11 +3454,6 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
             modelBuilder.Entity("CRM.Core.Domain.Company.Entities.Company", b =>
                 {
                     b.Navigation("CompanyFiles");
-                });
-
-            modelBuilder.Entity("CRM.Core.Domain.Contracts.Entities.Contract", b =>
-                {
-                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Customers.Entities.Agent", b =>

@@ -1,0 +1,71 @@
+@model List<CRM.EndPoint.FrontEnd.Models.ViewModel.Amount.RequestAmountVModel>
+
+<div class="col-12 mx-auto d-flex flex-column" style="gap:12px; padding: 10px">
+    @foreach (var item in Model) {
+        var requestAmount = item.RequestAmount;
+        var supplyFactorSerials = item.SupplyFactorSerials;
+        <div style="background-color: #fafafa;border: 1px solid #d0d0d0;border-radius: 6px;overflow: hidden;transition: all 0.2s;padding: 0;">
+
+            <div class="row g-0 align-items-stretch">
+
+                <div class="col-12 col-md-3 d-flex flex-column justify-content-center px-3 py-2" style="border-left: 1px solid #dedede; background-color: #f3f3f3;">
+                    <div class="d-flex justify-content-between align-items-baseline mb-1">
+                        <span style="font-size: 13px; color: #777">شماره درخواست:</span>
+                        <span class="fbold">@requestAmount.RequestNumber</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-baseline">
+                        <span style="font-size: 13px; color: #777">تاریخ درخواست:</span>
+                        <span class="fbold direction-ltr">
+                            @(string.Join(" | ", requestAmount.CreateDateTxt?.Substring(0, 16).Split(' ')))
+                        </span>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-4 d-flex flex-column justify-content-center align-items-center px-3 py-2"
+                     style="border-left: 1px solid #dedede; min-height: 80px;">
+                    <div class="d-flex align-items-baseline gap-2 mb-2 text-center">
+                        <span style="font-size: 13px; color: #777">نوع:</span>
+                        <span class="fbold">@requestAmount.DocTypeTxt</span>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2 mb-2 text-center">
+                        <span style="font-size: 13px; color: #777">بایت فاکتور تامین:</span>
+                        <span class="fbold direction-ltr">@string.Join(", ", supplyFactorSerials)</span>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2 text-center">
+                        <span style="font-size: 13px; color: #777">ثبت شده توسط:</span>
+                        <span class="fbold">@requestAmount.UserCreator</span>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-2 d-flex flex-row flex-md-column justify-content-between justify-content-md-center align-items-center px-3 py-2"
+                     style="border-left: 1px solid #dedede;
+                            background-color: #efefef;">
+                    <span style="font-size: 13px; color: #777">مبلغ درخواست:</span>
+                    <div class="fbold" style="font-size: 17px;">
+                        @string.Format("{0:n0}", requestAmount.Amount)
+                        <span style="font-size: 11px;">ريال</span>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-2 d-flex flex-row flex-md-column justify-content-between justify-content-md-center align-items-center px-3 py-2" style="border-left: 1px solid #dedede;background-color: #f7f7f7;">
+                    <span style="font-size: 13px; color: #777">مبلغ تایید شده:</span>
+                    <div class="fbold" style="font-size: 17px;">
+                        @string.Format("{0:n0}", requestAmount.AcceptedAmount)
+                        <span style="font-size: 11px;">ريال</span>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-1 d-flex flex-row flex-md-column justify-content-center align-items-center px-2 py-2 gap-4 gap-md-3" style="background-color: #eeeeee;border-top: 1px solid #dcdcdc;">
+                    <button class="flex-center p-0" data-title="ویرایش" style="color:#333; border:none; background-color:transparent">
+                        <i class="fa fa-pencil"></i>
+                    </button>
+
+                    <button class="flex-center p-0" data-title="حذف" style="color:#333; border:none; background-color:transparent">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    }
+</div>

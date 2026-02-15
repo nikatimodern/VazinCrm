@@ -3,16 +3,28 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
+namespace CRM.Infrastructures.Sql.Migrations
 {
     /// <inheritdoc />
-    public partial class _1404112514317 : Migration
+    public partial class up140411261246 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "FK_Attachments_Contracts_contractId",
+                table: "Attachments");
+
+            migrationBuilder.DropIndex(
+                name: "IX_Attachments_contractId",
+                table: "Attachments");
+
+            migrationBuilder.DropColumn(
+                name: "contractId",
+                table: "Attachments");
+
             migrationBuilder.CreateTable(
-                name: "Payment",
+                name: "Payments",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -33,11 +45,11 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Payment", x => x.Id);
+                    table.PrimaryKey("PK_Payments", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "RequestAmount",
+                name: "RequestAmounts",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -57,7 +69,7 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_RequestAmount", x => x.Id);
+                    table.PrimaryKey("PK_RequestAmounts", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -69,7 +81,6 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     SupplierId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SupplierTxt = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    FactorFileUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     FactorDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     FactorDateTxt = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -89,7 +100,7 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PaymentSupplyFactor",
+                name: "PaymentSupplyFactors",
                 columns: table => new
                 {
                     SupplyFactorID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -102,15 +113,15 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PaymentSupplyFactor", x => new { x.PaymentID, x.SupplyFactorID });
+                    table.PrimaryKey("PK_PaymentSupplyFactors", x => new { x.PaymentID, x.SupplyFactorID });
                     table.ForeignKey(
-                        name: "FK_PaymentSupplyFactor_Payment_PaymentID",
+                        name: "FK_PaymentSupplyFactors_Payments_PaymentID",
                         column: x => x.PaymentID,
-                        principalTable: "Payment",
+                        principalTable: "Payments",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_PaymentSupplyFactor_SupplyFactors_SupplyFactorID",
+                        name: "FK_PaymentSupplyFactors_SupplyFactors_SupplyFactorID",
                         column: x => x.SupplyFactorID,
                         principalTable: "SupplyFactors",
                         principalColumn: "Id",
@@ -118,7 +129,7 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "RequestAmountSupplyFactor",
+                name: "RequestAmountSupplyFactors",
                 columns: table => new
                 {
                     RequestAmountId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -131,15 +142,15 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_RequestAmountSupplyFactor", x => new { x.SupplyFactorId, x.RequestAmountId });
+                    table.PrimaryKey("PK_RequestAmountSupplyFactors", x => new { x.SupplyFactorId, x.RequestAmountId });
                     table.ForeignKey(
-                        name: "FK_RequestAmountSupplyFactor_RequestAmount_RequestAmountId",
+                        name: "FK_RequestAmountSupplyFactors_RequestAmounts_RequestAmountId",
                         column: x => x.RequestAmountId,
-                        principalTable: "RequestAmount",
+                        principalTable: "RequestAmounts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_RequestAmountSupplyFactor_SupplyFactors_SupplyFactorId",
+                        name: "FK_RequestAmountSupplyFactors_SupplyFactors_SupplyFactorId",
                         column: x => x.SupplyFactorId,
                         principalTable: "SupplyFactors",
                         principalColumn: "Id",
@@ -147,7 +158,7 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SupplyOrderHeads",
+                name: "SupplyFactorOrderHeads",
                 columns: table => new
                 {
                     SupplyFactorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -160,15 +171,15 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SupplyOrderHeads", x => new { x.SupplyFactorId, x.OrderHeadId });
+                    table.PrimaryKey("PK_SupplyFactorOrderHeads", x => new { x.SupplyFactorId, x.OrderHeadId });
                     table.ForeignKey(
-                        name: "FK_SupplyOrderHeads_OrderHeads_OrderHeadId",
+                        name: "FK_SupplyFactorOrderHeads_OrderHeads_OrderHeadId",
                         column: x => x.OrderHeadId,
                         principalTable: "OrderHeads",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_SupplyOrderHeads_SupplyFactors_SupplyFactorId",
+                        name: "FK_SupplyFactorOrderHeads_SupplyFactors_SupplyFactorId",
                         column: x => x.SupplyFactorId,
                         principalTable: "SupplyFactors",
                         principalColumn: "Id",
@@ -176,18 +187,18 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_PaymentSupplyFactor_SupplyFactorID",
-                table: "PaymentSupplyFactor",
+                name: "IX_PaymentSupplyFactors_SupplyFactorID",
+                table: "PaymentSupplyFactors",
                 column: "SupplyFactorID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_RequestAmountSupplyFactor_RequestAmountId",
-                table: "RequestAmountSupplyFactor",
+                name: "IX_RequestAmountSupplyFactors_RequestAmountId",
+                table: "RequestAmountSupplyFactors",
                 column: "RequestAmountId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SupplyOrderHeads_OrderHeadId",
-                table: "SupplyOrderHeads",
+                name: "IX_SupplyFactorOrderHeads_OrderHeadId",
+                table: "SupplyFactorOrderHeads",
                 column: "OrderHeadId");
         }
 
@@ -195,22 +206,41 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "PaymentSupplyFactor");
+                name: "PaymentSupplyFactors");
 
             migrationBuilder.DropTable(
-                name: "RequestAmountSupplyFactor");
+                name: "RequestAmountSupplyFactors");
 
             migrationBuilder.DropTable(
-                name: "SupplyOrderHeads");
+                name: "SupplyFactorOrderHeads");
 
             migrationBuilder.DropTable(
-                name: "Payment");
+                name: "Payments");
 
             migrationBuilder.DropTable(
-                name: "RequestAmount");
+                name: "RequestAmounts");
 
             migrationBuilder.DropTable(
                 name: "SupplyFactors");
+
+            migrationBuilder.AddColumn<Guid>(
+                name: "contractId",
+                table: "Attachments",
+                type: "uniqueidentifier",
+                nullable: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Attachments_contractId",
+                table: "Attachments",
+                column: "contractId");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_Attachments_Contracts_contractId",
+                table: "Attachments",
+                column: "contractId",
+                principalTable: "Contracts",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
         }
     }
 }

@@ -28,7 +28,7 @@ namespace CRM.Infrastructures.Sql.Supplies.Configs
                 .HasForeignKey(f => f.SupplyFactorID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-
+            builder.Property(f => f.Amount).HasPrecision(20, 0);
 
         }
     }

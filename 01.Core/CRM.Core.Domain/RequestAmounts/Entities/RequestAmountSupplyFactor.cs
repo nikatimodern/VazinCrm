@@ -5,8 +5,7 @@ using System.Text;
 
 namespace CRM.Core.Domain.RequestAmounts.Entities
 {
-    public class RequestAmountSupplyFactor:JunctionBaseEntity
-    {
+    public class RequestAmountSupplyFactor:JunctionBaseEntity {
         public Guid RequestAmountId { get; set; }
         public Guid SupplyFactorId { get; set; }
     }

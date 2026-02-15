@@ -26,6 +26,7 @@ using System.Threading.Tasks;
 using CRM.Core.Domain.Cartables.Entities;
 using CRM.Core.Domain.Chats.Entities;
 using CRM.Core.Domain.Emails.Entities;
+using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.RequestAmounts.Entities;
 
 namespace Generics.Infrastructures.Sql
@@ -83,7 +84,11 @@ namespace Generics.Infrastructures.Sql
         public DbSet<Chat> Chats { get; set; }
         public DbSet<MainChat> MainChats { get; set; }
         public DbSet<SupplyFactor> SupplyFactors { get; set; }
-        public DbSet<SupplyFactorOrderHead> SupplyOrderHeads { get; set; }
+        public DbSet<SupplyFactorOrderHead> SupplyFactorOrderHeads { get; set; }
+        public DbSet<RequestAmount> RequestAmounts { get; set; }
+        public DbSet<RequestAmountSupplyFactor> RequestAmountSupplyFactors { get; set; }
+        public DbSet<Payment> Payments { get; set; }
+        public DbSet<PaymentSupplyFactor> PaymentSupplyFactors { get; set; }
 
 
 
@@ -133,10 +138,13 @@ namespace Generics.Infrastructures.Sql
             modelBuilder.Entity<Email>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<Chat>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<MainChat>().HasQueryFilter(f => f.IsDeleted == false);
-            modelBuilder.Entity<SupplyFactor>().HasQueryFilter(f => f.IsDeleted == false);
 
+            modelBuilder.Entity<SupplyFactor>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<SupplyFactorOrderHead>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<RequestAmountSupplyFactor>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<RequestAmount>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<Payment>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<PaymentSupplyFactor>().HasQueryFilter(f => f.IsDeleted == false);
 
 
 

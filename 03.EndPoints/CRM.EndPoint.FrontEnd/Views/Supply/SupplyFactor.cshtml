@@ -5,7 +5,7 @@
 <div class="w-100">
     <div class="row align-items-center justify-content-between flex-wrap mb-2 g-2">
         <div class="d-flex col-lg-3">
-            <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="toggleSupplyFactorModal()">
+            <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="showSupplyFactorModal()">
                 <span style="line-height: 1">ثبت فاکتور جدید</span>
                 <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
             </button>
@@ -31,48 +31,48 @@
 </div>
 
 
-<!-- Modal addSupplyFactor -->
-<div class="modal fade" id="addSupplyFactorModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-hidden="true">
+<!-- Modal SupplyFactor -->
+<div class="modal fade" id="supplyFactorModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content col-12 p-2">
             <div class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">فاکتور تامین</div>
             <div class="modal-body pb-2">
-                <form id="addSupplyFactorForm" class="d-flex flex-column gap-2">
+                <form id="supplyFactorForm" class="d-flex flex-column gap-2">
                     <div>
-                        <label for="addSupplyFactorAmount">مبلغ:</label>
-                        <input id="addSupplyFactorAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="amount" required>
+                        <label for="supplyFactorAmount">مبلغ:</label>
+                        <input id="supplyFactorAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="amount" required>
                     </div>
 
                     <div>
-                        <label for="addSupplyFactorNumber">شماره فاکتور:</label>
-                        <input id="addSupplyFactorNumber" class="form-control" name="factorSerial" required />
+                        <label for="supplyFactorNumber">شماره فاکتور:</label>
+                        <input id="supplyFactorNumber" class="form-control" name="factorSerial" required />
                     </div>
 
                     <div>
-                        <label for="addSupplyFactorDate">تاریخ:</label>
-                        <input id="addSupplyFactorDate" class="sdate form-control" name="factorDateTxt" placeholder="yyyy/mm/dd" data-slots="ymd" required />
+                        <label for="supplyFactorDate">تاریخ:</label>
+                        <input id="supplyFactorDate" class="sdate form-control" name="factorDateTxt" placeholder="yyyy/mm/dd" data-slots="ymd" required />
                     </div>
 
                     <div>
-                        <label for="addSupplyFactorSupplierId">تامین‌ کننده:</label>
-                        <select name="supplierId" id="addSupplyFactorSupplierId" required>
+                        <label for="supplyFactorSupplierId">تامین‌ کننده:</label>
+                        <select name="supplierId" id="supplyFactorSupplierId" required>
                         </select>
                     </div>
 
                     <div>
-                        <label for="addSupplyFactorOrderHead">بابت دستور تولید:</label>
+                        <label for="supplyFactorOrderHead">بابت حواله تولید:</label>
                         <div class="input-group mb-3">
-                            <input id="addSupplyFactorOrderHead" type="text" class="form-control" placeholder="دستور تولید.." disabled required>
+                            <input id="supplyFactorOrderHead" type="text" class="form-control" placeholder="حواله تولید.." disabled required>
                             <button class="btn btn-sm btn-secondary" type="button" onclick="showAddOrderHeadModal()">انتخاب</button>
                         </div>
-                        @* <input name="supplierId" class="form-control" id="addSupplyFactorOrderHead" /> *@
+                        @* <input name="supplierId" class="form-control" id="supplyFactorOrderHead" /> *@
                     </div>
 
 
                     <div>
                         <label for="supplyFactorAtt">تصویر فاکتور:</label>
                         <div class="container-uploader">
-                            <input type="file" class="uploadBtn" data-varList="supplyFactorAttachments" data-showList="DivShowSupplyFactorAtt" id="supplyFactorAtt" accept="*/*" />
+                            <input type="file" class="uploadBtn" data-varList="supplyFactorAttachments" data-showList="DivShowSupplyFactorAtt" id="supplyFactorAtt" accept="*/*" multiple required />
                             <label for="supplyFactorAtt">
                                 <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
                                 <span>تصویر فاکتور را انتخاب یا اینجا رها کنید</span>
@@ -83,7 +83,7 @@
 
 
                     <div class="d-flex justify-content-center gap-1 mt-2">
-                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="toggleSupplyFactorModal()">انصراف</button>
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="cancelSupplyFactorModal()">انصراف</button>
                         <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitSupplyFactorModal()">ثبت</button>
                     </div>
                 </form>
@@ -98,7 +98,7 @@
         <div class="modal-content" style="border-radius: 12px;overflow: hidden;box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25)">
             <div class="modal-header">
                 <div class="d-flex align-items-center justify-content-between w-100">
-                    <span class="fbold">انتخاب دستور تولید</span>
+                    <span class="fbold">انتخاب حواله تولید</span>
                     <div>
                         <input id="addOrderHeadSearch" type="text" class="form-control" placeholder="جستجو..">
                     </div>
@@ -119,19 +119,52 @@
 </div>
 
 
+
+<div class="modal fade" id="supplyFactorAttachment" tabindex="-1" data-bs-focus="false" role="dialog" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+
+
+        <div class="modal-content col-12" style="padding:10px!important">
+
+
+            <div class="modal-body" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
+                <div class="d-flex justify-content-around col-12">
+                    <div class="container-uploader" style="border: 1px solid lightgray;">
+                        <div class="image-display" id="DivShowSupplyFactorAttach"></div>
+                    </div>
+                </div>
+
+                <div class="mt-3" style="width:100%; display:flex;justify-content:center;gap:4px">
+                    <button class="buttonCancel2" data-bs-dismiss="modal">انصراف</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
 @section Scripts {
     <script>
         var supplyFactorAttachments = [];
         let orderHeadsSelectedIds = [];
+        let supplyFactorData = {};
         const addOrderHeadModal = document.getElementById("addOrderHeadModal");
 
-        document.addEventListener("DOMContentLoaded", () => {
-
+        document.addEventListener("DOMContentLoaded", async () => {
+            await getAllSupplyFactors();
         });
 
-        function toggleSupplyFactorModal() {
-            setupSelectOptions();
-            ModalToggle("#addSupplyFactorModal");
+        async function showSupplyFactorModal() {
+            await setupSelectOptions();
+            ModalToggle("#supplyFactorModal");
+        }
+
+        function cancelSupplyFactorModal() {
+            supplyFactorAttachments = [];
+            orderHeadsSelectedIds = [];
+            mySer.emptyForm("supplyFactorForm");
+            ModalToggle("#supplyFactorModal", "hide");
         }
 
         async function showAddOrderHeadModal() {
@@ -155,7 +188,7 @@
         async function setupSelectOptions() {
             if (isSetupSupplyModal) return;
             const data = (await axios("/Supply/GetSupplyBaseData")).data;
-            new TomSelect("#addSupplyFactorSupplierId", {
+            new TomSelect("#supplyFactorSupplierId", {
                 options: data.suppliers,
                 placeholder: "انتخاب تامین کننده",
                 maxItems: 1,
@@ -165,13 +198,10 @@
         }
 
 
-        let isOrderHeadsLoaded = false;
         const getAllOrderHeads = async (search = "") => {
-            @* if (isOrderHeadsLoaded) return; *@;
             const res = await axios(`/Order/GetAllOrderHeads?search=${search}`);
 
             addOrderHeadModal.querySelector("#addOrderHeadContainer").innerHTML = res.data;
-            isOrderHeadsLoaded = true;
         };
 
         addOrderHeadModal.querySelector("#addOrderHeadContainer").addEventListener("change", (e) => {
@@ -184,18 +214,15 @@
         });
 
         const submitSelectedOrderHeads = () => {
-            const inpElm = document.getElementById("addSupplyFactorOrderHead");
             const checkedBoxes = [...addOrderHeadModal.querySelectorAll("#addOrderHeadContainer input[type='checkbox']:checked")];
 
             orderHeadsSelectedIds.length = 0;
             orderHeadsSelectedIds.push(...checkedBoxes.map(cb => cb.value));
 
-            const numbers = checkedBoxes.map(cb => cb.id.split("-")[1]);
-            inpElm.value = numbers.join(", ");
+            const inpElm = document.getElementById("supplyFactorOrderHead");
+            inpElm.value = checkedBoxes.map(cb => cb.dataset.number).join(", ");
 
             ModalToggle(addOrderHeadModal);
-
-            console.log(orderHeadsSelectedIds);
         };
 
 
@@ -204,32 +231,130 @@
                 toggleElementsDisabled(e.target);
                 await getAllOrderHeads(e.target.value.trim());
                 toggleElementsDisabled(e.target, false);
+                e.target.focus();
             }
         });
 
         async function submitSupplyFactorModal() {
-            if (!await mySer.CheckValidForm("addSupplyFactorForm")) return;
-            const supplierSelect = document.querySelector("#addSupplyFactorModal #addSupplyFactorSupplierId");
+            if (!await mySer.CheckValidForm("supplyFactorForm")) return;
+            if (supplyFactorAttachments.every(item => item.isDeleted)) {
+                toastifyError("تصویر فاکتور اجباری است");
+                return;
+            }
+
+            const supplierSelect = document.querySelector("#supplyFactorModal #supplyFactorSupplierId");
             const model = {
-                ...mySer.convertFormToJSON("addSupplyFactorForm"),
-                supplierTxt :supplierSelect.options[supplierSelect.selectedIndex].text,
+                ...supplyFactorData,
+                ...mySer.convertFormToJSON("supplyFactorForm"),
+                supplierTxt: supplierSelect.options[supplierSelect.selectedIndex].text,
                 supplyFactorOrderHeads: orderHeadsSelectedIds.map(id => ({ orderHeadId: id })),
                 attachments: supplyFactorAttachments,
             };
 
-            console.log(model);
+            FLshowLoading();
             try {
                 const res = await axios.post(`/Supply/AddSupplyFactor`, model);
                 if (res.status === 200) {
                     toastifySuccess("با موفقیت ثبت شد");
-                    mySer.emptyForm("addSupplyFactorForm");
-                    supplyFactorAttachments = [];
-                    orderHeadsSelectedIds = [];
-                    ModalToggle("addSupplyFactorModal");
+                    cancelSupplyFactorModal();
+                    getAllSupplyFactors();
                 }
             } catch (err) {
                 console.log(err);
+            } finally {
+                FLshowLoading(false);
             }
         }
+
+        const getAllSupplyFactors = async () => {
+            FLshowLoading();
+            const res = await axios(`/Supply/GetAllSupplyFactorsPartial`);
+            document.getElementById("supplyFactorContainer").innerHTML = res.data;
+            FLshowLoading(false);
+        };
+
+
+        const showSupplyFactorAttach = async (id) => {
+            const containerPreview = document.getElementById("DivShowSupplyFactorAttach");
+            containerPreview.innerHTML = "";
+            try {
+                FLshowLoading();
+                const files = (await axios(`/Factor/GetAttachment/${id}?type=8`)).data;
+
+                if (files.length) {
+                    files.forEach(fileItem => {
+                        const imageBox = createImageBox(fileItem);
+                        containerPreview.appendChild(imageBox);
+                    });
+                    containerPreview.parentElement.style.backgroundColor = "#fafafa";
+                } else {
+                    containerPreview.innerHTML = `
+                        <div class="d-flex flex-column align-items-center pb-4">
+                            <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
+                            <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ پیوستی برای نمایش وجود ندارد!</div>
+                        </div>
+                    `;
+                    containerPreview.parentElement.style.backgroundColor = "#fff";
+                }
+
+            } catch (err) {
+                containerPreview.innerHTML = "خطای دریافت اطلاعات!";
+                console.log(err);
+            } finally {
+                FLshowLoading(false);
+                ModalToggle("supplyFactorAttachment");
+            }
+        };
+
+        async function showEditSupplyFactorModal(id) {
+            FLshowLoading();
+            await showSupplyFactorModal();
+
+            try {
+                const res = await axios(`/Supply/GetSupplyFactor/${id}`);
+                if (res.status === 200) {
+                    supplyFactorData = res.data.supplyFactor;
+                    const orderSerials = res.data.orderSerials;
+                    mySer.convertJsonToForm(supplyFactorData, "supplyFactorForm");
+                    orderHeadsSelectedIds = supplyFactorData.supplyFactorOrderHeads.map(o => o.orderHeadId);
+
+                    const inpElm = document.getElementById("supplyFactorOrderHead");
+                    inpElm.value = orderSerials.join(", ");
+                    document.getElementById("DivShowSupplyFactorAttach").innerHTML = "";
+                    supplyFactorAttachments = res.data.attachments;
+                    FileUpReload("supplyFactorAtt");
+                }
+
+            } catch (err) {
+                console.log(err);
+            } finally {
+                FLshowLoading(false);
+            }
+        }
+
+
+        const deleteSupplyFactor = async (id) => {
+            Swal.fire({
+                title: "حذف!",
+                text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
+                icon: "warning",
+                showCancelButton: true,
+                cancelButtonColor: "#adadad",
+                confirmButtonColor: "#e64942",
+                cancelButtonText: "انصراف",
+                confirmButtonText: "بله، حذف شود",
+            }).then(async (willDelete) => {
+                if (willDelete.isConfirmed) {
+                    FLshowLoading();
+                    const res = await axios(`/Supply/DeleteSupplyFactor/${id}`);
+                    if (res.status === 200) {
+                        toastifySuccess("با موفقیت حذف شد");
+                        cancelSupplyFactorModal();
+                    }
+                    FLshowLoading(false);
+                }
+            });
+
+        };
     </script>
 }

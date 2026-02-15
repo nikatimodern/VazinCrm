@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CRM.Infrastructures.Sql.Migrations
 {
     [DbContext(typeof(CRMContextDb))]
-    [Migration("20260214151202_up140411251841")]
-    partial class up140411251841
+    [Migration("20260215091655_up140411261246")]
+    partial class up140411261246
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -2050,7 +2050,7 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Payment");
+                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Payments.Entities.PaymentSupplyFactor", b =>
@@ -2080,7 +2080,7 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasIndex("SupplyFactorID");
 
-                    b.ToTable("PaymentSupplyFactor");
+                    b.ToTable("PaymentSupplyFactors");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.PreFactors.Entities.BaseDescription", b =>
@@ -2718,7 +2718,7 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("RequestAmount");
+                    b.ToTable("RequestAmounts");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountSupplyFactor", b =>
@@ -2748,7 +2748,7 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasIndex("RequestAmountId");
 
-                    b.ToTable("RequestAmountSupplyFactor");
+                    b.ToTable("RequestAmountSupplyFactors");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.ExtraDataes.ExtraData", b =>
@@ -3117,7 +3117,7 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasIndex("OrderHeadId");
 
-                    b.ToTable("SupplyOrderHeads");
+                    b.ToTable("SupplyFactorOrderHeads");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.SystemWarnings.Entities.SystemWarning", b =>

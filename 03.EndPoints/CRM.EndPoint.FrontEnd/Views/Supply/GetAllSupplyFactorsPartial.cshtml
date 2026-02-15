@@ -1,0 +1,133 @@
+@model List<CRM.EndPoint.FrontEnd.Models.ViewModel.Supply.SupplyFactorVModel>
+
+@{
+    Layout = null;
+}
+
+<div style="width:100%; display:flex; flex-direction:column; gap:12px; padding: 10px;">
+    @foreach (var item in Model) {
+        var supplyFactor = item.SupplyFactor;
+        var orderSerials = item.OrderSerials;
+        <div class="" style="background-color: #fff; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; transition: border-color 0.2s; padding: 0;">
+
+            <div class="row g-0 align-items-stretch">
+
+                <div class="col-12 col-md-3 d-flex flex-column justify-content-center px-3 py-2" style="border-left: 1px solid #e0e0e0; background-color: #fcfcfc;">
+                    <div class="d-flex justify-content-between align-items-baseline mb-1">
+                        <span style="font-size: 13px; color: gray">شماره فاکتور:</span>
+                        <span class="fbold">@supplyFactor.FactorSerial</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-baseline">
+                        <span style="font-size: 13px; color: gray">تاریخ فاکتور:</span>
+                        <span class="fbold">@supplyFactor.FactorDateTxt</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-baseline">
+                        <span style="font-size: 13px; color: gray">تاریخ ثبت:</span>
+                        <span class="fbold direction-ltr">@(string.Join(" | ", supplyFactor.CreateDateTxt?.Substring(0, 16).Split(' ')))</span>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 d-flex flex-column justify-content-center align-items-center px-3 py-3" style="border-left: 1px solid #e0e0e0; min-height: 80px;">
+                    <div class="d-flex align-items-baseline gap-2 mb-2 text-center">
+                        <span style="font-size: 13px; color: gray">تامین کننده:</span>
+                        <span class="fbold">@supplyFactor.SupplierTxt</span>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2 mb-2 text-center">
+                        <span style="font-size: 13px; color: gray">حواله تولید:</span>
+                        <span class="fbold direction-ltr">@string.Join(", ", orderSerials)</span>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2 text-center">
+                        <span style="font-size: 13px; color: gray">ثبت شده توسط:</span>
+                        <span class="fbold">@supplyFactor.UserCreator</span>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-2 d-flex flex-row flex-md-column justify-content-between justify-content-md-center align-items-center px-3 py-2" style="border-left: 1px solid #e0e0e0; background-color: #fcfcfc;">
+                    <span style="font-size: 12px; color: gray">مبلغ کل:</span>
+                    <div class="fbold" style="font-size: 17px;">
+                        @string.Format("{0:n0}", supplyFactor.Amount) <span style="font-size: 11px;">ريال</span>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-1 d-flex flex-row flex-md-column justify-content-center align-items-center px-2 py-2 gap-4 gap-md-3" style="background-color: #f5f5f5; border-top: 1px solid #e0e0e0; border-md-top: none;">
+                    <button class="flex-center p-0" data-title="پیوست ها" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="showSupplyFactorAttach('@supplyFactor.Id')">
+                        <i class="fa fa-paperclip"></i>
+                    </button>
+                    <button class="flex-center p-0" data-title="ویرایش" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="showEditSupplyFactorModal('@supplyFactor.Id')">
+                        <i class="fa fa-pencil"></i>
+                    </button>
+                    <button class="flex-center p-0" data-title="حذف" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="deleteSupplyFactor('@supplyFactor.Id')">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    }
+</div>
+
+@*
+<div style="width:100%;display:flex;flex-direction:column;gap:5px;">
+    @foreach (var item in Model) {
+        <div class="mp" style=" width:100%;display:flex;">
+
+            <div class="d-flex flex-column flex-sm-row justify-content-between InfoDataItem_Prefactor w-100 py-2">
+
+                <div class="d-flex flex-column flex-md-row justify-content-between w-100">
+
+                    <div class="col-12 col-md-4 d-flex flex-row flex-md-column flex-wrap gap-md-2 px-2 justify-content-around" style="row-gap:.5rem;column-gap:1rem;">
+
+                        <div class="justify-content-between" style=" display:flex;align-items:center;gap:6px">
+                            <label style="color:gray">سریال:</label>
+                            <label class="text-center fbold">@item.FactorSerial</label>
+                        </div>
+
+                        <div class="justify-content-between" style="display:flex;align-items:center; gap:6px">
+                            <label style="color:gray">تاریخ:</label>
+                            <label class="text-center fbold">@item.FactorDateTxt</label>
+                        </div>
+
+                    </div>
+
+                    <div class="d-md-none my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                    <div class="col-12 col-md-5 flex-wrap flex-row flex-md-column gap-2 px-2 justify-content-around" style="text-align:center; display:flex;align-items:center">
+                        <div style=" display:flex;align-items:center;gap:6px">
+                            <label style="color:gray">تامین کننده:</label>
+                            <label class="text-center fbold">@item.SupplierTxt</label>
+                        </div>
+                        <div class="flex-row " style=" display:flex;align-items:center; justify-content:center;gap:6px;">
+                            <label style="color:gray">ثبت شده توسط:</label>
+                            <label class="text-center fbold">@item.UserCreator</label>
+                        </div>
+                    </div>
+
+                    <div class="d-md-none my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+
+                    <div class="col-12 col-md-3 flex-center flex-md-column justify-content-md-evenly text-center px-3" style="column-gap:24px;row-gap:8px">
+                        <div class="flex-center flex-row flex-md-column" style="gap:6px">
+                            <label style="color:gray">مبلغ:</label>
+                            <label class="text-center fbold">@string.Format("{0:n0}", item.Amount) <span style="font-size: 12px">ريال</span></label>
+                        </div>
+                    </div>
+                    <div class="d-sm-none mt-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
+                </div>
+
+                <div class="flex-row flex-sm-column mt-2 mt-sm-0 mx-0 mx-sm-2 align-items-center" style=" display:flex; justify-content:space-evenly !important;row-gap:8px;font-size:15px">
+                    <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="">
+                        <i style="font-size:15px" class="mp fa fa-paperclip"></i>
+                    </button>
+
+                    <button class="flex-center p-0" data-title-right="ویرایش" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="">
+                        <i class="mp fa fa-pencil"></i>
+                    </button>
+                    <button class="flex-center p-0" data-title-right="حذف" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="">
+                        <i class="mp fa fa-trash"></i>
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    }
+</div>
+*@

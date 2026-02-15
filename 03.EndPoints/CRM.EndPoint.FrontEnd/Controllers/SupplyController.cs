@@ -43,7 +43,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly FileSaver fileSaver;
 
         public SupplyController(CRMContextDb db, UserManager<AppUser> userManager, DateTimeServices dtService, Service genService,
-            LogSystemService logSystemService ,FileSaver fileSaver)
+            LogSystemService logSystemService, FileSaver fileSaver)
         {
             this.db = db;
             this.dtService = dtService;
@@ -71,11 +71,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return View();
         }
 
-           [HttpPost]
+        [HttpPost]
         public async Task<IActionResult> AddSupplyFactor([FromBody] SupplyFactor model)
         {
             if (model == null) return BadRequest();
-
 
             try
             {
@@ -83,16 +82,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 model.UserCreator = user.FullName;
                 model.UserCreatorID = user.Id;
-                model.FactorDate = dtService.GetDateMiladi(model.FactorDateTxt) ?? DateTime.Now;
-                db.SupplyFactors.Add(model);
 
+
+                model.FactorDate = dtService.GetDateMiladi(model.FactorDateTxt) ?? DateTime.Now;
+                await db.SupplyFactors.AddAsync(model);
 
                 var attach = fileSaver.saveAttach(model.Attachments, _AttachType.SupplyFactor);
                 foreach (var att in attach)
                 {
                     att.EntityId = model.Id;
                 }
-                db.Attachments.AddRange(attach);
+
+                await db.Attachments.AddRangeAsync(attach);
 
 
                 await db.SaveChangesAsync();
@@ -102,6 +103,140 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 return BadRequest(e.Message);
             }
+        }
+
+        public async Task<IActionResult> UpdateSupplyFactor([FromBody] SupplyFactor model)
+        {
+            if (model == null) return BadRequest();
+
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+
+                var data = await db.SupplyFactors
+                    .Include(x => x.SupplyFactorOrderHeads)
+                    .FirstOrDefaultAsync(x => x.Id == model.Id);
+
+                if (data == null) return NotFound();
+
+                data.UserModify = user.FullName;
+                data.UserModifyID = user.Id;
+                data.FactorDate = dtService.GetDateMiladi(model.FactorDateTxt) ?? DateTime.Now;
+
+                db.Entry(data).CurrentValues.SetValues(model);
+
+                var newIds = model.SupplyFactorOrderHeads.Select(x => x.OrderHeadId).ToList();
+
+                foreach (var item in data.SupplyFactorOrderHeads)
+                {
+                    if (!newIds.Contains(item.OrderHeadId))
+                        item.IsDeleted = true;
+                }
+
+                foreach (var id in newIds)
+                {
+                    if (!data.SupplyFactorOrderHeads.Any(x => x.OrderHeadId == id && !x.IsDeleted))
+                    {
+                        data.SupplyFactorOrderHeads.Add(new SupplyFactorOrderHead {
+                            SupplyFactorId = data.Id,
+                            OrderHeadId = id,
+                        });
+                    }
+                }
+
+                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.SupplyFactor);
+
+                foreach (var att in attach)
+                    att.EntityId = data.Id;
+
+                db.Attachments.AddRange(attach);
+
+                await db.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+
+        public async Task<IActionResult> DeleteSupplyFactor(Guid id)
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var item = await db.SupplyFactors.Where(f => f.Id == id).FirstOrDefaultAsync();
+
+            item.IsDeleted = true;
+            item.ModifyDate = DateTime.Now;
+            item.ModifyDateTxt = dtService.GetDateTimePersian();
+            item.UserModify = user.FullName;
+            item.UserModifyID = user.Id;
+
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+
+        public async Task<IActionResult> GetAllSupplyFactorsPartial()
+        {
+            var data = await db.SupplyFactors.OrderByDescending(f => f.CreateDate).AsNoTracking()
+                .Select(sf => new SupplyFactorVModel {
+                    SupplyFactor = sf,
+                    OrderSerials = sf.SupplyFactorOrderHeads
+                        .Join(db.OrderHeads,
+                            sfOh => sfOh.OrderHeadId,
+                            oh => oh.Id,
+                            (sfOh, oh) => oh.OrderNumber
+                        )
+                        .ToList()
+                })
+                .ToListAsync();
+            return PartialView(data);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllSupplyFactorsTablePartial(string search = "")
+        {
+            try
+            {
+                var query = db.SupplyFactors.AsNoTracking().OrderByDescending(f => f.CreateDate).AsQueryable();
+                if (!string.IsNullOrEmpty(search))
+                {
+                    query = query.Where(f =>
+                        f.SupplierTxt.Contains(search) ||
+                        f.FactorSerial == search ||
+                        f.Amount == TextService.convertToInt(search)
+                    );
+                }
+
+                var data = await query.ToListAsync();
+                return PartialView(data);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        public async Task<IActionResult> GetSupplyFactor(Guid id)
+        {
+            var data = await db.SupplyFactors.AsNoTracking()
+                .Where(f => f.Id == id)
+                .Include(f => f.SupplyFactorOrderHeads)
+                .Select(sf => new {
+                    SupplyFactor = sf,
+                    OrderSerials = sf.SupplyFactorOrderHeads
+                        .Join(db.OrderHeads,
+                            sfo => sfo.OrderHeadId,
+                            oh => oh.Id,
+                            (sfo, oh) => oh.OrderNumber
+                        ).ToList(),
+                    Attachments = db.Attachments
+                        .Where(a => a.EntityId == sf.Id && a._AttachType == _AttachType.SupplyFactor)
+                        .ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            return Ok(data);
         }
 
 

@@ -12,10 +12,16 @@ namespace CRM.Infrastructures.Sql.RequestAmounts.Configs
         public void Configure(EntityTypeBuilder<RequestAmount> builder)
         {
             builder.HasKey(x => x.Id);
+            builder.Property(x => x.RequestNumber).ValueGeneratedOnAdd();
+
+
             builder.HasMany(f=>f.RequestAmountSupplyFactor)
                 .WithOne()
                 .HasForeignKey(f=>f.RequestAmountId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Property(f => f.Amount).HasPrecision(20, 0);
+            builder.Property(f => f.AcceptedAmount).HasPrecision(20, 0);
 
         }
     }

@@ -2047,7 +2047,7 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Payment");
+                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Payments.Entities.PaymentSupplyFactor", b =>
@@ -2077,7 +2077,7 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasIndex("SupplyFactorID");
 
-                    b.ToTable("PaymentSupplyFactor");
+                    b.ToTable("PaymentSupplyFactors");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.PreFactors.Entities.BaseDescription", b =>
@@ -2674,8 +2674,13 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Amount")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<decimal>("AcceptedAmount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
 
                     b.Property<string>("CommentText")
                         .HasColumnType("nvarchar(max)");
@@ -2686,10 +2691,10 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("CreateDateTxt")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("DocType")
+                    b.Property<int>("DocType")
                         .HasColumnType("int");
 
-                    b.Property<string>("DocTypeTXT")
+                    b.Property<string>("DocTypeTxt")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
@@ -2699,6 +2704,18 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RequestNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RequestNumber"));
+
+                    b.Property<int>("RequestStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RequestStatusTxt")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserCreator")
@@ -2715,7 +2732,7 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("RequestAmount");
+                    b.ToTable("RequestAmounts");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountSupplyFactor", b =>
@@ -2745,7 +2762,7 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasIndex("RequestAmountId");
 
-                    b.ToTable("RequestAmountSupplyFactor");
+                    b.ToTable("RequestAmountSupplyFactors");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.ExtraDataes.ExtraData", b =>
@@ -3035,7 +3052,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
 
                     b.Property<string>("CommentText")
                         .HasColumnType("nvarchar(max)");
@@ -3114,7 +3132,7 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasIndex("OrderHeadId");
 
-                    b.ToTable("SupplyOrderHeads");
+                    b.ToTable("SupplyFactorOrderHeads");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.SystemWarnings.Entities.SystemWarning", b =>
