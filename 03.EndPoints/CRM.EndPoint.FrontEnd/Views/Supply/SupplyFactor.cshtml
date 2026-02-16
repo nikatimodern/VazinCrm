@@ -120,30 +120,6 @@
 
 
 
-<div class="modal fade" id="supplyFactorAttachment" tabindex="-1" data-bs-focus="false" role="dialog" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-
-
-        <div class="modal-content col-12" style="padding:10px!important">
-
-
-            <div class="modal-body" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
-                <div class="d-flex justify-content-around col-12">
-                    <div class="container-uploader" style="border: 1px solid lightgray;">
-                        <div class="image-display" id="DivShowSupplyFactorAttach"></div>
-                    </div>
-                </div>
-
-                <div class="mt-3" style="width:100%; display:flex;justify-content:center;gap:4px">
-                    <button class="buttonCancel2" data-bs-dismiss="modal">انصراف</button>
-                </div>
-
-            </div>
-        </div>
-    </div>
-</div>
-
-
 @section Scripts {
     <script>
         var supplyFactorAttachments = [];
@@ -274,38 +250,6 @@
         };
 
 
-        const showSupplyFactorAttach = async (id) => {
-            const containerPreview = document.getElementById("DivShowSupplyFactorAttach");
-            containerPreview.innerHTML = "";
-            try {
-                FLshowLoading();
-                const files = (await axios(`/Factor/GetAttachment/${id}?type=8`)).data;
-
-                if (files.length) {
-                    files.forEach(fileItem => {
-                        const imageBox = createImageBox(fileItem);
-                        containerPreview.appendChild(imageBox);
-                    });
-                    containerPreview.parentElement.style.backgroundColor = "#fafafa";
-                } else {
-                    containerPreview.innerHTML = `
-                        <div class="d-flex flex-column align-items-center pb-4">
-                            <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
-                            <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ پیوستی برای نمایش وجود ندارد!</div>
-                        </div>
-                    `;
-                    containerPreview.parentElement.style.backgroundColor = "#fff";
-                }
-
-            } catch (err) {
-                containerPreview.innerHTML = "خطای دریافت اطلاعات!";
-                console.log(err);
-            } finally {
-                FLshowLoading(false);
-                ModalToggle("supplyFactorAttachment");
-            }
-        };
-
         async function showEditSupplyFactorModal(id) {
             FLshowLoading();
             await showSupplyFactorModal();
@@ -349,12 +293,11 @@
                     const res = await axios(`/Supply/DeleteSupplyFactor/${id}`);
                     if (res.status === 200) {
                         toastifySuccess("با موفقیت حذف شد");
-                        cancelSupplyFactorModal();
+                        await getAllSupplyFactors()
                     }
                     FLshowLoading(false);
                 }
             });
-
         };
     </script>
 }

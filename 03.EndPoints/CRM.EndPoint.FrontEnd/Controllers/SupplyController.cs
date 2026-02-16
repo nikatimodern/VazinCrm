@@ -20,6 +20,7 @@ using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Enums;
+using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Supplies.Enums;
@@ -60,6 +61,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [Authorize(Roles = "مدیر ارشد, مدیر اجرایی")]
+        public IActionResult Payment() // پرداختی
+        {
+            return View();
+        }
+
+        [Authorize(Roles = "مدیر ارشد, مدیر اجرایی")]
         public IActionResult Profit() // بهای تمام شده
         {
             return View();
@@ -75,7 +82,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public async Task<IActionResult> AddSupplyFactor([FromBody] SupplyFactor model)
         {
             if (model == null) return BadRequest();
-
+            await using var transaction = await db.Database.BeginTransactionAsync();
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
@@ -97,65 +104,49 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
                 await db.SaveChangesAsync();
+                await transaction.CommitAsync();
                 return Ok();
             }
             catch (Exception e)
             {
+                await transaction.RollbackAsync();
                 return BadRequest(e.Message);
             }
         }
 
-        public async Task<IActionResult> UpdateSupplyFactor([FromBody] SupplyFactor model)
+        [HttpPost]
+        public async Task<IActionResult> AddPayment([FromBody] Payment model)
         {
             if (model == null) return BadRequest();
-
+            await using var transaction = await db.Database.BeginTransactionAsync();
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
 
-                var data = await db.SupplyFactors
-                    .Include(x => x.SupplyFactorOrderHeads)
-                    .FirstOrDefaultAsync(x => x.Id == model.Id);
+                model.UserCreator = user.FullName;
+                model.UserCreatorID = user.Id;
 
-                if (data == null) return NotFound();
 
-                data.UserModify = user.FullName;
-                data.UserModifyID = user.Id;
-                data.FactorDate = dtService.GetDateMiladi(model.FactorDateTxt) ?? DateTime.Now;
+                model.PaymentDate = dtService.GetDateMiladi(model.PaymentDateTxt) ?? DateTime.Now;
+                model.PaymentTypeTxt = model.PaymentType.ToString().Replace("_", " ");
+                await db.Payments.AddAsync(model);
 
-                db.Entry(data).CurrentValues.SetValues(model);
-
-                var newIds = model.SupplyFactorOrderHeads.Select(x => x.OrderHeadId).ToList();
-
-                foreach (var item in data.SupplyFactorOrderHeads)
-                {
-                    if (!newIds.Contains(item.OrderHeadId))
-                        item.IsDeleted = true;
-                }
-
-                foreach (var id in newIds)
-                {
-                    if (!data.SupplyFactorOrderHeads.Any(x => x.OrderHeadId == id && !x.IsDeleted))
-                    {
-                        data.SupplyFactorOrderHeads.Add(new SupplyFactorOrderHead {
-                            SupplyFactorId = data.Id,
-                            OrderHeadId = id,
-                        });
-                    }
-                }
-
-                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.SupplyFactor);
-
+                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.Payment);
                 foreach (var att in attach)
-                    att.EntityId = data.Id;
+                {
+                    att.EntityId = model.Id;
+                }
 
-                db.Attachments.AddRange(attach);
+                await db.Attachments.AddRangeAsync(attach);
+
 
                 await db.SaveChangesAsync();
+                await transaction.CommitAsync();
                 return Ok();
             }
             catch (Exception e)
             {
+                await transaction.RollbackAsync();
                 return BadRequest(e.Message);
             }
         }

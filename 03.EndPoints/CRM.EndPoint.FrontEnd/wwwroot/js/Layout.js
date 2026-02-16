@@ -3503,39 +3503,24 @@ const cancelShowAccModal = () => {
     document.getElementById("showImageDisplayAccAt").innerHTML = "";
 };
 
-const getAllBankAccounts = async () => {
+const getAllBankAccountsJson = async () => {
     try {
         const res = await axios.post("/Accountancy/GetAllBankAccountJson");
-        
-        const createOption = (text, value) => {
-            const o = document.createElement("option");
-            o.innerText = text;
-            o.value = value;
-            return o;
-        };
+        return res.data.map(i => ({ text: i.text, value: i.id }));
+    } catch (err) {
+        console.log(err);
+    }
+};
+const getAllBankAccounts = async () => {
+    try {
+        const data = await getAllBankAccountsJson();
         
         const applyToModal = (modalId) => {
             const modal = document.getElementById(modalId);
             if (!modal) return;
             
             const select = modal.querySelector("select[name='BankAccountId']");
-            
-            const fragment = document.createDocumentFragment();
-            fragment.appendChild(createOption("انتخاب کنید", ""));
-            res.data.forEach(item => fragment.appendChild(createOption(item.text, item.id)));
-            //fragment.appendChild(createOption("سایر", "other"));
-            
-            select.innerHTML = "";
-            select.appendChild(fragment);
-            
-            /*const inputTxt = modal.querySelector("input[name='BankAccountTxt']");
-            if (!inputTxt) return;
-            
-            select.addEventListener("change", (e) => {
-                const isOther = e.target.value === "other";
-                inputTxt.classList.toggle("d-none", !isOther);
-                inputTxt.toggleAttribute("required", isOther);
-            });*/
+            createOption(select, data, true, "انتخاب کنید");
         };
         
         applyToModal("InvoiceModalId");
@@ -4474,6 +4459,97 @@ async function showModalPhonebook() {
     await loadPhonebook();
 }
 
+const showSupplyFactorAttach = async (id) => {
+    const containerPreview = document.getElementById("DivShowSupplyFactorAttach");
+    if (!containerPreview) return;
+    containerPreview.innerHTML = "";
+    try {
+        FLshowLoading();
+        const files = (await axios(`/Factor/GetAttachment/${id}?type=8`)).data;
+        
+        if (files.length) {
+            files.forEach(fileItem => {
+                const imageBox = createImageBox(fileItem);
+                containerPreview.appendChild(imageBox);
+            });
+            containerPreview.parentElement.style.backgroundColor = "#fafafa";
+        } else {
+            containerPreview.innerHTML = `
+                        <div class="d-flex flex-column align-items-center pb-4">
+                            <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
+                            <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ پیوستی برای نمایش وجود ندارد!</div>
+                        </div>
+                    `;
+            containerPreview.parentElement.style.backgroundColor = "#fff";
+        }
+        
+    } catch (err) {
+        containerPreview.innerHTML = "خطای دریافت اطلاعات!";
+        console.log(err);
+    } finally {
+        FLshowLoading(false);
+        ModalToggle("supplyFactorAttachment");
+    }
+};
+/*--------------------------------------------------------------------------------*/
+const addSupplyFactorModal = document.getElementById("addSupplyFactorModal");
+let supplyFactorsSelectedIds = [];
+let supplyFactorsTargetInput;
+async function showAddSupplyFactorModal(elm) {
+    supplyFactorsTargetInput = elm.parentElement.querySelector("input")
+    await getAllSupplyFactorsTable();
+    addSupplyFactorModal.querySelectorAll("input[type='checkbox']").forEach((checkbox) => {
+        if (supplyFactorsSelectedIds.includes(checkbox.value)) {
+            checkbox.checked = true;
+        }
+    });
+    toggleAddSupplyFactorModal();
+    addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !supplyFactorsSelectedIds.length);
+}
+
+
+function toggleAddSupplyFactorModal() {
+    addSupplyFactorModal.querySelector("#addSupplyFactorSearch").value = "";
+    ModalToggle(addSupplyFactorModal);
+}
+
+const getAllSupplyFactorsTable = async (search = "") => {
+    const res = await axios(`/Supply/GetAllSupplyFactorsTablePartial?search=${search}`);
+    
+    addSupplyFactorModal.querySelector("#addSupplyFactorContainer").innerHTML = res.data;
+};
+
+addSupplyFactorModal?.querySelector("#addSupplyFactorContainer").addEventListener("change", (e) => {
+    const checkbox = e.target.closest("input[type='checkbox']");
+    if (!checkbox) return;
+    
+    const anyChecked = addSupplyFactorModal.querySelector("#addSupplyFactorContainer input[type='checkbox']:checked");
+    
+    addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !anyChecked);
+});
+
+const submitSelectedSupplyFactor = () => {
+    const checkedBoxes = [...addSupplyFactorModal.querySelectorAll("#addSupplyFactorContainer input[type='checkbox']:checked")];
+    
+    supplyFactorsSelectedIds.length = 0;
+    supplyFactorsSelectedIds.push(...checkedBoxes.map(cb => cb.value));
+    
+    //const inpElm = document.getElementById("reqAmountSupplyFactor");
+    supplyFactorsTargetInput.value = checkedBoxes.map(cb => cb.dataset.number);
+    
+    ModalToggle(addSupplyFactorModal);
+};
+
+
+addSupplyFactorModal?.querySelector("#addSupplyFactorSearch").addEventListener("keyup", async (e) => {
+    if (e.key === "Enter") {
+        toggleElementsDisabled(e.target);
+        await getAllSupplyFactorsTable(e.target.value.trim());
+        toggleElementsDisabled(e.target, false);
+        e.target.focus();
+    }
+});
+/*--------------------------------------------------------------------------------*/
 
 document.addEventListener("input", (e) => {
     if (e.target.matches("input, textarea")) {

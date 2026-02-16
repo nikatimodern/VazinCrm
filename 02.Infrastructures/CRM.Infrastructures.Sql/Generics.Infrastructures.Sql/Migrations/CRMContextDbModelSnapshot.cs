@@ -2004,7 +2004,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
 
                     b.Property<string>("CommentText")
                         .HasColumnType("nvarchar(max)");
@@ -2025,6 +2026,18 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("PaymentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PaymentDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PaymentType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PaymentTypeTxt")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("SupplyFactorId")
@@ -2052,10 +2065,10 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.Payments.Entities.PaymentSupplyFactor", b =>
                 {
-                    b.Property<Guid>("PaymentID")
+                    b.Property<Guid>("PaymentId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("SupplyFactorID")
+                    b.Property<Guid>("SupplyFactorId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreateDate")
@@ -2073,9 +2086,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("ModifyDateTxt")
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("PaymentID", "SupplyFactorID");
+                    b.HasKey("PaymentId", "SupplyFactorId");
 
-                    b.HasIndex("SupplyFactorID");
+                    b.HasIndex("SupplyFactorId");
 
                     b.ToTable("PaymentSupplyFactors");
                 });
@@ -3338,13 +3351,13 @@ namespace CRM.Infrastructures.Sql.Migrations
                 {
                     b.HasOne("CRM.Core.Domain.Payments.Entities.Payment", null)
                         .WithMany("PaymentSupplyFactors")
-                        .HasForeignKey("PaymentID")
+                        .HasForeignKey("PaymentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("CRM.Core.Domain.Supplies.Entities.SupplyFactor", null)
                         .WithMany("PaymentSupplyFactors")
-                        .HasForeignKey("SupplyFactorID")
+                        .HasForeignKey("SupplyFactorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

@@ -11,7 +11,7 @@ namespace CRM.Infrastructures.Sql.Payments.Configs
     {
         public void Configure(EntityTypeBuilder<PaymentSupplyFactor> builder)
         {
-            builder.HasKey(f => new { f.PaymentID, f.SupplyFactorID });
+            builder.HasKey(f => new { PaymentID = f.PaymentId, SupplyFactorID = f.SupplyFactorId });
         }
     }
 }

@@ -25,7 +25,7 @@ namespace CRM.Infrastructures.Sql.Supplies.Configs
 
             builder.HasMany(f => f.PaymentSupplyFactors)
                 .WithOne()
-                .HasForeignKey(f => f.SupplyFactorID)
+                .HasForeignKey(f => f.SupplyFactorId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.Property(f => f.Amount).HasPrecision(20, 0);

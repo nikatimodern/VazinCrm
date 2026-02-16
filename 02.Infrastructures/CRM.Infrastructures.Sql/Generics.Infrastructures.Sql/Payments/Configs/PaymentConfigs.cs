@@ -13,9 +13,11 @@ namespace CRM.Infrastructures.Sql.Payments.Configs
         {
             builder.HasKey(s => s.Id);
 
+            builder.Property(f => f.Amount).HasPrecision(20, 0);
+
             builder.HasMany(f=>f.PaymentSupplyFactors)
                 .WithOne()
-                .HasForeignKey(f=>f.PaymentID)
+                .HasForeignKey(f=>f.PaymentId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

@@ -50,13 +50,13 @@
                 </div>
 
                 <div class="col-12 col-md-1 d-flex flex-row flex-md-column justify-content-center align-items-center px-2 py-2 gap-4 gap-md-3" style="background-color: #f5f5f5; border-top: 1px solid #e0e0e0; border-md-top: none;">
-                    <button class="flex-center p-0" data-title="پیوست ها" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="showSupplyFactorAttach('@supplyFactor.Id')">
+                    <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="showSupplyFactorAttach('@supplyFactor.Id')">
                         <i class="fa fa-paperclip"></i>
                     </button>
-                    <button class="flex-center p-0" data-title="ویرایش" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="showEditSupplyFactorModal('@supplyFactor.Id')">
+                    <button class="flex-center p-0" data-title-right="ویرایش" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="showEditSupplyFactorModal('@supplyFactor.Id')" disabled>
                         <i class="fa fa-pencil"></i>
                     </button>
-                    <button class="flex-center p-0" data-title="حذف" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="deleteSupplyFactor('@supplyFactor.Id')">
+                    <button class="flex-center p-0" data-title-right="حذف" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="deleteSupplyFactor('@supplyFactor.Id')">
                         <i class="fa fa-trash"></i>
                     </button>
                 </div>
@@ -65,69 +65,3 @@
         </div>
     }
 </div>
-
-@*
-<div style="width:100%;display:flex;flex-direction:column;gap:5px;">
-    @foreach (var item in Model) {
-        <div class="mp" style=" width:100%;display:flex;">
-
-            <div class="d-flex flex-column flex-sm-row justify-content-between InfoDataItem_Prefactor w-100 py-2">
-
-                <div class="d-flex flex-column flex-md-row justify-content-between w-100">
-
-                    <div class="col-12 col-md-4 d-flex flex-row flex-md-column flex-wrap gap-md-2 px-2 justify-content-around" style="row-gap:.5rem;column-gap:1rem;">
-
-                        <div class="justify-content-between" style=" display:flex;align-items:center;gap:6px">
-                            <label style="color:gray">سریال:</label>
-                            <label class="text-center fbold">@item.FactorSerial</label>
-                        </div>
-
-                        <div class="justify-content-between" style="display:flex;align-items:center; gap:6px">
-                            <label style="color:gray">تاریخ:</label>
-                            <label class="text-center fbold">@item.FactorDateTxt</label>
-                        </div>
-
-                    </div>
-
-                    <div class="d-md-none my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
-
-                    <div class="col-12 col-md-5 flex-wrap flex-row flex-md-column gap-2 px-2 justify-content-around" style="text-align:center; display:flex;align-items:center">
-                        <div style=" display:flex;align-items:center;gap:6px">
-                            <label style="color:gray">تامین کننده:</label>
-                            <label class="text-center fbold">@item.SupplierTxt</label>
-                        </div>
-                        <div class="flex-row " style=" display:flex;align-items:center; justify-content:center;gap:6px;">
-                            <label style="color:gray">ثبت شده توسط:</label>
-                            <label class="text-center fbold">@item.UserCreator</label>
-                        </div>
-                    </div>
-
-                    <div class="d-md-none my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
-
-                    <div class="col-12 col-md-3 flex-center flex-md-column justify-content-md-evenly text-center px-3" style="column-gap:24px;row-gap:8px">
-                        <div class="flex-center flex-row flex-md-column" style="gap:6px">
-                            <label style="color:gray">مبلغ:</label>
-                            <label class="text-center fbold">@string.Format("{0:n0}", item.Amount) <span style="font-size: 12px">ريال</span></label>
-                        </div>
-                    </div>
-                    <div class="d-sm-none mt-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
-                </div>
-
-                <div class="flex-row flex-sm-column mt-2 mt-sm-0 mx-0 mx-sm-2 align-items-center" style=" display:flex; justify-content:space-evenly !important;row-gap:8px;font-size:15px">
-                    <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="">
-                        <i style="font-size:15px" class="mp fa fa-paperclip"></i>
-                    </button>
-
-                    <button class="flex-center p-0" data-title-right="ویرایش" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="">
-                        <i class="mp fa fa-pencil"></i>
-                    </button>
-                    <button class="flex-center p-0" data-title-right="حذف" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="">
-                        <i class="mp fa fa-trash"></i>
-                    </button>
-
-                </div>
-            </div>
-        </div>
-    }
-</div>
-*@

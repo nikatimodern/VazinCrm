@@ -7,8 +7,8 @@ namespace CRM.Core.Domain.Payments.Entities
 {
     public class PaymentSupplyFactor:JunctionBaseEntity
     {
-        public Guid SupplyFactorID { get; set; }
-        public Guid PaymentID { get; set; }
+        public Guid SupplyFactorId { get; set; }
+        public Guid PaymentId { get; set; }
 
     }
 }

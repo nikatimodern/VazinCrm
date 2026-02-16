@@ -279,11 +279,7 @@
     max-height: calc(100dvh - 249px) !important;
   }
   
-  #FinancialExpertPfContentId {
-    max-height: calc(100dvh - 293px) !important;
-  }
-  
-  #FinancialExpertPfContentId {
+  #FinancialExpertPfContentId, #MDRequestAmountContentId {
     max-height: calc(100dvh - 293px) !important;
   }
   
@@ -351,23 +347,19 @@
 }
 
 
-#financialExpertsTabs {
-  display: flex !important;
+.nav.nav-pills {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding-bottom: .5rem;
   gap: .25rem;
-  border-bottom: 2px solid var(--DarkColor) !important;
+  border-bottom: 2px solid var(--DarkColor);
 }
 
 
-#financialExpertsTabs .nav-link.active {
-  background-color: var(--DarkColor) !important;
-  color: #fff !important;
-}
-
-
-#financialExpertsTabs .nav-link {
-  color: var(--DarkColor) !important;
-  background-color: #1626361f !important;
-  border: none !important;
+.nav-pills .nav-link {
+  color: var(--DarkColor) ;
+  background-color: #1626361f;
 }
 
 

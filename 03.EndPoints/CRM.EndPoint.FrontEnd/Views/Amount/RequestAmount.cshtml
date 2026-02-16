@@ -3,14 +3,15 @@
 }
 
 <div class="w-100">
-    <div class="row align-items-center justify-content-between flex-wrap mb-2 g-2">
+    <div class="row align-items-center justify-content-between flex-wrap mb-3 g-2">
         <div class="d-flex col-lg-3">
-            <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="toggleSupplyFactorModal()">
+            <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="toggleRequestAmountModal()">
                 <span style="line-height: 1">ثبت درخواست جدید</span>
                 <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
             </button>
         </div>
         <div class="col-12 col-lg-5 d-flex align-items-center gap-2 flex-wrap">
+            <input class="form-control w-100" type="text" id="requestAmountSearchId" placeholder="جستجو..." />
             @*<div class="d-flex align-items-center flex-grow-1 gap-2">
                 <input type="text" class="form-control form-control-sm" id="dealSearchId" placeholder="جستجو">
                 <div class="btnFilter d-lg-none" data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterDeal" data-filterContentId="ContentDealFilterId" data-filterInpSearchId="dealSearchId" data-filterVarSearch="dealSearchVal" onclick="ShowFilterPopup(this)">
@@ -19,6 +20,18 @@
             </div>*@
         </div>
         <div class="d-flex align-items-start justify-content-start justify-content-lg-end gap-2 col-lg-3">
+            <div class="d-flex gap-2">
+                <ul class="filter-switch">
+                    <li class="filter-switch-item">
+                        <input type="radio" name="requestAmountFilter" id="requestAmountFilter1" value="1" checked />
+                        <label for="requestAmountFilter1">در انتظار تایید</label>
+                    </li>
+                    <li class="filter-switch-item">
+                        <input type="radio" name="requestAmountFilter" id="requestAmountFilter2" value="2" />
+                        <label for="requestAmountFilter2">تایید شده</label>
+                    </li>
+                </ul>
+            </div>
             @*<div id="ContentDealFilterId" class="ContentFilter"></div>
             <div class="btnFilter d-none d-lg-flex" data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterDeal" data-filterContentId="ContentDealFilterId" data-filterInpSearchId="dealSearchId" data-filterVarSearch="dealSearchVal" onclick="ShowFilterPopup(this)">
                 <svg style="width:24px;color:#333" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
@@ -69,13 +82,13 @@
                         <label for="reqAmountSupplyFactor">فاکتور تامین:</label>
                         <div class="input-group mb-3">
                             <input id="reqAmountSupplyFactor" type="text" class="form-control" placeholder="فاکتور تامین.." disabled required>
-                            <button class="btn btn-sm btn-secondary" type="button" onclick="showAddSupplyFactorModal()">انتخاب</button>
+                            <button class="btn btn-sm btn-secondary" type="button" onclick="showAddSupplyFactorModal(this)">انتخاب</button>
                         </div>
                     </div>
 
 
                     <div class="d-flex justify-content-center gap-1 mt-2">
-                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="toggleSupplyFactorModal()">انصراف</button>
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="toggleRequestAmountModal()">انصراف</button>
                         <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitRequestAmountModal()">ثبت</button>
                     </div>
                 </form>
@@ -84,105 +97,33 @@
     </div>
 </div>
 
-<!-- addSupplyFactor Modal -->
-<div class="modal fade" id="addSupplyFactorModal" tabindex="-1" data-bs-focus="false">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content" style="border-radius: 12px;overflow: hidden;box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25)">
-            <div class="modal-header">
-                <div class="d-flex align-items-center justify-content-between w-100">
-                    <span class="fbold">انتخاب حواله تولید</span>
-                    <div>
-                        <input id="addSupplyFactorSearch" type="text" class="form-control" placeholder="جستجو..">
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-body p-0">
-                <div id="addSupplyFactorContainer"></div>
-            </div>
-
-            <div class="modal-footer justify-content-center p-2">
-                <button style="padding-block:4px" type="button" class="buttonCancel2" onclick="toggleAddSupplyFactorModal()">انصراف</button>
-                <button id="submitSelectedSupplyFactor" style="padding-block:4px" type="button" class="buttonGreen3 d-none" onclick="submitSelectedSupplyFactor()">ثبت</button>
-            </div>
-
-        </div>
-    </div>
-</div>
 
 
 @section Scripts {
     <script>
-        const addSupplyFactorModal = document.getElementById("addSupplyFactorModal");
-        let supplyFactorsSelectedIds = [];
+
 
         document.addEventListener("DOMContentLoaded", async () => {
             //getAllRequestAmountDt();
             await getAllRequestAmount();
-        })
 
-        async function showAddSupplyFactorModal() {
-            await getAllSupplyFactorsTable();
-            addSupplyFactorModal.querySelectorAll("input[type='checkbox']").forEach((checkbox) => {
-                if (supplyFactorsSelectedIds.includes(checkbox.value)) {
-                    checkbox.checked = true;
+            document.getElementById("requestAmountSearchId").addEventListener("keyup", async (e) => {
+                if (e.key === "Enter") {
+                    await getAllRequestAmount();
                 }
             });
-            toggleAddSupplyFactorModal();
-            addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !supplyFactorsSelectedIds.length);
-        }
-
-        function toggleAddSupplyFactorModal() {
-            addSupplyFactorModal.querySelector("#addSupplyFactorSearch").value = "";
-            ModalToggle(addSupplyFactorModal);
-        }
-
-        const getAllSupplyFactorsTable = async (search = "") => {
-            const res = await axios(`/Supply/GetAllSupplyFactorsTablePartial?search=${search}`);
-
-            addSupplyFactorModal.querySelector("#addSupplyFactorContainer").innerHTML = res.data;
-        };
-
-        addSupplyFactorModal.querySelector("#addSupplyFactorContainer").addEventListener("change", (e) => {
-            const checkbox = e.target.closest("input[type='checkbox']");
-            if (!checkbox) return;
-
-            const anyChecked = addSupplyFactorModal.querySelector("#addSupplyFactorContainer input[type='checkbox']:checked");
-
-            addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !anyChecked);
-        });
-
-        const submitSelectedSupplyFactor = () => {
-            const checkedBoxes = [...addSupplyFactorModal.querySelectorAll("#addSupplyFactorContainer input[type='checkbox']:checked")];
-
-            supplyFactorsSelectedIds.length = 0;
-            supplyFactorsSelectedIds.push(...checkedBoxes.map(cb => cb.value));
-
-            setSupplyFactorsNumber();
-
-            ModalToggle(addSupplyFactorModal);
-        };
-
-        const setSupplyFactorsNumber = () => {
-            const inpElm = document.getElementById("reqAmountSupplyFactor");
-            const checkedBoxes = [...addSupplyFactorModal.querySelectorAll("#addSupplyFactorContainer input[type='checkbox']:checked")];
-
-            inpElm.value = checkedBoxes.map(cb => cb.dataset.number);
-        };
-
-
-        addSupplyFactorModal.querySelector("#addSupplyFactorSearch").addEventListener("keyup", async (e) => {
-            if (e.key === "Enter") {
-                toggleElementsDisabled(e.target);
-                await getAllSupplyFactorsTable(e.target.value.trim());
-                toggleElementsDisabled(e.target, false);
-                e.target.focus();
-            }
+            const requestAmountRadios = document.querySelectorAll("input[type='radio'][name='requestAmountFilter']");
+            requestAmountRadios.forEach(elm => elm.addEventListener("change", async () => {
+                await getAllRequestAmount();
+            }));
         });
 
 
-        function toggleSupplyFactorModal() {
-            ModalToggle("#requestAmountModal");
+
+        function toggleRequestAmountModal() {
+            ModalToggle("requestAmountModal");
+            mySer.emptyForm("requestAmountForm");
+            supplyFactorsSelectedIds = [];
         }
 
         async function submitRequestAmountModal() {
@@ -193,26 +134,54 @@
             };
 
             try {
+                FLshowLoading();
                 const res = await axios.post(`/Amount/AddRequestAmount`, model);
                 if (res.status === 200) {
                     toastifySuccess("با موفقیت ثبت شد");
-                    mySer.emptyForm("requestAmountForm");
-                    supplyFactorsSelectedIds = [];
-                    ModalToggle("requestAmountModal", "hide");
+                    getAllRequestAmount();
+                    toggleRequestAmountModal();
                 }
             } catch (err) {
                 console.log(err);
+            } finally {
+                FLshowLoading(false);
             }
 
         }
 
 
         const getAllRequestAmount = async () => {
+            const val = document.getElementById("requestAmountSearchId")?.value.trim() ?? "";
+            const type = document.querySelector("input[type='radio'][name='requestAmountFilter']:checked")?.value;
+            if (type === undefined) return;
             FLshowLoading();
-            const res = await axios(`/Amount/GetAllRequestAmountsPartial`);
-            document.getElementById("requestAmountContainer").innerHTML = res.data;
+            const res = await axios(`/Amount/GetAllRequestAmountsPartial?search=${val}&type=${type}&passType=1`);
+            document.getElementById("requestAmountContainer").innerHTML = res.data.html;
             FLshowLoading(false);
-        }
+        };
+
+        const deleteRequestAmount = async (id) => {
+            Swal.fire({
+                title: "حذف!",
+                text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
+                icon: "warning",
+                showCancelButton: true,
+                cancelButtonColor: "#adadad",
+                confirmButtonColor: "#e64942",
+                cancelButtonText: "انصراف",
+                confirmButtonText: "بله، حذف شود",
+            }).then(async (willDelete) => {
+                if (willDelete.isConfirmed) {
+                    FLshowLoading();
+                    const res = await axios(`/Amount/DeleteRequestAmount/${id}`);
+                    if (res.status === 200) {
+                        toastifySuccess("با موفقیت حذف شد");
+                        await getAllRequestAmount();
+                    }
+                    FLshowLoading(false);
+                }
+            });
+        };
 
 
         @*let requestAmountTbl;
@@ -298,7 +267,7 @@
                     },
                 },
             });
-        };*@
+        };*@;
 
     </script>
 }

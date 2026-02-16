@@ -7,11 +7,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.RequestAmounts.Entities;
+using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Amount;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Reports;
@@ -31,9 +33,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly CRMContextDb db;
         private readonly UserContextDb udb;
         private readonly LogSystemService _logSystemService;
+        private readonly IVeiwRenderService vrs;
 
         public AmountController(UserManager<AppUser> userManager, Service GenService, FileSaver fileSaver,
-            DateTimeServices dtService, CRMContextDb db, UserContextDb udb, LogSystemService logSystemService)
+            DateTimeServices dtService, CRMContextDb db, UserContextDb udb, LogSystemService logSystemService, IVeiwRenderService vrs)
         {
             this.userManager = userManager;
             genService = GenService;
@@ -42,6 +45,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.db = db;
             this.udb = udb;
             _logSystemService = logSystemService;
+            this.vrs = vrs;
         }
 
 
@@ -56,6 +60,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             if (model == null) return BadRequest();
 
+            await using var transaction = await db.Database.BeginTransactionAsync();
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
@@ -67,6 +72,35 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 db.RequestAmounts.Add(model);
 
                 await db.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                await transaction.RollbackAsync();
+                return BadRequest(e.Message);
+            }
+        }
+        [HttpPost]
+        public async Task<IActionResult> SetAcceptedRequestAmount([FromBody] RequestAmount model)
+        {
+            if (model == null) return BadRequest();
+
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+
+                var item = await db.RequestAmounts.Where(f => f.Id == model.Id).FirstOrDefaultAsync();
+                item.AcceptedAmount = model.AcceptedAmount;
+                item.RequestStatus = RequestStatusEnum.تایید_شده;
+                item.RequestStatusTxt = nameof(RequestStatusEnum.تایید_شده).Replace("_", " ");
+
+                item.UserModify = user.FullName;
+                item.UserModifyID = user.Id;
+                item.ModifyDate = DateTime.Now;
+                item.ModifyDateTxt = dtService.GetDateTimePersian();
+
+                await db.SaveChangesAsync();
                 return Ok();
             }
             catch (Exception e)
@@ -76,11 +110,26 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        public async Task<IActionResult> GetAllRequestAmountsPartial()
+        public async Task<IActionResult> GetAllRequestAmountsPartial(int passType, int type = -1, string search = "")
         {
             try
             {
-                var data = await db.RequestAmounts.AsNoTracking().OrderByDescending(f => f.CreateDate)
+                var query = db.RequestAmounts.AsNoTracking();
+
+
+                if (!string.IsNullOrEmpty(search))
+                {
+                    query = query.Where(f =>
+                        f.RequestNumber == TextService.convertToInt(search)
+                    );
+                }
+
+                if (type != -1)
+                {
+                    query = query.Where(f => f.RequestStatus == (RequestStatusEnum)type);
+                }
+
+                var data = await query.OrderByDescending(f => f.CreateDate)
                     .Select(ra => new RequestAmountVModel {
                         RequestAmount = ra,
                         SupplyFactorSerials = ra.RequestAmountSupplyFactor
@@ -92,7 +141,37 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             .ToList()
                     })
                     .ToListAsync();
-                return PartialView(data);
+
+
+                var html = await vrs.RenderToStringAsync("GetAllRequestAmountsPartial", data,
+                    new Dictionary<string, object> {
+                        { "PassType", passType }
+                    });
+                return Ok(new { count = data.Count, html });
+                //return PartialView(data);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        public async Task<IActionResult> DeleteRequestAmount(Guid id)
+        {
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var item = await db.RequestAmounts.Where(f => f.Id == id).FirstOrDefaultAsync();
+                if (item == null) return NotFound();
+
+                item.IsDeleted = true;
+                item.ModifyDate = DateTime.Now;
+                item.ModifyDateTxt = dtService.GetDateTimePersian();
+                item.UserModify = user.FullName;
+                item.UserModifyID = user.Id;
+
+                await db.SaveChangesAsync();
+                return Ok();
             }
             catch (Exception e)
             {
