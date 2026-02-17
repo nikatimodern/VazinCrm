@@ -2297,7 +2297,7 @@ class MyService {
                                     toastifyError("شماره موبایل معتبر نیست!");
                                     addAlert(el);
                                     isValid = false;
-                                } else if ((el.getAttribute("data-slots") === "ymd" || el.hasAttribute("data-mask-date")) && !isValidDate(el.value)) {
+                                } else if ((el.getAttribute("data-slots") === "ymd" || el.hasAttribute("data-mask-date")) && el.value && !isValidDate(el.value)) {
                                     toastifyError("تاریخ معتبر نیست!");
                                     addAlert(el);
                                     isValid = false;

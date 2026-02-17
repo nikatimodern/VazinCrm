@@ -10,6 +10,7 @@ namespace CRM.Core.Domain.Payments.Entities
 {
     public class Payment:BaseEntity
     {
+        public int PaymentNumber { get; set; }
         public decimal Amount { get; set; }
         public string FromAccount { get; set; }
         public string ToAccount { get; set; }
@@ -17,7 +18,6 @@ namespace CRM.Core.Domain.Payments.Entities
         public string PaymentTypeTxt { get; set; }
         public DateTime PaymentDate { get; set; }
         public string PaymentDateTxt { get; set; }
-        public Guid? SupplyFactorId { get; set; }
 
         [NotMapped]
         public IList<Attachment> Attachments { get; set; }

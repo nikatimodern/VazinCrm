@@ -69,7 +69,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.UserCreatorID = user.Id;
                 model.RequestStatusTxt = model.RequestStatus.ToString().Replace("_", " ");
                 model.DocTypeTxt = model.DocType.ToString().Replace("_", " ");
-                db.RequestAmounts.Add(model);
+                await db.RequestAmounts.AddAsync(model);
 
                 await db.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -81,6 +81,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 return BadRequest(e.Message);
             }
         }
+
+
         [HttpPost]
         public async Task<IActionResult> SetAcceptedRequestAmount([FromBody] RequestAmount model)
         {
@@ -147,8 +149,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     new Dictionary<string, object> {
                         { "PassType", passType }
                     });
+
                 return Ok(new { count = data.Count, html });
-                //return PartialView(data);
+
             }
             catch (Exception e)
             {

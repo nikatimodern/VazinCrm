@@ -2034,14 +2034,17 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("PaymentDateTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("PaymentNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PaymentNumber"));
+
                     b.Property<int>("PaymentType")
                         .HasColumnType("int");
 
                     b.Property<string>("PaymentTypeTxt")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid?>("SupplyFactorId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ToAccount")
                         .HasColumnType("nvarchar(max)");
@@ -3094,6 +3097,9 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.Property<string>("ModifyDateTxt")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte>("OfficialType")
+                        .HasColumnType("tinyint");
 
                     b.Property<Guid>("SupplierId")
                         .HasColumnType("uniqueidentifier");

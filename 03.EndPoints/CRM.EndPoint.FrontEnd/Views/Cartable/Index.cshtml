@@ -1409,7 +1409,7 @@
         }
 
         function toggleAcceptBtn(elm, acceptAmount, acceptedAmount) {
-            const acceptBtn = elm.closest(".request-item-wrapper").querySelector(".buttonGreen2");
+            const acceptBtn = elm.closest(".layered-card").querySelector(".buttonGreen2");
             if (acceptAmount === 0) {
                 toggleElementsDisabled(acceptBtn, true);
             } else {
@@ -1423,7 +1423,7 @@
         }
 
         async function submitAcceptedRequestAmount(btn, id) {
-            const input = btn.closest(".request-item-wrapper").querySelector("input[name='acceptedAmount']");
+            const input = btn.closest(".layered-card").querySelector("input[name='acceptedAmount']");
 
             const model = {
                 id,

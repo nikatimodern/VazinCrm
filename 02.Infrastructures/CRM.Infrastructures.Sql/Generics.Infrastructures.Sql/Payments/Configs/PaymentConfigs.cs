@@ -12,6 +12,7 @@ namespace CRM.Infrastructures.Sql.Payments.Configs
         public void Configure(EntityTypeBuilder<Payment> builder)
         {
             builder.HasKey(s => s.Id);
+            builder.Property(x => x.PaymentNumber).ValueGeneratedOnAdd();
 
             builder.Property(f => f.Amount).HasPrecision(20, 0);
 

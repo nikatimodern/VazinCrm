@@ -46,9 +46,22 @@ let CrmSer = new CrmService();
 let myDate = new GetDate();
 document.addEventListener("DOMContentLoaded", async () => {
     await GetUserLogin();
+    setActiveMenu();
+    
+    
     setting = await GetSetting();
     AcceptSetting(setting);
     
+    
+    initTooltipsIfCollapsed();
+    dateTimePicker();
+    
+    getRemind();
+    setDateTime();
+    getAllWarnings();
+});
+
+function setActiveMenu() {
     const currentPath = window.location.pathname.toLowerCase();
     document.querySelectorAll(".menuLink").forEach(link => {
         const href = link.getAttribute("href")?.toLowerCase();
@@ -58,7 +71,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         const submenu = link.closest(".submenu");
         if (submenu) {
             const wrapper = link.closest(".has-submenu");
+            const menuBox = wrapper.querySelector(".menuBox");
             wrapper?.classList.add("open");
+            menuBox?.classList.add("active-menu");
         }
     });
     
@@ -69,15 +84,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             wrapper.classList.toggle("open");
         });
     });
-    
-    initTooltipsIfCollapsed();
-    dateTimePicker();
-    
-    getRemind();
-    setDateTime();
-    getAllWarnings();
-});
-
+}
 
 /*
 const RepairPf = async (pfi, passType, dealId) => {
@@ -2472,37 +2479,6 @@ const ShowEditModalInvoice = async (id, type = 1) => {
     FLshowLoading(false);
 };
 
-const ShowModalAttachmentInvoice = (id) => {
-    const containerPreview = document.getElementById("DivShowSanadPayAttach");
-    containerPreview.innerHTML = "";
-    FLshowLoading();
-    $.get(`/Factor/GetAttachment/${id}`, (files) => {
-        if (files.length) {
-            files.forEach(fileItem => {
-                const imageBox = createImageBox(fileItem);
-                containerPreview.appendChild(imageBox);
-            });
-            containerPreview.parentElement.style.backgroundColor = "#fafafa";
-        } else {
-            containerPreview.innerHTML = `
-                <div class="d-flex flex-column align-items-center pb-4">
-                    <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
-                    <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ پیوستی برای نمایش وجود ندارد!</div>
-                </div>
-            `;
-            containerPreview.parentElement.style.backgroundColor = "#fff";
-        }
-        FLshowLoading(false);
-    });
-    
-    $("#sanadPayAttachment").modal("toggle");
-};
-
-const cancelModalAttachmentInvoice = () => {
-    $("#sanadPayAttachment").modal("toggle");
-    document.getElementById("DivShowSanadPayAttach").innerHTML = "";
-};
-
 
 async function checkEtebariWarning(isEditInvoiceModal, payType, AccParentId, AccType, pfactorID) {
     if (isEditInvoiceModal || payType === 3 || AccParentId || AccType !== 1) {
@@ -2910,17 +2886,21 @@ $(document).on("click", ".AddPersonImg_Btn", function () {
 });
 
 
-const AttachDoc = (id) => {
+const AttachDoc = async (id) => {
     pfactorID = id;
-    $("#Attachments").modal("show");
-    document.getElementById("FLshowLoading").style.display = "";
-    document.getElementById("imageDisplayAcAt").innerHTML = "";
-    
-    $.get(`/Factor/GetAttachment/${id}?type=2`, (res) => {
-        AccepedAttachment = res;
+    ModalToggle("Attachments", "show");
+    try {
+        FLshowLoading();
+        const res = await axios(`/Factor/GetAttachment/${id}?type=2`);
+        AccepedAttachment = res.data;
         FileUpReload("AcAtID");
-        document.getElementById("FLshowLoading").style.display = "none";
-    });
+    } catch (err) {
+        toastifyError("خطای سرور!");
+        console.log(err);
+    } finally {
+        FLshowLoading(false);
+    }
+    
 };
 
 const showAcc = (id) => {
@@ -4459,13 +4439,14 @@ async function showModalPhonebook() {
     await loadPhonebook();
 }
 
-const showSupplyFactorAttach = async (id) => {
-    const containerPreview = document.getElementById("DivShowSupplyFactorAttach");
+const showAttachments = async (id, typeAtt) => {
+    const showAttModal = document.getElementById("showAttachmentsModal");
+    const containerPreview = showAttModal.querySelector(".image-display");
     if (!containerPreview) return;
     containerPreview.innerHTML = "";
     try {
         FLshowLoading();
-        const files = (await axios(`/Factor/GetAttachment/${id}?type=8`)).data;
+        const files = (await axios(`/Factor/GetAttachment/${id}?type=${typeAtt}`)).data;
         
         if (files.length) {
             files.forEach(fileItem => {
@@ -4475,11 +4456,11 @@ const showSupplyFactorAttach = async (id) => {
             containerPreview.parentElement.style.backgroundColor = "#fafafa";
         } else {
             containerPreview.innerHTML = `
-                        <div class="d-flex flex-column align-items-center pb-4">
-                            <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
-                            <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ پیوستی برای نمایش وجود ندارد!</div>
-                        </div>
-                    `;
+                <div class="d-flex flex-column align-items-center pb-4">
+                    <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
+                    <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ پیوستی برای نمایش وجود ندارد!</div>
+                </div>
+            `;
             containerPreview.parentElement.style.backgroundColor = "#fff";
         }
         
@@ -4488,15 +4469,16 @@ const showSupplyFactorAttach = async (id) => {
         console.log(err);
     } finally {
         FLshowLoading(false);
-        ModalToggle("supplyFactorAttachment");
+        ModalToggle(showAttModal);
     }
 };
+
 /*--------------------------------------------------------------------------------*/
 const addSupplyFactorModal = document.getElementById("addSupplyFactorModal");
 let supplyFactorsSelectedIds = [];
 let supplyFactorsTargetInput;
 async function showAddSupplyFactorModal(elm) {
-    supplyFactorsTargetInput = elm.parentElement.querySelector("input")
+    supplyFactorsTargetInput = elm.parentElement.querySelector("input");
     await getAllSupplyFactorsTable();
     addSupplyFactorModal.querySelectorAll("input[type='checkbox']").forEach((checkbox) => {
         if (supplyFactorsSelectedIds.includes(checkbox.value)) {
@@ -4536,7 +4518,7 @@ const submitSelectedSupplyFactor = () => {
     
     //const inpElm = document.getElementById("reqAmountSupplyFactor");
     supplyFactorsTargetInput.value = checkedBoxes.map(cb => cb.dataset.number);
-    
+    supplyFactorsTargetInput.classList.remove("AlertReq");
     ModalToggle(addSupplyFactorModal);
 };
 
@@ -4551,10 +4533,36 @@ addSupplyFactorModal?.querySelector("#addSupplyFactorSearch").addEventListener("
 });
 /*--------------------------------------------------------------------------------*/
 
-document.addEventListener("input", (e) => {
+/*document.addEventListener("input", (e) => {
     if (e.target.matches("input, textarea")) {
         e.target.value = toEnglishDigits(e.target.value);
     }
+});*/
+
+document.addEventListener("input", (e) => {
+    const el = e.target;
+    
+    if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement))
+        return;
+    
+    const allowedTypes = ["text", "search", "tel", "url", "password", "email"];
+    
+    if (el instanceof HTMLInputElement && !allowedTypes.includes(el.type))
+        return;
+    
+    const newValue = toEnglishDigits(el.value);
+    
+    if (el.value !== newValue) {
+        const start = el.selectionStart;
+        const end = el.selectionEnd;
+        
+        el.value = newValue;
+        
+        /* if (start !== null && end !== null) {
+             el.setSelectionRange(start, end);
+         }*/
+    }
 });
+
 
 

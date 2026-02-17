@@ -179,11 +179,6 @@
                             </a>
                         </ul>
                     </div>
-                    @*  <hr class="mp" style="height:2px;width:100%; color:white" />
-                        <a class=" MyBtn menuBox " href="/Contract/Index">
-                        <i class="fas fa-file-contract menuIcon"  aria-hidden="true"></i>
-                        <span style=" width:100% ;font-size:15px" class="mp">قراردادها</span>
-                        </a> *@
                     <a data-tooltip-left="قیمت ها" class="menuBox menuLink TaminAdmin TaminExpert Admin SalesAdmin" style="display:none" href="/Amount/Index">
                         <i class="fas fa-dollar-sign menuIcon" aria-hidden="true"></i>
                         <span style="font-size:15px" class="flex-grow-1">قیمت ها</span>
@@ -1800,32 +1795,6 @@
 </div>
 
 
-<!-- Modal sanadPayAttachment -->
-<div class="modal fade" id="sanadPayAttachment" tabindex="-1" data-bs-focus="false" role="dialog" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-
-
-        <div class="modal-content col-12" style="padding:10px!important">
-
-
-            <div class="modal-body" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
-                <div class="d-flex justify-content-around col-12">
-                    <div class="container-uploader" style="border: 1px solid lightgray;">
-                        <div class="image-display" id="DivShowSanadPayAttach"></div>
-                    </div>
-                </div>
-
-                <div class="mt-3" style="width:100%; display:flex;justify-content:center;gap:4px">
-                    <button class="buttonCancel2" onclick="cancelModalAttachmentInvoice()">انصراف</button>
-                </div>
-
-            </div>
-        </div>
-    </div>
-</div>
-
-
-
 <!-- Modal Invoice -->
 <div class="modal fade invoice-modal" id="InvoiceModalId" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
@@ -2866,8 +2835,8 @@
     </div>
 </div>
 
-<!-- supplyFactorAttachment Modal -->
-<div class="modal fade" id="supplyFactorAttachment" tabindex="-1" data-bs-focus="false">
+<!-- showAttachmentsModal Modal -->
+<div class="modal fade" id="showAttachmentsModal" tabindex="-1" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content col-12" style="padding:10px!important">
             <div class="modal-body" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
@@ -2875,10 +2844,6 @@
                     <div class="container-uploader" style="border: 1px solid lightgray;">
                         <div class="image-display" id="DivShowSupplyFactorAttach"></div>
                     </div>
-                </div>
-
-                <div class="mt-3" style="width:100%; display:flex;justify-content:center;gap:4px">
-                    <button class="buttonCancel2" data-bs-dismiss="modal">انصراف</button>
                 </div>
             </div>
         </div>

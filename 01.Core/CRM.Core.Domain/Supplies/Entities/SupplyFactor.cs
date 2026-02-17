@@ -11,6 +11,7 @@ namespace CRM.Core.Domain.Supplies.Entities
 {
     public class SupplyFactor:BaseEntity
     {
+        public byte OfficialType { get; set; }
         public string FactorSerial { get; set; }//شماره فاکتور صادر شده توسط تامیین کننده
         public decimal Amount { get; set; }
         public Guid SupplierId { get; set; }
