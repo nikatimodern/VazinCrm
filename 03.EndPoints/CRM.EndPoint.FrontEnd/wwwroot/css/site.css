@@ -9,6 +9,27 @@ body {
 }
 
 
+/* button reset */
+button {
+  border: none;
+  margin: 0;
+  padding: 0;
+  width: auto;
+  background: transparent;
+  
+  -webkit-font-smoothing: inherit;
+  -moz-osx-font-smoothing: inherit;
+  -webkit-appearance: none;
+}
+
+
+.buttonDisabled {
+  background: rgba(239, 239, 239, 0.3);
+  color: rgba(16, 16, 16, 0.3);
+  border: 2px solid rgba(118, 118, 118, 0.3);
+}
+
+
 u, .text-decoration-underline {
   text-underline-offset: 5px;
 }
@@ -333,6 +354,13 @@ u, .text-decoration-underline {
 .link-gray {
   color: #444;
   transition: all .3s;
+}
+
+
+@media (max-width: 767px) {
+  .link-gray, .link-purple {
+    text-decoration: underline;
+  }
 }
 
 
@@ -2206,6 +2234,22 @@ input[type=checkbox], input[type=radio] {
 }
 
 
+.form-select.form-select-xs {
+  background-image: none;
+  padding: .25rem;
+  font-size: 11px;
+  line-height: normal;
+  border-radius: .25rem;
+}
+
+
+.input-group > .form-select.form-select-xs {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: auto;
+}
+
+
 .form-control::placeholder {
   color: #d0d0d0;
   opacity: 1;
@@ -2306,7 +2350,7 @@ input[type=checkbox], input[type=radio] {
   justify-content: space-between;
   transition: width 0.5s;
   align-items: center;
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 
@@ -2427,12 +2471,18 @@ html.sidebar-collapsed #mainWrapper {
   opacity: 0;
   transform: translateY(-6px);
   transition: all 0.3s ease;
+  transition-delay: 0.3s;
   margin: 0;
   padding-right: 10px;
 }
 
 
-.has-submenu.open ul.submenu {
+html.sidebar-collapsed .has-submenu ul.submenu {
+  transition-delay: 0.15s;
+}
+
+
+html:not(.sidebar-collapsed) .has-submenu.open ul.submenu {
   margin-top: 4px;
   max-height: 300px;
   opacity: 1;
@@ -2525,6 +2575,48 @@ html.sidebar-collapsed #collapseMenuIcon {
 html.sidebar-collapsed #expandMenuIcon,
 #collapseMenuIcon {
   display: flex;
+}
+
+
+html.sidebar-collapsed .MenuRight nav {
+  overflow: visible !important;
+}
+
+
+html.sidebar-collapsed .has-submenu {
+  position: relative;
+}
+
+
+html.sidebar-collapsed .has-submenu ul.submenu {
+  position: absolute;
+  right: 100%;
+  top: 0;
+  margin-right: 6px;
+  
+  width: 180px;
+  background: #004944;
+  border-radius: 6px;
+  padding: 8px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  
+  max-height: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(10px);
+}
+
+
+html.sidebar-collapsed .has-submenu.open ul.submenu {
+  opacity: 0;
+  visibility: hidden;
+}
+
+
+html.sidebar-collapsed .has-submenu:hover > ul.submenu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
 }
 
 
@@ -2818,6 +2910,18 @@ user-select: none;
 
 .buttonGreen2:active {
   background-color: var(--color8);
+}
+
+
+.buttonGreen2:disabled {
+  background-color: #9bbfbc;
+  box-shadow: none;
+  opacity: 0.65;
+}
+
+
+.buttonGreen2:disabled:hover {
+  background-color: #9bbfbc;
 }
 
 
@@ -4847,6 +4951,38 @@ table tr.payment-vosoled > td {
 }
 
 
+.invoice-modal.payment-mode .modalHeader-invoice {
+  background-color: #4B247A;
+}
+
+
+.invoice-modal.payment-mode .modalContent-invoice {
+  border-color: #6F42C1;
+}
+
+
+.invoice-modal.payment-mode .sectionTitle-invoice {
+  color: #663399;
+}
+
+
+.invoice-modal.payment-mode .sectionBox-invoice {
+  border-color: #CBB7E6;
+}
+
+
+.invoice-modal.payment-mode .form-check-input:checked {
+  background-color: #663399;
+  border-color: #663399;
+}
+
+
+.invoice-modal.payment-mode .form-check-input:focus {
+  border-color: #CBB7E6;
+  box-shadow: 0 0 0 .25rem #CBB7E640;
+}
+
+
 .cursor-pointer {
   cursor: pointer;
 }
@@ -4943,47 +5079,100 @@ table tr.payment-vosoled > td {
 }
 
 
-/*  */
-
-.disabled-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.6);
-  /* background: rgba(255, 255, 255, 0.35); */
-  /* backdrop-filter: blur(.5px); */
-  cursor: not-allowed;
-  pointer-events: all;
-  z-index: 20;
-  border-radius: inherit;
+.label-vertical {
+  width: 24px;
+  background-color: var(--DarkColor);
+  color: white;
+  writing-mode: vertical-rl;
+  text-align: center;
 }
 
 
-/* @keyframes FillFlash {
-  0%   { background-color: #e3f2fd; }
-  70%  { background-color: #f3f9ff; }
-  100% { background-color: transparent; }
+.layered-card {
+  display: flex;
+  flex-wrap: wrap;
+  background: #fafafa;
+  border: 1px solid #d0d0d0;
+  overflow: hidden;
+  transition: all .25s ease;
 }
 
-.fill-flash {
-  animation: FillFlash 1.2s ease;
-} */
 
-@keyframes FillFlash {
-  0% {
-    background-color: var(--flash-color);
+.layered-card.layered-card-pill {
+  border-radius: 100px;
+}
+
+
+.layered-card.layered-green {
+  border-color: #198754;
+  background: #f6fffb;
+}
+
+
+.layered-card {
+  --layer-bg-1: #f4f5f6;
+  --layer-bg-2: #f7f8f9;
+  --layer-bg-3: #eef1f2;
+  --layer-bg-4: #f9fafb;
+  --layer-bg-5: #f0f2f3;
+}
+
+
+.layered-card.layered-green {
+  --layer-bg-1: #eaf7f1;
+  --layer-bg-2: #f2fbf7;
+  --layer-bg-3: #e3f3ec;
+  --layer-bg-4: #f6fffb;
+  --layer-bg-5: #dff0e8;
+}
+
+
+.layered-card .layered-card__layer {
+  border-left: 1px solid #dedede;
+}
+
+
+.layered-card .layered-card__layer:nth-child(1) {
+  background: var(--layer-bg-1);
+}
+
+
+.layered-card .layered-card__layer:nth-child(2) {
+  background: var(--layer-bg-2);
+}
+
+
+.layered-card .layered-card__layer:nth-child(3) {
+  background: var(--layer-bg-3);
+}
+
+
+.layered-card .layered-card__layer:nth-child(4) {
+  background: var(--layer-bg-4);
+}
+
+
+.layered-card .layered-card__layer:nth-child(5) {
+  background: var(--layer-bg-5);
+}
+
+
+.layered-card .layered-card__layer:last-child {
+  border-left: none;
+}
+
+
+@media (max-width: 991px) {
+  .layered-card {
+    border-radius: 6px !important;
   }
-  70% {
-    background-color: color-mix(in srgb, var(--flash-color) 60%, white);
+  
+  .layered-card .layered-card__layer {
+    border-left: none;
+    border-bottom: 1px solid #dcdcdc;
   }
-  100% {
-    background-color: transparent;
+  
+  .layered-card .layered-card__layer:last-child {
+    border-bottom: none;
   }
 }
-
-
-.fill-flash {
-  --flash-color: #e3f2fd;
-  --flash-duration: 1.2s;
-  animation: FillFlash var(--flash-duration) ease;
-}
-

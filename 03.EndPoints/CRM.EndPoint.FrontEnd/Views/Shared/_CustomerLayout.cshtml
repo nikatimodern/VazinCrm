@@ -18,19 +18,21 @@
     <link rel="stylesheet" href="~/lib/CropperJs/cropper.min.css" />
     <link rel="stylesheet" href="~/lib/jQuery-Datatable/datatablesB.min.css" />
 
-    <link rel="stylesheet" href="~/css/site.css?v=2.9.8" />
-    <link rel="stylesheet" href="~/css/table.css?v=2.9.8" />
-    <link rel="stylesheet" href="~/css/layoutResponsive.css?v=2.9.8" />
-    <link rel="stylesheet" href="~/css/customerIndexResponsive.css?v=2.9.8" />
-    <link rel="stylesheet" href="~/css/customerProfileResponsive.css?v=2.9.8" />
-    <link rel="stylesheet" href="~/css/listProduct.css?v=2.9.8" />
-    <link rel="stylesheet" href="~/css/carizo.css?v=2.9.8" />
-    <link rel="stylesheet" href="~/css/reports.css?v=2.9.8" />
-    <link rel="stylesheet" href="~/css/dashboard.css?v=2.9.8" />
-    <link rel="stylesheet" href="~/css/order.css?v=2.9.8" />
-    <link rel="stylesheet" href="~/css/deal.css?v=2.9.8" />
-    <link rel="stylesheet" href="~/css/cartableStyle.css?v=2.9.8" />
-    <link rel="stylesheet" href="~/css/customerLayout.css?v=2.9.8" />
+
+    <link rel="stylesheet" href="~/css/site.css?v=2.10.0" />
+    <link rel="stylesheet" href="~/css/table.css?v=2.10.0" />
+    <link rel="stylesheet" href="~/css/layoutResponsive.css?v=2.10.0" />
+    <link rel="stylesheet" href="~/css/customerIndexResponsive.css?v=2.10.0" />
+    <link rel="stylesheet" href="~/css/customerProfileResponsive.css?v=2.10.0" />
+    <link rel="stylesheet" href="~/css/listProduct.css?v=2.10.0" />
+    <link rel="stylesheet" href="~/css/carizo.css?v=2.10.0" />
+    <link rel="stylesheet" href="~/css/reports.css?v=2.10.0" />
+    <link rel="stylesheet" href="~/css/dashboard.css?v=2.10.0" />
+    <link rel="stylesheet" href="~/css/order.css?v=2.10.0" />
+    <link rel="stylesheet" href="~/css/deal.css?v=2.10.0" />
+    <link rel="stylesheet" href="~/css/cartableStyle.css?v=2.10.0" />
+    <link rel="stylesheet" href="~/css/customerLayout.css?v=2.10.0" />
+
 
 </head>
 <body dir="rtl">
@@ -233,27 +235,20 @@
 </div>
 
 
-<!-- Modal sanadPayAttachment -->
-<div class="modal fade" dir="ltr" id="sanadPayAttachment" tabindex="-1" data-bs-focus="false" role="dialog" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+<!-- showAttachmentsModal Modal -->
+<div class="modal fade" id="showAttachmentsModal" tabindex="-1" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content col-12" style="padding:10px!important">
-
             <div class="modal-body" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
                 <div class="d-flex justify-content-around col-12">
-                    <div class="container-uploader" style="padding: 15px !important; border: 1px solid lightgray;">
-                        <div class="image-display" id="DivShowSanadPayAttach"></div>
+                    <div class="container-uploader" style="border: 1px solid lightgray;">
+                        <div class="image-display" id="DivShowSupplyFactorAttach"></div>
                     </div>
-                </div>
-
-                <div class="mt-3" style="width:100%; display:flex;justify-content:center;gap:4px">
-                    <button class="buttonCancel2" onclick="cancelModalAttachmentInvoice()">انصراف</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-
 
 
 <div id="divFrame" style="display:none; justify-content:center; align-items:center;z-index: 9000; height:90dvh; width:100%; top:50%;transform: translateY(-50%);position:fixed;background-color:hsla(1, 100%, 100%,0.9)">
@@ -383,12 +378,14 @@
 <script src="~/lib/Signalr/signalr.min.js"></script>
 <script src="~/lib/Sortable/Sortable.min.js"></script>
 
-<script src="~/js/site.js?v=2.9.8"></script>
-<script src="~/js/UploadFile.js?v=2.9.8"></script>
-<script src="~/js/PublicFunction.js?v=2.9.8"></script>
-<script src="~/js/DateValidate.js?v=2.9.8"></script>
-<script src="~/js/TaskSignalR.js?v=2.9.8"></script>
-<script src="~/js/Layout.js?v=2.9.8" defer></script>
+
+<script src="~/js/site.js?v=2.10.0"></script>
+<script src="~/js/UploadFile.js?v=2.10.0"></script>
+<script src="~/js/PublicFunction.js?v=2.10.0"></script>
+<script src="~/js/DateValidate.js?v=2.10.0"></script>
+<script src="~/js/TaskSignalR.js?v=2.10.0"></script>
+<script src="~/js/Layout.js?v=2.10.0" defer></script>
+
 
 <script>
     var baseUrl;

@@ -1,0 +1,300 @@
+@{
+    Layout = "_Layout";
+}
+
+<div class="w-100">
+    <div class="row align-items-center justify-content-between flex-wrap mb-3 g-2">
+        <div class="d-flex col-lg-3">
+            <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="toggleRequestAmountModal()">
+                <span style="line-height: 1">ثبت درخواست جدید</span>
+                <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
+            </button>
+        </div>
+        <div class="col-12 col-lg-5 d-flex align-items-center gap-2 flex-wrap">
+            <input class="form-control w-100" type="text" id="requestAmountSearchId" placeholder="جستجو..." />
+            @*<div class="d-flex align-items-center flex-grow-1 gap-2">
+                <input type="text" class="form-control form-control-sm" id="dealSearchId" placeholder="جستجو">
+                <div class="btnFilter d-lg-none" data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterDeal" data-filterContentId="ContentDealFilterId" data-filterInpSearchId="dealSearchId" data-filterVarSearch="dealSearchVal" onclick="ShowFilterPopup(this)">
+                    <svg style="width:24px;color:#333" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
+                </div>
+            </div>*@
+        </div>
+        <div class="d-flex align-items-start justify-content-start justify-content-lg-end gap-2 col-lg-3">
+            <div class="d-flex gap-2">
+                <ul class="filter-switch">
+                    <li class="filter-switch-item">
+                        <input type="radio" name="requestAmountFilter" id="requestAmountFilter1" value="1" checked />
+                        <label for="requestAmountFilter1">در انتظار تایید</label>
+                    </li>
+                    <li class="filter-switch-item">
+                        <input type="radio" name="requestAmountFilter" id="requestAmountFilter2" value="2" />
+                        <label for="requestAmountFilter2">تایید شده</label>
+                    </li>
+                </ul>
+            </div>
+            @*<div id="ContentDealFilterId" class="ContentFilter"></div>
+            <div class="btnFilter d-none d-lg-flex" data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterDeal" data-filterContentId="ContentDealFilterId" data-filterInpSearchId="dealSearchId" data-filterVarSearch="dealSearchVal" onclick="ShowFilterPopup(this)">
+                <svg style="width:24px;color:#333" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
+            </div>*@
+        </div>
+    </div>
+    <div id="requestAmountContainer">
+        @*<table class="table table-striped table-hover nowrap w-100" id="requestAmountTable">
+            <thead>
+            <tr>
+                <th>ردیف</th>
+                <th>نوع</th>
+                <th>قیمت</th>
+                <th>قیمت تایید شده</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>*@
+    </div>
+</div>
+
+
+<!-- Modal requestAmount -->
+<div class="modal fade" id="requestAmountModal" tabindex="-1" role="dialog" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content col-12 p-2">
+            <div class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">درخواست وجه</div>
+            <div class="modal-body pb-2">
+                <form id="requestAmountForm" class="d-flex flex-column gap-2">
+                    <div>
+                        <label for="reqAmountAmount">مبلغ:</label>
+                        <input id="reqAmountAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="amount" required>
+                    </div>
+
+                    <div>
+                        <label for="reqAmountDocType">نوع پرداخت:</label>
+                        <select id="reqAmountDocType" class="form-select form-select-sm valueNumber" name="docType" required>
+                            <option value="">انتخاب</option>
+                            <option value="1">نقدی</option>
+                            <option value="2">چکی</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="reqAmountSupplyFactor">فاکتور تامین:</label>
+                        <div class="input-group mb-3">
+                            <input id="reqAmountSupplyFactor" type="text" class="form-control direction-ltr" placeholder="فاکتور تامین.." disabled required>
+                            <button class="btn btn-sm btn-secondary" type="button" onclick="showAddSupplyFactorModal(this)">انتخاب</button>
+                        </div>
+                    </div>
+
+
+                    <div class="d-flex justify-content-center gap-1 mt-2">
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="toggleRequestAmountModal()">انصراف</button>
+                        <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitRequestAmountModal()">ثبت</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    <script>
+
+        let requestAmountData;
+        document.addEventListener("DOMContentLoaded", async () => {
+            //getAllRequestAmountDt();
+            await getAllRequestAmount();
+
+            document.getElementById("requestAmountSearchId").addEventListener("keyup", async (e) => {
+                if (e.key === "Enter") {
+                    await getAllRequestAmount();
+                }
+            });
+            const requestAmountRadios = document.querySelectorAll("input[type='radio'][name='requestAmountFilter']");
+            requestAmountRadios.forEach(elm => elm.addEventListener("change", async () => {
+                await getAllRequestAmount();
+            }));
+        });
+
+
+        function toggleRequestAmountModal() {
+            ModalToggle("requestAmountModal");
+            mySer.emptyForm("requestAmountForm");
+            supplyFactorsSelectedIds = [];
+            requestAmountData = [];
+        }
+
+        async function submitRequestAmountModal() {
+            if (!await mySer.CheckValidForm("requestAmountForm")) return;
+            const model = {
+                ...requestAmountData,
+                ...mySer.convertFormToJSON("requestAmountForm"),
+                requestAmountSupplyFactor: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id })),
+            };
+
+            try {
+                FLshowLoading();
+                const apiUrl = model.id ? "/Amount/UpdateRequestAmount" : "/Amount/AddRequestAmount";
+                const res = await axios.post(apiUrl, model);
+                if (res.status === 200) {
+                    toastifySuccess("با موفقیت ثبت شد");
+                    getAllRequestAmount();
+                    toggleRequestAmountModal();
+                }
+            } catch (err) {
+                console.log(err);
+            } finally {
+                FLshowLoading(false);
+            }
+
+        }
+
+
+        const getAllRequestAmount = async () => {
+            const val = document.getElementById("requestAmountSearchId")?.value.trim() ?? "";
+            const type = document.querySelector("input[type='radio'][name='requestAmountFilter']:checked")?.value;
+            if (type === undefined) return;
+            FLshowLoading();
+            const res = await axios(`/Amount/GetAllRequestAmountsPartial?search=${val}&type=${type}&passType=1`);
+            document.getElementById("requestAmountContainer").innerHTML = res.data.html;
+            FLshowLoading(false);
+        };
+
+        async function showEditRequestAmountModal(id) {
+            FLshowLoading();
+            toggleRequestAmountModal();
+
+            try {
+                const res = await axios(`/Amount/GetRequestAmount/${id}`);
+                console.log(res);
+                if (res.status === 200) {
+                    requestAmountData = res.data.requestAmount;
+                    const supplyFactorSerials = res.data.supplyFactorSerials;
+                    mySer.convertJsonToForm(requestAmountData, "requestAmountForm");
+                    supplyFactorsSelectedIds = requestAmountData.requestAmountSupplyFactor.map(r => r.supplyFactorId);
+
+                    const inpElm = document.getElementById("reqAmountSupplyFactor");
+                    inpElm.value = supplyFactorSerials.join(", ");
+                }
+
+            } catch (err) {
+                console.log(err);
+            } finally {
+                FLshowLoading(false);
+            }
+        }
+
+
+        const deleteRequestAmount = async (id) => {
+            Swal.fire({
+                title: "حذف!",
+                text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
+                icon: "warning",
+                showCancelButton: true,
+                cancelButtonColor: "#adadad",
+                confirmButtonColor: "#e64942",
+                cancelButtonText: "انصراف",
+                confirmButtonText: "بله، حذف شود",
+            }).then(async (willDelete) => {
+                if (willDelete.isConfirmed) {
+                    FLshowLoading();
+                    const res = await axios(`/Amount/DeleteRequestAmount/${id}`);
+                    if (res.status === 200) {
+                        toastifySuccess("با موفقیت حذف شد");
+                        await getAllRequestAmount();
+                    }
+                    FLshowLoading(false);
+                }
+            });
+        };
+
+
+        @*let requestAmountTbl;
+        let modelRequestAmount = {};
+        const getAllRequestAmountDt = () => {
+            requestAmountTbl = $("#requestAmountTable").DataTable({
+                pageLength: 10,
+                lengthMenu: [5, 10, 20, 50, 100, { label: "همه", value: -1 }],
+                processing: true,
+                serverSide: true,
+                searching: true,
+                search: {
+                    return: true,
+                },
+                ordering: true,
+                order: [[4, "desc"]],
+                scrollCollapse: true,
+                scrollY: "70dvh",
+                responsive: true,
+                ajax: {
+                    url: `/Amount/GetAllRequestAmountsDt`,
+                    type: "POST",
+                    data: (d) => {
+                        d.model = JSON.stringify(modelRequestAmount);
+                    },
+                },
+                language: {
+                    emptyTable: "هیچ رکوردی موجود نمی باشد.",
+                    info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
+                    infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
+                    infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
+                    lengthMenu: "نمایش _MENU_ ردیف",
+                    loadingRecords: "در حال بارگزاری...",
+                    search: "",
+                    zeroRecords: "رکوردی با این مشخصات پیدا نشد",
+                    aria: {
+                        sortAscending: ": فعال سازی نمایش به صورت صعودی",
+                        sortDescending: ": فعال سازی نمایش به صورت نزولی",
+                    },
+                },
+                columnDefs: [
+                    {
+                        targets: [0, 1, 2, 3],
+                        orderable: false,
+                    },
+                    {
+                        targets: [2, 3],
+                        render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>`,
+                    },
+                ],
+                columns: [
+                    { data: null, render: (data, type, row, meta) => meta.row + 1 },
+                    { data: "docTypeTxt", name: "DocTypeTxt", defaultContent: "-" },
+                    { data: "amount", name: "Amount", defaultContent: "-" },
+                    { data: "acceptedAmount", name: "AcceptedAmount", defaultContent: "-" },
+                    { data: "requestStatusTxt", name: "RequestStatusTxt", defaultContent: "-" },
+                    {
+                        data: null,
+                        render: function (data, type, row) {
+                            return `
+                                <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                                    <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick=''><i class="fa fa-pencil"></i></button>
+                                    <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick='DelBankAccountItem("${row.id}")'><i class="fa fa-trash"></i></button>
+                                </div>
+                            `;
+                        },
+                    },
+                ],
+                layout: {
+                    bottomEnd: "info",
+                    bottomStart: {
+                        paging: {
+                            type: "simple_numbers",
+                        },
+                    },
+                    topEnd: {
+                        pageLength: true,
+                    },
+                    topStart: {
+                        search: {
+                            placeholder: "جستجو",
+                        },
+                    },
+                },
+            });
+        };*@;
+
+    </script>
+}

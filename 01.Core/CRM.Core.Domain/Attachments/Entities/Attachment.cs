@@ -22,9 +22,6 @@ namespace CRM.Core.Domain.Attachments.Entities
         public string Filetype { get; set; }
         public string fileExten { get; set; }
         public byte[] File { get; set; }
-
-        
-        public Guid? contractId { get; set; }
     }
 
 

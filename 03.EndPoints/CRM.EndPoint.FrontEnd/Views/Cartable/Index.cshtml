@@ -281,17 +281,16 @@
 
             @*کارتابل کارشناس مالی*@
             <div class="col-12 col-xl-10 col-xxl-9" style="display:none;padding:8px" id="CFinancialExpertId">
-
                 <div class="d-flex flex-column w-100">
-                    <ul class="nav nav-pills w-100 justify-content-center pb-2" id="financialExpertsTabs" role="tablist">
+                    <ul class="nav nav-pills" id="financialExpertsTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link position-relative" style="margin-bottom:-2px;isolation:auto" onclick="GetInvoicesFinancialExpert()" id="FinancialInvoiceTab" data-bs-target="#FinancialInvoiceTab-pane" type="button" role="tab">
+                            <button class="nav-link position-relative" onclick="GetInvoicesFinancialExpert()" id="FinancialInvoiceTab" data-bs-target="#FinancialInvoiceTab-pane" type="button" role="tab">
                                 صورتحساب ها
                                 <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active position-relative" style="margin-bottom:-2px;isolation:auto" onclick="GetPreFactorFinancialExpert()" id="FinancialPrefactorTab" data-bs-target="#FinancialPrefactorTab-pane" type="button" role="tab">
+                            <button class="nav-link active position-relative" onclick="GetPreFactorFinancialExpert()" id="FinancialPrefactorTab" data-bs-target="#FinancialPrefactorTab-pane" type="button" role="tab">
                                 پیش‌فاکتور ها
                                 <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
                             </button>
@@ -299,7 +298,7 @@
                     </ul>
                     <div class="parent-all-financialExperts tab-content p-2 col-12" id="tabContentFinancialExperts">
 
-                        <div class="tab-pane fade  border-0" id="FinancialInvoiceTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
+                        <div class="tab-pane fade border-0" id="FinancialInvoiceTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
 
                             <div class="d-flex flex-column align-items-center w-100 gap-3">
                                 <div class="px-2 w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center align-items-md-center">
@@ -452,38 +451,89 @@
 
             @*کارتابل مدیر عامل*@
             <div class="col-12 col-xl-10 col-xxl-9" style="display:none;padding:8px" id="CManagingDirectorId">
+                <div class="d-flex flex-column w-100">
+                    <ul class="nav nav-pills" id="ManagingDirectorTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active position-relative" onclick="GetInvoicesManagingDirector()" id="MDInvoiceTab" data-bs-target="#MDInvoiceTab-pane" type="button" role="tab">
+                                صورتحساب ها
+                                <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link position-relative" onclick="GetRequestManagingDirector()" id="MDRequestAmountTab" data-bs-target="#MDRequestAmountTab-pane" type="button" role="tab">
+                                درخواست ها
+                                <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="parent-all-managingDirector tab-content p-2 col-12" id="tabContentManagingDirector">
+                        <div class="tab-pane fade show active border-0" id="MDInvoiceTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
+                            <div class="d-flex flex-column align-items-center w-100 gap-3">
+                                <div class="px-2 w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center">
 
-                <div class="d-flex flex-column align-items-center w-100 gap-3">
-                    <div class="px-2 w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center align-items-md-center">
+                                    <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(17px,2vw,18px);color:rgb(84 57 213)">
+                                        تعداد: <span id="ManagingDirectorCount"></span>
+                                    </div>
 
-                        <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(17px,2vw,18px);color:rgb(84 57 213)">
-                            تعداد: <span id="ManagingDirectorCount"></span>
+                                    <div class="col-12 order-last order-md-0 col-md-5" style="display:flex;justify-content:center ;">
+                                        <input class="form-control w-100" type="text" id="ManagingDirectorSearchId" placeholder="جستجو..." />
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        <ul class="filter-switch">
+                                            <li class="filter-switch-item">
+                                                <input type="radio" name="managingDirectorFilter" id="managingDirectorFilter1" value="1" checked />
+                                                <label for="managingDirectorFilter1">در انتظار تایید</label>
+                                            </li>
+                                            <li class="filter-switch-item">
+                                                <input type="radio" name="managingDirectorFilter" id="managingDirectorFilter2" value="2" />
+                                                <label for="managingDirectorFilter2">تایید شده</label>
+                                            </li>
+                                            <li class="filter-switch-item">
+                                                <input type="radio" name="managingDirectorFilter" id="managingDirectorFilter3" value="3" />
+                                                <label for="managingDirectorFilter3">رد شده</label>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+
+                                <div class="w-100" id="ManagingDirectorPfContentId">
+                                </div>
+                            </div>
                         </div>
+                        <div class="tab-pane fade border-0" id="MDRequestAmountTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
 
-                        <div class="col-12 order-last order-md-0 col-md-5" style="display:flex;justify-content:center ;">
-                            <input class="form-control w-100" type="text" id="ManagingDirectorSearchId" placeholder="جستجو..." />
+                            <div class="d-flex flex-column align-items-center w-100 gap-3">
+                                <div class="px-2 w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center">
+
+                                    <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(17px,2vw,18px);color:rgb(84 57 213)">
+                                        تعداد: <span id="MDRequestAmountCount"></span>
+                                    </div>
+
+                                    <div class="col-12 d-flex justify-content-center order-5 order-md-0 col-md-5">
+                                        <input class="form-control w-100" type="text" id="MDRequestAmountSearchId" placeholder="جستجو..." />
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        <ul class="filter-switch">
+                                            <li class="filter-switch-item">
+                                                <input type="radio" name="MDRequestAmountFilter" id="MDRequestAmountFilter1" value="1" checked />
+                                                <label for="MDRequestAmountFilter1">در انتظار تایید</label>
+                                            </li>
+                                            <li class="filter-switch-item">
+                                                <input type="radio" name="MDRequestAmountFilter" id="MDRequestAmountFilter2" value="2" />
+                                                <label for="MDRequestAmountFilter2">تایید شده</label>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+
+                                <div class="w-100" id="MDRequestAmountContentId" style="max-height:74dvh; overflow:auto;">
+                                </div>
+                            </div>
                         </div>
-
-                        <div class="d-flex gap-2">
-                            <ul class="filter-switch">
-                                <li class="filter-switch-item">
-                                    <input type="radio" name="managingDirectorFilter" id="managingDirectorFilter1" value="1" checked />
-                                    <label for="managingDirectorFilter1">در انتظار تایید</label>
-                                </li>
-                                <li class="filter-switch-item">
-                                    <input type="radio" name="managingDirectorFilter" id="managingDirectorFilter2" value="2" />
-                                    <label for="managingDirectorFilter2">تایید شده</label>
-                                </li>
-                                <li class="filter-switch-item">
-                                    <input type="radio" name="managingDirectorFilter" id="managingDirectorFilter3" value="3" />
-                                    <label for="managingDirectorFilter3">رد شده</label>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-
-
-                    <div class="w-100" id="ManagingDirectorPfContentId">
                     </div>
                 </div>
 
@@ -872,6 +922,16 @@
             const managingFilterRadios = document.querySelectorAll("input[type='radio'][name='managingDirectorFilter']");
             managingFilterRadios.forEach(elm => elm.addEventListener("change", async () => {
                 await GetInvoicesManagingDirector();
+            }));
+
+            document.getElementById("MDRequestAmountSearchId").addEventListener("keyup", async (e) => {
+                if (e.key === "Enter") {
+                    await GetRequestManagingDirector();
+                }
+            });
+            const MDRequestAmountRadios = document.querySelectorAll("input[type='radio'][name='MDRequestAmountFilter']");
+            MDRequestAmountRadios.forEach(elm => elm.addEventListener("change", async () => {
+                await GetRequestManagingDirector();
             }));
 
             // GetCustomersOpId("customerFilter", null, "#FilterFormId");
@@ -1274,7 +1334,7 @@
             }
         };
 
-        const GetPreFactorManagingDirector = async () => {
+        @*const GetPreFactorManagingDirector = async () => {
             const val = document.getElementById("ManagingDirectorSearchId")?.value.trim() ?? "";
             const type = document.querySelector("input[type='radio'][name='managingDirectorFilter']:checked")?.value;
             if (type === undefined) return;
@@ -1290,13 +1350,15 @@
             } catch (err) {
                 console.log(err);
             }
-        };
+        };*@;
 
 
         const GetInvoicesManagingDirector = async () => {
             const val = document.getElementById("ManagingDirectorSearchId")?.value.trim() ?? "";
             const type = document.querySelector("input[type='radio'][name='managingDirectorFilter']:checked")?.value;
             if (type === undefined) return;
+
+            ShowTab("#MDInvoiceTab");
             try {
                 FLshowLoading();
                 const res = await axios(`/Accountancy/GetAllPaymentCartablePartial?serVal=${val}&type=${type}&cartable=@((int)CartableEnum.مدیر_عامل)`);
@@ -1310,6 +1372,75 @@
                 console.log(err);
             }
         };
+
+
+        const GetRequestManagingDirector = async () => {
+            const val = document.getElementById("MDRequestAmountSearchId")?.value.trim() ?? "";
+            const type = document.querySelector("input[type='radio'][name='MDRequestAmountFilter']:checked")?.value;
+            if (type === undefined) return;
+
+            ShowTab("#MDRequestAmountTab");
+            try {
+                FLshowLoading();
+                const res = await axios(`/Amount/GetAllRequestAmountsPartial?search=${val}&type=${type}&passType=2`);
+                const data = res.data;
+                document.getElementById("MDRequestAmountContentId").innerHTML = data.html;
+                document.getElementById("MDRequestAmountCount").textContent = data.count;
+
+                FLshowLoading(false);
+            } catch (err) {
+                console.log(err);
+            }
+        };
+
+        function changePercentAcceptedRequestAmount(select, amount, acceptedAmount) {
+            const percent = Number(select.value);
+            const input = select.parentElement.querySelector("input");
+            const acceptAmount = percent * amount / 100;
+            input.value = acceptAmount ? acceptAmount.toLocaleString() : "";
+
+            toggleAcceptBtn(select, acceptAmount, acceptedAmount);
+        }
+
+        function changeAcceptedRequestAmount(input, acceptedAmount) {
+            const acceptAmount = Number(SeparatedNumberRemove(input.value));
+            toggleAcceptBtn(input, acceptAmount, acceptedAmount);
+        }
+
+        function toggleAcceptBtn(elm, acceptAmount, acceptedAmount) {
+            const acceptBtn = elm.closest(".layered-card").querySelector(".buttonGreen2");
+            if (acceptAmount === 0) {
+                toggleElementsDisabled(acceptBtn, true);
+            } else {
+                if (acceptedAmount === acceptAmount) {
+                    toggleElementsDisabled(acceptBtn, true);
+                }else {
+                    toggleElementsDisabled(acceptBtn, false);
+                    //acceptBtn.textContent = "تایید شده";
+                }
+            }
+        }
+
+        async function submitAcceptedRequestAmount(btn, id) {
+            const input = btn.closest(".layered-card").querySelector("input[name='acceptedAmount']");
+
+            const model = {
+                id,
+                acceptedAmount: Number(SeparatedNumberRemove(input.value)),
+            };
+            try {
+                FLshowLoading();
+                const res = await axios.post(`/Amount/SetAcceptedRequestAmount`, model);
+                console.log(res);
+                if (res.status === 200) {
+                    await GetRequestManagingDirector();
+                    FLshowLoading(false);
+                }
+            } catch (err) {
+                console.log(err);
+            }
+
+        }
 
         const GetPreFactorFinancialExpert = async () => {
             const val = document.getElementById("FinancialExpertSearchId")?.value.trim() ?? "";
