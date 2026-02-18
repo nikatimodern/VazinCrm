@@ -153,6 +153,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     }
                 }
 
+                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.SupplyFactor);
+                foreach (var att in attach)
+                {
+                    att.EntityId = model.Id;
+                }
+
+                db.Attachments.UpdateRange(attach);
+
                 await db.SaveChangesAsync();
                 await transaction.CommitAsync();
                 return Ok();
@@ -201,6 +209,67 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+        [HttpPost]
+        public async Task<IActionResult> UpdatePayment([FromBody] Payment model)
+        {
+            if (model == null) return BadRequest();
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+
+                model.PaymentDate = dtService.GetDateMiladi(model.PaymentDateTxt) ?? DateTime.Now;
+                model.PaymentTypeTxt = model.PaymentType.ToString().Replace("_", " ");
+
+                model.ModifyDate = DateTime.Now;
+                model.ModifyDateTxt = dtService.GetDateTimePersian();
+                model.UserModify = user.FullName;
+                model.UserModifyID = user.Id;
+
+                var entity = await db.Payments.Include(x => x.PaymentSupplyFactors).FirstOrDefaultAsync(x => x.Id == model.Id);
+
+                if (entity == null) return NotFound();
+
+                db.Entry(entity).CurrentValues.SetValues(model);
+
+                var toRemove = entity.PaymentSupplyFactors
+                    .Where(oldItem => !model.PaymentSupplyFactors.Any(newItem => newItem.SupplyFactorId == oldItem.SupplyFactorId))
+                    .ToList();
+
+                db.PaymentSupplyFactors.RemoveRange(toRemove);
+
+                foreach (var item in model.PaymentSupplyFactors ?? [])
+                {
+                    var exists = entity.PaymentSupplyFactors.Any(x => x.SupplyFactorId == item.SupplyFactorId);
+
+                    if (!exists)
+                    {
+                        entity.PaymentSupplyFactors.Add(new PaymentSupplyFactor {
+                            PaymentId = entity.Id,
+                            SupplyFactorId = item.SupplyFactorId
+                        });
+                    }
+                }
+
+                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.Payment);
+                foreach (var att in attach)
+                {
+                    att.EntityId = model.Id;
+                }
+
+                db.Attachments.UpdateRange(attach);
+
+                await db.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                await transaction.RollbackAsync();
+                return BadRequest(e.Message);
+            }
+        }
+
         public async Task<IActionResult> DeletePayment(Guid id)
         {
             try
@@ -224,21 +293,34 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        public async Task<IActionResult> GetAllSupplyPaymentPartial()
+        public async Task<IActionResult> GetPayment(Guid id)
         {
-            var data = await db.Payments.OrderByDescending(f => f.CreateDate).AsNoTracking()
-                .Select(sf => new SupplyPaymentVModel {
-                    Payment = sf,
-                    SupplyFactorSerials = sf.PaymentSupplyFactors
-                        .Join(db.SupplyFactors,
-                            pSf => pSf.SupplyFactorId,
-                            sf => sf.Id,
-                            (pSf, sf) => sf.FactorSerial
-                        )
-                        .ToList()
-                })
-                .ToListAsync();
-            return PartialView(data);
+            try
+            {
+                var data = await db.Payments
+                    .Where(f => f.Id == id)
+                    .Include(f => f.PaymentSupplyFactors)
+                    .AsNoTracking()
+                    .Select(sf => new {
+                        Payment = sf,
+                        SupplyFactorSerials = sf.PaymentSupplyFactors
+                            .Join(db.SupplyFactors,
+                                pSf => pSf.SupplyFactorId,
+                                sf => sf.Id,
+                                (pSf, sf) => sf.FactorSerial
+                            )
+                            .ToList(),
+                        Attachments = db.Attachments
+                            .Where(a => a.EntityId == sf.Id && a._AttachType == _AttachType.Payment)
+                            .ToList()
+                    })
+                    .FirstOrDefaultAsync();
+                return Ok(data);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
 
         public async Task<IActionResult> GetAllSupplyPaymentDt()
@@ -257,8 +339,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (!string.IsNullOrEmpty(searchValue))
                 {
+                    var searchNumber = TextService.convertToInt(searchValue);
                     query = query.Where(f =>
-                        f.Amount == TextService.convertToInt(searchValue)
+                        f.Amount == searchNumber ||
+                        f.PaymentNumber == searchNumber ||
+                        f.FromAccount.Contains(searchValue) ||
+                        f.ToAccount.Contains(searchValue) ||
+                        f.PaymentSupplyFactors.Any(pSf =>
+                            db.SupplyFactors.Any(sf => sf.Id == pSf.SupplyFactorId && sf.FactorSerial == searchValue)
+                        )
                     );
                 }
 
@@ -269,9 +358,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     var isAscending = sortColumnDirection == "asc";
                     query = sortColumn switch {
+                        "PaymentNumber" => isAscending
+                            ? query.OrderBy(f => f.PaymentNumber)
+                            : query.OrderByDescending(f => f.PaymentNumber),
                         "Amount" => isAscending
                             ? query.OrderBy(f => f.Amount)
                             : query.OrderByDescending(f => f.Amount),
+                        "CreateDateTxt" => isAscending
+                            ? query.OrderBy(f => f.CreateDate)
+                            : query.OrderByDescending(f => f.CreateDate),
+                        "PaymentDateTxt" => isAscending
+                            ? query.OrderBy(f => f.PaymentDate)
+                            : query.OrderByDescending(f => f.PaymentDate),
                         _ => query
                     };
                 }
@@ -322,21 +420,42 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return Ok();
         }
 
-        public async Task<IActionResult> GetAllSupplyFactorsPartial()
+        public async Task<IActionResult> GetAllSupplyFactorsPartial(string search)
         {
-            var data = await db.SupplyFactors.OrderByDescending(f => f.CreateDate).AsNoTracking()
-                .Select(sf => new SupplyFactorVModel {
-                    SupplyFactor = sf,
-                    OrderSerials = sf.SupplyFactorOrderHeads
-                        .Join(db.OrderHeads,
-                            sfOh => sfOh.OrderHeadId,
-                            oh => oh.Id,
-                            (sfOh, oh) => oh.OrderNumber
+            try
+            {
+                var query = db.SupplyFactors.AsNoTracking();
+
+                if (!string.IsNullOrEmpty(search))
+                {
+                    var searchNumber = TextService.convertToInt(search);
+                    query = query.Where(f =>
+                        f.FactorSerial == search ||
+                        f.SupplierTxt.Contains(search) ||
+                        f.SupplyFactorOrderHeads.Any(sfOh =>
+                            db.OrderHeads.Any(oh => oh.Id == sfOh.OrderHeadId && oh.OrderNumber == searchNumber)
                         )
-                        .ToList()
-                })
-                .ToListAsync();
-            return PartialView(data);
+                    );
+                }
+
+                var data = await query.OrderByDescending(f => f.CreateDate)
+                    .Select(sf => new SupplyFactorVModel {
+                        SupplyFactor = sf,
+                        OrderSerials = sf.SupplyFactorOrderHeads
+                            .Join(db.OrderHeads,
+                                sfOh => sfOh.OrderHeadId,
+                                oh => oh.Id,
+                                (sfOh, oh) => oh.OrderNumber
+                            ).ToList()
+                    })
+                    .ToListAsync();
+
+                return PartialView(data);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet]
@@ -365,24 +484,31 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         public async Task<IActionResult> GetSupplyFactor(Guid id)
         {
-            var data = await db.SupplyFactors.AsNoTracking()
-                .Where(f => f.Id == id)
-                .Include(f => f.SupplyFactorOrderHeads)
-                .Select(sf => new {
-                    SupplyFactor = sf,
-                    OrderSerials = sf.SupplyFactorOrderHeads
-                        .Join(db.OrderHeads,
-                            sfo => sfo.OrderHeadId,
-                            oh => oh.Id,
-                            (sfo, oh) => oh.OrderNumber
-                        ).ToList(),
-                    Attachments = db.Attachments
-                        .Where(a => a.EntityId == sf.Id && a._AttachType == _AttachType.SupplyFactor)
-                        .ToList()
-                })
-                .FirstOrDefaultAsync();
+            try
+            {
+                var data = await db.SupplyFactors.AsNoTracking()
+                    .Where(f => f.Id == id)
+                    .Include(f => f.SupplyFactorOrderHeads)
+                    .Select(sf => new {
+                        SupplyFactor = sf,
+                        OrderSerials = sf.SupplyFactorOrderHeads
+                            .Join(db.OrderHeads,
+                                sfo => sfo.OrderHeadId,
+                                oh => oh.Id,
+                                (sfo, oh) => oh.OrderNumber
+                            ).ToList(),
+                        Attachments = db.Attachments
+                            .Where(a => a.EntityId == sf.Id && a._AttachType == _AttachType.SupplyFactor)
+                            .ToList()
+                    })
+                    .FirstOrDefaultAsync();
 
-            return Ok(data);
+                return Ok(data);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
 
 

@@ -4517,7 +4517,7 @@ const submitSelectedSupplyFactor = () => {
     supplyFactorsSelectedIds.push(...checkedBoxes.map(cb => cb.value));
     
     //const inpElm = document.getElementById("reqAmountSupplyFactor");
-    supplyFactorsTargetInput.value = checkedBoxes.map(cb => cb.dataset.number);
+    supplyFactorsTargetInput.value = checkedBoxes.map(cb => cb.dataset.number).join(", ");
     supplyFactorsTargetInput.classList.remove("AlertReq");
     ModalToggle(addSupplyFactorModal);
 };

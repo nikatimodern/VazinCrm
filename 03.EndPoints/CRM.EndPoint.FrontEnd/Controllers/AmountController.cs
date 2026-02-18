@@ -82,6 +82,58 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+        [HttpPost]
+        public async Task<IActionResult> UpdateRequestAmount([FromBody] RequestAmount model)
+        {
+            if (model == null) return BadRequest();
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+
+                model.RequestStatusTxt = model.RequestStatus.ToString().Replace("_", " ");
+                model.DocTypeTxt = model.DocType.ToString().Replace("_", " ");
+                model.ModifyDate = DateTime.Now;
+                model.ModifyDateTxt = dtService.GetDateTimePersian();
+                model.UserModify = user.FullName;
+                model.UserModifyID = user.Id;
+
+                var entity = await db.RequestAmounts.Include(x => x.RequestAmountSupplyFactor).FirstOrDefaultAsync(x => x.Id == model.Id);
+
+                if (entity == null) return NotFound();
+
+                db.Entry(entity).CurrentValues.SetValues(model);
+
+                var toRemove = entity.RequestAmountSupplyFactor
+                    .Where(oldItem => !model.RequestAmountSupplyFactor.Any(newItem => newItem.SupplyFactorId == oldItem.SupplyFactorId))
+                    .ToList();
+
+                db.RequestAmountSupplyFactors.RemoveRange(toRemove);
+
+                foreach (var item in model.RequestAmountSupplyFactor ?? [])
+                {
+                    var exists = entity.RequestAmountSupplyFactor.Any(x => x.SupplyFactorId == item.SupplyFactorId);
+
+                    if (!exists)
+                    {
+                        entity.RequestAmountSupplyFactor.Add(new RequestAmountSupplyFactor {
+                            RequestAmountId = entity.Id,
+                            SupplyFactorId = item.SupplyFactorId
+                        });
+                    }
+                }
+
+                await db.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                await transaction.RollbackAsync();
+                return BadRequest(e.Message);
+            }
+        }
+
 
         [HttpPost]
         public async Task<IActionResult> SetAcceptedRequestAmount([FromBody] RequestAmount model)
@@ -122,7 +174,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (!string.IsNullOrEmpty(search))
                 {
                     query = query.Where(f =>
-                        f.RequestNumber == TextService.convertToInt(search)
+                        f.RequestNumber == TextService.convertToInt(search) ||
+                        f.RequestAmountSupplyFactor.Any(sfOh =>
+                            db.SupplyFactors.Any(oh => oh.Id == sfOh.SupplyFactorId && oh.FactorSerial == search)
+                        )
                     );
                 }
 
@@ -151,13 +206,40 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     });
 
                 return Ok(new { count = data.Count, html });
-
             }
             catch (Exception e)
             {
                 return BadRequest(e.Message);
             }
         }
+
+        public async Task<IActionResult> GetRequestAmount(Guid id)
+        {
+            try
+            {
+                var data = await db.RequestAmounts.AsNoTracking()
+                    .Where(f => f.Id == id)
+                    .Include(f => f.RequestAmountSupplyFactor)
+                    .Select(ra => new RequestAmountVModel {
+                        RequestAmount = ra,
+                        SupplyFactorSerials = ra.RequestAmountSupplyFactor
+                            .Join(db.SupplyFactors,
+                                raSf => raSf.SupplyFactorId,
+                                sf => sf.Id,
+                                (raSf, sf) => sf.FactorSerial
+                            )
+                            .ToList()
+                    })
+                    .FirstOrDefaultAsync();
+
+                return Ok(data);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
 
         public async Task<IActionResult> DeleteRequestAmount(Guid id)
         {

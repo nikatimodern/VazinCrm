@@ -49,7 +49,7 @@
                 </div>
             </div>
             @if (passType == 1) {
-                <div class="layered-card__layer col-12 col-lg-3 col-xl-2 d-flex flex-row flex-lg-column justify-content-between justify-content-lg-center align-items-center px-3 py-2">
+                <div class="layered-card__layer col d-flex flex-row flex-lg-column justify-content-between justify-content-lg-center align-items-center px-3 py-2">
                     <span style="font-size: 13px; color: #777">مبلغ تایید شده:</span>
                     <div class="fbold flex-center align-items-baseline column-gap-1 @(statusAccepted ? "badgeGreen" : "")">
                         <span style="font-size: 16px;">@string.Format("{0:n0}", requestAmount.AcceptedAmount)</span>
@@ -57,15 +57,17 @@
                     </div>
                 </div>
 
-                <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column px-2 py-2 gap-4 gap-lg-3">
-                    <button class="flex-center p-0" data-title-right="ویرایش" style="color:#333; border:none; background-color:transparent">
-                        <i class="fa fa-pencil"></i>
-                    </button>
+                if (!statusAccepted) {
+                    <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column px-2 py-2 gap-4 gap-lg-3">
+                        <button class="flex-center p-0" data-title-right="ویرایش" style="color:#333; border:none; background-color:transparent" onclick="showEditRequestAmountModal('@requestAmount.Id')">
+                            <i class="fa fa-pencil"></i>
+                        </button>
 
-                    <button class="flex-center p-0" data-title-right="حذف" style="color:#333; border:none; background-color:transparent" onclick="deleteRequestAmount('@requestAmount.Id')">
-                        <i class="fa fa-trash"></i>
-                    </button>
-                </div>
+                        <button class="flex-center p-0" data-title-right="حذف" style="color:#333; border:none; background-color:transparent" onclick="deleteRequestAmount('@requestAmount.Id')">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                }
             } else if (passType == 2) {
                 <div class="layered-card__layer col-12 col-lg-3 col-xl-2 d-flex flex-row flex-lg-column justify-content-between justify-content-lg-center align-items-center px-3 py-2 gap-2">
                     <span style="font-size: 13px; color: #777" class="flex-shrink-0">مبلغ تایید شده:</span>

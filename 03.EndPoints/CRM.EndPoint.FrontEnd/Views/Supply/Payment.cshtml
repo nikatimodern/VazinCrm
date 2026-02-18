@@ -78,7 +78,7 @@
                             <div class="flex-center flex-wrap row-gap-2 w-100">
                                 <div class="col-12 col-sm-6 col-lg-4 pe-sm-2">
                                     <label>مبلغ (ریال)</label>
-                                    <input inputmode="numeric" class="currencyNumber form-control" name="amount" type="text" placeholder="مبلغ پرداختی به ریال" required />
+                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" name="amount" type="text" placeholder="مبلغ پرداختی به ریال" required />
                                 </div>
 
                                 <div class="col-12 col-sm-6 col-lg-4">
@@ -104,7 +104,7 @@
                             <div>
                                 <label for="paymentSupplyFactor">بابت فاکتور:</label>
                                 <div class="input-group">
-                                    <input id="paymentSupplyFactor" type="text" class="form-control" placeholder="فاکتور تامین.." disabled required>
+                                    <input id="paymentSupplyFactor" type="text" class="form-control direction-ltr" placeholder="فاکتور تامین.." disabled required>
                                     <button class="btn btn-sm btn-secondary" type="button" onclick="showAddSupplyFactorModal(this)">انتخاب</button>
                                 </div>
                             </div>
@@ -142,6 +142,7 @@
 @section Scripts {
     <script>
         var paymentAttachments = [];
+        let paymentData = [];
         const paymentModal = document.getElementById("PaymentModalId");
         document.addEventListener("DOMContentLoaded", async () => {
             @*const data = await getAllBankAccountsJson();
@@ -161,6 +162,7 @@
         const cancelPaymentModal = () => {
             paymentAttachments = [];
             supplyFactorsSelectedIds = [];
+            paymentData = [];
             document.getElementById("DivShowPayment").innerHTML = "";
             document.getElementById("paymentAtt").value = "";
             mySer.emptyForm("paymentFormId");
@@ -175,6 +177,7 @@
             }
 
             const model = {
+                ...paymentData,
                 ...mySer.convertFormToJSON("paymentFormId"),
                 paymentSupplyFactors: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id })),
                 attachments: paymentAttachments,
@@ -182,11 +185,11 @@
 
             FLshowLoading();
             try {
-                const res = await axios.post(`/Supply/AddPayment`, model);
+                const apiUrl = model.id ? "/Supply/UpdatePayment" : "/Supply/AddPayment";
+                const res = await axios.post(apiUrl, model);
                 if (res.status === 200) {
                     toastifySuccess("با موفقیت ثبت شد");
                     cancelPaymentModal();
-                    //getAllPayments();
                     paymentTbl.ajax.reload();
                 }
             } catch (err) {
@@ -194,8 +197,6 @@
             } finally {
                 FLshowLoading(false);
             }
-
-            //closePaymentModal();
         };
 
         const getAllPayments = async () => {
@@ -228,7 +229,30 @@
             });
         };
 
+        async function showEditPaymentModal(id) {
+            FLshowLoading();
+            await togglePaymentModal();
 
+            try {
+                const res = await axios(`/Supply/GetPayment/${id}`);
+                if (res.status === 200) {
+                    paymentData = res.data.payment;
+                    const factorSerials = res.data.supplyFactorSerials;
+                    mySer.convertJsonToForm(paymentData, "paymentFormId");
+                    supplyFactorsSelectedIds = paymentData.paymentSupplyFactors.map(p => p.supplyFactorId);
+
+                    const inpElm = document.getElementById("paymentSupplyFactor");
+                    inpElm.value = factorSerials.join(", ");
+                    paymentAttachments = res.data.attachments;
+                    FileUpReload("paymentAtt");
+                }
+
+            } catch (err) {
+                console.log(err);
+            } finally {
+                FLshowLoading(false);
+            }
+        }
 
 
         let paymentTbl;
@@ -282,24 +306,28 @@
                         targets: [2],
                         render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>`,
                     },
+                    {
+                        targets: [7],
+                        render: data => `<span dir="ltr">${data?.join(", ") || "-"}</span>`,
+                    },
                 ],
                 columns: [
-                    { data: "payment.paymentNumber", defaultContent: "-" },
-                    { data: "payment.createDateTxt", defaultContent: "-" },
-                    { data: "payment.amount", defaultContent: "-" },
-                    { data: "payment.fromAccount", defaultContent: "-" },
-                    { data: "payment.toAccount", defaultContent: "-" },
-                    { data: "payment.paymentTypeTxt", defaultContent: "-" },
-                    { data: "payment.paymentDateTxt", defaultContent: "-" },
-                    { data: "supplyFactorSerials", render: data => data?.join(", ") || "-" },
-                    { data: "payment.userCreator", defaultContent: "-" },
+                    { data: "payment.paymentNumber", name: "PaymentNumber", defaultContent: "-" },
+                    { data: "payment.createDateTxt", name: "CreateDateTxt", defaultContent: "-" },
+                    { data: "payment.amount", name: "Amount", defaultContent: "-" },
+                    { data: "payment.fromAccount", name: "FromAccount", defaultContent: "-" },
+                    { data: "payment.toAccount", name: "ToAccount", defaultContent: "-" },
+                    { data: "payment.paymentTypeTxt", name: "PaymentTypeTxt", defaultContent: "-" },
+                    { data: "payment.paymentDateTxt", name: "PaymentDateTxt", defaultContent: "-" },
+                    { data: "supplyFactorSerials", name: "SupplyFactorSerials", defaultContent: "-" },
+                    { data: "payment.userCreator", name: "UserCreator", defaultContent: "-" },
                     {
                         data: null,
                         render: function (data, type, row) {
                             return `
                                 <div class="d-inline-flex align-items-center justify-content-center gap-1">
                                     <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.payment.id}', 9)"><i class="fa fa-paperclip"></i></button>
-                                    <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick=""><i class="fa fa-pencil"></i></button>
+                                    <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditPaymentModal('${row.payment.id}')"><i class="fa fa-pencil"></i></button>
                                     <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deletePayment('${row.payment.id}')"><i class="fa fa-trash"></i></button>
                                 </div>
                             `;

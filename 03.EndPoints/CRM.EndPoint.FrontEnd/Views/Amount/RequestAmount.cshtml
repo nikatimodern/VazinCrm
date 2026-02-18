@@ -81,7 +81,7 @@
                     <div>
                         <label for="reqAmountSupplyFactor">فاکتور تامین:</label>
                         <div class="input-group mb-3">
-                            <input id="reqAmountSupplyFactor" type="text" class="form-control" placeholder="فاکتور تامین.." disabled required>
+                            <input id="reqAmountSupplyFactor" type="text" class="form-control direction-ltr" placeholder="فاکتور تامین.." disabled required>
                             <button class="btn btn-sm btn-secondary" type="button" onclick="showAddSupplyFactorModal(this)">انتخاب</button>
                         </div>
                     </div>
@@ -102,7 +102,7 @@
 @section Scripts {
     <script>
 
-
+        let requestAmountData;
         document.addEventListener("DOMContentLoaded", async () => {
             //getAllRequestAmountDt();
             await getAllRequestAmount();
@@ -119,23 +119,25 @@
         });
 
 
-
         function toggleRequestAmountModal() {
             ModalToggle("requestAmountModal");
             mySer.emptyForm("requestAmountForm");
             supplyFactorsSelectedIds = [];
+            requestAmountData = [];
         }
 
         async function submitRequestAmountModal() {
             if (!await mySer.CheckValidForm("requestAmountForm")) return;
             const model = {
+                ...requestAmountData,
                 ...mySer.convertFormToJSON("requestAmountForm"),
                 requestAmountSupplyFactor: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id })),
             };
 
             try {
                 FLshowLoading();
-                const res = await axios.post(`/Amount/AddRequestAmount`, model);
+                const apiUrl = model.id ? "/Amount/UpdateRequestAmount" : "/Amount/AddRequestAmount";
+                const res = await axios.post(apiUrl, model);
                 if (res.status === 200) {
                     toastifySuccess("با موفقیت ثبت شد");
                     getAllRequestAmount();
@@ -159,6 +161,31 @@
             document.getElementById("requestAmountContainer").innerHTML = res.data.html;
             FLshowLoading(false);
         };
+
+        async function showEditRequestAmountModal(id) {
+            FLshowLoading();
+            toggleRequestAmountModal();
+
+            try {
+                const res = await axios(`/Amount/GetRequestAmount/${id}`);
+                console.log(res);
+                if (res.status === 200) {
+                    requestAmountData = res.data.requestAmount;
+                    const supplyFactorSerials = res.data.supplyFactorSerials;
+                    mySer.convertJsonToForm(requestAmountData, "requestAmountForm");
+                    supplyFactorsSelectedIds = requestAmountData.requestAmountSupplyFactor.map(r => r.supplyFactorId);
+
+                    const inpElm = document.getElementById("reqAmountSupplyFactor");
+                    inpElm.value = supplyFactorSerials.join(", ");
+                }
+
+            } catch (err) {
+                console.log(err);
+            } finally {
+                FLshowLoading(false);
+            }
+        }
+
 
         const deleteRequestAmount = async (id) => {
             Swal.fire({
