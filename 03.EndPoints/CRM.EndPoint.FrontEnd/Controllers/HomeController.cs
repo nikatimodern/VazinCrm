@@ -67,10 +67,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-
-
-
-
                 await trans.CommitAsync();
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();
