@@ -3578,9 +3578,9 @@ async function readNotifAction(id, btn, entityType = null, entityId = null) {
 }
 
 async function dismissNotif(id = null, btn) {
-    /*if (id) {
+    if (id) {
         await handleNotifAction(id, false);
-    }*/
+    }
     if (btn) {
         const closeBtn = btn.closest(".toastify").querySelector(".toast-close");
         closeBtn.click();

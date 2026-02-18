@@ -3,9 +3,15 @@
 }
 
 
+* {
+  box-sizing: border-box;
+}
+
+
 body {
   font-family: IRANSans;
   background-color: rgb(240, 241, 247);
+  margin: 0;
 }
 
 
@@ -38,6 +44,7 @@ u, .text-decoration-underline {
 .filter-switch {
   display: inline-flex;
   align-items: stretch;
+  justify-content: space-around;
   flex-wrap: wrap;
   gap: 4px;
   row-gap: 6px;
@@ -124,12 +131,12 @@ u, .text-decoration-underline {
 }
 
 
-.filter-switch.filter-switch-sm {
+.filter-switch.filter-switch-light {
   padding: 2px;
 }
 
 
-.filter-switch.filter-switch-sm label {
+.filter-switch.filter-switch-light label {
   min-height: 22px;
   padding: 0 8px;
   font-size: 12.5px;
@@ -2471,7 +2478,6 @@ html.sidebar-collapsed #mainWrapper {
   opacity: 0;
   transform: translateY(-6px);
   transition: all 0.3s ease;
-  transition-delay: 0.3s;
   margin: 0;
   padding-right: 10px;
 }
@@ -5077,6 +5083,101 @@ table tr.payment-vosoled > td {
   color: #212529;
   text-align: left;
 }
+
+
+/*  */
+
+.disabled-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.6);
+  /* background: rgba(255, 255, 255, 0.35); */
+  /* backdrop-filter: blur(.5px); */
+  cursor: not-allowed;
+  pointer-events: all;
+  z-index: 20;
+  border-radius: inherit;
+}
+
+
+.pwa-modal {
+  border-radius: 16px;
+  border: none;
+  padding: 10px;
+}
+
+
+.pwa-modal p {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+
+.header-icon-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0;
+  cursor: auto !important;
+  transition: background-color .15s ease, color .15s ease;
+}
+
+
+/* .back-btn {
+  display: none;
+} */
+
+
+.header-icon-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+
+.header-icon-btn:active {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+
+.header-icon-btn svg {
+  display: block;
+}
+
+
+/* @keyframes FillFlash {
+  0%   { background-color: #e3f2fd; }
+  70%  { background-color: #f3f9ff; }
+  100% { background-color: transparent; }
+}
+
+.fill-flash {
+  animation: FillFlash 1.2s ease;
+} */
+
+@keyframes FillFlash {
+  0% {
+    background-color: var(--flash-color);
+  }
+  70% {
+    background-color: color-mix(in srgb, var(--flash-color) 60%, white);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+
+.fill-flash {
+  --flash-color: #e3f2fd;
+  --flash-duration: 1.2s;
+  animation: FillFlash var(--flash-duration) ease;
+}
+
 
 
 .label-vertical {

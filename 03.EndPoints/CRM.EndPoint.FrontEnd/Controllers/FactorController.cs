@@ -39,8 +39,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Supplies.Entities;
+using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.Core.Domain.Supplies.Enums;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Accountency;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
@@ -53,6 +55,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly Sepidar1ContextDb S1db;
         private readonly IHubContext<TaskHub> hub;
         private readonly LogSystemService _logSystemService;
+        private readonly IPushQueue pushQueue;
         private readonly CrmSaveCahngeAsync crmSaveCahngeAsync;
         private readonly TaskServices ts;
         private readonly SepidarService sps;
@@ -65,7 +68,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, RoleManager<IdentityRole> roleManager, Service GenService,
             FileSaver fileSaver,
             DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb S1db,
-            IHubContext<TaskHub> hub, LogSystemService logSystemService)
+            IHubContext<TaskHub> hub, LogSystemService logSystemService, IPushQueue pushQueue)
         {
             this.crmSaveCahngeAsync = crmSaveCahngeAsync;
             this.ts = ts;
@@ -82,6 +85,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.S1db = S1db;
             this.hub = hub;
             _logSystemService = logSystemService;
+            this.pushQueue = pushQueue;
         }
 
         [Authorize(Policy = "NotCustomerOnly")]
@@ -200,7 +204,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await _logSystemService.LogChange(oldFac, fac, action, user);
 
             await db.SaveChangesAsync();
-
             return Ok();
         }
 
@@ -242,28 +245,42 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await db.SaveChangesAsync();
 
             string cusMobile;
-            string notifTxt;
+            string cusText;
 
             if (pf.CustomerId != null)
             {
                 var cus = await db.Customers.AsNoTracking().Where(f => f.Id == pf.CustomerId).FirstOrDefaultAsync();
                 cusMobile = cus.Mobile;
-                notifTxt = $"مشتری {cus.CustomerCode} {cus.CompanyName} ({cus.AgentName})".Trim();
+                cusText = $"{cus.CustomerCode} {cus.CompanyName} ({cus.AgentName})".Trim();
             } else
             {
                 cusMobile = pf.Cus_Mobile;
-                notifTxt = $"مشتری {pf.AgentName}";
+                cusText = pf.AgentName;
             }
 
             await smsServ.SendAcceptedSalesAdminToCustomer(cusMobile, pf.SerialNumber);
 
             await hub.Clients.User(pf.UserCreatorID).SendAsync("notifInfo",
-                $"پیش فاکتور <b>{pf.SerialNumber}</b> برای {notifTxt} توسط <b>{user.FullName}</b> تایید شد و در انتظار تایید مالی قرار گرفت",
+                $"پیش‌فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusText} توسط <b>{user.FullName}</b> تایید شد و در انتظار تایید مالی قرار گرفت",
                 $"/Customer/CustomerProfile?Id={pf.CustomerId}");
+            pushQueue.Enqueue(new PushQueueItem {
+                UserId = pf.UserCreatorID,
+                Title = "تایید پیش‌فاکتور",
+                Body = $"پیش‌فاکتور {pf.SerialNumber} توسط {user.FullName} تایید شد.",
+                Url = $"/Customer/CustomerProfile?Id={pf.CustomerId}",
+                Tag = "acceptPf-salesAdmin" + pf.SerialNumber
+            });
 
             await hub.Clients.Group("کارشناس مالی").SendAsync("notifActionRequired",
-                $"پیش فاکتور <b>{pf.SerialNumber}</b> برای {notifTxt} توسط <b>{user.FullName}</b> تایید شد و در کارتابل شما قرار گرفت.",
-                $"/Cartable/Index?tab=TFinancialExpertId");
+                $"پیش‌فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusText} توسط <b>{user.FullName}</b> تایید شد و در کارتابل شما قرار گرفت.",
+                "/Cartable/Index?tab=TFinancialExpertId");
+            pushQueue.Enqueue(new PushQueueItem {
+                RoleName = "کارشناس مالی",
+                Title = "تایید پیش‌فاکتور",
+                Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
+                Url = "/Cartable/Index?tab=TFinancialExpertId",
+                Tag = "acceptPf-salesAdmin" + pf.SerialNumber
+            });
 
             return Ok();
         }
@@ -308,13 +325,20 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 await _logSystemService.LogChange(oldPf, pf, LogActionEnum.رد_و_تغییر_وضعیت, user);
                 await db.SaveChangesAsync();
-
-                var notifTxt = pf.CustomerEntity != null
-                    ? $"مشتری {pf.CustomerEntity.CustomerCode} {pf.CustomerEntity.CompanyName} ({pf.CustomerEntity.AgentName})"
-                    : $"مشتری ({pf.AgentName})";
+                var cusText = string.IsNullOrWhiteSpace(pf.Customer)
+                    ? $"{pf.CustomerCode} ({pf.AgentName})"
+                    : $"{pf.CustomerCode} {pf.Customer} ({pf.AgentName})";
                 await hub.Clients.User(pf.UserCreatorID).SendAsync("notifInfo",
-                    $"پیش فاکتور <b>{pf.SerialNumber}</b> برای {notifTxt} توسط <b>{user.FullName}</b>، <b style='font-size: 15px; color:darkred'>عدم تایید</b> خورد!",
-                    pf.CustomerId != null ? $"/Customer/CustomerProfile?Id={pf.CustomerId}" : "");
+                    $"پیش فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusText} توسط <b>{user.FullName}</b>، <b style='font-size: 15px; color:darkred'>عدم تایید</b> خورد!",
+                    $"/Customer/CustomerProfile?Id={pf.CustomerId}"
+                );
+                pushQueue.Enqueue(new PushQueueItem {
+                    UserId = pf.UserCreatorID,
+                    Title = "عدم تایید پیش‌فاکتور",
+                    Body = $"پیش فاکتور {pf.SerialNumber} توسط {user.FullName}، عدم تایید خورد!",
+                    Url = $"/Customer/CustomerProfile?Id={pf.CustomerId}",
+                    Tag = "notAcceptPf-salesAdmin" + pf.SerialNumber
+                });
                 return Ok();
             }
             catch (Exception ex)
@@ -534,12 +558,22 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await _logSystemService.LogChange(oldPf, pf, LogActionEnum.تایید_و_تغییر_وضعیت, user);
             await db.SaveChangesAsync();
 
-            string notifTxt = pf.CustomerEntity != null
-                ? $"مشتری {pf.CustomerEntity.CustomerCode} {pf.CustomerEntity.CompanyName} ({pf.CustomerEntity.AgentName})"
-                : $"مشتری {pf.AgentName}";
-            await hub.Clients.User(pf.UserCreatorID)
-                .SendAsync("notifInfo", $"پیش‌فاکتور <b>{pf.SerialNumber}</b> برای {notifTxt} توسط <b>{user.FullName}</b> تایید شد",
-                    pf.CustomerId != null ? $"/Customer/CustomerProfile?Id={pf.CustomerId}" : "");
+            string cusTxt = pf.CustomerEntity != null
+                ? $"{pf.CustomerEntity.CustomerCode} {pf.CustomerEntity.CompanyName} ({pf.CustomerEntity.AgentName})"
+                : pf.AgentName;
+
+            await hub.Clients.User(pf.UserCreatorID).SendAsync("notifInfo",
+                $"پیش‌فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusTxt} توسط <b>{user.FullName}</b> تایید شد",
+                pf.CustomerId != null ? $"/Customer/CustomerProfile?Id={pf.CustomerId}" : ""
+            );
+
+            pushQueue.Enqueue(new PushQueueItem {
+                UserId = pf.UserCreatorID,
+                Title = "تایید پیش‌فاکتور",
+                Body = $"پیش‌فاکتور {pf.SerialNumber} توسط {user.FullName} تایید شد",
+                Url = pf.CustomerId != null ? $"/Customer/CustomerProfile?Id={pf.CustomerId}" : "/Deal/Index",
+                Tag = "acceptPf-taminExpert" + pf.SerialNumber
+            });
             return Ok();
         }
 
@@ -597,13 +631,21 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await tran.CommitAsync();
 
 
-                var notifTxt = pf.CustomerEntity != null
-                    ? $"مشتری {pf.CustomerEntity.CustomerCode} {pf.CustomerEntity.CompanyName} ({pf.CustomerEntity.AgentName})"
-                    : $"مشتری ({pf.AgentName})";
+                var cusTxt = pf.CustomerEntity != null
+                    ? $"{pf.CustomerEntity.CustomerCode} {pf.CustomerEntity.CompanyName} ({pf.CustomerEntity.AgentName})"
+                    : pf.AgentName;
                 await hub.Clients.User(pf.UserCreatorID).SendAsync("notifInfo",
-                    $"پیش فاکتور <b>{pf.SerialNumber}</b> برای {notifTxt} توسط <b>{user.FullName}</b>، <b style='font-size: 15px; color:darkred'>عدم تایید</b> خورد!",
-                    pf.CustomerId != null ? $"/Customer/CustomerProfile?Id={pf.CustomerId}" : "");
+                    $"پیش فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusTxt} توسط <b>{user.FullName}</b>، <b style='font-size: 15px; color:darkred'>عدم تایید</b> خورد!",
+                    pf.CustomerId != null ? $"/Customer/CustomerProfile?Id={pf.CustomerId}" : ""
+                );
 
+                pushQueue.Enqueue(new PushQueueItem {
+                    UserId = pf.UserCreatorID,
+                    Title = "عدم تایید پیش‌فاکتور",
+                    Body = $"پیش فاکتور {pf.SerialNumber} توسط {user.FullName}، عدم تایید خورد!",
+                    Url = pf.CustomerId != null ? $"/Customer/CustomerProfile?Id={pf.CustomerId}" : "/Deal/Index",
+                    Tag = "notAcceptPf-taminExpert" + pf.SerialNumber
+                });
                 return Ok();
             }
             catch (Exception e)
@@ -655,7 +697,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             var user = await userManager.GetUserAsync(HttpContext.User);
             var oldPf = await db.PreFactors.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
-            var pf = await db.PreFactors.Where(f => f.Id == id).Include(f => f.CustomerEntity).FirstOrDefaultAsync();
+            var pf = await db.PreFactors.Where(f => f.Id == id).FirstOrDefaultAsync();
 
             var hasNotAcceptedAcc = await db.Accountancies.ForPreFactor(id).AnyAsync(f => f.Status != AccStatusEnum.تایید_شده);
             if (hasNotAcceptedAcc)
@@ -675,13 +717,21 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await _logSystemService.LogChange(oldPf, pf, LogActionEnum.تایید_و_تغییر_وضعیت, user);
             await db.SaveChangesAsync();
 
-            string notifTxt = pf.CustomerEntity != null
-                ? $"مشتری {pf.CustomerEntity.CustomerCode} {pf.CustomerEntity.CompanyName} ({pf.CustomerEntity.AgentName})".Trim()
-                : $"مشتری {pf.AgentName}";
+            var cusText = string.IsNullOrWhiteSpace(pf.Customer)
+                ? $"{pf.CustomerCode} ({pf.AgentName})"
+                : $"{pf.CustomerCode} {pf.Customer} ({pf.AgentName})";
 
             await hub.Clients.User(pf.UserCreatorID).SendAsync("notifInfo",
-                $"پیش فاکتور <b>{pf.SerialNumber}</b> برای {notifTxt} توسط <b>{user.FullName}</b> تایید شد.",
+                $"پیش فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusText} توسط <b>{user.FullName}</b> تایید شد.",
                 $"/Customer/CustomerProfile?Id={pf.CustomerId}");
+
+            pushQueue.Enqueue(new PushQueueItem {
+                UserId = pf.UserCreatorID,
+                Title = "تایید مالی پیش‌فاکتور",
+                Body = $"پیش‌فاکتور {pf.SerialNumber} توسط {user.FullName} تایید شد.",
+                Url = $"/Customer/CustomerProfile?Id={pf.CustomerId}",
+                Tag = "acceptPf-financial" + pf.SerialNumber
+            });
 
             return Ok();
         }
@@ -694,7 +744,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var oldPf = await db.PreFactors.AsNoTracking().Where(f => f.Id == model.Id).FirstOrDefaultAsync();
-                var pf = await db.PreFactors.Where(f => f.Id == model.Id).Include(f => f.CustomerEntity).FirstOrDefaultAsync();
+                var pf = await db.PreFactors.Where(f => f.Id == model.Id).FirstOrDefaultAsync();
                 pf.AcceptedFinancial = false;
 
                 pf.CommentText = string.IsNullOrWhiteSpace(pf.CommentText)
@@ -711,16 +761,29 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await _logSystemService.LogChange(oldPf, pf, LogActionEnum.رد_و_تغییر_وضعیت, user);
                 await db.SaveChangesAsync();
 
-                string notifTxt = pf.CustomerEntity != null
-                    ? $"مشتری {pf.CustomerEntity.CustomerCode} {pf.CustomerEntity.CompanyName} ({pf.CustomerEntity.AgentName})"
-                    : $"مشتری {pf.AgentName}";
-
+                var cusText = string.IsNullOrWhiteSpace(pf.Customer)
+                    ? $"{pf.CustomerCode} ({pf.AgentName})"
+                    : $"{pf.CustomerCode} {pf.Customer} ({pf.AgentName})";
                 var msg =
-                    $"پیش فاکتور <b>{pf.SerialNumber}</b> برای {notifTxt} توسط <b>{user.FullName}</b>، <b style='font-size: 15px; color:darkred'>عدم تایید</b> خورد!";
+                    $"پیش فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusText} توسط <b>{user.FullName}</b>، <b style='font-size: 15px; color:darkred'>عدم تایید</b> خورد!";
 
                 await hub.Clients.User(pf.UserCreatorID).SendAsync("notifInfo", msg, "/Cartable/Index?tab=TSalesExpertId");
                 await hub.Clients.Group("مدیر فروش").SendAsync("notifInfo", msg, "/Cartable/Index?tab=TSalesAdminId");
 
+                pushQueue.Enqueue(new PushQueueItem {
+                    UserId = pf.UserCreatorID,
+                    Title = "عدم تایید پیش‌فاکتور",
+                    Body = $"پیش فاکتور {pf.SerialNumber} توسط {user.FullName}، عدم تایید خورد!",
+                    Url = $"/Customer/CustomerProfile?Id={pf.CustomerId}",
+                    Tag = "notAcceptPf-financial" + pf.SerialNumber
+                });
+                pushQueue.Enqueue(new PushQueueItem {
+                    RoleName = "مدیر فروش",
+                    Title = "عدم تایید پیش‌فاکتور",
+                    Body = $"پیش فاکتور {pf.SerialNumber} توسط {user.FullName}، عدم تایید خورد!",
+                    Url = "/Cartable/Index?tab=TSalesAdminId",
+                    Tag = "notAcceptPf-financial" + pf.SerialNumber
+                });
                 return Ok();
             }
             catch (Exception e)
@@ -776,7 +839,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 //                    .Where(f => f.Id == id).FirstOrDefaultAsync();
                 //var customer = await db.Customers.Where(f => f.Id == factor.CustomerId).FirstOrDefaultAsync();
 
-                Invoice s1 = await S1db.vwInvoice.Include(f => f.InvoiceItems).Where(f => f.InvoiceId == id).FirstOrDefaultAsync();
+                var s1 = await S1db.vwInvoice.Include(f => f.InvoiceItems).Where(f => f.InvoiceId == id).FirstOrDefaultAsync();
+
+                if (s1 == null) return NotFound();
+
                 s1.ExtraDescription = sps.getNoteFactor(s1.InvoiceId);
 
                 var myCompany = await db.Companies.Include(f => f.CompanyFiles).FirstOrDefaultAsync();
@@ -815,6 +881,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     .Include(f => f.FactorItems)
                     .Include(f => f.Descriptions)
                     .Where(f => f.Id == id).FirstOrDefaultAsync();
+
+                if (factor == null) return NotFound();
+
                 var customer = await db.Customers.Where(f => f.Id == factor.CustomerId).FirstOrDefaultAsync();
                 var myCompany = await db.Companies.Include(f => f.CompanyFiles).FirstOrDefaultAsync();
                 FactorViewModel model = new FactorViewModel() {
@@ -850,6 +919,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     .Include(f => f.PreFactorItems.Where(f => f.IsDeleted == false))
                     .Include(f => f.Descriptions.Where(f => f.IsDeleted == false))
                     .Where(f => f.Id == id).FirstOrDefaultAsync();
+
+
+                if (pfactor == null) return NotFound();
+
 
                 var set = await db.ASettings.FirstOrDefaultAsync();
                 var myCompany = await db.Companies.Include(f => f.CompanyFiles).FirstOrDefaultAsync();
@@ -1078,17 +1151,33 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await _logSystemService.LogChange(oldPf, pf, LogActionEnum.تایید_و_تغییر_وضعیت, user, null, "تایید پیش‌فاکتور توسط مشتری");
                 await db.SaveChangesAsync();
 
-                var notifTxt = $"مشتری {cus.CustomerCode} {cus.CompanyName} ({cus.AgentName})".Trim();
+                var cusText = string.IsNullOrWhiteSpace(cus.CompanyName) ? $"({cus.AgentName})" : $"{cus.CompanyName} ({cus.AgentName})";
                 //var countObj = await genService.GetCountEnvelopeObj();
                 if (pf.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش)
                 {
                     await hub.Clients.Group("مدیر فروش").SendAsync("notifActionRequired",
-                        $"پیش فاکتور <b>{pf.SerialNumber}</b> توسط <b>{notifTxt}</b> تایید شد و در کارتابل شما قرار گرفت",
-                        "/Cartable/Index?tab=TSalesAdminId");
+                        $"پیش فاکتور <b>{pf.SerialNumber}</b> توسط مشتری <b>{cusText}</b> تایید شد و در کارتابل شما قرار گرفت",
+                        "/Cartable/Index?tab=TSalesAdminId"
+                    );
+                    pushQueue.Enqueue(new PushQueueItem {
+                        RoleName = "مدیر فروش",
+                        Title = "تایید پیش‌فاکتور",
+                        Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
+                        Url = "/Cartable/Index?tab=TSalesAdminId",
+                        Tag = "acceptPf-customer" + pf.SerialNumber
+                    });
 
                     await hub.Clients.User(pf.UserCreatorID).SendAsync("notifInfo",
-                        $"پیش فاکتور <b>{pf.SerialNumber}</b> توسط <b>{notifTxt}</b> تایید شد و در انتظار تایید مدیر فروش قرار گرفت",
-                        $"/Customer/CustomerProfile?Id={pf.CustomerId}");
+                        $"پیش فاکتور <b>{pf.SerialNumber}</b> توسط مشتری <b>{cusText}</b> تایید شد و در انتظار تایید مدیر فروش قرار گرفت",
+                        $"/Customer/CustomerProfile?Id={pf.CustomerId}"
+                    );
+                    pushQueue.Enqueue(new PushQueueItem {
+                        UserId = pf.UserCreatorID,
+                        Title = "تایید پیش‌فاکتور",
+                        Body = $"پیش فاکتور {pf.SerialNumber} توسط مشتری {cusText} تایید شد.",
+                        Url = $"/Customer/CustomerProfile?Id={pf.CustomerId}",
+                        Tag = "acceptPf-customer" + pf.SerialNumber
+                    });
                 }
 
 
@@ -2210,13 +2299,21 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await db.SaveChangesAsync();
                 await transAction.CommitAsync();
 
-                var notifTxt = $"مشتری {cus.CustomerCode} {cus.CompanyName} ({cus.AgentName})".Trim();
+                var cusText = string.IsNullOrWhiteSpace(cus.CompanyName) ? $"({cus.AgentName})" : $"{cus.CompanyName} ({cus.AgentName})";
                 //var countObj = await genService.GetCountEnvelopeObj();
                 if (pf.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش)
                 {
                     await hub.Clients.Group("مدیر فروش").SendAsync("notifActionRequired",
-                        $"پیش فاکتور <b>{pf.SerialNumber}</b> برای {notifTxt} توسط <b>{user.FullName}</b> به صورت دستی تایید و در کارتابل شما قرار گرفت",
-                        "/Cartable/Index?tab=TSalesAdminId");
+                        $"پیش فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusText} توسط <b>{user.FullName}</b> به صورت دستی تایید و در کارتابل شما قرار گرفت",
+                        "/Cartable/Index?tab=TSalesAdminId"
+                    );
+                    pushQueue.Enqueue(new PushQueueItem {
+                        RoleName = "مدیر فروش",
+                        Title = "تایید پیش‌فاکتور",
+                        Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
+                        Url = "/Cartable/Index?tab=TSalesAdminId",
+                        Tag = "acceptPf-customer" + pf.SerialNumber
+                    });
                 }
 
                 return Ok();
@@ -2588,12 +2685,20 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
 
-                    var customerFullName = $"{model.Customer} {model.AgentName}".Trim();
+                    var cusTxt = $"{model.Customer} ({model.AgentName})".Trim();
                     var message =
-                        $"یک فاکتور به شماره سریال {model.SerialNumber} برای پیش‌فاکتور {model.PfactorSerialNumber} (مشتری {customerFullName}) ثبت شد.";
+                        $"یک فاکتور به شماره سریال {model.SerialNumber} برای پیش‌فاکتور {model.PfactorSerialNumber} ،مشتری {cusTxt} ثبت شد.";
                     await genService.AddEmail("فاکتور جدید", message, user, model.SelerId, model.SelerFullName, EntityTypeEnum.Factor, model.Id);
 
                     await hub.Clients.User(model.SelerId).SendAsync("notifInfo", message, "/Email/Index");
+
+                    pushQueue.Enqueue(new PushQueueItem {
+                        UserId = pf.UserCreatorID,
+                        Title = "فاکتور جدید",
+                        Body = $"فاکتور شماره {model.SerialNumber} برای مشتری {cusTxt} ثبت شد.",
+                        Url = "/Email/Index",
+                        Tag = "addFactor" + model.SerialNumber
+                    });
                 } else
                 {
                     await _logSystemService.LogChange(oldModel, model, LogActionEnum.ویرایش, user, ["Descriptions", "FactorItems"]);
@@ -2651,13 +2756,20 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await smsServ.SendAcceptPfactorToTamin(userTamin.PhoneNumber, pf.SerialNumber);
 
             await hub.Clients.Groups("کارشناس تامین", "مدیر ارشد").SendAsync("countPreFactorToAccept");
-            var notifTxt = pf.CustomerEntity != null
-                ? $"مشتری {pf.CustomerEntity.CustomerCode} {pf.CustomerEntity.CompanyName} ({pf.CustomerEntity.AgentName})"
-                : $"مشتری {pf.AgentName}";
+            var cusTxt = pf.CustomerEntity != null ? $"{pf.CustomerEntity.CompanyName} ({pf.CustomerEntity.AgentName})".Trim() : pf.AgentName;
 
             await hub.Clients.User(pf.UserTaminId.ToString()).SendAsync("notifActionRequired",
-                $"پیش فاکتور <b>{pf.SerialNumber}</b> برای {notifTxt} توسط <b>{pf.UserCreator}</b> جهت تایید در کارتابل شما قرار گرفت",
-                "/Cartable/Index?tab=TTaminExpertId");
+                $"پیش فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusTxt} توسط <b>{pf.UserCreator}</b> جهت تایید در کارتابل شما قرار گرفت",
+                "/Cartable/Index?tab=TTaminExpertId"
+            );
+
+            pushQueue.Enqueue(new PushQueueItem {
+                UserId = pf.UserTaminId.ToString(),
+                Title = "تایید پیش‌فاکتور",
+                Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
+                Url = "/Cartable/Index?tab=TTaminExpertId",
+                Tag = "assignPf-tamin" + pf.SerialNumber
+            });
             return Ok();
         }
 
@@ -2665,15 +2777,22 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public async Task<IActionResult> ResendRegUtamin(Guid pfId, Guid usId)
         {
             var pf = await db.PreFactors.AsNoTracking().Where(f => f.Id == pfId).Include(f => f.CustomerEntity).FirstOrDefaultAsync();
-            var userTamin = udb.Users.AsNoTracking().Where(f => f.Id == usId.ToString()).FirstOrDefaultAsync().Result;
+            var userTamin = await udb.Users.AsNoTracking().Where(f => f.Id == usId.ToString()).FirstOrDefaultAsync();
 
-            string notifTxt = pf.CustomerEntity != null
-                ? $"مشتری {pf.CustomerEntity.CustomerCode} {pf.CustomerEntity.CompanyName} ({(pf.CustomerEntity.Sex == 1 ? "جناب آقای" : "سرکار خانم")} {pf.CustomerEntity.AgentName})"
-                : $"مشتری {pf.AgentName}";
-            await hub.Clients.User(pf.UserTaminId.ToString()).SendAsync("notifActionRequired",
-                $"پیش فاکتور <b>{pf.SerialNumber}</b> برای {notifTxt} توسط <b>{pf.UserCreator}</b> جهت تایید در کارتابل شما قرار گرفت",
-                "/Cartable/Index?tab=TTaminExpertId");
             await smsServ.SendAcceptPfactorToTamin(userTamin.PhoneNumber, pf.SerialNumber);
+
+            var cusTxt = pf.CustomerEntity != null ? $"{pf.CustomerEntity.CompanyName} ({pf.CustomerEntity.AgentName})".Trim() : pf.AgentName;
+            await hub.Clients.User(pf.UserTaminId.ToString()).SendAsync("notifActionRequired",
+                $"پیش فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusTxt} توسط <b>{pf.UserCreator}</b> جهت تایید در کارتابل شما قرار گرفت",
+                "/Cartable/Index?tab=TTaminExpertId"
+            );
+            pushQueue.Enqueue(new PushQueueItem {
+                UserId = pf.UserTaminId.ToString(),
+                Title = "تایید پیش‌فاکتور",
+                Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
+                Url = "/Cartable/Index?tab=TTaminExpertId",
+                Tag = "assignPf-tamin" + pf.SerialNumber
+            });
             return Ok();
         }
 
@@ -3015,7 +3134,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                         await hub.Clients.Group("کارشناس مالی").SendAsync("notifActionRequired",
                             $"<b>واریزی</b> برای پیش‌فاکتور <b>{pf.SerialNumber}</b> توسط <b>{(type == 5 ? "مشتری" : pf.UserCreator)}</b> پیوست شد و جهت ثبت در کارتابل شما قرار گرفت",
-                            "/Cartable/Index?tab=TFinancialExpertId");
+                            "/Cartable/Index?tab=TFinancialExpertId"
+                        );
                     } else if (item.IsDeleted)
                     {
                         await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user, null,

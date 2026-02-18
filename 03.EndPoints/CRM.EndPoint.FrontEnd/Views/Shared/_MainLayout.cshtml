@@ -13,11 +13,20 @@
     <meta property="og:title" content="CRM">
     <meta property="og:description" content="سامانه مدیریت ارتباط با مشتری">
     <meta property="og:locale" content="fa_IR">
-    <meta property="og:image" content="/Img/consent.png">
+    <meta property="og:image" content="/static/icons/logo-180x180.png">
     <meta name="twitter:card" content="summary">
-    <meta name="msapplication-TileImage" content="/Img/consent.png">
-    <link rel="apple-touch-icon" sizes="57x57" href="/Img/consent.png">
-    <link rel="icon" type="image/x-icon" href="/Img/consent.png">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/logo-180x180.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
+    <link rel="manifest" href="/manifest.json?v=3.2.7">
+
+    <meta name="apple-mobile-web-app-title" content="VazinCRM">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+    <meta name="theme-color" content="#004944">
 
     <title>&rlm;سامانه مدیریت مشتری&zwnj;&rlm;</title>
 
@@ -25,10 +34,8 @@
     <link rel="stylesheet" href="~/lib/Bootstrap/bootstrap5.3.rtl.min.css" />
     <link rel="stylesheet" href="~/lib/toastify/toastify.min.css" />
 
-
-    <link rel="stylesheet" href="~/css/site.css?v=2.10.0" />
-    <link rel="stylesheet" href="~/css/login.css?v=2.10.0" />
-
+    <link rel="stylesheet" href="~/css/site.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/login.css?v=3.2.7" />
 
 </head>
 <body dir="rtl">
@@ -75,6 +82,57 @@
     </div>
 </div>
 
+
+<div class="modal fade" id="pwaInstallModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content pwa-modal">
+
+            <div class="modal-body text-center">
+                @* <div class="pwa-icon">📲</div> *@
+
+                <h5 class="mb-3">نصب اپلیکیشن سامانه وزین پلاست</h5>
+                <p class="text-muted small mt-2">
+                    با نصب اپلیکیشن، سریع‌تر وارد شوید و اعلان‌ها را دریافت کنید.
+                </p>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button id="pwaInstallBtn" class="btn btn-primary w-100">
+                        نصب
+                    </button>
+                    <button class="btn btn-light w-100" data-bs-dismiss="modal">
+                        بعداً
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="iosPwaInstallModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content pwa-modal">
+            <div class="modal-body text-center">
+                <h5 class="mb-3">نصب اپلیکیشن سامانه وزین پلاست</h5>
+                <p class="text-muted small mt-2">
+                    برای نصب اپلیکیشن روی ios:
+                    <br>
+                    دکمه <strong>Share</strong> را بزنید
+                    و گزینه <strong>Add to Home Screen</strong> را انتخاب کنید.
+                </p>
+
+                <button class="btn btn-primary w-100 mt-3" data-bs-dismiss="modal">
+                    فهمیدم
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+
 <script>
     document.getElementById("historyBackIcon").classList.toggle("d-none", window.location.pathname === "/");
 </script>
@@ -83,9 +141,8 @@
 <script src="~/lib/jquery/jquery.min.js"></script>
 <script src="~/lib/toastify/toastify-js.js"></script>
 
-
-<script src="~/js/site.js?v=2.10.0"></script>
-
+<script src="~/js/pwa.js?v=3.2.7"></script>
+<script src="~/js/site.js?v=3.2.7"></script>
 
 
 

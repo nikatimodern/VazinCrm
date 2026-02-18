@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta http-equiv="X-UA-Compatible" content="IE=8, IE=9" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="robots" content="noindex" />
@@ -19,12 +19,21 @@
     <meta property="og:title" content="CRM">
     <meta property="og:description" content="سامانه مدیریت ارتباط با مشتری">
     <meta property="og:locale" content="fa_IR">
-    <meta property="og:image" content="/Img/consent.png">
+    <meta property="og:image" content="/static/icons/logo-180x180.png">
     <meta name="twitter:card" content="summary">
 
-    <link rel="apple-touch-icon" sizes="57x57" href="/Img/consent.png">
-    <meta name="msapplication-TileImage" content="/Img/consent.png">
-    <link rel="icon" type="image/x-icon" href="/Img/consent.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/logo-180x180.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
+    <link rel="manifest" href="/manifest.json?v=3.2.7">
+
+    <meta name="apple-mobile-web-app-title" content="VazinCRM">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+    <meta name="theme-color" content="#004944">
+
 
     <script>
         if (sessionStorage.getItem("sidebar-collapsed") === "true") {
@@ -55,21 +64,19 @@
     <link rel="stylesheet" href="~/lib/Awesomplete/Awesomplete.css" />
     <link rel="stylesheet" href="~/lib/TomSelect/tom-select.min.css" />
 
-
-    <link rel="stylesheet" href="~/css/site.css?v=2.10.0" />
-    <link rel="stylesheet" href="~/css/table.css?v=2.10.0" />
-    <link rel="stylesheet" href="~/css/layoutResponsive.css?v=2.10.0" />
-    <link rel="stylesheet" href="~/css/customerIndexResponsive.css?v=2.10.0" />
-    <link rel="stylesheet" href="~/css/customerProfileResponsive.css?v=2.10.0" />
-    <link rel="stylesheet" href="~/css/listProduct.css?v=2.10.0" />
-    <link rel="stylesheet" href="~/css/carizo.css?v=2.10.0" />
-    <link rel="stylesheet" href="~/css/reports.css?v=2.10.0" />
-    <link rel="stylesheet" href="~/css/dashboard.css?v=2.10.0" />
-    <link rel="stylesheet" href="~/css/order.css?v=2.10.0" />
-    <link rel="stylesheet" href="~/css/deal.css?v=2.10.0" />
-    <link rel="stylesheet" href="~/css/cartableStyle.css?v=2.10.0" />
-    <link rel="stylesheet" href="~/css/email.css?v=2.10.0" />
-
+    <link rel="stylesheet" href="~/css/site.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/table.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/layoutResponsive.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/customerIndexResponsive.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/customerProfileResponsive.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/listProduct.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/carizo.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/reports.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/dashboard.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/order.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/deal.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/cartableStyle.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/email.css?v=3.2.7" />
 </head>
 
 
@@ -150,10 +157,10 @@
                         </span>
 
                         <ul class="submenu text-white">
-                            <a class="menuLink text-white" href="/Supply/Profit">
+                            <a class="menuLink text-white" asp-controller="Supply" asp-action="Profit">
                                 <li>بهای تمام شده</li>
                             </a>
-                            <a class="menuLink text-white" href="/Supply/Demand">
+                            <a class="menuLink text-white" asp-controller="Supply" asp-action="Demand">
                                 <li>مطالبات</li>
                             </a>
                         </ul>
@@ -647,7 +654,7 @@
                             سطل زباله
                         </a>
                     </span>
-                <span class="Admin SalesAdmin w-100" style="display: none">
+                <span class="Admin w-100" style="display: none">
                         <span class="buttonGreen2 d-flex align-items-center gap-1" style="line-height: 1;padding: 6px !important;font-size: 14px" onclick="showModalPhonebook()">
                             <svg style="width: 16px" fill="currentColor" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
                             دفترچه تلفن
@@ -2772,6 +2779,7 @@
                 <button type="button" data-bs-dismiss="modal" class="buttonCancel2">انصراف</button>
                 <button type="button" class="buttonGreen3" id="UndeliveredOrderHeadsModalOkBtn" onclick="deliveredOk()">تحویل همه و اتمام کار</button>
             </div>
+
         </div>
     </div>
 </div>
@@ -2947,15 +2955,14 @@
 <script src="~/lib/Awesomplete/awesomplete.min.js"></script>
 <script src="~/lib/TomSelect/tom-select.complete.min.js"></script>
 
-
-<script src="~/js/site.js?v=2.10.0"></script>
-<script src="~/js/UploadFile.js?v=2.10.0"></script>
-<script src="~/js/PublicFunction.js?v=2.10.0"></script>
-<script src="~/js/DateValidate.js?v=2.10.0"></script>
-<script src="~/js/TaskSignalR.js?v=2.10.0"></script>
-@* <script src="~/js/dashboard.js?v=2.10.0"></script> *@
-<script src="~/js/Layout.js?v=2.10.0" defer></script>
-
+<script src="~/js/pwa.js?v=3.2.7"></script>
+<script src="~/js/site.js?v=3.2.7"></script>
+<script src="~/js/UploadFile.js?v=3.2.7"></script>
+<script src="~/js/PublicFunction.js?v=3.2.7"></script>
+<script src="~/js/DateValidate.js?v=3.2.7"></script>
+<script src="~/js/TaskSignalR.js?v=3.2.7"></script>
+@* <script src="~/js/dashboard.js?v=3.2.7"></script> *@
+<script src="~/js/Layout.js?v=3.2.7" defer></script>
 
 <script>
     var baseUrl;

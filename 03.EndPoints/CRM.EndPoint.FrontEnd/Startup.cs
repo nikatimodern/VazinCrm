@@ -23,7 +23,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Security.Claims;
+using CRM.EndPoint.FrontEnd.Services.PushServices;
 
+using System.Net;
+using System.Net.Http;
+using WebPush;
 
 namespace CRM.EndPoint.FrontEnd {
     public class Startup {
@@ -39,6 +43,7 @@ namespace CRM.EndPoint.FrontEnd {
         {
             return EnCodeDeCode.Decrypt(EncodeText);
         }
+
 
 
         public void ConfigureServices(IServiceCollection services)
@@ -132,6 +137,28 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<IVeiwRenderService, VeiwRenderService>();
             services.AddScoped<LogSystemService>();
 
+            services.AddSingleton<IPushQueue, PushQueue>();
+            services.AddHostedService<PushBackgroundService>();
+            services.AddScoped<IPushService, PushService>();
+
+            services.AddSingleton<WebPushClient>(sp =>
+            {
+                var handler = new SocketsHttpHandler
+                {
+                    EnableMultipleHttp2Connections = false,
+                    PooledConnectionLifetime = TimeSpan.FromMinutes(5)
+                };
+
+                var httpClient = new HttpClient(handler)
+                {
+                    Timeout = TimeSpan.FromSeconds(30)
+                };
+
+                return new WebPushClient(httpClient);
+            });
+
+
+
 
             var mvc = services.AddControllersWithViews();
             //mvc.AddRazorRuntimeCompilation();
@@ -188,20 +215,29 @@ namespace CRM.EndPoint.FrontEnd {
 
             if (env.IsDevelopment())
             {
-                app.UseDeveloperExceptionPage();
+                app.UseExceptionHandler("/Error/500"); // فقط برای exceptionهای واقعی (500+)
+                app.UseStatusCodePagesWithReExecute("/Error/{0}"); // برای status code ها مثل 404 / 401 / 403
+
+                //app.UseDeveloperExceptionPage();
             } else
             {
-                app.UseExceptionHandler("/Home/Error");
+                app.UseExceptionHandler("/Error/500"); // فقط برای exceptionهای واقعی (500+)
+                app.UseStatusCodePagesWithReExecute("/Error/{0}"); // برای status code ها مثل 404 / 401 / 403
+
+                // app.UseExceptionHandler("/Home/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+
             app.UseRouting();
+
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseSession();
+
             app.UseEndpoints(endpoints => {
                 endpoints.MapControllerRoute(
                     name: "account-otp",

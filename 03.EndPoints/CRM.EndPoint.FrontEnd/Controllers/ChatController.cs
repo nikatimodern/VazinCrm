@@ -6,8 +6,10 @@ using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Attachments.Entities;
 using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.Chats.Entities;
+using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models.Chats;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Login;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Generics.Infrastructures.Sql;
@@ -29,9 +31,10 @@ public class ChatController : Controller {
     private readonly SignInManager<AppUser> signInManager;
     private readonly FileSaver fileSaver;
     private readonly IHubContext<TaskHub> hub;
+    private readonly IPushQueue pushQueue;
 
     public ChatController(DateTimeServices dtService, CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager,
-        SignInManager<AppUser> signInManager, FileSaver fileSaver, IHubContext<TaskHub> hub)
+        SignInManager<AppUser> signInManager, FileSaver fileSaver, IHubContext<TaskHub> hub, IPushQueue pushQueue)
     {
         this.dtService = dtService;
         this.db = db;
@@ -40,6 +43,7 @@ public class ChatController : Controller {
         this.signInManager = signInManager;
         this.fileSaver = fileSaver;
         this.hub = hub;
+        this.pushQueue = pushQueue;
     }
 
 
@@ -257,9 +261,21 @@ public class ChatController : Controller {
 
 
             var notifUserId = mainChat?.FromUserId == fromUser?.Id ? mainChat?.ToUserId : mainChat?.FromUserId;
-            var notifText = $"{fromUser?.FullName}: {model.Chat?.Text}".Trim();
-            await hub.Clients.User(notifUserId).SendAsync("Chat", mainChatId, notifText);
-            //await hub.Clients.Users(mainChat?.FromUserId, mainChat?.ToUserId).SendAsync("Chat", mainChatId, notifText);
+
+            const int maxLength = 50;
+            var text = model.Chat?.Text ?? "";
+            var displayText = text.Length > maxLength ? text.Substring(0, maxLength) + "..." : text;
+
+            await hub.Clients.User(notifUserId).SendAsync("Chat", mainChatId, $"{fromUser?.FullName}: {displayText}".Trim());
+
+            var rnd = new Random();
+            pushQueue.Enqueue(new PushQueueItem {
+                UserId = notifUserId,
+                Title = fromUser?.FullName ?? "پیام رسان",
+                Body = displayText,
+                Url = "/Chat/Main",
+                Tag = "chat" + rnd.Next(1000, 10000)
+            });
 
             await db.SaveChangesAsync();
             return Ok(mainChatId);
