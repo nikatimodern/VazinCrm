@@ -104,24 +104,27 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 db.Entry(entity).CurrentValues.SetValues(model);
 
-                var toRemove = entity.RequestAmountSupplyFactor
-                    .Where(oldItem => !model.RequestAmountSupplyFactor.Any(newItem => newItem.SupplyFactorId == oldItem.SupplyFactorId))
-                    .ToList();
+                entity.RequestAmountSupplyFactor = model.RequestAmountSupplyFactor;
 
-                db.RequestAmountSupplyFactors.RemoveRange(toRemove);
 
-                foreach (var item in model.RequestAmountSupplyFactor ?? [])
-                {
-                    var exists = entity.RequestAmountSupplyFactor.Any(x => x.SupplyFactorId == item.SupplyFactorId);
+                //var toRemove = entity.RequestAmountSupplyFactor
+                //    .Where(oldItem => !model.RequestAmountSupplyFactor.Any(newItem => newItem.SupplyFactorId == oldItem.SupplyFactorId))
+                //    .ToList();
 
-                    if (!exists)
-                    {
-                        entity.RequestAmountSupplyFactor.Add(new RequestAmountSupplyFactor {
-                            RequestAmountId = entity.Id,
-                            SupplyFactorId = item.SupplyFactorId
-                        });
-                    }
-                }
+                //db.RequestAmountSupplyFactors.RemoveRange(toRemove);
+
+                //foreach (var item in model.RequestAmountSupplyFactor ?? [])
+                //{
+                //    var exists = entity.RequestAmountSupplyFactor.Any(x => x.SupplyFactorId == item.SupplyFactorId);
+
+                //    if (!exists)
+                //    {
+                //        entity.RequestAmountSupplyFactor.Add(new RequestAmountSupplyFactor {
+                //            RequestAmountId = entity.Id,
+                //            SupplyFactorId = item.SupplyFactorId
+                //        });
+                //    }
+                //}
 
                 await db.SaveChangesAsync();
                 await transaction.CommitAsync();

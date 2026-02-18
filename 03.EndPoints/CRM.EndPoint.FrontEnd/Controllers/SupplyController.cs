@@ -219,24 +219,26 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 db.Entry(entity).CurrentValues.SetValues(model);
 
-                var toRemove = entity.PaymentSupplyFactors
-                    .Where(oldItem => !model.PaymentSupplyFactors.Any(newItem => newItem.SupplyFactorId == oldItem.SupplyFactorId))
-                    .ToList();
+                entity.PaymentSupplyFactors = model.PaymentSupplyFactors;
 
-                db.PaymentSupplyFactors.RemoveRange(toRemove);
+                //var toRemove = entity.PaymentSupplyFactors
+                //    .Where(oldItem => !model.PaymentSupplyFactors.Any(newItem => newItem.SupplyFactorId == oldItem.SupplyFactorId))
+                //    .ToList();
 
-                foreach (var item in model.PaymentSupplyFactors ?? [])
-                {
-                    var exists = entity.PaymentSupplyFactors.Any(x => x.SupplyFactorId == item.SupplyFactorId);
+                //db.PaymentSupplyFactors.RemoveRange(toRemove);
 
-                    if (!exists)
-                    {
-                        entity.PaymentSupplyFactors.Add(new PaymentSupplyFactor {
-                            PaymentId = entity.Id,
-                            SupplyFactorId = item.SupplyFactorId
-                        });
-                    }
-                }
+                //foreach (var item in model.PaymentSupplyFactors ?? [])
+                //{
+                //    var exists = entity.PaymentSupplyFactors.Any(x => x.SupplyFactorId == item.SupplyFactorId);
+
+                //    if (!exists)
+                //    {
+                //        entity.PaymentSupplyFactors.Add(new PaymentSupplyFactor {
+                //            PaymentId = entity.Id,
+                //            SupplyFactorId = item.SupplyFactorId
+                //        });
+                //    }
+                //}
 
                 var attach = fileSaver.saveAttach(model.Attachments, _AttachType.Payment);
                 foreach (var att in attach)
