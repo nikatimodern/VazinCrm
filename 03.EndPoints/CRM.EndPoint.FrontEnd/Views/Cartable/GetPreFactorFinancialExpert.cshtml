@@ -133,7 +133,7 @@
                         <i class="mp fa fa-eye"></i>
                     </button>
                     @if (preFactor.CustomerId != null) {
-                        <button class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="پروفایل" onclick="openCustomerProfile('@preFactor.CustomerId')">
+                        <button class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="پروفایل" onclick="openCustomerProfile('@preFactor.CustomerId', '@preFactor.SerialNumber')">
                             <i class="mp fa fa-user"></i>
                         </button>
                     }

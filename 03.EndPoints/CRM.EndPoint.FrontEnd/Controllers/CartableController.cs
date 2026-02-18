@@ -28,6 +28,7 @@ using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.Core.Domain.Supplies.Enums;
 using CRM.EndPoint.FrontEnd.Models.PreFactorVm;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 
 // ReSharper disable EntityFramework.UnsupportedServerSideFunctionCall
@@ -41,6 +42,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly CRMContextDb db;
         private readonly UserContextDb udb;
         private readonly Sepidar1ContextDb s1Db;
+        private readonly IPushQueue pushQueue;
+        private readonly IPushService pushService;
         private readonly IVeiwRenderService vrs;
         private readonly UserManager<AppUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
@@ -48,7 +51,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         public CartableController(IVeiwRenderService vrs, UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager, Service GenService,
-            FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb s1db)
+            FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb s1db, IPushQueue pushQueue, IPushService pushService)
         {
             this.vrs = vrs;
             this.userManager = userManager;
@@ -59,6 +62,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.db = db;
             udb = Udb;
             s1Db = s1db;
+            this.pushQueue = pushQueue;
+            this.pushService = pushService;
             this._setting = db.ASettings.FirstOrDefault();
         }
 
@@ -114,6 +119,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
+                /*pushQueue.Enqueue(new PushQueueItem {
+                    SendToAll = true,
+                    Title = "سلام وزین پلاستی",
+                    Body = "این یک پوش نوتیف تست جدید است، اینو فرستادم که در جریان اتفاقات ما باشی!",
+                    Url = "/"
+                });*/
+                //await pushService.SendToAllAsync("سلام وزین پلاستی", "این یک پوش نوتیف تست است", "/", null);
+
+
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var roles = await userManager.GetRolesAsync(user);
 
@@ -502,6 +516,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var rols = await userManager.GetRolesAsync(user);
 
+                var model = new TaminViewModel {
+                    UserId = user.Id,
+                    Setting = _setting,
+                    IsAdmin = rols.Contains("مدیر ارشد") || rols.Contains("مدیر تامین")
+                };
+
+
                 var query = db.PreFactors.AsQueryable();
                 switch (type)
                 {
@@ -519,17 +540,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     query = query.Where(s =>
                         EF.Functions.Like(s.AgentName, $"%{serVal}%") ||
                         EF.Functions.Like(s.Customer, $"%{serVal}%") ||
-                        s.SerialNumber == serialVal);
-                }
+                        s.SerialNumber == serialVal
+                    );
 
-                if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر تامین"))
-                {
-                    ViewBag.Admin = true;
-                } else
+                } else if (!rols.Contains("مدیر ارشد") && !rols.Contains("مدیر تامین"))
                 {
                     query = query.Where(f => f.UserTaminId == Guid.Parse(user.Id));
-                    ViewBag.Admin = false;
                 }
+
 
                 var preFactors = await query.OrderByDescending(f => f.ModifyDate).Take(100).Include(f => f.PreFactorItems).ToListAsync();
 
@@ -563,11 +581,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     pf.SupplyMismatch = s.totalItems != pfItemsCount; //|| s.totalWeight != pfItemsWeight;
                 }
 
-
-                var model = new TaminViewModel {
-                    PreFactors = preFactors,
-                    Setting = _setting,
-                };
+                model.PreFactors = preFactors;
 
 
                 var html = await vrs.RenderToStringAsync("GetPreFactorTaminExpert", model);

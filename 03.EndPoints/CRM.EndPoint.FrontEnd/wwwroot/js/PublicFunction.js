@@ -1183,7 +1183,7 @@ const submitPrefactorOK = async (type) => {
                     await GetPreFactorSalesAdmin();
                 } else if (type === 3) { // PreFactor/Factor
                     await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
-                } else if (type === 4) { //deal
+                } else if (type === 4) { //Deal
                     await getPreFactorFromDeal(dealData.id);
                     await getAllDeals();
                     if (!document.getElementById("dealPreFactorsModal").classList.contains("show")) {

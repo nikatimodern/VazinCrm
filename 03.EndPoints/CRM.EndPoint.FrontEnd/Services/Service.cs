@@ -378,56 +378,6 @@ namespace CRM.EndPoint.FrontEnd.Services {
             return FinancialStepEnum.در_انتظار_تایید_مالی;
         }
 
-
-        public async Task<List<PhoneBookVModel>> GetPhonebook(string search = "")
-        {
-            var query = db.Customers
-                .Select(c => new PhoneBookVModel {
-                    Id = c.Id,
-                    Name = c.CompanyName + " " + c.AgentName,
-                    Phone = c.Tel,
-                    CustomerCode = c.CustomerCode,
-                    Mobile = c.Mobile,
-                    ModifyDate = c.ModifyDate,
-                    NormalizedAgentName = c.NormalizedAgentName,
-                    NormalizedCompanyName = c.NormalizedCompanyName
-                });
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                search = TextService.NormalizeText(search);
-                var keywords = search.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(k => k.Length > 2).Distinct().ToList();
-
-                query = query
-                    .Where(c =>
-                        keywords.Any(k =>
-                            c.NormalizedCompanyName.Contains(k) ||
-                            c.NormalizedAgentName.Contains(k) ||
-                            c.Phone.Contains(search) || c.Mobile.Contains(search)
-                        ) || c.CustomerCode.ToString() == search).Select(c => new {
-                        Customer = c,
-                        Score =
-                            (c.NormalizedCompanyName == search ? 100 : 0) +
-                            (c.NormalizedAgentName == search ? 100 : 0) +
-                            (c.NormalizedCompanyName.StartsWith(search) ? 50 : 0) +
-                            (c.NormalizedAgentName.StartsWith(search) ? 50 : 0) +
-                            keywords.Count(k =>
-                                c.NormalizedAgentName.Contains(k) ||
-                                c.NormalizedCompanyName.Contains(k)) * 10
-                    })
-                    .OrderByDescending(x => x.Score)
-                    .ThenByDescending(x => x.Customer.ModifyDate)
-                    .Select(x => x.Customer);
-            } else
-            {
-                query = query.OrderByDescending(c => c.ModifyDate).Take(50);
-            }
-
-            var data = await query.ToListAsync();
-
-            return data;
-        }
-
         public async Task<object> getDetailAmountFactor(Guid? cusId, Guid? pfid)
         {
             IList<CRM.Core.Domain.Factors.Entities.Factor> fac = null;

@@ -35,7 +35,7 @@
                     <label style="font-family:'IRANSansBold'; transform: rotate(90deg)">صـادراتی</label>
                 </div>
             }
-            <div class="d-flex flex-column flex-sm-row justify-content-between InfoDataItem_Prefactor w-100 py-2">
+            <div data-serialnumber="@item.SerialNumber"  class="d-flex flex-column flex-sm-row justify-content-between InfoDataItem_Prefactor w-100 py-2">
                 <div class="d-flex flex-column w-100 justify-content-between">
                     <div class="mp flex-column flex-md-row px-2" style=" display:flex;justify-content:space-between; width:100%;direction:rtl; height:100%">
 
@@ -343,7 +343,7 @@
                     }
 
                     @if (item.CustomerId != null && passType == 4) {
-                        <button class="mp d-flex justify-content-center align-items-center" data-title-right="پروفایل" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="openCustomerProfile('@item.CustomerId')">
+                        <button class="mp d-flex justify-content-center align-items-center" data-title-right="پروفایل" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="openCustomerProfile('@item.CustomerId', '@item.SerialNumber')">
                             <i class="mp fa fa-user"></i>
                         </button>
                     }

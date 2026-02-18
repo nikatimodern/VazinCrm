@@ -220,7 +220,7 @@
                         }
 
                         @if (item.CustomerId != null) {
-                            <button class="mp d-flex justify-content-center align-items-center" data-title-right="پروفایل" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="openCustomerProfile('@item.CustomerId')">
+                            <button class="mp d-flex justify-content-center align-items-center" data-title-right="پروفایل" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="openCustomerProfile('@item.CustomerId', '@item.SerialNumber')">
                                 <i class="mp fa fa-user"></i>
                             </button>
                         }

@@ -5,6 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewData["Title"] - پروفایل مشتری</title>
 
+    <meta property="og:title" content="CRM">
+    <meta property="og:description" content="سامانه مدیریت ارتباط با مشتری">
+    <meta property="og:locale" content="fa_IR">
+    <meta property="og:image" content="/static/icons/logo-180x180.png">
+    <meta name="twitter:card" content="summary">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/logo-180x180.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
+    <link rel="manifest" href="/manifest.json?v=3.2.7">
+
+    <meta name="apple-mobile-web-app-title" content="VazinCRM">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+    <meta name="theme-color" content="#004944">
 
     <link rel="stylesheet" href="~/lib/Bootstrap/bootstrap5.3.rtl.min.css" />
     <link rel="stylesheet" href="~/lib/FontAwesome.Pro.5.15.1.Web/css/solid.min.css" />
@@ -18,6 +35,19 @@
     <link rel="stylesheet" href="~/lib/CropperJs/cropper.min.css" />
     <link rel="stylesheet" href="~/lib/jQuery-Datatable/datatablesB.min.css" />
 
+    <link rel="stylesheet" href="~/css/site.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/table.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/layoutResponsive.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/customerIndexResponsive.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/customerProfileResponsive.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/listProduct.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/carizo.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/reports.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/dashboard.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/order.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/deal.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/cartableStyle.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/customerLayout.css?v=3.2.7" />
 
     <link rel="stylesheet" href="~/css/site.css?v=2.10.0" />
     <link rel="stylesheet" href="~/css/table.css?v=2.10.0" />
@@ -356,6 +386,57 @@
 </div>
 
 
+<div class="modal fade" id="pwaInstallModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content pwa-modal">
+
+            <div class="modal-body text-center">
+                @* <div class="pwa-icon">📲</div> *@
+
+                <h5 class="mb-3">نصب اپلیکیشن سامانه وزین پلاست</h5>
+                <p class="text-muted small mt-2">
+                    با نصب اپلیکیشن، سریع‌تر وارد شوید و اعلان‌ها را دریافت کنید.
+                </p>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button id="pwaInstallBtn" class="btn btn-primary w-100">
+                        نصب
+                    </button>
+                    <button class="btn btn-light w-100" data-bs-dismiss="modal">
+                        بعداً
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="iosPwaInstallModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content pwa-modal">
+            <div class="modal-body text-center">
+                <h5 class="mb-3">نصب اپلیکیشن سامانه وزین پلاست</h5>
+                <p class="text-muted small mt-2">
+                    برای نصب اپلیکیشن روی ios:
+                    <br>
+                    دکمه <strong>Share</strong> را بزنید
+                    و گزینه <strong>Add to Home Screen</strong> را انتخاب کنید.
+                </p>
+
+                <button class="btn btn-primary w-100 mt-3" data-bs-dismiss="modal">
+                    فهمیدم
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+
+
 <div id="overlay"></div>
 <div id="dropdown-portal"></div>
 <div id="layoutPortal"></div>
@@ -379,13 +460,13 @@
 <script src="~/lib/Sortable/Sortable.min.js"></script>
 
 
-<script src="~/js/site.js?v=2.10.0"></script>
-<script src="~/js/UploadFile.js?v=2.10.0"></script>
-<script src="~/js/PublicFunction.js?v=2.10.0"></script>
-<script src="~/js/DateValidate.js?v=2.10.0"></script>
-<script src="~/js/TaskSignalR.js?v=2.10.0"></script>
-<script src="~/js/Layout.js?v=2.10.0" defer></script>
-
+<script src="~/js/pwa.js?v=3.2.7"></script>
+<script src="~/js/site.js?v=3.2.7"></script>
+<script src="~/js/UploadFile.js?v=3.2.7"></script>
+<script src="~/js/PublicFunction.js?v=3.2.7"></script>
+<script src="~/js/DateValidate.js?v=3.2.7"></script>
+<script src="~/js/TaskSignalR.js?v=3.2.7"></script>
+<script src="~/js/Layout.js?v=3.2.7" defer></script>
 
 <script>
     var baseUrl;
@@ -397,6 +478,7 @@
         baseUrl = '@Url.Action("", "")/';
     }
 </script>
+
 
 @await RenderSectionAsync("Scripts", required: false)
 

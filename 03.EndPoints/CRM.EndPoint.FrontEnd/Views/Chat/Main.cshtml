@@ -117,9 +117,9 @@
                     wrapper.classList.add("active");
                 }
 
-                wrapper.addEventListener("click", () => {
+                wrapper.addEventListener("click", async () => {
                     if (type === 1) {
-                        showChat(item.mainChatId);
+                        await showChat(item.mainChatId);
                         showListChats();
                     } else if (type === 2) {
                         createMainChat(item.id, item.fullName);

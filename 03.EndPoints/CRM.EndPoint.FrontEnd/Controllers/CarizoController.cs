@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.LogSystems.Entities;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize(Policy = "NotCustomerOnly")]
@@ -36,11 +37,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly IHubContext<TaskHub> hub;
         private readonly Service genService;
         private readonly LogSystemService _logSystemService;
+        private readonly IPushQueue pushQueue;
 
         public CarizoController(IVeiwRenderService vrs, CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, CRMContextDb db, UserContextDb udb,
             UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager, DateTimeServices dts, IHubContext<TaskHub> hub,
-            Service GenService
-            , LogSystemService logSystemService)
+            Service GenService, LogSystemService logSystemService, IPushQueue pushQueue)
         {
             this.vrs = vrs;
             this.crmSaveCahngeAsync = crmSaveCahngeAsync;
@@ -53,6 +54,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.hub = hub;
             genService = GenService;
             _logSystemService = logSystemService;
+            this.pushQueue = pushQueue;
         }
 
         public async Task<IActionResult> Index()
@@ -496,7 +498,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                                 CModel.UserCreatorID = model2.UserCreatorID;
                                 list.Add(CModel);
                                 await hub.Clients.User(CModel.AssignUserId).SendAsync("NotifTask",
-                                    $"کار <b>{CModel.Title}</b> توسط <b>{_user.FullName}</b> برای شما ثبت شد");
+                                    $"فعالیت <b>{CModel.Title}</b> توسط <b>{_user.FullName}</b> برای شما ثبت شد"
+                                );
+
+                                pushQueue.Enqueue(new PushQueueItem {
+                                    UserId = CModel.AssignUserId,
+                                    Title = "کاریزوی جدید",
+                                    Body = $"یک فعالیت جدید توسط {_user.FirstName} در کاریزوی شما ثبت شد.",
+                                    Url = "/Carizo/Index",
+                                    Tag = "carizo-assign" + model2.Id
+                                });
                             }
 
                             await db.Carizos.AddRangeAsync(list);
@@ -550,6 +561,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                                         db.Carizos.Add(CModel);
                                         await hub.Clients.User(CModel.AssignUserId).SendAsync("NotifTask",
                                             $"کار <b>{CModel.Title}</b> توسط <b>{_user.FullName}</b> برای شما ثبت شد");
+                                        pushQueue.Enqueue(new PushQueueItem {
+                                            UserId = CModel.AssignUserId,
+                                            Title = "کاریزوی جدید",
+                                            Body = $"یک فعالیت جدید توسط {_user.FirstName} در کاریزوی شما ثبت شد.",
+                                            Url = "/Carizo/Index",
+                                            Tag = "carizo-assign" + model2.Id
+                                        });
                                     } else
                                     {
                                         var dTask = await db.Carizos
@@ -569,6 +587,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                                         db.Carizos.Add(CModel);
                                         await hub.Clients.User(item.UserId.ToString()).SendAsync("NotifTask",
                                             $"کار <b>{CModel.Title}</b> توسط <b>{_user.FullName}</b> تغییر کرد");
+                                        pushQueue.Enqueue(new PushQueueItem {
+                                            UserId = CModel.AssignUserId,
+                                            Title = "تغییر کاریزو",
+                                            Body = $"فعالیت {CModel.Title} توسط {_user.FullName} تغییر کرد",
+                                            Url = "/Carizo/Index",
+                                            Tag = "carizo-assign" + model2.Id
+                                        });
                                     }
                                 }
 
