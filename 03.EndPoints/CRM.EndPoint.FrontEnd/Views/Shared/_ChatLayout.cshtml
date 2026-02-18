@@ -10,14 +10,24 @@
     <meta name="googlebot-news" content="noindex" />
     <meta name="slurp" content="noindex" />
     <meta name="msnbot" content="noindex" />
+
     <meta property="og:title" content="CRM">
     <meta property="og:description" content="سامانه مدیریت ارتباط با مشتری">
     <meta property="og:locale" content="fa_IR">
-    <meta property="og:image" content="/Img/consent.png">
+    <meta property="og:image" content="/static/icons/logo-180x180.png">
     <meta name="twitter:card" content="summary">
-    <meta name="msapplication-TileImage" content="/Img/consent.png">
-    <link rel="apple-touch-icon" sizes="57x57" href="/Img/consent.png">
-    <link rel="icon" type="image/x-icon" href="/Img/consent.png">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/logo-180x180.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
+    <link rel="manifest" href="/manifest.json?v=3.2.7">
+
+    <meta name="apple-mobile-web-app-title" content="VazinCRM">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+    <meta name="theme-color" content="#004944">
 
     <title>&rlm;سامانه مدیریت مشتری&zwnj;&rlm;</title>
 
@@ -28,13 +38,11 @@
     <link rel="stylesheet" href="~/lib/FontAwesome.Pro.5.15.1.Web/css/solid.min.css" />
     <link rel="stylesheet" href="~/lib/FontAwesome.Pro.5.15.1.Web/css/font-awesome-animation.min.css" />
 
-
-    <link rel="stylesheet" href="~/css/site.css?v=2.10.0" />
-    <link rel="stylesheet" href="~/css/dashboard.css?v=2.10.0" />
-    <link rel="stylesheet" href="~/css/reports.css?v=2.10.0" />
-    <link rel="stylesheet" href="~/css/email.css?v=2.10.0" />
-    <link rel="stylesheet" href="~/css/chat.css?v=2.10.0" />
-
+    <link rel="stylesheet" href="~/css/site.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/dashboard.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/reports.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/email.css?v=3.2.7" />
+    <link rel="stylesheet" href="~/css/chat.css?v=3.2.7" />
 </head>
 <body dir="rtl">
 <div id="FLshowLoading" style="z-index: 9000;position: fixed;inset: 0;height:100dvh;display:none">
@@ -240,12 +248,63 @@
 
 <div id="divFrame" style="display:none; justify-content:center; align-items:center;z-index: 9000; height:90dvh; width:100%; top:50%;transform: translateY(-50%);position:fixed;background-color:hsla(1, 100%, 100%,0.9)">
     <div style=" position:fixed;top:30px;right:30px; display:flex;justify-content:start  ">
-            <span class="btn btn-dark d-flex align-items-center justify-content-center p-2" style="cursor:pointer;" onclick="hideDivFrame()">
-                <svg style="width: 24px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-            </span>
+        <span class="btn btn-dark d-flex align-items-center justify-content-center p-2" style="cursor:pointer;" onclick="hideDivFrame()">
+            <svg style="width: 24px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+        </span>
     </div>
     <iframe src="" id="IframeId" style="height:100%;width:100%;"></iframe>
 </div>
+
+
+<div class="modal fade" id="pwaInstallModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content pwa-modal">
+
+            <div class="modal-body text-center">
+                @* <div class="pwa-icon">📲</div> *@
+
+                <h5 class="mb-3">نصب اپلیکیشن سامانه وزین پلاست</h5>
+                <p class="text-muted small mt-2">
+                    با نصب اپلیکیشن، سریع‌تر وارد شوید و اعلان‌ها را دریافت کنید.
+                </p>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button id="pwaInstallBtn" class="btn btn-primary w-100">
+                        نصب
+                    </button>
+                    <button class="btn btn-light w-100" data-bs-dismiss="modal">
+                        بعداً
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="iosPwaInstallModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content pwa-modal">
+            <div class="modal-body text-center">
+                <h5 class="mb-3">نصب اپلیکیشن سامانه وزین پلاست</h5>
+                <p class="text-muted small mt-2">
+                    برای نصب اپلیکیشن روی ios:
+                    <br>
+                    دکمه <strong>Share</strong> را بزنید
+                    و گزینه <strong>Add to Home Screen</strong> را انتخاب کنید.
+                </p>
+
+                <button class="btn btn-primary w-100 mt-3" data-bs-dismiss="modal">
+                    فهمیدم
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
 
 
 <script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js"></script>
@@ -258,14 +317,13 @@
 <script src="~/lib/FontAwesome.Pro.5.15.1.Web/js/solid.min.js"></script>
 <script src="~/lib/FontAwesome.Pro.5.15.1.Web/js/fontawesome.min.js"></script>
 
+<script src="~/js/pwa.js?v=3.2.7"></script>
+<script src="~/js/site.js?v=3.2.7"></script>
+<script src="~/js/UploadFile.js?v=3.2.7"></script>
 
-<script src="~/js/site.js?v=2.10.0"></script>
-<script src="~/js/UploadFile.js?v=2.10.0"></script>
-
-<script src="~/js/DateValidate.js?v=2.10.0"></script>
-<script src="~/js/TaskSignalR.js?v=2.10.0"></script>
-<script src="~/js/Layout.js?v=2.10.0" defer></script>
-
+<script src="~/js/DateValidate.js?v=3.2.7"></script>
+<script src="~/js/TaskSignalR.js?v=3.2.7"></script>
+<script src="~/js/Layout.js?v=3.2.7" defer></script>
 
 <script>
     var baseUrl;

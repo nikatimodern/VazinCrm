@@ -28,6 +28,7 @@ using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.Core.Domain.Supplies.Enums;
 using CRM.EndPoint.FrontEnd.Models.PreFactorVm;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 
 // ReSharper disable EntityFramework.UnsupportedServerSideFunctionCall
@@ -41,6 +42,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly CRMContextDb db;
         private readonly UserContextDb udb;
         private readonly Sepidar1ContextDb s1Db;
+        private readonly IPushQueue pushQueue;
+        private readonly IPushService pushService;
         private readonly IVeiwRenderService vrs;
         private readonly UserManager<AppUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
@@ -48,7 +51,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         public CartableController(IVeiwRenderService vrs, UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager, Service GenService,
-            FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb s1db)
+            FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb s1db, IPushQueue pushQueue, IPushService pushService)
         {
             this.vrs = vrs;
             this.userManager = userManager;
@@ -59,6 +62,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.db = db;
             udb = Udb;
             s1Db = s1db;
+            this.pushQueue = pushQueue;
+            this.pushService = pushService;
             this._setting = db.ASettings.FirstOrDefault();
         }
 
@@ -114,6 +119,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
+                /*pushQueue.Enqueue(new PushQueueItem {
+                    SendToAll = true,
+                    Title = "سلام وزین پلاستی",
+                    Body = "این یک پوش نوتیف تست جدید است، اینو فرستادم که در جریان اتفاقات ما باشی!",
+                    Url = "/"
+                });*/
+                //await pushService.SendToAllAsync("سلام وزین پلاستی", "این یک پوش نوتیف تست است", "/", null);
+
+
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var roles = await userManager.GetRolesAsync(user);
 

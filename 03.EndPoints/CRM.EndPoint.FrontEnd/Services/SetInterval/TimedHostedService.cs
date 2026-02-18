@@ -22,6 +22,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Cartables.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
+using CRM.EndPoint.FrontEnd.ISerives;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
+using CRM.EndPoint.FrontEnd.Services.PushServices;
 
 namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
     public class TimedHostedService : IHostedService, IDisposable {
@@ -158,17 +161,37 @@ namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
                 var db = scope.ServiceProvider.GetRequiredService<CRMContextDb>();
                 var dts = scope.ServiceProvider.GetRequiredService<DateTimeServices>();
                 var hub = scope.ServiceProvider.GetRequiredService<IHubContext<TaskHub>>();
-                var _data = await db.Carizos.Include(f => f.TaskUsers)
-                    .Where(f => f.TaskStatus == false
-                                && f.Remind == true
-                                && f.DateMiladi.Value <= DateTime.Now
-                                && f.RemindDismiss == false
-                    ).ToListAsync();
+                var pushQueue = scope.ServiceProvider.GetRequiredService<IPushQueue>();
+                var _data = await db.Carizos.Include(f => f.TaskUsers).Where(f =>
+                    f.TaskStatus == false
+                    && f.Remind == true
+                    && f.DateMiladi.Value <= DateTime.Now
+                    && f.RemindDismiss == false
+                ).ToListAsync();
                 foreach (var item in _data)
                 {
                     item.ElapsTime = dts.ElapsTime(item.DateMiladi.Value);
 
                     await hub.Clients.User(item.AssignUserId).SendAsync("ReceiveNotification", item);
+                }
+
+                if (_data.Count > 0)
+                {
+                    var usersWithTasks = _data
+                        .Select(x => x.AssignUserId)
+                        .Where(x => !string.IsNullOrEmpty(x))
+                        .Distinct();
+
+                    foreach (var userId in usersWithTasks)
+                    {
+                        pushQueue.Enqueue(new PushQueueItem {
+                            UserId = userId,
+                            Title = "یادآوری کاریزو",
+                            Body = "یک یا چند کاریزوی شما موعد آن سررسیده است.",
+                            Url = "/Carizo/Index",
+                            Tag = "carizo-remind"
+                        });
+                    }
                 }
             }
         }

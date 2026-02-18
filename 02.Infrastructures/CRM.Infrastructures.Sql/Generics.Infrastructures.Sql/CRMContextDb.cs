@@ -26,8 +26,7 @@ using System.Threading.Tasks;
 using CRM.Core.Domain.Cartables.Entities;
 using CRM.Core.Domain.Chats.Entities;
 using CRM.Core.Domain.Emails.Entities;
-using CRM.Core.Domain.Payments.Entities;
-using CRM.Core.Domain.RequestAmounts.Entities;
+using CRM.Core.Domain.WebPushSubscriptions.Entities;
 
 namespace Generics.Infrastructures.Sql
 {
@@ -83,12 +82,7 @@ namespace Generics.Infrastructures.Sql
         public DbSet<Email> Emails { get; set; }
         public DbSet<Chat> Chats { get; set; }
         public DbSet<MainChat> MainChats { get; set; }
-        public DbSet<SupplyFactor> SupplyFactors { get; set; }
-        public DbSet<SupplyFactorOrderHead> SupplyFactorOrderHeads { get; set; }
-        public DbSet<RequestAmount> RequestAmounts { get; set; }
-        public DbSet<RequestAmountSupplyFactor> RequestAmountSupplyFactors { get; set; }
-        public DbSet<Payment> Payments { get; set; }
-        public DbSet<PaymentSupplyFactor> PaymentSupplyFactors { get; set; }
+        public DbSet<WebPushSubscription> WebPushSubscriptions { get; set; }
 
 
 

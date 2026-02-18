@@ -13,6 +13,7 @@ namespace CRM.EndPoint.FrontEnd
     {
         public static void Main(string[] args)
         {
+
             CreateHostBuilder(args).Build().Run();
         }
 

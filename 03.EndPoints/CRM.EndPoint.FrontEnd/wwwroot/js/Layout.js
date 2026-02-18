@@ -4225,7 +4225,7 @@ function showModalWarnings() {
 
 async function getAllWarnings(isRefresh = false) {
     const roles = JSON.parse(sessionStorage.getItem("Rols"));
-    const hasAccess = roles.some(rol => "Admin FinancialExpert FinancialAdmin".includes(rol?.name));
+    const hasAccess = roles?.some(rol => "Admin FinancialExpert FinancialAdmin".includes(rol?.name));
     //const isAdmin = roles.some(rol => rol?.name === "Admin");
     if (!hasAccess) return;
     const container = document.getElementById("warningContainer");
