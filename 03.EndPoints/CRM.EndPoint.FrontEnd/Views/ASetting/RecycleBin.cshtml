@@ -30,6 +30,18 @@
                     <input type="radio" name="recRadio" id="recRadio-orderH" value="4">
                     <label for="recRadio-orderH">دستور تولید</label>
                 </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="recRadio" id="recRadio-supplyFactor" value="6">
+                    <label for="recRadio-supplyFactor">فاکتور تامین</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="recRadio" id="recRadio-payment" value="7">
+                    <label for="recRadio-payment">پرداختی</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="recRadio" id="recRadio-reqAmount" value="8">
+                    <label for="recRadio-reqAmount">درخواست وجه</label>
+                </li>
             </ul>
 
 
@@ -88,6 +100,12 @@
                             headerColor = "#25282b";
                         } else if (item.entityType === 4) {
                             headerColor = "#00678b";
+                        } else if (item.entityType === 6) {
+                            headerColor = "#474e54";
+                        } else if (item.entityType === 7) {
+                            headerColor = "#4b247a";
+                        } else if (item.entityType === 8) {
+                            headerColor = "#2e5569";
                         }
 
                         card.innerHTML = `
@@ -100,13 +118,13 @@
                                     <div><b>کاربر حذف کننده:</b> ${item.modifyUser ?? "-"}</div>
                                 </div>
                                 <div style="display: flex; gap: 6px; margin-top: 6px; justify-content: end;">
-                                    <button onclick="restoreRecycleItem('${item.entityId}', '${item.entityType}', '${item.entityTypeTxt}', ${item.codeNumber})" type="button" data-title="بازیابی" style="padding: 4px 6px;box-shadow: none;font-size: 13px" class="buttonGreen2 d-flex justify-content-center align-items-center">
+                                    <button onclick="restoreRecycleItem('${item.entityId}', ${item.entityType}, '${item.entityTypeTxt}', ${item.codeNumber})" type="button" data-title="بازیابی" style="padding: 4px 6px;box-shadow: none;font-size: 13px" class="buttonGreen2 d-flex justify-content-center align-items-center">
 
                                         <svg style="width: 14px;height: 14px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" />
                                         </svg>
                                     </button>
-                                    <button onclick="showRecycleItem('${item.entityId}', '${item.entityType}')" type="button" data-title="مشاهده" class="buttonGray d-flex justify-content-center align-items-center" style="padding: 4px 8px;box-shadow: none;font-size: 13px">
+                                    <button onclick="showRecycleItem('${item.entityId}', ${item.entityType})" type="button" data-title="مشاهده" class="buttonGray d-flex justify-content-center align-items-center" style="padding: 4px 8px;box-shadow: none;font-size: 13px">
                                         <svg style="width: 14px;height: 14px" viewBox="0 0 24 24" fill="currentColor">
                                             <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
                                             <path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 0 1 0-1.113ZM17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0Z" clip-rule="evenodd" />
@@ -242,13 +260,13 @@
 
 
         const showRecycleItem = (entityId, entityType) => {
-            if (entityType == 1) {
+            if (entityType === 1) {
                 openCustomerProfile(entityId);
-            } else if (entityType == 2) {
+            } else if (entityType === 2) {
                 ShowPreviewPfactor(entityId);
-            } else if (entityType == 3) {
+            } else if (entityType === 3) {
                 //ShowPreviewFactor(entityId)
-            } else if (entityType == 4) {
+            } else if (entityType === 4) {
                 //PreviewOrderPrint(entityId)
             }
         };

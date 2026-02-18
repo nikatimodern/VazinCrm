@@ -52,7 +52,7 @@
                 <div class="layered-card__layer col d-flex flex-row flex-lg-column justify-content-between justify-content-lg-center align-items-center px-3 py-2">
                     <span style="font-size: 13px; color: #777">مبلغ تایید شده:</span>
                     <div class="fbold flex-center align-items-baseline column-gap-1 @(statusAccepted ? "badgeGreen" : "")">
-                        <span style="font-size: 16px;">@string.Format("{0:n0}", requestAmount.AcceptedAmount)</span>
+                        <span style="font-size: 16px;">@($"{requestAmount.AcceptedAmount:n0}")</span>
                         <span style="font-size: 11px;">ريال</span>
                     </div>
                 </div>
