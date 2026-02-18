@@ -38,6 +38,7 @@ u, .text-decoration-underline {
 .filter-switch {
   display: inline-flex;
   align-items: stretch;
+  justify-content: space-around;
   flex-wrap: wrap;
   gap: 4px;
   row-gap: 6px;
