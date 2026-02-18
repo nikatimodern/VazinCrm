@@ -67,14 +67,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-/*
-
-                var vapidKeys = VapidHelper.GenerateVapidKeys();
-                Console.WriteLine(vapidKeys.PublicKey);
-                Console.WriteLine(vapidKeys.PrivateKey);
-*/
-
-
                 await trans.CommitAsync();
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();
