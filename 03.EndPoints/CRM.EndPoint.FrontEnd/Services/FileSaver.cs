@@ -10,10 +10,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace CRM.EndPoint.FrontEnd.Services
-{
-    public class FileSaver
-    {
+namespace CRM.EndPoint.FrontEnd.Services {
+    public class FileSaver {
         private readonly IWebHostEnvironment appEnvironment;
         private readonly DateTimeServices dtService;
 
@@ -24,7 +22,7 @@ namespace CRM.EndPoint.FrontEnd.Services
         }
 
 
-        public  byte[] CompressImage(IFormFile file, long maxBytes = 128 * 1024)
+        public byte[] CompressImage(IFormFile file, long maxBytes = 128 * 1024)
         {
             using (var image = Image.FromStream(file.OpenReadStream()))
             {
@@ -45,22 +43,17 @@ namespace CRM.EndPoint.FrontEnd.Services
 
                     quality -= 10;
                     if (quality < 10) break;
-                }
-                while (imageBytes.Length > maxBytes);
+                } while (imageBytes.Length > maxBytes);
 
                 return imageBytes;
             }
         }
 
-        private  ImageCodecInfo GetEncoder(ImageFormat format)
+        private ImageCodecInfo GetEncoder(ImageFormat format)
         {
             return ImageCodecInfo.GetImageDecoders()
-                                 .FirstOrDefault(codec => codec.FormatID == format.Guid);
+                .FirstOrDefault(codec => codec.FormatID == format.Guid);
         }
-
-
-
-
 
 
         public string GetStringImage(byte[] img)
@@ -72,8 +65,8 @@ namespace CRM.EndPoint.FrontEnd.Services
 
                 return imgSt;
             }
-            return null;
 
+            return null;
         }
 
         //public byte[] imageToByteArray(Image imageIn)
@@ -86,28 +79,30 @@ namespace CRM.EndPoint.FrontEnd.Services
         {
             var data = Encoding.ASCII.GetBytes(Str);
             return data;
-
         }
 
-        public IList<Attachment> saveAttach(IList<Attachment> list, _AttachType type)
+        public IList<Attachment> saveAttach(IList<Attachment> list, _AttachType type,bool RemoveFile=true)
         {
-            foreach (var item in list.Where(f => f.Id == Guid.Empty))
+            foreach (var item in list)
             {
+                if (item.Id == Guid.Empty)
+                {
+                    item.Filename = type.ToString() + "_" + Guid.NewGuid().ToString().Substring(0, 8);
+                    item.Url = CreateFileAtt(item.File, item.Filename, item.fileExten);
+                    item.CreateDate = DateTime.Now;
+                    item.CreateDateTxt = dtService.GetDatePersian();
+                    item._AttachType = type;
+                    item.AttachDate = DateTime.Now;
+                    item.AttachDateTxt = dtService.GetDateTimePersian();
+                    item.File = null;
+                } else if (item.IsDeleted && RemoveFile)
+                {
 
-
-                item.Filename = type.ToString() + "_" + Guid.NewGuid().ToString().Substring(0, 8);
-                item.Url = CreateFileAtt(item.File, item.Filename, item.fileExten);
-                item.CreateDate = DateTime.Now;
-                item.CreateDateTxt = dtService.GetDatePersian();
-                item._AttachType = type;
-                item.AttachDate = DateTime.Now;
-                item.AttachDateTxt = dtService.GetDateTimePersian();
-                item.File = null;
-
+                    DelFile(item.Url);
+                }
             }
 
             return list;
-
         }
 
 
@@ -145,7 +140,6 @@ namespace CRM.EndPoint.FrontEnd.Services
             //var ddd = StrImage.ToString();
             File.WriteAllBytes(filePath, StrImage);
             return @"\Uploaded\DocFile\" + fileName;
-
         }
 
 
@@ -158,8 +152,6 @@ namespace CRM.EndPoint.FrontEnd.Services
         //    // Image image = Image.FromStream(ms, true, true);
 
         //    // return image;
-
-
 
 
         //    //Image image;
@@ -229,11 +221,13 @@ namespace CRM.EndPoint.FrontEnd.Services
                 {
                     formFile.CopyTo(fileStream);
                 }
+
                 return $"/Uploaded/VideosSubExercide/{fileName}";
             }
 
             return null;
         }
+
         public string SaveImageSubExercise(IFormFile formFile)
         {
             if (formFile != null && formFile.Length > 0)
@@ -246,6 +240,7 @@ namespace CRM.EndPoint.FrontEnd.Services
                 {
                     formFile.CopyTo(fileStream);
                 }
+
                 return $"/Uploaded/ImagesSubExercide/{fileName}";
             }
 
@@ -280,7 +275,6 @@ namespace CRM.EndPoint.FrontEnd.Services
         }
 
 
-
         public string SaveBaseItemImage(byte[] StrImage, string FileName, string Filetype)
         {
             if (StrImage != null && StrImage.Length > 0)
@@ -294,6 +288,7 @@ namespace CRM.EndPoint.FrontEnd.Services
                 File.WriteAllBytes(filePath, StrImage);
                 return @"\Uploaded\CompanyImage\" + fileName;
             }
+
             return null;
         }
 
@@ -311,10 +306,13 @@ namespace CRM.EndPoint.FrontEnd.Services
                 {
                     formFile.CopyTo(fileStream);
                 }
+
                 return $"/Reports/Image/{fileName}";
             }
+
             return null;
         }
+
         public string SaveImageVisit(IFormFile formFile)
         {
             if (formFile != null && formFile.Length > 0)
@@ -328,6 +326,7 @@ namespace CRM.EndPoint.FrontEnd.Services
                 {
                     formFile.CopyTo(fileStream);
                 }
+
                 return $"/Uploaded/VisitImages/{fileName}";
             }
 
@@ -340,6 +339,7 @@ namespace CRM.EndPoint.FrontEnd.Services
             {
                 return null;
             }
+
             var ms = new MemoryStream();
             if (UpImagesSportMan != null)
                 UpImagesSportMan.CopyTo(ms);
@@ -357,13 +357,11 @@ namespace CRM.EndPoint.FrontEnd.Services
                 }
             }
         }
+
         public void CheckUrl(string Path)
         {
             if (!Directory.Exists(Path))
                 Directory.CreateDirectory(Path);
         }
-
-
-
     }
 }

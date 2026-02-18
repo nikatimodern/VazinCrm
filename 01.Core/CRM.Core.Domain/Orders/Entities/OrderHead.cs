@@ -1,9 +1,10 @@
 ﻿using CRM.Core.Domain.Customers.Entities;
+using CRM.Core.Domain.Orders.Enums;
+using CRM.Core.Domain.Supplies.Entities;
 using CRM.Framework.Domain;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using CRM.Core.Domain.Orders.Enums;
 
 namespace CRM.Core.Domain.Orders.Entities
 {
@@ -37,6 +38,9 @@ namespace CRM.Core.Domain.Orders.Entities
         public int? DealSerialNumber { get; set; }
         public Guid? SupplierId { get; set; }
         public string SupplierTxt { get; set; }
+
+        public IList<SupplyFactorOrderHead> SupplyFactorOrderHeads { get; set; }
+
 
 
     }

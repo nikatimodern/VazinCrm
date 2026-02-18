@@ -460,6 +460,33 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetAllOrderHeads(string search = "")
+        {
+            try
+            {
+                ViewBag.passType = 3;
+                var query = db.OrderHeads.AsNoTracking().AsQueryable();
+                if (!string.IsNullOrEmpty(search))
+                {
+                    query = query.Where(f =>
+                        f.CustomerTxt.Contains(search) ||
+                        f.OrderNumber == TextService.convertToInt(search) ||
+                        f.PrefactorSer == TextService.convertToInt(search) ||
+                        f.CustomerCode == TextService.convertToInt(search)
+                    );
+                }
+
+                var orderHeads = await query.ToListAsync();
+                return PartialView("GetOrderHead", orderHeads);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         /*[HttpGet]
         public async Task<IActionResult> GetHeadOrder(Guid id)
         {

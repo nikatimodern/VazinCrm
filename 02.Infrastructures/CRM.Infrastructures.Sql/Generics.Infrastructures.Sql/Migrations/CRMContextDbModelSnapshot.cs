@@ -17,7 +17,7 @@ namespace CRM.Infrastructures.Sql.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.0")
+                .HasAnnotation("ProductVersion", "10.0.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -384,15 +384,10 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("_AttachTypeTxt")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("contractId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("fileExten")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("contractId");
 
                     b.ToTable("Attachments");
                 });
@@ -2002,6 +1997,105 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("OrderHeads");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Payments.Entities.Payment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FromAccount")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("PaymentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PaymentDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PaymentNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PaymentNumber"));
+
+                    b.Property<int>("PaymentType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PaymentTypeTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ToAccount")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Payments");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Payments.Entities.PaymentSupplyFactor", b =>
+                {
+                    b.Property<Guid>("PaymentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SupplyFactorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("PaymentId", "SupplyFactorId");
+
+                    b.HasIndex("SupplyFactorId");
+
+                    b.ToTable("PaymentSupplyFactors");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.PreFactors.Entities.BaseDescription", b =>
                 {
                     b.Property<int>("Id")
@@ -2590,6 +2684,103 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("Reports");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("AcceptedAmount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DocType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DocTypeTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RequestNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RequestNumber"));
+
+                    b.Property<int>("RequestStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RequestStatusTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RequestAmounts");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountSupplyFactor", b =>
+                {
+                    b.Property<Guid>("SupplyFactorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RequestAmountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("SupplyFactorId", "RequestAmountId");
+
+                    b.HasIndex("RequestAmountId");
+
+                    b.ToTable("RequestAmountSupplyFactors");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.ExtraDataes.ExtraData", b =>
                 {
                     b.Property<int>("ExtraDataID")
@@ -2870,6 +3061,99 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("Supplies");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Supplies.Entities.SupplyFactor", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("FactorDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FactorDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FactorSerial")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte>("OfficialType")
+                        .HasColumnType("tinyint");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SupplierTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SupplyFactors");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Supplies.Entities.SupplyFactorOrderHead", b =>
+                {
+                    b.Property<Guid>("SupplyFactorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("OrderHeadId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("SupplyFactorId", "OrderHeadId");
+
+                    b.HasIndex("OrderHeadId");
+
+                    b.ToTable("SupplyFactorOrderHeads");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.SystemWarnings.Entities.SystemWarning", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2936,14 +3220,6 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.HasOne("CRM.Core.Domain.Customers.Entities.Customer", null)
                         .WithMany("Accountancies")
                         .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
-            modelBuilder.Entity("CRM.Core.Domain.Attachments.Entities.Attachment", b =>
-                {
-                    b.HasOne("CRM.Core.Domain.Contracts.Entities.Contract", null)
-                        .WithMany("Attachments")
-                        .HasForeignKey("contractId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
@@ -3077,6 +3353,21 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Payments.Entities.PaymentSupplyFactor", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Payments.Entities.Payment", null)
+                        .WithMany("PaymentSupplyFactors")
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CRM.Core.Domain.Supplies.Entities.SupplyFactor", null)
+                        .WithMany("PaymentSupplyFactors")
+                        .HasForeignKey("SupplyFactorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.PreFactors.Entities.PreFactor", b =>
                 {
                     b.HasOne("CRM.Core.Domain.Customers.Entities.Customer", "CustomerEntity")
@@ -3120,6 +3411,21 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountSupplyFactor", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", null)
+                        .WithMany("RequestAmountSupplyFactor")
+                        .HasForeignKey("RequestAmountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CRM.Core.Domain.Supplies.Entities.SupplyFactor", null)
+                        .WithMany("RequestAmountSupplyFactor")
+                        .HasForeignKey("SupplyFactorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.Invoices.Entities.InvoiceItem", b =>
                 {
                     b.HasOne("CRM.Core.Domain.Sepidar.Invoices.Entities.Invoice", null)
@@ -3135,6 +3441,21 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .WithMany("supplies")
                         .HasForeignKey("PfItemId")
                         .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Supplies.Entities.SupplyFactorOrderHead", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Orders.Entities.OrderHead", null)
+                        .WithMany("SupplyFactorOrderHeads")
+                        .HasForeignKey("OrderHeadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CRM.Core.Domain.Supplies.Entities.SupplyFactor", null)
+                        .WithMany("SupplyFactorOrderHeads")
+                        .HasForeignKey("SupplyFactorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Accountancies.Entities.BankAccount", b =>
@@ -3155,11 +3476,6 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Company.Entities.Company", b =>
                 {
                     b.Navigation("CompanyFiles");
-                });
-
-            modelBuilder.Entity("CRM.Core.Domain.Contracts.Entities.Contract", b =>
-                {
-                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Customers.Entities.Agent", b =>
@@ -3199,6 +3515,13 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Orders.Entities.OrderHead", b =>
                 {
                     b.Navigation("Orders");
+
+                    b.Navigation("SupplyFactorOrderHeads");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Payments.Entities.Payment", b =>
+                {
+                    b.Navigation("PaymentSupplyFactors");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.PreFactors.Entities.PreFactor", b =>
@@ -3225,6 +3548,11 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", b =>
+                {
+                    b.Navigation("RequestAmountSupplyFactor");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.Invoices.Entities.Invoice", b =>
                 {
                     b.Navigation("InvoiceItems");
@@ -3233,6 +3561,15 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.States.Entities.State", b =>
                 {
                     b.Navigation("Cities");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Supplies.Entities.SupplyFactor", b =>
+                {
+                    b.Navigation("PaymentSupplyFactors");
+
+                    b.Navigation("RequestAmountSupplyFactor");
+
+                    b.Navigation("SupplyFactorOrderHeads");
                 });
 #pragma warning restore 612, 618
         }

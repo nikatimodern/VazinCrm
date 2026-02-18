@@ -105,7 +105,7 @@
                             <div class="col-12 col-md-2 px-2 flex-row flex-md-column gap-2 flex-wrap" style=" font-size: 13px;display:flex;align-items:center;justify-content:space-evenly">
                                 @if (Model._Setting.CrmFactors == true) {
                                     if (item.CountFactor == 0) {
-                                        <button disabled style="display:flex;flex-direction:column;justify-content:center;align-items:center; border-radius:4px;height:auto;width: 80px;padding: 0 4px;">
+                                        <button class="buttonDisabled flex-center flex-column" disabled style="border-radius:4px;height:auto;width: 80px;padding: 0 4px;">
                                             <span>فاکتور CRM </span>
                                             <span style="display:flex;justify-content:center;gap: 2px"> <span> @item.CountFactor </span> <span>عدد</span></span>
                                         </button>
@@ -119,7 +119,7 @@
 
                                 @if (Model._Setting.Sepidar == true) {
                                     if (item.CountFactorSepidar == 0) {
-                                        <button disabled style="display:flex;flex-direction:column;justify-content:center;align-items:center; border-radius:4px;height:auto;width: 80px;padding: 0 4px;">
+                                        <button class="buttonDisabled flex-center flex-column" disabled style="border-radius:4px;height:auto;width: 80px;padding: 0 4px;">
                                             <span>فاکتور سپیدار </span>
                                             <span style="display:flex;justify-content:center;gap: 2px"> <span> @item.CountFactorSepidar </span> <span>عدد</span></span>
                                         </button>

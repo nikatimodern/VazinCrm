@@ -194,7 +194,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     model.AddRange(list.Select(map));
                 }
 
-                if (recycleType == -1 || recycleType == 1)
+                if (recycleType == -1 || recycleType == (int)EntityTypeEnum.Customer)
                 {
                     var query = db.Customers.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted);
                     if (!string.IsNullOrWhiteSpace(search))
@@ -225,7 +225,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         });
                 }
 
-                if (recycleType == -1 || recycleType == 2)
+                if (recycleType == -1 || recycleType == (int)EntityTypeEnum.PreFactor)
                 {
                     var query = db.PreFactors.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted);
                     if (!string.IsNullOrWhiteSpace(search))
@@ -261,7 +261,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         });
                 }
 
-                if (recycleType == -1 || recycleType == 3)
+                if (recycleType == -1 || recycleType == (int)EntityTypeEnum.Factor)
                 {
                     var query = db.Factors.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted);
                     if (!string.IsNullOrWhiteSpace(search))
@@ -294,7 +294,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         });
                 }
 
-                if (recycleType == -1 || recycleType == 4)
+                if (recycleType == -1 || recycleType == (int)EntityTypeEnum.OrderHead)
                 {
                     var query = db.OrderHeads.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted);
                     if (!string.IsNullOrWhiteSpace(search))
@@ -318,11 +318,108 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         item => new AllDeletedVmodel {
                             EntityId = item.Id,
                             EntityType = EntityTypeEnum.OrderHead,
-                            EntityTypeTxt = "دستور تولید",
+                            EntityTypeTxt = "حواله تولید",
                             title = $"{item.CustomerTxt} ({item.CustomerCode})",
                             ModifyDate = item.ModifyDate ?? DateTime.MinValue,
                             ModifyDateTxt = FormatDateTime(item.ModifyDateTxt),
                             CodeNumber = item.OrderNumber.ToString(),
+                            ModifyUser = item.UserModify ?? "-"
+                        });
+                }
+
+                if (recycleType == -1 || recycleType == (int)EntityTypeEnum.SupplyFactor)
+                {
+                    var query = db.SupplyFactors.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted);
+                    if (!string.IsNullOrWhiteSpace(search))
+                    {
+                        query = query.Where(f =>
+                            f.FactorSerial == search
+                            || f.SupplierTxt.Contains(search)
+                            || f.UserModify.Contains(search)
+                        );
+                    }
+
+                    await AddEntities(query.Select(f => new {
+                            f.Id,
+                            f.FactorSerial,
+                            f.ModifyDate,
+                            f.ModifyDateTxt,
+                            f.SupplierTxt,
+                            f.UserModify,
+                        }),
+                        item => new AllDeletedVmodel {
+                            EntityId = item.Id,
+                            EntityType = EntityTypeEnum.SupplyFactor,
+                            EntityTypeTxt = "فاکتور تامین",
+                            title = item.SupplierTxt,
+                            ModifyDate = item.ModifyDate ?? DateTime.MinValue,
+                            ModifyDateTxt = FormatDateTime(item.ModifyDateTxt),
+                            CodeNumber = item.FactorSerial.ToString(),
+                            ModifyUser = item.UserModify ?? "-"
+                        });
+                }
+
+                if (recycleType == -1 || recycleType == (int)EntityTypeEnum.Payment)
+                {
+                    var query = db.Payments.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted);
+                    if (!string.IsNullOrWhiteSpace(search))
+                    {
+                        query = query.Where(f =>
+                            f.PaymentNumber == TextService.convertToInt(search)
+                            || f.ToAccount.Contains(search)
+                            || f.UserModify.Contains(search)
+                        );
+                    }
+
+                    await AddEntities(query.Select(f => new {
+                            f.Id,
+                            f.PaymentNumber,
+                            f.ModifyDate,
+                            f.ModifyDateTxt,
+                            f.ToAccount,
+                            f.UserModify,
+                        }),
+                        item => new AllDeletedVmodel {
+                            EntityId = item.Id,
+                            EntityType = EntityTypeEnum.Payment,
+                            EntityTypeTxt = "پرداختی",
+                            title = $"پرداختی به {item.ToAccount}",
+                            ModifyDate = item.ModifyDate ?? DateTime.MinValue,
+                            ModifyDateTxt = FormatDateTime(item.ModifyDateTxt),
+                            CodeNumber = item.PaymentNumber.ToString(),
+                            ModifyUser = item.UserModify ?? "-"
+                        });
+                }
+
+                if (recycleType == -1 || recycleType == (int)EntityTypeEnum.RequestAmount)
+                {
+                    var query = db.RequestAmounts.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted);
+                    if (!string.IsNullOrWhiteSpace(search))
+                    {
+                        var searchNumber = TextService.convertToInt(search);
+                        query = query.Where(f =>
+                            f.RequestNumber == searchNumber
+                            || f.Amount == searchNumber
+                            || f.UserModify.Contains(search)
+                        );
+                    }
+
+                    await AddEntities(query.Select(f => new {
+                            f.Id,
+                            f.RequestNumber,
+                            f.ModifyDate,
+                            f.ModifyDateTxt,
+                            f.Amount,
+                            f.UserModify,
+                        }),
+                        item => new AllDeletedVmodel {
+                            EntityId = item.Id,
+                            EntityType = EntityTypeEnum.RequestAmount,
+                            EntityTypeTxt = "درخواست وجه",
+                            title = $"وجه {item.Amount:N0}",
+                            ModifyDate = item.ModifyDate ?? DateTime.MinValue,
+                            ModifyDateTxt = FormatDateTime(item.ModifyDateTxt),
+                            CodeNumber = item.RequestNumber.ToString(),
                             ModifyUser = item.UserModify ?? "-"
                         });
                 }
@@ -348,7 +445,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize(Roles = "مدیر ارشد")]
         [HttpGet]
-        public async Task<IActionResult> RestoreEntity(Guid EId, EntityTypeEnum EType)
+        public async Task<IActionResult> RestoreEntity(Guid eId, EntityTypeEnum eType)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var dataNow = DateTime.Now;
@@ -363,11 +460,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 entity.ModifyDateTxt = dataNowPersian;
             }
 
-            switch (EType)
+            switch (eType)
             {
                 case EntityTypeEnum.Customer:
                 {
-                    var customer = await db.Customers.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == EId);
+                    var customer = await db.Customers.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId);
                     await _logSystemService.LogChange(customer, null, LogActionEnum.بازیابی, user);
                     SetMainFields(customer);
 
@@ -376,7 +473,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
                 case EntityTypeEnum.PreFactor:
                 {
-                    var preF = await db.PreFactors.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == EId);
+                    var preF = await db.PreFactors.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId);
                     await _logSystemService.LogChange(preF, null, LogActionEnum.بازیابی, user);
                     SetMainFields(preF);
                     preF.CommentText = null;
@@ -409,7 +506,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
                 case EntityTypeEnum.Factor:
                 {
-                    var fac = await db.Factors.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == EId);
+                    var fac = await db.Factors.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId);
                     await _logSystemService.LogChange(fac, null, LogActionEnum.بازیابی, user);
                     SetMainFields(fac);
 
@@ -436,9 +533,37 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
                 case EntityTypeEnum.OrderHead:
                 {
-                    var orderH = await db.OrderHeads.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == EId);
+                    var orderH = await db.OrderHeads.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId);
                     await _logSystemService.LogChange(orderH, null, LogActionEnum.بازیابی, user);
                     SetMainFields(orderH);
+
+                    await db.SaveChangesAsync();
+                    break;
+                }
+
+                case EntityTypeEnum.SupplyFactor:
+                {
+                    var supplyFactor = await db.SupplyFactors.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId);
+                    await _logSystemService.LogChange(supplyFactor, null, LogActionEnum.بازیابی, user);
+                    SetMainFields(supplyFactor);
+
+                    await db.SaveChangesAsync();
+                    break;
+                }
+                case EntityTypeEnum.Payment:
+                {
+                    var payment = await db.Payments.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId);
+                    await _logSystemService.LogChange(payment, null, LogActionEnum.بازیابی, user);
+                    SetMainFields(payment);
+
+                    await db.SaveChangesAsync();
+                    break;
+                }
+                case EntityTypeEnum.RequestAmount:
+                {
+                    var requestAmount = await db.RequestAmounts.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId);
+                    await _logSystemService.LogChange(requestAmount, null, LogActionEnum.بازیابی, user);
+                    SetMainFields(requestAmount);
 
                     await db.SaveChangesAsync();
                     break;

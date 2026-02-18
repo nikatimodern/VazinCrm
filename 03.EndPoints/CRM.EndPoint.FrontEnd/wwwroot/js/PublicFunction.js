@@ -687,10 +687,10 @@ const generateItemPfactorDom = (data, type = "edit-delete") => {
         
         if (type === "edit-delete") {
             actionButtons = `
-                <button class="mp" style="display:flex;justify-content:center;align-items:center;color:#3f0e6e;border:none;background-color:transparent">
+                <button class="flex-center" style="color:#3f0e6e">
                     <i class="mp fa fa-trash" onclick="delPfactorItem(${index})"></i>
                 </button>
-                <button class="mp" style="display:flex;justify-content:center;align-items:center;color:#3f0e6e;border:none;background-color:transparent">
+                <button class="flex-center" style="color:#3f0e6e">
                     <i class="mp fa fa-pencil" onclick="upPfactorItem(${index})"></i>
                 </button>
             `;
@@ -703,7 +703,7 @@ const generateItemPfactorDom = (data, type = "edit-delete") => {
         }
         
         ob += `
-            <div class="mp" style="width:100%;display:flex">
+            <div style="width:100%;display:flex">
                 <div class="InfoDataItemHead" style="display:flex;width:24px;flex-shrink: 0">
                     <label style="font-family:'IRANSansBold'">${index + 1}</label>
                 </div>
@@ -769,7 +769,7 @@ const AddPfItem = async () => {
         data.id = null;
         _pfactorItems.push(data);
         pfactor.PreFactorItems = _pfactorItems;
-        
+        console.log(_pfactorItems);
         
         ShowItemPfactor();
         mySer.emptyForm("PreFacItem");
@@ -1720,6 +1720,7 @@ const upPfactorItem = (index) => {
         showModalItemPreFactor();
     }
     PfItemUpIndex = index;
+    console.log(index, _pfactorItems);
     mySer.convertJsonToForm(_pfactorItems[index], "PreFacItem");
     document.getElementById("AddBtnId").style.display = "none";
     document.getElementById("CancelBtnId").style.display = "none";
@@ -1817,8 +1818,8 @@ const UpPfItem = () => {
     }
     
     
-    data.id = _pfactorItems.filter(f => f.isDeleted != true)[PfItemUpIndex].id;
-    data.prefactorId = _pfactorItems.filter(f => f.isDeleted != true)[PfItemUpIndex].prefactorId;
+    data.id = _pfactorItems[PfItemUpIndex].id;
+    data.prefactorId = _pfactorItems[PfItemUpIndex].prefactorId;
     
     var el_Unit = Array.from(document.getElementById("PreFacItem").elements).filter(f => f.name == "unit")[0];
     data.unitTxt = el_Unit.options[el_Unit.selectedIndex].text;
@@ -1832,20 +1833,18 @@ const UpPfItem = () => {
     data.unitAmount = Number(SeparatedNumberRemove(data.unitAmount));
     
     
-    _pfactorItems.filter(f => f.isDeleted !== true)[PfItemUpIndex].printable = data.printable;
-    _pfactorItems.filter(f => f.isDeleted !== true)[PfItemUpIndex].printableTxt = data.printableTxt;
-    _pfactorItems.filter(f => f.isDeleted !== true)[PfItemUpIndex].product = data.product;
-    _pfactorItems.filter(f => f.isDeleted !== true)[PfItemUpIndex].productCode = data.productCode;
-    _pfactorItems.filter(f => f.isDeleted !== true)[PfItemUpIndex].productSmallName = data.productSmallName;
-    _pfactorItems.filter(f => f.isDeleted !== true)[PfItemUpIndex].weightCount = data.weightCount;
-    _pfactorItems.filter(f => f.isDeleted !== true)[PfItemUpIndex].unit = data.unit;
-    _pfactorItems.filter(f => f.isDeleted !== true)[PfItemUpIndex].unitTxt = data.unitTxt;
-    _pfactorItems.filter(f => f.isDeleted !== true)[PfItemUpIndex].unitAmount = data.unitAmount;
-    _pfactorItems.filter(f => f.isDeleted !== true)[PfItemUpIndex].totalAmount = data.totalAmount;
-    
-    
-    _pfactorItems.filter(f => f.isDeleted !== true)[PfItemUpIndex].productGroup = data.productGroup;
-    _pfactorItems.filter(f => f.isDeleted !== true)[PfItemUpIndex].productGroupTxt = data.productGroupTxt;
+    _pfactorItems[PfItemUpIndex].printable = data.printable;
+    _pfactorItems[PfItemUpIndex].printableTxt = data.printableTxt;
+    _pfactorItems[PfItemUpIndex].product = data.product;
+    _pfactorItems[PfItemUpIndex].productCode = data.productCode;
+    _pfactorItems[PfItemUpIndex].productSmallName = data.productSmallName;
+    _pfactorItems[PfItemUpIndex].weightCount = data.weightCount;
+    _pfactorItems[PfItemUpIndex].unit = data.unit;
+    _pfactorItems[PfItemUpIndex].unitTxt = data.unitTxt;
+    _pfactorItems[PfItemUpIndex].unitAmount = data.unitAmount;
+    _pfactorItems[PfItemUpIndex].totalAmount = data.totalAmount;
+    _pfactorItems[PfItemUpIndex].productGroup = data.productGroup;
+    _pfactorItems[PfItemUpIndex].productGroupTxt = data.productGroupTxt;
     
     
     $("#AddBtnId").css("display", "flex");
@@ -1884,7 +1883,7 @@ const delPfactorItem = (index) => {
         calculateTotal();
         calculateText();
     }
-    
+    console.log(index, _pfactorItems);
     
 };
 
