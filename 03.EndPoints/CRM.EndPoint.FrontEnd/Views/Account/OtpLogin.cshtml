@@ -25,7 +25,7 @@
             </div>
             <button id="confirmCodeOtpLoginBtn" type="submit" class="col-12 buttonGreen2 login-btn d-flex justify-content-center align-items-center" style="font-size: 16px;height: 38px">ارسال کد ورود</button>
             @if (ViewBag.type != "Forgot") {
-                <div class="d-flex align-items-center justify-content-end fs-6">
+                <div class="d-flex align-items-center justify-content-end fs-6 mt-2 mt-md-1">
                     <a asp-controller="Account" asp-action="Login" class="link-gray fMedium">ورود با نام کاربری</a>
                 </div>
             }
@@ -41,7 +41,7 @@
             <button id="verifyOtpBtn" class="col-12 buttonGreen2 login-btn justify-content-center align-items-center" style="font-size: 16px;height: 38px;display: flex">تایید کد</button>
         </div>
         <div class="d-flex align-items-center justify-content-between w-100 mt-2" style="direction: rtl;">
-            <p class="errorLoginText  mt-0" id="otpLoginMsg"></p>
+            <p class="errorLoginText mt-0" id="otpLoginMsg"></p>
             <button id="resendOtpBtn" class="buttonPurple2" style="display: none">ارسال مجدد کد</button>
             <p class="text-muted" id="remainingCodeOtpLoginId" style="display: none;align-items: baseline;gap: 4px;direction: rtl;justify-content: end">
                 <span>زمان باقی‌مانده: </span>

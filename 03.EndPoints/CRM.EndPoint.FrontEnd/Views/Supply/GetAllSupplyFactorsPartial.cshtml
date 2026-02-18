@@ -1,0 +1,69 @@
+@model List<CRM.EndPoint.FrontEnd.Models.ViewModel.Supply.SupplyFactorVModel>
+
+@{
+    Layout = null;
+}
+
+<div style="width:100%; display:flex; flex-direction:column; gap:12px; padding: 10px;">
+    @foreach (var item in Model) {
+        var supplyFactor = item.SupplyFactor;
+        var orderSerials = item.OrderSerials;
+        <div class="layered-card" style="background-color: #fff; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; transition: border-color 0.2s; padding: 0;">
+            <div class="layered-card__layer col-12 col-lg-4 col-xl-3 d-flex">
+                <div class="label-vertical" style="background-color: @(supplyFactor.OfficialType == 0 ? "#878787" : "var(--DarkColor)")">
+                    @(supplyFactor.OfficialType == 1 ? "رسمی" : "غیررسمی")
+                </div>
+                <div class="d-flex flex-column justify-content-center flex-grow-1 px-3 py-2">
+                    <div class="d-flex justify-content-between align-items-baseline mb-1">
+                        <span style="font-size: 13px; color: gray">شماره فاکتور:</span>
+                        <span class="fbold">@supplyFactor.FactorSerial</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-baseline">
+                        <span style="font-size: 13px; color: gray">تاریخ فاکتور:</span>
+                        <span class="fbold">@supplyFactor.FactorDateTxt</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-baseline">
+                        <span style="font-size: 13px; color: gray">تاریخ ثبت:</span>
+                        <span class="fbold direction-ltr">@(string.Join(" | ", supplyFactor.CreateDateTxt?.Substring(0, 16).Split(' ')))</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="layered-card__layer col-12 col-lg-5 col-xl-6 d-flex flex-column justify-content-center align-items-center px-3 py-3">
+                <div class="d-flex align-items-baseline justify-content-center flex-wrap column-gap-2 mb-2 text-center">
+                    <span style="font-size: 13px; color: gray">تامین کننده:</span>
+                    <span class="fbold">@supplyFactor.SupplierTxt</span>
+                </div>
+                <div class="d-flex align-items-baseline justify-content-center flex-wrap column-gap-2 mb-2 text-center">
+                    <span style="font-size: 13px; color: gray">حواله تولید:</span>
+                    <span class="fbold direction-ltr">@string.Join(", ", orderSerials)</span>
+                </div>
+                <div class="d-flex align-items-baseline justify-content-center flex-wrap column-gap-2 text-center">
+                    <span style="font-size: 13px; color: gray">ثبت شده توسط:</span>
+                    <span class="fbold">@supplyFactor.UserCreator</span>
+                </div>
+            </div>
+
+            <div class="layered-card__layer col-12 col-lg-2 d-flex flex-row flex-lg-column justify-content-between justify-content-lg-center align-items-center px-3 py-2">
+                <span style="font-size: 12px; color: gray">مبلغ کل:</span>
+                <div class="fbold flex-center align-items-baseline column-gap-1">
+                    <span style="font-size: 17px;">@string.Format("{0:n0}", supplyFactor.Amount)</span>
+                    <span style="font-size: 11px;">ريال</span>
+                </div>
+            </div>
+
+            <div class="layered-card__layer col-12 col-lg-1 d-flex flex-row flex-lg-column justify-content-center align-items-center px-2 py-2 gap-4 gap-lg-3">
+                <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="showAttachments('@supplyFactor.Id', 8)">
+                    <i class="fa fa-paperclip"></i>
+                </button>
+                <button class="flex-center p-0" data-title-right="ویرایش" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="showEditSupplyFactorModal('@supplyFactor.Id')">
+                    <i class="fa fa-pencil"></i>
+                </button>
+                <button class="flex-center p-0" data-title-right="حذف" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="deleteSupplyFactor('@supplyFactor.Id')">
+                    <i class="fa fa-trash"></i>
+                </button>
+            </div>
+
+        </div>
+    }
+</div>

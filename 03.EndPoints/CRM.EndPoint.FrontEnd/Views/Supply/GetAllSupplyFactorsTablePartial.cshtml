@@ -1,0 +1,33 @@
+@model System.Collections.Generic.List<CRM.Core.Domain.Supplies.Entities.SupplyFactor>
+@{
+    Layout = null;
+}
+@if (Model.Any()) {
+    <div class="order-table-grid" style="--order-table-col:5">
+        <div class="order-row order-header">
+            <div class="order-cell"></div>
+            <div class="order-cell">شماره فاکتور</div>
+            <div class="order-cell">تامین کننده</div>
+            <div class="order-cell">تاریخ</div>
+            <div class="order-cell">عملیات</div>
+        </div>
+
+        @foreach (var item in Model) {
+            <label class="order-row" for="supplyFactorCheck-@item.Id">
+                <div class="order-cell">
+                    <input id="supplyFactorCheck-@item.Id" data-number="@item.FactorSerial" value="@item.Id" type="checkbox" class="form-check-input">
+                </div>
+                <div class="order-cell">@item.FactorSerial</div>
+                <div class="order-cell">@item.SupplierTxt</div>
+                <div class="order-cell">@item.FactorDateTxt</div>
+                <div class="order-cell align-items-stretch gap-2 flex-wrap">
+                    <button data-title="پیوست ها" class="buttonGray flex-center py-1 px-2" onclick="showAttachments('@item.Id', 8)">
+                        <i class="fa fa-paperclip"></i>
+                    </button>
+                </div>
+            </label>
+        }
+    </div>
+} else {
+    <p class="empty-msg">فاکتوری ثبت نشده است!</p>
+}

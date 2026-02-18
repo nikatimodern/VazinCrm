@@ -12,6 +12,7 @@ using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.ASettings.Entities;
+using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Customers.Enum;
@@ -19,6 +20,7 @@ using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Enums;
+using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Supplies.Enums;
@@ -39,15 +41,29 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly UserManager<AppUser> userManager;
         private readonly Service genService;
         private readonly LogSystemService _logSystemService;
+        private readonly FileSaver fileSaver;
 
         public SupplyController(CRMContextDb db, UserManager<AppUser> userManager, DateTimeServices dtService, Service genService,
-            LogSystemService logSystemService)
+            LogSystemService logSystemService, FileSaver fileSaver)
         {
             this.db = db;
             this.dtService = dtService;
             this.userManager = userManager;
             this.genService = genService;
             _logSystemService = logSystemService;
+            this.fileSaver = fileSaver;
+        }
+
+        [Authorize(Roles = "مدیر ارشد, مدیر اجرایی")]
+        public IActionResult SupplyFactor() // فاکتور تامین
+        {
+            return View();
+        }
+
+        [Authorize(Roles = "مدیر ارشد, مدیر اجرایی")]
+        public IActionResult Payment() // پرداختی
+        {
+            return View();
         }
 
         [Authorize(Roles = "مدیر ارشد, مدیر اجرایی")]
@@ -60,6 +76,428 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public IActionResult Demand() // مطالبات
         {
             return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddSupplyFactor([FromBody] SupplyFactor model)
+        {
+            if (model == null) return BadRequest();
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+
+                model.UserCreator = user.FullName;
+                model.UserCreatorID = user.Id;
+                model.FactorDate = dtService.GetDateMiladi(model.FactorDateTxt) ?? DateTime.Now;
+
+                await db.SupplyFactors.AddAsync(model);
+
+                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.SupplyFactor);
+                foreach (var att in attach)
+                {
+                    att.EntityId = model.Id;
+                }
+
+                await db.Attachments.AddRangeAsync(attach);
+
+
+                await db.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                await transaction.RollbackAsync();
+                return BadRequest(e.Message);
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateSupplyFactor([FromBody] SupplyFactor model)
+        {
+            if (model == null) return BadRequest();
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+
+                model.FactorDate = dtService.GetDateMiladi(model.FactorDateTxt) ?? DateTime.Now;
+                model.ModifyDate = DateTime.Now;
+                model.ModifyDateTxt = dtService.GetDateTimePersian();
+                model.UserModify = user.FullName;
+                model.UserModifyID = user.Id;
+
+                var entity = await db.SupplyFactors.Include(x => x.SupplyFactorOrderHeads).FirstOrDefaultAsync(x => x.Id == model.Id);
+
+                if (entity == null) return NotFound();
+
+                db.Entry(entity).CurrentValues.SetValues(model);
+                entity.SupplyFactorOrderHeads = model.SupplyFactorOrderHeads;
+
+
+                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.SupplyFactor,false);
+
+                
+
+                foreach (var att in attach.Where(f=>f.EntityId==null) )
+                {
+                    att.EntityId = model.Id;
+                }
+
+
+                db.Attachments.UpdateRange(attach);
+
+                await db.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                await transaction.RollbackAsync();
+                return BadRequest(e.Message);
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddPayment([FromBody] Payment model)
+        {
+            if (model == null) return BadRequest();
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+
+                model.UserCreator = user.FullName;
+                model.UserCreatorID = user.Id;
+
+
+                model.PaymentDate = dtService.GetDateMiladi(model.PaymentDateTxt) ?? DateTime.Now;
+                model.PaymentTypeTxt = model.PaymentType.ToString().Replace("_", " ");
+                await db.Payments.AddAsync(model);
+
+                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.Payment);
+                foreach (var att in attach)
+                {
+                    att.EntityId = model.Id;
+                }
+
+                await db.Attachments.AddRangeAsync(attach);
+
+
+                await db.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                await transaction.RollbackAsync();
+                return BadRequest(e.Message);
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdatePayment([FromBody] Payment model)
+        {
+            if (model == null) return BadRequest();
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+
+                model.PaymentDate = dtService.GetDateMiladi(model.PaymentDateTxt) ?? DateTime.Now;
+                model.PaymentTypeTxt = model.PaymentType.ToString().Replace("_", " ");
+
+                model.ModifyDate = DateTime.Now;
+                model.ModifyDateTxt = dtService.GetDateTimePersian();
+                model.UserModify = user.FullName;
+                model.UserModifyID = user.Id;
+
+                var entity = await db.Payments.Include(x => x.PaymentSupplyFactors).FirstOrDefaultAsync(x => x.Id == model.Id);
+
+                if (entity == null) return NotFound();
+
+                db.Entry(entity).CurrentValues.SetValues(model);
+
+                entity.PaymentSupplyFactors = model.PaymentSupplyFactors;
+
+                //var toRemove = entity.PaymentSupplyFactors
+                //    .Where(oldItem => !model.PaymentSupplyFactors.Any(newItem => newItem.SupplyFactorId == oldItem.SupplyFactorId))
+                //    .ToList();
+
+                //db.PaymentSupplyFactors.RemoveRange(toRemove);
+
+                //foreach (var item in model.PaymentSupplyFactors ?? [])
+                //{
+                //    var exists = entity.PaymentSupplyFactors.Any(x => x.SupplyFactorId == item.SupplyFactorId);
+
+                //    if (!exists)
+                //    {
+                //        entity.PaymentSupplyFactors.Add(new PaymentSupplyFactor {
+                //            PaymentId = entity.Id,
+                //            SupplyFactorId = item.SupplyFactorId
+                //        });
+                //    }
+                //}
+
+                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.Payment);
+                foreach (var att in attach)
+                {
+                    att.EntityId = model.Id;
+                }
+
+                db.Attachments.UpdateRange(attach);
+
+                await db.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                await transaction.RollbackAsync();
+                return BadRequest(e.Message);
+            }
+        }
+
+        public async Task<IActionResult> DeletePayment(Guid id)
+        {
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var item = await db.Payments.Where(f => f.Id == id).FirstOrDefaultAsync();
+                if (item == null) return NotFound();
+
+                item.IsDeleted = true;
+                item.ModifyDate = DateTime.Now;
+                item.ModifyDateTxt = dtService.GetDateTimePersian();
+                item.UserModify = user.FullName;
+                item.UserModifyID = user.Id;
+
+                await db.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        public async Task<IActionResult> GetPayment(Guid id)
+        {
+            try
+            {
+                var data = await db.Payments
+                    .Where(f => f.Id == id)
+                    .Include(f => f.PaymentSupplyFactors)
+                    .AsNoTracking()
+                    .Select(sf => new {
+                        Payment = sf,
+                        SupplyFactorSerials = sf.PaymentSupplyFactors
+                            .Join(db.SupplyFactors,
+                                pSf => pSf.SupplyFactorId,
+                                sf => sf.Id,
+                                (pSf, sf) => sf.FactorSerial
+                            )
+                            .ToList(),
+                        Attachments = db.Attachments
+                            .Where(a => a.EntityId == sf.Id && a._AttachType == _AttachType.Payment)
+                            .ToList()
+                    })
+                    .FirstOrDefaultAsync();
+                return Ok(data);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        public async Task<IActionResult> GetAllSupplyPaymentDt()
+        {
+            try
+            {
+                var draw = Request.Form["draw"].FirstOrDefault();
+                var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
+                var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
+                var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
+                var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
+                var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
+                var searchValue = Request.Form["search[value]"].FirstOrDefault()?.ToLower().Trim();
+
+                var query = db.Payments.OrderByDescending(f => f.CreateDate).AsNoTracking();
+
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    var searchNumber = TextService.convertToInt(searchValue);
+                    query = query.Where(f =>
+                        f.Amount == searchNumber ||
+                        f.PaymentNumber == searchNumber ||
+                        f.FromAccount.Contains(searchValue) ||
+                        f.ToAccount.Contains(searchValue) ||
+                        f.PaymentSupplyFactors.Any(pSf =>
+                            db.SupplyFactors.Any(sf => sf.Id == pSf.SupplyFactorId && sf.FactorSerial == searchValue)
+                        )
+                    );
+                }
+
+                var recordsTotal = query.Count();
+
+
+                if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortColumnDirection))
+                {
+                    var isAscending = sortColumnDirection == "asc";
+                    query = sortColumn switch {
+                        "PaymentNumber" => isAscending
+                            ? query.OrderBy(f => f.PaymentNumber)
+                            : query.OrderByDescending(f => f.PaymentNumber),
+                        "Amount" => isAscending
+                            ? query.OrderBy(f => f.Amount)
+                            : query.OrderByDescending(f => f.Amount),
+                        "CreateDateTxt" => isAscending
+                            ? query.OrderBy(f => f.CreateDate)
+                            : query.OrderByDescending(f => f.CreateDate),
+                        "PaymentDateTxt" => isAscending
+                            ? query.OrderBy(f => f.PaymentDate)
+                            : query.OrderByDescending(f => f.PaymentDate),
+                        _ => query
+                    };
+                }
+
+
+                if (length != -1)
+                    query = query.Skip(start).Take(length);
+
+                var data = await query
+                    .Select(sf => new SupplyPaymentVModel {
+                        Payment = sf,
+                        SupplyFactorSerials = sf.PaymentSupplyFactors
+                            .Join(db.SupplyFactors,
+                                pSf => pSf.SupplyFactorId,
+                                sf => sf.Id,
+                                (pSf, sf) => sf.FactorSerial
+                            )
+                            .ToList()
+                    })
+                    .ToListAsync();
+
+                return Json(new {
+                    draw,
+                    recordsTotal,
+                    recordsFiltered = recordsTotal,
+                    data,
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+        public async Task<IActionResult> DeleteSupplyFactor(Guid id)
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var item = await db.SupplyFactors.Where(f => f.Id == id).FirstOrDefaultAsync();
+
+            item.IsDeleted = true;
+            item.ModifyDate = DateTime.Now;
+            item.ModifyDateTxt = dtService.GetDateTimePersian();
+            item.UserModify = user.FullName;
+            item.UserModifyID = user.Id;
+
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+
+        public async Task<IActionResult> GetAllSupplyFactorsPartial(string search)
+        {
+            try
+            {
+                var query = db.SupplyFactors.AsNoTracking();
+
+                if (!string.IsNullOrEmpty(search))
+                {
+                    var searchNumber = TextService.convertToInt(search);
+                    query = query.Where(f =>
+                        f.FactorSerial == search ||
+                        f.SupplierTxt.Contains(search) ||
+                        f.SupplyFactorOrderHeads.Any(sfOh =>
+                            db.OrderHeads.Any(oh => oh.Id == sfOh.OrderHeadId && oh.OrderNumber == searchNumber)
+                        )
+                    );
+                }
+
+                var data = await query.OrderByDescending(f => f.CreateDate)
+                    .Select(sf => new SupplyFactorVModel {
+                        SupplyFactor = sf,
+                        OrderSerials = sf.SupplyFactorOrderHeads
+                            .Join(db.OrderHeads,
+                                sfOh => sfOh.OrderHeadId,
+                                oh => oh.Id,
+                                (sfOh, oh) => oh.OrderNumber
+                            ).ToList()
+                    })
+                    .ToListAsync();
+
+                return PartialView(data);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllSupplyFactorsTablePartial(string search = "")
+        {
+            try
+            {
+                var query = db.SupplyFactors.AsNoTracking().OrderByDescending(f => f.CreateDate).AsQueryable();
+                if (!string.IsNullOrEmpty(search))
+                {
+                    query = query.Where(f =>
+                        f.SupplierTxt.Contains(search) ||
+                        f.FactorSerial == search ||
+                        f.Amount == TextService.convertToInt(search)
+                    );
+                }
+
+                var data = await query.ToListAsync();
+                return PartialView(data);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        public async Task<IActionResult> GetSupplyFactor(Guid id)
+        {
+            try
+            {
+                var data = await db.SupplyFactors.AsNoTracking()
+                    .Where(f => f.Id == id)
+                    .Include(f => f.SupplyFactorOrderHeads)
+                    .Select(sf => new {
+                        SupplyFactor = sf,
+                        OrderSerials = sf.SupplyFactorOrderHeads
+                            .Join(db.OrderHeads,
+                                sfo => sfo.OrderHeadId,
+                                oh => oh.Id,
+                                (sfo, oh) => oh.OrderNumber
+                            ).ToList(),
+                        Attachments = db.Attachments
+                            .Where(a => a.EntityId == sf.Id && a._AttachType == _AttachType.SupplyFactor)
+                            .ToList()
+                    })
+                    .FirstOrDefaultAsync();
+
+                return Ok(data);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
 
 

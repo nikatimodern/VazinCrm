@@ -52,7 +52,7 @@
                             <button class="buttonGray" onclick="showPayment('@item.Id')">مشاهده</button>
                         } else {
                             if (Model.IsCustomer) {
-                                <button class="mp d-inline-flex align-items-center justify-content-center" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none;background-color:transparent;" onclick="ShowModalAttachmentInvoice('@item.Id')">
+                                <button class="mp d-inline-flex align-items-center justify-content-center" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none;background-color:transparent;" onclick="showAttachments('@item.Id')">
                                     <i class="mp fa fa-paperclip"></i>
                                 </button>
                             } else if (isCreator || Model.IsCreatorParent || Model.IsAdmin || Model.IsSalesAdmin) {
@@ -70,7 +70,7 @@
                                     }
 
                                     @if (item.Status == AccStatusEnum.ثبت_اولیه || item.Status == AccStatusEnum.رد_شده) {
-                                        <button class="mp d-inline-flex align-items-center justify-content-center" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none;background-color:transparent;" onclick="ShowModalAttachmentInvoice('@item.Id')">
+                                        <button class="mp d-inline-flex align-items-center justify-content-center" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none;background-color:transparent;" onclick="showAttachments('@item.Id')">
                                             <i class="mp fa fa-paperclip"></i>
                                         </button>
                                     }

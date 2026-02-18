@@ -48,9 +48,22 @@ let CrmSer = new CrmService();
 let myDate = new GetDate();
 document.addEventListener("DOMContentLoaded", async () => {
     await GetUserLogin();
+    setActiveMenu();
+    
+    
     setting = await GetSetting();
     AcceptSetting(setting);
     
+    
+    initTooltipsIfCollapsed();
+    dateTimePicker();
+    
+    getRemind();
+    setDateTime();
+    getAllWarnings();
+});
+
+function setActiveMenu() {
     const currentPath = window.location.pathname.toLowerCase();
     document.querySelectorAll(".menuLink").forEach(link => {
         const href = link.getAttribute("href")?.toLowerCase();
@@ -60,7 +73,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         const submenu = link.closest(".submenu");
         if (submenu) {
             const wrapper = link.closest(".has-submenu");
+            const menuBox = wrapper.querySelector(".menuBox");
             wrapper?.classList.add("open");
+            menuBox?.classList.add("active-menu");
         }
     });
     
@@ -71,15 +86,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             wrapper.classList.toggle("open");
         });
     });
-    
-    initTooltipsIfCollapsed();
-    dateTimePicker();
-    
-    getRemind();
-    setDateTime();
-    getAllWarnings();
-});
-
+}
 
 /*
 const RepairPf = async (pfi, passType, dealId) => {
@@ -242,7 +249,6 @@ const canselModalItemPreFactor = () => {
     mySer.emptyForm("PreFacItem");
     $("#ItemPreFactorModal").modal("hide");
 };
-
 const canselModalItemFactor = () => {
     mySer.emptyForm("FacItem");
     $("#ItemFactorModal").modal("hide");
@@ -1582,7 +1588,7 @@ async function isSMSNotificationConfirmed() {
     return result.isConfirmed;
 }
 
-async function changeStatusHd(id, status, sourceStatus, passType, dealId, fromDrop = false, draggedItem = null, sourceColumn = null) {
+async function changeStatusHd(id, status, sourceStatus, passType, dealId = null, fromDrop = false, draggedItem = null, sourceColumn = null) {
     let sendSms = false;
     if (status === 3 && sourceStatus !== 4) {
         sendSms = await isSMSNotificationConfirmed();
@@ -2475,37 +2481,6 @@ const ShowEditModalInvoice = async (id, type = 1) => {
     FLshowLoading(false);
 };
 
-const ShowModalAttachmentInvoice = (id) => {
-    const containerPreview = document.getElementById("DivShowSanadPayAttach");
-    containerPreview.innerHTML = "";
-    FLshowLoading();
-    $.get(`/Factor/GetAttachment/${id}`, (files) => {
-        if (files.length) {
-            files.forEach(fileItem => {
-                const imageBox = createImageBox(fileItem);
-                containerPreview.appendChild(imageBox);
-            });
-            containerPreview.parentElement.style.backgroundColor = "#fafafa";
-        } else {
-            containerPreview.innerHTML = `
-                <div class="d-flex flex-column align-items-center pb-4">
-                    <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
-                    <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ پیوستی برای نمایش وجود ندارد!</div>
-                </div>
-            `;
-            containerPreview.parentElement.style.backgroundColor = "#fff";
-        }
-        FLshowLoading(false);
-    });
-    
-    $("#sanadPayAttachment").modal("toggle");
-};
-
-const cancelModalAttachmentInvoice = () => {
-    $("#sanadPayAttachment").modal("toggle");
-    document.getElementById("DivShowSanadPayAttach").innerHTML = "";
-};
-
 
 async function checkEtebariWarning(isEditInvoiceModal, payType, AccParentId, AccType, pfactorID) {
     if (isEditInvoiceModal || payType === 3 || AccParentId || AccType !== 1) {
@@ -2913,17 +2888,21 @@ $(document).on("click", ".AddPersonImg_Btn", function () {
 });
 
 
-const AttachDoc = (id) => {
+const AttachDoc = async (id) => {
     pfactorID = id;
-    $("#Attachments").modal("show");
-    document.getElementById("FLshowLoading").style.display = "";
-    document.getElementById("imageDisplayAcAt").innerHTML = "";
-    
-    $.get(`/Factor/GetAttachment/${id}?type=2`, (res) => {
-        AccepedAttachment = res;
+    ModalToggle("Attachments", "show");
+    try {
+        FLshowLoading();
+        const res = await axios(`/Factor/GetAttachment/${id}?type=2`);
+        AccepedAttachment = res.data;
         FileUpReload("AcAtID");
-        document.getElementById("FLshowLoading").style.display = "none";
-    });
+    } catch (err) {
+        toastifyError("خطای سرور!");
+        console.log(err);
+    } finally {
+        FLshowLoading(false);
+    }
+    
 };
 
 const showAcc = (id) => {
@@ -3002,11 +2981,10 @@ const HandAccepting = async (id, type, dealId) => {
     }
 };
 
-const openCustomerProfile = async (id, pfSerialNum) => {
+const openCustomerProfile = async (id) => {
     if (!id) return;
     const res = await axios(`/Customer/CustomerProfile?Id=${id}`);
     if (res.status === 200) {
-        sessionStorage.setItem("targetPf", pfSerialNum);
         window.open("/Customer/CustomerProfile?Id=" + id);
     } else if (res.status === 204) {
         toastifyError("شما به این صفحه دسترسی ندارید!");
@@ -3014,8 +2992,53 @@ const openCustomerProfile = async (id, pfSerialNum) => {
 };
 
 
+const GetUpSenfOp = () => {
+    const select = document.getElementById("workSenfID");
+    
+    return axios("/BaseItem/GetItemsOp?typeCode=1").then(res => {
+        $(select).select2({
+            data: res.data,
+            dir: "rtl",
+            placeholder: "انتخاب",
+            selectionCssClass: "form-control",
+            dropdownParent: $("#updateCustomerModal"),
+        });
+        
+        $(select).val(null).trigger("change");
+    });
+};
 
 
+const SubmitUpFormCustomer = async () => {
+    if (await mySer.CheckValidForm("#CuInfoUpFormId")) {
+        const data = mySer.convertFormToJSON("#CuInfoUpFormId");
+        data.id = customerIdUp;
+        
+        const workSelect = document.getElementById("workSenfID");
+        if (data.workSenf) data.workSenfTxt = workSelect.options[workSelect.selectedIndex].text;
+        
+        FLshowLoading();
+        
+        try {
+            const res = await axios.post("/Customer/UpCustomer", data);
+            if (res.status === 200) {
+                toastifySuccess("ویرایش مشتری با موفقیت انجام شد");
+                FLshowLoading(false);
+                closeModalUpdate();
+                //getAllCustomerPartialTop();
+                if ($("#SearchInp").val().trim().length !== 0) {
+                    SearchAllCustomer($("#SearchInp").val());
+                } else {
+                    loadCustomers(0);
+                }
+            }
+            
+        } catch (error) {
+            console.error(error);
+            setTimeout(async () => await submitCustomer(data), 3000);
+        }
+    }
+};
 
 
 const removeReqUp = () => {
@@ -3050,7 +3073,11 @@ const changeJur = (val) => {
 };
 
 
-
+const closeModalUpdate = () => {
+    $("#updateCustomerModal").modal("toggle");
+    cancelUpCustomer();
+    customerIdUp = null;
+};
 
 const cancelUpCustomer = () => {
     mySer.emptyForm("CuInfoUpFormId");
@@ -3059,6 +3086,23 @@ const cancelUpCustomer = () => {
     
 };
 
+let senfLoaded = false;
+const ShowModalUpCustomer = (id) => {
+    if (!senfLoaded) {
+        GetUpSenfOp();
+        senfLoaded = true;
+    }
+    
+    customerIdUp = id;
+    $("#loadingModalUp").css("display", "flex");
+    $.get(baseUrl + "Customer/GetCustomer?id=" + id, (res) => {
+        changeJur(res.juridical);
+        mySer.convertJsonToForm(res, "CuInfoUpFormId");
+        $("#loadingModalUp").css("display", "none");
+    });
+    $("#updateCustomerModal").modal("toggle");
+    
+};
 
 const OpenCloseMenu = () => {
     if (showFlag == 0) {
@@ -3441,39 +3485,24 @@ const cancelShowAccModal = () => {
     document.getElementById("showImageDisplayAccAt").innerHTML = "";
 };
 
-const getAllBankAccounts = async () => {
+const getAllBankAccountsJson = async () => {
     try {
         const res = await axios.post("/Accountancy/GetAllBankAccountJson");
-        
-        const createOption = (text, value) => {
-            const o = document.createElement("option");
-            o.innerText = text;
-            o.value = value;
-            return o;
-        };
+        return res.data.map(i => ({ text: i.text, value: i.id }));
+    } catch (err) {
+        console.log(err);
+    }
+};
+const getAllBankAccounts = async () => {
+    try {
+        const data = await getAllBankAccountsJson();
         
         const applyToModal = (modalId) => {
             const modal = document.getElementById(modalId);
             if (!modal) return;
             
             const select = modal.querySelector("select[name='BankAccountId']");
-            
-            const fragment = document.createDocumentFragment();
-            fragment.appendChild(createOption("انتخاب کنید", ""));
-            res.data.forEach(item => fragment.appendChild(createOption(item.text, item.id)));
-            //fragment.appendChild(createOption("سایر", "other"));
-            
-            select.innerHTML = "";
-            select.appendChild(fragment);
-            
-            /*const inputTxt = modal.querySelector("input[name='BankAccountTxt']");
-            if (!inputTxt) return;
-            
-            select.addEventListener("change", (e) => {
-                const isOther = e.target.value === "other";
-                inputTxt.classList.toggle("d-none", !isOther);
-                inputTxt.toggleAttribute("required", isOther);
-            });*/
+            createOption(select, data, true, "انتخاب کنید");
         };
         
         applyToModal("InvoiceModalId");
@@ -3571,6 +3600,7 @@ async function handleNotifAction(id, isRemindOff) {
     if (idx !== -1) taskList.splice(idx, 1);
     
     const url = isRemindOff ? `Carizo/ShowTask?id=${id}` : `Carizo/DismissTask?id=${id}`;
+    
     try {
         const res = await fetch(baseUrl + url);
         
@@ -3613,9 +3643,9 @@ async function readNotifAction(id, btn, entityType = null, entityId = null) {
 }
 
 async function dismissNotif(id = null, btn) {
-    /*if (id) {
+    if (id) {
         await handleNotifAction(id, false);
-    }*/
+    }
     if (btn) {
         const closeBtn = btn.closest(".toastify").querySelector(".toast-close");
         closeBtn.click();
@@ -4260,7 +4290,7 @@ function showModalWarnings() {
 
 async function getAllWarnings(isRefresh = false) {
     const roles = JSON.parse(sessionStorage.getItem("Rols"));
-    const hasAccess = roles?.some(rol => "Admin FinancialExpert FinancialAdmin".includes(rol?.name));
+    const hasAccess = roles.some(rol => "Admin FinancialExpert FinancialAdmin".includes(rol?.name));
     //const isAdmin = roles.some(rol => rol?.name === "Admin");
     if (!hasAccess) return;
     const container = document.getElementById("warningContainer");
@@ -4411,6 +4441,99 @@ async function showModalPhonebook() {
     await loadPhonebook();
 }
 
+const showAttachments = async (id, typeAtt) => {
+    const showAttModal = document.getElementById("showAttachmentsModal");
+    const containerPreview = showAttModal.querySelector(".image-display");
+    if (!containerPreview) return;
+    containerPreview.innerHTML = "";
+    try {
+        FLshowLoading();
+        const files = (await axios(`/Factor/GetAttachment/${id}?type=${typeAtt}`)).data;
+        
+        if (files.length) {
+            files.forEach(fileItem => {
+                const imageBox = createImageBox(fileItem);
+                containerPreview.appendChild(imageBox);
+            });
+            containerPreview.parentElement.style.backgroundColor = "#fafafa";
+        } else {
+            containerPreview.innerHTML = `
+                <div class="d-flex flex-column align-items-center pb-4">
+                    <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
+                    <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ پیوستی برای نمایش وجود ندارد!</div>
+                </div>
+            `;
+            containerPreview.parentElement.style.backgroundColor = "#fff";
+        }
+        
+    } catch (err) {
+        containerPreview.innerHTML = "خطای دریافت اطلاعات!";
+        console.log(err);
+    } finally {
+        FLshowLoading(false);
+        ModalToggle(showAttModal);
+    }
+};
+
+/*--------------------------------------------------------------------------------*/
+const addSupplyFactorModal = document.getElementById("addSupplyFactorModal");
+let supplyFactorsSelectedIds = [];
+let supplyFactorsTargetInput;
+async function showAddSupplyFactorModal(elm) {
+    supplyFactorsTargetInput = elm.parentElement.querySelector("input");
+    await getAllSupplyFactorsTable();
+    addSupplyFactorModal.querySelectorAll("input[type='checkbox']").forEach((checkbox) => {
+        if (supplyFactorsSelectedIds.includes(checkbox.value)) {
+            checkbox.checked = true;
+        }
+    });
+    toggleAddSupplyFactorModal();
+    addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !supplyFactorsSelectedIds.length);
+}
+
+
+function toggleAddSupplyFactorModal() {
+    addSupplyFactorModal.querySelector("#addSupplyFactorSearch").value = "";
+    ModalToggle(addSupplyFactorModal);
+}
+
+const getAllSupplyFactorsTable = async (search = "") => {
+    const res = await axios(`/Supply/GetAllSupplyFactorsTablePartial?search=${search}`);
+    
+    addSupplyFactorModal.querySelector("#addSupplyFactorContainer").innerHTML = res.data;
+};
+
+addSupplyFactorModal?.querySelector("#addSupplyFactorContainer").addEventListener("change", (e) => {
+    const checkbox = e.target.closest("input[type='checkbox']");
+    if (!checkbox) return;
+    
+    const anyChecked = addSupplyFactorModal.querySelector("#addSupplyFactorContainer input[type='checkbox']:checked");
+    
+    addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !anyChecked);
+});
+
+const submitSelectedSupplyFactor = () => {
+    const checkedBoxes = [...addSupplyFactorModal.querySelectorAll("#addSupplyFactorContainer input[type='checkbox']:checked")];
+    
+    supplyFactorsSelectedIds.length = 0;
+    supplyFactorsSelectedIds.push(...checkedBoxes.map(cb => cb.value));
+    
+    //const inpElm = document.getElementById("reqAmountSupplyFactor");
+    supplyFactorsTargetInput.value = checkedBoxes.map(cb => cb.dataset.number).join(", ");
+    supplyFactorsTargetInput.classList.remove("AlertReq");
+    ModalToggle(addSupplyFactorModal);
+};
+
+
+addSupplyFactorModal?.querySelector("#addSupplyFactorSearch").addEventListener("keyup", async (e) => {
+    if (e.key === "Enter") {
+        toggleElementsDisabled(e.target);
+        await getAllSupplyFactorsTable(e.target.value.trim());
+        toggleElementsDisabled(e.target, false);
+        e.target.focus();
+    }
+});
+/*--------------------------------------------------------------------------------*/
 
 /*document.addEventListener("input", (e) => {
     if (e.target.matches("input, textarea")) {
@@ -4418,21 +4541,33 @@ async function showModalPhonebook() {
     }
 });*/
 
-
 document.addEventListener("input", (e) => {
-    if (!e.target.matches("input, textarea")) return;
-    
     const el = e.target;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
     
-    const newValue = normalizeNumber(el.value);
+    if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement))
+        return;
+    
+    const allowedTypes = ["text", "search", "tel", "url", "password", "email"];
+    
+    if (el instanceof HTMLInputElement && !allowedTypes.includes(el.type))
+        return;
+    
+    const newValue = toEnglishDigits(el.value);
     
     if (el.value !== newValue) {
+        const start = el.selectionStart;
+        const end = el.selectionEnd;
+        
         el.value = newValue;
-        el.setSelectionRange(start, end);
+        
+        /* if (start !== null && end !== null) {
+             el.setSelectionRange(start, end);
+         }*/
     }
 });
+
+
+
 
 const normalizeNumber = (val) => {
     if (val == null) return val;

@@ -176,8 +176,9 @@
 
         async function sendChat() {
             const chatInput = chatContainerElm.querySelector("#chatInput");
+            const chatSendBtn = chatContainerElm.querySelector("#chatSendBtn");
             if (!chatInput.value.trim() && !chatAttachment.length) return;
-
+            toggleElementsDisabled(chatSendBtn);
             const model = {
                 chat: {
                     text: chatInput.value,
@@ -195,6 +196,7 @@
             } else {
                 toastifyError("خطای سرور!");
             }
+            toggleElementsDisabled(chatSendBtn, false);
         }
 
         async function submitOtherInput() {

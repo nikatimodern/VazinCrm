@@ -139,7 +139,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await signInManager.SignInAsync(user, new AuthenticationProperties {
                 AllowRefresh = true,
                 IsPersistent = true,
-                ExpiresUtc = DateTimeOffset.Now.AddHours(5)
+                ExpiresUtc = DateTimeOffset.Now.AddHours(1)
             });
 
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString();

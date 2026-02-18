@@ -1,0 +1,321 @@
+@{
+    Layout = "_Layout";
+}
+
+<div class="w-100">
+    <div class="row align-items-center justify-content-between flex-wrap mb-2 g-2">
+        <div class="d-flex col-lg-3">
+            <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="showSupplyFactorModal()">
+                <span style="line-height: 1">ثبت فاکتور جدید</span>
+                <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
+            </button>
+        </div>
+        <div class="col-12 col-lg-5 d-flex align-items-center gap-2 flex-wrap">
+            <div class="d-flex align-items-center flex-grow-1 gap-2">
+                <input class="form-control" id="supplyFactorSearch" placeholder="جستجو">
+            </div>
+        </div>
+        <div class="d-flex align-items-start justify-content-start justify-content-lg-end gap-2 col-lg-3">
+            @*<div id="ContentDealFilterId" class="ContentFilter"></div>
+            <div class="btnFilter d-none d-lg-flex" data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterDeal" data-filterContentId="ContentDealFilterId" data-filterInpSearchId="dealSearchId" data-filterVarSearch="dealSearchVal" onclick="ShowFilterPopup(this)">
+                <svg style="width:24px;color:#333" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
+            </div>*@
+        </div>
+    </div>
+    <div id="supplyFactorContainer">
+
+    </div>
+</div>
+
+
+<!-- Modal SupplyFactor -->
+<div class="modal fade" id="supplyFactorModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content col-12 p-2">
+            <div class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">فاکتور تامین</div>
+            <div class="modal-body pb-2">
+                <form id="supplyFactorForm" class="d-flex flex-column gap-2">
+                    <div>
+                        <div class="flex-center w-100 gap-3 gap-lg-5" id="supplyFactorOfficialAlert">
+                            <div class="d-flex align-items-center gap-1">
+                                <label class="fbold" for="supplyFactorOfficial">رسمی</label>
+                                <input type="radio" class="valueNumber" name="officialType" id="supplyFactorOfficial" value="1" data-alertid="supplyFactorOfficialAlert" required>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <label class="fbold" for="supplyFactorUnofficial">غیر رسمی</label>
+                                <input type="radio" class="valueNumber" name="officialType" id="supplyFactorUnofficial" value="0" data-alertid="supplyFactorOfficialAlert" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="supplyFactorAmount">مبلغ:</label>
+                        <input id="supplyFactorAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="amount" required>
+                    </div>
+
+                    <div>
+                        <label for="supplyFactorNumber">شماره فاکتور:</label>
+                        <input id="supplyFactorNumber" class="form-control" name="factorSerial" required />
+                    </div>
+
+                    <div>
+                        <label for="supplyFactorDate">تاریخ:</label>
+                        <input id="supplyFactorDate" class="sdate form-control" name="factorDateTxt" placeholder="yyyy/mm/dd" data-slots="ymd" required />
+                    </div>
+
+                    <div>
+                        <label for="supplyFactorSupplierId">تامین‌ کننده:</label>
+                        <select name="supplierId" id="supplyFactorSupplierId" required>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="supplyFactorOrderHead">بابت حواله تولید:</label>
+                        <div class="input-group mb-3">
+                            <input id="supplyFactorOrderHead" type="text" class="form-control" placeholder="حواله تولید.." disabled required>
+                            <button class="btn btn-sm btn-secondary" type="button" onclick="showAddOrderHeadModal()">انتخاب</button>
+                        </div>
+                        @* <input name="supplierId" class="form-control" id="supplyFactorOrderHead" /> *@
+                    </div>
+
+
+                    <div>
+                        <label for="supplyFactorAtt">تصویر فاکتور:</label>
+                        <div class="container-uploader">
+                            <input type="file" class="uploadBtn" data-varList="supplyFactorAttachments" data-showList="DivShowSupplyFactorAtt" id="supplyFactorAtt" accept="*/*" multiple required />
+                            <label for="supplyFactorAtt">
+                                <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                                <span>تصویر فاکتور را انتخاب یا اینجا رها کنید</span>
+                            </label>
+                            <div class="image-display" id="DivShowSupplyFactorAtt"></div>
+                        </div>
+                    </div>
+
+
+                    <div class="d-flex justify-content-center gap-1 mt-2">
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="cancelSupplyFactorModal()">انصراف</button>
+                        <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitSupplyFactorModal()">ثبت</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- addOrderHead Modal -->
+<div class="modal fade" id="addOrderHeadModal" tabindex="-1" data-bs-focus="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: 12px;overflow: hidden;box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25)">
+            <div class="modal-header">
+                <div class="d-flex align-items-center justify-content-between w-100">
+                    <span class="fbold">انتخاب حواله تولید</span>
+                    <div>
+                        <input id="addOrderHeadSearch" type="text" class="form-control" placeholder="جستجو..">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-body p-0">
+                <div id="addOrderHeadContainer"></div>
+            </div>
+
+            <div class="modal-footer justify-content-center p-2">
+                <button style="padding-block:4px" type="button" class="buttonCancel2" onclick="toggleAddOrderHeadModal()">انصراف</button>
+                <button id="submitSelectedOrderHeads" style="padding-block:4px" type="button" class="buttonGreen3 d-none" onclick="submitSelectedOrderHeads()">ثبت</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    <script>
+        var supplyFactorAttachments = [];
+        let orderHeadsSelectedIds = [];
+        let supplyFactorData = {};
+        const addOrderHeadModal = document.getElementById("addOrderHeadModal");
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await getAllSupplyFactors();
+            document.getElementById("supplyFactorSearch").addEventListener("keyup", async (e) => {
+                if (e.key === "Enter") {
+                    await getAllSupplyFactors();
+                }
+            });
+        });
+
+        async function showSupplyFactorModal() {
+            await setupSelectOptions();
+            ModalToggle("#supplyFactorModal");
+        }
+
+        function cancelSupplyFactorModal() {
+            supplyFactorAttachments = [];
+            orderHeadsSelectedIds = [];
+            supplyFactorData = [];
+            mySer.emptyForm("supplyFactorForm");
+            ModalToggle("#supplyFactorModal", "hide");
+        }
+
+        async function showAddOrderHeadModal() {
+            await getAllOrderHeads();
+            addOrderHeadModal.querySelectorAll("input[type='checkbox']").forEach((checkbox) => {
+                if (orderHeadsSelectedIds.includes(checkbox.value)) {
+                    checkbox.checked = true;
+                }
+            });
+            toggleAddOrderHeadModal();
+            addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !orderHeadsSelectedIds.length);
+        }
+
+        function toggleAddOrderHeadModal() {
+            addOrderHeadModal.querySelector("#addOrderHeadSearch").value = "";
+            ModalToggle(addOrderHeadModal);
+        }
+
+
+        let isSetupSupplyModal = false;
+        async function setupSelectOptions() {
+            if (isSetupSupplyModal) return;
+            const data = (await axios("/Supply/GetSupplyBaseData")).data;
+            new TomSelect("#supplyFactorSupplierId", {
+                options: data.suppliers,
+                placeholder: "انتخاب تامین کننده",
+                maxItems: 1,
+                selectOnTab: true,
+            });
+            isSetupSupplyModal = true;
+        }
+
+
+        const getAllOrderHeads = async (search = "") => {
+            const res = await axios(`/Order/GetAllOrderHeads?search=${search}`);
+
+            addOrderHeadModal.querySelector("#addOrderHeadContainer").innerHTML = res.data;
+        };
+
+        addOrderHeadModal.querySelector("#addOrderHeadContainer").addEventListener("change", (e) => {
+            const checkbox = e.target.closest("input[type='checkbox']");
+            if (!checkbox) return;
+
+            const anyChecked = addOrderHeadModal.querySelector("#addOrderHeadContainer input[type='checkbox']:checked");
+
+            addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !anyChecked);
+        });
+
+        const submitSelectedOrderHeads = () => {
+            const checkedBoxes = [...addOrderHeadModal.querySelectorAll("#addOrderHeadContainer input[type='checkbox']:checked")];
+
+            orderHeadsSelectedIds.length = 0;
+            orderHeadsSelectedIds.push(...checkedBoxes.map(cb => cb.value));
+
+            const inpElm = document.getElementById("supplyFactorOrderHead");
+            inpElm.value = checkedBoxes.map(cb => cb.dataset.number).join(", ");
+            inpElm.classList.remove("AlertReq");
+
+            ModalToggle(addOrderHeadModal);
+        };
+
+
+        addOrderHeadModal.querySelector("#addOrderHeadSearch").addEventListener("keyup", async (e) => {
+            if (e.key === "Enter") {
+                toggleElementsDisabled(e.target);
+                await getAllOrderHeads(e.target.value.trim());
+                toggleElementsDisabled(e.target, false);
+                e.target.focus();
+            }
+        });
+
+        async function submitSupplyFactorModal() {
+            if (!await mySer.CheckValidForm("supplyFactorForm")) return;
+            if (supplyFactorAttachments.every(item => item.isDeleted)) {
+                toastifyError("تصویر فاکتور اجباری است");
+                return;
+            }
+
+            const supplierSelect = document.querySelector("#supplyFactorModal #supplyFactorSupplierId");
+            const model = {
+                ...supplyFactorData,
+                ...mySer.convertFormToJSON("supplyFactorForm"),
+                supplierTxt: supplierSelect.options[supplierSelect.selectedIndex].text,
+                supplyFactorOrderHeads: orderHeadsSelectedIds.map(id => ({ orderHeadId: id })),
+                attachments: supplyFactorAttachments,
+            };
+
+            FLshowLoading();
+            try {
+                const apiUrl = model.id ? "/Supply/UpdateSupplyFactor" : "/Supply/AddSupplyFactor";
+                const res = await axios.post(apiUrl, model);
+                if (res.status === 200) {
+                    toastifySuccess("با موفقیت ثبت شد");
+                    cancelSupplyFactorModal();
+                    getAllSupplyFactors();
+                }
+            } catch (err) {
+                console.log(err);
+            } finally {
+                FLshowLoading(false);
+            }
+        }
+
+        const getAllSupplyFactors = async () => {
+            const val = document.getElementById("supplyFactorSearch")?.value.trim() ?? "";
+            FLshowLoading();
+            const res = await axios(`/Supply/GetAllSupplyFactorsPartial?search=${val}`);
+            document.getElementById("supplyFactorContainer").innerHTML = res.data;
+            FLshowLoading(false);
+        };
+
+
+        async function showEditSupplyFactorModal(id) {
+            FLshowLoading();
+            await showSupplyFactorModal();
+
+            try {
+                const res = await axios(`/Supply/GetSupplyFactor/${id}`);
+                if (res.status === 200) {
+                    supplyFactorData = res.data.supplyFactor;
+                    const orderSerials = res.data.orderSerials;
+                    mySer.convertJsonToForm(supplyFactorData, "supplyFactorForm");
+                    orderHeadsSelectedIds = supplyFactorData.supplyFactorOrderHeads.map(o => o.orderHeadId);
+
+                    const inpElm = document.getElementById("supplyFactorOrderHead");
+                    inpElm.value = orderSerials.join(", ");
+                    supplyFactorAttachments = res.data.attachments;
+                    FileUpReload("supplyFactorAtt");
+                }
+
+            } catch (err) {
+                console.log(err);
+            } finally {
+                FLshowLoading(false);
+            }
+        }
+
+
+        const deleteSupplyFactor = async (id) => {
+            Swal.fire({
+                title: "حذف!",
+                text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
+                icon: "warning",
+                showCancelButton: true,
+                cancelButtonColor: "#adadad",
+                confirmButtonColor: "#e64942",
+                cancelButtonText: "انصراف",
+                confirmButtonText: "بله، حذف شود",
+            }).then(async (willDelete) => {
+                if (willDelete.isConfirmed) {
+                    FLshowLoading();
+                    const res = await axios(`/Supply/DeleteSupplyFactor/${id}`);
+                    if (res.status === 200) {
+                        toastifySuccess("با موفقیت حذف شد");
+                        await getAllSupplyFactors()
+                    }
+                    FLshowLoading(false);
+                }
+            });
+        };
+    </script>
+}
