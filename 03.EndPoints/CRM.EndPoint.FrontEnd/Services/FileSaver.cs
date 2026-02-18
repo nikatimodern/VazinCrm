@@ -81,7 +81,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
             return data;
         }
 
-        public IList<Attachment> saveAttach(IList<Attachment> list, _AttachType type)
+        public IList<Attachment> saveAttach(IList<Attachment> list, _AttachType type,bool RemoveFile=true)
         {
             foreach (var item in list)
             {
@@ -95,8 +95,9 @@ namespace CRM.EndPoint.FrontEnd.Services {
                     item.AttachDate = DateTime.Now;
                     item.AttachDateTxt = dtService.GetDateTimePersian();
                     item.File = null;
-                } else if (item.IsDeleted)
+                } else if (item.IsDeleted && RemoveFile)
                 {
+
                     DelFile(item.Url);
                 }
             }

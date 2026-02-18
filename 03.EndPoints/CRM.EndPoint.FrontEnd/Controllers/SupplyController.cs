@@ -133,31 +133,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (entity == null) return NotFound();
 
                 db.Entry(entity).CurrentValues.SetValues(model);
+                entity.SupplyFactorOrderHeads = model.SupplyFactorOrderHeads;
 
-                var toRemove = entity.SupplyFactorOrderHeads
-                    .Where(oldItem => !model.SupplyFactorOrderHeads.Any(newItem => newItem.OrderHeadId == oldItem.OrderHeadId))
-                    .ToList();
 
-                db.SupplyFactorOrderHeads.RemoveRange(toRemove);
+                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.SupplyFactor,false);
 
-                foreach (var item in model.SupplyFactorOrderHeads ?? [])
-                {
-                    var exists = entity.SupplyFactorOrderHeads.Any(x => x.OrderHeadId == item.OrderHeadId);
+                
 
-                    if (!exists)
-                    {
-                        entity.SupplyFactorOrderHeads.Add(new SupplyFactorOrderHead {
-                            SupplyFactorId = entity.Id,
-                            OrderHeadId = item.OrderHeadId
-                        });
-                    }
-                }
-
-                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.SupplyFactor);
-                foreach (var att in attach)
+                foreach (var att in attach.Where(f=>f.EntityId==null) )
                 {
                     att.EntityId = model.Id;
                 }
+
 
                 db.Attachments.UpdateRange(attach);
 
