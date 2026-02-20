@@ -175,7 +175,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
                     await hub.Clients.User(item.AssignUserId).SendAsync("ReceiveNotification", item);
                 }
 
-                if (_data.Count > 0)
+                /*if (_data.Count > 0)
                 {
                     var usersWithTasks = _data
                         .Select(x => x.AssignUserId)
@@ -192,7 +192,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
                             Tag = "carizo-remind"
                         });
                     }
-                }
+                }*/
             }
         }
 

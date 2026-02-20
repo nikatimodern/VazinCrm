@@ -28,15 +28,17 @@ public class PushBackgroundService : BackgroundService {
             var pushService = scope.ServiceProvider.GetRequiredService<IPushService>();
             try
             {
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+                cts.CancelAfter(TimeSpan.FromSeconds(5));
                 if (item.SendToAll)
                 {
-                    await pushService.SendToAllAsync(item.Title, item.Body, item.Url, item.Tag);
+                    await pushService.SendToAllAsync(item.Title, item.Body, item.Url, item.Tag, cts.Token);
                 } else if (!string.IsNullOrEmpty(item.RoleName))
                 {
-                    await pushService.SendToRoleAsync(item.RoleName, item.Title, item.Body, item.Url, item.Tag);
+                    await pushService.SendToRoleAsync(item.RoleName, item.Title, item.Body, item.Url, item.Tag, cts.Token);
                 } else if (!string.IsNullOrEmpty(item.UserId))
                 {
-                    await pushService.SendToUserAsync(item.UserId, item.Title, item.Body, item.Url, item.Tag);
+                    await pushService.SendToUserAsync(item.UserId, item.Title, item.Body, item.Url, item.Tag, cts.Token);
                 }
             }
             catch (Exception ex)

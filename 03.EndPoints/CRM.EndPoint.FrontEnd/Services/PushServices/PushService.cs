@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.WebPushSubscriptions.Entities;
@@ -64,36 +65,37 @@ public class PushService : IPushService {
     }
 
 
-    public async Task SendToUserAsync(string userId, string title, string body, string url, string tag)
+    public async Task SendToUserAsync(string userId, string title, string body, string url, string tag, CancellationToken ctsToken)
     {
         var subs = await db.WebPushSubscriptions
             .Where(x => x.UserId == userId && x.IsActive)
-            .ToListAsync();
+            .ToListAsync(cancellationToken: ctsToken);
 
-        await SendInternalAsync(subs, title, body, url, tag);
+        await SendInternalAsync(subs, title, body, url, tag, ctsToken);
     }
 
-    public async Task SendToRoleAsync(string roleName, string title, string body, string url, string tag)
+    public async Task SendToRoleAsync(string roleName, string title, string body, string url, string tag, CancellationToken ctsToken)
     {
         var userIds = (await userManager.GetUsersInRoleAsync(roleName)).Select(u => u.Id).ToHashSet();
 
         var subs = await db.WebPushSubscriptions
             .Where(s => s.IsActive && userIds.Contains(s.UserId))
-            .ToListAsync();
+            .ToListAsync(cancellationToken: ctsToken);
 
-        await SendInternalAsync(subs, title, body, url, tag);
+        await SendInternalAsync(subs, title, body, url, tag, ctsToken);
     }
 
-    public async Task SendToAllAsync(string title, string body, string url, string tag)
+    public async Task SendToAllAsync(string title, string body, string url, string tag, CancellationToken ctsToken)
     {
-        var subs = db.WebPushSubscriptions
+        var subs = await db.WebPushSubscriptions
             .Where(x => x.IsActive)
-            .ToList();
+            .ToListAsync(cancellationToken: ctsToken);
 
-        await SendInternalAsync(subs, title, body, url, tag);
+        await SendInternalAsync(subs, title, body, url, tag, ctsToken);
     }
 
-    private async Task SendInternalAsync(IEnumerable<WebPushSubscription> subs, string title, string body, string url, string tag)
+    private async Task SendInternalAsync(IEnumerable<WebPushSubscription> subs, string title, string body, string url, string tag,
+        CancellationToken ctsToken)
     {
         foreach (var sub in subs.Where(x => x.IsActive))
         {
@@ -104,7 +106,8 @@ public class PushService : IPushService {
                     title,
                     body,
                     url,
-                    tag
+                    tag,
+                    ctsToken
                 );
             }
             catch (WebPushException ex) when (ex.StatusCode == HttpStatusCode.Gone)
@@ -112,13 +115,13 @@ public class PushService : IPushService {
                 sub.IsActive = false;
             }
 
-            await Task.Delay(50);
+            await Task.Delay(50, ctsToken);
         }
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(ctsToken);
     }
 
-    private async Task SendAsync(PushSubscription sub, string title, string body, string url, string tag = "general")
+    private async Task SendAsync(PushSubscription sub, string title, string body, string url, string tag, CancellationToken ctsToken)
     {
         const int maxRetries = 3;
         var delay = TimeSpan.FromMilliseconds(500);
@@ -136,10 +139,10 @@ public class PushService : IPushService {
                     title,
                     body,
                     url,
-                    tag
+                    tag = string.IsNullOrEmpty(tag) ? "general" : tag,
                 });
 
-                await client.SendNotificationAsync(sub, payload, vapidDetails);
+                await client.SendNotificationAsync(sub, payload, vapidDetails, ctsToken);
                 return;
             }
             catch (WebPushException ex) when (ex.StatusCode == HttpStatusCode.Gone)
@@ -150,7 +153,7 @@ public class PushService : IPushService {
             {
                 Console.WriteLine($"Attempt {attempt} failed, retrying...");
 
-                await Task.Delay(delay);
+                await Task.Delay(delay, ctsToken);
                 delay += delay;
             }
             catch (Exception ex)
@@ -158,7 +161,6 @@ public class PushService : IPushService {
                 Console.WriteLine(ex);
             }
         }
-
 
 
         /*try

@@ -473,7 +473,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 ViewBag.passType = 3;
-                var query = db.OrderHeads.AsNoTracking().AsQueryable();
+                var query = db.OrderHeads.AsNoTracking().OrderByDescending(f => f.CreateDate).AsQueryable();
                 if (!string.IsNullOrEmpty(search))
                 {
                     query = query.Where(f =>
@@ -482,6 +482,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         f.PrefactorSer == TextService.convertToInt(search) ||
                         f.CustomerCode == TextService.convertToInt(search)
                     );
+                } else
+                {
+                    query = query.Take(50);
                 }
 
                 var orderHeads = await query.ToListAsync();

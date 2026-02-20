@@ -4,10 +4,9 @@ window.addEventListener("load", async () => {
     await navigator.serviceWorker.ready;
     
     
-    
-    //initInstallPrompt();
+    initInstallPrompt();
     await initPush();
-    //await showIosPwaInstall();
+    await showIosPwaInstall();
 });
 
 
@@ -15,7 +14,6 @@ async function registerServiceWorker() {
     if ("serviceWorker" in navigator) {
         try {
             await navigator.serviceWorker.register("/sw.js");
-            console.log("Service Worker registered");
             return true;
         } catch (err) {
             console.error("Service Worker registration failed", err);
@@ -30,6 +28,7 @@ let deferredPrompt = null;
 function initInstallPrompt() {
     window.addEventListener("beforeinstallprompt", (e) => {
         e.preventDefault();
+        if (!isDesktop()) return;
         deferredPrompt = e;
         
         if (sessionStorage.getItem("pwa-install-shown")) return;

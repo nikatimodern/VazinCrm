@@ -101,9 +101,6 @@ self.addEventListener("notificationclick", event => {
         clients.matchAll({ type: "window", includeUncontrolled: true })
                .then(clientList => {
                    for (const client of clientList) {
-                       console.log(client.url);
-                       console.log(targetUrl);
-                       console.log(client.url.toLowerCase().includes(targetUrl.toLowerCase()))
                        if (client.url.toLowerCase().includes(targetUrl.toLowerCase()) && "focus" in client) {
                            return client.focus();
                        }

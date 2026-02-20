@@ -35,7 +35,23 @@
                     <div class="order-cell">@item.CustomerTxt</div>
                 }
                 <div class="order-cell">@item.OrderDate</div>
-                <div class="order-cell">@item.Status.ToString()?.Replace("_", " ")</div>
+                <div class="order-cell">
+                    @{
+                        var classBadge = item.Status switch {
+                            OrderHeadStatusEnum.ثبت_اولیه => "badgeBlue",
+                            OrderHeadStatusEnum.تولید => "badgeGold",
+                            OrderHeadStatusEnum.آماده_تحویل => "badgeGreen",
+                            _ => "badgeGray"
+                        };
+                        var color = item.Status switch {
+                            OrderHeadStatusEnum.ثبت_اولیه => "#00678b",
+                            OrderHeadStatusEnum.تولید => "#898b00",
+                            OrderHeadStatusEnum.آماده_تحویل => "var(--color8)",
+                            _ => "#5C5F66"
+                        };
+                    }
+                    <span style="color: @color" class="fMedium">@item.Status.ToString()?.Replace("_", " ")</span>
+                </div>
                 <div class="order-cell align-items-stretch gap-2 flex-wrap">
                     <button data-title="مشاهده" class="buttonGray d-flex align-items-center justify-content-center py-1 px-2" onclick="PreviewOrderPrint('@item.Id')">
                         <i class="fa fa-eye"></i>

@@ -54,13 +54,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.fileSaver = fileSaver;
         }
 
-        [Authorize(Roles = "مدیر ارشد, مدیر اجرایی")]
         public IActionResult SupplyFactor() // فاکتور تامین
         {
             return View();
         }
 
-        [Authorize(Roles = "مدیر ارشد, مدیر اجرایی")]
         public IActionResult Payment() // پرداختی
         {
             return View();
@@ -460,6 +458,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         f.FactorSerial == search ||
                         f.Amount == TextService.convertToInt(search)
                     );
+                } else
+                {
+                    query = query.Take(50);
                 }
 
                 var data = await query.ToListAsync();
@@ -512,6 +513,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             var suppliers = await db.Customers
                 .Where(f => f.RoleType == RoleTypeEnum.تامین_کننده || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری)
+                .OrderByDescending(f => f.CreateDate)
                 .Select(f => new {
                     Value = f.Id,
                     Text = $"{f.CompanyName ?? ""} {f.AgentName ?? ""} ({f.CustomerCode})".Trim(),

@@ -3206,6 +3206,42 @@ button.badgeGray:hover {
 }
 
 
+.badgeBlue {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: .5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border-radius: 100px;
+  padding: 5px 12px;
+  background-color: #00678b;
+  font-size: 12px;
+  line-height: 1;
+  color: #fff;
+  border: none;
+  user-select: none;
+  transition: all 0.3s;
+}
+
+
+.badgeGold {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: .5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border-radius: 100px;
+  padding: 5px 12px;
+  background-color: #898b00;
+  font-size: 12px;
+  line-height: 1;
+  color: #fff;
+  border: none;
+  user-select: none;
+  transition: all 0.3s;
+}
+
+
 .badgeRed {
   display: flex;
   align-items: baseline;
@@ -5179,7 +5215,6 @@ table tr.payment-vosoled > td {
 }
 
 
-
 .label-vertical {
   width: 24px;
   background-color: var(--DarkColor);
@@ -5275,5 +5310,10 @@ table tr.payment-vosoled > td {
   
   .layered-card .layered-card__layer:last-child {
     border-bottom: none;
+  }
+  
+  .layered-card .layered-card__layer:last-child button.buttonGreen2 {
+    min-width: 34px;
+    padding: 4px 15px !important;
   }
 }
