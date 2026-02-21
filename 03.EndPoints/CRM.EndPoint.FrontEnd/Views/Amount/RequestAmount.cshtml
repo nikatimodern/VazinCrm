@@ -135,9 +135,9 @@
             const model = {
                 ...requestAmountData,
                 ...mySer.convertFormToJSON("requestAmountForm"),
-                requestAmountSupplyFactor: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id })),
+                requestAmountSupplyFactor: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id, requestAmountId: requestAmountData.id })),
             };
-
+            console.log(model);
             try {
                 FLshowLoading();
                 const apiUrl = model.id ? "/Amount/UpdateRequestAmount" : "/Amount/AddRequestAmount";
@@ -172,7 +172,6 @@
 
             try {
                 const res = await axios(`/Amount/GetRequestAmount/${id}`);
-                console.log(res);
                 if (res.status === 200) {
                     requestAmountData = res.data.requestAmount;
                     const supplyFactorSerials = res.data.supplyFactorSerials;

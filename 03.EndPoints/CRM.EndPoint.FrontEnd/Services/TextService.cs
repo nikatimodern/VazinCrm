@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace CRM.EndPoint.FrontEnd.Services
 {
@@ -165,6 +166,17 @@ namespace CRM.EndPoint.FrontEnd.Services
             {
                 return 0;
             }
+        }
+
+        public static int ExtractNumber(string val)
+        {
+            if (string.IsNullOrWhiteSpace(val))
+                return 0;
+
+            var match = Regex.Match(val, @"\d+");
+            return int.TryParse(match.Value, out var result)
+                ? result
+                : 0;
         }
 
 

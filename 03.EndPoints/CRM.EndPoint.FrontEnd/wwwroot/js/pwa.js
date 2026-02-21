@@ -103,7 +103,6 @@ async function subscribeUser(registration) {
     console.log("New subscription", subscription);
     
     const res = await axios.post("/Push/Subscribe", subscription);
-    console.log(res);
     if (res.status === 200) {
         console.log("Subscribed successfully", res);
     }

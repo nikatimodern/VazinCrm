@@ -376,8 +376,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     query = query.OnlyManagingDirector();
                 }
 
-                var pendingCount = await query.Where(f => f.Status == AccStatusEnum.در_دست_تایید || f.Status == AccStatusEnum.ثبت_اولیه).CountAsync();
-
                 query = type switch {
                     1 => query.Where(f => f.Status == AccStatusEnum.در_دست_تایید || f.Status == AccStatusEnum.ثبت_اولیه),
                     2 => query.Where(f => f.Status == AccStatusEnum.تایید_شده),
@@ -415,7 +413,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var html = await _vrs.RenderToStringAsync("GetAllPaymentPartial", model);
 
-                return Ok(new { html, count, pendingCount });
+                return Ok(new { html, count });
             }
             catch (Exception e)
             {

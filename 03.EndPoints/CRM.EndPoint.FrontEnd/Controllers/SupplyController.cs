@@ -96,9 +96,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     att.EntityId = model.Id;
                 }
-
                 await db.Attachments.AddRangeAsync(attach);
 
+                await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
 
                 await db.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -127,23 +127,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.UserModifyID = user.Id;
 
                 var entity = await db.SupplyFactors.Include(x => x.SupplyFactorOrderHeads).FirstOrDefaultAsync(x => x.Id == model.Id);
-
                 if (entity == null) return NotFound();
 
+                await _logSystemService.LogChange(entity, model, LogActionEnum.ویرایش, user, ["SupplyFactorOrderHeads"]);
                 db.Entry(entity).CurrentValues.SetValues(model);
+
                 entity.SupplyFactorOrderHeads = model.SupplyFactorOrderHeads;
 
-
-                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.SupplyFactor,false);
-
-                
-
-                foreach (var att in attach.Where(f=>f.EntityId==null) )
+                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.SupplyFactor, false);
+                foreach (var att in attach.Where(f => f.EntityId == null))
                 {
                     att.EntityId = model.Id;
                 }
-
-
                 db.Attachments.UpdateRange(attach);
 
                 await db.SaveChangesAsync();
@@ -173,6 +168,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.PaymentDate = dtService.GetDateMiladi(model.PaymentDateTxt) ?? DateTime.Now;
                 model.PaymentTypeTxt = model.PaymentType.ToString().Replace("_", " ");
                 await db.Payments.AddAsync(model);
+                await db.SaveChangesAsync();
 
                 var attach = fileSaver.saveAttach(model.Attachments, _AttachType.Payment);
                 foreach (var att in attach)
@@ -182,6 +178,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 await db.Attachments.AddRangeAsync(attach);
 
+                await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
 
                 await db.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -212,38 +209,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.UserModifyID = user.Id;
 
                 var entity = await db.Payments.Include(x => x.PaymentSupplyFactors).FirstOrDefaultAsync(x => x.Id == model.Id);
-
                 if (entity == null) return NotFound();
 
-                db.Entry(entity).CurrentValues.SetValues(model);
+                await _logSystemService.LogChange(entity, model, LogActionEnum.ویرایش, user, ["PaymentSupplyFactors"]);
 
                 entity.PaymentSupplyFactors = model.PaymentSupplyFactors;
-
-                //var toRemove = entity.PaymentSupplyFactors
-                //    .Where(oldItem => !model.PaymentSupplyFactors.Any(newItem => newItem.SupplyFactorId == oldItem.SupplyFactorId))
-                //    .ToList();
-
-                //db.PaymentSupplyFactors.RemoveRange(toRemove);
-
-                //foreach (var item in model.PaymentSupplyFactors ?? [])
-                //{
-                //    var exists = entity.PaymentSupplyFactors.Any(x => x.SupplyFactorId == item.SupplyFactorId);
-
-                //    if (!exists)
-                //    {
-                //        entity.PaymentSupplyFactors.Add(new PaymentSupplyFactor {
-                //            PaymentId = entity.Id,
-                //            SupplyFactorId = item.SupplyFactorId
-                //        });
-                //    }
-                //}
+                db.Entry(entity).CurrentValues.SetValues(model);
 
                 var attach = fileSaver.saveAttach(model.Attachments, _AttachType.Payment);
                 foreach (var att in attach)
                 {
                     att.EntityId = model.Id;
                 }
-
                 db.Attachments.UpdateRange(attach);
 
                 await db.SaveChangesAsync();
@@ -270,6 +247,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 item.ModifyDateTxt = dtService.GetDateTimePersian();
                 item.UserModify = user.FullName;
                 item.UserModifyID = user.Id;
+
+                await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
 
                 await db.SaveChangesAsync();
                 return Ok();
@@ -403,6 +382,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             item.UserModify = user.FullName;
             item.UserModifyID = user.Id;
 
+            await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
             await db.SaveChangesAsync();
             return Ok();
         }

@@ -83,7 +83,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
-                var countObj = await genService.GetCountEnvelopeObj(user);
+                var countObj = await genService.GetCartableCountObj(user);
                 var emailsCount = await genService.GetEmailsNotSeenCount(Guid.Parse(user.Id));
 
                 var chatsCount = await db.MainChats
@@ -603,13 +603,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var query = db.PreFactors.AsQueryable();
 
-                var pendingQuery = query.Where(f => f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی);
-                var pendingCount = pendingQuery.Count();
-
                 switch (type)
                 {
                     case 1:
-                        query = pendingQuery;
+                        query = query.Where(f => f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی);
                         break;
                     case 2:
                         query = query.Where(f =>
@@ -659,7 +656,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
                 var html = await vrs.RenderToStringAsync("GetPreFactorFinancialExpert", result);
-                return Ok(new { count = result.Count, html, pendingCount });
+                return Ok(new { count = result.Count, html });
             }
             catch (Exception ex)
             {

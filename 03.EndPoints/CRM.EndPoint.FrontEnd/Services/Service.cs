@@ -22,6 +22,7 @@ using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Reports.Entities;
 using CRM.Core.Domain.Reports.Enum;
+using CRM.Core.Domain.RequestAmounts.Entities;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.LogSystem;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
@@ -211,85 +212,14 @@ namespace CRM.EndPoint.FrontEnd.Services {
             }
         }
 
-        public async Task<CountEnvelopeObjVModel> GetCountEnvelopeObj(AppUser user)
+        public async Task<CartableCountObjVModel> GetCartableCountObj(AppUser user)
         {
-            /*var roles = await userManager.GetRolesAsync(user);
-            var pf = db.PreFactors.AsNoTracking();
-
-            CountEnvelopeObjVModel obj = new CountEnvelopeObjVModel();
-
-            foreach (var role in roles)
-            {
-                switch (role)
-                {
-                    case "مدیر ارشد":
-                        obj.SalesAdmin = await pf.CountAsync(f => f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش);
-                        obj.Tamin = await pf.CountAsync(f => f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین);
-                        obj.Financial = await pf.CountAsync(f =>
-                            f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی
-                            && f.AcceptedFinancial == null
-                            && (f.FinancialStep == FinancialStepEnum.در_انتظار_تایید_مالی ||
-                                f.FinancialStep == FinancialStepEnum.در_انتظار_تایید_مالی_و_مدیرعامل)
-                            && db.Accountancies.ForPreFactor().OnlyFinancial().Any(a => a.pfid == f.Id && a.Status != AccStatusEnum.ثبت_اولیه)
-                        ) + await db.Accountancies.ForPreFactor().CountAsync(f => f.Status == AccStatusEnum.در_دست_تایید);
-                        obj.ManagingDirector = await pf.CountAsync(f =>
-                            f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی
-                            && f.AcceptedManagingDirector == null
-                            && (f.FinancialStep == FinancialStepEnum.در_انتظار_تایید_مدیرعامل ||
-                                f.FinancialStep == FinancialStepEnum.در_انتظار_تایید_مالی_و_مدیرعامل)
-                            && db.Accountancies.ForPreFactor().OnlyManagingDirector().Any(a => a.pfid == f.Id && a.Status != AccStatusEnum.ثبت_اولیه)
-                        );
-                        break;
-                    case "مدیر فروش":
-                        obj.SalesAdmin = await pf.CountAsync(f => f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش);
-                        break;
-
-
-                    case "کارشناس تامین":
-                        obj.Tamin = await pf.CountAsync(f =>
-                            f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین
-                            && f.UserTaminId == Guid.Parse(user.Id)
-                        );
-                        break;
-
-                    case "مدیر تامین":
-                        obj.Tamin = await pf.CountAsync(f => f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین);
-                        break;
-
-
-                    case "کارشناس مالی":
-                    case "مدیر مالی":
-
-                        obj.Financial = await pf.CountAsync(f =>
-                            f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی
-                            && f.AcceptedFinancial == null
-                            && (f.FinancialStep == FinancialStepEnum.در_انتظار_تایید_مالی ||
-                                f.FinancialStep == FinancialStepEnum.در_انتظار_تایید_مالی_و_مدیرعامل)
-                            && db.Accountancies.ForPreFactor().OnlyFinancial().Any(a => a.pfid == f.Id && a.Status != AccStatusEnum.ثبت_اولیه)
-                        ) + await db.Accountancies.ForPreFactor().CountAsync(f => f.Status == AccStatusEnum.در_دست_تایید);
-                        break;
-
-
-                    case "مدیر عامل":
-
-                        obj.ManagingDirector = await pf.CountAsync(f =>
-                            f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی
-                            && f.AcceptedManagingDirector == null
-                            && (f.FinancialStep == FinancialStepEnum.در_انتظار_تایید_مدیرعامل ||
-                                f.FinancialStep == FinancialStepEnum.در_انتظار_تایید_مالی_و_مدیرعامل)
-                            && db.Accountancies.ForPreFactor().OnlyManagingDirector().Any(a => a.pfid == f.Id && a.Status != AccStatusEnum.ثبت_اولیه)
-                        );
-                        break;
-                }
-            }*/
-
-
             var roles = (await userManager.GetRolesAsync(user)).ToHashSet();
 
             var pf = db.PreFactors.AsNoTracking();
             var accPf = db.Accountancies.AsNoTracking().ForPreFactor();
 
-            var countObj = new CountEnvelopeObjVModel();
+            var countObj = new CartableCountObjVModel();
 
             // Sales Admin
             if (roles.Contains("مدیر ارشد") || roles.Contains("مدیر فروش"))
@@ -315,24 +245,21 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
                 var pendingAccCount = await accPf.CountAsync(a => a.Status == AccStatusEnum.در_دست_تایید || a.Status == AccStatusEnum.ثبت_اولیه);
 
-                countObj.Financial = financialPfCount + pendingAccCount;
+                countObj.Financial = new SubCartableCountVModel {
+                    InvoiceCount = pendingAccCount,
+                    PreFactorCount =  financialPfCount,
+                };
             }
 
             // Managing Director
             if (roles.Contains("مدیر ارشد") || roles.Contains("مدیر عامل"))
             {
-                /*countObj.ManagingDirector = await pf.CountAsync(f =>
-                    f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی
-                    && f.AcceptedManagingDirector == null
-                    && (f.FinancialStep == FinancialStepEnum.در_انتظار_تایید_مدیرعامل ||
-                        f.FinancialStep == FinancialStepEnum.در_انتظار_تایید_مالی_و_مدیرعامل)
-                    && accPf.Any(a =>
-                        a.pfid == f.Id
-                        && (a.PayType == PayTypeEnum.اعتباری || a.PayType == PayTypeEnum.تهاتری)
-                        && a.Status != AccStatusEnum.ثبت_اولیه
-                    )
-                ); */
-                countObj.ManagingDirector = await accPf.OnlyManagingDirector().CountAsync(a => a.Status == AccStatusEnum.در_دست_تایید);
+                var invoiceCount = await accPf.OnlyManagingDirector().CountAsync(a => a.Status == AccStatusEnum.در_دست_تایید || a.Status == AccStatusEnum.ثبت_اولیه);
+                var reqCount = await db.RequestAmounts.CountAsync(f => f.RequestStatus == RequestStatusEnum.در_انتظار_تایید);
+                countObj.ManagingDirector = new SubCartableCountVModel {
+                    InvoiceCount = invoiceCount,
+                    RequestCount = reqCount
+                };
             }
 
             return countObj;

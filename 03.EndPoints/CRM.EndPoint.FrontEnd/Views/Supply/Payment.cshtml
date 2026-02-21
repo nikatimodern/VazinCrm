@@ -179,7 +179,7 @@
             const model = {
                 ...paymentData,
                 ...mySer.convertFormToJSON("paymentFormId"),
-                paymentSupplyFactors: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id })),
+                paymentSupplyFactors: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id, paymentId: paymentData.id  })),
                 attachments: paymentAttachments,
             };
 

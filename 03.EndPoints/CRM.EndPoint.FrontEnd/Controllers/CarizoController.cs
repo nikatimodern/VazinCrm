@@ -660,7 +660,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         break;
                 }
 
-                dataQ = dataQ.OrderByDescending(f => f.DateMiladi);
+                dataQ = dataQ.OrderByDescending(f => f.DateMiladi).ThenByDescending(f => f.CreateDate);
                 switch (type)
                 {
                     case 0:

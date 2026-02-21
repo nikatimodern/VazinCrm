@@ -14,9 +14,11 @@ using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Entities;
+using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Reports.Entities;
+using CRM.Core.Domain.RequestAmounts.Entities;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.EndPoint.FrontEnd.Models.LogSystem;
 using Generics.Infrastructures.Sql;
@@ -437,6 +439,51 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
                 }
 
                 break;
+            case Payment:
+                switch (action)
+                {
+                    case LogActionEnum.ثبت:
+                        return $"یک پرداختی به شماره پرداخت {serialNumber} توسط <b>{fullName}</b> ثبت شد.";
+
+                    case LogActionEnum.ویرایش:
+                        return $"یک پرداختی به شماره پرداخت {serialNumber} توسط <b>{fullName}</b> ویرایش شد.";
+
+                    case LogActionEnum.حذف:
+                        return $"یک پرداختی به شماره پرداخت {serialNumber} توسط <b>{fullName}</b> حذف شد.";
+                }
+
+                break;
+            case SupplyFactor supplyFactor:
+                switch (action)
+                {
+                    case LogActionEnum.ثبت:
+                        return $"یک فاکتور تامین به شماره فاکتور {supplyFactor.FactorSerial} توسط <b>{fullName}</b> ثبت شد.";
+
+                    case LogActionEnum.ویرایش:
+                        return $"یک فاکتور تامین به شماره فاکتور {supplyFactor.FactorSerial} توسط <b>{fullName}</b> ویرایش شد.";
+
+                    case LogActionEnum.حذف:
+                        return $"یک فاکتور تامین به شماره فاکتور {supplyFactor.FactorSerial} توسط <b>{fullName}</b> حذف شد.";
+                }
+
+                break;
+            case RequestAmount:
+                switch (action)
+                {
+                    case LogActionEnum.ثبت:
+                        return $"یک درخواست وجه به شماره درخواست {serialNumber} توسط <b>{fullName}</b> ثبت شد.";
+
+                    case LogActionEnum.ویرایش:
+                        return $"یک درخواست وجه به شماره درخواست {serialNumber} توسط <b>{fullName}</b> ویرایش شد.";
+
+                    case LogActionEnum.حذف:
+                        return $"یک درخواست وجه به شماره درخواست {serialNumber} توسط <b>{fullName}</b> حذف شد.";
+
+                    case LogActionEnum.تایید_و_تغییر_وضعیت:
+                        return $"یک درخواست وجه به شماره درخواست {serialNumber} توسط <b>{fullName}</b> تایید شد.";
+                }
+
+                break;
         }
 
         return null;
@@ -452,6 +499,9 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
             Accountancy a => a.SerialNum,
             OrderHead o => o.OrderNumber,
             Customer c => c.CustomerCode,
+            Payment p => p.PaymentNumber,
+            SupplyFactor s => TextService.ExtractNumber(s.FactorSerial),
+            RequestAmount r => r.RequestNumber,
             _ => null
         };
     }
@@ -460,8 +510,16 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
     {
         try
         {
-            var oldMap = oldList.ToDictionary(e => GetIdAsString(e));
-            var newMap = newList.ToDictionary(e => GetIdAsString(e));
+            //var oldMap = oldList.ToDictionary(e => GetIdAsString(e));
+            //var newMap = newList.ToDictionary(e => GetIdAsString(e));
+            var oldMap = oldList.Select((e, i) => new {
+                Key = GetIdAsString(e) == "null" ? $"null_{i}" : GetIdAsString(e),
+                Value = e
+            }).ToDictionary(x => x.Key, x => x.Value);
+            var newMap = newList.Select((e, i) => new {
+                Key = GetIdAsString(e) == "null" ? $"null_{i}" : GetIdAsString(e),
+                Value = e
+            }).ToDictionary(x => x.Key, x => x.Value);
 
             var removed = oldMap.Keys.Except(newMap.Keys);
             var added = newMap.Keys.Except(oldMap.Keys);

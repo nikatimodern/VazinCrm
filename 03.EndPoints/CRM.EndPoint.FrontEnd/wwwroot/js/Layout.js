@@ -2994,10 +2994,6 @@ const openCustomerProfile = async (id, pfSerialNum) => {
 };
 
 
-
-
-
-
 const removeReqUp = () => {
     var items = document.getElementsByClassName("Uhog");
     
@@ -3028,8 +3024,6 @@ const changeJur = (val) => {
         addReqUp();
     }
 };
-
-
 
 
 const cancelUpCustomer = () => {
@@ -3271,17 +3265,14 @@ const setCountEnvelope = (countObj, isAdmin) => {
     const countResult = {
         salesAdmin: { count: countObj.salesAdmin, id: "TSalesAdminId" },
         tamin: { count: countObj.tamin, id: "TTaminExpertId" },
-        financial: { count: countObj.financial, id: "TFinancialExpertId" },
-        managingDirector: { count: countObj.managingDirector, id: "TManagingDirectorId" },
+        financial: { count: countObj.financial.invoiceCount + countObj.financial.preFactorCount, id: "TFinancialExpertId" },
+        managingDirector: { count: countObj.managingDirector.invoiceCount + countObj.managingDirector.requestCount, id: "TManagingDirectorId" },
     };
     
     
-    let sumCount = Object.values(countResult).reduce((sum, c) => sum + c.count, 0);
-    const CountEnvelopeElm = document.getElementById("CountEnvelopeId");
-    if (CountEnvelopeElm) {
-        CountEnvelopeElm.classList.toggle("d-none", !Boolean(sumCount));
-        CountEnvelopeElm.textContent = sumCount || "";
-    }
+    let sumCount = Object.values(countResult).reduce((sum, c) => sum + (c.count || 0), 0);
+    const countEnvelopeElm = document.getElementById("CountEnvelopeId");
+    setBadge(countEnvelopeElm, sumCount);
     
     if (sumCount && sumCount > oldSumCount && !isAdmin) {
         const text = `شما در کارتابل خود <b>${sumCount}</b> مورد بررسی نشده دارید`;
@@ -3291,17 +3282,25 @@ const setCountEnvelope = (countObj, isAdmin) => {
     
     const cartableTabsElm = document.getElementById("CartableTabs");
     if (!cartableTabsElm) return;
-    for (const c in countResult) {
-        const el = cartableTabsElm.querySelector(`#${countResult[c].id} .badgeCircle`);
-        if (!el) continue;
-        
-        const count = countResult[c].count;
-        el.textContent = count;
-        el.classList.toggle("d-none", count === 0);
-    }
+    Object.values(countResult).forEach(({ id, count }) => {
+        const el = cartableTabsElm.querySelector(`#${id} .badgeCircle`);
+        setBadge(el, count);
+    });
     
+    // sub tabs
+    setBadge("#FinancialPrefactorTab .badgeCircle", countObj.financial.preFactorCount);
+    setBadge("#FinancialInvoiceTab .badgeCircle", countObj.financial.invoiceCount);
+    setBadge("#MDRequestAmountTab .badgeCircle", countObj.managingDirector.requestCount);
+    setBadge("#MDInvoiceTab .badgeCircle", countObj.managingDirector.invoiceCount);
 };
 
+const setBadge = (target, count) => {
+    const el = typeof target === "string" ? document.querySelector(target) : target;
+    if (!el) return;
+    
+    el.textContent = count || "";
+    el.classList.toggle("d-none", !count);
+};
 /*
 let oldSumCount = null;
 const setCountEnvelope = (countObj, isFromSignalR = false) => {
@@ -4451,7 +4450,7 @@ const submitSelectedSupplyFactor = () => {
     const checkedBoxes = [...addSupplyFactorModal.querySelectorAll("#addSupplyFactorContainer input[type='checkbox']:checked")];
     
     supplyFactorsSelectedIds.length = 0;
-    supplyFactorsSelectedIds.push(...checkedBoxes.map(cb => cb.value));
+    supplyFactorsSelectedIds.push(...checkedBoxes.map(cb => cb.value).reverse());
     
     //const inpElm = document.getElementById("reqAmountSupplyFactor");
     supplyFactorsTargetInput.value = checkedBoxes.map(cb => cb.dataset.number).join(", ");

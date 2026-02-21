@@ -961,9 +961,9 @@
 
 
             //const tabId = location.hash?.split("=")[1];
-            const { tab = "TPrefactorFactorId" } = getUrlParams();
+            const { tab = "TPrefactorFactorId", sub } = getUrlParams();
             if (document.getElementById(tab)) {
-                await GetCartable(tab);
+                GetCartable(tab, sub);
             }
 
         });
@@ -1180,12 +1180,8 @@
             }
         };
 
-        const GetCartable = (tabId) => {
-            if (tabId === "TFinancialExpertId") {
-                setUrlParams({ tab: tabId });
-            } else {
-                setUrlParams({ tab: tabId, sub: null });
-            }
+        const GetCartable = (tabId, subId) => {
+            setUrlParams({ tab: tabId, sub: subId });
             HideAllCartable();
             document.querySelectorAll(".TCar").forEach(async (item) => {
                 if (item.id === tabId) {
@@ -1217,13 +1213,13 @@
 
                         case "TFinancialExpertId":
                             document.getElementById("CFinancialExpertId").style.display = "flex";
-                            const { sub = "FinancialPrefactorTab" } = getUrlParams();
-                            if (sub === "FinancialPrefactorTab") {
-                                await GetPreFactorFinancialExpert();
-                            } else if (sub === "FinancialInvoiceTab") {
+                            if (subId === "FinancialInvoiceTab") {
                                 await GetInvoicesFinancialExpert();
+                            } else {
+                                await GetPreFactorFinancialExpert();
                             }
                             break;
+
 
                         case "TFinancialAdminId":
                             document.getElementById("CFinancialAdminId").style.display = "flex";
@@ -1243,9 +1239,14 @@
                             document.getElementById("CTaminExpertId").style.display = "flex";
                             await GetPreFactorTaminExpert();
                             break;
+
                         case "TManagingDirectorId":
                             document.getElementById("CManagingDirectorId").style.display = "flex";
-                            await GetInvoicesManagingDirector();
+                            if (subId === "MDRequestAmountTab") {
+                                await GetRequestManagingDirector();
+                            } else {
+                                await GetInvoicesManagingDirector();
+                            }
                             break;
                     }
                 } else {
@@ -1355,6 +1356,7 @@
             const type = document.querySelector("input[type='radio'][name='managingDirectorFilter']:checked")?.value;
             if (type === undefined) return;
 
+            setUrlParams({ sub: "MDInvoiceTab" });
             ShowTab("#MDInvoiceTab");
             try {
                 FLshowLoading();
@@ -1376,6 +1378,7 @@
             const type = document.querySelector("input[type='radio'][name='MDRequestAmountFilter']:checked")?.value;
             if (type === undefined) return;
 
+            setUrlParams({ sub: "MDRequestAmountTab" });
             ShowTab("#MDRequestAmountTab");
             try {
                 FLshowLoading();
@@ -1411,7 +1414,7 @@
             } else {
                 if (acceptedAmount === acceptAmount) {
                     toggleElementsDisabled(acceptBtn, true);
-                }else {
+                } else {
                     toggleElementsDisabled(acceptBtn, false);
                     //acceptBtn.textContent = "تایید شده";
                 }
@@ -1428,7 +1431,6 @@
             try {
                 FLshowLoading();
                 const res = await axios.post(`/Amount/SetAcceptedRequestAmount`, model);
-                console.log(res);
                 if (res.status === 200) {
                     await GetRequestManagingDirector();
                     FLshowLoading(false);
@@ -1452,10 +1454,6 @@
                 if (res.status === 200) {
                     document.getElementById("FinancialExpertPfContentId").innerHTML = res.data.html || "";
                     document.getElementById("FinancialExpertCount").textContent = res.data.count;
-
-                    const badgeTabElm = document.querySelector("#FinancialPrefactorTab .badgeCircle");
-                    badgeTabElm.textContent = res.data.pendingCount;
-                    badgeTabElm.classList.toggle("d-none", !res.data.pendingCount);
                     FLshowLoading(false);
                 }
             } catch (err) {
@@ -1478,10 +1476,6 @@
                 const data = res.data;
                 document.getElementById("FinancialExpertInvoiceContentId").innerHTML = data.html;
                 document.getElementById("FinancialExpertInvoiceCount").textContent = data.count;
-
-                const badgeTabElm = document.querySelector("#FinancialInvoiceTab .badgeCircle");
-                badgeTabElm.textContent = data.pendingCount;
-                badgeTabElm.classList.toggle("d-none", !data.pendingCount);
 
                 initPaymentPartial(55);
                 FLshowLoading(false);
