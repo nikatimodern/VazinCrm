@@ -101,8 +101,8 @@
                 <label class="fbold" id="dealModalTitle">ثبت سفارش</label>
             </div>
             <div class="modal-body" style="padding:12px">
-                <form id="formDeal" class="d-flex flex-wrap" style="border:1px solid #8b8b8b;border-radius:4px">
-                    <fieldset id="mainFormDeal" class="d-flex flex-column col-12 col-xl" style="padding:12px">
+                <form id="formDeal" class="d-flex flex-wrap" style="border:1px solid #8b8b8b;border-radius:4px" autocomplete="off">
+                    <fieldset id="mainFormDeal" class="d-flex flex-column col-12 col-xl" style="padding:12px" autocomplete="off">
                         <div class="d-flex flex-column gap-1">
                             <label for="dealTitle" class="fbold">عنوان سفارش</label>
                             <input class="form-control text-start" id="dealTitle" name="title" required style="padding: 2px 8px !important;" type="text">
@@ -144,7 +144,7 @@
                             مشخصات بیشتر ...
                         </button>
                     </fieldset>
-                    <fieldset id="extraCustomerPanel" class="d-none col-12 col-xl border-start bg-light" style="padding:12px;border-radius: 4px 0 0 4px">
+                    <fieldset id="extraCustomerPanel" class="d-none col-12 col-xl border-start bg-light" style="padding:12px;border-radius: 4px 0 0 4px" autocomplete="off">
                         <h6 class="fbold mb-2 text-center">مشخصات تکمیلی</h6>
                         <div class="d-flex flex-column">
                             <div class="row g-1 w-100">
@@ -621,7 +621,7 @@
 
                 if (currentDealData.customerId === null) {
                     const customId = `custom-${currentDealData.customerName}`;
-                    selectTomCustomers.addOption({ id: customId, text: currentDealData.customerName });
+                    selectTomCustomers.addOption({ value: customId, text: currentDealData.customerName });
                     selectTomCustomers.setValue(customId, true);
 
                     const mobileNumber = currentDealData.mobileNumber;
@@ -699,8 +699,7 @@
                 axios("/BaseItem/GetItemsOp?typeCode=2"),
             ]);
             selectTomCustomers = new TomSelect("#dealCustomersTomSelect", {
-                options: customerRes.data,
-                valueField: "id",
+                options: customerRes.data.map(c => ({ text: `${c.customerName} (کد مشتری: ${c.customerCode})`, value: c.id })),
                 maxItems: 1,
                 persist: false,
                 openOnFocus: false,
@@ -708,10 +707,9 @@
                 selectOnTab: true,
                 placeholder: "نام سفارش دهنده ...",
 
-                create: (input, callback) => callback({ id: `custom-${input}`, text: input }),
+                create: (input, callback) => callback({ value: `custom-${input}`, text: input }),
 
                 async onChange(value) {
-
                     if (!value) return;
                     if (!value.startsWith("custom")) {
                         toggleElementsDisabled(dealMobileElm, true);
@@ -754,18 +752,22 @@
                 },
             });
 
-
-            const mobileTom = new TomSelect(dealMobileElm, {
-                options: customerRes.data.map(f => ({ mobile: f.mobile })),
-                valueField: "mobile",
+            new TomSelect(dealMobileElm, {
+                options: customerRes.data.map(c => ({ text: `${c.customerName} (${c.mobile})`, value: c.mobile })),
                 openOnFocus: false,
-                searchField: ["mobile"],
-                labelField: "mobile",
+                searchField: ["value"],
                 maxItems: 1,
                 persist: false,
                 create: true,
                 createOnBlur: true,
+                selectOnTab: true,
                 placeholder: "...شماره موبایل",
+
+                render: {
+                    item(data, escape) {
+                        return `<div>${escape(data.value)}</div>`;
+                    },
+                },
 
                 onChange(value) {
                     if (!value) return;
@@ -775,21 +777,10 @@
                     selectTomCustomers.setValue(customer.id);
                     flashItem(selectTomCustomers.control);
                 },
-
-                onType(str) {
-                    let numeric = str.replace(/\D/g, "");
-
-                    if (numeric.length > 16) {
-                        numeric = numeric.slice(0, 16);
-                    }
-
-                    if (numeric !== str) {
-                        mobileTom.setTextboxValue(numeric);
-                    }
-                },
             });
-
-            document.getElementById("dealMobile-ts-control").setAttribute("inputmode", "numeric");
+            const dealMobileTsInput = document.getElementById("dealMobile-ts-control")
+            dealMobileTsInput.setAttribute("inputmode", "numeric");
+            dealMobileTsInput.addEventListener("input", handlerMobileInput);
 
 
             const selectTomWorkSenf = new TomSelect("#workSenfIDDeal", {

@@ -917,7 +917,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             ).Select(f => new {
                 f.Id,
                 f.Mobile,
-                text = $"{f.CompanyName} {f.AgentName} _ (کد مشتری  {f.CustomerCode})".Trim(),
+                customerName = $"{f.CompanyName} {f.AgentName}".Trim(),
+                customerCode = f.CustomerCode,
             }).ToListAsync();
             return Ok(data);
         }

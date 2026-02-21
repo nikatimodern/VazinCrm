@@ -1775,7 +1775,7 @@
                 `${pfItem.productSmallName ?? ""} ${pfItem.product ?? ""} ${pfItem.printable ? "(چاپدار)" : ""}`;
 
             addItemSupplyModal.querySelector("#previewItemWeight").innerText =
-                `${pfItem.weightCount ?? ""} ${pfItem.unitTxt ?? ""}`;
+                `${Number(pfItem.weightCount)?.toLocaleString() ?? ""} ${pfItem.unitTxt ?? ""}`;
 
             addItemSupplyModal.querySelector("#previewItemUnitAmount").innerText = pfItem.unitAmount.toLocaleString();
 
@@ -1910,21 +1910,21 @@
 
             infoItem.innerHTML = `
                 <td>${supplyItem.supplierTxt ?? ""}</td>
-                <td>${supplyItem.weight ?? ""}</td>
+                <td>${Number(supplyItem.weight)?.toLocaleString() ?? ""}</td>
                 ${hasSupplyAmountSetting ? `
-                <td>${supplyItem.unitAmount?.toLocaleString() ?? "-"}</td>
-                <td>${supplyItem.totalAmount?.toLocaleString() ?? "-"}</td>` : ""}
-                <td>
-                    <span class="d-flex gap-2 justify-content-center align-items-center" style="font-size: 13px">
-                        <button class="mp" type="button" onclick="handleDeleteSupplyItem('${divPfItemId}', ${supplyItemIndex})" style="display:flex;justify-content:center;align-items:center;color:#333;border:none;background-color:transparent">
-                          <i class="mp fa fa-trash"></i>
-                        </button>
-                        <button class="mp" type="button" onclick="handleEditSupplyItem('${divPfItemId}', ${supplyItemIndex})" style="display:flex;justify-content:center;align-items:center;color:#333;border:none;background-color:transparent">
-                          <i class="mp fa fa-pencil"></i>
-                        </button>
-                    </span>
-                </td>
-            `;
+                    <td>${supplyItem.unitAmount?.toLocaleString() ?? "-"}</td>
+                    <td>${supplyItem.totalAmount?.toLocaleString() ?? "-"}</td>` : ""}
+                    <td>
+                        <span class="d-flex gap-2 justify-content-center align-items-center" style="font-size: 13px">
+                            <button class="mp" type="button" onclick="handleDeleteSupplyItem('${divPfItemId}', ${supplyItemIndex})" style="display:flex;justify-content:center;align-items:center;color:#333;border:none;background-color:transparent">
+                              <i class="mp fa fa-trash"></i>
+                            </button>
+                            <button class="mp" type="button" onclick="handleEditSupplyItem('${divPfItemId}', ${supplyItemIndex})" style="display:flex;justify-content:center;align-items:center;color:#333;border:none;background-color:transparent">
+                              <i class="mp fa fa-pencil"></i>
+                            </button>
+                        </span>
+                    </td>
+                `;
             return infoItem;
         }
 
@@ -1950,7 +1950,7 @@
                                 <div class="flex-center gap-1">
                                     <span class="flex-shrink-0" style="color: #e1e1e1">مقدار: </span>
                                     <span class="fMedium text-center" style="white-space: nowrap">
-                                        <span>${item.weightCount ?? ""} </span>
+                                        <span>${Number(item.weightCount)?.toLocaleString() ?? ""}</span>
                                         <span>${item.unitTxt ?? ""}</span>
                                     </span>
                                 </div>
@@ -2148,7 +2148,7 @@
 
                 infoItem.innerHTML = `
                     <td>${supplyItem.itemTitle ?? ""}</td>
-                    <td>${supplyItem.weight ?? ""}</td>
+                    <td>${Number(supplyItem.weight)?.toLocaleString() ?? ""}</td>
                     <td>${supplyItem.totalAmount?.toLocaleString() ?? 0}</td>
                     <td>
                         <span class="d-flex gap-2 justify-content-center align-items-center" style="font-size: 13px;color:#333">

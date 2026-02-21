@@ -1563,7 +1563,7 @@ function handlerMobileInput(e) {
         el.value = normalizeMobile(el.value);
     }
     function normalizeMobile(val) {
-        val = val.replace(/[\s\-()]/g, "");
+        val = toEnglishDigits(val).replace(/[\s\-()]/g, "");
         
         if (val.startsWith("00")) {
             val = "+" + val.slice(2);

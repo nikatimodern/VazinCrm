@@ -487,6 +487,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
                             IList<Carizo> list = new List<Carizo>();
+                            if (list == null) throw new ArgumentNullException(nameof(list));
                             foreach (var item in model2.TaskUsers)
                             {
                                 Carizo CModel = model2.Clone();
