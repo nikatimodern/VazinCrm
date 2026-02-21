@@ -2918,7 +2918,7 @@ function getUrlParams() {
 function setUrlParams(paramsObj, options = { replace: true }) {
     const url = new URL(window.location.href);
     Object.entries(paramsObj).forEach(([key, value]) => {
-        if (value === null || value === "") {
+        if (value === null || value === "" || value === undefined) {
             url.searchParams.delete(key);
         } else {
             url.searchParams.set(key, value.toString());

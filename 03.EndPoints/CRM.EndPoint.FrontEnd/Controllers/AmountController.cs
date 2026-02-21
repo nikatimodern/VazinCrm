@@ -17,7 +17,9 @@ using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Amount;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Reports;
+using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Dapper;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
 
@@ -34,9 +36,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly UserContextDb udb;
         private readonly LogSystemService _logSystemService;
         private readonly IVeiwRenderService vrs;
+        private readonly IHubContext<TaskHub> hub;
 
         public AmountController(UserManager<AppUser> userManager, Service GenService, FileSaver fileSaver,
-            DateTimeServices dtService, CRMContextDb db, UserContextDb udb, LogSystemService logSystemService, IVeiwRenderService vrs)
+            DateTimeServices dtService, CRMContextDb db, UserContextDb udb, LogSystemService logSystemService, IVeiwRenderService vrs,
+            IHubContext<TaskHub> hub)
         {
             this.userManager = userManager;
             genService = GenService;
@@ -46,6 +50,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.udb = udb;
             _logSystemService = logSystemService;
             this.vrs = vrs;
+            this.hub = hub;
         }
 
 
@@ -70,6 +75,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.RequestStatusTxt = model.RequestStatus.ToString().Replace("_", " ");
                 model.DocTypeTxt = model.DocType.ToString().Replace("_", " ");
                 await db.RequestAmounts.AddAsync(model);
+                await db.SaveChangesAsync();
+
+                await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
 
                 await db.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -99,32 +107,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.UserModifyID = user.Id;
 
                 var entity = await db.RequestAmounts.Include(x => x.RequestAmountSupplyFactor).FirstOrDefaultAsync(x => x.Id == model.Id);
-
                 if (entity == null) return NotFound();
 
+                await _logSystemService.LogChange(entity, model, LogActionEnum.ویرایش, user, ["RequestAmountSupplyFactor"]);
+
                 db.Entry(entity).CurrentValues.SetValues(model);
-
                 entity.RequestAmountSupplyFactor = model.RequestAmountSupplyFactor;
-
-
-                //var toRemove = entity.RequestAmountSupplyFactor
-                //    .Where(oldItem => !model.RequestAmountSupplyFactor.Any(newItem => newItem.SupplyFactorId == oldItem.SupplyFactorId))
-                //    .ToList();
-
-                //db.RequestAmountSupplyFactors.RemoveRange(toRemove);
-
-                //foreach (var item in model.RequestAmountSupplyFactor ?? [])
-                //{
-                //    var exists = entity.RequestAmountSupplyFactor.Any(x => x.SupplyFactorId == item.SupplyFactorId);
-
-                //    if (!exists)
-                //    {
-                //        entity.RequestAmountSupplyFactor.Add(new RequestAmountSupplyFactor {
-                //            RequestAmountId = entity.Id,
-                //            SupplyFactorId = item.SupplyFactorId
-                //        });
-                //    }
-                //}
 
                 await db.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -147,6 +135,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
 
+                var oldItem = await db.RequestAmounts.AsNoTracking().Where(f => f.Id == model.Id).FirstOrDefaultAsync();
                 var item = await db.RequestAmounts.Where(f => f.Id == model.Id).FirstOrDefaultAsync();
                 item.AcceptedAmount = model.AcceptedAmount;
                 item.RequestStatus = RequestStatusEnum.تایید_شده;
@@ -157,7 +146,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 item.ModifyDate = DateTime.Now;
                 item.ModifyDateTxt = dtService.GetDateTimePersian();
 
+                await _logSystemService.LogChange(oldItem, item, LogActionEnum.تایید_و_تغییر_وضعیت, user);
                 await db.SaveChangesAsync();
+                await hub.Clients.Groups("مدیر عامل", "مدیر ارشد").SendAsync("countPreFactorToAccept");
                 return Ok();
             }
             catch (Exception e)
@@ -258,6 +249,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 item.UserModify = user.FullName;
                 item.UserModifyID = user.Id;
 
+                await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
                 await db.SaveChangesAsync();
                 return Ok();
             }
