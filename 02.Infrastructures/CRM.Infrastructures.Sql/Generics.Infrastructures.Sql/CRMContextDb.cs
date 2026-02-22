@@ -29,6 +29,7 @@ using CRM.Core.Domain.Emails.Entities;
 using CRM.Core.Domain.WebPushSubscriptions.Entities;
 using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.RequestAmounts.Entities;
+using CRM.Core.Domain.Cashes.Entities;
 
 namespace Generics.Infrastructures.Sql
 {
@@ -91,6 +92,8 @@ namespace Generics.Infrastructures.Sql
         public DbSet<RequestAmountSupplyFactor> RequestAmountSupplyFactors { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<PaymentSupplyFactor> PaymentSupplyFactors { get; set; }
+        public DbSet<Cashier> Cashiers { get; set; }
+        public DbSet<Cash> Cashes { get; set; }
 
 
 
@@ -147,6 +150,8 @@ namespace Generics.Infrastructures.Sql
             modelBuilder.Entity<RequestAmount>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<Payment>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<PaymentSupplyFactor>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<Cashier>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<Cash>().HasQueryFilter(f => f.IsDeleted == false);
 
 
 
