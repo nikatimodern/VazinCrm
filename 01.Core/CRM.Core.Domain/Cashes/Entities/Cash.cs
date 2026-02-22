@@ -9,7 +9,7 @@ namespace CRM.Core.Domain.Cashes.Entities
     {
         public int Serial { get; set; }
         public Guid CashierId { get; set; }
-        public string CashierIdTXT { get; set; }
+        public string CashierTxt { get; set; }
         public string CostTitle { get; set; }//عنوان هزینه
         public string CostCenter { get; set; }//مرکز هزینه
         public string Amount { get; set; }//مبلغ
