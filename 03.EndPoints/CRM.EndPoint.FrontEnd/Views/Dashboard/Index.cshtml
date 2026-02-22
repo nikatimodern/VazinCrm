@@ -299,6 +299,7 @@
                 filterVarConfig: "filterDashboardConfig",
             };
             document.getElementById("DateFilterChk").setAttribute("disabled", "true");
+            document.querySelector("#dateFilterBtnId .monthBtn").classList.add("bgGreen2");
             await FilterAccepted(filConfigCurrentMonth);
             FLshowLoading(false);
 

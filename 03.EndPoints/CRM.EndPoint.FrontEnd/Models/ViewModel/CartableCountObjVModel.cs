@@ -10,7 +10,7 @@ public class CartableCountObjVModel {
 }
 
 public class SubCartableCountVModel {
-    public int PreFactorCount { get; set; }
-    public int InvoiceCount { get; set; }
-    public int RequestCount { get; set; }
+    public int PreFactorCount { get; set; } = 0;
+    public int InvoiceCount { get; set; } = 0;
+    public int RequestCount { get; set; } = 0;
 }

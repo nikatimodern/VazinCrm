@@ -2316,11 +2316,7 @@ class MyService {
                                 }
                                 
                                 
-                                if (el.classList.contains("mobileNumber") && el.value.trim().length > 0 && el.value.trim().length <= 8) {
-                                    toastifyError("شماره موبایل معتبر نیست!");
-                                    addAlert(el);
-                                    isValid = false;
-                                } else if ((el.getAttribute("data-slots") === "ymd" || el.hasAttribute("data-mask-date")) && el.value && !isValidDate(el.value)) {
+                                if ((el.getAttribute("data-slots") === "ymd" || el.hasAttribute("data-mask-date")) && el.value && !isValidDate(el.value)) {
                                     toastifyError("تاریخ معتبر نیست!");
                                     addAlert(el);
                                     isValid = false;
@@ -2370,6 +2366,12 @@ class MyService {
                                 isValid = false;
                             }
                             break;
+                    }
+                    
+                    if (el.classList.contains("mobileNumber") && el.value.trim().length > 0 && el.value.trim().length <= 8) {
+                        toastifyError("شماره موبایل معتبر نیست!");
+                        addAlert(el);
+                        isValid = false;
                     }
                 } else {
                     if (el.getAttribute("data-slots") === "ymd" && el.value.trim()) {

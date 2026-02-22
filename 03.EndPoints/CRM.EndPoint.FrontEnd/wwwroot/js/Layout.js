@@ -546,11 +546,18 @@ const filterToggleDisable = (_val, contentId) => {
 };
 
 const getDateFilter = async (type, btn) => {
-    document.querySelectorAll("#DateFilterDivContent input").forEach(inp => inp.setAttribute("disabled", "true"));
-    btn.setAttribute("disabled", "true");
-    const currentDate = type === 1 ? await myDate.getCurrentYear() : type === 2 ? await myDate.getCurrentMonth() : await myDate.getCurrentWeek();
-    document.querySelectorAll("#DateFilterDivContent input").forEach(inp => inp.removeAttribute("disabled"));
-    btn.removeAttribute("disabled");
+    const filterInputs = document.querySelectorAll("#DateFilterDivContent input");
+    toggleElementsDisabled(filterInputs);
+    toggleElementsDisabled(btn);
+    const currentDate =
+        type === 1 ? await myDate.getCurrentYear() :
+            type === 2 ? await myDate.getCurrentMonth() :
+                await myDate.getCurrentWeek();
+    
+    toggleElementsDisabled(filterInputs, false);
+    toggleElementsDisabled(btn, false);
+    document.querySelectorAll("#dateFilterBtnId button").forEach(el => el.classList.remove("bgGreen2"));
+    btn.classList.add("bgGreen2");
     currentDateTypeFilter = type;
     if (type === 1) {
         currentYear = currentDate[2];
@@ -3263,13 +3270,17 @@ const setCountEmail = (emailsCount, isAdmin) => {
 let oldSumCount = null;
 const setCountEnvelope = (countObj, isAdmin) => {
     const countResult = {
-        salesAdmin: { count: countObj.salesAdmin, id: "TSalesAdminId" },
-        tamin: { count: countObj.tamin, id: "TTaminExpertId" },
-        financial: { count: countObj.financial.invoiceCount + countObj.financial.preFactorCount, id: "TFinancialExpertId" },
-        managingDirector: { count: countObj.managingDirector.invoiceCount + countObj.managingDirector.requestCount, id: "TManagingDirectorId" },
+        salesAdmin: { count: countObj.salesAdmin || 0, id: "TSalesAdminId" },
+        tamin: { count: countObj.tamin || 0, id: "TTaminExpertId" },
+        financial: {
+            count: countObj.financial?.invoiceCount || 0 + countObj.financial?.preFactorCount || 0,
+            id: "TFinancialExpertId",
+        },
+        managingDirector: {
+            count: countObj.managingDirector?.invoiceCount || 0 + countObj.managingDirector?.requestCount || 0,
+            id: "TManagingDirectorId",
+        },
     };
-    
-    
     let sumCount = Object.values(countResult).reduce((sum, c) => sum + (c.count || 0), 0);
     const countEnvelopeElm = document.getElementById("CountEnvelopeId");
     setBadge(countEnvelopeElm, sumCount);

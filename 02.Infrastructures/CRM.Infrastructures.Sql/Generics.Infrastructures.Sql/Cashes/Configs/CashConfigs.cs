@@ -9,7 +9,7 @@ namespace CRM.Infrastructures.Sql.Cashes.Configs
         public void Configure(EntityTypeBuilder<Cash> builder)
         {
             builder.HasKey(f => f.Id);
-
+            builder.Property(f => f.Amount).HasPrecision(20, 0);
         }
     }
 

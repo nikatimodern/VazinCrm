@@ -9,6 +9,7 @@ namespace CRM.Core.Domain.Cashes.Entities
     {
 
         public string UserId { get; set; }
+        public string Title { get; set; }
         public IList<Cash> Cashes { get; set; }
 
 
