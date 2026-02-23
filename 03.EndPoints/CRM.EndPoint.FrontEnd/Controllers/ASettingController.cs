@@ -19,6 +19,7 @@ using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
+using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
@@ -138,17 +139,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (modelF.filt != null)
                 {
-                    var fd = dtService.GetDateMiladi(modelF.filt.fromDate);
-                    var td = dtService.GetDateMiladi(modelF.filt.toDate);
-                    fd = fd == null ? dtService.GetDateMiladi("1000/01/01") : fd;
-                    td = td == null ? DateTime.Now : td;
-                    //if (modelF.filt.CusFilterChd == true)
-                    //    dataF = dataF.Where(f => f.CustomerId == modelF.filt.customerFilter).AsQueryable();
-                    if (modelF.filt.DateFilterChk == true)
-                        dataF = dataF.Where(f => f.ModifyDate >= fd && f.ModifyDate <= td)
-                            .OrderByDescending(f => f.ModifyDate).AsQueryable();
-                    //if (modelF.filt.SelFilterChd == true)
-                    //    dataF = dataF.Where(f => f.UserCreatorID == modelF.filt.selFilter.ToString()).AsQueryable();
+                    dataF = dataF.ApplyFilter(modelF, null, f => f.ModifyDate, null);
                 }
 
                 if (!string.IsNullOrEmpty(searchValue))

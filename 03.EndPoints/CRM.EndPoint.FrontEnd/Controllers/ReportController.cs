@@ -18,6 +18,7 @@ using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Reports.Enum;
 using CRM.EndPoint.FrontEnd.ISerives;
+using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.AspNetCore.SignalR;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
@@ -278,14 +279,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (model.filt != null)
                 {
-                    var fd = dts.GetDateMiladi(model.filt.fromDate) ?? dts.GetDateMiladi("1000/01/01");
-                    var td = dts.GetDateMiladi(model.filt.toDate) ?? DateTime.Now;
-                    if (model.filt.CusFilterChd)
-                        qData = qData.Where(f => f.CustomerId == model.filt.customerFilter);
-                    if (model.filt.DateFilterChk)
-                        qData = qData.Where(f => f.CreateDate >= fd && f.CreateDate <= td);
-                    if (model.filt.SelFilterChd)
-                        qData = qData.Where(f => f.UserCreatorID == model.filt.selFilter.ToString());
+                    qData = qData.ApplyFilter(model, f => f.CustomerId, f => f.CreateDate, f => f.UserCreatorID);
                 }
 
 

@@ -20,6 +20,7 @@ using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.EndPoint.FrontEnd.Services.Factor;
+using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using DocumentFormat.OpenXml.Spreadsheet;
 
 
@@ -256,17 +257,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (model.filt != null)
                 {
-                    var fd = dtService.GetDateMiladi(model.filt.fromDate) ?? dtService.GetDateMiladi("1000/01/01");
-                    var td = dtService.GetDateMiladi(model.filt.toDate) ?? DateTime.Now;
-
-                    if (model.filt.CusFilterChd)
-                        dataQ = dataQ.Where(f => f.Customer == model.filt.customerFilter);
-
-                    if (model.filt.DateFilterChk)
-                        dataQ = dataQ.Where(f => f.OrderDateMildi >= fd && f.OrderDateMildi <= td);
-
-                    if (model.filt.SelFilterChd)
-                        dataQ = dataQ.Where(f => f.UserCreatorID == model.filt.selFilter.ToString());
+                    dataQ = dataQ.ApplyFilter(model, f => f.Customer, f => f.OrderDateMildi, f => f.UserCreatorID);
                 }
 
                 //اگر فیلتر نداشت پیش فرض سفارش هایی که از این تاریخ به بعد هستند رو نمایش میده

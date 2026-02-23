@@ -20,6 +20,6 @@ namespace CRM.Core.Domain.Cashes.Entities {
 
     public enum CashStatusEnum {
         ثبت_موقت,
-        ارسال_به_حسابداری
+        ارسال_شده
     }
 }

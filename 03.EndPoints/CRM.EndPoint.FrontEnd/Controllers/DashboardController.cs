@@ -23,6 +23,7 @@ using System.Threading.Tasks;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.PreFactors.Enum;
+using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize(Policy = "NotCustomerOnly")]
@@ -66,13 +67,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             if (model?.filt != null)
             {
-                var fd = dtService.GetDateMiladi(model.filt.fromDate) ?? dtService.GetDateMiladi("1000/01/01");
-                var td = dtService.GetDateMiladi(model.filt.toDate) ?? DateTime.Now;
-
-                if (model.filt.DateFilterChk)
-                    logSystem = logSystem.Where(f => f.ChangeTime >= fd && f.ChangeTime <= td);
-                if (model.filt.SelFilterChd)
-                    logSystem = logSystem.Where(f => f.ChangedById == model.filt.selFilter.ToString());
+                logSystem = logSystem.ApplyFilter(model, null, f => f.ChangeTime, f => f.ChangedById);
             }
 
             var data = logSystem
@@ -100,12 +95,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             if (model.filt != null)
             {
-                var fd = dtService.GetDateMiladi(model.filt.fromDate);
-                var td = dtService.GetDateMiladi(model.filt.toDate);
-                fd = fd == null ? dtService.GetDateMiladi("1000/01/01") : fd;
-                td = td == null ? DateTime.Now : td;
-                if (model.filt.DateFilterChk == true)
-                    factorsQ = factorsQ.Where(f => f.DateMiladi >= fd && f.DateMiladi <= td);
+                factorsQ = factorsQ.ApplyFilter(model, null, f => f.DateMiladi, null);
             }
 
             var factorsBySeller = await factorsQ
@@ -146,16 +136,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             if (model.filt != null)
             {
-                var fd = dtService.GetDateMiladi(model.filt.fromDate);
-                var td = dtService.GetDateMiladi(model.filt.toDate);
-                fd = fd == null ? dtService.GetDateMiladi("1000/01/01") : fd;
-                td = td == null ? DateTime.Now : td;
-                if (model.filt.CusFilterChd == true)
-                    factorsQ = factorsQ.Where(f => f.CustomerId == model.filt.customerFilter);
-                if (model.filt.DateFilterChk == true)
-                    factorsQ = factorsQ.Where(f => f.DateMiladi >= fd && f.DateMiladi <= td);
-                if (model.filt.SelFilterChd == true)
-                    factorsQ = factorsQ.Where(f => f.SelerId == model.filt.selFilter.ToString());
+                factorsQ = factorsQ.ApplyFilter(model, f => f.CustomerId, f => f.DateMiladi, f => f.SelerId);
             }
 
 
@@ -187,19 +168,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var rols = await userManager.GetRolesAsync(user);
 
             var reports = db.Reports.AsQueryable();
-
             if (model.filt != null)
             {
-                var fd = dtService.GetDateMiladi(model.filt.fromDate);
+                reports = reports.ApplyFilter(model, f => f.CustomerId, f => f.CreateDate, f => f.UserCreatorID);
+                /*var fd = dtService.GetDateMiladi(model.filt.fromDate);
                 var td = dtService.GetDateMiladi(model.filt.toDate);
                 fd = fd ?? dtService.GetDateMiladi("1000/01/01");
-                td = td ?? DateTime.Now;
+                td = (td ?? DateTime.Today).Date.AddDays(1).AddTicks(-1);
                 if (model.filt.CusFilterChd == true)
                     reports = reports.Where(f => f.CustomerId == model.filt.customerFilter);
                 if (model.filt.DateFilterChk == true)
                     reports = reports.Where(f => f.CreateDate >= fd && f.CreateDate <= td);
                 if (model.filt.SelFilterChd == true)
-                    reports = reports.Where(f => f.UserCreatorID == model.filt.selFilter.ToString());
+                    reports = reports.Where(f => f.UserCreatorID == model.filt.selFilter.ToString());*/
             }
 
 
@@ -238,15 +219,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             if (_filter.filt != null)
             {
-                var fd = dtService.GetDateMiladi(_filter.filt.fromDate) ?? dtService.GetDateMiladi("1000/01/01");
-                var td = dtService.GetDateMiladi(_filter.filt.toDate) ?? DateTime.Now;
-
-                if (_filter.filt.CusFilterChd)
-                    orderHeadQ = orderHeadQ.Where(f => f.Customer == _filter.filt.customerFilter).AsQueryable();
-                if (_filter.filt.DateFilterChk)
-                    orderHeadQ = orderHeadQ.Where(f => f.OrderDateMildi >= fd && f.OrderDateMildi <= td).AsQueryable();
-                if (_filter.filt.SelFilterChd)
-                    orderHeadQ = orderHeadQ.Where(f => f.UserCreatorID == _filter.filt.selFilter.ToString()).AsQueryable();
+                orderHeadQ = orderHeadQ.ApplyFilter(_filter, f => f.Customer, f => f.OrderDateMildi, f => f.UserCreatorID);
             }
 
 
@@ -274,14 +247,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var roles = await userManager.GetRolesAsync(user);
 
-            /*var pFactorsQ = db.PreFactors.AsQueryable();
-
-            if (filter?.filt?.SelFilterChd == true)
-                pFactorsQ = pFactorsQ.Where(p => p.UserCreatorID == filter.filt.selFilter.ToString());
-
-            var preFactorIds = await pFactorsQ.Select(p => p.Id).ToListAsync();*/
-
-//            var factorsQ = db.Factors.Where(f => preFactorIds.Contains(f.PfactorID) && f.status == FactorStatus.تایید_شده);
             var factorsQ = db.Factors.Where(f => f.status == FactorStatus.تایید_شده);
 
             if (!roles.Contains("کارشناس مالی") && !roles.Contains("مدیر مالی") && !roles.Contains("مدیر ارشد") && !roles.Contains("مدیر فروش"))
@@ -289,68 +254,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             if (filter?.filt != null)
             {
-                var fd = dtService.GetDateMiladi(filter.filt.fromDate) ?? dtService.GetDateMiladi("1000/01/01");
-                var td = dtService.GetDateMiladi(filter.filt.toDate) ?? DateTime.Now;
-
-                if (filter.filt.CusFilterChd)
-                    factorsQ = factorsQ.Where(f => f.CustomerId == filter.filt.customerFilter);
-
-                if (filter.filt.DateFilterChk)
-                    factorsQ = factorsQ.Where(f => f.DateMiladi >= fd && f.DateMiladi <= td);
-
-                if (filter.filt.SelFilterChd)
-                    factorsQ = factorsQ.Where(f => f.SelerId == filter.filt.selFilter.ToString());
+                factorsQ = factorsQ.ApplyFilter(filter, f => f.CustomerId, f => f.DateMiladi, f => f.SelerId);
             }
-
-
-            var factors = await factorsQ.ToListAsync();
-
-            var model = new DashFactorsVModel {
-                Count = factors.Count,
-                SumAmount = factors.Sum(f => f.PaymentAmount),
-                Export = factors.Count(f => f.Export == true),
-                NoExport = factors.Count(f => f.Export != true)
-            };
-
-            return Ok(model);
-        }
-
-
-        public async Task<IActionResult> GetDashFactorsی([FromBody] filterVModel filter)
-        {
-            var user = await userManager.GetUserAsync(HttpContext.User);
-
-            var pFactorsQ = db.PreFactors.AsQueryable();
-
-            if (filter?.filt?.SelFilterChd == true)
-                pFactorsQ = pFactorsQ.Where(p => p.UserCreatorID == filter.filt.selFilter.ToString());
-            var preFactorIds = await pFactorsQ.Select(p => p.Id).ToListAsync();
-
-            var factorsQ = db.Factors.Where(f => preFactorIds.Contains(f.PfactorID) && f.status == FactorStatus.تایید_شده);
-
-            if (filter?.filt != null)
-            {
-                var fd = dtService.GetDateMiladi(filter.filt.fromDate) ?? dtService.GetDateMiladi("1000/01/01");
-                var td = dtService.GetDateMiladi(filter.filt.toDate) ?? DateTime.Now;
-
-                if (filter.filt.CusFilterChd)
-                    factorsQ = factorsQ.Where(f => f.CustomerId == filter.filt.customerFilter);
-
-                if (filter.filt.DateFilterChk)
-                    factorsQ = factorsQ.Where(f => f.DateMiladi >= fd && f.DateMiladi <= td);
-
-                if (filter.filt.SelFilterChd)
-                    factorsQ = factorsQ.Where(f => f.SelerId == filter.filt.selFilter.ToString());
-            }
-
-            bool isFinanceOrManager =
-                await userManager.IsInRoleAsync(user, "کارشناس مالی") ||
-                await userManager.IsInRoleAsync(user, "مدیر مالی") ||
-                await userManager.IsInRoleAsync(user, "مدیر ارشد") ||
-                await userManager.IsInRoleAsync(user, "مدیر فروش");
-
-            if (!isFinanceOrManager)
-                factorsQ = factorsQ.Where(f => f.SelerId == user.Id);
 
 
             var factors = await factorsQ.ToListAsync();
