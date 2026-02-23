@@ -9,6 +9,7 @@ using CRM.Core.Domain.Attachments.Entities;
 using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.Cartables.Entities;
 using CRM.Core.Domain.Cartables.Enums;
+using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Contracts.Entities;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Deals.Entities;
@@ -485,6 +486,20 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
                 }
 
                 break;
+            case Cash:
+                switch (action)
+                {
+                    case LogActionEnum.ثبت:
+                        return $"یک تنخواه به شماره تنخواه {serialNumber} توسط <b>{fullName}</b> ثبت شد.";
+
+                    case LogActionEnum.ویرایش:
+                        return $"یک تنخواه به شماره تنخواه {serialNumber} توسط <b>{fullName}</b> ویرایش شد.";
+
+                    case LogActionEnum.حذف:
+                        return $"یک تنخواه به شماره تنخواه {serialNumber} توسط <b>{fullName}</b> حذف شد.";
+                }
+
+                break;
         }
 
         return null;
@@ -503,6 +518,7 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
             Payment p => p.PaymentNumber,
             SupplyFactor s => TextService.ExtractNumber(s.FactorSerial),
             RequestAmount r => r.RequestNumber,
+            Cash c => c.Serial,
             _ => null
         };
     }

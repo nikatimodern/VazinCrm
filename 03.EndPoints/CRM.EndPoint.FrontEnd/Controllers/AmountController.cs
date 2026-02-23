@@ -54,6 +54,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
+        [Authorize(Roles = "مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
         public IActionResult RequestAmount()
         {
             return View();
