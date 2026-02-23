@@ -234,27 +234,32 @@ document.querySelectorAll("#Factor input[type='radio'][name='f_official']")?.for
 
 const descGenerate = () => {
     if (_officialType === 0) { //اگر غیر رسمی بود
-        PreFactorDescItems.forEach((item, index) => {
+        PreFactorDescItems = PreFactorDescItems.filter(item => {
             if (item.official === true) {
                 if (item.id == null) {
-                    PreFactorDescItems.splice(index, 1);
+                    return false;
                     
                 } else {
-                    PreFactorDescItems[index].isDeleted = true;
+                    item.isDeleted = true;
                 }
             }
+            return true;
         });
     } else { //اگر رسمی بود
-        PreFactorDescItems.forEach((item, index) => {
+        /*PreFactorDescItems.forEach((item, index) => {
             if (item.official === true) {
                 PreFactorDescItems.splice(index, 1);
             }
         });
-        baseDesPfactor.forEach((item, index) => {
+        baseDesPfactor.filter(f => f.type === 0).forEach((item, index) => {
             if (item.official === true) {
                 PreFactorDescItems.push({ text: item.text, official: item.official, isDeleted: false });
             }
-        });
+        });*/
+        PreFactorDescItems = [
+            ...PreFactorDescItems.filter(item => !item.official),
+            ...baseDesPfactor.filter(item => item.type === 0 && item.official),
+        ];
     }
     showPreFactorDescItems();
     if (_officialType === 1) {
@@ -1036,8 +1041,8 @@ const AddFactor = async (pfId = null, type = 1) => {
         FLshowLoading(false);
         return;
     }
-   
-    _factorItems = pfData.preFactorItems
+    
+    _factorItems = pfData.preFactorItems;
     
     _factorItems = _factorItems.filter(pfItem => supplyData.some(sup => sup.pfItemId === pfItem.id));
     _factorItems.forEach(pfItem => {
@@ -1124,10 +1129,11 @@ const showModalAddPfactor = async (type, cusId = null, deal) => {
     FLshowLoading();
     baseDesPfactor = await getbaseDescription();
     PreFactorDescItems = [];
-    
+    console.log(baseDesPfactor);
     baseDesPfactor.filter(f => !f.official).filter(f => f.type === 0).map(item => {
         PreFactorDescItems.push({ text: item.text, isDeleted: false, official: item.official });
     });
+    console.log(PreFactorDescItems);
     showPreFactorDescItems();
     toggleDisplayPrefactorModal();
     //_officialType = 1;//رسمی
