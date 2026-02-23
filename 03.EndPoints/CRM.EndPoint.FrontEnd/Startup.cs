@@ -158,12 +158,9 @@ namespace CRM.EndPoint.FrontEnd {
             });
 
 
-
-
-            var mvc = services.AddControllersWithViews();
-            //mvc.AddRazorRuntimeCompilation();
-
-
+            services
+                .AddControllersWithViews()
+                .AddRazorRuntimeCompilation();
 
             services.ConfigureApplicationCookie(options => {
                 options.AccessDeniedPath = "/AccessDenied-Skip"; // مسیر جعلی که ما خودمون مدیریت می‌کنیم

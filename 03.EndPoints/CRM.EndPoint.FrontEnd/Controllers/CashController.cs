@@ -152,6 +152,30 @@ public class CashController : Controller {
         }
     }
 
+    public async Task<IActionResult> ChangeStatusCash(Guid id, CashStatusEnum status)
+    {
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var data = await db.Cashes.Where(f => f.Id == id).FirstOrDefaultAsync();
+            if (data == null) return NotFound();
+
+            data.Status = status;
+            data.StatusTxt = status.ToString().Replace("_", " ");
+
+            data.ModifyDate = DateTime.Now;
+            data.ModifyDateTxt = dtService.GetDateTimePersian();
+            data.UserModify = user.FullName;
+            data.UserModifyID = user.Id;
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+
     public async Task<IActionResult> GetCashier(Guid id)
     {
         try
