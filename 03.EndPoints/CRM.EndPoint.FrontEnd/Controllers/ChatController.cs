@@ -274,7 +274,7 @@ public class ChatController : Controller {
                 Title = fromUser?.FullName ?? "پیام رسان",
                 Body = displayText,
                 Url = "/Chat/Main",
-                Tag = "chat" + rnd.Next(1000, 10000)
+                Tag = "chat" + fromUser?.FullName
             });
 
             await db.SaveChangesAsync();

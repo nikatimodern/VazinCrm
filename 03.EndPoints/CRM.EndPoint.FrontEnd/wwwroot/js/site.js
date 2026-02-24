@@ -2035,9 +2035,10 @@ class MyService {
                         elm.value = defVal ?? "";
                     }
                     break;
-                
                 case "select-one":
+                case "select-multiple":
                     if (elm.tomselect) {
+                        
                         elm.tomselect.clear(true);
                         if (defVal != null) elm.tomselect.setValue(defVal, true);
                     } else {

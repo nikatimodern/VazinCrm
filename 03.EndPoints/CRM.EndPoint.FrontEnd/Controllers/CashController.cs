@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
+using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
@@ -17,6 +18,7 @@ using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
+[Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی, تنخواه دار")]
 public class CashController : Controller {
     private readonly CRMContextDb db;
     private readonly UserContextDb udb;
@@ -24,9 +26,10 @@ public class CashController : Controller {
     private readonly DateTimeServices dtService;
     private readonly Service genService;
     private readonly LogSystemService logSystemService;
+    private readonly FileSaver fileSaver;
 
     public CashController(CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, DateTimeServices dtService, Service genService,
-        LogSystemService logSystemService)
+        LogSystemService logSystemService, FileSaver fileSaver)
     {
         this.db = db;
         this.udb = udb;
@@ -34,14 +37,16 @@ public class CashController : Controller {
         this.dtService = dtService;
         this.genService = genService;
         this.logSystemService = logSystemService;
+        this.fileSaver = fileSaver;
     }
 
+    [Authorize(Roles = "مدیر ارشد, تنخواه دار, مدیر مالی, کارشناس مالی")]
     public IActionResult Index()
     {
         return View();
     }
 
-    [Authorize(Roles = "مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
+    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
     public IActionResult Cashier()
     {
         return View();
@@ -59,11 +64,6 @@ public class CashController : Controller {
             var isAdd = model.Id == Guid.Empty;
             Cash oldCash = null;
 
-            var cashierId = await db.Cashiers.Where(f => f.UserId == user.Id).Select(f => f.Id).FirstOrDefaultAsync();
-            if (cashierId == Guid.Empty)
-                return NotFound("نام کاربری شما جز لیست تنخواه دارها ثبت نشده است!");
-
-
             if (isAdd)
             {
                 model.UserCreator = user.FullName;
@@ -78,8 +78,6 @@ public class CashController : Controller {
             }
 
             model.CostDateMiladi = dtService.GetDateMiladi(model.CostDate) ?? DateTime.Now;
-            model.CashierId = cashierId;
-            model.CashierTxt = user.FullName;
             model.StatusTxt = model.Status.ToString().Replace("_", " ");
 
             db.Cashes.Update(model);
@@ -92,6 +90,13 @@ public class CashController : Controller {
             {
                 await logSystemService.LogChange(oldCash, model, LogActionEnum.ویرایش, user);
             }
+
+            var attach = fileSaver.saveAttach(model.Attachments, _AttachType.Cash);
+            foreach (var att in attach)
+            {
+                att.EntityId = model.Id;
+            }
+            db.Attachments.UpdateRange(attach);
 
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -118,15 +123,24 @@ public class CashController : Controller {
             {
                 model.UserCreator = user.FullName;
                 model.UserCreatorID = user.Id;
+                db.Cashiers.Add(model);
             } else
             {
-                model.ModifyDate = DateTime.Now;
-                model.ModifyDateTxt = dtService.GetDateTimePersian();
-                model.UserModify = user.FullName;
-                model.UserModifyID = user.Id;
+                var data = await db.Cashiers.Include(f => f.CashierUsers).Where(f => f.Id == model.Id).FirstOrDefaultAsync();
+                data.ModifyDate = DateTime.Now;
+                data.ModifyDateTxt = dtService.GetDateTimePersian();
+                data.UserModify = user.FullName;
+                data.UserModifyID = user.Id;
+                data.CashierUsers = model.CashierUsers;
+                data.Title = model.Title;
             }
 
-            db.Cashiers.Update(model);
+            foreach (var cu in model.CashierUsers)
+            {
+                var usr = await udb.Users.Where(f => f.Id == cu.UserId).FirstOrDefaultAsync();
+                await userManager.AddToRoleAsync(usr, "تنخواه دار");
+            }
+
 
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -143,7 +157,14 @@ public class CashController : Controller {
     {
         try
         {
-            var data = await db.Cashes.Where(f => f.Id == id).AsNoTracking().FirstOrDefaultAsync();
+            var data = await db.Cashes.Where(f => f.Id == id).AsNoTracking()
+                .Select(c => new {
+                    Cash = c,
+                    Attachments = db.Attachments
+                        .Where(a => a.EntityId == c.Id && a._AttachType == _AttachType.Cash)
+                        .ToList()
+                })
+                .FirstOrDefaultAsync();
             return Ok(data);
         }
         catch (Exception e)
@@ -180,7 +201,34 @@ public class CashController : Controller {
     {
         try
         {
-            var data = await db.Cashiers.Where(f => f.Id == id).AsNoTracking().FirstOrDefaultAsync();
+            var data = await db.Cashiers.Where(f => f.Id == id).Include(f => f.CashierUsers).AsNoTracking().FirstOrDefaultAsync();
+            return Ok(data);
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+
+    public async Task<IActionResult> GetAllMyCashiers()
+    {
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var roles = await userManager.GetRolesAsync(user);
+
+            var query = db.Cashiers.AsNoTracking();
+
+            if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر مالی") && !roles.Contains("کارشناس مالی"))
+            {
+                query = query.Where(f => f.CashierUsers.Any(f => f.UserId == user.Id));
+            }
+
+            var data = await query.Select(f => new {
+                value = f.Id,
+                text = f.Title
+            }).ToListAsync();
+
             return Ok(data);
         }
         catch (Exception e)
@@ -219,7 +267,7 @@ public class CashController : Controller {
         try
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
-            var item = await db.Cashiers.Where(f => f.Id == id).FirstOrDefaultAsync();
+            var item = await db.Cashiers.Where(f => f.Id == id).Include(c => c.CashierUsers).FirstOrDefaultAsync();
             if (item == null) return NotFound();
 
             item.IsDeleted = true;
@@ -227,6 +275,17 @@ public class CashController : Controller {
             item.ModifyDateTxt = dtService.GetDateTimePersian();
             item.UserModify = user.FullName;
             item.UserModifyID = user.Id;
+
+            foreach (var cu in item.CashierUsers)
+            {
+                var userHasCashier = await db.CashierUsers.AnyAsync(x => x.UserId == cu.UserId && x.CashierId != item.Id);
+
+                if (!userHasCashier)
+                {
+                    var usr = await udb.Users.FirstOrDefaultAsync(f => f.Id == cu.UserId);
+                    await userManager.RemoveFromRoleAsync(usr, "تنخواه دار");
+                }
+            }
 
             await logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
 
@@ -255,20 +314,33 @@ public class CashController : Controller {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var roles = await userManager.GetRolesAsync(user);
 
-            var query = db.Cashes.OrderByDescending(f => f.CreateDate).AsNoTracking();
-            if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر مالی") && !roles.Contains("مدیر اجرایی") && !roles.Contains("مدیر عامل"))
+
+            var cashier = db.Cashiers.Include(f => f.CashierUsers.Where(f => f.UserId == user.Id)).AsNoTracking().Select(f => f.Id).ToList();
+            var query = db.Cashes
+                .Join(db.Cashiers,
+                    c => c.CashierId,
+                    ci => ci.Id,
+                    (c, ci) => new { cash = c, CostCenter = ci.Title }
+                );
+
+            var isManager = true;
+            if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر مالی") && !roles.Contains("کارشناس مالی"))
             {
-                query = query.Where(f => f.UserCreator == user.Id);
+                query = query.Where(f => cashier.Contains(f.cash.CashierId));
+                isManager = false;
+            } else
+            {
+                query = query.Where(f => f.cash.Status != CashStatusEnum.ثبت_موقت || f.cash.UserCreatorID == user.Id);
             }
+
 
             if (!string.IsNullOrEmpty(searchValue))
             {
                 var searchNumber = TextService.convertToInt(searchValue);
                 query = query.Where(f =>
-                    f.Amount == searchNumber ||
-                    f.Serial == searchNumber ||
-                    f.CashierTxt.Contains(searchValue) ||
-                    f.CostTitle.Contains(searchValue) ||
+                    f.cash.Amount == searchNumber ||
+                    f.cash.Serial == searchNumber  ||
+                    f.cash.CostTitle.Contains(searchValue) ||
                     f.CostCenter.Contains(searchValue)
                 );
             }
@@ -281,20 +353,20 @@ public class CashController : Controller {
                 var isAscending = sortColumnDirection == "asc";
                 query = sortColumn switch {
                     "Serial" => isAscending
-                        ? query.OrderBy(f => f.Serial)
-                        : query.OrderByDescending(f => f.Serial),
+                        ? query.OrderBy(f => f.cash.Serial)
+                        : query.OrderByDescending(f => f.cash.Serial),
                     "Amount" => isAscending
-                        ? query.OrderBy(f => f.Amount)
-                        : query.OrderByDescending(f => f.Amount),
+                        ? query.OrderBy(f => f.cash.Amount)
+                        : query.OrderByDescending(f => f.cash.Amount),
                     "CostTitle" => isAscending
-                        ? query.OrderBy(f => f.CostTitle)
-                        : query.OrderByDescending(f => f.CostTitle),
+                        ? query.OrderBy(f => f.cash.CostTitle)
+                        : query.OrderByDescending(f => f.cash.CostTitle),
                     "CostCenter" => isAscending
                         ? query.OrderBy(f => f.CostCenter)
                         : query.OrderByDescending(f => f.CostCenter),
                     "CostDate" => isAscending
-                        ? query.OrderBy(f => f.CostDateMiladi)
-                        : query.OrderByDescending(f => f.CostDateMiladi),
+                        ? query.OrderBy(f => f.cash.CostDateMiladi)
+                        : query.OrderByDescending(f => f.cash.CostDateMiladi),
                     _ => query
                 };
             }
@@ -303,13 +375,14 @@ public class CashController : Controller {
             if (length != -1)
                 query = query.Skip(start).Take(length);
 
-            var data = await query.ToListAsync();
+            var data = await query.OrderByDescending(f => f.cash.CreateDate).ToListAsync();
 
             return Json(new {
                 draw,
                 recordsTotal,
                 recordsFiltered = recordsTotal,
                 data,
+                isManager,
             });
         }
         catch (Exception ex)
@@ -335,17 +408,18 @@ public class CashController : Controller {
                 .Select(u => new { u.Id, u.FullName })
                 .ToDictionaryAsync(u => u.Id, u => u.FullName);
 
-            var cashiers = await db.Cashiers.AsNoTracking().ToListAsync();
+            var cashiers = await db.Cashiers.AsNoTracking().Include(c => c.CashierUsers).ToListAsync();
 
             var merged = cashiers.Select(c => new {
                 Cashier = c,
-                UserFullName = usersDict.GetValueOrDefault(c.UserId)
+                UserFullNames = c.CashierUsers.Select(cu => usersDict.GetValueOrDefault(cu.UserId)).ToList()
             });
+
 
             if (!string.IsNullOrEmpty(searchValue))
             {
                 merged = merged.Where(x =>
-                    x.UserFullName.Contains(searchValue) ||
+                    x.UserFullNames.Contains(searchValue) ||
                     x.Cashier.Title.Contains(searchValue)
                 );
             }
@@ -354,16 +428,11 @@ public class CashController : Controller {
             {
                 var asc = sortColumnDirection == "asc";
                 merged = sortColumn switch {
-                    "UserFullName" => asc
-                        ? merged.OrderBy(x => x.UserFullName)
-                        : merged.OrderByDescending(x => x.UserFullName),
                     "Title" => asc
                         ? merged.OrderBy(x => x.Cashier.Title)
                         : merged.OrderByDescending(x => x.Cashier.Title),
-                    "CreateDateTxt" => asc
-                        ? merged.OrderBy(x => x.Cashier.CreateDate)
-                        : merged.OrderByDescending(x => x.Cashier.CreateDate),
-                    _ => merged
+
+                    _ => merged.OrderByDescending(x => x.Cashier.CreateDate)
                 };
             }
 
@@ -378,7 +447,7 @@ public class CashController : Controller {
                 draw,
                 recordsTotal,
                 recordsFiltered = recordsTotal,
-                data
+                data,
             });
         }
         catch (Exception ex)

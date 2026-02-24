@@ -94,6 +94,7 @@ namespace Generics.Infrastructures.Sql
         public DbSet<PaymentSupplyFactor> PaymentSupplyFactors { get; set; }
         public DbSet<Cashier> Cashiers { get; set; }
         public DbSet<Cash> Cashes { get; set; }
+        public DbSet<CashierUser> CashierUsers { get; set; }
 
 
 
@@ -152,6 +153,7 @@ namespace Generics.Infrastructures.Sql
             modelBuilder.Entity<PaymentSupplyFactor>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<Cashier>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<Cash>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<CashierUser>().HasQueryFilter(f => f.IsDeleted == false);
 
 
 

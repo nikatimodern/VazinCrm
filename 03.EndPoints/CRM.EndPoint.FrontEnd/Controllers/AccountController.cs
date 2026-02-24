@@ -454,7 +454,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 ["کارشناس تامین"] = "TaminExpert",
                 ["مدیر مالی"] = "FinancialAdmin",
                 ["کارشناس مالی"] = "FinancialExpert",
-                ["مشتری"] = "Customer"
+                ["مشتری"] = "Customer",
+                ["تنخواه دار"] = "TanKhah",
             };
 
             var model = new GetUserLogin {

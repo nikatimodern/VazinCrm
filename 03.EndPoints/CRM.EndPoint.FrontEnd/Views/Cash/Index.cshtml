@@ -7,7 +7,7 @@
 <div class="w-100">
     <div class="row align-items-center justify-content-between flex-wrap mb-2 g-2">
         <div class="d-flex col-lg-3">
-            <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="toggleCashModal()">
+            <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" data-bs-toggle="modal" data-bs-target="#cashModal">
                 <span style="line-height: 1">ثبت تنخواه</span>
                 <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
             </button>
@@ -35,7 +35,7 @@
                 <th>مرکز هزینه</th>
                 <th>تاریخ پرداخت</th>
                 <th>مبلغ</th>
-                <th>تنخواه دار</th>
+                <th>ثبت توسط</th>
                 <th>وضعیت</th>
                 <th>عملیات</th>
             </tr>
@@ -61,7 +61,7 @@
 
                     <div>
                         <label for="cashCostCenter">مرکز هزینه:</label>
-                        <input id="cashCostCenter" class="form-control" name="costCenter" required>
+                        <select id="cashCostCenter" class="form-select form-select-sm" name="cashierId" required></select>
                     </div>
 
                     <div>
@@ -74,8 +74,20 @@
                         <input id="cashAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="amount" required>
                     </div>
 
+                    <div>
+                        <label for="cashAtt">تصویر رسید:</label>
+                        <div class="container-uploader">
+                            <input type="file" class="uploadBtn" data-varList="cashAttachments" data-showList="DivShowCashAtt" id="cashAtt" accept="*/*" multiple required />
+                            <label for="cashAtt">
+                                <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                                <span>تصویر رسید را انتخاب یا اینجا رها کنید</span>
+                            </label>
+                            <div class="image-display" id="DivShowCashAtt"></div>
+                        </div>
+                    </div>
+
                     <div class="d-flex justify-content-center gap-1 mt-2">
-                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="toggleCashModal()">انصراف</button>
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" data-bs-dismiss="modal">انصراف</button>
                         <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitCashModal()">ثبت</button>
                     </div>
                 </form>
@@ -86,30 +98,40 @@
 
 @section Scripts {
     <script>
+        var cashAttachments = [];
+        const cashModal = document.getElementById("cashModal");
+        const costCenterElm = cashModal.querySelector("#cashCostCenter");
         document.addEventListener("DOMContentLoaded", async () => {
             getAllCashesDt();
-            @*document.getElementById("cashSearch").addEventListener("keyup", async (e) => {
-                if (e.key === "Enter") {
-                }
-            });*@;
+            await initCashierSelectOpt();
         });
 
-        function toggleCashModal() {
-            ModalToggle("cashModal");
+        cashModal.addEventListener("hidden.bs.modal", () => {
             mySer.emptyForm("cashForm");
             cashData = [];
+            cashAttachments = [];
+        });
+
+        async function initCashierSelectOpt() {
+            const data = (await axios(`/Cash/GetAllMyCashiers`)).data;
+
+            createOption(costCenterElm, data);
         }
+
 
         let cashData = {};
         async function showEditCashModal(id) {
             FLshowLoading();
-            toggleCashModal();
+            ModalToggle(cashModal);
 
             try {
                 const res = await axios(`/Cash/GetCash/${id}`);
                 if (res.status === 200) {
-                    cashData = res.data;
+                    console.log(res);
+                    cashData = res.data.cash;
                     mySer.convertJsonToForm(cashData, "cashForm");
+                    cashAttachments = res.data.attachments;
+                    FileUpReload("cashAtt");
                 }
 
             } catch (err) {
@@ -145,10 +167,17 @@
 
         async function submitCashModal() {
             if (!await mySer.CheckValidForm("cashForm")) return;
+            if (cashAttachments.every(item => item.isDeleted)) {
+                toastifyError("تصویر رسید اجباری است");
+                return;
+            }
             const model = {
                 ...cashData,
                 ...mySer.convertFormToJSON("cashForm"),
+                costCenter: costCenterElm.options[costCenterElm.selectedIndex].text,
+                attachments: cashAttachments,
             };
+
 
             try {
                 FLshowLoading();
@@ -156,7 +185,7 @@
                 if (res.status === 200) {
                     toastifySuccess("با موفقیت ثبت شد");
                     cashTbl.ajax.reload();
-                    toggleCashModal();
+                    ModalToggle(cashModal);
                 }
             } catch (err) {
                 console.log(err);
@@ -173,8 +202,8 @@
                 FLshowLoading();
                 const res = await axios(`/Cash/ChangeStatusCash/${id}?status=${status}`);
                 if (res.status === 200) {
-                    if (status === 1) {
-                        toastifySuccess("ارسال شد");
+                    if (status === 2) {
+                        toastifySuccess("تایید شد");
                     }
                     cashTbl.ajax.reload();
                 }
@@ -190,6 +219,7 @@
 
         let cashTbl;
         let modelCash = {};
+        let isManager;
         const getAllCashesDt = () => {
             cashTbl = $("#cashTable").DataTable({
                 pageLength: 10,
@@ -210,6 +240,10 @@
                     type: "POST",
                     data: (d) => {
                         d.model = JSON.stringify(modelCash);
+                    },
+                    dataSrc: function (json) {
+                        isManager = json.isManager;
+                        return json.data;
                     },
                 },
                 language: {
@@ -241,31 +275,46 @@
                     },
                 ],
                 columns: [
-                    { data: "serial", name: "Serial", defaultContent: "-" },
-                    { data: "createDateTxt", name: "CreateDateTxt", defaultContent: "-" },
-                    { data: "costTitle", name: "CostTitle", defaultContent: "-" },
+                    { data: "cash.serial", name: "Serial", defaultContent: "-" },
+                    { data: "cash.createDateTxt", name: "CreateDateTxt", defaultContent: "-" },
+                    { data: "cash.costTitle", name: "CostTitle", defaultContent: "-" },
                     { data: "costCenter", name: "CostCenter", defaultContent: "-" },
-                    { data: "costDate", name: "CostDate", defaultContent: "-" },
-                    { data: "amount", name: "Amount", defaultContent: "-" },
-                    { data: "cashierTxt", name: "CashierTxt", defaultContent: "-" },
+                    { data: "cash.costDate", name: "CostDate", defaultContent: "-" },
+                    { data: "cash.amount", name: "Amount", defaultContent: "-" },
+                    { data: "cash.userCreator", name: "UserCreator", defaultContent: "-" },
                     {
-                        data: "status",
+                        data: "cash.status",
                         render: function (data, type, row) {
-                            if (data === 0) {
-                                return `
+                            if (data === 0) { // ثبت موقت
+                                //if (isManager) return `<span class="fMedium" style="color: #666">${row.statusTxt}</span>`;
+
+                                return `<button class="buttonGreen2" onclick="changeStatusCash('${row.cash.id}', 1)">ارسال به مالی</button>`;
+                            } else if (data === 1) { // در دست تایید
+                                if (isManager) return `
                                     <div class="d-inline-flex align-items-center justify-content-center gap-1">
-                                        <button type="button" class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>
+                                        <button class="buttonGreen2" onclick="changeStatusCash('${row.cash.id}', 2)">تایید</button>
+                                        <button class="buttonCancel3" onclick="changeStatusCash('${row.cash.id}', 0)">برگشت</button>
+
                                     </div>
                                 `;
-                            } else {
+
                                 return `
                                     <div class="d-inline-flex align-items-center justify-content-center gap-1">
-                                        <span class="fMedium" style="color: #666">${row.statusTxt}</span>
-                                        <button class="cursor-pointer" style="color:#333" onclick="changeStatusCash('${row.id}', 0)" data-title-left="بازگشت">
+                                        <span class="fMedium" style="color: #CC9900">${row.cash.statusTxt}</span>
+
+                                    </div>
+                                `;
+                            } else { // تایید شده
+                                if (isManager) return `
+                                    <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                                        <span class="fMedium" style="color: darkgreen">${row.cash.statusTxt}</span>
+                                        <button class="cursor-pointer" style="color:#333" onclick="changeStatusCash('${row.cash.id}', 1)" data-title-left="بازگشت">
                                             <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"></path></svg>
                                         </button>
                                     </div>
                                 `;
+
+                                return `<span class="fMedium" style="color: darkgreen">${row.cash.statusTxt}</span>`;
                             }
                         },
                     },
@@ -274,8 +323,11 @@
                         render: function (data, type, row) {
                             return `
                                 <div class="d-inline-flex align-items-center justify-content-center gap-1">
-                                    <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditCashModal('${row.id}')"><i class="fa fa-pencil"></i></button>
-                                    <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deleteCash('${row.id}')"><i class="fa fa-trash"></i></button>
+                                    <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.cash.id}', 10)"><i class="fa fa-paperclip"></i></button>
+                                    ${row.cash.status === 0 ? `
+                                        <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditCashModal('${row.cash.id}')"><i class="fa fa-pencil"></i></button>
+                                        <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deleteCash('${row.cash.id}')"><i class="fa fa-trash"></i></button>
+                                    ` : ""}
                                 </div>
                             `;
                         },

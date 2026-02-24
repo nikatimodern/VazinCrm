@@ -944,7 +944,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     Title = "واریزی نیاز به اصلاح",
                     Body = $"{acc.AccTypeTxt} مربوط به پیش‌فاکتور {acc.pfSerialNumber} نیاز به اصلاح دارد.",
                     Url = "/Email/Index",
-                    Tag = "rejectAcc" + acc.SerialNum
+                    Tag = "acc" + acc.SerialNum
                 });
             }
 

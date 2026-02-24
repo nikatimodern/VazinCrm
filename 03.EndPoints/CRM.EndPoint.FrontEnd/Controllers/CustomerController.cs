@@ -347,7 +347,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 Title = "تایید مشتری",
                 Body = $"مشتری {customerText} توسط {user.FullName} تایید شد.",
                 Url = "/Customer/Index",
-                Tag = "accept-customer" + cu.CustomerCode
+                Tag = "customer" + cu.CustomerCode
             });
             return Ok();
         }

@@ -6,7 +6,7 @@
 <div class="w-100">
     <div class="row align-items-center justify-content-between flex-wrap mb-2 g-2">
         <div class="d-flex col-lg-3">
-            <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="toggleCashierModal()">
+            <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="showCashierModal()">
                 <span style="line-height: 1">ثبت تنخواه دار</span>
                 <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
             </button>
@@ -28,8 +28,9 @@
         <table class="table table-striped table-bordered table-hover nowrap w-100" id="cashierTable">
             <thead>
             <tr>
-                <th>کاربر</th>
-                <th>عنوان تنخواه</th>
+                <th>کاربران</th>
+                <th>مرکز هزینه</th>
+                <th>ثبت توسط</th>
                 <th>تاریخ ثبت</th>
                 <th>عملیات</th>
             </tr>
@@ -45,21 +46,21 @@
 <div class="modal fade" id="cashierModal" tabindex="-1" role="dialog" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content col-12 p-2">
-            <div class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">ثبت تنخواه</div>
+            <div class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">ثبت تنخواه دار</div>
             <div class="modal-body pb-2">
                 <form id="cashierForm" class="d-flex flex-column gap-2">
                     <div>
-                        <label for="cashierCostTitle">عنوان تنخواه:</label>
+                        <label for="cashierCostTitle">مرکز هزینه:</label>
                         <input id="cashierCostTitle" class="form-control" name="title" required>
                     </div>
 
                     <div>
-                        <label for="cashierUser">کاربر:</label>
-                        <select id="cashierUser" name="userId" required></select>
+                        <label for="cashierUser">کاربران:</label>
+                        <select id="cashierUser" required></select>
                     </div>
 
                     <div class="d-flex justify-content-center gap-1 mt-2">
-                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="toggleCashierModal()">انصراف</button>
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" data-bs-dismiss="modal">انصراف</button>
                         <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitCashierModal()">ثبت</button>
                     </div>
                 </form>
@@ -73,20 +74,25 @@
         let cashierTbl;
         let modelCashier = {};
         let cashierData = {};
+        const cashierModal = document.getElementById("cashierModal");
         document.addEventListener("DOMContentLoaded", async () => {
             getAllCashiersDt();
         });
 
         let selectTomLoaded = false;
-        async function toggleCashierModal() {
+        async function showCashierModal() {
             if (!selectTomLoaded) {
                 await initSelectTomCashier();
                 selectTomLoaded = true;
             }
-            cashierData = {}
-            mySer.emptyForm("cashierForm");
-            ModalToggle("cashierModal");
+            ModalToggle(cashierModal, "show");
         }
+
+
+        cashierModal.addEventListener("hidden.bs.modal", () => {
+            cashierData = {};
+            mySer.emptyForm("cashierForm");
+        });
 
 
         const initSelectTomCashier = async () => {
@@ -94,19 +100,22 @@
             new TomSelect("#cashierUser", {
                 options: users,
                 valueField: "id",
-                maxItems: 1,
+                maxItems: null,
                 selectOnTab: true,
             });
-        }
+        };
 
         async function showEditCashierModal(id) {
             FLshowLoading();
-            await toggleCashierModal();
+            await showCashierModal();
 
             try {
                 const res = await axios(`/Cash/GetCashier/${id}`);
                 if (res.status === 200) {
                     cashierData = res.data;
+                    console.log(cashierData);
+                    console.log();
+                    cashierModal.querySelector("#cashierUser").tomselect.setValue([...cashierData.cashierUsers.map(i => i.userId)]);
                     mySer.convertJsonToForm(cashierData, "cashierForm");
                 }
 
@@ -146,13 +155,17 @@
                 ...cashierData,
                 ...mySer.convertFormToJSON("cashierForm"),
             };
+            const selectedUsers = cashierModal.querySelector("#cashierUser").tomselect.getValue();
+            model.cashierUsers = selectedUsers.map(i => ({ userId: i, cashierId: cashierData.id }));
+            console.log(model);
+
             try {
                 FLshowLoading();
                 const res = await axios.post("/Cash/AddCashier", model);
                 if (res.status === 200) {
                     toastifySuccess("با موفقیت ثبت شد");
                     cashierTbl.ajax.reload();
-                    toggleCashierModal();
+                    ModalToggle(cashierModal, "hide");
                 }
             } catch (err) {
                 console.log(err);
@@ -172,7 +185,7 @@
                     return: true,
                 },
                 ordering: true,
-                order: [[2, "desc"]],
+                order: [[3, "desc"]],
                 scrollCollapse: true,
                 scrollY: "70dvh",
                 responsive: true,
@@ -199,17 +212,21 @@
                 },
                 columnDefs: [
                     {
-                        targets: [3],
+                        targets: [0, 2, 4],
                         orderable: false,
                     },
                     {
-                        targets: [2],
+                        targets: [0],
+                        render: data => `<span>${data.join("، ")}</span>`,
+                    }, {
+                        targets: [3],
                         render: data => `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>`,
                     },
                 ],
                 columns: [
-                    { data: "userFullName", name: "UserFullName", defaultContent: "-" },
+                    { data: "userFullNames", name: "UserFullNames", defaultContent: "-" },
                     { data: "cashier.title", name: "Title", defaultContent: "-" },
+                    { data: "cashier.userCreator", name: "UserCreator", defaultContent: "-" },
                     { data: "cashier.createDateTxt", name: "CreateDateTxt", defaultContent: "-" },
                     {
                         data: null,
