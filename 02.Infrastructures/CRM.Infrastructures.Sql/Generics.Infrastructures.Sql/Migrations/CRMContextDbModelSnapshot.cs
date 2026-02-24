@@ -687,7 +687,10 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Serial")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Serial"));
 
                     b.Property<int>("Status")
                         .HasColumnType("int");

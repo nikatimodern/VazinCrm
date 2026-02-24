@@ -55,13 +55,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.fileSaver = fileSaver;
         }
 
-        [Authorize(Roles = "مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
+        [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
         public IActionResult SupplyFactor() // فاکتور تامین
         {
             return View();
         }
 
-        [Authorize(Roles = "مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
+        [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
         public IActionResult Payment() // پرداختی
         {
             return View();
