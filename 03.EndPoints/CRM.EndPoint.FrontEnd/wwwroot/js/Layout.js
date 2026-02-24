@@ -486,6 +486,8 @@ const showFilterContent = (model) => {
                 htm += `<p class="dashGridItem fbold gap-2" style="padding: 5px 14px;color: #333;border-radius: 4px;" data-type="Date"><span>${currentMonthArr[2]} ماه ${currentMonthArr[3]}</span></p>`;
             } else if (currentDateTypeFilter === 3) {
                 htm += `<p class="dashGridItem fbold gap-2" style="padding: 5px 14px;color: #333;border-radius: 4px;" data-type="Date"><i class="fas fa-times" style="cursor: pointer" onclick="delFilterContent(this, ${varConfig})"></i> <span>هفته جاری</span></p>`;
+            } else if (currentDateTypeFilter === 4) {
+                htm += `<p class="dashGridItem fbold gap-2" style="padding: 5px 14px;color: #333;border-radius: 4px;" data-type="Date"><i class="fas fa-times" style="cursor: pointer" onclick="delFilterContent(this, ${varConfig})"></i> <span>روز جاری</span></p>`;
             } else {
                 htm += `<p class="dashGridItem fbold gap-2" style="padding: 5px 14px;color: #333;border-radius: 4px;" data-type="Date"><i class="fas fa-times" style="cursor: pointer" onclick="delFilterContent(this, ${varConfig})"></i> <span>از ${model.fromDate || "ابتدا"} تا ${model.toDate || "امروز"}</span></p>`;
             }
@@ -519,6 +521,8 @@ const delFilterContent = async (event, varConfig) => {
             window[filterVarConfig].filterVar.toDate = currentMonthArr[1];
             window[filterVarConfig].filterVar.fromDate = currentMonthArr[0];
             currentDateTypeFilter = 2;
+            document.querySelectorAll("#dateFilterBtnId button").forEach(el => el.classList.remove("bgGreen2"));
+            document.querySelector("#dateFilterBtnId .monthBtn").classList.add("bgGreen2");
         }
     }
     if (type === "Sel") {
@@ -546,11 +550,20 @@ const filterToggleDisable = (_val, contentId) => {
 };
 
 const getDateFilter = async (type, btn) => {
-    document.querySelectorAll("#DateFilterDivContent input").forEach(inp => inp.setAttribute("disabled", "true"));
-    btn.setAttribute("disabled", "true");
-    const currentDate = type === 1 ? await myDate.getCurrentYear() : type === 2 ? await myDate.getCurrentMonth() : await myDate.getCurrentWeek();
-    document.querySelectorAll("#DateFilterDivContent input").forEach(inp => inp.removeAttribute("disabled"));
-    btn.removeAttribute("disabled");
+    const filterInputs = document.querySelectorAll("#DateFilterDivContent input");
+    toggleElementsDisabled(filterInputs);
+    toggleElementsDisabled(btn);
+    let currentDate =
+        type === 1 ? await myDate.getCurrentYear() :
+            type === 2 ? await myDate.getCurrentMonth() :
+                type === 3 ? await myDate.getCurrentWeek() :
+                    await myDate.getTodayDate();
+    
+    
+    toggleElementsDisabled(filterInputs, false);
+    toggleElementsDisabled(btn, false);
+    document.querySelectorAll("#dateFilterBtnId button").forEach(el => el.classList.remove("bgGreen2"));
+    btn.classList.add("bgGreen2");
     currentDateTypeFilter = type;
     if (type === 1) {
         currentYear = currentDate[2];
@@ -562,8 +575,8 @@ const getDateFilter = async (type, btn) => {
     //     currentMonth = '';
     //     currentYear = '';
     // }
-    document.querySelector("#DateFilterDivContent input[name='fromDate']").value = currentDate[0];
-    document.querySelector("#DateFilterDivContent input[name='toDate']").value = currentDate[1];
+    document.querySelector("#DateFilterDivContent input[name='fromDate']").value = currentDate instanceof Array ? currentDate[0] : currentDate;
+    document.querySelector("#DateFilterDivContent input[name='toDate']").value = currentDate instanceof Array ? currentDate[1] : currentDate;
 };
 
 
@@ -3263,13 +3276,17 @@ const setCountEmail = (emailsCount, isAdmin) => {
 let oldSumCount = null;
 const setCountEnvelope = (countObj, isAdmin) => {
     const countResult = {
-        salesAdmin: { count: countObj.salesAdmin, id: "TSalesAdminId" },
-        tamin: { count: countObj.tamin, id: "TTaminExpertId" },
-        financial: { count: countObj.financial.invoiceCount + countObj.financial.preFactorCount, id: "TFinancialExpertId" },
-        managingDirector: { count: countObj.managingDirector.invoiceCount + countObj.managingDirector.requestCount, id: "TManagingDirectorId" },
+        salesAdmin: { count: countObj.salesAdmin || 0, id: "TSalesAdminId" },
+        tamin: { count: countObj.tamin || 0, id: "TTaminExpertId" },
+        financial: {
+            count: countObj.financial?.invoiceCount || 0 + countObj.financial?.preFactorCount || 0,
+            id: "TFinancialExpertId",
+        },
+        managingDirector: {
+            count: countObj.managingDirector?.invoiceCount || 0 + countObj.managingDirector?.requestCount || 0,
+            id: "TManagingDirectorId",
+        },
     };
-    
-    
     let sumCount = Object.values(countResult).reduce((sum, c) => sum + (c.count || 0), 0);
     const countEnvelopeElm = document.getElementById("CountEnvelopeId");
     setBadge(countEnvelopeElm, sumCount);

@@ -10,6 +10,7 @@
             <th>پیش‌فاکتور</th>
             <th>تامین کننده</th>
             <th>مقدار</th>
+            <th>بهای واحد</th>
             <th>بهای تمام شده</th>
         </tr>
         </thead>
@@ -20,6 +21,7 @@
                 <td>@item.PfSerial</td>
                 <td>@item.SupplierTxt</td>
                 <td>@($"{int.Parse(item.Weight):n0}")</td>
+                <td>@($"{item.UnitAmount:n0}")</td>
                 <td>@($"{item.TotalAmount:n0}")</td>
             </tr>
         }

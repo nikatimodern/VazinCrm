@@ -268,7 +268,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 Title = "تایید پیش‌فاکتور",
                 Body = $"پیش‌فاکتور {pf.SerialNumber} توسط {user.FullName} تایید شد.",
                 Url = $"/Customer/CustomerProfile?Id={pf.CustomerId}",
-                Tag = "acceptPf-salesAdmin" + pf.SerialNumber
+                Tag = "pf" + pf.SerialNumber
             });
 
             await hub.Clients.Group("کارشناس مالی").SendAsync("notifActionRequired",
@@ -279,7 +279,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 Title = "تایید پیش‌فاکتور",
                 Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
                 Url = "/Cartable/Index?tab=TFinancialExpertId",
-                Tag = "acceptPf-salesAdmin" + pf.SerialNumber
+                Tag = "pf" + pf.SerialNumber
             });
 
             return Ok();
@@ -337,7 +337,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     Title = "عدم تایید پیش‌فاکتور",
                     Body = $"پیش فاکتور {pf.SerialNumber} توسط {user.FullName}، عدم تایید خورد!",
                     Url = $"/Customer/CustomerProfile?Id={pf.CustomerId}",
-                    Tag = "notAcceptPf-salesAdmin" + pf.SerialNumber
+                    Tag = "pf" + pf.SerialNumber
                 });
                 return Ok();
             }
@@ -572,7 +572,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 Title = "تایید پیش‌فاکتور",
                 Body = $"پیش‌فاکتور {pf.SerialNumber} توسط {user.FullName} تایید شد",
                 Url = pf.CustomerId != null ? $"/Customer/CustomerProfile?Id={pf.CustomerId}" : "/Deal/Index",
-                Tag = "acceptPf-taminExpert" + pf.SerialNumber
+                Tag = "pf" + pf.SerialNumber
             });
             return Ok();
         }
@@ -644,7 +644,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     Title = "عدم تایید پیش‌فاکتور",
                     Body = $"پیش فاکتور {pf.SerialNumber} توسط {user.FullName}، عدم تایید خورد!",
                     Url = pf.CustomerId != null ? $"/Customer/CustomerProfile?Id={pf.CustomerId}" : "/Deal/Index",
-                    Tag = "notAcceptPf-taminExpert" + pf.SerialNumber
+                    Tag = "pf" + pf.SerialNumber
                 });
                 return Ok();
             }
@@ -730,7 +730,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 Title = "تایید مالی پیش‌فاکتور",
                 Body = $"پیش‌فاکتور {pf.SerialNumber} توسط {user.FullName} تایید شد.",
                 Url = $"/Customer/CustomerProfile?Id={pf.CustomerId}",
-                Tag = "acceptPf-financial" + pf.SerialNumber
+                Tag = "pf" + pf.SerialNumber
             });
 
             return Ok();
@@ -775,14 +775,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     Title = "عدم تایید پیش‌فاکتور",
                     Body = $"پیش فاکتور {pf.SerialNumber} توسط {user.FullName}، عدم تایید خورد!",
                     Url = $"/Customer/CustomerProfile?Id={pf.CustomerId}",
-                    Tag = "notAcceptPf-financial" + pf.SerialNumber
+                    Tag = "pf" + pf.SerialNumber
                 });
                 pushQueue.Enqueue(new PushQueueItem {
                     RoleName = "مدیر فروش",
                     Title = "عدم تایید پیش‌فاکتور",
                     Body = $"پیش فاکتور {pf.SerialNumber} توسط {user.FullName}، عدم تایید خورد!",
                     Url = "/Cartable/Index?tab=TSalesAdminId",
-                    Tag = "notAcceptPf-financial" + pf.SerialNumber
+                    Tag = "pf" + pf.SerialNumber
                 });
                 return Ok();
             }
@@ -1164,7 +1164,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         Title = "تایید پیش‌فاکتور",
                         Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
                         Url = "/Cartable/Index?tab=TSalesAdminId",
-                        Tag = "acceptPf-customer" + pf.SerialNumber
+                        Tag = "pf" + pf.SerialNumber
                     });
 
                     await hub.Clients.User(pf.UserCreatorID).SendAsync("notifInfo",
@@ -1176,7 +1176,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         Title = "تایید پیش‌فاکتور",
                         Body = $"پیش فاکتور {pf.SerialNumber} توسط مشتری {cusText} تایید شد.",
                         Url = $"/Customer/CustomerProfile?Id={pf.CustomerId}",
-                        Tag = "acceptPf-customer" + pf.SerialNumber
+                        Tag = "pf" + pf.SerialNumber
                     });
                 }
 
@@ -2312,7 +2312,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         Title = "تایید پیش‌فاکتور",
                         Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
                         Url = "/Cartable/Index?tab=TSalesAdminId",
-                        Tag = "acceptPf-customer" + pf.SerialNumber
+                        Tag = "pf" + pf.SerialNumber
                     });
                 }
 
@@ -2697,7 +2697,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         Title = "فاکتور جدید",
                         Body = $"فاکتور شماره {model.SerialNumber} برای مشتری {cusTxt} ثبت شد.",
                         Url = "/Email/Index",
-                        Tag = "addFactor" + model.SerialNumber
+                        Tag = "f" + model.SerialNumber
                     });
                 } else
                 {
@@ -2768,7 +2768,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 Title = "تایید پیش‌فاکتور",
                 Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
                 Url = "/Cartable/Index?tab=TTaminExpertId",
-                Tag = "assignPf-tamin" + pf.SerialNumber
+                Tag = "pf" + pf.SerialNumber
             });
             return Ok();
         }
@@ -2791,7 +2791,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 Title = "تایید پیش‌فاکتور",
                 Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
                 Url = "/Cartable/Index?tab=TTaminExpertId",
-                Tag = "assignPf-tamin" + pf.SerialNumber
+                Tag = "pf" + pf.SerialNumber
             });
             return Ok();
         }

@@ -91,6 +91,7 @@
                         document.getElementById("otpLoginInp").value = "";
                         document.getElementById("otpLoginInp").focus();
                         document.getElementById("remainingCodeOtpLoginId").style.display = "flex";
+                        document.getElementById("historyBackIcon").classList.remove("d-none");
 
                         toastifySuccess(data.message);
                         startOtpTimer();

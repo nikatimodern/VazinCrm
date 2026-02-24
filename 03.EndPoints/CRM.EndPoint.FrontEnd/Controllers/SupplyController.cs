@@ -28,6 +28,7 @@ using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Reports;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
 using CRM.EndPoint.FrontEnd.Services;
+using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using Dapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.SqlClient;
@@ -54,11 +55,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.fileSaver = fileSaver;
         }
 
+        [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
         public IActionResult SupplyFactor() // فاکتور تامین
         {
             return View();
         }
 
+        [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
         public IActionResult Payment() // پرداختی
         {
             return View();
@@ -96,6 +99,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     att.EntityId = model.Id;
                 }
+
                 await db.Attachments.AddRangeAsync(attach);
 
                 await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
@@ -139,6 +143,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     att.EntityId = model.Id;
                 }
+
                 db.Attachments.UpdateRange(attach);
 
                 await db.SaveChangesAsync();
@@ -221,6 +226,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     att.EntityId = model.Id;
                 }
+
                 db.Attachments.UpdateRange(attach);
 
                 await db.SaveChangesAsync();
@@ -692,8 +698,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 //                        ProfitPercent = profit != -1 && totalFactors != 0 ? Math.Round(profit / totalFactors * 100, 2) : null
                     };*/
 
+                var dealQuery = db.Deals.AsNoTracking();
+                if (model?.filt != null)
+                {
+                    dealQuery = dealQuery.ApplyFilter(model, null, f => f.CreateDate, f => f.UserCreatorID);
+                }
 
-                var queryFirst = from deal in db.Deals.AsNoTracking()
+                var queryFirst = from deal in dealQuery
                     join pf in db.PreFactors.AsNoTracking()
                         on deal.Id equals pf.DealId
                     where pf.Pftype != (int)PreFactorEnum.فاقد_اعتبار && pf.Factors.Any() //f => f.status == FactorStatus.تایید_شده
@@ -707,6 +718,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             .Where(s => g.Select(x => x.pf.Id).Contains(s.PfId))
                             .Sum(s => s.SupplyType == SupplyTypeEnum.ضایعات ? -s.TotalAmount : s.TotalAmount),
                     };
+
+
+
 
 
                 var query = queryFirst.AsEnumerable().Select(q =>
@@ -727,17 +741,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             : null
                     });
 
+/*
 
                 if (model?.filt != null)
                 {
-                    var fd = dtService.GetDateMiladi(model.filt.fromDate) ?? dtService.GetDateMiladi("1000/01/01");
-                    var td = dtService.GetDateMiladi(model.filt.toDate) ?? DateTime.Now;
+                    query = query.AsQueryable().ApplyFilter(model, null, f => f.DealDateM, f => f.UserCreatorDealId);
+                    /*var fd = dtService.GetDateMiladi(model.filt.fromDate) ?? dtService.GetDateMiladi("1000/01/01");
+                    var td = (dtService.GetDateMiladi(model.filt.toDate) ?? DateTime.Today).Date.AddDays(1).AddTicks(-1);
 
                     if (model.filt.DateFilterChk)
                         query = query.Where(f => f.DealDateM >= fd && f.DealDateM <= td);
                     if (model.filt.SelFilterChd)
-                        query = query.Where(f => f.UserCreatorDealId == model.filt.selFilter.ToString());
-                }
+                        query = query.Where(f => f.UserCreatorDealId == model.filt.selFilter.ToString());#1#
+                }*/
 
 
                 if (!string.IsNullOrEmpty(searchValue))
@@ -878,13 +894,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (model?.filt != null)
                 {
-                    var fd = dtService.GetDateMiladi(model.filt.fromDate) ?? dtService.GetDateMiladi("1000/01/01");
+                    query = query.ApplyFilter(model, null, f => f.DealDateM, f => f.UserCreatorDealId);
+                    /*var fd = dtService.GetDateMiladi(model.filt.fromDate) ?? dtService.GetDateMiladi("1000/01/01");
                     var td = dtService.GetDateMiladi(model.filt.toDate) ?? DateTime.Now;
 
                     if (model.filt.DateFilterChk)
                         query = query.Where(f => f.DealDateM >= fd && f.DealDateM <= td);
                     if (model.filt.SelFilterChd)
-                        query = query.Where(f => f.UserCreatorDealId == model.filt.selFilter.ToString());
+                        query = query.Where(f => f.UserCreatorDealId == model.filt.selFilter.ToString());*/
                 }
 
 

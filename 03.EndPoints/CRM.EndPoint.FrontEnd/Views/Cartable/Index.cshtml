@@ -817,10 +817,6 @@
 
 
 
-
-
-
-
 @section scripts {
 
     <script>
@@ -1115,12 +1111,6 @@
 
 
         const HideAllCartable = () => {
-
-            //document.getElementById('TPrefactorFactorId').style.display = "none";
-            //document.getElementById('TFinancialAdminId').style.display = "none";
-            //document.getElementById('TSalesExpertId').style.display = "none";
-            //document.getElementById('TSalesAdminId').style.display = "none";
-
             document.getElementById("CPrefactorFactorId").style.display = "none";
             document.getElementById("CFinancialAdminId").style.display = "none";
             document.getElementById("CFinancialExpertId").style.display = "none";
@@ -1128,7 +1118,6 @@
             document.getElementById("CSalesAdminId").style.display = "none";
             document.getElementById("CTaminExpertId").style.display = "none";
             document.getElementById("CManagingDirectorId").style.display = "none";
-
         };
 
 
@@ -1192,8 +1181,7 @@
                             if (filConfigSession?.filterVar) {
                                 promises.push(FilterAccepted(filConfigSession));
                                 if (window.innerWidth < 1400) {
-                                    const allFactorTab = new bootstrap.Tab(document.getElementById("allFactorTab"));
-                                    allFactorTab.show();
+                                    ShowTab("allFactorTab")
                                 }
                             } else if (!fromWarning) {
                                 promises.push(GetFactorPartial(modelFactor.serVal, null, null, modelFactor.filt, modelFactor._type, null, 0, null, false));

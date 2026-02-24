@@ -30,6 +30,7 @@ using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.LogSystem;
 using CRM.EndPoint.FrontEnd.Models.Payment;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
+using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.EndPoint.FrontEnd.Services.TaskServices;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
@@ -597,15 +598,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (modelF.filt != null)
                 {
-                    var fd = dtService.GetDateMiladi(modelF.filt.fromDate) ?? dtService.GetDateMiladi("1000/01/01");
-                    var td = dtService.GetDateMiladi(modelF.filt.toDate) ?? DateTime.Now;
-
-                    if (modelF.filt.CusFilterChd)
-                        dataF = dataF.Where(f => f.CustomerId == modelF.filt.customerFilter).AsQueryable();
-                    if (modelF.filt.DateFilterChk)
-                        dataF = dataF.Where(f => f.CreateDate >= fd && f.CreateDate <= td).OrderByDescending(f => f.CreateDate).AsQueryable();
-                    if (modelF.filt.SelFilterChd)
-                        dataF = dataF.Where(f => f.UserCreatorID == modelF.filt.selFilter.ToString()).AsQueryable();
+                    dataF = dataF.ApplyFilter(modelF, f => f.CustomerId, f => f.CreateDate, f => f.UserCreatorID);
                 }
 
                 dataF = modelF.AccType switch {
@@ -951,7 +944,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     Title = "واریزی نیاز به اصلاح",
                     Body = $"{acc.AccTypeTxt} مربوط به پیش‌فاکتور {acc.pfSerialNumber} نیاز به اصلاح دارد.",
                     Url = "/Email/Index",
-                    Tag = "rejectAcc" + acc.SerialNum
+                    Tag = "acc" + acc.SerialNum
                 });
             }
 

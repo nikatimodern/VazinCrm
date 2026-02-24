@@ -137,7 +137,7 @@
                 ...mySer.convertFormToJSON("requestAmountForm"),
                 requestAmountSupplyFactor: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id, requestAmountId: requestAmountData.id })),
             };
-            console.log(model);
+
             try {
                 FLshowLoading();
                 const apiUrl = model.id ? "/Amount/UpdateRequestAmount" : "/Amount/AddRequestAmount";

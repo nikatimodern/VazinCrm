@@ -2314,6 +2314,10 @@ input[type=checkbox], input[type=radio] {
   border-color: #00766e !important;
 }
 
+.bgGreen2 {
+  background-color: #008077 !important;
+}
+
 
 .bgGray {
   background-color: #d3d3d3;
@@ -2446,11 +2450,11 @@ html.sidebar-collapsed #mainWrapper {
 
 .menuBox {
   width: 100%;
-  padding: 8px;
+  padding: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: "IRANSansBold";
+  font-family: IRANSansBold;
   user-select: none;
   color: #fff;
   gap: 12px;
@@ -2929,6 +2933,7 @@ user-select: none;
 .buttonGreen2:disabled:hover {
   background-color: #9bbfbc;
 }
+
 
 
 .buttonBlue {

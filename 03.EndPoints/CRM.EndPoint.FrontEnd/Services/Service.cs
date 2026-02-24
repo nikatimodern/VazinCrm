@@ -28,6 +28,7 @@ using CRM.EndPoint.FrontEnd.Models.LogSystem;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Customer;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
+using CRM.Framework.Domain;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Identity;
@@ -55,6 +56,14 @@ namespace CRM.EndPoint.FrontEnd.Services {
             this.userManager = userManager;
             this.hub = hub;
         }
+
+        public interface IFilterableEntity
+        {
+            Guid CustomerId { get; set; }
+            DateTime CreateDate { get; set; }
+            string UserCreatorID { get; set; }
+        }
+
 
 
         /// <param name="pf">پیش فاکتور</param>

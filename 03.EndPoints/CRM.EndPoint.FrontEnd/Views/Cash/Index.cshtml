@@ -1,0 +1,356 @@
+@using CRM.Core.Domain.Cashes.Entities
+@{
+    Layout = "_Layout";
+}
+
+
+<div class="w-100">
+    <div class="row align-items-center justify-content-between flex-wrap mb-2 g-2">
+        <div class="d-flex col-lg-3">
+            <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" data-bs-toggle="modal" data-bs-target="#cashModal">
+                <span style="line-height: 1">ثبت تنخواه</span>
+                <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
+            </button>
+        </div>
+        <div class="col-12 col-lg-5 d-flex align-items-center gap-2 flex-wrap">
+            @*<div class="d-flex align-items-center flex-grow-1 gap-2">
+                <input class="form-control" id="cashSearch" placeholder="جستجو">
+            </div>*@
+        </div>
+        <div class="d-flex align-items-start justify-content-start justify-content-lg-end gap-2 col-lg-3">
+
+            @*<div id="ContentDealFilterId" class="ContentFilter"></div>
+            <div class="btnFilter d-none d-lg-flex" data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterDeal" data-filterContentId="ContentDealFilterId" data-filterInpSearchId="dealSearchId" data-filterVarSearch="dealSearchVal" onclick="ShowFilterPopup(this)">
+                <svg style="width:24px;color:#333" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
+            </div>*@
+        </div>
+    </div>
+    <div id="cashContainer">
+        <table class="table table-striped table-bordered table-hover nowrap w-100" id="cashTable">
+            <thead>
+            <tr>
+                <th>شماره سریال</th>
+                <th>تاریخ ثبت</th>
+                <th>عنوان هزینه</th>
+                <th>مرکز هزینه</th>
+                <th>تاریخ پرداخت</th>
+                <th>مبلغ</th>
+                <th>ثبت توسط</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<!-- Modal cash -->
+<div class="modal fade" id="cashModal" tabindex="-1" role="dialog" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content col-12 p-2">
+            <div class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">ثبت تنخواه</div>
+            <div class="modal-body pb-2">
+                <form id="cashForm" class="d-flex flex-column gap-2">
+                    <div>
+                        <label for="cashCostTitle">عنوان هزینه:</label>
+                        <input id="cashCostTitle" class="form-control" name="costTitle" required>
+                    </div>
+
+                    <div>
+                        <label for="cashCostCenter">مرکز هزینه:</label>
+                        <select id="cashCostCenter" class="form-select form-select-sm" name="cashierId" required></select>
+                    </div>
+
+                    <div>
+                        <label for="cashCostDate">تاریخ هزینه:</label>
+                        <input id="cashCostDate" class="sdate form-control" name="costDate" data-mask-date required />
+                    </div>
+
+                    <div>
+                        <label for="cashAmount">مبلغ:</label>
+                        <input id="cashAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="amount" required>
+                    </div>
+
+                    <div>
+                        <label for="cashAtt">تصویر رسید:</label>
+                        <div class="container-uploader">
+                            <input type="file" class="uploadBtn" data-varList="cashAttachments" data-showList="DivShowCashAtt" id="cashAtt" accept="*/*" multiple required />
+                            <label for="cashAtt">
+                                <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                                <span>تصویر رسید را انتخاب یا اینجا رها کنید</span>
+                            </label>
+                            <div class="image-display" id="DivShowCashAtt"></div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-1 mt-2">
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" data-bs-dismiss="modal">انصراف</button>
+                        <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitCashModal()">ثبت</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var cashAttachments = [];
+        const cashModal = document.getElementById("cashModal");
+        const costCenterElm = cashModal.querySelector("#cashCostCenter");
+        document.addEventListener("DOMContentLoaded", async () => {
+            getAllCashesDt();
+            await initCashierSelectOpt();
+        });
+
+        cashModal.addEventListener("hidden.bs.modal", () => {
+            mySer.emptyForm("cashForm");
+            cashData = [];
+            cashAttachments = [];
+        });
+
+        async function initCashierSelectOpt() {
+            const data = (await axios(`/Cash/GetAllMyCashiers`)).data;
+
+            createOption(costCenterElm, data);
+        }
+
+
+        let cashData = {};
+        async function showEditCashModal(id) {
+            FLshowLoading();
+            ModalToggle(cashModal);
+
+            try {
+                const res = await axios(`/Cash/GetCash/${id}`);
+                if (res.status === 200) {
+                    console.log(res);
+                    cashData = res.data.cash;
+                    mySer.convertJsonToForm(cashData, "cashForm");
+                    cashAttachments = res.data.attachments;
+                    FileUpReload("cashAtt");
+                }
+
+            } catch (err) {
+                console.log(err);
+            } finally {
+                FLshowLoading(false);
+            }
+        }
+
+        const deleteCash = async (id) => {
+            Swal.fire({
+                title: "حذف!",
+                text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
+                icon: "warning",
+                showCancelButton: true,
+                cancelButtonColor: "#adadad",
+                confirmButtonColor: "#e64942",
+                cancelButtonText: "انصراف",
+                confirmButtonText: "بله، حذف شود",
+            }).then(async (willDelete) => {
+                if (willDelete.isConfirmed) {
+                    FLshowLoading();
+                    const res = await axios(`/Cash/DeleteCash/${id}`);
+                    if (res.status === 200) {
+                        toastifySuccess("با موفقیت حذف شد");
+                        cashTbl.ajax.reload();
+                    }
+                    FLshowLoading(false);
+                }
+            });
+        };
+
+
+        async function submitCashModal() {
+            if (!await mySer.CheckValidForm("cashForm")) return;
+            if (cashAttachments.every(item => item.isDeleted)) {
+                toastifyError("تصویر رسید اجباری است");
+                return;
+            }
+            const model = {
+                ...cashData,
+                ...mySer.convertFormToJSON("cashForm"),
+                costCenter: costCenterElm.options[costCenterElm.selectedIndex].text,
+                attachments: cashAttachments,
+            };
+
+
+            try {
+                FLshowLoading();
+                const res = await axios.post("/Cash/AddCash", model);
+                if (res.status === 200) {
+                    toastifySuccess("با موفقیت ثبت شد");
+                    cashTbl.ajax.reload();
+                    ModalToggle(cashModal);
+                }
+            } catch (err) {
+                console.log(err);
+                if (err.status === 404) {
+                    toastifyError(err.response.data);
+                }
+            } finally {
+                FLshowLoading(false);
+            }
+        }
+
+        async function changeStatusCash(id, status) {
+            try {
+                FLshowLoading();
+                const res = await axios(`/Cash/ChangeStatusCash/${id}?status=${status}`);
+                if (res.status === 200) {
+                    if (status === 2) {
+                        toastifySuccess("تایید شد");
+                    }
+                    cashTbl.ajax.reload();
+                }
+            } catch (err) {
+                console.log(err);
+                if (err.status === 404) {
+                    toastifyError(err.response.data);
+                }
+            } finally {
+                FLshowLoading(false);
+            }
+        }
+
+        let cashTbl;
+        let modelCash = {};
+        let isManager;
+        const getAllCashesDt = () => {
+            cashTbl = $("#cashTable").DataTable({
+                pageLength: 10,
+                lengthMenu: [5, 10, 20, 50, 100, { label: "همه", value: -1 }],
+                processing: true,
+                serverSide: true,
+                searching: true,
+                search: {
+                    return: true,
+                },
+                ordering: true,
+                order: [[1, "desc"]],
+                scrollCollapse: true,
+                scrollY: "70dvh",
+                responsive: true,
+                ajax: {
+                    url: `/Cash/GetAllCashesDt`,
+                    type: "POST",
+                    data: (d) => {
+                        d.model = JSON.stringify(modelCash);
+                    },
+                    dataSrc: function (json) {
+                        isManager = json.isManager;
+                        return json.data;
+                    },
+                },
+                language: {
+                    emptyTable: "هیچ رکوردی موجود نمی باشد.",
+                    info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
+                    infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
+                    infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
+                    lengthMenu: "نمایش _MENU_ ردیف",
+                    loadingRecords: "در حال بارگزاری...",
+                    search: "",
+                    zeroRecords: "رکوردی با این مشخصات پیدا نشد",
+                    aria: {
+                        sortAscending: ": فعال سازی نمایش به صورت صعودی",
+                        sortDescending: ": فعال سازی نمایش به صورت نزولی",
+                    },
+                },
+                columnDefs: [
+                    {
+                        targets: [3, 4, 5, 7, 8],
+                        orderable: false,
+                    },
+                    {
+                        targets: [1],
+                        render: data => `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>`,
+                    },
+                    {
+                        targets: [5],
+                        render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>`,
+                    },
+                ],
+                columns: [
+                    { data: "cash.serial", name: "Serial", defaultContent: "-" },
+                    { data: "cash.createDateTxt", name: "CreateDateTxt", defaultContent: "-" },
+                    { data: "cash.costTitle", name: "CostTitle", defaultContent: "-" },
+                    { data: "costCenter", name: "CostCenter", defaultContent: "-" },
+                    { data: "cash.costDate", name: "CostDate", defaultContent: "-" },
+                    { data: "cash.amount", name: "Amount", defaultContent: "-" },
+                    { data: "cash.userCreator", name: "UserCreator", defaultContent: "-" },
+                    {
+                        data: "cash.status",
+                        render: function (data, type, row) {
+                            if (data === 0) { // ثبت موقت
+                                //if (isManager) return `<span class="fMedium" style="color: #666">${row.statusTxt}</span>`;
+
+                                return `<button class="buttonGreen2" onclick="changeStatusCash('${row.cash.id}', 1)">ارسال به مالی</button>`;
+                            } else if (data === 1) { // در دست تایید
+                                if (isManager) return `
+                                    <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                                        <button class="buttonGreen2" onclick="changeStatusCash('${row.cash.id}', 2)">تایید</button>
+                                        <button class="buttonCancel3" onclick="changeStatusCash('${row.cash.id}', 0)">برگشت</button>
+
+                                    </div>
+                                `;
+
+                                return `
+                                    <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                                        <span class="fMedium" style="color: #CC9900">${row.cash.statusTxt}</span>
+
+                                    </div>
+                                `;
+                            } else { // تایید شده
+                                if (isManager) return `
+                                    <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                                        <span class="fMedium" style="color: darkgreen">${row.cash.statusTxt}</span>
+                                        <button class="cursor-pointer" style="color:#333" onclick="changeStatusCash('${row.cash.id}', 1)" data-title-left="بازگشت">
+                                            <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"></path></svg>
+                                        </button>
+                                    </div>
+                                `;
+
+                                return `<span class="fMedium" style="color: darkgreen">${row.cash.statusTxt}</span>`;
+                            }
+                        },
+                    },
+                    {
+                        data: null,
+                        render: function (data, type, row) {
+                            return `
+                                <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                                    <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.cash.id}', 10)"><i class="fa fa-paperclip"></i></button>
+                                    ${row.cash.status === 0 ? `
+                                        <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditCashModal('${row.cash.id}')"><i class="fa fa-pencil"></i></button>
+                                        <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deleteCash('${row.cash.id}')"><i class="fa fa-trash"></i></button>
+                                    ` : ""}
+                                </div>
+                            `;
+                        },
+                    },
+                ],
+                layout: {
+                    bottomEnd: "info",
+                    bottomStart: {
+                        paging: {
+                            type: "simple_numbers",
+                        },
+                    },
+                    topEnd: {
+                        pageLength: true,
+                    },
+                    topStart: {
+                        search: {
+                            placeholder: "جستجو",
+                        },
+                    },
+                },
+            });
+        };
+
+    </script>
+}

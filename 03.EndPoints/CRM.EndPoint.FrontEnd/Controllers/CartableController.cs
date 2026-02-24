@@ -29,6 +29,7 @@ using CRM.Core.Domain.Supplies.Entities;
 using CRM.Core.Domain.Supplies.Enums;
 using CRM.EndPoint.FrontEnd.Models.PreFactorVm;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
+using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 
 // ReSharper disable EntityFramework.UnsupportedServerSideFunctionCall
@@ -346,17 +347,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (model.filt != null)
                 {
-                    var fd = dtService.GetDateMiladi(model.filt.fromDate) ?? dtService.GetDateMiladi("1000/01/01");
-                    var td = dtService.GetDateMiladi(model.filt.toDate) ?? DateTime.Now;
-
-                    if (model.filt.CusFilterChd)
-                        pListQ = pListQ.Where(f => f.CustomerId == model.filt.customerFilter);
-
-                    if (model.filt.DateFilterChk)
-                        pListQ = pListQ.Where(f => f.DateMiladi >= fd && f.DateMiladi <= td);
-
-                    if (model.filt.SelFilterChd)
-                        pListQ = pListQ.Where(f => f.UserCreatorID == model.filt.selFilter.ToString());
+                    pListQ = pListQ.ApplyFilter(model, f => f.CustomerId, f => f.DateMiladi, f => f.UserCreatorID);
                 }
 
                 pListQ = model._type switch {
@@ -464,17 +455,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (model.filt != null)
                 {
-                    var fd = dtService.GetDateMiladi(model.filt.fromDate) ?? dtService.GetDateMiladi("1000/01/01");
-                    var td = dtService.GetDateMiladi(model.filt.toDate) ?? DateTime.Now;
-
-                    if (model.filt.CusFilterChd)
-                        fListQ = fListQ.Where(f => f.CustomerId == model.filt.customerFilter);
-
-                    if (model.filt.DateFilterChk)
-                        fListQ = fListQ.Where(f => f.DateMiladi >= fd && f.DateMiladi <= td);
-
-                    if (model.filt.SelFilterChd)
-                        fListQ = fListQ.Where(f => f.SelerId == model.filt.selFilter.ToString());
+                    fListQ = fListQ.ApplyFilter(model, f => f.CustomerId, f => f.DateMiladi, f => f.SelerId);
                 }
 
                 fListQ = model._type switch {

@@ -454,7 +454,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 ["کارشناس تامین"] = "TaminExpert",
                 ["مدیر مالی"] = "FinancialAdmin",
                 ["کارشناس مالی"] = "FinancialExpert",
-                ["مشتری"] = "Customer"
+                ["مشتری"] = "Customer",
+                ["تنخواه دار"] = "TanKhah",
             };
 
             var model = new GetUserLogin {
@@ -511,11 +512,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             switch (type)
             {
                 case 1:
-                    var customers = await userManager.GetUsersInRoleAsync("مشتری");
-                    var customerIds = customers.Select(u => u.Id).ToHashSet();
-
                     data = await UDb.Users
-                        .Where(u => !customerIds.Contains(u.Id))
+                        .Where(u => u.IsEmployee)
                         .Select(g => new SelectOptionGuidDto {
                             id = Guid.Parse(g.Id),
                             text = g.FullName

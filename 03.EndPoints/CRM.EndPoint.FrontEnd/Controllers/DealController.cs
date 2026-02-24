@@ -10,6 +10,7 @@ using CRM.Core.Domain.Deals.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Services;
+using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -73,18 +74,7 @@ public class DealController : Controller {
 
             if (model?.filt != null)
             {
-                if (model.filt.DateFilterChk)
-                {
-                    var fd = dtService.GetDateMiladi(model.filt.fromDate) ?? dtService.GetDateMiladi("1000/01/01");
-                    var td = dtService.GetDateMiladi(model.filt.toDate) ?? DateTime.Now;
-                    query = query.Where(f => f.CreateDate >= fd && f.CreateDate <= td);
-                }
-
-                if (model.filt.CusFilterChd)
-                    query = query.Where(f => f.CustomerId == model.filt.customerFilter);
-
-                if (model.filt.SelFilterChd)
-                    query = query.Where(f => f.UserCreatorID == model.filt.selFilter.ToString());
+                query = query.ApplyFilter(model, f => f.CustomerId, f => f.CreateDate, f => f.UserCreatorID);
             }
 
             query = query.OrderByDescending(f => f.ModifyDate);
