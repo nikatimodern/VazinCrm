@@ -516,6 +516,7 @@ const delFilterContent = async (event, varConfig) => {
             window[filterVarConfig].filterVar.DateFilterChk = false;
             window[filterVarConfig].filterVar.toDate = "";
             window[filterVarConfig].filterVar.fromDate = "";
+            document.querySelectorAll("#dateFilterBtnId button").forEach(el => el.classList.remove("bgGreen2"));
         } else {
             window[filterVarConfig].filterVar.DateFilterChk = true;
             window[filterVarConfig].filterVar.toDate = currentMonthArr[1];
@@ -4298,7 +4299,7 @@ async function getAllWarnings(isRefresh = false) {
         }
         isRefresh && FLshowLoading(false);
     } catch (err) {
-    
+        console.log(err);
     }
 }
 
@@ -4313,7 +4314,6 @@ async function removeWarning(id) {
         toastifyError("یافت نشد!");
         console.log(err);
     }
-    
 }
 async function showDetailsWarning(id) {
     const res = await axios(`/Factor/getFactor?id=${id}`);
