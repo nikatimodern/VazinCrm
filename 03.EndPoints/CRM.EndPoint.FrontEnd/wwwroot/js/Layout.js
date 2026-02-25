@@ -3306,10 +3306,10 @@ const setCountEnvelope = (countObj, isAdmin) => {
     });
     
     // sub tabs
-    setBadge("#FinancialPrefactorTab .badgeCircle", countObj.financial.preFactorCount);
-    setBadge("#FinancialInvoiceTab .badgeCircle", countObj.financial.invoiceCount);
-    setBadge("#MDRequestAmountTab .badgeCircle", countObj.managingDirector.requestCount);
-    setBadge("#MDInvoiceTab .badgeCircle", countObj.managingDirector.invoiceCount);
+    setBadge("#FinancialPrefactorTab .badgeCircle", countObj.financial?.preFactorCount || 0);
+    setBadge("#FinancialInvoiceTab .badgeCircle", countObj.financial?.invoiceCount || 0);
+    setBadge("#MDRequestAmountTab .badgeCircle", countObj.managingDirector?.requestCount || 0);
+    setBadge("#MDInvoiceTab .badgeCircle", countObj.managingDirector?.invoiceCount || 0);
 };
 
 const setBadge = (target, count) => {

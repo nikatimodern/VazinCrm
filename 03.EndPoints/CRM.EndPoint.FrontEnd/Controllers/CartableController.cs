@@ -120,15 +120,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                /*pushQueue.Enqueue(new PushQueueItem {
-                    SendToAll = true,
-                    Title = "سلام وزین پلاستی",
-                    Body = "این یک پوش نوتیف تست جدید است، اینو فرستادم که در جریان اتفاقات ما باشی!",
-                    Url = "/"
-                });*/
-                //await pushService.SendToAllAsync("سلام وزین پلاستی", "این یک پوش نوتیف تست است", "/", null);
-
-
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var roles = await userManager.GetRolesAsync(user);
 
@@ -402,7 +393,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     var serNums = pList.Select(f => (int?)f.SerialNumber).ToList();
 
-                    var invoices = s1Db.vwInvoice.Where(q => serNums.Contains(q.QuotationNumber)).ToList();
+                    var invoices = await s1Db.vwInvoice.Where(q => serNums.Contains(q.QuotationNumber)).ToListAsync();
 
                     var pfFactors = await db.Factors
                         .Where(f => pfIds.Contains(f.PfactorID))
