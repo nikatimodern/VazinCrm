@@ -756,10 +756,13 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasPrecision(20)
                         .HasColumnType("decimal(20,0)");
 
-                    b.Property<Guid>("CashierId")
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("CostCenterId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("CommentText")
+                    b.Property<string>("CostCenterTxt")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CostDate")
@@ -768,7 +771,13 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<DateTime>("CostDateMiladi")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("CostTitle")
+                    b.Property<string>("CostDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("CostTitleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CostTitleTxt")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreateDate")
@@ -812,8 +821,6 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CashierId");
-
                     b.ToTable("Cashes");
                 });
 
@@ -850,43 +857,21 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("UserCreatorID")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("UserModify")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserModifyID")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("UserTxt")
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.ToTable("Cashiers");
-                });
-
-            modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.CashierUser", b =>
-                {
-                    b.Property<Guid>("CashierId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("CreateDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreateDateTxt")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("ModifyDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ModifyDateTxt")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("CashierId", "UserId");
-
-                    b.ToTable("CashierUsers");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Chats.Entities.Chat", b =>
@@ -3523,24 +3508,6 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Navigation("LogSystem");
                 });
 
-            modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.Cash", b =>
-                {
-                    b.HasOne("CRM.Core.Domain.Cashes.Entities.Cashier", null)
-                        .WithMany("Cashes")
-                        .HasForeignKey("CashierId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.CashierUser", b =>
-                {
-                    b.HasOne("CRM.Core.Domain.Cashes.Entities.Cashier", null)
-                        .WithMany("CashierUsers")
-                        .HasForeignKey("CashierId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("CRM.Core.Domain.Chats.Entities.Chat", b =>
                 {
                     b.HasOne("CRM.Core.Domain.Chats.Entities.MainChat", null)
@@ -3765,13 +3732,6 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Carizos.Entities.Carizo", b =>
                 {
                     b.Navigation("TaskUsers");
-                });
-
-            modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.Cashier", b =>
-                {
-                    b.Navigation("Cashes");
-
-                    b.Navigation("CashierUsers");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Chats.Entities.MainChat", b =>
