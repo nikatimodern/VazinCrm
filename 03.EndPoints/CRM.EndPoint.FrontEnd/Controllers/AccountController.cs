@@ -215,7 +215,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var otp = new Random().Next(1000, 9999).ToString();
 
-            await smsServ.SendOtpSms(mobile, otp, type);
+            //await smsServ.SendOtpSms(mobile, otp, type);
 
             HttpContext.Session.SetString($"{type}IsExpireOtp", "false");
             HttpContext.Session.SetString($"{type}OtpCode", otp);
