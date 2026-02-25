@@ -646,6 +646,106 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("Cartables");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.BaseCash", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AccountTitle")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CostItem")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CostTitle")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("MoeinCode")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BaseCashes");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.BaseCenterCash", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Code")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BaseCenterCashes");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.Cash", b =>
                 {
                     b.Property<Guid>("Id")
