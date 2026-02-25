@@ -91,7 +91,7 @@
                         document.getElementById("otpLoginInp").focus();
                         document.getElementById("remainingCodeOtpLoginId").style.display = "flex";
                         document.getElementById("historyBackIcon").classList.remove("d-none");
-                        //history.pushState({ step: "otp" }, "", "/Account/OtpLogin#otp");
+                        history.pushState({ step: "otp" }, "", "/Account/OtpLogin#otp");
 
                         toastifySuccess(data.message);
                         startOtpTimer();
@@ -101,13 +101,17 @@
                 });
         });
 
-        @*window.addEventListener("popstate", (e) => {
+        window.addEventListener("popstate", (e) => {
             if (!e.state || e.state.step !== "otp") {
+                clearInterval(otpIntervalId);
                 document.getElementById("otpLoginMsg").innerText = "";
                 document.getElementById("remainingCodeOtpLoginId").style.display = "none";
-                clearInterval(otpIntervalId);
+                console.log("pop");
                 document.getElementById("otpLoginForm").style.display = "block";
                 document.getElementById("otpSection").style.display = "none";
+                document.getElementById("resendOtpBtn").style.display = "none";
+
+                document.getElementById("historyBackIcon").classList.add("d-none")
             }
         });
 
@@ -115,9 +119,11 @@
             if (location.hash === "#otp") {
                 document.getElementById("otpLoginForm").style.display = "none";
                 document.getElementById("otpSection").style.display = "block";
+                document.getElementById("remainingCodeOtpLoginId").style.display = "flex";
                 history.replaceState({ step: "otp" }, "", location.href);
+                startOtpTimer();
             }
-        });*@
+        });
 
         document.getElementById("verifyOtpBtn").addEventListener("click", () => verifyOtp());
         document.getElementById("otpLoginInp").addEventListener("keyup", (e) => {
