@@ -31,18 +31,9 @@ using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.RequestAmounts.Entities;
 using CRM.Core.Domain.Cashes.Entities;
 
-namespace Generics.Infrastructures.Sql
-{
-    public class CRMContextDb : DbContext
-    {
-
-       
-
-        public CRMContextDb(DbContextOptions<CRMContextDb> op) : base(op)
-        {
-
-           
-        }
+namespace Generics.Infrastructures.Sql {
+    public class CRMContextDb : DbContext {
+        public CRMContextDb(DbContextOptions<CRMContextDb> op) : base(op) { }
 
         public DbSet<Accountancy> Accountancies { get; set; }
         public DbSet<Customer> Customers { get; set; }
@@ -94,23 +85,16 @@ namespace Generics.Infrastructures.Sql
         public DbSet<PaymentSupplyFactor> PaymentSupplyFactors { get; set; }
         public DbSet<Cashier> Cashiers { get; set; }
         public DbSet<Cash> Cashes { get; set; }
-        public DbSet<CashierUser> CashierUsers { get; set; }
-
-
-
+        public DbSet<BaseCash> BaseCashes { get; set; }
+        public DbSet<BaseCenterCash> BaseCenterCashes { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-
             //GetEnumerableOfType();
             base.OnModelCreating(modelBuilder);
             modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly);
             //modelBuilder.ApplyConfigurationsFromAssembly(typeof(ContractConfig).Assembly);
-
-
-
-
 
 
             modelBuilder.Entity<Customer>().HasQueryFilter(f => f.IsDeleted == false);
@@ -153,16 +137,12 @@ namespace Generics.Infrastructures.Sql
             modelBuilder.Entity<PaymentSupplyFactor>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<Cashier>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<Cash>().HasQueryFilter(f => f.IsDeleted == false);
-            modelBuilder.Entity<CashierUser>().HasQueryFilter(f => f.IsDeleted == false);
-
 
 
             modelBuilder.Entity<Order>().Ignore(f => f.Row);
             modelBuilder.Entity<PreFactor>().Ignore(f => f.Emza);
-
-
-
         }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             base.OnConfiguring(optionsBuilder);

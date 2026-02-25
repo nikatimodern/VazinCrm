@@ -8,8 +8,11 @@ using CRM.Core.Domain.Attachments.Entities;
 namespace CRM.Core.Domain.Cashes.Entities {
     public class Cash : BaseEntity {
         public int Serial { get; set; }
-        public Guid CashierId { get; set; }
-        public string CostTitle { get; set; } //عنوان هزینه
+        public Guid CostCenterId { get; set; } // مرکز هزینه
+        public string CostCenterTxt { get; set; }
+        public Guid CostTitleId { get; set; } //عنوان هزینه
+        public string CostTitleTxt { get; set; }
+        public string CostDescription { get; set; }
         public decimal Amount { get; set; } //مبلغ
         public string CostDate { get; set; } //تاریخ هزینه
         public DateTime CostDateMiladi { get; set; } //تاریخ هزینه

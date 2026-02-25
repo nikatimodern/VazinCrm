@@ -10,16 +10,6 @@ namespace CRM.Infrastructures.Sql.Cashes.Configs {
         public void Configure(EntityTypeBuilder<Cashier> builder)
         {
             builder.HasKey(f => f.Id);
-            builder.HasMany(f => f.Cashes)
-                .WithOne()
-                .HasForeignKey(f => f.CashierId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-
-            builder.HasMany(f => f.CashierUsers)
-                .WithOne()
-                .HasForeignKey(f => f.CashierId)
-                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
