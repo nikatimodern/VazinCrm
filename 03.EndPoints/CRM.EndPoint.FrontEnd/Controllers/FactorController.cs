@@ -1697,12 +1697,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             item.UserCreatorID = user.Id;
                             item.UserCreator = user.FullName;
                             db.Attachments.Add(item);
-                            await _logSystemService.LogChange(item, null, LogActionEnum.ثبت, user, null,
-                                $"پیوست تایید برای پیش‌فاکتور {pf.SerialNumber}");
+                            await _logSystemService.LogChange(item, null, LogActionEnum.ثبت, user, null, $"پیوست تایید برای پیش‌فاکتور {pf.SerialNumber}");
                         } else if (item.IsDeleted)
                         {
-                            await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user, null,
-                                $"پیوست تایید برای پیش‌فاکتور {pf.SerialNumber}");
+                            await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user, null, $"پیوست تایید برای پیش‌فاکتور {pf.SerialNumber}");
                             db.Attachments.Update(item);
                         }
                     }

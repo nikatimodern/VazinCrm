@@ -146,14 +146,13 @@
             const res = await axios(`/Chat/ShowChat?mainChatId=${mainChatId}`);
             if (res.status === 200) {
                 chatContainerElm.innerHTML = res.data;
-
-                const chatWrapper = document.getElementById("chatWrapper");
-                chatWrapper.scrollTop = chatWrapper.scrollHeight;
                 if (window.innerWidth < 768) {
                     chatListElm.classList.add("d-none");
                     chatContainerElm.classList.remove("d-none");
                 }
 
+                const chatWrapper = document.getElementById("chatWrapper");
+                chatWrapper.scrollTop = chatWrapper.scrollHeight;
             } else {
                 toastifyError("خطای سرور!");
             }
@@ -240,6 +239,46 @@
             sendChat();
             toggleAttachChatModal();
         }
+
+        let openTaskDropdownToggle = null;
+        function showTaskDropdown() {
+            document.getElementById("chatContainer").addEventListener("click", function (e) {
+                const clickedToggle = e.target.closest(".task-dropdown__toggle");
+
+                if (clickedToggle) {
+
+                    if (openTaskDropdownToggle && openTaskDropdownToggle !== clickedToggle && openTaskDropdownToggle.dropdownInstance && openTaskDropdownToggle.dropdownInstance.isOpen) {
+                        openTaskDropdownToggle.dropdownInstance.close();
+                        openTaskDropdownToggle = null;
+                    }
+
+                    if (!clickedToggle.dropdownInstance) {
+                        const currentDropdown = clickedToggle.nextElementSibling;
+                        console.log(clickedToggle);
+                        console.log(currentDropdown);
+                        clickedToggle.dropdownInstance = new Dropdown({
+                            button: clickedToggle,
+                            content: currentDropdown,
+                            transitionDuration: 200,
+                            originalDisplay: "flex",
+                            effect: "zoom",
+                            placement: "",
+                        });
+                    }
+                    clickedToggle.dropdownInstance.toggle();
+
+                    openTaskDropdownToggle = clickedToggle.dropdownInstance.isOpen ? clickedToggle : null;
+
+                } else {
+                    if (openTaskDropdownToggle && openTaskDropdownToggle.dropdownInstance && openTaskDropdownToggle.dropdownInstance.isOpen) {
+                        openTaskDropdownToggle.dropdownInstance.close();
+                        openTaskDropdownToggle = null;
+                    }
+                }
+            });
+
+        }
+        showTaskDropdown();
 
     </script>
 }

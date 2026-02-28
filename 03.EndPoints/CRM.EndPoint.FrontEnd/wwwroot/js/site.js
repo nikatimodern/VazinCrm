@@ -55,7 +55,6 @@ class Dropdown {
         
         this.isOpen = false;
         this.content.style.display = "none";
-        
         if (!this.portal.contains(this.content)) {
             this.portal.appendChild(this.content);
         }
