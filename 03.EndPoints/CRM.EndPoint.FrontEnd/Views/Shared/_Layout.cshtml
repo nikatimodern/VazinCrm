@@ -1020,12 +1020,12 @@
 
 
 <!-- Modal Factor -->
-<div class="modal fade " dir="ltr" id="Factor" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-    <div class=" modal-dialog modal-dialog-centered modal-xl">
+<div class="modal fade" dir="ltr" id="Factor" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content col-12">
             <div class="modal-header pb-0" style="border:none">
-                <div class="w-100" style="display:flex; justify-content:center; background-color:#00302d;color:white;border-radius:5px">
-                    <label class="fbold">صدور فاکتور</label>
+                <div id="factorModalTitle" class="w-100 flex-center fbold" style="background-color:#00302d;color:white;border-radius:5px">
+                    صدور فاکتور
                 </div>
             </div>
 
@@ -1050,21 +1050,21 @@
                             <form class="d-flex flex-column justify-content-between row-gap-3" id="FHeadFormId" style="direction: rtl;flex-grow:0.6">
                                 <div class="d-flex justify-content-evenly">
                                     <div class="justify-content-around flex-column gap-1 gap-lg-2" style="direction: rtl; display:flex;width:100%; ">
-                                        <div class="mp d-flex align-items-center gap-1">
+                                        <div class="d-flex align-items-center gap-1">
                                             <label class="fbold" for="f_official">رسمی</label>
                                             <input type="radio" name="f_official" id="f_official" value="1" checked />
                                         </div>
-                                        <div class="mp d-flex align-items-center gap-1">
+                                        <div class="d-flex align-items-center gap-1">
                                             <label class="fbold" for="f_unofficial">غیر رسمی</label>
                                             <input type="radio" name="f_official" id="f_unofficial" value="0" />
                                         </div>
                                     </div>
                                     <div class="justify-content-around flex-column gap-1 gap-lg-2" id="F_exportAlert" style="direction: rtl; display:flex;width:100%; ">
-                                        <div class="mp d-flex align-items-center gap-1">
+                                        <div class="d-flex align-items-center gap-1">
                                             <label class="fbold" for="f_export">صادراتی</label>
                                             <input type="radio" name="f_export" id="f_export" value="1" data-alertid="F_exportAlert" required />
                                         </div>
-                                        <div class="mp d-flex align-items-center gap-1">
+                                        <div class="d-flex align-items-center gap-1">
                                             <label class="fbold" for="f_unexport">غیر صادراتی</label>
                                             <input type="radio" name="f_export" id="f_unexport" value="0" data-alertid="F_exportAlert" required />
                                         </div>
@@ -1083,8 +1083,6 @@
                                 <button class="btn btn-sm btn-secondary" onclick="showModalItemFactor()">افزودن</button>
                             </div>
                         </div>
-
-
                     </div>
 
                 </div>
@@ -1100,11 +1098,7 @@
                                 <textarea id="f_descriptionId" rows="6" class="form-control" style="height:100px !important; width:100%;padding:4px 4px 4px 36px !important" type="text" placeholder="توضیحات"></textarea>
 
                                 <button style="position: absolute;left: 1px;bottom: 1px;display: flex;justify-content: center;align-items: center;top: 1px;padding-inline: 8px;box-shadow: none" class="buttonGreen3" onclick="addFactorDescItem()">
-                                    <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                                    </svg>
-
-                                    @* <i class="fa fa-plus"></i> *@
+                                    <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                                 </button>
                             </div>
                             <div class="flex-grow-1 pe-1 " style="margin-top:14px; width:100%; display:flex ;max-height:310px;overflow:auto " id="factorDescId">
@@ -1161,10 +1155,6 @@
                                     <label>مبلغ کل</label>
                                     <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="totalAmount" id="totalAmount" disabled />
                                 </div>
-                                @*<div style="width:15%; display:flex;flex-direction:column;align-items:center; ">
-                            <label>تخفیف</label>
-                            <input class="form-control" type="text" placeholder="تخفیف" />
-                            </div>*@
 
                                 <div style="align-self:end">
                                     <button id="f_AddBtnId" type="button" class="buttonGreen3 align-items-center justify-content-center" style="display: flex;height: 2rem;padding-inline: 10px" onclick="AddfItem()">
@@ -1182,25 +1172,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
                                             </svg>
                                         </button>
-
-
-                                        @*<button id="f_AddBtnId" class="btn btn-info " onclick="AddfItem()" style="display:flex;justify-content:center; align-items:center;flex-direction:column; width:100%">
-                                        <i class=" fa fa-plus" style="font-size:14px"></i>
-                                    </button>
-                                    <div id="f_UpBtnId" style="display:none;flex-direction:column">
-                                        <button  class="btn btn-success " onclick="UpfItem()" style="display:flex;justify-content:center; align-items:center;flex-direction:column; width:100%">
-                                            <i class=" fa fa-check" style="font-size:14px"></i>
-                                        </button>
-                                        <button  class="btn btn-danger " onclick="UpfItemCancel()" style="display:flex;justify-content:center; align-items:center;flex-direction:column; width:100%">
-                                            <i class="fa fa-times" style="font-size:14px"></i>
-                                        </button>
-                                    </div>*@
                                     </div>
-
-                                    @*<div class="parentPlusAdd">
-                                            <span class="mp parentPlusAdd" onclick="addItemF()"><i sstyle="font-size:xx-larg" class="plusAdd mp fa fa-plus"></i> </span>
-                                        </div>*@
-
                                 </div>
                             </form>
                         </div>
@@ -1208,10 +1180,7 @@
                         <div class="InfoData flex-grow-1 mt-2" style="width:100%;height:auto;min-height:60px;max-height:200px;overflow:auto;border-color:#00302d;direction:rtl;" id="FactorItemId">
                         </div>
                         <div class="flex-column flex-lg-row mt-3" style="width:100%;display:flex;align-items:center;">
-
-
                             <div class="col-12 col-lg-6 col-xl-12 pe-1" style="display:flex;flex-direction:column;gap:4px">
-
                                 <div class="col-12 justify-content-around" style="display:flex; flex-direction:row-reverse;">
                                     <label class="col-4 col-xl-2 justify-content-center" style="display:flex;gap:3px">
                                         <span>: کل</span>
@@ -1264,15 +1233,12 @@
 
                     </div>
                 </div>
-                <div class="p-3" style=" width:100%;  ">
-                    <div style="width:100%; height:2px; background-color:green;">
-                    </div>
-                </div>
-                <div>
-                    <div style="width:100%; display:flex;justify-content:center;gap:4px">
-                        <button class="buttonGreen3" onclick="submitFactor()">ثبت</button>
-                        <button class="buttonCancel2" onclick="cancelFactor() ">انصراف</button>
-                    </div>
+            </div>
+            <div>
+                <div class="mx-auto" style="width: 97%;height:2px;background-color:#00302d"></div>
+                <div class="d-flex justify-content-center w-100 gap-1 my-3">
+                    <button class="buttonGreen3" onclick="submitFactor()">ثبت</button>
+                    <button class="buttonCancel2" onclick="cancelFactor() ">انصراف</button>
                 </div>
             </div>
         </div>

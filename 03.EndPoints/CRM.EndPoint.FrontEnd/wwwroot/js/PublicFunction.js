@@ -35,9 +35,7 @@ const addDes = (e) => {
 const f_getAllProductOp = async () => {
     
     return new Promise(async (resolve) => {
-        
-        var el = Array.from(document.getElementById("FacItem").elements).filter(f => f.name === "productCode")[0];
-        
+        const el = document.querySelector("#FacItem select[name='productCode']");
         $.get(baseUrl + "Product/GetAllProduct", (res) => {
             
             $(el).select2({
@@ -553,6 +551,68 @@ const upfactor = (fid, cid, type = 1) => {
 };
 
 
+const returnFactor = async (fid, cid, type = 1) => {
+    typeSubmitfactor = type;
+    customerId = cid;
+    const modalFactor = document.getElementById("Factor");
+    modalFactor.classList.add("returned-factor");
+    
+    
+    FLshowLoading();
+    Unit(2);
+    f_getAllProductOp();
+    factor = (await axios(`/factor/getFactor/${fid}`)).data;
+    factor.id = null;
+    factor.serialNumber = null;
+    factor.parentReturnedId = fid;
+    factor.descriptions = factor.descriptions.map((f) => ({ ...f, id: null }));
+    factor.factorItems = factor.factorItems.map((f) => ({ ...f, id: null }));
+    factor.date = await todayDate();
+    
+    _factorItems = factor.factorItems;
+    f_officialType = factor.officialType;
+    FactorDescItems = factor.descriptions;
+    console.log(factor);
+    
+    const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
+    currencyTypeElm.value = factor.currencyType ?? 0;
+    toggleElementsDisabled(currencyTypeElm, f_officialType === 1);
+    
+    
+    modalFactor.querySelectorAll("input[name='f_official']").forEach((i) => {
+        i.checked = Number(i.value) === f_officialType;
+    });
+    
+    const exportValue = factor.export ? "1" : "0";
+    modalFactor.querySelectorAll("input[name='f_export']").forEach((i) => {
+        i.checked = (i.value === exportValue);
+    });
+    
+    
+    modalFactor.querySelector("#f_dateFormId input[name='f_date']").value = factor.date;
+    modalFactor.querySelector("#snFinancialFormId input[name='snFinancial']").value = factor.snFinancial;
+    
+    const modalTitle = modalFactor.querySelector("#factorModalTitle");
+    modalTitle.textContent = "فاکتور برگشتی";
+    modalTitle.style.backgroundColor = "darkred";
+    
+    modalFactor.querySelectorAll(".modal-body .buttonGreen3").forEach((el) => {
+        el.classList.replace("buttonGreen3", "buttonCancel3");
+    });
+    
+    
+    ShowItemfactor();
+    showFactorDescItems();
+    modalFactor.querySelector("#f_sumTotalAmount").textContent = factor.sumTotalAmount.toLocaleString();
+    modalFactor.querySelector("#f_totalTax").textContent = factor.totalTax.toLocaleString();
+    modalFactor.querySelector("#f_paymentAmount").textContent = factor.paymentAmount.toLocaleString();
+    modalFactor.querySelector("#f_discount").value = factor.discount.toLocaleString();
+    
+    ModalToggle(modalFactor, "show");
+    FLshowLoading(false);
+};
+
+
 const upPfactor = async (id, type) => {
     FLshowLoading();
     typeSubmitPfactor = type;
@@ -605,64 +665,61 @@ const upPfactor = async (id, type) => {
 };
 
 const ShowItemfactor = () => {
-    
-    let ob = "<div style=\"display:flex; flex-direction:column;width:100%;gap:5px;direction:ltr; \">";
+    let ob = `<div class="d-flex flex-column w-100" style="gap:5px">`;
     _factorItems.forEach((item, index) => {
         if (item.product == null) item.product = "";
         _factorItems[index].row = index + 1;
-        var uAmount = SeperatedNumberGenerate(item.unitAmount);
-        var tAmount = SeperatedNumberGenerate(item.totalAmount);
+        const uAmount = item.unitAmount.toLocaleString();
+        const tAmount = item.totalAmount.toLocaleString();
         
         
         if (item.productSmallName == null) {
-            
             item.productSmallName = "";
         }
         
-        ob += `<div class="mp" style="width:100%;display:flex;flex-direction:row-reverse">
-                   <div class="InfoDataItemHeadFactor" style="display:flex;width:24px;flex-shrink: 0">
-                       <label style="font-family:'IRANSansBold'">${index + 1}</label>
-
-                   </div>
-                   <div class="InfoDataItemFactor py-1" style="display:flex;justify-content:space-between; width:100%; direction:rtl;">
-                        <div style="display:flex;justify-content:space-between; width:100%;flex-wrap:wrap;">
-                           <div class="col-12 col-lg-5" style="display:flex;flex-direction:column;align-items:center;justify-content:space-around">
-                               <label>شرح کالا</label>
-                               <label class="px-2 d-flex gap-1 fbold">
-                                    <span>${item.productSmallName}</span>
-                                    <span>${item.product}</span>
-                               </label>
-                           </div>
-                           <div class="d-lg-none" style="width:90%;margin-block: 4px;margin-inline: auto; height:1px; background-color:rgba(0,0,0,0.15);">
-                            </div>
-                           <div class="col-6 col-lg-1" style="white-space: nowrap;display:flex;flex-direction:column;align-items:center;justify-content:space-around">
-                               <label style="display:flex">تعداد/مقدار</label>
-                               <label style="font-family:'IRANSansBold'">${item.weightCount}</label>
-                           </div>
-                           <div class="col-6 col-lg-1" style="white-space: nowrap; display:flex;flex-direction:column;align-items:center;justify-content:space-around">
-                               <label>واحد</label>
-                               <label style="font-family:'IRANSansBold'">${item.unitTxt}</label>
-
-                           </div>
-                            <div class="d-lg-none" style="width:90%;margin-block: 4px;margin-inline: auto; height:1px; background-color:rgba(0,0,0,0.15);">
-                            </div>
-                           <div class="col-6 col-lg-2" style="white-space: nowrap;display:flex;flex-direction:column;align-items:center;justify-content:space-around">
-                               <label>مبلغ واحد</label>
-                               <label style="font-family:'IRANSansBold'">${uAmount}</label>
-                           </div>
-                           <div class="col-6 col-lg-2" style="white-space: nowrap;display:flex;flex-direction:column;align-items:center;justify-content:space-around">
-                               <label>مبلغ کل</label>
-                               <label style="font-family:'IRANSansBold'">${tAmount}</label>
-                           </div>
+        ob += `
+            <div class="d-flex w-100">
+                <div class="InfoDataItemHeadFactor" style="display:flex;width:24px;flex-shrink: 0">
+                   <label class="fbold">${index + 1}</label>
+                </div>
+                <div class="InfoDataItemFactor">
+                    <div style="display:flex;justify-content:space-between; width:100%;flex-wrap:wrap;">
+                       <div class="col-12 col-lg-5 d-flex flex-column align-items-center justify-content-around">
+                           <label>شرح کالا</label>
+                           <label class="px-2 d-flex gap-1 fbold">
+                                <span>${item.productSmallName}</span>
+                                <span>${item.product}</span>
+                           </label>
+                       </div>
+                       <div class="d-lg-none" style="width:90%;margin-block: 4px;margin-inline: auto; height:1px; background-color:rgba(0,0,0,0.15);">
                         </div>
-                        
-                        <div class="InfoDataItemOp col-auto" style="padding-inline: 6px;flex-shrink: 0">
-                           <button class="InfoDataItemOp mp" style="display: flex;justify-content: center;align-items: center;color: #02514C; border:none;background-color:transparent"><i class="mp fa fa-trash" onclick="delfactorItem(${index})"></i></button>
-                           <button class="InfoDataItemOp mp" style="display: flex;justify-content: center;align-items: center;color: #02514C; border:none;background-color:transparent"><i class="mp fa fa-pencil" onclick="upfactorItem(${index})"></i></button>
+                       <div class="col-6 col-lg-1 d-flex flex-column align-items-center justify-content-around" style="white-space: nowrap">
+                           <label style="display:flex">تعداد/مقدار</label>
+                           <label class="fbold">${item.weightCount}</label>
+                       </div>
+                       <div class="col-6 col-lg-1 d-flex flex-column align-items-center justify-content-around" style="white-space: nowrap">
+                           <label>واحد</label>
+                           <label class="fbold">${item.unitTxt}</label>
+                       </div>
+                        <div class="d-lg-none" style="width:90%;margin-block: 4px;margin-inline: auto; height:1px; background-color:rgba(0,0,0,0.15);">
                         </div>
-                       
-                   </div>
-                </div>`;
+                       <div class="col-6 col-lg-2 d-flex flex-column align-items-center justify-content-around" style="white-space: nowrap">
+                           <label>مبلغ واحد</label>
+                           <label class="fbold">${uAmount}</label>
+                       </div>
+                       <div class="col-6 col-lg-2 d-flex flex-column align-items-center justify-content-around" style="white-space: nowrap">
+                           <label>مبلغ کل</label>
+                           <label class="fbold">${tAmount}</label>
+                       </div>
+                    </div>
+                    
+                    <div class="InfoDataItemOp col-auto" style="padding-inline: 6px;flex-shrink: 0">
+                       <button class="flex-center"><i class="mp fa fa-trash" onclick="delfactorItem(${index})"></i></button>
+                       <button class="flex-center"><i class="mp fa fa-pencil" onclick="upfactorItem(${index})"></i></button>
+                    </div>
+                </div>
+            </div>
+        `;
     });
     
     ob += `</div>`;
@@ -1067,6 +1124,7 @@ const AddFactor = async (pfId = null, type = 1) => {
     factor.serialNumber = null;
     factor.id = null;
     factor.factorItems = _factorItems;
+    factor.date = await todayDate();
     
     factor.officialType = pfData.officialType;
     f_officialType = pfData.officialType;
@@ -1103,7 +1161,6 @@ const AddFactor = async (pfId = null, type = 1) => {
         r.checked = (r.value === exportValue);
     });
     
-    
     $("#f_serialNumber").val(factor.serialNumber);
     $("#f_date").val(factor.date);
     //$("#validityDade").val(factor.validityDade);
@@ -1129,7 +1186,7 @@ const showModalAddPfactor = async (type, cusId = null, deal) => {
     FLshowLoading();
     baseDesPfactor = await getbaseDescription();
     PreFactorDescItems = [];
-    console.log(baseDesPfactor);
+    
     baseDesPfactor.filter(f => !f.official).filter(f => f.type === 0).map(item => {
         PreFactorDescItems.push({ text: item.text, isDeleted: false, official: item.official });
     });
@@ -1239,63 +1296,58 @@ const submitFactor = async () => {
 
 const submitFactorOK = async (type) => {
     if (await mySer.CheckValidForm("#f_dateFormId") && await mySer.CheckValidForm("#f_SerialFormId")) {
-        FLshowLoading();
-        if (_factorItems.length > 0) {
-            //factor.serialNumber = Array.from(document.getElementById("f_SerialFormId")).filter(f => f.name == "f_serialNumber")[0].value;
-            factor.snFinancial = Array.from(document.getElementById("snFinancialFormId")).filter(f => f.name == "snFinancial")[0].value;
-            factor.date = Array.from(document.getElementById("f_dateFormId")).filter(f => f.name === "f_date")[0].value;
-            factor.officialType = f_officialType;
-            factor.customerId = customerId;
-            factor.descriptions = FactorDescItems;
-            factor.export = document.getElementById("f_export").checked;
-            
-            
-            const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
-            factor.currencyType = currencyTypeElm.value;
-            factor.currencyTypeTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
-            
-            //Array.from(FactorDescItems).forEach((item) => {
-            //    item.id = null;
-            //})
-            
-            $.post(baseUrl + "Factor/AddFactor", factor, async (res) => {
-                if (type === 0) {
-                    await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, modelFactor._type, factor.pfactorSerialNumber, type);
-                    await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
-                } else if (type === 1) {
-                    await getAllPreFactor();
-                    
-                    await GetFactorPartial(null, factor.pfactorID, null, null, factor.officialType, factor.pfactorSerialNumber, type);
-                    getFacAmount(factor.pfactorID, factor.pfactorSerialNumber, null);
-                    getAllDetailAmount();
-                    //getAllFactor();
-                } else if (type === 4) {
-                    if (!factor.id) {
-                        await getPreFactorFromDeal(dealData.id);
-                    } else {
-                        await getAllFactorsModal(dealData.id, 4);
-                    }
-                } else if (type === 5) {
-                    await getAllFactorsModal(factor.pfactorID, 5);
-                } else if (type === 6) {
-                    await getAllFactorsModal(factor.id, 6);
-                }
-                toastifySuccess("فاکتور با موفقیت ثبت شد.");
-                
-                cancelFactor();
-                $("#Factor").modal("toggle");
-                FLshowLoading(false);
-            })
-             .fail(() => {
-                 setTimeout(async () => await submitFactorOK(type), 3000);
-             });
-        } else {
+        if (_factorItems.length <= 0) {
             $("#preFactorItemId").parent().css("border", "2px solid #ff6d00");
-            FLshowLoading(false);
             toastifyError("فاکتور خالی");
+            return;
         }
+        
+        FLshowLoading();
+        factor.snFinancial = document.querySelector("#snFinancialFormId input[name='snFinancial']").value;
+        factor.date = document.querySelector("#f_dateFormId input[name='f_date']").value;
+        factor.officialType = f_officialType;
+        factor.customerId = customerId;
+        factor.descriptions = FactorDescItems;
+        factor.export = document.getElementById("f_export").checked;
+        
+        const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
+        factor.currencyType = currencyTypeElm.value;
+        factor.currencyTypeTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
+        
+        
+        $.post(baseUrl + "Factor/AddFactor", factor, async () => {
+            if (type === 0) {
+                await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, modelFactor._type, factor.pfactorSerialNumber, type);
+                await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
+            } else if (type === 1) {
+                await getAllPreFactor();
+                
+                await GetFactorPartial(null, factor.pfactorID, null, null, factor.officialType, factor.pfactorSerialNumber, type);
+                getFacAmount(factor.pfactorID, factor.pfactorSerialNumber, null);
+                getAllDetailAmount();
+                //getAllFactor();
+            } else if (type === 4) {
+                if (!factor.id) {
+                    await getPreFactorFromDeal(dealData.id);
+                } else {
+                    await getAllFactorsModal(dealData.id, 4);
+                }
+            } else if (type === 5) {
+                await getAllFactorsModal(factor.pfactorID, 5);
+            } else if (type === 6) {
+                await getAllFactorsModal(factor.id, 6);
+            }
+            toastifySuccess("فاکتور با موفقیت ثبت شد.");
+            
+            cancelFactor();
+            ModalToggle("#Factor");
+            FLshowLoading(false);
+        })
+         .fail(() => {
+             setTimeout(async () => await submitFactorOK(type), 3000);
+         });
+        
     }
-    
 };
 
 const cancelPreFactor = () => {
@@ -1326,6 +1378,8 @@ const cancelPreFactor = () => {
 };
 
 const cancelFactor = () => {
+    const modalFactor = document.getElementById("Factor");
+    ModalToggle(modalFactor, "hide");
     mySer.emptyForm("FacItem");
     $("#snFinancial").val("");
     $("#serialNumber").val("");
@@ -1335,7 +1389,6 @@ const cancelFactor = () => {
     $("#discount").val("");
     $("#totalTax").text("");
     $("#paymentAmount").text("");
-    $("#Factor").modal("toggle");
     $("#f_descriptionId").val("");
     $("#F_currencyTypeSelect").val("0");
     
@@ -1345,6 +1398,13 @@ const cancelFactor = () => {
     $("#FactorItemId").children().remove();
     UpfItemCancel();
     
+    const modalTitle = document.getElementById("factorModalTitle");
+    modalTitle.textContent = "صدور فاکتور";
+    modalTitle.style.backgroundColor = "#00302d";
+    modalFactor.classList.remove("returned-factor");
+    modalFactor.querySelectorAll(".modal-body .buttonCancel3").forEach((el) => {
+        el.classList.replace("buttonCancel3", "buttonGreen3");
+    });
 };
 const delPfactor = (id, type, dealId) => {
     Swal.fire({

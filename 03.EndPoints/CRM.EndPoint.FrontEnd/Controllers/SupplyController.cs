@@ -720,9 +720,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     };
 
 
-
-
-
                 var query = queryFirst.AsEnumerable().Select(q =>
                     new SuppliesProfitDtVModel {
                         DealId = q.Deal.Id,
@@ -855,7 +852,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         DealId = g.Key,
                         TotalFactorsAmount = g.SelectMany(x => x.Factors)
                             .Where(f => f.status == FactorStatus.تایید_شده)
-                            .Sum(f => f.PaymentAmount)
+                            .Sum(f => f.ParentReturnedId == null ? f.PaymentAmount : -f.PaymentAmount)
                     });
 
 
