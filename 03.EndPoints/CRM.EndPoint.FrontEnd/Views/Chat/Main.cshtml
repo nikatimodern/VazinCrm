@@ -241,44 +241,75 @@
         }
 
         let openTaskDropdownToggle = null;
-        function showTaskDropdown() {
-            document.getElementById("chatContainer").addEventListener("click", function (e) {
-                const clickedToggle = e.target.closest(".task-dropdown__toggle");
+        document.getElementById("chatContainer").addEventListener("click", function (e) {
+            const clickedToggle = e.target.closest(".task-dropdown__toggle");
 
-                if (clickedToggle) {
+            if (clickedToggle) {
 
-                    if (openTaskDropdownToggle && openTaskDropdownToggle !== clickedToggle && openTaskDropdownToggle.dropdownInstance && openTaskDropdownToggle.dropdownInstance.isOpen) {
-                        openTaskDropdownToggle.dropdownInstance.close();
-                        openTaskDropdownToggle = null;
+                if (openTaskDropdownToggle && openTaskDropdownToggle !== clickedToggle && openTaskDropdownToggle.dropdownInstance && openTaskDropdownToggle.dropdownInstance.isOpen) {
+                    openTaskDropdownToggle.dropdownInstance.close();
+                    openTaskDropdownToggle = null;
+                }
+
+                if (!clickedToggle.dropdownInstance) {
+                    const currentDropdown = clickedToggle.nextElementSibling;
+                    clickedToggle.dropdownInstance = new Dropdown({
+                        button: clickedToggle,
+                        content: currentDropdown,
+                        transitionDuration: 200,
+                        originalDisplay: "flex",
+                        effect: "zoom",
+                        placement: "",
+                    });
+                }
+                clickedToggle.dropdownInstance.toggle();
+
+                openTaskDropdownToggle = clickedToggle.dropdownInstance.isOpen ? clickedToggle : null;
+
+            } else {
+                if (openTaskDropdownToggle && openTaskDropdownToggle.dropdownInstance && openTaskDropdownToggle.dropdownInstance.isOpen) {
+                    openTaskDropdownToggle.dropdownInstance.close();
+                    openTaskDropdownToggle = null;
+                }
+            }
+        });
+
+        function deleteChat(id) {
+            openTaskDropdownToggle.dropdownInstance.close();
+            Swal.fire({
+                //title: "حذف!",
+                text: "آیا از حذف این پیام اطمینان دارید؟",
+                icon: "warning",
+                showCancelButton: true,
+                cancelButtonColor: "#adadad",
+                confirmButtonColor: "#e64942",
+                cancelButtonText: "انصراف",
+                confirmButtonText: "بله، حذف شود",
+            }).then(async (willDelete) => {
+                if (willDelete.isConfirmed) {
+                    FLshowLoading();
+                    const res = await axios(`/Chat/DeleteChat/${id}`);
+                    if (res.status === 200) {
+                        toastifySuccess("با موفقیت حذف شد");
+                        await showChat(currentMainChatId);
                     }
-
-                    if (!clickedToggle.dropdownInstance) {
-                        const currentDropdown = clickedToggle.nextElementSibling;
-                        console.log(clickedToggle);
-                        console.log(currentDropdown);
-                        clickedToggle.dropdownInstance = new Dropdown({
-                            button: clickedToggle,
-                            content: currentDropdown,
-                            transitionDuration: 200,
-                            originalDisplay: "flex",
-                            effect: "zoom",
-                            placement: "",
-                        });
-                    }
-                    clickedToggle.dropdownInstance.toggle();
-
-                    openTaskDropdownToggle = clickedToggle.dropdownInstance.isOpen ? clickedToggle : null;
-
-                } else {
-                    if (openTaskDropdownToggle && openTaskDropdownToggle.dropdownInstance && openTaskDropdownToggle.dropdownInstance.isOpen) {
-                        openTaskDropdownToggle.dropdownInstance.close();
-                        openTaskDropdownToggle = null;
-                    }
+                    FLshowLoading(false);
                 }
             });
-
         }
-        showTaskDropdown();
+
+
+       /* async function editChat(id) {
+            FLshowLoading();
+
+            try {
+
+            } catch (err) {
+                console.log(err);
+            } finally {
+                FLshowLoading(false);
+            }
+        }*/
 
     </script>
 }

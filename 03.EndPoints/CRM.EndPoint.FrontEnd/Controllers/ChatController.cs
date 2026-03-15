@@ -286,4 +286,28 @@ public class ChatController : Controller {
             throw;
         }
     }
+
+    public async Task<IActionResult> DeleteChat(Guid id)
+    {
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var item = await db.Chats.Where(f => f.Id == id).FirstOrDefaultAsync();
+            if (item == null) return NotFound();
+
+            item.IsDeleted = true;
+            item.ModifyDate = DateTime.Now;
+            item.ModifyDateTxt = dtService.GetDateTimePersian();
+            item.UserModify = user.FullName;
+            item.UserModifyID = user.Id;
+
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+
 }
