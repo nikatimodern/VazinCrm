@@ -565,6 +565,8 @@ const returnFactor = async (fid, cid, type = 1) => {
     factor.id = null;
     factor.serialNumber = null;
     factor.parentReturnedId = fid;
+    factor.sepidarId = null;
+    factor.snFinancial = null;
     factor.descriptions = factor.descriptions.map((f) => ({ ...f, id: null }));
     factor.factorItems = factor.factorItems.map((f) => ({ ...f, id: null }));
     factor.date = await todayDate();
