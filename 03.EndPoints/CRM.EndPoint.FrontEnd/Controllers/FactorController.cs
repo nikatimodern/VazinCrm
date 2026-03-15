@@ -2699,17 +2699,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
 
+                    var title = isReturnFactor ? "فاکتور برگشتی" : "فاکتور جدید";
                     var cusTxt = $"{model.Customer} ({model.AgentName})".Trim();
                     var message =
-                        $"یک فاکتور به شماره سریال {model.SerialNumber} برای پیش‌فاکتور {model.PfactorSerialNumber} ،مشتری {cusTxt} ثبت شد.";
-                    await genService.AddEmail("فاکتور جدید", message, user, model.SelerId, model.SelerFullName, EntityTypeEnum.Factor, model.Id);
+                        $"یک {title} به شماره سریال {model.SerialNumber} برای پیش‌فاکتور {model.PfactorSerialNumber} ،مشتری {cusTxt} ثبت شد.";
+                    await genService.AddEmail(title, message, user, model.SelerId, model.SelerFullName, EntityTypeEnum.Factor, model.Id);
 
                     await hub.Clients.User(model.SelerId).SendAsync("notifInfo", message, "/Email/Index");
 
                     pushQueue.Enqueue(new PushQueueItem {
-                        UserId = pf.UserCreatorID,
-                        Title = "فاکتور جدید",
-                        Body = $"فاکتور شماره {model.SerialNumber} برای مشتری {cusTxt} ثبت شد.",
+                        UserId = pf?.UserCreatorID ?? model.SelerId,
+                        Title = title,
+                        Body = $"{title} شماره {model.SerialNumber} برای مشتری {cusTxt} ثبت شد.",
                         Url = "/Email/Index",
                         Tag = "f" + model.SerialNumber
                     });
