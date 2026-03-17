@@ -104,6 +104,45 @@
 }
 
 
+#chatContainer.upload-attach #chatWrapper {
+  margin-bottom: 96px !important;
+}
+
+
+#chatContainer #chatAttachWrapper {
+  display: none;
+  align-items: center;
+  padding-inline: .5rem;
+  gap: .5rem;
+  width: 100%;
+  border: 1px solid #d4dbde;
+  border-bottom: none;
+  background-color: #fff;
+  height: 28px;
+}
+
+
+#chatContainer.upload-attach #chatAttachWrapper {
+  display: flex;
+}
+
+
+#chatContainer #chatInput {
+  height: 60px;
+  padding: 2px 8px 2px 64px;
+  resize: none;
+  border-color: #d4dbde;
+  border-radius: 8px;
+  text-align: start;
+}
+
+
+#chatContainer.upload-attach #chatInput {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+
 @media (max-width: 767px) {
   .report-wrapper {
     gap: 10px;

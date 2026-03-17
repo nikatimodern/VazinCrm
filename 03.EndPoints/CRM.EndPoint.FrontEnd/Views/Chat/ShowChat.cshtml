@@ -59,17 +59,21 @@
             <div style="padding: 10px; color: #777;">هیچ پیامی یافت نشد.</div>
         }
 
-        <div class="position-absolute" style="bottom: 6px;left: 6px;right: 6px">
+        <div id="chatInputWrapper" class="position-absolute" style="bottom: 6px;left: 6px;right: 6px">
+            <div id="chatAttachWrapper">
+                <i style="font-size: 12px" class="mp fa fa-paperclip"></i>
+                <span id="chatAttachFileName"></span>
+            </div>
             <div class="position-relative">
-                <textarea id="chatInput" placeholder="پیام..." class="form-control text-start" style="height: 60px;padding: 2px 8px 2px 64px;resize: none;border-color: #d4dbde;border-radius: 8px"></textarea>
-                <button class="flex-center" style="position: absolute;top: 10px;left: 50px;" onclick="toggleAttachChatModal()">
+                <textarea id="chatInput" class="form-control" placeholder="پیام..."></textarea>
+                <input type="file" id="chatAttachInput" onchange="handleChatAttach(this)" accept="*">
+                <label for="chatAttachInput" class="flex-center cursor-pointer position-absolute" style="top: 10px;left: 50px;">
                     <i style="font-size: 16px" class="mp fa fa-paperclip"></i>
-                </button>
-                <button id="chatSendBtn" style="position: absolute;top: 4px;left: 4px;" onclick="sendChat()">
+                </label>
+                <button id="chatSendBtn" style="position: absolute;top: 4px;left: 4px" onclick="sendChat()">
                     <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width: 34px; height: 34px;transform: rotate(90deg);color: #008077" viewBox="0 0 24 24"><path d="m9 12.75 3 3m0 0 3-3m-3 3v-7.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                 </button>
             </div>
         </div>
-
     </div>
 </div>

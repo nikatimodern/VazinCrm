@@ -108,7 +108,7 @@ public class ChatController : Controller {
     [HttpGet]
     public IActionResult Main()
     {
-        var user = userManager.GetUserAsync(HttpContext.User).Result;
+        //var user = userManager.GetUserAsync(HttpContext.User).Result;
 
         return View();
     }
