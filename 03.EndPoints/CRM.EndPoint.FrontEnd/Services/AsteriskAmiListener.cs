@@ -68,7 +68,7 @@ public class AsteriskAmiListener : BackgroundService {
                 foreach (var ev in ParseAmiResponse(res)) {
                     var evt = Get(ev, "Event");
                     if (!test.Contains(evt.ToLowerInvariant())) {
-                        //Console.WriteLine(evt);
+                        Console.WriteLine(evt);
                     }
 
                     switch (evt.ToLowerInvariant()) {

@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -26,6 +27,7 @@ using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
+using Microsoft.AspNetCore.Http;
 using WebPush;
 
 
@@ -43,10 +45,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly Service genService;
         private readonly UserContextDb udb;
         private readonly Sepidar1ContextDb S1db;
+        private readonly AudioToTextService audioToTextService;
 
         public HomeController(IWebHostEnvironment appEnvironment, TimedHostedService hostService, IConfiguration conf,
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
-            Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db)
+            Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db,AudioToTextService audioToTextService)
         {
             this.appEnvironment = appEnvironment;
             this.hostService = hostService;
@@ -58,6 +61,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.sdb = sdb;
             this.udb = udb;
             this.S1db = S1db;
+            this.audioToTextService = audioToTextService;
             this.genService = genService;
         }
 
@@ -67,8 +71,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-                await trans.CommitAsync();
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
+
+
+                var staticFilePath = Path.Combine("wwwroot", "a.mp3");
+
+                if (!System.IO.File.Exists(staticFilePath))
+                    return NotFound("File not found");
+
+                var result = await audioToTextService.ConvertAsync(staticFilePath);
+
+
+                await trans.CommitAsync();
                 return View();
             }
             catch (Exception e)
