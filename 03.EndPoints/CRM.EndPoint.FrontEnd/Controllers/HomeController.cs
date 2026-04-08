@@ -17,6 +17,9 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Entities;
@@ -29,7 +32,10 @@ using CRM.Core.Domain.Supplies.Entities;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Microsoft.AspNetCore.Http;
 using WebPush;
-
+using System;
+using System.IO;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
@@ -49,7 +55,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         public HomeController(IWebHostEnvironment appEnvironment, TimedHostedService hostService, IConfiguration conf,
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
-            Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db,AudioToTextService audioToTextService)
+            Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, AudioToTextService audioToTextService)
         {
             this.appEnvironment = appEnvironment;
             this.hostService = hostService;
@@ -74,12 +80,36 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
 
 
+                // --- نحوه فراخوانی تابع ---
+                string remoteRecordingPathOnIzabel = "/var/spool/asterisk/monitor/2026/04/08/rg-600-9123906718-20260408-160736-1775648256.116234.wav";
+                string recordingFileNameOnly = Path.GetFileName(remoteRecordingPathOnIzabel);
+
+                string isabelHttpBaseUrl = "http://91.92.180.125:5038/monitor/";
+                string izabelAuthUsername = "admin"; // یوزرنمی که برای دسترسی به فایل‌ها در ایزابل تنظیم کرده‌اید
+                string izabelAuthPassword = "admin654321"; // پسورد مربوطه
+                string downloadDirectory = "wwwroot/recordings/";
+
+                string downloadedFilePath = await DownloadRecordingWithAuthAsync(
+                    recordingFileNameOnly,
+                    isabelHttpBaseUrl,
+                    izabelAuthUsername,
+                    izabelAuthPassword,
+                    downloadDirectory);
+
+                if (downloadedFilePath != null)
+                {
+                    Console.WriteLine($"Downloaded file: {downloadedFilePath}");
+                }
+
+
+                /*
                 var staticFilePath = Path.Combine("wwwroot", "a.mp3");
 
                 if (!System.IO.File.Exists(staticFilePath))
                     return NotFound("File not found");
 
                 var result = await audioToTextService.ConvertAsync(staticFilePath);
+*/
 
 
                 await trans.CommitAsync();
@@ -89,6 +119,66 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 await trans.RollbackAsync();
                 return BadRequest(e.Message);
+            }
+        }
+
+
+        public async Task<string> DownloadRecordingWithAuthAsync(
+            string recordingFileName,
+            string isabelBaseUrl,
+            string username, // یوزرنیم برای احراز هویت
+            string password, // پسورد برای احراز هویت
+            string localSaveDirectory)
+        {
+            string fullRecordingUrl = "http://91.92.180.125:5038/var/spool/asterisk/monitor/2026/04/08/rg-600-9123906718-20260408-160736-1775648256.116234.wav";
+//            string fullRecordingUrl = new Uri(new Uri(isabelBaseUrl), recordingFileName).ToString();
+
+            // اطمینان از وجود پوشه مقصد
+            if (!Directory.Exists(localSaveDirectory))
+            {
+                Directory.CreateDirectory(localSaveDirectory);
+            }
+
+            string localFilePath = Path.Combine(localSaveDirectory, Path.GetFileName(recordingFileName));
+
+            try
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    // ساخت رشته احراز هویت Basic Authentication
+                    string credentials = $"{username}:{password}";
+                    // انکد کردن به Base64
+                    string encodedCredentials = Convert.ToBase64String(Encoding.ASCII.GetBytes(credentials));
+
+                    // اضافه کردن هدر Authorization
+                    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encodedCredentials);
+
+                    var response = await httpClient.GetAsync(fullRecordingUrl, HttpCompletionOption.ResponseHeadersRead);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        await using (var contentStream = await response.Content.ReadAsStreamAsync())
+                        await using (var fileStream = System.IO.File.Create(localFilePath))
+                        {
+                            await contentStream.CopyToAsync(fileStream);
+                        }
+
+                        Console.WriteLine($"File downloaded successfully to: {localFilePath}");
+                        return localFilePath;
+                    } else
+                    {
+                        Console.WriteLine($"Error downloading file: HTTP Status {response.StatusCode}");
+                        // اگر بخواهید جزئیات بیشتری از خطا بفهمید، می‌توانید پاسخ را بخوانید:
+                        string errorContent = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine($"Error content: {errorContent}");
+                        return null;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception downloading file: {ex.Message}");
+                return null;
             }
         }
 
