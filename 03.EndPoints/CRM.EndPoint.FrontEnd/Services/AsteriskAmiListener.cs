@@ -23,22 +23,19 @@ public class AsteriskAmiListener : BackgroundService {
     private readonly IServiceScopeFactory serviceScopeFactory;
     private readonly IList<AppUser> _users;
 
-    public AsteriskAmiListener(IHubContext<CallHub> hubContext, IConfiguration config, IServiceScopeFactory serviceScopeFactory)
-    {
+    public AsteriskAmiListener(IHubContext<CallHub> hubContext, IConfiguration config, IServiceScopeFactory serviceScopeFactory) {
         _hubContext = hubContext;
         _config = config;
         this.serviceScopeFactory = serviceScopeFactory;
 
-        using (var scope = serviceScopeFactory.CreateScope())
-        {
+        using (var scope = serviceScopeFactory.CreateScope()) {
             var udb = scope.ServiceProvider.GetRequiredService<UserContextDb>();
 
             _users = udb.Users.ToList();
         }
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
         var voipConfig = _config.GetSection("voipConfig").Get<AppSettingVoip>();
         if (voipConfig.ActiveStatus != true) return;
 
@@ -56,37 +53,28 @@ public class AsteriskAmiListener : BackgroundService {
 
 
         var ami = new AsteriskAMI(voipConfig._hostname, voipConfig._port, voipConfig._username, voipConfig._password);
-        try
-        {
+        try {
             await ami.ConnectAsync();
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             Console.WriteLine($"[AMI] اتصال برقرار نشد: {ex.Message}");
             return;
         }
 
-        try
-        {
-            while (!stoppingToken.IsCancellationRequested)
-            {
+        try {
+            while (!stoppingToken.IsCancellationRequested) {
                 var res = await ami.ReadRawAsync();
 
-                foreach (var ev in ParseAmiResponse(res))
-                {
+                foreach (var ev in ParseAmiResponse(res)) {
                     var evt = Get(ev, "Event");
-                    if (!test.Contains(evt.ToLowerInvariant()))
-                    {
+                    if (!test.Contains(evt.ToLowerInvariant())) {
                         Console.WriteLine(evt);
                     }
 
-                    switch (evt.ToLowerInvariant())
-                    {
-                        case "dialbegin":
-                        {
+                    switch (evt.ToLowerInvariant()) {
+                        case "dialbegin": {
                             var srcCaller = Get(ev, "CallerIDNum");
-                            if (srcCaller == "9506")
-                            {
+                            if (srcCaller == "9506") {
                                 srcCaller = Get(ev, "Channel").Substring(4, 3);
                             }
 
@@ -108,12 +96,10 @@ public class AsteriskAmiListener : BackgroundService {
                                 callType = "internal-to-external";*/
 
                             string srcCallerText = null;
-                            if (srcIsInternal)
-                            {
+                            if (srcIsInternal) {
                                 var srcUser = await GetUsers(srcCaller);
                                 srcCallerText = srcUser == null ? srcCaller : $"{srcUser.FullName} ({srcCaller})";
-                            } else if (!srcIsInternal)
-                            {
+                            } else if (!srcIsInternal) {
                                 srcCallerText = GetCallerText(srcCaller);
                             }
 
@@ -130,8 +116,7 @@ public class AsteriskAmiListener : BackgroundService {
                             //var linkedId = Get(ev, "Linkedid");
                             var destUid = Get(ev, "DestUniqueid");
 
-                            if (!string.IsNullOrEmpty(uniqueid) && desUser != null && destCaller.StartsWith("1"))
-                            {
+                            if (!string.IsNullOrEmpty(uniqueid) && desUser != null) {
                                 await _hubContext.Clients
                                     .User(desUser.Id)
                                     .SendAsync("IncomingCall", srcCallerText, destCaller, !string.IsNullOrEmpty(destUid) ? destUid : uniqueid);
@@ -140,28 +125,24 @@ public class AsteriskAmiListener : BackgroundService {
                             break;
                         }
 
-                        case "hangup":
-                        {
+                        case "hangup": {
                             var uniqueid = Get(ev, "Uniqueid");
                             //var linkedId = Get(ev, "LinkedId");
                             var destUid = Get(ev, "DestUniqueid");
 
-                            if (!string.IsNullOrEmpty(uniqueid) || !string.IsNullOrEmpty(destUid))
-                            {
+                            if (!string.IsNullOrEmpty(uniqueid) || !string.IsNullOrEmpty(destUid)) {
                                 await _hubContext.Clients.All.SendAsync("CallEnded", !string.IsNullOrEmpty(destUid) ? destUid : uniqueid);
                             }
 
                             break;
                         }
 
-                        case "bridgeenter":
-                        {
+                        case "bridgeenter": {
                             var uniqueid = Get(ev, "Uniqueid");
                             //var linkedId = Get(ev, "LinkedId");
                             var destUid = Get(ev, "DestUniqueid");
 
-                            if (!string.IsNullOrEmpty(uniqueid) || !string.IsNullOrEmpty(destUid))
-                            {
+                            if (!string.IsNullOrEmpty(uniqueid) || !string.IsNullOrEmpty(destUid)) {
                                 await _hubContext.Clients.All.SendAsync("CallAnswered", !string.IsNullOrEmpty(destUid) ? destUid : uniqueid);
                             }
 
@@ -205,16 +186,14 @@ public class AsteriskAmiListener : BackgroundService {
                 }
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             Console.WriteLine($"[AMI] ارتباط قطع شد: {ex.Message}");
             return;
             //await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
         }
     }
 
-    private async Task<AppUser> GetUsers(string destCaller)
-    {
+    private async Task<AppUser> GetUsers(string destCaller) {
         AppUser user = null;
         user = _users
             .FirstOrDefault(u => (u.InternalTels ?? "")
@@ -226,14 +205,12 @@ public class AsteriskAmiListener : BackgroundService {
     private static Dictionary<string, Customer> _cusCache = new();
     private static DateTime _lastCacheTime = DateTime.MinValue;
 
-    private string GetCallerText(string srcCaller)
-    {
+    private string GetCallerText(string srcCaller) {
         if (string.IsNullOrEmpty(srcCaller)) return srcCaller;
         var key = srcCaller.Length > 7 ? srcCaller[^7..] : srcCaller;
 
         // هر 1 دقیقه کش اپدیت بشه
-        if ((DateTime.Now - _lastCacheTime).TotalSeconds > 60 || _cusCache.Count == 0)
-        {
+        if ((DateTime.Now - _lastCacheTime).TotalSeconds > 60 || _cusCache.Count == 0) {
             using var scope = serviceScopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<CRMContextDb>();
 
@@ -242,16 +219,13 @@ public class AsteriskAmiListener : BackgroundService {
                 .ToList();
             var dict = new Dictionary<string, Customer>(list.Count * 2);
 
-            foreach (var c in list)
-            {
-                if (!string.IsNullOrEmpty(c.Tel))
-                {
+            foreach (var c in list) {
+                if (!string.IsNullOrEmpty(c.Tel)) {
                     var k = c.Tel.Length > 7 ? c.Tel[^7..] : c.Tel;
                     dict.TryAdd(k, new Customer { CompanyName = c.CompanyName, AgentName = c.AgentName });
                 }
 
-                if (!string.IsNullOrEmpty(c.Mobile))
-                {
+                if (!string.IsNullOrEmpty(c.Mobile)) {
                     var k = c.Mobile.Length > 7 ? c.Mobile[^7..] : c.Mobile;
                     dict.TryAdd(k, new Customer { CompanyName = c.CompanyName, AgentName = c.AgentName });
                 }
@@ -276,18 +250,15 @@ public class AsteriskAmiListener : BackgroundService {
     }
 
 
-    private static IEnumerable<Dictionary<string, string>> ParseAmiResponse(string chunk)
-    {
+    private static IEnumerable<Dictionary<string, string>> ParseAmiResponse(string chunk) {
         chunk = chunk.Replace("\r\n", "\n");
         var frames = chunk.Split("\n\n", StringSplitOptions.RemoveEmptyEntries);
 
-        foreach (var frame in frames)
-        {
+        foreach (var frame in frames) {
             var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var lines = frame.Split('\n');
 
-            foreach (var line in lines)
-            {
+            foreach (var line in lines) {
                 var idx = line.IndexOf(':');
                 if (idx <= 0) continue;
 
