@@ -460,12 +460,13 @@
                         <div class="col-12" style="display:flex;flex-flow:wrap ">
                             <div class="form-group col-12 col-sm-3">
                                 <label class="text-dark">شماره تلفن تماس:</label>
-                                <input type="text" class="form-control" name="repTel" id="repTel" required />
+                                <input type="text" inputmode="numeric" class="form-control mobileNumber" name="repTel" id="repTel" required />
+                                @* <select inputmode="numeric" class="mobileNumber" id="repTel" name="repTel" required></select> *@
                             </div>
 
                             <div class="form-group col-12 col-sm-9" id="roDivCustId">
                                 <label class="text-dark">نام مشتری:</label>
-                                <select id="repCustomerTxt" name="repCustomerTxt" class="Lbox form-control" style="width:100%" required>
+                                <select id="repCustomerTxt" name="customerId" required>
                                 </select>
                             </div>
 
