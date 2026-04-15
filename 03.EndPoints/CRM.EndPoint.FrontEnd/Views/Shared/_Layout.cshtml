@@ -25,7 +25,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/logo-180x180.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
-    <link rel="manifest" href="/manifest.json?v=3.4.2">
+    <link rel="manifest" href="/manifest.json?v=3.4.5">
 
     <meta name="apple-mobile-web-app-title" content="VazinCRM">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -64,19 +64,19 @@
     <link rel="stylesheet" href="~/lib/Awesomplete/Awesomplete.css" />
     <link rel="stylesheet" href="~/lib/TomSelect/tom-select.min.css" />
 
-    <link rel="stylesheet" href="~/css/site.css?v=3.4.2" />
-    <link rel="stylesheet" href="~/css/table.css?v=3.4.2" />
-    <link rel="stylesheet" href="~/css/layoutResponsive.css?v=3.4.2" />
-    <link rel="stylesheet" href="~/css/customerIndexResponsive.css?v=3.4.2" />
-    <link rel="stylesheet" href="~/css/customerProfileResponsive.css?v=3.4.2" />
-    <link rel="stylesheet" href="~/css/listProduct.css?v=3.4.2" />
-    <link rel="stylesheet" href="~/css/carizo.css?v=3.4.2" />
-    <link rel="stylesheet" href="~/css/reports.css?v=3.4.2" />
-    <link rel="stylesheet" href="~/css/dashboard.css?v=3.4.2" />
-    <link rel="stylesheet" href="~/css/order.css?v=3.4.2" />
-    <link rel="stylesheet" href="~/css/deal.css?v=3.4.2" />
-    <link rel="stylesheet" href="~/css/cartableStyle.css?v=3.4.2" />
-    <link rel="stylesheet" href="~/css/email.css?v=3.4.2" />
+    <link rel="stylesheet" href="~/css/site.css?v=3.4.5" />
+    <link rel="stylesheet" href="~/css/table.css?v=3.4.5" />
+    <link rel="stylesheet" href="~/css/layoutResponsive.css?v=3.4.5" />
+    <link rel="stylesheet" href="~/css/customerIndexResponsive.css?v=3.4.5" />
+    <link rel="stylesheet" href="~/css/customerProfileResponsive.css?v=3.4.5" />
+    <link rel="stylesheet" href="~/css/listProduct.css?v=3.4.5" />
+    <link rel="stylesheet" href="~/css/carizo.css?v=3.4.5" />
+    <link rel="stylesheet" href="~/css/reports.css?v=3.4.5" />
+    <link rel="stylesheet" href="~/css/dashboard.css?v=3.4.5" />
+    <link rel="stylesheet" href="~/css/order.css?v=3.4.5" />
+    <link rel="stylesheet" href="~/css/deal.css?v=3.4.5" />
+    <link rel="stylesheet" href="~/css/cartableStyle.css?v=3.4.5" />
+    <link rel="stylesheet" href="~/css/email.css?v=3.4.5" />
 </head>
 
 
@@ -460,12 +460,13 @@
                         <div class="col-12" style="display:flex;flex-flow:wrap ">
                             <div class="form-group col-12 col-sm-3">
                                 <label class="text-dark">شماره تلفن تماس:</label>
-                                <input type="text" class="form-control" name="repTel" id="repTel" required />
+                                <input type="text" inputmode="numeric" class="form-control mobileNumber" name="repTel" id="repTel" required />
+                                @* <select inputmode="numeric" class="mobileNumber" id="repTel" name="repTel" required></select> *@
                             </div>
 
                             <div class="form-group col-12 col-sm-9" id="roDivCustId">
                                 <label class="text-dark">نام مشتری:</label>
-                                <select id="repCustomerTxt" name="repCustomerTxt" class="Lbox form-control" style="width:100%" required>
+                                <select id="repCustomerTxt" name="customerId" required>
                                 </select>
                             </div>
 
@@ -993,6 +994,7 @@
                                 <option value="30">30</option>
                                 <option value="50" selected>50</option>
                                 <option value="70">70</option>
+                                <option value="100">100</option>
                             </select>
                         </div>
                         <div class="h-100 w-100 d-flex flex-column">
@@ -3055,14 +3057,14 @@
 <script src="~/lib/Awesomplete/awesomplete.min.js"></script>
 <script src="~/lib/TomSelect/tom-select.complete.min.js"></script>
 
-<script src="~/js/pwa.js?v=3.4.2"></script>
-<script src="~/js/site.js?v=3.4.2"></script>
-<script src="~/js/UploadFile.js?v=3.4.2"></script>
-<script src="~/js/PublicFunction.js?v=3.4.2"></script>
-<script src="~/js/DateValidate.js?v=3.4.2"></script>
-<script src="~/js/TaskSignalR.js?v=3.4.2"></script>
-@* <script src="~/js/dashboard.js?v=3.4.2"></script> *@
-<script src="~/js/Layout.js?v=3.4.2" defer></script>
+<script src="~/js/pwa.js?v=3.4.5"></script>
+<script src="~/js/site.js?v=3.4.5"></script>
+<script src="~/js/UploadFile.js?v=3.4.5"></script>
+<script src="~/js/PublicFunction.js?v=3.4.5"></script>
+<script src="~/js/DateValidate.js?v=3.4.5"></script>
+<script src="~/js/TaskSignalR.js?v=3.4.5"></script>
+@* <script src="~/js/dashboard.js?v=3.4.5"></script> *@
+<script src="~/js/Layout.js?v=3.4.5" defer></script>
 
 <script>
     var baseUrl;

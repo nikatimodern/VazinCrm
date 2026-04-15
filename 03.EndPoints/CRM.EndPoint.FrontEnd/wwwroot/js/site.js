@@ -1170,7 +1170,7 @@ const SubmitReportForm = async () => {
         let data = mySer.convertFormToJSON("#ReportFormId");
         const el = document.getElementById("repCustomerTxt");
         
-        data.customerId = data.repCustomerTxt;
+        //data.customerId = data.repCustomerTxt;
         data.customerTxt = el.options[el.selectedIndex].text;
         data.dealId = dealIdReport;
         data.dealSerialNumber = dealSerialNumberReport;
@@ -1291,23 +1291,102 @@ async function initReportModal() {
 }
 
 
-const initCustomerOpReport = () => {
-    $("#repCustomerTxt").select2({
-        tags: true,
-        dir: "rtl",
-        placeholder: "انتخاب",
-        selectionCssClass: "form-control",
-        dropdownParent: $("#ModalReport"),
-        ajax: {
-            url: baseUrl + "Customer/GetCustomerOp",
-            delay: 250,
-            cache: true,
-            data: params => ({ search: params.term || "" }),
-            processResults: data => ({
-                results: data.map(item => ({ id: item.id, text: item.text })),
-            }),
+const initCustomerOpReport = async () => {
+    /*    $("#repCustomerTxt").select2({
+            tags: true,
+            dir: "rtl",
+            placeholder: "انتخاب",
+            selectionCssClass: "form-control",
+            dropdownParent: $("#ModalReport"),
+            ajax: {
+                url: baseUrl + "Customer/GetCustomerOp",
+                delay: 250,
+                cache: true,
+                data: params => ({ search: params.term || "" }),
+                processResults: data => ({
+                    results: data.map(item => ({ id: item.id, text: item.text })),
+                }),
+            },
+        });*/
+    
+    
+    const customerRes = await axios("/Customer/GetAllCustomers");
+    const repTelElm = document.getElementById("repTel");
+    
+    
+    const cusTomSelect = new TomSelect("#repCustomerTxt", {
+        options: customerRes.data.map(c => ({ text: `${c.customerName} (کد مشتری: ${c.customerCode})`, value: c.id })),
+        maxItems: 1,
+        persist: false,
+        openOnFocus: false,
+        createOnBlur: true,
+        selectOnTab: true,
+        placeholder: "نام مشتری ...",
+        
+        create: (input, callback) => callback({ value: `custom-${input}`, text: input }),
+        
+        async onChange(value) {
+            if (!value) return;
+            if (!value.startsWith("custom")) {
+                toggleElementsDisabled(repTelElm, true);
+                cusTomSelect.disable();
+                
+                const res = await axios(`/Customer/GetCustomer/${value}`);
+                // repTelElm.tomselect.setValue(res.data.mobile, true);
+                repTelElm.value = res.data.mobile;
+                flashItem(repTelElm);
+                // flashItem(repTelElm.tomselect.control);
+                cusTomSelect.enable();
+                toggleElementsDisabled(repTelElm, false);
+            }
+        },
+        
+        onDelete(values) {
+            const value = values[0];
+            if (value.startsWith("custom")) {
+                const opt = cusTomSelect.options[value];
+                
+                cusTomSelect.removeItem(value, true);
+                cusTomSelect.setTextboxValue(opt.text.trim());
+                cusTomSelect.refreshOptions(true);
+                return false;
+            }
+            
+            // repTelElm.tomselect.clear(true);
+            repTelElm.value = "";
+            return true;
         },
     });
+    /*
+        new TomSelect(repTelElm, {
+            options: customerRes.data.map(c => ({ text: `${c.customerName} (${c.mobile})`, value: c.mobile })),
+            openOnFocus: false,
+            searchField: ["value"],
+            maxItems: 1,
+            persist: false,
+            create: true,
+            createOnBlur: true,
+            selectOnTab: true,
+            placeholder: "...شماره موبایل",
+            
+            render: {
+                item(data, escape) {
+                    return `<div>${escape(data.value)}</div>`;
+                },
+            },
+            
+            onChange(value) {
+                if (!value) return;
+                const customer = customerRes.data.find(x => x.mobile === value);
+                if (!customer) return;
+                
+                cusTomSelect.setValue(customer.id);
+                flashItem(cusTomSelect.control);
+            },
+        });
+    const repTelTsInput = document.getElementById("repTel-ts-control");
+    repTelTsInput.setAttribute("inputmode", "numeric");
+    repTelTsInput.addEventListener("input", handlerMobileInput);*/
 };
 
 let reportModalLoaded = false;
@@ -1414,7 +1493,7 @@ async function getAllReports(showLoading = true) {
 const ShowUpdateReport = async (id, passType = 0) => {
     if (!reportModalLoaded) {
         await initReportModal();
-        initCustomerOpReport();
+        await initCustomerOpReport();
         reportModalLoaded = true;
     }
     
@@ -1423,16 +1502,21 @@ const ShowUpdateReport = async (id, passType = 0) => {
         oldReport = res;
         dealIdReport = res.dealId;
         dealSerialNumberReport = res.dealSerialNumber;
-        
-        const data = {
+        /*const data = {
             id: res.customerId,
             text: res.customerTxt,
         };
         
         const newOption = new Option(data.text, data.id, true, true);
-        $("#repCustomerTxt").append(newOption).trigger("change");
+        $("#repCustomerTxt").append(newOption).trigger("change");*/
         
-        await mySer.convertJsonToForm(res, "ReportFormId");
+        mySer.convertJsonToForm(res, "ReportFormId");
+        if (res.customerId === null) {
+            const selectTomCustomers = document.getElementById("repCustomerTxt");
+            const customId = `custom-${res.customerTxt}`;
+            selectTomCustomers.tomselect.addOption({ value: customId, text: res.customerTxt });
+            selectTomCustomers.tomselect.setValue(customId, true);
+        }
         $("#ModalReport").modal("toggle");
     });
 };
@@ -1520,6 +1604,7 @@ document.addEventListener("DOMContentLoaded", function () {
             handlerIranMobileInput.call(e.target, e);
         }
     });
+    
     /*document.addEventListener("focus", function (e) {
         if (e.target.classList.contains("mobileNumber")) {
             if (!e.target.value.startsWith("09")) {
@@ -2369,7 +2454,7 @@ class MyService {
                             break;
                     }
                     
-                    if (el.classList.contains("mobileNumber") && el.value.trim().length > 0 && el.value.trim().length <= 8) {
+                    if (el.classList.contains("mobileNumber") && el.value.trim().length > 0 && el.value.trim().length < 8) {
                         toastifyError("شماره موبایل معتبر نیست!");
                         addAlert(el);
                         isValid = false;
