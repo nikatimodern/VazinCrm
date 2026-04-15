@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +16,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Renci.SshNet;
 
 namespace CRM.EndPoint.FrontEnd.Services;
 
@@ -21,21 +24,28 @@ public class AsteriskAmiListener : BackgroundService {
     private readonly IHubContext<CallHub> _hubContext;
     private readonly IConfiguration _config;
     private readonly IServiceScopeFactory serviceScopeFactory;
+    private readonly AudioToTextService _audioToTextService;
     private readonly IList<AppUser> _users;
 
-    public AsteriskAmiListener(IHubContext<CallHub> hubContext, IConfiguration config, IServiceScopeFactory serviceScopeFactory) {
+    public AsteriskAmiListener(IHubContext<CallHub> hubContext, IConfiguration config, IServiceScopeFactory serviceScopeFactory, AudioToTextService audioToTextService)
+    {
         _hubContext = hubContext;
         _config = config;
         this.serviceScopeFactory = serviceScopeFactory;
+        _audioToTextService = audioToTextService;
 
-        using (var scope = serviceScopeFactory.CreateScope()) {
+        using (var scope = serviceScopeFactory.CreateScope())
+        {
             var udb = scope.ServiceProvider.GetRequiredService<UserContextDb>();
 
             _users = udb.Users.ToList();
         }
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+    private readonly ConcurrentDictionary<string, string> _recordings = new();
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
         var voipConfig = _config.GetSection("voipConfig").Get<AppSettingVoip>();
         if (voipConfig.ActiveStatus != true) return;
 
@@ -53,28 +63,37 @@ public class AsteriskAmiListener : BackgroundService {
 
 
         var ami = new AsteriskAMI(voipConfig._hostname, voipConfig._port, voipConfig._username, voipConfig._password);
-        try {
+        try
+        {
             await ami.ConnectAsync();
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             Console.WriteLine($"[AMI] اتصال برقرار نشد: {ex.Message}");
             return;
         }
 
-        try {
-            while (!stoppingToken.IsCancellationRequested) {
+        try
+        {
+            while (!stoppingToken.IsCancellationRequested)
+            {
                 var res = await ami.ReadRawAsync();
 
-                foreach (var ev in ParseAmiResponse(res)) {
+                foreach (var ev in ParseAmiResponse(res))
+                {
                     var evt = Get(ev, "Event");
-                    if (!test.Contains(evt.ToLowerInvariant())) {
+                    if (!test.Contains(evt.ToLowerInvariant()))
+                    {
                         Console.WriteLine(evt);
                     }
 
-                    switch (evt.ToLowerInvariant()) {
-                        case "dialbegin": {
+                    switch (evt.ToLowerInvariant())
+                    {
+                        case "dialbegin":
+                        {
                             var srcCaller = Get(ev, "CallerIDNum");
-                            if (srcCaller == "9506") {
+                            if (srcCaller == "9506")
+                            {
                                 srcCaller = Get(ev, "Channel").Substring(4, 3);
                             }
 
@@ -96,10 +115,12 @@ public class AsteriskAmiListener : BackgroundService {
                                 callType = "internal-to-external";*/
 
                             string srcCallerText = null;
-                            if (srcIsInternal) {
+                            if (srcIsInternal)
+                            {
                                 var srcUser = await GetUsers(srcCaller);
                                 srcCallerText = srcUser == null ? srcCaller : $"{srcUser.FullName} ({srcCaller})";
-                            } else if (!srcIsInternal) {
+                            } else if (!srcIsInternal)
+                            {
                                 srcCallerText = GetCallerText(srcCaller);
                             }
 
@@ -116,7 +137,8 @@ public class AsteriskAmiListener : BackgroundService {
                             //var linkedId = Get(ev, "Linkedid");
                             var destUid = Get(ev, "DestUniqueid");
 
-                            if (!string.IsNullOrEmpty(uniqueid) && desUser != null) {
+                            if (!string.IsNullOrEmpty(uniqueid) && desUser != null)
+                            {
                                 await _hubContext.Clients
                                     .User(desUser.Id)
                                     .SendAsync("IncomingCall", srcCallerText, destCaller, !string.IsNullOrEmpty(destUid) ? destUid : uniqueid);
@@ -125,24 +147,54 @@ public class AsteriskAmiListener : BackgroundService {
                             break;
                         }
 
-                        case "hangup": {
+                        case "hangup":
+                        {
                             var uniqueid = Get(ev, "Uniqueid");
                             //var linkedId = Get(ev, "LinkedId");
                             var destUid = Get(ev, "DestUniqueid");
 
-                            if (!string.IsNullOrEmpty(uniqueid) || !string.IsNullOrEmpty(destUid)) {
+                            if (!string.IsNullOrEmpty(uniqueid) || !string.IsNullOrEmpty(destUid))
+                            {
+                                if (_recordings.TryGetValue(uniqueid, out var filePath))
+                                {
+                                    Console.WriteLine(uniqueid, filePath);
+
+
+                                    string ftpHost = "192.168.1.150"; // IP سرور ایزابل
+                                    string ftpUser = "root"; // نام کاربری FTP در ایزابل
+                                    string ftpPass = "123"; // رمز عبور FTP
+                                    string remoteFilePath = filePath;
+                                    string targetFilePath = @"wwwroot\recordings"; // مسیر ذخیره فایل در سرور ASP.NET
+
+
+                                    DownloadRecording(ftpHost, ftpUser, ftpPass, remoteFilePath, targetFilePath);
+
+
+                                    var localFilePath = Path.Combine(targetFilePath, Path.GetFileName(remoteFilePath));
+
+
+                                    var result = await _audioToTextService.ConvertAsync(localFilePath);
+
+                                    Console.WriteLine(result.Result.Text);
+
+                                    _recordings.TryRemove(uniqueid, out _);
+                                }
+
+
                                 await _hubContext.Clients.All.SendAsync("CallEnded", !string.IsNullOrEmpty(destUid) ? destUid : uniqueid);
                             }
 
                             break;
                         }
 
-                        case "bridgeenter": {
+                        case "bridgeenter":
+                        {
                             var uniqueid = Get(ev, "Uniqueid");
                             //var linkedId = Get(ev, "LinkedId");
                             var destUid = Get(ev, "DestUniqueid");
 
-                            if (!string.IsNullOrEmpty(uniqueid) || !string.IsNullOrEmpty(destUid)) {
+                            if (!string.IsNullOrEmpty(uniqueid) || !string.IsNullOrEmpty(destUid))
+                            {
                                 await _hubContext.Clients.All.SendAsync("CallAnswered", !string.IsNullOrEmpty(destUid) ? destUid : uniqueid);
                             }
 
@@ -155,15 +207,15 @@ public class AsteriskAmiListener : BackgroundService {
                             if (variable == "MIXMONITOR_FILENAME")
                             {
                                 var uniqueid = Get(ev, "Uniqueid");
-                                var destUid = Get(ev, "DestUniqueid");
+                                //var destUid = Get(ev, "DestUniqueid");
                                 var filePath = Get(ev, "Value");
                                 // https://192.168.1.150/index.php?menu=monitoring&action=display_record&id=1775648256.116234&namefile=rg-600-9123906718-20260408-160736-1775648256.116234.wav&rawmode=yes
                                 // /var/spool/asterisk/monitor/2026/04/08/rg-600-9123906718-20260408-160736-1775648256.116234.wav
 
-
-                                if ((!string.IsNullOrEmpty(uniqueid) || !string.IsNullOrEmpty(destUid)) && !string.IsNullOrEmpty(filePath))
+                                if (!string.IsNullOrEmpty(uniqueid) && !string.IsNullOrEmpty(filePath))
                                 {
-                                    Console.WriteLine(filePath, uniqueid, destUid);
+                                    _recordings[uniqueid] = filePath;
+                                    Console.WriteLine(filePath, uniqueid);
                                 }
                             }
 
@@ -186,14 +238,59 @@ public class AsteriskAmiListener : BackgroundService {
                 }
             }
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             Console.WriteLine($"[AMI] ارتباط قطع شد: {ex.Message}");
             return;
             //await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
         }
     }
 
-    private async Task<AppUser> GetUsers(string destCaller) {
+    public static void DownloadRecording(string host, string username, string password, string remoteFilePath, string localDirectory)
+    {
+        try
+        {
+            // ساخت مسیر کامل فایل محلی با حفظ نام فایل اصلی
+            string localFileName = Path.GetFileName(remoteFilePath);
+            string localFilePath = Path.Combine(localDirectory, localFileName);
+
+            // اتصال به سرور SFTP
+            using (var client = new SftpClient(host, username, password))
+            {
+                Console.WriteLine($"Connecting to SFTP server {host}...");
+                client.Connect();
+                Console.WriteLine("Connected.");
+
+                // اطمینان از وجود دایرکتوری مقصد
+                if (!Directory.Exists(localDirectory))
+                {
+                    Directory.CreateDirectory(localDirectory);
+                    Console.WriteLine($"Created local directory: {localDirectory}");
+                }
+
+                // دانلود فایل
+                Console.WriteLine($"Downloading file: {remoteFilePath} to {localFilePath}");
+                using (var fileStream = System.IO.File.OpenWrite(localFilePath))
+                {
+                    client.DownloadFile(remoteFilePath, fileStream);
+                }
+
+                Console.WriteLine("File downloaded successfully!");
+
+                // قطع اتصال
+                client.Disconnect();
+                Console.WriteLine("Disconnected.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+            // در اینجا می‌توانید جزئیات بیشتری از خطا را نمایش دهید یا لاگ کنید
+            // Console.WriteLine(ex.ToString());
+        }
+    }
+    private async Task<AppUser> GetUsers(string destCaller)
+    {
         AppUser user = null;
         user = _users
             .FirstOrDefault(u => (u.InternalTels ?? "")
@@ -205,12 +302,14 @@ public class AsteriskAmiListener : BackgroundService {
     private static Dictionary<string, Customer> _cusCache = new();
     private static DateTime _lastCacheTime = DateTime.MinValue;
 
-    private string GetCallerText(string srcCaller) {
+    private string GetCallerText(string srcCaller)
+    {
         if (string.IsNullOrEmpty(srcCaller)) return srcCaller;
         var key = srcCaller.Length > 7 ? srcCaller[^7..] : srcCaller;
 
         // هر 1 دقیقه کش اپدیت بشه
-        if ((DateTime.Now - _lastCacheTime).TotalSeconds > 60 || _cusCache.Count == 0) {
+        if ((DateTime.Now - _lastCacheTime).TotalSeconds > 60 || _cusCache.Count == 0)
+        {
             using var scope = serviceScopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<CRMContextDb>();
 
@@ -219,13 +318,16 @@ public class AsteriskAmiListener : BackgroundService {
                 .ToList();
             var dict = new Dictionary<string, Customer>(list.Count * 2);
 
-            foreach (var c in list) {
-                if (!string.IsNullOrEmpty(c.Tel)) {
+            foreach (var c in list)
+            {
+                if (!string.IsNullOrEmpty(c.Tel))
+                {
                     var k = c.Tel.Length > 7 ? c.Tel[^7..] : c.Tel;
                     dict.TryAdd(k, new Customer { CompanyName = c.CompanyName, AgentName = c.AgentName });
                 }
 
-                if (!string.IsNullOrEmpty(c.Mobile)) {
+                if (!string.IsNullOrEmpty(c.Mobile))
+                {
                     var k = c.Mobile.Length > 7 ? c.Mobile[^7..] : c.Mobile;
                     dict.TryAdd(k, new Customer { CompanyName = c.CompanyName, AgentName = c.AgentName });
                 }
@@ -250,15 +352,18 @@ public class AsteriskAmiListener : BackgroundService {
     }
 
 
-    private static IEnumerable<Dictionary<string, string>> ParseAmiResponse(string chunk) {
+    private static IEnumerable<Dictionary<string, string>> ParseAmiResponse(string chunk)
+    {
         chunk = chunk.Replace("\r\n", "\n");
         var frames = chunk.Split("\n\n", StringSplitOptions.RemoveEmptyEntries);
 
-        foreach (var frame in frames) {
+        foreach (var frame in frames)
+        {
             var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var lines = frame.Split('\n');
 
-            foreach (var line in lines) {
+            foreach (var line in lines)
+            {
                 var idx = line.IndexOf(':');
                 if (idx <= 0) continue;
 

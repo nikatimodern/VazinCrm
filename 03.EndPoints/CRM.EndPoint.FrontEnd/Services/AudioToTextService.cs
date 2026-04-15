@@ -1,7 +1,10 @@
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using CRM.EndPoint.FrontEnd.Models.ViewModel;
 
 namespace CRM.EndPoint.FrontEnd.Services;
 
@@ -14,7 +17,7 @@ public class AudioToTextService
         _http = http;
     }
 
-    public async Task<string> ConvertAsync(string filePath)
+    public async Task<AiResponseDetails> ConvertAsync(string filePath)
     {
         using var form = new MultipartFormDataContent();
 
@@ -37,6 +40,14 @@ public class AudioToTextService
 
         // ارسال درخواست
         var response = await _http.PostAsync("", form);
-        return await response.Content.ReadAsStringAsync();
+
+        if (response.IsSuccessStatusCode)
+        {
+            var resJson = await response.Content.ReadFromJsonAsync<AiResponseModel>();
+            return resJson.Data.Data.AiResponse;
+        }
+
+        throw new Exception("API Error: " + await response.Content.ReadAsStringAsync());
+
     }
 }
