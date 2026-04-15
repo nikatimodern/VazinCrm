@@ -1185,7 +1185,7 @@
                             if (filConfigSession?.filterVar) {
                                 promises.push(FilterAccepted(filConfigSession));
                                 if (window.innerWidth < 1400) {
-                                    ShowTab("allFactorTab")
+                                    ShowTab("allFactorTab");
                                 }
                             } else if (!fromWarning) {
                                 promises.push(GetFactorPartial(modelFactor.serVal, null, null, modelFactor.filt, modelFactor._type, null, 0, null, false));
@@ -1391,12 +1391,19 @@
             const acceptAmount = percent * amount / 100;
             input.value = acceptAmount ? acceptAmount.toLocaleString() : "";
 
+            select.style.backgroundColor = acceptAmount ? "#e3f7e3" : "";
             toggleAcceptBtn(select, acceptAmount, acceptedAmount);
         }
 
-        function changeAcceptedRequestAmount(input, acceptedAmount) {
-            const acceptAmount = Number(SeparatedNumberRemove(input.value));
-            toggleAcceptBtn(input, acceptAmount, acceptedAmount);
+        function changeAcceptedRequestAmount(input, amount, acceptedAmount) {
+            const inputValue = Number(SeparatedNumberRemove(input.value));
+            const select = input.parentElement.querySelector("select");
+            const percent = Number(select.value);
+            if (percent * amount / 100 !== inputValue) {
+                select.value = "";
+                select.style.backgroundColor = "";
+            }
+            toggleAcceptBtn(input, inputValue, acceptedAmount);
         }
 
         function toggleAcceptBtn(elm, acceptAmount, acceptedAmount) {

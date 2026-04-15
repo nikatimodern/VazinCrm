@@ -116,7 +116,7 @@ public class AsteriskAmiListener : BackgroundService {
                             //var linkedId = Get(ev, "Linkedid");
                             var destUid = Get(ev, "DestUniqueid");
 
-                            if (!string.IsNullOrEmpty(uniqueid) && desUser != null && destCaller.StartsWith("1")) {
+                            if (!string.IsNullOrEmpty(uniqueid) && desUser != null) {
                                 await _hubContext.Clients
                                     .User(desUser.Id)
                                     .SendAsync("IncomingCall", srcCallerText, destCaller, !string.IsNullOrEmpty(destUid) ? destUid : uniqueid);

@@ -73,17 +73,16 @@
                     <span style="font-size: 13px; color: #777" class="flex-shrink-0">مبلغ تایید شده:</span>
                     <div class="input-group">
                         @{
-                            int[] percents = [25, 50, 75, 100];
+                            decimal[] percents = [25, 50, 75, 100];
                             var percent = (requestAmount.AcceptedAmount * 100) / requestAmount.Amount;
                         }
-                        <input name="acceptedAmount" type="text" class="form-control currencyNumber" oninput="changeAcceptedRequestAmount(this, @requestAmount.AcceptedAmount)" value="@(requestAmount.AcceptedAmount > 0 ? string.Format("{0:n0}", requestAmount.AcceptedAmount) : "")" required>
-                        <select class="form-select form-select-xs" onchange="changePercentAcceptedRequestAmount(this, @requestAmount.Amount, @requestAmount.AcceptedAmount)">
+                        <input name="acceptedAmount" type="text" class="form-control currencyNumber" oninput="changeAcceptedRequestAmount(this, @requestAmount.Amount, @requestAmount.AcceptedAmount)" value="@(requestAmount.AcceptedAmount > 0 ? string.Format("{0:n0}", requestAmount.AcceptedAmount) : "")" required>
+                        <select class="form-select form-select-xs" style="background-color: @(percents.Contains(percent) ? "#e3f7e3" : "");" onchange="changePercentAcceptedRequestAmount(this, @requestAmount.Amount, @requestAmount.AcceptedAmount)">
                             <option value="" selected="@(percent == 0 ? "selected" : null)">درصد</option>
                             @foreach (var p in percents) {
                                 <option value="@p" selected="@(percent == p ? "selected" : null)">@p%</option>
                             }
                         </select>
-
                     </div>
                 </div>
 

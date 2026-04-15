@@ -391,10 +391,8 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
                 break;
 
             case AppUser user:
-                if (!string.IsNullOrEmpty(commentTxt)
-//                    && (commentTxt.Contains("192.168.1.3") || commentTxt.Contains("127.0.0.1") || commentTxt.Contains("::1")) && fullName != "مدیر ارشد"
-                   )
-                    return null;
+                /*if (!string.IsNullOrEmpty(commentTxt) && (commentTxt.Contains("192.168.1.3") || commentTxt.Contains("127.0.0.1") || commentTxt.Contains("::1")) && fullName != "مدیر ارشد")
+                    return null;*/
 
                 switch (action)
                 {
