@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Services.AI;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -24,15 +25,14 @@ public class AsteriskAmiListener : BackgroundService {
     private readonly IHubContext<CallHub> _hubContext;
     private readonly IConfiguration _config;
     private readonly IServiceScopeFactory serviceScopeFactory;
-    private readonly AudioToTextService _audioToTextService;
     private readonly IList<AppUser> _users;
 
-    public AsteriskAmiListener(IHubContext<CallHub> hubContext, IConfiguration config, IServiceScopeFactory serviceScopeFactory, AudioToTextService audioToTextService)
+    public AsteriskAmiListener(IHubContext<CallHub> hubContext, IConfiguration config, IServiceScopeFactory serviceScopeFactory
+    )
     {
         _hubContext = hubContext;
         _config = config;
         this.serviceScopeFactory = serviceScopeFactory;
-        _audioToTextService = audioToTextService;
 
         using (var scope = serviceScopeFactory.CreateScope())
         {
@@ -153,29 +153,29 @@ public class AsteriskAmiListener : BackgroundService {
                             //var linkedId = Get(ev, "LinkedId");
                             var destUid = Get(ev, "DestUniqueid");
 
+
                             if (!string.IsNullOrEmpty(uniqueid) || !string.IsNullOrEmpty(destUid))
                             {
                                 if (_recordings.TryGetValue(uniqueid, out var filePath))
                                 {
-                                    Console.WriteLine(uniqueid, filePath);
+                                    var srcCaller = Get(ev, "CallerIDNum");
+                                    var destCaller = Get(ev, "ConnectedLineNum");
+
+                                    using (var scope = serviceScopeFactory.CreateScope())
+                                    {
+                                        var audioToTextService = scope.ServiceProvider.GetRequiredService<AudioToTextService>();
+                                        await audioToTextService.ProcessCallRecording(srcCaller, destCaller, filePath);
+                                    }
 
 
-                                    string ftpHost = "192.168.1.150"; // IP سرور ایزابل
-                                    string ftpUser = "root"; // نام کاربری FTP در ایزابل
-                                    string ftpPass = "123"; // رمز عبور FTP
-                                    string remoteFilePath = filePath;
-                                    string targetFilePath = @"wwwroot\recordings"; // مسیر ذخیره فایل در سرور ASP.NET
+/*
 
-
-                                    DownloadRecording(ftpHost, ftpUser, ftpPass, remoteFilePath, targetFilePath);
-
-
-                                    var localFilePath = Path.Combine(targetFilePath, Path.GetFileName(remoteFilePath));
-
-
-                                    var result = await _audioToTextService.ConvertAsync(localFilePath);
-
-                                    Console.WriteLine(result.Result.Text);
+                                    var audioBytes = await _audioToTextService.GetAudioFromIsabel(filePath);
+                                    if (audioBytes != null && audioBytes.Length > 0)
+                                    {
+                                        var result = await _audioToTextService.ConvertAudioToText(audioBytes, Path.GetFileName(filePath));
+                                        Console.WriteLine(result.Result.Text);
+                                    }*/
 
                                     _recordings.TryRemove(uniqueid, out _);
                                 }
@@ -246,49 +246,6 @@ public class AsteriskAmiListener : BackgroundService {
         }
     }
 
-    public static void DownloadRecording(string host, string username, string password, string remoteFilePath, string localDirectory)
-    {
-        try
-        {
-            // ساخت مسیر کامل فایل محلی با حفظ نام فایل اصلی
-            string localFileName = Path.GetFileName(remoteFilePath);
-            string localFilePath = Path.Combine(localDirectory, localFileName);
-
-            // اتصال به سرور SFTP
-            using (var client = new SftpClient(host, username, password))
-            {
-                Console.WriteLine($"Connecting to SFTP server {host}...");
-                client.Connect();
-                Console.WriteLine("Connected.");
-
-                // اطمینان از وجود دایرکتوری مقصد
-                if (!Directory.Exists(localDirectory))
-                {
-                    Directory.CreateDirectory(localDirectory);
-                    Console.WriteLine($"Created local directory: {localDirectory}");
-                }
-
-                // دانلود فایل
-                Console.WriteLine($"Downloading file: {remoteFilePath} to {localFilePath}");
-                using (var fileStream = System.IO.File.OpenWrite(localFilePath))
-                {
-                    client.DownloadFile(remoteFilePath, fileStream);
-                }
-
-                Console.WriteLine("File downloaded successfully!");
-
-                // قطع اتصال
-                client.Disconnect();
-                Console.WriteLine("Disconnected.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"An error occurred: {ex.Message}");
-            // در اینجا می‌توانید جزئیات بیشتری از خطا را نمایش دهید یا لاگ کنید
-            // Console.WriteLine(ex.ToString());
-        }
-    }
     private async Task<AppUser> GetUsers(string destCaller)
     {
         AppUser user = null;

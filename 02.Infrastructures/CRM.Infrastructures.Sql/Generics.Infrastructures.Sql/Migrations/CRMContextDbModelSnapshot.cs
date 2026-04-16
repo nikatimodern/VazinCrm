@@ -412,6 +412,62 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("BaseItems");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.CallRecordings.Entities.CallRecording", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CallerNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DestinationNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RecordingFilePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SummaryText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TranscriptionText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CallRecordings");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Carizos.Entities.Carizo", b =>
                 {
                     b.Property<Guid>("Id")

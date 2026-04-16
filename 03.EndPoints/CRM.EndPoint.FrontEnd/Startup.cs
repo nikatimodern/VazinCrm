@@ -28,6 +28,7 @@ using CRM.EndPoint.FrontEnd.Services.PushServices;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using CRM.EndPoint.FrontEnd.Services.AI;
 using WebPush;
 
 namespace CRM.EndPoint.FrontEnd {
@@ -141,6 +142,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddSingleton<IPushQueue, PushQueue>();
             services.AddHostedService<PushBackgroundService>();
             services.AddScoped<IPushService, PushService>();
+            services.AddScoped<AudioToTextService>();
 
             services.AddSingleton<WebPushClient>(sp =>
             {
@@ -158,13 +160,20 @@ namespace CRM.EndPoint.FrontEnd {
                 return new WebPushClient(httpClient);
             });
 
-            services.AddHttpClient<AudioToTextService>(client =>
+
+            services.AddHttpClient("AvanegarApi", client =>
             {
                 client.BaseAddress = new Uri("https://partai.gw.isahab.ir/avanegar/v2/avanegar/request");
                 client.DefaultRequestHeaders.Add("gateway-token", "eyJhbGciOiJIUzI1NiJ9.eyJzeXN0ZW0iOiJzYWhhYiIsImNyZWF0ZVRpbWUiOiIxNDA1MDExNzEwMDkwNzA0MiIsInVuaXF1ZUZpZWxkcyI6eyJ1c2VybmFtZSI6Ijg3YzM0ZDI2LTE0OWQtNGNlYS1hMTNhLTg3YWNhZWNmZjg4MiJ9LCJncm91cE5hbWUiOiJiZmNmZDI5YzJmOGJkMjA5M2NjMWIzM2ZkNzUxZTkyNiIsImRhdGEiOnsic2VydmljZUlEIjoiNGVkNzY5ZTYtNDgxNC00ZGNiLWEzZWQtZTU1ZWI5Y2FiZjhlIiwicmFuZG9tVGV4dCI6IlhiMFpsIn19.NttwGRfzzklqvXglCgf7tmvPYRnq0t8PtV4xjmbQQ2Q");
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             });
 
+            services.AddHttpClient("SummarizeApi", client =>
+            {
+                client.BaseAddress = new Uri("https://dadmatech.gw.isahab.ir/summarize/v1/summarize");
+                client.DefaultRequestHeaders.Add("gateway-token", "eyJhbGciOiJIUzI1NiJ9.eyJzeXN0ZW0iOiJzYWhhYiIsImNyZWF0ZVRpbWUiOiIxNDA1MDEyNzE0MDEwNjYxMCIsInVuaXF1ZUZpZWxkcyI6eyJ1c2VybmFtZSI6Ijg3YzM0ZDI2LTE0OWQtNGNlYS1hMTNhLTg3YWNhZWNmZjg4MiJ9LCJncm91cE5hbWUiOiJiOTc2MWUzNTdmMDZiODFjZTFiNTQ0YjY1M2QyYTEzYiIsImRhdGEiOnsic2VydmljZUlEIjoiNTUyMWYxYjgtYmJiYS00ZGI0LWI0YTctYjA2OGI5NGQ1ZTQyIiwicmFuZG9tVGV4dCI6IkN3anp0In19.ez-ICJWTBcu3NJ_Og5ohFrjWj55hzUEDZO0xhnjxXWw");
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            });
 
             services
                 .AddControllersWithViews()
