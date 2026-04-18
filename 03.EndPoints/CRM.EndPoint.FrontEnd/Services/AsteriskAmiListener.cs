@@ -137,7 +137,7 @@ public class AsteriskAmiListener : BackgroundService {
                             //var linkedId = Get(ev, "Linkedid");
                             var destUid = Get(ev, "DestUniqueid");
 
-                            if (!string.IsNullOrEmpty(uniqueid) && desUser != null)
+                            if (!string.IsNullOrEmpty(uniqueid) && desUser != null && destCaller.StartsWith("1"))
                             {
                                 await _hubContext.Clients
                                     .User(desUser.Id)

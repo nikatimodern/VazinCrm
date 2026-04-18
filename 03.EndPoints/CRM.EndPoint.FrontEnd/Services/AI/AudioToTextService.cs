@@ -30,7 +30,7 @@ public class AudioToTextService {
     }
 
 
-    private static async Task<byte[]> GetAudioFromIsabel(string remoteFilePath)
+    private async Task<byte[]> GetAudioFromIsabel(string remoteFilePath)
     {
         try
         {
@@ -46,7 +46,10 @@ public class AudioToTextService {
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"An error occurred: {ex.Message}");
+            db.CallRecordings.Add(new CallRecording {
+                TranscriptionText = ex.Message,
+            });
+            await db.SaveChangesAsync();
             return null;
         }
     }
