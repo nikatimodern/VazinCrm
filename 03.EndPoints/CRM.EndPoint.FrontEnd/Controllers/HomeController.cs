@@ -81,6 +81,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
+
+                throw new Exception("This is a test exception");
 /*
 
 
@@ -108,6 +110,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (Exception e)
             {
                 await trans.RollbackAsync();
+                throw;
                 return BadRequest(e.Message);
             }
         }

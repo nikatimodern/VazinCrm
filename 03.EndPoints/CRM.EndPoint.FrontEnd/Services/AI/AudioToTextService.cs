@@ -46,10 +46,7 @@ public class AudioToTextService {
         }
         catch (Exception ex)
         {
-            db.CallRecordings.Add(new CallRecording {
-                TranscriptionText = ex.Message,
-            });
-            await db.SaveChangesAsync();
+            throw;
             return null;
         }
     }
@@ -118,7 +115,7 @@ public class AudioToTextService {
             var jsonContent = JsonSerializer.Serialize(requestData);
             var httpContent = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
 
-            var response = await httpClient.PostAsync("summarize", httpContent);
+            var response = await httpClient.PostAsync("", httpContent);
 
             if (response.IsSuccessStatusCode)
             {
@@ -162,6 +159,7 @@ public class AudioToTextService {
         catch (Exception ex)
         {
             Console.WriteLine(ex.Message);
+            throw;
         }
     }
 
@@ -191,7 +189,8 @@ public class AudioToTextService {
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            //Console.WriteLine(ex.Message);
+            throw;
         }
         finally
         {

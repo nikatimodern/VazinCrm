@@ -170,7 +170,7 @@ namespace CRM.EndPoint.FrontEnd {
 
             services.AddHttpClient("SummarizeApi", client =>
             {
-                client.BaseAddress = new Uri("https://dadmatech.gw.isahab.ir/summarize/v1/");
+                client.BaseAddress = new Uri("https://dadmatech.gw.isahab.ir/summarize/v1/summarize");
                 client.DefaultRequestHeaders.Add("gateway-token", "eyJhbGciOiJIUzI1NiJ9.eyJzeXN0ZW0iOiJzYWhhYiIsImNyZWF0ZVRpbWUiOiIxNDA1MDEyNzE0MDEwNjYxMCIsInVuaXF1ZUZpZWxkcyI6eyJ1c2VybmFtZSI6Ijg3YzM0ZDI2LTE0OWQtNGNlYS1hMTNhLTg3YWNhZWNmZjg4MiJ9LCJncm91cE5hbWUiOiJiOTc2MWUzNTdmMDZiODFjZTFiNTQ0YjY1M2QyYTEzYiIsImRhdGEiOnsic2VydmljZUlEIjoiNTUyMWYxYjgtYmJiYS00ZGI0LWI0YTctYjA2OGI5NGQ1ZTQyIiwicmFuZG9tVGV4dCI6IkN3anp0In19.ez-ICJWTBcu3NJ_Og5ohFrjWj55hzUEDZO0xhnjxXWw");
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             });
@@ -248,6 +248,8 @@ namespace CRM.EndPoint.FrontEnd {
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseSession();
+
+            app.UseMiddleware<ErrorLoggingMiddleware>();
 
             app.UseEndpoints(endpoints => {
                 endpoints.MapControllerRoute(
