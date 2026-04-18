@@ -167,7 +167,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    @foreach (var item in Model.Factor.FactorItems) {
+                    @foreach (var item in Model.Factor.FactorItems ?? []) {
                         <tr>
                             <td>@item.Row</td>
                             <td>

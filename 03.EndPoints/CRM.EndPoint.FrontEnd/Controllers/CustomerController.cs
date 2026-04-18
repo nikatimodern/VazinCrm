@@ -912,14 +912,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [Authorize(Policy = "NotCustomerOnly")]
         public async Task<IActionResult> GetAllCustomers()
         {
-            var data = await db.Customers.Where(f =>
-                f.RoleType == RoleTypeEnum.مشتری || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری
-            ).Select(f => new {
-                f.Id,
-                f.Mobile,
-                customerName = $"{f.CompanyName} {f.AgentName}".Trim(),
-                customerCode = f.CustomerCode,
-            }).ToListAsync();
+            var data = await db.Customers
+//                .Where(f => f.RoleType == RoleTypeEnum.مشتری || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری)
+                .Select(f => new {
+                    f.Id,
+                    f.Mobile,
+                    customerName = $"{f.CompanyName} {f.AgentName}".Trim(),
+                    customerCode = f.CustomerCode,
+                }).ToListAsync();
             return Ok(data);
         }
 
