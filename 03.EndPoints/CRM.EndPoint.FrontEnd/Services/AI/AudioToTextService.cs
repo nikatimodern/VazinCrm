@@ -30,7 +30,7 @@ public class AudioToTextService {
     }
 
 
-    private async Task<byte[]> GetAudioFromIsabel(string remoteFilePath)
+    private static async Task<byte[]> GetAudioFromIsabel(string remoteFilePath)
     {
         try
         {
@@ -170,13 +170,13 @@ public class AudioToTextService {
         try
         {
             // 1. دانلود فایل صوتی از SFTP
-            var audioBytes =await GetAudioFromIsabel(filePath);
+            var audioBytes = await GetAudioFromIsabel(filePath);
             if (audioBytes == null || audioBytes.Length == 0) return;
 
 
             // 2. تبدیل صدا به متن
-           var transcriptionResult = await ConvertAudioToText(audioBytes, Path.GetFileName(filePath));
-           var fullTranscriptionText = transcriptionResult?.Result?.Text ?? string.Empty;
+            var transcriptionResult = await ConvertAudioToText(audioBytes, Path.GetFileName(filePath));
+            var fullTranscriptionText = transcriptionResult?.Result?.Text ?? string.Empty;
 
             if (!string.IsNullOrEmpty(fullTranscriptionText))
             {
