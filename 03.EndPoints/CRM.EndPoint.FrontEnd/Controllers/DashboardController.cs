@@ -18,12 +18,14 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Threading.Tasks;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
+using CRM.Infrastructures.Sql.Factors.QueryExtensions;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize(Policy = "NotCustomerOnly")]
@@ -89,7 +91,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public async Task<IActionResult> GetInfoFactors([FromBody] filterVModel model)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
-            var rols = await userManager.GetRolesAsync(user);
+            //var rols = await userManager.GetRolesAsync(user);
 
             var factorsQ = db.Factors.Where(f => f.status == FactorStatus.تایید_شده).AsQueryable();
 
@@ -104,7 +106,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     SellerId = g.Key.SelerId,
                     SellerName = g.First().SelerFullName,
                     factorCount = g.Count(),
-                    TotalAmount = g.Sum(f => f.PaymentAmount),
+                    TotalAmount = g.Sum(f => f.ParentReturnedId == null ? f.PaymentAmount : -f.PaymentAmount),
                 })
                 .OrderByDescending(f => f.TotalAmount)
                 .ToListAsync();
@@ -140,7 +142,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
 
 
-            if (!(rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش") || rols.Contains("کارشناس مالی") || rols.Contains("مدیر مالی")))
+            if (!rols.Contains("مدیر ارشد") && !rols.Contains("مدیر فروش") && !rols.Contains("کارشناس مالی") && !rols.Contains("مدیر مالی"))
             {
                 factorsQ = factorsQ.Where(f => f.SelerId == user.Id);
             }
@@ -257,14 +259,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 factorsQ = factorsQ.ApplyFilter(filter, f => f.CustomerId, f => f.DateMiladi, f => f.SelerId);
             }
 
-
             var factors = await factorsQ.ToListAsync();
 
+
             var model = new DashFactorsVModel {
-                Count = factors.Count,
-                SumAmount = factors.Sum(f => f.PaymentAmount),
-                Export = factors.Count(f => f.Export == true),
-                NoExport = factors.Count(f => f.Export != true)
+                Count = factors.Count(f => f.ParentReturnedId == null),
+                SumAmount = factors.Sum(f => f.ParentReturnedId == null ? f.PaymentAmount : -f.PaymentAmount),
+                Export = factors.Where(f => f.ParentReturnedId == null).Count(f => f.Export == true),
+                NoExport = factors.Where(f => f.ParentReturnedId == null).Count(f => f.Export != true)
             };
 
             return Ok(model);

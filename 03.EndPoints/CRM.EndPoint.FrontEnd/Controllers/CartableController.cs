@@ -52,7 +52,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         public CartableController(IVeiwRenderService vrs, UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager, Service GenService,
-            FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb s1db, IPushQueue pushQueue, IPushService pushService)
+            FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb s1db, IPushQueue pushQueue,
+            IPushService pushService)
         {
             this.vrs = vrs;
             this.userManager = userManager;
@@ -431,11 +432,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     int? serNum = TextService.convertToInt(ser);
 
                     fListQ = fListQ.Where(s =>
-                        EF.Functions.Like(s.AgentName, "%" + ser + "%")
-                        || EF.Functions.Like(s.Customer, "%" + ser + "%")
-                        || s.SerialNumber == serNum
-                        || s.CustomerCode == serNum
-                        || s.SnFinancial == ser
+                        EF.Functions.Like(s.AgentName, "%" + ser + "%") ||
+                        EF.Functions.Like(s.Customer, "%" + ser + "%") ||
+                        s.SerialNumber == serNum ||
+                        s.CustomerCode == serNum ||
+                        s.SnFinancial == ser
                     );
                 }
 
@@ -452,6 +453,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 fListQ = model._type switch {
                     1 => fListQ.Where(f => f.OfficialType == 1),
                     2 => fListQ.Where(f => f.OfficialType == 0),
+                    3 => fListQ.Where(f => f.ParentReturnedId != null),
                     _ => fListQ
                 };
 
@@ -514,7 +516,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         EF.Functions.Like(s.Customer, $"%{serVal}%") ||
                         s.SerialNumber == serialVal
                     );
-
                 } else if (!rols.Contains("مدیر ارشد") && !rols.Contains("مدیر تامین"))
                 {
                     query = query.Where(f => f.UserTaminId == Guid.Parse(user.Id));
@@ -792,11 +793,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var vModel = new FactorsViewModel {
                 factors = fList,
                 Rols = rols,
-                _Setting = _setting
+                _Setting = _setting,
+                Financial = rols.Contains("مدیر فروش") || rols.Contains("کارشناس مالی")
             };
-
-            if (rols.Contains("مدیر فروش") || rols.Contains("کارشناس مالی"))
-                vModel.Financial = true;
 
             var html = await vrs.RenderToStringAsync("FactorPartial", vModel,
                 new Dictionary<string, object> {

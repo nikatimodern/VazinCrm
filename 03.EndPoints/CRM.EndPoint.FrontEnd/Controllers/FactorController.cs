@@ -1920,8 +1920,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (model.ParentId != null)
                 {
-                    model.ParentId = model.ParentId;
-
                     var parent = await db.Accountancies.FirstOrDefaultAsync(f => f.Id == model.ParentId);
                     parent?.Vosoled = true;
 
@@ -2055,7 +2053,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 //FacAmount = db.Accountancies.Where(f => f.AccType == (int)AcEnum.بدهکاری && f.CustomerId == cusId && f.FirstAcc == false).Sum(f => f.debit);
 
-                var facIds = await db.Factors.Where(f => f.CustomerId == cusId && f.status == FactorStatus.تایید_شده).Select(f => f.Id).ToListAsync();
+                var facIds = await db.Factors.Where(f =>
+                    f.CustomerId == cusId
+                    && f.status == FactorStatus.تایید_شده
+                    && !f.Returned
+                    && f.ParentReturnedId == null
+                ).Select(f => f.Id).ToListAsync();
 
                 var facAmount = accountancies.Where(f =>
                     f.InvoiceType == InvoiceTypeEnum.فاکتور
@@ -2607,16 +2610,23 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 bool isNewFactor;
                 Factor oldModel = null;
+                var isReturnFactor = model.ParentReturnedId != null;
 
                 if (setting.FactorTowStep == false)
                 {
                     model.status = FactorStatus.تایید_شده;
-                    model.statusTxt = FactorStatus.تایید_شده.ToString().Replace("_", " ");
+                    model.statusTxt = nameof(FactorStatus.تایید_شده).Replace("_", " ");
                 }
 
                 if (model.Id == Guid.Empty)
                 {
                     isNewFactor = true;
+
+                    if (isReturnFactor)
+                    {
+                        var parent = await db.Factors.Where(f => f.Id == model.ParentReturnedId).FirstOrDefaultAsync();
+                        parent?.Returned = true;
+                    }
 
                     model.UserCreatorID = user.Id;
                     model.UserCreator = user.FullName;
@@ -2654,21 +2664,22 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     model.UserModifyID = user.Id;
                     model.UserModify = user.FullName;
 
-                    if (setting.Sepidar == true)
+
+                    if (setting.Sepidar == true && model.SepidarId != null)
                     {
-                        if (model.SepidarId != null)
-                        {
-                            var sF = await S1db.vwInvoice.AsNoTracking().Where(f => f.InvoiceId == model.SepidarId).FirstOrDefaultAsync();
-                            model.DateMiladi = sF.Date;
-                            model.Date = sF.DateTXT;
-                        }
+                        var sF = await S1db.vwInvoice.AsNoTracking().Where(f => f.InvoiceId == model.SepidarId).FirstOrDefaultAsync();
+                        model.DateMiladi = sF.Date;
+                        model.Date = sF.DateTXT;
                     }
                 }
 
-                model.SelerFullName = pf.UserCreator;
-                model.SelerId = pf.UserCreatorID;
-                model.DealId = pf.DealId;
-                model.DealSerialNumber = pf.DealSerialNumber;
+                if (pf != null)
+                {
+                    model.SelerFullName = pf.UserCreator;
+                    model.SelerId = pf.UserCreatorID;
+                    model.DealId = pf.DealId;
+                    model.DealSerialNumber = pf.DealSerialNumber;
+                }
 
                 model.ModifyDate = DateTime.Now;
                 model.ModifyDateTxt = dtService.GetDateTimePersian();
@@ -2682,7 +2693,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 await db.SaveChangesAsync();
                 await db.Entry(model).ReloadAsync();
-                await regAccountancy(model);
+                if (!isReturnFactor)
+                {
+                    await regAccountancy(model);
+                }
 
                 if (cus != null)
                 {
@@ -2696,17 +2710,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
 
+                    var title = isReturnFactor ? "فاکتور برگشتی" : "فاکتور جدید";
                     var cusTxt = $"{model.Customer} ({model.AgentName})".Trim();
                     var message =
-                        $"یک فاکتور به شماره سریال {model.SerialNumber} برای پیش‌فاکتور {model.PfactorSerialNumber} ،مشتری {cusTxt} ثبت شد.";
-                    await genService.AddEmail("فاکتور جدید", message, user, model.SelerId, model.SelerFullName, EntityTypeEnum.Factor, model.Id);
+                        $"یک {title} به شماره سریال {model.SerialNumber} برای پیش‌فاکتور {model.PfactorSerialNumber} ،مشتری {cusTxt} ثبت شد.";
+                    await genService.AddEmail(title, message, user, model.SelerId, model.SelerFullName, EntityTypeEnum.Factor, model.Id);
 
                     await hub.Clients.User(model.SelerId).SendAsync("notifInfo", message, "/Email/Index");
 
                     pushQueue.Enqueue(new PushQueueItem {
-                        UserId = pf.UserCreatorID,
-                        Title = "فاکتور جدید",
-                        Body = $"فاکتور شماره {model.SerialNumber} برای مشتری {cusTxt} ثبت شد.",
+                        UserId = pf?.UserCreatorID ?? model.SelerId,
+                        Title = title,
+                        Body = $"{title} شماره {model.SerialNumber} برای مشتری {cusTxt} ثبت شد.",
                         Url = "/Email/Index",
                         Tag = "f" + model.SerialNumber
                     });
@@ -2869,6 +2884,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             item.UserModifyID = user.Id;
             item.ModifyDate = DateTime.Now;
             item.ModifyDateTxt = dtService.GetDateTimePersian();
+
+            if (item.ParentReturnedId != null)
+            {
+                var returnedF = await db.Factors.FirstOrDefaultAsync(f => f.Id == item.ParentReturnedId);
+                returnedF?.Returned = false;
+            }
 
             var ac = await db.Accountancies.Where(f => f.fid == id).FirstOrDefaultAsync();
             if (ac != null)

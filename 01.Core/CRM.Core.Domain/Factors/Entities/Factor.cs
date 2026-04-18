@@ -5,10 +5,8 @@ using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Framework.Domain;
 
-namespace CRM.Core.Domain.Factors.Entities
-{
-    public class Factor : BaseEntity
-    {
+namespace CRM.Core.Domain.Factors.Entities {
+    public class Factor : BaseEntity {
         public decimal SumTotalAmount { get; set; }
         public decimal SumTotalAmountTax { get; set; }
         public decimal Discount { get; set; }
@@ -21,7 +19,7 @@ namespace CRM.Core.Domain.Factors.Entities
         public DateTime? DateCompleted { get; set; }
         public string DateCompletedTxt { get; set; }
         public string SnFinancial { get; set; }
-        public int? SepidarId { get; set; }// InvoiceId کلید اصلی فاکتور سپیدار
+        public int? SepidarId { get; set; } // InvoiceId کلید اصلی فاکتور سپیدار
         public int SerialNumber { get; set; }
         public int CountNum { get; set; } = 0;
         public byte OfficialType { get; set; }
@@ -45,8 +43,6 @@ namespace CRM.Core.Domain.Factors.Entities
         public string Cus_Address { get; set; }
 
 
-
-
         public string ExpireValidateDesc { get; set; }
         //public Customer Customer { get; set; }
 
@@ -62,7 +58,6 @@ namespace CRM.Core.Domain.Factors.Entities
         public string SelerId { get; set; }
 
 
-
         public int PfactorSerialNumber { get; set; }
         public Guid PfactorID { get; set; }
 
@@ -75,8 +70,7 @@ namespace CRM.Core.Domain.Factors.Entities
 
         public bool? Export { get; set; }
 
-        [NotMapped]
-        public bool Financial { get; set; } = false;
+        [NotMapped] public bool Financial { get; set; } = false;
 
         //public bool? Accepted { get; set; } = false;
 
@@ -87,5 +81,7 @@ namespace CRM.Core.Domain.Factors.Entities
         public CurrencyTypeEnum CurrencyType { get; set; }
         public string CurrencyTypeTxt { get; set; }
 
+        public bool Returned { get; set; }
+        public Guid? ParentReturnedId { get; set; }
     }
 }
