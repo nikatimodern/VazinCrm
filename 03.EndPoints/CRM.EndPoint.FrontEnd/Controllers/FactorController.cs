@@ -154,30 +154,27 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> AcceptFactor(Guid id, int type)
         {
-            var user = userManager.GetUserAsync(HttpContext.User).Result;
+            var user = await userManager.GetUserAsync(HttpContext.User);
 
             var oldFac = await db.Factors.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
             var fac = await db.Factors.Where(f => f.Id == id).FirstOrDefaultAsync();
-
 
             switch (type)
             {
                 case 1:
                     fac.status = FactorStatus.در_دست_تایید;
-                    fac.statusTxt = FactorStatus.در_دست_تایید.ToString().Replace("_", " ");
+                    fac.statusTxt = nameof(FactorStatus.در_دست_تایید).Replace("_", " ");
                     break;
                 case 2:
                     if (string.IsNullOrEmpty(fac.SnFinancial))
-                    {
                         return NoContent();
-                    }
 
                     fac.status = FactorStatus.تایید_شده;
-                    fac.statusTxt = FactorStatus.تایید_شده.ToString().Replace("_", " ");
+                    fac.statusTxt = nameof(FactorStatus.تایید_شده).Replace("_", " ");
                     break;
                 case 3:
                     fac.status = FactorStatus.ابطال_شده;
-                    fac.statusTxt = FactorStatus.ابطال_شده.ToString().Replace("_", " ");
+                    fac.statusTxt = nameof(FactorStatus.ابطال_شده).Replace("_", " ");
                     break;
             }
 
