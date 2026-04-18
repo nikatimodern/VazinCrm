@@ -69,11 +69,10 @@ public class AudioToTextService {
         form.Add(new StringContent("true"), "diarize");
 
         // فایل صوتی
-        var filePath = Path.Combine("wwwroot", "a.mp3");
+        //var filePath = Path.Combine("wwwroot", "a.mp3");
+        //var fileBytess = await File.ReadAllBytesAsync(filePath);
 
-
-        var fileBytess = await File.ReadAllBytesAsync(filePath);
-        var fileContent = new ByteArrayContent(fileBytess);
+        var fileContent = new ByteArrayContent(fileBytes);
         fileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/mpeg");
 
         form.Add(fileContent, "audio", audioFileName);
@@ -116,7 +115,7 @@ public class AudioToTextService {
             var jsonContent = JsonSerializer.Serialize(requestData);
             var httpContent = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
 
-            var response = await httpClient.PostAsync("", httpContent);
+            var response = await httpClient.PostAsync("summarize", httpContent);
 
             if (response.IsSuccessStatusCode)
             {
@@ -131,7 +130,7 @@ public class AudioToTextService {
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
                 Console.WriteLine($"Summarization API Error ({response.StatusCode}): {errorContent}");
-                throw new Exception($"Summarization API Error: {response.StatusCode} - {errorContent}");
+                return null;
             }
         }
         catch (Exception ex)
@@ -170,19 +169,18 @@ public class AudioToTextService {
         try
         {
             // 1. دانلود فایل صوتی از SFTP
-            //var audioBytes =await GetAudioFromIsabel(filePath);
-            //if (audioBytes == null || audioBytes.Length == 0) return;
+            var audioBytes =await GetAudioFromIsabel(filePath);
+            if (audioBytes == null || audioBytes.Length == 0) return;
 
 
             // 2. تبدیل صدا به متن
-           // var transcriptionResult = await ConvertAudioToText(audioBytes, Path.GetFileName(filePath));
-            var fullTranscriptionText =
-                "آقای سلامی، عزیز داداشی شماره ی راننده رو واست فرستادم، داره، بار زده داره می آد سمت جانبازان باهاش هماهنگ کن، شماره تور رو هم داره، ";//transcriptionResult?.Result?.Text ?? string.Empty;
+           var transcriptionResult = await ConvertAudioToText(audioBytes, Path.GetFileName(filePath));
+           var fullTranscriptionText = transcriptionResult?.Result?.Text ?? string.Empty;
 
             if (!string.IsNullOrEmpty(fullTranscriptionText))
             {
                 // 3. خلاصه‌سازی متن
-                summary = await SummarizeText(fullTranscriptionText);
+                summary = null; //await SummarizeText(fullTranscriptionText);
             }
 
             // 4. ذخیره اطلاعات در پایگاه داده
@@ -194,7 +192,7 @@ public class AudioToTextService {
         }
         finally
         {
-            GC.Collect(); // فراخوانی GC به صورت دستی (اختیاری و معمولاً لازم نیست)
+            GC.Collect();
         }
     }
 }
