@@ -159,6 +159,10 @@ public class AsteriskAmiListener : BackgroundService {
                                 if (_recordings.TryGetValue(uniqueid, out var filePath))
                                 {
                                     var srcCaller = Get(ev, "CallerIDNum");
+                                    if (srcCaller == "9506")
+                                    {
+                                        srcCaller = Get(ev, "Channel").Substring(4, 3);
+                                    }
                                     var destCaller = Get(ev, "ConnectedLineNum");
 
                                     using (var scope = serviceScopeFactory.CreateScope())

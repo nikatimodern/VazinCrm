@@ -81,11 +81,27 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
+/*
 
 
-                await audioToTextService.ProcessCallRecording("srcCaller", "destCaller", "filePath");
+                string ftpHost = "192.168.1.150"; // IP سرور ایزابل
+                string ftpUser = "root"; // نام کاربری FTP در ایزابل
+                string ftpPass = "123"; // رمز عبور FTP
+                string remoteFilePath = "/var/spool/asterisk/monitor/2026/04/08/rg-600-9123906718-20260408-160736-1775648256.116234.wav";
+                string targetFilePath = @"wwwroot\recordings"; // مسیر ذخیره فایل در سرور ASP.NET
 
 
+                DownloadRecording(ftpHost, ftpUser, ftpPass, remoteFilePath, targetFilePath);
+
+
+                var localFilePath = Path.Combine(targetFilePath, Path.GetFileName(remoteFilePath));
+                if (!System.IO.File.Exists(localFilePath))
+                    return NotFound("File not found");
+
+                var result = await audioToTextService.ConvertAsync(localFilePath);
+
+*/
+                await audioToTextService.ProcessCallRecording("", "", "");
                 await trans.CommitAsync();
                 return View();
             }
@@ -93,6 +109,107 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 await trans.RollbackAsync();
                 return BadRequest(e.Message);
+            }
+        }
+
+
+        public static void DownloadRecording(string host, string username, string password, string remoteFilePath, string localDirectory)
+        {
+            try
+            {
+                // ساخت مسیر کامل فایل محلی با حفظ نام فایل اصلی
+                string localFileName = Path.GetFileName(remoteFilePath);
+                string localFilePath = Path.Combine(localDirectory, localFileName);
+
+                // اتصال به سرور SFTP
+                using (var client = new SftpClient(host, username, password))
+                {
+                    Console.WriteLine($"Connecting to SFTP server {host}...");
+                    client.Connect();
+                    Console.WriteLine("Connected.");
+
+                    // اطمینان از وجود دایرکتوری مقصد
+                    if (!Directory.Exists(localDirectory))
+                    {
+                        Directory.CreateDirectory(localDirectory);
+                        Console.WriteLine($"Created local directory: {localDirectory}");
+                    }
+
+                    // دانلود فایل
+                    Console.WriteLine($"Downloading file: {remoteFilePath} to {localFilePath}");
+                    using (var fileStream = System.IO.File.OpenWrite(localFilePath))
+                    {
+                        client.DownloadFile(remoteFilePath, fileStream);
+                    }
+
+                    Console.WriteLine("File downloaded successfully!");
+
+                    // قطع اتصال
+                    client.Disconnect();
+                    Console.WriteLine("Disconnected.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                // در اینجا می‌توانید جزئیات بیشتری از خطا را نمایش دهید یا لاگ کنید
+                // Console.WriteLine(ex.ToString());
+            }
+        }
+
+
+        public async Task<string> DownloadRecordingWithAuthAsync(
+            string recordingFileName,
+            string isabelBaseUrl,
+            string username,
+            string password,
+            string localSaveDirectory)
+        {
+            string fullRecordingUrl =
+                "http://192.168.1.150/var/spool/asterisk/monitor/2026/04/08/rg-600-9123906718-20260408-160736-1775648256.116234.wav";
+//            string fullRecordingUrl = new Uri(new Uri(isabelBaseUrl), recordingFileName).ToString();
+
+
+            if (!Directory.Exists(localSaveDirectory))
+            {
+                Directory.CreateDirectory(localSaveDirectory);
+            }
+
+            string localFilePath = Path.Combine(localSaveDirectory, Path.GetFileName(recordingFileName));
+
+            try
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    string credentials = $"{username}:{password}";
+                    string encodedCredentials = Convert.ToBase64String(Encoding.ASCII.GetBytes(credentials));
+                    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encodedCredentials);
+
+                    var response = await httpClient.GetAsync(fullRecordingUrl, HttpCompletionOption.ResponseHeadersRead);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        await using (var contentStream = await response.Content.ReadAsStreamAsync())
+                        await using (var fileStream = System.IO.File.Create(localFilePath))
+                        {
+                            await contentStream.CopyToAsync(fileStream);
+                        }
+
+                        Console.WriteLine($"File downloaded successfully to: {localFilePath}");
+                        return localFilePath;
+                    } else
+                    {
+                        Console.WriteLine($"Error downloading file: HTTP Status {response.StatusCode}");
+                        string errorContent = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine($"Error content: {errorContent}");
+                        return null;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception downloading file: {ex.Message}");
+                return null;
             }
         }
 
