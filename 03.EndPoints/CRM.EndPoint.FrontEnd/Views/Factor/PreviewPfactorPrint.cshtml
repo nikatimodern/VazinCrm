@@ -15,9 +15,9 @@
 
 
     <link rel="stylesheet" href="~/lib/Bootstrap/bootstrap5.3.rtl.min.css" />
-    <link rel="stylesheet" href="~/css/site.css?v=3.4.5" />
+    <link rel="stylesheet" href="~/css/site.css?v=3.4.6" />
     <link rel="stylesheet" href="~/css/normalize.min.css">
-    <link rel="stylesheet" href="~/css/paper.css?v=3.4.5">
+    <link rel="stylesheet" href="~/css/paper.css?v=3.4.6">
 </head>
 
 <body dir="rtl" class="A4">
@@ -183,7 +183,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    @foreach (var item in Model.PreFactor.PreFactorItems) {
+                    @foreach (var item in Model.PreFactor.PreFactorItems ?? []) {
                         <tr>
                             <td>@item.Row</td>
                             <td>

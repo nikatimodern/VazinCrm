@@ -1093,6 +1093,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     pf.CustomerCode = cus.CustomerCode;
                     await _logSystemService.LogChange(cus, null, LogActionEnum.ثبت,
                         new AppUser { FirstName = cus.CompanyName, LastName = cus.AgentName }, null, "مشتری");
+                } else
+                {
+                    if (cus.RoleType == RoleTypeEnum.تامین_کننده)
+                    {
+                        cus.RoleType = RoleTypeEnum.تامین_کننده_مشتری;
+                        cus.RoleTypeTxt = cus.RoleType.ToString().Replace("_", " ");
+                    }
                 }
 
                 var user = await userManager.FindByNameAsync(pf.Cus_Mobile);
@@ -2275,6 +2282,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                     pf.CustomerId = cus.Id;
                     pf.CustomerCode = cus.CustomerCode;
+                } else
+                {
+                    if (cus.RoleType == RoleTypeEnum.تامین_کننده)
+                    {
+                        cus.RoleType = RoleTypeEnum.تامین_کننده_مشتری;
+                        cus.RoleTypeTxt = cus.RoleType.ToString().Replace("_", " ");
+                    }
                 }
 
                 pf.Accepted = true;
