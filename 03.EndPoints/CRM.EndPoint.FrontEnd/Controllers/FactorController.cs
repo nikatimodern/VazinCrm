@@ -2888,6 +2888,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             item.ModifyDate = DateTime.Now;
             item.ModifyDateTxt = dtService.GetDateTimePersian();
 
+            if (item.ParentReturnedId != null)
+            {
+                var returnedF = await db.Factors.FirstOrDefaultAsync(f => f.Id == item.ParentReturnedId);
+                returnedF?.Returned = false;
+            }
+
             var ac = await db.Accountancies.Where(f => f.fid == id).FirstOrDefaultAsync();
             if (ac != null)
                 ac.IsDeleted = true;
