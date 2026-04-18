@@ -83,6 +83,7 @@
                 .then(data => {
                     if (data.status === 200) {
                         mobileVerified = mobile;
+                        sessionStorage.setItem("mobileVerified", JSON.stringify(mobileVerified));
                         document.getElementById("otpLoginMsg").innerText = "";
                         document.getElementById("phoneNumberLoginOtp").innerText = mobileVerified;
                         document.getElementById("otpLoginForm").style.display = "none";
@@ -134,7 +135,8 @@
 
         const otpLoginMsgElm = document.getElementById("otpLoginMsg");
         function verifyOtp() {
-            const mobile = "09" + document.querySelector("input[name='mobile']").value;
+            const inpMobileValue = document.querySelector("input[name='mobile']").value;
+            const mobile = inpMobileValue ? "09" + inpMobileValue : JSON.parse(sessionStorage.getItem("mobileVerified"));
             const OtpCode = document.querySelector("input[name='otp']").value;
 
             fetch(`/Account/VerifyOtpGeneric?type=@ViewBag.type`, {
@@ -148,6 +150,7 @@
                       showAccountModal(data.accounts);
                   } else if (data.status === 200) {
                       otpLoginMsgElm.innerText = "";
+                      sessionStorage.removeItem("mobileVerified");
                       goTo(data.url);
                   } else if (data.status === 405) {
                       data.errors.forEach(err => {
@@ -187,6 +190,7 @@
 
 
         document.getElementById("resendOtpBtn").addEventListener("click", () => {
+            mobileVerified = JSON.parse(sessionStorage.getItem("mobileVerified"));
             fetch(`/Account/RequestOtp?type=@ViewBag.type`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
