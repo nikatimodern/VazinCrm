@@ -322,4 +322,29 @@ public class DealController : Controller {
             return BadRequest();
         }
     }
+
+    public async Task<IActionResult> AssignCustomerToExpert(Guid dealId, Guid customerId, Guid? userId)
+    {
+        try
+        {
+            var deal = await db.Deals.FirstOrDefaultAsync(f => f.Id == dealId);
+            if (deal == null) return NotFound();
+
+            if (userId != null && customerId != Guid.Empty)
+            {
+                await db.UserCustomers.AddAsync(new UserCustomer {
+                    CustomerId = customerId,
+                    UserId = (Guid)userId
+                });
+            }
+
+            deal.Suspend = false;
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+        catch
+        {
+            return BadRequest();
+        }
+    }
 }
