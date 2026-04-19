@@ -193,6 +193,18 @@ public class DealController : Controller {
             }
 
             var user = await userManager.GetUserAsync(HttpContext.User);
+            var setting = await db.ASettings.FirstOrDefaultAsync();
+            if (setting.CustomerAssignExpert && model.CustomerId != null)
+            {
+                var isCustomerForUser = await db.UserCustomers.Where(f =>
+                    f.CustomerId == model.CustomerId &&
+                    f.UserId.ToString() == user.Id
+                ).AnyAsync();
+
+                if (!isCustomerForUser)
+                    model.Suspend = true;
+            }
+
             var oldDeal = await db.Deals.AsNoTracking().Where(f => f.Id == model.Id).FirstOrDefaultAsync();
             var customer = await db.Customers.Where(f => f.Id == model.CustomerId).FirstOrDefaultAsync();
             if (customer != null)

@@ -482,10 +482,27 @@
 
 
                 card.innerHTML = `
+                        ${item.suspend ? `<div class="overlay-card flex-center flex-column text-center" style="background-color: rgba(128, 128, 128, 0.8);padding:8px;opacity:60%">
+                            <p class="fbold text-white" style="font-size:18px;margin-bottom: 10px;">نیاز به تأیید مدیر فروش</p>
+                             <p class="fbold text-white" style="font-size:12px;color: #eee;">این سفارش به‌دلیل مغایرت بین کارشناس ثبت‌کننده و کارشناس مالک مشتری، تا زمان تصمیم‌گیری مدیر فروش در حالت تعلیق قرار گرفته است.</p>
+                        </div>` : ""}
+@*${item.suspend ? `
+        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10;">
+            <div style="background-color: rgba(128, 128, 128, 0.8); padding: 20px; border-radius: 8px; text-align: center; width: 90%;">
+                <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+                    <span style="font-size: 24px; margin-right: 10px;">⏳</span>
+                    <p style="font-size: 18px; font-weight: bold; color: #fff; margin: 0;">نیاز به تأیید مدیر فروش</p>
+                </div>
+                <p style="font-size: 12px; color: #eee; margin-bottom: 20px;">
+                    این سفارش به‌دلیل مغایرت بین کارشناس ثبت‌کننده و کارشناس مالک مشتری، تا زمان تصمیم‌گیری مدیر فروش در حالت تعلیق قرار گرفته است.
+                </p>
+            </div>
+        </div>
+        ` : ""}*@
                         <div class="d-flex justify-content-between align-items-start gap-2">
-                        <div>
-                            <span class="fbold" style="font-size:clamp(13px, 2vw, 14px);color: #333">${item.title}</span>
-                        </div>
+                            <div>
+                                <span class="fbold" style="font-size:clamp(13px, 2vw, 14px);color: #333">${item.title}</span>
+                            </div>
                             <div class="d-flex align-items-center gap-2" style="color: #555;">
                               <span data-title-right="ثبت گزارش" class="d-flex addReport" style="cursor: pointer">
                                 <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>

@@ -34,6 +34,8 @@ public class Deal : BaseEntity {
     public Guid? CusAcquaintanceWay { get; set; }
     public string CusAcquaintanceWayTxt { get; set; }
 
+    public bool Suspend { get; set; }
+
 
     [NotMapped]
     public Counts Counts { get; set; } = new Counts();

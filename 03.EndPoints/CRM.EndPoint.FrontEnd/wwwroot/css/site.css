@@ -2314,6 +2314,7 @@ input[type=checkbox], input[type=radio] {
   border-color: #00766e !important;
 }
 
+
 .bgGreen2 {
   background-color: #008077 !important;
 }
@@ -2933,7 +2934,6 @@ user-select: none;
 .buttonGreen2:disabled:hover {
   background-color: #9bbfbc;
 }
-
 
 
 .buttonBlue {
@@ -5321,4 +5321,13 @@ table tr.payment-vosoled > td {
     min-width: 34px;
     padding: 4px 15px !important;
   }
+}
+
+
+.overlay-card {
+  background-color: rgba(250, 250, 250, 0.63);
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  border-radius: 10px;
 }
