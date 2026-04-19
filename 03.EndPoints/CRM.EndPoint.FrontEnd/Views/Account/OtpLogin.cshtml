@@ -22,7 +22,10 @@
                     <svg style="width: 26px;height: 26px;color: #787c83" fill="none" viewBox="0 0 24 24" stroke-width="1.25" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
                 </span>
             </div>
-            <button id="confirmCodeOtpLoginBtn" type="submit" class="col-12 buttonGreen2 login-btn d-flex justify-content-center align-items-center" style="font-size: 16px;height: 38px">ارسال کد ورود</button>
+            <button id="confirmCodeOtpLoginBtn" type="submit" class="col-12 buttonGreen2 login-btn flex-center" style="font-size: 16px;height: 38px">
+                <span>ارسال کد ورود</span>
+                <div class="spinner-border spinner-border-sm d-none ms-2" role="status"></div>
+            </button>
             @if (ViewBag.type != "Forgot") {
                 <div class="d-flex align-items-center justify-content-end fs-6 mt-2 mt-md-1">
                     <a asp-controller="Account" asp-action="Login" class="link-gray fMedium">ورود با نام کاربری</a>
@@ -37,7 +40,10 @@
                 </span>
                 <input inputmode="numeric" class="form-group__input form-group__input--ltr digitNumber" id="otpLoginInp" name="otp" autocomplete="one-time-code" type="text" autofocus maxlength="4" placeholder="کد تایید" />
             </div>
-            <button id="verifyOtpBtn" class="col-12 buttonGreen2 login-btn justify-content-center align-items-center" style="font-size: 16px;height: 38px;display: flex">تایید کد</button>
+            <button id="verifyOtpBtn" class="col-12 buttonGreen2 login-btn justify-content-center align-items-center" style="font-size: 16px;height: 38px;display: flex">
+                <span>تایید کد</span>
+                <div class="spinner-border spinner-border-sm d-none ms-2" role="status"></div>
+            </button>
         </div>
         <div class="d-flex align-items-center justify-content-between w-100 mt-2" style="direction: rtl;">
             <p class="errorLoginText mt-0" id="otpLoginMsg"></p>
@@ -58,16 +64,20 @@
         let intervalId;
         let mobileVerified;
         let selectedUserId;
+        let otpBtn = document.getElementById("verifyOtpBtn");
+        let mobileLoginBtn = document.getElementById("confirmCodeOtpLoginBtn");
 
         document.addEventListener("DOMContentLoaded", async () => {
             const input = document.querySelector("#otpSection input[autocomplete='one-time-code']");
-            const btn = document.getElementById("verifyOtpBtn");
-            await readOtp(input, btn);
+            await readOtp(input, otpBtn);
         });
 
 
         document.getElementById("otpLoginForm").addEventListener("submit", function (e) {
             e.preventDefault();
+            toggleElementsDisabled(mobileLoginBtn);
+            mobileLoginBtn.querySelector(".spinner-border").classList.remove("d-none");
+
             if (this.mobile.value.length < 9) {
                 document.getElementById("otpLoginMsg").textContent = "شماره موبایل معتبر نیست!";
                 return;
@@ -99,6 +109,8 @@
                     } else {
                         document.getElementById("otpLoginMsg").innerText = data.message;
                     }
+                    mobileLoginBtn.querySelector(".spinner-border").classList.add("d-none");
+                    toggleElementsDisabled(mobileLoginBtn, false);
                 });
         });
 
@@ -107,12 +119,12 @@
                 clearInterval(otpIntervalId);
                 document.getElementById("otpLoginMsg").innerText = "";
                 document.getElementById("remainingCodeOtpLoginId").style.display = "none";
-                console.log("pop");
+
                 document.getElementById("otpLoginForm").style.display = "block";
                 document.getElementById("otpSection").style.display = "none";
                 document.getElementById("resendOtpBtn").style.display = "none";
 
-                document.getElementById("historyBackIcon").classList.add("d-none")
+                document.getElementById("historyBackIcon").classList.add("d-none");
             }
         });
 
@@ -126,7 +138,7 @@
             }
         });
 
-        document.getElementById("verifyOtpBtn").addEventListener("click", () => verifyOtp());
+        otpBtn.addEventListener("click", () => verifyOtp());
         document.getElementById("otpLoginInp").addEventListener("keyup", (e) => {
             if (e.target.value.length >= 4 || e.key === "Enter") {
                 verifyOtp();
@@ -138,6 +150,8 @@
             const inpMobileValue = document.querySelector("input[name='mobile']").value;
             const mobile = inpMobileValue ? "09" + inpMobileValue : JSON.parse(sessionStorage.getItem("mobileVerified"));
             const OtpCode = document.querySelector("input[name='otp']").value;
+            toggleElementsDisabled(otpBtn);
+            otpBtn.querySelector(".spinner-border").classList.remove("d-none");
 
             fetch(`/Account/VerifyOtpGeneric?type=@ViewBag.type`, {
                 method: "POST",
@@ -161,6 +175,8 @@
                   } else {
                       otpLoginMsgElm.innerText = data.message;
                   }
+                  otpBtn.querySelector(".spinner-border").classList.add("d-none");
+                  toggleElementsDisabled(otpBtn, false);
               });
         }
 
@@ -174,12 +190,12 @@
                             document.getElementById("remainingSecondsOtpLogin").innerText = data.elsapsTime + " ثانیه";
                             document.getElementById("resendOtpBtn").style.display = "none";
                             document.getElementById("remainingCodeOtpLoginId").style.display = "flex";
-                            document.getElementById("verifyOtpBtn").style.display = "flex";
+                            otpBtn.style.display = "flex";
                         } else {
                             clearInterval(otpIntervalId);
                             document.getElementById("resendOtpBtn").style.display = "flex";
                             document.getElementById("remainingCodeOtpLoginId").style.display = "none";
-                            document.getElementById("verifyOtpBtn").style.display = "none";
+                            otpBtn.style.display = "none";
                         }
                     })
                     .catch(err => {
@@ -226,7 +242,8 @@
                 `;
 
                 btn.addEventListener("click", () => {
-
+                    toggleElementsDisabled(otpBtn);
+                    otpBtn.querySelector(".spinner-border").classList.remove("d-none");
                     fetch(`/Account/SelectAccount?userId=${acc.id}&type=@ViewBag.type`)
                         .then(res => res.json())
                         .then(data => {
@@ -238,6 +255,8 @@
                             } else {
                                 toastifyError(data.message);
                             }
+                            otpBtn.querySelector(".spinner-border").classList.add("d-none");
+                            toggleElementsDisabled(otpBtn, false);
                         });
                 });
 
