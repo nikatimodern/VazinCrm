@@ -1744,6 +1744,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<byte>("OfficialType")
                         .HasColumnType("tinyint");
 
+                    b.Property<Guid?>("ParentReturnedId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<decimal>("PaymentAmount")
                         .HasPrecision(20)
                         .HasColumnType("decimal(20,0)");
@@ -1760,6 +1763,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<decimal>("ReciveAmount")
                         .HasPrecision(20)
                         .HasColumnType("decimal(20,0)");
+
+                    b.Property<bool>("Returned")
+                        .HasColumnType("bit");
 
                     b.Property<string>("SelerFullName")
                         .HasColumnType("nvarchar(max)");
