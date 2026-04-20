@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Deals.Enums;
 using CRM.Framework.Domain;
@@ -39,6 +41,8 @@ public class Deal : BaseEntity {
 
     [NotMapped]
     public Counts Counts { get; set; } = new Counts();
+    [NotMapped]
+    public List<AppUser> UserIdsForSuspend { get; set; }
 }
 
 public class Counts {

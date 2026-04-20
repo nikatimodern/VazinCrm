@@ -26,15 +26,17 @@ public class DealController : Controller {
     private readonly DateTimeServices dtService;
     private readonly Service genService;
     private readonly LogSystemService _logSystemService;
+    private readonly UserContextDb udb;
 
     public DealController(CRMContextDb db, UserManager<AppUser> userManager, DateTimeServices dtService, Service genService,
-        LogSystemService logSystemService)
+        LogSystemService logSystemService, UserContextDb udb)
     {
         this.db = db;
         this.userManager = userManager;
         this.dtService = dtService;
         this.genService = genService;
         _logSystemService = logSystemService;
+        this.udb = udb;
     }
 
     public IActionResult Index()
@@ -131,6 +133,10 @@ public class DealController : Controller {
                 .ToDictionaryAsync(x => x.Key, x => x.Count);
 
 
+            var users = await udb.Users.Where(f => f.IsEmployee).Select(f => new { f.Id, f.FirstName, f.LastName })
+                .ToDictionaryAsync(x => Guid.Parse(x.Id), x => x.FirstName + " " + x.LastName);
+
+
             foreach (var item in open)
             {
                 item.Counts.PreFactor = preFactorCounts.GetValueOrDefault(item.Id);
@@ -138,6 +144,15 @@ public class DealController : Controller {
                 item.Counts.Report = reportCounts.GetValueOrDefault(item.Id);
                 item.Counts.OrderHead = orderHeadCounts.GetValueOrDefault(item.Id);
                 item.Counts.Accountancy = accCounts.GetValueOrDefault(item.Id);
+                if (item.Suspend)
+                {
+                    item.UserIdsForSuspend = await db.UserCustomers
+                        .Where(f => f.CustomerId == item.CustomerId)
+                        .Select(f => new AppUser {
+                            Id = f.UserId.ToString(),
+                            FirstName = users.GetValueOrDefault(f.UserId)
+                        }).ToListAsync();
+                }
             }
 
             foreach (var item in success)

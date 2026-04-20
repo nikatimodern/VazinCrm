@@ -480,7 +480,6 @@
                 card.dataset.id = item.id;
                 card.style.borderRightColor = colorStatus;
 
-
                 card.innerHTML = `
                      <div class="position-relative w-100 h-100">
                         ${item.suspend ? `
@@ -602,7 +601,9 @@
                      </div>
                     `;
 
+
                 if (item.suspend) {
+                    console.log(item);
                     //isAdmin = false;
                     const text = isAdmin ? "مشتری این سفارش متعلق به کارشناس دیگری است، لطفاً مشخص کنید این سفارش باید به کدام کارشناس اختصاص یابد."
                         : "مشتری این سفارش متعلق به کارشناس دیگری است، به همین خاطر تا زمان تصمیم‌گیری مدیر فروش در حالت تعلیق قرار گرفته است.";
@@ -612,7 +613,8 @@
                             ${isAdmin ? `<div class="d-flex align-items-center gap-1 mt-3">
                                 <label for="assignUserSuspendDeal" class="flex-shrink-0" style="font-size: 11px">اختصاص به کارشناس</label>
                                 <select class="form-select form-select-xs" id="assignUserSuspendDeal">
-                                  <option value="حسین زاده">${"حسین زاده"}</option>
+                                  <option value="${item.userCreatorID}">${item.userCreator}</option>
+                                  ${item.userIdsForSuspend.map(i => `<option value="${i.id}">${i.fullName}</option>`)}
                                 </select>
                                 <button class="flex-center">
                                     <svg style="width: 24px;color: #4f5057" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
