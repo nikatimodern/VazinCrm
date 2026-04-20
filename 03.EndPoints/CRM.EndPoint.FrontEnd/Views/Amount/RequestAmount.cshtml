@@ -82,12 +82,20 @@
                         </select>
                     </div>
 
-                    <div>
+                    @*<div>
                         <label for="reqAmountSupplyFactor">فاکتور تامین:</label>
                         <div class="input-group mb-3">
                             <input id="reqAmountSupplyFactor" type="text" class="form-control direction-ltr" placeholder="فاکتور تامین.." disabled required>
                             <button class="btn btn-sm btn-secondary" type="button" onclick="showAddSupplyFactorModal(this)">انتخاب</button>
                         </div>
+                    </div>*@
+                    <div>
+                        <label for="reqAmountOrderHead">بابت حواله تولید:</label>
+                        <div class="input-group mb-3">
+                            <input id="reqAmountOrderHead" type="text" class="form-control" placeholder="حواله تولید.." disabled required>
+                            <button class="btn btn-sm btn-secondary" type="button" onclick="showAddOrderHeadModal()">انتخاب</button>
+                        </div>
+                        @* <input name="supplierId" class="form-control" id="reqAmountOrderHead" /> *@
                     </div>
 
 
@@ -127,6 +135,7 @@
             ModalToggle("requestAmountModal");
             mySer.emptyForm("requestAmountForm");
             supplyFactorsSelectedIds = [];
+            orderHeadsSelectedIds = [];
             requestAmountData = [];
         }
 
@@ -136,6 +145,7 @@
                 ...requestAmountData,
                 ...mySer.convertFormToJSON("requestAmountForm"),
                 requestAmountSupplyFactor: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id, requestAmountId: requestAmountData.id })),
+                requestAmountOrderHeads: orderHeadsSelectedIds.map(id => ({ orderHeadId: id, requestAmountId: requestAmountData.id })),
             };
 
             try {
@@ -175,11 +185,20 @@
                 if (res.status === 200) {
                     requestAmountData = res.data.requestAmount;
                     const supplyFactorSerials = res.data.supplyFactorSerials;
+                    const orderHeadSerials = res.data.orderHeadSerials;
                     mySer.convertJsonToForm(requestAmountData, "requestAmountForm");
                     supplyFactorsSelectedIds = requestAmountData.requestAmountSupplyFactor.map(r => r.supplyFactorId);
+                    orderHeadsSelectedIds = requestAmountData.requestAmountOrderHeads.map(r => r.orderHeadId);
 
-                    const inpElm = document.getElementById("reqAmountSupplyFactor");
-                    inpElm.value = supplyFactorSerials.join(", ");
+                    const inpElmSupplyFactor = document.getElementById("reqAmountSupplyFactor");
+                    if (inpElmSupplyFactor) {
+                        inpElmSupplyFactor.value = supplyFactorSerials.join(", ");
+                    }
+
+                    const inpElmOrderHead = document.getElementById("reqAmountOrderHead");
+                    if (inpElmOrderHead) {
+                        inpElmOrderHead.value = orderHeadSerials.join(", ");
+                    }
                 }
 
             } catch (err) {
@@ -298,6 +317,117 @@
                 },
             });
         };*@;
+
+        let orderHeadsSelectedIds = [];
+        @*const addOrderHeadModal = document.getElementById("addOrderHeadModal");
+        async function showAddOrderHeadModal() {
+            await getAllOrderHeads();
+            addOrderHeadModal.querySelectorAll("input[type='checkbox']").forEach((checkbox) => {
+                if (orderHeadsSelectedIds.includes(checkbox.value)) {
+                    checkbox.checked = true;
+                }
+            });
+            toggleAddOrderHeadModal();
+            addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !orderHeadsSelectedIds.length);
+        }
+
+        function toggleAddOrderHeadModal() {
+            addOrderHeadModal.querySelector("#addOrderHeadSearch").value = "";
+            ModalToggle(addOrderHeadModal);
+        }
+
+
+        const getAllOrderHeads = async (search = "") => {
+            const res = await axios(`/Order/GetAllOrderHeads?search=${search}&passType=3`);
+
+            addOrderHeadModal.querySelector("#addOrderHeadContainer").innerHTML = res.data;
+        };
+
+        addOrderHeadModal.querySelector("#addOrderHeadContainer").addEventListener("change", (e) => {
+            const checkbox = e.target.closest("input[type='checkbox']");
+            if (!checkbox) return;
+
+            const anyChecked = addOrderHeadModal.querySelector("#addOrderHeadContainer input[type='checkbox']:checked");
+
+            addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !anyChecked);
+        });
+
+        const submitSelectedOrderHeads = () => {
+            const checkedBoxes = [...addOrderHeadModal.querySelectorAll("#addOrderHeadContainer input[type='checkbox']:checked")];
+
+            orderHeadsSelectedIds.length = 0;
+            orderHeadsSelectedIds.push(...checkedBoxes.map(cb => cb.value).reverse());
+
+            const inpElm = document.getElementById("reqAmountOrderHead");
+            inpElm.value = checkedBoxes.map(cb => cb.dataset.number).join(", ");
+            inpElm.classList.remove("AlertReq");
+
+            ModalToggle(addOrderHeadModal);
+        };
+
+        addOrderHeadModal.querySelector("#addOrderHeadSearch").addEventListener("keyup", async (e) => {
+            if (e.key === "Enter") {
+                toggleElementsDisabled(e.target);
+                await getAllOrderHeads(e.target.value.trim());
+                toggleElementsDisabled(e.target, false);
+                e.target.focus();
+            }
+        });*@
+////////////////////////////////////////////////////////
+        const addOrderHeadModal = document.getElementById("addOrderHeadModal");
+        async function showAddOrderHeadModal() {
+            await getAllOrderHeads();
+            addOrderHeadModal.querySelectorAll("#addOrderHeadContainer input").forEach((inp) => {
+                if (orderHeadsSelectedIds.includes(inp.value)) {
+                    inp.checked = true;
+                }
+            });
+            toggleAddOrderHeadModal();
+
+            addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !orderHeadsSelectedIds.length);
+        }
+
+        function toggleAddOrderHeadModal() {
+            addOrderHeadModal.querySelector("#addOrderHeadSearch").value = "";
+            ModalToggle(addOrderHeadModal);
+        }
+
+        const getAllOrderHeads = async (search = "") => {
+            const res = await axios(`/Order/GetAllOrderHeads?search=${search}&passType=4`); // 3: checkBox  4:radio
+
+            addOrderHeadModal.querySelector("#addOrderHeadContainer").innerHTML = res.data;
+        };
+
+        addOrderHeadModal.querySelector("#addOrderHeadContainer").addEventListener("change", (e) => {
+            const inp = e.target.closest("input");
+            if (!inp) return;
+
+            const anySelected = addOrderHeadModal.querySelector("#addOrderHeadContainer input:checked");
+            addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !anySelected);
+        });
+
+        const submitSelectedOrderHeads = () => {
+            const inps = [...addOrderHeadModal.querySelectorAll("#addOrderHeadContainer input:checked")];
+            orderHeadsSelectedIds.length = 0;
+            orderHeadsSelectedIds.push(...inps.map(cb => cb.value).reverse());
+
+
+            const inpElm = document.getElementById("reqAmountOrderHead");
+            inpElm.value = inps.map(cb => cb.dataset.number).join(", ");
+            inpElm.classList.remove("AlertReq");
+
+            ModalToggle(addOrderHeadModal);
+        };
+
+
+        addOrderHeadModal.querySelector("#addOrderHeadSearch").addEventListener("keyup", async (e) => {
+            if (e.key === "Enter") {
+                toggleElementsDisabled(e.target);
+                await getAllOrderHeads(e.target.value.trim());
+                toggleElementsDisabled(e.target, false);
+                e.target.focus();
+            }
+        });
 
     </script>
 }

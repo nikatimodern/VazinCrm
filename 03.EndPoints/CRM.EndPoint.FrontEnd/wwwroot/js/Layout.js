@@ -4486,6 +4486,16 @@ addSupplyFactorModal?.querySelector("#addSupplyFactorSearch").addEventListener("
 });
 /*--------------------------------------------------------------------------------*/
 
+
+
+
+
+
+
+
+
+/*--------------------------------------------------------------------------------*/
+
 /*document.addEventListener("input", (e) => {
     if (e.target.matches("input, textarea")) {
         e.target.value = toEnglishDigits(e.target.value);
