@@ -87,6 +87,7 @@ namespace Generics.Infrastructures.Sql {
         public DbSet<Cash> Cashes { get; set; }
         public DbSet<BaseCash> BaseCashes { get; set; }
         public DbSet<BaseCenterCash> BaseCenterCashes { get; set; }
+        public DbSet<RequestAmountOrderHead> RequestAmountOrderHeads { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -137,6 +138,7 @@ namespace Generics.Infrastructures.Sql {
             modelBuilder.Entity<PaymentSupplyFactor>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<Cashier>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<Cash>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<RequestAmountOrderHead>().HasQueryFilter(f => f.IsDeleted == false);
 
 
             modelBuilder.Entity<Order>().Ignore(f => f.Row);

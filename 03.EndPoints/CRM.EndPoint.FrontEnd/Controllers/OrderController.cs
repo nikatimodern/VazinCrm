@@ -459,11 +459,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetAllOrderHeads(string search = "")
+        public async Task<IActionResult> GetAllOrderHeads(string search = "", int passType = 3)
         {
             try
             {
-                ViewBag.passType = 3;
+                ViewBag.passType = passType;
                 var query = db.OrderHeads.AsNoTracking().OrderByDescending(f => f.CreateDate).AsQueryable();
                 if (!string.IsNullOrEmpty(search))
                 {

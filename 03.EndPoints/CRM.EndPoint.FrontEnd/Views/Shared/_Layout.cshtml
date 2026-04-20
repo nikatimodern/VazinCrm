@@ -2903,6 +2903,34 @@
     </div>
 </div>
 
+
+
+<!-- addOrderHead Modal -->
+<div class="modal fade" id="addOrderHeadModal" tabindex="-1" data-bs-focus="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: 12px;overflow: hidden;box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25)">
+            <div class="modal-header">
+                <div class="d-flex align-items-center justify-content-between w-100">
+                    <span class="fbold">انتخاب حواله تولید</span>
+                    <div>
+                        <input id="addOrderHeadSearch" type="text" class="form-control" placeholder="جستجو..">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-body p-0">
+                <div id="addOrderHeadContainer"></div>
+            </div>
+
+            <div class="modal-footer justify-content-center p-2">
+                <button style="padding-block:4px" type="button" class="buttonCancel2" onclick="toggleAddOrderHeadModal()">انصراف</button>
+                <button id="submitSelectedOrderHeads" style="padding-block:4px" type="button" class="buttonGreen3 d-none" onclick="submitSelectedOrderHeads()">ثبت</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 <!-- Modal ListAmount -->
 <div class="modal fade" id="ListAmount" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
     <div class=" modal-dialog modal-dialog-centered modal-xl">

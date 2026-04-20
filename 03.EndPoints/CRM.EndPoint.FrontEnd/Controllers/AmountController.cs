@@ -107,13 +107,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.UserModify = user.FullName;
                 model.UserModifyID = user.Id;
 
-                var entity = await db.RequestAmounts.Include(x => x.RequestAmountSupplyFactor).FirstOrDefaultAsync(x => x.Id == model.Id);
+                var entity = await db.RequestAmounts.Include(x => x.RequestAmountSupplyFactor).Include(x => x.RequestAmountOrderHeads)
+                    .FirstOrDefaultAsync(x => x.Id == model.Id);
                 if (entity == null) return NotFound();
 
                 await _logSystemService.LogChange(entity, model, LogActionEnum.ویرایش, user, ["RequestAmountSupplyFactor"]);
 
                 db.Entry(entity).CurrentValues.SetValues(model);
                 entity.RequestAmountSupplyFactor = model.RequestAmountSupplyFactor;
+                entity.RequestAmountOrderHeads = model.RequestAmountOrderHeads;
 
                 await db.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -190,7 +192,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                                 sf => sf.Id,
                                 (raSf, sf) => sf.FactorSerial
                             )
-                            .ToList()
+                            .ToList(),
+                        OrderHeadSerials = ra.RequestAmountOrderHeads
+                            .Join(db.OrderHeads,
+                                raSf => raSf.OrderHeadId,
+                                sf => sf.Id,
+                                (raSf, sf) => sf.OrderNumber
+                            )
+                            .ToList(),
                     })
                     .ToListAsync();
 
@@ -214,6 +223,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var data = await db.RequestAmounts.AsNoTracking()
                     .Where(f => f.Id == id)
+                    .Include(f => f.RequestAmountOrderHeads)
                     .Include(f => f.RequestAmountSupplyFactor)
                     .Select(ra => new RequestAmountVModel {
                         RequestAmount = ra,
@@ -223,7 +233,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                                 sf => sf.Id,
                                 (raSf, sf) => sf.FactorSerial
                             )
-                            .ToList()
+                            .ToList(),
+                        OrderHeadSerials = ra.RequestAmountOrderHeads
+                            .Join(db.OrderHeads,
+                                raSf => raSf.OrderHeadId,
+                                sf => sf.Id,
+                                (raSf, sf) => sf.OrderNumber
+                            )
+                            .ToList(),
                     })
                     .FirstOrDefaultAsync();
 
