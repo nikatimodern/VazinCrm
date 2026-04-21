@@ -138,15 +138,12 @@
 
         async function showAddOrderHeadModal() {
             const supplierId = document.getElementById("supplyFactorSupplierId").value;
-            if (supplierId && !orderHeadsSelectedIds.length) {
-                const orderHeadsData = await getOrderHeadsBySupplier(supplierId);
-                const orderHeadIds = orderHeadsData.map(o => o.id);
-                await getAllOrderHeads("", orderHeadIds);
-                setCheckedCheckboxes(orderHeadIds);
-            } else {
-                setCheckedCheckboxes(orderHeadsSelectedIds);
-            }
+            const orderHeadIds = (supplierId && !orderHeadsSelectedIds.length)
+                ? await getOrderHeadIdsBySupplier(supplierId)
+                : orderHeadsSelectedIds;
 
+            await getAllOrderHeads("", orderHeadIds);
+            setCheckedCheckboxes(orderHeadIds);
             toggleAddOrderHeadModal();
         }
 
@@ -160,10 +157,9 @@
             addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !idsToSelect.length);
         }
 
-        async function getOrderHeadsBySupplier(supplierId) {
+        async function getOrderHeadIdsBySupplier(supplierId) {
             try {
                 const res = await axios(`/Supply/GetOrderHeadsBySupplier?supplierId=${supplierId}`);
-                console.log(res);
                 if (res.status === 200) {
                     return res.data;
                 }
