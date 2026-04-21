@@ -3865,18 +3865,6 @@ border-end-end-radius: 10px;*/
 }
 
 
-.InfoDataItemHeadFactor {
-  color: aliceblue;
-  background-color: #00302d;
-  width: 3%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border-bottom-right-radius: 10px;
-}
-
-
 .InfoDataItemHead {
   color: aliceblue;
   background-color: #4c1087;
@@ -3889,18 +3877,48 @@ border-end-end-radius: 10px;*/
 }
 
 
+.InfoDataItemHeadFactor {
+  color: aliceblue;
+  background-color: #00302d;
+  width: 3%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-bottom-right-radius: 10px;
+}
+
+
 .InfoDataItemFactor {
   border: solid 2px #00625b;
-  /*    border-right: solid 2px rebeccapurple;
-border-top: solid 2px rebeccapurple;
-border-bottom: solid 2px rebeccapurple;
-border-left: solid 2px rebeccapurple;*/
-  /*   border: solid 2px rebeccapurple;*/
-  /*border: solid 2px #0065f2;*/
   background-color: #ffffff;
-  /*    border-start-end-radius: 10px;
-border-end-end-radius: 10px;*/
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  direction: rtl;
+  padding-block: .25rem;
 }
+
+
+.InfoDataItemFactor .InfoDataItemOp button {
+  color: #02514C;
+}
+
+
+.returned-factor .InfoDataItemHeadFactor {
+  background-color: darkred;
+}
+
+
+.returned-factor .InfoDataItemFactor {
+  border-color: darkred;
+}
+
+
+.returned-factor .InfoDataItemFactor .InfoDataItemOp button {
+  color: darkred;
+}
+
 
 
 .InfoDataItem {

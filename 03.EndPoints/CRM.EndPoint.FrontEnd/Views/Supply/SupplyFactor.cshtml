@@ -102,31 +102,6 @@
     </div>
 </div>
 
-<!-- addOrderHead Modal -->
-<div class="modal fade" id="addOrderHeadModal" tabindex="-1" data-bs-focus="false">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content" style="border-radius: 12px;overflow: hidden;box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25)">
-            <div class="modal-header">
-                <div class="d-flex align-items-center justify-content-between w-100">
-                    <span class="fbold">انتخاب حواله تولید</span>
-                    <div>
-                        <input id="addOrderHeadSearch" type="text" class="form-control" placeholder="جستجو..">
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-body p-0">
-                <div id="addOrderHeadContainer"></div>
-            </div>
-
-            <div class="modal-footer justify-content-center p-2">
-                <button style="padding-block:4px" type="button" class="buttonCancel2" onclick="toggleAddOrderHeadModal()">انصراف</button>
-                <button id="submitSelectedOrderHeads" style="padding-block:4px" type="button" class="buttonGreen3 d-none" onclick="submitSelectedOrderHeads()">ثبت</button>
-            </div>
-
-        </div>
-    </div>
-</div>
 
 
 
@@ -176,22 +151,8 @@
         }
 
 
-        let isSetupSupplyModal = false;
-        async function setupSelectOptions() {
-            if (isSetupSupplyModal) return;
-            const data = (await axios("/Supply/GetSupplyBaseData")).data;
-            new TomSelect("#supplyFactorSupplierId", {
-                options: data.suppliers,
-                placeholder: "انتخاب تامین کننده",
-                maxItems: 1,
-                selectOnTab: true,
-            });
-            isSetupSupplyModal = true;
-        }
-
-
         const getAllOrderHeads = async (search = "") => {
-            const res = await axios(`/Order/GetAllOrderHeads?search=${search}`);
+            const res = await axios(`/Order/GetAllOrderHeads?search=${search}&passType=3`);
 
             addOrderHeadModal.querySelector("#addOrderHeadContainer").innerHTML = res.data;
         };
@@ -218,7 +179,6 @@
             ModalToggle(addOrderHeadModal);
         };
 
-
         addOrderHeadModal.querySelector("#addOrderHeadSearch").addEventListener("keyup", async (e) => {
             if (e.key === "Enter") {
                 toggleElementsDisabled(e.target);
@@ -227,6 +187,19 @@
                 e.target.focus();
             }
         });
+
+        let isSetupSupplyModal = false;
+        async function setupSelectOptions() {
+            if (isSetupSupplyModal) return;
+            const data = (await axios("/Supply/GetSupplyBaseData")).data;
+            new TomSelect("#supplyFactorSupplierId", {
+                options: data.suppliers,
+                placeholder: "انتخاب تامین کننده",
+                maxItems: 1,
+                selectOnTab: true,
+            });
+            isSetupSupplyModal = true;
+        }
 
         async function submitSupplyFactorModal() {
             if (!await mySer.CheckValidForm("supplyFactorForm")) return;

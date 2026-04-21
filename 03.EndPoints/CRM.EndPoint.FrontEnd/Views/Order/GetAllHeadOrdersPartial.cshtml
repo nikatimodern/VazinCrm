@@ -66,6 +66,7 @@
                         <i class="mp fa fa-trash"></i>
                     </button>
                 </div>
+
                 <div class="pe-2 d-flex align-items-center gap-2">
                     @if (item.Status == OrderHeadStatusEnum.تولید || item.Status == OrderHeadStatusEnum.آماده_تحویل) {
                         <button class="buttonGray @(ViewBag.PassType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', @(item.Status == OrderHeadStatusEnum.تولید ? 1 : 2), @((int)item.Status), @ViewBag.PassType, '@item.DealId')">مرحله قبل</button>
