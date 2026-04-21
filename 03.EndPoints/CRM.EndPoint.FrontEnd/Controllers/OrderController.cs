@@ -19,6 +19,7 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
 using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using DocumentFormat.OpenXml.Spreadsheet;
@@ -152,6 +153,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 HttpContext.Items["ErrorMessage"] = "حواله تولیدی پیدا نشد!";
                 return NotFound();
             }
+
             var pf = await db.PreFactors.IgnoreQueryFilters().Where(f => f.Id == order.Prefactor).FirstOrDefaultAsync();
 
             if (pf == null)
@@ -458,13 +460,20 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [Authorize]
-        [HttpGet]
-        public async Task<IActionResult> GetAllOrderHeads(string search = "", int passType = 3)
+        [HttpPost]
+        public async Task<IActionResult> GetAllOrderHeads([FromBody] GetAllOrderBySelectedVModel model)
         {
             try
             {
-                ViewBag.passType = passType;
-                var query = db.OrderHeads.AsNoTracking().OrderByDescending(f => f.CreateDate).AsQueryable();
+                ViewBag.passType = model.PassType;
+                var search = model.Search;
+
+                var query = db.OrderHeads
+                    .OrderByDescending(f => model.SelectedIds.Contains(f.Id))
+                    .ThenByDescending(f => f.CreateDate)
+                    .AsNoTracking()
+                    .AsQueryable();
+
                 if (!string.IsNullOrEmpty(search))
                 {
                     query = query.Where(f =>

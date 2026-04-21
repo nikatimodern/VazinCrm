@@ -393,7 +393,8 @@
         }
 
         const getAllOrderHeads = async (search = "") => {
-            const res = await axios(`/Order/GetAllOrderHeads?search=${search}&passType=4`); // 3: checkBox  4:radio
+            const model = { search, passType: 4, selectedIds: [] }; // 3: checkBox  4:radio
+            const res = await axios.post(`/Order/GetAllOrderHeads`, model);
 
             addOrderHeadModal.querySelector("#addOrderHeadContainer").innerHTML = res.data;
         };
