@@ -136,7 +136,6 @@ public class DealController : Controller {
             var users = await udb.Users.Where(f => f.IsEmployee).Select(f => new { f.Id, f.FirstName, f.LastName })
                 .ToDictionaryAsync(x => Guid.Parse(x.Id), x => x.FirstName + " " + x.LastName);
 
-
             foreach (var item in open)
             {
                 item.Counts.PreFactor = preFactorCounts.GetValueOrDefault(item.Id);
@@ -144,14 +143,23 @@ public class DealController : Controller {
                 item.Counts.Report = reportCounts.GetValueOrDefault(item.Id);
                 item.Counts.OrderHead = orderHeadCounts.GetValueOrDefault(item.Id);
                 item.Counts.Accountancy = accCounts.GetValueOrDefault(item.Id);
+
                 if (item.Suspend)
                 {
-                    item.UserIdsForSuspend = await db.UserCustomers
+                    var userList = await db.UserCustomers
                         .Where(f => f.CustomerId == item.CustomerId)
                         .Select(f => new AppUser {
                             Id = f.UserId.ToString(),
                             FirstName = users.GetValueOrDefault(f.UserId)
-                        }).ToListAsync();
+                        })
+                        .ToListAsync();
+
+                    userList.Add(new AppUser {
+                        Id = item.UserCreatorID,
+                        FirstName = item.UserCreator
+                    });
+
+                    item.UserIdsForSuspend = userList.DistinctBy(u => Guid.Parse(u.Id)).Reverse().ToList();
                 }
             }
 
@@ -338,19 +346,24 @@ public class DealController : Controller {
         }
     }
 
-    public async Task<IActionResult> AssignCustomerToExpert(Guid dealId, Guid customerId, Guid? userId)
+    public async Task<IActionResult> AssignUserSuspendDeal(Guid dealId, Guid userId, string userFullName)
     {
         try
         {
             var deal = await db.Deals.FirstOrDefaultAsync(f => f.Id == dealId);
             if (deal == null) return NotFound();
+            if (deal.CustomerId == null) return BadRequest();
 
-            if (userId != null && customerId != Guid.Empty)
+            if (Guid.Parse(deal.UserCreatorID) == userId)
             {
                 await db.UserCustomers.AddAsync(new UserCustomer {
-                    CustomerId = customerId,
-                    UserId = (Guid)userId
+                    UserId = userId,
+                    CustomerId = (Guid)deal.CustomerId
                 });
+            } else
+            {
+                deal.UserCreatorID = userId.ToString();
+                deal.UserCreator = userFullName;
             }
 
             deal.Suspend = false;

@@ -603,35 +603,42 @@
 
 
                 if (item.suspend) {
-                    console.log(item);
                     //isAdmin = false;
                     const text = isAdmin ? "مشتری این سفارش متعلق به کارشناس دیگری است، لطفاً مشخص کنید این سفارش باید به کدام کارشناس اختصاص یابد."
                         : "مشتری این سفارش متعلق به کارشناس دیگری است، به همین خاطر تا زمان تصمیم‌گیری مدیر فروش در حالت تعلیق قرار گرفته است.";
+
                     const suspendElm = `
                         <div class="mt-3 p-2 text-center" style="background-color:rgb(216 219 231 / 78%);border-radius: 10px;">
                             <p class="fMedium" style="font-size: 12px; color: #333;">${text}</p>
                             ${isAdmin ? `<div class="d-flex align-items-center gap-1 mt-3">
-                                <label for="assignUserSuspendDeal" class="flex-shrink-0" style="font-size: 11px">اختصاص به کارشناس</label>
-                                <select class="form-select form-select-xs" id="assignUserSuspendDeal">
-                                  <option value="${item.userCreatorID}">${item.userCreator}</option>
+                                <label for="assignUserSuspendSelect" class="flex-shrink-0" style="font-size: 11px">اختصاص به کارشناس</label>
+                                <select class="form-select form-select-xs" id="assignUserSuspendSelect" onchange="handleSuspendAssignment()">
                                   ${item.userIdsForSuspend.map(i => `<option value="${i.id}">${i.fullName}</option>`)}
                                 </select>
-                                <button class="flex-center">
+                                <button id="assignUserSuspendBtn" class="flex-center">
                                     <svg style="width: 24px;color: #4f5057" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
                                 </button>
                             </div>` : ""}
                         </div>
                     `;
 
+
                     /*
                      <button onclick="handleSuspendAssignment('${item.id}', '${item.customerId}', '${item.userCreatorID}')" class="buttonBlue2 rounded-pill" style="padding: .5rem !important">
-                                    ادامه کار
-                                </button>
-                                <button onclick="handleSuspendAssignment('${item.id}', '${item.customerId}')" class="buttonGray rounded-pill" style="padding: .5rem !important">
-                                    اختصاص به کارشناس مربوطه
-                                </button>
+                        ادامه کار
+                    </button>
+                    <button onclick="handleSuspendAssignment('${item.id}', '${item.customerId}')" class="buttonGray rounded-pill" style="padding: .5rem !important">
+                        اختصاص به کارشناس مربوطه
+                    </button>
                      */
                     card.insertAdjacentHTML("beforeend", suspendElm);
+
+                    card.querySelector("#assignUserSuspendBtn")?.addEventListener("click", async () => {
+                        const selectElm = card.querySelector("select#assignUserSuspendSelect");
+                        const userId = selectElm.value;
+                        const userFullName = selectElm.selectedOptions[0].textContent;
+                        await assignUserSuspendDeal(item.id, userId, userFullName);
+                    });
 
                 }
                 @*<svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M17 20h-11a3 3 0 0 1 0 -6h11a3 3 0 0 0 0 6h1a3 3 0 0 0 3 -3v-11a2 2 0 0 0 -2 -2h-10a2 2 0 0 0 -2 2v8" /></svg>*@;
@@ -650,8 +657,21 @@
             });
         };
 
-        const handleSuspendAssignment = async (dealId, cusId, userId) => {
-            const res = await axios(`/Deal/AssignCustomerToExpert?dealId=${dealId}&customerId=${cusId}&userId=${userId}`);
+        const assignUserSuspendDeal = async (dealId, userId, userFullName) => {
+            try {
+                FLshowLoading();
+                const res = await axios(`/Deal/AssignUserSuspendDeal?dealId=${dealId}&userId=${userId}&userFullName=${userFullName}`);
+                if (res.status === 200) {
+                    toastifySuccess("با موفقیت ثبت شد.");
+                    await getAllDeals();
+                }
+
+            } catch (err) {
+                console.log(err);
+                toastifyError("خطای سرور");
+            } finally {
+                FLshowLoading(false);
+            }
         };
 
 
