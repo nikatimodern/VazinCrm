@@ -73,7 +73,7 @@
                         <label for="supplyFactorOrderHead">بابت حواله تولید:</label>
                         <div class="input-group mb-3">
                             <input id="supplyFactorOrderHead" type="text" class="form-control" placeholder="حواله تولید.." disabled required>
-                            <button class="btn btn-sm btn-secondary" type="button" onclick="showAddOrderHeadModal()">انتخاب</button>
+                            <button id="showAddOrderHeadBtn" class="btn btn-sm btn-secondary" type="button" onclick="showAddOrderHeadModal()" disabled>انتخاب</button>
                         </div>
                         @* <input name="supplierId" class="form-control" id="supplyFactorOrderHead" /> *@
                     </div>
@@ -131,18 +131,43 @@
             orderHeadsSelectedIds = [];
             supplyFactorData = [];
             mySer.emptyForm("supplyFactorForm");
+
+            toggleElementsDisabled(document.getElementById("showAddOrderHeadBtn"), true);
             ModalToggle("#supplyFactorModal", "hide");
         }
 
         async function showAddOrderHeadModal() {
-            await getAllOrderHeads();
+            const supplierId = document.getElementById("supplyFactorSupplierId").value;
+            const orderHeadIds = (supplierId && !orderHeadsSelectedIds.length)
+                ? await getOrderHeadIdsBySupplier(supplierId)
+                : orderHeadsSelectedIds;
+
+            await getAllOrderHeads("", orderHeadIds);
+            setCheckedCheckboxes(orderHeadIds);
+            toggleAddOrderHeadModal();
+        }
+
+
+        function setCheckedCheckboxes(idsToSelect = []) {
             addOrderHeadModal.querySelectorAll("input[type='checkbox']").forEach((checkbox) => {
-                if (orderHeadsSelectedIds.includes(checkbox.value)) {
+                if (idsToSelect.includes(checkbox.value)) {
                     checkbox.checked = true;
                 }
             });
-            toggleAddOrderHeadModal();
-            addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !orderHeadsSelectedIds.length);
+            addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !idsToSelect.length);
+        }
+
+        async function getOrderHeadIdsBySupplier(supplierId) {
+            try {
+                const res = await axios(`/Supply/GetOrderHeadsBySupplier?supplierId=${supplierId}`);
+                if (res.status === 200) {
+                    return res.data;
+                }
+                return [];
+            } catch (err) {
+                console.log(err);
+                return [];
+            }
         }
 
         function toggleAddOrderHeadModal() {
@@ -151,8 +176,9 @@
         }
 
 
-        const getAllOrderHeads = async (search = "") => {
-            const res = await axios(`/Order/GetAllOrderHeads?search=${search}&passType=3`);
+        const getAllOrderHeads = async (search = "", selectedIds = []) => {
+            const model = { search, passType: 3, selectedIds };
+            const res = await axios.post(`/Order/GetAllOrderHeads`, model);
 
             addOrderHeadModal.querySelector("#addOrderHeadContainer").innerHTML = res.data;
         };
@@ -191,13 +217,25 @@
         let isSetupSupplyModal = false;
         async function setupSelectOptions() {
             if (isSetupSupplyModal) return;
+            const addOrderBtn = document.getElementById("showAddOrderHeadBtn");
             const data = (await axios("/Supply/GetSupplyBaseData")).data;
             new TomSelect("#supplyFactorSupplierId", {
                 options: data.suppliers,
                 placeholder: "انتخاب تامین کننده",
                 maxItems: 1,
                 selectOnTab: true,
+
+                onItemAdd() {
+                    toggleElementsDisabled(addOrderBtn, false);
+                    document.getElementById("supplyFactorOrderHead").value = "";
+                    orderHeadsSelectedIds = [];
+                },
+
+                onDelete() {
+                    toggleElementsDisabled(addOrderBtn, true);
+                },
             });
+
             isSetupSupplyModal = true;
         }
 
@@ -213,7 +251,7 @@
                 ...supplyFactorData,
                 ...mySer.convertFormToJSON("supplyFactorForm"),
                 supplierTxt: supplierSelect.options[supplierSelect.selectedIndex].text,
-                supplyFactorOrderHeads: orderHeadsSelectedIds.map(id => ({ orderHeadId: id, supplyFactorId: supplyFactorData.id  })),
+                supplyFactorOrderHeads: orderHeadsSelectedIds.map(id => ({ orderHeadId: id, supplyFactorId: supplyFactorData.id })),
                 attachments: supplyFactorAttachments,
             };
 
@@ -284,7 +322,7 @@
                     const res = await axios(`/Supply/DeleteSupplyFactor/${id}`);
                     if (res.status === 200) {
                         toastifySuccess("با موفقیت حذف شد");
-                        await getAllSupplyFactors()
+                        await getAllSupplyFactors();
                     }
                     FLshowLoading(false);
                 }

@@ -1073,5 +1073,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 return BadRequest(ex.Message);
             }
         }
+
+
+        public async Task<IActionResult> GetOrderHeadsBySupplier(Guid supplierId)
+        {
+            var result =
+                from s in db.Supplies.Where(f => f.SupplierId == supplierId)
+                join pf in db.PreFactors on s.PfId equals pf.Id
+                join oh in db.OrderHeads on pf.Id equals oh.Prefactor
+                select oh.Id;
+
+            var data = await result.Distinct().ToListAsync();
+
+            return Ok(data);
+        }
     }
 }
