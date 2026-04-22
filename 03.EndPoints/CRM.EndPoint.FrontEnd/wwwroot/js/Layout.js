@@ -2571,6 +2571,7 @@ const submitInvoice = async () => {
             listAttach: SanadPayList,
         };
         
+        
         try {
             FLshowLoading();
             const res = await axios.post(`/Factor/AddPayAttachment`, model);
@@ -2578,6 +2579,11 @@ const submitInvoice = async () => {
                 await refreshInvoiceSuccess();
                 toastifySuccess(isEditInvoiceModal ? "ویرایش انجام شد" : "ثبت انجام شد");
                 closeModalInvoice();
+                
+                const pfListModal = document.getElementById("preFactorListModal");
+                if (pfListModal.classList.contains("show")) {
+                    ModalToggle(pfListModal, "hide");
+                }
             } else {
                 toastifyError(res.error);
             }
@@ -2887,6 +2893,8 @@ const closeModalInvoice = () => {
     document.querySelector("#InvoiceModalId .beneficiaryWrapper")?.classList.add("d-none");
     const upSanadPay = document.getElementById("upSanadPay");
     if (upSanadPay) upSanadPay.value = "";
+    
+    
 };
 
 
@@ -4487,12 +4495,36 @@ addSupplyFactorModal?.querySelector("#addSupplyFactorSearch").addEventListener("
 });
 /*--------------------------------------------------------------------------------*/
 
+const preFactorListModal = document.getElementById("preFactorListModal");
+let accType_pfList;
+async function showModalPreFactorList(accType) {
+    accType_pfList = accType;
+    await getAllPreFactorList();
+    preFactorListModal.querySelector("#preFactorListSearch").value = "";
+    ModalToggle(preFactorListModal);
+}
+
+const getAllPreFactorList = async (search = "") => {
+    const res = await axios(`/Factor/GetAllPreFactorList?search=${search}`);
+    
+    preFactorListModal.querySelector("#preFactorListContainer").innerHTML = res.data;
+};
+
+preFactorListModal.querySelector("#preFactorListSearch").addEventListener("keyup", async (e) => {
+    if (e.key === "Enter") {
+        toggleElementsDisabled(e.target);
+        await getAllPreFactorList(e.target.value.trim());
+        toggleElementsDisabled(e.target, false);
+        e.target.focus();
+    }
+});
 
 
-
-
-
-
+async function selectPfFromPfListModal(pfId) {
+    InvoiceType = 1;
+    pfactorID = pfId;
+    await ShowModalInvoice(accType_pfList);
+}
 
 
 /*--------------------------------------------------------------------------------*/

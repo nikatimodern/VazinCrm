@@ -1316,7 +1316,7 @@ const submitFactorOK = async (type) => {
         factor.currencyType = currencyTypeElm.value;
         factor.currencyTypeTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
         
-        
+        console.log(factor);
         $.post(baseUrl + "Factor/AddFactor", factor, async () => {
             if (type === 0) {
                 await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, modelFactor._type, factor.pfactorSerialNumber, type);
