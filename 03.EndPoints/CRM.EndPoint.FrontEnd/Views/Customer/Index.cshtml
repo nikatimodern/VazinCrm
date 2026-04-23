@@ -335,12 +335,12 @@
         const LoadingCustomer = document.getElementById("LoadingCusPartId");
         const ShowAllBtn = document.getElementById("btnShowAllId");
 
-        (function initFiltersFromUrl () {
+        (function initFiltersFromUrl() {
             const { juridicalType = -1, roleType = -1, search = "" } = getUrlParams();
             document.querySelector(`input[name='roleTypeChange'][value='${roleType}']`).checked = true;
             document.querySelector(`input[name='juridicalChange'][value='${juridicalType}']`).checked = true;
             SearchInp.value = search;
-        })()
+        })();
 
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -998,21 +998,25 @@
 
 
         let senfLoaded = false;
-        const ShowModalUpCustomer = (id) => {
+        const ShowModalUpCustomer = async (id) => {
             if (!senfLoaded) {
                 GetUpSenfOp();
                 senfLoaded = true;
             }
-
             customerIdUp = id;
-            $("#loadingModalUp").css("display", "flex");
-            $.get(baseUrl + "Customer/GetCustomer?id=" + id, (res) => {
-                changeJur(res.juridical);
-                mySer.convertJsonToForm(res, "CuInfoUpFormId");
-                $("#loadingModalUp").css("display", "none");
-            });
-            $("#updateCustomerModal").modal("toggle");
+            const loadingModal = document.getElementById("loadingModalUp");
 
+            @* loadingModal.classList.remove("d-none"); *@
+            FLshowLoading()
+            const res = await axios(`/Customer/GetCustomer/${id}`);
+            if (res.status === 200) {
+                const data = res.data;
+                changeJur(data.juridical);
+                mySer.convertJsonToForm(data, "CuInfoUpFormId");
+                FLshowLoading(false)
+                @* loadingModal.classList.add("d-none"); *@
+            }
+            ModalToggle("updateCustomerModal");
         };
 
         const SubmitUpFormCustomer = async () => {

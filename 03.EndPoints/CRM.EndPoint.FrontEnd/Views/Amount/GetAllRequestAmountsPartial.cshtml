@@ -5,10 +5,11 @@
     var passType = ViewBag.PassType;
 }
 
-<div class="col-12 mx-auto d-flex flex-column" style="gap:12px">
+<div class="col-12 mx-auto d-flex flex-column" style="gap:12px;padding-bottom: 12px;">
     @foreach (var item in Model) {
         var requestAmount = item.RequestAmount;
         var supplyFactorSerials = item.SupplyFactorSerials;
+        var orderHeadNumbers = item.OrderHeadSerials;
         var statusAccepted = requestAmount.RequestStatus == RequestStatusEnum.تایید_شده;
 
         <div class="layered-card layered-card-pill @(statusAccepted ? "layered-green" : "")">
@@ -31,10 +32,18 @@
                     <span style="font-size: 13px; color: #777">نوع:</span>
                     <span class="fbold">@requestAmount.DocTypeTxt</span>
                 </div>
-                <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mb-2 text-center">
-                    <span style="font-size: 13px; color: #777">فاکتور تامین:</span>
-                    <span class="fbold direction-ltr">@string.Join(", ", supplyFactorSerials)</span>
-                </div>
+                @if (supplyFactorSerials.Any()) {
+                    <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mb-2 text-center">
+                        <span style="font-size: 13px; color: #777">فاکتور تامین:</span>
+                        <span class="fbold direction-ltr">@string.Join(", ", supplyFactorSerials)</span>
+                    </div>
+                }
+                @if (orderHeadNumbers.Any()) {
+                    <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mb-2 text-center">
+                        <span style="font-size: 13px; color: #777">حواله تولید:</span>
+                        <span class="fbold direction-ltr">@string.Join(", ", orderHeadNumbers)</span>
+                    </div>
+                }
                 <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 text-center">
                     <span style="font-size: 13px; color: #777">ثبت شده توسط:</span>
                     <span class="fbold">@requestAmount.UserCreator</span>
@@ -73,17 +82,16 @@
                     <span style="font-size: 13px; color: #777" class="flex-shrink-0">مبلغ تایید شده:</span>
                     <div class="input-group">
                         @{
-                            int[] percents = [25, 50, 75, 100];
+                            decimal[] percents = [25, 50, 75, 100];
                             var percent = (requestAmount.AcceptedAmount * 100) / requestAmount.Amount;
                         }
-                        <input name="acceptedAmount" type="text" class="form-control currencyNumber" oninput="changeAcceptedRequestAmount(this, @requestAmount.AcceptedAmount)" value="@(requestAmount.AcceptedAmount > 0 ? string.Format("{0:n0}", requestAmount.AcceptedAmount) : "")" required>
-                        <select class="form-select form-select-xs" onchange="changePercentAcceptedRequestAmount(this, @requestAmount.Amount, @requestAmount.AcceptedAmount)">
+                        <input name="acceptedAmount" type="text" class="form-control currencyNumber" oninput="changeAcceptedRequestAmount(this, @requestAmount.Amount, @requestAmount.AcceptedAmount)" value="@(requestAmount.AcceptedAmount > 0 ? string.Format("{0:n0}", requestAmount.AcceptedAmount) : "")" required>
+                        <select class="form-select form-select-xs" style="background-color: @(percents.Contains(percent) ? "#e3f7e3" : "");" onchange="changePercentAcceptedRequestAmount(this, @requestAmount.Amount, @requestAmount.AcceptedAmount)">
                             <option value="" selected="@(percent == 0 ? "selected" : null)">درصد</option>
                             @foreach (var p in percents) {
                                 <option value="@p" selected="@(percent == p ? "selected" : null)">@p%</option>
                             }
                         </select>
-
                     </div>
                 </div>
 

@@ -274,29 +274,30 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
 
                 break;
             case Core.Domain.Factors.Entities.Factor f:
+                var title = f.ParentReturnedId != null ? "فاکتور برگشتی" : "فاکتور";
                 switch (action)
                 {
                     case LogActionEnum.ثبت:
                         fullCustomer = $"{f.Customer} {f.AgentName}".Trim();
-                        return $"یک فاکتور به شماره سریال {serialNumber} برای مشتری ({fullCustomer}) توسط <b>{fullName}</b> ثبت شد.";
+                        return $"یک {title} به شماره سریال {serialNumber} برای مشتری ({fullCustomer}) توسط <b>{fullName}</b> ثبت شد.";
 
                     case LogActionEnum.ویرایش:
-                        return $"فاکتور شماره {serialNumber} توسط <b>{fullName}</b> ویرایش شد.";
+                        return $"{title} شماره {serialNumber} توسط <b>{fullName}</b> ویرایش شد.";
 
                     case LogActionEnum.حذف:
-                        return $"فاکتور شماره {serialNumber} توسط <b>{fullName}</b> حذف شد.";
+                        return $"{title} شماره {serialNumber} توسط <b>{fullName}</b> حذف شد.";
 
                     case LogActionEnum.بازیابی:
-                        return $"فاکتور شماره {serialNumber} توسط <b>{fullName}</b> بازیابی شد.";
+                        return $"{title} شماره {serialNumber} توسط <b>{fullName}</b> بازیابی شد.";
 
                     case LogActionEnum.تغییر_وضعیت:
-                        return $"فاکتور شماره {serialNumber} توسط <b>{fullName}</b> به حالت در انتظار تایید بازگشت.";
+                        return $"{title} شماره {serialNumber} توسط <b>{fullName}</b> به حالت در انتظار تایید بازگشت.";
 
                     case LogActionEnum.تایید_و_تغییر_وضعیت:
-                        return $"فاکتور شماره {serialNumber} توسط <b>{fullName}</b> تایید شد.";
+                        return $"{title} شماره {serialNumber} توسط <b>{fullName}</b> تایید شد.";
 
                     case LogActionEnum.رد_و_تغییر_وضعیت:
-                        return $"فاکتور شماره {serialNumber} توسط <b>{fullName}</b> ابطال شد.";
+                        return $"{title} شماره {serialNumber} توسط <b>{fullName}</b> ابطال شد.";
                 }
 
                 break;
@@ -390,10 +391,8 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
                 break;
 
             case AppUser user:
-                if (!string.IsNullOrEmpty(commentTxt)
-//                    && (commentTxt.Contains("192.168.1.3") || commentTxt.Contains("127.0.0.1") || commentTxt.Contains("::1")) && fullName != "مدیر ارشد"
-                   )
-                    return null;
+                /*if (!string.IsNullOrEmpty(commentTxt) && (commentTxt.Contains("192.168.1.3") || commentTxt.Contains("127.0.0.1") || commentTxt.Contains("::1")) && fullName != "مدیر ارشد")
+                    return null;*/
 
                 switch (action)
                 {

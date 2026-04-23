@@ -7,14 +7,14 @@
 }
 
 @if (Model.Any()) {
-    <div class="order-table-grid" style="--order-table-col:@(passType == 3 ? 7 : 5)">
+    <div class="order-table-grid" style="--order-table-col:@(passType == 3 || passType == 4 ? 7 : 5)">
         <div class="order-row order-header">
-            @if (passType == 3) {
+            @if (passType == 3 || passType == 4) {
                 <div class="order-cell"></div>
             }
             <div class="order-cell">شماره</div>
             <div class="order-cell">پیش‌فاکتور</div>
-            @if (passType == 3) {
+            @if (passType == 3 || passType == 4) {
                 <div class="order-cell">مشتری</div>
             }
             <div class="order-cell">تاریخ</div>
@@ -28,10 +28,14 @@
                     <div class="order-cell">
                         <input id="orderCheck-@item.OrderNumber" data-number="@item.OrderNumber" value="@item.Id" type="checkbox" class="form-check-input">
                     </div>
+                }else if (passType == 4) {
+                    <div class="order-cell">
+                        <input id="orderCheck-@item.OrderNumber" data-number="@item.OrderNumber" name="orderHead" value="@item.Id" type="radio" class="form-check-input">
+                    </div>
                 }
                 <div class="order-cell">@item.OrderNumber</div>
                 <div class="order-cell">@item.PrefactorSer</div>
-                @if (passType == 3) {
+                @if (passType == 3 || passType == 4) {
                     <div class="order-cell">@item.CustomerTxt</div>
                 }
                 <div class="order-cell">@item.OrderDate</div>

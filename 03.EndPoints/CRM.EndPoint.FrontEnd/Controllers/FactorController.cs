@@ -154,30 +154,27 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> AcceptFactor(Guid id, int type)
         {
-            var user = userManager.GetUserAsync(HttpContext.User).Result;
+            var user = await userManager.GetUserAsync(HttpContext.User);
 
             var oldFac = await db.Factors.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
             var fac = await db.Factors.Where(f => f.Id == id).FirstOrDefaultAsync();
-
 
             switch (type)
             {
                 case 1:
                     fac.status = FactorStatus.در_دست_تایید;
-                    fac.statusTxt = FactorStatus.در_دست_تایید.ToString().Replace("_", " ");
+                    fac.statusTxt = nameof(FactorStatus.در_دست_تایید).Replace("_", " ");
                     break;
                 case 2:
                     if (string.IsNullOrEmpty(fac.SnFinancial))
-                    {
                         return NoContent();
-                    }
 
                     fac.status = FactorStatus.تایید_شده;
-                    fac.statusTxt = FactorStatus.تایید_شده.ToString().Replace("_", " ");
+                    fac.statusTxt = nameof(FactorStatus.تایید_شده).Replace("_", " ");
                     break;
                 case 3:
                     fac.status = FactorStatus.ابطال_شده;
-                    fac.statusTxt = FactorStatus.ابطال_شده.ToString().Replace("_", " ");
+                    fac.statusTxt = nameof(FactorStatus.ابطال_شده).Replace("_", " ");
                     break;
             }
 
@@ -1093,6 +1090,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     pf.CustomerCode = cus.CustomerCode;
                     await _logSystemService.LogChange(cus, null, LogActionEnum.ثبت,
                         new AppUser { FirstName = cus.CompanyName, LastName = cus.AgentName }, null, "مشتری");
+                } else
+                {
+                    if (cus.RoleType == RoleTypeEnum.تامین_کننده)
+                    {
+                        cus.RoleType = RoleTypeEnum.تامین_کننده_مشتری;
+                        cus.RoleTypeTxt = cus.RoleType.ToString().Replace("_", " ");
+                    }
                 }
 
                 var user = await userManager.FindByNameAsync(pf.Cus_Mobile);
@@ -1914,8 +1918,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (model.ParentId != null)
                 {
-                    model.ParentId = model.ParentId;
-
                     var parent = await db.Accountancies.FirstOrDefaultAsync(f => f.Id == model.ParentId);
                     parent?.Vosoled = true;
 
@@ -2049,7 +2051,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 //FacAmount = db.Accountancies.Where(f => f.AccType == (int)AcEnum.بدهکاری && f.CustomerId == cusId && f.FirstAcc == false).Sum(f => f.debit);
 
-                var facIds = await db.Factors.Where(f => f.CustomerId == cusId && f.status == FactorStatus.تایید_شده).Select(f => f.Id).ToListAsync();
+                var facIds = await db.Factors.Where(f =>
+                    f.CustomerId == cusId
+                    && f.status == FactorStatus.تایید_شده
+                    && !f.Returned
+                    && f.ParentReturnedId == null
+                ).Select(f => f.Id).ToListAsync();
 
                 var facAmount = accountancies.Where(f =>
                     f.InvoiceType == InvoiceTypeEnum.فاکتور
@@ -2270,6 +2277,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                     pf.CustomerId = cus.Id;
                     pf.CustomerCode = cus.CustomerCode;
+                } else
+                {
+                    if (cus.RoleType == RoleTypeEnum.تامین_کننده)
+                    {
+                        cus.RoleType = RoleTypeEnum.تامین_کننده_مشتری;
+                        cus.RoleTypeTxt = cus.RoleType.ToString().Replace("_", " ");
+                    }
                 }
 
                 pf.Accepted = true;
@@ -2594,16 +2608,23 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 bool isNewFactor;
                 Factor oldModel = null;
+                var isReturnFactor = model.ParentReturnedId != null;
 
                 if (setting.FactorTowStep == false)
                 {
                     model.status = FactorStatus.تایید_شده;
-                    model.statusTxt = FactorStatus.تایید_شده.ToString().Replace("_", " ");
+                    model.statusTxt = nameof(FactorStatus.تایید_شده).Replace("_", " ");
                 }
 
                 if (model.Id == Guid.Empty)
                 {
                     isNewFactor = true;
+
+                    if (isReturnFactor)
+                    {
+                        var parent = await db.Factors.Where(f => f.Id == model.ParentReturnedId).FirstOrDefaultAsync();
+                        parent?.Returned = true;
+                    }
 
                     model.UserCreatorID = user.Id;
                     model.UserCreator = user.FullName;
@@ -2641,21 +2662,22 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     model.UserModifyID = user.Id;
                     model.UserModify = user.FullName;
 
-                    if (setting.Sepidar == true)
+
+                    if (setting.Sepidar == true && model.SepidarId != null)
                     {
-                        if (model.SepidarId != null)
-                        {
-                            var sF = await S1db.vwInvoice.AsNoTracking().Where(f => f.InvoiceId == model.SepidarId).FirstOrDefaultAsync();
-                            model.DateMiladi = sF.Date;
-                            model.Date = sF.DateTXT;
-                        }
+                        var sF = await S1db.vwInvoice.AsNoTracking().Where(f => f.InvoiceId == model.SepidarId).FirstOrDefaultAsync();
+                        model.DateMiladi = sF.Date;
+                        model.Date = sF.DateTXT;
                     }
                 }
 
-                model.SelerFullName = pf.UserCreator;
-                model.SelerId = pf.UserCreatorID;
-                model.DealId = pf.DealId;
-                model.DealSerialNumber = pf.DealSerialNumber;
+                if (pf != null)
+                {
+                    model.SelerFullName = pf.UserCreator;
+                    model.SelerId = pf.UserCreatorID;
+                    model.DealId = pf.DealId;
+                    model.DealSerialNumber = pf.DealSerialNumber;
+                }
 
                 model.ModifyDate = DateTime.Now;
                 model.ModifyDateTxt = dtService.GetDateTimePersian();
@@ -2669,7 +2691,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 await db.SaveChangesAsync();
                 await db.Entry(model).ReloadAsync();
-                await regAccountancy(model);
+                if (!isReturnFactor)
+                {
+                    await regAccountancy(model);
+                }
 
                 if (cus != null)
                 {
@@ -2683,17 +2708,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
 
+                    var title = isReturnFactor ? "فاکتور برگشتی" : "فاکتور جدید";
                     var cusTxt = $"{model.Customer} ({model.AgentName})".Trim();
                     var message =
-                        $"یک فاکتور به شماره سریال {model.SerialNumber} برای پیش‌فاکتور {model.PfactorSerialNumber} ،مشتری {cusTxt} ثبت شد.";
-                    await genService.AddEmail("فاکتور جدید", message, user, model.SelerId, model.SelerFullName, EntityTypeEnum.Factor, model.Id);
+                        $"یک {title} به شماره سریال {model.SerialNumber} برای پیش‌فاکتور {model.PfactorSerialNumber} ،مشتری {cusTxt} ثبت شد.";
+                    await genService.AddEmail(title, message, user, model.SelerId, model.SelerFullName, EntityTypeEnum.Factor, model.Id);
 
                     await hub.Clients.User(model.SelerId).SendAsync("notifInfo", message, "/Email/Index");
 
                     pushQueue.Enqueue(new PushQueueItem {
-                        UserId = pf.UserCreatorID,
-                        Title = "فاکتور جدید",
-                        Body = $"فاکتور شماره {model.SerialNumber} برای مشتری {cusTxt} ثبت شد.",
+                        UserId = pf?.UserCreatorID ?? model.SelerId,
+                        Title = title,
+                        Body = $"{title} شماره {model.SerialNumber} برای مشتری {cusTxt} ثبت شد.",
                         Url = "/Email/Index",
                         Tag = "f" + model.SerialNumber
                     });
@@ -2856,6 +2882,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             item.UserModifyID = user.Id;
             item.ModifyDate = DateTime.Now;
             item.ModifyDateTxt = dtService.GetDateTimePersian();
+
+            if (item.ParentReturnedId != null)
+            {
+                var returnedF = await db.Factors.FirstOrDefaultAsync(f => f.Id == item.ParentReturnedId);
+                returnedF?.Returned = false;
+            }
 
             var ac = await db.Accountancies.Where(f => f.fid == id).FirstOrDefaultAsync();
             if (ac != null)

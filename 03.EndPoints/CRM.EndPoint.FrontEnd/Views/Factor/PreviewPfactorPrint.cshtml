@@ -15,9 +15,9 @@
 
 
     <link rel="stylesheet" href="~/lib/Bootstrap/bootstrap5.3.rtl.min.css" />
-    <link rel="stylesheet" href="~/css/site.css?v=3.4.1" />
+    <link rel="stylesheet" href="~/css/site.css?v=3.5.0" />
     <link rel="stylesheet" href="~/css/normalize.min.css">
-    <link rel="stylesheet" href="~/css/paper.css?v=3.4.1">
+    <link rel="stylesheet" href="~/css/paper.css?v=3.5.0">
 </head>
 
 <body dir="rtl" class="A4">
@@ -183,11 +183,14 @@
                     </tr>
                     </thead>
                     <tbody>
-                    @foreach (var item in Model.PreFactor.PreFactorItems) {
+                    @foreach (var item in Model.PreFactor.PreFactorItems ?? []) {
                         <tr>
                             <td>@item.Row</td>
                             <td>
-                                @item.ProductSmallName @item.Product
+                                <span class="d-inline-flex gap-1">
+                                    <span>@item.ProductSmallName</span>
+                                    <span>@item.Product</span>
+                                </span>
                                 @(item.Printable == 1 ? " (چـاپدار)" : "")
                             </td>
                             <td>@item.WeightCount</td>

@@ -6,4 +6,5 @@ namespace CRM.EndPoint.FrontEnd.Models.ViewModel.Amount;
 public class RequestAmountVModel {
     public RequestAmount RequestAmount { get; set; }
     public List<string> SupplyFactorSerials { get; set; }
+    public List<int> OrderHeadSerials { get; set; }
 }

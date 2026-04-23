@@ -720,9 +720,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     };
 
 
-
-
-
                 var query = queryFirst.AsEnumerable().Select(q =>
                     new SuppliesProfitDtVModel {
                         DealId = q.Deal.Id,
@@ -855,7 +852,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         DealId = g.Key,
                         TotalFactorsAmount = g.SelectMany(x => x.Factors)
                             .Where(f => f.status == FactorStatus.تایید_شده)
-                            .Sum(f => f.PaymentAmount)
+                            .Sum(f => f.ParentReturnedId == null ? f.PaymentAmount : -f.PaymentAmount)
                     });
 
 
@@ -1075,6 +1072,20 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+
+        public async Task<IActionResult> GetOrderHeadsBySupplier(Guid supplierId)
+        {
+            var result =
+                from s in db.Supplies.Where(f => f.SupplierId == supplierId)
+                join pf in db.PreFactors on s.PfId equals pf.Id
+                join oh in db.OrderHeads on pf.Id equals oh.Prefactor
+                select oh.Id;
+
+            var data = await result.Distinct().ToListAsync();
+
+            return Ok(data);
         }
     }
 }
