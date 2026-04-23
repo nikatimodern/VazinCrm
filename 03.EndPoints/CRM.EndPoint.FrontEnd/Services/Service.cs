@@ -187,6 +187,9 @@ namespace CRM.EndPoint.FrontEnd.Services {
             {
                 f.CustomerId = customer?.Id;
                 f.CustomerCode = customer?.CustomerCode;
+                f.Customer = customer?.CompanyName;
+                f.AgentName = customer != null ? customer.AgentName : dealCustomerName;
+                f.Cus_Mobile = customer != null ? customer.Mobile : dealMobileNumber;
             }
 
             var reports = await db.Reports.Where(f => f.DealId == dealId).ToListAsync();
@@ -210,6 +213,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
             {
                 f.Customer = customer?.Id;
                 f.CustomerCode = customer?.CustomerCode;
+                f.CustomerTxt = customer != null ? $"{customer.CompanyName ?? ""} {customer.AgentName ?? ""}".Trim() : dealCustomerName;
             }
 
             var acc = await db.Accountancies.Where(f => f.DealId == dealId).ToListAsync();
