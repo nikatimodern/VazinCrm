@@ -4488,13 +4488,6 @@ addSupplyFactorModal?.querySelector("#addSupplyFactorSearch").addEventListener("
 /*--------------------------------------------------------------------------------*/
 
 
-
-
-
-
-
-
-
 /*--------------------------------------------------------------------------------*/
 
 /*document.addEventListener("input", (e) => {

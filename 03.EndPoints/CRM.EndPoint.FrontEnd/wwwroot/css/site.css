@@ -89,6 +89,18 @@ u, .text-decoration-underline {
 }
 
 
+.filter-switch.filter-switch-sm {
+  padding: 2px;
+}
+
+
+.filter-switch.filter-switch-sm label {
+  min-height: 22px;
+  padding: 0 8px;
+  font-size: 12.5px;
+}
+
+
 .filter-switch label:hover {
   color: #374151;
 }
@@ -128,18 +140,11 @@ u, .text-decoration-underline {
     font-size: 12px;
     min-height: 22px;
   }
-}
-
-
-.filter-switch.filter-switch-light {
-  padding: 2px;
-}
-
-
-.filter-switch.filter-switch-light label {
-  min-height: 22px;
-  padding: 0 8px;
-  font-size: 12.5px;
+  
+  .filter-switch.filter-switch-sm label {
+    font-size: 11px;
+    line-height: normal;
+  }
 }
 
 
@@ -3920,7 +3925,6 @@ border-end-end-radius: 10px;*/
 }
 
 
-
 .InfoDataItem {
   border: solid 2px rebeccapurple;
   /*    border-right: solid 2px rebeccapurple;
@@ -5339,4 +5343,41 @@ table tr.payment-vosoled > td {
     min-width: 34px;
     padding: 4px 15px !important;
   }
+}
+
+
+.search-group {
+  position: relative;
+}
+
+
+.search-group input {
+  position: relative;
+  padding-left: 28px !important;
+}
+
+
+.search-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  left: 4px;
+  top: 0;
+  bottom: 0;
+}
+
+
+.search-icon svg {
+  width: 20px;
+  color: #c3c3c3;
+  transition: all .15s;
+}
+
+
+.search-icon:hover svg,
+.search-group:focus-within .search-icon svg {
+  color: #999;
+  width: 22px;
+  cursor: pointer;
 }

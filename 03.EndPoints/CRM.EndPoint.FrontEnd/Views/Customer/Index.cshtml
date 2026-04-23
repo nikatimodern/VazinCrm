@@ -16,9 +16,12 @@
                     <button class="buttonCancel2" onclick="hideFormCustomer()" id="btnCancel" style="display:none;padding: 8px 16px;border-radius: 50px;line-height: 1;">انصراف</button>
                 </div>
             }
-            <div id="searchInput" class="col-12 col-lg-7" style="display:flex;justify-content:center;flex-direction:column; align-items:center;  ">
-                <div style="width:100%; display:flex; justify-content:center; flex-direction:column;align-items:center; ">
+            <div id="searchCustomerWrapper" class="col-12 col-lg-7 flex-center">
+                <div class="search-group">
                     <input class="form-control form-control-lg" id="SearchInp" type="text" placeholder="جستجو برحسب (نام مشتری ، کد مشتری)" />
+                    <div class="search-icon" style="left: 6px">
+                        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                    </div>
                 </div>
             </div>
             <div id="roleTypeRadios" class="flex-center flex-wrap gap-2">
@@ -366,6 +369,11 @@
                     getAllCustomers();
                 }
             });
+            SearchInp.nextElementSibling.addEventListener("click", () => {
+                const searchValue = SearchInp.value.trim();
+                setUrlParams({ search: searchValue ? searchValue : null });
+                getAllCustomers();
+            });
 
 
             document.querySelectorAll("input[name='roleTypeChange']")?.forEach(radio => {
@@ -424,13 +432,13 @@
             $("#CuParId").css("display", "none");
             gotoStep(1);
             $("#formAddCustom").css("display", "");
-            $("#searchInput").css("display", "none");
+            $("#searchCustomerWrapper").css("display", "none");
             $("#roleTypeRadios").css("display", "none");
         };
         const hideFormCustomer = () => {
             $("#btnNew").css("display", "");
             $("#CuParId").css("display", "flex");
-            $("#searchInput").css("display", "block");
+            $("#searchCustomerWrapper").css("display", "block");
             $("#roleTypeRadios").css("display", "block");
             $("#btnCancel").css("display", "none");
             $("#formAddCustom").css("display", "none");
@@ -1006,15 +1014,15 @@
             customerIdUp = id;
             const loadingModal = document.getElementById("loadingModalUp");
 
-            @* loadingModal.classList.remove("d-none"); *@
-            FLshowLoading()
+            @* loadingModal.classList.remove("d-none"); *@;
+            FLshowLoading();
             const res = await axios(`/Customer/GetCustomer/${id}`);
             if (res.status === 200) {
                 const data = res.data;
                 changeJur(data.juridical);
                 mySer.convertJsonToForm(data, "CuInfoUpFormId");
-                FLshowLoading(false)
-                @* loadingModal.classList.add("d-none"); *@
+                FLshowLoading(false);
+                @* loadingModal.classList.add("d-none"); *@;
             }
             ModalToggle("updateCustomerModal");
         };
