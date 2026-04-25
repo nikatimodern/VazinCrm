@@ -46,7 +46,7 @@ public class AudioToTextService {
         }
         catch (Exception ex)
         {
-            throw;
+            Console.WriteLine(ex.Message);
             return null;
         }
     }
@@ -90,13 +90,13 @@ public class AudioToTextService {
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
                 Console.WriteLine($"Transcription API Error ({response.StatusCode}): {errorContent}");
-                throw new Exception($"Transcription API Error: {response.StatusCode} - {errorContent}");
+                return null;
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error during transcription API call: {ex.Message}");
-            throw;
+            return null;
         }
     }
 
@@ -136,7 +136,7 @@ public class AudioToTextService {
         catch (Exception ex)
         {
             Console.WriteLine($"Error during summarization API call: {ex.Message}");
-            throw;
+            return null;
         }
     }
 
@@ -159,14 +159,11 @@ public class AudioToTextService {
         catch (Exception ex)
         {
             Console.WriteLine(ex.Message);
-            throw;
         }
     }
 
     public async Task ProcessCallRecording(string callerNumber, string destinationNumber, string filePath)
     {
-        string summary = null;
-
         try
         {
             // 1. دانلود فایل صوتی از SFTP
@@ -178,19 +175,17 @@ public class AudioToTextService {
             var transcriptionResult = await ConvertAudioToText(audioBytes, Path.GetFileName(filePath));
             var fullTranscriptionText = transcriptionResult?.Result?.Text ?? string.Empty;
 
-            if (!string.IsNullOrEmpty(fullTranscriptionText))
-            {
-                // 3. خلاصه‌سازی متن
-                summary = null; //await SummarizeText(fullTranscriptionText);
-            }
+            if (string.IsNullOrEmpty(fullTranscriptionText)) return;
+
+            // 3. خلاصه‌سازی متن
+            var summary = await SummarizeText(fullTranscriptionText);
 
             // 4. ذخیره اطلاعات در پایگاه داده
             await SaveCallDataToDatabase(filePath, callerNumber, destinationNumber, fullTranscriptionText, summary);
         }
         catch (Exception ex)
         {
-            //Console.WriteLine(ex.Message);
-            throw;
+            Console.WriteLine(ex.Message);
         }
         finally
         {
