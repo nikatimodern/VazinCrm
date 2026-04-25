@@ -1199,7 +1199,8 @@ const showModalAddPfactor = async (type, cusId = null, deal) => {
     $("#official").checked = true;
     $("#PreFactor").modal("show");
     $("#date").val(await todayDate());
-    $("#validityDade").val(await tomorrowDate());
+    //$("#validityDade").val(await tomorrowDate());
+    $("#validityDade").val(await todayDate());
     getAllProductOp();
     Unit(1);
     FLshowLoading(false);
