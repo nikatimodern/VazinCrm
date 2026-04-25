@@ -1286,6 +1286,7 @@ const submitOrder = async () => {
         model.push(data);
     });
     
+    console.log(model);
     
     axios.post(`/Order/AddHeadOrder`, model).then((res) => {
         if (res.status === 200) {
@@ -3280,11 +3281,11 @@ const setCountEnvelope = (countObj, isAdmin) => {
         salesAdmin: { count: countObj.salesAdmin || 0, id: "TSalesAdminId" },
         tamin: { count: countObj.tamin || 0, id: "TTaminExpertId" },
         financial: {
-            count: countObj.financial?.invoiceCount || 0 + countObj.financial?.preFactorCount || 0,
+            count: (countObj.financial?.invoiceCount || 0) + (countObj.financial?.preFactorCount || 0),
             id: "TFinancialExpertId",
         },
         managingDirector: {
-            count: countObj.managingDirector?.invoiceCount || 0 + countObj.managingDirector?.requestCount || 0,
+            count: (countObj.managingDirector?.invoiceCount || 0) + (countObj.managingDirector?.requestCount || 0),
             id: "TManagingDirectorId",
         },
     };
@@ -4484,6 +4485,16 @@ addSupplyFactorModal?.querySelector("#addSupplyFactorSearch").addEventListener("
         e.target.focus();
     }
 });
+/*--------------------------------------------------------------------------------*/
+
+
+
+
+
+
+
+
+
 /*--------------------------------------------------------------------------------*/
 
 /*document.addEventListener("input", (e) => {

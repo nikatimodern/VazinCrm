@@ -16,6 +16,8 @@ namespace CRM.Core.Domain.RequestAmounts.Entities {
         public decimal AcceptedAmount { get; set; }
 
         public IList<RequestAmountSupplyFactor> RequestAmountSupplyFactor { get; set; }
+        public IList<RequestAmountOrderHead> RequestAmountOrderHeads { get; set; }
+
     }
 
     public enum RequestAmountDocType {

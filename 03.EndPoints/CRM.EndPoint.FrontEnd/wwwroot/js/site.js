@@ -1395,8 +1395,7 @@ const ShowModalReport = async (model, passType = 0, dealId = null, dealSerialNum
     const selectElm = document.getElementById("repCustomerTxt");
     
     if (!reportModalLoaded) {
-        await initReportModal();
-        initCustomerOpReport();
+        await Promise.all([initReportModal(), initCustomerOpReport()]);
         reportModalLoaded = true;
     }
     
@@ -1408,25 +1407,28 @@ const ShowModalReport = async (model, passType = 0, dealId = null, dealSerialNum
         let { id = null, agentName, companyName, customerCode, mobile } = model;
         repTelElm.value = mobile;
         
-        const customerCodeText = customerCode ? ` (کد مشتری ${customerCode})` : "";
-        const data = {
-            id,
-            text: `${companyName ?? ""} ${agentName}${customerCodeText}`.trim(),
-        };
-        
-        const newOption = new Option(data.text, data.id, true, true);
-        $(selectElm).append(newOption).trigger("change");
+        if (id) {
+            selectElm.tomselect.setValue(id, true);
+        } else {
+            const customerCodeText = customerCode ? ` (کد مشتری ${customerCode})` : "";
+            const text = `${companyName ?? ""} ${agentName}${customerCodeText}`.trim();
+            
+            const customId = `custom-${text}`;
+            selectElm.tomselect.addOption({ value: customId, text });
+            selectElm.tomselect.setValue(customId, true);
+        }
+        selectElm.tomselect.disable();
+        toggleElementsDisabled(repTelElm, true);
     }
-    toggleElementsDisabled([selectElm, repTelElm], Boolean(model));
     
-    createRating("reportRate", {
+    /*createRating("reportRate", {
         count: 10,
         value: 0,
         resultId: "reportRateResult",
         onRate: (val) => {
             console.log(val);
         },
-    });
+    });*/
     
     ModalToggle("#ModalReport");
 };
@@ -1436,6 +1438,10 @@ const closeModalReport = () => {
     document.getElementById("resultFollowUpContainer").classList.add("d-none");
     ModalToggle("#ModalReport");
     mySer.emptyForm("ReportFormId");
+    const repTelElm = document.getElementById("repTel");
+    const selectElm = document.getElementById("repCustomerTxt");
+    selectElm.tomselect.enable();
+    toggleElementsDisabled(repTelElm, false);
 };
 
 

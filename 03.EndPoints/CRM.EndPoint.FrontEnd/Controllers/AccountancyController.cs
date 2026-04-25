@@ -532,7 +532,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (modelF.filt != null)
                 {
-                    dataF = dataF.ApplyFilter(modelF, f => f.CustomerId, f => f.CreateDate, f => f.UserCreatorID);
+                    dataF = dataF.ApplyFilter(modelF, f => f.CustomerId, f => f.VosolDateM, f => f.UserCreatorID);
                 }
 
                 dataF = modelF.AccType switch {

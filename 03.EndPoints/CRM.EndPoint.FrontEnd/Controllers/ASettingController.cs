@@ -513,6 +513,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         }
                     }
 
+                    if (fac.ParentReturnedId != null)
+                    {
+                        var returnedF = await db.Factors.FirstOrDefaultAsync(f => f.Id == fac.ParentReturnedId);
+                        returnedF?.Returned = true;
+                    }
                     /*
                     var ac = await db.Accountancies.IgnoreQueryFilters().Where(f => f.fid == EId).FirstOrDefaultAsync();
                     if (ac != null)

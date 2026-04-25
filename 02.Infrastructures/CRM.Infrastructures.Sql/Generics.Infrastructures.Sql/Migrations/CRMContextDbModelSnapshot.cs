@@ -1800,6 +1800,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<byte>("OfficialType")
                         .HasColumnType("tinyint");
 
+                    b.Property<Guid?>("ParentReturnedId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<decimal>("PaymentAmount")
                         .HasPrecision(20)
                         .HasColumnType("decimal(20,0)");
@@ -1816,6 +1819,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<decimal>("ReciveAmount")
                         .HasPrecision(20)
                         .HasColumnType("decimal(20,0)");
+
+                    b.Property<bool>("Returned")
+                        .HasColumnType("bit");
 
                     b.Property<string>("SelerFullName")
                         .HasColumnType("nvarchar(max)");
@@ -3035,6 +3041,36 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("RequestAmounts");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountOrderHead", b =>
+                {
+                    b.Property<Guid>("OrderHeadId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RequestAmountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("OrderHeadId", "RequestAmountId");
+
+                    b.HasIndex("RequestAmountId");
+
+                    b.ToTable("RequestAmountOrderHeads");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountSupplyFactor", b =>
                 {
                     b.Property<Guid>("SupplyFactorId")
@@ -3733,6 +3769,15 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountOrderHead", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", null)
+                        .WithMany("RequestAmountOrderHeads")
+                        .HasForeignKey("RequestAmountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountSupplyFactor", b =>
                 {
                     b.HasOne("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", null)
@@ -3872,6 +3917,8 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", b =>
                 {
+                    b.Navigation("RequestAmountOrderHeads");
+
                     b.Navigation("RequestAmountSupplyFactor");
                 });
 
