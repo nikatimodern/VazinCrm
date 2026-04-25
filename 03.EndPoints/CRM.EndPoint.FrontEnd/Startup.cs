@@ -142,6 +142,9 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddSingleton<IPushQueue, PushQueue>();
             services.AddHostedService<PushBackgroundService>();
             services.AddScoped<IPushService, PushService>();
+
+            services.AddSingleton<IAiQueue, AiQueue>();
+            services.AddHostedService<AiBackgroundService>();
             services.AddScoped<AudioToTextService>();
 
             services.AddSingleton<WebPushClient>(sp =>

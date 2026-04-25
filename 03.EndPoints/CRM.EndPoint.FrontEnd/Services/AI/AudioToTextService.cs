@@ -178,7 +178,7 @@ public class AudioToTextService {
             if (string.IsNullOrEmpty(fullTranscriptionText)) return;
 
             // 3. خلاصه‌سازی متن
-            var summary = await SummarizeText(fullTranscriptionText);
+            string summary = await SummarizeText(fullTranscriptionText);
 
             // 4. ذخیره اطلاعات در پایگاه داده
             await SaveCallDataToDatabase(filePath, callerNumber, destinationNumber, fullTranscriptionText, summary);

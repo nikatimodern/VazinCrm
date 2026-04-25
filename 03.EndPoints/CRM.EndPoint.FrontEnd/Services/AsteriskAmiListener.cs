@@ -7,7 +7,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Customers.Entities;
+using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 using CRM.EndPoint.FrontEnd.Services.AI;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Generics.Infrastructures.Sql;
@@ -25,14 +27,15 @@ public class AsteriskAmiListener : BackgroundService {
     private readonly IHubContext<CallHub> _hubContext;
     private readonly IConfiguration _config;
     private readonly IServiceScopeFactory serviceScopeFactory;
+    private readonly IAiQueue _aiQueue;
     private readonly IList<AppUser> _users;
 
-    public AsteriskAmiListener(IHubContext<CallHub> hubContext, IConfiguration config, IServiceScopeFactory serviceScopeFactory
-    )
+    public AsteriskAmiListener(IHubContext<CallHub> hubContext, IConfiguration config, IServiceScopeFactory serviceScopeFactory, IAiQueue aiQueue)
     {
         _hubContext = hubContext;
         _config = config;
         this.serviceScopeFactory = serviceScopeFactory;
+        _aiQueue = aiQueue;
 
         using (var scope = serviceScopeFactory.CreateScope())
         {
@@ -163,17 +166,21 @@ public class AsteriskAmiListener : BackgroundService {
                                     {
                                         srcCaller = Get(ev, "Channel").Substring(4, 3);
                                     }
+
                                     var destCaller = Get(ev, "ConnectedLineNum");
 
-                                    using (var scope = serviceScopeFactory.CreateScope())
+                                    bool srcIsInternal = srcCaller.Length <= 3;
+                                    bool destIsInternal = destCaller.Length <= 3;
+
+                                    if (!srcIsInternal && destIsInternal)
                                     {
-                                        var audioToTextService = scope.ServiceProvider.GetRequiredService<AudioToTextService>();
-                                        await audioToTextService.ProcessCallRecording(srcCaller, destCaller, filePath);
+                                        _aiQueue.Enqueue(new AiQueueItem {
+                                            CallerNumber = srcCaller,
+                                            DestinationNumber = destCaller,
+                                            FilePath = filePath
+                                        });
                                     }
-
-
-/*
-
+                                    /*
                                     var audioBytes = await _audioToTextService.GetAudioFromIsabel(filePath);
                                     if (audioBytes != null && audioBytes.Length > 0)
                                     {
