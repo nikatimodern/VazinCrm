@@ -1,8 +1,8 @@
-namespace CRM.EndPoint.FrontEnd.Models.ViewModel;
-
 using System.Text.Json.Serialization;
 
-public class AiResponseModel {
+namespace CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
+
+public class AiAvanegarModel {
     [JsonPropertyName("data")] public DataContainer Data { get; set; }
 
     [JsonPropertyName("meta")] public MetaRoot Meta { get; set; }

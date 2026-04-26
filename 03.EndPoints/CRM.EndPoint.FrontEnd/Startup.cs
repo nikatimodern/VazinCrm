@@ -171,10 +171,17 @@ namespace CRM.EndPoint.FrontEnd {
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             });
 
-            services.AddHttpClient("SummarizeApi", client =>
+            /*services.AddHttpClient("SummarizeApi", client =>
             {
                 client.BaseAddress = new Uri("https://dadmatech.gw.isahab.ir/summarize/v1/summarize");
                 client.DefaultRequestHeaders.Add("gateway-token", "eyJhbGciOiJIUzI1NiJ9.eyJzeXN0ZW0iOiJzYWhhYiIsImNyZWF0ZVRpbWUiOiIxNDA1MDEyNzE0MDEwNjYxMCIsInVuaXF1ZUZpZWxkcyI6eyJ1c2VybmFtZSI6Ijg3YzM0ZDI2LTE0OWQtNGNlYS1hMTNhLTg3YWNhZWNmZjg4MiJ9LCJncm91cE5hbWUiOiJiOTc2MWUzNTdmMDZiODFjZTFiNTQ0YjY1M2QyYTEzYiIsImRhdGEiOnsic2VydmljZUlEIjoiNTUyMWYxYjgtYmJiYS00ZGI0LWI0YTctYjA2OGI5NGQ1ZTQyIiwicmFuZG9tVGV4dCI6IkN3anp0In19.ez-ICJWTBcu3NJ_Og5ohFrjWj55hzUEDZO0xhnjxXWw");
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            });*/
+
+            services.AddHttpClient("GapgptApi", client =>
+            {
+                client.BaseAddress = new Uri("https://api.gapgpt.app/v1/");
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "sk-AP1Dqd3THpHbfx3c1O6Aif1Q1CExaBuWTWaFFaJ6E88lQsCe");
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             });
 

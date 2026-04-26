@@ -3,18 +3,22 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using CRM.Core.Domain.CallRecordings.Entities;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 using Generics.Infrastructures.Sql;
+using OpenAI;
+using OpenAI.Models;
+using OpenAI.Responses;
 using Renci.SshNet;
 
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 
 public class AudioToTextService {
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly HttpClient _httpClient;
     private readonly CRMContextDb db;
 
     private const string FtpHost = "192.168.1.150";
@@ -22,10 +26,9 @@ public class AudioToTextService {
     private const string FtpPass = "123";
     //private const string TargetFilePath = @"wwwroot\recordings";
 
-    public AudioToTextService(IHttpClientFactory httpClientFactory, HttpClient httpClient, CRMContextDb db)
+    public AudioToTextService(IHttpClientFactory httpClientFactory, CRMContextDb db)
     {
         _httpClientFactory = httpClientFactory;
-        _httpClient = httpClient;
         this.db = db;
     }
 
@@ -52,102 +55,57 @@ public class AudioToTextService {
     }
 
 
-    private async Task<AiResponseDetails> ConvertAudioToText(byte[] fileBytes, string audioFileName)
-    {
-        var httpClient = _httpClientFactory.CreateClient("AvanegarApi");
-
-        using var form = new MultipartFormDataContent();
-
-        // API Parameters
-        form.Add(new StringContent("default"), "model"); // https://api.ivira.ai/partai/avanegar?type=document
-        form.Add(new StringContent("false"), "srt");
-        form.Add(new StringContent("true"), "inverseNormalizer");
-        form.Add(new StringContent("false"), "timestamp");
-        form.Add(new StringContent("false"), "spokenPunctuation");
-        form.Add(new StringContent("true"), "punctuation");
-        form.Add(new StringContent("0"), "numSpeakers");
-        form.Add(new StringContent("true"), "diarize");
-
-        // فایل صوتی
-        //var filePath = Path.Combine("wwwroot", "a.mp3");
-        //var fileBytess = await File.ReadAllBytesAsync(filePath);
-
-        var fileContent = new ByteArrayContent(fileBytes);
-        fileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/mpeg");
-
-        form.Add(fileContent, "audio", audioFileName);
-
-
-        try
-        {
-            var response = await httpClient.PostAsync("", form);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var resJson = await response.Content.ReadFromJsonAsync<AiResponseModel>();
-                return resJson.Data.Data.AiResponse;
-            } else
-            {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Transcription API Error ({response.StatusCode}): {errorContent}");
-                return null;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error during transcription API call: {ex.Message}");
-            return null;
-        }
-    }
 
 
     private async Task<string> SummarizeText(string textToSummarize)
     {
-        var httpClient = _httpClientFactory.CreateClient("SummarizeApi");
+        var httpClient = _httpClientFactory.CreateClient("GapgptApi");
 
-        var requestData = new {
-            input = textToSummarize,
+        var prompt = $@"
+            شما یک دستیار داخلی برای تیم فروش شرکت «وزین پلاست» هستید.
+
+            زمینه:
+            شرکت در حوزه تولید نایلون، نایلکس و محصولات پلی‌اتیلنی فعالیت می‌کند.
+
+            متنی که دریافت می‌کنید:
+            خروجی تبدیل گفتار به متن از مکالمه تلفنی بین مشتری و کارشناس فروش است
+            و ممکن است دارای اشتباه، تکرار یا جملات ناقص باشد.
+
+            هدف:
+            یک خلاصه کوتاه، کاربردی و رسمی و قابل استفاده برای تیم فروش تولید کن.
+
+            قوانین مهم:
+            - از اضافه‌گویی خودداری کن
+            - از حدس زدن یا تغییر اعداد خودداری کن
+            - فقط اطلاعاتی که در متن هست را استخراج کن
+            متن:
+            {textToSummarize}
+        ";
+
+        var requestBody = new {
+//            model = "gapgpt-qwen-3.6",
+            model = "gapgpt-qwen-3.6-thinking",
+            messages = new[] {
+                new { role = "user", content = prompt }
+            }
         };
 
+        var response = await httpClient.PostAsJsonAsync("chat/completions", requestBody);
+        response.EnsureSuccessStatusCode();
 
-        try
-        {
-            var jsonContent = JsonSerializer.Serialize(requestData);
-            var httpContent = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+        var result = await response.Content.ReadFromJsonAsync<AiGapgptModel>();
 
-            var response = await httpClient.PostAsync("", httpContent);
+        return result?.Choices?[0]?.Message?.Content;
 
-            if (response.IsSuccessStatusCode)
-            {
-                var responseJson = await response.Content.ReadAsStringAsync();
-
-                // var summaryResult = System.Text.Json.JsonSerializer.Deserialize<YourSummaryResponseModel>(responseJson);
-                // return summaryResult.Summary; // یا هر فیلد مربوطه
-
-                var simplifiedResponse = JsonDocument.Parse(responseJson).RootElement.GetProperty("data").GetString();
-                return simplifiedResponse;
-            } else
-            {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Summarization API Error ({response.StatusCode}): {errorContent}");
-                return null;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error during summarization API call: {ex.Message}");
-            return null;
-        }
     }
 
-    private async Task SaveCallDataToDatabase(string filePath, string callerNumber, string destinationNumber, string fullTranscription,
-        string summary)
+    private async Task SaveCallDataToDatabase(string filePath, string callerNumber, string destNumber, string fullTranscription, string summary)
     {
         try
         {
             var model = new CallRecording {
                 CallerNumber = callerNumber,
-                DestinationNumber = destinationNumber,
+                DestinationNumber = destNumber,
                 TranscriptionText = fullTranscription,
                 SummaryText = summary,
                 RecordingFilePath = filePath,
@@ -178,7 +136,7 @@ public class AudioToTextService {
             if (string.IsNullOrEmpty(fullTranscriptionText)) return;
 
             // 3. خلاصه‌سازی متن
-            string summary = await SummarizeText(fullTranscriptionText);
+            var summary = await SummarizeText(fullTranscriptionText);
 
             // 4. ذخیره اطلاعات در پایگاه داده
             await SaveCallDataToDatabase(filePath, callerNumber, destinationNumber, fullTranscriptionText, summary);
