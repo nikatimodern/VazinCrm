@@ -66,8 +66,12 @@
                     </div>
                 </div>
 
-                if (!statusAccepted) {
-                    <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column px-2 py-2 gap-4 gap-lg-3">
+                if (statusAccepted) {
+                    <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column p-2 gap-4 gap-lg-3">
+                        <button class="buttonGreen2" onclick="">واریز شد</button>
+                    </div>
+                } else {
+                    <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column p-2 gap-4 gap-lg-3">
                         <button class="flex-center p-0" data-title-right="ویرایش" style="color:#333; border:none; background-color:transparent" onclick="showEditRequestAmountModal('@requestAmount.Id')">
                             <i class="fa fa-pencil"></i>
                         </button>
