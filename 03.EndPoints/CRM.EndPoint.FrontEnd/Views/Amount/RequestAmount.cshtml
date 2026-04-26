@@ -374,11 +374,13 @@
             }
         });*@;
         ////////////////////////////////////////////////////////
+        let selectOrderHeadType = 3;  // 3: checkBox  4: radio
         let orderHeadsSelectedIds = [];
         let tempSelectedIds = [];
         let tempSelectedMap = new Map(); // id -> number
         const addOrderHeadModal = document.getElementById("addOrderHeadModal");
         async function showAddOrderHeadModal() {
+            tempSelectedMap.clear()
             tempSelectedIds = [...orderHeadsSelectedIds];
             await getAllOrderHeads();
             toggleAddOrderHeadModal();
@@ -390,7 +392,7 @@
         }
 
         const getAllOrderHeads = async (search = "") => {
-            const model = { search, passType: 3, selectedIds: tempSelectedIds }; // 3: checkBox  4:radio
+            const model = { search, passType: selectOrderHeadType, selectedIds: tempSelectedIds };
             const res = await axios.post(`/Order/GetAllOrderHeads`, model);
 
             addOrderHeadModal.querySelector("#addOrderHeadContainer").innerHTML = res.data;
@@ -401,22 +403,30 @@
             const inp = e.target.closest("input");
             if (!inp) return;
 
+            inp.type === "radio" ? handleRadio(inp) : handleCheckbox(inp);
+
+            const anySelected = tempSelectedIds.length > 0;
+            addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !anySelected);
+        });
+
+        function handleRadio(inp) {
+            tempSelectedIds = [inp.value];
+            tempSelectedMap.clear();
+            tempSelectedMap.set(inp.value, inp.dataset.number);
+        }
+
+        function handleCheckbox(inp) {
             if (inp.checked) {
                 if (!tempSelectedIds.includes(inp.value)) {
                     tempSelectedIds.push(inp.value);
                     tempSelectedMap.set(inp.value, inp.dataset.number);
                 }
             } else {
-                const index = tempSelectedIds.indexOf(inp.value);
-                if (index > -1) {
-                    tempSelectedIds.splice(index, 1);
-                }
+                const i = tempSelectedIds.indexOf(inp.value);
+                if (i !== -1) tempSelectedIds.splice(i, 1);
                 tempSelectedMap.delete(inp.value);
             }
-
-            const anySelected = tempSelectedIds.length > 0;
-            addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !anySelected);
-        });
+        }
 
         const submitSelectedOrderHeads = () => {
             orderHeadsSelectedIds = [...tempSelectedIds];
@@ -441,7 +451,10 @@
 
         function restoreSelectedOrderHeads() {
             addOrderHeadModal.querySelectorAll("#addOrderHeadContainer input").forEach(inp => {
-                inp.checked = tempSelectedIds.includes(inp.value);
+                if (tempSelectedIds.includes(inp.value)) {
+                    inp.checked = true;
+                    tempSelectedMap.set(inp.value, inp.dataset.number);
+                }
             });
 
             const anySelected = tempSelectedIds.length > 0;

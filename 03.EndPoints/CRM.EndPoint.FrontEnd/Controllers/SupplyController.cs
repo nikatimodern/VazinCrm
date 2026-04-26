@@ -1082,6 +1082,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 join pf in db.PreFactors on s.PfId equals pf.Id
                 join oh in db.OrderHeads on pf.Id equals oh.Prefactor
                 select oh.Id;
+                /*select new
+                {
+                    oh.Id,
+                    oh.OrderNumber
+                };*/
 
             var data = await result.Distinct().ToListAsync();
 
