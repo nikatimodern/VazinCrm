@@ -3,6 +3,7 @@
 
 @{
     var passType = ViewBag.PassType;
+    var isFinancial = ViewBag.IsFinancial;
 }
 
 <div class="col-12 mx-auto d-flex flex-column" style="gap:12px;padding-bottom: 12px;">
@@ -67,9 +68,28 @@
                 </div>
 
                 if (statusAccepted) {
-                    <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column p-2 gap-4 gap-lg-3">
-                        <button class="buttonGreen2" onclick="">واریز شد</button>
-                    </div>
+                    if (!requestAmount.Vosoled) {
+                        if (isFinancial) {
+                            <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column p-2 gap-4 gap-lg-3">
+                                <button class="buttonGreen2" onclick="showAttachReqAmount('@requestAmount.Id')">واریز شد</button>
+                            </div>
+                        }
+                    } else {
+                        <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column p-2 gap-4 gap-lg-3">
+                            @if (isFinancial) {
+                                <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="showAttachReqAmount('@requestAmount.Id')">
+                                    <i class="fa fa-paperclip"></i>
+                                </button>
+                            } else {
+                                <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="showAttachments('@requestAmount.Id', 11)">
+                                    <i class="fa fa-paperclip"></i>
+                                </button>
+                            }
+                        </div>
+                        @*if (!isFinancial) {
+                                <span class="badgeGreen" style="box-shadow: none">واریز شد</span>
+                            }*@
+                    }
                 } else {
                     <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column p-2 gap-4 gap-lg-3">
                         <button class="flex-center p-0" data-title-right="ویرایش" style="color:#333; border:none; background-color:transparent" onclick="showEditRequestAmountModal('@requestAmount.Id')">
