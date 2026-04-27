@@ -2980,6 +2980,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("UserModifyID")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("Vosoled")
+                        .HasColumnType("bit");
+
                     b.HasKey("Id");
 
                     b.ToTable("RequestAmounts");

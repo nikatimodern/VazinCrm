@@ -14,10 +14,10 @@ namespace CRM.Core.Domain.RequestAmounts.Entities {
         public RequestStatusEnum RequestStatus { get; set; } = RequestStatusEnum.در_انتظار_تایید;
         public string RequestStatusTxt { get; set; }
         public decimal AcceptedAmount { get; set; }
+        public bool Vosoled { get; set; }
 
         public IList<RequestAmountSupplyFactor> RequestAmountSupplyFactor { get; set; }
         public IList<RequestAmountOrderHead> RequestAmountOrderHeads { get; set; }
-
     }
 
     public enum RequestAmountDocType {
@@ -27,6 +27,6 @@ namespace CRM.Core.Domain.RequestAmounts.Entities {
 
     public enum RequestStatusEnum {
         در_انتظار_تایید = 1,
-        تایید_شده = 2
+        تایید_شده = 2,
     }
 }
