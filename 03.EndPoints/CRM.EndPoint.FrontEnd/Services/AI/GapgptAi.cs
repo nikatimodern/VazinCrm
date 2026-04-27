@@ -8,36 +8,19 @@ namespace CRM.EndPoint.FrontEnd.Services.AI;
 
 public class GapgptAi {
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly AiPrompts _aiPrompts;
 
-    public GapgptAi(IHttpClientFactory httpClientFactory)
+    public GapgptAi(IHttpClientFactory httpClientFactory, AiPrompts aiPrompts)
     {
         _httpClientFactory = httpClientFactory;
+        _aiPrompts = aiPrompts;
     }
 
     public async Task<string> SummarizeText(string textToSummarize) // خلاصه نویسی
     {
         var httpClient = _httpClientFactory.CreateClient("GapgptApi");
 
-        var prompt = $@"
-            شما یک دستیار داخلی برای تیم فروش شرکت «وزین پلاست» هستید.
-
-            زمینه:
-            شرکت در حوزه تولید نایلون، نایلکس و محصولات پلی‌اتیلنی فعالیت می‌کند.
-
-            متنی که دریافت می‌کنید:
-            خروجی تبدیل گفتار به متن از مکالمه تلفنی بین مشتری و کارشناس فروش است
-            و ممکن است دارای اشتباه، تکرار یا جملات ناقص باشد.
-
-            هدف:
-            یک خلاصه کوتاه، کاربردی و رسمی و قابل استفاده برای تیم فروش تولید کن.
-
-            قوانین مهم:
-            - از اضافه‌گویی خودداری کن
-            - از حدس زدن یا تغییر اعداد خودداری کن
-            - فقط اطلاعاتی که در متن هست را استخراج کن
-            متن:
-            {textToSummarize}
-        ";
+        var prompt = _aiPrompts.SummarizeCall(textToSummarize);
 
         var requestBody = new {
 //            model = "gapgpt-qwen-3.6",
