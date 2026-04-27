@@ -5,7 +5,7 @@
 <div class="w-100">
     <div class="row align-items-center justify-content-between flex-wrap mb-3 g-2">
         <div class="d-flex col-lg-3">
-            <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="toggleRequestAmountModal()">
+            <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="showRequestAmountModal()">
                 <span style="line-height: 1">ثبت درخواست جدید</span>
                 <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
             </button>
@@ -89,18 +89,23 @@
                             <button class="btn btn-sm btn-secondary" type="button" onclick="showAddSupplyFactorModal(this)">انتخاب</button>
                         </div>
                     </div>*@
-                    <div>
+                    @*<div>
                         <label for="reqAmountOrderHead">بابت حواله تولید:</label>
                         <div class="input-group mb-3">
                             <input id="reqAmountOrderHead" type="text" class="form-control direction-ltr" placeholder="حواله تولید.." disabled required>
                             <button class="btn btn-sm btn-secondary" type="button" onclick="showAddOrderHeadModal()">انتخاب</button>
                         </div>
-                        @* <input name="supplierId" class="form-control" id="reqAmountOrderHead" /> *@
+                    </div>*@
+
+                    <div>
+                        <label for="reqAmountSupplierId">تامین‌ کننده:</label>
+                        <select name="supplierId" id="reqAmountSupplierId" required>
+                        </select>
                     </div>
 
 
                     <div class="d-flex justify-content-center gap-1 mt-2">
-                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="toggleRequestAmountModal()">انصراف</button>
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="cancelRequestAmountModal()">انصراف</button>
                         <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitRequestAmountModal()">ثبت</button>
                     </div>
                 </form>
@@ -171,7 +176,7 @@
         });
 
 
-        function toggleRequestAmountModal() {
+        function cancelRequestAmountModal() {
             ModalToggle("requestAmountModal");
             mySer.emptyForm("requestAmountForm");
             supplyFactorsSelectedIds = [];
@@ -179,15 +184,21 @@
             requestAmountData = [];
         }
 
+        async function showRequestAmountModal() {
+            await setupSelectOptions();
+            ModalToggle("requestAmountModal");
+        }
+
         async function submitRequestAmountModal() {
             if (!await mySer.CheckValidForm("requestAmountForm")) return;
+            const supplierSelect = document.querySelector("#requestAmountModal #reqAmountSupplierId");
             const model = {
                 ...requestAmountData,
                 ...mySer.convertFormToJSON("requestAmountForm"),
+                supplierTxt: supplierSelect.selectedOptions[0].innerText,
                 requestAmountSupplyFactor: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id, requestAmountId: requestAmountData.id })),
                 requestAmountOrderHeads: orderHeadsSelectedIds.map(id => ({ orderHeadId: id, requestAmountId: requestAmountData.id })),
             };
-
             try {
                 FLshowLoading();
                 const apiUrl = model.id ? "/Amount/UpdateRequestAmount" : "/Amount/AddRequestAmount";
@@ -195,7 +206,7 @@
                 if (res.status === 200) {
                     toastifySuccess("با موفقیت ثبت شد");
                     getAllRequestAmount();
-                    toggleRequestAmountModal();
+                    cancelRequestAmountModal();
                 }
             } catch (err) {
                 console.log(err);
@@ -218,7 +229,7 @@
 
         async function showEditRequestAmountModal(id) {
             FLshowLoading();
-            toggleRequestAmountModal();
+            await showRequestAmountModal();
 
             try {
                 const res = await axios(`/Amount/GetRequestAmount/${id}`);
@@ -321,6 +332,20 @@
             }
         };
 
+
+        let isSetupReqAmountModal = false;
+        async function setupSelectOptions() {
+            if (isSetupReqAmountModal) return;
+            const data = (await axios("/Supply/GetSupplyBaseData")).data;
+            new TomSelect("#reqAmountSupplierId", {
+                options: data.suppliers,
+                placeholder: "انتخاب تامین کننده",
+                maxItems: 1,
+                selectOnTab: true,
+            });
+
+            isSetupReqAmountModal = true;
+        }
 
         @*let requestAmountTbl;
         let modelRequestAmount = {};

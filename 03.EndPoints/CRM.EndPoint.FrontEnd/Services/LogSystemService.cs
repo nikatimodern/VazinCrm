@@ -482,6 +482,9 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
 
                     case LogActionEnum.تایید_و_تغییر_وضعیت:
                         return $"یک درخواست وجه به شماره درخواست {serialNumber} توسط <b>{fullName}</b> تایید شد.";
+
+                    case LogActionEnum.تغییر_وضعیت:
+                        return $"پرداخت مربوط به درخواست وجه با شماره {serialNumber} توسط <b>{fullName}</b> با موفقیت انجام شد.";
                 }
 
                 break;

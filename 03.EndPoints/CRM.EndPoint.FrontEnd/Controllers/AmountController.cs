@@ -166,6 +166,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+
+                var oldReqAmount = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
                 var reqAmount = await db.RequestAmounts.FirstOrDefaultAsync(f => f.Id == model.Id);
                 if (reqAmount == null) return NotFound();
 
@@ -180,6 +183,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 reqAmount.Vosoled = true;
 
+                await _logSystemService.LogChange(oldReqAmount, reqAmount, LogActionEnum.تغییر_وضعیت, user);
                 await db.SaveChangesAsync();
                 return Ok();
             }

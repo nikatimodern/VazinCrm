@@ -45,6 +45,12 @@
                         <span class="fbold direction-ltr">@string.Join(", ", orderHeadNumbers)</span>
                     </div>
                 }
+                @if (!string.IsNullOrEmpty(requestAmount.SupplierTxt)) {
+                    <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mb-2 text-center">
+                        <span style="font-size: 13px; color: #777">تامین کننده:</span>
+                        <span class="fbold direction-ltr">@requestAmount.SupplierTxt</span>
+                    </div>
+                }
                 <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 text-center">
                     <span style="font-size: 13px; color: #777">ثبت شده توسط:</span>
                     <span class="fbold">@requestAmount.UserCreator</span>

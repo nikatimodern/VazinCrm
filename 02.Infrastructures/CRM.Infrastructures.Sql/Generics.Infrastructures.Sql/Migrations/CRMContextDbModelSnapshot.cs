@@ -2968,6 +2968,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("RequestStatusTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("SupplierId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SupplierTxt")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("UserCreator")
                         .HasColumnType("nvarchar(max)");
 

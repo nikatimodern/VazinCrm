@@ -18,6 +18,9 @@ namespace CRM.Core.Domain.RequestAmounts.Entities {
 
         public IList<RequestAmountSupplyFactor> RequestAmountSupplyFactor { get; set; }
         public IList<RequestAmountOrderHead> RequestAmountOrderHeads { get; set; }
+
+        public Guid? SupplierId { get; set; }
+        public string SupplierTxt { get; set; }
     }
 
     public enum RequestAmountDocType {
