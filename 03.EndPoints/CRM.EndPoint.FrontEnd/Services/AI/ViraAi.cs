@@ -17,7 +17,7 @@ public class ViraAi {
 
 
 
-    private async Task<AiResponseDetails> ConvertAudioToText(byte[] fileBytes, string audioFileName)
+    public async Task<AiResponseDetails> ConvertAudioToText(byte[] fileBytes, string audioFileName)
     {
         var httpClient = _httpClientFactory.CreateClient("AvanegarApi");
 

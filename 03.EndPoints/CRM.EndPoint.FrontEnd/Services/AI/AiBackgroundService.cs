@@ -32,9 +32,9 @@ public class AiBackgroundService : BackgroundService
                 try
                 {
                     using var scope = _sp.CreateScope();
-                    var audioToTextService = scope.ServiceProvider.GetRequiredService<AudioToTextService>();
+                    var aiService = scope.ServiceProvider.GetRequiredService<AiService>();
 
-                    await audioToTextService?.ProcessCallRecording(
+                    await aiService?.ProcessCallRecording(
                         item.CallerNumber,
                         item.DestinationNumber,
                         item.FilePath

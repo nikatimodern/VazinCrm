@@ -146,6 +146,9 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddSingleton<IAiQueue, AiQueue>();
             services.AddHostedService<AiBackgroundService>();
             services.AddScoped<AudioToTextService>();
+            services.AddScoped<AiService>();
+            services.AddScoped<ViraAi>();
+            services.AddScoped<GapgptAi>();
 
             services.AddSingleton<WebPushClient>(sp =>
             {
