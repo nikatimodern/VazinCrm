@@ -4430,17 +4430,18 @@ const showAttachments = async (id, typeAtt) => {
 /*--------------------------------------------------------------------------------*/
 const addSupplyFactorModal = document.getElementById("addSupplyFactorModal");
 let supplyFactorsSelectedIds = [];
+let tempSupFacSelectedIds = [];
+let tempSupFacSelectedMap = new Map();  // id -> number
+
 let supplyFactorsTargetInput;
 async function showAddSupplyFactorModal(elm) {
     supplyFactorsTargetInput = elm.parentElement.querySelector("input");
+    
+    tempSupFacSelectedIds = [...supplyFactorsSelectedIds];
+    tempSupFacSelectedMap.clear();
+    
     await getAllSupplyFactorsTable();
-    addSupplyFactorModal.querySelectorAll("input[type='checkbox']").forEach((checkbox) => {
-        if (supplyFactorsSelectedIds.includes(checkbox.value)) {
-            checkbox.checked = true;
-        }
-    });
     toggleAddSupplyFactorModal();
-    addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !supplyFactorsSelectedIds.length);
 }
 
 
@@ -4450,28 +4451,37 @@ function toggleAddSupplyFactorModal() {
 }
 
 const getAllSupplyFactorsTable = async (search = "") => {
-    const res = await axios(`/Supply/GetAllSupplyFactorsTablePartial?search=${search}`);
+    const model = { search, selectedIds: tempSupFacSelectedIds };
+    const res = await axios.post(`/Supply/GetAllSupplyFactorsTablePartial`, model);
     
     addSupplyFactorModal.querySelector("#addSupplyFactorContainer").innerHTML = res.data;
+    
+    restoreSelectedSupplyFactor();
 };
 
 addSupplyFactorModal?.querySelector("#addSupplyFactorContainer").addEventListener("change", (e) => {
     const checkbox = e.target.closest("input[type='checkbox']");
     if (!checkbox) return;
     
-    const anyChecked = addSupplyFactorModal.querySelector("#addSupplyFactorContainer input[type='checkbox']:checked");
+    if (checkbox.checked) {
+        if (!tempSupFacSelectedIds.includes(checkbox.value)) {
+            tempSupFacSelectedIds.push(checkbox.value);
+            tempSupFacSelectedMap.set(checkbox.value, checkbox.dataset.number);
+        }
+    } else {
+        const idx = tempSupFacSelectedIds.indexOf(checkbox.value);
+        if (idx !== -1) tempSupFacSelectedIds.splice(idx, 1);
+        tempSupFacSelectedMap.delete(checkbox.value);
+    }
     
-    addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !anyChecked);
+    const anySelected = tempSupFacSelectedIds.length > 0;
+    addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !anySelected);
 });
 
 const submitSelectedSupplyFactor = () => {
-    const checkedBoxes = [...addSupplyFactorModal.querySelectorAll("#addSupplyFactorContainer input[type='checkbox']:checked")];
+    supplyFactorsSelectedIds = [...tempSupFacSelectedIds];
     
-    supplyFactorsSelectedIds.length = 0;
-    supplyFactorsSelectedIds.push(...checkedBoxes.map(cb => cb.value).reverse());
-    
-    //const inpElm = document.getElementById("reqAmountSupplyFactor");
-    supplyFactorsTargetInput.value = checkedBoxes.map(cb => cb.dataset.number).join(", ");
+    supplyFactorsTargetInput.value = [...tempSupFacSelectedMap.values()].join(", ");
     supplyFactorsTargetInput.classList.remove("AlertReq");
     ModalToggle(addSupplyFactorModal);
 };
@@ -4485,14 +4495,20 @@ addSupplyFactorModal?.querySelector("#addSupplyFactorSearch").addEventListener("
         e.target.focus();
     }
 });
+
+
+function restoreSelectedSupplyFactor() {
+    addSupplyFactorModal.querySelectorAll("#addSupplyFactorContainer input").forEach(inp => {
+        if (tempSupFacSelectedIds.includes(inp.value)) {
+            inp.checked = true;
+            tempSupFacSelectedMap.set(inp.value, inp.dataset.number);
+        }
+    });
+    const anySelected = tempSupFacSelectedIds.length > 0;
+    addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !anySelected);
+}
+
 /*--------------------------------------------------------------------------------*/
-
-
-
-
-
-
-
 
 
 /*--------------------------------------------------------------------------------*/

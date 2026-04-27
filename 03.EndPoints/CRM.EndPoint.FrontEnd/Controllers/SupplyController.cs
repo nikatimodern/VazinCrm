@@ -431,12 +431,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllSupplyFactorsTablePartial(string search = "")
+        [HttpPost]
+        public async Task<IActionResult> GetAllSupplyFactorsTablePartial([FromBody] GetAllSortBySelectedVModel model)
         {
             try
             {
-                var query = db.SupplyFactors.AsNoTracking().OrderByDescending(f => f.CreateDate).AsQueryable();
+                var search = model.Search;
+
+                var query = db.SupplyFactors
+                    .OrderByDescending(f => model.SelectedIds.Contains(f.Id))
+                    .ThenByDescending(f => f.CreateDate)
+                    .AsNoTracking()
+                    .AsQueryable();
+
                 if (!string.IsNullOrEmpty(search))
                 {
                     query = query.Where(f =>

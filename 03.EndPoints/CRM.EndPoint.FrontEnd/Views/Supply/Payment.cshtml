@@ -161,8 +161,12 @@
 
         const cancelPaymentModal = () => {
             paymentAttachments = [];
-            supplyFactorsSelectedIds = [];
             paymentData = [];
+
+            supplyFactorsSelectedIds = [];
+            tempSupFacSelectedIds = [];
+            tempSupFacSelectedMap.clear();
+
             document.getElementById("DivShowPayment").innerHTML = "";
             document.getElementById("paymentAtt").value = "";
             mySer.emptyForm("paymentFormId");
