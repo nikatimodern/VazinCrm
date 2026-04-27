@@ -52,6 +52,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<bool?>("FinancialConfirm")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("MultiSelectOrderHeadsInRequestAmount")
+                        .HasColumnType("bit");
+
                     b.Property<bool?>("Sepidar")
                         .HasColumnType("bit");
 
