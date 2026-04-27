@@ -92,7 +92,7 @@
                     <div>
                         <label for="reqAmountOrderHead">بابت حواله تولید:</label>
                         <div class="input-group mb-3">
-                            <input id="reqAmountOrderHead" type="text" class="form-control" placeholder="حواله تولید.." disabled required>
+                            <input id="reqAmountOrderHead" type="text" class="form-control direction-ltr" placeholder="حواله تولید.." disabled required>
                             <button class="btn btn-sm btn-secondary" type="button" onclick="showAddOrderHeadModal()">انتخاب</button>
                         </div>
                         @* <input name="supplierId" class="form-control" id="reqAmountOrderHead" /> *@
@@ -318,7 +318,7 @@
             });
         };*@;
 
-        let orderHeadsSelectedIds = [];
+
         @*const addOrderHeadModal = document.getElementById("addOrderHeadModal");
         async function showAddOrderHeadModal() {
             await getAllOrderHeads();
@@ -372,19 +372,18 @@
                 toggleElementsDisabled(e.target, false);
                 e.target.focus();
             }
-        });*@
-////////////////////////////////////////////////////////
+        });*@;
+        ////////////////////////////////////////////////////////
+        let selectOrderHeadType = 3;  // 3: checkBox  4: radio
+        let orderHeadsSelectedIds = [];
+        let tempSelectedIds = [];
+        let tempSelectedMap = new Map(); // id -> number
         const addOrderHeadModal = document.getElementById("addOrderHeadModal");
         async function showAddOrderHeadModal() {
+            tempSelectedMap.clear()
+            tempSelectedIds = [...orderHeadsSelectedIds];
             await getAllOrderHeads();
-            addOrderHeadModal.querySelectorAll("#addOrderHeadContainer input").forEach((inp) => {
-                if (orderHeadsSelectedIds.includes(inp.value)) {
-                    inp.checked = true;
-                }
-            });
             toggleAddOrderHeadModal();
-
-            addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !orderHeadsSelectedIds.length);
         }
 
         function toggleAddOrderHeadModal() {
@@ -393,28 +392,47 @@
         }
 
         const getAllOrderHeads = async (search = "") => {
-            const model = { search, passType: 4, selectedIds: orderHeadsSelectedIds }; // 3: checkBox  4:radio
+            const model = { search, passType: selectOrderHeadType, selectedIds: tempSelectedIds };
             const res = await axios.post(`/Order/GetAllOrderHeads`, model);
 
             addOrderHeadModal.querySelector("#addOrderHeadContainer").innerHTML = res.data;
+            restoreSelectedOrderHeads();
         };
 
         addOrderHeadModal.querySelector("#addOrderHeadContainer").addEventListener("change", (e) => {
             const inp = e.target.closest("input");
             if (!inp) return;
 
-            const anySelected = addOrderHeadModal.querySelector("#addOrderHeadContainer input:checked");
+            inp.type === "radio" ? handleRadio(inp) : handleCheckbox(inp);
+
+            const anySelected = tempSelectedIds.length > 0;
             addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !anySelected);
         });
 
-        const submitSelectedOrderHeads = () => {
-            const inps = [...addOrderHeadModal.querySelectorAll("#addOrderHeadContainer input:checked")];
-            orderHeadsSelectedIds.length = 0;
-            orderHeadsSelectedIds.push(...inps.map(cb => cb.value).reverse());
+        function handleRadio(inp) {
+            tempSelectedIds = [inp.value];
+            tempSelectedMap.clear();
+            tempSelectedMap.set(inp.value, inp.dataset.number);
+        }
 
+        function handleCheckbox(inp) {
+            if (inp.checked) {
+                if (!tempSelectedIds.includes(inp.value)) {
+                    tempSelectedIds.push(inp.value);
+                    tempSelectedMap.set(inp.value, inp.dataset.number);
+                }
+            } else {
+                const i = tempSelectedIds.indexOf(inp.value);
+                if (i !== -1) tempSelectedIds.splice(i, 1);
+                tempSelectedMap.delete(inp.value);
+            }
+        }
+
+        const submitSelectedOrderHeads = () => {
+            orderHeadsSelectedIds = [...tempSelectedIds];
 
             const inpElm = document.getElementById("reqAmountOrderHead");
-            inpElm.value = inps.map(cb => cb.dataset.number).join(", ");
+            inpElm.value = [...tempSelectedMap.values()].join(", ");
             inpElm.classList.remove("AlertReq");
 
             ModalToggle(addOrderHeadModal);
@@ -429,6 +447,19 @@
                 e.target.focus();
             }
         });
+
+
+        function restoreSelectedOrderHeads() {
+            addOrderHeadModal.querySelectorAll("#addOrderHeadContainer input").forEach(inp => {
+                if (tempSelectedIds.includes(inp.value)) {
+                    inp.checked = true;
+                    tempSelectedMap.set(inp.value, inp.dataset.number);
+                }
+            });
+
+            const anySelected = tempSelectedIds.length > 0;
+            addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !anySelected);
+        }
 
     </script>
 }

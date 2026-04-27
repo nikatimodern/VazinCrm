@@ -461,7 +461,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> GetAllOrderHeads([FromBody] GetAllOrderBySelectedVModel model)
+        public async Task<IActionResult> GetAllOrderHeads([FromBody] GetAllSortBySelectedVModel model)
         {
             try
             {
