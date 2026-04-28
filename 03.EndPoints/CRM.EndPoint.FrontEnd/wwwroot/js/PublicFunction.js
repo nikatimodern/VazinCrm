@@ -1306,7 +1306,7 @@ const submitFactorOK = async (type) => {
         }
         
         FLshowLoading();
-        factor.snFinancial = document.querySelector("#snFinancialFormId input[name='snFinancial']").value;
+        factor.snFinancial = document.querySelector("#snFinancialFormId input[name='snFinancial']").value || null;
         factor.date = document.querySelector("#f_dateFormId input[name='f_date']").value;
         factor.officialType = f_officialType;
         factor.customerId = customerId;
@@ -1314,41 +1314,66 @@ const submitFactorOK = async (type) => {
         factor.export = document.getElementById("f_export").checked;
         
         const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
-        factor.currencyType = currencyTypeElm.value;
+        factor.currencyType = Number(currencyTypeElm.value);
         factor.currencyTypeTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
         
-        
-        $.post(baseUrl + "Factor/AddFactor", factor, async () => {
-            if (type === 0) {
-                await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, modelFactor._type, factor.pfactorSerialNumber, type);
-                await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
-            } else if (type === 1) {
-                await getAllPreFactor();
-                
-                await GetFactorPartial(null, factor.pfactorID, null, null, factor.officialType, factor.pfactorSerialNumber, type);
-                getFacAmount(factor.pfactorID, factor.pfactorSerialNumber, null);
-                getAllDetailAmount();
-                //getAllFactor();
-            } else if (type === 4) {
-                if (!factor.id) {
-                    await getPreFactorFromDeal(dealData.id);
-                } else {
-                    await getAllFactorsModal(dealData.id, 4);
+        try {
+            const res = await axios.post("/Factor/AddFactor", factor);
+            if (res.status === 200) {
+                if (type === 0) {
+                    await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, modelFactor._type, factor.pfactorSerialNumber, type);
+                    await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
+                } else if (type === 1) {
+                    await getAllPreFactor();
+                    
+                    await GetFactorPartial(null, factor.pfactorID, null, null, factor.officialType, factor.pfactorSerialNumber, type);
+                    getFacAmount(factor.pfactorID, factor.pfactorSerialNumber, null);
+                    getAllDetailAmount();
+                    //getAllFactor();
+                } else if (type === 4) {
+                    if (!factor.id) {
+                        await getPreFactorFromDeal(dealData.id);
+                    } else {
+                        await getAllFactorsModal(dealData.id, 4);
+                    }
+                } else if (type === 5) {
+                    await getAllFactorsModal(factor.pfactorID, 5);
+                } else if (type === 6) {
+                    await getAllFactorsModal(factor.id, 6);
                 }
-            } else if (type === 5) {
-                await getAllFactorsModal(factor.pfactorID, 5);
-            } else if (type === 6) {
-                await getAllFactorsModal(factor.id, 6);
+                toastifySuccess("فاکتور با موفقیت ثبت شد.");
+                cancelFactor();
+                ModalToggle("#Factor");
+                FLshowLoading(false);
+            } else if (res.status === 201) {
+                FLshowLoading(false);
+                const result = await Swal.fire({
+                    title: "خطا در همگام‌سازی با سپیدار!",
+                    //text: "فاکتور معادل در سیستم سپیدار یافت نشد. لطفاً بررسی و در صورت نیاز مجدداً لینک نمایید.",
+                    //text: "فاکتور معادل در سیستم سپیدار یافت نشد. در صورت تأیید شما، ارتباط این فاکتور با سپیدار قطع خواهد شد تا بتوانید مجدداً آن را لینک نمایید.",
+                    text: "فاکتور معادل در سیستم سپیدار یافت نشد. برای ثبت تغییرات، لازم است ارتباط این فاکتور با سپیدار قطع شود. آیا تایید می‌کنید؟",
+                    icon: "error",
+                    showCancelButton: true,
+                    cancelButtonColor: "#adadad",
+                    confirmButtonColor: "#e64942",
+                    cancelButtonText: "انصراف",
+                    confirmButtonText: "ارتباط قطع شود",
+                });
+                
+                if (result.isConfirmed) {
+                    FLshowLoading();
+                    const res = await axios(`/Factor/DisconnectSepidarFactor?id=${factor.id}`);
+                    if (res.status === 200) {
+                        FLshowLoading(false);
+                        toastifySuccess("ارتباط این فاکتور با سپیدار قطع شد.");
+                        await submitFactorOK(type);
+                    }
+                }
             }
-            toastifySuccess("فاکتور با موفقیت ثبت شد.");
-            
-            cancelFactor();
-            ModalToggle("#Factor");
-            FLshowLoading(false);
-        })
-         .fail(() => {
-             setTimeout(async () => await submitFactorOK(type), 3000);
-         });
+        } catch (err) {
+            console.log(err);
+            setTimeout(async () => await submitFactorOK(type), 3000);
+        }
         
     }
 };
