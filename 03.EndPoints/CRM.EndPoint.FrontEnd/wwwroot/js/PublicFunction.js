@@ -574,7 +574,7 @@ const returnFactor = async (fid, cid, type = 1) => {
     _factorItems = factor.factorItems;
     f_officialType = factor.officialType;
     FactorDescItems = factor.descriptions;
-    console.log(factor);
+    
     
     const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
     currencyTypeElm.value = factor.currencyType ?? 0;
@@ -1279,25 +1279,26 @@ const submitPrefactorOK = async (type) => {
 
 //OfficialRqModal
 const submitFactor = async () => {
-    const sumTotalSupply = supplyData.reduce((sum, cur) => sum + (cur.supplyType === 3 ? -cur.totalAmount : cur.totalAmount), 0);
-    if (factor.sumTotalAmount <= sumTotalSupply) {
-        const result = await Swal.fire({
-            title: "زیان در ثبت فاکتور!",
-            text: "مبلغ نهایی فاکتور کمتر از بهای تمام‌شده است و ثبت آن منجر به زیان خواهد شد. آیا مایل به ثبت فاکتور هستید؟",
-            icon: "warning",
-            showCancelButton: true,
-            cancelButtonColor: "#adadad",
-            confirmButtonColor: "#0d6efd",
-            cancelButtonText: "خیر",
-            confirmButtonText: "بله، ثبت شود",
-        });
-        if (!result.isConfirmed) return;
-        
+    if (!factor.parentReturnedId) { // اگر فاکتور برگشتی نبود
+        const sumTotalSupply = supplyData.reduce((sum, cur) => sum + (cur.supplyType === 3 ? -cur.totalAmount : cur.totalAmount), 0);
+        if (factor.sumTotalAmount <= sumTotalSupply) {
+            const result = await Swal.fire({
+                title: "زیان در ثبت فاکتور!",
+                text: "مبلغ نهایی فاکتور کمتر از بهای تمام‌شده است و ثبت آن منجر به زیان خواهد شد. آیا مایل به ثبت فاکتور هستید؟",
+                icon: "warning",
+                showCancelButton: true,
+                cancelButtonColor: "#adadad",
+                confirmButtonColor: "#0d6efd",
+                cancelButtonText: "خیر",
+                confirmButtonText: "بله، ثبت شود",
+            });
+            if (!result.isConfirmed) return;
+        }
     }
     await submitFactorOK(Number(typeSubmitfactor));
 };
 
-const submitFactorOK = async (type) => {
+const submitFactorOK = async (type, unlinkSepidar = false) => {
     if (await mySer.CheckValidForm("#f_dateFormId") && await mySer.CheckValidForm("#f_SerialFormId")) {
         if (_factorItems.length <= 0) {
             $("#preFactorItemId").parent().css("border", "2px solid #ff6d00");
@@ -1317,8 +1318,8 @@ const submitFactorOK = async (type) => {
         factor.currencyType = Number(currencyTypeElm.value);
         factor.currencyTypeTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
         
-        try {
-            const res = await axios.post("/Factor/AddFactor", factor);
+        $.post(`/Factor/AddFactor?unlinkSepidar=${unlinkSepidar}`, factor, async (res) => {
+            FLshowLoading(false);
             if (res.status === 200) {
                 if (type === 0) {
                     await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, modelFactor._type, factor.pfactorSerialNumber, type);
@@ -1349,8 +1350,6 @@ const submitFactorOK = async (type) => {
                 FLshowLoading(false);
                 const result = await Swal.fire({
                     title: "خطا در همگام‌سازی با سپیدار!",
-                    //text: "فاکتور معادل در سیستم سپیدار یافت نشد. لطفاً بررسی و در صورت نیاز مجدداً لینک نمایید.",
-                    //text: "فاکتور معادل در سیستم سپیدار یافت نشد. در صورت تأیید شما، ارتباط این فاکتور با سپیدار قطع خواهد شد تا بتوانید مجدداً آن را لینک نمایید.",
                     text: "فاکتور معادل در سیستم سپیدار یافت نشد. برای ثبت تغییرات، لازم است ارتباط این فاکتور با سپیدار قطع شود. آیا تایید می‌کنید؟",
                     icon: "error",
                     showCancelButton: true,
@@ -1361,19 +1360,15 @@ const submitFactorOK = async (type) => {
                 });
                 
                 if (result.isConfirmed) {
-                    FLshowLoading();
-                    const res = await axios(`/Factor/DisconnectSepidarFactor?id=${factor.id}`);
-                    if (res.status === 200) {
-                        FLshowLoading(false);
-                        toastifySuccess("ارتباط این فاکتور با سپیدار قطع شد.");
-                        await submitFactorOK(type);
-                    }
+                    await submitFactorOK(type, true);
                 }
             }
-        } catch (err) {
+            
+        }).fail((err) => {
             console.log(err);
             setTimeout(async () => await submitFactorOK(type), 3000);
-        }
+        });
+        
         
     }
 };

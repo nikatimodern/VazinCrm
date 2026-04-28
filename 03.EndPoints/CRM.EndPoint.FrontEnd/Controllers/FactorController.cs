@@ -2597,10 +2597,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> AddFactor([FromBody] Factor model)
+        public async Task<IActionResult> AddFactor(Factor model, bool unlinkSepidar = false)
         {
             if (model == null) return NotFound();
-
 
             await using var transAction = await db.Database.BeginTransactionAsync();
             try
@@ -2668,13 +2667,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     model.UserModify = user.FullName;
 
 
-                    if (setting.Sepidar == true && model.SepidarId == null)
+                    if (unlinkSepidar)
+                    {
+                        model.SepidarId = null;
+                        model.SnFinancial = null;
+                    }
+
+                    if (setting.Sepidar == true && model.SepidarId != null)
                     {
                         var sF = await S1db.vwInvoice.AsNoTracking().Where(f => f.InvoiceId == model.SepidarId).FirstOrDefaultAsync();
-                        if (sF == null)
-                        {
-                            return StatusCode(201);
-                        }
+                        if (sF == null) return Ok(new { status = 201 });
 
                         model.DateMiladi = sF.Date;
                         model.Date = sF.DateTXT;
@@ -2746,7 +2748,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 await db.SaveChangesAsync();
                 await transAction.CommitAsync();
-                return Ok();
+                return Ok(new { status = 200 });
             }
             catch (Exception e)
             {
@@ -3083,35 +3085,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var customer = await db.Customers.Where(f => f.Id == factor.CustomerId).FirstOrDefaultAsync();
                 customer.FinancialCustomerId = sepidar.CustomerPartyRef;
                 customer.FinancialCustomerName = sepidar.CustomerPartyName;
-
-                await _logSystemService.LogChange(oldFactor, factor, LogActionEnum.ویرایش, user);
-                await db.SaveChangesAsync();
-                return Ok();
-            }
-            catch (Exception e)
-            {
-                return BadRequest(e.Message);
-            }
-        }
-
-
-        [Authorize]
-        public async Task<IActionResult> DisconnectSepidarFactor(Guid id)
-        {
-            try
-            {
-                var user = await userManager.GetUserAsync(HttpContext.User);
-
-                var oldFactor = await db.Factors.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
-                var factor = await db.Factors.Where(f => f.Id == id).FirstOrDefaultAsync();
-
-                factor.SepidarId = null;
-                factor.SnFinancial = null;
-                factor.UserModify = user.FullName;
-                factor.UserModifyID = user.Id;
-                factor.ModifyDate = DateTime.Now;
-                factor.ModifyDateTxt = dtService.GetDateTimePersian();
-
 
                 await _logSystemService.LogChange(oldFactor, factor, LogActionEnum.ویرایش, user);
                 await db.SaveChangesAsync();
