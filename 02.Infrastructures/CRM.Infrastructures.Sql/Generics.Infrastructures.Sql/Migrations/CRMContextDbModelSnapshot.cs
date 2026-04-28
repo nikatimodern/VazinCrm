@@ -43,6 +43,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<bool?>("CrmFactors")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("CustomerAssignExpert")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("CustomerCanChooseInvoiceType")
                         .HasColumnType("bit");
 
@@ -1550,6 +1553,9 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<bool>("Suspend")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Title")
                         .HasColumnType("nvarchar(max)");

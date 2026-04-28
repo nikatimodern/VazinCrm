@@ -5347,3 +5347,22 @@ table tr.payment-vosoled > td {
     padding: 4px 15px !important;
   }
 }
+
+
+.overlay-card {
+  background-color: rgba(128, 128, 128, 0.8);
+  background-color:rgb(216 219 231 / 78%);
+  background-color:rgba(250,250,250,0.63);
+  
+  /* backdrop-filter: blur(1px); */
+  position: absolute;
+  padding: .5rem;
+  inset: 0;
+  z-index: 10;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+}
