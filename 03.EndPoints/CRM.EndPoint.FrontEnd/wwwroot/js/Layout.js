@@ -4119,10 +4119,11 @@ window.onload = () => {
 // console.log(dateTime)
 
 
-lightbox.option({
+/*lightbox.option({
     resizeDuration: 500, wrapAround: true,
-});
+});*/
 
+Lightbox.init()
 
 const overlay = document.getElementById("overlay");
 const moreMenuBtn = document.getElementById("moreMenuBtn");
@@ -4543,6 +4544,7 @@ document.addEventListener("input", (e) => {
          }*/
     }
 });
+
 
 
 
