@@ -103,8 +103,10 @@ function createImageBox(fileItem, key = null, indexEle = null, showDelete = fals
     const isPdf = fileItem.fileExten?.toLowerCase() === "pdf";
     
     if (isImage) {
-        imgSrc = fileItem.url ? `..${fileItem.url.replace(/\\/g, "/")}`
-            : fileItem.file ? `data:image/${fileItem.fileExten};base64,${fileItem.file}` : "";
+        /*imgSrc = fileItem.url ? `..${fileItem.url.replace(/\\/g, "/")}`
+            : fileItem.file ? `data:image/${fileItem.fileExten};base64,${fileItem.file}` : "";*/
+        imgSrc = fileItem.file ? `data:image/${fileItem.fileExten};base64,${fileItem.file}`
+            : fileItem.url ? `..${fileItem.url.replace(/\\/g, "/")}` : "";
         backgroundImage = imgSrc;
     } else if (isPdf) {
         backgroundImage = "/Img/pdf.png";
@@ -137,7 +139,7 @@ function createImageBox(fileItem, key = null, indexEle = null, showDelete = fals
     let linkElement;
     if (backgroundImage === imgSrc) {
         linkElement = `
-            <a href="${imgSrc}" data-lightbox="lightBox-${fileItem.entityId?.slice(0, 6)}" class="fileAttachLink">
+            <a href="${imgSrc}" data-lightbox="lightBox-${fileItem.entityId?.slice(0, 6)}" class="fileAttachLink" data-viewer>
               <div class="fileAttachImg" style="background-image:url(${backgroundImage})"></div>
             </a>
         `;
@@ -228,3 +230,47 @@ document.addEventListener("keydown", (e) => {
     }
 }, true);
 
+
+document.addEventListener("click", function (e) {
+    const link = e.target.closest("[data-viewer]");
+    if (!link) return;
+    
+    e.preventDefault();
+    
+    // همه آیتم‌های هم‌گروه
+    const groupName = link.dataset.lightbox;
+    const groupItems = document.querySelectorAll(`[data-lightbox="${groupName}"]`);
+    
+    // ساخت container موقت
+    const temp = document.createElement("div");
+    
+    let index = 0;
+    
+    groupItems.forEach((el, i) => {
+        const img = document.createElement("img");
+        
+        // عکس اصلی از href
+        img.src = el.getAttribute("href");
+        
+        temp.appendChild(img);
+        
+        if (el === link) index = i;
+    });
+    
+    document.body.appendChild(temp);
+    
+    const viewer = new Viewer(temp, {
+        toolbar: {
+            zoomIn: true,
+            zoomOut: true,
+            rotateLeft: true,
+            rotateRight: true,
+        },
+        hidden() {
+            viewer.destroy();
+            temp.remove(); // 👈 مهم (cleanup کامل)
+        },
+    });
+    
+    viewer.view(index);
+});

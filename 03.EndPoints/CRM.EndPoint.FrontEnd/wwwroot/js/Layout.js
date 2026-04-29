@@ -49,7 +49,7 @@ let myDate = new GetDate();
 document.addEventListener("DOMContentLoaded", async () => {
     await GetUserLogin();
     setActiveMenu();
-    
+   // initLightbox();
     
     setting = await GetSetting();
     AcceptSetting(setting);
@@ -4123,7 +4123,12 @@ window.onload = () => {
     resizeDuration: 500, wrapAround: true,
 });*/
 
-Lightbox.init()
+function initLightbox() {
+    if (!window.Lightbox3) return;
+    
+    const { Lightbox } = Lightbox3;
+    Lightbox.init();
+}
 
 const overlay = document.getElementById("overlay");
 const moreMenuBtn = document.getElementById("moreMenuBtn");
