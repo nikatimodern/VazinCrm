@@ -156,6 +156,7 @@
 
 @section Scripts {
     <script>
+        let selectOrderHeadType;  // 3: checkBox  4: radio
         let requestAmountData;
         let reqAmountId;
         var reqAmountAttachment = [];
@@ -163,12 +164,16 @@
         document.addEventListener("DOMContentLoaded", async () => {
             //getAllRequestAmountDt();
             await getAllRequestAmount();
+            document.addEventListener("settingReady", () => {
+                selectOrderHeadType = setting.multiSelectOrderHeadsInRequestAmount ? 3 : 4;
+            });
 
             document.getElementById("requestAmountSearchId").addEventListener("keyup", async (e) => {
                 if (e.key === "Enter") {
                     await getAllRequestAmount();
                 }
             });
+
             const requestAmountRadios = document.querySelectorAll("input[type='radio'][name='requestAmountFilter']");
             requestAmountRadios.forEach(elm => elm.addEventListener("change", async () => {
                 await getAllRequestAmount();
@@ -488,12 +493,13 @@
             }
         });*@;
         ////////////////////////////////////////////////////////
-        let selectOrderHeadType = 3;  // 3: checkBox  4: radio
+
         let orderHeadsSelectedIds = [];
         let tempSelectedIds = [];
         let tempSelectedMap = new Map(); // id -> number
         const addOrderHeadModal = document.getElementById("addOrderHeadModal");
         async function showAddOrderHeadModal() {
+            if (!selectOrderHeadType) return;
             tempSelectedMap.clear();
             tempSelectedIds = [...orderHeadsSelectedIds];
             await getAllOrderHeads();

@@ -1968,6 +1968,8 @@ const Backward = (id, type, dealId) => {
 const GetSetting = async () => {
     return new Promise((resolve) => {
         $.get("/ASetting/GetSetting", (res) => {
+            setting = res;
+            document.dispatchEvent(new CustomEvent("settingReady"));
             resolve(res);
         })
          .fail(async () => {
