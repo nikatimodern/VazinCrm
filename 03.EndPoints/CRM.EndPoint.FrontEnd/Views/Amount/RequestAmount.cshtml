@@ -99,17 +99,18 @@
                         <label for="reqAmountSupplierId">تامین‌ کننده:</label>
                         <select name="supplierId" id="reqAmountSupplierId" required>
                         </select>
+                        <p id="reqAmountTotalAmountSupFactor" class="mt-2 text-end" style="color: #666"></p>
                     </div>
 
                     <div id="reqAmountOrderHeadWrapper" class="d-none">
                         <label for="reqAmountOrderHead">بابت حواله تولید:</label>
-                        <div class="input-group mb-3">
+                        <div class="input-group">
                             <input id="reqAmountOrderHead" type="text" class="form-control direction-ltr" placeholder="حواله تولید.." disabled>
                             <button class="btn btn-sm btn-secondary" type="button" onclick="showAddOrderHeadModal()">انتخاب</button>
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-center gap-1 mt-2">
+                    <div class="d-flex justify-content-center gap-1 mt-3">
                         <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="cancelRequestAmountModal()">انصراف</button>
                         <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitRequestAmountModal()">ثبت</button>
                     </div>
@@ -197,8 +198,10 @@
 
             const ohInputWrapper = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
             const ohInput = reqAmountModal.querySelector("input#reqAmountOrderHead");
+            const totalAmountSupFactorElm = reqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
             ohInputWrapper.classList.add("d-none");
             toggleElementsRequired(ohInput, false);
+            totalAmountSupFactorElm.innerHTML = "";
         }
 
         async function showRequestAmountModal() {
@@ -357,28 +360,51 @@
             if (isSetupReqAmountModal) return;
             const addOrderBtn = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper button");
             const ohInput = reqAmountModal.querySelector("input#reqAmountOrderHead");
+            const totalAmountSupFactorElm = reqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
 
             const data = (await axios("/Supply/GetSupplyBaseData")).data;
 
-            new TomSelect("#reqAmountSupplierId", {
+            const select = new TomSelect("#reqAmountSupplierId", {
                 options: data.suppliers,
                 placeholder: "انتخاب تامین کننده",
                 maxItems: 1,
                 selectOnTab: true,
 
-                onItemAdd() {
+                async onItemAdd(supplierId) {
                     toggleElementsDisabled(addOrderBtn, false);
                     ohInput.value = "";
                     orderHeadsSelectedIds = [];
+                    select.disable();
+                    const totalSupplyFactorAmount = await getTotalAmountSupplyFactor(supplierId);
+                    if (totalSupplyFactorAmount !== null) {
+                        totalAmountSupFactorElm.innerHTML = `جمع مبالغ فاکتور: <b style="color: #333">${totalSupplyFactorAmount?.toLocaleString()}</b> ريال`;
+                    }
+                    select.enable();
                 },
 
                 onDelete() {
                     toggleElementsDisabled(addOrderBtn, true);
+                    totalAmountSupFactorElm.innerHTML = "";
                 },
             });
 
             isSetupReqAmountModal = true;
         }
+
+
+        async function getTotalAmountSupplyFactor(supplierId) {
+            try {
+                const res = await axios(`/Supply/GetTotalAmountSupplyFactor?supplierId=${supplierId}`);
+                if (res.status === 200) {
+                    return res.data;
+                }
+                return null;
+            } catch (err) {
+                console.log(err);
+                return null;
+            }
+        }
+
 
         reqAmountModal.querySelector("input#reqAmountPrepayment").addEventListener("change", async (e) => {
             const hasPrepayment = e.target.checked;

@@ -377,6 +377,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
+        public async Task<IActionResult> GetTotalAmountSupplyFactor(Guid supplierId)
+        {
+            var totalAmount = await db.SupplyFactors
+                .AsNoTracking()
+                .Where(f => f.SupplierId == supplierId)
+                .SumAsync(f => f.Amount);
+            return Ok(totalAmount);
+        }
+
         public async Task<IActionResult> DeleteSupplyFactor(Guid id)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
@@ -1089,11 +1098,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 join pf in db.PreFactors on s.PfId equals pf.Id
                 join oh in db.OrderHeads on pf.Id equals oh.Prefactor
                 select oh.Id;
-                /*select new
-                {
-                    oh.Id,
-                    oh.OrderNumber
-                };*/
+            /*select new
+            {
+                oh.Id,
+                oh.OrderNumber
+            };*/
 
             var data = await result.Distinct().ToListAsync();
 
