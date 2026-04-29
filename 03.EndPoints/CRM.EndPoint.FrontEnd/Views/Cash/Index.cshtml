@@ -4,28 +4,14 @@
 }
 
 
-<div class="w-100">
-    <div class="row align-items-center justify-content-between flex-wrap mb-2 g-2">
-        <div class="d-flex col-lg-3">
-            <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" data-bs-toggle="modal" data-bs-target="#cashModal">
-                <span style="line-height: 1">ثبت تنخواه</span>
-                <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
-            </button>
-        </div>
-        <div class="col-12 col-lg-5 d-flex align-items-center gap-2 flex-wrap">
-            @*<div class="d-flex align-items-center flex-grow-1 gap-2">
-                <input class="form-control" id="cashSearch" placeholder="جستجو">
-            </div>*@
-        </div>
-        <div class="d-flex align-items-start justify-content-start justify-content-lg-end gap-2 col-lg-3">
-
-            @*<div id="ContentDealFilterId" class="ContentFilter"></div>
-            <div class="btnFilter d-none d-lg-flex" data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterDeal" data-filterContentId="ContentDealFilterId" data-filterInpSearchId="dealSearchId" data-filterVarSearch="dealSearchVal" onclick="ShowFilterPopup(this)">
-                <svg style="width:24px;color:#333" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
-            </div>*@
-        </div>
+<div>
+    <div class="mb-2">
+        <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" data-bs-toggle="modal" data-bs-target="#cashModal">
+            <span style="line-height: 1">ثبت تنخواه</span>
+            <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
+        </button>
     </div>
-    <div id="cashContainer">
+    <div id="cashContainer" style="width: 99%;">
         <table class="table table-striped table-bordered table-hover nowrap w-100" id="cashTable">
             <thead>
             <tr>
@@ -126,7 +112,6 @@
         }
 
 
-
         let cashData = {};
         async function showEditCashModal(id) {
             FLshowLoading();
@@ -165,7 +150,7 @@
                     const res = await axios(`/Cash/DeleteCash/${id}`);
                     if (res.status === 200) {
                         toastifySuccess("با موفقیت حذف شد");
-                        cashTbl.ajax.reload();
+                        cashTbl.ajax.reload(null, false);
                     }
                     FLshowLoading(false);
                 }
@@ -194,7 +179,7 @@
                 const res = await axios.post("/Cash/AddCash", model);
                 if (res.status === 200) {
                     toastifySuccess("با موفقیت ثبت شد");
-                    cashTbl.ajax.reload();
+                    cashTbl.ajax.reload(null, false);
                     ModalToggle(cashModal);
                 }
             } catch (err) {
@@ -215,7 +200,25 @@
                     if (status === 2) {
                         toastifySuccess("تایید شد");
                     }
-                    cashTbl.ajax.reload();
+                    cashTbl.ajax.reload(null, false);
+                }
+            } catch (err) {
+                console.log(err);
+                if (err.status === 404) {
+                    toastifyError(err.response.data);
+                }
+            } finally {
+                FLshowLoading(false);
+            }
+        }
+
+        async function changeStatusAllCashToPending() {
+            try {
+                FLshowLoading();
+                const res = await axios(`/Cash/ChangeStatusAllCashToPending`);
+                if (res.status === 200) {
+                    toastifySuccess("به مالی ارسال شد");
+                    cashTbl.ajax.reload(null, false);
                 }
             } catch (err) {
                 console.log(err);
@@ -360,6 +363,34 @@
                         },
                     },
                 },
+                drawCallback: function () {
+                    const api = this.api();
+                    const json = api.ajax.json();
+
+                    const container = document.querySelector(".dt-length");
+                    const existingBtn = container.querySelector(".sendAllBtn");
+
+                    const shouldShow = json?.data?.some(i => i.status === 0);
+
+                    if (!shouldShow) {
+                        existingBtn?.remove();
+                        return;
+                    }
+
+                    if (existingBtn) return;
+
+                    const btn = document.createElement("button");
+                    btn.className = "buttonGreen2 sendAllBtn";
+                    btn.textContent = "ارسال همه به مالی";
+
+                    btn.onclick = async () => {
+                        btn.disabled = true;
+                        await changeStatusAllCashToPending();
+                        btn.disabled = false;
+                    };
+
+                    container.prepend(btn);
+                }
             });
         };
 

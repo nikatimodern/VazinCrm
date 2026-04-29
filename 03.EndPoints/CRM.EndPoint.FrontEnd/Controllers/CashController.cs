@@ -198,6 +198,36 @@ public class CashController : Controller {
         }
     }
 
+    public async Task<IActionResult> ChangeStatusAllCashToPending()
+    {
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var cashes = await db.Cashes.Where(f =>
+                f.UserCreatorID == user.Id &&
+                f.Status == CashStatusEnum.ثبت_موقت
+            ).ToListAsync();
+
+            foreach (var cash in cashes)
+            {
+                cash.Status = CashStatusEnum.در_دست_تایید;
+                cash.StatusTxt = nameof(CashStatusEnum.در_دست_تایید).Replace("_", " ");
+
+                cash.ModifyDate = DateTime.Now;
+                cash.ModifyDateTxt = dtService.GetDateTimePersian();
+                cash.UserModify = user.FullName;
+                cash.UserModifyID = user.Id;
+            }
+
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+
     public async Task<IActionResult> GetCashier(Guid id)
     {
         try
