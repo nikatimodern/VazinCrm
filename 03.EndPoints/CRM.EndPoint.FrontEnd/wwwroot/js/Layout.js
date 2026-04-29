@@ -4551,6 +4551,21 @@ async function selectPfFromPfListModal(pfId) {
 
 /*--------------------------------------------------------------------------------*/
 
+async function getOrderHeadIdsBySupplier(supplierId) {
+    try {
+        const res = await axios(`/Supply/GetOrderHeadsBySupplier?supplierId=${supplierId}`);
+        if (res.status === 200) {
+            return res.data;
+        }
+        return [];
+    } catch (err) {
+        console.log(err);
+        return [];
+    }
+}
+
+/*--------------------------------------------------------------------------------*/
+
 /*document.addEventListener("input", (e) => {
     if (e.target.matches("input, textarea")) {
         e.target.value = toEnglishDigits(e.target.value);

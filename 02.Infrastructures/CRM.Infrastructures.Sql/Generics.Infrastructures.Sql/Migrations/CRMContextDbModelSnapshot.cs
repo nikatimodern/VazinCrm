@@ -2965,6 +2965,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("ModifyDateTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("Prepayment")
+                        .HasColumnType("bit");
+
                     b.Property<int>("RequestNumber")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");

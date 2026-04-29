@@ -68,6 +68,11 @@
             <div class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">درخواست وجه</div>
             <div class="modal-body pb-2">
                 <form id="requestAmountForm" class="d-flex flex-column gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <input id="reqAmountPrepayment" type="checkbox" name="prepayment">
+                        <label for="reqAmountPrepayment">پیش پرداخت</label>
+                    </div>
+
                     <div>
                         <label for="reqAmountAmount">مبلغ:</label>
                         <input id="reqAmountAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="amount" required>
@@ -89,13 +94,6 @@
                             <button class="btn btn-sm btn-secondary" type="button" onclick="showAddSupplyFactorModal(this)">انتخاب</button>
                         </div>
                     </div>*@
-                    @*<div>
-                        <label for="reqAmountOrderHead">بابت حواله تولید:</label>
-                        <div class="input-group mb-3">
-                            <input id="reqAmountOrderHead" type="text" class="form-control direction-ltr" placeholder="حواله تولید.." disabled required>
-                            <button class="btn btn-sm btn-secondary" type="button" onclick="showAddOrderHeadModal()">انتخاب</button>
-                        </div>
-                    </div>*@
 
                     <div>
                         <label for="reqAmountSupplierId">تامین‌ کننده:</label>
@@ -103,6 +101,13 @@
                         </select>
                     </div>
 
+                    <div id="reqAmountOrderHeadWrapper" class="d-none">
+                        <label for="reqAmountOrderHead">بابت حواله تولید:</label>
+                        <div class="input-group mb-3">
+                            <input id="reqAmountOrderHead" type="text" class="form-control direction-ltr" placeholder="حواله تولید.." disabled>
+                            <button class="btn btn-sm btn-secondary" type="button" onclick="showAddOrderHeadModal()">انتخاب</button>
+                        </div>
+                    </div>
 
                     <div class="d-flex justify-content-center gap-1 mt-2">
                         <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="cancelRequestAmountModal()">انصراف</button>
@@ -157,9 +162,11 @@
 @section Scripts {
     <script>
         let selectOrderHeadType;  // 3: checkBox  4: radio
-        let requestAmountData;
+        let requestAmountData = {};
         let reqAmountId;
         var reqAmountAttachment = [];
+
+        const reqAmountModal = document.getElementById("requestAmountModal");
 
         document.addEventListener("DOMContentLoaded", async () => {
             //getAllRequestAmountDt();
@@ -182,21 +189,26 @@
 
 
         function cancelRequestAmountModal() {
-            ModalToggle("requestAmountModal");
+            ModalToggle(reqAmountModal);
             mySer.emptyForm("requestAmountForm");
             supplyFactorsSelectedIds = [];
             orderHeadsSelectedIds = [];
-            requestAmountData = [];
+            requestAmountData = {};
+
+            const ohInputWrapper = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
+            const ohInput = reqAmountModal.querySelector("input#reqAmountOrderHead");
+            ohInputWrapper.classList.add("d-none");
+            toggleElementsRequired(ohInput, false);
         }
 
         async function showRequestAmountModal() {
             await setupSelectOptions();
-            ModalToggle("requestAmountModal");
+            ModalToggle(reqAmountModal);
         }
 
         async function submitRequestAmountModal() {
             if (!await mySer.CheckValidForm("requestAmountForm")) return;
-            const supplierSelect = document.querySelector("#requestAmountModal #reqAmountSupplierId");
+            const supplierSelect = reqAmountModal.querySelector("#reqAmountSupplierId");
             const model = {
                 ...requestAmountData,
                 ...mySer.convertFormToJSON("requestAmountForm"),
@@ -204,6 +216,7 @@
                 requestAmountSupplyFactor: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id, requestAmountId: requestAmountData.id })),
                 requestAmountOrderHeads: orderHeadsSelectedIds.map(id => ({ orderHeadId: id, requestAmountId: requestAmountData.id })),
             };
+
             try {
                 FLshowLoading();
                 const apiUrl = model.id ? "/Amount/UpdateRequestAmount" : "/Amount/AddRequestAmount";
@@ -214,6 +227,7 @@
                     cancelRequestAmountModal();
                 }
             } catch (err) {
+                toastifyError("خطای سرور");
                 console.log(err);
             } finally {
                 FLshowLoading(false);
@@ -246,12 +260,12 @@
                     supplyFactorsSelectedIds = requestAmountData.requestAmountSupplyFactor.map(r => r.supplyFactorId);
                     orderHeadsSelectedIds = requestAmountData.requestAmountOrderHeads.map(r => r.orderHeadId);
 
-                    const inpElmSupplyFactor = document.getElementById("reqAmountSupplyFactor");
+                    const inpElmSupplyFactor = reqAmountModal.querySelector("#reqAmountSupplyFactor");
                     if (inpElmSupplyFactor) {
                         inpElmSupplyFactor.value = supplyFactorSerials.join(", ");
                     }
 
-                    const inpElmOrderHead = document.getElementById("reqAmountOrderHead");
+                    const inpElmOrderHead = reqAmountModal.querySelector("#reqAmountOrderHead");
                     if (inpElmOrderHead) {
                         inpElmOrderHead.value = orderHeadSerials.join(", ");
                     }
@@ -341,16 +355,47 @@
         let isSetupReqAmountModal = false;
         async function setupSelectOptions() {
             if (isSetupReqAmountModal) return;
+            const addOrderBtn = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper button");
+            const ohInput = reqAmountModal.querySelector("input#reqAmountOrderHead");
+
             const data = (await axios("/Supply/GetSupplyBaseData")).data;
+
             new TomSelect("#reqAmountSupplierId", {
                 options: data.suppliers,
                 placeholder: "انتخاب تامین کننده",
                 maxItems: 1,
                 selectOnTab: true,
+
+                onItemAdd() {
+                    toggleElementsDisabled(addOrderBtn, false);
+                    ohInput.value = "";
+                    orderHeadsSelectedIds = [];
+                },
+
+                onDelete() {
+                    toggleElementsDisabled(addOrderBtn, true);
+                },
             });
 
             isSetupReqAmountModal = true;
         }
+
+        reqAmountModal.querySelector("input#reqAmountPrepayment").addEventListener("change", async (e) => {
+            const hasPrepayment = e.target.checked;
+            const ohInputWrapper = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
+            const ohInput = reqAmountModal.querySelector("input#reqAmountOrderHead");
+
+            if (hasPrepayment) {
+                ohInputWrapper.classList.remove("d-none");
+                toggleElementsRequired(ohInput, true);
+            } else {
+                ohInputWrapper.classList.add("d-none");
+                toggleElementsRequired(ohInput, false);
+                ohInput.value = "";
+                orderHeadsSelectedIds = [];
+            }
+        });
+
 
         @*let requestAmountTbl;
         let modelRequestAmount = {};
@@ -495,6 +540,7 @@
         ////////////////////////////////////////////////////////
 
         let orderHeadsSelectedIds = [];
+        let orderHeadsFilterIds = null;
         let tempSelectedIds = [];
         let tempSelectedMap = new Map(); // id -> number
         const addOrderHeadModal = document.getElementById("addOrderHeadModal");
@@ -502,6 +548,19 @@
             if (!selectOrderHeadType) return;
             tempSelectedMap.clear();
             tempSelectedIds = [...orderHeadsSelectedIds];
+
+            const supplierId = reqAmountModal.querySelector("#reqAmountSupplierId").value;
+            if (supplierId) {
+                FLshowLoading();
+                orderHeadsFilterIds = await getOrderHeadIdsBySupplier(supplierId);
+                await getAllOrderHeads();
+                FLshowLoading(false);
+            } else {
+                FLshowLoading();
+                await getAllOrderHeads();
+                FLshowLoading(false);
+            }
+
             await getAllOrderHeads();
             toggleAddOrderHeadModal();
         }
@@ -512,7 +571,7 @@
         }
 
         const getAllOrderHeads = async (search = "") => {
-            const model = { search, passType: selectOrderHeadType, selectedIds: tempSelectedIds };
+            const model = { search, passType: selectOrderHeadType, selectedIds: tempSelectedIds, filterIds: orderHeadsFilterIds };
             const res = await axios.post(`/Order/GetAllOrderHeads`, model);
 
             addOrderHeadModal.querySelector("#addOrderHeadContainer").innerHTML = res.data;

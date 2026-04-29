@@ -128,7 +128,7 @@
 
         function cancelSupplyFactorModal() {
             supplyFactorAttachments = [];
-            supplyFactorData = [];
+            supplyFactorData = {};
 
             orderHeadsSelectedIds = [];
             tempSelectedIds = [];
@@ -142,33 +142,27 @@
 
         ///////////////////
         let orderHeadsSelectedIds = [];
+        let orderHeadsFilterIds = null;
         let tempSelectedIds = [];
         let tempSelectedMap = new Map(); // id -> number
         async function showAddOrderHeadModal() {
-            const supplierId = document.getElementById("supplyFactorSupplierId").value;
-
             tempSelectedMap.clear();
-            tempSelectedIds = (supplierId && orderHeadsSelectedIds.length === 0)
-                ? await getOrderHeadIdsBySupplier(supplierId)
-                : [...orderHeadsSelectedIds];
+            tempSelectedIds = [...orderHeadsSelectedIds];
 
-            await getAllOrderHeads();
+            const supplierId = document.getElementById("supplyFactorSupplierId").value;
+            if (supplierId) {
+                FLshowLoading();
+                orderHeadsFilterIds = await getOrderHeadIdsBySupplier(supplierId);
+                await getAllOrderHeads();
+                FLshowLoading(false);
+            } else {
+                FLshowLoading();
+                await getAllOrderHeads();
+                FLshowLoading(false);
+            }
             toggleAddOrderHeadModal();
         }
 
-
-        async function getOrderHeadIdsBySupplier(supplierId) {
-            try {
-                const res = await axios(`/Supply/GetOrderHeadsBySupplier?supplierId=${supplierId}`);
-                if (res.status === 200) {
-                    return res.data;
-                }
-                return [];
-            } catch (err) {
-                console.log(err);
-                return [];
-            }
-        }
 
         function toggleAddOrderHeadModal() {
             addOrderHeadModal.querySelector("#addOrderHeadSearch").value = "";
@@ -177,7 +171,7 @@
 
 
         const getAllOrderHeads = async (search = "") => {
-            const model = { search, passType: 3, selectedIds: tempSelectedIds };
+            const model = { search, passType: 3, selectedIds: tempSelectedIds, filterIds: orderHeadsFilterIds };
             const res = await axios.post(`/Order/GetAllOrderHeads`, model);
 
             addOrderHeadModal.querySelector("#addOrderHeadContainer").innerHTML = res.data;
