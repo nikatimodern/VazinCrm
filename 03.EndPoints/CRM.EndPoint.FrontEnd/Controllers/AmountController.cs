@@ -25,9 +25,9 @@ using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
-    [Authorize(Roles = " کارشناس فروش ,مدیر فروش , مدیر تامین ,  مدیر ارشد , کارشناس تامین")]
 
-    //[Authorize]
+
+    [Authorize(Policy = "NotCustomerOnly")]
     public class AmountController : Controller {
         private readonly UserManager<AppUser> userManager;
         private readonly Service genService;
@@ -375,7 +375,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-
+        [Authorize(Roles = "کارشناس فروش ,مدیر فروش , مدیر تامین , مدیر ارشد , کارشناس تامین")]
         public async Task<IActionResult> index()
         {
             return View();
