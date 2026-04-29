@@ -2601,8 +2601,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> AddFactor(Factor model)
+        public async Task<IActionResult> AddFactor(Factor model, bool unlinkSepidar = false)
         {
+            if (model == null) return NotFound();
+
             await using var transAction = await db.Database.BeginTransactionAsync();
             try
             {
@@ -2669,9 +2671,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     model.UserModify = user.FullName;
 
 
+                    if (unlinkSepidar)
+                    {
+                        model.SepidarId = null;
+                        model.SnFinancial = null;
+                    }
+
                     if (setting.Sepidar == true && model.SepidarId != null)
                     {
                         var sF = await S1db.vwInvoice.AsNoTracking().Where(f => f.InvoiceId == model.SepidarId).FirstOrDefaultAsync();
+                        if (sF == null) return Ok(new { status = 201 });
+
                         model.DateMiladi = sF.Date;
                         model.Date = sF.DateTXT;
                     }
@@ -2742,7 +2752,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 await db.SaveChangesAsync();
                 await transAction.CommitAsync();
-                return Ok();
+                return Ok(new { status = 200 });
             }
             catch (Exception e)
             {
