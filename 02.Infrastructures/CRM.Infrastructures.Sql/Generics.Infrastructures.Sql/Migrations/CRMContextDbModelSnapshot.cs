@@ -2950,6 +2950,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("CreateDateTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("DocType")
                         .HasColumnType("int");
 
