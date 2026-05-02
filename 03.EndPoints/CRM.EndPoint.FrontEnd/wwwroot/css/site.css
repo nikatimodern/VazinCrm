@@ -5358,7 +5358,7 @@ table tr.payment-vosoled > td {
   position: absolute;
   padding: .5rem;
   inset: 0;
-  z-index: 10;
+  z-index: 9;
   border-radius: 10px;
   display: flex;
   align-items: center;

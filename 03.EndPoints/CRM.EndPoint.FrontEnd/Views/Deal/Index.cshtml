@@ -483,128 +483,129 @@
                 card.style.borderRightColor = colorStatus;
 
                 card.innerHTML = `
-                                 <div class="position-relative w-100 h-100">
-                                    ${item.suspend ? `
-                                    <div class="overlay-card">
-                                        <p class="fbold" style="padding: 10px;border-radius: 50px;background-color: red;color: aliceblue;opacity: 30%;transform: rotate(-10deg);">
-                                            در انتظار تصمیم مدیر فروش
-                                        </p>
-                                    </div>`
+                     <div class="position-relative w-100 h-100">
+                        ${item.suspend ? `
+                        <div class="overlay-card">
+                            <p class="fbold" style="padding: 10px;border-radius: 50px;background-color: red;color: aliceblue;opacity: 30%;transform: rotate(-10deg);">
+                                در انتظار تصمیم مدیر فروش
+                            </p>
+                        </div>`
                     : ""}
-                                    <div class="d-flex justify-content-between align-items-start gap-2">
-                                        <div>
-                                            <span class="fbold" style="font-size:clamp(13px, 2vw, 14px);color: #333">${item.title}</span>
-                                        </div>
-                                        <div class="d-flex align-items-center gap-2" style="color: #555;">
-                                          <span data-title-right="ثبت گزارش" class="d-flex addReport" style="cursor: pointer">
-                                            <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
-                                          </span>
-                                          <span data-title-right="ثبت پیش‌فاکتور" class="d-flex addPreFactor" style="cursor: pointer">
-                                            <svg style="width: 18px;cursor: pointer" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
-                                          </span>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex align-items-center gap-2 mb-2 mt-1" style="font-size:clamp(10px, 2vw, 11px);color: #555">
-                                        <div class="d-flex align-items-center gap-1">
-                                            <span class="fMedium text-muted">شماره سفارش:</span>
-                                            <span class="fbold" style="font-size:clamp(11px, 2vw, 12px)">${item.serialNumber}</span>
-                                        </div>
-                                        ${isAdmin ? `
-                                        <span class="d-flex align-items-center gap-1">
-                                             <span class="fMedium text-muted">دراختیار:</span>
-                                             <span class="fbold">${item.userCreator}</span>
-                                        </span>` : ""}
-                                    </div>
-                                    <p style="font-size:clamp(12px, 2vw, 13px);color:gray;min-height:12px;">${item.commentText.trim()}</p>
-                                    <div class="d-flex w-100 justify-content-between align-items-end mt-2" style="column-gap:10px;row-gap:8px;color: #666">
-                                        <div class="d-flex gap-2 gap-lg-3 align-items-end justify-content-between flex-grow-1" style="font-size:clamp(10px, 2vw, 11px)">
-                                            <div class="d-flex gap-2 gap-lg-3 align-items-center flex-grow-1 flex-wrap" style="row-gap:.5rem !important">
-                                                <span class="d-flex align-items-center gap-1 ">
-                                                    ${item.customerId
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div>
+                                <span class="fbold" style="font-size:clamp(13px, 2vw, 14px);color: #333">${item.title}</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2" style="color: #555;">
+                              <span data-title-right="ثبت گزارش" class="d-flex addReport" style="cursor: pointer">
+                                <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+                              </span>
+                              <span data-title-right="ثبت پیش‌فاکتور" class="d-flex addPreFactor" style="cursor: pointer">
+                                <svg style="width: 18px;cursor: pointer" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
+                              </span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mb-2 mt-1" style="font-size:clamp(10px, 2vw, 11px);color: #555">
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="fMedium text-muted">شماره سفارش:</span>
+                                <span class="fbold" style="font-size:clamp(11px, 2vw, 12px)">${item.serialNumber}</span>
+                            </div>
+                            ${isAdmin ? `
+                            <span class="d-flex align-items-center gap-1">
+                                 <span class="fMedium text-muted">دراختیار:</span>
+                                 <span class="fbold">${item.userCreator}</span>
+                            </span>` : ""}
+                        </div>
+                        <p style="font-size:clamp(12px, 2vw, 13px);color:gray;min-height:12px;">${item.commentText.trim()}</p>
+                        <div class="d-flex w-100 justify-content-between align-items-end mt-2" style="column-gap:10px;row-gap:8px;color: #666">
+                            <div class="d-flex gap-2 gap-lg-3 align-items-end justify-content-between flex-grow-1" style="font-size:clamp(10px, 2vw, 11px)">
+                                <div class="d-flex gap-2 gap-lg-3 align-items-center flex-grow-1 flex-wrap" style="row-gap:.5rem !important">
+                                    <span class="d-flex align-items-center gap-1 ">
+                                        ${item.customerId
                     ? `<svg class="icon-hover" style="width: 16px;flex-shrink: 0;color: ${colorStatus};cursor: pointer" onclick="openCustomerProfile('${item.customerId}')" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0Zm-5-2a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM8 9c-1.825 0-3.422.977-4.295 2.437A5.49 5.49 0 0 0 8 13.5a5.49 5.49 0 0 0 4.294-2.063A4.997 4.997 0 0 0 8 9Z" clip-rule="evenodd"/></svg>`
                     : `<svg style="width: 16px;flex-shrink: 0" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0Zm-5-2a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM8 9c-1.825 0-3.422.977-4.295 2.437A5.49 5.49 0 0 0 8 13.5a5.49 5.49 0 0 0 4.294-2.063A4.997 4.997 0 0 0 8 9Z" clip-rule="evenodd"/></svg>`
                 }
-                                                    <span>${item.customerName ?? ""}${item.customerCode ? " (کد مشتری: " + item.customerCode + ")" : ""}</span>
-                                                </span>
-                                                 <span class="d-flex align-items-center gap-1 ">
-                                                    <svg style="width: 16px;flex-shrink: 0" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="m3.855 7.286 1.067-.534a1 1 0 0 0 .542-1.046l-.44-2.858A1 1 0 0 0 4.036 2H3a1 1 0 0 0-1 1v2c0 .709.082 1.4.238 2.062a9.012 9.012 0 0 0 6.7 6.7A9.024 9.024 0 0 0 11 14h2a1 1 0 0 0 1-1v-1.036a1 1 0 0 0-.848-.988l-2.858-.44a1 1 0 0 0-1.046.542l-.534 1.067a7.52 7.52 0 0 1-4.86-4.859Z" clip-rule="evenodd" /></svg>
-                                                    <span style="direction: ltr">${item.mobileNumber}</span>
-                                                </span>
-                                                 <span class="d-flex align-items-center gap-1 ">
-                                                    <svg style="width: 16px;flex-shrink: 0" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M4 1.75a.75.75 0 0 1 1.5 0V3h5V1.75a.75.75 0 0 1 1.5 0V3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2V1.75ZM4.5 6a1 1 0 0 0-1 1v4.5a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-7Z" clip-rule="evenodd" /></svg>
-                                                    <span style="direction: ltr">${item.createDateTxt.slice(0, -3).split(" ").join(" | ")} </span>
-                                                </span>
-                                            </div>
-                                            <div class="d-flex align-items-center gap-1 d-xl-none">
-                                                <button class="${item.status === 1 ? "buttonGreen2" : "buttonBlue2"}" style="font-size: 11px" onclick="changeStatusDeal('${item.id}', ${item.status === 1 ? "3" : "1"})">
-                                                    ${item.status === 1 ? "موفق" : "باز"}
-                                                </button>
-                                                <button class="${item.status === 2 ? "buttonGreen2" : "buttonCancel3"}" style="font-size: 11px" onclick="changeStatusDeal('${item.id}', ${item.status === 2 ? "3" : "2"})">
-                                                    ${item.status === 2 ? "موفق" : "ناموفق"}
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="deal-dropdown__toggle d-flex align-items-center justify-content-center" style="cursor:pointer;color:${colorStatus}" tabindex="0">
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-8 4.66a1 1 0 0 0 -1 1v6l.007 .117l.029 .149l.035 .105l.054 .113l.071 .111c.03 .04 .061 .077 .097 .112l.09 .08l.096 .067l.098 .052l.11 .044l.112 .03l.126 .017l6.075 .003l.117 -.007a1 1 0 0 0 .883 -.993l-.007 -.117a1 1 0 0 0 -.993 -.883h-3.586l4.293 -4.293l.083 -.094a1 1 0 0 0 -1.497 -1.32l-4.293 4.291v-3.584l-.007 -.117a1 1 0 0 0 -.993 -.883z"/></svg>
-                                            </div>
-                                            <div class="task-dropdown deal-dropdown__list" style="border: 1px solid #e5e5e5;">
-                                                <div class="task-dropdown__item justify-content-between itemGreen showPreFactors">
-                                                    <div class="d-flex align-items-center" style="gap: 12px">
-                                                      <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg>
-                                                      <span>پیش‌فاکتور ها</span>
-                                                    </div>
-                                                    ${item.counts.preFactor ? `<span class="badgeCircle">${item.counts.preFactor}</span>` : ""}
-                                                </div>
-                                                <div class="task-dropdown__item justify-content-between itemGreen showFactors">
-                                                    <div class="d-flex align-items-center" style="gap: 12px">
-                                                        <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12h-5"/><path d="M15 8h-5"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg>
-                                                        <span>فاکتور ها</span>
-                                                    </div>
-                                                    ${item.counts.factor ? `<span class="badgeCircle">${item.counts.factor}</span>` : ""}
-                                                </div>
-                                                <div class="task-dropdown__item justify-content-between itemGray showReports">
-                                                    <div class="d-flex align-items-center" style="gap: 12px">
-                                                        <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M12 2v4"/><path d="M16 2v4"/><rect width="16" height="18" x="4" y="4" rx="2"/><path d="M8 10h6"/><path d="M8 14h8"/><path d="M8 18h5"/></svg>
-                                                        <span>گزارش ها</span>
-                                                    </div>
-                                                    ${item.counts.report ? `<span class="badgeCircle">${item.counts.report}</span>` : ""}
-                                                </div>
-                                                <div class="task-dropdown__item justify-content-between itemBlue showOrders">
-                                                    <div class="d-flex align-items-center" style="gap: 12px">
-                                                        <svg style="width: 16px" fill="currentColor" viewBox="0 0 256 256"><path d="M72,104a8,8,0,0,1,8-8h96a8,8,0,0,1,0,16H80A8,8,0,0,1,72,104Zm8,40h96a8,8,0,0,0,0-16H80a8,8,0,0,0,0,16ZM232,56V208a8,8,0,0,1-11.58,7.15L192,200.94l-28.42,14.21a8,8,0,0,1-7.16,0L128,200.94,99.58,215.15a8,8,0,0,1-7.16,0L64,200.94,35.58,215.15A8,8,0,0,1,24,208V56A16,16,0,0,1,40,40H216A16,16,0,0,1,232,56Zm-16,0H40V195.06l20.42-10.22a8,8,0,0,1,7.16,0L96,199.06l28.42-14.22a8,8,0,0,1,7.16,0L160,199.06l28.42-14.22a8,8,0,0,1,7.16,0L216,195.06Z"></path></svg>
-                                                        <span>حواله ها</span>
-                                                    </div>
-                                                    ${item.counts.orderHead ? `<span class="badgeCircle">${item.counts.orderHead}</span>` : ""}
-                                                </div>
-                                                <div class="task-dropdown__item justify-content-between itemPurple showInvoices">
-                                                    <div class="d-flex align-items-center" style="gap: 12px">
-                                                        <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5"/><path d="M18 12h.01"/><path d="M19 22v-6"/><path d="m22 19-3-3-3 3"/><path d="M6 12h.01"/><circle cx="12" cy="12" r="2"/></svg>
-                                                        <span>واریزی ها</span>
-                                                    </div>
-                                                    ${item.counts.accountancy ? `<span class="badgeCircle">${item.counts.accountancy}</span>` : ""}
-                                                </div>
-                                                <div class="task-dropdown__item itemGold" onclick="showTaskModal('${item.id}', 'Deal')">
-                                                    <svg style="width:16px;" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"></path></svg>
-                                                    <span>افزودن فعالیت</span>
-                                                </div>
-                                                <div class="task-dropdown__item itemGray" style="border-top: 1px solid #e3e3e3;" onclick="editDealModal('${item.id}')">
-                                                    <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"></path></svg>
-                                                    <span>ویرایش</span>
-                                                </div>
-                                                ${isAdmin ? `
-                                                <div class="task-dropdown__item itemRed" onclick="deleteDeal('${item.id}')">
-                                                    <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"></path></svg>
-                                                    <span>حذف</span>
-                                                </div>` : ""}
-                                            </div>
-                                        </div>
+                                    <span>${item.customerName ?? ""}${item.customerCode ? " (کد مشتری: " + item.customerCode + ")" : ""}</span>
+                                </span>
+                                 <span class="d-flex align-items-center gap-1 ">
+                                    <svg style="width: 16px;flex-shrink: 0" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="m3.855 7.286 1.067-.534a1 1 0 0 0 .542-1.046l-.44-2.858A1 1 0 0 0 4.036 2H3a1 1 0 0 0-1 1v2c0 .709.082 1.4.238 2.062a9.012 9.012 0 0 0 6.7 6.7A9.024 9.024 0 0 0 11 14h2a1 1 0 0 0 1-1v-1.036a1 1 0 0 0-.848-.988l-2.858-.44a1 1 0 0 0-1.046.542l-.534 1.067a7.52 7.52 0 0 1-4.86-4.859Z" clip-rule="evenodd" /></svg>
+                                    <span style="direction: ltr">${item.mobileNumber}</span>
+                                </span>
+                                 <span class="d-flex align-items-center gap-1 ">
+                                    <svg style="width: 16px;flex-shrink: 0" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M4 1.75a.75.75 0 0 1 1.5 0V3h5V1.75a.75.75 0 0 1 1.5 0V3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2V1.75ZM4.5 6a1 1 0 0 0-1 1v4.5a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-7Z" clip-rule="evenodd" /></svg>
+                                    <span style="direction: ltr">${item.createDateTxt.slice(0, -3).split(" ").join(" | ")} </span>
+                                </span>
+                            </div>
+                            <div class="d-flex align-items-center gap-1 d-xl-none">
+                                <button class="${item.status === 1 ? "buttonGreen2" : "buttonBlue2"}" style="font-size: 11px" onclick="changeStatusDeal('${item.id}', ${item.status === 1 ? "3" : "1"})">
+                                    ${item.status === 1 ? "موفق" : "باز"}
+                                </button>
+                                <button class="${item.status === 2 ? "buttonGreen2" : "buttonCancel3"}" style="font-size: 11px" onclick="changeStatusDeal('${item.id}', ${item.status === 2 ? "3" : "2"})">
+                                    ${item.status === 2 ? "موفق" : "ناموفق"}
+                                </button>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="deal-dropdown__toggle d-flex align-items-center justify-content-center" style="cursor:pointer;color:${colorStatus}" tabindex="0">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-8 4.66a1 1 0 0 0 -1 1v6l.007 .117l.029 .149l.035 .105l.054 .113l.071 .111c.03 .04 .061 .077 .097 .112l.09 .08l.096 .067l.098 .052l.11 .044l.112 .03l.126 .017l6.075 .003l.117 -.007a1 1 0 0 0 .883 -.993l-.007 -.117a1 1 0 0 0 -.993 -.883h-3.586l4.293 -4.293l.083 -.094a1 1 0 0 0 -1.497 -1.32l-4.293 4.291v-3.584l-.007 -.117a1 1 0 0 0 -.993 -.883z"/></svg>
+                            </div>
+                            <div class="task-dropdown deal-dropdown__list" style="border: 1px solid #e5e5e5;">
+                                <div class="task-dropdown__item justify-content-between itemGreen showPreFactors">
+                                    <div class="d-flex align-items-center" style="gap: 12px">
+                                      <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg>
+                                      <span>پیش‌فاکتور ها</span>
                                     </div>
-                                 </div>
-                                `;
+                                    ${item.counts.preFactor ? `<span class="badgeCircle">${item.counts.preFactor}</span>` : ""}
+                                </div>
+                                <div class="task-dropdown__item justify-content-between itemGreen showFactors">
+                                    <div class="d-flex align-items-center" style="gap: 12px">
+                                        <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12h-5"/><path d="M15 8h-5"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg>
+                                        <span>فاکتور ها</span>
+                                    </div>
+                                    ${item.counts.factor ? `<span class="badgeCircle">${item.counts.factor}</span>` : ""}
+                                </div>
+                                <div class="task-dropdown__item justify-content-between itemGray showReports">
+                                    <div class="d-flex align-items-center" style="gap: 12px">
+                                        <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M12 2v4"/><path d="M16 2v4"/><rect width="16" height="18" x="4" y="4" rx="2"/><path d="M8 10h6"/><path d="M8 14h8"/><path d="M8 18h5"/></svg>
+                                        <span>گزارش ها</span>
+                                    </div>
+                                    ${item.counts.report ? `<span class="badgeCircle">${item.counts.report}</span>` : ""}
+                                </div>
+                                <div class="task-dropdown__item justify-content-between itemBlue showOrders">
+                                    <div class="d-flex align-items-center" style="gap: 12px">
+                                        <svg style="width: 16px" fill="currentColor" viewBox="0 0 256 256"><path d="M72,104a8,8,0,0,1,8-8h96a8,8,0,0,1,0,16H80A8,8,0,0,1,72,104Zm8,40h96a8,8,0,0,0,0-16H80a8,8,0,0,0,0,16ZM232,56V208a8,8,0,0,1-11.58,7.15L192,200.94l-28.42,14.21a8,8,0,0,1-7.16,0L128,200.94,99.58,215.15a8,8,0,0,1-7.16,0L64,200.94,35.58,215.15A8,8,0,0,1,24,208V56A16,16,0,0,1,40,40H216A16,16,0,0,1,232,56Zm-16,0H40V195.06l20.42-10.22a8,8,0,0,1,7.16,0L96,199.06l28.42-14.22a8,8,0,0,1,7.16,0L160,199.06l28.42-14.22a8,8,0,0,1,7.16,0L216,195.06Z"></path></svg>
+                                        <span>حواله ها</span>
+                                    </div>
+                                    ${item.counts.orderHead ? `<span class="badgeCircle">${item.counts.orderHead}</span>` : ""}
+                                </div>
+                                <div class="task-dropdown__item justify-content-between itemPurple showInvoices">
+                                    <div class="d-flex align-items-center" style="gap: 12px">
+                                        <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5"/><path d="M18 12h.01"/><path d="M19 22v-6"/><path d="m22 19-3-3-3 3"/><path d="M6 12h.01"/><circle cx="12" cy="12" r="2"/></svg>
+                                        <span>واریزی ها</span>
+                                    </div>
+                                    ${item.counts.accountancy ? `<span class="badgeCircle">${item.counts.accountancy}</span>` : ""}
+                                </div>
+                                <div class="task-dropdown__item itemGold" onclick="showTaskModal('${item.id}', 'Deal')">
+                                    <svg style="width:16px;" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"></path></svg>
+                                    <span>افزودن فعالیت</span>
+                                </div>
+                                <div class="task-dropdown__item itemGray" style="border-top: 1px solid #e3e3e3;" onclick="editDealModal('${item.id}')">
+                                    <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"></path></svg>
+                                    <span>ویرایش</span>
+                                </div>
+                                ${isAdmin ? `
+                                <div class="task-dropdown__item itemRed" onclick="deleteDeal('${item.id}')">
+                                    <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"></path></svg>
+                                    <span>حذف</span>
+                                </div>` : ""}
+                            </div>
+                        </div>
+                    </div>
+                 </div>
+                `;
 
 
                 if (item.suspend) {
+                    card.classList.add("suspend-deal");
                     //isAdmin = false;
                     const text = isAdmin ? "مشتری این سفارش متعلق به کارشناس دیگری است، لطفاً مشخص کنید این سفارش باید به کدام کارشناس اختصاص یابد."
                         : "مشتری این سفارش متعلق به کارشناس دیگری است.";
@@ -613,9 +614,8 @@
                         <div class="mt-3 p-2 text-center" style="background-color:rgb(216 219 231 / 78%);border-radius: 10px;">
                             <p class="fMedium" style="font-size: 12px; color: #333;">${text}</p>
                             ${isAdmin ? `<div class="d-flex align-items-center gap-1 mt-3">
-                                <label for="assignUserSuspendSelect" class="flex-shrink-0" style="font-size: 11px">اختصاص به کارشناس</label>
-                                <select class="w-100 assignUser-suspendSelect" id="assignUserSuspendSelect" >
-
+                                <label for="assignUserSuspendSelect${index}" class="flex-shrink-0" style="font-size: 11px">اختصاص به کارشناس</label>
+                                <select class="w-100 assignUser-suspendSelect" id="assignUserSuspendSelect${index}" >
                                 </select>
                                 <button id="assignUserSuspendBtn" class="flex-center">
                                     <svg style="width: 24px;color: #198754" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
@@ -635,22 +635,16 @@
                             await assignUserSuspendDeal(item.id, userId, userFullName);
                         });
 
+                        const suspendSelect = card.querySelector(`.assignUser-suspendSelect`);
 
-                        const test = card.querySelector(`.assignUser-suspendSelect`);
+                        const options = item.userIdsForSuspend.map(u => ({ value: u.id, text: u.firstName }));
 
-                        const options = item.userIdsForSuspend.map(u => ({
-                            value: u.id,
-                            text: u.firstName,
-                        }));
-
-
-                        new TomSelect(test, {
+                        new TomSelect(suspendSelect, {
                             options: options,
                             items: options[0].value,
                             placeholder: "انتخاب تامین کننده",
                             maxItems: 1,
                             selectOnTab: true,
-                            // dropdownParent
                         });
 
                     }
