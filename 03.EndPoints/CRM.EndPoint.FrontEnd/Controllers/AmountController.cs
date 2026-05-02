@@ -140,8 +140,46 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var oldItem = await db.RequestAmounts.AsNoTracking().Where(f => f.Id == model.Id).FirstOrDefaultAsync();
                 var item = await db.RequestAmounts.Where(f => f.Id == model.Id).FirstOrDefaultAsync();
                 item.AcceptedAmount = model.AcceptedAmount;
-                item.RequestStatus = RequestStatusEnum.تایید_شده;
-                item.RequestStatusTxt = nameof(RequestStatusEnum.تایید_شده).Replace("_", " ");
+                item.RequestStatus = RequestStatusEnum.در_انتظار_ارسال_به_مالی;
+                item.RequestStatusTxt = nameof(RequestStatusEnum.در_انتظار_ارسال_به_مالی).Replace("_", " ");
+
+                item.UserModify = user.FullName;
+                item.UserModifyID = user.Id;
+                item.ModifyDate = DateTime.Now;
+                item.ModifyDateTxt = dtService.GetDateTimePersian();
+
+                await _logSystemService.LogChange(oldItem, item, LogActionEnum.تایید_و_تغییر_وضعیت, user);
+                await db.SaveChangesAsync();
+                await hub.Clients.Groups("مدیر عامل", "مدیر ارشد").SendAsync("countPreFactorToAccept");
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        public async Task<IActionResult> ChangeStatusRequestAmount(Guid id, RequestStatusEnum status)
+        {
+            if (id == Guid.Empty) return BadRequest();
+
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+
+                var oldItem = await db.RequestAmounts.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
+                var item = await db.RequestAmounts.Where(f => f.Id == id).FirstOrDefaultAsync();
+
+
+                item.RequestStatus = status;
+                item.RequestStatusTxt = item.RequestStatus.ToString().Replace("_", " ");
+
+                if (status == RequestStatusEnum.در_انتظار_پرداخت)
+                {
+                    var attaches = await db.Attachments.Where(f => f.EntityId == item.Id).ToListAsync();
+                    foreach (var attach in attaches)
+                        attach?.IsDeleted = true;
+                }
 
                 item.UserModify = user.FullName;
                 item.UserModifyID = user.Id;
@@ -179,7 +217,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 db.Attachments.UpdateRange(attachList);
 
-                reqAmount.Vosoled = true;
+                reqAmount.RequestStatus = RequestStatusEnum.واریز_شد;
+                reqAmount.RequestStatusTxt = nameof(RequestStatusEnum.واریز_شد).Replace("_", " ");
 
                 await _logSystemService.LogChange(oldReqAmount, reqAmount, LogActionEnum.تغییر_وضعیت, user);
                 await db.SaveChangesAsync();
@@ -220,7 +259,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (type != -1)
                 {
-                    query = query.Where(f => f.RequestStatus == (RequestStatusEnum)type);
+                    if (type == 1)
+                    {
+                        query = query.Where(f =>
+                            f.RequestStatus == RequestStatusEnum.در_انتظار_ارسال_به_مالی ||
+                            f.RequestStatus == RequestStatusEnum.در_انتظار_تایید_مدیرعامل
+                        );
+                    } else
+                    {
+                        query = query.Where(f => f.RequestStatus == (RequestStatusEnum)type);
+                    }
+                } else if (passType == 2)
+                {
+                    query = query.Where(f => f.RequestStatus != RequestStatusEnum.ثبت_اولیه);
                 }
 
                 var data = await query.OrderByDescending(f => f.CreateDate)

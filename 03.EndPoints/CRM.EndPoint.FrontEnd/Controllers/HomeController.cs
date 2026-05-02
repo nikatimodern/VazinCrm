@@ -24,6 +24,7 @@ using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
+using CRM.Core.Domain.RequestAmounts.Entities;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using WebPush;
@@ -68,6 +69,21 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 await trans.CommitAsync();
+
+                var data = await db.RequestAmounts.IgnoreQueryFilters().ToListAsync();
+                foreach (var r in data)
+                {
+                    if (r.Vosoled)
+                    {
+                        r.RequestStatus = RequestStatusEnum.واریز_شد;
+                        r.RequestStatusTxt = nameof(RequestStatusEnum.واریز_شد).Replace("_", " ");
+                    } else
+                    {
+                        r.RequestStatusTxt = r.RequestStatus.ToString().Replace("_", " ");
+                    }
+                }
+
+
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();
             }

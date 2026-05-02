@@ -268,7 +268,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
             if (roles.Contains("مدیر ارشد") || roles.Contains("مدیر عامل"))
             {
                 var invoiceCount = await accPf.OnlyManagingDirector().CountAsync(a => a.Status == AccStatusEnum.در_دست_تایید || a.Status == AccStatusEnum.ثبت_اولیه);
-                var reqCount = await db.RequestAmounts.CountAsync(f => f.RequestStatus == RequestStatusEnum.در_انتظار_تایید);
+                var reqCount = await db.RequestAmounts.CountAsync(f => f.RequestStatus == RequestStatusEnum.در_انتظار_تایید_مدیرعامل);
                 countObj.ManagingDirector = new SubCartableCountVModel {
                     InvoiceCount = invoiceCount,
                     RequestCount = reqCount

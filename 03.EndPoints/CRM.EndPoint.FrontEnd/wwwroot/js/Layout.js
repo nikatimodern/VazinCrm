@@ -4564,6 +4564,27 @@ async function getOrderHeadIdsBySupplier(supplierId) {
     }
 }
 
+async function changeStatusReqAmount(reqAmountId, status) {
+    try {
+        FLshowLoading();
+        const res = await axios(`/Amount/ChangeStatusRequestAmount?id=${reqAmountId}&status=${status}`);
+        if (res.status === 200) {
+            const currentPath = window.location.pathname.toLowerCase();
+            if (currentPath.includes("cartable")) {
+                await GetRequestManagingDirector();
+            } else {
+                await getAllRequestAmount();
+            }
+        }
+    } catch (err) {
+        console.log(err);
+        toastifyError("خطای سرور");
+    } finally {
+        FLshowLoading(false);
+    }
+}
+
+
 /*--------------------------------------------------------------------------------*/
 
 /*document.addEventListener("input", (e) => {

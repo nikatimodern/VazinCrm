@@ -459,7 +459,7 @@
             </div>
 
             @*کارتابل مدیر عامل*@
-            <div class="col-12 col-xl-10 col-xxl-9" style="display:none;padding:8px" id="CManagingDirectorId">
+            <div class="col-12 col-xxl-11" style="display:none;padding:8px" id="CManagingDirectorId">
                 <div class="d-flex flex-column w-100">
                     <ul class="nav nav-pills" id="ManagingDirectorTabs" role="tablist">
                         <li class="nav-item" role="presentation">
@@ -531,7 +531,7 @@
                                                 <label for="MDRequestAmountFilterAll">همه</label>
                                             </li>
                                             <li class="filter-switch-item">
-                                                <input type="radio" name="MDRequestAmountFilter" id="MDRequestAmountFilter1" value="1" checked />
+                                                <input type="radio" name="MDRequestAmountFilter" id="MDRequestAmountFilter1" value="1" />
                                                 <label for="MDRequestAmountFilter1">در انتظار تایید</label>
                                             </li>
                                             <li class="filter-switch-item">
@@ -1423,12 +1423,11 @@
             if (acceptAmount === 0) {
                 toggleElementsDisabled(acceptBtn, true);
             } else {
-                if (acceptedAmount === acceptAmount) {
+                /*if (acceptedAmount === acceptAmount) {
                     toggleElementsDisabled(acceptBtn, true);
-                } else {
-                    toggleElementsDisabled(acceptBtn, false);
-                    //acceptBtn.textContent = "تایید شده";
-                }
+                } else {*/
+                toggleElementsDisabled(acceptBtn, false);
+                // }
             }
         }
 
