@@ -5366,20 +5366,7 @@ table tr.payment-vosoled > td {
 }
 
 
-.search-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  border-top-left-radius: 6px;
-  border-bottom-left-radius: 6px;
-  padding: 6px;
-  background: rgba(0, 0, 0, 0.05);
-  border-right: 1px solid #dee2e6;
-}
+
 
 
 .search-icon svg {
