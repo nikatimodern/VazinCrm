@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.RequestAmounts.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
@@ -24,9 +25,9 @@ using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
-    [Authorize(Roles = " کارشناس فروش ,مدیر فروش , مدیر تامین ,  مدیر ارشد , کارشناس تامین")]
 
-    //[Authorize]
+
+    [Authorize(Policy = "NotCustomerOnly")]
     public class AmountController : Controller {
         private readonly UserManager<AppUser> userManager;
         private readonly Service genService;
@@ -160,11 +161,47 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+        [HttpPost]
+        public async Task<IActionResult> AttachAndVosolReqAmount([FromBody] AttachmentModel model)
+        {
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+
+                var oldReqAmount = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
+                var reqAmount = await db.RequestAmounts.FirstOrDefaultAsync(f => f.Id == model.Id);
+                if (reqAmount == null) return NotFound();
+
+
+                var attachList = fileSaver.saveAttach(model.ListAttach, _AttachType.requestAmount, false);
+                foreach (var att in attachList ?? [])
+                {
+                    att?.EntityId = model.Id;
+                }
+
+                db.Attachments.UpdateRange(attachList);
+
+                reqAmount.Vosoled = true;
+
+                await _logSystemService.LogChange(oldReqAmount, reqAmount, LogActionEnum.تغییر_وضعیت, user);
+                await db.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
 
         public async Task<IActionResult> GetAllRequestAmountsPartial(int passType, int type = -1, string search = "")
         {
             try
             {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var roles = await userManager.GetRolesAsync(user);
+                var isFinancial = roles.Contains("کارشناس مالی");
+
                 var query = db.RequestAmounts.AsNoTracking();
 
 
@@ -206,7 +243,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var html = await vrs.RenderToStringAsync("GetAllRequestAmountsPartial", data,
                     new Dictionary<string, object> {
-                        { "PassType", passType }
+                        { "PassType", passType },
+                        { "IsFinancial", isFinancial }
                     });
 
                 return Ok(new { count = data.Count, html });
@@ -337,7 +375,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-
+        [Authorize(Roles = "کارشناس فروش ,مدیر فروش , مدیر تامین , مدیر ارشد , کارشناس تامین")]
         public async Task<IActionResult> index()
         {
             return View();

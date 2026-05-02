@@ -309,11 +309,20 @@
 
                         <div class="tab-pane fade border-0" id="FinancialInvoiceTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
 
-                            <div class="d-flex flex-column align-items-center w-100 gap-3">
-                                <div class="w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center align-items-md-center">
+                            <div class="w-100">
+                                <div class="px-2 w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center align-items-md-center">
 
                                     <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
                                         تعداد: <span id="FinancialExpertInvoiceCount"></span>
+                                    </div>
+
+                                    <div data-class="d-flex" class="FinancialExpert align-items-center gap-1 justify-content-end" style="display: none">
+                                        <button class="buttonGreen0 deposit-btn py-1 px-2" style="font-size: 12px" onclick="showModalPreFactorList(1)">
+                                            ثبت واریزی
+                                        </button>
+                                        <button class="buttonCancel2 backward-btn py-1 px-2" style="background-color: #750002;font-size: 12px" onclick="showModalPreFactorList(2)">
+                                            ثبت برگشتی
+                                        </button>
                                     </div>
 
                                     <div class="search-group col-12 order-5 order-md-0 col-md-5">
@@ -346,8 +355,7 @@
                                     </div>
                                 </div>
 
-
-                                <div class="w-100" id="FinancialExpertInvoiceContentId">
+                                <div class="w-100 mt-3" id="FinancialExpertInvoiceContentId">
                                 </div>
                             </div>
                         </div>

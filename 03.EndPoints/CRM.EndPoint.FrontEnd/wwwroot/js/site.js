@@ -2271,6 +2271,7 @@ class MyService {
                         break;
                     case "checkbox":
                         elm.checked = Boolean(value);
+                        elm.dispatchEvent(new Event("change"));
                         break;
                     default:
                         break;
@@ -2329,6 +2330,12 @@ class MyService {
                 jsonData[name] = value;
             }
         }
+        
+        const checkboxes = formEl.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+            if (blackListArray.includes(cb.name)) return;
+            jsonData[cb.name] = cb.checked;
+        });
         
         disabledEls.forEach(el => el.setAttribute("disabled", "disabled"));
         return jsonData;

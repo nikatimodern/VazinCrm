@@ -574,7 +574,7 @@ const returnFactor = async (fid, cid, type = 1) => {
     _factorItems = factor.factorItems;
     f_officialType = factor.officialType;
     FactorDescItems = factor.descriptions;
-    console.log(factor);
+    
     
     const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
     currencyTypeElm.value = factor.currencyType ?? 0;
@@ -1199,7 +1199,8 @@ const showModalAddPfactor = async (type, cusId = null, deal) => {
     $("#official").checked = true;
     $("#PreFactor").modal("show");
     $("#date").val(await todayDate());
-    $("#validityDade").val(await tomorrowDate());
+    //$("#validityDade").val(await tomorrowDate());
+    $("#validityDade").val(await todayDate());
     getAllProductOp();
     Unit(1);
     FLshowLoading(false);
@@ -1278,25 +1279,26 @@ const submitPrefactorOK = async (type) => {
 
 //OfficialRqModal
 const submitFactor = async () => {
-    const sumTotalSupply = supplyData.reduce((sum, cur) => sum + (cur.supplyType === 3 ? -cur.totalAmount : cur.totalAmount), 0);
-    if (factor.sumTotalAmount <= sumTotalSupply) {
-        const result = await Swal.fire({
-            title: "زیان در ثبت فاکتور!",
-            text: "مبلغ نهایی فاکتور کمتر از بهای تمام‌شده است و ثبت آن منجر به زیان خواهد شد. آیا مایل به ثبت فاکتور هستید؟",
-            icon: "warning",
-            showCancelButton: true,
-            cancelButtonColor: "#adadad",
-            confirmButtonColor: "#0d6efd",
-            cancelButtonText: "خیر",
-            confirmButtonText: "بله، ثبت شود",
-        });
-        if (!result.isConfirmed) return;
-        
+    if (!factor.parentReturnedId) { // اگر فاکتور برگشتی نبود
+        const sumTotalSupply = supplyData.reduce((sum, cur) => sum + (cur.supplyType === 3 ? -cur.totalAmount : cur.totalAmount), 0);
+        if (factor.sumTotalAmount <= sumTotalSupply) {
+            const result = await Swal.fire({
+                title: "زیان در ثبت فاکتور!",
+                text: "مبلغ نهایی فاکتور کمتر از بهای تمام‌شده است و ثبت آن منجر به زیان خواهد شد. آیا مایل به ثبت فاکتور هستید؟",
+                icon: "warning",
+                showCancelButton: true,
+                cancelButtonColor: "#adadad",
+                confirmButtonColor: "#0d6efd",
+                cancelButtonText: "خیر",
+                confirmButtonText: "بله، ثبت شود",
+            });
+            if (!result.isConfirmed) return;
+        }
     }
     await submitFactorOK(Number(typeSubmitfactor));
 };
 
-const submitFactorOK = async (type) => {
+const submitFactorOK = async (type, unlinkSepidar = false) => {
     if (await mySer.CheckValidForm("#f_dateFormId") && await mySer.CheckValidForm("#f_SerialFormId")) {
         if (_factorItems.length <= 0) {
             $("#preFactorItemId").parent().css("border", "2px solid #ff6d00");
@@ -1305,7 +1307,7 @@ const submitFactorOK = async (type) => {
         }
         
         FLshowLoading();
-        factor.snFinancial = document.querySelector("#snFinancialFormId input[name='snFinancial']").value;
+        factor.snFinancial = document.querySelector("#snFinancialFormId input[name='snFinancial']").value || null;
         factor.date = document.querySelector("#f_dateFormId input[name='f_date']").value;
         factor.officialType = f_officialType;
         factor.customerId = customerId;
@@ -1313,41 +1315,60 @@ const submitFactorOK = async (type) => {
         factor.export = document.getElementById("f_export").checked;
         
         const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
-        factor.currencyType = currencyTypeElm.value;
+        factor.currencyType = Number(currencyTypeElm.value);
         factor.currencyTypeTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
         
-        
-        $.post(baseUrl + "Factor/AddFactor", factor, async () => {
-            if (type === 0) {
-                await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, modelFactor._type, factor.pfactorSerialNumber, type);
-                await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
-            } else if (type === 1) {
-                await getAllPreFactor();
-                
-                await GetFactorPartial(null, factor.pfactorID, null, null, factor.officialType, factor.pfactorSerialNumber, type);
-                getFacAmount(factor.pfactorID, factor.pfactorSerialNumber, null);
-                getAllDetailAmount();
-                //getAllFactor();
-            } else if (type === 4) {
-                if (!factor.id) {
-                    await getPreFactorFromDeal(dealData.id);
-                } else {
-                    await getAllFactorsModal(dealData.id, 4);
-                }
-            } else if (type === 5) {
-                await getAllFactorsModal(factor.pfactorID, 5);
-            } else if (type === 6) {
-                await getAllFactorsModal(factor.id, 6);
-            }
-            toastifySuccess("فاکتور با موفقیت ثبت شد.");
-            
-            cancelFactor();
-            ModalToggle("#Factor");
+        $.post(`/Factor/AddFactor?unlinkSepidar=${unlinkSepidar}`, factor, async (res) => {
             FLshowLoading(false);
-        })
-         .fail(() => {
-             setTimeout(async () => await submitFactorOK(type), 3000);
-         });
+            if (res.status === 200) {
+                if (type === 0) {
+                    await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, modelFactor._type, factor.pfactorSerialNumber, type);
+                    await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
+                } else if (type === 1) {
+                    await getAllPreFactor();
+                    
+                    await GetFactorPartial(null, factor.pfactorID, null, null, factor.officialType, factor.pfactorSerialNumber, type);
+                    getFacAmount(factor.pfactorID, factor.pfactorSerialNumber, null);
+                    getAllDetailAmount();
+                    //getAllFactor();
+                } else if (type === 4) {
+                    if (!factor.id) {
+                        await getPreFactorFromDeal(dealData.id);
+                    } else {
+                        await getAllFactorsModal(dealData.id, 4);
+                    }
+                } else if (type === 5) {
+                    await getAllFactorsModal(factor.pfactorID, 5);
+                } else if (type === 6) {
+                    await getAllFactorsModal(factor.id, 6);
+                }
+                toastifySuccess("فاکتور با موفقیت ثبت شد.");
+                cancelFactor();
+                ModalToggle("#Factor");
+                FLshowLoading(false);
+            } else if (res.status === 201) {
+                FLshowLoading(false);
+                const result = await Swal.fire({
+                    title: "خطا در همگام‌سازی با سپیدار!",
+                    text: "فاکتور معادل در سیستم سپیدار یافت نشد. برای ثبت تغییرات، لازم است ارتباط این فاکتور با سپیدار قطع شود. آیا تایید می‌کنید؟",
+                    icon: "error",
+                    showCancelButton: true,
+                    cancelButtonColor: "#adadad",
+                    confirmButtonColor: "#e64942",
+                    cancelButtonText: "انصراف",
+                    confirmButtonText: "ارتباط قطع شود",
+                });
+                
+                if (result.isConfirmed) {
+                    await submitFactorOK(type, true);
+                }
+            }
+            
+        }).fail((err) => {
+            console.log(err);
+            setTimeout(async () => await submitFactorOK(type), 3000);
+        });
+        
         
     }
 };

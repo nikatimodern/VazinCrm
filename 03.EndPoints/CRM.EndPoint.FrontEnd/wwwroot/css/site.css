@@ -5260,6 +5260,13 @@ table tr.payment-vosoled > td {
   transition: all .25s ease;
 }
 
+.layered-card {
+  --layer-bg-1: #f4f5f6;
+  --layer-bg-2: #f7f8f9;
+  --layer-bg-3: #eef1f2;
+  --layer-bg-4: #f9fafb;
+  --layer-bg-5: #f0f2f3;
+}
 
 .layered-card.layered-card-pill {
   border-radius: 100px;
@@ -5269,24 +5276,24 @@ table tr.payment-vosoled > td {
 .layered-card.layered-green {
   border-color: #198754;
   background: #f6fffb;
-}
-
-
-.layered-card {
-  --layer-bg-1: #f4f5f6;
-  --layer-bg-2: #f7f8f9;
-  --layer-bg-3: #eef1f2;
-  --layer-bg-4: #f9fafb;
-  --layer-bg-5: #f0f2f3;
-}
-
-
-.layered-card.layered-green {
+  
   --layer-bg-1: #eaf7f1;
   --layer-bg-2: #f2fbf7;
   --layer-bg-3: #e3f3ec;
   --layer-bg-4: #f6fffb;
   --layer-bg-5: #dff0e8;
+}
+
+
+.layered-card.layered-green-light {
+  border-color: #b7c6bf;
+  background: #fbfffd;
+  
+  --layer-bg-1: #f4fbf8;
+  --layer-bg-2: #f8fdfb;
+  --layer-bg-3: #eef8f3;
+  --layer-bg-4: #fbfffd;
+  --layer-bg-5: #eaf6f1;
 }
 
 
@@ -5380,4 +5387,23 @@ table tr.payment-vosoled > td {
   color: #999;
   width: 22px;
   cursor: pointer;
+}
+
+
+.overlay-card {
+  background-color: rgba(128, 128, 128, 0.8);
+  background-color:rgb(216 219 231 / 78%);
+  background-color:rgba(250,250,250,0.63);
+  
+  /* backdrop-filter: blur(1px); */
+  position: absolute;
+  padding: .5rem;
+  inset: 0;
+  z-index: 9;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
 }

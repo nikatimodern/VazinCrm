@@ -377,6 +377,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
+        public async Task<IActionResult> GetTotalAmountSupplyFactor(Guid supplierId)
+        {
+            var totalAmount = await db.SupplyFactors
+                .AsNoTracking()
+                .Where(f => f.SupplierId == supplierId)
+                .SumAsync(f => f.Amount);
+            return Ok(totalAmount);
+        }
+
         public async Task<IActionResult> DeleteSupplyFactor(Guid id)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
@@ -431,12 +440,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllSupplyFactorsTablePartial(string search = "")
+        [HttpPost]
+        public async Task<IActionResult> GetAllSupplyFactorsTablePartial([FromBody] GetAllSortBySelectedVModel model)
         {
             try
             {
-                var query = db.SupplyFactors.AsNoTracking().OrderByDescending(f => f.CreateDate).AsQueryable();
+                var search = model.Search;
+
+                var query = db.SupplyFactors
+                    .OrderByDescending(f => model.SelectedIds.Contains(f.Id))
+                    .ThenByDescending(f => f.CreateDate)
+                    .AsNoTracking()
+                    .AsQueryable();
+
                 if (!string.IsNullOrEmpty(search))
                 {
                     query = query.Where(f =>
@@ -1082,6 +1098,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 join pf in db.PreFactors on s.PfId equals pf.Id
                 join oh in db.OrderHeads on pf.Id equals oh.Prefactor
                 select oh.Id;
+            /*select new
+            {
+                oh.Id,
+                oh.OrderNumber
+            };*/
 
             var data = await result.Distinct().ToListAsync();
 

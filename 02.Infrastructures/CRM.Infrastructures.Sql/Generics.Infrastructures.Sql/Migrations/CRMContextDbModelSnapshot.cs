@@ -43,6 +43,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<bool?>("CrmFactors")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("CustomerAssignExpert")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("CustomerCanChooseInvoiceType")
                         .HasColumnType("bit");
 
@@ -50,6 +53,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("bit");
 
                     b.Property<bool?>("FinancialConfirm")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("MultiSelectOrderHeadsInRequestAmount")
                         .HasColumnType("bit");
 
                     b.Property<bool?>("Sepidar")
@@ -1551,6 +1557,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<bool>("Suspend")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Title")
                         .HasColumnType("nvarchar(max)");
 
@@ -2956,6 +2965,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("ModifyDateTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("Prepayment")
+                        .HasColumnType("bit");
+
                     b.Property<int>("RequestNumber")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
@@ -2966,6 +2978,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("RequestStatusTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("SupplierId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SupplierTxt")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserCreator")
@@ -2979,6 +2997,9 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.Property<string>("UserModifyID")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Vosoled")
+                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 

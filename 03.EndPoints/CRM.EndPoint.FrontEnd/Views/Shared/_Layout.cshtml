@@ -25,7 +25,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/logo-180x180.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
-    <link rel="manifest" href="/manifest.json?v=3.5.0">
+    <link rel="manifest" href="/manifest.json?v=3.5.8">
 
     <meta name="apple-mobile-web-app-title" content="VazinCRM">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -64,19 +64,19 @@
     <link rel="stylesheet" href="~/lib/Awesomplete/Awesomplete.css" />
     <link rel="stylesheet" href="~/lib/TomSelect/tom-select.min.css" />
 
-    <link rel="stylesheet" href="~/css/site.css?v=3.5.0" />
-    <link rel="stylesheet" href="~/css/table.css?v=3.5.0" />
-    <link rel="stylesheet" href="~/css/layoutResponsive.css?v=3.5.0" />
-    <link rel="stylesheet" href="~/css/customerIndexResponsive.css?v=3.5.0" />
-    <link rel="stylesheet" href="~/css/customerProfileResponsive.css?v=3.5.0" />
-    <link rel="stylesheet" href="~/css/listProduct.css?v=3.5.0" />
-    <link rel="stylesheet" href="~/css/carizo.css?v=3.5.0" />
-    <link rel="stylesheet" href="~/css/reports.css?v=3.5.0" />
-    <link rel="stylesheet" href="~/css/dashboard.css?v=3.5.0" />
-    <link rel="stylesheet" href="~/css/order.css?v=3.5.0" />
-    <link rel="stylesheet" href="~/css/deal.css?v=3.5.0" />
-    <link rel="stylesheet" href="~/css/cartableStyle.css?v=3.5.0" />
-    <link rel="stylesheet" href="~/css/email.css?v=3.5.0" />
+    <link rel="stylesheet" href="~/css/site.css?v=3.5.8" />
+    <link rel="stylesheet" href="~/css/table.css?v=3.5.8" />
+    <link rel="stylesheet" href="~/css/layoutResponsive.css?v=3.5.8" />
+    <link rel="stylesheet" href="~/css/customerIndexResponsive.css?v=3.5.8" />
+    <link rel="stylesheet" href="~/css/customerProfileResponsive.css?v=3.5.8" />
+    <link rel="stylesheet" href="~/css/listProduct.css?v=3.5.8" />
+    <link rel="stylesheet" href="~/css/carizo.css?v=3.5.8" />
+    <link rel="stylesheet" href="~/css/reports.css?v=3.5.8" />
+    <link rel="stylesheet" href="~/css/dashboard.css?v=3.5.8" />
+    <link rel="stylesheet" href="~/css/order.css?v=3.5.8" />
+    <link rel="stylesheet" href="~/css/deal.css?v=3.5.8" />
+    <link rel="stylesheet" href="~/css/cartableStyle.css?v=3.5.8" />
+    <link rel="stylesheet" href="~/css/email.css?v=3.5.8" />
 </head>
 
 
@@ -105,7 +105,7 @@
                 </div>
             </div>
             <nav class="d-flex flex-column justify-content-between h-100 overflow-auto text-white w-100 p-2">
-                <div style="display:flex;gap:4px;flex-direction:column; justify-content:space-around ;align-items:center;">
+                <div class="d-flex flex-column justify-content-around align-content-center gap-1">
                     <a data-tooltip-left="داشبورد" class="menuBox menuLink Admin SalesExpert SalesAdmin TaminExpert TaminAdmin FinancialExpert FinancialAdmin" style="display:none" href="/Dashboard/Index">
                         <svg class="menuIcon" style="overflow:visible" viewBox="0 0 24 24" fill="currentColor"><path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" /><path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" /></svg>
                         <span style="font-size:14px" class="flex-grow-1">داشبورد</span>
@@ -946,6 +946,7 @@
                                         <option value="30">30</option>
                                         <option value="50" selected>50</option>
                                         <option value="70">70</option>
+                                        <option value="100">100</option>
                                     </select>
                                 </div>
                                 <div class="h-100 w-100 d-flex flex-column">
@@ -1265,6 +1266,7 @@
                                 <option value="30">30</option>
                                 <option value="50" selected>50</option>
                                 <option value="70">70</option>
+                                <option value="100">100</option>
                             </select>
                         </div>
                         <div style="width:100%; display:flex;position:relative">
@@ -1673,14 +1675,8 @@
 <div class="modal fade " dir="ltr" id="Attachments" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
 
-
         <div class="modal-content col-12" style="padding:10px 10px 0">
 
-
-            @*
-                <div style="height:2px; margin-bottom:10px; display:flex; justify-content:center; background-color:rebeccapurple;color:white;border-radius:5px">
-
-                </div> *@
             <div class="modal-body" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
                 <div class="col-12">
                     <div class="fmp ">
@@ -2878,7 +2874,7 @@
 </div>
 
 <!-- addSupplyFactor Modal -->
-<div class="modal fade" id="addSupplyFactorModal" tabindex="-1" data-bs-focus="false">
+<div class="modal fade" id="addSupplyFactorModal" tabindex="-1" data-bs-focus="false" data-bs-backdrop="static">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content" style="border-radius: 12px;overflow: hidden;box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25)">
             <div class="modal-header">
@@ -2906,7 +2902,7 @@
 
 
 <!-- addOrderHead Modal -->
-<div class="modal fade" id="addOrderHeadModal" tabindex="-1" data-bs-focus="false">
+<div class="modal fade" id="addOrderHeadModal" tabindex="-1" data-bs-focus="false" data-bs-backdrop="static">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content" style="border-radius: 12px;overflow: hidden;box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25)">
             <div class="modal-header">
@@ -2925,6 +2921,35 @@
             <div class="modal-footer justify-content-center p-2">
                 <button style="padding-block:4px" type="button" class="buttonCancel2" onclick="toggleAddOrderHeadModal()">انصراف</button>
                 <button id="submitSelectedOrderHeads" style="padding-block:4px" type="button" class="buttonGreen3 d-none" onclick="submitSelectedOrderHeads()">ثبت</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- preFactorList Modal -->
+<div class="modal fade" id="preFactorListModal" tabindex="-1" data-bs-focus="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: 12px;overflow: hidden;box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25)">
+            <div class="modal-header">
+                <div class="d-flex align-items-center justify-content-between w-100">
+                    <div>
+                        <p class="fbold mb-1">انتخاب پیش‌فاکتور</p>
+                        <p style="font-size: 11px">پیش‌فاکتوری که میخواهید روی آن صورتحساب ثبت کنید را انتخاب نمایید</p>
+                    </div>
+                    <div>
+                        <input id="preFactorListSearch" type="text" class="form-control" placeholder="جستجو..">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-body p-0">
+                <div id="preFactorListContainer"></div>
+            </div>
+
+            <div class="modal-footer justify-content-center p-2">
+                <button style="padding-block:4px" type="button" class="buttonCancel2" data-bs-dismiss="modal">انصراف</button>
+                @* <button id="submitSelectedPreFactor" style="padding-block:4px" type="button" class="buttonGreen3 d-none" onclick="submitSelectedPreFactor()">ثبت</button> *@
             </div>
 
         </div>
@@ -3054,14 +3079,14 @@
 <script src="~/lib/Awesomplete/awesomplete.min.js"></script>
 <script src="~/lib/TomSelect/tom-select.complete.min.js"></script>
 
-<script src="~/js/pwa.js?v=3.5.0"></script>
-<script src="~/js/site.js?v=3.5.0"></script>
-<script src="~/js/UploadFile.js?v=3.5.0"></script>
-<script src="~/js/PublicFunction.js?v=3.5.0"></script>
-<script src="~/js/DateValidate.js?v=3.5.0"></script>
-<script src="~/js/TaskSignalR.js?v=3.5.0"></script>
-@* <script src="~/js/dashboard.js?v=3.5.0"></script> *@
-<script src="~/js/Layout.js?v=3.5.0" defer></script>
+<script src="~/js/pwa.js?v=3.5.8"></script>
+<script src="~/js/site.js?v=3.5.8"></script>
+<script src="~/js/UploadFile.js?v=3.5.8"></script>
+<script src="~/js/PublicFunction.js?v=3.5.8"></script>
+<script src="~/js/DateValidate.js?v=3.5.8"></script>
+<script src="~/js/TaskSignalR.js?v=3.5.8"></script>
+@* <script src="~/js/dashboard.js?v=3.5.8"></script> *@
+<script src="~/js/Layout.js?v=3.5.8" defer></script>
 
 <script>
     var baseUrl;

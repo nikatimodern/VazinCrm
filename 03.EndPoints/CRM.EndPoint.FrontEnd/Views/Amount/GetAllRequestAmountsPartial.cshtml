@@ -2,7 +2,8 @@
 @model List<CRM.EndPoint.FrontEnd.Models.ViewModel.Amount.RequestAmountVModel>
 
 @{
-    var passType = ViewBag.PassType;
+    var passType = ViewBag.PassType; //1: requestAmount | 2: cartable MD
+    var isFinancial = ViewBag.IsFinancial;
 }
 
 <div class="col-12 mx-auto d-flex flex-column" style="gap:12px;padding-bottom: 12px;">
@@ -12,7 +13,7 @@
         var orderHeadNumbers = item.OrderHeadSerials;
         var statusAccepted = requestAmount.RequestStatus == RequestStatusEnum.تایید_شده;
 
-        <div class="layered-card layered-card-pill @(statusAccepted ? "layered-green" : "")">
+        <div class="layered-card layered-card-pill @(statusAccepted ? requestAmount.Vosoled ? "layered-green" : "layered-green-light" : "")">
 
             <div class="layered-card__layer col-12 col-lg-3 d-flex flex-column justify-content-center px-3 px-lg-4 py-2">
                 <div class="d-flex justify-content-between align-items-baseline mb-1">
@@ -30,7 +31,9 @@
             <div class="layered-card__layer col-12 col-lg-3 col-xl-4 d-flex flex-column justify-content-center align-items-center px-3 py-2">
                 <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mb-2 text-center">
                     <span style="font-size: 13px; color: #777">نوع:</span>
-                    <span class="fbold">@requestAmount.DocTypeTxt</span>
+                    <span class="fbold">
+                        @requestAmount.DocTypeTxt @(requestAmount.Prepayment ? "(پیش پرداخت)" : "")
+                    </span>
                 </div>
                 @if (supplyFactorSerials.Any()) {
                     <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mb-2 text-center">
@@ -42,6 +45,12 @@
                     <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mb-2 text-center">
                         <span style="font-size: 13px; color: #777">حواله تولید:</span>
                         <span class="fbold direction-ltr">@string.Join(", ", orderHeadNumbers)</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(requestAmount.SupplierTxt)) {
+                    <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mb-2 text-center">
+                        <span style="font-size: 13px; color: #777">تامین کننده:</span>
+                        <span class="fbold direction-ltr">@requestAmount.SupplierTxt</span>
                     </div>
                 }
                 <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 text-center">
@@ -66,8 +75,31 @@
                     </div>
                 </div>
 
-                if (!statusAccepted) {
-                    <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column px-2 py-2 gap-4 gap-lg-3">
+                if (statusAccepted) {
+                    if (!requestAmount.Vosoled) {
+                        <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column p-2 gap-4 gap-lg-3">
+                            @if (isFinancial) {
+                                <button class="buttonGreen2" onclick="showAttachReqAmount('@requestAmount.Id')">واریز شد</button>
+                            } else {
+                                <span class="fbold" style="color: gray">در دست واریز</span>
+                            }
+                        </div>
+                    } else {
+                        <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column p-2 gap-4 gap-lg-3">
+                            @if (isFinancial) {
+                                <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="showAttachReqAmount('@requestAmount.Id')">
+                                    <i class="fa fa-paperclip"></i>
+                                </button>
+                            } else {
+                                <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="showAttachments('@requestAmount.Id', 11)">
+                                    <i class="fa fa-paperclip"></i>
+                                </button>
+                            }
+                            <span class="fbold" style="color: #04857c">واریز شد</span>
+                        </div>
+                    }
+                } else {
+                    <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column p-2 gap-4 gap-lg-3">
                         <button class="flex-center p-0" data-title-right="ویرایش" style="color:#333; border:none; background-color:transparent" onclick="showEditRequestAmountModal('@requestAmount.Id')">
                             <i class="fa fa-pencil"></i>
                         </button>
@@ -85,8 +117,8 @@
                             decimal[] percents = [25, 50, 75, 100];
                             var percent = (requestAmount.AcceptedAmount * 100) / requestAmount.Amount;
                         }
-                        <input name="acceptedAmount" type="text" class="form-control currencyNumber" oninput="changeAcceptedRequestAmount(this, @requestAmount.Amount, @requestAmount.AcceptedAmount)" value="@(requestAmount.AcceptedAmount > 0 ? string.Format("{0:n0}", requestAmount.AcceptedAmount) : "")" required>
-                        <select class="form-select form-select-xs" style="background-color: @(percents.Contains(percent) ? "#e3f7e3" : "");" onchange="changePercentAcceptedRequestAmount(this, @requestAmount.Amount, @requestAmount.AcceptedAmount)">
+                        <input name="acceptedAmount" @(requestAmount.Vosoled ? "disabled" : "") type="text" class="form-control currencyNumber" oninput="changeAcceptedRequestAmount(this, @requestAmount.Amount, @requestAmount.AcceptedAmount)" value="@(requestAmount.AcceptedAmount > 0 ? string.Format("{0:n0}", requestAmount.AcceptedAmount) : "")" required>
+                        <select class="form-select form-select-xs" @(requestAmount.Vosoled ? "disabled" : "") style="background-color: @(percents.Contains(percent) ? "#e3f7e3" : "");" onchange="changePercentAcceptedRequestAmount(this, @requestAmount.Amount, @requestAmount.AcceptedAmount)">
                             <option value="" selected="@(percent == 0 ? "selected" : null)">درصد</option>
                             @foreach (var p in percents) {
                                 <option value="@p" selected="@(percent == p ? "selected" : null)">@p%</option>
@@ -96,7 +128,14 @@
                 </div>
 
                 <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column px-2 py-2 gap-4 gap-lg-3">
-                    <button class="buttonGreen2" onclick="submitAcceptedRequestAmount(this, '@requestAmount.Id')" disabled>تایید</button>
+                    @if (requestAmount.Vosoled) {
+                        <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="showAttachments('@requestAmount.Id', 11)">
+                            <i class="fa fa-paperclip"></i>
+                        </button>
+                        <span class="fbold" style="color: #04857c">واریز شد</span>
+                    } else {
+                        <button class="buttonGreen2" onclick="submitAcceptedRequestAmount(this, '@requestAmount.Id')" disabled>تایید</button>
+                    }
                 </div>
             }
         </div>

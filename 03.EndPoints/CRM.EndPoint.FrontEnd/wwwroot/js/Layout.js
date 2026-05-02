@@ -1968,6 +1968,8 @@ const Backward = (id, type, dealId) => {
 const GetSetting = async () => {
     return new Promise((resolve) => {
         $.get("/ASetting/GetSetting", (res) => {
+            setting = res;
+            document.dispatchEvent(new CustomEvent("settingReady"));
             resolve(res);
         })
          .fail(async () => {
@@ -2578,6 +2580,11 @@ const submitInvoice = async () => {
                 await refreshInvoiceSuccess();
                 toastifySuccess(isEditInvoiceModal ? "ویرایش انجام شد" : "ثبت انجام شد");
                 closeModalInvoice();
+                
+                const pfListModal = document.getElementById("preFactorListModal");
+                if (pfListModal.classList.contains("show")) {
+                    ModalToggle(pfListModal, "hide");
+                }
             } else {
                 toastifyError(res.error);
             }
@@ -4430,17 +4437,18 @@ const showAttachments = async (id, typeAtt) => {
 /*--------------------------------------------------------------------------------*/
 const addSupplyFactorModal = document.getElementById("addSupplyFactorModal");
 let supplyFactorsSelectedIds = [];
+let tempSupFacSelectedIds = [];
+let tempSupFacSelectedMap = new Map();  // id -> number
+
 let supplyFactorsTargetInput;
 async function showAddSupplyFactorModal(elm) {
     supplyFactorsTargetInput = elm.parentElement.querySelector("input");
+    
+    tempSupFacSelectedIds = [...supplyFactorsSelectedIds];
+    tempSupFacSelectedMap.clear();
+    
     await getAllSupplyFactorsTable();
-    addSupplyFactorModal.querySelectorAll("input[type='checkbox']").forEach((checkbox) => {
-        if (supplyFactorsSelectedIds.includes(checkbox.value)) {
-            checkbox.checked = true;
-        }
-    });
     toggleAddSupplyFactorModal();
-    addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !supplyFactorsSelectedIds.length);
 }
 
 
@@ -4450,28 +4458,37 @@ function toggleAddSupplyFactorModal() {
 }
 
 const getAllSupplyFactorsTable = async (search = "") => {
-    const res = await axios(`/Supply/GetAllSupplyFactorsTablePartial?search=${search}`);
+    const model = { search, selectedIds: tempSupFacSelectedIds };
+    const res = await axios.post(`/Supply/GetAllSupplyFactorsTablePartial`, model);
     
     addSupplyFactorModal.querySelector("#addSupplyFactorContainer").innerHTML = res.data;
+    
+    restoreSelectedSupplyFactor();
 };
 
 addSupplyFactorModal?.querySelector("#addSupplyFactorContainer").addEventListener("change", (e) => {
     const checkbox = e.target.closest("input[type='checkbox']");
     if (!checkbox) return;
     
-    const anyChecked = addSupplyFactorModal.querySelector("#addSupplyFactorContainer input[type='checkbox']:checked");
+    if (checkbox.checked) {
+        if (!tempSupFacSelectedIds.includes(checkbox.value)) {
+            tempSupFacSelectedIds.push(checkbox.value);
+            tempSupFacSelectedMap.set(checkbox.value, checkbox.dataset.number);
+        }
+    } else {
+        const idx = tempSupFacSelectedIds.indexOf(checkbox.value);
+        if (idx !== -1) tempSupFacSelectedIds.splice(idx, 1);
+        tempSupFacSelectedMap.delete(checkbox.value);
+    }
     
-    addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !anyChecked);
+    const anySelected = tempSupFacSelectedIds.length > 0;
+    addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !anySelected);
 });
 
 const submitSelectedSupplyFactor = () => {
-    const checkedBoxes = [...addSupplyFactorModal.querySelectorAll("#addSupplyFactorContainer input[type='checkbox']:checked")];
+    supplyFactorsSelectedIds = [...tempSupFacSelectedIds];
     
-    supplyFactorsSelectedIds.length = 0;
-    supplyFactorsSelectedIds.push(...checkedBoxes.map(cb => cb.value).reverse());
-    
-    //const inpElm = document.getElementById("reqAmountSupplyFactor");
-    supplyFactorsTargetInput.value = checkedBoxes.map(cb => cb.dataset.number).join(", ");
+    supplyFactorsTargetInput.value = [...tempSupFacSelectedMap.values()].join(", ");
     supplyFactorsTargetInput.classList.remove("AlertReq");
     ModalToggle(addSupplyFactorModal);
 };
@@ -4485,8 +4502,67 @@ addSupplyFactorModal?.querySelector("#addSupplyFactorSearch").addEventListener("
         e.target.focus();
     }
 });
+
+
+function restoreSelectedSupplyFactor() {
+    addSupplyFactorModal.querySelectorAll("#addSupplyFactorContainer input").forEach(inp => {
+        if (tempSupFacSelectedIds.includes(inp.value)) {
+            inp.checked = true;
+            tempSupFacSelectedMap.set(inp.value, inp.dataset.number);
+        }
+    });
+    const anySelected = tempSupFacSelectedIds.length > 0;
+    addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !anySelected);
+}
+
 /*--------------------------------------------------------------------------------*/
 
+const preFactorListModal = document.getElementById("preFactorListModal");
+let accType_pfList;
+async function showModalPreFactorList(accType) {
+    accType_pfList = accType;
+    await getAllPreFactorList();
+    preFactorListModal.querySelector("#preFactorListSearch").value = "";
+    ModalToggle(preFactorListModal);
+}
+
+const getAllPreFactorList = async (search = "") => {
+    const res = await axios(`/Factor/GetAllPreFactorList?search=${search}`);
+    
+    preFactorListModal.querySelector("#preFactorListContainer").innerHTML = res.data;
+};
+
+preFactorListModal.querySelector("#preFactorListSearch").addEventListener("keyup", async (e) => {
+    if (e.key === "Enter") {
+        toggleElementsDisabled(e.target);
+        await getAllPreFactorList(e.target.value.trim());
+        toggleElementsDisabled(e.target, false);
+        e.target.focus();
+    }
+});
+
+
+async function selectPfFromPfListModal(pfId) {
+    InvoiceType = 1;
+    pfactorID = pfId;
+    await ShowModalInvoice(accType_pfList);
+}
+
+
+/*--------------------------------------------------------------------------------*/
+
+async function getOrderHeadIdsBySupplier(supplierId) {
+    try {
+        const res = await axios(`/Supply/GetOrderHeadsBySupplier?supplierId=${supplierId}`);
+        if (res.status === 200) {
+            return res.data;
+        }
+        return [];
+    } catch (err) {
+        console.log(err);
+        return [];
+    }
+}
 
 /*--------------------------------------------------------------------------------*/
 
