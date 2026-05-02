@@ -5,9 +5,11 @@
 }
 
 <div class="my-2 mb-md-3 col-8 offset-2 col-md-6 offset-md-3">
-    <form onsubmit="searchProduct(event, 'amountIndex')">
-
+    <form class="search-group" onsubmit="searchProduct(event, 'amountIndex')">
         <input class="form-control" style="font-size:1rem !important;min-height:34px" type="text" name="search" placeholder="جستجو نام محصول" />
+        <button class="search-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+        </button>
     </form>
 </div>
 <div id="ListProductId" class="col-12" style="max-height:80dvh;overflow:auto">
