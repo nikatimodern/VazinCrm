@@ -387,18 +387,27 @@ public class CashController : Controller {
                     "Serial" => isAscending
                         ? query.OrderBy(f => f.Serial)
                         : query.OrderByDescending(f => f.Serial),
-                    "Amount" => isAscending
-                        ? query.OrderBy(f => f.Amount)
-                        : query.OrderByDescending(f => f.Amount),
-                    "CostTitle" => isAscending
+                    "CreateDateTxt" => isAscending
+                        ? query.OrderBy(f => f.CreateDate)
+                        : query.OrderByDescending(f => f.CreateDate),
+                    "CostTitleTxt" => isAscending
                         ? query.OrderBy(f => f.CostTitleTxt)
                         : query.OrderByDescending(f => f.CostTitleTxt),
-                    "CostCenter" => isAscending
+                    "CostCenterTxt" => isAscending
                         ? query.OrderBy(f => f.CostCenterTxt)
                         : query.OrderByDescending(f => f.CostCenterTxt),
                     "CostDate" => isAscending
                         ? query.OrderBy(f => f.CostDateMiladi)
                         : query.OrderByDescending(f => f.CostDateMiladi),
+                    "Amount" => isAscending
+                        ? query.OrderBy(f => f.Amount)
+                        : query.OrderByDescending(f => f.Amount),
+                    "CostDescription" => isAscending
+                        ? query.OrderBy(f => f.CostDescription)
+                        : query.OrderByDescending(f => f.CostDescription),
+                    "UserCreator" => isAscending
+                        ? query.OrderBy(f => f.UserCreator)
+                        : query.OrderByDescending(f => f.UserCreator),
                     _ => query
                 };
             }
@@ -407,7 +416,7 @@ public class CashController : Controller {
             if (length != -1)
                 query = query.Skip(start).Take(length);
 
-            var data = await query.OrderByDescending(f => f.CreateDate).ToListAsync();
+            var data = await query.ToListAsync();
 
             return Json(new {
                 draw,
