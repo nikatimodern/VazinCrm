@@ -5260,6 +5260,7 @@ table tr.payment-vosoled > td {
   transition: all .25s ease;
 }
 
+
 .layered-card {
   --layer-bg-1: #f4f5f6;
   --layer-bg-2: #f7f8f9;
@@ -5267,6 +5268,7 @@ table tr.payment-vosoled > td {
   --layer-bg-4: #f9fafb;
   --layer-bg-5: #f0f2f3;
 }
+
 
 .layered-card.layered-card-pill {
   border-radius: 100px;
@@ -5369,9 +5371,12 @@ table tr.payment-vosoled > td {
   align-items: center;
   justify-content: center;
   position: absolute;
-  left: 4px;
+  left: 0;
   top: 0;
   bottom: 0;
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+  padding: 6px;
 }
 
 
@@ -5382,18 +5387,31 @@ table tr.payment-vosoled > td {
 }
 
 
+
+.search-icon:hover,
+.search-group:focus-within .search-icon {
+  background: rgba(0, 0, 0, 0.05);
+  /* border-right: 1px solid #dee2e6; */
+}
+
+
 .search-icon:hover svg,
 .search-group:focus-within .search-icon svg {
-  color: #999;
-  width: 22px;
+  color: #666;
+  transform: scale(1.1);
   cursor: pointer;
+}
+
+
+.search-group input:placeholder-shown ~ .search-icon svg {
+  color: #aaa;
 }
 
 
 .overlay-card {
   background-color: rgba(128, 128, 128, 0.8);
-  background-color:rgb(216 219 231 / 78%);
-  background-color:rgba(250,250,250,0.63);
+  background-color: rgb(216 219 231 / 78%);
+  background-color: rgba(250, 250, 250, 0.63);
   
   /* backdrop-filter: blur(1px); */
   position: absolute;
