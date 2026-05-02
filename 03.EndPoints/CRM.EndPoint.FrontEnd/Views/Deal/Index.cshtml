@@ -699,10 +699,9 @@
                     selectTomCustomers.setValue(customId, true);
 
                     const mobileNumber = currentDealData.mobileNumber;
-                    dealMobileElm.tomselect.addOption({ mobile: mobileNumber });
+                    dealMobileElm.tomselect.addOption({ value: mobileNumber });
                     dealMobileElm.tomselect.setValue(mobileNumber, true);
                 }
-
 
             } catch (err) {
                 console.log(err);
