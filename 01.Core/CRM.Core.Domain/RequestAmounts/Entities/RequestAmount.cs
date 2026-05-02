@@ -23,6 +23,7 @@ namespace CRM.Core.Domain.RequestAmounts.Entities {
         public string SupplierTxt { get; set; }
 
         public bool Prepayment { get; set; }
+        public string Description { get; set; }
     }
 
     public enum RequestAmountDocType {
