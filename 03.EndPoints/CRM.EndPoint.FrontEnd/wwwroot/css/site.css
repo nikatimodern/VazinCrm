@@ -5377,6 +5377,8 @@ table tr.payment-vosoled > td {
   border-top-left-radius: 6px;
   border-bottom-left-radius: 6px;
   padding: 6px;
+  background: rgba(0, 0, 0, 0.05);
+  border-right: 1px solid #dee2e6;
 }
 
 
@@ -5387,18 +5389,9 @@ table tr.payment-vosoled > td {
 }
 
 
-
-.search-icon:hover,
-.search-group:focus-within .search-icon {
-  background: rgba(0, 0, 0, 0.05);
-  /* border-right: 1px solid #dee2e6; */
-}
-
-
 .search-icon:hover svg,
 .search-group:focus-within .search-icon svg {
   color: #666;
-  transform: scale(1.1);
   cursor: pointer;
 }
 
