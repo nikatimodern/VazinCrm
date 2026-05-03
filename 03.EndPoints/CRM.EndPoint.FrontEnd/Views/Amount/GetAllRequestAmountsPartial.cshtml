@@ -11,10 +11,17 @@
         var reqAmount = item.RequestAmount;
         var supplyFactorSerials = item.SupplyFactorSerials;
         var orderHeadNumbers = item.OrderHeadSerials;
-        var pendingFinancial = reqAmount.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت;
-        var vosoled = reqAmount.RequestStatus == RequestStatusEnum.واریز_شد;
+        var status = reqAmount.RequestStatus;
 
-        <div class="layered-card layered-card-pill @(pendingFinancial ? "layered-green-light" : vosoled ? "layered-green" : "")">
+        var bgCssClass = status switch {
+            RequestStatusEnum.در_انتظار_پرداخت => "layered-green-light",
+            RequestStatusEnum.واریز_شد => "layered-green",
+            RequestStatusEnum.در_انتظار_تایید_مدیرعامل or RequestStatusEnum.در_انتظار_ارسال_به_مالی => "layered-purple-light",
+            //RequestStatusEnum.در_انتظار_تایید_مدیرعامل or RequestStatusEnum.در_انتظار_ارسال_به_مالی => "layered-gold",
+            _ => ""
+        };
+
+        <div class="layered-card layered-card-pill @(bgCssClass)">
 
             <div class="layered-card__layer col-12 col-lg-3 d-flex flex-column justify-content-center px-3 px-lg-4 py-2">
                 <div class="d-flex justify-content-between align-items-baseline mb-1">
@@ -76,14 +83,14 @@
             @if (passType == 1) {
                 <div class="layered-card__layer col d-flex flex-row flex-lg-column justify-content-between justify-content-lg-center align-items-center px-3 py-2">
                     <span style="font-size: 13px; color: #777">مبلغ تایید شده:</span>
-                    <div class="fbold flex-center align-items-baseline column-gap-1 @(reqAmount.RequestStatus is RequestStatusEnum.در_انتظار_پرداخت or RequestStatusEnum.واریز_شد ? "badgeGreen" : "")">
+                    <div class="fbold flex-center align-items-baseline column-gap-1 @(status is RequestStatusEnum.در_انتظار_پرداخت or RequestStatusEnum.واریز_شد ? "badgeGreen" : "")">
                         <span style="font-size: 16px;">@($"{reqAmount.AcceptedAmount:n0}")</span>
                         <span style="font-size: 11px;">ريال</span>
                     </div>
                 </div>
 
                 <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column p-2 gap-4 gap-lg-3">
-                    @switch (reqAmount.RequestStatus) {
+                    @switch (status) {
                         case RequestStatusEnum.ثبت_اولیه:
                             if (isFinancial) {
                                 <span class="fbold" style="color:#777">@reqAmount.RequestStatusTxt</span>
@@ -105,7 +112,7 @@
                             break;
                         case RequestStatusEnum.در_انتظار_تایید_مدیرعامل:
                         case RequestStatusEnum.در_انتظار_ارسال_به_مالی:
-                            <span class="fbold text-center" style="color: #CC9900">@reqAmount.RequestStatusTxt</span>
+                            <span class="fbold text-center" style="color: rebeccapurple">@reqAmount.RequestStatusTxt</span>
                             break;
                         case RequestStatusEnum.در_انتظار_پرداخت:
                             if (isFinancial) {
@@ -114,21 +121,16 @@
                                     <button class="buttonCancel3" onclick="changeStatusReqAmount('@reqAmount.Id', 1)">برگشت</button>
                                 </div>
                             } else {
-                                <span class="fbold" style="color: #CC9900">@reqAmount.RequestStatusTxt</span>
+                                <span class="fbold" style="color: #4f817d">@reqAmount.RequestStatusTxt</span>
                             }
 
                             break;
                         case RequestStatusEnum.واریز_شد:
-                            if (isFinancial) {
-                                <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor)" onclick="showAttachReqAmount('@reqAmount.Id')">
-                                    <i class="fa fa-paperclip"></i>
-                                </button>
-                            } else {
-                                <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor)" onclick="showAttachments('@reqAmount.Id', 11)">
-                                    <i class="fa fa-paperclip"></i>
-                                </button>
-                            }
+                            var attachFn = isFinancial ? $"showAttachReqAmount('{reqAmount.Id}')" : $"showAttachments('{reqAmount.Id}', 11)";
 
+                            <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor)" onclick="@attachFn">
+                                <i class="fa fa-paperclip"></i>
+                            </button>
                             <div class="flex-center gap-2">
                                 <span class="fbold" style="color: #04857c">واریز شد</span>
                                 @if (isFinancial) {
@@ -141,15 +143,14 @@
                     }
                 </div>
             } else if (passType == 2) {
+                decimal[] percents = [25, 50, 75, 100];
+                var percent = (reqAmount.AcceptedAmount * 100) / reqAmount.Amount;
+                var pendingMd = status == RequestStatusEnum.در_انتظار_تایید_مدیرعامل;
+
                 <div class="layered-card__layer col-12 col-lg-3 col-xl-2 d-flex flex-row flex-lg-column justify-content-between justify-content-lg-center align-items-center px-3 py-2 gap-2">
                     <span style="font-size: 13px; color: #777" class="flex-shrink-0">مبلغ تایید شده:</span>
                     <div class="input-group">
-                        @{
-                            decimal[] percents = [25, 50, 75, 100];
-                            var percent = (reqAmount.AcceptedAmount * 100) / reqAmount.Amount;
-                            var pendingMd = reqAmount.RequestStatus == RequestStatusEnum.در_انتظار_تایید_مدیرعامل;
-                        }
-                        <input name="acceptedAmount" @(pendingMd ? "" : "disabled") type="text" class="form-control currencyNumber" oninput="changeAcceptedRequestAmount(this, @reqAmount.Amount, @reqAmount.AcceptedAmount)" value="@(reqAmount.AcceptedAmount > 0 ? string.Format("{0:n0}", reqAmount.AcceptedAmount) : "")" required>
+                        <input name="acceptedAmount" @(pendingMd ? "" : "disabled") type="text" class="form-control currencyNumber" oninput="changeAcceptedRequestAmount(this, @reqAmount.Amount, @reqAmount.AcceptedAmount)" value="@(reqAmount.AcceptedAmount > 0 ? $"{reqAmount.AcceptedAmount:n0}" : "")" required>
                         <select class="form-select form-select-xs" @(pendingMd ? "" : "disabled") style="background-color: @(percents.Contains(percent) ? "#e3f7e3" : "");" onchange="changePercentAcceptedRequestAmount(this, @reqAmount.Amount, @reqAmount.AcceptedAmount)">
                             <option value="" selected="@(percent == 0 ? "selected" : null)">درصد</option>
                             @foreach (var p in percents) {
@@ -160,7 +161,10 @@
                 </div>
 
                 <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column px-2 py-2 gap-4 gap-lg-3">
-                    @switch (reqAmount.RequestStatus) {
+                    @switch (status) {
+                        case RequestStatusEnum.ثبت_اولیه:
+                            <span class="fbold" style="color:#777">@reqAmount.RequestStatusTxt</span>
+                            break;
                         case RequestStatusEnum.در_انتظار_تایید_مدیرعامل:
                             <div class="d-inline-flex flex-column align-items-center justify-content-center gap-2">
                                 <button class="buttonGreen2" onclick="submitAcceptedRequestAmount(this, '@reqAmount.Id')" @(reqAmount.AcceptedAmount == 0 ? "disabled" : "")>
@@ -178,13 +182,13 @@
                             </div>
                             break;
                         case RequestStatusEnum.در_انتظار_پرداخت:
-                            <span class="fbold text-center" style="color: #CC9900">@reqAmount.RequestStatusTxt</span>
+                            <span class="fbold text-center" style="color: #4f817d">@reqAmount.RequestStatusTxt</span>
                             break;
                         case RequestStatusEnum.واریز_شد:
                             <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor)" onclick="showAttachments('@reqAmount.Id', 11)">
                                 <i class="fa fa-paperclip"></i>
                             </button>
-                            <span class="fbold text-center" style="color: #04857c">واریز شد</span>
+                            <span class="fbold text-center" style="color: #04857c">@reqAmount.RequestStatusTxt</span>
                             break;
                     }
 

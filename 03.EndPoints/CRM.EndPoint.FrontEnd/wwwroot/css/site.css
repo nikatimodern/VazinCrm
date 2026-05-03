@@ -5299,6 +5299,67 @@ table tr.payment-vosoled > td {
 }
 
 
+.layered-card.layered-purple {
+  border-color: #663399;
+  background: #fbf7ff;
+  
+  --layer-bg-1: #f1e9fb;
+  --layer-bg-2: #f6f0fd;
+  --layer-bg-3: #e9ddf7;
+  --layer-bg-4: #fbf7ff;
+  --layer-bg-5: #e3d6f4;
+}
+
+
+.layered-card.layered-purple-light {
+  border-color: #c5b6dd;
+  background: #fdfbff;
+  
+  --layer-bg-1: #f7f3fc;
+  --layer-bg-2: #faf7fe;
+  --layer-bg-3: #f1ebf9;
+  --layer-bg-4: #fdfbff;
+  --layer-bg-5: #ece4f7;
+}
+
+
+.layered-card.layered-blue {
+  border-color: #0d6efd;
+  background: #f5f9ff;
+  
+  --layer-bg-1: #e7f0ff;
+  --layer-bg-2: #f0f6ff;
+  --layer-bg-3: #dce9ff;
+  --layer-bg-4: #f5f9ff;
+  --layer-bg-5: #d6e4ff;
+}
+
+
+.layered-card.layered-blue-light {
+  border-color: #b6c7e3;
+  background: #fbfdff;
+  
+  --layer-bg-1: #f3f7fd;
+  --layer-bg-2: #f7faff;
+  --layer-bg-3: #edf3fb;
+  --layer-bg-4: #fbfdff;
+  --layer-bg-5: #e6eef9;
+}
+
+
+.layered-card.layered-gold {
+  /* border-color: #e3d2a3; */
+  border-color: #dfc784;
+  background: #fffefb;
+  
+  --layer-bg-1: #fdf9ec;
+  --layer-bg-2: #fefbf4;
+  --layer-bg-3: #fbf4df;
+  --layer-bg-4: #fffefb;
+  --layer-bg-5: #f7edd0;
+}
+
+
 .layered-card .layered-card__layer {
   border-left: 1px solid #dedede;
 }

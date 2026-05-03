@@ -57,13 +57,11 @@ namespace CRM.EndPoint.FrontEnd.Services {
             this.hub = hub;
         }
 
-        public interface IFilterableEntity
-        {
+        public interface IFilterableEntity {
             Guid CustomerId { get; set; }
             DateTime CreateDate { get; set; }
             string UserCreatorID { get; set; }
         }
-
 
 
         /// <param name="pf">پیش فاکتور</param>
@@ -260,15 +258,17 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
                 countObj.Financial = new SubCartableCountVModel {
                     InvoiceCount = pendingAccCount,
-                    PreFactorCount =  financialPfCount,
+                    PreFactorCount = financialPfCount,
                 };
             }
 
             // Managing Director
             if (roles.Contains("مدیر ارشد") || roles.Contains("مدیر عامل"))
             {
-                var invoiceCount = await accPf.OnlyManagingDirector().CountAsync(a => a.Status == AccStatusEnum.در_دست_تایید || a.Status == AccStatusEnum.ثبت_اولیه);
-                var reqCount = await db.RequestAmounts.CountAsync(f => f.RequestStatus == RequestStatusEnum.در_انتظار_تایید_مدیرعامل);
+                var invoiceCount = await accPf.OnlyManagingDirector()
+                    .CountAsync(a => a.Status == AccStatusEnum.در_دست_تایید || a.Status == AccStatusEnum.ثبت_اولیه);
+                var reqCount = await db.RequestAmounts.CountAsync(f =>
+                    f.RequestStatus == RequestStatusEnum.در_انتظار_تایید_مدیرعامل || f.RequestStatus == RequestStatusEnum.در_انتظار_ارسال_به_مالی);
                 countObj.ManagingDirector = new SubCartableCountVModel {
                     InvoiceCount = invoiceCount,
                     RequestCount = reqCount

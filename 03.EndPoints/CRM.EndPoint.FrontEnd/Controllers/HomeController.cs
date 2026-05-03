@@ -73,17 +73,24 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var data = await db.RequestAmounts.IgnoreQueryFilters().ToListAsync();
                 foreach (var r in data)
                 {
-                    if (r.Vosoled)
+                    if (r.RequestStatus == (RequestStatusEnum)1)
                     {
-                        r.RequestStatus = RequestStatusEnum.واریز_شد;
-                        r.RequestStatusTxt = nameof(RequestStatusEnum.واریز_شد).Replace("_", " ");
-                    } else
+                        r.RequestStatus = RequestStatusEnum.در_انتظار_تایید_مدیرعامل;
+                    } else if (r.RequestStatus == (RequestStatusEnum)2)
                     {
-                        r.RequestStatusTxt = r.RequestStatus.ToString().Replace("_", " ");
+                        if (r.Vosoled)
+                        {
+                            r.RequestStatus = RequestStatusEnum.واریز_شد;
+                        } else
+                        {
+                            r.RequestStatus = RequestStatusEnum.در_انتظار_پرداخت;
+                        }
                     }
+
+                    r.RequestStatusTxt = r.RequestStatus.ToString().Replace("_", " ");
                 }
 
-
+                //await db.SaveChangesAsync();
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();
             }

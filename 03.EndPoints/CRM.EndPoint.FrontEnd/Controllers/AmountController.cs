@@ -186,7 +186,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 item.ModifyDate = DateTime.Now;
                 item.ModifyDateTxt = dtService.GetDateTimePersian();
 
-                await _logSystemService.LogChange(oldItem, item, LogActionEnum.تایید_و_تغییر_وضعیت, user);
+                await _logSystemService.LogChange(oldItem, item, LogActionEnum.تغییر_وضعیت, user);
                 await db.SaveChangesAsync();
                 await hub.Clients.Groups("مدیر عامل", "مدیر ارشد").SendAsync("countPreFactorToAccept");
                 return Ok();
@@ -219,6 +219,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 reqAmount.RequestStatus = RequestStatusEnum.واریز_شد;
                 reqAmount.RequestStatusTxt = nameof(RequestStatusEnum.واریز_شد).Replace("_", " ");
+
+                reqAmount.UserModify = user.FullName;
+                reqAmount.UserModifyID = user.Id;
+                reqAmount.ModifyDate = DateTime.Now;
+                reqAmount.ModifyDateTxt = dtService.GetDateTimePersian();
 
                 await _logSystemService.LogChange(oldReqAmount, reqAmount, LogActionEnum.تغییر_وضعیت, user);
                 await db.SaveChangesAsync();
@@ -257,22 +262,23 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     );
                 }
 
-                if (type != -1)
-                {
-                    if (type == 1)
-                    {
-                        query = query.Where(f =>
-                            f.RequestStatus == RequestStatusEnum.در_انتظار_ارسال_به_مالی ||
-                            f.RequestStatus == RequestStatusEnum.در_انتظار_تایید_مدیرعامل
-                        );
-                    } else
-                    {
-                        query = query.Where(f => f.RequestStatus == (RequestStatusEnum)type);
-                    }
-                } else if (passType == 2)
+
+                query = type switch {
+                    1 => query.Where(f => // در انتظار تایید
+                        f.RequestStatus == RequestStatusEnum.در_انتظار_تایید_مدیرعامل ||
+                        f.RequestStatus == RequestStatusEnum.در_انتظار_ارسال_به_مالی
+                    ),
+                    2 => query.Where(f => // تایید شده
+                        f.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت ||
+                        f.RequestStatus == RequestStatusEnum.واریز_شد
+                    ),
+                    _ => query
+                };
+
+                /*if (type == -1 && passType == 2) // گزینه همه در کارتابل مدیرعامل
                 {
                     query = query.Where(f => f.RequestStatus != RequestStatusEnum.ثبت_اولیه);
-                }
+                }*/
 
                 var data = await query.OrderByDescending(f => f.CreateDate)
                     .Select(ra => new RequestAmountVModel {
