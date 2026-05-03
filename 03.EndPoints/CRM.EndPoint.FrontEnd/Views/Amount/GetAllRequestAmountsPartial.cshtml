@@ -4,11 +4,13 @@
 @{
     var passType = ViewBag.PassType; //1: requestAmount | 2: cartable MD
     var isFinancial = ViewBag.IsFinancial;
+    var userId = ViewBag.UserId;
 }
 
 <div class="col-12 mx-auto d-flex flex-column" style="gap:12px;padding-bottom: 12px;">
     @foreach (var item in Model) {
         var reqAmount = item.RequestAmount;
+        var isCreator = reqAmount.UserCreatorID == userId;
         var supplyFactorSerials = item.SupplyFactorSerials;
         var orderHeadNumbers = item.OrderHeadSerials;
         var status = reqAmount.RequestStatus;
@@ -92,7 +94,7 @@
                 <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column p-2 gap-4 gap-lg-3">
                     @switch (status) {
                         case RequestStatusEnum.ثبت_اولیه:
-                            if (isFinancial) {
+                            if (isFinancial && !isCreator) {
                                 <span class="fbold" style="color:#777">@reqAmount.RequestStatusTxt</span>
                             } else {
                                 <div class="flex-center flex-column gap-3">
@@ -151,7 +153,7 @@
                     <span style="font-size: 13px; color: #777" class="flex-shrink-0">مبلغ تایید شده:</span>
                     <div class="input-group">
                         <input name="acceptedAmount" @(pendingMd ? "" : "disabled") type="text" class="form-control currencyNumber" oninput="changeAcceptedRequestAmount(this, @reqAmount.Amount, @reqAmount.AcceptedAmount)" value="@(reqAmount.AcceptedAmount > 0 ? $"{reqAmount.AcceptedAmount:n0}" : "")" required>
-                        <select class="form-select form-select-xs" @(pendingMd ? "" : "disabled") style="background-color: @(percents.Contains(percent) ? "#e3f7e3" : "");" onchange="changePercentAcceptedRequestAmount(this, @reqAmount.Amount, @reqAmount.AcceptedAmount)">
+                        <select class="form-select form-select-xs no-placeholder-style" @(pendingMd ? "" : "disabled") style="background-color: @(percents.Contains(percent) ? "#e3f7e3" : "");" onchange="changePercentAcceptedRequestAmount(this, @reqAmount.Amount, @reqAmount.AcceptedAmount)">
                             <option value="" selected="@(percent == 0 ? "selected" : null)">درصد</option>
                             @foreach (var p in percents) {
                                 <option value="@p" selected="@(percent == p ? "selected" : null)">@p%</option>

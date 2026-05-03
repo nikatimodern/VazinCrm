@@ -275,10 +275,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     _ => query
                 };
 
-                /*if (type == -1 && passType == 2) // گزینه همه در کارتابل مدیرعامل
-                {
-                    query = query.Where(f => f.RequestStatus != RequestStatusEnum.ثبت_اولیه);
-                }*/
 
                 var data = await query.OrderByDescending(f => f.CreateDate)
                     .Select(ra => new RequestAmountVModel {
@@ -304,8 +300,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var html = await vrs.RenderToStringAsync("GetAllRequestAmountsPartial", data,
                     new Dictionary<string, object> {
                         { "PassType", passType },
-                        { "IsFinancial", isFinancial }
-                    });
+                        { "IsFinancial", isFinancial },
+                        { "UserId", user.Id }
+                    }
+                );
 
                 return Ok(new { count = data.Count, html });
             }
