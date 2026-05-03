@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.RequestAmounts.Entities;
+using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Amount;
@@ -73,7 +74,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.UserCreator = user.FullName;
                 model.UserCreatorID = user.Id;
                 model.RequestStatusTxt = model.RequestStatus.ToString().Replace("_", " ");
-                model.DocTypeTxt = model.DocType.ToString().Replace("_", " ");
+                model.DocTypeTxt = model.DocTypeEnum.ToString().Replace("_", " ");
                 await db.RequestAmounts.AddAsync(model);
                 await db.SaveChangesAsync();
 
@@ -100,7 +101,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var user = await userManager.GetUserAsync(HttpContext.User);
 
                 model.RequestStatusTxt = model.RequestStatus.ToString().Replace("_", " ");
-                model.DocTypeTxt = model.DocType.ToString().Replace("_", " ");
+                model.DocTypeTxt = model.DocTypeEnum.ToString().Replace("_", " ");
                 model.ModifyDate = DateTime.Now;
                 model.ModifyDateTxt = dtService.GetDateTimePersian();
                 model.UserModify = user.FullName;
@@ -408,8 +409,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             ? query.OrderBy(f => f.AcceptedAmount)
                             : query.OrderByDescending(f => f.AcceptedAmount),
                         "DocType" => isAscending
-                            ? query.OrderBy(f => f.DocType)
-                            : query.OrderByDescending(f => f.DocType),
+                            ? query.OrderBy(f => f.DocTypeEnum)
+                            : query.OrderByDescending(f => f.DocTypeEnum),
                         _ => query
                     };
                 }

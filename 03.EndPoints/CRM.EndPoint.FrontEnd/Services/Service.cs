@@ -23,6 +23,7 @@ using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Reports.Entities;
 using CRM.Core.Domain.Reports.Enum;
 using CRM.Core.Domain.RequestAmounts.Entities;
+using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.LogSystem;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;

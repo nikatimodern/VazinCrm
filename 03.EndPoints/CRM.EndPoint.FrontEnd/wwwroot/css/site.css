@@ -4823,7 +4823,8 @@ input[type="file"] {
 }
 
 
-select:has(option[value=""]:checked), option[value=""] {
+select:not(.no-placeholder-style):has(option[value=""]:checked),
+option[value=""] {
   color: #bbb;
 }
 
