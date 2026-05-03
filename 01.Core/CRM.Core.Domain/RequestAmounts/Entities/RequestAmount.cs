@@ -8,7 +8,7 @@ namespace CRM.Core.Domain.RequestAmounts.Entities {
     public class RequestAmount : BaseEntity {
         public int RequestNumber { get; set; }
         public decimal Amount { get; set; }
-        public RequestAmountDocTypeEnum DocTypeEnum { get; set; }
+        public RequestAmountDocTypeEnum DocType { get; set; }
         public string DocTypeTxt { get; set; }
         public RequestStatusEnum RequestStatus { get; set; } = RequestStatusEnum.ثبت_اولیه;
         public string RequestStatusTxt { get; set; }

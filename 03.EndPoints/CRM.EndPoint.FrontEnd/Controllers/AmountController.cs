@@ -74,7 +74,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.UserCreator = user.FullName;
                 model.UserCreatorID = user.Id;
                 model.RequestStatusTxt = model.RequestStatus.ToString().Replace("_", " ");
-                model.DocTypeTxt = model.DocTypeEnum.ToString().Replace("_", " ");
+                model.DocTypeTxt = model.DocType.ToString().Replace("_", " ");
                 await db.RequestAmounts.AddAsync(model);
                 await db.SaveChangesAsync();
 
@@ -101,7 +101,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var user = await userManager.GetUserAsync(HttpContext.User);
 
                 model.RequestStatusTxt = model.RequestStatus.ToString().Replace("_", " ");
-                model.DocTypeTxt = model.DocTypeEnum.ToString().Replace("_", " ");
+                model.DocTypeTxt = model.DocType.ToString().Replace("_", " ");
                 model.ModifyDate = DateTime.Now;
                 model.ModifyDateTxt = dtService.GetDateTimePersian();
                 model.UserModify = user.FullName;
@@ -289,11 +289,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             .ToList(),
                         OrderHeadSerials = ra.RequestAmountOrderHeads
                             .Join(db.OrderHeads,
-                                raSf => raSf.OrderHeadId,
-                                sf => sf.Id,
-                                (raSf, sf) => sf.OrderNumber
+                                raOh => raOh.OrderHeadId,
+                                oh => oh.Id,
+                                (raOh, oh) => oh.OrderNumber
                             )
                             .ToList(),
+                        CustomerNames = ra.RequestAmountOrderHeads
+                            .Join(db.OrderHeads,
+                                raOh => raOh.OrderHeadId,
+                                oh => oh.Id,
+                                (raOh, oh) => oh.CustomerTxt
+                            ).ToList()
                     })
                     .ToListAsync();
 
@@ -409,8 +415,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             ? query.OrderBy(f => f.AcceptedAmount)
                             : query.OrderByDescending(f => f.AcceptedAmount),
                         "DocType" => isAscending
-                            ? query.OrderBy(f => f.DocTypeEnum)
-                            : query.OrderByDescending(f => f.DocTypeEnum),
+                            ? query.OrderBy(f => f.DocType)
+                            : query.OrderByDescending(f => f.DocType),
                         _ => query
                     };
                 }

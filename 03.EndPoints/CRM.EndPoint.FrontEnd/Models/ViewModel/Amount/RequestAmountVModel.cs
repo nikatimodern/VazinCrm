@@ -7,5 +7,5 @@ public class RequestAmountVModel {
     public RequestAmount RequestAmount { get; set; }
     public List<string> SupplyFactorSerials { get; set; }
     public List<int> OrderHeadSerials { get; set; }
-    public List<string> Customers { get; set; }
+    public List<string> CustomerNames { get; set; }
 }
