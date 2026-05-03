@@ -13,7 +13,7 @@
         var reqAmount = item.RequestAmount;
         var isCreator = reqAmount.UserCreatorID == userId;
         var supplyFactorSerials = item.SupplyFactorSerials;
-        var orderHeadNumbers = item.OrderHeadSerials;
+        var orderHeadNumbers = item.OrderNumbers;
         var customerNames = item.CustomerNames;
         var status = reqAmount.RequestStatus;
 
@@ -90,7 +90,7 @@
                     <span style="font-size: 11px;">ريال</span>
                 </div>
             </div>
-            @if (passType == 1) {
+            @if (passType == 1 || passType == 3) {
                 <div class="layered-card__layer col d-flex flex-row flex-lg-column justify-content-between justify-content-lg-center align-items-center px-3 py-2">
                     <span style="font-size: 13px; color: #777">مبلغ تایید شده:</span>
                     <div class="fbold flex-center align-items-baseline column-gap-1 @(status is RequestStatusEnum.در_انتظار_پرداخت or RequestStatusEnum.واریز_شد ? "badgeGreen" : "")">
@@ -105,7 +105,7 @@
                             if (isFinancial && !isCreator) {
                                 <span class="fbold" style="color:#777">@reqAmount.RequestStatusTxt</span>
                             } else {
-                                <div class="flex-center flex-column gap-3">
+                                <div class="flex-center flex-lg-column gap-3">
                                     <div class="flex-center flex-row gap-4 gap-lg-3">
                                         <button class="flex-center p-0" data-title-right="ویرایش" style="color:#333" onclick="showEditRequestAmountModal('@reqAmount.Id')">
                                             <i class="fa fa-pencil"></i>
@@ -126,7 +126,7 @@
                             break;
                         case RequestStatusEnum.در_انتظار_پرداخت:
                             if (isFinancial) {
-                                <div class="flex-center flex-column gap-1">
+                                <div class="flex-center flex-lg-column gap-1">
                                     <button class="buttonGreen2" onclick="showAttachReqAmount('@reqAmount.Id')">واریز شد</button>
                                     <button class="buttonCancel3" onclick="changeStatusReqAmount('@reqAmount.Id', 1)">برگشت</button>
                                 </div>
@@ -176,7 +176,7 @@
                             <span class="fbold" style="color:#777">@reqAmount.RequestStatusTxt</span>
                             break;
                         case RequestStatusEnum.در_انتظار_تایید_مدیرعامل:
-                            <div class="d-inline-flex flex-column align-items-center justify-content-center gap-2">
+                            <div class="d-inline-flex flex-lg-column align-items-center justify-content-center gap-2">
                                 <button class="buttonGreen2" onclick="submitAcceptedRequestAmount(this, '@reqAmount.Id')" @(reqAmount.AcceptedAmount == 0 ? "disabled" : "")>
                                     تایید
                                 </button>
@@ -184,7 +184,7 @@
                             </div>
                             break;
                         case RequestStatusEnum.در_انتظار_ارسال_به_مالی:
-                            <div class="d-inline-flex flex-column align-items-center justify-content-center gap-2">
+                            <div class="d-inline-flex flex-lg-column align-items-center justify-content-center gap-2">
                                 <button class="buttonGreen2" onclick="changeStatusReqAmount('@reqAmount.Id', 3)" @(reqAmount.AcceptedAmount == 0 ? "disabled" : "")>
                                     ارسال به مالی
                                 </button>

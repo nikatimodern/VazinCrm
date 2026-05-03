@@ -3288,7 +3288,7 @@ const setCountEnvelope = (countObj, isAdmin) => {
         salesAdmin: { count: countObj.salesAdmin || 0, id: "TSalesAdminId" },
         tamin: { count: countObj.tamin || 0, id: "TTaminExpertId" },
         financial: {
-            count: (countObj.financial?.invoiceCount || 0) + (countObj.financial?.preFactorCount || 0),
+            count: (countObj.financial?.invoiceCount || 0) + (countObj.financial?.preFactorCount || 0) + (countObj.financial?.requestCount || 0),
             id: "TFinancialExpertId",
         },
         managingDirector: {
@@ -3316,6 +3316,7 @@ const setCountEnvelope = (countObj, isAdmin) => {
     // sub tabs
     setBadge("#FinancialPrefactorTab .badgeCircle", countObj.financial?.preFactorCount || 0);
     setBadge("#FinancialInvoiceTab .badgeCircle", countObj.financial?.invoiceCount || 0);
+    setBadge("#FinancialRequestTab .badgeCircle", countObj.financial?.requestCount || 0);
     setBadge("#MDRequestAmountTab .badgeCircle", countObj.managingDirector?.requestCount || 0);
     setBadge("#MDInvoiceTab .badgeCircle", countObj.managingDirector?.invoiceCount || 0);
 };
@@ -4563,6 +4564,7 @@ async function getOrderHeadIdsBySupplier(supplierId) {
         return [];
     }
 }
+/*--------------------------------------------------------------------------------*/
 
 async function changeStatusReqAmount(reqAmountId, status) {
     try {
@@ -4571,7 +4573,15 @@ async function changeStatusReqAmount(reqAmountId, status) {
         if (res.status === 200) {
             const currentPath = window.location.pathname.toLowerCase();
             if (currentPath.includes("cartable")) {
-                await GetRequestManagingDirector();
+                const { tab } = getUrlParams();
+                switch (tab) {
+                    case "TManagingDirectorId":
+                        await GetRequestManagingDirector();
+                        break;
+                    case "TFinancialExpertId":
+                        await GetRequestFinancialExpert();
+                        break;
+                }
             } else {
                 await getAllRequestAmount();
             }
@@ -4583,6 +4593,60 @@ async function changeStatusReqAmount(reqAmountId, status) {
         FLshowLoading(false);
     }
 }
+
+var reqAmountAttachment = [];
+let reqAmountId;
+const showAttachReqAmount = async (id) => {
+    reqAmountId = id;
+    ModalToggle("reqAmountAttachModal", "show");
+    try {
+        FLshowLoading();
+        const res = await axios(`/Factor/GetAttachment/${id}?type=11`);
+        reqAmountAttachment = res.data;
+        FileUpReload("reqAmountAttach");
+    } catch (err) {
+        toastifyError("خطای سرور!");
+        console.log(err);
+    } finally {
+        FLshowLoading(false);
+    }
+};
+
+
+const cancelReqAmountAttach = () => {
+    ModalToggle("reqAmountAttachModal", "hide");
+    reqAmountAttachment = [];
+    document.getElementById("imageDisplayReqAmountAt").innerHTML = "";
+    document.getElementById("reqAmountAttach").value = "";
+};
+
+
+const submitReqAmountAttach = async () => {
+    if (reqAmountAttachment.every(item => item.isDeleted)) {
+        toastifyError("رسید واریزی اجباری است");
+        return;
+    }
+    const model = { listAttach: reqAmountAttachment, id: reqAmountId };
+    FLshowLoading();
+    try {
+        const res = await axios.post("/Amount/AttachAndVosolReqAmount", model);
+        if (res.status === 200) {
+            toastifySuccess("ثبت با موفقیت انجام شد");
+            cancelReqAmountAttach();
+            const currentPath = window.location.pathname.toLowerCase();
+            if (currentPath.includes("cartable")) {
+                await GetRequestFinancialExpert();
+            } else {
+                await getAllRequestAmount();
+            }
+        }
+    } catch (err) {
+        toastifyError("خطای سرور!");
+        console.log(err);
+    } finally {
+        FLshowLoading(false);
+    }
+};
 
 
 /*--------------------------------------------------------------------------------*/

@@ -4,39 +4,43 @@
 
 <div class="w-100">
     <div class="d-flex align-items-center justify-content-between flex-wrap mb-3 gap-2">
-        <div class="d-flex col-lg-3">
+        <div class="d-flex align-content-center gap-2 col-lg-3">
             <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="showRequestAmountModal()">
                 <span style="line-height: 1">ثبت درخواست جدید</span>
                 <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
             </button>
         </div>
-        <div class="search-group col-12 col-lg-5">
-            <input class="form-control" type="text" id="requestAmountSearchId" placeholder="جستجو..." />
-            <div class="search-icon">
-                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
-            </div>
-        </div>
-        <div class="d-flex align-items-start justify-content-start justify-content-lg-end gap-2 col-lg-3">
-            <div class="d-flex gap-2">
-                <ul class="filter-switch">
-                    <li class="filter-switch-item">
-                        <input type="radio" name="requestAmountFilter" id="requestAmountFilterAll" value="-1" checked />
-                        <label for="requestAmountFilterAll">همه</label>
-                    </li>
-                    <li class="filter-switch-item">
-                        <input type="radio" name="requestAmountFilter" id="requestAmountFilter1" value="1" />
-                        <label for="requestAmountFilter1">در انتظار تایید</label>
-                    </li>
-                    <li class="filter-switch-item">
-                        <input type="radio" name="requestAmountFilter" id="requestAmountFilter2" value="2" />
-                        <label for="requestAmountFilter2">تایید شده</label>
-                    </li>
-                </ul>
-            </div>
-            @*<div id="ContentDealFilterId" class="ContentFilter"></div>
-            <div class="btnFilter d-none d-lg-flex" data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterDeal" data-filterContentId="ContentDealFilterId" data-filterInpSearchId="dealSearchId" data-filterVarSearch="dealSearchVal" onclick="ShowFilterPopup(this)">
+        <div class="d-flex align-items-center gap-2 col-12 col-lg-5">
+            @*<div id="ContentRequestAmountFilterId" class="ContentFilter"></div>
+            <div class="btnFilter" data-filtervarconfig="filterRequestAmountConfig" data-filtercallback="callbackFilterRequestAmount" data-filtercontentid="ContentRequestAmountFilterId" data-filterinpsearchid="requestAmountSearchId" data-filtervarsearch="requestAmountSearchVal" onclick="ShowFilterPopup(this)">
                 <svg style="width:24px;color:#333" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
             </div>*@
+            <div class="search-group flex-grow-1">
+                <input class="form-control" type="text" id="requestAmountSearchId" placeholder="جستجو..." />
+                <div class="search-icon">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex align-items-center justify-content-start justify-content-lg-end gap-2 col-lg">
+            <ul class="filter-switch">
+                <li class="filter-switch-item">
+                    <input type="radio" name="requestAmountFilter" id="requestAmountFilterAll" value="-1" checked />
+                    <label for="requestAmountFilterAll">همه</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="requestAmountFilter" id="requestAmountFilter1" value="1" />
+                    <label for="requestAmountFilter1">در انتظار تایید</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="requestAmountFilter" id="requestAmountFilter2" value="2" />
+                    <label for="requestAmountFilter2">در انتظار پرداخت</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="requestAmountFilter" id="requestAmountFilter3" value="3" />
+                    <label for="requestAmountFilter3">پرداخت شده</label>
+                </li>
+            </ul>
         </div>
     </div>
     <div id="requestAmountContainer">
@@ -123,56 +127,19 @@
 </div>
 
 
-<!-- Modal reqAmountAttach -->
-<div class="modal fade " dir="ltr" id="reqAmountAttachModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-
-        <div class="modal-content col-12" style="padding:10px 10px 0">
-
-            <div class="modal-body" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
-                <div class="col-12">
-                    <div class="fmp ">
-                        <div style="display:flex;justify-content:center">
-                            <div class="col-12">
-                                <div class="container-uploader">
-                                    <input type="file" class="uploadBtn" data-varList="reqAmountAttachment" data-showList="imageDisplayReqAmountAt" id="reqAmountAttach" multiple accept="*" />
-
-                                    <label for="reqAmountAttach">
-                                        <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-                                        <span>درج تصویر</span>
-                                    </label>
-                                    <div class="image-display" id="imageDisplayReqAmountAt"></div>
-                                </div>
-                            </div>
-                            <button class="AddFile_Btn buttonGreen" id="AddFile_BtnId" style="display:none">
-                                <i class="fas fa-plus AttachBt "></i>
-                            </button>
-                        </div>
-
-                    </div>
-                </div>
-
-                <div class="mt-3" style="width:100%; display:flex;justify-content:center;gap:4px">
-                    <button class="buttonGreen3" onclick="submitReqAmountAttach()">ثبت</button>
-                    <button class="buttonCancel2" onclick="cancelReqAmountAttach() ">انصراف</button>
-                </div>
-
-            </div>
-        </div>
-    </div>
-</div>
 
 @section Scripts {
     <script>
         let selectOrderHeadType;  // 3: checkBox  4: radio
         let requestAmountData = {};
-        let reqAmountId;
-        var reqAmountAttachment = [];
+
+        let modelRequestAmount = { filt: null, serVal: null };
+        var filterRequestAmountConfig = {};
+        var requestAmountSearchVal = null;
 
         const reqAmountModal = document.getElementById("requestAmountModal");
 
         document.addEventListener("DOMContentLoaded", async () => {
-            //getAllRequestAmountDt();
             await getAllRequestAmount();
             document.addEventListener("settingReady", () => {
                 selectOrderHeadType = setting.multiSelectOrderHeadsInRequestAmount ? 3 : 4;
@@ -190,6 +157,14 @@
             const requestAmountRadios = document.querySelectorAll("input[type='radio'][name='requestAmountFilter']");
             requestAmountRadios.forEach(elm => elm.addEventListener("change", async () => await getAllRequestAmount()));
         });
+
+
+        async function callbackFilterRequestAmount() {
+            modelRequestAmount.filt = filterRequestAmountConfig.filterVar;
+            modelRequestAmount.serVal = filterRequestAmountConfig.varSearch;
+
+            await getAllRequestAmount();
+        }
 
 
         function cancelRequestAmountModal() {
@@ -309,55 +284,6 @@
         };
 
 
-        const showAttachReqAmount = async (id) => {
-            reqAmountId = id;
-            ModalToggle("reqAmountAttachModal", "show");
-            try {
-                FLshowLoading();
-                const res = await axios(`/Factor/GetAttachment/${id}?type=11`);
-                console.log(res);
-                reqAmountAttachment = res.data;
-                FileUpReload("reqAmountAttach");
-            } catch (err) {
-                toastifyError("خطای سرور!");
-                console.log(err);
-            } finally {
-                FLshowLoading(false);
-            }
-        };
-
-
-        const cancelReqAmountAttach = () => {
-            ModalToggle("reqAmountAttachModal", "hide");
-            reqAmountAttachment = [];
-            document.getElementById("imageDisplayReqAmountAt").innerHTML = "";
-            document.getElementById("reqAmountAttach").value = "";
-        };
-
-
-        const submitReqAmountAttach = async () => {
-            if (reqAmountAttachment.every(item => item.isDeleted)) {
-                toastifyError("رسید واریزی اجباری است");
-                return;
-            }
-            const model = { listAttach: reqAmountAttachment, id: reqAmountId };
-            FLshowLoading();
-            try {
-                const res = await axios.post("/Amount/AttachAndVosolReqAmount", model);
-                if (res.status === 200) {
-                    toastifySuccess("ثبت با موفقیت انجام شد");
-                    cancelReqAmountAttach();
-                    await getAllRequestAmount();
-                }
-            } catch (err) {
-                toastifyError("خطای سرور!");
-                console.log(err);
-            } finally {
-                FLshowLoading(false);
-            }
-        };
-
-
         let isSetupReqAmountModal = false;
         async function setupSelectOptions() {
             if (isSetupReqAmountModal) return;
@@ -425,147 +351,6 @@
             }
         });
 
-
-        @*let requestAmountTbl;
-        let modelRequestAmount = {};
-        const getAllRequestAmountDt = () => {
-            requestAmountTbl = $("#requestAmountTable").DataTable({
-                pageLength: 10,
-                lengthMenu: [5, 10, 20, 50, 100, { label: "همه", value: -1 }],
-                processing: true,
-                serverSide: true,
-                searching: true,
-                search: {
-                    return: true,
-                },
-                ordering: true,
-                order: [[4, "desc"]],
-                scrollCollapse: true,
-                scrollY: "70dvh",
-                responsive: true,
-                ajax: {
-                    url: `/Amount/GetAllRequestAmountsDt`,
-                    type: "POST",
-                    data: (d) => {
-                        d.model = JSON.stringify(modelRequestAmount);
-                    },
-                },
-                language: {
-                    emptyTable: "هیچ رکوردی موجود نمی باشد.",
-                    info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
-                    infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
-                    infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
-                    lengthMenu: "نمایش _MENU_ ردیف",
-                    loadingRecords: "در حال بارگزاری...",
-                    search: "",
-                    zeroRecords: "رکوردی با این مشخصات پیدا نشد",
-                    aria: {
-                        sortAscending: ": فعال سازی نمایش به صورت صعودی",
-                        sortDescending: ": فعال سازی نمایش به صورت نزولی",
-                    },
-                },
-                columnDefs: [
-                    {
-                        targets: [0, 1, 2, 3],
-                        orderable: false,
-                    },
-                    {
-                        targets: [2, 3],
-                        render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>`,
-                    },
-                ],
-                columns: [
-                    { data: null, render: (data, type, row, meta) => meta.row + 1 },
-                    { data: "docTypeTxt", name: "DocTypeTxt", defaultContent: "-" },
-                    { data: "amount", name: "Amount", defaultContent: "-" },
-                    { data: "acceptedAmount", name: "AcceptedAmount", defaultContent: "-" },
-                    { data: "requestStatusTxt", name: "RequestStatusTxt", defaultContent: "-" },
-                    {
-                        data: null,
-                        render: function (data, type, row) {
-                            return `
-                                <div class="d-inline-flex align-items-center justify-content-center gap-1">
-                                    <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick=''><i class="fa fa-pencil"></i></button>
-                                    <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick='DelBankAccountItem("${row.id}")'><i class="fa fa-trash"></i></button>
-                                </div>
-                            `;
-                        },
-                    },
-                ],
-                layout: {
-                    bottomEnd: "info",
-                    bottomStart: {
-                        paging: {
-                            type: "simple_numbers",
-                        },
-                    },
-                    topEnd: {
-                        pageLength: true,
-                    },
-                    topStart: {
-                        search: {
-                            placeholder: "جستجو",
-                        },
-                    },
-                },
-            });
-        };*@;
-
-
-        @*const addOrderHeadModal = document.getElementById("addOrderHeadModal");
-        async function showAddOrderHeadModal() {
-            await getAllOrderHeads();
-            addOrderHeadModal.querySelectorAll("input[type='checkbox']").forEach((checkbox) => {
-                if (orderHeadsSelectedIds.includes(checkbox.value)) {
-                    checkbox.checked = true;
-                }
-            });
-            toggleAddOrderHeadModal();
-            addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !orderHeadsSelectedIds.length);
-        }
-
-        function toggleAddOrderHeadModal() {
-            addOrderHeadModal.querySelector("#addOrderHeadSearch").value = "";
-            ModalToggle(addOrderHeadModal);
-        }
-
-
-        const getAllOrderHeads = async (search = "") => {
-            const res = await axios(`/Order/GetAllOrderHeads?search=${search}&passType=3`);
-
-            addOrderHeadModal.querySelector("#addOrderHeadContainer").innerHTML = res.data;
-        };
-
-        addOrderHeadModal.querySelector("#addOrderHeadContainer").addEventListener("change", (e) => {
-            const checkbox = e.target.closest("input[type='checkbox']");
-            if (!checkbox) return;
-
-            const anyChecked = addOrderHeadModal.querySelector("#addOrderHeadContainer input[type='checkbox']:checked");
-
-            addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !anyChecked);
-        });
-
-        const submitSelectedOrderHeads = () => {
-            const checkedBoxes = [...addOrderHeadModal.querySelectorAll("#addOrderHeadContainer input[type='checkbox']:checked")];
-
-            orderHeadsSelectedIds.length = 0;
-            orderHeadsSelectedIds.push(...checkedBoxes.map(cb => cb.value).reverse());
-
-            const inpElm = document.getElementById("reqAmountOrderHead");
-            inpElm.value = checkedBoxes.map(cb => cb.dataset.number).join(", ");
-            inpElm.classList.remove("AlertReq");
-
-            ModalToggle(addOrderHeadModal);
-        };
-
-        addOrderHeadModal.querySelector("#addOrderHeadSearch").addEventListener("keyup", async (e) => {
-            if (e.key === "Enter") {
-                toggleElementsDisabled(e.target);
-                await getAllOrderHeads(e.target.value.trim());
-                toggleElementsDisabled(e.target, false);
-                e.target.focus();
-            }
-        });*@;
         ////////////////////////////////////////////////////////
 
         let orderHeadsSelectedIds = [];
@@ -668,6 +453,5 @@
             const anySelected = tempSelectedIds.length > 0;
             addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !anySelected);
         }
-
     </script>
 }

@@ -189,7 +189,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 await _logSystemService.LogChange(oldItem, item, LogActionEnum.تغییر_وضعیت, user);
                 await db.SaveChangesAsync();
-                await hub.Clients.Groups("مدیر عامل", "مدیر ارشد").SendAsync("countPreFactorToAccept");
+                await hub.Clients.Groups("مدیر عامل", "مدیر ارشد", "کارشناس مالی").SendAsync("countPreFactorToAccept");
                 return Ok();
             }
             catch (Exception e)
@@ -228,6 +228,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 await _logSystemService.LogChange(oldReqAmount, reqAmount, LogActionEnum.تغییر_وضعیت, user);
                 await db.SaveChangesAsync();
+                await hub.Clients.Groups("مدیر ارشد", "کارشناس مالی").SendAsync("countPreFactorToAccept");
                 return Ok();
             }
             catch (Exception ex)
@@ -269,8 +270,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         f.RequestStatus == RequestStatusEnum.در_انتظار_تایید_مدیرعامل ||
                         f.RequestStatus == RequestStatusEnum.در_انتظار_ارسال_به_مالی
                     ),
-                    2 => query.Where(f => // تایید شده
-                        f.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت ||
+                    2 => query.Where(f => // در انتظار پرداخت
+                        f.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت
+                    ),
+                    3 => query.Where(f => // پرداخت شده
                         f.RequestStatus == RequestStatusEnum.واریز_شد
                     ),
                     _ => query
@@ -287,19 +290,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                                 (raSf, sf) => sf.FactorSerial
                             )
                             .ToList(),
-                        OrderHeadSerials = ra.RequestAmountOrderHeads
+                        OrderHeadsData = ra.RequestAmountOrderHeads
                             .Join(db.OrderHeads,
                                 raOh => raOh.OrderHeadId,
                                 oh => oh.Id,
-                                (raOh, oh) => oh.OrderNumber
-                            )
-                            .ToList(),
-                        CustomerNames = ra.RequestAmountOrderHeads
-                            .Join(db.OrderHeads,
-                                raOh => raOh.OrderHeadId,
-                                oh => oh.Id,
-                                (raOh, oh) => oh.CustomerTxt
-                            ).ToList()
+                                (raOh, oh) => new RequestAmountOrderHeadDataVModel {
+                                    OrderNumber = oh.OrderNumber,
+                                    CustomerTxt = oh.CustomerTxt
+                                })
+                            .ToList()
                     })
                     .ToListAsync();
 
@@ -337,11 +336,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                                 (raSf, sf) => sf.FactorSerial
                             )
                             .ToList(),
-                        OrderHeadSerials = ra.RequestAmountOrderHeads
+                        OrderHeadsData = ra.RequestAmountOrderHeads
                             .Join(db.OrderHeads,
-                                raSf => raSf.OrderHeadId,
-                                sf => sf.Id,
-                                (raSf, sf) => sf.OrderNumber
+                                raOh => raOh.OrderHeadId,
+                                oh => oh.Id,
+                                (raOh, oh) => new RequestAmountOrderHeadDataVModel {
+                                    CustomerTxt = oh.CustomerTxt,
+                                    OrderNumber = oh.OrderNumber,
+                                }
                             )
                             .ToList(),
                     })

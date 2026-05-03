@@ -257,9 +257,12 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
                 var pendingAccCount = await accPf.CountAsync(a => a.Status == AccStatusEnum.در_دست_تایید || a.Status == AccStatusEnum.ثبت_اولیه);
 
+                var reqCount = await db.RequestAmounts.CountAsync(f => f.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت);
+
                 countObj.Financial = new SubCartableCountVModel {
                     InvoiceCount = pendingAccCount,
                     PreFactorCount = financialPfCount,
+                    RequestCount = reqCount
                 };
             }
 

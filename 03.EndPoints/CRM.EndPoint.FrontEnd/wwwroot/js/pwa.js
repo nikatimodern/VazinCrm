@@ -75,7 +75,7 @@ async function initPush() {
     const existingSubscription = await registration.pushManager.getSubscription();
     
     if (existingSubscription) {
-        console.log("Already subscribed", existingSubscription);
+        //console.log("Already subscribed", existingSubscription);
         return;
     }
     

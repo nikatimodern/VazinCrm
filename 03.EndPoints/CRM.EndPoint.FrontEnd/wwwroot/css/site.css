@@ -4823,8 +4823,7 @@ input[type="file"] {
 }
 
 
-select:not(.no-placeholder-style):has(option[value=""]:checked),
-option[value=""] {
+select:has(option[value=""]:checked), option[value=""] {
   color: #bbb;
 }
 
@@ -5410,7 +5409,8 @@ table tr.payment-vosoled > td {
     border-bottom: none;
   }
   
-  .layered-card .layered-card__layer:last-child button.buttonGreen2 {
+  .layered-card .layered-card__layer:last-child button.buttonGreen2,
+  .layered-card .layered-card__layer:last-child button.buttonCancel3 {
     min-width: 34px;
     padding: 4px 15px !important;
   }
