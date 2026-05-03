@@ -3199,20 +3199,19 @@ button.badgeGray:hover {
 
 
 .badgeGreen {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: .5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  border-radius: 100px;
-  padding: 5px 12px;
-  background-color: var(--color8);
-  font-size: 12px;
-  line-height: 1;
-  color: #fff;
-  border: none;
-  user-select: none;
-  transition: all 0.3s;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: .5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    border-radius: 100px;
+    padding: 5px 12px;
+    font-size: 12px;
+    line-height: 1;
+    border: 1px solid var(--color8);
+    
+    user-select: none;
+    transition: all 0.3s;
 }
 
 

@@ -1580,11 +1580,19 @@
         }
 
         async function submitAcceptedRequestAmount(btn, id) {
-            const input = btn.closest(".layered-card").querySelector("input[name='acceptedAmount']");
+            const input = btn.closest(".layered-card").querySelector("input.acceptedAmount");
+
+            const selOpPercent=btn.closest(".layered-card").querySelector("select.acceptedAmountPercent") ;
+
+
+            console.log(selOpPercent)
+            console.log(selOpPercent.value)
+
 
             const model = {
                 id,
                 acceptedAmount: Number(SeparatedNumberRemove(input.value)),
+                acceptedAmountPercent:selOpPercent.value? Number(selOpPercent.value) : null
             };
             try {
                 FLshowLoading();

@@ -9,15 +9,17 @@
 }
 
 <div class="col-12 mx-auto d-flex flex-column" style="gap:12px;padding-bottom: 12px;">
-    @foreach (var item in Model) {
-        var reqAmount = item.RequestAmount;
+    @foreach (var item in Model )
+    {
+        var reqAmount = item.RequestAmount ;
         var isCreator = reqAmount.UserCreatorID == userId;
         var supplyFactorSerials = item.SupplyFactorSerials;
         var orderHeadNumbers = item.OrderNumbers;
         var customerNames = item.CustomerNames;
         var status = reqAmount.RequestStatus;
 
-        var bgCssClass = status switch {
+        var bgCssClass = status switch
+        {
             RequestStatusEnum.در_انتظار_پرداخت => "layered-green-light",
             RequestStatusEnum.واریز_شد => "layered-green",
             RequestStatusEnum.در_انتظار_تایید_مدیرعامل or RequestStatusEnum.در_انتظار_ارسال_به_مالی => "layered-purple-light",
@@ -51,31 +53,36 @@
                         @reqAmount.DocTypeTxt @(reqAmount.Prepayment ? "(پیش پرداخت)" : "")
                     </span>
                 </div>
-                @if (supplyFactorSerials.Any()) {
+                @if (supplyFactorSerials.Any())
+                {
                     <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mt-2 text-center">
                         <span style="font-size: 13px; color: #777">فاکتور تامین:</span>
                         <span class="fbold direction-ltr">@string.Join(", ", supplyFactorSerials)</span>
                     </div>
                 }
-                @if (!string.IsNullOrEmpty(reqAmount.SupplierTxt)) {
+                @if (!string.IsNullOrEmpty(reqAmount.SupplierTxt))
+                {
                     <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mt-2 text-center">
                         <span style="font-size: 13px; color: #777">تامین کننده:</span>
                         <span class="fbold direction-ltr">@reqAmount.SupplierTxt</span>
                     </div>
                 }
-                @if (orderHeadNumbers.Any()) {
+                @if (orderHeadNumbers.Any())
+                {
                     <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mt-2 text-center">
                         <span style="font-size: 13px; color: #777">حواله تولید:</span>
                         <span class="fbold">@string.Join(" / ", orderHeadNumbers)</span>
                     </div>
                 }
-                @if (customerNames.Any()) {
+                @if (customerNames.Any())
+                {
                     <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mt-2 text-center">
                         <span style="font-size: 13px; color: #777">مشتری:</span>
                         <span class="fbold">@string.Join(" / ", customerNames)</span>
                     </div>
                 }
-                @if (!string.IsNullOrEmpty(reqAmount.Description)) {
+                @if (!string.IsNullOrEmpty(reqAmount.Description))
+                {
                     <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mt-2 text-center">
                         <span style="font-size: 13px; color: #777">توضیحات:</span>
                         <span class="fbold direction-ltr">@reqAmount.Description</span>
@@ -93,16 +100,29 @@
             @if (passType == 1 || passType == 3) {
                 <div class="layered-card__layer col d-flex flex-row flex-lg-column justify-content-between justify-content-lg-center align-items-center px-3 py-2">
                     <span style="font-size: 13px; color: #777">مبلغ تایید شده:</span>
+@*                     <div class="fbold flex-center align-items-baseline column-gap-1 @(status is RequestStatusEnum.در_انتظار_پرداخت or RequestStatusEnum.واریز_شد ? "badgeGreen" : "")">
+                        <span style="font-size: 16px;">@($"{reqAmount.AcceptedAmount:n0}")</span>
+                        <span style="font-size: 11px;">ريال</span>
+                    </div> *@
+
                     <div class="fbold flex-center align-items-baseline column-gap-1 @(status is RequestStatusEnum.در_انتظار_پرداخت or RequestStatusEnum.واریز_شد ? "badgeGreen" : "")">
                         <span style="font-size: 16px;">@($"{reqAmount.AcceptedAmount:n0}")</span>
                         <span style="font-size: 11px;">ريال</span>
+                        <span style="font-size: 16px; color:darkgray">
+                            @(reqAmount.AcceptedAmountPercent.HasValue ? $"{reqAmount.AcceptedAmountPercent.Value}%" : "")
+                        </span>
                     </div>
+
+
+
                 </div>
 
                 <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column p-2 gap-4 gap-lg-3">
-                    @switch (status) {
+                    @switch (status)
+                    {
                         case RequestStatusEnum.ثبت_اولیه:
-                            if (isFinancial && !isCreator) {
+                            if (isFinancial && !isCreator)
+                            {
                                 <span class="fbold" style="color:#777">@reqAmount.RequestStatusTxt</span>
                             } else {
                                 <div class="flex-center flex-lg-column gap-3">
@@ -130,7 +150,9 @@
                                     <button class="buttonGreen2" onclick="showAttachReqAmount('@reqAmount.Id')">واریز شد</button>
                                     <button class="buttonCancel3" onclick="changeStatusReqAmount('@reqAmount.Id', 1)">برگشت</button>
                                 </div>
-                            } else {
+                            }
+                            else
+                            {
                                 <span class="fbold" style="color: #4f817d">@reqAmount.RequestStatusTxt</span>
                             }
 
@@ -143,7 +165,8 @@
                             </button>
                             <div class="flex-center gap-2">
                                 <span class="fbold" style="color: #04857c">واریز شد</span>
-                                @if (isFinancial) {
+                                @if (isFinancial)
+                                {
                                     <span style="cursor:pointer;color:#333" onclick="changeStatusReqAmount('@reqAmount.Id', 3)" data-title="بازگشت">
                                         <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>
                                     </span>
@@ -152,26 +175,48 @@
                             break;
                     }
                 </div>
-            } else if (passType == 2) {
-                decimal[] percents = [25, 50, 75, 100];
+            }
+            else if (passType == 2)
+            {
+                decimal[] acceptedAmountPercentList = [25, 50, 75, 100];
                 var percent = (reqAmount.AcceptedAmount * 100) / reqAmount.Amount;
                 var pendingMd = status == RequestStatusEnum.در_انتظار_تایید_مدیرعامل;
 
                 <div class="layered-card__layer col-12 col-lg-3 col-xl-2 d-flex flex-row flex-lg-column justify-content-between justify-content-lg-center align-items-center px-3 py-2 gap-2">
                     <span style="font-size: 13px; color: #777" class="flex-shrink-0">مبلغ تایید شده:</span>
-                    <div class="input-group">
-                        <input name="acceptedAmount" @(pendingMd ? "" : "disabled") type="text" class="form-control currencyNumber" oninput="changeAcceptedRequestAmount(this, @reqAmount.Amount, @reqAmount.AcceptedAmount)" value="@(reqAmount.AcceptedAmount > 0 ? $"{reqAmount.AcceptedAmount:n0}" : "")" required>
-                        <select class="form-select form-select-xs" @(pendingMd ? "" : "disabled") style="@(percents.Contains(percent) ? "background-color: #cef5ce" : "border-color: #b5b5b5");color: #333" onchange="changePercentAcceptedRequestAmount(this, @reqAmount.Amount, @reqAmount.AcceptedAmount)">
-                            <option value="" selected="@(percent == 0 ? "selected" : null)">درصد</option>
-                            @foreach (var p in percents) {
-                                <option value="@p" selected="@(percent == p ? "selected" : null)">@p%</option>
-                            }
-                        </select>
-                    </div>
+
+                    @if (status == RequestStatusEnum.در_انتظار_تایید_مدیرعامل)
+                    {
+
+                        <div class="input-group">
+                            <input @(pendingMd ? "" : "disabled") type="text" class="acceptedAmount form-control currencyNumber" oninput="changeAcceptedRequestAmount(this, @reqAmount.Amount, @reqAmount.AcceptedAmount)" value="@(reqAmount.AcceptedAmount > 0 ? $"{reqAmount.AcceptedAmount:n0}" : "")" required>
+                            <select class="acceptedAmountPercent form-select form-select-xs" @(pendingMd ? "" : "disabled") style="@(acceptedAmountPercentList.Contains(percent) ? "background-color: #cef5ce" : "border-color: #b5b5b5");color: #333" onchange="changePercentAcceptedRequestAmount(this, @reqAmount.Amount, @reqAmount.AcceptedAmount)">
+                                <option value="" selected="@(percent == 0 ? "selected" : null)">درصد</option>
+                                @foreach (var p in acceptedAmountPercentList)
+                                {
+                                    <option value="@p" selected="@(percent == p ? "selected" : null)">@p%</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                    else
+                    {
+
+                        <div class="fbold flex-center align-items-baseline column-gap-1">
+                            <span style="font-size: 16px;">@($"{reqAmount.AcceptedAmount:n0}")</span>
+                            <span style="font-size: 11px;">ريال</span>
+                            <span style="font-size: 16px; color:darkgray">
+                                @(reqAmount.AcceptedAmountPercent.HasValue ? $"{reqAmount.AcceptedAmountPercent.Value}%" : "")
+                            </span>
+                        </div>
+
+                    }
+
                 </div>
 
                 <div class="layered-card__layer col-12 col-lg-1 flex-center flex-row flex-lg-column px-2 py-2 gap-4 gap-lg-3">
-                    @switch (status) {
+                    @switch (status)
+                    {
                         case RequestStatusEnum.ثبت_اولیه:
                             <span class="fbold" style="color:#777">@reqAmount.RequestStatusTxt</span>
                             break;

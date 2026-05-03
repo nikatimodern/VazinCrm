@@ -1,29 +1,30 @@
 ﻿using CRM.Core.Domain.AppUsers.Entities;
-using CRM.Core.Domain.Products.Entities;
-using CRM.EndPoint.FrontEnd.Services;
-using Generics.Infrastructures.Sql;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.LogSystems.Entities;
+using CRM.Core.Domain.Products.Entities;
 using CRM.Core.Domain.RequestAmounts.Entities;
 using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Amount;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Reports;
+using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Dapper;
+using Generics.Infrastructures.Sql;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Threading.Tasks;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize(Policy = "NotCustomerOnly")]
@@ -148,6 +149,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 item.UserModifyID = user.Id;
                 item.ModifyDate = DateTime.Now;
                 item.ModifyDateTxt = dtService.GetDateTimePersian();
+                item.AcceptedAmountPercent = model.AcceptedAmountPercent;
 
                 await _logSystemService.LogChange(oldItem, item, LogActionEnum.تایید_و_تغییر_وضعیت, user);
                 await db.SaveChangesAsync();
@@ -171,9 +173,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var oldItem = await db.RequestAmounts.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
                 var item = await db.RequestAmounts.Where(f => f.Id == id).FirstOrDefaultAsync();
 
-
                 item.RequestStatus = status;
                 item.RequestStatusTxt = item.RequestStatus.ToString().Replace("_", " ");
+
+                if (status== RequestStatusEnum.ثبت_اولیه )
+                {
+                    item.AcceptedAmount = 0;
+                }
+
 
                 if (status == RequestStatusEnum.در_انتظار_پرداخت)
                 {
@@ -280,27 +287,41 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 };
 
 
-                var data = await query.OrderByDescending(f => f.CreateDate)
-                    .Select(ra => new RequestAmountVModel {
-                        RequestAmount = ra,
-                        SupplyFactorSerials = ra.RequestAmountSupplyFactor
-                            .Join(db.SupplyFactors,
-                                raSf => raSf.SupplyFactorId,
-                                sf => sf.Id,
-                                (raSf, sf) => sf.FactorSerial
-                            )
-                            .ToList(),
-                        OrderHeadsData = ra.RequestAmountOrderHeads
-                            .Join(db.OrderHeads,
-                                raOh => raOh.OrderHeadId,
-                                oh => oh.Id,
-                                (raOh, oh) => new RequestAmountOrderHeadDataVModel {
-                                    OrderNumber = oh.OrderNumber,
-                                    CustomerTxt = oh.CustomerTxt
-                                })
-                            .ToList()
-                    })
+
+                var res = await query.OrderByDescending(f => f.CreateDate).ToListAsync();
+
+
+                var ids = res.Select(x => x.Id).ToList();
+
+                var supplySerials = await db.RequestAmountSupplyFactors.AsNoTracking()
+                    .Where(x => ids.Contains(x.RequestAmountId))
+                    .Join(db.SupplyFactors, x => x.SupplyFactorId, sf => sf.Id,
+                        (x, sf) => new { x.RequestAmountId, sf.FactorSerial })
                     .ToListAsync();
+
+                var orderSerials = await db.RequestAmountOrderHeads.AsNoTracking()
+                    .Where(x => ids.Contains(x.RequestAmountId))
+                    .Join(db.OrderHeads, x => x.OrderHeadId, oh => oh.Id,
+                        (x, oh) => new { x.RequestAmountId, oh.OrderNumber, oh.CustomerTxt })
+                    .ToListAsync();
+
+
+
+
+
+                var data = res.Select(ra => new RequestAmountVModel
+                {
+                    RequestAmount = ra,
+                    SupplyFactorSerials = supplySerials
+                     .Where(x => x.RequestAmountId == ra.Id)
+                     .Select(x => x.FactorSerial).ToList(),
+                    OrderHeadSerials = orderSerials
+                     .Where(x => x.RequestAmountId == ra.Id)
+                     .Select(x => x.OrderNumber).ToList(),
+                    CustomerNames = orderSerials
+                     .Where(x => x.RequestAmountId == ra.Id)
+                     .Select(x => x.CustomerTxt).ToList(),
+                }).ToList();
 
 
                 var html = await vrs.RenderToStringAsync("GetAllRequestAmountsPartial", data,
