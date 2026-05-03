@@ -2937,6 +2937,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasPrecision(20)
                         .HasColumnType("decimal(20,0)");
 
+                    b.Property<int?>("AcceptedAmountPercent")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("Amount")
                         .HasPrecision(20)
                         .HasColumnType("decimal(20,0)");

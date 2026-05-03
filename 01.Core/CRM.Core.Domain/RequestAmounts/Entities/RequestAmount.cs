@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using CRM.Core.Domain.RequestAmounts.Enums;
+using System.ComponentModel.DataAnnotations.Schema;
 
 
 namespace CRM.Core.Domain.RequestAmounts.Entities {
@@ -13,6 +14,9 @@ namespace CRM.Core.Domain.RequestAmounts.Entities {
         public RequestStatusEnum RequestStatus { get; set; } = RequestStatusEnum.ثبت_اولیه;
         public string RequestStatusTxt { get; set; }
         public decimal AcceptedAmount { get; set; }
+
+ 
+        public int? AcceptedAmountPercent { get; set; } = 0;
         public bool Vosoled { get; set; }
 
         public IList<RequestAmountSupplyFactor> RequestAmountSupplyFactor { get; set; }
