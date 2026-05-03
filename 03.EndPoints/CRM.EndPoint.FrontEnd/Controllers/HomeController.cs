@@ -81,7 +81,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     {
                         if (r.Vosoled)
                         {
-                            r.RequestStatus = RequestStatusEnum.واریز_شد;
+                            r.RequestStatus = RequestStatusEnum.پرداخت_شده;
                         } else
                         {
                             r.RequestStatus = RequestStatusEnum.در_انتظار_پرداخت;

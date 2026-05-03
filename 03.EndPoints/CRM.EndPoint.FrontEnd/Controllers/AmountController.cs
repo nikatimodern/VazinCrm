@@ -176,9 +176,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 item.RequestStatus = status;
                 item.RequestStatusTxt = item.RequestStatus.ToString().Replace("_", " ");
 
-                if (status== RequestStatusEnum.ثبت_اولیه )
+                if (status == RequestStatusEnum.ثبت_اولیه)
                 {
                     item.AcceptedAmount = 0;
+                    item.AcceptedAmountPercent = null;
                 }
 
 
@@ -225,8 +226,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 db.Attachments.UpdateRange(attachList);
 
-                reqAmount.RequestStatus = RequestStatusEnum.واریز_شد;
-                reqAmount.RequestStatusTxt = nameof(RequestStatusEnum.واریز_شد).Replace("_", " ");
+                reqAmount.RequestStatus = RequestStatusEnum.پرداخت_شده;
+                reqAmount.RequestStatusTxt = nameof(RequestStatusEnum.پرداخت_شده).Replace("_", " ");
 
                 reqAmount.UserModify = user.FullName;
                 reqAmount.UserModifyID = user.Id;
@@ -281,11 +282,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         f.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت
                     ),
                     3 => query.Where(f => // پرداخت شده
-                        f.RequestStatus == RequestStatusEnum.واریز_شد
+                        f.RequestStatus == RequestStatusEnum.پرداخت_شده
                     ),
                     _ => query
                 };
-
 
 
                 var res = await query.OrderByDescending(f => f.CreateDate).ToListAsync();
@@ -306,21 +306,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     .ToListAsync();
 
 
-
-
-
-                var data = res.Select(ra => new RequestAmountVModel
-                {
+                var data = res.Select(ra => new RequestAmountVModel {
                     RequestAmount = ra,
                     SupplyFactorSerials = supplySerials
-                     .Where(x => x.RequestAmountId == ra.Id)
-                     .Select(x => x.FactorSerial).ToList(),
+                        .Where(x => x.RequestAmountId == ra.Id)
+                        .Select(x => x.FactorSerial).ToList(),
                     OrderHeadSerials = orderSerials
-                     .Where(x => x.RequestAmountId == ra.Id)
-                     .Select(x => x.OrderNumber).ToList(),
+                        .Where(x => x.RequestAmountId == ra.Id)
+                        .Select(x => x.OrderNumber).ToList(),
                     CustomerNames = orderSerials
-                     .Where(x => x.RequestAmountId == ra.Id)
-                     .Select(x => x.CustomerTxt).ToList(),
+                        .Where(x => x.RequestAmountId == ra.Id)
+                        .Select(x => x.CustomerTxt).ToList(),
                 }).ToList();
 
 
@@ -357,14 +353,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                                 (raSf, sf) => sf.FactorSerial
                             )
                             .ToList(),
-                        OrderHeadsData = ra.RequestAmountOrderHeads
+                        OrderHeadSerials = ra.RequestAmountOrderHeads
                             .Join(db.OrderHeads,
                                 raOh => raOh.OrderHeadId,
                                 oh => oh.Id,
-                                (raOh, oh) => new RequestAmountOrderHeadDataVModel {
-                                    CustomerTxt = oh.CustomerTxt,
-                                    OrderNumber = oh.OrderNumber,
-                                }
+                                (raOh, oh) => oh.OrderNumber
                             )
                             .ToList(),
                     })

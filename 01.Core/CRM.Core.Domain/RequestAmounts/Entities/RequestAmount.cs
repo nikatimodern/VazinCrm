@@ -16,7 +16,7 @@ namespace CRM.Core.Domain.RequestAmounts.Entities {
         public decimal AcceptedAmount { get; set; }
 
  
-        public int? AcceptedAmountPercent { get; set; } = 0;
+        public int? AcceptedAmountPercent { get; set; }
         public bool Vosoled { get; set; }
 
         public IList<RequestAmountSupplyFactor> RequestAmountSupplyFactor { get; set; }
