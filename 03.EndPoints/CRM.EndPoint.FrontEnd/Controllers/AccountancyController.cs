@@ -621,11 +621,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        public async Task<IActionResult> GetAllBankAccountJson()
+        public async Task<IActionResult> GetAllBankAccountJson(BankAccountTypeEnum type)
         {
             try
             {
                 var data = await db.BankAccounts
+                    .Where(f => f.BankAccountType == type)
                     .Select(f => new SelectOptionGuidDto {
                         id = f.Id,
                         text = f.AccountName + " (" + f.BankName + " " + f.AccountNumber + ")",
@@ -756,6 +757,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.UserModifyID = user.Id;
                 model.UserCreator = user.FullName;
                 model.UserCreatorID = user.Id;
+                model.BankAccountType = BankAccountTypeEnum.شرکت;
+                model.BankAccountTypeTxt = nameof(BankAccountTypeEnum.شرکت);
                 db.BankAccounts.Add(model);
 
                 await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);

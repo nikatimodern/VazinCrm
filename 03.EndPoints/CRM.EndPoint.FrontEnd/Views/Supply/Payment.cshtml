@@ -238,7 +238,7 @@
             await togglePaymentModal();
 
             try {
-                const res = await axios(`/Supply/GetPayment/${id}`);
+                const res = await axios(`/Supply/GetPayment?paymentId=${id}`);
                 if (res.status === 200) {
                     paymentData = res.data.payment;
                     const factorSerials = res.data.supplyFactorSerials;

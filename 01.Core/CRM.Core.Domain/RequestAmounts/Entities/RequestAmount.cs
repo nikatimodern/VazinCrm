@@ -1,8 +1,8 @@
 ﻿using CRM.Framework.Domain;
 using System;
 using System.Collections.Generic;
+using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.RequestAmounts.Enums;
-using System.ComponentModel.DataAnnotations.Schema;
 
 
 namespace CRM.Core.Domain.RequestAmounts.Entities {
@@ -15,7 +15,7 @@ namespace CRM.Core.Domain.RequestAmounts.Entities {
         public string RequestStatusTxt { get; set; }
         public decimal AcceptedAmount { get; set; }
 
- 
+
         public int? AcceptedAmountPercent { get; set; }
         public bool Vosoled { get; set; }
 
@@ -27,5 +27,10 @@ namespace CRM.Core.Domain.RequestAmounts.Entities {
 
         public bool Prepayment { get; set; }
         public string Description { get; set; }
+
+        public RequestAmountTypeEnum RequestAmountType { get; set; }
+        public string RequestAmountTypeTxt { get; set; }
+
+        public IList<Payment> Payments { get; set; }
     }
 }

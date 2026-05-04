@@ -1580,31 +1580,28 @@
         }
 
         async function submitAcceptedRequestAmount(btn, id) {
-            const input = btn.closest(".layered-card").querySelector("input.acceptedAmount");
-
-            const selOpPercent=btn.closest(".layered-card").querySelector("select.acceptedAmountPercent") ;
-
-
-            console.log(selOpPercent)
-            console.log(selOpPercent.value)
-
+            const card = btn.closest(".layered-card");
+            const input = card.querySelector("input.acceptedAmount");
+            const selOpPercent = card.querySelector("select.acceptedAmountPercent");
 
             const model = {
                 id,
                 acceptedAmount: Number(SeparatedNumberRemove(input.value)),
-                acceptedAmountPercent:selOpPercent.value? Number(selOpPercent.value) : null
+                acceptedAmountPercent: selOpPercent.value ? Number(selOpPercent.value) : null,
             };
+
             try {
                 FLshowLoading();
                 const res = await axios.post(`/Amount/SetAcceptedRequestAmount`, model);
                 if (res.status === 200) {
                     await GetRequestManagingDirector();
-                    FLshowLoading(false);
                 }
             } catch (err) {
                 console.log(err);
+                toastifyError("خطای سرور");
+            } finally {
+                FLshowLoading(false);
             }
-
         }
 
         const GetPreFactorFinancialExpert = async () => {

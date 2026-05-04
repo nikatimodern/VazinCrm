@@ -3447,28 +3447,32 @@ const cancelShowAccModal = () => {
     document.getElementById("showImageDisplayAccAt").innerHTML = "";
 };
 
-const getAllBankAccountsJson = async () => {
+const getAllBankAccountsJson = async (type = 1) => {
     try {
-        const res = await axios.post("/Accountancy/GetAllBankAccountJson");
+        const res = await axios(`/Accountancy/GetAllBankAccountJson?type=${type}`);
         return res.data.map(i => ({ text: i.text, value: i.id }));
     } catch (err) {
         console.log(err);
     }
 };
-const getAllBankAccounts = async () => {
+const getAllBankAccounts = async (type = 1) => {
     try {
-        const data = await getAllBankAccountsJson();
+        const data = await getAllBankAccountsJson(type);
         
-        const applyToModal = (modalId) => {
+        const applyToModal = (modalId, selector) => {
             const modal = document.getElementById(modalId);
             if (!modal) return;
             
-            const select = modal.querySelector("select[name='BankAccountId']");
+            const select = modal.querySelector(selector);
             createOption(select, data, true, "انتخاب کنید");
         };
-        
-        applyToModal("InvoiceModalId");
-        applyToModal("ShowPaymentModal");
+        if (type === 1) {
+            applyToModal("InvoiceModalId", "select[name='BankAccountId']");
+            applyToModal("ShowPaymentModal", "select[name='BankAccountId']");
+            applyToModal("reqAmountAttachModal", "select[name='fromAccountId']");
+        } else if (type === 2) {
+            applyToModal("reqAmountAttachModal", "select[name='toAccountId']");
+        }
         
     } catch (err) {
         console.log(err);
@@ -4601,8 +4605,9 @@ const showAttachReqAmount = async (id) => {
     ModalToggle("reqAmountAttachModal", "show");
     try {
         FLshowLoading();
-        const res = await axios(`/Factor/GetAttachment/${id}?type=11`);
-        reqAmountAttachment = res.data;
+        // const res = await axios(`/Factor/GetAttachment/${id}?type=11`);
+        reqAmountAttachment = data.attachments;
+        mySer.convertJsonToForm(data.payment, "reqAmountAttachForm")
         FileUpReload("reqAmountAttach");
     } catch (err) {
         toastifyError("خطای سرور!");
@@ -4622,11 +4627,25 @@ const cancelReqAmountAttach = () => {
 
 
 const submitReqAmountAttach = async () => {
+    if (!await mySer.CheckValidForm("reqAmountAttachForm")) return;
+    
     if (reqAmountAttachment.every(item => item.isDeleted)) {
         toastifyError("رسید واریزی اجباری است");
         return;
     }
-    const model = { listAttach: reqAmountAttachment, id: reqAmountId };
+    
+    const fromAccountElm = document.querySelector("#reqAmountAttachForm select[name='fromAccountId']");
+    const toAccountElm = document.querySelector("#reqAmountAttachForm select[name='toAccountId']");
+    
+    const model = {
+        requestAmountId: reqAmountId,
+        attachments: reqAmountAttachment,
+        toAccountId: toAccountElm.value,
+        fromAccountId: fromAccountElm.value,
+        toAccountTxt: toAccountElm.selectedOptions[0].innerText,
+        fromAccountTxt: fromAccountElm.selectedOptions[0].innerText,
+    };
+    
     FLshowLoading();
     try {
         const res = await axios.post("/Amount/AttachAndVosolReqAmount", model);

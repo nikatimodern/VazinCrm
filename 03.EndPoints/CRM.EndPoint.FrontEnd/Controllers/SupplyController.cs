@@ -265,17 +265,20 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        public async Task<IActionResult> GetPayment(Guid id)
+        public async Task<IActionResult> GetPayment(Guid? paymentId, Guid? requestAmountId)
         {
             try
             {
-                var data = await db.Payments
-                    .Where(f => f.Id == id)
+                var query = paymentId != null
+                    ? db.Payments.Where(f => f.Id == paymentId)
+                    : db.Payments.Where(f => f.RequestAmountId == requestAmountId);
+
+                var data = await query
                     .Include(f => f.PaymentSupplyFactors)
                     .AsNoTracking()
-                    .Select(sf => new {
-                        Payment = sf,
-                        SupplyFactorSerials = sf.PaymentSupplyFactors
+                    .Select(p => new {
+                        Payment = p,
+                        SupplyFactorSerials = p.PaymentSupplyFactors
                             .Join(db.SupplyFactors,
                                 pSf => pSf.SupplyFactorId,
                                 sf => sf.Id,
@@ -283,7 +286,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             )
                             .ToList(),
                         Attachments = db.Attachments
-                            .Where(a => a.EntityId == sf.Id && a._AttachType == _AttachType.Payment)
+                            .Where(a => a.EntityId == p.Id && a._AttachType == _AttachType.Payment)
                             .ToList()
                     })
                     .FirstOrDefaultAsync();
@@ -315,8 +318,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     query = query.Where(f =>
                         f.Amount == searchNumber ||
                         f.PaymentNumber == searchNumber ||
-                        f.FromAccount.Contains(searchValue) ||
-                        f.ToAccount.Contains(searchValue) ||
+                        f.FromAccountTxt.Contains(searchValue) ||
+                        f.ToAccountTxt.Contains(searchValue) ||
                         f.PaymentSupplyFactors.Any(pSf =>
                             db.SupplyFactors.Any(sf => sf.Id == pSf.SupplyFactorId && sf.FactorSerial == searchValue)
                         )

@@ -7,24 +7,20 @@ using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Amount;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Reports;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
-using Dapper;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Payments.Entities;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize(Policy = "NotCustomerOnly")]
@@ -180,14 +176,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     item.AcceptedAmount = 0;
                     item.AcceptedAmountPercent = null;
-                }
-
-
-                if (status == RequestStatusEnum.در_انتظار_پرداخت)
+                } else if (status == RequestStatusEnum.در_انتظار_پرداخت)
                 {
                     var attaches = await db.Attachments.Where(f => f.EntityId == item.Id).ToListAsync();
                     foreach (var attach in attaches)
                         attach?.IsDeleted = true;
+                    /*item.FromAccountId = Guid.Empty;
+                    item.FromAccountTxt = null;
+                    item.ToAccountId = Guid.Empty;
+                    item.ToAccountTxt = null;*/
                 }
 
                 item.UserModify = user.FullName;
@@ -207,32 +204,34 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [HttpPost]
-        public async Task<IActionResult> AttachAndVosolReqAmount([FromBody] AttachmentModel model)
+        public async Task<IActionResult> AttachAndVosolReqAmount([FromBody] Payment model)
         {
             try
             {
+                //var reqAmountData = model.RequestAmountData;
+                //var paymentData = model.PaymentData;
+
                 var user = await userManager.GetUserAsync(HttpContext.User);
-
-                var oldReqAmount = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
-                var reqAmount = await db.RequestAmounts.FirstOrDefaultAsync(f => f.Id == model.Id);
+                var oldReqAmount = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.RequestAmountId);
+                var reqAmount = await db.RequestAmounts.FirstOrDefaultAsync(f => f.Id == model.RequestAmountId);
                 if (reqAmount == null) return NotFound();
-
-
-                var attachList = fileSaver.saveAttach(model.ListAttach, _AttachType.requestAmount, false);
-                foreach (var att in attachList ?? [])
-                {
-                    att?.EntityId = model.Id;
-                }
-
-                db.Attachments.UpdateRange(attachList);
 
                 reqAmount.RequestStatus = RequestStatusEnum.پرداخت_شده;
                 reqAmount.RequestStatusTxt = nameof(RequestStatusEnum.پرداخت_شده).Replace("_", " ");
-
                 reqAmount.UserModify = user.FullName;
                 reqAmount.UserModifyID = user.Id;
                 reqAmount.ModifyDate = DateTime.Now;
                 reqAmount.ModifyDateTxt = dtService.GetDateTimePersian();
+
+                db.Payments.Update(model);
+
+
+                var attachList = fileSaver.saveAttach(model.Attachments, _AttachType.Payment, false);
+                foreach (var att in attachList ?? [])
+                {
+                    att?.EntityId = model.Id;
+                }
+                db.Attachments.UpdateRange(attachList);
 
                 await _logSystemService.LogChange(oldReqAmount, reqAmount, LogActionEnum.تغییر_وضعیت, user);
                 await db.SaveChangesAsync();
@@ -295,28 +294,28 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var supplySerials = await db.RequestAmountSupplyFactors.AsNoTracking()
                     .Where(x => ids.Contains(x.RequestAmountId))
-                    .Join(db.SupplyFactors, x => x.SupplyFactorId, sf => sf.Id,
-                        (x, sf) => new { x.RequestAmountId, sf.FactorSerial })
+                    .Join(db.SupplyFactors,
+                        x => x.SupplyFactorId,
+                        sf => sf.Id,
+                        (x, sf) => new { x.RequestAmountId, sf.FactorSerial }
+                    )
                     .ToListAsync();
 
                 var orderSerials = await db.RequestAmountOrderHeads.AsNoTracking()
                     .Where(x => ids.Contains(x.RequestAmountId))
-                    .Join(db.OrderHeads, x => x.OrderHeadId, oh => oh.Id,
-                        (x, oh) => new { x.RequestAmountId, oh.OrderNumber, oh.CustomerTxt })
+                    .Join(db.OrderHeads,
+                        x => x.OrderHeadId,
+                        oh => oh.Id,
+                        (x, oh) => new { x.RequestAmountId, oh.OrderNumber, oh.CustomerTxt }
+                    )
                     .ToListAsync();
 
 
                 var data = res.Select(ra => new RequestAmountVModel {
                     RequestAmount = ra,
-                    SupplyFactorSerials = supplySerials
-                        .Where(x => x.RequestAmountId == ra.Id)
-                        .Select(x => x.FactorSerial).ToList(),
-                    OrderHeadSerials = orderSerials
-                        .Where(x => x.RequestAmountId == ra.Id)
-                        .Select(x => x.OrderNumber).ToList(),
-                    CustomerNames = orderSerials
-                        .Where(x => x.RequestAmountId == ra.Id)
-                        .Select(x => x.CustomerTxt).ToList(),
+                    SupplyFactorSerials = supplySerials.Where(x => x.RequestAmountId == ra.Id).Select(x => x.FactorSerial).ToList(),
+                    OrderHeadSerials = orderSerials.Where(x => x.RequestAmountId == ra.Id).Select(x => x.OrderNumber).ToList(),
+                    CustomerNames = orderSerials.Where(x => x.RequestAmountId == ra.Id).Select(x => x.CustomerTxt).ToList(),
                 }).ToList();
 
 
