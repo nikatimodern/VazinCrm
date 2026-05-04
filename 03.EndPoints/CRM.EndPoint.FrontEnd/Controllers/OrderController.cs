@@ -459,6 +459,43 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetAllOrderHeadsByCurrentTamin()
+        {
+            try
+            {
+                var CUser=await userManager.GetUserAsync(HttpContext.User);
+
+                var pfs=db.PreFactors
+                    .Where(f=>f.UserTaminId==Guid.Parse(CUser.Id))
+                    .Select(f=>f.Id)
+                    .ToArray();
+
+
+                var orderHead = await db.OrderHeads
+                    .Where(f => pfs.Contains(f.Prefactor.Value))
+                    .Select(f => f.Id).ToListAsync();
+
+
+                return Ok(orderHead);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+
+
+
+
+
+
+
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> GetAllOrderHeads([FromBody] GetAllSortBySelectedVModel model)

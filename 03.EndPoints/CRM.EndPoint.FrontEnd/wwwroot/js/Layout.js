@@ -52,6 +52,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     
     setting = await GetSetting();
+
+    console.log(setting)
+
     AcceptSetting(setting);
     
     

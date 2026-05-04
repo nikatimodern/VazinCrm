@@ -143,9 +143,7 @@
             await getAllRequestAmount();
             await getAllBankAccounts()
             await getAllBankAccounts(2)
-            document.addEventListener("settingReady", () => {
-                selectOrderHeadType = setting.multiSelectOrderHeadsInRequestAmount ? 3 : 4;
-            });
+
 
             const searchReqAmountElm = document.getElementById("requestAmountSearchId");
             searchReqAmountElm.addEventListener("keyup", async (e) => {
@@ -159,6 +157,14 @@
             const requestAmountRadios = document.querySelectorAll("input[type='radio'][name='requestAmountFilter']");
             requestAmountRadios.forEach(elm => elm.addEventListener("change", async () => await getAllRequestAmount()));
         });
+
+
+                    document.addEventListener("settingReady", () => {
+
+                console.log(setting)
+                selectOrderHeadType = setting.multiSelectOrderHeadsInRequestAmount ? 3 : 4;
+            });
+
 
 
         async function callbackFilterRequestAmount() {
@@ -361,23 +367,35 @@
         let tempSelectedMap = new Map(); // id -> number
         const addOrderHeadModal = document.getElementById("addOrderHeadModal");
         async function showAddOrderHeadModal() {
+
+           
             if (!selectOrderHeadType) return;
+
+
             tempSelectedMap.clear();
             tempSelectedIds = [...orderHeadsSelectedIds];
 
-            const supplierId = reqAmountModal.querySelector("#reqAmountSupplierId").value;
-            if (supplierId) {
-                FLshowLoading();
-                orderHeadsFilterIds = await getOrderHeadIdsBySupplier(supplierId);
-                await getAllOrderHeads();
-                FLshowLoading(false);
-            } else {
-                FLshowLoading();
-                await getAllOrderHeads();
-                FLshowLoading(false);
-            }
-
+            FLshowLoading();
+            orderHeadsFilterIds = (await axios(`/Order/GetAllOrderHeadsByCurrentTamin`)).data ;
             await getAllOrderHeads();
+            FLshowLoading(false);
+
+            // const supplierId = reqAmountModal.querySelector("#reqAmountSupplierId").value;
+            // if (supplierId) {
+            //     FLshowLoading();
+            //     orderHeadsFilterIds = await getOrderHeadIdsBySupplier(supplierId);
+            //     await getAllOrderHeads();
+            //     FLshowLoading(false);
+            // } else {
+            //     FLshowLoading();
+            //     await getAllOrderHeads();
+            //     FLshowLoading(false);
+            // }
+
+            // await getAllOrderHeads();
+
+
+
             toggleAddOrderHeadModal();
         }
 
@@ -389,7 +407,6 @@
         const getAllOrderHeads = async (search = "") => {
             const model = { search, passType: selectOrderHeadType, selectedIds: tempSelectedIds, filterIds: orderHeadsFilterIds };
             const res = await axios.post(`/Order/GetAllOrderHeads`, model);
-
             addOrderHeadModal.querySelector("#addOrderHeadContainer").innerHTML = res.data;
             restoreSelectedOrderHeads();
         };
