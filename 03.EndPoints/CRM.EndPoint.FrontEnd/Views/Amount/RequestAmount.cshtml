@@ -140,9 +140,8 @@
         const reqAmountModal = document.getElementById("requestAmountModal");
 
         document.addEventListener("DOMContentLoaded", async () => {
-            await getAllRequestAmount();
-            await getAllBankAccounts()
-            await getAllBankAccounts(2)
+            await Promise.all([getAllRequestAmount(), getAllBankAccounts()]);
+
             document.addEventListener("settingReady", () => {
                 selectOrderHeadType = setting.multiSelectOrderHeadsInRequestAmount ? 3 : 4;
             });

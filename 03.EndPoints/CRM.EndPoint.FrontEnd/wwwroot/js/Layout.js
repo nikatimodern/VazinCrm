@@ -3447,33 +3447,34 @@ const cancelShowAccModal = () => {
     document.getElementById("showImageDisplayAccAt").innerHTML = "";
 };
 
-const getAllBankAccountsJson = async (type = 1) => {
+const getAllBankAccountsJson = async (type) => {
     try {
         const res = await axios(`/Accountancy/GetAllBankAccountJson?type=${type}`);
-        return res.data.map(i => ({ text: i.text, value: i.id }));
+        return res.data;
     } catch (err) {
         console.log(err);
     }
 };
-const getAllBankAccounts = async (type = 1) => {
+const getAllBankAccounts = async () => {
     try {
-        const data = await getAllBankAccountsJson(type);
+        const data = await getAllBankAccountsJson();
+        const companyData = data.filter(d => d.type === 1); // حساب های شرکت
+        const otherData = data.filter(d => d.type === 2); // حساب های دیگران
         
-        const applyToModal = (modalId, selector) => {
+        const applyToModal = (dataOptions, modalId, selector) => {
             const modal = document.getElementById(modalId);
             if (!modal) return;
             
             const select = modal.querySelector(selector);
-            createOption(select, data, true, "انتخاب کنید");
+            createOption(select, dataOptions, true, "انتخاب کنید");
         };
-        if (type === 1) {
-            applyToModal("InvoiceModalId", "select[name='BankAccountId']");
-            applyToModal("ShowPaymentModal", "select[name='BankAccountId']");
-            applyToModal("reqAmountAttachModal", "select[name='fromAccountId']");
-        } else if (type === 2) {
-            applyToModal("reqAmountAttachModal", "select[name='toAccountId']");
-        }
         
+        
+        applyToModal(companyData, "InvoiceModalId", "select[name='BankAccountId']");
+        applyToModal(companyData, "ShowPaymentModal", "select[name='BankAccountId']");
+        applyToModal(companyData, "reqAmountAttachModal", "select[name='fromAccountId']");
+        
+        applyToModal(otherData, "reqAmountAttachModal", "select[name='toAccountId']");
     } catch (err) {
         console.log(err);
     }
@@ -4598,23 +4599,143 @@ async function changeStatusReqAmount(reqAmountId, status) {
     }
 }
 
+
 var reqAmountAttachment = [];
 let reqAmountId;
+const ShowModalListPayment = async (id) => {
+    getAllPaymentsList(id);
+    ModalToggle("paymentListModalId", "show");
+};
+
+let paymentTable;
+let isFinancialPaymentTable;
+const initPaymentTable = () => {
+    paymentTable = $("#paymentListTable").DataTable({
+        paging: false,
+        processing: true,
+        serverSide: true,
+        searching: false,
+        ordering: true,
+        order: [[1, "desc"]],
+        scrollCollapse: true,
+        scrollY: "calc(100dvh - 400px)",
+        responsive: true,
+        ajax: {
+            url: ``,
+            type: "POST",
+            dataSrc: function (json) {
+                isFinancialPaymentTable = json.isFinancial;
+                return json.data;
+            },
+        },
+        language: {
+            emptyTable: "هیچ رکوردی موجود نمی باشد.",
+            info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
+            infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
+            infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
+            lengthMenu: "نمایش _MENU_ ردیف",
+            loadingRecords: "در حال بارگزاری...",
+            search: "",
+            zeroRecords: "رکوردی با این مشخصات پیدا نشد",
+            aria: {
+                sortAscending: ": فعال سازی نمایش به صورت صعودی",
+                sortDescending: ": فعال سازی نمایش به صورت نزولی",
+            },
+        },
+        columnDefs: [
+            {
+                targets: [3, 4, 6, 7],
+                orderable: false,
+            },
+            {
+                targets: [1],
+                render: data => `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>`,
+            },
+            {
+                targets: [2],
+                render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>`,
+            },
+        ],
+        columns: [
+            { data: "paymentNumber", name: "PaymentNumber", defaultContent: "-" },
+            { data: "createDateTxt", name: "CreateDateTxt", defaultContent: "-" },
+            { data: "amount", name: "Amount", defaultContent: "-" },
+            { data: "fromAccountTxt", name: "FromAccountTxt", defaultContent: "-" },
+            { data: "toAccountTxt", name: "ToAccountTxt", defaultContent: "-" },
+            { data: "paymentDateTxt", name: "PaymentDateTxt", defaultContent: "-" },
+            { data: "userCreator", name: "UserCreator", defaultContent: "-" },
+            {
+                data: null,
+                render: function (data, type, row) {
+                    return `
+                        <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                            <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.id}', 9)"><i class="fa fa-paperclip"></i></button>
+<!--                             <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditPaymentModal('${row.id}')"><i class="fa fa-pencil"></i></button> -->
+                          ${isFinancialPaymentTable
+                            ? `<button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deletePayment('${row.id}')"><i class="fa fa-trash"></i></button>`
+                            : ""}
+                            
+                        </div>
+                    `;
+                },
+            },
+        ],
+        layout: null,
+    });
+};
+
+const getAllPaymentsList = (id) => {
+    if (!paymentTable) {
+        initPaymentTable();
+    }
+    paymentTable.ajax.url(`/Amount/GetAllPaymentsByRequestAmount?id=${id}`).load();
+};
+
+
+const deletePayment = async (id) => {
+    Swal.fire({
+        title: "حذف!",
+        text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
+        icon: "warning",
+        showCancelButton: true,
+        cancelButtonColor: "#adadad",
+        confirmButtonColor: "#e64942",
+        cancelButtonText: "انصراف",
+        confirmButtonText: "بله، حذف شود",
+    }).then(async (willDelete) => {
+        if (willDelete.isConfirmed) {
+            FLshowLoading();
+            const res = await axios(`/Supply/DeletePayment/${id}`);
+            if (res.status === 200) {
+                toastifySuccess("با موفقیت حذف شد");
+                paymentTable.ajax.reload();
+                
+                const currentPath = window.location.pathname.toLowerCase();
+                if (currentPath.includes("cartable")) {
+                    const { tab } = getUrlParams();
+                    switch (tab) {
+                        case "TManagingDirectorId":
+                            await GetRequestManagingDirector();
+                            break;
+                        case "TFinancialExpertId":
+                            await GetRequestFinancialExpert();
+                            break;
+                    }
+                } else if (currentPath.includes("requestamount")) {
+                    await getAllRequestAmount();
+                }
+                
+            }
+            FLshowLoading(false);
+        }
+    });
+};
+
+
+
 const showAttachReqAmount = async (id) => {
     reqAmountId = id;
     ModalToggle("reqAmountAttachModal", "show");
-    try {
-        FLshowLoading();
-        // const res = await axios(`/Factor/GetAttachment/${id}?type=11`);
-        reqAmountAttachment = data.attachments;
-        mySer.convertJsonToForm(data.payment, "reqAmountAttachForm")
-        FileUpReload("reqAmountAttach");
-    } catch (err) {
-        toastifyError("خطای سرور!");
-        console.log(err);
-    } finally {
-        FLshowLoading(false);
-    }
 };
 
 
@@ -4623,6 +4744,7 @@ const cancelReqAmountAttach = () => {
     reqAmountAttachment = [];
     document.getElementById("imageDisplayReqAmountAt").innerHTML = "";
     document.getElementById("reqAmountAttach").value = "";
+    mySer.emptyForm("reqAmountAttachForm");
 };
 
 
@@ -4638,14 +4760,13 @@ const submitReqAmountAttach = async () => {
     const toAccountElm = document.querySelector("#reqAmountAttachForm select[name='toAccountId']");
     
     const model = {
+        ...mySer.convertFormToJSON("reqAmountAttachForm"),
         requestAmountId: reqAmountId,
         attachments: reqAmountAttachment,
-        toAccountId: toAccountElm.value,
-        fromAccountId: fromAccountElm.value,
         toAccountTxt: toAccountElm.selectedOptions[0].innerText,
         fromAccountTxt: fromAccountElm.selectedOptions[0].innerText,
     };
-    
+    console.log(model);
     FLshowLoading();
     try {
         const res = await axios.post("/Amount/AttachAndVosolReqAmount", model);
