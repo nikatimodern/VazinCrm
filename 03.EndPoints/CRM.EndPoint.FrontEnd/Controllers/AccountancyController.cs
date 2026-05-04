@@ -79,7 +79,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [Authorize(Policy = "NotCustomerOnly")]
         public IActionResult Index()
         {
-
             return View();
         }
 
@@ -621,15 +620,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        public async Task<IActionResult> GetAllBankAccountJson(BankAccountTypeEnum type)
+        public async Task<IActionResult> GetAllBankAccountJson(BankAccountTypeEnum? type = null)
         {
             try
             {
-                var data = await db.BankAccounts
-                    .Where(f => f.BankAccountType == type)
-                    .Select(f => new SelectOptionGuidDto {
-                        id = f.Id,
+                var query = type != null
+                    ? db.BankAccounts.Where(f => f.BankAccountType == type).AsQueryable()
+                    : db.BankAccounts.AsQueryable();
+
+                var data = await query
+                    .Select(f => new {
+                        value = f.Id,
                         text = f.AccountName + " (" + f.BankName + " " + f.AccountNumber + ")",
+                        type = f.BankAccountType
                     })
                     .OrderByDescending(f => f.text)
                     .ToListAsync();

@@ -8,4 +8,5 @@ public class RequestAmountVModel {
     public List<string> SupplyFactorSerials { get; set; }
     public List<int> OrderHeadSerials { get; set; }
     public List<string> CustomerNames { get; set; }
+    public decimal TotalPaymentAmount { get; set; }
 }

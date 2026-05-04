@@ -178,10 +178,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     item.AcceptedAmountPercent = null;
                 } else if (status == RequestStatusEnum.در_انتظار_پرداخت)
                 {
-                    var attaches = await db.Attachments.Where(f => f.EntityId == item.Id).ToListAsync();
+                    /*var attaches = await db.Attachments.Where(f => f.EntityId == item.Id).ToListAsync();
                     foreach (var attach in attaches)
                         attach?.IsDeleted = true;
-                    /*item.FromAccountId = Guid.Empty;
+                    item.FromAccountId = Guid.Empty;
                     item.FromAccountTxt = null;
                     item.ToAccountId = Guid.Empty;
                     item.ToAccountTxt = null;*/
@@ -208,9 +208,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                //var reqAmountData = model.RequestAmountData;
-                //var paymentData = model.PaymentData;
-
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var oldReqAmount = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.RequestAmountId);
                 var reqAmount = await db.RequestAmounts.FirstOrDefaultAsync(f => f.Id == model.RequestAmountId);
@@ -223,6 +220,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 reqAmount.ModifyDate = DateTime.Now;
                 reqAmount.ModifyDateTxt = dtService.GetDateTimePersian();
 
+
+                model.PaymentDate = dtService.GetDateMiladi(model.PaymentDateTxt);
+                model.UserCreator = user.FullName;
+                model.UserCreatorID = user.Id;
                 db.Payments.Update(model);
 
 
@@ -231,12 +232,76 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     att?.EntityId = model.Id;
                 }
+
                 db.Attachments.UpdateRange(attachList);
 
                 await _logSystemService.LogChange(oldReqAmount, reqAmount, LogActionEnum.تغییر_وضعیت, user);
                 await db.SaveChangesAsync();
                 await hub.Clients.Groups("مدیر ارشد", "کارشناس مالی").SendAsync("countPreFactorToAccept");
                 return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> GetAllPaymentsByRequestAmount([FromQuery] Guid id)
+        {
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var roles = await userManager.GetRolesAsync(user);
+                var isFinancial = roles.Contains("کارشناس مالی");
+
+                var draw = Request.Form["draw"].FirstOrDefault();
+                var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
+                var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
+                var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
+                var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
+
+                var query = db.Payments
+                    .Where(f => f.RequestAmountId == id)
+                    .OrderByDescending(f => f.CreateDate)
+                    .AsNoTracking();
+
+                var recordsTotal = query.Count();
+
+
+                if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortColumnDirection))
+                {
+                    var isAscending = sortColumnDirection == "asc";
+                    query = sortColumn switch {
+                        "PaymentNumber" => isAscending
+                            ? query.OrderBy(f => f.PaymentNumber)
+                            : query.OrderByDescending(f => f.PaymentNumber),
+                        "Amount" => isAscending
+                            ? query.OrderBy(f => f.Amount)
+                            : query.OrderByDescending(f => f.Amount),
+                        "CreateDateTxt" => isAscending
+                            ? query.OrderBy(f => f.CreateDate)
+                            : query.OrderByDescending(f => f.CreateDate),
+                        "PaymentDateTxt" => isAscending
+                            ? query.OrderBy(f => f.PaymentDate)
+                            : query.OrderByDescending(f => f.PaymentDate),
+                        _ => query
+                    };
+                }
+
+                if (length != -1)
+                    query = query.Skip(start).Take(length);
+
+                var data = await query.ToListAsync();
+
+                return Json(new {
+                    draw,
+                    recordsTotal,
+                    recordsFiltered = recordsTotal,
+                    data,
+                    isFinancial
+                });
             }
             catch (Exception ex)
             {
@@ -310,12 +375,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     )
                     .ToListAsync();
 
+                var paymentAmounts = await db.Payments.AsNoTracking()
+                    .Where(x => ids.Contains(x.RequestAmountId.Value))
+                    .Select(x => new { x.RequestAmountId, x.Amount })
+                    .ToListAsync();
+
 
                 var data = res.Select(ra => new RequestAmountVModel {
                     RequestAmount = ra,
                     SupplyFactorSerials = supplySerials.Where(x => x.RequestAmountId == ra.Id).Select(x => x.FactorSerial).ToList(),
                     OrderHeadSerials = orderSerials.Where(x => x.RequestAmountId == ra.Id).Select(x => x.OrderNumber).ToList(),
                     CustomerNames = orderSerials.Where(x => x.RequestAmountId == ra.Id).Select(x => x.CustomerTxt).ToList(),
+                    TotalPaymentAmount = paymentAmounts.Where(x => x.RequestAmountId == ra.Id).Sum(x => x.Amount)
                 }).ToList();
 
 
