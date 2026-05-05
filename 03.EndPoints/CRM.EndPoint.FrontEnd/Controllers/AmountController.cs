@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Payments.Entities;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize(Policy = "NotCustomerOnly")]
@@ -210,7 +211,21 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 await AddOrUpdatePayment(model, user);
-                await SetRequestAmountToPaid(model.RequestAmountId, user);
+                //await SetRequestAmountToPaid(model.RequestAmountId, user);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        [HttpPost]
+        public async Task<IActionResult> AddPaymentByRequestAmountGrouped([FromBody] Payment model)
+        {
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+
                 return Ok();
             }
             catch (Exception ex)
@@ -318,11 +333,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
                 await db.SaveChangesAsync();
 
-                var hasAnyPaymentForReqAmount = await db.Payments.AnyAsync(f => f.RequestAmountId == item.RequestAmountId);
+                /*var hasAnyPaymentForReqAmount = await db.Payments.AnyAsync(f => f.RequestAmountId == item.RequestAmountId);
                 if (!hasAnyPaymentForReqAmount)
                 {
                     await SetRequestAmountToPendingPaid(item.RequestAmountId, user);
-                }
+                }*/
 
                 return Ok();
             }
@@ -382,7 +397,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
 
                 var query = db.Payments
-                    .Where(f => f.RequestAmountId == id)
+                    //.Where(f => f.RequestAmountId == id)
                     .OrderByDescending(f => f.CreateDate)
                     .AsNoTracking();
 
@@ -495,8 +510,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     .ToListAsync();
 
                 var paymentAmounts = await db.Payments.AsNoTracking()
-                    .Where(x => ids.Contains(x.RequestAmountId.Value))
-                    .Select(x => new { x.RequestAmountId, x.Amount })
+                    //.Where(x => ids.Contains(x.RequestAmountId.Value))
+                    //.Select(x => new { x.RequestAmountId, x.Amount })
                     .ToListAsync();
 
 
@@ -505,7 +520,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     SupplyFactorSerials = supplySerials.Where(x => x.RequestAmountId == ra.Id).Select(x => x.FactorSerial).ToList(),
                     OrderHeadSerials = orderSerials.Where(x => x.RequestAmountId == ra.Id).Select(x => x.OrderNumber).ToList(),
                     CustomerNames = orderSerials.Where(x => x.RequestAmountId == ra.Id).Select(x => x.CustomerTxt).ToList(),
-                    TotalPaymentAmount = paymentAmounts.Where(x => x.RequestAmountId == ra.Id).Sum(x => x.Amount)
+                    //TotalPaymentAmount = paymentAmounts.Where(x => x.RequestAmountId == ra.Id).Sum(x => x.Amount)
                 }).ToList();
 
 
@@ -551,6 +566,23 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             .ToList(),
                     })
                     .FirstOrDefaultAsync();
+
+                return Ok(data);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> GetRequestsAmountByFilteredIds([FromBody] GetAllBySelectedVModel model)
+        {
+            try
+            {
+                var data = await db.RequestAmounts.AsNoTracking()
+                    .Where(f => model.FilterIds.Contains(f.Id))
+                    .ToListAsync();
 
                 return Ok(data);
             }

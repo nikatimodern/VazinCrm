@@ -5,6 +5,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Attachments.Entities;
+using CRM.Core.Domain.Payments.Enums;
+using CRM.Core.Domain.RequestAmounts.Entities;
 
 namespace CRM.Core.Domain.Payments.Entities {
     public class Payment : BaseEntity {
@@ -21,10 +23,11 @@ namespace CRM.Core.Domain.Payments.Entities {
         public DateTime? PaymentDate { get; set; }
         public string PaymentDateTxt { get; set; }
 
-        public Guid? RequestAmountId { get; set; }
-
         [NotMapped] public IList<Attachment> Attachments { get; set; }
 
         public IList<PaymentSupplyFactor> PaymentSupplyFactors { get; set; }
+
+        public IList<RequestAmountPayment> RequestAmountPayments { get; set; }
+        public PaymentModeEnum paymentMode { get; set; }
     }
 }

@@ -9,6 +9,7 @@
                 <span style="line-height: 1">ثبت درخواست جدید</span>
                 <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
             </button>
+
         </div>
         <div class="d-flex align-items-center gap-2 col-12 col-lg-5">
             @*<div id="ContentRequestAmountFilterId" class="ContentFilter"></div>
@@ -44,20 +45,6 @@
         </div>
     </div>
     <div id="requestAmountContainer">
-        @*<table class="table table-striped table-hover nowrap w-100" id="requestAmountTable">
-            <thead>
-            <tr>
-                <th>ردیف</th>
-                <th>نوع</th>
-                <th>قیمت</th>
-                <th>قیمت تایید شده</th>
-                <th>وضعیت</th>
-                <th>عملیات</th>
-            </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>*@
     </div>
 </div>
 
@@ -137,14 +124,12 @@
         var filterRequestAmountConfig = {};
         var requestAmountSearchVal = null;
 
+
+        const requestContainer = document.getElementById("requestAmountContainer");
         const reqAmountModal = document.getElementById("requestAmountModal");
 
         document.addEventListener("DOMContentLoaded", async () => {
-     
-
             await Promise.all([getAllRequestAmount(), getAllBankAccounts()]);
-
-
 
             const searchReqAmountElm = document.getElementById("requestAmountSearchId");
             searchReqAmountElm.addEventListener("keyup", async (e) => {
@@ -160,12 +145,9 @@
         });
 
 
-                    document.addEventListener("settingReady", () => {
-
-                console.log(setting)
-                selectOrderHeadType = setting.multiSelectOrderHeadsInRequestAmount ? 3 : 4;
-            });
-
+        document.addEventListener("settingReady", () => {
+            selectOrderHeadType = setting.multiSelectOrderHeadsInRequestAmount ? 3 : 4;
+        });
 
 
         async function callbackFilterRequestAmount() {
@@ -232,7 +214,7 @@
             if (type === undefined) return;
             FLshowLoading();
             const res = await axios(`/Amount/GetAllRequestAmountsPartial?search=${val}&type=${type}&passType=1`);
-            document.getElementById("requestAmountContainer").innerHTML = res.data.html;
+            requestContainer.innerHTML = res.data.html;
             FLshowLoading(false);
         };
 
@@ -360,7 +342,7 @@
             }
         });
 
-        ////////////////////////////////////////////////////////
+
 
         let orderHeadsSelectedIds = [];
         let orderHeadsFilterIds = null;
@@ -369,7 +351,7 @@
         const addOrderHeadModal = document.getElementById("addOrderHeadModal");
         async function showAddOrderHeadModal() {
 
-           
+
             if (!selectOrderHeadType) return;
 
 
@@ -377,7 +359,7 @@
             tempSelectedIds = [...orderHeadsSelectedIds];
 
             FLshowLoading();
-            orderHeadsFilterIds = (await axios(`/Order/GetAllOrderHeadsByCurrentTamin`)).data ;
+            orderHeadsFilterIds = (await axios(`/Order/GetAllOrderHeadsByCurrentTamin`)).data;
             await getAllOrderHeads();
             FLshowLoading(false);
 
@@ -394,7 +376,6 @@
             // }
 
             // await getAllOrderHeads();
-
 
 
             toggleAddOrderHeadModal();

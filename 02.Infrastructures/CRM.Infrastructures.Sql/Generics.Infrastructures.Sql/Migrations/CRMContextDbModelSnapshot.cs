@@ -2304,9 +2304,6 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("PaymentTypeTxt")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("RequestAmountId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("ToAccountId")
                         .HasColumnType("uniqueidentifier");
 
@@ -2325,9 +2322,10 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("UserModifyID")
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
+                    b.Property<int>("paymentMode")
+                        .HasColumnType("int");
 
-                    b.HasIndex("RequestAmountId");
+                    b.HasKey("Id");
 
                     b.ToTable("Payments");
                 });
@@ -3071,6 +3069,40 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("RequestAmountOrderHeads");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountPayment", b =>
+                {
+                    b.Property<Guid>("RequestAmountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PaymentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("RequestAmountId", "PaymentId");
+
+                    b.HasIndex("PaymentId");
+
+                    b.ToTable("RequestAmountPayments");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountSupplyFactor", b =>
                 {
                     b.Property<Guid>("SupplyFactorId")
@@ -3711,14 +3743,6 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
-            modelBuilder.Entity("CRM.Core.Domain.Payments.Entities.Payment", b =>
-                {
-                    b.HasOne("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", null)
-                        .WithMany("Payments")
-                        .HasForeignKey("RequestAmountId")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
             modelBuilder.Entity("CRM.Core.Domain.Payments.Entities.PaymentSupplyFactor", b =>
                 {
                     b.HasOne("CRM.Core.Domain.Payments.Entities.Payment", null)
@@ -3781,6 +3805,21 @@ namespace CRM.Infrastructures.Sql.Migrations
                 {
                     b.HasOne("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", null)
                         .WithMany("RequestAmountOrderHeads")
+                        .HasForeignKey("RequestAmountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountPayment", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Payments.Entities.Payment", null)
+                        .WithMany("RequestAmountPayments")
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", null)
+                        .WithMany("RequestAmountPayments")
                         .HasForeignKey("RequestAmountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -3897,6 +3936,8 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Payments.Entities.Payment", b =>
                 {
                     b.Navigation("PaymentSupplyFactors");
+
+                    b.Navigation("RequestAmountPayments");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.PreFactors.Entities.PreFactor", b =>
@@ -3925,9 +3966,9 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", b =>
                 {
-                    b.Navigation("Payments");
-
                     b.Navigation("RequestAmountOrderHeads");
+
+                    b.Navigation("RequestAmountPayments");
 
                     b.Navigation("RequestAmountSupplyFactor");
                 });

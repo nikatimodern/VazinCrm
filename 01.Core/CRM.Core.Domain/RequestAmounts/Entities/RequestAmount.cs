@@ -31,6 +31,6 @@ namespace CRM.Core.Domain.RequestAmounts.Entities {
         public RequestAmountTypeEnum RequestAmountType { get; set; }
         public string RequestAmountTypeTxt { get; set; }
 
-        public IList<Payment> Payments { get; set; }
+        public IList<RequestAmountPayment> RequestAmountPayments { get; set; }
     }
 }

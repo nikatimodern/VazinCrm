@@ -412,12 +412,13 @@
 
                         <div class="tab-pane fade border-0" id="FinancialRequestTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
 
-                            <div class="d-flex flex-column align-items-center w-100 gap-3">
-                                <div class="w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center">
+                            <div class="w-100">
+                                <div class="d-flex justify-content-between flex-wrap gap-2 align-items-center">
 
                                     <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
                                         تعداد: <span id="FinancialRequestCount"></span>
                                     </div>
+
 
                                     <div class="search-group col-12 order-5 order-md-0 col-md-5">
                                         <input class="form-control" type="text" id="FinancialRequestSearchId" placeholder="جستجو..." />
@@ -425,7 +426,6 @@
                                             <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
                                         </div>
                                     </div>
-
 
                                     <div class="d-flex gap-2">
                                         <ul class="filter-switch">
@@ -450,7 +450,43 @@
                                 </div>
 
 
-                                <div class="w-100" id="FinancialRequestContentId" style="max-height:74dvh; overflow:auto;">
+                                <button id="selectionModeBtn" class="buttonGreen2 d-flex align-items-center gap-2 mt-2" style="padding: 4px 8px">
+                                    <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM1.49 15.326a.78.78 0 0 1-.358-.442 3 3 0 0 1 4.308-3.516 6.484 6.484 0 0 0-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 0 1-2.07-.655ZM16.44 15.98a4.97 4.97 0 0 0 2.07-.654.78.78 0 0 0 .357-.442 3 3 0 0 0-4.308-3.517 6.484 6.484 0 0 1 1.907 3.96 2.32 2.32 0 0 1-.026.654ZM18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5.304 16.19a.844.844 0 0 1-.277-.71 5 5 0 0 1 9.947 0 .843.843 0 0 1-.277.71A6.975 6.975 0 0 1 10 18a6.974 6.974 0 0 1-4.696-1.81Z" /></svg>
+                                    <span style="line-height: 1">پرداخت گروهی</span>
+                                </button>
+
+                                <div id="selectionBar" class="selection-bar d-none mt-2">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <label class="d-flex align-items-center gap-3">
+                                            <input type="checkbox" id="selectAll" />
+                                            <span>انتخاب همه</span>
+                                        </label>
+                                    </div>
+
+                                    <div class="d-flex align-items-center gap-3" style="color: #444;">
+                                        <span id="selectedCount" class="fbold" style="color: var(--color8);">0</span>
+                                        <span>مورد انتخاب شده</span>
+
+                                        <button id="clearSelection" class="link-green" style="font-size: 13px">
+                                            حذف انتخاب
+                                        </button>
+                                    </div>
+
+                                    <div class="d-flex align-items-center gap-3">
+                                        <button id="cancelSelection" class="buttonCancel-white">
+                                            <svg style="width: 16px" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
+                                            انصراف
+                                        </button>
+
+                                        <button id="paySelected" class="buttonGreen0" disabled>
+                                            پرداخت همه (<span id="selectedCountBtn">0</span>)
+                                        </button>
+                                    </div>
+
+                                </div>
+
+
+                                <div id="FinancialRequestContentId" class="pt-3" style="max-height:74dvh; overflow:auto;">
                                 </div>
                             </div>
                         </div>
@@ -943,7 +979,29 @@
 </div>
 
 
+<!-- requestAmountPayment Modal -->
+<div class="modal fade" id="requestAmountPaymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content col-12" style="padding:8px!important;">
+            <div class="flex-center" style="height:32px; background: #02514C; color:white;border-radius:5px">
+                <span class="modal-title fbold" style="font-size: 16px;">جزئیات پرداخت گروهی</span>
+            </div>
 
+            <div class="modal-body pb-0 px-1 px-md-2" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
+                <div class="col-12 d-flex flex-column" style="font-size:clamp(12px,2vw,14px)">
+
+                    <form id="setAmountPaymentForm" class="py-2 d-flex flex-column w-100 overflow-auto" style="max-height: calc(100dvh - 230px)">
+                    </form>
+                </div>
+                <div class="mx-auto my-3" style="width:98%; height:2px; background-color:#1a2d41;"></div>
+                <div class="d-flex justify-content-center gap-1">
+                    <button class="btnGroupBase btnRight btnRightRed" type="button" data-bs-dismiss="modal">انصراف</button>
+                    <button class="btnGroupBase btnLeft btnLeftGreen fMedium" style="line-height: 1.1" type="button" onclick="">تایید</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section scripts {
 
@@ -1064,7 +1122,10 @@
             searchFinancialReqElm.nextElementSibling.addEventListener("click", async () => await GetRequestFinancialExpert());
 
             const financialRequestAmountRadios = document.querySelectorAll("input[type='radio'][name='FinancialRequestFilter']");
-            financialRequestAmountRadios.forEach(elm => elm.addEventListener("change", async () => await GetRequestFinancialExpert()));
+            financialRequestAmountRadios.forEach(elm => elm.addEventListener("change", async () => {
+                clearAllSelection();
+                await GetRequestFinancialExpert();
+            }));
 
 
             //////////////////////MD inv//////////////////////
@@ -1667,6 +1728,191 @@
                 console.log(err);
             }
         };
+
+
+        ////////////////////////////////////////////////////////
+        let selectionMode = false;
+        let selectedIds = new Set();
+
+        const requestContainer = document.getElementById("FinancialRequestContentId");
+        const selectionModeBtn = document.getElementById("selectionModeBtn");
+        const selectionBar = document.getElementById("selectionBar");
+        const cancelBtn = document.getElementById("cancelSelection");
+        const selectAll = document.getElementById("selectAll");
+        const clearAllBtn = document.getElementById("clearSelection");
+        const selectedCount = document.getElementById("selectedCount");
+        const selectedCountBtn = document.getElementById("selectedCountBtn");
+        const paySelectedBtn = document.getElementById("paySelected");
+
+
+        selectionModeBtn.addEventListener("click", () => toggleSelectionBar(true));
+        cancelBtn.addEventListener("click", () => toggleSelectionBar(false));
+        clearAllBtn.addEventListener("click", clearAllSelection);
+
+        function clearAllSelection() {
+            if (!selectionMode) return;
+            selectedIds.clear();
+            document.querySelectorAll(".layered-card").forEach(card => {
+                card.classList.remove("selected");
+                const checkbox = card.querySelector(".card-checkbox");
+                if (checkbox) checkbox.checked = false;
+            });
+            selectAll.checked = false;
+            selectedCount.textContent = "0";
+            selectedCountBtn.textContent = "0";
+            toggleElementsDisabled(paySelectedBtn, true);
+        }
+
+        function toggleSelectionBar(enable) {
+            selectionMode = enable;
+            requestContainer.classList.toggle("selection-mode", enable);
+            selectionBar.classList.toggle("d-none", !enable);
+            selectionModeBtn.classList.toggle("d-none", enable);
+
+            if (!enable) clearAllSelection();
+        }
+
+
+        requestContainer.addEventListener("click", (e) => {
+            const card = e.target.closest(".layered-card");
+            if (!card || !selectionMode) return;
+
+            const checkbox = card.querySelector(".card-checkbox");
+            if (!checkbox) return;
+
+            if (!e.target.classList.contains("card-checkbox")) {
+                checkbox.checked = !checkbox.checked;
+            }
+            toggleCard(card, checkbox.checked);
+        });
+
+
+        function toggleCard(card, isChecked) {
+            const id = card.dataset.id;
+
+            if (isChecked) {
+                card.classList.add("selected");
+                selectedIds.add(id);
+            } else {
+                card.classList.remove("selected");
+                selectedIds.delete(id);
+            }
+
+            const count = selectedIds.size.toString();
+
+            selectedCount.textContent = count;
+            selectedCountBtn.textContent = count;
+            toggleElementsDisabled(paySelectedBtn, selectedIds.size === 0);
+        }
+
+
+        // select all
+        selectAll.addEventListener("change", () => {
+            const isChecked = selectAll.checked;
+
+            document.querySelectorAll(".layered-card").forEach(card => {
+                const checkbox = card.querySelector(".card-checkbox");
+                checkbox.checked = isChecked;
+                toggleCard(card, isChecked);
+            });
+        });
+
+        let requestAmountListData;
+        // دکمه پرداخت
+        paySelectedBtn.addEventListener("click", async () => {
+            const idsArray = Array.from(selectedIds);
+
+            if (idsArray.length === 0) {
+                toastifyError("لطفاً ابتدا درخواست‌های مورد نظر را انتخاب کنید.");
+                return;
+            }
+
+            ModalToggle("requestAmountPaymentModal");
+
+            FLshowLoading();
+
+            try {
+                const res = await axios.post("/Amount/GetRequestsAmountByFilteredIds", { filterIds: idsArray });
+                if (res.status === 200) {
+                    requestAmountListData = res.data;
+                    createSetAmountPaymentItem();
+                }
+            } catch (err) {
+                console.error(err);
+                listContainer.innerHTML = `<tr><td colspan="3" class="text-center">خطا در بارگذاری اطلاعات</td></tr>`;
+            } finally {
+                FLshowLoading(false);
+            }
+        });
+
+
+        function createSetAmountPaymentItem() {
+            const container = document.querySelector("#setAmountPaymentForm");
+            container.innerHTML = "";
+
+            requestAmountListData.forEach((item, index) => {
+                const fieldset = document.createElement("fieldset");
+                fieldset.id = `setAmountPaymentItem-${index}`;
+                fieldset.innerHTML = `
+                    <div class="d-flex flex-wrap align-items-center justify-content-around setAmountSalesItem bgGreen" style="border: 1px solid;border-radius: 6px;overflow: hidden">
+                        <div class="d-flex col-12 justify-content-around p-1 px-2" style="background-color:#04857c;color: #fff">
+                            <div class="d-flex align-items-center justify-content-center gap-1 pe-2">
+                                <span class="flex-shrink-0" style="color: #e1e1e1">شماره درخواست: </span>
+                                <span class="fMedium text-center">${item.requestNumber ?? ""}</span>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-center gap-1">
+                                <span class="flex-shrink-0" style="color: #e1e1e1">مبلغ درخواست: </span>
+                                <span class="fMedium text-center" style="white-space: nowrap">
+                                    <span>${item.amount.toLocaleString()}</span>
+                                    <span style="font-size: 11px">ریال</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-wrap col-12 justify-content-around p-2">
+                            <div class="d-flex align-items-center gap-1 gap-xl-2 col-6 col-xl-auto pe-2">
+                                <span class="flex-shrink-0" style="color: #535353">مبلغ تایید شده: </span>
+
+                                <div class="fbold flex-center align-items-baseline column-gap-1 badgeGreen-border">
+                                    <span style="font-size: 16px;">${item.acceptedAmount.toLocaleString()}</span>
+                                    <span style="font-size: 11px;">ريال</span>
+                                    <span style="font-size: 16px; color:#888">${item.acceptedAmountPercent ? item.acceptedAmountPercent + "%" : ""}</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-1 gap-xl-2 col-6 col-xl-auto">
+                                <span class="flex-shrink-0" style="color: #535353">مبلغ پرداختی: </span>
+                                <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="totalAmount">
+                            </div>
+                        </div>
+                    </div>
+                    ${index !== requestAmountListData.length - 1 ? `<div style="width: 95%;height:1px; margin: 10px auto;background-color:darkviolet"></div>` : ""}
+                    `;
+                container.appendChild(fieldset);
+            });
+        }
+
+        async function submitRequestAmountPayment() {
+            if (!await mySer.CheckValidForm("setAmountPaymentForm")) return;
+            try {
+                const model = [];
+                for (let i = 0; i < requestAmountListData.length; i++) {
+                    const json = mySer.convertFormToJSON(`setAmountPaymentItem-${i}`);
+                    const item = { ...requestAmountListData[i], ...json };
+                    model.push(item);
+                }
+
+                FLshowLoading();
+                const res = await axios.post(`/Amount/AddPaymentByRequestAmountGrouped`, model);
+                if (res.status === 200) {
+                    toastifySuccess("با موفقیت ثبت شد")
+                    FLshowLoading(false);
+                }
+            } catch (err) {
+                console.log(err);
+                setTimeout(async () => await submitRequestAmountPayment(), 3000);
+            }
+        }
+        ////////////////////////////////////////////////////////
 
 
         /*function renderProgressTracker() {

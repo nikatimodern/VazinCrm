@@ -23,7 +23,7 @@ namespace CRM.Infrastructures.Sql.RequestAmounts.Configs {
                 .HasForeignKey(f => f.RequestAmountId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasMany(f => f.Payments)
+            builder.HasMany(f => f.RequestAmountPayments)
                 .WithOne()
                 .HasForeignKey(f => f.RequestAmountId)
                 .OnDelete(DeleteBehavior.Cascade);

@@ -246,7 +246,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                var query = paymentId != null
+                /*var query = paymentId != null
                     ? db.Payments.Where(f => f.Id == paymentId)
                     : db.Payments.Where(f => f.RequestAmountId == requestAmountId);
 
@@ -266,8 +266,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             .Where(a => a.EntityId == p.Id && a._AttachType == _AttachType.Payment)
                             .ToList()
                     })
-                    .FirstOrDefaultAsync();
-                return Ok(data);
+                    .FirstOrDefaultAsync();*/
+                return Ok();
             }
             catch (Exception e)
             {
@@ -421,7 +421,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [HttpPost]
-        public async Task<IActionResult> GetAllSupplyFactorsTablePartial([FromBody] GetAllSortBySelectedVModel model)
+        public async Task<IActionResult> GetAllSupplyFactorsTablePartial([FromBody] GetAllBySelectedVModel model)
         {
             try
             {
