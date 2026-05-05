@@ -204,14 +204,33 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [HttpPost]
-        public async Task<IActionResult> AttachAndVosolReqAmount([FromBody] Payment model)
+        public async Task<IActionResult> AddPaymentByRequestAmount([FromBody] Payment model)
         {
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
-                var oldReqAmount = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.RequestAmountId);
-                var reqAmount = await db.RequestAmounts.FirstOrDefaultAsync(f => f.Id == model.RequestAmountId);
-                if (reqAmount == null) return NotFound();
+                await AddOrUpdatePayment(model, user);
+                await SetRequestAmountToPaid(model.RequestAmountId, user);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        private async Task SetRequestAmountToPaid(Guid? id, AppUser user)
+        {
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            try
+            {
+                var reqAmount = await db.RequestAmounts.FirstOrDefaultAsync(f => f.Id == id);
+                if (reqAmount == null) return;
+
+
+                if (reqAmount.RequestStatus == RequestStatusEnum.پرداخت_شده) return;
+
+                var oldReqAmount = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
 
                 reqAmount.RequestStatus = RequestStatusEnum.پرداخت_شده;
                 reqAmount.RequestStatusTxt = nameof(RequestStatusEnum.پرداخت_شده).Replace("_", " ");
@@ -220,29 +239,129 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 reqAmount.ModifyDate = DateTime.Now;
                 reqAmount.ModifyDateTxt = dtService.GetDateTimePersian();
 
+                await _logSystemService.LogChange(oldReqAmount, reqAmount, LogActionEnum.تغییر_وضعیت, user);
+                await db.SaveChangesAsync();
+                await hub.Clients.Groups("مدیر ارشد", "کارشناس مالی").SendAsync("countPreFactorToAccept");
+                await transaction.CommitAsync();
+            }
+            catch (Exception e)
+            {
+                await transaction.RollbackAsync();
+                Console.WriteLine(e);
+                throw;
+            }
+        }
 
+
+        private async Task AddOrUpdatePayment(Payment model, AppUser user)
+        {
+            if (model == null) return;
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            try
+            {
                 model.PaymentDate = dtService.GetDateMiladi(model.PaymentDateTxt);
-                model.UserCreator = user.FullName;
-                model.UserCreatorID = user.Id;
-                db.Payments.Update(model);
+                if (model.Id == Guid.Empty)
+                {
+                    model.UserCreator = user.FullName;
+                    model.UserCreatorID = user.Id;
+                    await db.Payments.AddAsync(model);
+                    await db.SaveChangesAsync();
 
+                    await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
+                } else
+                {
+                    var oldModel = await db.Payments.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id);
 
-                var attachList = fileSaver.saveAttach(model.Attachments, _AttachType.Payment, false);
+                    model.ModifyDate = DateTime.Now;
+                    model.ModifyDateTxt = dtService.GetDateTimePersian();
+                    model.UserModify = user.FullName;
+                    model.UserModifyID = user.Id;
+
+                    db.Payments.Update(model);
+                    db.Entry(model).Property(f => f.PaymentNumber).IsModified = false;
+
+                    await _logSystemService.LogChange(oldModel, model, LogActionEnum.ویرایش, user);
+                }
+
+                var attachList = fileSaver.saveAttach(model.Attachments, _AttachType.Payment);
                 foreach (var att in attachList ?? [])
                 {
                     att?.EntityId = model.Id;
                 }
 
                 db.Attachments.UpdateRange(attachList);
+                await db.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch (Exception e)
+            {
+                await transaction.RollbackAsync();
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        public async Task<IActionResult> DeletePayment(Guid id)
+        {
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var item = await db.Payments.Where(f => f.Id == id).FirstOrDefaultAsync();
+                if (item == null) return NotFound();
+
+                item.IsDeleted = true;
+                item.ModifyDate = DateTime.Now;
+                item.ModifyDateTxt = dtService.GetDateTimePersian();
+                item.UserModify = user.FullName;
+                item.UserModifyID = user.Id;
+
+                await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
+                await db.SaveChangesAsync();
+
+                var hasAnyPaymentForReqAmount = await db.Payments.AnyAsync(f => f.RequestAmountId == item.RequestAmountId);
+                if (!hasAnyPaymentForReqAmount)
+                {
+                    await SetRequestAmountToPendingPaid(item.RequestAmountId, user);
+                }
+
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        private async Task SetRequestAmountToPendingPaid(Guid? id, AppUser user)
+        {
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            try
+            {
+                var reqAmount = await db.RequestAmounts.FirstOrDefaultAsync(f => f.Id == id);
+                if (reqAmount == null) return;
+
+
+                if (reqAmount.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت) return;
+
+                var oldReqAmount = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
+
+                reqAmount.RequestStatus = RequestStatusEnum.در_انتظار_پرداخت;
+                reqAmount.RequestStatusTxt = nameof(RequestStatusEnum.در_انتظار_پرداخت).Replace("_", " ");
+                reqAmount.UserModify = user.FullName;
+                reqAmount.UserModifyID = user.Id;
+                reqAmount.ModifyDate = DateTime.Now;
+                reqAmount.ModifyDateTxt = dtService.GetDateTimePersian();
 
                 await _logSystemService.LogChange(oldReqAmount, reqAmount, LogActionEnum.تغییر_وضعیت, user);
                 await db.SaveChangesAsync();
                 await hub.Clients.Groups("مدیر ارشد", "کارشناس مالی").SendAsync("countPreFactorToAccept");
-                return Ok();
+                await transaction.CommitAsync();
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                return BadRequest(ex.Message);
+                await transaction.RollbackAsync();
+                Console.WriteLine(e);
+                throw;
             }
         }
 

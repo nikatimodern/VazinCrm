@@ -240,30 +240,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        public async Task<IActionResult> DeletePayment(Guid id)
-        {
-            try
-            {
-                var user = await userManager.GetUserAsync(HttpContext.User);
-                var item = await db.Payments.Where(f => f.Id == id).FirstOrDefaultAsync();
-                if (item == null) return NotFound();
 
-                item.IsDeleted = true;
-                item.ModifyDate = DateTime.Now;
-                item.ModifyDateTxt = dtService.GetDateTimePersian();
-                item.UserModify = user.FullName;
-                item.UserModifyID = user.Id;
-
-                await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
-
-                await db.SaveChangesAsync();
-                return Ok();
-            }
-            catch (Exception e)
-            {
-                return BadRequest(e.Message);
-            }
-        }
 
         public async Task<IActionResult> GetPayment(Guid? paymentId, Guid? requestAmountId)
         {

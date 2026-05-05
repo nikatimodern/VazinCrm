@@ -52,9 +52,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     
     setting = await GetSetting();
-
-    console.log(setting)
-
+    
+    console.log(setting);
+    
     AcceptSetting(setting);
     
     
@@ -4574,6 +4574,12 @@ async function getOrderHeadIdsBySupplier(supplierId) {
 }
 /*--------------------------------------------------------------------------------*/
 
+let paymentData = {};
+var reqAmountAttachment = [];
+let reqAmountId;
+let paymentTable;
+let isFinancialPaymentTable;
+
 async function changeStatusReqAmount(reqAmountId, status) {
     try {
         FLshowLoading();
@@ -4603,15 +4609,10 @@ async function changeStatusReqAmount(reqAmountId, status) {
 }
 
 
-var reqAmountAttachment = [];
-let reqAmountId;
 const ShowModalListPayment = async (id) => {
     getAllPaymentsList(id);
     ModalToggle("paymentListModalId", "show");
 };
-
-let paymentTable;
-let isFinancialPaymentTable;
 const initPaymentTable = () => {
     paymentTable = $("#paymentListTable").DataTable({
         paging: false,
@@ -4673,10 +4674,10 @@ const initPaymentTable = () => {
                     return `
                         <div class="d-inline-flex align-items-center justify-content-center gap-1">
                             <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.id}', 9)"><i class="fa fa-paperclip"></i></button>
-<!--                             <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditPaymentModal('${row.id}')"><i class="fa fa-pencil"></i></button> -->
                           ${isFinancialPaymentTable
-                            ? `<button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deletePayment('${row.id}')"><i class="fa fa-trash"></i></button>`
-                            : ""}
+                        ? ` <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditPaymentModal('${row.id}')"><i class="fa fa-pencil"></i></button>
+                            <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deletePayment('${row.id}')"><i class="fa fa-trash"></i></button>`
+                        : ""}
                             
                         </div>
                     `;
@@ -4688,6 +4689,7 @@ const initPaymentTable = () => {
 };
 
 const getAllPaymentsList = (id) => {
+    reqAmountId = id;
     if (!paymentTable) {
         initPaymentTable();
     }
@@ -4708,7 +4710,7 @@ const deletePayment = async (id) => {
     }).then(async (willDelete) => {
         if (willDelete.isConfirmed) {
             FLshowLoading();
-            const res = await axios(`/Supply/DeletePayment/${id}`);
+            const res = await axios(`/Amount/DeletePayment/${id}`);
             if (res.status === 200) {
                 toastifySuccess("با موفقیت حذف شد");
                 paymentTable.ajax.reload();
@@ -4734,9 +4736,32 @@ const deletePayment = async (id) => {
     });
 };
 
+async function showEditPaymentModal(id) {
+    FLshowLoading();
+    ModalToggle("reqAmountAttachModal", "show");
+    
+    try {
+        const res = await axios(`/Supply/GetPayment?paymentId=${id}`);
+        if (res.status === 200) {
+            paymentData = res.data.payment;
+            mySer.convertJsonToForm(paymentData, "reqAmountAttachForm");
+            
+            reqAmountAttachment = res.data.attachments;
+            FileUpReload("reqAmountAttach");
+            /*supplyFactorsSelectedIds = paymentData.paymentSupplyFactors.map(p => p.supplyFactorId);
+            const factorSerials = res.data.supplyFactorSerials;
+            const inpElm = document.getElementById("paymentSupplyFactor");
+            inpElm.value = factorSerials.join(", ");*/
+        }
+    } catch (err) {
+        console.log(err);
+    } finally {
+        FLshowLoading(false);
+    }
+}
 
 
-const showAttachReqAmount = async (id) => {
+const showAttachReqAmount = (id) => {
     reqAmountId = id;
     ModalToggle("reqAmountAttachModal", "show");
 };
@@ -4745,6 +4770,7 @@ const showAttachReqAmount = async (id) => {
 const cancelReqAmountAttach = () => {
     ModalToggle("reqAmountAttachModal", "hide");
     reqAmountAttachment = [];
+    paymentData = {};
     document.getElementById("imageDisplayReqAmountAt").innerHTML = "";
     document.getElementById("reqAmountAttach").value = "";
     mySer.emptyForm("reqAmountAttachForm");
@@ -4763,19 +4789,23 @@ const submitReqAmountAttach = async () => {
     const toAccountElm = document.querySelector("#reqAmountAttachForm select[name='toAccountId']");
     
     const model = {
+        ...paymentData,
         ...mySer.convertFormToJSON("reqAmountAttachForm"),
         requestAmountId: reqAmountId,
         attachments: reqAmountAttachment,
         toAccountTxt: toAccountElm.selectedOptions[0].innerText,
         fromAccountTxt: fromAccountElm.selectedOptions[0].innerText,
     };
-    console.log(model);
+    
     FLshowLoading();
     try {
-        const res = await axios.post("/Amount/AttachAndVosolReqAmount", model);
+        const res = await axios.post("/Amount/AddPaymentByRequestAmount", model);
         if (res.status === 200) {
             toastifySuccess("ثبت با موفقیت انجام شد");
             cancelReqAmountAttach();
+            if (model.id && paymentTable) {
+                paymentTable.ajax.reload();
+            }
             const currentPath = window.location.pathname.toLowerCase();
             if (currentPath.includes("cartable")) {
                 await GetRequestFinancialExpert();
