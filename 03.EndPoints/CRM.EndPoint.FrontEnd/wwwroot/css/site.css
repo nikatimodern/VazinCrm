@@ -5491,6 +5491,17 @@ table tr.payment-vosoled > td {
 }
 
 
+@media (min-width: 1200px) {
+  .layered-card.layered-card-pill > div:last-child {
+    padding-left: 1rem !important;
+  }
+  
+  .layered-card.layered-card-pill > div:first-child {
+    padding-right: 1rem !important;
+  }
+}
+
+
 .search-group {
   position: relative;
 }

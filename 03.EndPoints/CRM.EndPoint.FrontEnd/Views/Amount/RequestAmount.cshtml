@@ -53,7 +53,6 @@
 @section Scripts {
     <script>
         let selectOrderHeadType;  // 3: checkBox  4: radio
-        let requestAmountData = {};
 
         let modelRequestAmount = { filt: null, serVal: null };
         var filterRequestAmountConfig = {};
@@ -61,7 +60,6 @@
 
 
         const requestContainer = document.getElementById("requestAmountContainer");
-        const reqAmountModal = document.getElementById("requestAmountModal");
 
         document.addEventListener("DOMContentLoaded", async () => {
             await Promise.all([getAllRequestAmount(), getAllBankAccounts()]);
@@ -93,24 +91,6 @@
         }
 
 
-        function cancelRequestAmountModal() {
-            ModalToggle(reqAmountModal);
-            mySer.emptyForm("requestAmountForm");
-            supplyFactorsSelectedIds = [];
-            orderHeadsSelectedIds = [];
-            requestAmountData = {};
-
-            const ohInputWrapper = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
-            const ohInput = reqAmountModal.querySelector("input#reqAmountOrderHead");
-            const totalAmountSupFactorElm = reqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
-            ohInputWrapper.classList.add("d-none");
-            toggleElementsRequired(ohInput, false);
-            totalAmountSupFactorElm.innerHTML = "";
-        }
-
-
-
-
         const getAllRequestAmount = async () => {
             const val = document.getElementById("requestAmountSearchId")?.value.trim() ?? "";
             const type = document.querySelector("input[type='radio'][name='requestAmountFilter']:checked")?.value;
@@ -121,85 +101,6 @@
             FLshowLoading(false);
         };
 
-        async function showEditRequestAmountModal(id) {
-            FLshowLoading();
-            await showRequestAmountModal();
-
-            try {
-                const res = await axios(`/Amount/GetRequestAmount/${id}`);
-                if (res.status === 200) {
-                    requestAmountData = res.data.requestAmount;
-                    const supplyFactorSerials = res.data.supplyFactorSerials;
-                    const orderHeadSerials = res.data.orderHeadSerials;
-                    mySer.convertJsonToForm(requestAmountData, "requestAmountForm");
-                    supplyFactorsSelectedIds = requestAmountData.requestAmountSupplyFactor.map(r => r.supplyFactorId);
-                    orderHeadsSelectedIds = requestAmountData.requestAmountOrderHeads.map(r => r.orderHeadId);
-
-                    const inpElmSupplyFactor = reqAmountModal.querySelector("#reqAmountSupplyFactor");
-                    if (inpElmSupplyFactor) {
-                        inpElmSupplyFactor.value = supplyFactorSerials.join(", ");
-                    }
-
-                    const inpElmOrderHead = reqAmountModal.querySelector("#reqAmountOrderHead");
-                    if (inpElmOrderHead) {
-                        inpElmOrderHead.value = orderHeadSerials.join(", ");
-                    }
-                }
-
-            } catch (err) {
-                console.log(err);
-            } finally {
-                FLshowLoading(false);
-            }
-        }
-
-
-        const deleteRequestAmount = async (id) => {
-            Swal.fire({
-                title: "حذف!",
-                text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
-                icon: "warning",
-                showCancelButton: true,
-                cancelButtonColor: "#adadad",
-                confirmButtonColor: "#e64942",
-                cancelButtonText: "انصراف",
-                confirmButtonText: "بله، حذف شود",
-            }).then(async (willDelete) => {
-                if (willDelete.isConfirmed) {
-                    FLshowLoading();
-                    const res = await axios(`/Amount/DeleteRequestAmount/${id}`);
-                    if (res.status === 200) {
-                        toastifySuccess("با موفقیت حذف شد");
-                        await getAllRequestAmount();
-                    }
-                    FLshowLoading(false);
-                }
-            });
-        };
-
-
-
-
-
-
-
-        reqAmountModal.querySelector("input#reqAmountPrepayment").addEventListener("change", async (e) => {
-            const hasPrepayment = e.target.checked;
-            const ohInputWrapper = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
-            const ohInput = reqAmountModal.querySelector("input#reqAmountOrderHead");
-
-            if (hasPrepayment) {
-                ohInputWrapper.classList.remove("d-none");
-                toggleElementsRequired(ohInput, true);
-            } else {
-                ohInputWrapper.classList.add("d-none");
-                toggleElementsRequired(ohInput, false);
-                ohInput.value = "";
-                orderHeadsSelectedIds = [];
-            }
-        });
-
-
 
 
         let orderHeadsFilterIds = null;
@@ -207,11 +108,7 @@
         let tempSelectedMap = new Map(); // id -> number
         const addOrderHeadModal = document.getElementById("addOrderHeadModal");
         async function showAddOrderHeadModal() {
-
-
             if (!selectOrderHeadType) return;
-
-
             tempSelectedMap.clear();
             tempSelectedIds = [...orderHeadsSelectedIds];
 
@@ -233,8 +130,6 @@
             // }
 
             // await getAllOrderHeads();
-
-
             toggleAddOrderHeadModal();
         }
 
