@@ -4851,21 +4851,27 @@ const submitReqAmountAttach = async () => {
 
 /*--------------------------------------------------------------------------------*/
 
+const reqAmountModal = document.getElementById("requestAmountModal");
 let orderHeadsSelectedIds = [];
-let isPrePaymentRequest = false;
+let requestAmountData = {};
+let isFromOrderHead = false;
 async function showRequestAmountModal(ohId, ohNumber) {
     await setupSelectOptions("#reqAmountSupplierId");
     if (ohId) {
-        isPrePaymentRequest = true;
+        isFromOrderHead = true;
+        requestAmountData.requestAmountType = 1;
         orderHeadsSelectedIds = [ohId];
-        document.getElementById("reqAmountModalTitleId").textContent = `درخواست پیش پرداخت حواله ${ohNumber}`;
+        reqAmountModal.querySelector("#reqAmountModalTitleId").textContent = `درخواست پیش پرداخت حواله ${ohNumber}`;
+        const reqAmountTypeWrapper = reqAmountModal.querySelector("#requestAmountTypeWrapper");
+        reqAmountTypeWrapper?.remove();
+        /*reqAmountType.value = "1";
+        toggleElementsDisabled(reqAmountType, true);*/
     }
     ModalToggle("requestAmountModal");
 }
 
 
 let isSetupReqAmountModal = false;
-const reqAmountModal = document.getElementById("requestAmountModal");
 async function setupSelectOptions(targetId) {
     if (isSetupReqAmountModal) return;
     const addOrderBtn = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper button");
@@ -4883,8 +4889,7 @@ async function setupSelectOptions(targetId) {
         async onItemAdd(supplierId) {
             toggleElementsDisabled(addOrderBtn, false);
             ohInput.value = "";
-            const shouldBeEmpty = !reqAmountModal.querySelector("#reqAmountOrderHeadWrapper").classList.contains("d-none");
-            if (shouldBeEmpty) {
+            if (!isFromOrderHead) {
                 orderHeadsSelectedIds = [];
             }
             select.disable();
@@ -4919,14 +4924,12 @@ async function getTotalAmountSupplyFactor(supplierId) {
 }
 
 
-let requestAmountData = {};
 async function submitRequestAmountModal() {
     if (!await mySer.CheckValidForm("requestAmountForm")) return;
     const supplierSelect = reqAmountModal.querySelector("#reqAmountSupplierId");
     const model = {
         ...requestAmountData,
         ...mySer.convertFormToJSON("requestAmountForm"),
-        prepayment: requestAmountData.prepayment ?? isPrePaymentRequest,
         supplierTxt: supplierSelect.selectedOptions[0].innerText,
         requestAmountSupplyFactor: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id, requestAmountId: requestAmountData.id })),
         requestAmountOrderHeads: orderHeadsSelectedIds.map(id => ({ orderHeadId: id, requestAmountId: requestAmountData.id })),
@@ -4962,14 +4965,16 @@ function cancelRequestAmountModal() {
     supplyFactorsSelectedIds = [];
     orderHeadsSelectedIds = [];
     requestAmountData = {};
-    isPrePaymentRequest = false;
+    isFromOrderHead = false;
     
     const ohInputWrapper = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
     const ohInput = reqAmountModal.querySelector("input#reqAmountOrderHead");
-    const totalAmountSupFactorElm = reqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
     ohInputWrapper.classList.add("d-none");
     toggleElementsRequired(ohInput, false);
+    const totalAmountSupFactorElm = reqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
     totalAmountSupFactorElm.innerHTML = "";
+  /*  const reqAmountType = reqAmountModal.querySelector("#requestAmountTypeId");
+    if (reqAmountType) toggleElementsDisabled(reqAmountType, false);*/
 }
 
 
@@ -5034,19 +5039,21 @@ const deleteRequestAmount = async (id) => {
 };
 
 
-reqAmountModal.querySelector("input#reqAmountPrepayment")?.addEventListener("change", async (e) => {
-    const hasPrepayment = e.target.checked;
+reqAmountModal.querySelector("select#requestAmountTypeId")?.addEventListener("change", async (e) => {
+    const type = Number(e.target.value);
     const ohInputWrapper = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
     const ohInput = reqAmountModal.querySelector("input#reqAmountOrderHead");
     
-    if (hasPrepayment) {
+    if (type === 1) {
         ohInputWrapper.classList.remove("d-none");
         toggleElementsRequired(ohInput, true);
-    } else {
+    } else if (type === 2) {
         ohInputWrapper.classList.add("d-none");
         toggleElementsRequired(ohInput, false);
         ohInput.value = "";
         orderHeadsSelectedIds = [];
+    } else if (type === 3) {
+    
     }
 });
 

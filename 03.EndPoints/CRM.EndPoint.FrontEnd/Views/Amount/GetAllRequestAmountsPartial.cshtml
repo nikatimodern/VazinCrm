@@ -5,6 +5,7 @@
 @{
     var passType = ViewBag.PassType; //1: requestAmount | 2: cartable MD
     var isFinancial = ViewBag.IsFinancial;
+    var isAdmin = ViewBag.isAdmin;
     var userId = ViewBag.UserId;
 }
 
@@ -52,8 +53,8 @@
                 <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 text-center">
                     <span style="font-size: 13px; color: #777">نوع:</span>
                     <span class="fbold">
-                    @reqAmount.DocTypeTxt @(reqAmount.Prepayment ? "(پیش پرداخت)" : "")
-                </span>
+                    @reqAmount.DocTypeTxt @(reqAmount.RequestAmountType == RequestAmountTypeEnum.پیش_پرداخت ? "(پیش پرداخت)" : "")
+                    </span>
                 </div>
                 @if (supplyFactorSerials.Any()) {
                     <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mt-2 text-center">
@@ -120,9 +121,7 @@
                 <div class="layered-card__layer col-12 col-xl-auto col-xxl-1 flex-center flex-row flex-xl-column p-2 px-xl-3 gap-4 gap-xl-3">
                     @switch (status) {
                         case RequestStatusEnum.ثبت_اولیه:
-                            if (isFinancial && !isCreator) {
-                                <span class="fbold" style="color:#777">@reqAmount.RequestStatusTxt</span>
-                            } else {
+                            if (isCreator) {
                                 <div class="flex-center flex-xl-column gap-3">
                                     <div class="flex-center flex-row gap-4 gap-xl-3">
                                         <button class="flex-center p-0" data-title-right="ویرایش" style="color:#333" onclick="showEditRequestAmountModal('@reqAmount.Id')">
@@ -135,6 +134,8 @@
                                     </div>
                                     <button class="buttonGreen2" onclick="changeStatusReqAmount('@reqAmount.Id', 1)">ارسال به مدیرعامل</button>
                                 </div>
+                            } else {
+                                <span class="fbold" style="color:#777">@reqAmount.RequestStatusTxt</span>
                             }
 
                             break;
@@ -171,8 +172,8 @@
                                 <span class="fbold" style="color: #04857c">@reqAmount.RequestStatusTxt</span>
                                 @if (isFinancial) {
                                     <span style="cursor:pointer;color:#333" onclick="changeStatusReqAmount('@reqAmount.Id', 3)" data-title="بازگشت">
-                                    <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>
-                                </span>
+                                        <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>
+                                    </span>
                                 }
                             </div>
                             break;

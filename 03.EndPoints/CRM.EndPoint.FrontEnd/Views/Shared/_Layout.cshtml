@@ -3062,6 +3062,17 @@
             <div id="reqAmountModalTitleId" class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">درخواست وجه</div>
             <div class="modal-body pb-2">
                 <form id="requestAmountForm" class="d-flex flex-column gap-2">
+                    <div id="requestAmountTypeWrapper">
+                        <label for="requestAmountTypeId">نوع درخواست:</label>
+                        <select id="requestAmountTypeId" class="form-select form-select-sm valueNumber" name="requestAmountType" required>
+                            <option value="">انتخاب</option>
+                            <option value="1">پیش پرداخت</option>
+                            <option value="2">پرداخت فاکتور</option>
+                            @* <option value="3">تنخواه</option> *@
+                        </select>
+                    </div>
+
+
                     <div>
                         <label for="reqAmountAmount">مبلغ:</label>
                         <input id="reqAmountAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="amount" required>

@@ -72,6 +72,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.UserCreator = user.FullName;
                 model.UserCreatorID = user.Id;
                 model.RequestStatusTxt = model.RequestStatus.ToString().Replace("_", " ");
+                model.RequestAmountTypeTxt = model.RequestAmountType.ToString().Replace("_", " ");
                 model.DocTypeTxt = model.DocType.ToString().Replace("_", " ");
                 await db.RequestAmounts.AddAsync(model);
                 await db.SaveChangesAsync();
@@ -467,9 +468,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var roles = await userManager.GetRolesAsync(user);
                 var isFinancial = roles.Contains("کارشناس مالی");
+                var isAdmin = roles.Contains("مدیر ارشد");
 
                 var query = db.RequestAmounts.AsNoTracking();
 
+                if (!isAdmin && !isFinancial)
+                {
+                    query = query.Where(f => f.UserCreatorID == user.Id);
+                }
 
                 if (!string.IsNullOrEmpty(search))
                 {
@@ -544,6 +550,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     new Dictionary<string, object> {
                         { "PassType", passType },
                         { "IsFinancial", isFinancial },
+                        { "isAdmin", isAdmin },
                         { "UserId", user.Id }
                     }
                 );
