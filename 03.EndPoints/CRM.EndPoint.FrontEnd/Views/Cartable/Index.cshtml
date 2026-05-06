@@ -450,36 +450,36 @@
                                 </div>
 
 
-                                <button id="selectionModeBtn" class="buttonGreen2 d-flex align-items-center gap-2 mt-2" style="padding: 4px 8px">
+                                <button id="requestSelectionModeBtn" class="buttonGreen2 d-flex align-items-center gap-2 mt-2" style="padding: 4px 8px !important">
                                     <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM1.49 15.326a.78.78 0 0 1-.358-.442 3 3 0 0 1 4.308-3.516 6.484 6.484 0 0 0-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 0 1-2.07-.655ZM16.44 15.98a4.97 4.97 0 0 0 2.07-.654.78.78 0 0 0 .357-.442 3 3 0 0 0-4.308-3.517 6.484 6.484 0 0 1 1.907 3.96 2.32 2.32 0 0 1-.026.654ZM18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5.304 16.19a.844.844 0 0 1-.277-.71 5 5 0 0 1 9.947 0 .843.843 0 0 1-.277.71A6.975 6.975 0 0 1 10 18a6.974 6.974 0 0 1-4.696-1.81Z" /></svg>
                                     <span style="line-height: 1">پرداخت گروهی</span>
                                 </button>
 
-                                <div id="selectionBar" class="selection-bar d-none mt-2">
+                                <div id="requestSelectionBar" class="selection-bar d-none mt-2">
                                     <div class="d-flex align-items-center gap-3">
                                         <label class="d-flex align-items-center gap-3">
-                                            <input type="checkbox" id="selectAll" />
+                                            <input type="checkbox" class="selectAll"  />
                                             <span>انتخاب همه</span>
                                         </label>
                                     </div>
 
                                     <div class="d-flex align-items-center gap-3" style="color: #444;">
-                                        <span id="selectedCount" class="fbold" style="color: var(--color8);">0</span>
+                                        <span class="selectedCount fbold" style="color: var(--color8);">0</span>
                                         <span>مورد انتخاب شده</span>
 
-                                        <button id="clearSelection" class="link-green" style="font-size: 13px">
+                                        <button class="clearSelection link-green" style="font-size: 13px">
                                             حذف انتخاب
                                         </button>
                                     </div>
 
                                     <div class="d-flex align-items-center gap-3">
-                                        <button id="cancelSelection" class="buttonCancel-white">
+                                        <button class="cancelSelection buttonCancel-white">
                                             <svg style="width: 16px" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
                                             انصراف
                                         </button>
 
-                                        <button id="paySelected" class="buttonGreen0" disabled>
-                                            پرداخت همه (<span id="selectedCountBtn">0</span>)
+                                        <button class="paySelected buttonGreen0" disabled>
+                                            پرداخت همه (<span class="selectedCountBtn">0</span>)
                                         </button>
                                     </div>
 
@@ -980,7 +980,7 @@
 
 
 <!-- requestAmountPayment Modal -->
-<div class="modal fade" id="requestAmountPaymentModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="requestAmountPaymentModal" tabindex="-1" data-bs-focus="false">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content col-12" style="padding:8px!important;">
             <div class="flex-center" style="height:32px; background: #02514C; color:white;border-radius:5px">
@@ -995,8 +995,8 @@
                 </div>
                 <div class="mx-auto my-3" style="width:98%; height:2px; background-color:#1a2d41;"></div>
                 <div class="d-flex justify-content-center gap-1">
-                    <button class="btnGroupBase btnRight btnRightRed" type="button" data-bs-dismiss="modal">انصراف</button>
-                    <button class="btnGroupBase btnLeft btnLeftGreen fMedium" style="line-height: 1.1" type="button" onclick="">تایید</button>
+                    <button class="btnGroupBase btnRight btnRightRed" type="button" onclick="cancelRequestAmountPaymentModal()">انصراف</button>
+                    <button class="btnGroupBase btnLeft btnLeftGreen fMedium" style="line-height: 1.1" type="button" onclick="goToStepAttachReqAmount()">تایید</button>
                 </div>
             </div>
         </div>
@@ -1122,10 +1122,7 @@
             searchFinancialReqElm.nextElementSibling.addEventListener("click", async () => await GetRequestFinancialExpert());
 
             const financialRequestAmountRadios = document.querySelectorAll("input[type='radio'][name='FinancialRequestFilter']");
-            financialRequestAmountRadios.forEach(elm => elm.addEventListener("change", async () => {
-                clearAllSelection();
-                await GetRequestFinancialExpert();
-            }));
+            financialRequestAmountRadios.forEach(elm => elm.addEventListener("change", async () => await GetRequestFinancialExpert()));
 
 
             //////////////////////MD inv//////////////////////
@@ -1722,7 +1719,7 @@
                 const data = res.data;
                 document.getElementById("FinancialRequestContentId").innerHTML = data.html;
                 document.getElementById("FinancialRequestCount").textContent = data.count;
-
+                toggleRequestSelectionBar(false)
                 FLshowLoading(false);
             } catch (err) {
                 console.log(err);
@@ -1731,27 +1728,27 @@
 
 
         ////////////////////////////////////////////////////////
-        let selectionMode = false;
-        let selectedIds = new Set();
+        let requestSelectionMode = false;
+        let requestSelectedIdsSet = new Set();
 
         const requestContainer = document.getElementById("FinancialRequestContentId");
-        const selectionModeBtn = document.getElementById("selectionModeBtn");
-        const selectionBar = document.getElementById("selectionBar");
-        const cancelBtn = document.getElementById("cancelSelection");
-        const selectAll = document.getElementById("selectAll");
-        const clearAllBtn = document.getElementById("clearSelection");
-        const selectedCount = document.getElementById("selectedCount");
-        const selectedCountBtn = document.getElementById("selectedCountBtn");
-        const paySelectedBtn = document.getElementById("paySelected");
+        const requestSelectionModeBtn = document.getElementById("requestSelectionModeBtn");
+        const requestSelectionBar = document.getElementById("requestSelectionBar");
+        const cancelBtn = requestSelectionBar.querySelector(".cancelSelection");
+        const selectAll = requestSelectionBar.querySelector(".selectAll");
+        const clearAllBtn = requestSelectionBar.querySelector(".clearSelection");
+        const selectedCount = requestSelectionBar.querySelector(".selectedCount");
+        const selectedCountBtn = requestSelectionBar.querySelector(".selectedCountBtn");
+        const paySelectedBtn = requestSelectionBar.querySelector(".paySelected");
 
 
-        selectionModeBtn.addEventListener("click", () => toggleSelectionBar(true));
-        cancelBtn.addEventListener("click", () => toggleSelectionBar(false));
+        requestSelectionModeBtn.addEventListener("click", () => toggleRequestSelectionBar(true));
+        cancelBtn.addEventListener("click", () => toggleRequestSelectionBar(false));
         clearAllBtn.addEventListener("click", clearAllSelection);
 
         function clearAllSelection() {
-            if (!selectionMode) return;
-            selectedIds.clear();
+            if (!requestSelectionMode) return;
+            requestSelectedIdsSet.clear();
             document.querySelectorAll(".layered-card").forEach(card => {
                 card.classList.remove("selected");
                 const checkbox = card.querySelector(".card-checkbox");
@@ -1763,11 +1760,11 @@
             toggleElementsDisabled(paySelectedBtn, true);
         }
 
-        function toggleSelectionBar(enable) {
-            selectionMode = enable;
+        function toggleRequestSelectionBar(enable) {
+            requestSelectionMode = enable;
             requestContainer.classList.toggle("selection-mode", enable);
-            selectionBar.classList.toggle("d-none", !enable);
-            selectionModeBtn.classList.toggle("d-none", enable);
+            requestSelectionBar.classList.toggle("d-none", !enable);
+            requestSelectionModeBtn.classList.toggle("d-none", enable);
 
             if (!enable) clearAllSelection();
         }
@@ -1775,7 +1772,7 @@
 
         requestContainer.addEventListener("click", (e) => {
             const card = e.target.closest(".layered-card");
-            if (!card || !selectionMode) return;
+            if (!card || !requestSelectionMode) return;
 
             const checkbox = card.querySelector(".card-checkbox");
             if (!checkbox) return;
@@ -1792,17 +1789,17 @@
 
             if (isChecked) {
                 card.classList.add("selected");
-                selectedIds.add(id);
+                requestSelectedIdsSet.add(id);
             } else {
                 card.classList.remove("selected");
-                selectedIds.delete(id);
+                requestSelectedIdsSet.delete(id);
             }
 
-            const count = selectedIds.size.toString();
+            const count = requestSelectedIdsSet.size.toString();
 
             selectedCount.textContent = count;
             selectedCountBtn.textContent = count;
-            toggleElementsDisabled(paySelectedBtn, selectedIds.size === 0);
+            toggleElementsDisabled(paySelectedBtn, requestSelectedIdsSet.size === 0);
         }
 
 
@@ -1817,17 +1814,20 @@
             });
         });
 
+
+        ////////////////////////////////////////////////////////
         let requestAmountListData;
+        let reqAmountPaymentModal = document.getElementById("requestAmountPaymentModal");
         // دکمه پرداخت
         paySelectedBtn.addEventListener("click", async () => {
-            const idsArray = Array.from(selectedIds);
+            const idsArray = Array.from(requestSelectedIdsSet);
 
             if (idsArray.length === 0) {
                 toastifyError("لطفاً ابتدا درخواست‌های مورد نظر را انتخاب کنید.");
                 return;
             }
 
-            ModalToggle("requestAmountPaymentModal");
+            ModalToggle(reqAmountPaymentModal);
 
             FLshowLoading();
 
@@ -1847,14 +1847,15 @@
 
 
         function createSetAmountPaymentItem() {
-            const container = document.querySelector("#setAmountPaymentForm");
+            const container = reqAmountPaymentModal.querySelector("#setAmountPaymentForm");
             container.innerHTML = "";
 
             requestAmountListData.forEach((item, index) => {
                 const fieldset = document.createElement("fieldset");
                 fieldset.id = `setAmountPaymentItem-${index}`;
+                fieldset.dataset.id = item.id;
                 fieldset.innerHTML = `
-                    <div class="d-flex flex-wrap align-items-center justify-content-around setAmountSalesItem bgGreen" style="border: 1px solid;border-radius: 6px;overflow: hidden">
+                    <div class="d-flex flex-wrap align-items-center justify-content-around setAmountPaymentItem bgGreen" style="border: 1px solid;border-radius: 6px;overflow: hidden">
                         <div class="d-flex col-12 justify-content-around p-1 px-2" style="background-color:#04857c;color: #fff">
                             <div class="d-flex align-items-center justify-content-center gap-1 pe-2">
                                 <span class="flex-shrink-0" style="color: #e1e1e1">شماره درخواست: </span>
@@ -1881,7 +1882,7 @@
                             </div>
                             <div class="d-flex align-items-center gap-1 gap-xl-2 col-6 col-xl-auto">
                                 <span class="flex-shrink-0" style="color: #535353">مبلغ پرداختی: </span>
-                                <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="totalAmount">
+                                <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="amount" required>
                             </div>
                         </div>
                     </div>
@@ -1891,27 +1892,37 @@
             });
         }
 
-        async function submitRequestAmountPayment() {
-            if (!await mySer.CheckValidForm("setAmountPaymentForm")) return;
-            try {
-                const model = [];
-                for (let i = 0; i < requestAmountListData.length; i++) {
-                    const json = mySer.convertFormToJSON(`setAmountPaymentItem-${i}`);
-                    const item = { ...requestAmountListData[i], ...json };
-                    model.push(item);
-                }
 
-                FLshowLoading();
-                const res = await axios.post(`/Amount/AddPaymentByRequestAmountGrouped`, model);
-                if (res.status === 200) {
-                    toastifySuccess("با موفقیت ثبت شد")
-                    FLshowLoading(false);
-                }
-            } catch (err) {
-                console.log(err);
-                setTimeout(async () => await submitRequestAmountPayment(), 3000);
-            }
+        let reqAmountAttachModal = document.getElementById("reqAmountAttachModal");
+        let requestAmountPaymentMap = {};
+        async function goToStepAttachReqAmount() {
+            if (!await mySer.CheckValidForm("setAmountPaymentForm")) return;
+
+            const allItemsArray = Array.from(reqAmountPaymentModal.querySelectorAll("fieldset"));
+
+            requestAmountPaymentMap = allItemsArray.map(item => {
+                const amountValue = item.querySelector("input[name='amount']").value;
+                return {
+                    paymentId: undefined,
+                    requestAmountId: item.dataset.id,
+                    amount: Number(SeparatedNumberRemove(amountValue)),
+                };
+            });
+
+            const allInputsAmount = Array.from(reqAmountPaymentModal.querySelectorAll("input[name='amount']"));
+            const totalAmount = allInputsAmount.reduce((sum, i) => sum + Number(SeparatedNumberRemove(i.value) || 0), 0);
+            const targetInputAmount = reqAmountAttachModal.querySelector("input[name='amount']");
+            targetInputAmount.value = totalAmount.toLocaleString();
+            toggleElementsDisabled(targetInputAmount, true);
+            ModalToggle(reqAmountAttachModal, "show");
         }
+
+        function cancelRequestAmountPaymentModal() {
+            mySer.emptyForm("setAmountPaymentForm");
+            ModalToggle(reqAmountPaymentModal, "hide");
+        }
+
+
         ////////////////////////////////////////////////////////
 
 

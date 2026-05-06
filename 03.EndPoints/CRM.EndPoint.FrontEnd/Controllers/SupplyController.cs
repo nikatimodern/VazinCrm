@@ -242,13 +242,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
 
-        public async Task<IActionResult> GetPayment(Guid? paymentId, Guid? requestAmountId)
+        public async Task<IActionResult> GetPayment(Guid? paymentId)
         {
             try
             {
-                /*var query = paymentId != null
-                    ? db.Payments.Where(f => f.Id == paymentId)
-                    : db.Payments.Where(f => f.RequestAmountId == requestAmountId);
+                var query = db.Payments.AsNoTracking().Where(f => f.Id == paymentId);
 
                 var data = await query
                     .Include(f => f.PaymentSupplyFactors)
@@ -266,8 +264,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             .Where(a => a.EntityId == p.Id && a._AttachType == _AttachType.Payment)
                             .ToList()
                     })
-                    .FirstOrDefaultAsync();*/
-                return Ok();
+                    .FirstOrDefaultAsync();
+                return Ok(data);
             }
             catch (Exception e)
             {

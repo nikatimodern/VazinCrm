@@ -4657,7 +4657,14 @@ const initPaymentTable = () => {
             },
             {
                 targets: [2],
-                render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>`,
+                render: (data, type, row) => {
+                    return `
+                        <span class="d-inline-flex flex-column fbold">
+                            <span dir="ltr">${data ? data.toLocaleString() : "-"}</span>
+                           ${row.paymentMode === 1 ? `<span style="font-size: 12px;color: #008077">(پرداخت ${row.paymentModeTxt})</span>` : ""}
+                        </span>
+                    `
+                },
             },
         ],
         columns: [
@@ -4745,6 +4752,10 @@ async function showEditPaymentModal(id) {
         if (res.status === 200) {
             paymentData = res.data.payment;
             mySer.convertJsonToForm(paymentData, "reqAmountAttachForm");
+            if (paymentData.paymentMode) {
+                const targetInputAmount = document.querySelector("#reqAmountAttachModal input[name='amount']");
+                toggleElementsDisabled(targetInputAmount, true);
+            }
             
             reqAmountAttachment = res.data.attachments;
             FileUpReload("reqAmountAttach");
@@ -4774,6 +4785,9 @@ const cancelReqAmountAttach = () => {
     document.getElementById("imageDisplayReqAmountAt").innerHTML = "";
     document.getElementById("reqAmountAttach").value = "";
     mySer.emptyForm("reqAmountAttachForm");
+    const targetInputAmount = document.querySelector("#reqAmountAttachModal input[name='amount']");
+    toggleElementsDisabled(targetInputAmount, false);
+    
 };
 
 
@@ -4788,14 +4802,23 @@ const submitReqAmountAttach = async () => {
     const fromAccountElm = document.querySelector("#reqAmountAttachForm select[name='fromAccountId']");
     const toAccountElm = document.querySelector("#reqAmountAttachForm select[name='toAccountId']");
     
+    const convertedToJson = mySer.convertFormToJSON("reqAmountAttachForm");
+    
+    const requestAmountPayments = requestSelectionMode
+        ? requestAmountPaymentMap
+        : [{ paymentId: paymentData.id, requestAmountId: reqAmountId, amount: convertedToJson.amount }];
+    
     const model = {
         ...paymentData,
-        ...mySer.convertFormToJSON("reqAmountAttachForm"),
-        requestAmountId: reqAmountId,
+        ...convertedToJson,
+        requestAmountPayments,
         attachments: reqAmountAttachment,
         toAccountTxt: toAccountElm.selectedOptions[0].innerText,
         fromAccountTxt: fromAccountElm.selectedOptions[0].innerText,
+        paymentMode: requestSelectionMode ? 1 : 0,
     };
+    console.log(model);
+    console.log(requestSelectionMode);
     
     FLshowLoading();
     try {
@@ -4803,6 +4826,10 @@ const submitReqAmountAttach = async () => {
         if (res.status === 200) {
             toastifySuccess("ثبت با موفقیت انجام شد");
             cancelReqAmountAttach();
+            if (requestSelectionMode) {
+                cancelRequestAmountPaymentModal();
+                toggleRequestSelectionBar(false);
+            }
             if (model.id && paymentTable) {
                 paymentTable.ajax.reload();
             }

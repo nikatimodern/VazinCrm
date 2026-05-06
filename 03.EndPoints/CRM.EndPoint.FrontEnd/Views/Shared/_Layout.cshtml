@@ -2943,7 +2943,7 @@
 
 
 <!-- Modal ListInvoice -->
-<div class="modal fade" id="paymentListModalId" tabindex="-1" data-bs-focus="false" data-bs-backdrop="static">
+<div class="modal fade" id="paymentListModalId" tabindex="-1" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-centered modal-xxl">
         <div class="modal-content col-12" style="padding:10px!important">
             <div class="d-flex justify-content-center position-relative" style="margin-bottom:10px;background-color:var(--DarkColor);color:white;border-radius:5px">
@@ -2984,6 +2984,9 @@
 
 
 
+
+
+
 <!-- Modal reqAmountAttach -->
 <div class="modal fade invoice-modal payment-mode" id="reqAmountAttachModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
@@ -3010,13 +3013,13 @@
 
                                 <div class="mt-2 w-100">
                                     <div>
-                                        <label>حساب مبدا</label>
-                                        <select class="form-select" name="fromAccountId" type="text" required></select>
+                                        <label for="reqAttachFromAccountId">حساب مبدا</label>
+                                        <select id="reqAttachFromAccountId" class="form-select" name="fromAccountId" type="text" required></select>
                                         @* <input class="form-control" name="fromAccount" type="text" placeholder="از کدام حساب پرداخت شده است." required /> *@
                                     </div>
                                     <div class="mt-2">
-                                        <label>حساب مقصد</label>
-                                        <select class="form-select" name="toAccountId" type="text" required></select>
+                                        <label for="reqAttachToAccountId">حساب مقصد</label>
+                                        <select id="reqAttachToAccountId" class="form-select" name="toAccountId" type="text" required></select>
                                     </div>
                                 </div>
                             </div>
@@ -3048,6 +3051,7 @@
         </div>
     </div>
 </div>
+
 
 
 <!-- Modal ListAmount -->
