@@ -3054,6 +3054,69 @@
 
 
 
+
+<!-- Modal requestAmount -->
+<div class="modal fade" id="requestAmountModal" tabindex="-1" role="dialog" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content col-12 p-2">
+            <div id="reqAmountModalTitleId" class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">درخواست وجه</div>
+            <div class="modal-body pb-2">
+                <form id="requestAmountForm" class="d-flex flex-column gap-2">
+                    <div>
+                        <label for="reqAmountAmount">مبلغ:</label>
+                        <input id="reqAmountAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="amount" required>
+                    </div>
+
+                    <div>
+                        <label for="reqAmountDocType">نوع پرداخت:</label>
+                        <select id="reqAmountDocType" class="form-select form-select-sm valueNumber" name="docType" required>
+                            <option value="">انتخاب</option>
+                            <option value="1">نقدی</option>
+                            <option value="2">چکی</option>
+                        </select>
+                    </div>
+
+                    @*<div>
+                        <label for="reqAmountSupplyFactor">فاکتور تامین:</label>
+                        <div class="input-group mb-3">
+                            <input id="reqAmountSupplyFactor" type="text" class="form-control direction-ltr" placeholder="فاکتور تامین.." disabled required>
+                            <button class="btn btn-sm btn-secondary" type="button" onclick="showAddSupplyFactorModal(this)">انتخاب</button>
+                        </div>
+                    </div>*@
+
+                    <div>
+                        <label for="reqAmountSupplierId">تامین‌ کننده:</label>
+                        <select name="supplierId" id="reqAmountSupplierId" required>
+                        </select>
+                        <p id="reqAmountTotalAmountSupFactor" class="mt-2 text-end" style="color: #666"></p>
+                    </div>
+
+                    <div id="reqAmountOrderHeadWrapper" class="d-none">
+                        <label for="reqAmountOrderHead">بابت حواله تولید:</label>
+                        <div class="input-group">
+                            <input id="reqAmountOrderHead" type="text" class="form-control direction-ltr" placeholder="حواله تولید.." disabled>
+                            <button class="btn btn-sm btn-secondary" type="button" onclick="showAddOrderHeadModal()">انتخاب</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="reqAmountDescription">توضیحات:</label>
+                        <textarea id="reqAmountDescription" class="form-control h-auto px-2 py-1 text-start" name="description" rows="3"></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-1 mt-3">
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="cancelRequestAmountModal()">انصراف</button>
+                        <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitRequestAmountModal()">ثبت</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
 <!-- Modal ListAmount -->
 <div class="modal fade" id="ListAmount" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
     <div class=" modal-dialog modal-dialog-centered modal-xl">

@@ -4663,7 +4663,7 @@ const initPaymentTable = () => {
                             <span dir="ltr">${data ? data.toLocaleString() : "-"}</span>
                            ${row.paymentMode === 1 ? `<span style="font-size: 12px;color: #008077">(پرداخت ${row.paymentModeTxt})</span>` : ""}
                         </span>
-                    `
+                    `;
                 },
             },
         ],
@@ -4847,6 +4847,102 @@ const submitReqAmountAttach = async () => {
         FLshowLoading(false);
     }
 };
+
+
+/*--------------------------------------------------------------------------------*/
+
+let orderHeadsSelectedIds = [];
+async function showRequestAmountModal(ohId, ohNumber) {
+    await setupSelectOptions("#reqAmountSupplierId");
+    if (ohId) {
+        orderHeadsSelectedIds = [ohId];
+        document.getElementById("reqAmountModalTitleId").textContent = `درخواست پیش پرداخت حواله ${ohNumber}`;
+    }
+    ModalToggle("requestAmountModal");
+}
+
+
+let isSetupReqAmountModal = false;
+const reqAmountModal = document.getElementById("requestAmountModal");
+async function setupSelectOptions(targetId) {
+    if (isSetupReqAmountModal) return;
+    const addOrderBtn = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper button");
+    const ohInput = reqAmountModal.querySelector("input#reqAmountOrderHead");
+    const totalAmountSupFactorElm = reqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
+    
+    const data = (await axios("/Supply/GetSupplyBaseData")).data;
+    
+    const select = new TomSelect(targetId, {
+        options: data.suppliers,
+        placeholder: "انتخاب تامین کننده",
+        maxItems: 1,
+        selectOnTab: true,
+        
+        async onItemAdd(supplierId) {
+            toggleElementsDisabled(addOrderBtn, false);
+            ohInput.value = "";
+            //orderHeadsSelectedIds = [];
+            select.disable();
+            const totalSupplyFactorAmount = await getTotalAmountSupplyFactor(supplierId);
+            if (totalSupplyFactorAmount !== null) {
+                totalAmountSupFactorElm.innerHTML = `جمع مبالغ فاکتور: <b style="color: #333">${totalSupplyFactorAmount?.toLocaleString()}</b> ريال`;
+            }
+            select.enable();
+        },
+        
+        onDelete() {
+            toggleElementsDisabled(addOrderBtn, true);
+            totalAmountSupFactorElm.innerHTML = "";
+        },
+    });
+    
+    isSetupReqAmountModal = true;
+}
+
+
+async function getTotalAmountSupplyFactor(supplierId) {
+    try {
+        const res = await axios(`/Supply/GetTotalAmountSupplyFactor?supplierId=${supplierId}`);
+        if (res.status === 200) {
+            return res.data;
+        }
+        return null;
+    } catch (err) {
+        console.log(err);
+        return null;
+    }
+}
+
+
+
+async function submitRequestAmountModal() {
+    if (!await mySer.CheckValidForm("requestAmountForm")) return;
+    const supplierSelect = reqAmountModal.querySelector("#reqAmountSupplierId");
+    const model = {
+        ...requestAmountData,
+        ...mySer.convertFormToJSON("requestAmountForm"),
+        supplierTxt: supplierSelect.selectedOptions[0].innerText,
+        requestAmountSupplyFactor: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id, requestAmountId: requestAmountData.id })),
+        requestAmountOrderHeads: orderHeadsSelectedIds.map(id => ({ orderHeadId: id, requestAmountId: requestAmountData.id })),
+    };
+    
+    try {
+        FLshowLoading();
+        const apiUrl = model.id ? "/Amount/UpdateRequestAmount" : "/Amount/AddRequestAmount";
+        const res = await axios.post(apiUrl, model);
+        if (res.status === 200) {
+            toastifySuccess("با موفقیت ثبت شد");
+            getAllRequestAmount();
+            cancelRequestAmountModal();
+        }
+    } catch (err) {
+        toastifyError("خطای سرور");
+        console.log(err);
+    } finally {
+        FLshowLoading(false);
+    }
+    
+}
 
 
 /*--------------------------------------------------------------------------------*/
