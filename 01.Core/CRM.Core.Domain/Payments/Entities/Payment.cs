@@ -28,6 +28,16 @@ namespace CRM.Core.Domain.Payments.Entities {
         public IList<PaymentSupplyFactor> PaymentSupplyFactors { get; set; }
 
         public IList<RequestAmountPayment> RequestAmountPayments { get; set; }
-        public PaymentModeEnum paymentMode { get; set; }
+
+        private PaymentModeEnum _paymentMode;
+        public PaymentModeEnum PaymentMode {
+            get => _paymentMode;
+            set {
+                _paymentMode = value;
+                PaymentModeTxt = value.ToString().Replace("_"," ");
+            }
+        }
+        public string PaymentModeTxt { get; private set; }
+
     }
 }

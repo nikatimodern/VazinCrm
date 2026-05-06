@@ -207,25 +207,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> AddPaymentByRequestAmount([FromBody] Payment model)
         {
+            if (model == null) return BadRequest();
+
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 await AddOrUpdatePayment(model, user);
-                //await SetRequestAmountToPaid(model.RequestAmountId, user);
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-        [HttpPost]
-        public async Task<IActionResult> AddPaymentByRequestAmountGrouped([FromBody] Payment model)
-        {
-            try
-            {
-                var user = await userManager.GetUserAsync(HttpContext.User);
-
+                var RequestAmountIdList = model.RequestAmountPayments.Select(f => f.RequestAmountId).ToList();
+                await SetRequestAmountsToPaid(RequestAmountIdList, user);
                 return Ok();
             }
             catch (Exception ex)
@@ -234,27 +223,31 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        private async Task SetRequestAmountToPaid(Guid? id, AppUser user)
+        private async Task SetRequestAmountsToPaid(List<Guid> idsList, AppUser user)
         {
             await using var transaction = await db.Database.BeginTransactionAsync();
             try
             {
-                var reqAmount = await db.RequestAmounts.FirstOrDefaultAsync(f => f.Id == id);
-                if (reqAmount == null) return;
+                foreach (var id in idsList)
+                {
+                    var reqAmount = await db.RequestAmounts.FirstOrDefaultAsync(f => f.Id == id);
+                    if (reqAmount == null) return;
 
 
-                if (reqAmount.RequestStatus == RequestStatusEnum.پرداخت_شده) return;
+                    if (reqAmount.RequestStatus == RequestStatusEnum.پرداخت_شده) return;
 
-                var oldReqAmount = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
+                    var oldReqAmount = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
 
-                reqAmount.RequestStatus = RequestStatusEnum.پرداخت_شده;
-                reqAmount.RequestStatusTxt = nameof(RequestStatusEnum.پرداخت_شده).Replace("_", " ");
-                reqAmount.UserModify = user.FullName;
-                reqAmount.UserModifyID = user.Id;
-                reqAmount.ModifyDate = DateTime.Now;
-                reqAmount.ModifyDateTxt = dtService.GetDateTimePersian();
+                    reqAmount.RequestStatus = RequestStatusEnum.پرداخت_شده;
+                    reqAmount.RequestStatusTxt = nameof(RequestStatusEnum.پرداخت_شده).Replace("_", " ");
+                    reqAmount.UserModify = user.FullName;
+                    reqAmount.UserModifyID = user.Id;
+                    reqAmount.ModifyDate = DateTime.Now;
+                    reqAmount.ModifyDateTxt = dtService.GetDateTimePersian();
 
-                await _logSystemService.LogChange(oldReqAmount, reqAmount, LogActionEnum.تغییر_وضعیت, user);
+                    await _logSystemService.LogChange(oldReqAmount, reqAmount, LogActionEnum.تغییر_وضعیت, user);
+                }
+
                 await db.SaveChangesAsync();
                 await hub.Clients.Groups("مدیر ارشد", "کارشناس مالی").SendAsync("countPreFactorToAccept");
                 await transaction.CommitAsync();
@@ -321,8 +314,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
-                var item = await db.Payments.Where(f => f.Id == id).FirstOrDefaultAsync();
+                var item = await db.Payments.Include(f => f.RequestAmountPayments).Where(f => f.Id == id).FirstOrDefaultAsync();
                 if (item == null) return NotFound();
+
+                var requestAmountIds = item.RequestAmountPayments?
+                    .Select(x => x.RequestAmountId)
+                    .Distinct()
+                    .ToList() ?? [];
 
                 item.IsDeleted = true;
                 item.ModifyDate = DateTime.Now;
@@ -330,14 +328,23 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 item.UserModify = user.FullName;
                 item.UserModifyID = user.Id;
 
+                foreach (var rap in item.RequestAmountPayments ?? [])
+                {
+                    rap.IsDeleted = true;
+                }
+
                 await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
                 await db.SaveChangesAsync();
 
-                /*var hasAnyPaymentForReqAmount = await db.Payments.AnyAsync(f => f.RequestAmountId == item.RequestAmountId);
-                if (!hasAnyPaymentForReqAmount)
-                {
-                    await SetRequestAmountToPendingPaid(item.RequestAmountId, user);
-                }*/
+
+                var requestIdsWithPayment = await db.RequestAmountPayments
+                    .Where(x => requestAmountIds.Contains(x.RequestAmountId))
+                    .Select(x => x.RequestAmountId)
+                    .Distinct()
+                    .ToListAsync();
+
+                var requestIdsWithoutPayment = requestAmountIds.Except(requestIdsWithPayment).ToList();
+                await SetRequestAmountsToPendingPaid(requestIdsWithoutPayment, user);
 
                 return Ok();
             }
@@ -347,27 +354,31 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        private async Task SetRequestAmountToPendingPaid(Guid? id, AppUser user)
+        private async Task SetRequestAmountsToPendingPaid(List<Guid> idsList, AppUser user)
         {
             await using var transaction = await db.Database.BeginTransactionAsync();
             try
             {
-                var reqAmount = await db.RequestAmounts.FirstOrDefaultAsync(f => f.Id == id);
-                if (reqAmount == null) return;
+                foreach (var id in idsList ?? [])
+                {
+                    var reqAmount = await db.RequestAmounts.FirstOrDefaultAsync(f => f.Id == id);
+                    if (reqAmount == null) return;
 
 
-                if (reqAmount.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت) return;
+                    if (reqAmount.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت) return;
 
-                var oldReqAmount = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
+                    var oldReqAmount = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
 
-                reqAmount.RequestStatus = RequestStatusEnum.در_انتظار_پرداخت;
-                reqAmount.RequestStatusTxt = nameof(RequestStatusEnum.در_انتظار_پرداخت).Replace("_", " ");
-                reqAmount.UserModify = user.FullName;
-                reqAmount.UserModifyID = user.Id;
-                reqAmount.ModifyDate = DateTime.Now;
-                reqAmount.ModifyDateTxt = dtService.GetDateTimePersian();
+                    reqAmount.RequestStatus = RequestStatusEnum.در_انتظار_پرداخت;
+                    reqAmount.RequestStatusTxt = nameof(RequestStatusEnum.در_انتظار_پرداخت).Replace("_", " ");
+                    reqAmount.UserModify = user.FullName;
+                    reqAmount.UserModifyID = user.Id;
+                    reqAmount.ModifyDate = DateTime.Now;
+                    reqAmount.ModifyDateTxt = dtService.GetDateTimePersian();
 
-                await _logSystemService.LogChange(oldReqAmount, reqAmount, LogActionEnum.تغییر_وضعیت, user);
+                    await _logSystemService.LogChange(oldReqAmount, reqAmount, LogActionEnum.تغییر_وضعیت, user);
+                }
+
                 await db.SaveChangesAsync();
                 await hub.Clients.Groups("مدیر ارشد", "کارشناس مالی").SendAsync("countPreFactorToAccept");
                 await transaction.CommitAsync();
@@ -396,8 +407,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
                 var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
 
+                var paymentsIds = await db.RequestAmountPayments.AsNoTracking()
+                    .Where(f => f.RequestAmountId == id)
+                    .Select(f => f.PaymentId)
+                    .ToListAsync();
+
                 var query = db.Payments
-                    //.Where(f => f.RequestAmountId == id)
+                    .Where(f => paymentsIds.Contains(f.Id))
                     .OrderByDescending(f => f.CreateDate)
                     .AsNoTracking();
 
@@ -509,9 +525,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     )
                     .ToListAsync();
 
-                var paymentAmounts = await db.Payments.AsNoTracking()
-                    //.Where(x => ids.Contains(x.RequestAmountId.Value))
-                    //.Select(x => new { x.RequestAmountId, x.Amount })
+                var requestAmountPayments = await db.RequestAmountPayments.AsNoTracking()
+                    .Where(x => ids.Contains(x.RequestAmountId))
+                    .Select(x => new { x.RequestAmountId, x.Amount })
                     .ToListAsync();
 
 
@@ -520,7 +536,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     SupplyFactorSerials = supplySerials.Where(x => x.RequestAmountId == ra.Id).Select(x => x.FactorSerial).ToList(),
                     OrderHeadSerials = orderSerials.Where(x => x.RequestAmountId == ra.Id).Select(x => x.OrderNumber).ToList(),
                     CustomerNames = orderSerials.Where(x => x.RequestAmountId == ra.Id).Select(x => x.CustomerTxt).ToList(),
-                    //TotalPaymentAmount = paymentAmounts.Where(x => x.RequestAmountId == ra.Id).Sum(x => x.Amount)
+                    TotalPaymentAmount = requestAmountPayments.Where(x => x.RequestAmountId == ra.Id).Sum(x => x.Amount)
                 }).ToList();
 
 

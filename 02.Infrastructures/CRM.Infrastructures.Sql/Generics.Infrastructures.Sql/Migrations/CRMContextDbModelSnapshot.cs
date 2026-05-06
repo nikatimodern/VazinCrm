@@ -2292,6 +2292,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("PaymentDateTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("PaymentMode")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PaymentModeTxt")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("PaymentNumber")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
@@ -2321,9 +2327,6 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.Property<string>("UserModifyID")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("paymentMode")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

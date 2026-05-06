@@ -4889,7 +4889,8 @@ input[type="file"] {
 }
 
 
-select:has(option[value=""]:checked), option[value=""] {
+select:has(option[value=""]:checked),
+option[value=""] {
   color: #bbb;
 }
 
