@@ -5,6 +5,7 @@
 @{
     var passType = ViewBag.PassType; //1: requestAmount | 2: cartable MD
     var isFinancial = ViewBag.IsFinancial;
+    var isAdmin = ViewBag.isAdmin;
     var userId = ViewBag.UserId;
 }
 
@@ -27,33 +28,33 @@
 
         <div class="layered-card layered-card-pill @(bgCssClass)" data-id="@reqAmount.Id">
             @if (status is RequestStatusEnum.در_انتظار_پرداخت or RequestStatusEnum.پرداخت_شده) {
-                <div class="layered-select-box px-3 py-2" style="width: 60px">
+                <div class="layered-select-box col-auto p-2">
                     <input type="checkbox" class="card-checkbox" />
                 </div>
             }
-            <div class="layered-card__layer col-12 col-xl-3 d-flex flex-column justify-content-center px-3 ps-xl-4 py-2">
-                <div class="d-flex justify-content-between align-items-baseline mb-1">
+            <div class="layered-card__layer col-12 col-xl-auto col-xxl-3 d-flex flex-column justify-content-center px-3 py-2">
+                <div class="d-flex justify-content-between align-items-baseline mb-1 column-gap-3">
                     <span style="font-size: 13px; color: #777">شماره درخواست:</span>
                     <span class="fbold">@reqAmount.RequestNumber</span>
                 </div>
-                <div class="d-flex justify-content-between align-items-baseline mb-1">
+                <div class="d-flex justify-content-between align-items-baseline mb-1 column-gap-3">
                     <span style="font-size: 13px; color: #777">تاریخ درخواست:</span>
                     <span class="fbold direction-ltr">
-                    @(string.Join(" | ", reqAmount.CreateDateTxt?.Substring(0, 16).Split(' ')))
-                </span>
+                        @(string.Join(" | ", reqAmount.CreateDateTxt?.Substring(0, 16).Split(' ')))
+                    </span>
                 </div>
-                <div class="d-flex justify-content-between align-items-baseline">
+                <div class="d-flex justify-content-between align-items-baseline column-gap-3">
                     <span style="font-size: 13px; color: #777">ثبت شده توسط:</span>
                     <span class="fbold">@reqAmount.UserCreator</span>
                 </div>
             </div>
 
-            <div class="layered-card__layer col-12 col-xl-3 col-xxl-4 d-flex flex-column justify-content-center align-items-center px-3 px-xl-2 py-2">
+            <div class="layered-card__layer col-12 col-xl-3 d-flex flex-column justify-content-center align-items-center px-3 px-xl-2 py-2">
                 <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 text-center">
                     <span style="font-size: 13px; color: #777">نوع:</span>
                     <span class="fbold">
-                    @reqAmount.DocTypeTxt @(reqAmount.Prepayment ? "(پیش پرداخت)" : "")
-                </span>
+                    @reqAmount.DocTypeTxt @(reqAmount.RequestAmountType == RequestAmountTypeEnum.پیش_پرداخت ? "(پیش پرداخت)" : "")
+                    </span>
                 </div>
                 @if (supplyFactorSerials.Any()) {
                     <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mt-2 text-center">
@@ -87,7 +88,7 @@
                 }
             </div>
 
-            <div class="layered-card__layer col-12 col-xl-2 d-flex flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center px-3 px-xl-2 py-2">
+            <div class="layered-card__layer col-12 col-xl d-flex flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center px-3 px-xl-2 py-2">
                 <span style="font-size: 13px; color: #777">مبلغ درخواست:</span>
                 <div class="fbold flex-center align-items-baseline column-gap-1">
                     <span style="font-size: 17px;">@string.Format("{0:n0}", reqAmount.Amount)</span>
@@ -95,7 +96,7 @@
                 </div>
             </div>
             @if (passType == 1 || passType == 3) {
-                <div class="layered-card__layer col d-flex flex-column justify-content-xl-evenly align-items-center gap-2 px-3 px-xl-2 py-2">
+                <div class="layered-card__layer col-12 col-xl d-flex flex-column justify-content-xl-evenly align-items-center gap-2 px-3 px-xl-2 py-2">
                     <div class="w-100 d-flex flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
                         <span style="font-size: 13px; color: #777">مبلغ تایید شده:</span>
                         <div class="fbold flex-center align-items-baseline column-gap-1 @(status is RequestStatusEnum.در_انتظار_پرداخت or RequestStatusEnum.پرداخت_شده ? "badgeGreen-border" : "")">
@@ -117,12 +118,10 @@
                     }
                 </div>
 
-                <div class="layered-card__layer col-12 col-xl col-xxl-1 flex-center flex-row flex-xl-column p-2 gap-4 gap-xl-3">
+                <div class="layered-card__layer col-12 col-xl-auto col-xxl-1 flex-center flex-row flex-xl-column p-2 px-xl-3 gap-4 gap-xl-3">
                     @switch (status) {
                         case RequestStatusEnum.ثبت_اولیه:
-                            if (isFinancial && !isCreator) {
-                                <span class="fbold" style="color:#777">@reqAmount.RequestStatusTxt</span>
-                            } else {
+                            if (isCreator) {
                                 <div class="flex-center flex-xl-column gap-3">
                                     <div class="flex-center flex-row gap-4 gap-xl-3">
                                         <button class="flex-center p-0" data-title-right="ویرایش" style="color:#333" onclick="showEditRequestAmountModal('@reqAmount.Id')">
@@ -135,6 +134,8 @@
                                     </div>
                                     <button class="buttonGreen2" onclick="changeStatusReqAmount('@reqAmount.Id', 1)">ارسال به مدیرعامل</button>
                                 </div>
+                            } else {
+                                <span class="fbold" style="color:#777">@reqAmount.RequestStatusTxt</span>
                             }
 
                             break;
@@ -171,8 +172,8 @@
                                 <span class="fbold" style="color: #04857c">@reqAmount.RequestStatusTxt</span>
                                 @if (isFinancial) {
                                     <span style="cursor:pointer;color:#333" onclick="changeStatusReqAmount('@reqAmount.Id', 3)" data-title="بازگشت">
-                                    <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>
-                                </span>
+                                        <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>
+                                    </span>
                                 }
                             </div>
                             break;
@@ -183,7 +184,7 @@
                 var percent = reqAmount.AcceptedAmountPercent;
                 var pendingMd = status == RequestStatusEnum.در_انتظار_تایید_مدیرعامل;
 
-                <div class="layered-card__layer col d-flex flex-column justify-content-xl-evenly align-items-center gap-2 px-3 px-xl-2 py-2">
+                <div class="layered-card__layer col-12 col-xl d-flex flex-column justify-content-xl-evenly align-items-center gap-2 px-3 px-xl-2 py-2">
 
                     <div class="w-100 d-flex flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
                         <span style="font-size: 13px; color: #777" class="flex-shrink-0">مبلغ تایید شده:</span>
@@ -218,7 +219,7 @@
                     }
                 </div>
 
-                <div class="layered-card__layer col-12 col-xl col-xxl-1 flex-center flex-row flex-xl-column px-2 py-2 gap-4 gap-xl-3">
+                <div class="layered-card__layer col-12 col-xl-auto col-xxl-1 flex-center flex-row flex-xl-column p-2 px-xl-3 gap-4 gap-xl-3">
                     @switch (status) {
                         case RequestStatusEnum.ثبت_اولیه:
                             <span class="fbold" style="color:#777">@reqAmount.RequestStatusTxt</span>
@@ -249,7 +250,6 @@
                             <span class="fbold text-center" style="color: #04857c">@reqAmount.RequestStatusTxt</span>
                             break;
                     }
-
                 </div>
             }
         </div>

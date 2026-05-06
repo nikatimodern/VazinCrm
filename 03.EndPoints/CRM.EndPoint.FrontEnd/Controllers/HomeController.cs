@@ -89,6 +89,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     }
 
                     r.RequestStatusTxt = r.RequestStatus.ToString().Replace("_", " ");
+
+
+                    if (r.Prepayment)
+                    {
+                        r.RequestAmountType = RequestAmountTypeEnum.پیش_پرداخت;
+                        r.RequestAmountTypeTxt = nameof(RequestAmountTypeEnum.پیش_پرداخت).Replace("_", " ");
+                    } else
+                    {
+                        r.RequestAmountType = RequestAmountTypeEnum.پرداخت_فاکتور;
+                        r.RequestAmountTypeTxt = nameof(RequestAmountTypeEnum.پرداخت_فاکتور).Replace("_", " ");
+                    }
                 }
 
                 //await db.SaveChangesAsync();

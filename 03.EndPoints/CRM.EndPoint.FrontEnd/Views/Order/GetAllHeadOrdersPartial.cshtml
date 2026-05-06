@@ -65,6 +65,9 @@
                     <button class="mp d-flex justify-content-center align-items-center" data-title="حذف" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="DelHeadOrderItem('@item.Id', @ViewBag.PassType, '@item.DealId')">
                         <i class="mp fa fa-trash"></i>
                     </button>
+                    @if (item.Status == OrderHeadStatusEnum.ثبت_اولیه) {
+                        <button class="buttonGray" onclick="showRequestAmountModal('@item.Id', '@item.OrderNumber')">درخواست وجه</button>
+                    }
                 </div>
 
                 <div class="pe-2 d-flex align-items-center gap-2">
