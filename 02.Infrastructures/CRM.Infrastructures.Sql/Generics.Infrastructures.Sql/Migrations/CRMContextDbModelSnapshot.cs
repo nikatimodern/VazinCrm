@@ -2968,6 +2968,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasPrecision(20)
                         .HasColumnType("decimal(20,0)");
 
+                    b.Property<Guid?>("CashierId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CashierTxt")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("CommentText")
                         .HasColumnType("nvarchar(max)");
 

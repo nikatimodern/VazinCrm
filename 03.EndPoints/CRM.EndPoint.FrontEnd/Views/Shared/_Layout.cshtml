@@ -3068,7 +3068,7 @@
                             <option value="">انتخاب</option>
                             <option value="1">پیش پرداخت</option>
                             <option value="2">پرداخت فاکتور</option>
-                            @* <option value="3">تنخواه</option> *@
+                            <option value="3">تنخواه</option>
                         </select>
                     </div>
 
@@ -3095,11 +3095,17 @@
                         </div>
                     </div>*@
 
-                    <div>
+                    <div id="reqAmountSupplierWrapper">
                         <label for="reqAmountSupplierId">تامین‌ کننده:</label>
                         <select name="supplierId" id="reqAmountSupplierId" required>
                         </select>
                         <p id="reqAmountTotalAmountSupFactor" class="mt-2 text-end" style="color: #666"></p>
+                    </div>
+
+                    <div id="reqAmountCashierWrapper" class="d-none">
+                        <label for="reqAmountCashierId">تنخواه دار:</label>
+                        <select name="cashierId" id="reqAmountCashierId">
+                        </select>
                     </div>
 
                     <div id="reqAmountOrderHeadWrapper" class="d-none">

@@ -135,7 +135,7 @@
             supplyFactorAttachments = [];
             supplyFactorData = {};
 
-            orderHeadsSelectedIds = [];
+            orderHeadsSupFactorSelectedIds = [];
             tempSelectedIds = [];
             tempSelectedMap.clear();
 
@@ -146,13 +146,13 @@
         }
 
         ///////////////////
-        let orderHeadsSelectedIds = [];
+        let orderHeadsSupFactorSelectedIds = [];
         let orderHeadsFilterIds = null;
         let tempSelectedIds = [];
         let tempSelectedMap = new Map(); // id -> number
         async function showAddOrderHeadModal() {
             tempSelectedMap.clear();
-            tempSelectedIds = [...orderHeadsSelectedIds];
+            tempSelectedIds = [...orderHeadsSupFactorSelectedIds];
 
             const supplierId = document.getElementById("supplyFactorSupplierId").value;
             if (supplierId) {
@@ -205,7 +205,7 @@
         });
 
         const submitSelectedOrderHeads = () => {
-            orderHeadsSelectedIds = [...tempSelectedIds];
+            orderHeadsSupFactorSelectedIds = [...tempSelectedIds];
 
             const inpElm = document.getElementById("supplyFactorOrderHead");
             inpElm.value = [...tempSelectedMap.values()].join(", ");
@@ -252,7 +252,7 @@
                 onItemAdd() {
                     toggleElementsDisabled(addOrderBtn, false);
                     document.getElementById("supplyFactorOrderHead").value = "";
-                    orderHeadsSelectedIds = [];
+                    orderHeadsSupFactorSelectedIds = [];
                 },
 
                 onDelete() {
@@ -275,7 +275,7 @@
                 ...supplyFactorData,
                 ...mySer.convertFormToJSON("supplyFactorForm"),
                 supplierTxt: supplierSelect.options[supplierSelect.selectedIndex].text,
-                supplyFactorOrderHeads: orderHeadsSelectedIds.map(id => ({ orderHeadId: id, supplyFactorId: supplyFactorData.id })),
+                supplyFactorOrderHeads: orderHeadsSupFactorSelectedIds.map(id => ({ orderHeadId: id, supplyFactorId: supplyFactorData.id })),
                 attachments: supplyFactorAttachments,
             };
 
@@ -314,7 +314,7 @@
                     supplyFactorData = res.data.supplyFactor;
                     const orderSerials = res.data.orderSerials;
                     mySer.convertJsonToForm(supplyFactorData, "supplyFactorForm");
-                    orderHeadsSelectedIds = supplyFactorData.supplyFactorOrderHeads.map(o => o.orderHeadId);
+                    orderHeadsSupFactorSelectedIds = supplyFactorData.supplyFactorOrderHeads.map(o => o.orderHeadId);
 
                     const inpElm = document.getElementById("supplyFactorOrderHead");
                     inpElm.value = orderSerials.join(", ");

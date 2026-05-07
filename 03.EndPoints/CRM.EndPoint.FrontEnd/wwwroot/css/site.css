@@ -3540,7 +3540,7 @@ width: 100% !important;
   align-items: center;
   justify-content: center;
   gap: .5rem;
-  padding: 8px 12px;
+  padding: 6px 12px;
   border-radius: 4px;
   background-color: white;
   color: #757575;
@@ -5492,12 +5492,12 @@ table tr.payment-vosoled > td {
 
 
 @media (min-width: 1200px) {
-  .layered-card.layered-card-pill > div:last-child {
-    padding-left: 1rem !important;
+  .layered-card.layered-card-pill .layered-card__layer:nth-child(1 of .layered-card__layer) {
+    padding-right: 1.5rem !important;
   }
   
-  .layered-card.layered-card-pill > div:first-child {
-    padding-right: 1rem !important;
+  .layered-card.layered-card-pill .layered-card__layer:last-of-type {
+    padding-left: 1.5rem !important;
   }
 }
 
@@ -5569,19 +5569,31 @@ table tr.payment-vosoled > td {
 
 
 /*    */
-/* wrapper */
+/* =========================
+   Selection Bar
+========================= */
+
 .selection-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  column-gap: 16px;
+  row-gap: 12px;
   width: 100%;
+  flex-wrap: wrap;
   
   background: #f8faf9;
   border: 1px solid #d7e6dd;
   border-radius: 14px;
   
   padding: 12px 16px;
+}
+
+
+@media (max-width: 991px) {
+  .selection-bar {
+    padding: 8px 14px;
+  }
 }
 
 
@@ -5601,11 +5613,12 @@ table tr.payment-vosoled > td {
   width: 20px;
   height: 20px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 
 .selection-mode .layered-card {
-  transition: transform 0.2s;
+  transition: transform 0.2s ease;
   cursor: pointer;
   position: relative;
 }
@@ -5622,6 +5635,7 @@ table tr.payment-vosoled > td {
 }
 
 
+/* hover overlay */
 .selection-mode .layered-card::after {
   content: "";
   position: absolute;

@@ -485,4 +485,27 @@ public class CashController : Controller {
             return BadRequest(ex.Message);
         }
     }
+
+
+    public async Task<IActionResult> GetAllCashiers()
+    {
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var query = db.Cashiers.AsNoTracking();
+
+
+            var data = await query.Select(f => new {
+                value = f.UserId,
+                text = f.UserTxt,
+                target = f.UserId == user.Id
+            }).ToListAsync();
+
+            return Ok(data);
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
 }

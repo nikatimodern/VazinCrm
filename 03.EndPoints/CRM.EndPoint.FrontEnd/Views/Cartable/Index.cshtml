@@ -404,7 +404,7 @@
                                 </div>
 
 
-                                <div class="w-100" id="FinancialExpertPfContentId" style="max-height:74dvh; overflow:auto;">
+                                <div class="w-100" id="FinancialExpertPfContentId" style="max-height:72dvh; overflow:auto;">
                                 </div>
                             </div>
 
@@ -450,20 +450,22 @@
                                 </div>
 
 
-                                <button id="requestSelectionModeBtn" class="buttonGreen2 d-flex align-items-center gap-2 mt-2" style="padding: 4px 8px !important">
-                                    <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM1.49 15.326a.78.78 0 0 1-.358-.442 3 3 0 0 1 4.308-3.516 6.484 6.484 0 0 0-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 0 1-2.07-.655ZM16.44 15.98a4.97 4.97 0 0 0 2.07-.654.78.78 0 0 0 .357-.442 3 3 0 0 0-4.308-3.517 6.484 6.484 0 0 1 1.907 3.96 2.32 2.32 0 0 1-.026.654ZM18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5.304 16.19a.844.844 0 0 1-.277-.71 5 5 0 0 1 9.947 0 .843.843 0 0 1-.277.71A6.975 6.975 0 0 1 10 18a6.974 6.974 0 0 1-4.696-1.81Z" /></svg>
-                                    <span style="line-height: 1">پرداخت گروهی</span>
-                                </button>
+                                <div class="d-flex justify-content-start mt-2 mb-1">
+                                    <button id="requestSelectionModeBtn" class="buttonGreen2 d-flex align-items-center gap-2" style="padding: 4px 8px !important">
+                                        <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM1.49 15.326a.78.78 0 0 1-.358-.442 3 3 0 0 1 4.308-3.516 6.484 6.484 0 0 0-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 0 1-2.07-.655ZM16.44 15.98a4.97 4.97 0 0 0 2.07-.654.78.78 0 0 0 .357-.442 3 3 0 0 0-4.308-3.517 6.484 6.484 0 0 1 1.907 3.96 2.32 2.32 0 0 1-.026.654ZM18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5.304 16.19a.844.844 0 0 1-.277-.71 5 5 0 0 1 9.947 0 .843.843 0 0 1-.277.71A6.975 6.975 0 0 1 10 18a6.974 6.974 0 0 1-4.696-1.81Z" /></svg>
+                                        <span style="line-height: 1">پرداخت گروهی</span>
+                                    </button>
+                                </div>
 
                                 <div id="requestSelectionBar" class="selection-bar d-none mt-2">
-                                    <div class="d-flex align-items-center gap-3">
+                                    <div class="d-none d-lg-flex align-items-center gap-3">
                                         <label class="d-flex align-items-center gap-3">
-                                            <input type="checkbox" class="selectAll"  />
+                                            <input type="checkbox" class="selectAll" />
                                             <span>انتخاب همه</span>
                                         </label>
                                     </div>
 
-                                    <div class="d-flex align-items-center gap-3" style="color: #444;">
+                                    <div class="col-12 col-lg-auto flex-center flex-wrap gap-3" style="color: #444;">
                                         <span class="selectedCount fbold" style="color: var(--color8);">0</span>
                                         <span>مورد انتخاب شده</span>
 
@@ -472,7 +474,7 @@
                                         </button>
                                     </div>
 
-                                    <div class="d-flex align-items-center gap-3">
+                                    <div class="col-12 col-lg-auto d-flex align-items-center justify-content-between justify-content-lg-end gap-3">
                                         <button class="cancelSelection buttonCancel-white">
                                             <svg style="width: 16px" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
                                             انصراف
@@ -486,7 +488,7 @@
                                 </div>
 
 
-                                <div id="FinancialRequestContentId" class="pt-3" style="max-height:74dvh; overflow:auto;">
+                                <div id="FinancialRequestContentId" class="pt-2" style="max-height:74dvh; overflow:auto;">
                                 </div>
                             </div>
                         </div>
@@ -1394,6 +1396,7 @@
             HideAllCartable();
             document.querySelectorAll(".TCar").forEach(async (item) => {
                 if (item.id === tabId) {
+                    console.log(subId);
                     item.classList.add("TCarActive");
                     switch (tabId) {
                         case "TPrefactorFactorId":
@@ -1423,6 +1426,8 @@
                             document.getElementById("CFinancialExpertId").style.display = "flex";
                             if (subId === "FinancialInvoiceTab") {
                                 await GetInvoicesFinancialExpert();
+                            } else if (subId === "FinancialRequestTab") {
+                                await GetRequestFinancialExpert();
                             } else {
                                 await GetPreFactorFinancialExpert();
                             }
@@ -1719,7 +1724,7 @@
                 const data = res.data;
                 document.getElementById("FinancialRequestContentId").innerHTML = data.html;
                 document.getElementById("FinancialRequestCount").textContent = data.count;
-                toggleRequestSelectionBar(false)
+                toggleRequestSelectionBar(false);
                 FLshowLoading(false);
             } catch (err) {
                 console.log(err);
@@ -1747,7 +1752,6 @@
         clearAllBtn.addEventListener("click", clearAllSelection);
 
         function clearAllSelection() {
-            if (!requestSelectionMode) return;
             requestSelectedIdsSet.clear();
             document.querySelectorAll(".layered-card").forEach(card => {
                 card.classList.remove("selected");
@@ -1764,7 +1768,7 @@
             requestSelectionMode = enable;
             requestContainer.classList.toggle("selection-mode", enable);
             requestSelectionBar.classList.toggle("d-none", !enable);
-            requestSelectionModeBtn.classList.toggle("d-none", enable);
+            requestSelectionModeBtn.parentElement.classList.toggle("d-none", enable);
 
             if (!enable) clearAllSelection();
         }
@@ -1870,8 +1874,8 @@
                             </div>
                         </div>
 
-                        <div class="d-flex flex-wrap col-12 justify-content-around p-2">
-                            <div class="d-flex align-items-center gap-1 gap-xl-2 col-6 col-xl-auto pe-2">
+                        <div class="d-flex flex-wrap col-12 justify-content-around p-2 row-gap-2">
+                            <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto pe-xl-2">
                                 <span class="flex-shrink-0" style="color: #535353">مبلغ تایید شده: </span>
 
                                 <div class="fbold flex-center align-items-baseline column-gap-1 badgeGreen-border">
@@ -1880,7 +1884,7 @@
                                     <span style="font-size: 16px; color:#888">${item.acceptedAmountPercent ? item.acceptedAmountPercent + "%" : ""}</span>
                                 </div>
                             </div>
-                            <div class="d-flex align-items-center gap-1 gap-xl-2 col-6 col-xl-auto">
+                            <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto">
                                 <span class="flex-shrink-0" style="color: #535353">مبلغ پرداختی: </span>
                                 <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="amount" required>
                             </div>

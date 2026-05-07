@@ -25,6 +25,9 @@ namespace CRM.Core.Domain.RequestAmounts.Entities {
         public Guid? SupplierId { get; set; }
         public string SupplierTxt { get; set; }
 
+        public Guid? CashierId { get; set; } // تنخواه دار
+        public string CashierTxt { get; set; }
+
         public bool Prepayment { get; set; }
         public string Description { get; set; }
 

@@ -2386,10 +2386,25 @@ class MyService {
             let isValid = true;
             
             const addAlert = (el, className = "AlertReq") => {
-                el.classList.add(className);
-                const remove = () => el.classList.remove(className);
-                el.addEventListener("input", remove);
-                el.addEventListener("change", remove);
+                if (el.tomselect) {
+                    el.tomselect.control.classList.add(className);
+                    el.tomselect.on("change", remove);
+                } else {
+                    el.classList.add(className);
+                    el.addEventListener("input", remove);
+                    el.addEventListener("change", remove);
+                }
+                
+                function remove() {
+                    if (el.tomselect) {
+                        el.tomselect.control.classList.remove(className);
+                        el.tomselect.off("change", remove);
+                    } else {
+                        el.classList.remove(className);
+                        el.removeEventListener("input", remove);
+                        el.removeEventListener("change", remove);
+                    }
+                }
             };
             
             for (const el of elements) {
@@ -2461,7 +2476,7 @@ class MyService {
                                     isValid = false;
                                 }
                             } else if (el.value.trim().length === 0) {
-                                addAlert(el.tomselect ? el.tomselect.control : el);
+                                addAlert(el);
                                 isValid = false;
                             }
                             break;

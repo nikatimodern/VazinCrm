@@ -113,8 +113,6 @@
                 const res = await axios(`/Cash/GetCashier/${id}`);
                 if (res.status === 200) {
                     cashierData = res.data;
-                    console.log(cashierData);
-                    console.log();
                     cashierModal.querySelector("#cashierUser").tomselect.setValue([...cashierData.cashierUsers.map(i => i.userId)]);
                     mySer.convertJsonToForm(cashierData, "cashierForm");
                 }
@@ -158,7 +156,6 @@
                 userTxt: cashierUserElm.options[cashierUserElm.selectedIndex].text
             };
             //model.cashierUsers = selectedUsers.map(i => ({ userId: i, cashierId: cashierData.id }));
-            console.log(model);
 
             try {
                 FLshowLoading();

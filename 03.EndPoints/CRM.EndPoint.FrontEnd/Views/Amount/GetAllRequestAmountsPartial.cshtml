@@ -9,7 +9,7 @@
     var userId = ViewBag.UserId;
 }
 
-<div class="col-12 mx-auto d-flex flex-column" style="gap:12px;padding-bottom: 12px;">
+<div class="col-12 mx-auto d-flex flex-column" style="gap:12px;">
     @foreach (var item in Model) {
         var reqAmount = item.RequestAmount;
         var isCreator = reqAmount.UserCreatorID == userId;
@@ -28,7 +28,7 @@
 
         <div class="layered-card layered-card-pill @(bgCssClass)" data-id="@reqAmount.Id">
             @if (status is RequestStatusEnum.در_انتظار_پرداخت or RequestStatusEnum.پرداخت_شده) {
-                <div class="layered-select-box col-auto p-2">
+                <div class="layered-select-box col-auto py-2 px-1 ps-3">
                     <input type="checkbox" class="card-checkbox" />
                 </div>
             }
@@ -52,10 +52,14 @@
             <div class="layered-card__layer col-12 col-xl-3 d-flex flex-column justify-content-center align-items-center px-3 px-xl-2 py-2">
                 <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 text-center">
                     <span style="font-size: 13px; color: #777">نوع:</span>
-                    <span class="fbold">
-                    @reqAmount.DocTypeTxt @(reqAmount.RequestAmountType == RequestAmountTypeEnum.پیش_پرداخت ? "(پیش پرداخت)" : "")
-                    </span>
+                    <span class="fbold">@reqAmount.RequestAmountTypeTxt (@reqAmount.DocTypeTxt)</span>
                 </div>
+                @if (!string.IsNullOrEmpty(reqAmount.CashierTxt)) {
+                    <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mt-2 text-center">
+                        <span style="font-size: 13px; color: #777">تنخواه دار:</span>
+                        <span class="fbold">@reqAmount.CashierTxt</span>
+                    </div>
+                }
                 @if (supplyFactorSerials.Any()) {
                     <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mt-2 text-center">
                         <span style="font-size: 13px; color: #777">فاکتور تامین:</span>
@@ -65,7 +69,7 @@
                 @if (!string.IsNullOrEmpty(reqAmount.SupplierTxt)) {
                     <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mt-2 text-center">
                         <span style="font-size: 13px; color: #777">تامین کننده:</span>
-                        <span class="fbold direction-ltr">@reqAmount.SupplierTxt</span>
+                        <span class="fbold">@reqAmount.SupplierTxt</span>
                     </div>
                 }
                 @if (orderHeadNumbers.Any()) {

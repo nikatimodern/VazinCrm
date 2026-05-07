@@ -4856,7 +4856,7 @@ let orderHeadsSelectedIds = [];
 let requestAmountData = {};
 let isFromOrderHead = false;
 async function showRequestAmountModal(ohId, ohNumber) {
-    await setupSelectOptions("#reqAmountSupplierId");
+    await setupSelectOptionsReqAmount();
     if (ohId) {
         isFromOrderHead = true;
         requestAmountData.requestAmountType = 1;
@@ -4872,38 +4872,38 @@ async function showRequestAmountModal(ohId, ohNumber) {
 
 
 let isSetupReqAmountModal = false;
-async function setupSelectOptions(targetId) {
+async function setupSelectOptionsReqAmount(targetId) {
     if (isSetupReqAmountModal) return;
-    const addOrderBtn = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper button");
-    const ohInput = reqAmountModal.querySelector("input#reqAmountOrderHead");
     const totalAmountSupFactorElm = reqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
     
-    const data = (await axios("/Supply/GetSupplyBaseData")).data;
+    const [resSuppliers, resCashiers] = await Promise.all([axios("/Supply/GetSupplyBaseData"), axios("/Cash/GetAllCashiers")]);
     
-    const select = new TomSelect(targetId, {
-        options: data.suppliers,
+    const selectSupplier = new TomSelect("#reqAmountSupplierId", {
+        options: resSuppliers.data.suppliers,
         placeholder: "انتخاب تامین کننده",
         maxItems: 1,
         selectOnTab: true,
         
         async onItemAdd(supplierId) {
-            toggleElementsDisabled(addOrderBtn, false);
-            ohInput.value = "";
-            if (!isFromOrderHead) {
-                orderHeadsSelectedIds = [];
-            }
-            select.disable();
+            selectSupplier.disable();
             const totalSupplyFactorAmount = await getTotalAmountSupplyFactor(supplierId);
             if (totalSupplyFactorAmount !== null) {
                 totalAmountSupFactorElm.innerHTML = `جمع مبالغ فاکتور: <b style="color: #333">${totalSupplyFactorAmount?.toLocaleString()}</b> ريال`;
             }
-            select.enable();
+            selectSupplier.enable();
         },
         
         onDelete() {
-            toggleElementsDisabled(addOrderBtn, true);
             totalAmountSupFactorElm.innerHTML = "";
         },
+    });
+    
+    new TomSelect("#reqAmountCashierId", {
+        options: resCashiers.data,
+        items: resCashiers.data.find(i => i.target)?.value,
+        placeholder: "انتخاب تنخواه دار",
+        maxItems: 1,
+        selectOnTab: true,
     });
     
     isSetupReqAmountModal = true;
@@ -4927,14 +4927,19 @@ async function getTotalAmountSupplyFactor(supplierId) {
 async function submitRequestAmountModal() {
     if (!await mySer.CheckValidForm("requestAmountForm")) return;
     const supplierSelect = reqAmountModal.querySelector("#reqAmountSupplierId");
+    const cashierSelect = reqAmountModal.querySelector("#reqAmountCashierId");
+    
+    const formData = mySer.convertFormToJSON("requestAmountForm");
     const model = {
         ...requestAmountData,
-        ...mySer.convertFormToJSON("requestAmountForm"),
+        ...formData,
+        cashierId: formData.cashierId || null,
+        supplierId: formData.supplierId || null,
         supplierTxt: supplierSelect.selectedOptions[0].innerText,
+        cashierTxt: cashierSelect.selectedOptions[0].innerText,
         requestAmountSupplyFactor: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id, requestAmountId: requestAmountData.id })),
         requestAmountOrderHeads: orderHeadsSelectedIds.map(id => ({ orderHeadId: id, requestAmountId: requestAmountData.id })),
     };
-    
     try {
         FLshowLoading();
         const apiUrl = model.id ? "/Amount/UpdateRequestAmount" : "/Amount/AddRequestAmount";
@@ -4973,8 +4978,8 @@ function cancelRequestAmountModal() {
     toggleElementsRequired(ohInput, false);
     const totalAmountSupFactorElm = reqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
     totalAmountSupFactorElm.innerHTML = "";
-  /*  const reqAmountType = reqAmountModal.querySelector("#requestAmountTypeId");
-    if (reqAmountType) toggleElementsDisabled(reqAmountType, false);*/
+    /*  const reqAmountType = reqAmountModal.querySelector("#requestAmountTypeId");
+      if (reqAmountType) toggleElementsDisabled(reqAmountType, false);*/
 }
 
 
@@ -5038,23 +5043,44 @@ const deleteRequestAmount = async (id) => {
     });
 };
 
-
 reqAmountModal.querySelector("select#requestAmountTypeId")?.addEventListener("change", async (e) => {
     const type = Number(e.target.value);
-    const ohInputWrapper = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
-    const ohInput = reqAmountModal.querySelector("input#reqAmountOrderHead");
     
-    if (type === 1) {
-        ohInputWrapper.classList.remove("d-none");
-        toggleElementsRequired(ohInput, true);
-    } else if (type === 2) {
-        ohInputWrapper.classList.add("d-none");
-        toggleElementsRequired(ohInput, false);
-        ohInput.value = "";
-        orderHeadsSelectedIds = [];
-    } else if (type === 3) {
+    const ohWrapper = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
+    const cashierWrapper = reqAmountModal.querySelector("#reqAmountCashierWrapper");
+    const supplierWrapper = reqAmountModal.querySelector("#reqAmountSupplierWrapper");
     
-    }
+    const totalAmountSupFactorElm = reqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
+    
+    const toggleField = (wrapper, show) => {
+        const input = wrapper.querySelector("input, select");
+        wrapper.classList.toggle("d-none", !show);
+        toggleElementsRequired(input, show);
+        
+        if (show) {
+            if (wrapper.id === "reqAmountCashierWrapper") {
+                const target = Object.values(input.tomselect.options).find(o => o.target)?.value;
+                if (target) input.tomselect.setValue(target);
+            }
+        } else {
+            if (input?.tomselect) {
+                input.tomselect.clear();
+            }
+            
+            if (wrapper.id === "reqAmountOrderHeadWrapper") {
+                orderHeadsSelectedIds = [];
+                input.value = "";
+            }
+            
+            if (wrapper.id === "reqAmountSupplierWrapper") {
+                totalAmountSupFactorElm.innerHTML = "";
+            }
+        }
+    };
+    
+    toggleField(ohWrapper, type === 1);
+    toggleField(supplierWrapper, type === 1 || type === 2);
+    toggleField(cashierWrapper, type === 3);
 });
 
 /*--------------------------------------------------------------------------------*/
