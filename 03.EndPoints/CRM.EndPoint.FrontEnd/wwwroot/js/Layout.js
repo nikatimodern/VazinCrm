@@ -4845,6 +4845,7 @@ const submitReqAmountAttach = async () => {
     } catch (err) {
         toastifyError("خطای سرور!");
         console.log(err);
+        await submitReqAmountAttach();
     } finally {
         FLshowLoading(false);
     }
