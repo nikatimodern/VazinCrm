@@ -593,13 +593,13 @@
                 <div class="d-flex flex-column w-100">
                     <ul class="nav nav-pills" id="ManagingDirectorTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active position-relative" onclick="GetInvoicesManagingDirector()" id="MDInvoiceTab" data-bs-target="#MDInvoiceTab-pane" type="button" role="tab">
+                            <button class="nav-link position-relative" onclick="GetInvoicesManagingDirector()" id="MDInvoiceTab" data-bs-target="#MDInvoiceTab-pane" type="button" role="tab">
                                 صورتحساب ها
                                 <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link position-relative" onclick="GetRequestManagingDirector()" id="MDRequestAmountTab" data-bs-target="#MDRequestAmountTab-pane" type="button" role="tab">
+                            <button class="nav-link active position-relative" onclick="GetRequestManagingDirector()" id="MDRequestAmountTab" data-bs-target="#MDRequestAmountTab-pane" type="button" role="tab">
                                 درخواست ها
                                 <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
                             </button>
@@ -607,7 +607,7 @@
                     </ul>
                     <div class="parent-all-managingDirector tab-content p-2 px-1 px-sm-2 col-12" id="tabContentManagingDirector">
 
-                        <div class="tab-pane fade show active border-0" id="MDInvoiceTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
+                        <div class="tab-pane fade border-0" id="MDInvoiceTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
                             <div class="d-flex flex-column align-items-center w-100 gap-3">
                                 <div class="w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center">
 
@@ -650,7 +650,7 @@
                             </div>
                         </div>
 
-                        <div class="tab-pane fade border-0" id="MDRequestAmountTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
+                        <div class="tab-pane fade show active border-0" id="MDRequestAmountTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
 
                             <div class="d-flex flex-column align-items-center w-100 gap-3">
                                 <div class="w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center">
@@ -1455,10 +1455,10 @@
 
                         case "TManagingDirectorId":
                             document.getElementById("CManagingDirectorId").style.display = "flex";
-                            if (subId === "MDRequestAmountTab") {
-                                await GetRequestManagingDirector();
-                            } else {
+                            if (subId === "MDInvoiceTab") {
                                 await GetInvoicesManagingDirector();
+                            } else {
+                                await GetRequestManagingDirector();
                             }
                             break;
                     }
@@ -1814,9 +1814,7 @@
 
             selectAll.checked =
                 visibleCards.length > 0 &&
-                Array.from(visibleCards).every(card =>
-                    requestSelectedIdsSet.has(card.dataset.id)
-                );
+                Array.from(visibleCards).every(card => requestSelectedIdsSet.has(card.dataset.id));
         }
 
 
