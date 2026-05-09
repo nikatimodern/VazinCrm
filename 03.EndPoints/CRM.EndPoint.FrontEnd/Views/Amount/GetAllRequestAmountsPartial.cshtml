@@ -155,9 +155,7 @@
                         case RequestStatusEnum.در_انتظار_پرداخت:
                             if (isFinancial) {
                                 <div class="flex-center flex-xl-column gap-1">
-                                    @if (item.TotalPaymentAmount < reqAmount.AcceptedAmount) {
-                                        <button class="buttonGreen2" onclick="showAttachReqAmount('@reqAmount.Id')">ثبت پرداختی</button>
-                                    }
+                                    <button class="buttonGreen2" onclick="showAttachReqAmount('@reqAmount.Id')">ثبت پرداختی</button>
                                     <button class="buttonCancel3" onclick="changeStatusReqAmount('@reqAmount.Id', 1)">برگشت</button>
                                 </div>
                             } else {
@@ -170,9 +168,11 @@
                                 @*<button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor)" onclick="showAttachReqAmount('@reqAmount.Id')">
                                     <i class="fa fa-paperclip"></i>
                                 </button>*@
-                                <div class="flex-center flex-xl-column gap-1">
-                                    <button class="buttonGreen2" onclick="showAttachReqAmount('@reqAmount.Id')">ثبت پرداختی</button>
-                                </div>
+                                if (item.TotalPaymentAmount < reqAmount.AcceptedAmount) {
+                                    <div class="flex-center flex-xl-column gap-1">
+                                        <button class="buttonGreen2" onclick="showAttachReqAmount('@reqAmount.Id')">ثبت پرداختی</button>
+                                    </div>
+                                }
                             } else {
                                 <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor)" onclick="showAttachments('@reqAmount.Id', 9)">
                                     <i class="fa fa-paperclip"></i>
