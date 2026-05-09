@@ -1724,7 +1724,8 @@
                 const data = res.data;
                 document.getElementById("FinancialRequestContentId").innerHTML = data.html;
                 document.getElementById("FinancialRequestCount").textContent = data.count;
-                toggleRequestSelectionBar(false);
+                restoreSelectedRequestAmounts();
+                //toggleRequestSelectionBar(false);
                 FLshowLoading(false);
             } catch (err) {
                 console.log(err);
@@ -1799,11 +1800,18 @@
                 requestSelectedIdsSet.delete(id);
             }
 
-            const count = requestSelectedIdsSet.size.toString();
+            updateSelectionUI();
+        }
 
-            selectedCount.textContent = count;
-            selectedCountBtn.textContent = count;
-            toggleElementsDisabled(paySelectedBtn, requestSelectedIdsSet.size === 0);
+        function updateSelectionUI() {
+            const count = requestSelectedIdsSet.size;
+
+            selectedCount.textContent = count.toString();
+            selectedCountBtn.textContent = count.toString();
+
+            toggleElementsDisabled(paySelectedBtn, count === 0);
+
+            selectAll.checked = count > 0 && document.querySelectorAll(".layered-card").length === count;
         }
 
 
@@ -1817,6 +1825,19 @@
                 toggleCard(card, isChecked);
             });
         });
+
+        function restoreSelectedRequestAmounts() {
+            if (!requestSelectionMode) return;
+            document.querySelectorAll(".layered-card").forEach(card => {
+                const isSelected = requestSelectedIdsSet.has(card.dataset.id);
+                const checkbox = card.querySelector(".card-checkbox");
+
+                card.classList.toggle("selected", isSelected);
+                if (checkbox) checkbox.checked = isSelected;
+
+            });
+            updateSelectionUI();
+        }
 
 
         ////////////////////////////////////////////////////////
