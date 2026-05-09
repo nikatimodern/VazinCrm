@@ -9,7 +9,7 @@
     var userId = ViewBag.UserId;
 }
 
-<div class="col-12 mx-auto d-flex flex-column" style="gap:12px;">
+<div class="col-12 mx-auto d-flex flex-column" style="gap:12px">
     @foreach (var item in Model) {
         var reqAmount = item.RequestAmount;
         var isCreator = reqAmount.UserCreatorID == userId;
@@ -172,6 +172,8 @@
                                     <div class="flex-center flex-xl-column gap-1">
                                         <button class="buttonGreen2" onclick="showAttachReqAmount('@reqAmount.Id')">ثبت پرداختی</button>
                                     </div>
+                                } else {
+                                    <span class="badgeGreen" style="box-shadow: none">تکمیل شده</span>
                                 }
                             } else {
                                 <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor)" onclick="showAttachments('@reqAmount.Id', 9)">
@@ -214,8 +216,8 @@
                                 <span style="font-size: 16px;">@($"{reqAmount.AcceptedAmount:n0}")</span>
                                 <span style="font-size: 11px;">ريال</span>
                                 <span style="font-size: 16px; color:darkgray">
-                                @(reqAmount.AcceptedAmountPercent.HasValue ? $"{reqAmount.AcceptedAmountPercent.Value}%" : "")
-                            </span>
+                                    @(reqAmount.AcceptedAmountPercent.HasValue ? $"{reqAmount.AcceptedAmountPercent.Value}%" : "")
+                                </span>
                             </div>
                         }
                     </div>
@@ -235,7 +237,7 @@
                     }
                 </div>
 
-                <div class="layered-card__layer col-12 col-xl-auto flex-center flex-row flex-xl-column p-2 px-xl-3 gap-4 gap-xl-3">
+                <div class="layered-card__layer col-12 col-xl-auto col-xxl-1 flex-center flex-row flex-xl-column p-2 px-xl-3 gap-4 gap-xl-3" style="min-width: 140px;">
                     @switch (status) {
                         case RequestStatusEnum.ثبت_اولیه:
                             <span class="fbold" style="color:#777">@reqAmount.RequestStatusTxt</span>
