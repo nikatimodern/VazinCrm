@@ -114,9 +114,16 @@
                     @if (item.TotalPaymentAmount > 0) {
                         <div class="w-100 d-flex flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
                             <span style="font-size: 13px; color: #777">مبلغ پرداخت شده:</span>
-                            <div class="fbold flex-center align-items-baseline column-gap-1 badgeGreen cursor-pointer" onclick="ShowModalListPayment('@reqAmount.Id')">
-                                <span style="font-size: 14px;">@($"{item.TotalPaymentAmount:n0}")</span>
-                                <span style="font-size: 10px;">ريال</span>
+                            <div>
+                                <div class="fbold flex-center badgeGreen cursor-pointer" onclick="ShowModalListPayment('@reqAmount.Id')">
+                                    <span class="d-flex align-items-baseline column-gap-1">
+                                        <span style="font-size: 14px;">@($"{item.TotalPaymentAmount:n0}")</span>
+                                        <span style="font-size: 10px;">ريال</span>
+                                    </span>
+                                    <span class="ps-2 ms-1" style="border-right: 1px solid whitesmoke">
+                                        <i class="fa fa-pencil" style="font-size: 12px;color: white"></i>
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     }

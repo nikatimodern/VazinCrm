@@ -4661,29 +4661,30 @@ const initPaymentTable = () => {
                     return `
                         <span class="d-inline-flex flex-column fbold">
                             <span dir="ltr">${data ? data.toLocaleString() : "-"}</span>
-                           ${row.paymentMode === 1 ? `<span style="font-size: 12px;color: #008077">(پرداخت ${row.paymentModeTxt})</span>` : ""}
+                           ${row.payment.paymentMode === 1
+                        ? `<span style="font-size: 12px;color: #008077">پرداخت ${row.payment.paymentModeTxt} (<span>${row.payment.amount.toLocaleString()}</span>)</span>`: ""}
                         </span>
                     `;
                 },
             },
         ],
         columns: [
-            { data: "paymentNumber", name: "PaymentNumber", defaultContent: "-" },
-            { data: "createDateTxt", name: "CreateDateTxt", defaultContent: "-" },
-            { data: "amount", name: "Amount", defaultContent: "-" },
-            { data: "fromAccountTxt", name: "FromAccountTxt", defaultContent: "-" },
-            { data: "toAccountTxt", name: "ToAccountTxt", defaultContent: "-" },
-            { data: "paymentDateTxt", name: "PaymentDateTxt", defaultContent: "-" },
-            { data: "userCreator", name: "UserCreator", defaultContent: "-" },
+            { data: "payment.paymentNumber", name: "PaymentNumber", defaultContent: "-" },
+            { data: "payment.createDateTxt", name: "CreateDateTxt", defaultContent: "-" },
+            { data: "requestAmountPaymentAmount", name: "RequestAmountPaymentAmount", defaultContent: "-" },
+            { data: "payment.fromAccountTxt", name: "FromAccountTxt", defaultContent: "-" },
+            { data: "payment.toAccountTxt", name: "ToAccountTxt", defaultContent: "-" },
+            { data: "payment.paymentDateTxt", name: "PaymentDateTxt", defaultContent: "-" },
+            { data: "payment.userCreator", name: "UserCreator", defaultContent: "-" },
             {
                 data: null,
                 render: function (data, type, row) {
                     return `
                         <div class="d-inline-flex align-items-center justify-content-center gap-1">
-                            <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.id}', 9)"><i class="fa fa-paperclip"></i></button>
+                            <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.payment.id}', 9)"><i class="fa fa-paperclip"></i></button>
                           ${isFinancialPaymentTable
-                        ? ` <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditPaymentModal('${row.id}')"><i class="fa fa-pencil"></i></button>
-                            <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deletePayment('${row.id}')"><i class="fa fa-trash"></i></button>`
+                        ? ` <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditPaymentModal('${row.payment.id}')"><i class="fa fa-pencil"></i></button>
+                            <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deletePayment('${row.payment.id}')"><i class="fa fa-trash"></i></button>`
                         : ""}
                             
                         </div>

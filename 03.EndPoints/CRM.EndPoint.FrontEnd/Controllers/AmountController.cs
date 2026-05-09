@@ -408,15 +408,27 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
                 var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
 
-                var paymentsIds = await db.RequestAmountPayments.AsNoTracking()
+                /*var RequestAmountPayments = await db.RequestAmountPayments.AsNoTracking()
                     .Where(f => f.RequestAmountId == id)
-                    .Select(f => f.PaymentId)
-                    .ToListAsync();
+                    .ToListAsync();*/
+
+                /*var query = db.Payments
+                    .Where(f => RequestAmountPayments.Select(p => p.PaymentId).Contains(f.Id))
+                    .OrderByDescending(f => f.CreateDate)
+                    .AsNoTracking();*/
 
                 var query = db.Payments
-                    .Where(f => paymentsIds.Contains(f.Id))
-                    .OrderByDescending(f => f.CreateDate)
+                    .Where(p => p.RequestAmountPayments.Any(x => x.RequestAmountId == id))
+                    .Select(p => new {
+                        payment = p,
+                        RequestAmountPaymentAmount = p.RequestAmountPayments
+                            .Where(x => x.RequestAmountId == id)
+                            .Select(x => x.Amount)
+                            .FirstOrDefault(),
+                    })
+                    .OrderByDescending(f => f.payment.CreateDate)
                     .AsNoTracking();
+
 
                 var recordsTotal = query.Count();
 
@@ -426,17 +438,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     var isAscending = sortColumnDirection == "asc";
                     query = sortColumn switch {
                         "PaymentNumber" => isAscending
-                            ? query.OrderBy(f => f.PaymentNumber)
-                            : query.OrderByDescending(f => f.PaymentNumber),
-                        "Amount" => isAscending
-                            ? query.OrderBy(f => f.Amount)
-                            : query.OrderByDescending(f => f.Amount),
+                            ? query.OrderBy(f => f.payment.PaymentNumber)
+                            : query.OrderByDescending(f => f.payment.PaymentNumber),
+                        "RequestAmountPaymentAmount" => isAscending
+                            ? query.OrderBy(f => f.RequestAmountPaymentAmount)
+                            : query.OrderByDescending(f => f.RequestAmountPaymentAmount),
                         "CreateDateTxt" => isAscending
-                            ? query.OrderBy(f => f.CreateDate)
-                            : query.OrderByDescending(f => f.CreateDate),
+                            ? query.OrderBy(f => f.payment.CreateDate)
+                            : query.OrderByDescending(f => f.payment.CreateDate),
                         "PaymentDateTxt" => isAscending
-                            ? query.OrderBy(f => f.PaymentDate)
-                            : query.OrderByDescending(f => f.PaymentDate),
+                            ? query.OrderBy(f => f.payment.PaymentDate)
+                            : query.OrderByDescending(f => f.payment.PaymentDate),
                         _ => query
                     };
                 }
