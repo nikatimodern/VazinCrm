@@ -449,42 +449,38 @@
                                     </div>
                                 </div>
 
-
-                                <div class="d-flex justify-content-start mt-2 mb-1">
-                                    <button id="requestSelectionModeBtn" class="buttonGreen2 d-flex align-items-center gap-2" style="padding: 4px 8px !important">
-                                        <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM1.49 15.326a.78.78 0 0 1-.358-.442 3 3 0 0 1 4.308-3.516 6.484 6.484 0 0 0-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 0 1-2.07-.655ZM16.44 15.98a4.97 4.97 0 0 0 2.07-.654.78.78 0 0 0 .357-.442 3 3 0 0 0-4.308-3.517 6.484 6.484 0 0 1 1.907 3.96 2.32 2.32 0 0 1-.026.654ZM18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5.304 16.19a.844.844 0 0 1-.277-.71 5 5 0 0 1 9.947 0 .843.843 0 0 1-.277.71A6.975 6.975 0 0 1 10 18a6.974 6.974 0 0 1-4.696-1.81Z" /></svg>
-                                        <span style="line-height: 1">پرداخت گروهی</span>
-                                    </button>
-                                </div>
+                                <button id="requestSelectionModeBtn" class="buttonGreen2 d-flex align-items-center gap-2 mt-2 mb-1" style="padding: 4px 8px !important">
+                                    <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM1.49 15.326a.78.78 0 0 1-.358-.442 3 3 0 0 1 4.308-3.516 6.484 6.484 0 0 0-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 0 1-2.07-.655ZM16.44 15.98a4.97 4.97 0 0 0 2.07-.654.78.78 0 0 0 .357-.442 3 3 0 0 0-4.308-3.517 6.484 6.484 0 0 1 1.907 3.96 2.32 2.32 0 0 1-.026.654ZM18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5.304 16.19a.844.844 0 0 1-.277-.71 5 5 0 0 1 9.947 0 .843.843 0 0 1-.277.71A6.975 6.975 0 0 1 10 18a6.974 6.974 0 0 1-4.696-1.81Z" /></svg>
+                                    <span style="line-height: 1">پرداخت گروهی</span>
+                                </button>
 
                                 <div id="requestSelectionBar" class="selection-bar d-none mt-2">
                                     <div class="d-none d-lg-flex align-items-center gap-3">
                                         <label class="d-flex align-items-center gap-3">
-                                            <input type="checkbox" class="selectAll" />
+                                            <input type="checkbox" class="select-all" />
                                             <span>انتخاب همه</span>
                                         </label>
                                     </div>
 
                                     <div class="col-12 col-lg-auto flex-center flex-wrap gap-3" style="color: #444;">
-                                        <span class="selectedCount fbold" style="color: var(--color8);">0</span>
+                                        <span class="selected-count fbold" style="color: var(--color8);">0</span>
                                         <span>مورد انتخاب شده</span>
 
-                                        <button class="clearSelection link-green" style="font-size: 13px">
+                                        <button class="clear-selection link-green" style="font-size: 13px">
                                             حذف انتخاب
                                         </button>
                                     </div>
 
                                     <div class="col-12 col-lg-auto d-flex align-items-center justify-content-between justify-content-lg-end gap-3">
-                                        <button class="cancelSelection buttonCancel-white">
+                                        <button class="cancel-selection buttonCancel-white">
                                             <svg style="width: 16px" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
                                             انصراف
                                         </button>
 
-                                        <button class="paySelected buttonGreen0" disabled>
-                                            پرداخت همه (<span class="selectedCountBtn">0</span>)
+                                        <button class="pay-selected buttonGreen0" disabled>
+                                            پرداخت همه (<span class="selected-count">0</span>)
                                         </button>
                                     </div>
-
                                 </div>
 
 
@@ -980,30 +976,6 @@
     </div>
 </div>
 
-
-<!-- requestAmountPayment Modal -->
-<div class="modal fade" id="requestAmountPaymentModal" tabindex="-1" data-bs-focus="false">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content col-12" style="padding:8px!important;">
-            <div class="flex-center" style="height:32px; background: #02514C; color:white;border-radius:5px">
-                <span class="modal-title fbold" style="font-size: 16px;">جزئیات پرداخت گروهی</span>
-            </div>
-
-            <div class="modal-body pb-0 px-1 px-md-2" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
-                <div class="col-12 d-flex flex-column" style="font-size:clamp(12px,2vw,14px)">
-
-                    <form id="setAmountPaymentForm" class="py-2 d-flex flex-column w-100 overflow-auto" style="max-height: calc(100dvh - 230px)">
-                    </form>
-                </div>
-                <div class="mx-auto my-3" style="width:98%; height:2px; background-color:#1a2d41;"></div>
-                <div class="d-flex justify-content-center gap-1">
-                    <button class="btnGroupBase btnRight btnRightRed" type="button" onclick="cancelRequestAmountPaymentModal()">انصراف</button>
-                    <button class="btnGroupBase btnLeft btnLeftGreen fMedium" style="line-height: 1.1" type="button" onclick="goToStepAttachReqAmount()">تایید</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 @section scripts {
 
@@ -1723,7 +1695,7 @@
                 const data = res.data;
                 document.getElementById("FinancialRequestContentId").innerHTML = data.html;
                 document.getElementById("FinancialRequestCount").textContent = data.count;
-                restoreSelectedRequestAmounts();
+                requestSelection.restoreSelection();// restoreSelectedRequestAmounts();
                 //toggleRequestSelectionBar(false);
                 FLshowLoading(false);
             } catch (err) {
@@ -1733,246 +1705,21 @@
 
 
         ////////////////////////////////////////////////////////
-        let requestSelectionMode = false;
-        let requestSelectedIdsSet = new Set();
+        const requestSelection = new SelectionManager({
+            container: "#FinancialRequestContentId",
+            selectionBar: "#requestSelectionBar",
+            toggleBtn: "#requestSelectionModeBtn",
 
-        const requestContainer = document.getElementById("FinancialRequestContentId");
-        const requestSelectionModeBtn = document.getElementById("requestSelectionModeBtn");
-        const requestSelectionBar = document.getElementById("requestSelectionBar");
-        const cancelBtn = requestSelectionBar.querySelector(".cancelSelection");
-        const selectAll = requestSelectionBar.querySelector(".selectAll");
-        const clearAllBtn = requestSelectionBar.querySelector(".clearSelection");
-        const selectedCount = requestSelectionBar.querySelector(".selectedCount");
-        const selectedCountBtn = requestSelectionBar.querySelector(".selectedCountBtn");
-        const paySelectedBtn = requestSelectionBar.querySelector(".paySelected");
-
-
-        requestSelectionModeBtn.addEventListener("click", () => toggleRequestSelectionBar(true));
-        cancelBtn.addEventListener("click", () => toggleRequestSelectionBar(false));
-        clearAllBtn.addEventListener("click", clearAllSelection);
-
-        function clearAllSelection() {
-            requestSelectedIdsSet.clear();
-            document.querySelectorAll(".layered-card").forEach(card => {
-                card.classList.remove("selected");
-                const checkbox = card.querySelector(".card-checkbox");
-                if (checkbox) checkbox.checked = false;
-            });
-            selectAll.checked = false;
-            selectedCount.textContent = "0";
-            selectedCountBtn.textContent = "0";
-            toggleElementsDisabled(paySelectedBtn, true);
-        }
-
-        function toggleRequestSelectionBar(enable) {
-            requestSelectionMode = enable;
-            requestContainer.classList.toggle("selection-mode", enable);
-            requestSelectionBar.classList.toggle("d-none", !enable);
-            requestSelectionModeBtn.parentElement.classList.toggle("d-none", enable);
-
-            if (!enable) clearAllSelection();
-        }
-
-
-        requestContainer.addEventListener("click", (e) => {
-            const card = e.target.closest(".layered-card");
-            if (!card || !requestSelectionMode) return;
-
-            const checkbox = card.querySelector(".card-checkbox");
-            if (!checkbox) return;
-
-            if (!e.target.classList.contains("card-checkbox")) {
-                checkbox.checked = !checkbox.checked;
-            }
-            toggleCard(card, checkbox.checked);
-        });
-
-
-        function toggleCard(card, isChecked) {
-            const id = card.dataset.id;
-
-            if (isChecked) {
-                card.classList.add("selected");
-                requestSelectedIdsSet.add(id);
-            } else {
-                card.classList.remove("selected");
-                requestSelectedIdsSet.delete(id);
-            }
-
-            updateSelectionUI();
-        }
-
-        function updateSelectionUI() {
-            const count = requestSelectedIdsSet.size;
-
-            selectedCount.textContent = count.toString();
-            selectedCountBtn.textContent = count.toString();
-
-            toggleElementsDisabled(paySelectedBtn, count === 0);
-            const visibleCards = document.querySelectorAll(".layered-card");
-
-            selectAll.checked =
-                visibleCards.length > 0 &&
-                Array.from(visibleCards).every(card => requestSelectedIdsSet.has(card.dataset.id));
-        }
-
-
-        // select all
-        selectAll.addEventListener("change", () => {
-            const isChecked = selectAll.checked;
-
-            document.querySelectorAll(".layered-card").forEach(card => {
-                const checkbox = card.querySelector(".card-checkbox");
-                checkbox.checked = isChecked;
-                toggleCard(card, isChecked);
-            });
-        });
-
-        function restoreSelectedRequestAmounts() {
-            if (!requestSelectionMode) return;
-            document.querySelectorAll(".layered-card").forEach(card => {
-                const isSelected = requestSelectedIdsSet.has(card.dataset.id);
-                const checkbox = card.querySelector(".card-checkbox");
-
-                card.classList.toggle("selected", isSelected);
-                if (checkbox) checkbox.checked = isSelected;
-
-            });
-            updateSelectionUI();
-        }
-
-
-        ////////////////////////////////////////////////////////
-        let requestAmountListData;
-        let reqAmountPaymentModal = document.getElementById("requestAmountPaymentModal");
-        // دکمه پرداخت
-        paySelectedBtn.addEventListener("click", async () => {
-            const idsArray = Array.from(requestSelectedIdsSet);
-
-            if (idsArray.length === 0) {
-                toastifyError("لطفاً ابتدا درخواست‌های مورد نظر را انتخاب کنید.");
-                return;
-            }
-            await showSetAmountPaymentItemModal(idsArray);
-        });
-
-        async function showSetAmountPaymentItemModal(filterIds) {
-            FLshowLoading();
-            try {
-                const res = await axios.post("/Amount/GetRequestsAmountByFilteredIds", { filterIds });
-                if (res.status === 200) {
-                    requestAmountListData = res.data;
-
-                    createSetAmountPaymentItem();
-                    ModalToggle(reqAmountPaymentModal);
+            itemSelector: ".layered-card",
+            checkboxSelector: ".card-checkbox",
+            onPay: async (selectedIds) => {
+                if (selectedIds.length === 0) {
+                    toastifyError("لطفاً ابتدا درخواست‌های مورد نظر را انتخاب کنید.");
+                    return;
                 }
-            } catch (err) {
-                console.error(err);
-                toastifyError("خطا در بارگذاری اطلاعات");
-            } finally {
-                FLshowLoading(false);
-            }
-        }
-
-        async function showEditAmountPaymentItemModal() {
-            requestSelectionMode = true;
-            FLshowLoading();
-            try {
-                const res = await axios(`/Amount/GetRequestAmountsWithPaidAmountByPayment?paymentId=${paymentData.id}`);
-                if (res.status === 200) {
-                    requestAmountListData = res.data;
-
-                    createSetAmountPaymentItem();
-                    ModalToggle(reqAmountPaymentModal);
-                }
-            } catch (err) {
-                console.error(err);
-                toastifyError("خطا در بارگذاری اطلاعات");
-            } finally {
-                FLshowLoading(false);
-            }
-        }
-
-
-        function createSetAmountPaymentItem() {
-            const container = reqAmountPaymentModal.querySelector("#setAmountPaymentForm");
-            container.innerHTML = "";
-
-            requestAmountListData.forEach((item, index) => {
-                const fieldset = document.createElement("fieldset");
-                fieldset.id = `setAmountPaymentItem-${index}`;
-                fieldset.dataset.id = item.id;
-                fieldset.innerHTML = `
-                    <div class="d-flex flex-wrap align-items-center justify-content-around setAmountPaymentItem bgGreen" style="border: 1px solid;border-radius: 6px;overflow: hidden">
-                        <div class="d-flex col-12 justify-content-around p-1 px-2" style="background-color:#04857c;color: #fff">
-                            <div class="d-flex align-items-center justify-content-center gap-1 pe-2">
-                                <span class="flex-shrink-0" style="color: #e1e1e1">شماره درخواست: </span>
-                                <span class="fMedium text-center">${item.requestNumber ?? ""}</span>
-                            </div>
-                            <div class="d-flex align-items-center justify-content-center gap-1">
-                                <span class="flex-shrink-0" style="color: #e1e1e1">مبلغ درخواست: </span>
-                                <span class="fMedium text-center" style="white-space: nowrap">
-                                    <span>${item.amount.toLocaleString()}</span>
-                                    <span style="font-size: 11px">ریال</span>
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="d-flex flex-wrap col-12 justify-content-around p-2 row-gap-2">
-                            <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto pe-xl-2">
-                                <span class="flex-shrink-0" style="color: #535353">مبلغ تایید شده: </span>
-
-                                <div class="fbold flex-center align-items-baseline column-gap-1 badgeGreen-border">
-                                    <span style="font-size: 16px;">${item.acceptedAmount.toLocaleString()}</span>
-                                    <span style="font-size: 11px;">ريال</span>
-                                    <span style="font-size: 16px; color:#888">${item.acceptedAmountPercent ? item.acceptedAmountPercent + "%" : ""}</span>
-                                </div>
-                            </div>
-                            <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto">
-                                <span class="flex-shrink-0" style="color: #535353">مبلغ پرداختی: </span>
-                                <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="amount"  value="${item.paidAmount ? item.paidAmount.toLocaleString() : ""}" required>
-                            </div>
-                        </div>
-                    </div>
-                    ${index !== requestAmountListData.length - 1 ? `<div style="width: 95%;height:1px; margin: 10px auto;background-color:darkviolet"></div>` : ""}
-                    `;
-                container.appendChild(fieldset);
-            });
-        }
-
-
-        let reqAmountAttachModal = document.getElementById("reqAmountAttachModal");
-        let requestAmountPaymentMap = [];
-        async function goToStepAttachReqAmount() {
-            if (!await mySer.CheckValidForm("setAmountPaymentForm")) return;
-
-            const allItemsArray = Array.from(reqAmountPaymentModal.querySelectorAll("fieldset"));
-
-            requestAmountPaymentMap = allItemsArray.map(item => {
-                const amountValue = item.querySelector("input[name='amount']").value;
-                return {
-                    paymentId: paymentData.id,
-                    requestAmountId: item.dataset.id,
-                    amount: Number(SeparatedNumberRemove(amountValue)),
-                };
-            });
-
-            const allInputsAmount = Array.from(reqAmountPaymentModal.querySelectorAll("input[name='amount']"));
-            const totalAmount = allInputsAmount.reduce((sum, i) => sum + Number(SeparatedNumberRemove(i.value) || 0), 0);
-            const targetInputAmount = reqAmountAttachModal.querySelector("input[name='amount']");
-
-            targetInputAmount.value = totalAmount.toLocaleString();
-            toggleElementsDisabled(targetInputAmount, true);
-            ModalToggle(reqAmountPaymentModal, "hide");
-            ModalToggle(reqAmountAttachModal, "show");
-        }
-
-        function cancelRequestAmountPaymentModal() {
-            requestSelectionMode = false;
-            mySer.emptyForm("setAmountPaymentForm");
-            ModalToggle(reqAmountPaymentModal, "hide");
-        }
-
+                await showSetAmountPaymentItemModal(selectedIds);
+            },
+        });
 
         ////////////////////////////////////////////////////////
 

@@ -27,6 +27,217 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
+class SelectionManager {
+    /**
+     * @param {Object} options
+     * @param {string} options.wrapper
+     * ریشه component
+     *
+     * @param {string} options.itemSelector
+     * selector هر آیتم selectable
+     *
+     * @param {string} options.checkboxSelector
+     * selector checkbox داخل آیتم
+     *
+     * @param {string} [options.selectedClass="selected"]
+     * کلاس آیتم انتخاب‌شده
+     *
+     * @param {string} [options.selectionModeClass="selection-mode"]
+     * کلاس فعال شدن selection mode
+     *
+     * @param {(ids: string[], instance: SelectionManager) => void|Promise<void>} [options.onPay]
+     * callback دکمه عملیات
+     */
+    constructor(options) {
+        
+        this.options = {
+            container: null,
+            selectionBar: ".selection-bar",
+            toggleBtn: ".selection-toggle-btn",
+            
+            itemSelector: ".selection-item",
+            checkboxSelector: ".selection-checkbox",
+            
+            selectedClass: "selected",
+            selectionModeClass: "selection-mode",
+            
+            onPay: null,
+            
+            ...options,
+        };
+        
+        this.container = this.options.container instanceof HTMLElement ? this.options.container : document.querySelector(this.options.container);
+        this.selectionBar = this.options.selectionBar instanceof HTMLElement ? this.options.selectionBar : document.querySelector(this.options.selectionBar);
+        this.toggleBtn = this.options.toggleBtn instanceof HTMLElement ? this.options.toggleBtn : document.querySelector(this.options.toggleBtn);
+        
+        if (!this.container || !this.selectionBar || !this.toggleBtn) {
+            throw new Error("");
+        }
+        
+        //this.container = this.wrapper.querySelector(".selection-container");
+        //this.selectionBar = this.wrapper.querySelector(".selection-bar");
+        this.cancelBtn = this.selectionBar.querySelector(".cancel-selection");
+        this.clearBtn = this.selectionBar.querySelector(".clear-selection");
+        this.selectAll = this.selectionBar.querySelector(".select-all");
+        this.selectedCounts = this.selectionBar.querySelectorAll(".selected-count");
+        this.payBtn = this.selectionBar.querySelector(".pay-selected");
+        this.selectedIds = new Set();
+        this.selectionMode = false;
+        
+        this.init();
+    }
+    
+    
+    init() {
+        this.toggleBtn?.addEventListener("click", () => this.showSelectionMode());
+        this.cancelBtn?.addEventListener("click", () => this.hideSelectionMode());
+        this.clearBtn?.addEventListener("click", () => this.clearSelection());
+        this.selectAll?.addEventListener("change", () => this.toggleSelectAll());
+        this.payBtn?.addEventListener("click", async () => {
+            if (typeof this.options.onPay === "function") {
+                await this.options.onPay(Array.from(this.selectedIds), this);
+            }
+        });
+        
+        this.container?.addEventListener("click", (e) => this.handleItemClick(e));
+    }
+    
+    
+    getItems() {
+        return this.container.querySelectorAll(this.options.itemSelector);
+    }
+    
+    
+    #toggleSelectionMode(enable) {
+        this.selectionMode = enable;
+        this.container.classList.toggle(this.options.selectionModeClass, enable);
+        this.selectionBar?.classList.toggle("d-none", !enable);
+        this.toggleBtn?.classList.toggle("d-none", enable);
+    }
+    
+    showSelectionMode() {
+        this.#toggleSelectionMode(true);
+    }
+    
+    hideSelectionMode() {
+        this.#toggleSelectionMode(false);
+        this.clearSelection();
+    }
+    
+    
+    handleItemClick(e) {
+        if (!this.selectionMode) return;
+        
+        const item = e.target.closest(this.options.itemSelector);
+        if (!item) return;
+        
+        const checkbox = item.querySelector(this.options.checkboxSelector);
+        if (!checkbox) return;
+        
+        if (!e.target.matches(this.options.checkboxSelector)) {
+            checkbox.checked = !checkbox.checked;
+        }
+        
+        this.toggleItem(item, checkbox.checked);
+    }
+    
+    
+    toggleItem(item, isChecked) {
+        const id = item.dataset.id;
+        
+        item.classList.toggle(this.options.selectedClass, isChecked);
+        
+        if (isChecked) {
+            this.selectedIds.add(id);
+        } else {
+            this.selectedIds.delete(id);
+        }
+        
+        this.updateUI();
+    }
+    
+    
+    updateUI() {
+        const count = this.selectedIds.size;
+        
+        if (this.selectedCounts) {
+            this.selectedCounts.forEach(i => i.textContent = count);
+        }
+        
+        if (this.payBtn) {
+            this.payBtn.disabled = count === 0;
+        }
+        
+        if (this.selectAll) {
+            const visibleItems = this.getItems();
+            
+            this.selectAll.checked =
+                visibleItems.length > 0 &&
+                Array.from(visibleItems).every(item => this.selectedIds.has(item.dataset.id));
+        }
+    }
+    
+    
+    toggleSelectAll() {
+        const isChecked = this.selectAll.checked;
+        
+        this.getItems().forEach(item => {
+            const checkbox = item.querySelector(this.options.checkboxSelector);
+            if (!checkbox) return;
+            
+            checkbox.checked = isChecked;
+            this.toggleItem(item, isChecked);
+        });
+    }
+    
+    
+    clearSelection() {
+        this.selectedIds.clear();
+        
+        this.getItems().forEach(item => {
+            item.classList.remove(this.options.selectedClass);
+            const checkbox = item.querySelector(this.options.checkboxSelector);
+            if (checkbox) {
+                checkbox.checked = false;
+            }
+        });
+        
+        this.updateUI();
+    }
+    
+    
+    restoreSelection() {
+        if (!this.selectionMode) return;
+        
+        this.getItems().forEach(item => {
+            const isSelected = this.selectedIds.has(item.dataset.id);
+            
+            item.classList.toggle(this.options.selectedClass, isSelected);
+            
+            const checkbox = item.querySelector(this.options.checkboxSelector);
+            if (checkbox) {
+                checkbox.checked = isSelected;
+            }
+        });
+        
+        this.updateUI();
+    }
+    
+    
+    getSelectedIds() {
+        return Array.from(this.selectedIds);
+    }
+    
+    
+    setSelectedIds(ids = []) {
+        
+        this.selectedIds = new Set(ids);
+        
+        this.restoreSelection();
+    }
+}
+
+
 class Dropdown {
     /**
      * @param {{button: Element, content: Element, effect: string, transitionDuration: number, placement: string, zIndex: number}} options
@@ -2331,7 +2542,7 @@ class MyService {
             }
         }
         
-        const checkboxes = formEl.querySelectorAll('input[type="checkbox"]');
+        const checkboxes = formEl.querySelectorAll("input[type=\"checkbox\"]");
         checkboxes.forEach(cb => {
             if (blackListArray.includes(cb.name)) return;
             jsonData[cb.name] = cb.checked;

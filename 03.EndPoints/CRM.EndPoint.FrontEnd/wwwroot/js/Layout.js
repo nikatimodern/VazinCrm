@@ -4660,7 +4660,7 @@ const initPaymentTable = () => {
                         <span class="d-inline-flex flex-column fbold">
                             <span dir="ltr">${data ? data.toLocaleString() : "-"}</span>
                            ${row.payment.paymentMode === 1
-                        ? `<span style="font-size: 12px;color: #008077">پرداخت ${row.payment.paymentModeTxt} (<span>${row.payment.amount.toLocaleString()}</span>)</span>`: ""}
+                        ? `<span style="font-size: 12px;color: #008077">پرداخت ${row.payment.paymentModeTxt} (<span>${row.payment.amount.toLocaleString()}</span>)</span>` : ""}
                         </span>
                     `;
                 },
@@ -4754,7 +4754,7 @@ async function showEditPaymentModal(id) {
             if (paymentData.paymentMode === 1) {
                 const targetInputAmount = document.querySelector("#reqAmountAttachModal input[name='amount']");
                 toggleElementsDisabled(targetInputAmount, true);
-                const amountEditIcon =  document.querySelector("#reqAmountAttachModal #paymentAmountGroupEditIcon");
+                const amountEditIcon = document.querySelector("#reqAmountAttachModal #paymentAmountGroupEditIcon");
                 amountEditIcon.classList.remove("d-none");
             }
             
@@ -4770,6 +4770,131 @@ async function showEditPaymentModal(id) {
     } finally {
         FLshowLoading(false);
     }
+}
+
+
+
+////////////////////////////////////////////////////////
+let requestAmountListData;
+let reqAmountPaymentModal = document.getElementById("requestAmountPaymentModal");
+
+let isGroupPayment = false;
+async function showSetAmountPaymentItemModal(filterIds) {
+    isGroupPayment = true;
+    FLshowLoading();
+    try {
+        const res = await axios.post("/Amount/GetRequestsAmountByFilteredIds", { filterIds });
+        if (res.status === 200) {
+            requestAmountListData = res.data;
+            
+            createSetAmountPaymentItem();
+            ModalToggle(reqAmountPaymentModal);
+        }
+    } catch (err) {
+        console.error(err);
+        toastifyError("خطا در بارگذاری اطلاعات");
+    } finally {
+        FLshowLoading(false);
+    }
+}
+
+async function showEditAmountPaymentItemModal() {
+    isGroupPayment = true;
+    FLshowLoading();
+    try {
+        const res = await axios(`/Amount/GetRequestAmountsWithPaidAmountByPayment?paymentId=${paymentData.id}`);
+        if (res.status === 200) {
+            requestAmountListData = res.data;
+            
+            createSetAmountPaymentItem();
+            ModalToggle(reqAmountPaymentModal);
+        }
+    } catch (err) {
+        console.error(err);
+        toastifyError("خطا در بارگذاری اطلاعات");
+    } finally {
+        FLshowLoading(false);
+    }
+}
+
+
+function createSetAmountPaymentItem() {
+    const container = reqAmountPaymentModal.querySelector("#setAmountPaymentForm");
+    container.innerHTML = "";
+    
+    requestAmountListData.forEach((item, index) => {
+        const fieldset = document.createElement("fieldset");
+        fieldset.id = `setAmountPaymentItem-${index}`;
+        fieldset.dataset.id = item.id;
+        fieldset.innerHTML = `
+            <div class="d-flex flex-wrap align-items-center justify-content-around setAmountPaymentItem bgGreen" style="border: 1px solid;border-radius: 6px;overflow: hidden">
+                <div class="d-flex col-12 justify-content-around p-1 px-2" style="background-color:#04857c;color: #fff">
+                    <div class="d-flex align-items-center justify-content-center gap-1 pe-2">
+                        <span class="flex-shrink-0" style="color: #e1e1e1">شماره درخواست: </span>
+                        <span class="fMedium text-center">${item.requestNumber ?? ""}</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-center gap-1">
+                        <span class="flex-shrink-0" style="color: #e1e1e1">مبلغ درخواست: </span>
+                        <span class="fMedium text-center" style="white-space: nowrap">
+                            <span>${item.amount.toLocaleString()}</span>
+                            <span style="font-size: 11px">ریال</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap col-12 justify-content-around p-2 row-gap-2">
+                    <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto pe-xl-2">
+                        <span class="flex-shrink-0" style="color: #535353">مبلغ تایید شده: </span>
+
+                        <div class="fbold flex-center align-items-baseline column-gap-1 badgeGreen-border">
+                            <span style="font-size: 16px;">${item.acceptedAmount.toLocaleString()}</span>
+                            <span style="font-size: 11px;">ريال</span>
+                            <span style="font-size: 16px; color:#888">${item.acceptedAmountPercent ? item.acceptedAmountPercent + "%" : ""}</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto">
+                        <span class="flex-shrink-0" style="color: #535353">مبلغ پرداختی: </span>
+                        <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="amount"  value="${item.paidAmount ? item.paidAmount.toLocaleString() : ""}" required>
+                    </div>
+                </div>
+            </div>
+            ${index !== requestAmountListData.length - 1 ? `<div style="width: 95%;height:1px; margin: 10px auto;background-color:darkviolet"></div>` : ""}
+            `;
+        container.appendChild(fieldset);
+    });
+}
+
+
+let reqAmountAttachModal = document.getElementById("reqAmountAttachModal");
+let requestAmountPaymentMap = [];
+async function goToStepAttachReqAmount() {
+    if (!await mySer.CheckValidForm("setAmountPaymentForm")) return;
+    
+    const allItemsArray = Array.from(reqAmountPaymentModal.querySelectorAll("fieldset"));
+    
+    requestAmountPaymentMap = allItemsArray.map(item => {
+        const amountValue = item.querySelector("input[name='amount']").value;
+        return {
+            paymentId: paymentData.id,
+            requestAmountId: item.dataset.id,
+            amount: Number(SeparatedNumberRemove(amountValue)),
+        };
+    });
+    
+    const allInputsAmount = Array.from(reqAmountPaymentModal.querySelectorAll("input[name='amount']"));
+    const totalAmount = allInputsAmount.reduce((sum, i) => sum + Number(SeparatedNumberRemove(i.value) || 0), 0);
+    const targetInputAmount = reqAmountAttachModal.querySelector("input[name='amount']");
+    
+    targetInputAmount.value = totalAmount.toLocaleString();
+    toggleElementsDisabled(targetInputAmount, true);
+    ModalToggle(reqAmountPaymentModal, "hide");
+    ModalToggle(reqAmountAttachModal, "show");
+}
+
+function cancelRequestAmountPaymentModal() {
+    isGroupPayment = false;
+    mySer.emptyForm("setAmountPaymentForm");
+    ModalToggle(reqAmountPaymentModal, "hide");
 }
 
 
@@ -4806,7 +4931,7 @@ const submitReqAmountAttach = async () => {
     
     const formData = mySer.convertFormToJSON("reqAmountAttachForm");
     
-    const requestAmountPayments = requestSelectionMode
+    const requestAmountPayments = isGroupPayment
         ? requestAmountPaymentMap
         : [{ paymentId: paymentData.id, requestAmountId: reqAmountId, amount: formData.amount }];
     
@@ -4817,7 +4942,7 @@ const submitReqAmountAttach = async () => {
         attachments: reqAmountAttachment,
         toAccountTxt: toAccountElm.selectedOptions[0].innerText,
         fromAccountTxt: fromAccountElm.selectedOptions[0].innerText,
-        paymentMode: requestSelectionMode && requestAmountPaymentMap?.length > 1 ? 1 : 0,
+        paymentMode: isGroupPayment && requestAmountPaymentMap?.length > 1 ? 1 : 0,
     };
     
     FLshowLoading();
@@ -4826,9 +4951,9 @@ const submitReqAmountAttach = async () => {
         if (res.status === 200) {
             toastifySuccess("ثبت با موفقیت انجام شد");
             cancelReqAmountAttach();
-            if (requestSelectionMode) {
+            if (isGroupPayment) {
                 cancelRequestAmountPaymentModal();
-                toggleRequestSelectionBar(false);
+                requestSelection.hideSelectionMode();
             }
             if (model.id && paymentTable) {
                 paymentTable.ajax.reload();
@@ -4839,14 +4964,14 @@ const submitReqAmountAttach = async () => {
             } else {
                 await getAllRequestAmount();
             }
-        } else if(res.status === 201) {
+        } else if (res.status === 201) {
             console.log(res);
             toastifyError(res.data);
         }
     } catch (err) {
         toastifyError("خطای سرور!");
         console.log(err);
-        setTimeout(async () => await submitReqAmountAttach(), 3000)
+        setTimeout(async () => await submitReqAmountAttach(), 3000);
         
     } finally {
         FLshowLoading(false);

@@ -5432,27 +5432,27 @@ table tr.payment-vosoled > td {
 }
 
 
-.layered-card .layered-card__layer:nth-child(1) {
+.layered-card .layered-card__layer:nth-child(1 of .layered-card__layer) {
   background: var(--layer-bg-1);
 }
 
 
-.layered-card .layered-card__layer:nth-child(2) {
+.layered-card .layered-card__layer:nth-child(2 of .layered-card__layer) {
   background: var(--layer-bg-2);
 }
 
 
-.layered-card .layered-card__layer:nth-child(3) {
+.layered-card .layered-card__layer:nth-child(3 of .layered-card__layer) {
   background: var(--layer-bg-3);
 }
 
 
-.layered-card .layered-card__layer:nth-child(4) {
+.layered-card .layered-card__layer:nth-child(4 of .layered-card__layer) {
   background: var(--layer-bg-4);
 }
 
 
-.layered-card .layered-card__layer:nth-child(5) {
+.layered-card .layered-card__layer:nth-child(5 of .layered-card__layer) {
   background: var(--layer-bg-5);
 }
 

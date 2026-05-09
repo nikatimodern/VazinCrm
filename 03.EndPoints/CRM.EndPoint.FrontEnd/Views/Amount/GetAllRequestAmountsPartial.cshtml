@@ -27,7 +27,7 @@
         };
 
         <div class="layered-card layered-card-pill @(bgCssClass)" data-id="@reqAmount.Id">
-            @if (status is RequestStatusEnum.در_انتظار_پرداخت or RequestStatusEnum.پرداخت_شده) {
+            @if (status == RequestStatusEnum.در_انتظار_پرداخت || (status == RequestStatusEnum.پرداخت_شده && item.TotalPaymentAmount < reqAmount.AcceptedAmount)) {
                 <div class="layered-select-box col-auto py-2 px-1 ps-3">
                     <input type="checkbox" class="card-checkbox" />
                 </div>
@@ -165,22 +165,12 @@
                             break;
                         case RequestStatusEnum.پرداخت_شده:
                             if (isFinancial) {
-                                @*<button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor)" onclick="showAttachReqAmount('@reqAmount.Id')">
-                                    <i class="fa fa-paperclip"></i>
-                                </button>*@
                                 if (item.TotalPaymentAmount < reqAmount.AcceptedAmount) {
                                     <div class="flex-center flex-xl-column gap-1">
                                         <button class="buttonGreen2" onclick="showAttachReqAmount('@reqAmount.Id')">ثبت پرداختی</button>
                                     </div>
-                                } else {
-                                    <span class="badgeGreen" style="box-shadow: none">تکمیل شده</span>
                                 }
-                            } else {
-                                <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor)" onclick="showAttachments('@reqAmount.Id', 9)">
-                                    <i class="fa fa-paperclip"></i>
-                                </button>
                             }
-
                             <div class="flex-center flex-wrap column-gap-2">
                                 <span class="fbold" style="color: #04857c">@reqAmount.RequestStatusTxt</span>
                                 @if (isFinancial) {
@@ -262,9 +252,6 @@
                             <span class="fbold text-center" style="color: #4f817d">@reqAmount.RequestStatusTxt</span>
                             break;
                         case RequestStatusEnum.پرداخت_شده:
-                            <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor)" onclick="showAttachments('@reqAmount.Id', 11)">
-                                <i class="fa fa-paperclip"></i>
-                            </button>
                             <span class="fbold text-center" style="color: #04857c">@reqAmount.RequestStatusTxt</span>
                             break;
                     }

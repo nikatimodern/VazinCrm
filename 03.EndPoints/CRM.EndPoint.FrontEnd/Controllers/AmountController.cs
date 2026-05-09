@@ -206,6 +206,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+        [Authorize(Roles = "کارشناس مالی, مدیر مالی, مدیر ارشد")]
         [HttpPost]
         public async Task<IActionResult> AddPaymentByRequestAmount([FromBody] Payment model)
         {
@@ -344,7 +345,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var finalAmount = requestAmount.PaidAmount + reqAmountPayment.Amount;
 
-                if (finalAmount > requestAmount.AcceptedAmount) {
+                if (finalAmount > requestAmount.AcceptedAmount)
+                {
                     return (false, "مبلغ پرداخت بیشتر از مبلغ تایید شده است.");
                 }
             }
@@ -523,10 +525,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var roles = await userManager.GetRolesAsync(user);
                 var isFinancial = roles.Contains("کارشناس مالی");
                 var isAdmin = roles.Contains("مدیر ارشد");
+                var isManager = roles.Contains("مدیر عامل");
 
                 var query = db.RequestAmounts.AsNoTracking();
 
-                if (!isAdmin && !isFinancial)
+                if (!isAdmin && !isFinancial && !isManager)
                 {
                     query = query.Where(f => f.UserCreatorID == user.Id);
                 }

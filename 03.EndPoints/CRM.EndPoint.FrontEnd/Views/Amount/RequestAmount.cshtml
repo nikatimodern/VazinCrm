@@ -3,7 +3,7 @@
 }
 
 <div class="w-100p pb-3">
-    <div class="d-flex align-items-center justify-content-between flex-wrap mb-3 gap-2">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
         <div class="d-flex align-content-center gap-2 col-lg-3">
             <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="showRequestAmountModal()">
                 <span style="line-height: 1">ثبت درخواست جدید</span>
@@ -44,7 +44,43 @@
             </ul>
         </div>
     </div>
-    <div id="requestAmountContainer">
+
+    <div class="FinancialExpert" style="display: none">
+        <button class="selection-toggle-btn buttonGreen2 d-flex align-items-center gap-2 mt-3" style="padding: 4px 8px !important">
+            <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM1.49 15.326a.78.78 0 0 1-.358-.442 3 3 0 0 1 4.308-3.516 6.484 6.484 0 0 0-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 0 1-2.07-.655ZM16.44 15.98a4.97 4.97 0 0 0 2.07-.654.78.78 0 0 0 .357-.442 3 3 0 0 0-4.308-3.517 6.484 6.484 0 0 1 1.907 3.96 2.32 2.32 0 0 1-.026.654ZM18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5.304 16.19a.844.844 0 0 1-.277-.71 5 5 0 0 1 9.947 0 .843.843 0 0 1-.277.71A6.975 6.975 0 0 1 10 18a6.974 6.974 0 0 1-4.696-1.81Z" /></svg>
+            <span style="line-height: 1">پرداخت گروهی</span>
+        </button>
+    </div>
+    <div class="selection-bar d-none mt-2">
+        <div class="d-none d-lg-flex align-items-center gap-3">
+            <label class="d-flex align-items-center gap-3">
+                <input type="checkbox" class="select-all" />
+                <span>انتخاب همه</span>
+            </label>
+        </div>
+
+        <div class="col-12 col-lg-auto flex-center flex-wrap gap-3" style="color: #444;">
+            <span class="selected-count fbold" style="color: var(--color8);">0</span>
+            <span>مورد انتخاب شده</span>
+
+            <button class="clear-selection link-green" style="font-size: 13px">
+                حذف انتخاب
+            </button>
+        </div>
+
+        <div class="col-12 col-lg-auto d-flex align-items-center justify-content-between justify-content-lg-end gap-3">
+            <button class="cancel-selection buttonCancel-white">
+                <svg style="width: 16px" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
+                انصراف
+            </button>
+
+            <button class="pay-selected buttonGreen0" disabled>
+                پرداخت همه (<span class="selected-count">0</span>)
+            </button>
+        </div>
+    </div>
+
+    <div id="requestAmountContainer" class="mt-3">
     </div>
 </div>
 
@@ -98,9 +134,9 @@
             FLshowLoading();
             const res = await axios(`/Amount/GetAllRequestAmountsPartial?search=${val}&type=${type}&passType=1`);
             requestContainer.innerHTML = res.data.html;
+            requestSelection.restoreSelection();
             FLshowLoading(false);
         };
-
 
 
         let orderHeadsFilterIds = null;
@@ -206,5 +242,20 @@
             const anySelected = tempSelectedIds.length > 0;
             addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !anySelected);
         }
+
+
+        ////////////////////////////////////////////////////
+        const requestSelection = new SelectionManager({
+            container: "#requestAmountContainer",
+            itemSelector: ".layered-card",
+            checkboxSelector: ".card-checkbox",
+            onPay: async (selectedIds) => {
+                if (selectedIds.length === 0) {
+                    toastifyError("لطفاً ابتدا درخواست‌های مورد نظر را انتخاب کنید.");
+                    return;
+                }
+                await showSetAmountPaymentItemModal(selectedIds);
+            },
+        });
     </script>
 }
