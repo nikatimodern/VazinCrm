@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Payments.Entities;
+using CRM.Core.Domain.Payments.Enums;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
@@ -213,7 +214,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
-                await AddOrUpdatePayment(model, user);
+                var result = await AddOrUpdatePayment(model, user);
+                if (!result.IsSuccess) return BadRequest(result.Message);
+
                 var RequestAmountIdList = model.RequestAmountPayments.Select(f => f.RequestAmountId).ToList();
                 await SetRequestAmountsToPaid(RequestAmountIdList, user);
                 return Ok();
@@ -260,10 +263,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-
-        private async Task AddOrUpdatePayment(Payment model, AppUser user)
+        private async Task<(bool IsSuccess, string Message)> AddOrUpdatePayment(Payment model, AppUser user)
         {
-            if (model == null) return;
+            if (model == null) return (false, "اطلاعات پرداخت نامعتبر است.");
+
+            var validation = await ValidateRequestAmountsPayment(model);
+            if (!validation.IsValid) return (false, validation.Message);
+
             await using var transaction = await db.Database.BeginTransactionAsync();
             try
             {
@@ -272,6 +278,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     model.UserCreator = user.FullName;
                     model.UserCreatorID = user.Id;
+                    if (model.RequestAmountPayments?.Count == 1)
+                        model.PaymentMode = PaymentModeEnum.تکی;
+
                     await db.Payments.AddAsync(model);
                     await db.SaveChangesAsync();
 
@@ -300,14 +309,49 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 db.Attachments.UpdateRange(attachList);
                 await db.SaveChangesAsync();
                 await transaction.CommitAsync();
+                return (true, "");
             }
             catch (Exception e)
             {
                 await transaction.RollbackAsync();
                 Console.WriteLine(e);
-                throw;
+                return (false, "خطا در ثبت پرداخت");
             }
         }
+
+        private async Task<(bool IsValid, string Message)> ValidateRequestAmountsPayment(Payment model)
+        {
+            var requestAmountIds = model.RequestAmountPayments?.Select(x => x.RequestAmountId).Distinct().ToList();
+
+            if (requestAmountIds == null || requestAmountIds.Count == 0)
+                return (true, "");
+
+            var requestAmounts = await db.RequestAmounts
+                .AsNoTracking()
+                .Where(x => requestAmountIds.Contains(x.Id))
+                .Select(x => new {
+                    x.Id,
+                    x.AcceptedAmount,
+
+                    PaidAmount = x.RequestAmountPayments.Where(p => p.PaymentId != model.Id).Sum(p => p.Amount)
+                })
+                .ToDictionaryAsync(x => x.Id);
+
+            foreach (var reqAmountPayment in model.RequestAmountPayments)
+            {
+                if (!requestAmounts.TryGetValue(reqAmountPayment.RequestAmountId, out var requestAmount))
+                    continue;
+
+                var finalAmount = requestAmount.PaidAmount + reqAmountPayment.Amount;
+
+                if (finalAmount > requestAmount.AcceptedAmount) {
+                    return (false, "مجموع پرداخت درخواست بیشتر از مبلغ تایید شده است.");
+                }
+            }
+
+            return (true, "");
+        }
+
 
         public async Task<IActionResult> DeletePayment(Guid id)
         {

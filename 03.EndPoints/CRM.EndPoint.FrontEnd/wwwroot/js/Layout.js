@@ -4804,23 +4804,21 @@ const submitReqAmountAttach = async () => {
     const fromAccountElm = document.querySelector("#reqAmountAttachForm select[name='fromAccountId']");
     const toAccountElm = document.querySelector("#reqAmountAttachForm select[name='toAccountId']");
     
-    const convertedToJson = mySer.convertFormToJSON("reqAmountAttachForm");
+    const formData = mySer.convertFormToJSON("reqAmountAttachForm");
     
     const requestAmountPayments = requestSelectionMode
         ? requestAmountPaymentMap
-        : [{ paymentId: paymentData.id, requestAmountId: reqAmountId, amount: convertedToJson.amount }];
+        : [{ paymentId: paymentData.id, requestAmountId: reqAmountId, amount: formData.amount }];
     
     const model = {
         ...paymentData,
-        ...convertedToJson,
+        ...formData,
         requestAmountPayments,
         attachments: reqAmountAttachment,
         toAccountTxt: toAccountElm.selectedOptions[0].innerText,
         fromAccountTxt: fromAccountElm.selectedOptions[0].innerText,
-        paymentMode: requestSelectionMode ? 1 : 0,
+        paymentMode: requestSelectionMode && requestAmountPaymentMap?.length > 1 ? 1 : 0,
     };
-    console.log(model);
-    console.log(requestSelectionMode);
     
     FLshowLoading();
     try {
