@@ -1396,7 +1396,6 @@
             HideAllCartable();
             document.querySelectorAll(".TCar").forEach(async (item) => {
                 if (item.id === tabId) {
-                    console.log(subId);
                     item.classList.add("TCarActive");
                     switch (tabId) {
                         case "TPrefactorFactorId":
@@ -1854,24 +1853,45 @@
                 toastifyError("لطفاً ابتدا درخواست‌های مورد نظر را انتخاب کنید.");
                 return;
             }
+            await showSetAmountPaymentItemModal(idsArray);
+        });
 
-            ModalToggle(reqAmountPaymentModal);
-
+        async function showSetAmountPaymentItemModal(filterIds) {
             FLshowLoading();
-
             try {
-                const res = await axios.post("/Amount/GetRequestsAmountByFilteredIds", { filterIds: idsArray });
+                const res = await axios.post("/Amount/GetRequestsAmountByFilteredIds", { filterIds });
                 if (res.status === 200) {
                     requestAmountListData = res.data;
+
                     createSetAmountPaymentItem();
+                    ModalToggle(reqAmountPaymentModal);
                 }
             } catch (err) {
                 console.error(err);
-                listContainer.innerHTML = `<tr><td colspan="3" class="text-center">خطا در بارگذاری اطلاعات</td></tr>`;
+                toastifyError("خطا در بارگذاری اطلاعات");
             } finally {
                 FLshowLoading(false);
             }
-        });
+        }
+
+        async function showEditAmountPaymentItemModal() {
+            requestSelectionMode = true;
+            FLshowLoading();
+            try {
+                const res = await axios(`/Amount/GetRequestAmountsWithPaidAmountByPayment?paymentId=${paymentData.id}`);
+                if (res.status === 200) {
+                    requestAmountListData = res.data;
+
+                    createSetAmountPaymentItem();
+                    ModalToggle(reqAmountPaymentModal);
+                }
+            } catch (err) {
+                console.error(err);
+                toastifyError("خطا در بارگذاری اطلاعات");
+            } finally {
+                FLshowLoading(false);
+            }
+        }
 
 
         function createSetAmountPaymentItem() {
@@ -1910,7 +1930,7 @@
                             </div>
                             <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto">
                                 <span class="flex-shrink-0" style="color: #535353">مبلغ پرداختی: </span>
-                                <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="amount" required>
+                                <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="amount"  value="${item.paidAmount ? item.paidAmount.toLocaleString() : ""}" required>
                             </div>
                         </div>
                     </div>
@@ -1931,7 +1951,7 @@
             requestAmountPaymentMap = allItemsArray.map(item => {
                 const amountValue = item.querySelector("input[name='amount']").value;
                 return {
-                    paymentId: undefined,
+                    paymentId: paymentData.id,
                     requestAmountId: item.dataset.id,
                     amount: Number(SeparatedNumberRemove(amountValue)),
                 };
@@ -1940,12 +1960,15 @@
             const allInputsAmount = Array.from(reqAmountPaymentModal.querySelectorAll("input[name='amount']"));
             const totalAmount = allInputsAmount.reduce((sum, i) => sum + Number(SeparatedNumberRemove(i.value) || 0), 0);
             const targetInputAmount = reqAmountAttachModal.querySelector("input[name='amount']");
+
             targetInputAmount.value = totalAmount.toLocaleString();
             toggleElementsDisabled(targetInputAmount, true);
+            ModalToggle(reqAmountPaymentModal, "hide");
             ModalToggle(reqAmountAttachModal, "show");
         }
 
         function cancelRequestAmountPaymentModal() {
+            requestSelectionMode = false;
             mySer.emptyForm("setAmountPaymentForm");
             ModalToggle(reqAmountPaymentModal, "hide");
         }

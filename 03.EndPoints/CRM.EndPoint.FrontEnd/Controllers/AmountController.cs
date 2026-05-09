@@ -229,15 +229,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var transaction = await db.Database.BeginTransactionAsync();
             try
             {
-                foreach (var id in idsList)
+                var requestAmounts = await db.RequestAmounts.Where(x =>
+                    idsList.Contains(x.Id) &&
+                    x.RequestStatus != RequestStatusEnum.پرداخت_شده
+                ).ToListAsync();
+
+                foreach (var reqAmount in requestAmounts)
                 {
-                    var reqAmount = await db.RequestAmounts.FirstOrDefaultAsync(f => f.Id == id);
-                    if (reqAmount == null) return;
-
-
-                    if (reqAmount.RequestStatus == RequestStatusEnum.پرداخت_شده) return;
-
-                    var oldReqAmount = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
+                    var oldReqAmount = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == reqAmount.Id);
 
                     reqAmount.RequestStatus = RequestStatusEnum.پرداخت_شده;
                     reqAmount.RequestStatusTxt = nameof(RequestStatusEnum.پرداخت_شده).Replace("_", " ");
@@ -360,15 +359,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var transaction = await db.Database.BeginTransactionAsync();
             try
             {
-                foreach (var id in idsList ?? [])
+                var requestAmounts = await db.RequestAmounts.Where(f =>
+                    idsList.Contains(f.Id) &&
+                    f.RequestStatus != RequestStatusEnum.در_انتظار_پرداخت
+                ).ToListAsync();
+
+                foreach (var reqAmount in requestAmounts)
                 {
-                    var reqAmount = await db.RequestAmounts.FirstOrDefaultAsync(f => f.Id == id);
-                    if (reqAmount == null) return;
-
-
-                    if (reqAmount.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت) return;
-
-                    var oldReqAmount = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
+                    var oldReqAmount = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == reqAmount.Id);
 
                     reqAmount.RequestStatus = RequestStatusEnum.در_انتظار_پرداخت;
                     reqAmount.RequestStatusTxt = nameof(RequestStatusEnum.در_انتظار_پرداخت).Replace("_", " ");
@@ -617,6 +615,34 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var data = await db.RequestAmounts.AsNoTracking()
                     .Where(f => model.FilterIds.Contains(f.Id))
+                    .ToListAsync();
+
+                return Ok(data);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetRequestAmountsWithPaidAmountByPayment(Guid paymentId)
+        {
+            try
+            {
+                var data = await db.RequestAmountPayments
+                    .AsNoTracking()
+                    .Where(x => x.PaymentId == paymentId)
+                    .Select(x => new {
+                        Id = x.RequestAmountId,
+
+                        PaidAmount = x.Amount,
+
+                        x.RequestAmount.RequestNumber,
+                        x.RequestAmount.Amount,
+                        x.RequestAmount.AcceptedAmount,
+                        x.RequestAmount.AcceptedAmountPercent
+                    })
                     .ToListAsync();
 
                 return Ok(data);

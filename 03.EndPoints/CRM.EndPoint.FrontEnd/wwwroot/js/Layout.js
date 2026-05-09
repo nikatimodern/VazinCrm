@@ -53,7 +53,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     setting = await GetSetting();
     
-    console.log(setting);
     
     AcceptSetting(setting);
     
@@ -4608,7 +4607,6 @@ async function changeStatusReqAmount(reqAmountId, status) {
     }
 }
 
-
 const ShowModalListPayment = async (id) => {
     getAllPaymentsList(id);
     ModalToggle("paymentListModalId", "show");
@@ -4753,9 +4751,11 @@ async function showEditPaymentModal(id) {
         if (res.status === 200) {
             paymentData = res.data.payment;
             mySer.convertJsonToForm(paymentData, "reqAmountAttachForm");
-            if (paymentData.paymentMode) {
+            if (paymentData.paymentMode === 1) {
                 const targetInputAmount = document.querySelector("#reqAmountAttachModal input[name='amount']");
                 toggleElementsDisabled(targetInputAmount, true);
+                const amountEditIcon =  document.querySelector("#reqAmountAttachModal #paymentAmountGroupEditIcon");
+                amountEditIcon.classList.remove("d-none");
             }
             
             reqAmountAttachment = res.data.attachments;
@@ -4787,8 +4787,9 @@ const cancelReqAmountAttach = () => {
     document.getElementById("reqAmountAttach").value = "";
     mySer.emptyForm("reqAmountAttachForm");
     const targetInputAmount = document.querySelector("#reqAmountAttachModal input[name='amount']");
+    const amountEditIcon = reqAmountAttachModal.querySelector("#paymentAmountGroupEditIcon");
     toggleElementsDisabled(targetInputAmount, false);
-    
+    amountEditIcon.classList.add("d-none");
 };
 
 

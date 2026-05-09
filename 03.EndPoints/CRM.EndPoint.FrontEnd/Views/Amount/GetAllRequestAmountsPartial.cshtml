@@ -114,22 +114,20 @@
                     @if (item.TotalPaymentAmount > 0) {
                         <div class="w-100 d-flex flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
                             <span style="font-size: 13px; color: #777">مبلغ پرداخت شده:</span>
-                            <div>
-                                <div class="fbold flex-center badgeGreen cursor-pointer" onclick="ShowModalListPayment('@reqAmount.Id')">
-                                    <span class="d-flex align-items-baseline column-gap-1">
-                                        <span style="font-size: 14px;">@($"{item.TotalPaymentAmount:n0}")</span>
-                                        <span style="font-size: 10px;">ريال</span>
-                                    </span>
-                                    <span class="ps-2 ms-1" style="border-right: 1px solid whitesmoke">
-                                        <i class="fa fa-pencil" style="font-size: 12px;color: white"></i>
-                                    </span>
-                                </div>
+                            <div class="fbold flex-center badgeGreen cursor-pointer" onclick="ShowModalListPayment('@reqAmount.Id')">
+                                <span class="d-flex align-items-baseline column-gap-1">
+                                    <span style="font-size: 14px;">@($"{item.TotalPaymentAmount:n0}")</span>
+                                    <span style="font-size: 10px;">ريال</span>
+                                </span>
+                                <span class="flex-center ps-2 ms-1" style="border-right: 1px solid whitesmoke">
+                                    <i class="fa @(isFinancial ? "fa-pencil" : "fa-eye") " style="font-size: 10px;color: white"></i>
+                                </span>
                             </div>
                         </div>
                     }
                 </div>
 
-                <div class="layered-card__layer col-12 col-xl-auto col-xxl-1 flex-center flex-row flex-xl-column p-2 px-xl-3 gap-4 gap-xl-3">
+                <div class="layered-card__layer col-12 col-xl-auto col-xxl-1 flex-center flex-row flex-xl-column p-2 px-xl-3 gap-4 gap-xl-3" style="min-width: 140px;">
                     @switch (status) {
                         case RequestStatusEnum.ثبت_اولیه:
                             if (isCreator) {
@@ -157,7 +155,9 @@
                         case RequestStatusEnum.در_انتظار_پرداخت:
                             if (isFinancial) {
                                 <div class="flex-center flex-xl-column gap-1">
-                                    <button class="buttonGreen2" onclick="showAttachReqAmount('@reqAmount.Id')">ثبت پرداختی</button>
+                                    @if (item.TotalPaymentAmount < reqAmount.AcceptedAmount) {
+                                        <button class="buttonGreen2" onclick="showAttachReqAmount('@reqAmount.Id')">ثبت پرداختی</button>
+                                    }
                                     <button class="buttonCancel3" onclick="changeStatusReqAmount('@reqAmount.Id', 1)">برگشت</button>
                                 </div>
                             } else {
@@ -179,7 +179,7 @@
                                 </button>
                             }
 
-                            <div class="flex-center gap-2">
+                            <div class="flex-center flex-wrap column-gap-2">
                                 <span class="fbold" style="color: #04857c">@reqAmount.RequestStatusTxt</span>
                                 @if (isFinancial) {
                                     <span style="cursor:pointer;color:#333" onclick="changeStatusReqAmount('@reqAmount.Id', 3)" data-title="بازگشت">
@@ -222,15 +222,20 @@
                     @if (item.TotalPaymentAmount > 0) {
                         <div class="w-100 d-flex flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
                             <span style="font-size: 13px; color: #777">مبلغ پرداخت شده:</span>
-                            <div class="fbold flex-center align-items-baseline column-gap-1 badgeGreen cursor-pointer" onclick="ShowModalListPayment('@reqAmount.Id')">
-                                <span style="font-size: 14px;">@($"{item.TotalPaymentAmount:n0}")</span>
-                                <span style="font-size: 10px;">ريال</span>
+                            <div class="fbold flex-center badgeGreen cursor-pointer" onclick="ShowModalListPayment('@reqAmount.Id')">
+                                <span class="d-flex align-items-baseline column-gap-1">
+                                    <span style="font-size: 14px;">@($"{item.TotalPaymentAmount:n0}")</span>
+                                    <span style="font-size: 10px;">ريال</span>
+                                </span>
+                                <span class="flex-center ps-2 ms-1" style="border-right: 1px solid whitesmoke">
+                                    <i class="fa @(isFinancial ? "fa-pencil" : "fa-eye") " style="font-size: 10px;color: white"></i>
+                                </span>
                             </div>
                         </div>
                     }
                 </div>
 
-                <div class="layered-card__layer col-12 col-xl-auto col-xxl-1 flex-center flex-row flex-xl-column p-2 px-xl-3 gap-4 gap-xl-3">
+                <div class="layered-card__layer col-12 col-xl-auto flex-center flex-row flex-xl-column p-2 px-xl-3 gap-4 gap-xl-3">
                     @switch (status) {
                         case RequestStatusEnum.ثبت_اولیه:
                             <span class="fbold" style="color:#777">@reqAmount.RequestStatusTxt</span>

@@ -3002,7 +3002,12 @@
                                 <div class="flex-center flex-wrap row-gap-2 w-100">
                                     <div class="col-12 col-sm-6 col-lg-4 pe-sm-2">
                                         <label>مبلغ (ریال)</label>
-                                        <input inputmode="numeric" class="currencyNumber form-control inpAmount" name="amount" type="text" placeholder="مبلغ پرداختی به ریال" required />
+                                        <div class="position-relative">
+                                            <span id="paymentAmountGroupEditIcon" class="position-absolute flex-center top-0 bottom-0 px-2 text-dark cursor-pointer d-none" onclick="showEditAmountPaymentItemModal()">
+                                                <i class="fa fa-pencil" style="font-size: 12px"></i>
+                                            </span>
+                                            <input inputmode="numeric" class="currencyNumber form-control inpAmount" name="amount" type="text" placeholder="مبلغ پرداختی به ریال" required />
+                                        </div>
                                     </div>
 
                                     <div class="col-12 col-sm-6 col-lg-4">

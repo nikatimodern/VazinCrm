@@ -20,7 +20,7 @@ namespace CRM.Infrastructures.Sql.Payments.Configs {
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(f => f.RequestAmountPayments)
-                .WithOne()
+                .WithOne(f => f.Payment)
                 .HasForeignKey(f => f.PaymentId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
