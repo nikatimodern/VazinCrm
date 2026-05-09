@@ -1810,8 +1810,13 @@
             selectedCountBtn.textContent = count.toString();
 
             toggleElementsDisabled(paySelectedBtn, count === 0);
+            const visibleCards = document.querySelectorAll(".layered-card");
 
-            selectAll.checked = count > 0 && document.querySelectorAll(".layered-card").length === count;
+            selectAll.checked =
+                visibleCards.length > 0 &&
+                Array.from(visibleCards).every(card =>
+                    requestSelectedIdsSet.has(card.dataset.id)
+                );
         }
 
 
