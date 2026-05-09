@@ -55,6 +55,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<bool?>("FinancialConfirm")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("MultiSelectOrderHeadsInRequestAmount")
+                        .HasColumnType("bit");
+
                     b.Property<bool?>("Sepidar")
                         .HasColumnType("bit");
 
@@ -2947,6 +2950,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("CreateDateTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("DocType")
                         .HasColumnType("int");
 
@@ -2961,6 +2967,9 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.Property<string>("ModifyDateTxt")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Prepayment")
+                        .HasColumnType("bit");
 
                     b.Property<int>("RequestNumber")
                         .ValueGeneratedOnAdd()

@@ -1,5 +1,5 @@
 ﻿
-#SearchInp {
+#searchCustomerWrapper .search-group {
     width: 95% !important;
 }
 @media all and (max-width: 767px) {
@@ -15,7 +15,7 @@
         text-align: center;
         margin-bottom: 0;
     }
-    #SearchInp {
+  #searchCustomerWrapper .search-group {
         width: 80% !important;
     }
     

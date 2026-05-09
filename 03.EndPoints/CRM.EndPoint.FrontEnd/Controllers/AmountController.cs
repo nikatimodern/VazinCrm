@@ -25,9 +25,7 @@ using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
-    [Authorize(Roles = " کارشناس فروش ,مدیر فروش , مدیر تامین ,  مدیر ارشد , کارشناس تامین")]
-
-    //[Authorize]
+    [Authorize(Policy = "NotCustomerOnly")]
     public class AmountController : Controller {
         private readonly UserManager<AppUser> userManager;
         private readonly Service genService;
@@ -209,8 +207,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     query = query.Where(f =>
                         f.RequestNumber == TextService.convertToInt(search) ||
-                        f.RequestAmountSupplyFactor.Any(sfOh =>
-                            db.SupplyFactors.Any(oh => oh.Id == sfOh.SupplyFactorId && oh.FactorSerial == search)
+                        f.Description.Contains(search) ||
+                        f.SupplierTxt.Contains(search) ||
+                        f.RequestAmountSupplyFactor.Any(raSf =>
+                            db.SupplyFactors.Any(sf => sf.Id == raSf.SupplyFactorId && sf.FactorSerial == search)
+                        ) ||
+                        f.RequestAmountOrderHeads.Any(raOh =>
+                            db.OrderHeads.Any(oh => oh.Id == raOh.OrderHeadId && oh.OrderNumber.ToString() == search)
                         )
                     );
                 }
@@ -375,7 +378,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-
+        [Authorize(Roles = "کارشناس فروش ,مدیر فروش , مدیر تامین , مدیر ارشد , کارشناس تامین")]
         public async Task<IActionResult> index()
         {
             return View();

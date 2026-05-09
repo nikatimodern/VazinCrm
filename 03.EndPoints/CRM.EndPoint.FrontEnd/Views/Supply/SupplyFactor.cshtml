@@ -11,8 +11,11 @@
             </button>
         </div>
         <div class="col-12 col-lg-5 d-flex align-items-center gap-2 flex-wrap">
-            <div class="d-flex align-items-center flex-grow-1 gap-2">
+            <div class="search-group flex-grow-1">
                 <input class="form-control" id="supplyFactorSearch" placeholder="جستجو">
+                <div class="search-icon">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                </div>
             </div>
         </div>
         <div class="d-flex align-items-start justify-content-start justify-content-lg-end gap-2 col-lg-3">
@@ -114,11 +117,13 @@
 
         document.addEventListener("DOMContentLoaded", async () => {
             await getAllSupplyFactors();
-            document.getElementById("supplyFactorSearch").addEventListener("keyup", async (e) => {
+            const searchSupplyFactorElm = document.getElementById("supplyFactorSearch");
+            searchSupplyFactorElm.addEventListener("keyup", async (e) => {
                 if (e.key === "Enter") {
                     await getAllSupplyFactors();
                 }
             });
+            searchSupplyFactorElm.nextElementSibling.addEventListener("click", async () => await getAllSupplyFactors());
         });
 
         async function showSupplyFactorModal() {
@@ -128,7 +133,7 @@
 
         function cancelSupplyFactorModal() {
             supplyFactorAttachments = [];
-            supplyFactorData = [];
+            supplyFactorData = {};
 
             orderHeadsSelectedIds = [];
             tempSelectedIds = [];
@@ -142,33 +147,27 @@
 
         ///////////////////
         let orderHeadsSelectedIds = [];
+        let orderHeadsFilterIds = null;
         let tempSelectedIds = [];
         let tempSelectedMap = new Map(); // id -> number
         async function showAddOrderHeadModal() {
-            const supplierId = document.getElementById("supplyFactorSupplierId").value;
-
             tempSelectedMap.clear();
-            tempSelectedIds = (supplierId && orderHeadsSelectedIds.length === 0)
-                ? await getOrderHeadIdsBySupplier(supplierId)
-                : [...orderHeadsSelectedIds];
+            tempSelectedIds = [...orderHeadsSelectedIds];
 
-            await getAllOrderHeads();
+            const supplierId = document.getElementById("supplyFactorSupplierId").value;
+            if (supplierId) {
+                FLshowLoading();
+                orderHeadsFilterIds = await getOrderHeadIdsBySupplier(supplierId);
+                await getAllOrderHeads();
+                FLshowLoading(false);
+            } else {
+                FLshowLoading();
+                await getAllOrderHeads();
+                FLshowLoading(false);
+            }
             toggleAddOrderHeadModal();
         }
 
-
-        async function getOrderHeadIdsBySupplier(supplierId) {
-            try {
-                const res = await axios(`/Supply/GetOrderHeadsBySupplier?supplierId=${supplierId}`);
-                if (res.status === 200) {
-                    return res.data;
-                }
-                return [];
-            } catch (err) {
-                console.log(err);
-                return [];
-            }
-        }
 
         function toggleAddOrderHeadModal() {
             addOrderHeadModal.querySelector("#addOrderHeadSearch").value = "";
@@ -177,7 +176,7 @@
 
 
         const getAllOrderHeads = async (search = "") => {
-            const model = { search, passType: 3, selectedIds: tempSelectedIds };
+            const model = { search, passType: 3, selectedIds: tempSelectedIds, filterIds: orderHeadsFilterIds };
             const res = await axios.post(`/Order/GetAllOrderHeads`, model);
 
             addOrderHeadModal.querySelector("#addOrderHeadContainer").innerHTML = res.data;

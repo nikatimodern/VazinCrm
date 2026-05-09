@@ -1887,6 +1887,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 var setting = await db.ASettings.FirstOrDefaultAsync();
+                var roles = await userManager.GetRolesAsync(user);
                 // ================= UPDATE =================
                 if (model.Id != Guid.Empty)
                 {
@@ -1977,7 +1978,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     ac.DealSerialNumber = model.DealSerialNumber ?? ac.DealSerialNumber;
 
                     ac.Beneficiary = model.Beneficiary;
-                    ac.Status = model.AccType == AcEnum.برگشتی ? AccStatusEnum.در_دست_تایید : AccStatusEnum.ثبت_اولیه;
+
+                    ac.Status = roles.Contains("کارشناس مالی") || model.AccType == AcEnum.برگشتی
+                        ? AccStatusEnum.در_دست_تایید
+                        : AccStatusEnum.ثبت_اولیه;
                     ac.ToName = model.ToName;
 
                     switch (model.AccType)
@@ -2597,8 +2601,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> AddFactor(Factor model)
+        public async Task<IActionResult> AddFactor(Factor model, bool unlinkSepidar = false)
         {
+            if (model == null) return NotFound();
+
             await using var transAction = await db.Database.BeginTransactionAsync();
             try
             {
@@ -2665,9 +2671,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     model.UserModify = user.FullName;
 
 
+                    if (unlinkSepidar)
+                    {
+                        model.SepidarId = null;
+                        model.SnFinancial = null;
+                    }
+
                     if (setting.Sepidar == true && model.SepidarId != null)
                     {
                         var sF = await S1db.vwInvoice.AsNoTracking().Where(f => f.InvoiceId == model.SepidarId).FirstOrDefaultAsync();
+                        if (sF == null) return Ok(new { status = 201 });
+
                         model.DateMiladi = sF.Date;
                         model.Date = sF.DateTXT;
                     }
@@ -2738,7 +2752,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 await db.SaveChangesAsync();
                 await transAction.CommitAsync();
-                return Ok();
+                return Ok(new { status = 200 });
             }
             catch (Exception e)
             {
@@ -3263,6 +3277,38 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
             return errorList.Count > 0 ? Ok(new ReturnVModel { Status = false, Errors = errorList }) : Ok();
+        }
+
+
+        public async Task<IActionResult> GetAllPreFactorList(string search = "")
+        {
+            try
+            {
+                var query = db.PreFactors
+                    .OrderByDescending(f => f.CreateDate)
+                    .AsNoTracking()
+                    .AsQueryable();
+
+                if (!string.IsNullOrEmpty(search))
+                {
+                    query = query.Where(f =>
+                        f.Customer.Contains(search) ||
+                        f.AgentName.Contains(search) ||
+                        f.SerialNumber == TextService.convertToInt(search) ||
+                        f.CustomerCode == TextService.convertToInt(search)
+                    );
+                } else
+                {
+                    query = query.Take(50);
+                }
+
+                var preFactors = await query.ToListAsync();
+                return PartialView(preFactors);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

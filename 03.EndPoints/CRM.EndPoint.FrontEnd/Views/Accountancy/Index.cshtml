@@ -3,8 +3,15 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="mx-auto pb-2 w-100" style="align-items:center; flex-direction:column;display:flex;">
-
+<div class="mx-auto pb-2 w-100">
+    <div data-class="d-flex" class="FinancialExpert align-items-center gap-1 mb-3 justify-content-end" style="display: none">
+        <button class="buttonGreen0 deposit-btn py-1 px-2" style="font-size: 12px" onclick="showModalPreFactorList(1)">
+            ثبت واریزی
+        </button>
+        <button class="buttonCancel2 backward-btn py-1 px-2" style="background-color: #750002;font-size: 12px" onclick="showModalPreFactorList(2)">
+            ثبت برگشتی
+        </button>
+    </div>
     <div style="border-radius:10px;width:100%;">
         <table style=" width:100%" class="table table-striped table-hover nowrap" id="AcTable">
             <thead>
@@ -66,6 +73,7 @@
                 // searchDelay: 500,
                 ordering: true,
                 order: [[0, "desc"]],
+
 
                 scrollCollapse: true,
                 scrollY: "70dvh",
@@ -215,6 +223,13 @@
                             placeholder: "جستجو",
                         },
                     },
+                    @*div: {
+                        className: "search-group",
+                        html: `<input class="form-control" type="text" id="requestAmountSearchId" placeholder="جستجو..." />
+                                <div class="search-icon">
+                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                                </div>`,
+                    },*@
                 },
                 rowCallback: function (row, data) {
                     if ((data.payType === 2 || data.payType === 3) && data.vosoled) {
@@ -229,7 +244,7 @@
             function initFilterAccTable() {
                 const dtLength = document.querySelector(".dt-length label");
                 const dtSearch = document.querySelector(".dt-search");
-                const searchInput = dtSearch.querySelector("input");
+                const searchInput = dtSearch?.querySelector("input");
                 if (!searchInput) return;
 
                 const refresh = `

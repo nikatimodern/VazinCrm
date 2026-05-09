@@ -142,7 +142,7 @@
 @section Scripts {
     <script>
         var paymentAttachments = [];
-        let paymentData = [];
+        let paymentData = {};
         const paymentModal = document.getElementById("PaymentModalId");
         document.addEventListener("DOMContentLoaded", async () => {
             @*const data = await getAllBankAccountsJson();
@@ -161,7 +161,7 @@
 
         const cancelPaymentModal = () => {
             paymentAttachments = [];
-            paymentData = [];
+            paymentData = {};
 
             supplyFactorsSelectedIds = [];
             tempSupFacSelectedIds = [];

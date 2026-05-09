@@ -22,6 +22,7 @@ namespace CRM.Core.Domain.ASettings.Entities
 
         public bool SetSupplyAmountByTamin { get; set; } = false;
         public bool SetSupplyByTamin { get; set; } = false;
+        public bool MultiSelectOrderHeadsInRequestAmount { get; set; } = false;
         public bool CustomerAssignExpert { get; set; } = false;
 
     }

@@ -1968,6 +1968,8 @@ const Backward = (id, type, dealId) => {
 const GetSetting = async () => {
     return new Promise((resolve) => {
         $.get("/ASetting/GetSetting", (res) => {
+            setting = res;
+            document.dispatchEvent(new CustomEvent("settingReady"));
             resolve(res);
         })
          .fail(async () => {
@@ -2578,6 +2580,11 @@ const submitInvoice = async () => {
                 await refreshInvoiceSuccess();
                 toastifySuccess(isEditInvoiceModal ? "ویرایش انجام شد" : "ثبت انجام شد");
                 closeModalInvoice();
+                
+                const pfListModal = document.getElementById("preFactorListModal");
+                if (pfListModal.classList.contains("show")) {
+                    ModalToggle(pfListModal, "hide");
+                }
             } else {
                 toastifyError(res.error);
             }
@@ -4516,6 +4523,52 @@ function restoreSelectedSupplyFactor() {
 
 /*--------------------------------------------------------------------------------*/
 
+const preFactorListModal = document.getElementById("preFactorListModal");
+let accType_pfList;
+async function showModalPreFactorList(accType) {
+    accType_pfList = accType;
+    await getAllPreFactorList();
+    preFactorListModal.querySelector("#preFactorListSearch").value = "";
+    ModalToggle(preFactorListModal);
+}
+
+const getAllPreFactorList = async (search = "") => {
+    const res = await axios(`/Factor/GetAllPreFactorList?search=${search}`);
+    
+    preFactorListModal.querySelector("#preFactorListContainer").innerHTML = res.data;
+};
+
+preFactorListModal.querySelector("#preFactorListSearch").addEventListener("keyup", async (e) => {
+    if (e.key === "Enter") {
+        toggleElementsDisabled(e.target);
+        await getAllPreFactorList(e.target.value.trim());
+        toggleElementsDisabled(e.target, false);
+        e.target.focus();
+    }
+});
+
+
+async function selectPfFromPfListModal(pfId) {
+    InvoiceType = 1;
+    pfactorID = pfId;
+    await ShowModalInvoice(accType_pfList);
+}
+
+
+/*--------------------------------------------------------------------------------*/
+
+async function getOrderHeadIdsBySupplier(supplierId) {
+    try {
+        const res = await axios(`/Supply/GetOrderHeadsBySupplier?supplierId=${supplierId}`);
+        if (res.status === 200) {
+            return res.data;
+        }
+        return [];
+    } catch (err) {
+        console.log(err);
+        return [];
+    }
+}
 
 /*--------------------------------------------------------------------------------*/
 

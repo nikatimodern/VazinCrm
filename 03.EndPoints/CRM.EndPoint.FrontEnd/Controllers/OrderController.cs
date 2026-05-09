@@ -468,11 +468,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 ViewBag.passType = model.PassType;
                 var search = model.Search;
 
-                var query = db.OrderHeads
+                var query = db.OrderHeads.AsNoTracking().AsQueryable();
+
+                if (model.FilterIds != null)
+                {
+                    query = query.Where(f => model.FilterIds.Contains(f.Id));
+                }
+
+                query = query
                     .OrderByDescending(f => model.SelectedIds.Contains(f.Id))
-                    .ThenByDescending(f => f.CreateDate)
-                    .AsNoTracking()
-                    .AsQueryable();
+                    .ThenByDescending(f => f.CreateDate);
 
                 if (!string.IsNullOrEmpty(search))
                 {
