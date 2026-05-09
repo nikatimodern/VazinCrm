@@ -4839,11 +4839,15 @@ const submitReqAmountAttach = async () => {
             } else {
                 await getAllRequestAmount();
             }
+        } else if(res.status === 201) {
+            console.log(res);
+            toastifyError(res.data);
         }
     } catch (err) {
         toastifyError("خطای سرور!");
         console.log(err);
-        await submitReqAmountAttach();
+        setTimeout(async () => await submitReqAmountAttach(), 3000)
+        
     } finally {
         FLshowLoading(false);
     }

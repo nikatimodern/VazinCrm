@@ -215,7 +215,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var result = await AddOrUpdatePayment(model, user);
-                if (!result.IsSuccess) return BadRequest(result.Message);
+                if (!result.IsSuccess) return StatusCode(201, result.Message);
 
                 var RequestAmountIdList = model.RequestAmountPayments.Select(f => f.RequestAmountId).ToList();
                 await SetRequestAmountsToPaid(RequestAmountIdList, user);
@@ -345,7 +345,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var finalAmount = requestAmount.PaidAmount + reqAmountPayment.Amount;
 
                 if (finalAmount > requestAmount.AcceptedAmount) {
-                    return (false, "مجموع پرداخت درخواست بیشتر از مبلغ تایید شده است.");
+                    return (false, "مبلغ پرداخت بیشتر از مبلغ تایید شده است.");
                 }
             }
 
