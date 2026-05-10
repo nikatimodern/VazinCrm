@@ -142,7 +142,7 @@
 @section Scripts {
     <script>
         var paymentAttachments = [];
-        let paymentData = [];
+        let paymentData = {};
         const paymentModal = document.getElementById("PaymentModalId");
         document.addEventListener("DOMContentLoaded", async () => {
             @*const data = await getAllBankAccountsJson();
@@ -161,7 +161,7 @@
 
         const cancelPaymentModal = () => {
             paymentAttachments = [];
-            paymentData = [];
+            paymentData = {};
 
             supplyFactorsSelectedIds = [];
             tempSupFacSelectedIds = [];
@@ -210,35 +210,15 @@
             FLshowLoading(false);
         };
 
-        const deletePayment = async (id) => {
-            Swal.fire({
-                title: "حذف!",
-                text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
-                icon: "warning",
-                showCancelButton: true,
-                cancelButtonColor: "#adadad",
-                confirmButtonColor: "#e64942",
-                cancelButtonText: "انصراف",
-                confirmButtonText: "بله، حذف شود",
-            }).then(async (willDelete) => {
-                if (willDelete.isConfirmed) {
-                    FLshowLoading();
-                    const res = await axios(`/Supply/DeletePayment/${id}`);
-                    if (res.status === 200) {
-                        toastifySuccess("با موفقیت حذف شد");
-                        paymentTbl.ajax.reload();
-                    }
-                    FLshowLoading(false);
-                }
-            });
-        };
 
+
+        @*
         async function showEditPaymentModal(id) {
             FLshowLoading();
             await togglePaymentModal();
 
             try {
-                const res = await axios(`/Supply/GetPayment/${id}`);
+                const res = await axios(`/Supply/GetPayment?paymentId=${id}`);
                 if (res.status === 200) {
                     paymentData = res.data.payment;
                     const factorSerials = res.data.supplyFactorSerials;
@@ -256,7 +236,7 @@
             } finally {
                 FLshowLoading(false);
             }
-        }
+        }*@
 
 
         let paymentTbl;
@@ -319,8 +299,8 @@
                     { data: "payment.paymentNumber", name: "PaymentNumber", defaultContent: "-" },
                     { data: "payment.createDateTxt", name: "CreateDateTxt", defaultContent: "-" },
                     { data: "payment.amount", name: "Amount", defaultContent: "-" },
-                    { data: "payment.fromAccount", name: "FromAccount", defaultContent: "-" },
-                    { data: "payment.toAccount", name: "ToAccount", defaultContent: "-" },
+                    { data: "payment.fromAccountTxt", name: "FromAccountTxt", defaultContent: "-" },
+                    { data: "payment.toAccountTxt", name: "ToAccountTxt", defaultContent: "-" },
                     { data: "payment.paymentTypeTxt", name: "PaymentTypeTxt", defaultContent: "-" },
                     { data: "payment.paymentDateTxt", name: "PaymentDateTxt", defaultContent: "-" },
                     { data: "supplyFactorSerials", name: "SupplyFactorSerials", defaultContent: "-" },

@@ -357,7 +357,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     {
                         query = query.Where(f =>
                             f.PaymentNumber == TextService.convertToInt(search)
-                            || f.ToAccount.Contains(search)
+                            || f.ToAccountTxt.Contains(search)
                             || f.UserModify.Contains(search)
                         );
                     }
@@ -367,14 +367,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             f.PaymentNumber,
                             f.ModifyDate,
                             f.ModifyDateTxt,
-                            f.ToAccount,
+                            f.ToAccountTxt,
                             f.UserModify,
                         }),
                         item => new AllDeletedVmodel {
                             EntityId = item.Id,
                             EntityType = EntityTypeEnum.Payment,
                             EntityTypeTxt = "پرداختی",
-                            title = $"پرداختی به {item.ToAccount}",
+                            title = $"پرداختی به {item.ToAccountTxt}",
                             ModifyDate = item.ModifyDate ?? DateTime.MinValue,
                             ModifyDateTxt = FormatDateTime(item.ModifyDateTxt),
                             CodeNumber = item.PaymentNumber.ToString(),

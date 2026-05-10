@@ -498,15 +498,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
                 var query = db.PreFactors.AsQueryable();
-                switch (type)
-                {
-                    case 1:
-                        query = query.Where(s => s.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین);
-                        break;
-                    default:
-                        query = query.Where(s => s.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین);
-                        break;
-                }
+                query = type switch {
+                    -1 => query.Where(s => s.Pftype >= (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین),
+                    1 => query.Where(s => s.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین),
+                    2 => query.Where(s => s.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین),
+                    _ => query
+                };
 
                 if (!string.IsNullOrWhiteSpace(serVal))
                 {
@@ -578,6 +575,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 switch (type)
                 {
+                    case -1:
+                        query = query.Where(f =>
+                            f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی ||
+                            f.Pftype == (int)PreFactorEnum.در_انتظار_تولید ||
+                            f.Pftype == (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد ||
+                            f.AcceptedFinancial == true || f.AcceptedFinancial == false
+                        );
+                        break;
                     case 1:
                         query = query.Where(f => f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی);
                         break;
@@ -736,6 +741,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             s.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش
                             || s.Pftype == (int)PreFactorEnum.در_انتظار_تولید
                             || s.Pftype == (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد
+                            || s.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی
                             || s.Pftype == (int)PreFactorEnum.بسته_شده
                         );
                         break;

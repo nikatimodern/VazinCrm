@@ -26,15 +26,17 @@ public class DealController : Controller {
     private readonly DateTimeServices dtService;
     private readonly Service genService;
     private readonly LogSystemService _logSystemService;
+    private readonly UserContextDb udb;
 
     public DealController(CRMContextDb db, UserManager<AppUser> userManager, DateTimeServices dtService, Service genService,
-        LogSystemService logSystemService)
+        LogSystemService logSystemService, UserContextDb udb)
     {
         this.db = db;
         this.userManager = userManager;
         this.dtService = dtService;
         this.genService = genService;
         _logSystemService = logSystemService;
+        this.udb = udb;
     }
 
     public IActionResult Index()
@@ -131,6 +133,9 @@ public class DealController : Controller {
                 .ToDictionaryAsync(x => x.Key, x => x.Count);
 
 
+            var users = await udb.Users.Where(f => f.IsEmployee).Select(f => new { f.Id, f.FirstName, f.LastName })
+                .ToDictionaryAsync(x => Guid.Parse(x.Id), x => x.FirstName + " " + x.LastName);
+
             foreach (var item in open)
             {
                 item.Counts.PreFactor = preFactorCounts.GetValueOrDefault(item.Id);
@@ -138,6 +143,24 @@ public class DealController : Controller {
                 item.Counts.Report = reportCounts.GetValueOrDefault(item.Id);
                 item.Counts.OrderHead = orderHeadCounts.GetValueOrDefault(item.Id);
                 item.Counts.Accountancy = accCounts.GetValueOrDefault(item.Id);
+
+                if (item.Suspend)
+                {
+                    var userList = await db.UserCustomers
+                        .Where(f => f.CustomerId == item.CustomerId)
+                        .Select(f => new AppUser {
+                            Id = f.UserId.ToString(),
+                            FirstName = users.GetValueOrDefault(f.UserId)
+                        })
+                        .ToListAsync();
+
+                    userList.Add(new AppUser {
+                        Id = item.UserCreatorID,
+                        FirstName = item.UserCreator
+                    });
+
+                    item.UserIdsForSuspend = userList.DistinctBy(u => Guid.Parse(u.Id)).Reverse().ToList();
+                }
             }
 
             foreach (var item in success)
@@ -193,6 +216,18 @@ public class DealController : Controller {
             }
 
             var user = await userManager.GetUserAsync(HttpContext.User);
+            var setting = await db.ASettings.FirstOrDefaultAsync();
+            if (setting.CustomerAssignExpert && model.CustomerId != null)
+            {
+                var isCustomerForUser = await db.UserCustomers.Where(f =>
+                    f.CustomerId == model.CustomerId &&
+                    f.UserId.ToString() == user.Id
+                ).AnyAsync();
+
+                if (!isCustomerForUser)
+                    model.Suspend = true;
+            }
+
             var oldDeal = await db.Deals.AsNoTracking().Where(f => f.Id == model.Id).FirstOrDefaultAsync();
             var customer = await db.Customers.Where(f => f.Id == model.CustomerId).FirstOrDefaultAsync();
             if (customer != null)
@@ -302,6 +337,36 @@ public class DealController : Controller {
             deal.ModifyDateTxt = dtService.GetDateTimePersian();
 
             await _logSystemService.LogChange(oldDeal, deal, LogActionEnum.تغییر_وضعیت, user);
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+        catch
+        {
+            return BadRequest();
+        }
+    }
+
+    public async Task<IActionResult> AssignUserSuspendDeal(Guid dealId, Guid userId, string userFullName)
+    {
+        try
+        {
+            var deal = await db.Deals.FirstOrDefaultAsync(f => f.Id == dealId);
+            if (deal == null) return NotFound();
+            if (deal.CustomerId == null) return BadRequest();
+
+            if (Guid.Parse(deal.UserCreatorID) == userId)
+            {
+                await db.UserCustomers.AddAsync(new UserCustomer {
+                    UserId = userId,
+                    CustomerId = (Guid)deal.CustomerId
+                });
+            } else
+            {
+                deal.UserCreatorID = userId.ToString();
+                deal.UserCreator = userFullName;
+            }
+
+            deal.Suspend = false;
             await db.SaveChangesAsync();
             return Ok();
         }

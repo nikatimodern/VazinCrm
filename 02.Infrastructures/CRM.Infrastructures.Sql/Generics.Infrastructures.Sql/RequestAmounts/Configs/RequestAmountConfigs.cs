@@ -23,6 +23,11 @@ namespace CRM.Infrastructures.Sql.RequestAmounts.Configs {
                 .HasForeignKey(f => f.RequestAmountId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.HasMany(f => f.RequestAmountPayments)
+                .WithOne(f => f.RequestAmount)
+                .HasForeignKey(f => f.RequestAmountId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             builder.Property(f => f.Amount).HasPrecision(20, 0);
             builder.Property(f => f.AcceptedAmount).HasPrecision(20, 0);
         }

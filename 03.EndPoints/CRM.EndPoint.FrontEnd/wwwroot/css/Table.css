@@ -256,7 +256,8 @@ div.dt-container div.dt-buttons {
 @media screen and (max-width: 767px) {
   #AcTable_wrapper div.dt-scroll-body,
   #supplyProfitTable_wrapper div.dt-scroll-body,
-  #supplyDemandTable_wrapper div.dt-scroll-body {
+  #supplyDemandTable_wrapper div.dt-scroll-body,
+  #cashTable_wrapper div.dt-scroll-body {
     max-height: none !important;
   }
   
