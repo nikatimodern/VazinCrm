@@ -24,6 +24,8 @@ using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
+using CRM.Core.Domain.RequestAmounts.Entities;
+using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using WebPush;
@@ -68,6 +70,39 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 await trans.CommitAsync();
+
+                var data = await db.RequestAmounts.IgnoreQueryFilters().ToListAsync();
+                foreach (var r in data)
+                {
+                    if (r.RequestStatus == (RequestStatusEnum)1)
+                    {
+                        r.RequestStatus = RequestStatusEnum.در_انتظار_تایید_مدیرعامل;
+                    } else if (r.RequestStatus == (RequestStatusEnum)2)
+                    {
+                        if (r.Vosoled)
+                        {
+                            r.RequestStatus = RequestStatusEnum.پرداخت_شده;
+                        } else
+                        {
+                            r.RequestStatus = RequestStatusEnum.در_انتظار_پرداخت;
+                        }
+                    }
+
+                    r.RequestStatusTxt = r.RequestStatus.ToString().Replace("_", " ");
+
+
+                    if (r.Prepayment)
+                    {
+                        r.RequestAmountType = RequestAmountTypeEnum.پیش_پرداخت;
+                        r.RequestAmountTypeTxt = nameof(RequestAmountTypeEnum.پیش_پرداخت).Replace("_", " ");
+                    } else
+                    {
+                        r.RequestAmountType = RequestAmountTypeEnum.پرداخت_فاکتور;
+                        r.RequestAmountTypeTxt = nameof(RequestAmountTypeEnum.پرداخت_فاکتور).Replace("_", " ");
+                    }
+                }
+
+                //await db.SaveChangesAsync();
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();
             }

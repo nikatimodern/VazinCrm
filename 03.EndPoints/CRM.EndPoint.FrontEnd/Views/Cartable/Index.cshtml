@@ -304,11 +304,16 @@
                                 <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
                             </button>
                         </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link position-relative" onclick="GetRequestFinancialExpert()" id="FinancialRequestTab" data-bs-target="#FinancialRequestTab-pane" type="button" role="tab">
+                                درخواست ها
+                                <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                            </button>
+                        </li>
                     </ul>
                     <div class="parent-all-financialExperts tab-content p-2 px-1 px-sm-2 col-12" id="tabContentFinancialExperts">
 
                         <div class="tab-pane fade border-0" id="FinancialInvoiceTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
-
                             <div class="w-100">
                                 <div class="px-2 w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center align-items-md-center">
 
@@ -359,6 +364,7 @@
                                 </div>
                             </div>
                         </div>
+
                         <div class="tab-pane fade show active border-0" id="FinancialPrefactorTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
 
                             <div class="d-flex flex-column align-items-center w-100 gap-3">
@@ -398,11 +404,91 @@
                                 </div>
 
 
-                                <div class="w-100" id="FinancialExpertPfContentId" style="max-height:74dvh; overflow:auto;">
+                                <div class="w-100" id="FinancialExpertPfContentId" style="max-height:72dvh; overflow:auto;">
                                 </div>
                             </div>
 
                         </div>
+
+                        <div class="tab-pane fade border-0" id="FinancialRequestTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
+
+                            <div class="w-100">
+                                <div class="d-flex justify-content-between flex-wrap gap-2 align-items-center">
+
+                                    <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
+                                        تعداد: <span id="FinancialRequestCount"></span>
+                                    </div>
+
+
+                                    <div class="search-group col-12 order-5 order-md-0 col-md-5">
+                                        <input class="form-control" type="text" id="FinancialRequestSearchId" placeholder="جستجو..." />
+                                        <div class="search-icon">
+                                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        <ul class="filter-switch">
+                                            <li class="filter-switch-item">
+                                                <input type="radio" name="FinancialRequestFilter" id="FinancialRequestFilterAll" value="-1" />
+                                                <label for="FinancialRequestFilterAll">همه</label>
+                                            </li>
+                                            <li class="filter-switch-item">
+                                                <input type="radio" name="FinancialRequestFilter" id="FinancialRequestFilter1" value="1" />
+                                                <label for="FinancialRequestFilter1">در انتظار تایید</label>
+                                            </li>
+                                            <li class="filter-switch-item">
+                                                <input type="radio" name="FinancialRequestFilter" id="FinancialRequestFilter2" value="2" checked />
+                                                <label for="FinancialRequestFilter2">در انتظار پرداخت</label>
+                                            </li>
+                                            <li class="filter-switch-item">
+                                                <input type="radio" name="FinancialRequestFilter" id="FinancialRequestFilter3" value="3" />
+                                                <label for="FinancialRequestFilter3">پرداخت شده</label>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <button id="requestSelectionModeBtn" class="buttonGreen2 d-flex align-items-center gap-2 mt-2 mb-1" style="padding: 4px 8px !important">
+                                    <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM1.49 15.326a.78.78 0 0 1-.358-.442 3 3 0 0 1 4.308-3.516 6.484 6.484 0 0 0-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 0 1-2.07-.655ZM16.44 15.98a4.97 4.97 0 0 0 2.07-.654.78.78 0 0 0 .357-.442 3 3 0 0 0-4.308-3.517 6.484 6.484 0 0 1 1.907 3.96 2.32 2.32 0 0 1-.026.654ZM18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5.304 16.19a.844.844 0 0 1-.277-.71 5 5 0 0 1 9.947 0 .843.843 0 0 1-.277.71A6.975 6.975 0 0 1 10 18a6.974 6.974 0 0 1-4.696-1.81Z" /></svg>
+                                    <span style="line-height: 1">پرداخت گروهی</span>
+                                </button>
+
+                                <div id="requestSelectionBar" class="selection-bar d-none mt-2">
+                                    <div class="d-none d-lg-flex align-items-center gap-3">
+                                        <label class="d-flex align-items-center gap-3">
+                                            <input type="checkbox" class="select-all" />
+                                            <span>انتخاب همه</span>
+                                        </label>
+                                    </div>
+
+                                    <div class="col-12 col-lg-auto flex-center flex-wrap gap-3" style="color: #444;">
+                                        <span class="selected-count fbold" style="color: var(--color8);">0</span>
+                                        <span>مورد انتخاب شده</span>
+
+                                        <button class="clear-selection link-green" style="font-size: 13px">
+                                            حذف انتخاب
+                                        </button>
+                                    </div>
+
+                                    <div class="col-12 col-lg-auto d-flex align-items-center justify-content-between justify-content-lg-end gap-3">
+                                        <button class="cancel-selection buttonCancel-white">
+                                            <svg style="width: 16px" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
+                                            انصراف
+                                        </button>
+
+                                        <button class="pay-selected buttonGreen0" disabled>
+                                            پرداخت همه (<span class="selected-count">0</span>)
+                                        </button>
+                                    </div>
+                                </div>
+
+
+                                <div id="FinancialRequestContentId" class="pt-2" style="max-height:74dvh; overflow:auto;">
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
                 </div>
@@ -499,24 +585,25 @@
             </div>
 
             @*کارتابل مدیر عامل*@
-            <div class="col-12 col-xl-10 col-xxl-9" style="display:none;padding:8px" id="CManagingDirectorId">
+            <div class="col-12 col-xxl-11" style="display:none;padding:8px" id="CManagingDirectorId">
                 <div class="d-flex flex-column w-100">
                     <ul class="nav nav-pills" id="ManagingDirectorTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active position-relative" onclick="GetInvoicesManagingDirector()" id="MDInvoiceTab" data-bs-target="#MDInvoiceTab-pane" type="button" role="tab">
+                            <button class="nav-link position-relative" onclick="GetInvoicesManagingDirector()" id="MDInvoiceTab" data-bs-target="#MDInvoiceTab-pane" type="button" role="tab">
                                 صورتحساب ها
                                 <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link position-relative" onclick="GetRequestManagingDirector()" id="MDRequestAmountTab" data-bs-target="#MDRequestAmountTab-pane" type="button" role="tab">
+                            <button class="nav-link active position-relative" onclick="GetRequestManagingDirector()" id="MDRequestAmountTab" data-bs-target="#MDRequestAmountTab-pane" type="button" role="tab">
                                 درخواست ها
                                 <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
                             </button>
                         </li>
                     </ul>
                     <div class="parent-all-managingDirector tab-content p-2 px-1 px-sm-2 col-12" id="tabContentManagingDirector">
-                        <div class="tab-pane fade show active border-0" id="MDInvoiceTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
+
+                        <div class="tab-pane fade border-0" id="MDInvoiceTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
                             <div class="d-flex flex-column align-items-center w-100 gap-3">
                                 <div class="w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center">
 
@@ -558,7 +645,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="tab-pane fade border-0" id="MDRequestAmountTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
+
+                        <div class="tab-pane fade show active border-0" id="MDRequestAmountTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
 
                             <div class="d-flex flex-column align-items-center w-100 gap-3">
                                 <div class="w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center">
@@ -587,8 +675,14 @@
                                             </li>
                                             <li class="filter-switch-item">
                                                 <input type="radio" name="MDRequestAmountFilter" id="MDRequestAmountFilter2" value="2" />
-                                                <label for="MDRequestAmountFilter2">تایید شده</label>
+                                                <label for="MDRequestAmountFilter2">در انتظار پرداخت</label>
                                             </li>
+
+                                            <li class="filter-switch-item">
+                                                <input type="radio" name="MDRequestAmountFilter" id="MDRequestAmountFilter3" value="3" />
+                                                <label for="MDRequestAmountFilter3">پرداخت شده</label>
+                                            </li>
+
                                         </ul>
                                     </div>
                                 </div>
@@ -598,6 +692,7 @@
                                 </div>
                             </div>
                         </div>
+
                     </div>
                 </div>
 
@@ -882,8 +977,6 @@
 </div>
 
 
-
-
 @section scripts {
 
     <script>
@@ -991,6 +1084,19 @@
 
             const financialInvoiceFilterRadios = document.querySelectorAll("input[type='radio'][name='financialExpertInvoiceFilter']");
             financialInvoiceFilterRadios.forEach(elm => elm.addEventListener("change", async () => await GetInvoicesFinancialExpert()));
+
+
+            //////////////////////financial req//////////////////////
+            const searchFinancialReqElm = document.getElementById("FinancialRequestSearchId");
+            searchFinancialReqElm.addEventListener("keyup", async (e) => {
+                if (e.key === "Enter") {
+                    await GetRequestFinancialExpert();
+                }
+            });
+            searchFinancialReqElm.nextElementSibling.addEventListener("click", async () => await GetRequestFinancialExpert());
+
+            const financialRequestAmountRadios = document.querySelectorAll("input[type='radio'][name='FinancialRequestFilter']");
+            financialRequestAmountRadios.forEach(elm => elm.addEventListener("change", async () => await GetRequestFinancialExpert()));
 
 
             //////////////////////MD inv//////////////////////
@@ -1291,6 +1397,8 @@
                             document.getElementById("CFinancialExpertId").style.display = "flex";
                             if (subId === "FinancialInvoiceTab") {
                                 await GetInvoicesFinancialExpert();
+                            } else if (subId === "FinancialRequestTab") {
+                                await GetRequestFinancialExpert();
                             } else {
                                 await GetPreFactorFinancialExpert();
                             }
@@ -1318,10 +1426,10 @@
 
                         case "TManagingDirectorId":
                             document.getElementById("CManagingDirectorId").style.display = "flex";
-                            if (subId === "MDRequestAmountTab") {
-                                await GetRequestManagingDirector();
-                            } else {
+                            if (subId === "MDInvoiceTab") {
                                 await GetInvoicesManagingDirector();
+                            } else {
+                                await GetRequestManagingDirector();
                             }
                             break;
                     }
@@ -1475,19 +1583,21 @@
             const acceptAmount = percent * amount / 100;
             input.value = acceptAmount ? acceptAmount.toLocaleString() : "";
 
-            select.style.backgroundColor = acceptAmount ? "#e3f7e3" : "";
+            select.style.backgroundColor = acceptAmount ? "#cef5ce" : "";
             toggleAcceptBtn(select, acceptAmount, acceptedAmount);
         }
 
         function changeAcceptedRequestAmount(input, amount, acceptedAmount) {
-            const inputValue = Number(SeparatedNumberRemove(input.value));
-            const select = input.parentElement.querySelector("select");
-            const percent = Number(select.value);
-            if (percent * amount / 100 !== inputValue) {
-                select.value = "";
-                select.style.backgroundColor = "";
-            }
-            toggleAcceptBtn(input, inputValue, acceptedAmount);
+            setTimeout(() => {
+                const inputValue = Number(SeparatedNumberRemove(input.value)) || 0;
+                const select = input.parentElement.querySelector("select");
+                const percent = Number(select.value);
+                if (percent * amount / 100 !== inputValue) {
+                    select.value = "";
+                    select.style.backgroundColor = "";
+                }
+                toggleAcceptBtn(input, inputValue, acceptedAmount);
+            });
         }
 
         function toggleAcceptBtn(elm, acceptAmount, acceptedAmount) {
@@ -1495,33 +1605,37 @@
             if (acceptAmount === 0) {
                 toggleElementsDisabled(acceptBtn, true);
             } else {
-                if (acceptedAmount === acceptAmount) {
+                /*if (acceptedAmount === acceptAmount) {
                     toggleElementsDisabled(acceptBtn, true);
-                } else {
-                    toggleElementsDisabled(acceptBtn, false);
-                    //acceptBtn.textContent = "تایید شده";
-                }
+                } else {*/
+                toggleElementsDisabled(acceptBtn, false);
+                // }
             }
         }
 
         async function submitAcceptedRequestAmount(btn, id) {
-            const input = btn.closest(".layered-card").querySelector("input[name='acceptedAmount']");
+            const card = btn.closest(".layered-card");
+            const input = card.querySelector("input.acceptedAmount");
+            const selOpPercent = card.querySelector("select.acceptedAmountPercent");
 
             const model = {
                 id,
                 acceptedAmount: Number(SeparatedNumberRemove(input.value)),
+                acceptedAmountPercent: selOpPercent.value ? Number(selOpPercent.value) : null,
             };
+
             try {
                 FLshowLoading();
                 const res = await axios.post(`/Amount/SetAcceptedRequestAmount`, model);
                 if (res.status === 200) {
                     await GetRequestManagingDirector();
-                    FLshowLoading(false);
                 }
             } catch (err) {
                 console.log(err);
+                toastifyError("خطای سرور");
+            } finally {
+                FLshowLoading(false);
             }
-
         }
 
         const GetPreFactorFinancialExpert = async () => {
@@ -1566,6 +1680,48 @@
                 console.log(err);
             }
         };
+
+
+        const GetRequestFinancialExpert = async () => {
+            const val = document.getElementById("FinancialRequestSearchId")?.value.trim() ?? "";
+            const type = document.querySelector("input[type='radio'][name='FinancialRequestFilter']:checked")?.value;
+            if (type === undefined) return;
+
+            setUrlParams({ sub: "FinancialRequestTab" });
+            ShowTab("#FinancialRequestTab");
+            try {
+                FLshowLoading();
+                const res = await axios(`/Amount/GetAllRequestAmountsPartial?search=${val}&type=${type}&passType=3`);
+                const data = res.data;
+                document.getElementById("FinancialRequestContentId").innerHTML = data.html;
+                document.getElementById("FinancialRequestCount").textContent = data.count;
+                requestSelection.restoreSelection();// restoreSelectedRequestAmounts();
+                //toggleRequestSelectionBar(false);
+                FLshowLoading(false);
+            } catch (err) {
+                console.log(err);
+            }
+        };
+
+
+        ////////////////////////////////////////////////////////
+        const requestSelection = new SelectionManager({
+            container: "#FinancialRequestContentId",
+            selectionBar: "#requestSelectionBar",
+            toggleBtn: "#requestSelectionModeBtn",
+
+            itemSelector: ".layered-card",
+            checkboxSelector: ".card-checkbox",
+            onPay: async (selectedIds) => {
+                if (selectedIds.length === 0) {
+                    toastifyError("لطفاً ابتدا درخواست‌های مورد نظر را انتخاب کنید.");
+                    return;
+                }
+                await showSetAmountPaymentItemModal(selectedIds);
+            },
+        });
+
+        ////////////////////////////////////////////////////////
 
 
         /*function renderProgressTracker() {

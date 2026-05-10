@@ -18,7 +18,6 @@ using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
-[Authorize(Roles = "مدیر ارشد,تنخواه دار,مدیر مالی,کارشناس مالی")]
 public class CashController : Controller {
     private readonly CRMContextDb db;
     private readonly UserContextDb udb;
@@ -52,6 +51,7 @@ public class CashController : Controller {
         return View();
     }
 
+    [Authorize(Roles = "مدیر ارشد,تنخواه دار,مدیر مالی,کارشناس مالی")]
     [HttpPost]
     public async Task<IActionResult> AddCash([FromBody] Cash model)
     {
@@ -113,6 +113,7 @@ public class CashController : Controller {
         }
     }
 
+    [Authorize(Roles = "مدیر ارشد,مدیر مالی,کارشناس مالی")]
     [HttpPost]
     public async Task<IActionResult> AddCashier([FromBody] Cashier model)
     {
@@ -483,6 +484,29 @@ public class CashController : Controller {
         catch (Exception ex)
         {
             return BadRequest(ex.Message);
+        }
+    }
+
+
+    public async Task<IActionResult> GetAllCashiers()
+    {
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var query = db.Cashiers.AsNoTracking();
+
+
+            var data = await query.Select(f => new {
+                value = f.UserId,
+                text = f.UserTxt,
+                target = f.UserId == user.Id
+            }).ToListAsync();
+
+            return Ok(data);
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
         }
     }
 }

@@ -459,9 +459,51 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetAllOrderHeadsByCurrentTamin()
+        {
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var roles = await userManager.GetRolesAsync(user);
+
+
+                var orderHeadQ = db.OrderHeads.AsQueryable();
+
+                if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر فروش") && !roles.Contains("کارشناس مالی") && !roles.Contains("مدیر مالی"))
+                {
+                    orderHeadQ = roles.Contains("کارشناس تامین")
+                        ? orderHeadQ.Where(f => f.UserCreatorID == user.Id || f.UserTaminId.ToString() == user.Id)
+                        : orderHeadQ.Where(f => f.UserCreatorID == user.Id);
+                }
+
+                var data = await orderHeadQ.Select(f => f.Id).ToListAsync();
+
+                /*
+                var pfs = db.PreFactors
+                    .Where(f => f.UserTaminId == Guid.Parse(CUser.Id))
+                    .Select(f => f.Id)
+                    .ToArray();
+
+                var orderHead = await db.OrderHeads
+                    .Where(f => pfs.Contains(f.Prefactor.Value))
+                    .Select(f => f.Id).ToListAsync();*/
+
+
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> GetAllOrderHeads([FromBody] GetAllSortBySelectedVModel model)
+        public async Task<IActionResult> GetAllOrderHeads([FromBody] GetAllBySelectedVModel model)
         {
             try
             {
@@ -775,7 +817,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
                     } else
                     {
-                        var oldData = await db.OrderHeads.AsNoTracking().Include(f => f.Orders).Where(f => f.Id == model.Id).FirstOrDefaultAsync();
+                        var oldData = await db.OrderHeads.AsNoTracking().Include(f => f.Orders).Where(f => f.Id == model.Id)
+                            .FirstOrDefaultAsync();
                         await _logSystemService.LogChange(oldData, model, LogActionEnum.ویرایش, user, ["Orders"]);
                     }
                 }

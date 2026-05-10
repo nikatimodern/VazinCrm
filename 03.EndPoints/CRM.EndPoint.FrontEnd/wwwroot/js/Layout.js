@@ -52,6 +52,8 @@ document.addEventListener("DOMContentLoaded", async () => {
    // initLightbox();
     
     setting = await GetSetting();
+    
+    
     AcceptSetting(setting);
     
     
@@ -3288,7 +3290,7 @@ const setCountEnvelope = (countObj, isAdmin) => {
         salesAdmin: { count: countObj.salesAdmin || 0, id: "TSalesAdminId" },
         tamin: { count: countObj.tamin || 0, id: "TTaminExpertId" },
         financial: {
-            count: (countObj.financial?.invoiceCount || 0) + (countObj.financial?.preFactorCount || 0),
+            count: (countObj.financial?.invoiceCount || 0) + (countObj.financial?.preFactorCount || 0) + (countObj.financial?.requestCount || 0),
             id: "TFinancialExpertId",
         },
         managingDirector: {
@@ -3316,6 +3318,7 @@ const setCountEnvelope = (countObj, isAdmin) => {
     // sub tabs
     setBadge("#FinancialPrefactorTab .badgeCircle", countObj.financial?.preFactorCount || 0);
     setBadge("#FinancialInvoiceTab .badgeCircle", countObj.financial?.invoiceCount || 0);
+    setBadge("#FinancialRequestTab .badgeCircle", countObj.financial?.requestCount || 0);
     setBadge("#MDRequestAmountTab .badgeCircle", countObj.managingDirector?.requestCount || 0);
     setBadge("#MDInvoiceTab .badgeCircle", countObj.managingDirector?.invoiceCount || 0);
 };
@@ -3446,10 +3449,10 @@ const cancelShowAccModal = () => {
     document.getElementById("showImageDisplayAccAt").innerHTML = "";
 };
 
-const getAllBankAccountsJson = async () => {
+const getAllBankAccountsJson = async (type) => {
     try {
-        const res = await axios.post("/Accountancy/GetAllBankAccountJson");
-        return res.data.map(i => ({ text: i.text, value: i.id }));
+        const res = await axios(`/Accountancy/GetAllBankAccountJson?type=${type}`);
+        return res.data;
     } catch (err) {
         console.log(err);
     }
@@ -3457,18 +3460,23 @@ const getAllBankAccountsJson = async () => {
 const getAllBankAccounts = async () => {
     try {
         const data = await getAllBankAccountsJson();
+        const companyData = data.filter(d => d.type === 1); // حساب های شرکت
+        const otherData = data.filter(d => d.type === 2); // حساب های دیگران
         
-        const applyToModal = (modalId) => {
+        const applyToModal = (dataOptions, modalId, selector) => {
             const modal = document.getElementById(modalId);
             if (!modal) return;
             
-            const select = modal.querySelector("select[name='BankAccountId']");
-            createOption(select, data, true, "انتخاب کنید");
+            const select = modal.querySelector(selector);
+            createOption(select, dataOptions, true, "انتخاب کنید");
         };
         
-        applyToModal("InvoiceModalId");
-        applyToModal("ShowPaymentModal");
         
+        applyToModal(companyData, "InvoiceModalId", "select[name='BankAccountId']");
+        applyToModal(companyData, "ShowPaymentModal", "select[name='BankAccountId']");
+        applyToModal(companyData, "reqAmountAttachModal", "select[name='fromAccountId']");
+        
+        applyToModal(otherData, "reqAmountAttachModal", "select[name='toAccountId']");
     } catch (err) {
         console.log(err);
     }
@@ -4569,6 +4577,647 @@ async function getOrderHeadIdsBySupplier(supplierId) {
         return [];
     }
 }
+/*--------------------------------------------------------------------------------*/
+
+let paymentData = {};
+var reqAmountAttachment = [];
+let reqAmountId;
+let paymentTable;
+let isFinancialPaymentTable;
+
+async function changeStatusReqAmount(reqAmountId, status) {
+    try {
+        FLshowLoading();
+        const res = await axios(`/Amount/ChangeStatusRequestAmount?id=${reqAmountId}&status=${status}`);
+        if (res.status === 200) {
+            const currentPath = window.location.pathname.toLowerCase();
+            if (currentPath.includes("cartable")) {
+                const { tab } = getUrlParams();
+                switch (tab) {
+                    case "TManagingDirectorId":
+                        await GetRequestManagingDirector();
+                        break;
+                    case "TFinancialExpertId":
+                        await GetRequestFinancialExpert();
+                        break;
+                }
+            } else {
+                await getAllRequestAmount();
+            }
+        }
+    } catch (err) {
+        console.log(err);
+        toastifyError("خطای سرور");
+    } finally {
+        FLshowLoading(false);
+    }
+}
+
+const ShowModalListPayment = async (id) => {
+    getAllPaymentsList(id);
+    ModalToggle("paymentListModalId", "show");
+};
+const initPaymentTable = () => {
+    paymentTable = $("#paymentListTable").DataTable({
+        paging: false,
+        processing: true,
+        serverSide: true,
+        searching: false,
+        ordering: true,
+        order: [[1, "desc"]],
+        scrollCollapse: true,
+        scrollY: "calc(100dvh - 400px)",
+        responsive: true,
+        ajax: {
+            url: ``,
+            type: "POST",
+            dataSrc: function (json) {
+                isFinancialPaymentTable = json.isFinancial;
+                return json.data;
+            },
+        },
+        language: {
+            emptyTable: "هیچ رکوردی موجود نمی باشد.",
+            info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
+            infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
+            infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
+            lengthMenu: "نمایش _MENU_ ردیف",
+            loadingRecords: "در حال بارگزاری...",
+            search: "",
+            zeroRecords: "رکوردی با این مشخصات پیدا نشد",
+            aria: {
+                sortAscending: ": فعال سازی نمایش به صورت صعودی",
+                sortDescending: ": فعال سازی نمایش به صورت نزولی",
+            },
+        },
+        columnDefs: [
+            {
+                targets: [3, 4, 6, 7],
+                orderable: false,
+            },
+            {
+                targets: [1],
+                render: data => `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>`,
+            },
+            {
+                targets: [2],
+                render: (data, type, row) => {
+                    return `
+                        <span class="d-inline-flex flex-column fbold">
+                            <span dir="ltr">${data ? data.toLocaleString() : "-"}</span>
+                           ${row.payment.paymentMode === 1
+                        ? `<span style="font-size: 12px;color: #008077">پرداخت ${row.payment.paymentModeTxt} (<span>${row.payment.amount.toLocaleString()}</span>)</span>` : ""}
+                        </span>
+                    `;
+                },
+            },
+        ],
+        columns: [
+            { data: "payment.paymentNumber", name: "PaymentNumber", defaultContent: "-" },
+            { data: "payment.createDateTxt", name: "CreateDateTxt", defaultContent: "-" },
+            { data: "requestAmountPaymentAmount", name: "RequestAmountPaymentAmount", defaultContent: "-" },
+            { data: "payment.fromAccountTxt", name: "FromAccountTxt", defaultContent: "-" },
+            { data: "payment.toAccountTxt", name: "ToAccountTxt", defaultContent: "-" },
+            { data: "payment.paymentDateTxt", name: "PaymentDateTxt", defaultContent: "-" },
+            { data: "payment.userCreator", name: "UserCreator", defaultContent: "-" },
+            {
+                data: null,
+                render: function (data, type, row) {
+                    return `
+                        <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                            <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.payment.id}', 9)"><i class="fa fa-paperclip"></i></button>
+                          ${isFinancialPaymentTable
+                        ? ` <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditPaymentModal('${row.payment.id}')"><i class="fa fa-pencil"></i></button>
+                            <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deletePayment('${row.payment.id}')"><i class="fa fa-trash"></i></button>`
+                        : ""}
+                            
+                        </div>
+                    `;
+                },
+            },
+        ],
+        layout: null,
+    });
+};
+
+const getAllPaymentsList = (id) => {
+    reqAmountId = id;
+    if (!paymentTable) {
+        initPaymentTable();
+    }
+    paymentTable.ajax.url(`/Amount/GetAllPaymentsByRequestAmount?id=${id}`).load();
+};
+
+
+const deletePayment = async (id) => {
+    Swal.fire({
+        title: "حذف!",
+        text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
+        icon: "warning",
+        showCancelButton: true,
+        cancelButtonColor: "#adadad",
+        confirmButtonColor: "#e64942",
+        cancelButtonText: "انصراف",
+        confirmButtonText: "بله، حذف شود",
+    }).then(async (willDelete) => {
+        if (willDelete.isConfirmed) {
+            FLshowLoading();
+            const res = await axios(`/Amount/DeletePayment/${id}`);
+            if (res.status === 200) {
+                toastifySuccess("با موفقیت حذف شد");
+                paymentTable.ajax.reload();
+                
+                const currentPath = window.location.pathname.toLowerCase();
+                if (currentPath.includes("cartable")) {
+                    const { tab } = getUrlParams();
+                    switch (tab) {
+                        case "TManagingDirectorId":
+                            await GetRequestManagingDirector();
+                            break;
+                        case "TFinancialExpertId":
+                            await GetRequestFinancialExpert();
+                            break;
+                    }
+                } else if (currentPath.includes("requestamount")) {
+                    await getAllRequestAmount();
+                }
+                
+            }
+            FLshowLoading(false);
+        }
+    });
+};
+
+async function showEditPaymentModal(id) {
+    FLshowLoading();
+    ModalToggle("reqAmountAttachModal", "show");
+    
+    try {
+        const res = await axios(`/Supply/GetPayment?paymentId=${id}`);
+        if (res.status === 200) {
+            paymentData = res.data.payment;
+            mySer.convertJsonToForm(paymentData, "reqAmountAttachForm");
+            if (paymentData.paymentMode === 1) {
+                const targetInputAmount = document.querySelector("#reqAmountAttachModal input[name='amount']");
+                toggleElementsDisabled(targetInputAmount, true);
+                const amountEditIcon = document.querySelector("#reqAmountAttachModal #paymentAmountGroupEditIcon");
+                amountEditIcon.classList.remove("d-none");
+            }
+            
+            reqAmountAttachment = res.data.attachments;
+            FileUpReload("reqAmountAttach");
+            /*supplyFactorsSelectedIds = paymentData.paymentSupplyFactors.map(p => p.supplyFactorId);
+            const factorSerials = res.data.supplyFactorSerials;
+            const inpElm = document.getElementById("paymentSupplyFactor");
+            inpElm.value = factorSerials.join(", ");*/
+        }
+    } catch (err) {
+        console.log(err);
+    } finally {
+        FLshowLoading(false);
+    }
+}
+
+
+
+////////////////////////////////////////////////////////
+let requestAmountListData;
+let reqAmountPaymentModal = document.getElementById("requestAmountPaymentModal");
+
+let isGroupPayment = false;
+async function showSetAmountPaymentItemModal(filterIds) {
+    isGroupPayment = true;
+    FLshowLoading();
+    try {
+        const res = await axios.post("/Amount/GetRequestsAmountByFilteredIds", { filterIds });
+        if (res.status === 200) {
+            requestAmountListData = res.data;
+            
+            createSetAmountPaymentItem();
+            ModalToggle(reqAmountPaymentModal);
+        }
+    } catch (err) {
+        console.error(err);
+        toastifyError("خطا در بارگذاری اطلاعات");
+    } finally {
+        FLshowLoading(false);
+    }
+}
+
+async function showEditAmountPaymentItemModal() {
+    isGroupPayment = true;
+    FLshowLoading();
+    try {
+        const res = await axios(`/Amount/GetRequestAmountsWithPaidAmountByPayment?paymentId=${paymentData.id}`);
+        if (res.status === 200) {
+            requestAmountListData = res.data;
+            
+            createSetAmountPaymentItem();
+            ModalToggle(reqAmountPaymentModal);
+        }
+    } catch (err) {
+        console.error(err);
+        toastifyError("خطا در بارگذاری اطلاعات");
+    } finally {
+        FLshowLoading(false);
+    }
+}
+
+
+function createSetAmountPaymentItem() {
+    const container = reqAmountPaymentModal.querySelector("#setAmountPaymentForm");
+    container.innerHTML = "";
+    
+    requestAmountListData.forEach((item, index) => {
+        const fieldset = document.createElement("fieldset");
+        fieldset.id = `setAmountPaymentItem-${index}`;
+        fieldset.dataset.id = item.id;
+        fieldset.innerHTML = `
+            <div class="d-flex flex-wrap align-items-center justify-content-around setAmountPaymentItem bgGreen" style="border: 1px solid;border-radius: 6px;overflow: hidden">
+                <div class="d-flex col-12 justify-content-around p-1 px-2" style="background-color:#04857c;color: #fff">
+                    <div class="d-flex align-items-center justify-content-center gap-1 pe-2">
+                        <span class="flex-shrink-0" style="color: #e1e1e1">شماره درخواست: </span>
+                        <span class="fMedium text-center">${item.requestNumber ?? ""}</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-center gap-1">
+                        <span class="flex-shrink-0" style="color: #e1e1e1">مبلغ درخواست: </span>
+                        <span class="fMedium text-center" style="white-space: nowrap">
+                            <span>${item.amount.toLocaleString()}</span>
+                            <span style="font-size: 11px">ریال</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap col-12 justify-content-around p-2 row-gap-2">
+                    <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto pe-xl-2">
+                        <span class="flex-shrink-0" style="color: #535353">مبلغ تایید شده: </span>
+
+                        <div class="fbold flex-center align-items-baseline column-gap-1 badgeGreen-border">
+                            <span style="font-size: 16px;">${item.acceptedAmount.toLocaleString()}</span>
+                            <span style="font-size: 11px;">ريال</span>
+                            <span style="font-size: 16px; color:#888">${item.acceptedAmountPercent ? item.acceptedAmountPercent + "%" : ""}</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto">
+                        <span class="flex-shrink-0" style="color: #535353">مبلغ پرداختی: </span>
+                        <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="amount"  value="${item.paidAmount ? item.paidAmount.toLocaleString() : ""}" required>
+                    </div>
+                </div>
+            </div>
+            ${index !== requestAmountListData.length - 1 ? `<div style="width: 95%;height:1px; margin: 10px auto;background-color:darkviolet"></div>` : ""}
+            `;
+        container.appendChild(fieldset);
+    });
+}
+
+
+let reqAmountAttachModal = document.getElementById("reqAmountAttachModal");
+let requestAmountPaymentMap = [];
+async function goToStepAttachReqAmount() {
+    if (!await mySer.CheckValidForm("setAmountPaymentForm")) return;
+    
+    const allItemsArray = Array.from(reqAmountPaymentModal.querySelectorAll("fieldset"));
+    
+    requestAmountPaymentMap = allItemsArray.map(item => {
+        const amountValue = item.querySelector("input[name='amount']").value;
+        return {
+            paymentId: paymentData.id,
+            requestAmountId: item.dataset.id,
+            amount: Number(SeparatedNumberRemove(amountValue)),
+        };
+    });
+    
+    const allInputsAmount = Array.from(reqAmountPaymentModal.querySelectorAll("input[name='amount']"));
+    const totalAmount = allInputsAmount.reduce((sum, i) => sum + Number(SeparatedNumberRemove(i.value) || 0), 0);
+    const targetInputAmount = reqAmountAttachModal.querySelector("input[name='amount']");
+    
+    targetInputAmount.value = totalAmount.toLocaleString();
+    toggleElementsDisabled(targetInputAmount, true);
+    ModalToggle(reqAmountPaymentModal, "hide");
+    ModalToggle(reqAmountAttachModal, "show");
+}
+
+function cancelRequestAmountPaymentModal() {
+    isGroupPayment = false;
+    mySer.emptyForm("setAmountPaymentForm");
+    ModalToggle(reqAmountPaymentModal, "hide");
+}
+
+
+const showAttachReqAmount = (id) => {
+    reqAmountId = id;
+    ModalToggle("reqAmountAttachModal", "show");
+};
+
+
+const cancelReqAmountAttach = () => {
+    ModalToggle("reqAmountAttachModal", "hide");
+    reqAmountAttachment = [];
+    paymentData = {};
+    document.getElementById("imageDisplayReqAmountAt").innerHTML = "";
+    document.getElementById("reqAmountAttach").value = "";
+    mySer.emptyForm("reqAmountAttachForm");
+    const targetInputAmount = document.querySelector("#reqAmountAttachModal input[name='amount']");
+    const amountEditIcon = reqAmountAttachModal.querySelector("#paymentAmountGroupEditIcon");
+    toggleElementsDisabled(targetInputAmount, false);
+    amountEditIcon.classList.add("d-none");
+};
+
+
+const submitReqAmountAttach = async () => {
+    if (!await mySer.CheckValidForm("reqAmountAttachForm")) return;
+    
+    if (reqAmountAttachment.every(item => item.isDeleted)) {
+        toastifyError("رسید واریزی اجباری است");
+        return;
+    }
+    
+    const fromAccountElm = document.querySelector("#reqAmountAttachForm select[name='fromAccountId']");
+    const toAccountElm = document.querySelector("#reqAmountAttachForm select[name='toAccountId']");
+    
+    const formData = mySer.convertFormToJSON("reqAmountAttachForm");
+    
+    const requestAmountPayments = isGroupPayment
+        ? requestAmountPaymentMap
+        : [{ paymentId: paymentData.id, requestAmountId: reqAmountId, amount: formData.amount }];
+    
+    const model = {
+        ...paymentData,
+        ...formData,
+        requestAmountPayments,
+        attachments: reqAmountAttachment,
+        toAccountTxt: toAccountElm.selectedOptions[0].innerText,
+        fromAccountTxt: fromAccountElm.selectedOptions[0].innerText,
+        paymentMode: isGroupPayment && requestAmountPaymentMap?.length > 1 ? 1 : 0,
+    };
+    
+    FLshowLoading();
+    try {
+        const res = await axios.post("/Amount/AddPaymentByRequestAmount", model);
+        if (res.status === 200) {
+            toastifySuccess("ثبت با موفقیت انجام شد");
+            cancelReqAmountAttach();
+            if (isGroupPayment) {
+                cancelRequestAmountPaymentModal();
+                requestSelection.hideSelectionMode();
+            }
+            if (model.id && paymentTable) {
+                paymentTable.ajax.reload();
+            }
+            const currentPath = window.location.pathname.toLowerCase();
+            if (currentPath.includes("cartable")) {
+                await GetRequestFinancialExpert();
+            } else {
+                await getAllRequestAmount();
+            }
+        } else if (res.status === 201) {
+            console.log(res);
+            toastifyError(res.data);
+        }
+    } catch (err) {
+        toastifyError("خطای سرور!");
+        console.log(err);
+        setTimeout(async () => await submitReqAmountAttach(), 3000);
+        
+    } finally {
+        FLshowLoading(false);
+    }
+};
+
+
+/*--------------------------------------------------------------------------------*/
+
+const reqAmountModal = document.getElementById("requestAmountModal");
+let orderHeadsSelectedIds = [];
+let requestAmountData = {};
+let isFromOrderHead = false;
+async function showRequestAmountModal(ohId, ohNumber) {
+    await setupSelectOptionsReqAmount();
+    if (ohId) {
+        isFromOrderHead = true;
+        requestAmountData.requestAmountType = 1;
+        orderHeadsSelectedIds = [ohId];
+        reqAmountModal.querySelector("#reqAmountModalTitleId").textContent = `درخواست پیش پرداخت حواله ${ohNumber}`;
+        const reqAmountTypeWrapper = reqAmountModal.querySelector("#requestAmountTypeWrapper");
+        reqAmountTypeWrapper?.remove();
+        /*reqAmountType.value = "1";
+        toggleElementsDisabled(reqAmountType, true);*/
+    }
+    ModalToggle("requestAmountModal");
+}
+
+
+let isSetupReqAmountModal = false;
+async function setupSelectOptionsReqAmount(targetId) {
+    if (isSetupReqAmountModal) return;
+    const totalAmountSupFactorElm = reqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
+    
+    const [resSuppliers, resCashiers] = await Promise.all([axios("/Supply/GetSupplyBaseData"), axios("/Cash/GetAllCashiers")]);
+    
+    const selectSupplier = new TomSelect("#reqAmountSupplierId", {
+        options: resSuppliers.data.suppliers,
+        placeholder: "انتخاب تامین کننده",
+        maxItems: 1,
+        selectOnTab: true,
+        
+        async onItemAdd(supplierId) {
+            selectSupplier.disable();
+            const totalSupplyFactorAmount = await getTotalAmountSupplyFactor(supplierId);
+            if (totalSupplyFactorAmount !== null) {
+                totalAmountSupFactorElm.innerHTML = `جمع مبالغ فاکتور: <b style="color: #333">${totalSupplyFactorAmount?.toLocaleString()}</b> ريال`;
+            }
+            selectSupplier.enable();
+        },
+        
+        onDelete() {
+            totalAmountSupFactorElm.innerHTML = "";
+        },
+    });
+    
+    new TomSelect("#reqAmountCashierId", {
+        options: resCashiers.data,
+        items: resCashiers.data.find(i => i.target)?.value,
+        placeholder: "انتخاب تنخواه دار",
+        maxItems: 1,
+        selectOnTab: true,
+    });
+    
+    isSetupReqAmountModal = true;
+}
+
+
+async function getTotalAmountSupplyFactor(supplierId) {
+    try {
+        const res = await axios(`/Supply/GetTotalAmountSupplyFactor?supplierId=${supplierId}`);
+        if (res.status === 200) {
+            return res.data;
+        }
+        return null;
+    } catch (err) {
+        console.log(err);
+        return null;
+    }
+}
+
+
+async function submitRequestAmountModal() {
+    if (!await mySer.CheckValidForm("requestAmountForm")) return;
+    const supplierSelect = reqAmountModal.querySelector("#reqAmountSupplierId");
+    const cashierSelect = reqAmountModal.querySelector("#reqAmountCashierId");
+    
+    const formData = mySer.convertFormToJSON("requestAmountForm");
+    const model = {
+        ...requestAmountData,
+        ...formData,
+        cashierId: formData.cashierId || null,
+        supplierId: formData.supplierId || null,
+        supplierTxt: supplierSelect.selectedOptions[0].innerText,
+        cashierTxt: cashierSelect.selectedOptions[0].innerText,
+        requestAmountSupplyFactor: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id, requestAmountId: requestAmountData.id })),
+        requestAmountOrderHeads: orderHeadsSelectedIds.map(id => ({ orderHeadId: id, requestAmountId: requestAmountData.id })),
+    };
+    try {
+        FLshowLoading();
+        const apiUrl = model.id ? "/Amount/UpdateRequestAmount" : "/Amount/AddRequestAmount";
+        const res = await axios.post(apiUrl, model);
+        if (res.status === 200) {
+            toastifySuccess("با موفقیت ثبت شد");
+            const currentPath = window.location.pathname.toLowerCase();
+            if (currentPath.includes("requestamount")) {
+                getAllRequestAmount();
+            } else if (currentPath.includes("order")) {
+            }
+            
+            cancelRequestAmountModal();
+        }
+    } catch (err) {
+        toastifyError("خطای سرور");
+        console.log(err);
+    } finally {
+        FLshowLoading(false);
+    }
+    
+}
+
+
+function cancelRequestAmountModal() {
+    ModalToggle(reqAmountModal);
+    mySer.emptyForm("requestAmountForm");
+    supplyFactorsSelectedIds = [];
+    orderHeadsSelectedIds = [];
+    requestAmountData = {};
+    isFromOrderHead = false;
+    
+    const ohInputWrapper = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
+    const ohInput = reqAmountModal.querySelector("input#reqAmountOrderHead");
+    ohInputWrapper.classList.add("d-none");
+    toggleElementsRequired(ohInput, false);
+    const totalAmountSupFactorElm = reqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
+    totalAmountSupFactorElm.innerHTML = "";
+    /*  const reqAmountType = reqAmountModal.querySelector("#requestAmountTypeId");
+      if (reqAmountType) toggleElementsDisabled(reqAmountType, false);*/
+}
+
+
+async function showEditRequestAmountModal(id) {
+    FLshowLoading();
+    await showRequestAmountModal();
+    
+    try {
+        const res = await axios(`/Amount/GetRequestAmount/${id}`);
+        if (res.status === 200) {
+            requestAmountData = res.data.requestAmount;
+            const supplyFactorSerials = res.data.supplyFactorSerials;
+            const orderHeadSerials = res.data.orderHeadSerials;
+            mySer.convertJsonToForm(requestAmountData, "requestAmountForm");
+            supplyFactorsSelectedIds = requestAmountData.requestAmountSupplyFactor.map(r => r.supplyFactorId);
+            orderHeadsSelectedIds = requestAmountData.requestAmountOrderHeads.map(r => r.orderHeadId);
+            
+            const inpElmSupplyFactor = reqAmountModal.querySelector("#reqAmountSupplyFactor");
+            if (inpElmSupplyFactor) {
+                inpElmSupplyFactor.value = supplyFactorSerials.join(", ");
+            }
+            
+            const inpElmOrderHead = reqAmountModal.querySelector("#reqAmountOrderHead");
+            if (inpElmOrderHead) {
+                inpElmOrderHead.value = orderHeadSerials.join(", ");
+            }
+        }
+        
+    } catch (err) {
+        console.log(err);
+    } finally {
+        FLshowLoading(false);
+    }
+}
+
+
+const deleteRequestAmount = async (id) => {
+    Swal.fire({
+        title: "حذف!",
+        text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
+        icon: "warning",
+        showCancelButton: true,
+        cancelButtonColor: "#adadad",
+        confirmButtonColor: "#e64942",
+        cancelButtonText: "انصراف",
+        confirmButtonText: "بله، حذف شود",
+    }).then(async (willDelete) => {
+        if (willDelete.isConfirmed) {
+            FLshowLoading();
+            const res = await axios(`/Amount/DeleteRequestAmount/${id}`);
+            if (res.status === 200) {
+                toastifySuccess("با موفقیت حذف شد");
+                const currentPath = window.location.pathname.toLowerCase();
+                if (currentPath.includes("requestamount")) {
+                    getAllRequestAmount();
+                } else if (currentPath.includes("order")) {
+                }
+            }
+            FLshowLoading(false);
+        }
+    });
+};
+
+reqAmountModal.querySelector("select#requestAmountTypeId")?.addEventListener("change", async (e) => {
+    const type = Number(e.target.value);
+    
+    const ohWrapper = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
+    const cashierWrapper = reqAmountModal.querySelector("#reqAmountCashierWrapper");
+    const supplierWrapper = reqAmountModal.querySelector("#reqAmountSupplierWrapper");
+    
+    const totalAmountSupFactorElm = reqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
+    
+    const toggleField = (wrapper, show) => {
+        const input = wrapper.querySelector("input, select");
+        wrapper.classList.toggle("d-none", !show);
+        toggleElementsRequired(input, show);
+        
+        if (show) {
+            if (wrapper.id === "reqAmountCashierWrapper") {
+                const target = Object.values(input.tomselect.options).find(o => o.target)?.value;
+                if (target) input.tomselect.setValue(target);
+            }
+        } else {
+            if (input?.tomselect) {
+                input.tomselect.clear();
+            }
+            
+            if (wrapper.id === "reqAmountOrderHeadWrapper") {
+                orderHeadsSelectedIds = [];
+                input.value = "";
+            }
+            
+            if (wrapper.id === "reqAmountSupplierWrapper") {
+                totalAmountSupFactorElm.innerHTML = "";
+            }
+        }
+    };
+    
+    toggleField(ohWrapper, type === 1);
+    toggleField(supplierWrapper, type === 1 || type === 2);
+    toggleField(cashierWrapper, type === 3);
+});
 
 /*--------------------------------------------------------------------------------*/
 
