@@ -30,23 +30,30 @@ document.addEventListener("DOMContentLoaded", () => {
 class SelectionManager {
     /**
      * @param {Object} options
-     * @param {string} options.wrapper
-     * ریشه component
      *
-     * @param {string} options.itemSelector
-     * selector هر آیتم selectable
+     * @param {string|HTMLElement} options.container
+     * Main items container
      *
-     * @param {string} options.checkboxSelector
-     * selector checkbox داخل آیتم
+     * @param {string|HTMLElement} options.selectionBar
+     * Selection actions bar element
+     *
+     * @param {string|HTMLElement} options.toggleBtn
+     * Button used to enable selection mode
+     *
+     * @param {string} [options.itemSelector=".selection-item"]
+     * Selector for selectable items
+     *
+     * @param {string} [options.checkboxSelector=".selection-checkbox"]
+     * Selector for item checkbox
      *
      * @param {string} [options.selectedClass="selected"]
-     * کلاس آیتم انتخاب‌شده
+     * Class applied to selected items
      *
      * @param {string} [options.selectionModeClass="selection-mode"]
-     * کلاس فعال شدن selection mode
+     * Class applied when selection mode is active
      *
-     * @param {(ids: string[], instance: SelectionManager) => void|Promise<void>} [options.onPay]
-     * callback دکمه عملیات
+     * @param {(selectedIds: string[], instance: SelectionManager) => void|Promise<void>} [options.onAction]
+     * Callback triggered when action button is clicked
      */
     constructor(options) {
         
@@ -61,26 +68,24 @@ class SelectionManager {
             selectedClass: "selected",
             selectionModeClass: "selection-mode",
             
-            onPay: null,
+            onAction: null,
             
             ...options,
         };
         
-        this.container = this.options.container instanceof HTMLElement ? this.options.container : document.querySelector(this.options.container);
-        this.selectionBar = this.options.selectionBar instanceof HTMLElement ? this.options.selectionBar : document.querySelector(this.options.selectionBar);
-        this.toggleBtn = this.options.toggleBtn instanceof HTMLElement ? this.options.toggleBtn : document.querySelector(this.options.toggleBtn);
+        this.container = this.resolveElement(this.options.container);
+        this.selectionBar = this.resolveElement(this.options.selectionBar);
+        this.toggleBtn = this.resolveElement(this.options.toggleBtn);
         
         if (!this.container || !this.selectionBar || !this.toggleBtn) {
             throw new Error("");
         }
         
-        //this.container = this.wrapper.querySelector(".selection-container");
-        //this.selectionBar = this.wrapper.querySelector(".selection-bar");
         this.cancelBtn = this.selectionBar.querySelector(".cancel-selection");
         this.clearBtn = this.selectionBar.querySelector(".clear-selection");
         this.selectAll = this.selectionBar.querySelector(".select-all");
         this.selectedCounts = this.selectionBar.querySelectorAll(".selected-count");
-        this.payBtn = this.selectionBar.querySelector(".pay-selected");
+        this.actionBtn = this.selectionBar.querySelector(".selection-action-btn");
         this.selectedIds = new Set();
         this.selectionMode = false;
         
@@ -93,15 +98,22 @@ class SelectionManager {
         this.cancelBtn?.addEventListener("click", () => this.hideSelectionMode());
         this.clearBtn?.addEventListener("click", () => this.clearSelection());
         this.selectAll?.addEventListener("change", () => this.toggleSelectAll());
-        this.payBtn?.addEventListener("click", async () => {
-            if (typeof this.options.onPay === "function") {
-                await this.options.onPay(Array.from(this.selectedIds), this);
+        this.actionBtn?.addEventListener("click", async () => {
+            if (typeof this.options.onAction === "function") {
+                await this.options.onAction(Array.from(this.selectedIds), this);
             }
         });
         
         this.container?.addEventListener("click", (e) => this.handleItemClick(e));
     }
     
+    resolveElement(elementOrSelector) {
+        if (elementOrSelector instanceof HTMLElement) {
+            return elementOrSelector;
+        }
+        
+        return document.querySelector(elementOrSelector);
+    }
     
     getItems() {
         return this.container.querySelectorAll(this.options.itemSelector);
@@ -164,8 +176,8 @@ class SelectionManager {
             this.selectedCounts.forEach(i => i.textContent = count);
         }
         
-        if (this.payBtn) {
-            this.payBtn.disabled = count === 0;
+        if (this.actionBtn) {
+            this.actionBtn.disabled = count === 0;
         }
         
         if (this.selectAll) {

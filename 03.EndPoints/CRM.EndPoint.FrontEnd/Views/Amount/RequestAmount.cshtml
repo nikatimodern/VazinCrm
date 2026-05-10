@@ -74,7 +74,7 @@
                 انصراف
             </button>
 
-            <button class="pay-selected buttonGreen0" disabled>
+            <button class="selection-action-btn buttonGreen0" disabled>
                 پرداخت همه (<span class="selected-count">0</span>)
             </button>
         </div>
@@ -249,7 +249,7 @@
             container: "#requestAmountContainer",
             itemSelector: ".layered-card",
             checkboxSelector: ".card-checkbox",
-            onPay: async (selectedIds) => {
+            onAction: async (selectedIds) => {
                 if (selectedIds.length === 0) {
                     toastifyError("لطفاً ابتدا درخواست‌های مورد نظر را انتخاب کنید.");
                     return;
