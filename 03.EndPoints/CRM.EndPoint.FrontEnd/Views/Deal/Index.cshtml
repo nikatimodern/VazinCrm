@@ -43,18 +43,21 @@
     </div>
     <ul class="nav nav-tabs" id="dealTabs" role="tablist" style="display: none;">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active text-dark" style="margin-bottom:-2px;isolation:auto" id="openDealTab" data-bs-toggle="tab" data-bs-target="#openDealTab-pane" type="button" role="tab" aria-controls="openDealTab-pane" aria-selected="true">
+            <button class="nav-link active text-dark position-relative" style="margin-bottom:-2px;isolation:auto" id="openDealTab" data-bs-toggle="tab" data-bs-target="#openDealTab-pane" type="button" role="tab" aria-controls="openDealTab-pane" aria-selected="true">
                 سفارشات باز
+                <span class="badgeCircle search-count-badge" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff;display: none"></span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link text-dark" style="margin-bottom:-2px;isolation:auto" id="successDealTab" data-bs-toggle="tab" data-bs-target="#successDealTab-pane" type="button" role="tab" aria-controls="successDealTab-pane" aria-selected="false">
+            <button class="nav-link text-dark position-relative" style="margin-bottom:-2px;isolation:auto" id="successDealTab" data-bs-toggle="tab" data-bs-target="#successDealTab-pane" type="button" role="tab" aria-controls="successDealTab-pane" aria-selected="false">
                 سفارشات موفق
+                <span class="badgeCircle search-count-badge" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff;display: none"></span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link text-dark" style="margin-bottom:-2px;isolation:auto" id="failedDealTab" data-bs-toggle="tab" data-bs-target="#failedDealTab-pane" type="button" role="tab" aria-controls="failedDealTab-pane" aria-selected="false">
+            <button class="nav-link text-dark position-relative" style="margin-bottom:-2px;isolation:auto" id="failedDealTab" data-bs-toggle="tab" data-bs-target="#failedDealTab-pane" type="button" role="tab" aria-controls="failedDealTab-pane" aria-selected="false">
                 سفارشات ناموفق
+                <span class="badgeCircle search-count-badge" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff;display: none"></span>
             </button>
         </li>
     </ul>
@@ -460,12 +463,69 @@
             await getAllDeals();
         }
 
+        const dealTabsMap = {
+            open: {
+                btn: document.getElementById("openDealTab"),
+                pane: "#openDealTab-pane",
+            },
+            success: {
+                btn: document.getElementById("successDealTab"),
+                pane: "#successDealTab-pane",
+            },
+            failed: {
+                btn: document.getElementById("failedDealTab"),
+                pane: "#failedDealTab-pane",
+            },
+        };
+
+        const updateSearchTabBadges = (items) => {
+            Object.entries(items).forEach(([key, arr]) => {
+                const badge = dealTabsMap[key].btn.querySelector(".search-count-badge");
+                if (!badge) return;
+
+                if (modelDeal.serVal?.trim() || modelDeal.filt) {
+                    badge.style.display = arr.length ? "flex" : "none";
+                    badge.textContent = arr.length;
+
+                    dealTabsMap[key].btn.style.opacity = arr.length ? "1" : ".5";
+                } else {
+                    badge.style.display = "none";
+                    dealTabsMap[key].btn.style.opacity = "1";
+                }
+            });
+        };
+
+        const moveToFirstTabWithData = (items) => {
+            const activeTab = document.querySelector("#dealTabs .nav-link.active");
+
+            const activeKey =
+                activeTab?.id === "openDealTab" ? "open" :
+                    activeTab?.id === "successDealTab" ? "success" :
+                        "failed";
+
+            if (items[activeKey]?.length) return;
+
+            const firstTab =
+                items.open.length ? dealTabsMap.open.btn :
+                    items.success.length ? dealTabsMap.success.btn :
+                        items.failed.length ? dealTabsMap.failed.btn :
+                            null;
+
+            if (!firstTab) return;
+
+            ShowTab(firstTab);
+        };
+
         const getAllDeals = async () => {
             try {
                 FLshowLoading();
                 const res = await axios.post(`/Deal/GetAllDeals`, modelDeal);
                 if (res.status === 200) {
                     const items = res.data.items;
+                    if (window.innerWidth < 1200) {
+                        updateSearchTabBadges(items);
+                        moveToFirstTabWithData(items);
+                    }
                     createDomAllDeals(items.open, "#openDealsContainerId", res.data.isAdmin);
                     createDomAllDeals(items.success, "#successDealsContainerId", res.data.isAdmin);
                     createDomAllDeals(items.failed, "#failedDealsContainerId", res.data.isAdmin);

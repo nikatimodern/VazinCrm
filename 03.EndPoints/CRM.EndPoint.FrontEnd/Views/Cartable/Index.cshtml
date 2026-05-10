@@ -571,11 +571,17 @@
                         </li>
                         <li class="filter-switch-item">
                             <input type="radio" name="TFilter" id="Tpf1" value="1" checked />
-                            <label class="fbold" for="Tpf1">در انتظار تایید</label>
+                            <label class="fbold position-relative" for="Tpf1">
+                                در انتظار تایید
+                                <span class="badgeCircle filter-count-badge" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff;display: none"></span>
+                            </label>
                         </li>
                         <li class="filter-switch-item">
                             <input type="radio" name="TFilter" id="Tpf5" value="2" />
-                            <label class="fbold" for="Tpf5">تایید شده</label>
+                            <label class="fbold position-relative" for="Tpf5">
+                                تایید شده
+                                <span class="badgeCircle filter-count-badge" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff;display: none"></span>
+                            </label>
                         </li>
                     </ul>
                 </div>
@@ -1508,6 +1514,15 @@
                 if (res.status === 200) {
                     document.getElementById("TContentId").innerHTML = res.data.html;
                     document.getElementById("T_CountId").textContent = res.data.count;
+                    updateFilterSwitchState({
+                        wrapperSelector: "#CTaminExpertId",
+                        filterData: res.data.filterCounts,
+                        currentFilterValue: type,
+                        searchValue: val,
+                        onChange: async () => {
+                            await GetPreFactorTaminExpert();
+                        },
+                    });
                     FLshowLoading(false);
                 }
 
@@ -2538,15 +2553,15 @@
 
         function removeTabAllFactorsDesktop() {
             if (window.innerWidth >= 1400) {
-                document.getElementById("tabContentAllFactors").classList.remove("tab-content");
-                document.getElementById("allPreFactorTab-pane").classList.remove("tab-pane", "fade");
-                document.getElementById("allFactorTab-pane").classList.remove("tab-pane", "fade");
+                document.getElementById("tabContentAllFactors")?.classList.remove("tab-content");
+                document.getElementById("allPreFactorTab-pane")?.classList.remove("tab-pane", "fade");
+                document.getElementById("allFactorTab-pane")?.classList.remove("tab-pane", "fade");
             } else {
-                document.getElementById("tabContentAllFactors").classList.add("tab-content");
-                document.getElementById("allPreFactorTab-pane").classList.add("tab-pane", "fade");
-                document.getElementById("allFactorTab-pane").classList.add("tab-pane", "fade");
+                document.getElementById("tabContentAllFactors")?.classList.add("tab-content");
+                document.getElementById("allPreFactorTab-pane")?.classList.add("tab-pane", "fade");
+                document.getElementById("allFactorTab-pane")?.classList.add("tab-pane", "fade");
             }
-        };
+        }
         window.addEventListener("resize", removeTabAllFactorsDesktop);
 
 

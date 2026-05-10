@@ -497,26 +497,34 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 };
 
 
-                var query = db.PreFactors.AsQueryable();
-                query = type switch {
-                    -1 => query.Where(s => s.Pftype >= (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین),
-                    1 => query.Where(s => s.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین),
-                    2 => query.Where(s => s.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین),
-                    _ => query
-                };
+                var queryBase = db.PreFactors.AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(serVal))
                 {
                     var serialVal = TextService.convertToInt(serVal);
-                    query = query.Where(s =>
+                    queryBase = queryBase.Where(s =>
                         EF.Functions.Like(s.AgentName, $"%{serVal}%") ||
                         EF.Functions.Like(s.Customer, $"%{serVal}%") ||
                         s.SerialNumber == serialVal
                     );
                 } else if (!rols.Contains("مدیر ارشد") && !rols.Contains("مدیر تامین"))
                 {
-                    query = query.Where(f => f.UserTaminId == Guid.Parse(user.Id));
+                    queryBase = queryBase.Where(f => f.UserTaminId == Guid.Parse(user.Id));
                 }
+
+                var filterCounts = new Dictionary<int, int> {
+                    //[-1] = await queryBase.CountAsync(s => s.Pftype >= (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین),
+                    [1] = await queryBase.CountAsync(s => s.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین),
+                    [2] = await queryBase.CountAsync(s => s.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین),
+                };
+
+
+                var query = type switch {
+                    -1 => queryBase.Where(s => s.Pftype >= (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین),
+                    1 => queryBase.Where(s => s.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین),
+                    2 => queryBase.Where(s => s.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین),
+                    _ => queryBase
+                };
 
 
                 var preFactors = await query.OrderByDescending(f => f.ModifyDate).Take(100).Include(f => f.PreFactorItems).ToListAsync();
@@ -555,7 +563,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
                 var html = await vrs.RenderToStringAsync("GetPreFactorTaminExpert", model);
-                return Ok(new { count = model.PreFactors.Count, html });
+                return Ok(new { count = model.PreFactors.Count, html, filterCounts });
             }
             catch (Exception e)
             {

@@ -209,11 +209,12 @@
         async function getHiddenOrdersCount() {
             modelOrder._type = 4;
             const res = await axios.post(`/order/GetAllHeadOrdersPartial?fStatus=${fStatus}`, modelOrder);
+            const hiddenOrdersCount = document.getElementById("hiddenOrdersCount");
             if (res.data.count > 0) {
-                document.getElementById("hiddenOrdersCount").style.display = "flex";
-                document.getElementById("hiddenOrdersCount").innerText = res.data.count;
+                hiddenOrdersCount.style.display = "flex";
+                hiddenOrdersCount.innerText = res.data.count;
             } else {
-                document.getElementById("hiddenOrdersCount").style.display = "none";
+                hiddenOrdersCount.style.display = "none";
             }
         }
 
@@ -247,9 +248,7 @@
 
         const refreshOrders = async () => {
             document.getElementById("hiddenOrdersCount").style.display = "none";
-            await getAllHeadOrders(1);
-            await getAllHeadOrders(2);
-            showHidden ? await getAllHeadOrders(4) : await getAllHeadOrders(3);
+            await Promise.all([getAllHeadOrders(1), getAllHeadOrders(2), getAllHeadOrders(showHidden ? 4 : 3)]);
         };
 
         function initSortableOrders() {

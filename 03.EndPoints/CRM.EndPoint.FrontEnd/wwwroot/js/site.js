@@ -3296,3 +3296,60 @@ document.addEventListener("click", e => {
 })*/
 
 
+const updateFilterSwitchState = ({ wrapperSelector, filterData, currentFilterValue, searchValue, onChange }) => {
+    const wrapper = document.querySelector(wrapperSelector);
+    if (!wrapper) return;
+    
+    const hasSearch = !!searchValue.trim();
+    if (!hasSearch) {
+        wrapper.dataset.autoSwitched = "false";
+        
+        wrapper.querySelectorAll(".filter-switch-item").forEach(item => {
+            item.style.opacity = "1";
+            const badge = item.querySelector(".filter-count-badge");
+            if (badge) {
+                badge.style.display = "none";
+            }
+        });
+        
+        return;
+    }
+    
+    if (!filterData) return;
+    
+    let firstAvailableValue = null;
+    Object.entries(filterData).forEach(([value, count]) => {
+        const radio = wrapper.querySelector(`input[type="radio"][value="${value}"]`);
+        if (!radio) return;
+        
+        const item = radio.closest(".filter-switch-item");
+        const badge = item?.querySelector(".filter-count-badge");
+        
+        if (badge) {
+            badge.style.display = count > 0 ? "flex" : "none";
+            badge.textContent = count;
+        }
+        
+        item.style.opacity = count > 0 ? "1" : ".5";
+        
+        if (count > 0 && firstAvailableValue === null) {
+            firstAvailableValue = value;
+        }
+        
+        radio.addEventListener("click", () => {
+            wrapper.dataset.autoSwitched = "true";
+        }, { once: true });
+    });
+    
+    if (wrapper.dataset.autoSwitched === "true") return;
+    if (filterData[currentFilterValue] > 0) return;
+    if (!firstAvailableValue) return;
+    
+    const targetRadio = wrapper.querySelector(`input[value="${firstAvailableValue}"]`);
+    if (!targetRadio) return;
+    targetRadio.checked = true;
+    
+    wrapper.dataset.autoSwitched = "true";
+    
+    onChange?.(firstAvailableValue);
+};
