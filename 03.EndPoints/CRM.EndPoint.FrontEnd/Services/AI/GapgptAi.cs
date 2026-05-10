@@ -18,7 +18,7 @@ public class GapgptAi {
 
     public async Task<string> SummarizeText(string textToSummarize) // خلاصه نویسی
     {
-        var httpClient = _httpClientFactory.CreateClient("GapgptApi");
+        var httpClient = _httpClientFactory.CreateClient("GapgptApi"); // https://gapgpt.app/platform-v2/tokens
 
         var prompt = _aiPrompts.SummarizeCall(textToSummarize);
 
