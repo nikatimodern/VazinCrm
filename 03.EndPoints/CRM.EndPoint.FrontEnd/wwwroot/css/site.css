@@ -5649,3 +5649,15 @@ table tr.payment-vosoled > td {
 .selection-mode .layered-card.selected::after {
   background: rgba(0, 0, 0, 0.05);
 }
+
+
+.viewer-download::before {
+  content: "";
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  background-image: url("../Img/download.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}

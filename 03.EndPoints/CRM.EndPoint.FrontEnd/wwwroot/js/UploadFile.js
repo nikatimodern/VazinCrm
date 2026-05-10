@@ -1,4 +1,7 @@
-﻿let uploadButtons = document.getElementsByClassName("uploadBtn");
+﻿const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp", "jfif"];
+
+let uploadButtons = document.getElementsByClassName("uploadBtn");
+let imageViewer = null;
 
 //Upload Button
 Array.from(uploadButtons).forEach((item, index) => {
@@ -75,7 +78,10 @@ const ShowPreview = (indexEle) => {
     const divPre = item.getAttribute("data-showList");
     const ListAttach = window[listName] || [];
     
+    console.log(ListAttach);
+    
     const previewContainer = document.getElementById(divPre);
+    previewContainer.classList.add("previewContainer");
     previewContainer.innerHTML = "";
     ListAttach.forEach((fileItem, key) => {
         if (!fileItem.isDeleted) {
@@ -88,6 +94,7 @@ const ShowPreview = (indexEle) => {
             const watermarkText =
                 (listName === "paymentReceiptList" || listName === "attachInvoiceList") &&
                 (fileItem._AttachType === 5 || fileItem._AttachType === 6) ? "در دست تایید" : "تایید شد";
+            
             const imageBox = createImageBox(fileItem, key, indexEle, showDelete, showWatermark, watermarkText);
             previewContainer.appendChild(imageBox);
         }
@@ -95,69 +102,207 @@ const ShowPreview = (indexEle) => {
 };
 
 
-function createImageBox(fileItem, key = null, indexEle = null, showDelete = false, showWatermark = false, watermarkText) {
-    let imgSrc = "";
-    let backgroundImage = "";
+/**
+ * file type
+ */
+function isImageFile(fileItem) {
+    return IMAGE_EXTENSIONS.includes(fileItem.fileExten?.toLowerCase());
+}
+
+function isPdfFile(fileItem) {
+    return fileItem.fileExten?.toLowerCase() === "pdf";
+}
+
+/**
+ * image src
+ */
+function getImageSrc(fileItem) {
     
-    const isImage = ["jpg", "jpeg", "png", "gif", "webp", "jfif"].includes(fileItem.fileExten?.toLowerCase());
-    const isPdf = fileItem.fileExten?.toLowerCase() === "pdf";
     
+    if (fileItem.file) {
+        return `data:image/${fileItem.fileExten};base64,${fileItem.file}`;
+    }
+    if (fileItem.url) {
+        return `..${fileItem.url.replace(/\\/g, "/")}`;
+    }
+    return "";
+}
+
+/**
+ * background image
+ */
+function getBackgroundImage(fileItem, isImage, isPdf) {
     if (isImage) {
-        /*imgSrc = fileItem.url ? `..${fileItem.url.replace(/\\/g, "/")}`
-            : fileItem.file ? `data:image/${fileItem.fileExten};base64,${fileItem.file}` : "";*/
-        imgSrc = fileItem.file ? `data:image/${fileItem.fileExten};base64,${fileItem.file}`
-            : fileItem.url ? `..${fileItem.url.replace(/\\/g, "/")}` : "";
-        backgroundImage = imgSrc;
-    } else if (isPdf) {
-        backgroundImage = "/Img/pdf.png";
-    } else {
-        backgroundImage = "/Img/file.png";
+        return getImageSrc(fileItem);
     }
     
+    return isPdf ? "/Img/pdf.png" : "/Img/file.png";
+}
+
+/**
+ * preload image
+ */
+function preloadImage(src) {
+    if (!src) return;
+    
+    const img = new Image();
+    img.src = src;
+}
+
+/**
+ * delete button
+ */
+function createDeleteButton(showDelete, key, indexEle) {
+    if (!showDelete || key === null || indexEle === null)
+        return "";
+    
+    return `
+        <span class="deleteBtn" onclick="delFile(${key}, ${indexEle})">
+            <svg style="width: 16px" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
+        </span>
+    `;
+}
+
+/**
+ * watermark
+ */
+function createWatermark(showWatermark, watermarkText) {
+    if (!showWatermark) return "";
+    
+    const watermarkStatusClass =
+        watermarkText === "تایید شد" || watermarkText === "ثبت شد"
+            ? "watermark--success"
+            : watermarkText === "در دست تایید"
+                ? "watermark--pending"
+                : watermarkText === "رد شد"
+                    ? "watermark--rejected"
+                    : "";
+    
+    return `<div class="watermark ${watermarkStatusClass}">${watermarkText}</div>`;
+}
+
+
+/**
+ * image link element
+ */
+function createImageLinkElement(fileItem, imgSrc, backgroundImage) {
+    // viewerJs
+    return `
+        <span class="fileAttachLink viewerImageBtn">
+            <img src="${imgSrc}" alt="${fileItem.filename || "image"}" data-extension="${fileItem.fileExten || ""}" class="viewerImageSource d-none" />
+
+            <div class="fileAttachImg" style="background-image:url(${backgroundImage})">
+            </div>
+        </span>
+    `;
+    
+    // lightbox2
+    /*return `
+        <a href="${imgSrc}" data-lightbox="lightBox-${fileItem.entityId?.slice(0, 6)}" class="fileAttachLink">
+            <div class="fileAttachImg" style="background-image:url(${backgroundImage})"></div>
+        </a>
+    `;*/
+}
+
+/**
+ * non image link element
+ */
+function createFileLinkElement(fileItem, backgroundImage) {
+    const srcIframe = fileItem.id
+        ? `${window.location.origin}${fileItem.url}`.replace(/\\/g, "/")
+        : `${fileItem.filetype},${fileItem.file}`;
+    
+    return `
+        <span onclick="showDivFrame('${srcIframe}')" class="fileAttachLink">
+            <div class="fileAttachImg" style="background-image:url(${backgroundImage})">
+            </div>
+        </span>
+    `;
+}
+
+/**
+ * setup viewer js
+ */
+function setupViewer(wrapper) {
+    const btn = wrapper.querySelector(".viewerImageBtn");
+    if (!btn) return;
+    
+    btn.addEventListener("click", function () {
+        const previewContainer = btn.closest(".previewContainer") || btn.parentElement;
+        
+        if (imageViewer) {
+            imageViewer.destroy();
+        }
+        
+        imageViewer = new Viewer(previewContainer, {
+            filter(image) {
+                return image.classList.contains("viewerImageSource");
+            },
+            
+            zoomRatio: 0.2,
+            //title: false,
+            toolbar: {
+                //oneToOne: true,
+                //reset: true,
+                zoomIn: true,
+                zoomOut: true,
+                rotateRight: true,
+                
+                download() {
+                    const currentImg = imageViewer.image;
+                    
+                    downloadFile({
+                        url: currentImg.src,
+                        filename: currentImg.alt,
+                        extension: currentImg.dataset.extension,
+                    });
+                },
+            },
+            
+            hidden() {
+                imageViewer.destroy();
+                imageViewer = null;
+            },
+        });
+        
+        
+        imageViewer.view([...previewContainer.querySelectorAll(".viewerImageSource")].indexOf(wrapper.querySelector(".viewerImageSource")));
+    });
+}
+
+
+function createImageBox(fileItem, key = null, indexEle = null, showDelete = false, showWatermark = false, watermarkText = "") {
+    const isImage = isImageFile(fileItem);
+    const isPdf = isPdfFile(fileItem);
+    
+    const imgSrc = isImage ? getImageSrc(fileItem) : "";
+    const backgroundImage = getBackgroundImage(fileItem, isImage, isPdf);
+    
+    if (isImage) {
+        preloadImage(imgSrc);
+    }
     
     const wrapper = document.createElement("div");
     wrapper.className = "boxAttach";
     
-    const deleteBtn = (showDelete && key !== null && indexEle !== null)
-        ? `<span class="deleteBtn" onclick="delFile(${key}, ${indexEle})">
-              <svg style="width: 16px" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
-            </span>`
-        : "";
+    const deleteBtn = createDeleteButton(showDelete, key, indexEle);
+    const watermark = createWatermark(showWatermark, watermarkText);
     
-    let watermark = "";
-    if (showWatermark) {
-        const watermarkStatusClass =
-            watermarkText === "تایید شد" || watermarkText === "ثبت شد" ? "watermark--success"
-                : watermarkText === "در دست تایید" ? "watermark--pending"
-                    : watermarkText === "رد شد" ? "watermark--rejected"
-                        : "";
-        
-        watermark = `<div class="watermark ${watermarkStatusClass}">${watermarkText}</div>`;
-    }
-    
-    
-    let linkElement;
-    if (backgroundImage === imgSrc) {
-        linkElement = `
-            <a href="${imgSrc}" data-lightbox="lightBox-${fileItem.entityId?.slice(0, 6)}" class="fileAttachLink" data-viewer>
-              <div class="fileAttachImg" style="background-image:url(${backgroundImage})"></div>
-            </a>
-        `;
-    } else {
-        const srcIframe = fileItem.id ? `${window.location.origin}${fileItem.url}`.replace(/\\/g, "/") : `${fileItem.filetype},${fileItem.file}`;
-        linkElement = `
-            <span onclick="showDivFrame('${srcIframe}')" class="fileAttachLink">
-              <div class="fileAttachImg" style="background-image:url(${backgroundImage})"></div>
-            </span>
-        `;
-    }
+    const linkElement = isImage
+        ? createImageLinkElement(fileItem, imgSrc, backgroundImage)
+        : createFileLinkElement(fileItem, backgroundImage);
     
     
     wrapper.innerHTML = `
         ${deleteBtn}
         ${watermark}
         ${linkElement}
-      `;
+    `;
+    
+    
+    if (isImage) {
+        setupViewer(wrapper);
+    }
     
     return wrapper;
 }
@@ -231,46 +376,28 @@ document.addEventListener("keydown", (e) => {
 }, true);
 
 
-document.addEventListener("click", function (e) {
-    const link = e.target.closest("[data-viewer]");
-    if (!link) return;
+function downloadFile({ url, filename = "file", extension = "" }) {
+    if (!extension) {
+        if (url.startsWith("data:image/")) { // base64
+            const match = url.match(/^data:image\/([a-zA-Z0-9+]+);base64,/);
+            extension = match?.[1] || "";
+            
+        } else { // url
+            const cleanUrl = url.split("?")[0];
+            extension = cleanUrl.split(".").pop() || "";
+        }
+    }
     
-    e.preventDefault();
+    extension = extension.replace(".", "").toLowerCase();
     
-    // همه آیتم‌های هم‌گروه
-    const groupName = link.dataset.lightbox;
-    const groupItems = document.querySelectorAll(`[data-lightbox="${groupName}"]`);
+    if (extension && !filename.endsWith(`.${extension}`)) { // اگر filename پسوند نداشت
+        filename += `.${extension}`;
+    }
     
-    // ساخت container موقت
-    const temp = document.createElement("div");
-    
-    let index = 0;
-    
-    groupItems.forEach((el, i) => {
-        const img = document.createElement("img");
-        
-        // عکس اصلی از href
-        img.src = el.getAttribute("href");
-        
-        temp.appendChild(img);
-        
-        if (el === link) index = i;
-    });
-    
-    document.body.appendChild(temp);
-    
-    const viewer = new Viewer(temp, {
-        toolbar: {
-            zoomIn: true,
-            zoomOut: true,
-            rotateLeft: true,
-            rotateRight: true,
-        },
-        hidden() {
-            viewer.destroy();
-            temp.remove(); // 👈 مهم (cleanup کامل)
-        },
-    });
-    
-    viewer.view(index);
-});
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}

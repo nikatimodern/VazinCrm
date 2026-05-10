@@ -2369,14 +2369,14 @@ async function showPayment(id, parent = false) {
             }
         }
         
-        SanadPayList = res.listAttach;
+        const attachList = res.listAttach;
         
         const containerUploader = invoiceModalElm.querySelector("#ShowPaymentSanadParId").parentElement;
         const divShow = containerUploader.querySelector("#ShowPaymentDivShowSanadPar");
         divShow.innerHTML = "";
-        if (SanadPayList.length) {
+        if (attachList.length) {
             containerUploader.classList.remove("d-none");
-            SanadPayList.forEach(fileItem => {
+            attachList.forEach(fileItem => {
                 const imageBox = createImageBox(fileItem);
                 divShow.appendChild(imageBox);
             });
