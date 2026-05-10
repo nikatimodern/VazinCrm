@@ -1721,7 +1721,6 @@
             },
         });
 
-        new SelectionManager({})
         ////////////////////////////////////////////////////////
 
 
@@ -2537,7 +2536,7 @@
         };
 
 
-        const removeTabAllFactorsDesktop = () => {
+        function removeTabAllFactorsDesktop() {
             if (window.innerWidth >= 1400) {
                 document.getElementById("tabContentAllFactors").classList.remove("tab-content");
                 document.getElementById("allPreFactorTab-pane").classList.remove("tab-pane", "fade");
@@ -2551,7 +2550,7 @@
         window.addEventListener("resize", removeTabAllFactorsDesktop);
 
 
-        const removeSalesExpertsTabsDesktop = () => {
+        function removeSalesExpertsTabsDesktop() {
             if (window.innerWidth >= 1400) {
                 document.getElementById("tabContentSalesExperts")?.classList.remove("tab-content");
                 document.getElementById("notSendedTab-pane")?.classList.remove("tab-pane", "fade");

@@ -77,9 +77,9 @@ class SelectionManager {
         this.selectionBar = this.resolveElement(this.options.selectionBar);
         this.toggleBtn = this.resolveElement(this.options.toggleBtn);
         
-        if (!this.container || !this.selectionBar || !this.toggleBtn) {
-            throw new Error("");
-        }
+        if (!this.container) throw new Error("SelectionManager: container element not found.");
+        if (!this.selectionBar) throw new Error("SelectionManager: selectionBar element not found.");
+        if (!this.toggleBtn) throw new Error("SelectionManager: toggleBtn element not found.");
         
         this.cancelBtn = this.selectionBar.querySelector(".cancel-selection");
         this.clearBtn = this.selectionBar.querySelector(".clear-selection");
