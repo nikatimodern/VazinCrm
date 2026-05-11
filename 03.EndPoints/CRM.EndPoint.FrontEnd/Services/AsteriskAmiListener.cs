@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
+using CRM.Core.Domain.CallRecordings.Entities;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models;
@@ -52,17 +53,10 @@ public class AsteriskAmiListener : BackgroundService {
         var voipConfig = _config.GetSection("voipConfig").Get<AppSettingVoip>();
         if (voipConfig.ActiveStatus != true) return;
 
-        string[] test = new string[11];
-        test[0] = "varset";
-        test[1] = "newexten";
-        test[2] = "devicestatechange";
-        test[3] = "newchannel";
-        test[4] = "newstate";
-        test[5] = "newconnectedline";
-        test[6] = "extensionstatus";
-        test[7] = "dialstate";
-        test[8] = "rtcpreceived";
-        test[9] = "rtcpsent";
+        var test = new[] {
+            "varset", "newexten", "devicestatechange", "newchannel", "newstate", "newconnectedline", "extensionstatus", "dialstate", "rtcpreceived",
+            "rtcpsent"
+        };
 
 
         var ami = new AsteriskAMI(voipConfig._hostname, voipConfig._port, voipConfig._username, voipConfig._password);
@@ -174,10 +168,17 @@ public class AsteriskAmiListener : BackgroundService {
 
                                     if (!srcIsInternal && destIsInternal)
                                     {
-                                        _aiQueue.Enqueue(new AiQueueItem {
+                                        var desUser = await GetUsers(destCaller);
+                                        var callerCus = GetCallerCustomer(srcCaller);
+
+                                        _aiQueue.Enqueue(new CallRecording {
                                             CallerNumber = srcCaller,
+                                            CallerCustomerId = callerCus?.Id,
+                                            CallerCustomerTxt = callerCus != null ? $"{callerCus.CompanyName} {callerCus.AgentName}" : null,
                                             DestinationNumber = destCaller,
-                                            FilePath = filePath
+                                            DestinationUserId = desUser.Id,
+                                            DestinationUserTxt = desUser.FullName,
+                                            RecordingFilePath = filePath
                                         });
                                     }
                                     /*
@@ -259,45 +260,51 @@ public class AsteriskAmiListener : BackgroundService {
 
     private async Task<AppUser> GetUsers(string destCaller)
     {
-        AppUser user = null;
-        user = _users
-            .FirstOrDefault(u => (u.InternalTels ?? "")
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Contains(destCaller));
+        var user = _users.FirstOrDefault(u => (u.InternalTels ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).Contains(destCaller));
         return user;
     }
 
     private static Dictionary<string, Customer> _cusCache = new();
     private static DateTime _lastCacheTime = DateTime.MinValue;
 
-    private string GetCallerText(string srcCaller)
+    private Customer GetCallerCustomer(string srcCaller)
     {
-        if (string.IsNullOrEmpty(srcCaller)) return srcCaller;
+        if (string.IsNullOrEmpty(srcCaller)) return null;
+
         var key = srcCaller.Length > 7 ? srcCaller[^7..] : srcCaller;
 
-        // هر 1 دقیقه کش اپدیت بشه
+        // هر 1 دقیقه کش آپدیت بشه
         if ((DateTime.Now - _lastCacheTime).TotalSeconds > 60 || _cusCache.Count == 0)
         {
             using var scope = serviceScopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<CRMContextDb>();
 
-            var list = db.Customers
-                .Select(c => new { c.CompanyName, c.AgentName, c.Tel, c.Mobile })
-                .ToList();
+            var list = db.Customers.Select(c => new {
+                c.CompanyName,
+                c.AgentName,
+                c.Tel,
+                c.Mobile
+            }).ToList();
+
             var dict = new Dictionary<string, Customer>(list.Count * 2);
 
             foreach (var c in list)
             {
+                var customer = new Customer {
+                    CompanyName = c.CompanyName,
+                    AgentName = c.AgentName
+                };
+
                 if (!string.IsNullOrEmpty(c.Tel))
                 {
                     var k = c.Tel.Length > 7 ? c.Tel[^7..] : c.Tel;
-                    dict.TryAdd(k, new Customer { CompanyName = c.CompanyName, AgentName = c.AgentName });
+                    dict.TryAdd(k, customer);
                 }
 
                 if (!string.IsNullOrEmpty(c.Mobile))
                 {
                     var k = c.Mobile.Length > 7 ? c.Mobile[^7..] : c.Mobile;
-                    dict.TryAdd(k, new Customer { CompanyName = c.CompanyName, AgentName = c.AgentName });
+                    dict.TryAdd(k, customer);
                 }
             }
 
@@ -305,18 +312,18 @@ public class AsteriskAmiListener : BackgroundService {
             _lastCacheTime = DateTime.Now;
         }
 
-        return _cusCache.TryGetValue(key, out var cus)
+        return _cusCache.TryGetValue(key, out var cus) ? cus : null;
+    }
+
+    private string GetCallerText(string srcCaller)
+    {
+        if (string.IsNullOrEmpty(srcCaller)) return srcCaller;
+
+        var cus = GetCallerCustomer(srcCaller);
+
+        return cus != null
             ? $"{cus.CompanyName} {cus.AgentName} ({srcCaller})"
             : srcCaller;
-
-        /*using (var scope = serviceScopeFactory.CreateScope())
-        {
-            var db =  scope.ServiceProvider.GetRequiredService<CRMContextDb>();
-
-            var srcCallerLast = srcCaller.Substring(srcCaller.Length - 7);
-            var srcCus = db.Customers.FirstOrDefault(f => f.Tel.EndsWith(srcCallerLast) || f.Mobile.EndsWith(srcCallerLast));
-            srcCallerText = srcCus == null ? srcCaller : $"{srcCus.CompanyName} {srcCus.AgentName} ({srcCaller})";
-        }*/
     }
 
 
