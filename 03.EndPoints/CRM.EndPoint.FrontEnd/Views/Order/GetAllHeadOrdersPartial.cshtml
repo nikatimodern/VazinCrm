@@ -67,14 +67,14 @@
                     @if (isTamin) {
                         //if (item.Status == OrderHeadStatusEnum.ثبت_اولیه) {
                         var requestCount = item.RequestAmountOrderHeads?.Count;
-                        <div class="buttonGroup">
+                        <div class="@(requestCount > 0 ? "buttonGroup" : "")">
                             <button class="buttonGray" onclick="showAddRequestAmountModal('@item.Id', '@item.OrderNumber')">درخواست پیش‌پرداخت</button>
-                            <button class="buttonGray d-flex align-content-center gap-1" @(requestCount == 0 ? "disabled" : "") onclick="showAllRequestAmountModal('@item.Id', '@item.OrderNumber')">
-                                <i class="fa fa-eye"></i>
-                                @if (requestCount > 0) {
+                            @if (requestCount > 0) {
+                                <button class="buttonGray d-flex align-content-center gap-1" onclick="showAllRequestAmountModal('@item.Id', '@item.OrderNumber')">
+                                    <i class="fa fa-eye"></i>
                                     <span>(@requestCount)</span>
-                                }
-                            </button>
+                                </button>
+                            }
                         </div>
                         //}
                     }
