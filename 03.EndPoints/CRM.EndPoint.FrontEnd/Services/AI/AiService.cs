@@ -1,38 +1,46 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using CRM.Core.Domain.CallRecordings.Entities;
+using CRM.Core.Domain.Reports.Entities;
+using CRM.Core.Domain.Reports.Enum;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 using Generics.Infrastructures.Sql;
+using Microsoft.EntityFrameworkCore;
 using Renci.SshNet;
 
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 
-public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi) {
+public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, DateTimeServices dts) {
     private const string FtpHost = "192.168.1.150";
     private const string FtpUser = "root";
     private const string FtpPass = "123";
 
-    public async Task ProcessCallRecording(string callerNumber, string destinationNumber, string filePath)
+    public async Task ProcessCallRecording(CallRecording callData)
     {
         try
         {
             // 1. دانلود فایل صوتی از SFTP
-            var audioBytes = await GetAudioFromIsabel(filePath);
+            var audioBytes = await GetAudioFromIsabel(callData.RecordingFilePath);
             if (audioBytes == null || audioBytes.Length == 0) return;
 
 
             // 2. تبدیل صدا به متن
-            var transcriptionResult = await viraAi.ConvertAudioToText(audioBytes, Path.GetFileName(filePath));
-            var fullTranscriptionText = transcriptionResult?.Result?.Text ?? string.Empty;
+            var transcriptionResult = await viraAi.ConvertAudioToText(audioBytes, Path.GetFileName(callData.RecordingFilePath));
+            callData.TranscriptionText = transcriptionResult?.Result?.Text ?? string.Empty;
 
-            if (string.IsNullOrEmpty(fullTranscriptionText)) return;
+            if (string.IsNullOrEmpty(callData.TranscriptionText)) return;
 
             // 3. خلاصه‌سازی متن
-            var summary = await gapgptAi.SummarizeText(fullTranscriptionText);
+            callData.SummaryText = await gapgptAi.SummarizeText(callData.TranscriptionText);
 
             // 4. ذخیره اطلاعات در پایگاه داده
-            await SaveCallDataToDatabase(filePath, callerNumber, destinationNumber, fullTranscriptionText, summary);
+            await SaveCallDataToDatabase(callData);
+
+            // 4. ثبت گزارش کار
+            await CreateReportWithCallData(callData);
         }
         catch (Exception ex)
         {
@@ -67,19 +75,52 @@ public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi) {
     }
 
 
-    private async Task SaveCallDataToDatabase(string filePath, string callerNumber, string destNumber, string fullTranscription, string summary)
+    private async Task<CallRecording> SaveCallDataToDatabase(CallRecording callData)
     {
         try
         {
-            var model = new CallRecording {
-                CallerNumber = callerNumber,
-                DestinationNumber = destNumber,
-                TranscriptionText = fullTranscription,
-                SummaryText = summary,
-                RecordingFilePath = filePath,
+            await db.CallRecordings.AddAsync(callData);
+            await db.SaveChangesAsync();
+            return callData;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return null;
+        }
+    }
+
+    private async Task CreateReportWithCallData(CallRecording callRecording)
+    {
+        try
+        {
+            int? customerCode = null;
+            if (callRecording.CallerCustomerId.HasValue)
+            {
+                customerCode = await db.Customers
+                    .Where(f => f.Id == callRecording.CallerCustomerId)
+                    .Select(f => f.CustomerCode)
+                    .FirstOrDefaultAsync();
+            }
+
+            var newReport = new Report {
+                RepTel = callRecording.CallerNumber,
+                UserCreatorID = callRecording.DestinationUserId,
+                UserCreator = callRecording.DestinationUserTxt,
+                CustomerId = callRecording.CallerCustomerId,
+                CustomerTxt = callRecording.CallerCustomerTxt,
+                CustomerCode = customerCode,
+                ReportText = callRecording.SummaryText,
+                RegDate = DateTime.Now,
+                RegDateTxt = dts.GetDatePersian(),
+                RegTimeTxt = dts.GetNowTime("HH:mm:ss"),
+                ReportType = ReportTypeEnum.گزارش_تماس_های_ورودی,
+                ReportTypeTxt = nameof(ReportTypeEnum.گزارش_تماس_های_ورودی).Replace("_", " ")
             };
 
-            await db.AddAsync(model);
+            await db.Reports.AddAsync(newReport);
+
+            //await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
             await db.SaveChangesAsync();
         }
         catch (Exception ex)

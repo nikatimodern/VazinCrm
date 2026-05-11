@@ -34,11 +34,7 @@ public class AiBackgroundService : BackgroundService
                     using var scope = _sp.CreateScope();
                     var aiService = scope.ServiceProvider.GetRequiredService<AiService>();
 
-                    await aiService?.ProcessCallRecording(
-                        item.CallerNumber,
-                        item.DestinationNumber,
-                        item.FilePath
-                    );
+                    await aiService?.ProcessCallRecording(item);
                 }
                 catch (Exception ex)
                 {
