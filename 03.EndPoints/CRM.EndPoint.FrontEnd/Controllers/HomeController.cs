@@ -71,7 +71,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 await trans.CommitAsync();
 
-                var data = await db.RequestAmounts.IgnoreQueryFilters().ToListAsync();
+                var data = await db.RequestAmounts.IgnoreQueryFilters().Include(f => f.RequestAmountOrderHeads).ToListAsync();
                 foreach (var r in data)
                 {
                     if (r.RequestStatus == (RequestStatusEnum)1)
@@ -99,6 +99,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     {
                         r.RequestAmountType = RequestAmountTypeEnum.پرداخت_فاکتور;
                         r.RequestAmountTypeTxt = nameof(RequestAmountTypeEnum.پرداخت_فاکتور).Replace("_", " ");
+                    }
+
+
+                    if (r.IsDeleted)
+                    {
+                        foreach (var rRequestAmountOrderHead in r.RequestAmountOrderHeads ?? [])
+                        {
+                            rRequestAmountOrderHead.IsDeleted = true;
+                        }
                     }
                 }
 

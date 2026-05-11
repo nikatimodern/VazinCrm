@@ -19,6 +19,7 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.Order;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
 using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
@@ -232,18 +233,23 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                ViewBag.PassType = 1;
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var rols = await userManager.GetRolesAsync(user);
 
-                var dataQ = db.OrderHeads.AsQueryable();
+                bool hasFilter = model.filt != null;
+                bool hasSearch = !string.IsNullOrEmpty(model.serVal);
 
-                dataQ = dataQ.Where(item =>
-                    (string.IsNullOrEmpty(model.serVal)
-                     || item.OrderNumber.ToString() == model.serVal
-                     || item.CustomerTxt.Contains(model.serVal)
-                     || item.PrefactorSer.ToString() == model.serVal
-                     || item.CustomerCode.ToString() == model.serVal)
+
+                var query = db.OrderHeads.OrderByDescending(f => f.CreateDate).AsQueryable();
+
+                query = query.Where(item =>
+                    (
+                        string.IsNullOrEmpty(model.serVal)
+                        || item.OrderNumber.ToString() == model.serVal
+                        || item.CustomerTxt.Contains(model.serVal)
+                        || item.PrefactorSer.ToString() == model.serVal
+                        || item.CustomerCode.ToString() == model.serVal
+                    )
                     && item.Status == (OrderHeadStatusEnum)model._type
                 );
 
@@ -251,50 +257,48 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     var preFactorsHasFactorIds = await db.PreFactors.Where(f => f.Factors.Count > 0).Select(f => f.Id).ToListAsync();
 
-                    if (fStatus == 1)
-                        dataQ = dataQ.Where(f => preFactorsHasFactorIds.Contains(f.Prefactor.Value));
-                    else if (fStatus == 2)
-                        dataQ = dataQ.Where(f => !preFactorsHasFactorIds.Contains(f.Prefactor.Value));
+                    query = fStatus switch {
+                        1 => query.Where(f => preFactorsHasFactorIds.Contains(f.Prefactor.Value)),
+                        2 => query.Where(f => !preFactorsHasFactorIds.Contains(f.Prefactor.Value)),
+                        _ => query
+                    };
                 }
 
-                if (model.filt != null)
+                if (hasFilter)
                 {
-                    dataQ = dataQ.ApplyFilter(model, f => f.Customer, f => f.OrderDateMildi, f => f.UserCreatorID);
+                    query = query.ApplyFilter(model, f => f.Customer, f => f.OrderDateMildi, f => f.UserCreatorID);
                 }
 
-                //اگر فیلتر نداشت پیش فرض سفارش هایی که از این تاریخ به بعد هستند رو نمایش میده
-                var date = dtService.GetDateMiladi("1404/01/01");
 
-                bool hasFilter = model.filt != null;
-                bool hasSearch = !string.IsNullOrEmpty(model.serVal);
-
+                var isTamin = false;
                 if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش") || rols.Contains("کارشناس مالی") || rols.Contains("مدیر مالی"))
                 {
-                    if (!hasFilter && !hasSearch)
-                        dataQ = dataQ.Where(f => f.OrderDateMildi > date).Take(200);
+                    isTamin = true;
                 } else if (rols.Contains("کارشناس تامین"))
                 {
-                    dataQ = dataQ.Where(f => f.UserCreatorID == user.Id || f.UserTaminId.ToString() == user.Id);
-
-                    if (hasFilter)
-                        dataQ = dataQ.Take(200);
-                    else if (!hasSearch)
-                        dataQ = dataQ.Where(f => f.OrderDateMildi > date).Take(200);
+                    isTamin = true;
+                    query = query.Where(f => f.UserCreatorID == user.Id || f.UserTaminId.ToString() == user.Id);
                 } else
                 {
-                    dataQ = dataQ.Where(f => f.UserCreatorID == user.Id);
-
-                    if (!hasFilter && !hasSearch)
-                        dataQ = dataQ.Where(f => f.OrderDateMildi > date).Take(200);
+                    query = query.Where(f => f.UserCreatorID == user.Id);
                 }
 
+                if (!hasFilter && !hasSearch) //اگر فیلتر نداشت پیش فرض سفارش هایی که از این تاریخ به بعد هستند رو نمایش میده
+                {
+                    var date = dtService.GetDateMiladi("1404/01/01");
+                    query = query.Where(f => f.OrderDateMildi > date).Take(200);
+                }
 
-                var data = await dataQ.OrderByDescending(f => f.CreateDate).ToListAsync();
-
+                /*var data = await query.Select(oh => new OrderHeadVModel {
+                    OrderHead = oh,
+                    RequestAmountCounts = oh.RequestAmountOrderHeads.Count
+                }).ToListAsync();*/
+                var data = await query.Include(f => f.RequestAmountOrderHeads).ToListAsync();
 
                 var html = await vrs.RenderToStringAsync("GetAllHeadOrdersPartial", data,
                     new Dictionary<string, object> {
-                        { "PassType", ViewBag.PassType }
+                        { "PassType", 1 },
+                        { "IsTamin", isTamin }
                     });
 
                 return Ok(new { count = data.Count, html });

@@ -19,7 +19,7 @@ namespace CRM.Infrastructures.Sql.RequestAmounts.Configs {
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(f => f.RequestAmountOrderHeads)
-                .WithOne()
+                .WithOne(f => f.RequestAmount)
                 .HasForeignKey(f => f.RequestAmountId)
                 .OnDelete(DeleteBehavior.Cascade);
 

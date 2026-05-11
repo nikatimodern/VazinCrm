@@ -121,6 +121,9 @@
     </div>
 </div>
 
+
+
+
 @section scripts {
     <script>
         var modelOrder = { filt: null, serVal: null, _type: 1 };
@@ -166,7 +169,7 @@
             searchOrderElm.nextElementSibling.addEventListener("click", async (e) => {
                 modelOrder.serVal = searchOrderElm.value;
                 await refreshOrders();
-                if (searchOrderElm.trim() && !showHidden) {
+                if (searchOrderElm.value.trim() && !showHidden) {
                     await getHiddenOrdersCount();
                 }
             });
@@ -303,5 +306,4 @@
         };
 
     </script>
-
 }

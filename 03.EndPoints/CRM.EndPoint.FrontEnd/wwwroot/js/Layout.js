@@ -4595,8 +4595,12 @@ async function changeStatusReqAmount(reqAmountId, status) {
                         await GetRequestFinancialExpert();
                         break;
                 }
-            } else {
+            } else if (currentPath.includes("order")) {
+                await getAllRequestAmountByOrderHead(ohReqAmountId);
+                
+            } else if (currentPath.includes("requestamount")) {
                 await getAllRequestAmount();
+                
             }
         }
     } catch (err) {
@@ -4771,7 +4775,6 @@ async function showEditPaymentModal(id) {
         FLshowLoading(false);
     }
 }
-
 
 
 ////////////////////////////////////////////////////////
@@ -4981,30 +4984,59 @@ const submitReqAmountAttach = async () => {
 
 /*--------------------------------------------------------------------------------*/
 
-const reqAmountModal = document.getElementById("requestAmountModal");
+const addReqAmountModal = document.getElementById("addRequestAmountModal");
 let orderHeadsSelectedIds = [];
 let requestAmountData = {};
 let isFromOrderHead = false;
-async function showRequestAmountModal(ohId, ohNumber) {
+let ohReqAmountId;
+async function showAddRequestAmountModal(ohId, ohNumber) {
     await setupSelectOptionsReqAmount();
     if (ohId) {
+        ohReqAmountId = ohId;
         isFromOrderHead = true;
         requestAmountData.requestAmountType = 1;
         orderHeadsSelectedIds = [ohId];
-        reqAmountModal.querySelector("#reqAmountModalTitleId").textContent = `درخواست پیش پرداخت حواله ${ohNumber}`;
-        const reqAmountTypeWrapper = reqAmountModal.querySelector("#requestAmountTypeWrapper");
+        addReqAmountModal.querySelector("#reqAmountModalTitleId").textContent = `درخواست پیش پرداخت حواله ${ohNumber}`;
+    }
+    
+    if (ohId || ohReqAmountId) {
+        const reqAmountTypeWrapper = addReqAmountModal.querySelector("#requestAmountTypeWrapper");
         reqAmountTypeWrapper?.remove();
         /*reqAmountType.value = "1";
         toggleElementsDisabled(reqAmountType, true);*/
     }
-    ModalToggle("requestAmountModal");
+    ModalToggle(addReqAmountModal);
+}
+
+async function showAllRequestAmountModal(ohId, ohNumber) {
+    const modal = document.getElementById("allRequestAmountsModal");
+    modal.querySelector(".modal-title").innerText = ohNumber ? `درخواست های حواله شماره ${ohNumber}` : "درخواست های وجه";
+    
+    ohReqAmountId = ohId;
+    await getAllRequestAmountByOrderHead(ohId);
+    ModalToggle(modal, "show");
+}
+
+async function getAllRequestAmountByOrderHead(ohId) {
+    try {
+        FLshowLoading();
+        const res = await axios(`/Amount/GetAllRequestAmountsPartial?orderHeadId=${ohId}&passType=1`);
+        if (res.status === 200) {
+            document.querySelector("#allRequestAmountsModal #requestAmountsBodyModal").innerHTML = res.data.html;
+        }
+    } catch (err) {
+        console.log(err);
+        toastifyError("خطای سرور");
+    } finally {
+        FLshowLoading(false);
+    }
 }
 
 
 let isSetupReqAmountModal = false;
 async function setupSelectOptionsReqAmount(targetId) {
     if (isSetupReqAmountModal) return;
-    const totalAmountSupFactorElm = reqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
+    const totalAmountSupFactorElm = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
     
     const [resSuppliers, resCashiers] = await Promise.all([axios("/Supply/GetSupplyBaseData"), axios("/Cash/GetAllCashiers")]);
     
@@ -5056,8 +5088,8 @@ async function getTotalAmountSupplyFactor(supplierId) {
 
 async function submitRequestAmountModal() {
     if (!await mySer.CheckValidForm("requestAmountForm")) return;
-    const supplierSelect = reqAmountModal.querySelector("#reqAmountSupplierId");
-    const cashierSelect = reqAmountModal.querySelector("#reqAmountCashierId");
+    const supplierSelect = addReqAmountModal.querySelector("#reqAmountSupplierId");
+    const cashierSelect = addReqAmountModal.querySelector("#reqAmountCashierId");
     
     const formData = mySer.convertFormToJSON("requestAmountForm");
     const model = {
@@ -5075,13 +5107,19 @@ async function submitRequestAmountModal() {
         const apiUrl = model.id ? "/Amount/UpdateRequestAmount" : "/Amount/AddRequestAmount";
         const res = await axios.post(apiUrl, model);
         if (res.status === 200) {
-            toastifySuccess("با موفقیت ثبت شد");
             const currentPath = window.location.pathname.toLowerCase();
             if (currentPath.includes("requestamount")) {
                 getAllRequestAmount();
             } else if (currentPath.includes("order")) {
+                refreshOrders();
+                if (model.id) {
+                    await getAllRequestAmountByOrderHead(ohReqAmountId);
+                } else {
+                    await showAllRequestAmountModal(ohReqAmountId);
+                }
             }
             
+            toastifySuccess("با موفقیت ثبت شد");
             cancelRequestAmountModal();
         }
     } catch (err) {
@@ -5095,27 +5133,27 @@ async function submitRequestAmountModal() {
 
 
 function cancelRequestAmountModal() {
-    ModalToggle(reqAmountModal);
+    ModalToggle(addReqAmountModal);
     mySer.emptyForm("requestAmountForm");
     supplyFactorsSelectedIds = [];
     orderHeadsSelectedIds = [];
     requestAmountData = {};
     isFromOrderHead = false;
     
-    const ohInputWrapper = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
-    const ohInput = reqAmountModal.querySelector("input#reqAmountOrderHead");
+    const ohInputWrapper = addReqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
+    const ohInput = addReqAmountModal.querySelector("input#reqAmountOrderHead");
     ohInputWrapper.classList.add("d-none");
     toggleElementsRequired(ohInput, false);
-    const totalAmountSupFactorElm = reqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
+    const totalAmountSupFactorElm = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
     totalAmountSupFactorElm.innerHTML = "";
-    /*  const reqAmountType = reqAmountModal.querySelector("#requestAmountTypeId");
+    /*  const reqAmountType = addReqAmountModal.querySelector("#requestAmountTypeId");
       if (reqAmountType) toggleElementsDisabled(reqAmountType, false);*/
 }
 
 
 async function showEditRequestAmountModal(id) {
     FLshowLoading();
-    await showRequestAmountModal();
+    await showAddRequestAmountModal();
     
     try {
         const res = await axios(`/Amount/GetRequestAmount/${id}`);
@@ -5127,12 +5165,12 @@ async function showEditRequestAmountModal(id) {
             supplyFactorsSelectedIds = requestAmountData.requestAmountSupplyFactor.map(r => r.supplyFactorId);
             orderHeadsSelectedIds = requestAmountData.requestAmountOrderHeads.map(r => r.orderHeadId);
             
-            const inpElmSupplyFactor = reqAmountModal.querySelector("#reqAmountSupplyFactor");
+            const inpElmSupplyFactor = addReqAmountModal.querySelector("#reqAmountSupplyFactor");
             if (inpElmSupplyFactor) {
                 inpElmSupplyFactor.value = supplyFactorSerials.join(", ");
             }
             
-            const inpElmOrderHead = reqAmountModal.querySelector("#reqAmountOrderHead");
+            const inpElmOrderHead = addReqAmountModal.querySelector("#reqAmountOrderHead");
             if (inpElmOrderHead) {
                 inpElmOrderHead.value = orderHeadSerials.join(", ");
             }
@@ -5166,6 +5204,8 @@ const deleteRequestAmount = async (id) => {
                 if (currentPath.includes("requestamount")) {
                     getAllRequestAmount();
                 } else if (currentPath.includes("order")) {
+                    await getAllRequestAmountByOrderHead(ohReqAmountId);
+                    refreshOrders();
                 }
             }
             FLshowLoading(false);
@@ -5173,14 +5213,14 @@ const deleteRequestAmount = async (id) => {
     });
 };
 
-reqAmountModal.querySelector("select#requestAmountTypeId")?.addEventListener("change", async (e) => {
+addReqAmountModal.querySelector("select#requestAmountTypeId")?.addEventListener("change", async (e) => {
     const type = Number(e.target.value);
     
-    const ohWrapper = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
-    const cashierWrapper = reqAmountModal.querySelector("#reqAmountCashierWrapper");
-    const supplierWrapper = reqAmountModal.querySelector("#reqAmountSupplierWrapper");
+    const ohWrapper = addReqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
+    const cashierWrapper = addReqAmountModal.querySelector("#reqAmountCashierWrapper");
+    const supplierWrapper = addReqAmountModal.querySelector("#reqAmountSupplierWrapper");
     
-    const totalAmountSupFactorElm = reqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
+    const totalAmountSupFactorElm = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
     
     const toggleField = (wrapper, show) => {
         const input = wrapper.querySelector("input, select");
