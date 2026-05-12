@@ -2,17 +2,18 @@
 
 let uploadButtons = document.getElementsByClassName("uploadBtn");
 let imageViewer = null;
-
 //Upload Button
 Array.from(uploadButtons).forEach((item, index) => {
     const listName = item.getAttribute("data-varList");
     
     item.addEventListener("change", async () => {
-        if (item.files?.length > 0) {
+        /*if (item.files?.length > 0) {
             await addToList(item.files, listName);
             ShowPreview(index);
-        }
+        }*/
+        await processUploadFiles(item.files, listName, index, containerUploader);
     });
+    
     
     // Drag & Drop
     const containerUploader = item.closest(".container-uploader") || item.parentElement;
@@ -51,14 +52,36 @@ Array.from(uploadButtons).forEach((item, index) => {
             e.preventDefault();
             
             containerUploader.classList.remove("dragover");
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                await addToList(files, listName);
-                ShowPreview(index);
-            }
+            
+            await processUploadFiles(e.dataTransfer.files, listName, index, containerUploader);
         });
     }
 });
+
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function processUploadFiles(files, listName, previewIndex, containerUploader) {
+    if (!files?.length) return;
+    
+    const progress = createUploadProgress(containerUploader);
+    const minDuration = 800;
+    const startTime = performance.now();
+    
+    try {
+        containerUploader.classList.add("uploading");
+        await addToList(files, listName, progress);
+        
+        ShowPreview(previewIndex);
+        
+        const elapsed = performance.now() - startTime;
+        if (elapsed < minDuration) {
+            await delay(minDuration - elapsed);
+        }
+    } finally {
+        containerUploader.classList.remove("uploading");
+        removeUploadProgress(containerUploader);
+    }
+}
 
 
 const FileUpReload = (fUpId) => {
@@ -77,8 +100,6 @@ const ShowPreview = (indexEle) => {
     const listName = item.getAttribute("data-varList");
     const divPre = item.getAttribute("data-showList");
     const ListAttach = window[listName] || [];
-    
-    console.log(ListAttach);
     
     const previewContainer = document.getElementById(divPre);
     previewContainer.classList.add("previewContainer");
@@ -323,7 +344,7 @@ const delFile = (index, indexEle) => {
     ShowPreview(indexEle);
 };
 
-
+/*
 const addToList = async (files, listName) => {
     for (let file of files) {
         const base64 = await toBase64(file);
@@ -342,7 +363,39 @@ const addToList = async (files, listName) => {
         };
         window[listName].push(fileObj);
     }
+};*/
+
+const addToList = async (files, listName, progressElement) => {
+    const total = files.length;
+    
+    let current = 0;
+    
+    for (let file of files) {
+        current++;
+        updateUploadProgress(progressElement, Math.round(((current - 1) / total) * 100), `در حال پردازش ${file.name}`);
+        await new Promise(resolve => requestAnimationFrame(resolve));
+        
+        const sizeKB = Math.round(file.size / 1024);
+        
+        if (sizeKB > 20480) {
+            toastifyError("حجم فایل باید کمتر از 20 مگابایت باشد");
+            continue;
+        }
+        const base64 = await toBase64(file);
+        
+        const fileObj = {
+            filename: file.name,
+            fileExten: file.name.split(".").pop().toLowerCase(),
+            filetype: base64.toString().split(",")[0],
+            file: base64.toString().split(",")[1],
+            isDeleted: false,
+        };
+        window[listName].push(fileObj);
+        
+        updateUploadProgress(progressElement, Math.round((current / total) * 100), `فایل ${current} از ${total} پردازش شد`);
+    }
 };
+
 
 const toBase64 = file => new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -400,4 +453,40 @@ function downloadFile({ url, filename = "file", extension = "" }) {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+}
+
+function createUploadProgress(containerUploader) {
+    removeUploadProgress(containerUploader);
+    
+    const progress = document.createElement("div");
+    progress.className = "upload-progress";
+    progress.innerHTML = `
+        <div class="upload-progress-text">
+            در حال پردازش فایل...
+        </div>
+
+        <div class="upload-progress-bar">
+            <div class="upload-progress-bar-fill"></div>
+        </div>
+    `;
+    
+    containerUploader.appendChild(progress);
+    
+    return progress;
+}
+
+
+function updateUploadProgress(progressElement, percent, text) {
+    const fill = progressElement.querySelector(".upload-progress-bar-fill");
+    
+    const txt = progressElement.querySelector(".upload-progress-text");
+    
+    fill.style.width = `${percent}%`;
+    
+    txt.innerText = text;
+}
+
+
+function removeUploadProgress(containerUploader) {
+    containerUploader.querySelector(".upload-progress")?.remove();
 }
