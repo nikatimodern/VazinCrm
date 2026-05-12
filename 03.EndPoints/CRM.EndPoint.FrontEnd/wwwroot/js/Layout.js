@@ -49,7 +49,7 @@ let myDate = new GetDate();
 document.addEventListener("DOMContentLoaded", async () => {
     await GetUserLogin();
     setActiveMenu();
-    
+   // initLightbox();
     
     setting = await GetSetting();
     
@@ -2369,14 +2369,14 @@ async function showPayment(id, parent = false) {
             }
         }
         
-        SanadPayList = res.listAttach;
+        const attachList = res.listAttach;
         
         const containerUploader = invoiceModalElm.querySelector("#ShowPaymentSanadParId").parentElement;
         const divShow = containerUploader.querySelector("#ShowPaymentDivShowSanadPar");
         divShow.innerHTML = "";
-        if (SanadPayList.length) {
+        if (attachList.length) {
             containerUploader.classList.remove("d-none");
-            SanadPayList.forEach(fileItem => {
+            attachList.forEach(fileItem => {
                 const imageBox = createImageBox(fileItem);
                 divShow.appendChild(imageBox);
             });
@@ -4134,10 +4134,16 @@ window.onload = () => {
 // console.log(dateTime)
 
 
-lightbox.option({
+/*lightbox.option({
     resizeDuration: 500, wrapAround: true,
-});
+});*/
 
+function initLightbox() {
+    if (!window.Lightbox3) return;
+    
+    const { Lightbox } = Lightbox3;
+    Lightbox.init();
+}
 
 const overlay = document.getElementById("overlay");
 const moreMenuBtn = document.getElementById("moreMenuBtn");
@@ -5285,6 +5291,7 @@ document.addEventListener("input", (e) => {
          }*/
     }
 });
+
 
 
 
