@@ -31,8 +31,8 @@ class SelectionManager {
     /**
      * @param {Object} options
      * @param {string|HTMLElement} options.container - Main items container
-     * @param {string|HTMLElement} options.selectionBar - Selection actions bar element
-     * @param {string|HTMLElement} options.toggleBtn - Button used to enable selection mode
+     * @param {string|HTMLElement} [options.selectionBar=".selection-bar"] - Selection actions bar element
+     * @param {string|HTMLElement} [options.toggleBtn=".selection-toggle-btn"] - Button used to enable selection mode
      * @param {string} [options.itemSelector=".selection-item"] - Selector for selectable items
      * @param {string} [options.checkboxSelector=".selection-checkbox"] - Selector for item checkbox
      * @param {string} [options.selectedClass="selected"] - Class applied to selected items

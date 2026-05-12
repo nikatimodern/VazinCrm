@@ -363,11 +363,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var item = await db.Payments.Include(f => f.RequestAmountPayments).Where(f => f.Id == id).FirstOrDefaultAsync();
                 if (item == null) return NotFound();
 
-                var requestAmountIds = item.RequestAmountPayments?
-                    .Select(x => x.RequestAmountId)
-                    .Distinct()
-                    .ToList() ?? [];
-
                 item.IsDeleted = true;
                 item.ModifyDate = DateTime.Now;
                 item.ModifyDateTxt = dtService.GetDateTimePersian();
@@ -382,6 +377,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
                 await db.SaveChangesAsync();
 
+                var requestAmountIds = item.RequestAmountPayments?
+                    .Select(x => x.RequestAmountId)
+                    .Distinct()
+                    .ToList() ?? [];
 
                 var requestIdsWithPayment = await db.RequestAmountPayments
                     .Where(x => requestAmountIds.Contains(x.RequestAmountId))
@@ -517,7 +516,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        public async Task<IActionResult> GetAllRequestAmountsPartial(int passType, int type = -1, string search = "")
+        public async Task<IActionResult> GetAllRequestAmountsPartial(int passType, int type = -1, string search = "", Guid? orderHeadId = null)
         {
             try
             {
@@ -532,6 +531,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (!isAdmin && !isFinancial && !isManager)
                 {
                     query = query.Where(f => f.UserCreatorID == user.Id);
+                }
+
+                if (orderHeadId.HasValue)
+                {
+                    query = query.Where(x =>
+                        x.RequestAmountOrderHeads.Any(ra => ra.OrderHeadId == orderHeadId.Value)
+                    );
                 }
 
                 if (!string.IsNullOrEmpty(search))
@@ -706,7 +712,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
-                var item = await db.RequestAmounts.Where(f => f.Id == id).FirstOrDefaultAsync();
+                var item = await db.RequestAmounts
+                    .Where(f => f.Id == id)
+                    .Include(f => f.RequestAmountOrderHeads)
+                    .Include(f => f.RequestAmountSupplyFactor)
+                    .FirstOrDefaultAsync();
+
                 if (item == null) return NotFound();
 
                 item.IsDeleted = true;
@@ -714,6 +725,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 item.ModifyDateTxt = dtService.GetDateTimePersian();
                 item.UserModify = user.FullName;
                 item.UserModifyID = user.Id;
+
+                foreach (var i in item.RequestAmountOrderHeads ?? [])
+                {
+                    i.IsDeleted = true;
+                }
+
+                foreach (var i in item.RequestAmountSupplyFactor ?? [])
+                {
+                    i.IsDeleted = true;
+                }
 
                 await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
                 await db.SaveChangesAsync();

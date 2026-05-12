@@ -71,10 +71,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 await trans.CommitAsync();
 
-                var data = await db.RequestAmounts.IgnoreQueryFilters().ToListAsync();
+                var data = await db.RequestAmounts.IgnoreQueryFilters().Include(f => f.RequestAmountOrderHeads).ToListAsync();
                 foreach (var r in data)
                 {
-                    if (r.RequestStatus == (RequestStatusEnum)1)
+                    /*if (r.RequestStatus == (RequestStatusEnum)1)
                     {
                         r.RequestStatus = RequestStatusEnum.در_انتظار_تایید_مدیرعامل;
                     } else if (r.RequestStatus == (RequestStatusEnum)2)
@@ -100,6 +100,22 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         r.RequestAmountType = RequestAmountTypeEnum.پرداخت_فاکتور;
                         r.RequestAmountTypeTxt = nameof(RequestAmountTypeEnum.پرداخت_فاکتور).Replace("_", " ");
                     }
+
+
+                    if (r.IsDeleted)
+                    {
+                        foreach (var rRequestAmountOrderHead in r.RequestAmountOrderHeads ?? [])
+                        {
+                            rRequestAmountOrderHead.IsDeleted = true;
+                        }
+                    }*/
+
+                    /*var percent = (int)((r.AcceptedAmount / r.Amount) * 100);
+                    int[] percentList = [25, 50, 75, 100];
+                    if (percentList.Contains(percent))
+                    {
+                        r.AcceptedAmountPercent = percent;
+                    }*/
                 }
 
                 //await db.SaveChangesAsync();

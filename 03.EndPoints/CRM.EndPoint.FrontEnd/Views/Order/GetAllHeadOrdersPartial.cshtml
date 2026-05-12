@@ -2,6 +2,7 @@
 @model List<OrderHead>
 @{
     Layout = null;
+    var isTamin = ViewBag.IsTamin;
 }
 
 @foreach (var item in Model) {
@@ -10,7 +11,6 @@
             <div class="mp flex-column" style=" display:flex;justify-content:space-between; width:100%;">
 
                 <div class="col-12 d-flex flex-wrap justify-content-around" style="row-gap:.5rem;column-gap:10px;">
-
                     <div class="justify-content-between" style=" display:flex;align-items:center;gap:6px">
                         <label style="color:gray">شماره:</label>
                         <label style="font-family:'IRANSansBold'">@item.OrderNumber</label>
@@ -23,7 +23,6 @@
                         <label style="color:gray">تاریخ:</label>
                         <label style="font-family:'IRANSansBold'">@item.OrderDate</label>
                     </div>
-
                 </div>
 
                 <div class="my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
@@ -56,17 +55,28 @@
             <div class="my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
             <div class="d-flex align-items-center">
                 <div class="align-items-center flex-grow-1" style=" display:flex; justify-content:space-evenly !important;row-gap:8px;font-size:14px">
-                    <button class="mp d-flex justify-content-center align-items-center" data-title="مشاهده" style="color:var(--DarkColor);border:none;background-color:transparent" onclick="PreviewOrderPrint('@item.Id')">
+                    <button class="flex-center" data-title="مشاهده" style="color:var(--DarkColor);border:none;background-color:transparent" onclick="PreviewOrderPrint('@item.Id')">
                         <i class="mp fa fa-eye"></i>
                     </button>
-                    <button class="mp d-flex justify-content-center align-items-center" data-title="ویرایش" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="ShowUpdateHeadOrder('@item.Id', @ViewBag.PassType, '@item.DealId')">
+                    <button class="flex-center" data-title="ویرایش" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="ShowUpdateHeadOrder('@item.Id', @ViewBag.PassType, '@item.DealId')">
                         <i class="mp fa fa-pencil"></i>
                     </button>
-                    <button class="mp d-flex justify-content-center align-items-center" data-title="حذف" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="DelHeadOrderItem('@item.Id', @ViewBag.PassType, '@item.DealId')">
+                    <button class="flex-center" data-title="حذف" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="DelHeadOrderItem('@item.Id', @ViewBag.PassType, '@item.DealId')">
                         <i class="mp fa fa-trash"></i>
                     </button>
-                    @if (item.Status == OrderHeadStatusEnum.ثبت_اولیه) {
-                        <button class="buttonGray" onclick="showRequestAmountModal('@item.Id', '@item.OrderNumber')">درخواست وجه</button>
+                    @if (isTamin) {
+                        //if (item.Status == OrderHeadStatusEnum.ثبت_اولیه) {
+                        var requestCount = item.RequestAmountOrderHeads?.Count;
+                        <div class="@(requestCount > 0 ? "buttonGroup" : "")">
+                            <button class="buttonGray" onclick="showAddRequestAmountModal('@item.Id', '@item.OrderNumber')">درخواست پیش‌پرداخت</button>
+                            @if (requestCount > 0) {
+                                <button class="buttonGray d-flex align-content-center gap-1" onclick="showAllRequestAmountModal('@item.Id', '@item.OrderNumber')">
+                                    <i class="fa fa-eye"></i>
+                                    <span>(@requestCount)</span>
+                                </button>
+                            }
+                        </div>
+                        //}
                     }
                 </div>
 
