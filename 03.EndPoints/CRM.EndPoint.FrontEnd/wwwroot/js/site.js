@@ -3318,12 +3318,32 @@ const updateFilterSwitchState = ({ wrapperSelector, filterData, currentFilterVal
     if (!filterData) return;
     
     let firstAvailableValue = null;
-    Object.entries(filterData).forEach(([value, count]) => {
-        const radio = wrapper.querySelector(`input[type="radio"][value="${value}"]`);
-        if (!radio) return;
+    const radios = wrapper.querySelectorAll(`.filter-switch-item input[type="radio"]`);
+    radios.forEach(radio => {
+        const value = radio.value;
+        const count = filterData?.[value];
         
         const item = radio.closest(".filter-switch-item");
         const badge = item?.querySelector(".filter-count-badge");
+        
+        /*if (!radio.dataset.filterSwitchBinded) {
+            radio.addEventListener("click", () => {
+                wrapper.dataset.autoSwitched = "true";
+            });
+            radio.dataset.filterSwitchBinded = "true";
+        }*/
+        
+        radio.addEventListener("click", () => {
+            wrapper.dataset.autoSwitched = "true";
+        });
+        
+        if (count === undefined) {
+            item.style.opacity = "1";
+            if (badge) {
+                badge.style.display = "none";
+            }
+            return;
+        }
         
         if (badge) {
             badge.style.display = count > 0 ? "flex" : "none";
@@ -3332,14 +3352,10 @@ const updateFilterSwitchState = ({ wrapperSelector, filterData, currentFilterVal
         
         item.style.opacity = count > 0 ? "1" : ".5";
         
-        if (count > 0 && firstAvailableValue === null) {
+        if (value !== "-1" && count > 0 && firstAvailableValue === null) {
             firstAvailableValue = value;
         }
-        
-        radio.addEventListener("click", () => {
-            wrapper.dataset.autoSwitched = "true";
-        }, { once: true });
-    });
+    })
     
     if (wrapper.dataset.autoSwitched === "true") return;
     if (filterData[currentFilterValue] > 0) return;

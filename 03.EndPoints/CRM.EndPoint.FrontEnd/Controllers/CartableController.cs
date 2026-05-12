@@ -513,7 +513,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
 
                 var filterCounts = new Dictionary<int, int> {
-                    //[-1] = await queryBase.CountAsync(s => s.Pftype >= (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین),
+                    [-1] = await queryBase.CountAsync(s => s.Pftype >= (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین),
                     [1] = await queryBase.CountAsync(s => s.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین),
                     [2] = await queryBase.CountAsync(s => s.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین),
                 };
@@ -731,42 +731,36 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                var query = db.PreFactors.AsQueryable();
+                var baseQuery = db.PreFactors.AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(serVal))
                 {
                     var serialVal = TextService.convertToInt(serVal);
-                    query = query.Where(s =>
+                    baseQuery = baseQuery.Where(s =>
                         EF.Functions.Like(s.AgentName, $"%{serVal}%") ||
                         EF.Functions.Like(s.Customer, $"%{serVal}%") ||
                         s.SerialNumber == serialVal);
                 }
 
-                switch (type)
-                {
-                    case -1:
-                        query = query.Where(s =>
-                            s.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش
-                            || s.Pftype == (int)PreFactorEnum.در_انتظار_تولید
-                            || s.Pftype == (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد
-                            || s.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی
-                            || s.Pftype == (int)PreFactorEnum.بسته_شده
-                        );
-                        break;
-                    case 1:
-                        query = query.Where(s => s.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش);
-                        break;
-                    case 2:
-                    {
-                        query = query.Where(s =>
-                            s.Pftype == (int)PreFactorEnum.در_انتظار_تولید
-                            || s.Pftype == (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد
-                            || s.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی
-                        );
-                        break;
-                    }
-                }
+                const int pending = (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش;
+                var approved = new[] {
+                    (int)PreFactorEnum.در_انتظار_تولید,
+                    (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد,
+                    (int)PreFactorEnum.در_انتظار_تایید_مالی
+                };
 
+                var filterCounts = new Dictionary<int, int> {
+                    [-1] = await baseQuery.Where(s => approved.Contains(s.Pftype) || s.Pftype == pending).CountAsync(),
+                    [1] = await baseQuery.Where(s => s.Pftype == pending).CountAsync(),
+                    [2] = await baseQuery.Where(s => approved.Contains(s.Pftype)).CountAsync(),
+                };
+
+                var query = type switch {
+                    -1 => baseQuery.Where(s => approved.Contains(s.Pftype) || s.Pftype == pending),
+                    1 => baseQuery.Where(s => s.Pftype == pending),
+                    2 => baseQuery.Where(s => approved.Contains(s.Pftype)),
+                    _ => baseQuery
+                };
 
                 var pList = await (
                         from pf in query
@@ -787,7 +781,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
                 var html = await vrs.RenderToStringAsync("GetPreFactorSalesAdmin", pList);
-                return Ok(new { count = pList.Count, html });
+                return Ok(new { count = pList.Count, html, filterCounts });
             }
             catch (Exception e)
             {

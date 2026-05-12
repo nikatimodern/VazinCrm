@@ -529,11 +529,17 @@
                             </li>
                             <li class="filter-switch-item">
                                 <input type="radio" name="SalesAdminFilter" id="spf1" value="1" checked />
-                                <label for="spf1">در انتظار تایید</label>
+                                <label for="spf1">
+                                    در انتظار تایید
+                                    <span class="badgeCircle filter-count-badge" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff;display: none"></span>
+                                </label>
                             </li>
                             <li class="filter-switch-item">
                                 <input type="radio" name="SalesAdminFilter" id="spf2" value="2" />
-                                <label for="spf2">تایید شده</label>
+                                <label for="spf2">
+                                    تایید شده
+                                    <span class="badgeCircle filter-count-badge" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff;display: none"></span>
+                                </label>
                             </li>
                         </ul>
                     </div>
@@ -1494,6 +1500,15 @@
                     document.getElementById("SalesAdminPfactorContentId").innerHTML = res.data.html;
                     document.getElementById("S_CountId").textContent = res.data.count;
                     document.getElementById("SalesAdminFooterId").classList.toggle("d-none", !res.data.count);
+                    updateFilterSwitchState({
+                        wrapperSelector: "#CSalesAdminId",
+                        filterData: res.data.filterCounts,
+                        currentFilterValue: type,
+                        searchValue: val,
+                        onChange: async () => {
+                            await GetPreFactorSalesAdmin();
+                        },
+                    });
                     FLshowLoading(false);
                 }
 
