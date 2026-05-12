@@ -4425,6 +4425,16 @@ padding: 0 !important;
 }
 
 
+.badgeCircle.filter-count-badge {
+  position: absolute;
+  top: -6px;
+  left: -3px;
+  z-index: 10;
+  color: #fff;
+  display: none;
+}
+
+
 .box-phoneBook {
   background-color: #fff;
   border-radius: .25rem;
@@ -5682,10 +5692,12 @@ table tr.payment-vosoled > td {
   background-size: contain;
 }
 
+
 .container-uploader.uploading {
   pointer-events: none;
   opacity: .8;
 }
+
 
 .upload-progress {
   direction: rtl;
@@ -5697,10 +5709,12 @@ table tr.payment-vosoled > td {
   font-size: 13px;
 }
 
+
 .upload-progress-text {
   margin-bottom: 8px;
   color: #555;
 }
+
 
 .upload-progress-bar {
   width: 100%;
@@ -5709,6 +5723,7 @@ table tr.payment-vosoled > td {
   overflow: hidden;
   background: #ddd;
 }
+
 
 .upload-progress-bar-fill {
   height: 100%;

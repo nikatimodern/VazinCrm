@@ -2099,7 +2099,7 @@
                         </div>
                     </div>
                     <div id="selFilterItem" class="Admin SalesAdmin TaminAdmin FinancialExpert FinancialAdmin ManagingDirector" style="display:none">
-                        <div style=" display:flex;flex-direction:column;align-items:start ">
+                        <div class="d-flex flex-column">
                             <div class="checkbox-wrapper-20">
                                 <div class="switch">
                                     <label for="SelFilterChd" style="font-family:IRANSansBold; font-size:clamp(16px,2vw,18px);">کارشناس فروش</label>
@@ -2115,7 +2115,7 @@
                         </div>
                     </div>
                     <div id="dateFilterItem" style=" display:flex;flex-direction:column;align-items:start ">
-                        <div class="d-flex align-items-end justify-content-between w-100">
+                        <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 w-100">
                             <div class="checkbox-wrapper-20">
                                 <div class="switch">
                                     <label for="DateFilterChk" style="font-family:IRANSansBold; font-size:clamp(16px,2vw,18px);">تاریخ</label>
@@ -2124,7 +2124,7 @@
                                     <label for="DateFilterChk" class="slider"></label>
                                 </div>
                             </div>
-                            <div class="d-flex align-items-center gap-2 disableDiv" id="dateFilterBtnId">
+                            <div class="d-flex align-items-center justify-content-end flex-grow-1 gap-2 disableDiv" id="dateFilterBtnId">
                                 <button type="button" class="buttonGray yearBtn" style="font-size:11px" onclick="getDateFilter(1, this)">سال جاری</button>
                                 <button type="button" class="buttonGray monthBtn" style="font-size:11px" onclick="getDateFilter(2, this)">ماه جاری</button>
                                 <button type="button" class="buttonGray weekBtn" style="font-size:11px" onclick="getDateFilter(3, this)">هفته جاری</button>

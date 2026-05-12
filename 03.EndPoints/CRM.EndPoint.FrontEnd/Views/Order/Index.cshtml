@@ -40,18 +40,21 @@
         <div class="d-flex flex-column w-100">
             <ul class="nav nav-tabs" id="ordersTabs" role="tablist" style="display: none;">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active text-dark" style="margin-bottom:-2px;isolation:auto" id="registeredOrderTab" data-bs-toggle="tab" data-bs-target="#registeredOrderTab-pane" type="button" role="tab" aria-controls="registeredOrderTab-pane" aria-selected="true">
-                        ثبت اولیه دستور تولید
+                    <button class="nav-link active text-dark position-relative" style="margin-bottom:-2px;isolation:auto" id="registeredOrderTab" data-tab="registeredOrder" data-bs-toggle="tab" data-bs-target="#registeredOrderTab-pane" type="button" role="tab" aria-controls="registeredOrderTab-pane" aria-selected="true">
+                        <span>ثبت اولیه دستور تولید</span>
+                        <span class="badgeCircle filter-count-badge"></span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link text-dark" style="margin-bottom:-2px;isolation:auto" id="producingOrderTab" data-bs-toggle="tab" data-bs-target="#producingOrderTab-pane" type="button" role="tab" aria-controls="producingOrderTab-pane" aria-selected="false">
-                        مرحله تولید
+                    <button class="nav-link text-dark position-relative" style="margin-bottom:-2px;isolation:auto" id="producingOrderTab" data-tab="producingOrder" data-bs-toggle="tab" data-bs-target="#producingOrderTab-pane" type="button" role="tab" aria-controls="producingOrderTab-pane" aria-selected="false">
+                        <span>مرحله تولید</span>
+                        <span class="badgeCircle filter-count-badge"></span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link text-dark" style="margin-bottom:-2px;isolation:auto" id="finishedOrderTab" data-bs-toggle="tab" data-bs-target="#finishedOrderTab-pane" type="button" role="tab" aria-controls="finishedOrderTab-pane" aria-selected="false">
-                        آماده تحویل
+                    <button class="nav-link text-dark position-relative" style="margin-bottom:-2px;isolation:auto" id="finishedOrderTab" data-tab="finishedOrder" data-bs-toggle="tab" data-bs-target="#finishedOrderTab-pane" type="button" role="tab" aria-controls="finishedOrderTab-pane" aria-selected="false">
+                        <span class="finishedOrder-title">آماده تحویل</span>
+                        <span class="badgeCircle filter-count-badge"></span>
                     </button>
                 </li>
             </ul>
@@ -98,7 +101,7 @@
                         <div class="d-flex align-items-center justify-content-between w-100 px-2">
                             <div class="d-flex align-items-center gap-2">
                                 <div class="fbold d-none d-xl-flex align-items-end">
-                                    <span id="finishedOrderTitle" style="font-size:16px">آماده تحویل</span>
+                                    <span class="finishedOrder-title" style="font-size:16px">آماده تحویل</span>
                                 </div>
                                 <div id="showFinishedOrderIcon" style="cursor:pointer;position: relative" class="ms-1" data-title="نمایش تحویل شده ها" onclick="showFinishedOrders()">
                                     <span id="hiddenOrdersCount" class="badgeCircle" style="left: -18px;position: absolute;top: -8px;color: #fff;cursor: auto;display: none"></span>
@@ -161,26 +164,17 @@
                 if (e.key === "Enter") {
                     modelOrder.serVal = e.target.value;
                     await refreshOrders();
-                    if (e.target.value.trim() && !showHidden) {
-                        await getHiddenOrdersCount();
-                    }
                 }
             });
             searchOrderElm.nextElementSibling.addEventListener("click", async (e) => {
                 modelOrder.serVal = searchOrderElm.value;
                 await refreshOrders();
-                if (searchOrderElm.value.trim() && !showHidden) {
-                    await getHiddenOrdersCount();
-                }
             });
 
             document.querySelectorAll("input[name='factorStatus']").forEach(radio => {
                 radio.addEventListener("change", async (e) => {
                     fStatus = e.target.value;
                     await refreshOrders();
-                    if (Number(e.target.value) !== -1 && !showHidden) {
-                        await getHiddenOrdersCount();
-                    }
                 });
             });
             initSortableOrders();
@@ -188,36 +182,51 @@
         });
 
 
-        async function getAllHeadOrders(type = 1) {
+        async function getAllHeadOrders(type = 0) {
             modelOrder._type = type;
-            document.getElementById("FLshowLoading").style.display = "";
-
             try {
                 const res = await axios.post(`/order/GetAllHeadOrdersPartial?fStatus=${fStatus}`, modelOrder);
-                if (res.status === 200) {
-                    const containerName = type === 1 ? "registeredOrder" : type === 2 ? "producingOrder" : "finishedOrder";
+                if (res.status !== 200) return;
 
-                    document.getElementById(containerName + "Id").innerHTML = res.data.html;
-                    document.getElementById(containerName + "Count").innerHTML = res.data.count;
-                    document.getElementById("FLshowLoading").style.display = "none";
+                // multi mode
+                if (type === 0) {
+                    const tabData = {};
+                    ["registered", "producing", "finished"].forEach((key) => {
+                        const column = res.data[key];
+                        if (!column) return;
+
+                        const containerName = `${key}Order`;
+
+                        document.getElementById(containerName + "Id").innerHTML = column.html;
+                        document.getElementById(containerName + "Count").innerHTML = column.count;
+
+                        tabData[containerName] = key === "finished" && !column.count ? res.data.deliveredCount : column.count;
+                    });
+
+                    showHiddenOrdersCount(res.data.deliveredCount);
+                    return tabData;
                 }
 
+                // single mode
+                const containerName = type === 1 ? "registeredOrder" : type === 2 ? "producingOrder" : "finishedOrder";
+                document.getElementById(containerName + "Id").innerHTML = res.data.html;
+                document.getElementById(containerName + "Count").innerHTML = res.data.count;
+
+                return { [containerName]: res.data.count };
             } catch (e) {
                 console.log(e);
                 toastifyError("خطا در دریافت اطلاعات!");
-                document.getElementById("FLshowLoading").style.display = "none";
             }
         }
 
-        async function getHiddenOrdersCount() {
-            modelOrder._type = 4;
-            const res = await axios.post(`/order/GetAllHeadOrdersPartial?fStatus=${fStatus}`, modelOrder);
-            const hiddenOrdersCount = document.getElementById("hiddenOrdersCount");
-            if (res.data.count > 0) {
-                hiddenOrdersCount.style.display = "flex";
-                hiddenOrdersCount.innerText = res.data.count;
+        function showHiddenOrdersCount(count) {
+            const hiddenOrdersCountElm = document.getElementById("hiddenOrdersCount");
+
+            if (count > 0 && !showHidden) {
+                hiddenOrdersCountElm.style.display = "flex";
+                hiddenOrdersCountElm.textContent = count;
             } else {
-                hiddenOrdersCount.style.display = "none";
+                hiddenOrdersCountElm.style.display = "none";
             }
         }
 
@@ -225,11 +234,7 @@
         async function callbackFilterOrder() {
             modelOrder.filt = window[filterVarConfig].filterVar;
             modelOrder.serVal = window[filterVarConfig].varSearch;
-
             await refreshOrders();
-            if (modelOrder.filt && !showHidden) {
-                await getHiddenOrdersCount();
-            }
         }
 
 
@@ -251,7 +256,18 @@
 
         const refreshOrders = async () => {
             document.getElementById("hiddenOrdersCount").style.display = "none";
-            await Promise.all([getAllHeadOrders(1), getAllHeadOrders(2), getAllHeadOrders(showHidden ? 4 : 3)]);
+            FLshowLoading();
+
+            const tabData = await getAllHeadOrders();
+            if (window.innerWidth < 1200 && tabData) {
+                updateTabSwitchState({
+                    wrapperSelector: "#ordersTabs",
+                    tabData,
+                    searchValue: modelOrder.serVal,
+                    filter: modelOrder.filt,
+                });
+            }
+            FLshowLoading(false);
         };
 
         function initSortableOrders() {
@@ -291,17 +307,17 @@
                 openIcon.style.display = "none";
                 closedIcon.style.display = "block";
                 document.getElementById("showFinishedOrderIcon").setAttribute("data-title", "نمایش تحویل شده");
-                document.getElementById("finishedOrderTitle").innerText = "آماده تحویل";
-                document.getElementById("finishedOrderTab").innerText = "آماده تحویل";
+                document.querySelectorAll(".finishedOrder-title").forEach(el => el.innerText = "آماده تحویل");
             } else {
                 openIcon.style.display = "block";
                 closedIcon.style.display = "none";
                 document.getElementById("showFinishedOrderIcon").setAttribute("data-title", "نمایش آماده تحویل");
-                document.getElementById("finishedOrderTitle").innerText = "تحویل شده";
-                document.getElementById("finishedOrderTab").innerText = "تحویل شده";
+                document.querySelectorAll(".finishedOrder-title").forEach(el => el.innerText = "تحویل شده");
             }
             showHidden = !showHidden;
-            showHidden ? await getAllHeadOrders(4) : await getAllHeadOrders(3);
+            FLshowLoading();
+            await getAllHeadOrders(showHidden ? 4 : 3);
+            FLshowLoading(false);
         };
 
     </script>

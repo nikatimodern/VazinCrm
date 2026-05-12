@@ -579,45 +579,38 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                var query = db.PreFactors.AsQueryable();
-
-                switch (type)
-                {
-                    case -1:
-                        query = query.Where(f =>
-                            f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی ||
-                            f.Pftype == (int)PreFactorEnum.در_انتظار_تولید ||
-                            f.Pftype == (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد ||
-                            f.AcceptedFinancial == true || f.AcceptedFinancial == false
-                        );
-                        break;
-                    case 1:
-                        query = query.Where(f => f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی);
-                        break;
-                    case 2:
-                        query = query.Where(f =>
-                            f.Pftype == (int)PreFactorEnum.در_انتظار_تولید ||
-                            f.Pftype == (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد ||
-                            f.AcceptedFinancial == true
-                        );
-                        break;
-                    case 3:
-                        query = query.Where(f => f.AcceptedFinancial == false);
-                        break;
-                }
+                var baseQuery = db.PreFactors.OrderByDescending(g => g.ModifyDate).AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(serVal))
                 {
-                    query = query.Where(f =>
+                    baseQuery = baseQuery.Where(f =>
                         f.AgentName.Contains(serVal) ||
                         f.Customer.Contains(serVal) ||
                         f.SerialNumber == TextService.convertToInt(serVal)
                     );
                 }
 
+                const int pending = (int)PreFactorEnum.در_انتظار_تایید_مالی;
+                int[] approved = [(int)PreFactorEnum.در_انتظار_تولید, (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد];
+
+                var filterCounts = new Dictionary<int, int> {
+                    [-1] = await baseQuery.Where(s => approved.Contains(s.Pftype) || s.Pftype == pending || s.AcceptedFinancial != null).CountAsync(),
+                    [1] = await baseQuery.Where(s => s.Pftype == pending).CountAsync(),
+                    [2] = await baseQuery.Where(s => approved.Contains(s.Pftype) || s.AcceptedFinancial == true).CountAsync(),
+                    [3] = await baseQuery.Where(s => s.AcceptedFinancial == false).CountAsync(),
+                };
+
+                var query = type switch {
+                    -1 => baseQuery.Where(f => approved.Contains(f.Pftype) || f.Pftype == pending || f.AcceptedFinancial != null),
+                    1 => baseQuery.Where(f => f.Pftype == pending),
+                    2 => baseQuery.Where(f => approved.Contains(f.Pftype) || f.AcceptedFinancial == true),
+                    3 => baseQuery.Where(f => f.AcceptedFinancial == false),
+                    _ => baseQuery
+                };
+
+                query = string.IsNullOrEmpty(serVal) ? query.Take(100) : query;
+
                 var result = await query
-                    .OrderByDescending(g => g.ModifyDate)
-                    .Take(100)
                     .Select(pf => new PreFactorFinancialExpertVModel {
                         PreFactor = pf,
                         ReceiveAmount =
@@ -642,7 +635,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
                 var html = await vrs.RenderToStringAsync("GetPreFactorFinancialExpert", result);
-                return Ok(new { count = result.Count, html });
+                return Ok(new { count = result.Count, html, filterCounts });
             }
             catch (Exception ex)
             {

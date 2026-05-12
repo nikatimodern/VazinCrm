@@ -3302,7 +3302,7 @@ const updateFilterSwitchState = ({ wrapperSelector, filterData, currentFilterVal
     
     const hasSearch = !!searchValue.trim();
     if (!hasSearch) {
-        wrapper.dataset.autoSwitched = "false";
+        wrapper.dataset.userInteracted = "false";
         
         wrapper.querySelectorAll(".filter-switch-item").forEach(item => {
             item.style.opacity = "1";
@@ -3326,15 +3326,8 @@ const updateFilterSwitchState = ({ wrapperSelector, filterData, currentFilterVal
         const item = radio.closest(".filter-switch-item");
         const badge = item?.querySelector(".filter-count-badge");
         
-        /*if (!radio.dataset.filterSwitchBinded) {
-            radio.addEventListener("click", () => {
-                wrapper.dataset.autoSwitched = "true";
-            });
-            radio.dataset.filterSwitchBinded = "true";
-        }*/
-        
         radio.addEventListener("click", () => {
-            wrapper.dataset.autoSwitched = "true";
+            wrapper.dataset.userInteracted = "true";
         });
         
         if (count === undefined) {
@@ -3355,9 +3348,8 @@ const updateFilterSwitchState = ({ wrapperSelector, filterData, currentFilterVal
         if (value !== "-1" && count > 0 && firstAvailableValue === null) {
             firstAvailableValue = value;
         }
-    })
-    
-    if (wrapper.dataset.autoSwitched === "true") return;
+    });
+    if (wrapper.dataset.userInteracted === "true") return;
     if (filterData[currentFilterValue] > 0) return;
     if (!firstAvailableValue) return;
     
@@ -3365,7 +3357,50 @@ const updateFilterSwitchState = ({ wrapperSelector, filterData, currentFilterVal
     if (!targetRadio) return;
     targetRadio.checked = true;
     
-    wrapper.dataset.autoSwitched = "true";
-    
     onChange?.(firstAvailableValue);
+};
+
+
+const updateTabSwitchState = ({ wrapperSelector, tabData, searchValue, filter }) => {
+    const wrapper = document.querySelector(wrapperSelector);
+    if (!wrapper) return;
+    
+    const hasSearch = !!searchValue?.trim();
+    const hasFilter = filter !== undefined && filter !== null;
+    let firstAvailableTab = null;
+    
+    const activeTab = wrapper.querySelector(".nav-link.active");
+    const activeKey = activeTab?.dataset.tab;
+    
+    const tabs = wrapper.querySelectorAll(".nav-link");
+    
+    tabs.forEach(tab => {
+        const key = tab.dataset.tab;
+        const count = tabData[key]?.length ?? tabData[key] ?? 0;
+        const badge = tab.querySelector(".filter-count-badge");
+        
+        if (!hasSearch && !hasFilter) {
+            tab.style.opacity = "1";
+            if (badge) {
+                badge.style.display = "none";
+            }
+            return;
+        }
+        
+        if (badge) {
+            badge.style.display = count > 0 ? "flex" : "none";
+            badge.textContent = count;
+        }
+        
+        tab.style.opacity = count > 0 ? "1" : ".5";
+        
+        if (count > 0 && !firstAvailableTab) {
+            firstAvailableTab = tab;
+        }
+    });
+    
+    if (tabData[activeKey]?.length) return;
+    
+    if (!firstAvailableTab) return;
+    ShowTab(firstAvailableTab);
 };

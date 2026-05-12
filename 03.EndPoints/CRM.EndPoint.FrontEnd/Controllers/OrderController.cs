@@ -240,26 +240,23 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 bool hasSearch = !string.IsNullOrEmpty(model.serVal);
 
 
-                var query = db.OrderHeads.OrderByDescending(f => f.CreateDate).AsQueryable();
+                var query = db.OrderHeads.AsNoTracking().OrderByDescending(f => f.CreateDate).AsQueryable();
 
-                query = query.Where(item =>
-                    (
-                        string.IsNullOrEmpty(model.serVal)
-                        || item.OrderNumber.ToString() == model.serVal
-                        || item.CustomerTxt.Contains(model.serVal)
-                        || item.PrefactorSer.ToString() == model.serVal
-                        || item.CustomerCode.ToString() == model.serVal
-                    )
-                    && item.Status == (OrderHeadStatusEnum)model._type
-                );
+                if (hasSearch)
+                {
+                    query = query.Where(item =>
+                        item.CustomerTxt.Contains(model.serVal) ||
+                        item.OrderNumber.ToString() == model.serVal ||
+                        item.PrefactorSer.ToString() == model.serVal ||
+                        item.CustomerCode.ToString() == model.serVal
+                    );
+                }
 
                 if (fStatus != -1)
                 {
-                    var preFactorsHasFactorIds = await db.PreFactors.Where(f => f.Factors.Count > 0).Select(f => f.Id).ToListAsync();
-
                     query = fStatus switch {
-                        1 => query.Where(f => preFactorsHasFactorIds.Contains(f.Prefactor.Value)),
-                        2 => query.Where(f => !preFactorsHasFactorIds.Contains(f.Prefactor.Value)),
+                        1 => query.Where(f => db.PreFactors.Any(p => p.Id == f.Prefactor.Value && p.Factors.Count > 0)),
+                        2 => query.Where(f => !db.PreFactors.Any(p => p.Id == f.Prefactor.Value && p.Factors.Count > 0)),
                         _ => query
                     };
                 }
@@ -289,19 +286,45 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     query = query.Where(f => f.OrderDateMildi > date).Take(200);
                 }
 
-                /*var data = await query.Select(oh => new OrderHeadVModel {
-                    OrderHead = oh,
-                    RequestAmountCounts = oh.RequestAmountOrderHeads.Count
-                }).ToListAsync();*/
-                var data = await query.Include(f => f.RequestAmountOrderHeads).ToListAsync();
+                // single mode
+                if (model._type > 0)
+                {
+                    var result = await BuildColumn((OrderHeadStatusEnum)model._type)!;
+                    return Ok(result);
+                }
 
-                var html = await vrs.RenderToStringAsync("GetAllHeadOrdersPartial", data,
-                    new Dictionary<string, object> {
-                        { "PassType", 1 },
-                        { "IsTamin", isTamin }
-                    });
+                // multi mode
+                var registered = await BuildColumn(OrderHeadStatusEnum.ثبت_اولیه)!;
+                var producing = await BuildColumn(OrderHeadStatusEnum.تولید)!;
+                var finished = await BuildColumn(OrderHeadStatusEnum.آماده_تحویل)!;
+                var deliveredCount = 0;
 
-                return Ok(new { count = data.Count, html });
+                if (hasSearch || hasFilter)
+                {
+                    deliveredCount = await query.CountAsync(f => f.Status == OrderHeadStatusEnum.تحویل_شده);
+                }
+
+                return Ok(new { registered, producing, finished, deliveredCount });
+
+                async Task<object> BuildColumn(OrderHeadStatusEnum status)
+                {
+                    /*var data = await query.Select(oh => new OrderHeadVModel {
+                        OrderHead = oh,
+                        RequestAmountCounts = oh.RequestAmountOrderHeads.Count
+                    }).ToListAsync();*/
+                    var data = await query.Where(f => f.Status == status)
+                        .Include(f => f.RequestAmountOrderHeads)
+                        .ToListAsync();
+
+                    var html = await vrs.RenderToStringAsync("GetAllHeadOrdersPartial", data,
+                        new Dictionary<string, object> {
+                            { "PassType", 1 },
+                            { "IsTamin", isTamin }
+                        }
+                    );
+
+                    return new { count = data.Count, html };
+                }
             }
             catch (Exception ex)
             {
