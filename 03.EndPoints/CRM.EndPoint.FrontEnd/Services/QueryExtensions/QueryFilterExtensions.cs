@@ -13,9 +13,11 @@ public static class QueryFilterExtensions {
         Expression<Func<T, DateTime?>> dateSelector = null,
         Expression<Func<T, string>> userSelector = null)
     {
+        if (model?.filt == null) return query;
+
         var dtService = new DateTimeServices();
-        var fd = dtService.GetDateMiladi(model.filt.fromDate) ?? dtService.GetDateMiladi("1000/01/01");
-        var td = (dtService.GetDateMiladi(model.filt.toDate) ?? DateTime.Today).Date.AddDays(1).AddTicks(-1);
+        var fd = dtService.GetDateMiladi(model.filt?.fromDate) ?? dtService.GetDateMiladi("1000/01/01");
+        var td = (dtService.GetDateMiladi(model.filt?.toDate) ?? DateTime.Today).Date.AddDays(1).AddTicks(-1);
 
         if (model.filt.CusFilterChd && customerSelector != null)
         {

@@ -6,6 +6,7 @@
 }
 
 @foreach (var item in Model) {
+    var requestCount = item.RequestAmountOrderHeads?.Count;
     <div class="orderBox @($"orderBox_col{(int)item.Status}")" data-id="@item.Id">
         <div class="d-flex flex-column justify-content-between p-2 w-100" style="column-gap:14px">
             <div class="mp flex-column" style=" display:flex;justify-content:space-between; width:100%;">
@@ -53,20 +54,22 @@
 
             </div>
             <div class="my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
-            <div class="d-flex align-items-center">
-                <div class="align-items-center flex-grow-1" style=" display:flex; justify-content:space-evenly !important;row-gap:8px;font-size:14px">
-                    <button class="flex-center" data-title="مشاهده" style="color:var(--DarkColor);border:none;background-color:transparent" onclick="PreviewOrderPrint('@item.Id')">
+
+            <div class="d-flex flex-column flex-xxl-row flex-wrap gap-2">
+                <div class="d-flex align-items-center justify-content-evenly flex-grow-1 gap-3">
+                    <button class="flex-center px-2" data-title="مشاهده" style="color:var(--DarkColor)" onclick="PreviewOrderPrint('@item.Id')">
                         <i class="mp fa fa-eye"></i>
                     </button>
-                    <button class="flex-center" data-title="ویرایش" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="ShowUpdateHeadOrder('@item.Id', @ViewBag.PassType, '@item.DealId')">
+                    <button class="flex-center px-2" data-title="ویرایش" style="color:var(--DarkColor)" onclick="ShowUpdateHeadOrder('@item.Id', @ViewBag.PassType, '@item.DealId')">
                         <i class="mp fa fa-pencil"></i>
                     </button>
-                    <button class="flex-center" data-title="حذف" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="DelHeadOrderItem('@item.Id', @ViewBag.PassType, '@item.DealId')">
+                    <button class="flex-center px-2" data-title="حذف" style="color:var(--DarkColor)" onclick="DelHeadOrderItem('@item.Id', @ViewBag.PassType, '@item.DealId')">
                         <i class="mp fa fa-trash"></i>
                     </button>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between flex-grow-1 gap-2 flex-wrap pe-2 mt-1 mt-xxl-0">
                     @if (isTamin) {
-                        //if (item.Status == OrderHeadStatusEnum.ثبت_اولیه) {
-                        var requestCount = item.RequestAmountOrderHeads?.Count;
                         <div class="@(requestCount > 0 ? "buttonGroup" : "")">
                             <button class="buttonGray" onclick="showAddRequestAmountModal('@item.Id', '@item.OrderNumber')">درخواست پیش‌پرداخت</button>
                             @if (requestCount > 0) {
@@ -76,23 +79,21 @@
                                 </button>
                             }
                         </div>
-                        //}
                     }
-                </div>
-
-                <div class="pe-2 d-flex align-items-center gap-2">
-                    @if (item.Status == OrderHeadStatusEnum.تولید || item.Status == OrderHeadStatusEnum.آماده_تحویل) {
-                        <button class="buttonGray @(ViewBag.PassType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', @(item.Status == OrderHeadStatusEnum.تولید ? 1 : 2), @((int)item.Status), @ViewBag.PassType, '@item.DealId')">مرحله قبل</button>
-                    }
-                    @if (item.Status == OrderHeadStatusEnum.ثبت_اولیه) {
-                        <button class="buttonGreen2 @(ViewBag.PassType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', 2, @((int)item.Status), @ViewBag.PassType, '@item.DealId')">طراحی و تولید</button>
-                    } else if (item.Status == OrderHeadStatusEnum.تولید) {
-                        <button class="buttonGreen2 @(ViewBag.PassType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', 3, @((int)item.Status), @ViewBag.PassType, '@item.DealId')">آماده تحویل</button>
-                    } else if (item.Status == OrderHeadStatusEnum.آماده_تحویل) {
-                        <button class="buttonGreen2" onclick="changeStatusHd('@item.Id', 4, @((int)item.Status), @ViewBag.PassType, '@item.DealId')">تحویل شد</button>
-                    } else if (item.Status == OrderHeadStatusEnum.تحویل_شده) {
-                        <button class="buttonGray" onclick="changeStatusHd('@item.Id', 3, @((int)item.Status), @ViewBag.PassType, '@item.DealId')">مرحله قبل</button>
-                    }
+                    <div class="d-flex align-items-center justify-content-end flex-grow-1 gap-2">
+                        @if (item.Status == OrderHeadStatusEnum.تولید || item.Status == OrderHeadStatusEnum.آماده_تحویل) {
+                            <button class="buttonGray @(ViewBag.PassType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', @(item.Status == OrderHeadStatusEnum.تولید ? 1 : 2), @((int)item.Status), @ViewBag.PassType, '@item.DealId')">مرحله قبل</button>
+                        }
+                        @if (item.Status == OrderHeadStatusEnum.ثبت_اولیه) {
+                            <button class="buttonGreen2 @(ViewBag.PassType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', 2, @((int)item.Status), @ViewBag.PassType, '@item.DealId')">طراحی و تولید</button>
+                        } else if (item.Status == OrderHeadStatusEnum.تولید) {
+                            <button class="buttonGreen2 @(ViewBag.PassType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', 3, @((int)item.Status), @ViewBag.PassType, '@item.DealId')">آماده تحویل</button>
+                        } else if (item.Status == OrderHeadStatusEnum.آماده_تحویل) {
+                            <button class="buttonGreen2" onclick="changeStatusHd('@item.Id', 4, @((int)item.Status), @ViewBag.PassType, '@item.DealId')">تحویل شد</button>
+                        } else if (item.Status == OrderHeadStatusEnum.تحویل_شده) {
+                            <button class="buttonGray" onclick="changeStatusHd('@item.Id', 3, @((int)item.Status), @ViewBag.PassType, '@item.DealId')">مرحله قبل</button>
+                        }
+                    </div>
                 </div>
             </div>
 

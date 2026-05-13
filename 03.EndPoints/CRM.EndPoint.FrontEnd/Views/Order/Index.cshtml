@@ -200,7 +200,7 @@
                         document.getElementById(containerName + "Id").innerHTML = column.html;
                         document.getElementById(containerName + "Count").innerHTML = column.count;
 
-                        tabData[containerName] = key === "finished" && !column.count ? res.data.deliveredCount : column.count;
+                        tabData[containerName] = (key === "finished" && !column.count) ? res.data.deliveredCount : column.count;
                     });
 
                     showHiddenOrdersCount(res.data.deliveredCount);

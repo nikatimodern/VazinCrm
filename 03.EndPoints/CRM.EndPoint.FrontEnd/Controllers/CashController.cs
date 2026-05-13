@@ -9,6 +9,7 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
 using CRM.EndPoint.FrontEnd.Services;
+using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -344,7 +345,7 @@ public class CashController : Controller {
         {
             var draw = Request.Form["draw"].FirstOrDefault();
             var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
-            //var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
+            var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
             var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
             var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
             var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
@@ -377,6 +378,17 @@ public class CashController : Controller {
                     f.CostTitleTxt.Contains(searchValue)
                 );
             }
+
+            if (model?.filt != null)
+            {
+                query = query.ApplyFilter(model, null, d => d.CreateDate, f => f.UserCreatorID);
+            }
+
+            query = model._type switch {
+                1 => query.Where(f => f.Status == CashStatusEnum.در_دست_تایید),
+                2 => query.Where(f => f.Status == CashStatusEnum.تایید_شده),
+                _ => query
+            };
 
             var recordsTotal = query.Count();
 
