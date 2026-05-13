@@ -298,9 +298,9 @@ const getbaseDescription = async () => {
 
 
 let sellersLoaded = false;
-const GetSelsOpId = async (Lid, valTriger = null, parentModal = null) => {
+const GetSelsOpId = async (Lid, valTriger = null, parentModal = null, type = 2) => {
     if (sellersLoaded) return;
-    let sel = await CrmSer.getUsers(1);
+    let sel = await CrmSer.getUsers(type);
     $("#" + Lid).select2({
         data: sel, dir: "rtl", placeholder: "انتخاب", selectionCssClass: "form-control", dropdownParent: $(parentModal),
     });
@@ -356,7 +356,13 @@ const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
     
     
     GetCustomersOpId("customerFilter", null, "#FilterFormId");
-    GetSelsOpId("selFilter", null, "#FilterFormId");
+    if (filterVarConfig === "cashConfigFilter") {
+        document.getElementById("SelFilterLabel").textContent = "کارشناس"
+        GetSelsOpId("selFilter", null, "#FilterFormId", 1);
+    } else {
+        document.getElementById("SelFilterLabel").textContent = "کارشناس فروش"
+        GetSelsOpId("selFilter", null, "#FilterFormId");
+    }
     
     
     if (filterItemBlackList.length) {
