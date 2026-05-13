@@ -20,26 +20,29 @@ public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, DateTi
 
     public async Task ProcessCallRecording(CallRecording callData)
     {
+        var filePath = @"C:\Users\a.gorji\Desktop\test1.wav";
         try
         {
-            // 1. دانلود فایل صوتی از SFTP
-            var audioBytes = await GetAudioFromIsabel(callData.RecordingFilePath);
+            // 1. SFTP
+           // byte[] audioBytes = await GetAudioFromIsabel(callData.RecordingFilePath);
+            var audioBytes = await File.ReadAllBytesAsync(filePath);
             if (audioBytes == null || audioBytes.Length == 0) return;
 
 
-            // 2. تبدیل صدا به متن
-            var transcriptionResult = await viraAi.ConvertAudioToText(audioBytes, Path.GetFileName(callData.RecordingFilePath));
+            // 2. Audio To Text
+            //var transcriptionResult = await viraAi.ConvertAudioToText(audioBytes, Path.GetFileName(callData.RecordingFilePath));
+            var transcriptionResult = await viraAi.ConvertAudioToText(audioBytes, Path.GetFileName(filePath));
             callData.TranscriptionText = transcriptionResult?.Result?.Text ?? string.Empty;
 
             if (string.IsNullOrEmpty(callData.TranscriptionText)) return;
 
-            // 3. خلاصه‌سازی متن
+            // 3. Summary
             callData.SummaryText = await gapgptAi.SummarizeText(callData.TranscriptionText);
 
-            // 4. ذخیره اطلاعات در پایگاه داده
+            // 4. Save To Database
             await SaveCallDataToDatabase(callData);
 
-            // 4. ثبت گزارش کار
+            // 4. Create Report
             await CreateReportWithCallData(callData);
         }
         catch (Exception ex)

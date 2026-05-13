@@ -30,7 +30,7 @@ public class ViraAi {
         form.Add(new StringContent("false"), "timestamp");
         form.Add(new StringContent("false"), "spokenPunctuation");
         form.Add(new StringContent("true"), "punctuation");
-        form.Add(new StringContent("0"), "numSpeakers");
+        form.Add(new StringContent("2"), "numSpeakers");
         form.Add(new StringContent("true"), "diarize");
 
         // فایل صوتی

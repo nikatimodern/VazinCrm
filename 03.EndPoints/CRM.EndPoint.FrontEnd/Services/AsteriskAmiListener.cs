@@ -166,7 +166,7 @@ public class AsteriskAmiListener : BackgroundService {
                                     bool srcIsInternal = srcCaller.Length <= 3;
                                     bool destIsInternal = destCaller.Length <= 3;
 
-                                    if (!srcIsInternal && destIsInternal)
+                                    //if (!srcIsInternal && destIsInternal)
                                     {
                                         var desUser = await GetUsers(destCaller);
                                         var callerCus = GetCallerCustomer(srcCaller);

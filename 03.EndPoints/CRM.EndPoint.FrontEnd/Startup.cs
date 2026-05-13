@@ -171,7 +171,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddHttpClient("AvanegarApi", client =>
             {
                 client.BaseAddress = new Uri("https://partai.gw.isahab.ir/avanegar/v2/avanegar/request");
-                client.DefaultRequestHeaders.Add("gateway-token", "eyJhbGciOiJIUzI1NiJ9.eyJzeXN0ZW0iOiJzYWhhYiIsImNyZWF0ZVRpbWUiOiIxNDA1MDExNzEwMDkwNzA0MiIsInVuaXF1ZUZpZWxkcyI6eyJ1c2VybmFtZSI6Ijg3YzM0ZDI2LTE0OWQtNGNlYS1hMTNhLTg3YWNhZWNmZjg4MiJ9LCJncm91cE5hbWUiOiJiZmNmZDI5YzJmOGJkMjA5M2NjMWIzM2ZkNzUxZTkyNiIsImRhdGEiOnsic2VydmljZUlEIjoiNGVkNzY5ZTYtNDgxNC00ZGNiLWEzZWQtZTU1ZWI5Y2FiZjhlIiwicmFuZG9tVGV4dCI6IlhiMFpsIn19.NttwGRfzzklqvXglCgf7tmvPYRnq0t8PtV4xjmbQQ2Q");
+                client.DefaultRequestHeaders.Add("gateway-token", "eyJhbGciOiJIUzI1NiJ9.eyJzeXN0ZW0iOiJzYWhhYiIsImNyZWF0ZVRpbWUiOiIxNDA1MDIyMzE0MjA0MTAwNiIsInVuaXF1ZUZpZWxkcyI6eyJ1c2VybmFtZSI6Ijg3YzM0ZDI2LTE0OWQtNGNlYS1hMTNhLTg3YWNhZWNmZjg4MiJ9LCJncm91cE5hbWUiOiJiZmNmZDI5YzJmOGJkMjA5M2NjMWIzM2ZkNzUxZTkyNiIsImRhdGEiOnsic2VydmljZUlEIjoiNGVkNzY5ZTYtNDgxNC00ZGNiLWEzZWQtZTU1ZWI5Y2FiZjhlIiwicmFuZG9tVGV4dCI6IklvQ1VSIn19.Hvu7g2cRpMnmV7gz6yn09m_zMKBab-d9d5StzTvtT7I");
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             });
 
@@ -185,7 +185,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddHttpClient("GapgptApi", client =>
             {
                 client.BaseAddress = new Uri("https://api.gapgpt.app/v1/");
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "sk-AP1Dqd3THpHbfx3c1O6Aif1Q1CExaBuWTWaFFaJ6E88lQsCe");
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "sk-hRMArn3FmKRS130Tgez4rtYOVVlWaGVNsG6dnwgtA4jjKwfd");
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             });
 
