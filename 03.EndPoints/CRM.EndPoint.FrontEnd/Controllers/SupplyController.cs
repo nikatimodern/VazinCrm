@@ -241,7 +241,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-
         public async Task<IActionResult> GetPayment(Guid? paymentId)
         {
             try
@@ -294,10 +293,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         f.Amount == searchNumber ||
                         f.PaymentNumber == searchNumber ||
                         f.FromAccountTxt.Contains(searchValue) ||
-                        f.ToAccountTxt.Contains(searchValue) ||
-                        f.PaymentSupplyFactors.Any(pSf =>
-                            db.SupplyFactors.Any(sf => sf.Id == pSf.SupplyFactorId && sf.FactorSerial == searchValue)
-                        )
+                        f.ToAccountTxt.Contains(searchValue)
                     );
                 }
 
@@ -328,18 +324,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (length != -1)
                     query = query.Skip(start).Take(length);
 
-                var data = await query
-                    .Select(sf => new SupplyPaymentVModel {
-                        Payment = sf,
-                        SupplyFactorSerials = sf.PaymentSupplyFactors
-                            .Join(db.SupplyFactors,
-                                pSf => pSf.SupplyFactorId,
-                                sf => sf.Id,
-                                (pSf, sf) => sf.FactorSerial
-                            )
-                            .ToList()
-                    })
-                    .ToListAsync();
+                var data = await query.ToListAsync();
 
                 return Json(new {
                     draw,

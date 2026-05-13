@@ -451,20 +451,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
                 var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
 
-                /*var RequestAmountPayments = await db.RequestAmountPayments.AsNoTracking()
-                    .Where(f => f.RequestAmountId == id)
-                    .ToListAsync();*/
-
-                /*var query = db.Payments
-                    .Where(f => RequestAmountPayments.Select(p => p.PaymentId).Contains(f.Id))
-                    .OrderByDescending(f => f.CreateDate)
-                    .AsNoTracking();*/
 
                 var query = db.Payments
                     .Where(p => p.RequestAmountPayments.Any(x => x.RequestAmountId == id))
                     .Select(p => new {
                         payment = p,
-                        RequestAmountPaymentAmount = p.RequestAmountPayments
+                        RequestPaymentAmount = p.RequestAmountPayments
                             .Where(x => x.RequestAmountId == id)
                             .Select(x => x.Amount)
                             .FirstOrDefault(),
@@ -483,9 +475,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         "PaymentNumber" => isAscending
                             ? query.OrderBy(f => f.payment.PaymentNumber)
                             : query.OrderByDescending(f => f.payment.PaymentNumber),
-                        "RequestAmountPaymentAmount" => isAscending
-                            ? query.OrderBy(f => f.RequestAmountPaymentAmount)
-                            : query.OrderByDescending(f => f.RequestAmountPaymentAmount),
+                        "RequestPaymentAmount" => isAscending
+                            ? query.OrderBy(f => f.RequestPaymentAmount)
+                            : query.OrderByDescending(f => f.RequestPaymentAmount),
                         "CreateDateTxt" => isAscending
                             ? query.OrderBy(f => f.payment.CreateDate)
                             : query.OrderByDescending(f => f.payment.CreateDate),

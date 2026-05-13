@@ -4684,7 +4684,7 @@ const initPaymentTable = () => {
         columns: [
             { data: "payment.paymentNumber", name: "PaymentNumber", defaultContent: "-" },
             { data: "payment.createDateTxt", name: "CreateDateTxt", defaultContent: "-" },
-            { data: "requestAmountPaymentAmount", name: "RequestAmountPaymentAmount", defaultContent: "-" },
+            { data: "requestPaymentAmount", name: "RequestPaymentAmount", defaultContent: "-" },
             { data: "payment.fromAccountTxt", name: "FromAccountTxt", defaultContent: "-" },
             { data: "payment.toAccountTxt", name: "ToAccountTxt", defaultContent: "-" },
             { data: "payment.paymentDateTxt", name: "PaymentDateTxt", defaultContent: "-" },
