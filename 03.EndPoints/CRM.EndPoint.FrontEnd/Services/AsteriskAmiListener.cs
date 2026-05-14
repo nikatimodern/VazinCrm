@@ -117,28 +117,13 @@ public class AsteriskAmiListener : BackgroundService {
 
         if (string.IsNullOrEmpty(uniqueId) && string.IsNullOrEmpty(destUid)) return;
 
-        var src = Get(ev, "CallerIDNum");
-        if (src == "9506")
-        {
-            src = Get(ev, "Channel")?.Substring(4, 3);
-        }
+        var src = GetSrc(ev);
 
         if (string.IsNullOrEmpty(src) || src == "unknown") return;
 
         var dest = Get(ev, "DestCallerIDNum"); //DestExten
 
-        bool srcIsInternal = src.Length <= 4;
-        bool destIsInternal = dest.Length <= 4;
-
-        /*string callType = null;
-        if (srcIsInternal && destIsInternal)
-            callType = "internal-to-internal";
-        else if (dest == "600")
-            callType = "external-to-ring";
-        else if (!srcIsInternal && destIsInternal && dest != "600")
-            callType = "external-to-internal";
-        else if (srcIsInternal && !destIsInternal)
-            callType = "internal-to-external";*/
+        var (srcIsInternal, destIsInternal) = GetDirection(src, dest);
 
 
         var userDest = await GetUsers(dest);
@@ -214,27 +199,17 @@ public class AsteriskAmiListener : BackgroundService {
         if (!_calls.TryGetValue(uniqueId, out var call)) return;
 
 
-        if (!call.Answered)
+        if (!call.Answered || string.IsNullOrWhiteSpace(call.RecordingPath))
         {
             _calls.TryRemove(uniqueId, out _);
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(call.RecordingPath))
-        {
-            _calls.TryRemove(uniqueId, out _);
-            return;
-        }
-
-        //var src = NormalizeCaller(Get(ev, "CallerIDNum"));
-        var src = Get(ev, "CallerIDNum");
-        if (src == "9506")
-            src = Get(ev, "Channel").Substring(4, 3);
-
-
+        var src = GetSrc(ev);
         var dest = Get(ev, "ConnectedLineNum");
 
-        if (IsValidCall(src, dest))
+        var (srcIsInternal, destIsInternal) = GetDirection(src, dest);
+        /*if (!srcIsInternal && destIsInternal)
         {
             var user = await GetUsers(dest);
             var customer = GetCallerCustomer(src);
@@ -248,29 +223,27 @@ public class AsteriskAmiListener : BackgroundService {
                 DestinationUserTxt = user.FullName,
                 RecordingFilePath = call.RecordingPath
             });
-        }
+        }*/
 
         _calls.TryRemove(uniqueId, out _);
     }
 
-    private bool IsValidCall(string src, string dest)
+    private static string GetSrc(Dictionary<string, string> ev)
     {
-        if (string.IsNullOrWhiteSpace(src) || string.IsNullOrWhiteSpace(dest))
-            return false;
-
-        bool srcInternal = src.Length <= 4;
-        bool destInternal = dest.Length <= 4;
-
-        return !srcInternal && destInternal;
+        var src = Get(ev, "CallerIDNum");
+        if (src == "9506")
+            src = Get(ev, "Channel")?.Substring(4, 3);
+        return src;
     }
 
-    private string NormalizeCaller(string caller)
-    {
-        if (caller == "9506")
-            return caller;
 
-        return caller;
+    private static (bool srcInternal, bool destInternal) GetDirection(string src, string dest)
+    {
+        return (IsInternal(src), IsInternal(dest));
+
+        bool IsInternal(string n) => !string.IsNullOrWhiteSpace(n) && n.Length <= 4;
     }
+
 
     private async Task<string> GetSrcText(bool isInternal, string src)
     {
