@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -17,7 +18,7 @@ public class ViraAi {
 
 
 
-    public async Task<AiResponseDetails> ConvertAudioToText(byte[] fileBytes, string audioFileName)
+    public async Task<AiResponseDetails> ConvertAudioToText(Stream audioStream, string audioFileName)
     {
         var httpClient = _httpClientFactory.CreateClient("AvanegarApi");
 
@@ -37,7 +38,8 @@ public class ViraAi {
         //var filePath = Path.Combine("wwwroot", "a.mp3");
         //var fileBytess = await File.ReadAllBytesAsync(filePath);
 
-        var fileContent = new ByteArrayContent(fileBytes);
+        var fileContent = new StreamContent(audioStream);
+
         fileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/mpeg");
 
         form.Add(fileContent, "audio", audioFileName);

@@ -56,11 +56,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly Service genService;
         private readonly UserContextDb udb;
         private readonly Sepidar1ContextDb S1db;
-        private readonly AudioToTextService audioToTextService;
 
         public HomeController(IWebHostEnvironment appEnvironment, TimedHostedService hostService, IConfiguration conf,
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
-            Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, AudioToTextService audioToTextService)
+            Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db)
         {
             this.appEnvironment = appEnvironment;
             this.hostService = hostService;
@@ -72,7 +71,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.sdb = sdb;
             this.udb = udb;
             this.S1db = S1db;
-            this.audioToTextService = audioToTextService;
             this.genService = genService;
         }
 

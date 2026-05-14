@@ -11,6 +11,7 @@ using CRM.Core.Domain.Customers.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.AsteriskAmi;
 using CRM.EndPoint.FrontEnd.Services.AI;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Generics.Infrastructures.Sql;
@@ -27,46 +28,37 @@ namespace CRM.EndPoint.FrontEnd.Services;
 public class AsteriskAmiListener : BackgroundService {
     private readonly IHubContext<CallHub> _hubContext;
     private readonly IConfiguration _config;
-    private readonly IServiceScopeFactory serviceScopeFactory;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly IAiQueue _aiQueue;
-    private readonly IList<AppUser> _users;
 
     public AsteriskAmiListener(IHubContext<CallHub> hubContext, IConfiguration config, IServiceScopeFactory serviceScopeFactory, IAiQueue aiQueue)
     {
         _hubContext = hubContext;
         _config = config;
-        this.serviceScopeFactory = serviceScopeFactory;
+        _serviceScopeFactory = serviceScopeFactory;
         _aiQueue = aiQueue;
-
-        using (var scope = serviceScopeFactory.CreateScope())
-        {
-            var udb = scope.ServiceProvider.GetRequiredService<UserContextDb>();
-
-            _users = udb.Users.ToList();
-        }
     }
 
-    private readonly ConcurrentDictionary<string, string> _recordings = new();
+    private readonly ConcurrentDictionary<string, CallSessionModel> _calls = new();
+
+    private readonly string[] test = [
+        "varset", "newexten", "devicestatechange", "newchannel", "newstate",
+        "newconnectedline", "extensionstatus", "dialstate", "rtcpreceived", "rtcpsent"
+    ];
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var voipConfig = _config.GetSection("voipConfig").Get<AppSettingVoip>();
-        if (voipConfig.ActiveStatus != true) return;
+        var config = _config.GetSection("voipConfig").Get<AppSettingVoip>();
+        if (config?.ActiveStatus != true) return;
 
-        var test = new[] {
-            "varset", "newexten", "devicestatechange", "newchannel", "newstate", "newconnectedline", "extensionstatus", "dialstate", "rtcpreceived",
-            "rtcpsent"
-        };
-
-
-        var ami = new AsteriskAMI(voipConfig._hostname, voipConfig._port, voipConfig._username, voipConfig._password);
+        var ami = new AsteriskAMI(config._hostname, config._port, config._username, config._password);
         try
         {
             await ami.ConnectAsync();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AMI] اتصال برقرار نشد: {ex.Message}");
+            Console.WriteLine($"[AMI] Connection failed: {ex.Message}");
             return;
         }
 
@@ -74,209 +66,280 @@ public class AsteriskAmiListener : BackgroundService {
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                var res = await ami.ReadRawAsync();
+                var raw = await ami.ReadRawAsync();
+                var events = ParseAmiResponse(raw);
 
-                foreach (var ev in ParseAmiResponse(res))
+                foreach (var ev in events ?? [])
                 {
-                    var evt = Get(ev, "Event");
-                    if (!test.Contains(evt.ToLowerInvariant()))
-                    {
-                        Console.WriteLine(evt);
-                    }
-
-                    switch (evt.ToLowerInvariant())
-                    {
-                        case "dialbegin":
-                        {
-                            var srcCaller = Get(ev, "CallerIDNum");
-                            if (srcCaller == "9506")
-                            {
-                                srcCaller = Get(ev, "Channel").Substring(4, 3);
-                            }
-
-                            if (string.IsNullOrEmpty(srcCaller) || srcCaller == "unknown") continue;
-
-                            var destCaller = Get(ev, "DestCallerIDNum"); //DestExten
-                            bool srcIsInternal = srcCaller.Length <= 4;
-                            bool destIsInternal = destCaller.Length <= 4;
-
-                            /*string callType = null;
-                             DestUniqueid
-                            if (srcIsInternal && destIsInternal)
-                                callType = "internal-to-internal";
-                            else if (destCaller == "600")
-                                callType = "external-to-ring";
-                            else if (!srcIsInternal && destIsInternal && destCaller != "600")
-                                callType = "external-to-internal";
-                            else if (srcIsInternal && !destIsInternal)
-                                callType = "internal-to-external";*/
-
-                            string srcCallerText = null;
-                            if (srcIsInternal)
-                            {
-                                var srcUser = await GetUsers(srcCaller);
-                                srcCallerText = srcUser == null ? srcCaller : $"{srcUser.FullName} ({srcCaller})";
-                            } else if (!srcIsInternal)
-                            {
-                                srcCallerText = GetCallerText(srcCaller);
-                            }
-
-                            /*string destCallerText = null;
-                            if (!destIsInternal) {
-                                var destCallerLast = destCaller.Substring(srcCaller.Length - 7);
-                                var destCus = db.Customers.FirstOrDefault(f => destCallerLast.Contains(f.Tel) || destCallerLast.Contains(f.Mobile));
-                                destCallerText = destCus == null ? srcCaller : destCus.CompanyName + " " + destCus.AgentName + " (" + destCus.CustomerCode + ")";
-                            }*/
-
-                            var desUser = await GetUsers(destCaller);
-
-                            var uniqueid = Get(ev, "Uniqueid");
-                            //var linkedId = Get(ev, "Linkedid");
-                            var destUid = Get(ev, "DestUniqueid");
-
-                            if (!string.IsNullOrEmpty(uniqueid) && desUser != null && destCaller.StartsWith("1"))
-                            {
-                                await _hubContext.Clients
-                                    .User(desUser.Id)
-                                    .SendAsync("IncomingCall", srcCallerText, destCaller, !string.IsNullOrEmpty(destUid) ? destUid : uniqueid);
-                            }
-
-                            break;
-                        }
-
-                        case "hangup":
-                        {
-                            var uniqueid = Get(ev, "Uniqueid");
-                            //var linkedId = Get(ev, "LinkedId");
-                            var destUid = Get(ev, "DestUniqueid");
-
-
-                            if (!string.IsNullOrEmpty(uniqueid) || !string.IsNullOrEmpty(destUid))
-                            {
-                                if (_recordings.TryGetValue(uniqueid, out var filePath))
-                                {
-                                    var srcCaller = Get(ev, "CallerIDNum");
-                                    if (srcCaller == "9506")
-                                    {
-                                        srcCaller = Get(ev, "Channel").Substring(4, 3);
-                                    }
-
-                                    var destCaller = Get(ev, "ConnectedLineNum");
-
-                                    bool srcIsInternal = srcCaller.Length <= 3;
-                                    bool destIsInternal = destCaller.Length <= 3;
-
-                                    //if (!srcIsInternal && destIsInternal)
-                                    {
-                                        var desUser = await GetUsers(destCaller);
-                                        var callerCus = GetCallerCustomer(srcCaller);
-
-                                        _aiQueue.Enqueue(new CallRecording {
-                                            CallerNumber = srcCaller,
-                                            CallerCustomerId = callerCus?.Id,
-                                            CallerCustomerTxt = callerCus != null ? $"{callerCus.CompanyName} {callerCus.AgentName}" : null,
-                                            DestinationNumber = destCaller,
-                                            DestinationUserId = desUser.Id,
-                                            DestinationUserTxt = desUser.FullName,
-                                            RecordingFilePath = filePath
-                                        });
-                                    }
-                                    /*
-                                    var audioBytes = await _audioToTextService.GetAudioFromIsabel(filePath);
-                                    if (audioBytes != null && audioBytes.Length > 0)
-                                    {
-                                        var result = await _audioToTextService.ConvertAudioToText(audioBytes, Path.GetFileName(filePath));
-                                        Console.WriteLine(result.Result.Text);
-                                    }*/
-
-                                    _recordings.TryRemove(uniqueid, out _);
-                                }
-
-
-                                await _hubContext.Clients.All.SendAsync("CallEnded", !string.IsNullOrEmpty(destUid) ? destUid : uniqueid);
-                            }
-
-                            break;
-                        }
-
-                        case "bridgeenter":
-                        {
-                            var uniqueid = Get(ev, "Uniqueid");
-                            //var linkedId = Get(ev, "LinkedId");
-                            var destUid = Get(ev, "DestUniqueid");
-
-                            if (!string.IsNullOrEmpty(uniqueid) || !string.IsNullOrEmpty(destUid))
-                            {
-                                await _hubContext.Clients.All.SendAsync("CallAnswered", !string.IsNullOrEmpty(destUid) ? destUid : uniqueid);
-                            }
-
-                            break;
-                        }
-
-                        case "varset":
-                        {
-                            var variable = Get(ev, "Variable");
-                            if (variable == "MIXMONITOR_FILENAME")
-                            {
-                                var uniqueid = Get(ev, "Uniqueid");
-                                //var destUid = Get(ev, "DestUniqueid");
-                                var filePath = Get(ev, "Value");
-                                // https://192.168.1.150/index.php?menu=monitoring&action=display_record&id=1775648256.116234&namefile=rg-600-9123906718-20260408-160736-1775648256.116234.wav&rawmode=yes
-                                // /var/spool/asterisk/monitor/2026/04/08/rg-600-9123906718-20260408-160736-1775648256.116234.wav
-
-                                if (!string.IsNullOrEmpty(uniqueid) && !string.IsNullOrEmpty(filePath))
-                                {
-                                    _recordings[uniqueid] = filePath;
-                                    Console.WriteLine(filePath, uniqueid);
-                                }
-                            }
-
-                            break;
-                        }
-                        /*case "blindtransfer":
-                        case "localbridge":
-                        {
-                            var uniqueid = Get(ev, "Uniqueid");
-                            //var linkedId = Get(ev, "LinkedId");
-                            var linkedId = Get(ev, "TransfererUniqueid");
-
-                            if (!string.IsNullOrEmpty(linkedId)) {
-                                await _hubContext.Clients.All.SendAsync("CallEnded", linkedId);
-                            }
-
-                            break;
-                        }*/
-                    }
+                    await HandleEvent(ev);
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AMI] ارتباط قطع شد: {ex.Message}");
-            return;
-            //await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+            Console.WriteLine($"[AMI] Connection disconnect: {ex.Message}");
         }
     }
 
-    private async Task<AppUser> GetUsers(string destCaller)
+    private async Task HandleEvent(Dictionary<string, string> ev)
     {
-        var user = _users.FirstOrDefault(u => (u.InternalTels ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).Contains(destCaller));
+        var evt = Get(ev, "Event")?.ToLowerInvariant();
+        /*if (!test.Contains(evt.ToLowerInvariant()))
+        {
+            Console.WriteLine(evt);
+        }*/
+
+        switch (evt)
+        {
+            case "dialbegin":
+                await HandleDialBegin(ev);
+                break;
+
+            case "bridgeenter":
+                await HandleBridgeEnter(ev);
+                break;
+
+            case "varset":
+                HandleVarSet(ev);
+                break;
+
+            case "hangup":
+                await HandleHangup(ev);
+                break;
+        }
+    }
+
+    private async Task HandleDialBegin(Dictionary<string, string> ev)
+    {
+        var uniqueId = Get(ev, "Uniqueid");
+        //var linkedId = Get(ev, "Linkedid");
+        var destUid = Get(ev, "DestUniqueid");
+
+        if (string.IsNullOrEmpty(uniqueId) && string.IsNullOrEmpty(destUid)) return;
+
+        var src = Get(ev, "CallerIDNum");
+        if (src == "9506")
+        {
+            src = Get(ev, "Channel")?.Substring(4, 3);
+        }
+
+        if (string.IsNullOrEmpty(src) || src == "unknown") return;
+
+        var dest = Get(ev, "DestCallerIDNum"); //DestExten
+
+        bool srcIsInternal = src.Length <= 4;
+        bool destIsInternal = dest.Length <= 4;
+
+        /*string callType = null;
+        if (srcIsInternal && destIsInternal)
+            callType = "internal-to-internal";
+        else if (dest == "600")
+            callType = "external-to-ring";
+        else if (!srcIsInternal && destIsInternal && dest != "600")
+            callType = "external-to-internal";
+        else if (srcIsInternal && !destIsInternal)
+            callType = "internal-to-external";*/
+
+
+        var userDest = await GetUsers(dest);
+        if (userDest == null) return;
+
+        var srcText = await GetSrcText(srcIsInternal, src);
+
+        if (dest.StartsWith("1"))
+        {
+            await _hubContext.Clients.User(userDest.Id)
+                .SendAsync("IncomingCall", srcText, dest, !string.IsNullOrEmpty(destUid) ? destUid : uniqueId);
+        }
+    }
+
+
+    private void HandleVarSet(Dictionary<string, string> ev)
+    {
+        var variable = Get(ev, "Variable");
+        if (variable != "MIXMONITOR_FILENAME") return;
+
+        var uniqueId = Get(ev, "Uniqueid");
+        var filePath = Get(ev, "Value");
+
+        if (string.IsNullOrWhiteSpace(uniqueId) || string.IsNullOrWhiteSpace(filePath))
+            return;
+        //_recordings[uniqueId] = filePath;
+        _calls.AddOrUpdate(uniqueId,
+            _ => new CallSessionModel {
+                UniqueId = uniqueId,
+                RecordingPath = filePath
+            },
+            (_, existing) => {
+                existing.RecordingPath = filePath;
+                return existing;
+            }
+        );
+    }
+
+    private async Task HandleBridgeEnter(Dictionary<string, string> ev)
+    {
+        try
+        {
+            var uniqueid = Get(ev, "Uniqueid");
+            //var linkedId = Get(ev, "LinkedId");
+            var destUid = Get(ev, "DestUniqueid");
+
+            if (!string.IsNullOrEmpty(uniqueid) || !string.IsNullOrEmpty(destUid))
+            {
+                await _hubContext.Clients.All.SendAsync("CallAnswered", !string.IsNullOrEmpty(destUid) ? destUid : uniqueid);
+            }
+
+            if (_calls.TryGetValue(uniqueid, out var call))
+            {
+                call.Answered = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"BridgeEnter Error: {ex.Message}");
+        }
+    }
+
+    private async Task HandleHangup(Dictionary<string, string> ev)
+    {
+        var uniqueId = Get(ev, "Uniqueid");
+        //var linkedId = Get(ev, "LinkedId");
+        var destUid = Get(ev, "DestUniqueid");
+
+        if (string.IsNullOrEmpty(uniqueId) && string.IsNullOrEmpty(destUid)) return;
+
+        await _hubContext.Clients.All.SendAsync("CallEnded", !string.IsNullOrEmpty(destUid) ? destUid : uniqueId);
+
+        if (!_calls.TryGetValue(uniqueId, out var call)) return;
+
+
+        if (!call.Answered)
+        {
+            _calls.TryRemove(uniqueId, out _);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(call.RecordingPath))
+        {
+            _calls.TryRemove(uniqueId, out _);
+            return;
+        }
+
+        //var src = NormalizeCaller(Get(ev, "CallerIDNum"));
+        var src = Get(ev, "CallerIDNum");
+        if (src == "9506")
+            src = Get(ev, "Channel").Substring(4, 3);
+
+
+        var dest = Get(ev, "ConnectedLineNum");
+
+        if (IsValidCall(src, dest))
+        {
+            var user = await GetUsers(dest);
+            var customer = GetCallerCustomer(src);
+
+            _aiQueue.Enqueue(new CallRecording {
+                CallerNumber = src,
+                CallerCustomerId = customer?.Id,
+                CallerCustomerTxt = customer != null ? $"{customer.CompanyName} {customer.AgentName}" : null,
+                DestinationNumber = dest,
+                DestinationUserId = user.Id,
+                DestinationUserTxt = user.FullName,
+                RecordingFilePath = call.RecordingPath
+            });
+        }
+
+        _calls.TryRemove(uniqueId, out _);
+    }
+
+    private bool IsValidCall(string src, string dest)
+    {
+        if (string.IsNullOrWhiteSpace(src) || string.IsNullOrWhiteSpace(dest))
+            return false;
+
+        bool srcInternal = src.Length <= 4;
+        bool destInternal = dest.Length <= 4;
+
+        return !srcInternal && destInternal;
+    }
+
+    private string NormalizeCaller(string caller)
+    {
+        if (caller == "9506")
+            return caller;
+
+        return caller;
+    }
+
+    private async Task<string> GetSrcText(bool isInternal, string src)
+    {
+        string srcText;
+        if (isInternal)
+        {
+            var srcUser = await GetUsers(src);
+            srcText = srcUser == null ? src : $"{srcUser.FullName} ({src})";
+        } else
+        {
+            srcText = GetCallerText(src);
+        }
+
+        return srcText;
+    }
+
+    private async Task<AppUser> GetUsers(string num)
+    {
+        var users = await GetUsersCacheAsync();
+        var user = users.FirstOrDefault(u =>
+            (u.InternalTels ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Contains(num)
+        );
         return user;
     }
+
+    private List<AppUser> _usersCache = [];
+    private DateTime _usersCacheTime = DateTime.MinValue;
+    private readonly Lock _usersLock = new();
+
+    private async Task<List<AppUser>> GetUsersCacheAsync()
+    {
+        if (_usersCache.Count > 0 && (DateTime.Now - _usersCacheTime).TotalMinutes < 5)
+            return _usersCache;
+
+        lock (_usersLock)
+        {
+            if (_usersCache.Count > 0 && (DateTime.Now - _usersCacheTime).TotalMinutes < 5)
+                return _usersCache;
+        }
+
+        using var scope = _serviceScopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<UserContextDb>();
+
+        var users = db.Users.Where(f => f.IsEmployee).ToList();
+
+        lock (_usersLock)
+        {
+            _usersCache = users;
+            _usersCacheTime = DateTime.Now;
+        }
+
+        return users;
+    }
+
 
     private static Dictionary<string, Customer> _cusCache = new();
     private static DateTime _lastCacheTime = DateTime.MinValue;
 
-    private Customer GetCallerCustomer(string srcCaller)
+    private Customer GetCallerCustomer(string num)
     {
-        if (string.IsNullOrEmpty(srcCaller)) return null;
+        if (string.IsNullOrEmpty(num)) return null;
 
-        var key = srcCaller.Length > 7 ? srcCaller[^7..] : srcCaller;
+        var key = num.Length > 7 ? num[^7..] : num;
 
         // هر 1 دقیقه کش آپدیت بشه
         if ((DateTime.Now - _lastCacheTime).TotalSeconds > 60 || _cusCache.Count == 0)
         {
-            using var scope = serviceScopeFactory.CreateScope();
+            using var scope = _serviceScopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<CRMContextDb>();
 
             var list = db.Customers.Select(c => new {
@@ -315,15 +378,15 @@ public class AsteriskAmiListener : BackgroundService {
         return _cusCache.TryGetValue(key, out var cus) ? cus : null;
     }
 
-    private string GetCallerText(string srcCaller)
+    private string GetCallerText(string num)
     {
-        if (string.IsNullOrEmpty(srcCaller)) return srcCaller;
+        if (string.IsNullOrEmpty(num)) return num;
 
-        var cus = GetCallerCustomer(srcCaller);
+        var cus = GetCallerCustomer(num);
 
         return cus != null
-            ? $"{cus.CompanyName} {cus.AgentName} ({srcCaller})"
-            : srcCaller;
+            ? $"{cus.CompanyName} {cus.AgentName} ({num})"
+            : num;
     }
 
 

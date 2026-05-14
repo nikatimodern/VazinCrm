@@ -8,12 +8,13 @@ using CRM.Core.Domain.Reports.Entities;
 using CRM.Core.Domain.Reports.Enum;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 using Generics.Infrastructures.Sql;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Renci.SshNet;
 
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 
-public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, DateTimeServices dts) {
+public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, AiProcessAudio aiProcessAudio, DateTimeServices dts) {
     private const string FtpHost = "192.168.1.150";
     private const string FtpUser = "root";
     private const string FtpPass = "123";
@@ -24,14 +25,13 @@ public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, DateTi
         try
         {
             // 1. SFTP
-           // byte[] audioBytes = await GetAudioFromIsabel(callData.RecordingFilePath);
-            var audioBytes = await File.ReadAllBytesAsync(filePath);
-            if (audioBytes == null || audioBytes.Length == 0) return;
+            var audioStream = await GetAudioFromIsabel(callData.RecordingFilePath);
+            if (audioStream == null) return;
+            /*var audioBytes = await File.ReadAllBytesAsync(filePath);
+            var audioStream = new MemoryStream(audioBytes);*/
 
-
-            // 2. Audio To Text
-            //var transcriptionResult = await viraAi.ConvertAudioToText(audioBytes, Path.GetFileName(callData.RecordingFilePath));
-            var transcriptionResult = await viraAi.ConvertAudioToText(audioBytes, Path.GetFileName(filePath));
+            /*// 2. Audio To Text
+            var transcriptionResult = await viraAi.ConvertAudioToText(audioBytes, Path.GetFileName(callData.RecordingFilePath));
             callData.TranscriptionText = transcriptionResult?.Result?.Text ?? string.Empty;
 
             if (string.IsNullOrEmpty(callData.TranscriptionText)) return;
@@ -43,7 +43,9 @@ public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, DateTi
             await SaveCallDataToDatabase(callData);
 
             // 4. Create Report
-            await CreateReportWithCallData(callData);
+            await CreateReportWithCallData(callData);*/
+            var result = await aiProcessAudio.ProcessAudioAsync(audioStream, Path.GetFileName(callData.RecordingFilePath));
+            Console.WriteLine(result);
         }
         catch (Exception ex)
         {
@@ -56,19 +58,21 @@ public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, DateTi
     }
 
 
-    private static async Task<byte[]> GetAudioFromIsabel(string remoteFilePath)
+    private static async Task<MemoryStream> GetAudioFromIsabel(string remoteFilePath)
     {
         try
         {
+            var memoryStream = new MemoryStream();
+
             using var client = new SftpClient(FtpHost, FtpUser, FtpPass);
+
             client.Connect();
-
-            await using var memoryStream = new MemoryStream();
             client.DownloadFile(remoteFilePath, memoryStream);
-
-
             client.Disconnect();
-            return memoryStream.ToArray();
+
+            memoryStream.Position = 0;
+
+            return memoryStream;
         }
         catch (Exception ex)
         {
