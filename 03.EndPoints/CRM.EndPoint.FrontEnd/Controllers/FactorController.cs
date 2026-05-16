@@ -2036,7 +2036,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                var accountancies = await db.Accountancies.NotVosoled().Where(f => f.CustomerId == cusId).ToListAsync();
+
+                var date = "2026-03-20";
+//                var pfs = await db.PreFactors.Where(f => f.CreateDate)
+                var accountancies = await db.Accountancies.NotVosoled().Where(f => f.CustomerId == cusId)
+                    .Where(f => f.CreateDate >= Convert.ToDateTime(date)).ToListAsync();
 
                 var pFacPayment = accountancies.Where(f =>
                     f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور

@@ -255,7 +255,7 @@ namespace CRM.EndPoint.FrontEnd {
             var licenseFile = System.IO.Path.Combine(contentRoot, "wwwroot\\Reports", "license.key");
             //Stimulsoft.Base.StiLicense.LoadFromFile(licenseFile);
 
-            if (env.IsDevelopment())
+            if (!env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             } else

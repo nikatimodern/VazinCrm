@@ -210,25 +210,32 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> GetAllReportPartial([FromBody] ReportFilterVModel model, [FromQuery] Guid? dealId = null)
         {
-            var data = await GetAllReports(model, dealId);
-
-            var userIds = data.Select(r => r.UserCreatorID).Distinct().ToList();
-            var userImages = await udb.Users
-                .Where(u => userIds.Contains(u.Id))
-                .ToDictionaryAsync(u => u.Id, u => u.PersonImageUrl);
-
-            foreach (var r in data)
+            try
             {
-                if (userImages.TryGetValue(r.UserCreatorID, out var img))
-                    r.UserImage = img;
+                var data = await GetAllReports(null, dealId);
+
+                var userIds = data.Select(r => r.UserCreatorID).Distinct().ToList();
+                var userImages = await udb.Users
+                    .Where(u => userIds.Contains(u.Id))
+                    .ToDictionaryAsync(u => u.Id, u => u.PersonImageUrl);
+
+                foreach (var r in data)
+                {
+                    if (userImages.TryGetValue(r.UserCreatorID, out var img))
+                        r.UserImage = img;
+                }
+
+                var html = await vrs.RenderToStringAsync("GetAllReportPartial", data,
+                    new Dictionary<string, object> {
+                        { "PassType", ViewBag.PassType }
+                    });
+
+                return Ok(new { count = data.Count, html });
             }
-
-            var html = await vrs.RenderToStringAsync("GetAllReportPartial", data,
-                new Dictionary<string, object> {
-                    { "PassType", ViewBag.PassType }
-                });
-
-            return Ok(new { count = data.Count, html });
+            catch (Exception ex)
+            {
+                return BadRequest();
+            }
         }
 
         private async Task<List<Report>> GetAllReports(ReportFilterVModel model, Guid? dealId = null)

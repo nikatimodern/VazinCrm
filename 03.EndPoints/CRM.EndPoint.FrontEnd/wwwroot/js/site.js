@@ -1695,7 +1695,7 @@ async function getAllReports(showLoading = true) {
             return resolve();
         } catch (err) {
             console.error(err);
-            containerReport.innerHTML = "خطا در دریافت گزارش ها :(";
+            containerReport.innerHTML = err.response.data; // "خطا در دریافت گزارش ها :(";
             return reject();
         } finally {
             FLshowLoading(false);
