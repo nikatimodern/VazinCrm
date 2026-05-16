@@ -3883,11 +3883,21 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountOrderHead", b =>
                 {
-                    b.HasOne("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", null)
+                    b.HasOne("CRM.Core.Domain.Orders.Entities.OrderHead", "OrderHead")
+                        .WithMany("RequestAmountOrderHeads")
+                        .HasForeignKey("OrderHeadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", "RequestAmount")
                         .WithMany("RequestAmountOrderHeads")
                         .HasForeignKey("RequestAmountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("OrderHead");
+
+                    b.Navigation("RequestAmount");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountPayment", b =>
@@ -4013,6 +4023,8 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Orders.Entities.OrderHead", b =>
                 {
                     b.Navigation("Orders");
+
+                    b.Navigation("RequestAmountOrderHeads");
 
                     b.Navigation("SupplyFactorOrderHeads");
                 });

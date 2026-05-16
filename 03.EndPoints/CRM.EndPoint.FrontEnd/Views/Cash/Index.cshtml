@@ -91,6 +91,8 @@
 @section Scripts {
     <script>
         var cashAttachments = [];
+        var searchVarCash;
+        var cashConfigFilter = {};
         const cashModal = document.getElementById("cashModal");
         const costCenterElm = cashModal.querySelector("#cashCostCenter");
         document.addEventListener("DOMContentLoaded", async () => {
@@ -375,6 +377,8 @@
                         },
                     },
                 },
+
+                initComplete: () => initFilterCashTable(),
                 drawCallback: function () {
                     const api = this.api();
                     const json = api.ajax.json();
@@ -403,8 +407,63 @@
 
                     container.prepend(btn);
                 },
+
+
+            });
+
+            function initFilterCashTable() {
+                const dtLength = document.querySelector(".dt-length label");
+                const dtSearch = document.querySelector(".dt-search");
+                const searchInput = dtSearch?.querySelector("input");
+                if (!searchInput) return;
+                const filterButton = `
+                    <div class="btnFilter pe-md-2" data-filterVarConfig="cashConfigFilter" data-filterCallBack="callBackCashFilter" data-filterContentId="contentCashFilterId" data-filterInpSearchId="dt-search-0" data-filterVarSearch="searchVarCash" onclick="ShowFilterPopup(this, ['cusFilterItem'])">
+                        <svg style="width:24px;height:24px;color:#333" viewBox="0 0 24 24" fill="currentColor" ><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd" /></svg>
+                    </div>
+                `;
+                const radioBtns = `
+                    <div class="d-flex column-gap-2 align-items-center justify-content-between flex-wrap">
+                        <ul class="filter-switch mt-2 mt-md-0">
+                            <li class="filter-switch-item">
+                                <input type="radio" name="cash_type" id="cash_type-all" value="-1" checked>
+                                <label for="cash_type-all">همه</label>
+                            </li>
+                            <li class="filter-switch-item">
+                                <input type="radio" name="cash_type" id="cash_type-1" value="1">
+                                <label for="cash_type-1">در انتظار تایید</label>
+                            </li>
+                            <li class="filter-switch-item">
+                                <input type="radio" name="cash_type" id="cash_type-2" value="2">
+                                <label for="cash_type-2">تایید شده</label>
+                            </li>
+                        </ul>
+                    </div>
+                `;
+                const contentFilter = `<div id="contentCashFilterId" style="justify-content: start;" class="ContentFilter mt-2 mt-md-0 ms-md-2"></div>`;
+
+                searchInput.insertAdjacentHTML("afterend", filterButton);
+                dtSearch.insertAdjacentHTML("afterend", contentFilter);
+                dtSearch.insertAdjacentHTML("afterend", radioBtns);
+            }
+
+            cashTbl.on("search", function () {
+                modelCash.serVal = cashTbl.search();
             });
         };
+
+        const callBackCashFilter = () => {
+            modelCash.serVal = window[filterVarConfig]?.varSearch;
+            modelCash.filt = window[filterVarConfig]?.filterVar;
+
+            cashTbl.ajax.reload();
+        };
+
+        document.body.addEventListener("change", async (e) => {
+            if (e.target.matches("input[name='cash_type']")) {
+                modelCash._type = Number(e.target.value);
+                cashTbl.ajax.reload();
+            }
+        });
 
     </script>
 }

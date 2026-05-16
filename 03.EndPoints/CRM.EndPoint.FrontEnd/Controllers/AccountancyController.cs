@@ -304,23 +304,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var roles = await userManager.GetRolesAsync(user);
 
-                var query = db.Accountancies.ForPreFactor().AsQueryable();
+                var baseQuery = db.Accountancies.OrderByDescending(f => f.CreateDate).ForPreFactor().AsQueryable();
                 if (cartable == CartableEnum.مدیر_عامل)
                 {
-                    query = query.OnlyManagingDirector();
+                    baseQuery = baseQuery.OnlyManagingDirector();
                 }
 
-                query = type switch {
-                    1 => query.Where(f => f.Status == AccStatusEnum.در_دست_تایید || f.Status == AccStatusEnum.ثبت_اولیه),
-                    2 => query.Where(f => f.Status == AccStatusEnum.تایید_شده),
-                    3 => query.Where(f => f.Status == AccStatusEnum.رد_شده),
-                    _ => query
-                };
 
                 if (!string.IsNullOrWhiteSpace(serVal))
                 {
                     var serNum = TextService.convertToInt(serVal);
-                    query = query.Where(f =>
+                    baseQuery = baseQuery.Where(f =>
                         f.pfSerialNumber == serNum
                         || f.SerialNum == serNum
                         || f.UserCreator.Contains(serVal)
@@ -328,9 +322,24 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     );
                 }
 
-                var accS = await query.OrderByDescending(f => f.CreateDate).Take(100).ToListAsync();
-                var count = accS.Count;
+                var filterCounts = new Dictionary<int, int> {
+                    [-1] = await baseQuery.CountAsync(),
+                    [1] = await baseQuery.Where(f => f.Status == AccStatusEnum.در_دست_تایید || f.Status == AccStatusEnum.ثبت_اولیه).CountAsync(),
+                    [2] = await baseQuery.Where(f => f.Status == AccStatusEnum.تایید_شده).CountAsync(),
+                    [3] = await baseQuery.Where(f => f.Status == AccStatusEnum.رد_شده).CountAsync(),
+                };
 
+                var query = type switch {
+                    1 => baseQuery.Where(f => f.Status == AccStatusEnum.در_دست_تایید || f.Status == AccStatusEnum.ثبت_اولیه),
+                    2 => baseQuery.Where(f => f.Status == AccStatusEnum.تایید_شده),
+                    3 => baseQuery.Where(f => f.Status == AccStatusEnum.رد_شده),
+                    _ => baseQuery
+                };
+
+                query = string.IsNullOrWhiteSpace(serVal) ? query.Take(100) : query;
+
+                var accS = await query.ToListAsync();
+                var count = accS.Count;
 
                 var model = new PaymentPartialVModel {
                     Items = accS,
@@ -347,7 +356,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var html = await _vrs.RenderToStringAsync("GetAllPaymentPartial", model);
 
-                return Ok(new { html, count });
+                return Ok(new { html, count, filterCounts });
             }
             catch (Exception e)
             {

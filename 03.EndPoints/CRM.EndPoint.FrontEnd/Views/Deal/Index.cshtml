@@ -43,18 +43,21 @@
     </div>
     <ul class="nav nav-tabs" id="dealTabs" role="tablist" style="display: none;">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active text-dark" style="margin-bottom:-2px;isolation:auto" id="openDealTab" data-bs-toggle="tab" data-bs-target="#openDealTab-pane" type="button" role="tab" aria-controls="openDealTab-pane" aria-selected="true">
+            <button class="nav-link active text-dark position-relative" style="margin-bottom:-2px;isolation:auto" id="openDealTab" data-tab="open" data-bs-toggle="tab" data-bs-target="#openDealTab-pane" type="button" role="tab" aria-controls="openDealTab-pane" aria-selected="true">
                 سفارشات باز
+                <span class="badgeCircle filter-count-badge"></span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link text-dark" style="margin-bottom:-2px;isolation:auto" id="successDealTab" data-bs-toggle="tab" data-bs-target="#successDealTab-pane" type="button" role="tab" aria-controls="successDealTab-pane" aria-selected="false">
+            <button class="nav-link text-dark position-relative" style="margin-bottom:-2px;isolation:auto" id="successDealTab" data-tab="success" data-bs-toggle="tab" data-bs-target="#successDealTab-pane" type="button" role="tab" aria-controls="successDealTab-pane" aria-selected="false">
                 سفارشات موفق
+                <span class="badgeCircle filter-count-badge"></span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link text-dark" style="margin-bottom:-2px;isolation:auto" id="failedDealTab" data-bs-toggle="tab" data-bs-target="#failedDealTab-pane" type="button" role="tab" aria-controls="failedDealTab-pane" aria-selected="false">
+            <button class="nav-link text-dark position-relative" style="margin-bottom:-2px;isolation:auto" id="failedDealTab" data-tab="failed" data-bs-toggle="tab" data-bs-target="#failedDealTab-pane" type="button" role="tab" aria-controls="failedDealTab-pane" aria-selected="false">
                 سفارشات ناموفق
+                <span class="badgeCircle filter-count-badge"></span>
             </button>
         </li>
     </ul>
@@ -369,7 +372,6 @@
             showDealDropdown();
             getAllOrders();
 
-            await getAllBankAccounts();
             await showTaminDropdown();
             await getAllDeals();
 
@@ -466,6 +468,14 @@
                 const res = await axios.post(`/Deal/GetAllDeals`, modelDeal);
                 if (res.status === 200) {
                     const items = res.data.items;
+                    if (window.innerWidth < 1200) {
+                        updateTabSwitchState({
+                            wrapperSelector: "#dealTabs",
+                            tabData: items,
+                            searchValue: modelDeal.serVal,
+                            filter: modelDeal.filt,
+                        });
+                    }
                     createDomAllDeals(items.open, "#openDealsContainerId", res.data.isAdmin);
                     createDomAllDeals(items.success, "#successDealsContainerId", res.data.isAdmin);
                     createDomAllDeals(items.failed, "#failedDealsContainerId", res.data.isAdmin);

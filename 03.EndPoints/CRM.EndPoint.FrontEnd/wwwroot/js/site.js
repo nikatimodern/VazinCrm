@@ -30,30 +30,14 @@ document.addEventListener("DOMContentLoaded", () => {
 class SelectionManager {
     /**
      * @param {Object} options
-     *
-     * @param {string|HTMLElement} options.container
-     * Main items container
-     *
-     * @param {string|HTMLElement} options.selectionBar
-     * Selection actions bar element
-     *
-     * @param {string|HTMLElement} options.toggleBtn
-     * Button used to enable selection mode
-     *
-     * @param {string} [options.itemSelector=".selection-item"]
-     * Selector for selectable items
-     *
-     * @param {string} [options.checkboxSelector=".selection-checkbox"]
-     * Selector for item checkbox
-     *
-     * @param {string} [options.selectedClass="selected"]
-     * Class applied to selected items
-     *
-     * @param {string} [options.selectionModeClass="selection-mode"]
-     * Class applied when selection mode is active
-     *
-     * @param {(selectedIds: string[], instance: SelectionManager) => void|Promise<void>} [options.onAction]
-     * Callback triggered when action button is clicked
+     * @param {string|HTMLElement} options.container - Main items container
+     * @param {string|HTMLElement} [options.selectionBar=".selection-bar"] - Selection actions bar element
+     * @param {string|HTMLElement} [options.toggleBtn=".selection-toggle-btn"] - Button used to enable selection mode
+     * @param {string} [options.itemSelector=".selection-item"] - Selector for selectable items
+     * @param {string} [options.checkboxSelector=".selection-checkbox"] - Selector for item checkbox
+     * @param {string} [options.selectedClass="selected"] - Class applied to selected items
+     * @param {string} [options.selectionModeClass="selection-mode"] - Class applied when selection mode is active
+     * @param {(selectedIds: string[], instance: SelectionManager) => void|Promise<void>} [options.onAction] - Callback triggered when action button is clicked
      */
     constructor(options) {
         
@@ -77,9 +61,9 @@ class SelectionManager {
         this.selectionBar = this.resolveElement(this.options.selectionBar);
         this.toggleBtn = this.resolveElement(this.options.toggleBtn);
         
-        if (!this.container || !this.selectionBar || !this.toggleBtn) {
-            throw new Error("");
-        }
+        if (!this.container) throw new Error("SelectionManager: container element not found.");
+        if (!this.selectionBar) throw new Error("SelectionManager: selectionBar element not found.");
+        if (!this.toggleBtn) throw new Error("SelectionManager: toggleBtn element not found.");
         
         this.cancelBtn = this.selectionBar.querySelector(".cancel-selection");
         this.clearBtn = this.selectionBar.querySelector(".clear-selection");
@@ -3312,3 +3296,111 @@ document.addEventListener("click", e => {
 })*/
 
 
+const updateFilterSwitchState = ({ wrapperSelector, filterData, currentFilterValue, searchValue, onChange }) => {
+    const wrapper = document.querySelector(wrapperSelector);
+    if (!wrapper) return;
+    
+    const hasSearch = !!searchValue.trim();
+    if (!hasSearch) {
+        wrapper.dataset.userInteracted = "false";
+        
+        wrapper.querySelectorAll(".filter-switch-item").forEach(item => {
+            item.style.opacity = "1";
+            const badge = item.querySelector(".filter-count-badge");
+            if (badge) {
+                badge.style.display = "none";
+            }
+        });
+        
+        return;
+    }
+    
+    if (!filterData) return;
+    
+    let firstAvailableValue = null;
+    const radios = wrapper.querySelectorAll(`.filter-switch-item input[type="radio"]`);
+    radios.forEach(radio => {
+        const value = radio.value;
+        const count = filterData?.[value];
+        
+        const item = radio.closest(".filter-switch-item");
+        const badge = item?.querySelector(".filter-count-badge");
+        
+        radio.addEventListener("click", () => {
+            wrapper.dataset.userInteracted = "true";
+        });
+        
+        if (count === undefined) {
+            item.style.opacity = "1";
+            if (badge) {
+                badge.style.display = "none";
+            }
+            return;
+        }
+        
+        if (badge) {
+            badge.style.display = count > 0 ? "flex" : "none";
+            badge.textContent = count;
+        }
+        
+        item.style.opacity = count > 0 ? "1" : ".5";
+        
+        if (value !== "-1" && count > 0 && firstAvailableValue === null) {
+            firstAvailableValue = value;
+        }
+    });
+    if (wrapper.dataset.userInteracted === "true") return;
+    if (filterData[currentFilterValue] > 0) return;
+    if (!firstAvailableValue) return;
+    
+    const targetRadio = wrapper.querySelector(`input[value="${firstAvailableValue}"]`);
+    if (!targetRadio) return;
+    targetRadio.checked = true;
+    
+    onChange?.(firstAvailableValue);
+};
+
+
+const updateTabSwitchState = ({ wrapperSelector, tabData, searchValue, filter }) => {
+    const wrapper = document.querySelector(wrapperSelector);
+    if (!wrapper) return;
+    
+    const hasSearch = !!searchValue?.trim();
+    const hasFilter = filter !== undefined && filter !== null;
+    let firstAvailableTab = null;
+    
+    const activeTab = wrapper.querySelector(".nav-link.active");
+    const activeKey = activeTab?.dataset.tab;
+    
+    const tabs = wrapper.querySelectorAll(".nav-link");
+    
+    tabs.forEach(tab => {
+        const key = tab.dataset.tab;
+        const count = tabData[key]?.length ?? tabData[key] ?? 0;
+        const badge = tab.querySelector(".filter-count-badge");
+        
+        if (!hasSearch && !hasFilter) {
+            tab.style.opacity = "1";
+            if (badge) {
+                badge.style.display = "none";
+            }
+            return;
+        }
+        
+        if (badge) {
+            badge.style.display = count > 0 ? "flex" : "none";
+            badge.textContent = count;
+        }
+        
+        tab.style.opacity = count > 0 ? "1" : ".5";
+        
+        if (count > 0 && !firstAvailableTab) {
+            firstAvailableTab = tab;
+        }
+    });
+    
+    if (tabData[activeKey]?.length) return;
+    
+    if (!firstAvailableTab) return;
+    ShowTab(firstAvailableTab);
+};

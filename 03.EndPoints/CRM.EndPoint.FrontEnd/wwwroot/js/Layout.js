@@ -49,7 +49,7 @@ let myDate = new GetDate();
 document.addEventListener("DOMContentLoaded", async () => {
     await GetUserLogin();
     setActiveMenu();
-    
+    // initLightbox();
     
     setting = await GetSetting();
     
@@ -297,16 +297,22 @@ const getbaseDescription = async () => {
 };
 
 
-const GetSelsOpId = async (Lid, valTriger = null, parentModal = null) => {
-    let sel = await CrmSer.getUsers(2);
+let sellersLoaded = false;
+const GetSelsOpId = async (Lid, valTriger = null, parentModal = null, type = 2) => {
+    if (sellersLoaded) return;
+    let sel = await CrmSer.getUsers(type);
     $("#" + Lid).select2({
         data: sel, dir: "rtl", placeholder: "انتخاب", selectionCssClass: "form-control", dropdownParent: $(parentModal),
     });
     $("#" + Lid).val(valTriger).trigger("change");
+    sellersLoaded = true;
 };
 
 
+let customersLoaded = false;
 const GetCustomersOpId = async (Lid, valTriger = null, parentModal = null) => {
+    if (customersLoaded) return;
+    
     let roles = JSON.parse(sessionStorage.getItem("Rols"));
     if (roles?.some(r => r.name === "Customer")) return;
     $.get(baseUrl + "order/GetCustomersOpId", async (res) => {
@@ -317,6 +323,7 @@ const GetCustomersOpId = async (Lid, valTriger = null, parentModal = null) => {
         $("#" + Lid).val(valTriger).trigger("change");
     });
     
+    customersLoaded = true;
 };
 
 
@@ -339,8 +346,6 @@ document.getElementById("DateFilterChk")?.addEventListener("change", () => {
 });
 
 
-let customersLoaded = false;
-let sellersLoaded = false;
 let filterVarConfig;
 const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
     const filterCallBack = filterBtn.getAttribute("data-filterCallBack"); /*کال بک فانکشنی بعد از فیلتر اجرا میشه*/
@@ -350,14 +355,13 @@ const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
     filterVarConfig = filterBtn.getAttribute("data-filterVarConfig"); /*اسم متغیر کانفیگ فیلتر */
     
     
-    if (!customersLoaded) {
-        GetCustomersOpId("customerFilter", null, "#FilterFormId");
-        customersLoaded = true;
-    }
-    
-    if (!sellersLoaded) {
+    GetCustomersOpId("customerFilter", null, "#FilterFormId");
+    if (filterVarConfig === "cashConfigFilter") {
+        document.getElementById("SelFilterLabel").textContent = "کارشناس"
+        GetSelsOpId("selFilter", null, "#FilterFormId", 1);
+    } else {
+        document.getElementById("SelFilterLabel").textContent = "کارشناس فروش"
         GetSelsOpId("selFilter", null, "#FilterFormId");
-        sellersLoaded = true;
     }
     
     
@@ -1545,46 +1549,33 @@ const getAllOrders = () => {
                 sortAscending: ": فعال سازی نمایش به صورت صعودی", sortDescending: ": فعال سازی نمایش به صورت نزولی",
             },
         },
-        columns: [{ data: null, render: (data, type, row, meta) => meta.row + 1 }, {
-            data: "productSmallName",
-            name: "ProductSmallName",
-            autoWidth: true,
-            defaultContent: "-",
-        }, { data: "product", name: "Product", autoWidth: true, defaultContent: "-" }, {
-            data: "dimensions",
-            name: "Dimensions",
-            autoWidth: true,
-            defaultContent: "-",
-        }, { data: "categoryType", name: "CategoryType", autoWidth: true, defaultContent: "-" }, {
-            data: "caset",
-            name: "Caset",
-            autoWidth: true,
-            defaultContent: "-",
-        }, { data: "backgroundColor", name: "BackgroundColor", autoWidth: true, defaultContent: "-" }, {
-            data: "printColor",
-            name: "PrintColor",
-            autoWidth: true,
-            defaultContent: "-",
-        }, { data: "countColor", name: "CountColor", autoWidth: true, defaultContent: "-" }, {
-            data: "designName",
-            name: "DesignName",
-            autoWidth: true,
-            defaultContent: "-",
-        }, {
-            data: "weight",
-            name: "Weight",
-            autoWidth: true,
-            render: (data, type, row) => (data !== null && data !== "") && row.unitTxt ? `${data} ${row.unitTxt}` : "-",
-        }, { data: "thickness", name: "Thickness", autoWidth: true, defaultContent: "-" }, {
-            data: null, render: function (data, type, row) {
-                return `
+        columns: [
+            { data: null, render: (data, type, row, meta) => meta.row + 1 },
+            { data: "productSmallName", name: "ProductSmallName", autoWidth: true, defaultContent: "-" },
+            { data: "product", name: "Product", autoWidth: true, defaultContent: "-" },
+            { data: "dimensions", name: "Dimensions", autoWidth: true, defaultContent: "-" },
+            { data: "categoryType", name: "CategoryType", autoWidth: true, defaultContent: "-" },
+            { data: "caset", name: "Caset", autoWidth: true, defaultContent: "-" },
+            { data: "backgroundColor", name: "BackgroundColor", autoWidth: true, defaultContent: "-" },
+            { data: "printColor", name: "PrintColor", autoWidth: true, defaultContent: "-" },
+            { data: "countColor", name: "CountColor", autoWidth: true, defaultContent: "-" },
+            { data: "designName", name: "DesignName", autoWidth: true, defaultContent: "-" },
+            {
+                data: "weight", name: "Weight", autoWidth: true,
+                render: (data, type, row) => (data !== null && data !== "") && row.unitTxt ? `${data} ${row.unitTxt}` : "-",
+            },
+            { data: "thickness", name: "Thickness", autoWidth: true, defaultContent: "-" },
+            {
+                data: null,
+                render: function (data, type, row) {
+                    return `
                         <div class="d-inline-flex align-items-center justify-content-center gap-1">
                             <button type="button" data-title-right="ویرایش" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 d-flex justify-content-center align-items-center" onclick='ShowUpdateOrder("${row._index}")'><i class="fa fa-pencil"></i></button>
                             <button type="button" data-title-right="حذف" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="Admin buttonCancel2 d-flex justify-content-center align-items-center" onclick='DelOrderItem("${row._index}")'><i class="fa fa-trash"></i></button>
                         </div>
                     `;
+                },
             },
-        },
         
         ],
         layout: null,
@@ -2295,6 +2286,7 @@ let isEditInvoiceModal = false;
 let invoiceItemId;
 
 const ShowModalInvoice = async (acType = 1, ParentId = null) => {
+    getAllBankAccounts();
     if (ParentId != null || acType === 2) { // وصول یا برگشتی بود
         document.getElementById("DivEtebariId").style.display = "none";
     } else {
@@ -2327,6 +2319,7 @@ const ShowModalInvoice = async (acType = 1, ParentId = null) => {
 async function showPayment(id, parent = false) {
     try {
         FLshowLoading();
+        await getAllBankAccounts();
         const res = (await axios(`/Accountancy/getAccountancy/${id}?parent=${parent}`)).data;
         const data = res.accData;
         
@@ -2369,22 +2362,21 @@ async function showPayment(id, parent = false) {
             }
         }
         
-        SanadPayList = res.listAttach;
+        const attachList = res.listAttach;
         
         const containerUploader = invoiceModalElm.querySelector("#ShowPaymentSanadParId").parentElement;
         const divShow = containerUploader.querySelector("#ShowPaymentDivShowSanadPar");
         divShow.innerHTML = "";
-        if (SanadPayList.length) {
+        if (attachList.length) {
             containerUploader.classList.remove("d-none");
-            SanadPayList.forEach(fileItem => {
+            attachList.forEach(fileItem => {
                 const imageBox = createImageBox(fileItem);
                 divShow.appendChild(imageBox);
             });
         } else {
             containerUploader.classList.add("d-none");
         }
-        
-        $("#ShowPaymentModal").modal("show");
+        ModalToggle(invoiceModalElm);
         
     } catch (err) {
         if (err.status === 404) {
@@ -2433,6 +2425,7 @@ async function showPayment(id, parent = false) {
 
 const ShowEditModalInvoice = async (id, type = 1) => {
     FLshowLoading();
+    getAllBankAccounts();
     const res = await axios(`/Accountancy/getAccountancy/${id}`);
     const data = res.data.accData;
     
@@ -3457,30 +3450,42 @@ const getAllBankAccountsJson = async (type) => {
         console.log(err);
     }
 };
+
+let isLoadedBankAccounts = false;
+
 const getAllBankAccounts = async () => {
+    if (isLoadedBankAccounts) return;
+    
+    const selects = [
+        { element: document.querySelector("#InvoiceModalId select[name='BankAccountId']"), type: 1 },
+        { element: document.querySelector("#ShowPaymentModal select[name='BankAccountId']"), type: 1, isDisable: true },
+        { element: document.querySelector("#reqAmountAttachModal select[name='fromAccountId']"), type: 1 },
+        { element: document.querySelector("#reqAmountAttachModal select[name='toAccountId']"), type: 2 },
+    ].filter(e => e.element);
+    
+    const elementsToToggleDisable = selects.filter(s => !s.isDisable).map(s => s.element);
+    toggleElementsDisabled(elementsToToggleDisable);
+    
     try {
         const data = await getAllBankAccountsJson();
-        const companyData = data.filter(d => d.type === 1); // حساب های شرکت
-        const otherData = data.filter(d => d.type === 2); // حساب های دیگران
         
-        const applyToModal = (dataOptions, modalId, selector) => {
-            const modal = document.getElementById(modalId);
-            if (!modal) return;
-            
-            const select = modal.querySelector(selector);
-            createOption(select, dataOptions, true, "انتخاب کنید");
-        };
+        selects.forEach(x => {
+            createOption(
+                x.element,
+                data.filter(d => d.type === x.type),
+                true,
+                "انتخاب کنید",
+            );
+        });
         
-        
-        applyToModal(companyData, "InvoiceModalId", "select[name='BankAccountId']");
-        applyToModal(companyData, "ShowPaymentModal", "select[name='BankAccountId']");
-        applyToModal(companyData, "reqAmountAttachModal", "select[name='fromAccountId']");
-        
-        applyToModal(otherData, "reqAmountAttachModal", "select[name='toAccountId']");
+        isLoadedBankAccounts = true;
     } catch (err) {
         console.log(err);
+    } finally {
+        toggleElementsDisabled(elementsToToggleDisable, false);
     }
 };
+
 
 const hideFact = () => {
     document.getElementById("DivFacListId").style.display = "none";
@@ -4134,10 +4139,16 @@ window.onload = () => {
 // console.log(dateTime)
 
 
-lightbox.option({
+/*lightbox.option({
     resizeDuration: 500, wrapAround: true,
-});
+});*/
 
+function initLightbox() {
+    if (!window.Lightbox3) return;
+    
+    const { Lightbox } = Lightbox3;
+    Lightbox.init();
+}
 
 const overlay = document.getElementById("overlay");
 const moreMenuBtn = document.getElementById("moreMenuBtn");
@@ -4579,10 +4590,10 @@ let reqAmountId;
 let paymentTable;
 let isFinancialPaymentTable;
 
-async function changeStatusReqAmount(reqAmountId, status) {
+async function changeStatusReqAmount(id, status) {
     try {
         FLshowLoading();
-        const res = await axios(`/Amount/ChangeStatusRequestAmount?id=${reqAmountId}&status=${status}`);
+        const res = await axios(`/Amount/ChangeStatusRequestAmount?id=${id}&status=${status}`);
         if (res.status === 200) {
             const currentPath = window.location.pathname.toLowerCase();
             if (currentPath.includes("cartable")) {
@@ -4595,8 +4606,12 @@ async function changeStatusReqAmount(reqAmountId, status) {
                         await GetRequestFinancialExpert();
                         break;
                 }
-            } else {
+            } else if (currentPath.includes("order")) {
+                await getAllRequestAmountByOrderHead(ohReqAmountId);
+                
+            } else if (currentPath.includes("requestamount")) {
                 await getAllRequestAmount();
+                
             }
         }
     } catch (err) {
@@ -4669,7 +4684,7 @@ const initPaymentTable = () => {
         columns: [
             { data: "payment.paymentNumber", name: "PaymentNumber", defaultContent: "-" },
             { data: "payment.createDateTxt", name: "CreateDateTxt", defaultContent: "-" },
-            { data: "requestAmountPaymentAmount", name: "RequestAmountPaymentAmount", defaultContent: "-" },
+            { data: "requestPaymentAmount", name: "RequestPaymentAmount", defaultContent: "-" },
             { data: "payment.fromAccountTxt", name: "FromAccountTxt", defaultContent: "-" },
             { data: "payment.toAccountTxt", name: "ToAccountTxt", defaultContent: "-" },
             { data: "payment.paymentDateTxt", name: "PaymentDateTxt", defaultContent: "-" },
@@ -4744,6 +4759,7 @@ const deletePayment = async (id) => {
 
 async function showEditPaymentModal(id) {
     FLshowLoading();
+    getAllBankAccounts();
     ModalToggle("reqAmountAttachModal", "show");
     
     try {
@@ -4771,7 +4787,6 @@ async function showEditPaymentModal(id) {
         FLshowLoading(false);
     }
 }
-
 
 
 ////////////////////////////////////////////////////////
@@ -4880,6 +4895,7 @@ async function goToStepAttachReqAmount() {
             amount: Number(SeparatedNumberRemove(amountValue)),
         };
     });
+    getAllBankAccounts();
     
     const allInputsAmount = Array.from(reqAmountPaymentModal.querySelectorAll("input[name='amount']"));
     const totalAmount = allInputsAmount.reduce((sum, i) => sum + Number(SeparatedNumberRemove(i.value) || 0), 0);
@@ -4900,6 +4916,7 @@ function cancelRequestAmountPaymentModal() {
 
 const showAttachReqAmount = (id) => {
     reqAmountId = id;
+    getAllBankAccounts();
     ModalToggle("reqAmountAttachModal", "show");
 };
 
@@ -4961,8 +4978,10 @@ const submitReqAmountAttach = async () => {
             const currentPath = window.location.pathname.toLowerCase();
             if (currentPath.includes("cartable")) {
                 await GetRequestFinancialExpert();
-            } else {
+            } else if (currentPath.includes("requestamount")) {
                 await getAllRequestAmount();
+            } else if (currentPath.includes("order")) {
+                await getAllRequestAmountByOrderHead(ohReqAmountId);
             }
         } else if (res.status === 201) {
             console.log(res);
@@ -4981,30 +5000,59 @@ const submitReqAmountAttach = async () => {
 
 /*--------------------------------------------------------------------------------*/
 
-const reqAmountModal = document.getElementById("requestAmountModal");
+const addReqAmountModal = document.getElementById("addRequestAmountModal");
 let orderHeadsSelectedIds = [];
 let requestAmountData = {};
 let isFromOrderHead = false;
-async function showRequestAmountModal(ohId, ohNumber) {
+let ohReqAmountId;
+async function showAddRequestAmountModal(ohId, ohNumber) {
     await setupSelectOptionsReqAmount();
     if (ohId) {
+        ohReqAmountId = ohId;
         isFromOrderHead = true;
         requestAmountData.requestAmountType = 1;
         orderHeadsSelectedIds = [ohId];
-        reqAmountModal.querySelector("#reqAmountModalTitleId").textContent = `درخواست پیش پرداخت حواله ${ohNumber}`;
-        const reqAmountTypeWrapper = reqAmountModal.querySelector("#requestAmountTypeWrapper");
+        addReqAmountModal.querySelector("#reqAmountModalTitleId").textContent = `درخواست پیش پرداخت حواله ${ohNumber}`;
+    }
+    
+    if (ohId || ohReqAmountId) {
+        const reqAmountTypeWrapper = addReqAmountModal.querySelector("#requestAmountTypeWrapper");
         reqAmountTypeWrapper?.remove();
         /*reqAmountType.value = "1";
         toggleElementsDisabled(reqAmountType, true);*/
     }
-    ModalToggle("requestAmountModal");
+    ModalToggle(addReqAmountModal);
+}
+
+async function showAllRequestAmountModal(ohId, ohNumber) {
+    const modal = document.getElementById("allRequestAmountsModal");
+    modal.querySelector(".modal-title").innerText = ohNumber ? `درخواست های حواله شماره ${ohNumber}` : "درخواست های وجه";
+    
+    ohReqAmountId = ohId;
+    await getAllRequestAmountByOrderHead(ohId);
+    ModalToggle(modal, "show");
+}
+
+async function getAllRequestAmountByOrderHead(ohId) {
+    try {
+        FLshowLoading();
+        const res = await axios(`/Amount/GetAllRequestAmountsPartial?orderHeadId=${ohId}&passType=1`);
+        if (res.status === 200) {
+            document.querySelector("#allRequestAmountsModal #requestAmountsBodyModal").innerHTML = res.data.html;
+        }
+    } catch (err) {
+        console.log(err);
+        toastifyError("خطای سرور");
+    } finally {
+        FLshowLoading(false);
+    }
 }
 
 
 let isSetupReqAmountModal = false;
 async function setupSelectOptionsReqAmount(targetId) {
     if (isSetupReqAmountModal) return;
-    const totalAmountSupFactorElm = reqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
+    const totalAmountSupFactorElm = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
     
     const [resSuppliers, resCashiers] = await Promise.all([axios("/Supply/GetSupplyBaseData"), axios("/Cash/GetAllCashiers")]);
     
@@ -5056,8 +5104,8 @@ async function getTotalAmountSupplyFactor(supplierId) {
 
 async function submitRequestAmountModal() {
     if (!await mySer.CheckValidForm("requestAmountForm")) return;
-    const supplierSelect = reqAmountModal.querySelector("#reqAmountSupplierId");
-    const cashierSelect = reqAmountModal.querySelector("#reqAmountCashierId");
+    const supplierSelect = addReqAmountModal.querySelector("#reqAmountSupplierId");
+    const cashierSelect = addReqAmountModal.querySelector("#reqAmountCashierId");
     
     const formData = mySer.convertFormToJSON("requestAmountForm");
     const model = {
@@ -5075,13 +5123,19 @@ async function submitRequestAmountModal() {
         const apiUrl = model.id ? "/Amount/UpdateRequestAmount" : "/Amount/AddRequestAmount";
         const res = await axios.post(apiUrl, model);
         if (res.status === 200) {
-            toastifySuccess("با موفقیت ثبت شد");
             const currentPath = window.location.pathname.toLowerCase();
             if (currentPath.includes("requestamount")) {
                 getAllRequestAmount();
             } else if (currentPath.includes("order")) {
+                refreshOrders();
+                if (model.id) {
+                    await getAllRequestAmountByOrderHead(ohReqAmountId);
+                } else {
+                    await showAllRequestAmountModal(ohReqAmountId);
+                }
             }
             
+            toastifySuccess("با موفقیت ثبت شد");
             cancelRequestAmountModal();
         }
     } catch (err) {
@@ -5095,27 +5149,27 @@ async function submitRequestAmountModal() {
 
 
 function cancelRequestAmountModal() {
-    ModalToggle(reqAmountModal);
+    ModalToggle(addReqAmountModal);
     mySer.emptyForm("requestAmountForm");
     supplyFactorsSelectedIds = [];
     orderHeadsSelectedIds = [];
     requestAmountData = {};
     isFromOrderHead = false;
     
-    const ohInputWrapper = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
-    const ohInput = reqAmountModal.querySelector("input#reqAmountOrderHead");
+    const ohInputWrapper = addReqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
+    const ohInput = addReqAmountModal.querySelector("input#reqAmountOrderHead");
     ohInputWrapper.classList.add("d-none");
     toggleElementsRequired(ohInput, false);
-    const totalAmountSupFactorElm = reqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
+    const totalAmountSupFactorElm = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
     totalAmountSupFactorElm.innerHTML = "";
-    /*  const reqAmountType = reqAmountModal.querySelector("#requestAmountTypeId");
+    /*  const reqAmountType = addReqAmountModal.querySelector("#requestAmountTypeId");
       if (reqAmountType) toggleElementsDisabled(reqAmountType, false);*/
 }
 
 
 async function showEditRequestAmountModal(id) {
     FLshowLoading();
-    await showRequestAmountModal();
+    await showAddRequestAmountModal();
     
     try {
         const res = await axios(`/Amount/GetRequestAmount/${id}`);
@@ -5127,12 +5181,12 @@ async function showEditRequestAmountModal(id) {
             supplyFactorsSelectedIds = requestAmountData.requestAmountSupplyFactor.map(r => r.supplyFactorId);
             orderHeadsSelectedIds = requestAmountData.requestAmountOrderHeads.map(r => r.orderHeadId);
             
-            const inpElmSupplyFactor = reqAmountModal.querySelector("#reqAmountSupplyFactor");
+            const inpElmSupplyFactor = addReqAmountModal.querySelector("#reqAmountSupplyFactor");
             if (inpElmSupplyFactor) {
                 inpElmSupplyFactor.value = supplyFactorSerials.join(", ");
             }
             
-            const inpElmOrderHead = reqAmountModal.querySelector("#reqAmountOrderHead");
+            const inpElmOrderHead = addReqAmountModal.querySelector("#reqAmountOrderHead");
             if (inpElmOrderHead) {
                 inpElmOrderHead.value = orderHeadSerials.join(", ");
             }
@@ -5166,6 +5220,8 @@ const deleteRequestAmount = async (id) => {
                 if (currentPath.includes("requestamount")) {
                     getAllRequestAmount();
                 } else if (currentPath.includes("order")) {
+                    await getAllRequestAmountByOrderHead(ohReqAmountId);
+                    refreshOrders();
                 }
             }
             FLshowLoading(false);
@@ -5173,14 +5229,14 @@ const deleteRequestAmount = async (id) => {
     });
 };
 
-reqAmountModal.querySelector("select#requestAmountTypeId")?.addEventListener("change", async (e) => {
+addReqAmountModal.querySelector("select#requestAmountTypeId")?.addEventListener("change", async (e) => {
     const type = Number(e.target.value);
     
-    const ohWrapper = reqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
-    const cashierWrapper = reqAmountModal.querySelector("#reqAmountCashierWrapper");
-    const supplierWrapper = reqAmountModal.querySelector("#reqAmountSupplierWrapper");
+    const ohWrapper = addReqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
+    const cashierWrapper = addReqAmountModal.querySelector("#reqAmountCashierWrapper");
+    const supplierWrapper = addReqAmountModal.querySelector("#reqAmountSupplierWrapper");
     
-    const totalAmountSupFactorElm = reqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
+    const totalAmountSupFactorElm = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
     
     const toggleField = (wrapper, show) => {
         const input = wrapper.querySelector("input, select");
@@ -5245,6 +5301,7 @@ document.addEventListener("input", (e) => {
          }*/
     }
 });
+
 
 
 

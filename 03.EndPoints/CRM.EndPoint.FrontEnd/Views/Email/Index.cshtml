@@ -191,7 +191,6 @@
                 await getAllFactorsModal(entityId, 6);
                 ModalToggle("#FactorsModal");
             } else if (entityName === "Accountancy") {
-                await getAllBankAccounts();
                 try {
                     const res = (await axios(`/Accountancy/getAccountancy/${entityId}`)).data;
                     const data = res.accData;

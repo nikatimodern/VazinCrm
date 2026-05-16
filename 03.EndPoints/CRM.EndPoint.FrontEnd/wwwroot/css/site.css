@@ -3087,6 +3087,26 @@ user-select: none;
 }
 
 
+.buttonGroup {
+  display: inline-flex;
+}
+
+
+.buttonGroup button:first-child {
+  border-radius: 0 4px 4px 0;
+}
+
+
+.buttonGroup button:last-child {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  border-radius: 4px 0 0 4px;
+  margin-right: 1px;
+}
+
+
 .buttonGray2 {
   background-color: rgb(135, 135, 135);
   color: #fff;
@@ -4405,6 +4425,16 @@ padding: 0 !important;
 }
 
 
+.badgeCircle.filter-count-badge {
+  position: absolute;
+  top: -6px;
+  left: -3px;
+  z-index: 10;
+  color: #fff;
+  display: none;
+}
+
+
 .box-phoneBook {
   background-color: #fff;
   border-radius: .25rem;
@@ -5653,4 +5683,56 @@ table tr.payment-vosoled > td {
 
 .selection-mode .layered-card.selected::after {
   background: rgba(0, 0, 0, 0.05);
+}
+
+
+.viewer-download::before {
+  content: "";
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  background-image: url("../Img/download.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+
+.container-uploader.uploading {
+  pointer-events: none;
+  opacity: .8;
+}
+
+
+.upload-progress {
+  direction: rtl;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #f3f3f3;
+  font-size: 13px;
+}
+
+
+.upload-progress-text {
+  margin-bottom: 8px;
+  color: #555;
+}
+
+
+.upload-progress-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #ddd;
+}
+
+
+.upload-progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  transition: width .8s linear;
+  background: #0d6efd;
 }
