@@ -2930,6 +2930,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("AI")
+                        .HasColumnType("bit");
+
                     b.Property<string>("CommentText")
                         .HasColumnType("nvarchar(max)");
 

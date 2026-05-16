@@ -109,6 +109,7 @@ public class AsteriskAmiListener : BackgroundService {
         }
     }
 
+
     private async Task HandleDialBegin(Dictionary<string, string> ev)
     {
         var uniqueId = Get(ev, "Uniqueid");
@@ -137,7 +138,6 @@ public class AsteriskAmiListener : BackgroundService {
                 .SendAsync("IncomingCall", srcText, dest, !string.IsNullOrEmpty(destUid) ? destUid : uniqueId);
         }
     }
-
 
     private void HandleVarSet(Dictionary<string, string> ev)
     {
@@ -209,7 +209,7 @@ public class AsteriskAmiListener : BackgroundService {
         var dest = Get(ev, "ConnectedLineNum");
 
         var (srcIsInternal, destIsInternal) = GetDirection(src, dest);
-        /*if (!srcIsInternal && destIsInternal)
+        if (!srcIsInternal && destIsInternal)
         {
             var user = await GetUsers(dest);
             var customer = GetCallerCustomer(src);
@@ -223,10 +223,11 @@ public class AsteriskAmiListener : BackgroundService {
                 DestinationUserTxt = user.FullName,
                 RecordingFilePath = call.RecordingPath
             });
-        }*/
+        }
 
         _calls.TryRemove(uniqueId, out _);
     }
+
 
     private static string GetSrc(Dictionary<string, string> ev)
     {
@@ -236,14 +237,12 @@ public class AsteriskAmiListener : BackgroundService {
         return src;
     }
 
-
     private static (bool srcInternal, bool destInternal) GetDirection(string src, string dest)
     {
         return (IsInternal(src), IsInternal(dest));
 
         bool IsInternal(string n) => !string.IsNullOrWhiteSpace(n) && n.Length <= 4;
     }
-
 
     private async Task<string> GetSrcText(bool isInternal, string src)
     {

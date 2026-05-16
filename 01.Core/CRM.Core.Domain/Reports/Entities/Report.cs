@@ -24,6 +24,8 @@ namespace CRM.Core.Domain.Reports.Entities {
         public string FinalResultCallTxt { get; set; }
         public Guid? ReasonCancelId { get; set; }
         public string ReasonCancelTxt { get; set; }
+
+        public bool AI { get; set; }
     }
 }
 

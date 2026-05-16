@@ -30,8 +30,8 @@ public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, AiProc
             /*var audioBytes = await File.ReadAllBytesAsync(filePath);
             var audioStream = new MemoryStream(audioBytes);*/
 
-            /*// 2. Audio To Text
-            var transcriptionResult = await viraAi.ConvertAudioToText(audioBytes, Path.GetFileName(callData.RecordingFilePath));
+            // 2. Audio To Text
+            var transcriptionResult = await viraAi.ConvertAudioToText(audioStream, Path.GetFileName(callData.RecordingFilePath));
             callData.TranscriptionText = transcriptionResult?.Result?.Text ?? string.Empty;
 
             if (string.IsNullOrEmpty(callData.TranscriptionText)) return;
@@ -43,9 +43,9 @@ public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, AiProc
             await SaveCallDataToDatabase(callData);
 
             // 4. Create Report
-            await CreateReportWithCallData(callData);*/
-            var result = await aiProcessAudio.ProcessAudioAsync(audioStream, Path.GetFileName(callData.RecordingFilePath));
-            Console.WriteLine(result);
+            await CreateReportWithCallData(callData);
+            //var result = await aiProcessAudio.ProcessAudioAsync(audioStream, Path.GetFileName(callData.RecordingFilePath));
+            //Console.WriteLine(result);
         }
         catch (Exception ex)
         {
@@ -122,7 +122,8 @@ public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, AiProc
                 RegDateTxt = dts.GetDatePersian(),
                 RegTimeTxt = dts.GetNowTime("HH:mm:ss"),
                 ReportType = ReportTypeEnum.گزارش_تماس_های_ورودی,
-                ReportTypeTxt = nameof(ReportTypeEnum.گزارش_تماس_های_ورودی).Replace("_", " ")
+                ReportTypeTxt = nameof(ReportTypeEnum.گزارش_تماس_های_ورودی).Replace("_", " "),
+                AI = true
             };
 
             await db.Reports.AddAsync(newReport);
