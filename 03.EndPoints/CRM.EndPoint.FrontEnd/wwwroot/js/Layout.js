@@ -357,10 +357,10 @@ const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
     
     GetCustomersOpId("customerFilter", null, "#FilterFormId");
     if (filterVarConfig === "cashConfigFilter") {
-        document.getElementById("SelFilterLabel").textContent = "کارشناس"
+        document.getElementById("SelFilterLabel").textContent = "کارشناس";
         GetSelsOpId("selFilter", null, "#FilterFormId", 1);
     } else {
-        document.getElementById("SelFilterLabel").textContent = "کارشناس فروش"
+        document.getElementById("SelFilterLabel").textContent = "کارشناس فروش";
         GetSelsOpId("selFilter", null, "#FilterFormId");
     }
     
@@ -4153,6 +4153,7 @@ function initLightbox() {
 const overlay = document.getElementById("overlay");
 const moreMenuBtn = document.getElementById("moreMenuBtn");
 const moreMenuDropdown = document.getElementById("moreMenuDropdown");
+/*
 moreMenuBtn?.addEventListener("click", () => {
     if (!moreMenuDropdown || !moreMenuBtn || !overlay) return;
     const isVisible = moreMenuDropdown.classList.toggle("show");
@@ -4166,6 +4167,43 @@ document.addEventListener("click", (e) => {
         overlay.classList.remove("show");
     }
 });
+*/
+
+
+const mobileDrawer = document.getElementById("mobileDrawer");
+const mobileDrawerOverlay = document.getElementById("mobileDrawerOverlay");
+const closeMobileDrawer = document.getElementById("closeMobileDrawer");
+
+function toggleMobileDrawer(state) {
+    
+    const isOpen = state ?? !mobileDrawer.classList.contains("show");
+    
+    mobileDrawer.classList.toggle("show", isOpen);
+    mobileDrawerOverlay.classList.toggle("show", isOpen);
+    
+    document.body.style.overflow = isOpen ? "hidden" : "";
+}
+
+moreMenuBtn?.addEventListener("click", () => {
+    toggleMobileDrawer(true);
+});
+
+closeMobileDrawer?.addEventListener("click", () => {
+    toggleMobileDrawer(false);
+});
+
+mobileDrawerOverlay?.addEventListener("click", () => {
+    toggleMobileDrawer(false);
+});
+
+/*document.querySelectorAll("#mobileDrawer .has-submenu > .menuBox").forEach(el => {
+    el.addEventListener("click", () => {
+        const parent = el.closest(".has-submenu");
+        console.log(parent);
+        parent.classList.add("open");
+    });
+});*/
+
 
 function sortableMobileMenu() {
     const navMenu = document.getElementById("navMenuBar");

@@ -64,7 +64,7 @@ nav#customerMenuDesktop {
     display: none !important;
   }
   
-  #logoCompanyText {
+  .logoCompany-text {
     filter: none !important;
   }
   
