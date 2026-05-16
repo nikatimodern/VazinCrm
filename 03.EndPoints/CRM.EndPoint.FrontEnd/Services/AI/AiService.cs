@@ -94,12 +94,10 @@ public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, AiProc
         {
             await db.CallRecordings.AddAsync(callData);
             await db.SaveChangesAsync();
-            return;
         }
         catch (Exception ex)
         {
             Console.WriteLine(ex.Message);
-            return;
         }
     }
 

@@ -20,7 +20,7 @@ public class AiBackgroundService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var semaphore = new SemaphoreSlim(1); // مثلا 2 تا همزمان
+        var semaphore = new SemaphoreSlim(1);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -34,7 +34,7 @@ public class AiBackgroundService : BackgroundService
                     using var scope = _sp.CreateScope();
                     var aiService = scope.ServiceProvider.GetRequiredService<AiService>();
 
-                    await aiService?.ProcessCallRecording(item);
+                    await aiService.ProcessCallRecording(item);
                 }
                 catch (Exception ex)
                 {
