@@ -94,30 +94,56 @@
 }
 
 
-.report-badge {
+.report-badges {
   position: absolute;
   top: -10px;
   left: 10px;
-  color: white;
-  font-size: clamp(9px, 2.1vw, 10px);
-  /*    font-family: 'IRANSansBold';*/
-  padding: 4px 10px;
-  border-radius: 100px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 
-.report-follow-up .report-badge {
+.report-type-badge,
+.report-ai-badge {
+  color: white;
+  font-size: clamp(9px, 2.1vw, 10px);
+  padding: 4px 10px;
+  border-radius: 100px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+
+.report-ai-badge {
+  background: linear-gradient(135deg, #ff4fd8, #7b61ff);
+  background: linear-gradient(135deg, #c2188f, #5b21b6);
+  /* background: linear-gradient(135deg, #a21caf, #4338ca); */
+}
+
+
+.report-ai-badge img {
+  width: 24px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+
+.report-follow-up .report-type-badge {
   background-color: #6014de;
 }
 
 
-.report-call .report-badge {
+.report-call .report-type-badge {
   background-color: #157b74;
 }
 
 
-.report-satisfaction .report-badge {
+.report-satisfaction .report-type-badge {
   background-color: #905901;
 }
 
@@ -138,6 +164,7 @@
 .report-box.report-call .reporter-name {
   padding-left: 110px
 }
+
 
 .report-box.report-follow-up .reporter-name {
   padding-left: 70px
@@ -184,14 +211,14 @@
 
 
 /*.report-dropdown__item {
-    padding: 4px 12px 4px 32px;
-    color: #414c5d;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    transition: all 0.3s;
-    user-select: none;
+  padding: 4px 12px 4px 32px;
+  color: #414c5d;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s;
+  user-select: none;
 }*/
 .report-dropdown__item {
   color: #414c5d;
@@ -261,7 +288,7 @@
     gap: 13px;
   }
   
-  .report-badge {
+  .report-type-badge, .report-ai-badge {
     padding: 3px 8px;
   }
   

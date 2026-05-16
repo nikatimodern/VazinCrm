@@ -1724,7 +1724,7 @@ const ShowUpdateReport = async (id, passType = 0) => {
         $("#repCustomerTxt").append(newOption).trigger("change");*/
         
         mySer.convertJsonToForm(res, "ReportFormId");
-        if (res.customerId === null) {
+        if (res.customerId === null && res.customerTxt) {
             const selectTomCustomers = document.getElementById("repCustomerTxt");
             const customId = `custom-${res.customerTxt}`;
             selectTomCustomers.tomselect.addOption({ value: customId, text: res.customerTxt });

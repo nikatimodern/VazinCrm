@@ -17,12 +17,21 @@
             <img class="reporter-image" src="@(string.IsNullOrEmpty(item.UserImage) ? "/Img/User.png" : item.UserImage)" />
 
             <div class="report-box @(item.ReportType == ReportTypeEnum.گزارش_پیگیری ? "report-follow-up" : item.ReportType == ReportTypeEnum.گزارش_تماس_های_ورودی ? "report-call" : "report-satisfaction")">
+                <div class="report-badges">
+                    @if (item.AI)
+                    {
+                        <span class="report-ai-badge">
+                            @* <span>ساخته‌شده با هوش مصنوعی</span> *@
+                            <img src="~/Img/aiLogo.png" alt="AI">
+                        </span>
+                    }
+                    <span class="report-type-badge">@item.ReportTypeTxt</span>
+                </div>
 
-                <span class="report-badge">@item.ReportTypeTxt</span>
                 <span class="reporter-name">@item.CustomerTxt</span>
 
                 <div class="report-text">
-                    <span>@item.ReportText</span>
+                    <span style="white-space: pre-wrap">@item.ReportText.Trim()</span>
                     @if (!string.IsNullOrEmpty(item.ResultCallTxt) || !string.IsNullOrEmpty(item.FinalResultCallTxt) || !string.IsNullOrEmpty(item.ReasonCancelTxt)) {
                         <p class="d-flex flex-wrap column-gap-2">
                             @if (!string.IsNullOrEmpty(item.ResultCallTxt)) {

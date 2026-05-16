@@ -32,12 +32,18 @@ public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, AiProc
 
             // 2. Audio To Text
             var transcriptionResult = await viraAi.ConvertAudioToText(audioStream, Path.GetFileName(callData.RecordingFilePath));
-            callData.TranscriptionText = transcriptionResult?.Result?.Text ?? string.Empty;
+            callData.TranscriptionText = transcriptionResult?.Result?.Text?.Trim() ?? string.Empty;
 
             if (string.IsNullOrEmpty(callData.TranscriptionText)) return;
 
             // 3. Summary
-            callData.SummaryText = await gapgptAi.SummarizeText(callData.TranscriptionText);
+            var resSummary = await gapgptAi.SummarizeText(callData.TranscriptionText);
+            if (resSummary != null)
+            {
+                callData.SummaryText = resSummary.summary?.Trim();
+                if (string.IsNullOrEmpty(callData.CallerCustomerTxt))
+                    callData.CallerCustomerTxt = resSummary.customer?.Trim();
+            }
 
             // 4. Save To Database
             await SaveCallDataToDatabase(callData);
@@ -82,18 +88,18 @@ public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, AiProc
     }
 
 
-    private async Task<CallRecording> SaveCallDataToDatabase(CallRecording callData)
+    private async Task SaveCallDataToDatabase(CallRecording callData)
     {
         try
         {
             await db.CallRecordings.AddAsync(callData);
             await db.SaveChangesAsync();
-            return callData;
+            return;
         }
         catch (Exception ex)
         {
             Console.WriteLine(ex.Message);
-            return null;
+            return;
         }
     }
 

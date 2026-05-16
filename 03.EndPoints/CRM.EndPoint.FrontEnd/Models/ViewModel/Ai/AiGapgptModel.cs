@@ -14,3 +14,9 @@ public class Message {
     public string Role { get; set; }
     public string Content { get; set; }
 }
+
+public class SummaryModel {
+    public string summary { get; set; }
+    public string customer { get; set; }
+    public string product { get; set; }
+}

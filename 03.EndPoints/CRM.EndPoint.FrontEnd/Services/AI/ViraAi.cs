@@ -9,19 +9,17 @@ using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 
 public class ViraAi {
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly HttpClient _httpClient;
 
-    public ViraAi(IHttpClientFactory httpClientFactory)
+    public ViraAi(HttpClient  httpClient)
     {
-        _httpClientFactory = httpClientFactory;
+        _httpClient = httpClient;
     }
 
 
 
     public async Task<AiResponseDetails> ConvertAudioToText(Stream audioStream, string audioFileName)
     {
-        var httpClient = _httpClientFactory.CreateClient("AvanegarApi");
-
         using var form = new MultipartFormDataContent();
 
         // API Parameters
@@ -44,10 +42,9 @@ public class ViraAi {
 
         form.Add(fileContent, "audio", audioFileName);
 
-
         try
         {
-            var response = await httpClient.PostAsync("", form);
+            var response = await _httpClient.PostAsync("avanegar/v2/avanegar/request", form);
 
             if (response.IsSuccessStatusCode)
             {

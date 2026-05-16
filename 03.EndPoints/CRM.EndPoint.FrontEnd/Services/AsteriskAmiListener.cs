@@ -149,7 +149,7 @@ public class AsteriskAmiListener : BackgroundService {
 
         if (string.IsNullOrWhiteSpace(uniqueId) || string.IsNullOrWhiteSpace(filePath))
             return;
-        //_recordings[uniqueId] = filePath;
+
         _calls.AddOrUpdate(uniqueId,
             _ => new CallSessionModel {
                 UniqueId = uniqueId,
