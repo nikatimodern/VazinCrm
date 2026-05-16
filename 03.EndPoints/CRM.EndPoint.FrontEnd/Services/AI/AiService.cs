@@ -49,6 +49,8 @@ public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, AiProc
             await SaveCallDataToDatabase(callData);
 
             // 4. Create Report
+            if (string.IsNullOrEmpty(callData.SummaryText)) return;
+
             await CreateReportWithCallData(callData);
             //var result = await aiProcessAudio.ProcessAudioAsync(audioStream, Path.GetFileName(callData.RecordingFilePath));
             //Console.WriteLine(result);
