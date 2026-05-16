@@ -4295,7 +4295,7 @@ function sortableMobileMenu() {
         });
     });
     
-    restoreMenuOrder();
+    // restoreMenuOrder();
 }
 
 sortableMobileMenu();
