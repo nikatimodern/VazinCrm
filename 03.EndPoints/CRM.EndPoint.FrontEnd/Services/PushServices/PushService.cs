@@ -142,7 +142,13 @@ public class PushService : IPushService {
                     tag = string.IsNullOrEmpty(tag) ? "general" : tag,
                 });
 
-                await client.SendNotificationAsync(sub, payload, vapidDetails, ctsToken);
+                var options = new Dictionary<string, object>
+                {
+                    ["vapidDetails"] = vapidDetails,
+                    ["TTL"] = 300,
+                    ["urgency"] = "high"
+                };
+                await client.SendNotificationAsync(sub, payload, options, ctsToken);
                 return;
             }
             catch (WebPushException ex) when (ex.StatusCode == HttpStatusCode.Gone)

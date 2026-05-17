@@ -13,5 +13,5 @@ public class CallSessionModel {
 
     public bool Answered { get; set; }
 
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime? AnswerTime { get; set; }
 }

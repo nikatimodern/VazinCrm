@@ -82,7 +82,7 @@ public class AsteriskAmiListener : BackgroundService {
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, $"[AMI] Connection disconnect: {ex.Message}");
+            logger.LogError(ex, $"[AMI] ExecuteAsync has error: {ex.Message}");
             Console.WriteLine($"[AMI] Connection disconnect: {ex.Message}");
         }
     }
@@ -118,54 +118,73 @@ public class AsteriskAmiListener : BackgroundService {
 
     private async Task HandleDialBegin(Dictionary<string, string> ev)
     {
-        var uniqueId = Get(ev, "Uniqueid");
-        //var linkedId = Get(ev, "Linkedid");
-        var destUid = Get(ev, "DestUniqueid");
-
-        if (string.IsNullOrEmpty(uniqueId) && string.IsNullOrEmpty(destUid)) return;
-
-        var src = GetSrc(ev);
-
-        if (string.IsNullOrEmpty(src) || src == "unknown") return;
-
-        var dest = Get(ev, "DestCallerIDNum"); //DestExten
-
-        var (srcIsInternal, destIsInternal) = GetDirection(src, dest);
-
-
-        var userDest = await GetUsers(dest);
-        if (userDest == null) return;
-
-        var srcText = await GetSrcText(srcIsInternal, src);
-
-        if (dest.StartsWith("1"))
+        try
         {
-            await _hubContext.Clients.User(userDest.Id)
-                .SendAsync("IncomingCall", srcText, dest, !string.IsNullOrEmpty(destUid) ? destUid : uniqueId);
+            var uniqueId = Get(ev, "Uniqueid");
+            //var linkedId = Get(ev, "Linkedid");
+            var destUid = Get(ev, "DestUniqueid");
+
+            if (string.IsNullOrEmpty(uniqueId) && string.IsNullOrEmpty(destUid)) return;
+
+            var src = GetSrc(ev);
+
+            if (string.IsNullOrEmpty(src) || src == "unknown") return;
+
+            var dest = Get(ev, "DestCallerIDNum"); //DestExten
+
+            var (srcIsInternal, destIsInternal) = GetDirection(src, dest);
+
+
+            var userDest = await GetUsers(dest);
+            if (userDest == null) return;
+
+            var srcText = await GetSrcText(srcIsInternal, src);
+
+            if (dest.StartsWith("1"))
+            {
+                await _hubContext.Clients.User(userDest.Id)
+                    .SendAsync("IncomingCall", srcText, dest, !string.IsNullOrEmpty(destUid) ? destUid : uniqueId);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, $"DialBegin Error: {ex.Message}");
         }
     }
 
     private void HandleVarSet(Dictionary<string, string> ev)
     {
-        var variable = Get(ev, "Variable");
-        if (variable != "MIXMONITOR_FILENAME") return;
+        try
+        {
+            var variable = Get(ev, "Variable");
+            if (variable != "MIXMONITOR_FILENAME") return;
 
-        var uniqueId = Get(ev, "Uniqueid");
-        var filePath = Get(ev, "Value");
+            var uniqueId = Get(ev, "Uniqueid");
+            var filePath = Get(ev, "Value");
 
-        if (string.IsNullOrWhiteSpace(uniqueId) || string.IsNullOrWhiteSpace(filePath))
-            return;
-
-        _calls.AddOrUpdate(uniqueId,
-            _ => new CallSessionModel {
-                UniqueId = uniqueId,
-                RecordingPath = filePath
-            },
-            (_, existing) => {
-                existing.RecordingPath = filePath;
-                return existing;
+            if (string.IsNullOrWhiteSpace(uniqueId) || string.IsNullOrWhiteSpace(filePath))
+            {
+                logger.LogInformation("VarSet: uniqueId or filePath is null: uniqueId:{uniqueId}, filePath:{filePath}", uniqueId, filePath);
+                return;
             }
-        );
+
+            _calls.AddOrUpdate(uniqueId,
+                _ => new CallSessionModel {
+                    UniqueId = uniqueId,
+                    RecordingPath = filePath
+                },
+                (_, existing) => {
+                    existing.RecordingPath = filePath;
+                    return existing;
+                }
+            );
+            logger.LogInformation("VarSet: filePath {FilePath}", filePath);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, $"VarSet Error: {ex.Message}");
+            Console.WriteLine(ex);
+        }
     }
 
     private async Task HandleBridgeEnter(Dictionary<string, string> ev)
@@ -184,6 +203,7 @@ public class AsteriskAmiListener : BackgroundService {
             if (_calls.TryGetValue(uniqueid, out var call))
             {
                 call.Answered = true;
+                call.AnswerTime = DateTime.Now;
             }
         }
         catch (Exception ex)
@@ -195,44 +215,73 @@ public class AsteriskAmiListener : BackgroundService {
 
     private async Task HandleHangup(Dictionary<string, string> ev)
     {
-        var uniqueId = Get(ev, "Uniqueid");
-        //var linkedId = Get(ev, "LinkedId");
-        var destUid = Get(ev, "DestUniqueid");
-
-        if (string.IsNullOrEmpty(uniqueId) && string.IsNullOrEmpty(destUid)) return;
-
-        await _hubContext.Clients.All.SendAsync("CallEnded", !string.IsNullOrEmpty(destUid) ? destUid : uniqueId);
-
-        if (!_calls.TryGetValue(uniqueId, out var call)) return;
-
-
-        if (!call.Answered || string.IsNullOrWhiteSpace(call.RecordingPath))
+        try
         {
+            var uniqueId = Get(ev, "Uniqueid");
+            //var linkedId = Get(ev, "LinkedId");
+            var destUid = Get(ev, "DestUniqueid");
+
+            if (string.IsNullOrEmpty(uniqueId) && string.IsNullOrEmpty(destUid))
+            {
+                logger.LogWarning("hangup: uniqueId and destUid is null: uniqueId:{uniqueId}, destUid:{destUid}", uniqueId, destUid);
+                return;
+            }
+
+
+            await _hubContext.Clients.All.SendAsync("CallEnded", !string.IsNullOrEmpty(destUid) ? destUid : uniqueId);
+
+            if (!_calls.TryGetValue(uniqueId, out var call))
+            {
+                //logger.LogWarning("hangup: this uniqueId not exist in _calls obj: {uniqueId}", uniqueId);
+                return;
+            }
+
+
+            if (!call.Answered || string.IsNullOrWhiteSpace(call.RecordingPath))
+            {
+                logger.LogWarning("hangup: call not Answered or path is null: {FilePath}", call.RecordingPath);
+                _calls.TryRemove(uniqueId, out _);
+                return;
+            }
+
+            var duration = call.AnswerTime.HasValue ? DateTime.Now - call.AnswerTime.Value : TimeSpan.Zero;
+            if (duration.TotalSeconds < 5)
+            {
+                logger.LogInformation("Call ignored. Duration={Duration}", duration.TotalSeconds);
+                _calls.TryRemove(uniqueId, out _);
+                return;
+            }
+
+            var src = GetSrc(ev);
+            var dest = Get(ev, "ConnectedLineNum");
+
+            var (srcIsInternal, destIsInternal) = GetDirection(src, dest);
+            if (!srcIsInternal && destIsInternal)
+            {
+                var user = await GetUsers(dest);
+                var customer = GetCallerCustomer(src);
+
+                logger.LogInformation("hangup and Enqueue: {FilePath}", call.RecordingPath);
+                _aiQueue?.Enqueue(new CallRecording {
+                    CallerNumber = src,
+                    CallerCustomerId = customer?.Id,
+                    CallerCustomerTxt = customer != null ? $"{customer.CompanyName} {customer.AgentName}" : null,
+                    DestinationNumber = dest,
+                    DestinationUserId = user.Id,
+                    DestinationUserTxt = user.FullName,
+                    RecordingFilePath = call.RecordingPath
+                });
+            } else
+            {
+                logger.LogInformation("hangup: the call is not external to internal: {FilePath}", call.RecordingPath);
+            }
+
             _calls.TryRemove(uniqueId, out _);
-            return;
         }
-
-        var src = GetSrc(ev);
-        var dest = Get(ev, "ConnectedLineNum");
-
-        var (srcIsInternal, destIsInternal) = GetDirection(src, dest);
-        if (!srcIsInternal && destIsInternal)
+        catch (Exception ex)
         {
-            var user = await GetUsers(dest);
-            var customer = GetCallerCustomer(src);
-
-            _aiQueue?.Enqueue(new CallRecording {
-                CallerNumber = src,
-                CallerCustomerId = customer?.Id,
-                CallerCustomerTxt = customer != null ? $"{customer.CompanyName} {customer.AgentName}" : null,
-                DestinationNumber = dest,
-                DestinationUserId = user.Id,
-                DestinationUserTxt = user.FullName,
-                RecordingFilePath = call.RecordingPath
-            });
+            logger.LogError(ex, $"Hangup Error: {ex.Message}");
         }
-
-        _calls.TryRemove(uniqueId, out _);
     }
 
 

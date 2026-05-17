@@ -45,7 +45,7 @@ public class AiService(
             {
                 logger.LogWarning($"TranscriptionText is null or empty: {callData.TranscriptionText}");
                 return;
-            };
+            }
 
             // 3. Summary
             var resSummary = await gapgptAi.SummarizeText(callData.TranscriptionText, callData.DestinationUserTxt);
@@ -64,7 +64,7 @@ public class AiService(
             {
                 logger.LogWarning($"Summarize is null or empty: {callData.SummaryText}");
                 return;
-            };
+            }
 
             await CreateReportWithCallData(callData);
             //var result = await aiProcessAudio.ProcessAudioAsync(audioStream, Path.GetFileName(callData.RecordingFilePath));
@@ -82,23 +82,30 @@ public class AiService(
     {
         logger.LogInformation("Downloading audio: {Path}", remoteFilePath);
         var memoryStream = new MemoryStream();
+        try
+        {
+            using var client = new SftpClient(FtpHost, FtpUser, FtpPass);
 
-        using var client = new SftpClient(FtpHost, FtpUser, FtpPass);
+            client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(30);
+            client.OperationTimeout = TimeSpan.FromSeconds(60);
 
-        client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(30);
-        client.OperationTimeout = TimeSpan.FromSeconds(60);
+            client.Connect();
+            logger.LogInformation("SFTP connected");
 
-        client.Connect();
-        logger.LogInformation("SFTP connected");
+            client.DownloadFile(remoteFilePath, memoryStream);
+            logger.LogInformation("Audio downloaded with size: {Size}", memoryStream.Length);
+            client.Disconnect();
+            logger.LogInformation("SFTP disconnected");
 
-        client.DownloadFile(remoteFilePath, memoryStream);
-        logger.LogInformation("Audio downloaded with size: {Size}", memoryStream.Length);
-        client.Disconnect();
-        logger.LogInformation("SFTP disconnected");
+            memoryStream.Position = 0;
 
-        memoryStream.Position = 0;
-
-        return memoryStream;
+            return memoryStream;
+        }
+        catch (Exception e)
+        {
+            await memoryStream.DisposeAsync();
+            return null;
+        }
     }
 
     private async Task<MemoryStream> GetAudioWithRetry(string path)

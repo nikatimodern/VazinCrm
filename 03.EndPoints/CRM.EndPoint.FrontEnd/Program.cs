@@ -10,10 +10,8 @@ using System.Threading.Tasks;
 using Serilog;
 using Serilog.Events;
 
-namespace CRM.EndPoint.FrontEnd
-{
-    public class Program
-    {
+namespace CRM.EndPoint.FrontEnd {
+    public class Program {
         public static void Main(string[] args)
         {
             ConfigureLogger();
@@ -24,7 +22,7 @@ namespace CRM.EndPoint.FrontEnd
             }
             catch (Exception ex)
             {
-                Log.Fatal(ex,  "Application crashed");
+                Log.Fatal(ex, "Application crashed");
             }
             finally
             {
@@ -36,10 +34,7 @@ namespace CRM.EndPoint.FrontEnd
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
                 .UseSerilog()
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+                .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
 
         private static void ConfigureLogger()
         {
@@ -47,33 +42,26 @@ namespace CRM.EndPoint.FrontEnd
 
                 //.MinimumLevel.Error()
                 .MinimumLevel.Information()
-
-                // مایکروسافت فقط Error
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
-
-                // سیستم فقط Error
-                .MinimumLevel.Override("System", LogEventLevel.Error)
-
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Error) // مایکروسافت فقط ارور
+                .MinimumLevel.Override("System", LogEventLevel.Error) // سیستم فقط ارور
+                .Enrich.FromLogContext()
+                //.Enrich.WithShortTypeName()
                 .WriteTo.Async(x =>
                     x.File(
                         "Logs/log-.txt",
-
                         rollingInterval:
                         RollingInterval.Day,
-
                         retainedFileCountLimit: 30,
-
                         shared: true,
                         encoding: Encoding.UTF8,
-
                         outputTemplate:
-                        "[{Timestamp:yyyy-MM-dd HH:mm:ss}] " +
+                        "[{Timestamp:HH:mm:ss}] " +
                         "[{Level:u3}] " +
                         "[{SourceContext}] " +
                         "{Message:lj}" +
                         "{NewLine}{Exception}"
-                    ))
-
+                    )
+                )
                 .CreateLogger();
         }
     }
