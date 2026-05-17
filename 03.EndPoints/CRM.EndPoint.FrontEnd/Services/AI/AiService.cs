@@ -22,7 +22,6 @@ public class AiService(
     AiProcessAudio aiProcessAudio,
     DateTimeServices dts,
     ILogger<AiService> logger) {
-
     private const string FtpHost = "192.168.1.150";
     private const string FtpUser = "root";
     private const string FtpPass = "123";
@@ -42,7 +41,11 @@ public class AiService(
             var transcriptionResult = await viraAi.ConvertAudioToText(audioStream, Path.GetFileName(callData.RecordingFilePath));
             callData.TranscriptionText = transcriptionResult?.Result?.Text?.Trim() ?? string.Empty;
 
-            if (string.IsNullOrEmpty(callData.TranscriptionText)) return;
+            if (string.IsNullOrEmpty(callData.TranscriptionText))
+            {
+                logger.LogWarning($"TranscriptionText is null or empty: {callData.TranscriptionText}");
+                return;
+            };
 
             // 3. Summary
             var resSummary = await gapgptAi.SummarizeText(callData.TranscriptionText, callData.DestinationUserTxt);
@@ -57,7 +60,11 @@ public class AiService(
             await SaveCallDataToDatabase(callData);
 
             // 4. Create Report
-            if (string.IsNullOrEmpty(callData.SummaryText)) return;
+            if (string.IsNullOrEmpty(callData.SummaryText))
+            {
+                logger.LogWarning($"Summarize is null or empty: {callData.SummaryText}");
+                return;
+            };
 
             await CreateReportWithCallData(callData);
             //var result = await aiProcessAudio.ProcessAudioAsync(audioStream, Path.GetFileName(callData.RecordingFilePath));
@@ -71,8 +78,9 @@ public class AiService(
     }
 
 
-    private static async Task<MemoryStream> GetAudioFromIsabel(string remoteFilePath)
+    private async Task<MemoryStream> GetAudioFromIsabel(string remoteFilePath)
     {
+        logger.LogInformation("Downloading audio: {Path}", remoteFilePath);
         var memoryStream = new MemoryStream();
 
         using var client = new SftpClient(FtpHost, FtpUser, FtpPass);
@@ -81,8 +89,12 @@ public class AiService(
         client.OperationTimeout = TimeSpan.FromSeconds(60);
 
         client.Connect();
+        logger.LogInformation("SFTP connected");
+
         client.DownloadFile(remoteFilePath, memoryStream);
+        logger.LogInformation("Audio downloaded with size: {Size}", memoryStream.Length);
         client.Disconnect();
+        logger.LogInformation("SFTP disconnected");
 
         memoryStream.Position = 0;
 
@@ -93,28 +105,35 @@ public class AiService(
     {
         try
         {
+            logger.LogInformation("Audio retry started");
             for (var i = 0; i < 5; i++)
             {
+                logger.LogInformation("Audio attempt {Attempt}/5", i + 1);
                 try
                 {
                     var stream = await GetAudioFromIsabel(path);
 
                     if (stream != null && stream.Length > 0)
+                    {
+                        logger.LogInformation("Audio loaded");
                         return stream;
+                    }
                 }
                 catch (Exception ex)
                 {
+                    logger.LogWarning(ex, "Audio retry failed");
                     Console.WriteLine(ex);
                 }
 
                 await Task.Delay(2000);
             }
 
+            logger.LogWarning("Audio retries exhausted");
             return null;
         }
         catch (Exception e)
         {
-            logger.LogError(e, e.Message);
+            logger.LogError(e, "Audio load error");
             Console.WriteLine(e);
             return null;
         }
@@ -125,18 +144,21 @@ public class AiService(
     {
         try
         {
+            logger.LogInformation("Saving call");
             await db.CallRecordings.AddAsync(callData);
             await db.SaveChangesAsync();
+            logger.LogInformation("Call saved: {path}", callData.RecordingFilePath);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, ex.Message);
+            logger.LogError(ex, "Save call failed");
             Console.WriteLine(ex.Message);
         }
     }
 
     private async Task CreateReportWithCallData(CallRecording callRecording)
     {
+        logger.LogInformation("Report creation started");
         try
         {
             int? customerCode = null;
@@ -164,14 +186,15 @@ public class AiService(
                 AI = true
             };
 
+            logger.LogInformation("Saving report");
             await db.Reports.AddAsync(newReport);
 
-            //await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
             await db.SaveChangesAsync();
+            logger.LogInformation("Report created");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, ex.Message);
+            logger.LogError(ex, "Report creation failed");
             Console.WriteLine(ex.Message);
         }
     }

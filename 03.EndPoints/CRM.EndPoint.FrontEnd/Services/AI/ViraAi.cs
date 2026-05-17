@@ -13,16 +13,16 @@ public class ViraAi {
     private readonly HttpClient _httpClient;
     private readonly ILogger<ViraAi> logger;
 
-    public ViraAi(HttpClient  httpClient, ILogger<ViraAi> logger)
+    public ViraAi(HttpClient httpClient, ILogger<ViraAi> logger)
     {
         _httpClient = httpClient;
         this.logger = logger;
     }
 
 
-
     public async Task<AiResponseDetails> ConvertAudioToText(Stream audioStream, string audioFileName)
     {
+        logger.LogInformation("Transcription started: {FileName}", audioFileName);
         using var form = new MultipartFormDataContent();
 
         // API Parameters
@@ -52,6 +52,8 @@ public class ViraAi {
             if (response.IsSuccessStatusCode)
             {
                 var resJson = await response.Content.ReadFromJsonAsync<AiAvanegarModel>();
+                logger.LogInformation("Transcription completed");
+
                 return resJson.Data.Data.AiResponse;
             } else
             {
@@ -63,7 +65,8 @@ public class ViraAi {
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, $"Error during transcription API call: {ex.Message}");
+            logger.LogError(ex, "Transcription error");
+
             Console.WriteLine($"Error during transcription API call: {ex.Message}");
             return null;
         }

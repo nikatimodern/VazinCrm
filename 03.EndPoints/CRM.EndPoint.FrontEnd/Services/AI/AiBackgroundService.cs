@@ -26,10 +26,12 @@ public class AiBackgroundService : BackgroundService {
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        logger.LogInformation("AI workers started: {Count}", WorkerCount);
         var workers = Enumerable.Range(0, WorkerCount)
             .Select(_ => ProcessQueue(stoppingToken));
 
         await Task.WhenAll(workers);
+        logger.LogInformation("AI workers stopped");
     }
 
     private async Task ProcessQueue(CancellationToken stoppingToken)
@@ -38,21 +40,25 @@ public class AiBackgroundService : BackgroundService {
         {
             try
             {
+                logger.LogInformation("Waiting queue item");
                 var item = await _queue.DequeueAsync(stoppingToken);
+                logger.LogInformation("Queue item received");
 
                 using var scope = _sp.CreateScope();
 
                 var aiService = scope.ServiceProvider.GetRequiredService<AiService>();
 
                 await aiService.ProcessCallRecording(item);
+                logger.LogInformation("Queue item processed");
             }
             catch (OperationCanceledException)
             {
+                logger.LogInformation("Queue stopped");
                 break;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"Error while processing AI queue: {ex.Message}");
+                logger.LogError(ex, "Queue processing failed");
                 Console.WriteLine($"Error while processing AI queue: {ex}");
             }
         }

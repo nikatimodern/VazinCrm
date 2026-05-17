@@ -26,6 +26,7 @@ public class GapgptAi {
     {
         try
         {
+            logger.LogInformation("Summarize started");
             var prompt = _aiPrompts.SummarizeCall(textToSummarize, userName);
 
             var requestBody = new {
@@ -37,17 +38,24 @@ public class GapgptAi {
             };
 
             var response = await _httpClient.PostAsJsonAsync("chat/completions", requestBody);
-            response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadFromJsonAsync<AiGapgptModel>();
+            if (response.IsSuccessStatusCode)
+            {
+                var resJson = await response.Content.ReadFromJsonAsync<AiGapgptModel>();
+                logger.LogInformation("Summarize completed");
 
-            var content = result?.Choices?[0]?.Message?.Content;
-            var summary = JsonSerializer.Deserialize<SummaryModel>(content);
-            return summary;
+                var content = resJson?.Choices?[0]?.Message?.Content;
+                var summary = JsonSerializer.Deserialize<SummaryModel>(content);
+                return summary;
+            } else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                logger.LogError($"Summarize API Error ({response.StatusCode}): {errorContent}");
+                return null;
+            }
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            logger.LogError(e, e.Message);
-            Console.WriteLine(e);
+            logger.LogError(ex, "Summarize error");
             return null;
         }
     }
