@@ -10,11 +10,19 @@ using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Renci.SshNet;
 
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 
-public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, AiProcessAudio aiProcessAudio, DateTimeServices dts) {
+public class AiService(
+    CRMContextDb db,
+    ViraAi viraAi,
+    GapgptAi gapgptAi,
+    AiProcessAudio aiProcessAudio,
+    DateTimeServices dts,
+    ILogger<AiService> logger) {
+
     private const string FtpHost = "192.168.1.150";
     private const string FtpUser = "root";
     private const string FtpPass = "123";
@@ -25,7 +33,7 @@ public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, AiProc
         try
         {
             // 1. SFTP
-            var audioStream = await GetAudioFromIsabel(callData.RecordingFilePath);
+            var audioStream = await GetAudioWithRetry(callData.RecordingFilePath);
             if (audioStream == null) return;
             /*var audioBytes = await File.ReadAllBytesAsync(filePath);
             var audioStream = new MemoryStream(audioBytes);*/
@@ -37,7 +45,7 @@ public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, AiProc
             if (string.IsNullOrEmpty(callData.TranscriptionText)) return;
 
             // 3. Summary
-            var resSummary = await gapgptAi.SummarizeText(callData.TranscriptionText);
+            var resSummary = await gapgptAi.SummarizeText(callData.TranscriptionText, callData.DestinationUserTxt);
             if (resSummary != null)
             {
                 callData.SummaryText = resSummary.summary?.Trim();
@@ -57,34 +65,57 @@ public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, AiProc
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, ex.Message);
             Console.WriteLine(ex.Message);
-        }
-        finally
-        {
-            GC.Collect();
         }
     }
 
 
     private static async Task<MemoryStream> GetAudioFromIsabel(string remoteFilePath)
     {
+        var memoryStream = new MemoryStream();
+
+        using var client = new SftpClient(FtpHost, FtpUser, FtpPass);
+
+        client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(30);
+        client.OperationTimeout = TimeSpan.FromSeconds(60);
+
+        client.Connect();
+        client.DownloadFile(remoteFilePath, memoryStream);
+        client.Disconnect();
+
+        memoryStream.Position = 0;
+
+        return memoryStream;
+    }
+
+    private async Task<MemoryStream> GetAudioWithRetry(string path)
+    {
         try
         {
-            var memoryStream = new MemoryStream();
+            for (var i = 0; i < 5; i++)
+            {
+                try
+                {
+                    var stream = await GetAudioFromIsabel(path);
 
-            using var client = new SftpClient(FtpHost, FtpUser, FtpPass);
+                    if (stream != null && stream.Length > 0)
+                        return stream;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
 
-            client.Connect();
-            client.DownloadFile(remoteFilePath, memoryStream);
-            client.Disconnect();
+                await Task.Delay(2000);
+            }
 
-            memoryStream.Position = 0;
-
-            return memoryStream;
+            return null;
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            Console.WriteLine(ex.Message);
+            logger.LogError(e, e.Message);
+            Console.WriteLine(e);
             return null;
         }
     }
@@ -99,6 +130,7 @@ public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, AiProc
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, ex.Message);
             Console.WriteLine(ex.Message);
         }
     }
@@ -139,6 +171,7 @@ public class AiService(CRMContextDb db, ViraAi viraAi, GapgptAi gapgptAi, AiProc
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, ex.Message);
             Console.WriteLine(ex.Message);
         }
     }

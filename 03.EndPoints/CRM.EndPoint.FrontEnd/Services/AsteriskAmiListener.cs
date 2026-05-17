@@ -21,6 +21,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Renci.SshNet;
 
 namespace CRM.EndPoint.FrontEnd.Services;
@@ -30,13 +31,16 @@ public class AsteriskAmiListener : BackgroundService {
     private readonly IConfiguration _config;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly IAiQueue _aiQueue;
+    private readonly ILogger<AsteriskAmiListener> logger;
 
-    public AsteriskAmiListener(IHubContext<CallHub> hubContext, IConfiguration config, IServiceScopeFactory serviceScopeFactory, IAiQueue aiQueue)
+    public AsteriskAmiListener(IHubContext<CallHub> hubContext, IConfiguration config, IServiceScopeFactory serviceScopeFactory, IAiQueue aiQueue,
+        ILogger<AsteriskAmiListener> logger)
     {
         _hubContext = hubContext;
         _config = config;
         _serviceScopeFactory = serviceScopeFactory;
         _aiQueue = aiQueue;
+        this.logger = logger;
     }
 
     private readonly ConcurrentDictionary<string, CallSessionModel> _calls = new();
@@ -58,6 +62,7 @@ public class AsteriskAmiListener : BackgroundService {
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, $"[AMI] Connection failed: {ex.Message}");
             Console.WriteLine($"[AMI] Connection failed: {ex.Message}");
             return;
         }
@@ -77,6 +82,7 @@ public class AsteriskAmiListener : BackgroundService {
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, $"[AMI] Connection disconnect: {ex.Message}");
             Console.WriteLine($"[AMI] Connection disconnect: {ex.Message}");
         }
     }
@@ -182,6 +188,7 @@ public class AsteriskAmiListener : BackgroundService {
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, $"BridgeEnter Error: {ex.Message}");
             Console.WriteLine($"BridgeEnter Error: {ex.Message}");
         }
     }
@@ -214,7 +221,7 @@ public class AsteriskAmiListener : BackgroundService {
             var user = await GetUsers(dest);
             var customer = GetCallerCustomer(src);
 
-            _aiQueue.Enqueue(new CallRecording {
+            _aiQueue?.Enqueue(new CallRecording {
                 CallerNumber = src,
                 CallerCustomerId = customer?.Id,
                 CallerCustomerTxt = customer != null ? $"{customer.CompanyName} {customer.AgentName}" : null,

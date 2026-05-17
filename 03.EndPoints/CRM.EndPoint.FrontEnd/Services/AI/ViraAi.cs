@@ -5,15 +5,18 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
+using Microsoft.Extensions.Logging;
 
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 
 public class ViraAi {
     private readonly HttpClient _httpClient;
+    private readonly ILogger<ViraAi> logger;
 
-    public ViraAi(HttpClient  httpClient)
+    public ViraAi(HttpClient  httpClient, ILogger<ViraAi> logger)
     {
         _httpClient = httpClient;
+        this.logger = logger;
     }
 
 
@@ -53,12 +56,14 @@ public class ViraAi {
             } else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
+                logger.LogError($"Transcription API Error ({response.StatusCode}): {errorContent}");
                 Console.WriteLine($"Transcription API Error ({response.StatusCode}): {errorContent}");
                 return null;
             }
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, $"Error during transcription API call: {ex.Message}");
             Console.WriteLine($"Error during transcription API call: {ex.Message}");
             return null;
         }

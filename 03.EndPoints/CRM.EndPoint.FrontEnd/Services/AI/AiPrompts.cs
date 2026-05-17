@@ -1,10 +1,13 @@
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 
 public class AiPrompts {
-    public string SummarizeCall(string text)
+    public string SummarizeCall(string text, string expertName)
     {
         return $@"
             شما دستیار ثبت گزارش تماس برای CRM شرکت «وزین پلاست» هستید.
+
+            کارشناس فروش این تماس:
+            {expertName}
 
             زمینه:
             شرکت در حوزه تولید نایلون، نایلکس، شیرینک و محصولات پلی‌اتیلنی فعالیت می‌کند.
@@ -28,6 +31,9 @@ public class AiPrompts {
             - customer نام شخص یا شرکت مشتری است
             - product نام محصول درخواستی است
             - اگر customer یا product مشخص نبود null قرار بده
+            - customer فقط نام شخص یا شرکت تماس‌گیرنده (مشتری) است
+            - نام کارشناس فروش، اپراتور، پرسنل شرکت یا معرفی داخلی را به عنوان customer قرار نده
+            - اگر نام فقط توسط کارشناس معرفی شد یا مشخص نبود متعلق به مشتری است، customer را null قرار بده
 
             فرمت خروجی:
             {{

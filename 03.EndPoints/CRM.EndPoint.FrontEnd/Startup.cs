@@ -29,6 +29,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using CRM.EndPoint.FrontEnd.Services.AI;
+using Serilog;
 using WebPush;
 
 namespace CRM.EndPoint.FrontEnd {
@@ -254,6 +255,8 @@ namespace CRM.EndPoint.FrontEnd {
             var contentRoot = env.ContentRootPath;
             var licenseFile = System.IO.Path.Combine(contentRoot, "wwwroot\\Reports", "license.key");
             //Stimulsoft.Base.StiLicense.LoadFromFile(licenseFile);
+
+            //app.UseSerilogRequestLogging();
 
             if (env.IsDevelopment())
             {
