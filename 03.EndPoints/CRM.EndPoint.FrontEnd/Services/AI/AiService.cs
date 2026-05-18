@@ -165,7 +165,6 @@ public class AiService(
 
     private async Task CreateReportWithCallData(CallRecording callRecording)
     {
-        logger.LogInformation("Report creation started");
         try
         {
             int? customerCode = null;
@@ -184,7 +183,7 @@ public class AiService(
                 CustomerId = callRecording.CallerCustomerId,
                 CustomerTxt = callRecording.CallerCustomerTxt,
                 CustomerCode = customerCode,
-                ReportText = callRecording.SummaryText,
+                ReportText = callRecording.SummaryText + " *",
                 RegDate = DateTime.Now,
                 RegDateTxt = dts.GetDatePersian(),
                 RegTimeTxt = dts.GetNowTime("HH:mm:ss"),

@@ -178,7 +178,7 @@ public class AsteriskAmiListener : BackgroundService {
                     return existing;
                 }
             );
-            logger.LogInformation("VarSet: filePath {FilePath}", filePath);
+            logger.LogInformation("VarSet: filePath: {FilePath}", filePath.Split("/").Last());
         }
         catch (Exception ex)
         {
@@ -260,6 +260,10 @@ public class AsteriskAmiListener : BackgroundService {
             {
                 var user = await GetUsers(dest);
                 var customer = GetCallerCustomer(src);
+                if (user == null)
+                {
+                    logger.LogWarning("hangup: user is null: {dest}", dest);
+                }
 
                 logger.LogInformation("hangup and Enqueue: {FilePath}", call.RecordingPath);
                 _aiQueue?.Enqueue(new CallRecording {
@@ -267,8 +271,8 @@ public class AsteriskAmiListener : BackgroundService {
                     CallerCustomerId = customer?.Id,
                     CallerCustomerTxt = customer != null ? $"{customer.CompanyName} {customer.AgentName}" : null,
                     DestinationNumber = dest,
-                    DestinationUserId = user.Id,
-                    DestinationUserTxt = user.FullName,
+                    DestinationUserId = user?.Id,
+                    DestinationUserTxt = user?.FullName,
                     RecordingFilePath = call.RecordingPath
                 });
             } else

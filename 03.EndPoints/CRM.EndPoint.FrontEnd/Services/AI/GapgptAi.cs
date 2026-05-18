@@ -49,7 +49,7 @@ public class GapgptAi {
             } else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                logger.LogError($"Summarize API Error ({response.StatusCode}): {errorContent}");
+                logger.LogError("Summarize API Error ({ResponseStatusCode}): {ErrorContent}", response.StatusCode, errorContent);
                 return null;
             }
         }
