@@ -2971,7 +2971,7 @@ const CheckAcPfAtach = async (id) => {
 };
 const AcceptPfactor = async (id, type, dealId) => {
     document.getElementById("FLshowLoading").style.display = "";
-    $.get("/Factor/AcceptPreFactor/" + id, async (res) => {
+    $.get("/Factor/AcceptPreFactorManual/" + id, async (res) => {
         if (type === 1) {
             await getAllPreFactor();
         } else if (type === 4) {

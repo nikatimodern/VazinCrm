@@ -217,16 +217,20 @@ public class DealController : Controller {
 
             var user = await userManager.GetUserAsync(HttpContext.User);
             var setting = await db.ASettings.FirstOrDefaultAsync();
+
             if (setting.CustomerAssignExpert && model.CustomerId != null)
             {
+                var dealCreatorId = model.Id == Guid.Empty ? user.Id : model.UserCreatorID;
                 var isCustomerForUser = await db.UserCustomers.Where(f =>
                     f.CustomerId == model.CustomerId &&
-                    f.UserId.ToString() == user.Id
+                    f.UserId.ToString() == dealCreatorId
                 ).AnyAsync();
 
                 if (!isCustomerForUser)
                     model.Suspend = true;
             }
+
+
 
             var oldDeal = await db.Deals.AsNoTracking().Where(f => f.Id == model.Id).FirstOrDefaultAsync();
             var customer = await db.Customers.Where(f => f.Id == model.CustomerId).FirstOrDefaultAsync();
@@ -258,6 +262,7 @@ public class DealController : Controller {
 
             if (model.Id == Guid.Empty)
             {
+
                 model.UserCreator = user.FullName;
                 model.UserCreatorID = user.Id;
 

@@ -1025,140 +1025,39 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> AcceptingSMS([FromBody] PreFactor model)
         {
+            await using var transAction = await db.Database.BeginTransactionAsync();
             try
             {
                 var setting = await db.ASettings.FirstOrDefaultAsync();
+                var oldPf = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
+                var pf = await db.PreFactors.FirstOrDefaultAsync(f => f.Id == model.Id);
 
-                var oldPf = await db.PreFactors.AsNoTracking().Where(f => f.Id == model.Id).FirstOrDefaultAsync();
-                var pf = await db.PreFactors.Where(f => f.Id == model.Id).FirstOrDefaultAsync();
-                var cus = await db.Customers.Where(f => f.Id == pf.CustomerId).FirstOrDefaultAsync();
-
-                Deal deal = null;
-                if (pf.DealId != null)
-                {
-                    deal = await db.Deals.Where(f => f.Id == pf.DealId).FirstOrDefaultAsync();
-                }
-
-                if (cus == null)
-                {
-                    cus = new Customer {
-                        AgentName = model.AgentName,
-                        Mobile = pf.Cus_Mobile,
-                        NormalizedAgentName = TextService.NormalizeText(model.AgentName),
-                        RoleType = RoleTypeEnum.مشتری,
-                        RoleTypeTxt = Service.GetTypeTxtRoleType((int)RoleTypeEnum.مشتری),
-                        UserCreator = pf.UserCreator,
-                        UserCreatorID = pf.UserCreatorID,
-                        Accepted = setting.SmallOffice,
-
-                        NumberRegister = deal?.CusNumberRegister ?? pf.Cus_NumberRegister,
-                        EghtesadiCode = deal?.CusEghtesadiCode ?? pf.Cus_EghtesadiCode,
-                        ShenaseMeli = deal?.CusShenaseMeli ?? pf.Cus_ShenaseMeli,
-                        AgentMeliCode = deal?.CusMelliCode ?? pf.AgentMeliCode,
-                        PostalCode = deal?.CusPostalCode ?? pf.Cus_PostalCode,
-                        Juridical = deal?.CusJuridical ?? pf.Cus_Juridical,
-                        CompanyName = deal?.CusCompanyName ?? pf.Customer,
-                        NormalizedCompanyName = TextService.NormalizeText(deal?.CusCompanyName ?? pf.Customer),
-                        Address = deal?.CusAddress ?? pf.Cus_Address,
-                        Tel = deal?.CusTel ?? pf.Cus_Tel,
-                        Sex = deal?.CusSex ?? 1,
-                        Province = deal?.CusProvince,
-                        City = deal?.CusCity,
-                        WorkSenf = deal?.CusWorkSenf,
-                        WorkSenfTxt = deal?.CusWorkSenfTxt,
-                        WorkSenfDescription = deal?.CusWorkSenfDescription,
-                        AcquaintanceWay = deal?.CusAcquaintanceWay,
-                        AcquaintanceWayTxt = deal?.CusAcquaintanceWayTxt,
-                    };
-                    db.Customers.Add(cus);
-                    await db.SaveChangesAsync();
-
-                    var us = new UserCustomer {
-                        UserId = Guid.Parse(pf.UserCreatorID),
-                        CustomerId = cus.Id
-                    };
-                    db.UserCustomers.Add(us);
-
-                    if (deal != null)
-                    {
-                        await genService.UpdateChildEntityDeal(pf.DealId, cus);
-                        deal.CustomerId = cus.Id;
-                        deal.CustomerCode = cus.CustomerCode;
-                    }
-
-                    pf.CustomerId = cus.Id;
-                    pf.CustomerCode = cus.CustomerCode;
-                    await _logSystemService.LogChange(cus, null, LogActionEnum.ثبت,
-                        new AppUser { FirstName = cus.CompanyName, LastName = cus.AgentName }, null, "مشتری");
-                } else
-                {
-                    if (cus.RoleType == RoleTypeEnum.تامین_کننده)
-                    {
-                        cus.RoleType = RoleTypeEnum.تامین_کننده_مشتری;
-                        cus.RoleTypeTxt = cus.RoleType.ToString().Replace("_", " ");
-                    }
-                }
-
-                var user = await userManager.FindByNameAsync(pf.Cus_Mobile);
-                if (user == null)
-                {
-                    user = new AppUser {
-                        UserName = pf.Cus_Mobile,
-                        PhoneNumber = pf.Cus_Mobile,
-                        FirstName = cus.CompanyName,
-                        LastName = cus.AgentName,
-                        PersonId = cus.Id
-                    };
-                    var result = await userManager.CreateAsync(user);
-                    if (result.Succeeded)
-                    {
-                        await userManager.AddToRoleAsync(user, "مشتری");
-                        await _logSystemService.LogChange(user, null, LogActionEnum.ثبت, user, null, "ثبت یوزر مشتری");
-                    }
-                }
-
-                cus.AgentName = model.AgentName;
-                if (deal != null) deal.CustomerName = model.AgentName;
                 pf.AgentName = model.AgentName?.Trim();
 
-                var s = model.Emza.Split(',').ToArray();
-                pf.Signature = Convert.FromBase64String(s[1]);
-                pf.SignatureDes = "پیش فاکتور شماره " + pf.SerialNumber + " توسط اینجانب " + model.AgentName + " مورد تایید می باشد ";
-                pf.Accepted = true;
-                pf.AcceptedDate = DateTime.Now;
-                pf.AcceptedDateTxt = dtService.GetDateTimePersian();
+                (pf, var cus) = await AcceptCustomerPreFactor(pf, setting.SmallOffice);
+                var user = await CreateUserForCustomer(cus, pf.Cus_Mobile);
 
-                pf.ModifyDate = DateTime.Now;
-                pf.ModifyDateTxt = dtService.GetDateTimePersian();
+                pf.Signature = Convert.FromBase64String(model.Emza?.Split(',')[1]);
+                pf.SignatureDes = "پیش فاکتور شماره " + pf.SerialNumber + " توسط اینجانب " + model.AgentName + " مورد تایید می باشد ";
                 pf.UserModify = user.FullName;
                 pf.UserModifyID = user.Id;
 
                 if (setting.CustomerCanChooseInvoiceType)
                 {
                     pf.OfficialType = model.OfficialType;
+                    pf = Service.UpdateTaxAmountPreFactor(pf);
                 }
 
-                pf = Service.UpdateTaxAmountPreFactor(pf);
-                await regAccountancy(pf);
-
-                /*pf.PrePftype = pf.Pftype;
-                if (setting.SmallOffice)
-                {
-                    pf.Pftype = (int)PreFactorEnum.در_انتظار_تولید;
-                } else
-                {
-                    pf.Pftype = (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش;
-                }
-                pf.PftypeTxt = Service.GetTypeTxtPfactor(pf.Pftype);*/
-
-                pf = await genService.AcceptOrRejectPreFactor(pf, 1);
                 await _logSystemService.LogChange(oldPf, pf, LogActionEnum.تایید_و_تغییر_وضعیت, user, null, "تایید پیش‌فاکتور توسط مشتری");
-                await db.SaveChangesAsync();
 
-                var cusText = string.IsNullOrWhiteSpace(cus.CompanyName) ? $"({cus.AgentName})" : $"{cus.CompanyName} ({cus.AgentName})";
-                //var countObj = await genService.GetCountEnvelopeObj();
+                cus.AgentName = model.AgentName;
+
+                await db.SaveChangesAsync();
+                await transAction.CommitAsync();
+
                 if (pf.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش)
                 {
+                    var cusText = string.IsNullOrWhiteSpace(cus.CompanyName) ? $"({cus.AgentName})" : $"{cus.CompanyName} ({cus.AgentName})";
                     await hub.Clients.Group("مدیر فروش").SendAsync("notifActionRequired",
                         $"پیش فاکتور <b>{pf.SerialNumber}</b> توسط مشتری <b>{cusText}</b> تایید شد و در کارتابل شما قرار گرفت",
                         "/Cartable/Index?tab=TSalesAdminId"
@@ -1189,7 +1088,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var bankAccList = await db.BankAccounts.Where(f => f.OfficialType == pf.OfficialType && f.Active).ToListAsync();
 
                 ViewBag.isLogin = 0;
-                var isSameUser = User.Identity.Name == pf.Cus_Mobile;
+                var isSameUser = User.Identity?.Name == pf.Cus_Mobile;
                 if (isSameUser)
                 {
                     ViewBag.isLogin = 1;
@@ -1198,7 +1097,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     await signInManager.SignOutAsync();
                 }
 
-                var _model = new UpdateCustomerVModel() {
+                var _model = new UpdateCustomerVModel {
                     PreFactor = pf,
                     WorkSenf = workSenf,
                     Customer = cus,
@@ -1209,9 +1108,176 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
             catch (Exception e)
             {
+                await transAction.RollbackAsync();
                 Console.WriteLine(e);
                 throw;
             }
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> AcceptPreFactorManual(Guid id)
+        {
+            await using var transAction = await db.Database.BeginTransactionAsync();
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var set = await db.ASettings.FirstOrDefaultAsync();
+                var oldPf = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
+                var pf = await db.PreFactors.FirstOrDefaultAsync(f => f.Id == id);
+
+
+                (pf, var cus) = await AcceptCustomerPreFactor(pf, set.SmallOffice);
+                pf.UserModify = user.FullName;
+                pf.UserModifyID = user.Id;
+
+
+                await _logSystemService.LogChange(oldPf, pf, LogActionEnum.تایید_و_تغییر_وضعیت, user, null, "تایید پیش‌فاکتور به صورت دستی");
+                await db.SaveChangesAsync();
+                await transAction.CommitAsync();
+
+
+                if (pf.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش)
+                {
+                    var cusText = string.IsNullOrWhiteSpace(cus.CompanyName) ? $"({cus.AgentName})" : $"{cus.CompanyName} ({cus.AgentName})";
+                    await hub.Clients.Group("مدیر فروش").SendAsync("notifActionRequired",
+                        $"پیش فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusText} توسط <b>{user.FullName}</b> به صورت دستی تایید و در کارتابل شما قرار گرفت",
+                        "/Cartable/Index?tab=TSalesAdminId"
+                    );
+                    pushQueue.Enqueue(new PushQueueItem {
+                        RoleName = "مدیر فروش",
+                        Title = "تایید پیش‌فاکتور",
+                        Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
+                        Url = "/Cartable/Index?tab=TSalesAdminId",
+                        Tag = "pf" + pf.SerialNumber
+                    });
+                }
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                await transAction.RollbackAsync();
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+        private async Task<(PreFactor, Customer)> AcceptCustomerPreFactor(PreFactor pf, bool isSmallOffice)
+        {
+            var cus = await db.Customers.FirstOrDefaultAsync(x => x.Id == pf.CustomerId);
+            var deal = pf.DealId != null ? await db.Deals.FirstOrDefaultAsync(f => f.Id == pf.DealId) : null;
+
+            if (cus == null)
+            {
+                cus = await CreateCustomer(pf, deal, isSmallOffice);
+
+                if (deal != null)
+                {
+                    await genService.UpdateChildEntityDeal(pf.DealId, cus);
+                    deal.CustomerId = cus.Id;
+                    deal.CustomerName = cus.AgentName;
+                    deal.CustomerCode = cus.CustomerCode;
+                }
+
+                pf.CustomerId = cus.Id;
+                pf.CustomerCode = cus.CustomerCode;
+            } else if (cus.RoleType == RoleTypeEnum.تامین_کننده)
+            {
+                cus.RoleType = RoleTypeEnum.تامین_کننده_مشتری;
+                cus.RoleTypeTxt = cus.RoleType.ToString().Replace("_", " ");
+            }
+
+            pf.Accepted = true;
+            pf.AcceptedDate = DateTime.Now;
+            pf.AcceptedDateTxt = dtService.GetDateTimePersian();
+
+            pf.ModifyDate = DateTime.Now;
+            pf.ModifyDateTxt = dtService.GetDateTimePersian();
+
+            deal?.CustomerName = pf.AgentName;
+
+            if (isSmallOffice)
+            {
+                pf.PrePftype = pf.Pftype;
+                pf.Pftype = (int)PreFactorEnum.در_انتظار_تولید;
+                pf.PftypeTxt = Service.GetTypeTxtPfactor(pf.Pftype);
+            } else
+            {
+                pf = await genService.AcceptOrRejectPreFactor(pf, 1);
+            }
+
+            await regAccountancy(pf);
+            return (pf, cus);
+        }
+
+
+        private async Task<AppUser> CreateUserForCustomer(Customer cus, string mobile)
+        {
+            var user = await userManager.FindByNameAsync(mobile);
+            if (user != null) return user;
+
+            user = new AppUser {
+                UserName = mobile,
+                PhoneNumber = mobile,
+                FirstName = cus.CompanyName,
+                LastName = cus.AgentName,
+                PersonId = cus.Id
+            };
+
+            var result = await userManager.CreateAsync(user);
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(user, "مشتری");
+                await _logSystemService.LogChange(user, null, LogActionEnum.ثبت, user, null, "ثبت یوزر مشتری");
+            }
+
+            return user;
+        }
+
+        private async Task<Customer> CreateCustomer(PreFactor pf, Deal deal, bool isSmallOffice)
+        {
+            var cus = new Customer {
+                AgentName = pf.AgentName,
+                NormalizedAgentName = TextService.NormalizeText(pf.AgentName),
+                Mobile = pf.Cus_Mobile,
+                RoleType = RoleTypeEnum.مشتری,
+                RoleTypeTxt = Service.GetTypeTxtRoleType((int)RoleTypeEnum.مشتری),
+                UserCreator = pf.UserCreator,
+                UserCreatorID = pf.UserCreatorID,
+                Accepted = isSmallOffice,
+
+                NumberRegister = deal?.CusNumberRegister ?? pf.Cus_NumberRegister,
+                EghtesadiCode = deal?.CusEghtesadiCode ?? pf.Cus_EghtesadiCode,
+                ShenaseMeli = deal?.CusShenaseMeli ?? pf.Cus_ShenaseMeli,
+                AgentMeliCode = deal?.CusMelliCode ?? pf.AgentMeliCode,
+                PostalCode = deal?.CusPostalCode ?? pf.Cus_PostalCode,
+                Juridical = deal?.CusJuridical ?? pf.Cus_Juridical,
+                CompanyName = deal?.CusCompanyName ?? pf.Customer,
+                NormalizedCompanyName = TextService.NormalizeText(deal?.CusCompanyName ?? pf.Customer),
+                Address = deal?.CusAddress ?? pf.Cus_Address,
+                Tel = deal?.CusTel ?? pf.Cus_Tel,
+                Sex = deal?.CusSex ?? 1,
+                Province = deal?.CusProvince,
+                City = deal?.CusCity,
+                WorkSenf = deal?.CusWorkSenf,
+                WorkSenfTxt = deal?.CusWorkSenfTxt,
+                WorkSenfDescription = deal?.CusWorkSenfDescription,
+                AcquaintanceWay = deal?.CusAcquaintanceWay,
+                AcquaintanceWayTxt = deal?.CusAcquaintanceWayTxt,
+            };
+
+            db.Customers.Add(cus);
+            await db.SaveChangesAsync();
+
+            var userCustomer = new UserCustomer {
+                UserId = Guid.Parse(pf.UserCreatorID),
+                CustomerId = cus.Id
+            };
+
+            await _logSystemService.LogChange(cus, null, LogActionEnum.ثبت, new AppUser { FirstName = "سیستم" });
+            db.UserCustomers.Add(userCustomer);
+            return cus;
         }
 
         [Authorize]
@@ -2185,161 +2251,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     DealSerialNumber = model.DealSerialNumber,
                 };
                 await db.Accountancies.AddAsync(acD);
-            }
-        }
-
-
-        [HttpGet]
-        public async Task<IActionResult> AcceptPreFactor(Guid id)
-        {
-            await using var transAction = await db.Database.BeginTransactionAsync();
-            try
-            {
-                var user = await userManager.GetUserAsync(HttpContext.User);
-                var set = await db.ASettings.FirstOrDefaultAsync();
-                var oldPf = await db.PreFactors.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
-                var pf = await db.PreFactors.Where(f => f.Id == id).FirstOrDefaultAsync();
-                var cus = await db.Customers.Where(f => f.Id == pf.CustomerId).FirstOrDefaultAsync();
-                var deal = pf.DealId != null ? await db.Deals.Where(f => f.Id == pf.DealId).FirstOrDefaultAsync() : null;
-
-
-                /*if (cus == null && deal.CusJuridical == 1 && !string.IsNullOrWhiteSpace(deal.CusShenaseMeli))
-                {
-                    cus = await db.Customers.Where(f => f.ShenaseMeli == deal.CusShenaseMeli).FirstOrDefaultAsync();
-
-                    if (deal != null)
-                    {
-                        await genService.UpdateChildEntityDeal(pf.DealId, cus);
-                        deal.CustomerId = cus.Id;
-                        deal.CustomerName = cus.AgentName;
-                        deal.CustomerCode = cus.CustomerCode;
-                    }
-
-                    pf.CustomerId = cus.Id;
-                    pf.CustomerCode = cus.CustomerCode;
-
-
-                    /*if (cus != null)
-                    {
-                        var newAgent = new Agent {
-                            CustomerCode = cus.CustomerCode,
-                            CustomerId = cus.Id,
-                            FirstName = deal.CustomerName,
-                            MeliCode = deal.CusMelliCode
-                        };
-                        db.Agents.Add(newAgent);
-                    }#1#
-                }*/
-
-                if (cus == null)
-                {
-                    cus = new Customer {
-                        AgentName = pf.AgentName,
-                        Mobile = pf.Cus_Mobile,
-                        NormalizedAgentName = TextService.NormalizeText(pf.AgentName),
-                        RoleType = RoleTypeEnum.مشتری,
-                        RoleTypeTxt = Service.GetTypeTxtRoleType((int)RoleTypeEnum.مشتری),
-                        UserCreator = pf.UserCreator,
-                        UserCreatorID = pf.UserCreatorID,
-                        Accepted = set.SmallOffice,
-
-                        NumberRegister = deal?.CusNumberRegister ?? pf.Cus_NumberRegister,
-                        EghtesadiCode = deal?.CusEghtesadiCode ?? pf.Cus_EghtesadiCode,
-                        ShenaseMeli = deal?.CusShenaseMeli ?? pf.Cus_ShenaseMeli,
-                        AgentMeliCode = deal?.CusMelliCode ?? pf.AgentMeliCode,
-                        PostalCode = deal?.CusPostalCode ?? pf.Cus_PostalCode,
-                        Juridical = deal?.CusJuridical ?? pf.Cus_Juridical,
-                        CompanyName = deal?.CusCompanyName ?? pf.Customer,
-                        Address = deal?.CusAddress ?? pf.Cus_Address,
-                        Tel = deal?.CusTel ?? pf.Cus_Tel,
-                        Sex = deal?.CusSex ?? 1,
-                        Province = deal?.CusProvince,
-                        City = deal?.CusCity,
-                        WorkSenf = deal?.CusWorkSenf,
-                        WorkSenfTxt = deal?.CusWorkSenfTxt,
-                        WorkSenfDescription = deal?.CusWorkSenfDescription,
-                        AcquaintanceWay = deal?.CusAcquaintanceWay,
-                        AcquaintanceWayTxt = deal?.CusAcquaintanceWayTxt,
-                    };
-                    db.Customers.Add(cus);
-                    await db.SaveChangesAsync();
-
-                    var us = new UserCustomer {
-                        UserId = Guid.Parse(pf.UserCreatorID),
-                        CustomerId = cus.Id
-                    };
-                    db.UserCustomers.Add(us);
-
-                    await _logSystemService.LogChange(cus, null, LogActionEnum.ثبت, user);
-
-
-                    if (deal != null)
-                    {
-                        await genService.UpdateChildEntityDeal(pf.DealId, cus);
-                        deal.CustomerId = cus.Id;
-                        deal.CustomerName = cus.AgentName;
-                        deal.CustomerCode = cus.CustomerCode;
-                    }
-
-                    pf.CustomerId = cus.Id;
-                    pf.CustomerCode = cus.CustomerCode;
-                } else
-                {
-                    if (cus.RoleType == RoleTypeEnum.تامین_کننده)
-                    {
-                        cus.RoleType = RoleTypeEnum.تامین_کننده_مشتری;
-                        cus.RoleTypeTxt = cus.RoleType.ToString().Replace("_", " ");
-                    }
-                }
-
-                pf.Accepted = true;
-                pf.AcceptedDate = DateTime.Now;
-                pf.AcceptedDateTxt = dtService.GetDateTimePersian();
-
-                pf.ModifyDate = DateTime.Now;
-                pf.ModifyDateTxt = dtService.GetDateTimePersian();
-                pf.UserModify = user.FullName;
-                pf.UserModifyID = user.Id;
-                await regAccountancy(pf);
-
-                if (set.SmallOffice)
-                {
-                    pf.PrePftype = pf.Pftype;
-                    pf.Pftype = (int)PreFactorEnum.در_انتظار_تولید;
-                    pf.PftypeTxt = Service.GetTypeTxtPfactor(pf.Pftype);
-                } else
-                {
-                    pf = await genService.AcceptOrRejectPreFactor(pf, 1);
-                }
-
-
-                await _logSystemService.LogChange(oldPf, pf, LogActionEnum.تایید_و_تغییر_وضعیت, user, null, "تایید پیش‌فاکتور به صورت دستی");
-                await db.SaveChangesAsync();
-                await transAction.CommitAsync();
-
-                var cusText = string.IsNullOrWhiteSpace(cus.CompanyName) ? $"({cus.AgentName})" : $"{cus.CompanyName} ({cus.AgentName})";
-                //var countObj = await genService.GetCountEnvelopeObj();
-                if (pf.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش)
-                {
-                    await hub.Clients.Group("مدیر فروش").SendAsync("notifActionRequired",
-                        $"پیش فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusText} توسط <b>{user.FullName}</b> به صورت دستی تایید و در کارتابل شما قرار گرفت",
-                        "/Cartable/Index?tab=TSalesAdminId"
-                    );
-                    pushQueue.Enqueue(new PushQueueItem {
-                        RoleName = "مدیر فروش",
-                        Title = "تایید پیش‌فاکتور",
-                        Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
-                        Url = "/Cartable/Index?tab=TSalesAdminId",
-                        Tag = "pf" + pf.SerialNumber
-                    });
-                }
-
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                await transAction.RollbackAsync();
-                return BadRequest(ex.Message);
             }
         }
 
