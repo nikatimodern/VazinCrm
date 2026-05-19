@@ -930,9 +930,6 @@ const calculateText = () => {
 
     let kelisheTotalAmount, cilandrTotalAmount;
 
-    console.log(pfactor.officialType);
-
-
     if (_officialType) {
          kelisheTotalAmount = kelisheItems.reduce((sum, item) => {
             let totalAmount = Number(SeparatedNumberRemove(item.totalAmount))
@@ -944,9 +941,6 @@ const calculateText = () => {
             let totalAmount = Number(SeparatedNumberRemove(item.totalAmount))
             return sum + totalAmount + (totalAmount * 0.1)
          }, 0)
-
-
-
     }
 
     else {
