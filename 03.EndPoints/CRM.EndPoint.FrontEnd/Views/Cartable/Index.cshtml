@@ -1309,7 +1309,7 @@
             //$("#BtnSendToId").css("display", "none");
             //$("#loadingSendToId").css("display", "");
             $("#FLshowLoading").css("display", "");
-            $.get(baseUrl + "Factor/AcceptPreFactor/" + id, (res) => {
+            $.get(baseUrl + "Factor/AcceptPreFactorManual/" + id, (res) => {
                 toastifySuccess("پیش فاکتور تایید و به واحد مالی ارسال شد.");
 
                 GetSelesExpertPartial();

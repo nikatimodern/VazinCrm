@@ -80,55 +80,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-                await trans.CommitAsync();
+                /*var customers = await db.Customers.IgnoreQueryFilters()
+                    .Where(f => string.IsNullOrEmpty(f.NormalizedAgentName) || string.IsNullOrEmpty(f.NormalizedCompanyName))
+                    .ToListAsync();
 
-                var data = await db.RequestAmounts.IgnoreQueryFilters().Include(f => f.RequestAmountOrderHeads).ToListAsync();
-                foreach (var r in data)
+                foreach (var customer in customers)
                 {
-                    /*if (r.RequestStatus == (RequestStatusEnum)1)
-                    {
-                        r.RequestStatus = RequestStatusEnum.در_انتظار_تایید_مدیرعامل;
-                    } else if (r.RequestStatus == (RequestStatusEnum)2)
-                    {
-                        if (r.Vosoled)
-                        {
-                            r.RequestStatus = RequestStatusEnum.پرداخت_شده;
-                        } else
-                        {
-                            r.RequestStatus = RequestStatusEnum.در_انتظار_پرداخت;
-                        }
-                    }
+                    customer?.NormalizedCompanyName = TextService.NormalizeText(customer.CompanyName);
+                    customer?.NormalizedAgentName = TextService.NormalizeText(customer.AgentName);
+                }*/
 
-                    r.RequestStatusTxt = r.RequestStatus.ToString().Replace("_", " ");
-
-
-                    if (r.Prepayment)
-                    {
-                        r.RequestAmountType = RequestAmountTypeEnum.پیش_پرداخت;
-                        r.RequestAmountTypeTxt = nameof(RequestAmountTypeEnum.پیش_پرداخت).Replace("_", " ");
-                    } else
-                    {
-                        r.RequestAmountType = RequestAmountTypeEnum.پرداخت_فاکتور;
-                        r.RequestAmountTypeTxt = nameof(RequestAmountTypeEnum.پرداخت_فاکتور).Replace("_", " ");
-                    }
-
-
-                    if (r.IsDeleted)
-                    {
-                        foreach (var rRequestAmountOrderHead in r.RequestAmountOrderHeads ?? [])
-                        {
-                            rRequestAmountOrderHead.IsDeleted = true;
-                        }
-                    }*/
-
-                    /*var percent = (int)((r.AcceptedAmount / r.Amount) * 100);
-                    int[] percentList = [25, 50, 75, 100];
-                    if (percentList.Contains(percent))
-                    {
-                        r.AcceptedAmountPercent = percent;
-                    }*/
-                }
-
+                await trans.CommitAsync();
                 //await db.SaveChangesAsync();
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();

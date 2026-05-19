@@ -22,17 +22,17 @@
 
             @if (item.OfficialType == 1) {
                 <div class="mp InfoDataHead_PrefactorRasmi" style="display:flex;width:24px !important">
-                    <label style="transform: rotate(90deg)">رسمی</label>
+                    <label style="writing-mode: vertical-lr">رسمی</label>
                 </div>
             } else {
                 <div class="mp InfoDataHead_PrefactorNonRasmi" style="display:flex;width:24px !important">
-                    <label style="transform: rotate(90deg)">غیررسمی</label>
+                    <label style="writing-mode: vertical-lr">غیررسمی</label>
                 </div>
             }
 
             @if (item.Export == true) {
                 <div style="background-color:lightgreen;border-block: 2px solid darkgreen; width:24px; display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
-                    <label style="font-family:'IRANSansBold'; transform: rotate(90deg)">صـادراتی</label>
+                    <label style="font-family:'IRANSansBold'; writing-mode: vertical-lr">صـادراتی</label>
                 </div>
             }
             <div data-serialnumber="@item.SerialNumber" class="d-flex flex-column flex-sm-row justify-content-between InfoDataItem_Prefactor w-100 py-2">

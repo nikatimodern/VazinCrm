@@ -172,13 +172,13 @@ namespace CRM.EndPoint.FrontEnd.Services {
         public async Task UpdateChildEntityDeal(Guid? dealId, Customer customer, string dealCustomerName = "", string dealMobileNumber = "")
         {
             var pFactors = await db.PreFactors.Where(f => f.DealId == dealId).ToListAsync();
-            foreach (var f in pFactors)
+            foreach (var p in pFactors)
             {
-                f.CustomerId = customer?.Id;
-                f.CustomerCode = customer?.CustomerCode;
-                f.Customer = customer?.CompanyName;
-                f.AgentName = customer != null ? customer.AgentName : dealCustomerName;
-                f.Cus_Mobile = customer != null ? customer.Mobile : dealMobileNumber;
+                p.CustomerId = customer?.Id;
+                p.CustomerCode = customer?.CustomerCode;
+                p.Customer = customer?.CompanyName;
+                p.AgentName = customer != null ? customer.AgentName : dealCustomerName;
+                p.Cus_Mobile = customer != null ? customer.Mobile : dealMobileNumber;
             }
 
             var factors = await db.Factors.Where(f => f.DealId == dealId).ToListAsync();
