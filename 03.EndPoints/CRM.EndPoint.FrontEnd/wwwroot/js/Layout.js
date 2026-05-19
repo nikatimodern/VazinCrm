@@ -1796,13 +1796,13 @@ const backDelivered = async (pfId, passType, dealId) => {
 };
 
 
-const regUtamin = async (id, type, dealId) => {
-    if (!await mySer.CheckValidForm(id)) return;
+const regUtamin = async (pfId, type, dealId) => {
+    if (!await mySer.CheckValidForm(pfId)) return;
     
     try {
-        document.getElementById("FLshowLoading").style.display = "";
-        const el = document.getElementById("S_" + id);
-        const res = await axios(`/Factor/UtaminReg?pfId=${id}&usId=${el.value}`);
+        FLshowLoading();
+        const el = document.getElementById("S_" + pfId);
+        const res = await axios(`/Factor/UtaminReg?pfId=${pfId}&usId=${el.value}`);
         if (res.status === 200) {
             if (type === 1) {
                 await getAllPreFactor();
@@ -1810,7 +1810,7 @@ const regUtamin = async (id, type, dealId) => {
                 await getPreFactorFromDeal(dealId);
             }
             
-            document.getElementById("FLshowLoading").style.display = "none";
+            FLshowLoading(false);
             toastifySuccess("به مسئول تامین واگذار شد");
         }
     } catch (err) {
@@ -1820,7 +1820,7 @@ const regUtamin = async (id, type, dealId) => {
 
 const resendRegUtamin = async (pfId, userTaminId, type, dealId) => {
     try {
-        document.getElementById("FLshowLoading").style.display = "";
+        FLshowLoading();
         const res = await axios(`/Factor/ResendRegUtamin?pfId=${pfId}&usId=${userTaminId}`);
         if (res.status === 200) {
             if (type === 1) {
@@ -1828,7 +1828,7 @@ const resendRegUtamin = async (pfId, userTaminId, type, dealId) => {
             } else if (type === 4) {
                 await getPreFactorFromDeal(dealId);
             }
-            document.getElementById("FLshowLoading").style.display = "none";
+            FLshowLoading();
             toastifySuccess("ارسال مجدد انجام شد");
         }
     } catch (err) {
