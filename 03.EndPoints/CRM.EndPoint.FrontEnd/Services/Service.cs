@@ -23,6 +23,7 @@ using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Reports.Entities;
 using CRM.Core.Domain.Reports.Enum;
 using CRM.Core.Domain.RequestAmounts.Entities;
+using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.LogSystem;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
@@ -57,13 +58,11 @@ namespace CRM.EndPoint.FrontEnd.Services {
             this.hub = hub;
         }
 
-        public interface IFilterableEntity
-        {
+        public interface IFilterableEntity {
             Guid CustomerId { get; set; }
             DateTime CreateDate { get; set; }
             string UserCreatorID { get; set; }
         }
-
 
 
         /// <param name="pf">پیش فاکتور</param>
@@ -173,13 +172,13 @@ namespace CRM.EndPoint.FrontEnd.Services {
         public async Task UpdateChildEntityDeal(Guid? dealId, Customer customer, string dealCustomerName = "", string dealMobileNumber = "")
         {
             var pFactors = await db.PreFactors.Where(f => f.DealId == dealId).ToListAsync();
-            foreach (var f in pFactors)
+            foreach (var p in pFactors)
             {
-                f.CustomerId = customer?.Id;
-                f.CustomerCode = customer?.CustomerCode;
-                f.Customer = customer?.CompanyName;
-                f.AgentName = customer != null ? customer.AgentName : dealCustomerName;
-                f.Cus_Mobile = customer != null ? customer.Mobile : dealMobileNumber;
+                p.CustomerId = customer?.Id;
+                p.CustomerCode = customer?.CustomerCode;
+                p.Customer = customer?.CompanyName;
+                p.AgentName = customer != null ? customer.AgentName : dealCustomerName;
+                p.Cus_Mobile = customer != null ? customer.Mobile : dealMobileNumber;
             }
 
             var factors = await db.Factors.Where(f => f.DealId == dealId).ToListAsync();
@@ -258,17 +257,22 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
                 var pendingAccCount = await accPf.CountAsync(a => a.Status == AccStatusEnum.در_دست_تایید || a.Status == AccStatusEnum.ثبت_اولیه);
 
+                var reqCount = await db.RequestAmounts.CountAsync(f => f.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت);
+
                 countObj.Financial = new SubCartableCountVModel {
                     InvoiceCount = pendingAccCount,
-                    PreFactorCount =  financialPfCount,
+                    PreFactorCount = financialPfCount,
+                    RequestCount = reqCount
                 };
             }
 
             // Managing Director
             if (roles.Contains("مدیر ارشد") || roles.Contains("مدیر عامل"))
             {
-                var invoiceCount = await accPf.OnlyManagingDirector().CountAsync(a => a.Status == AccStatusEnum.در_دست_تایید || a.Status == AccStatusEnum.ثبت_اولیه);
-                var reqCount = await db.RequestAmounts.CountAsync(f => f.RequestStatus == RequestStatusEnum.در_انتظار_تایید);
+                var invoiceCount = await accPf.OnlyManagingDirector()
+                    .CountAsync(a => a.Status == AccStatusEnum.در_دست_تایید || a.Status == AccStatusEnum.ثبت_اولیه);
+                var reqCount = await db.RequestAmounts.CountAsync(f =>
+                    f.RequestStatus == RequestStatusEnum.در_انتظار_تایید_مدیرعامل || f.RequestStatus == RequestStatusEnum.در_انتظار_ارسال_به_مالی);
                 countObj.ManagingDirector = new SubCartableCountVModel {
                     InvoiceCount = invoiceCount,
                     RequestCount = reqCount

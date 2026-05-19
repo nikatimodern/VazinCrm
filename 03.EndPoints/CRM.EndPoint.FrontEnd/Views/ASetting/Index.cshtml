@@ -61,6 +61,14 @@
                 <label style="cursor:pointer;" for="setSupplyByTamin">ورود تامین کننده</label>
             </div>
             <div class="d-flex align-items-center gap-1">
+                <input type="checkbox" id="multiSelectOrderHeadsInRequestAmount" name="multiSelectOrderHeadsInRequestAmount" value="true" />
+                <label style="cursor:pointer;" for="multiSelectOrderHeadsInRequestAmount">انتخاب چندتایی حواله تولید در ثبت پیش پرداخت</label>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+                <input type="checkbox" id="customerAssignExpert" name="customerAssignExpert" value="true" />
+                <label style="cursor:pointer;" for="customerAssignExpert">مشتری اختصاصی</label>
+            </div>
+            <div class="d-flex align-items-center gap-1">
                 <label for="setAmountByRoleType" class="flex-shrink-0">ورود مبلغ توسط: </label>
                 <select class="form-select form-select-sm" name="setAmountByRoleType" id="setAmountByRoleType">
                     <option value="1">فروش</option>
@@ -95,8 +103,6 @@
             document.getElementById("FLshowLoading").style.display = "";
             setting = await GetSetting();
             mySer.convertJsonToForm(setting, "SettingFormId");
-
-
             document.getElementById("FLshowLoading").style.display = "none";
         });
 

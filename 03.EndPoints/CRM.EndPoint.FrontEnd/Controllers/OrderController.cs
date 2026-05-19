@@ -19,6 +19,7 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.Order;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
 using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
@@ -232,72 +233,98 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                ViewBag.PassType = 1;
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var rols = await userManager.GetRolesAsync(user);
-
-                var dataQ = db.OrderHeads.AsQueryable();
-
-                dataQ = dataQ.Where(item =>
-                    (string.IsNullOrEmpty(model.serVal)
-                     || item.OrderNumber.ToString() == model.serVal
-                     || item.CustomerTxt.Contains(model.serVal)
-                     || item.PrefactorSer.ToString() == model.serVal
-                     || item.CustomerCode.ToString() == model.serVal)
-                    && item.Status == (OrderHeadStatusEnum)model._type
-                );
-
-                if (fStatus != -1)
-                {
-                    var preFactorsHasFactorIds = await db.PreFactors.Where(f => f.Factors.Count > 0).Select(f => f.Id).ToListAsync();
-
-                    if (fStatus == 1)
-                        dataQ = dataQ.Where(f => preFactorsHasFactorIds.Contains(f.Prefactor.Value));
-                    else if (fStatus == 2)
-                        dataQ = dataQ.Where(f => !preFactorsHasFactorIds.Contains(f.Prefactor.Value));
-                }
-
-                if (model.filt != null)
-                {
-                    dataQ = dataQ.ApplyFilter(model, f => f.Customer, f => f.OrderDateMildi, f => f.UserCreatorID);
-                }
-
-                //اگر فیلتر نداشت پیش فرض سفارش هایی که از این تاریخ به بعد هستند رو نمایش میده
-                var date = dtService.GetDateMiladi("1404/01/01");
 
                 bool hasFilter = model.filt != null;
                 bool hasSearch = !string.IsNullOrEmpty(model.serVal);
 
-                if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش") || rols.Contains("کارشناس مالی") || rols.Contains("مدیر مالی"))
-                {
-                    if (!hasFilter && !hasSearch)
-                        dataQ = dataQ.Where(f => f.OrderDateMildi > date).Take(200);
-                } else if (rols.Contains("کارشناس تامین"))
-                {
-                    dataQ = dataQ.Where(f => f.UserCreatorID == user.Id || f.UserTaminId.ToString() == user.Id);
 
-                    if (hasFilter)
-                        dataQ = dataQ.Take(200);
-                    else if (!hasSearch)
-                        dataQ = dataQ.Where(f => f.OrderDateMildi > date).Take(200);
-                } else
-                {
-                    dataQ = dataQ.Where(f => f.UserCreatorID == user.Id);
+                var query = db.OrderHeads.AsNoTracking().OrderByDescending(f => f.CreateDate).AsQueryable();
 
-                    if (!hasFilter && !hasSearch)
-                        dataQ = dataQ.Where(f => f.OrderDateMildi > date).Take(200);
+                if (hasSearch)
+                {
+                    query = query.Where(item =>
+                        item.CustomerTxt.Contains(model.serVal) ||
+                        item.OrderNumber.ToString() == model.serVal ||
+                        item.PrefactorSer.ToString() == model.serVal ||
+                        item.CustomerCode.ToString() == model.serVal
+                    );
+                }
+
+                if (fStatus != -1)
+                {
+                    query = fStatus switch {
+                        1 => query.Where(f => db.PreFactors.Any(p => p.Id == f.Prefactor.Value && p.Factors.Count > 0)),
+                        2 => query.Where(f => !db.PreFactors.Any(p => p.Id == f.Prefactor.Value && p.Factors.Count > 0)),
+                        _ => query
+                    };
+                }
+
+                if (hasFilter)
+                {
+                    query = query.ApplyFilter(model, f => f.Customer, f => f.OrderDateMildi, f => f.UserCreatorID);
                 }
 
 
-                var data = await dataQ.OrderByDescending(f => f.CreateDate).ToListAsync();
+                var isTamin = false;
+                if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش") || rols.Contains("کارشناس مالی") || rols.Contains("مدیر مالی"))
+                {
+                    isTamin = true;
+                } else if (rols.Contains("کارشناس تامین"))
+                {
+                    isTamin = true;
+                    query = query.Where(f => f.UserCreatorID == user.Id || f.UserTaminId.ToString() == user.Id);
+                } else
+                {
+                    query = query.Where(f => f.UserCreatorID == user.Id);
+                }
 
+                if (!hasFilter && !hasSearch) //اگر فیلتر نداشت پیش فرض سفارش هایی که از این تاریخ به بعد هستند رو نمایش میده
+                {
+                    var date = dtService.GetDateMiladi("1404/01/01");
+                    query = query.Where(f => f.OrderDateMildi > date).Take(200);
+                }
 
-                var html = await vrs.RenderToStringAsync("GetAllHeadOrdersPartial", data,
-                    new Dictionary<string, object> {
-                        { "PassType", ViewBag.PassType }
-                    });
+                // single mode
+                if (model._type > 0)
+                {
+                    var result = await BuildColumn((OrderHeadStatusEnum)model._type)!;
+                    return Ok(result);
+                }
 
-                return Ok(new { count = data.Count, html });
+                // multi mode
+                var registered = await BuildColumn(OrderHeadStatusEnum.ثبت_اولیه)!;
+                var producing = await BuildColumn(OrderHeadStatusEnum.تولید)!;
+                var finished = await BuildColumn(OrderHeadStatusEnum.آماده_تحویل)!;
+                var deliveredCount = 0;
+
+                if (hasSearch || hasFilter)
+                {
+                    deliveredCount = await query.CountAsync(f => f.Status == OrderHeadStatusEnum.تحویل_شده);
+                }
+
+                return Ok(new { registered, producing, finished, deliveredCount });
+
+                async Task<object> BuildColumn(OrderHeadStatusEnum status)
+                {
+                    /*var data = await query.Select(oh => new OrderHeadVModel {
+                        OrderHead = oh,
+                        RequestAmountCounts = oh.RequestAmountOrderHeads.Count
+                    }).ToListAsync();*/
+                    var data = await query.Where(f => f.Status == status)
+                        .Include(f => f.RequestAmountOrderHeads)
+                        .ToListAsync();
+
+                    var html = await vrs.RenderToStringAsync("GetAllHeadOrdersPartial", data,
+                        new Dictionary<string, object> {
+                            { "PassType", 1 },
+                            { "IsTamin", isTamin }
+                        }
+                    );
+
+                    return new { count = data.Count, html };
+                }
             }
             catch (Exception ex)
             {
@@ -459,20 +486,67 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetAllOrderHeadsByCurrentTamin()
+        {
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var roles = await userManager.GetRolesAsync(user);
+
+
+                var orderHeadQ = db.OrderHeads.AsQueryable();
+
+                if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر فروش") && !roles.Contains("کارشناس مالی") && !roles.Contains("مدیر مالی"))
+                {
+                    orderHeadQ = roles.Contains("کارشناس تامین")
+                        ? orderHeadQ.Where(f => f.UserCreatorID == user.Id || f.UserTaminId.ToString() == user.Id)
+                        : orderHeadQ.Where(f => f.UserCreatorID == user.Id);
+                }
+
+                var data = await orderHeadQ.Select(f => f.Id).ToListAsync();
+
+                /*
+                var pfs = db.PreFactors
+                    .Where(f => f.UserTaminId == Guid.Parse(CUser.Id))
+                    .Select(f => f.Id)
+                    .ToArray();
+
+                var orderHead = await db.OrderHeads
+                    .Where(f => pfs.Contains(f.Prefactor.Value))
+                    .Select(f => f.Id).ToListAsync();*/
+
+
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> GetAllOrderHeads([FromBody] GetAllOrderBySelectedVModel model)
+        public async Task<IActionResult> GetAllOrderHeads([FromBody] GetAllBySelectedVModel model)
         {
             try
             {
                 ViewBag.passType = model.PassType;
                 var search = model.Search;
 
-                var query = db.OrderHeads
+                var query = db.OrderHeads.AsNoTracking().AsQueryable();
+
+                if (model.FilterIds != null)
+                {
+                    query = query.Where(f => model.FilterIds.Contains(f.Id));
+                }
+
+                query = query
                     .OrderByDescending(f => model.SelectedIds.Contains(f.Id))
-                    .ThenByDescending(f => f.CreateDate)
-                    .AsNoTracking()
-                    .AsQueryable();
+                    .ThenByDescending(f => f.CreateDate);
 
                 if (!string.IsNullOrEmpty(search))
                 {
@@ -770,7 +844,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
                     } else
                     {
-                        var oldData = await db.OrderHeads.AsNoTracking().Include(f => f.Orders).Where(f => f.Id == model.Id).FirstOrDefaultAsync();
+                        var oldData = await db.OrderHeads.AsNoTracking().Include(f => f.Orders).Where(f => f.Id == model.Id)
+                            .FirstOrDefaultAsync();
                         await _logSystemService.LogChange(oldData, model, LogActionEnum.ویرایش, user, ["Orders"]);
                     }
                 }

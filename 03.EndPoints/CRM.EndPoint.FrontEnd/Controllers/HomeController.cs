@@ -24,6 +24,8 @@ using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
+using CRM.Core.Domain.RequestAmounts.Entities;
+using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using WebPush;
@@ -67,7 +69,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
+                /*var customers = await db.Customers.IgnoreQueryFilters()
+                    .Where(f => string.IsNullOrEmpty(f.NormalizedAgentName) || string.IsNullOrEmpty(f.NormalizedCompanyName))
+                    .ToListAsync();
+
+                foreach (var customer in customers)
+                {
+                    customer?.NormalizedCompanyName = TextService.NormalizeText(customer.CompanyName);
+                    customer?.NormalizedAgentName = TextService.NormalizeText(customer.AgentName);
+                }*/
+
                 await trans.CommitAsync();
+                //await db.SaveChangesAsync();
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();
             }

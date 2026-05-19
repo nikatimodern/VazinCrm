@@ -14,12 +14,17 @@ namespace CRM.Infrastructures.Sql.RequestAmounts.Configs {
 
 
             builder.HasMany(f => f.RequestAmountSupplyFactor)
-                .WithOne()
+                .WithOne(f => f.RequestAmount)
                 .HasForeignKey(f => f.RequestAmountId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(f => f.RequestAmountOrderHeads)
-                .WithOne()
+                .WithOne(f => f.RequestAmount)
+                .HasForeignKey(f => f.RequestAmountId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(f => f.RequestAmountPayments)
+                .WithOne(f => f.RequestAmount)
                 .HasForeignKey(f => f.RequestAmountId)
                 .OnDelete(DeleteBehavior.Cascade);
 

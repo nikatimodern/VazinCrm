@@ -283,6 +283,14 @@
     max-height: calc(100dvh - 293px) !important;
   }
   
+  #FinancialRequestContentId {
+    max-height: calc(100dvh - 347px) !important;
+  }
+  
+  #FinancialRequestContentId.selection-mode {
+    max-height: calc(100dvh - 396px) !important;
+  }
+  
   .salesExperts-list {
     height: auto !important;
     max-height: calc(100dvh - 212px) !important;
@@ -358,7 +366,7 @@
 
 
 .nav-pills .nav-link {
-  color: var(--DarkColor) ;
+  color: var(--DarkColor);
   background-color: #1626361f;
 }
 

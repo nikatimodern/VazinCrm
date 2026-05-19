@@ -5,10 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CRM.Infrastructures.Sql.Orders.Configs
-{
-    public class OrderHeadConfig : IEntityTypeConfiguration<OrderHead>
-    {
+namespace CRM.Infrastructures.Sql.Orders.Configs {
+    public class OrderHeadConfig : IEntityTypeConfiguration<OrderHead> {
         public void Configure(EntityTypeBuilder<OrderHead> builder)
         {
             builder.HasKey(f => f.Id);
@@ -21,13 +19,16 @@ namespace CRM.Infrastructures.Sql.Orders.Configs
                 .OnDelete(DeleteBehavior.Cascade);
 
 
-            builder.HasMany(f=>f.SupplyFactorOrderHeads)
+            builder.HasMany(f => f.SupplyFactorOrderHeads)
                 .WithOne()
-                .HasForeignKey(f=>f.OrderHeadId)
+                .HasForeignKey(f => f.OrderHeadId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            
 
+            builder.HasMany(f => f.RequestAmountOrderHeads)
+                .WithOne(f => f.OrderHead)
+                .HasForeignKey(f => f.OrderHeadId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

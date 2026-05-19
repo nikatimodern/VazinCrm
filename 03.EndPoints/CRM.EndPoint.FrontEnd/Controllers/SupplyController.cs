@@ -240,42 +240,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        public async Task<IActionResult> DeletePayment(Guid id)
+
+        public async Task<IActionResult> GetPayment(Guid? paymentId)
         {
             try
             {
-                var user = await userManager.GetUserAsync(HttpContext.User);
-                var item = await db.Payments.Where(f => f.Id == id).FirstOrDefaultAsync();
-                if (item == null) return NotFound();
+                var query = db.Payments.AsNoTracking().Where(f => f.Id == paymentId);
 
-                item.IsDeleted = true;
-                item.ModifyDate = DateTime.Now;
-                item.ModifyDateTxt = dtService.GetDateTimePersian();
-                item.UserModify = user.FullName;
-                item.UserModifyID = user.Id;
-
-                await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
-
-                await db.SaveChangesAsync();
-                return Ok();
-            }
-            catch (Exception e)
-            {
-                return BadRequest(e.Message);
-            }
-        }
-
-        public async Task<IActionResult> GetPayment(Guid id)
-        {
-            try
-            {
-                var data = await db.Payments
-                    .Where(f => f.Id == id)
+                var data = await query
                     .Include(f => f.PaymentSupplyFactors)
                     .AsNoTracking()
-                    .Select(sf => new {
-                        Payment = sf,
-                        SupplyFactorSerials = sf.PaymentSupplyFactors
+                    .Select(p => new {
+                        Payment = p,
+                        SupplyFactorSerials = p.PaymentSupplyFactors
                             .Join(db.SupplyFactors,
                                 pSf => pSf.SupplyFactorId,
                                 sf => sf.Id,
@@ -283,7 +260,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             )
                             .ToList(),
                         Attachments = db.Attachments
-                            .Where(a => a.EntityId == sf.Id && a._AttachType == _AttachType.Payment)
+                            .Where(a => a.EntityId == p.Id && a._AttachType == _AttachType.Payment)
                             .ToList()
                     })
                     .FirstOrDefaultAsync();
@@ -315,11 +292,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     query = query.Where(f =>
                         f.Amount == searchNumber ||
                         f.PaymentNumber == searchNumber ||
-                        f.FromAccount.Contains(searchValue) ||
-                        f.ToAccount.Contains(searchValue) ||
-                        f.PaymentSupplyFactors.Any(pSf =>
-                            db.SupplyFactors.Any(sf => sf.Id == pSf.SupplyFactorId && sf.FactorSerial == searchValue)
-                        )
+                        f.FromAccountTxt.Contains(searchValue) ||
+                        f.ToAccountTxt.Contains(searchValue)
                     );
                 }
 
@@ -350,18 +324,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (length != -1)
                     query = query.Skip(start).Take(length);
 
-                var data = await query
-                    .Select(sf => new SupplyPaymentVModel {
-                        Payment = sf,
-                        SupplyFactorSerials = sf.PaymentSupplyFactors
-                            .Join(db.SupplyFactors,
-                                pSf => pSf.SupplyFactorId,
-                                sf => sf.Id,
-                                (pSf, sf) => sf.FactorSerial
-                            )
-                            .ToList()
-                    })
-                    .ToListAsync();
+                var data = await query.ToListAsync();
 
                 return Json(new {
                     draw,
@@ -376,6 +339,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+
+        public async Task<IActionResult> GetTotalAmountSupplyFactor(Guid supplierId)
+        {
+            var totalAmount = await db.SupplyFactors
+                .AsNoTracking()
+                .Where(f => f.SupplierId == supplierId)
+                .SumAsync(f => f.Amount);
+            return Ok(totalAmount);
+        }
 
         public async Task<IActionResult> DeleteSupplyFactor(Guid id)
         {
@@ -431,12 +403,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllSupplyFactorsTablePartial(string search = "")
+        [HttpPost]
+        public async Task<IActionResult> GetAllSupplyFactorsTablePartial([FromBody] GetAllBySelectedVModel model)
         {
             try
             {
-                var query = db.SupplyFactors.AsNoTracking().OrderByDescending(f => f.CreateDate).AsQueryable();
+                var search = model.Search;
+
+                var query = db.SupplyFactors
+                    .OrderByDescending(f => model.SelectedIds.Contains(f.Id))
+                    .ThenByDescending(f => f.CreateDate)
+                    .AsNoTracking()
+                    .AsQueryable();
+
                 if (!string.IsNullOrEmpty(search))
                 {
                     query = query.Where(f =>
@@ -1082,6 +1061,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 join pf in db.PreFactors on s.PfId equals pf.Id
                 join oh in db.OrderHeads on pf.Id equals oh.Prefactor
                 select oh.Id;
+            /*select new
+            {
+                oh.Id,
+                oh.OrderNumber
+            };*/
 
             var data = await result.Distinct().ToListAsync();
 

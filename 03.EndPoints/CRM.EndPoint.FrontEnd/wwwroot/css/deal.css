@@ -146,7 +146,7 @@ body.drag-active #overlay {
   }
   
   
-  .deal-card:hover {
+ .deal-card:not(.suspend-deal):hover {
     transform: translateY(-2px);
   }
 }

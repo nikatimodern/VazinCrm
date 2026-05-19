@@ -1,0 +1,46 @@
+@model List<PreFactor>
+
+@{
+    Layout = null;
+}
+
+@if (Model.Any()) {
+    <div class="order-table-grid" style="--order-table-col: 5">
+        <div class="order-row order-header">
+            @* <div class="order-cell"></div> *@
+
+            <div class="order-cell">شماره</div>
+            <div class="order-cell">مشتری</div>
+
+            <div class="order-cell">تاریخ</div>
+            <div class="order-cell">کارشناس فروش</div>
+            @* <div class="order-cell">وضعیت</div> *@
+            <div class="order-cell">عملیات</div>
+        </div>
+
+        @foreach (var item in Model) {
+            <span class="order-row cursor-pointer" onclick="selectPfFromPfListModal('@item.Id')">
+                <div class="order-cell">@item.SerialNumber</div>
+                <div class="order-cell">
+                    @item.Customer
+                    @(string.IsNullOrWhiteSpace(item.Customer) || string.IsNullOrWhiteSpace(item.AgentName) ? "" : " | ")
+                    @item.AgentName
+                </div>
+                <div class="order-cell">@item.Date</div>
+                <div class="order-cell">@item.UserCreator</div>
+                @* <div class="order-cell fMedium">@item.PftypeTxt</div> *@
+                <div class="order-cell align-items-stretch gap-2 flex-wrap">
+                    <button data-title="مشاهده" class="buttonGray flex-center py-1 px-2" onclick="event.stopPropagation();ShowPreviewPfactor('@item.Id')">
+                        <i class="fa fa-eye"></i>
+                    </button>
+                </div>
+            </span>
+        }
+    </div>
+} else {
+    <p class="empty-msg">دستور تولیدی ثبت نشده است!</p>
+}
+
+
+
+

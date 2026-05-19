@@ -232,17 +232,21 @@
                         <button class="mp d-flex justify-content-center align-items-center" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="AttachDoc('@item.Id')">
                             <i style="font-size:15px" class="mp fa fa-paperclip"></i>
                         </button>
-                        @if (item.Pftype is (int)PreFactorEnum.در_انتظار_تایید_مالی or (int)PreFactorEnum.در_انتظار_تولید or (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد) {
+
+                        @if (item.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش) {
                             <button class="mp d-flex justify-content-center align-items-center taminDropdownToggle" data-title-right="دستور تولیدها" style="color:var(--DarkColor); border:none;background-color:transparent" data-pfId="@item.Id">
                                 <i class="mp fas fa-industry"></i>
                             </button>
                             <div class="taminDropdown"></div>
-                            if ((Model.rols.Contains("کارشناس مالی") || Model.rols.Contains("مدیر مالی") || Model.rols.Contains("مدیر ارشد")) && item.Pftype != (int)PreFactorEnum.در_انتظار_تایید_مالی) {
-                                <button class="mp d-flex justify-content-center align-items-center" data-title-right="ثبت فاکتور جدید" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="AddFactor('@item.Id',0)">
-                                    <i class="fa fa-arrow-left"></i>
-                                </button>
-                            }
                         }
+
+                        @if ((Model.rols.Contains("کارشناس مالی") || Model.rols.Contains("مدیر مالی") || Model.rols.Contains("مدیر ارشد"))
+                             && (item.Pftype is (int)PreFactorEnum.در_انتظار_تولید or (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد)) {
+                            <button class="mp d-flex justify-content-center align-items-center" data-title-right="ثبت فاکتور جدید" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="AddFactor('@item.Id',0)">
+                                <i class="fa fa-arrow-left"></i>
+                            </button>
+                        }
+
                         @if (item.Pftype == (int)PreFactorEnum.فاقد_اعتبار) {
                             <button class="mp d-flex justify-content-center align-items-center" data-title-right="بازگشت" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="Backward('@item.Id', 2, '@item.DealId')">
                                 <i style="font-size:15px" class="mp fa fa-forward"></i>

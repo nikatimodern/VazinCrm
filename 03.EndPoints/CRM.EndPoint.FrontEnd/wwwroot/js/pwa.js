@@ -26,9 +26,9 @@ async function registerServiceWorker() {
 
 let deferredPrompt = null;
 function initInstallPrompt() {
+    //if (!isDesktop()) return;
     window.addEventListener("beforeinstallprompt", (e) => {
         e.preventDefault();
-        if (!isDesktop()) return;
         deferredPrompt = e;
         
         if (sessionStorage.getItem("pwa-install-shown")) return;
@@ -75,7 +75,7 @@ async function initPush() {
     const existingSubscription = await registration.pushManager.getSubscription();
     
     if (existingSubscription) {
-        console.log("Already subscribed", existingSubscription);
+        //console.log("Already subscribed", existingSubscription);
         return;
     }
     
@@ -128,7 +128,7 @@ function isRunningInPwa() {
         || window.navigator.standalone === true;
 }
 
-function isDesktop () {
+function isDesktop() {
     if (navigator.userAgentData) {
         return !navigator.userAgentData.mobile;
     }

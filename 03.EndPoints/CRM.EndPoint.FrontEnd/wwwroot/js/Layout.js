@@ -49,9 +49,11 @@ let myDate = new GetDate();
 document.addEventListener("DOMContentLoaded", async () => {
     await GetUserLogin();
     setActiveMenu();
-    
+    // initLightbox();
     
     setting = await GetSetting();
+    
+    
     AcceptSetting(setting);
     
     
@@ -295,16 +297,22 @@ const getbaseDescription = async () => {
 };
 
 
-const GetSelsOpId = async (Lid, valTriger = null, parentModal = null) => {
-    let sel = await CrmSer.getUsers(2);
+let sellersLoaded = false;
+const GetSelsOpId = async (Lid, valTriger = null, parentModal = null, type = 2) => {
+    if (sellersLoaded) return;
+    let sel = await CrmSer.getUsers(type);
     $("#" + Lid).select2({
         data: sel, dir: "rtl", placeholder: "انتخاب", selectionCssClass: "form-control", dropdownParent: $(parentModal),
     });
     $("#" + Lid).val(valTriger).trigger("change");
+    sellersLoaded = true;
 };
 
 
+let customersLoaded = false;
 const GetCustomersOpId = async (Lid, valTriger = null, parentModal = null) => {
+    if (customersLoaded) return;
+    
     let roles = JSON.parse(sessionStorage.getItem("Rols"));
     if (roles?.some(r => r.name === "Customer")) return;
     $.get(baseUrl + "order/GetCustomersOpId", async (res) => {
@@ -315,6 +323,7 @@ const GetCustomersOpId = async (Lid, valTriger = null, parentModal = null) => {
         $("#" + Lid).val(valTriger).trigger("change");
     });
     
+    customersLoaded = true;
 };
 
 
@@ -337,8 +346,6 @@ document.getElementById("DateFilterChk")?.addEventListener("change", () => {
 });
 
 
-let customersLoaded = false;
-let sellersLoaded = false;
 let filterVarConfig;
 const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
     const filterCallBack = filterBtn.getAttribute("data-filterCallBack"); /*کال بک فانکشنی بعد از فیلتر اجرا میشه*/
@@ -348,14 +355,13 @@ const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
     filterVarConfig = filterBtn.getAttribute("data-filterVarConfig"); /*اسم متغیر کانفیگ فیلتر */
     
     
-    if (!customersLoaded) {
-        GetCustomersOpId("customerFilter", null, "#FilterFormId");
-        customersLoaded = true;
-    }
-    
-    if (!sellersLoaded) {
+    GetCustomersOpId("customerFilter", null, "#FilterFormId");
+    if (filterVarConfig === "cashConfigFilter") {
+        document.getElementById("SelFilterLabel").textContent = "کارشناس";
+        GetSelsOpId("selFilter", null, "#FilterFormId", 1);
+    } else {
+        document.getElementById("SelFilterLabel").textContent = "کارشناس فروش";
         GetSelsOpId("selFilter", null, "#FilterFormId");
-        sellersLoaded = true;
     }
     
     
@@ -1543,46 +1549,33 @@ const getAllOrders = () => {
                 sortAscending: ": فعال سازی نمایش به صورت صعودی", sortDescending: ": فعال سازی نمایش به صورت نزولی",
             },
         },
-        columns: [{ data: null, render: (data, type, row, meta) => meta.row + 1 }, {
-            data: "productSmallName",
-            name: "ProductSmallName",
-            autoWidth: true,
-            defaultContent: "-",
-        }, { data: "product", name: "Product", autoWidth: true, defaultContent: "-" }, {
-            data: "dimensions",
-            name: "Dimensions",
-            autoWidth: true,
-            defaultContent: "-",
-        }, { data: "categoryType", name: "CategoryType", autoWidth: true, defaultContent: "-" }, {
-            data: "caset",
-            name: "Caset",
-            autoWidth: true,
-            defaultContent: "-",
-        }, { data: "backgroundColor", name: "BackgroundColor", autoWidth: true, defaultContent: "-" }, {
-            data: "printColor",
-            name: "PrintColor",
-            autoWidth: true,
-            defaultContent: "-",
-        }, { data: "countColor", name: "CountColor", autoWidth: true, defaultContent: "-" }, {
-            data: "designName",
-            name: "DesignName",
-            autoWidth: true,
-            defaultContent: "-",
-        }, {
-            data: "weight",
-            name: "Weight",
-            autoWidth: true,
-            render: (data, type, row) => (data !== null && data !== "") && row.unitTxt ? `${data} ${row.unitTxt}` : "-",
-        }, { data: "thickness", name: "Thickness", autoWidth: true, defaultContent: "-" }, {
-            data: null, render: function (data, type, row) {
-                return `
+        columns: [
+            { data: null, render: (data, type, row, meta) => meta.row + 1 },
+            { data: "productSmallName", name: "ProductSmallName", autoWidth: true, defaultContent: "-" },
+            { data: "product", name: "Product", autoWidth: true, defaultContent: "-" },
+            { data: "dimensions", name: "Dimensions", autoWidth: true, defaultContent: "-" },
+            { data: "categoryType", name: "CategoryType", autoWidth: true, defaultContent: "-" },
+            { data: "caset", name: "Caset", autoWidth: true, defaultContent: "-" },
+            { data: "backgroundColor", name: "BackgroundColor", autoWidth: true, defaultContent: "-" },
+            { data: "printColor", name: "PrintColor", autoWidth: true, defaultContent: "-" },
+            { data: "countColor", name: "CountColor", autoWidth: true, defaultContent: "-" },
+            { data: "designName", name: "DesignName", autoWidth: true, defaultContent: "-" },
+            {
+                data: "weight", name: "Weight", autoWidth: true,
+                render: (data, type, row) => (data !== null && data !== "") && row.unitTxt ? `${data} ${row.unitTxt}` : "-",
+            },
+            { data: "thickness", name: "Thickness", autoWidth: true, defaultContent: "-" },
+            {
+                data: null,
+                render: function (data, type, row) {
+                    return `
                         <div class="d-inline-flex align-items-center justify-content-center gap-1">
                             <button type="button" data-title-right="ویرایش" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 d-flex justify-content-center align-items-center" onclick='ShowUpdateOrder("${row._index}")'><i class="fa fa-pencil"></i></button>
                             <button type="button" data-title-right="حذف" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="Admin buttonCancel2 d-flex justify-content-center align-items-center" onclick='DelOrderItem("${row._index}")'><i class="fa fa-trash"></i></button>
                         </div>
                     `;
+                },
             },
-        },
         
         ],
         layout: null,
@@ -1803,13 +1796,13 @@ const backDelivered = async (pfId, passType, dealId) => {
 };
 
 
-const regUtamin = async (id, type, dealId) => {
-    if (!await mySer.CheckValidForm(id)) return;
+const regUtamin = async (pfId, type, dealId) => {
+    if (!await mySer.CheckValidForm(pfId)) return;
     
     try {
-        document.getElementById("FLshowLoading").style.display = "";
-        const el = document.getElementById("S_" + id);
-        const res = await axios(`/Factor/UtaminReg?pfId=${id}&usId=${el.value}`);
+        FLshowLoading();
+        const el = document.getElementById("S_" + pfId);
+        const res = await axios(`/Factor/UtaminReg?pfId=${pfId}&usId=${el.value}`);
         if (res.status === 200) {
             if (type === 1) {
                 await getAllPreFactor();
@@ -1817,7 +1810,7 @@ const regUtamin = async (id, type, dealId) => {
                 await getPreFactorFromDeal(dealId);
             }
             
-            document.getElementById("FLshowLoading").style.display = "none";
+            FLshowLoading(false);
             toastifySuccess("به مسئول تامین واگذار شد");
         }
     } catch (err) {
@@ -1827,7 +1820,7 @@ const regUtamin = async (id, type, dealId) => {
 
 const resendRegUtamin = async (pfId, userTaminId, type, dealId) => {
     try {
-        document.getElementById("FLshowLoading").style.display = "";
+        FLshowLoading();
         const res = await axios(`/Factor/ResendRegUtamin?pfId=${pfId}&usId=${userTaminId}`);
         if (res.status === 200) {
             if (type === 1) {
@@ -1835,7 +1828,7 @@ const resendRegUtamin = async (pfId, userTaminId, type, dealId) => {
             } else if (type === 4) {
                 await getPreFactorFromDeal(dealId);
             }
-            document.getElementById("FLshowLoading").style.display = "none";
+            FLshowLoading();
             toastifySuccess("ارسال مجدد انجام شد");
         }
     } catch (err) {
@@ -1968,6 +1961,8 @@ const Backward = (id, type, dealId) => {
 const GetSetting = async () => {
     return new Promise((resolve) => {
         $.get("/ASetting/GetSetting", (res) => {
+            setting = res;
+            document.dispatchEvent(new CustomEvent("settingReady"));
             resolve(res);
         })
          .fail(async () => {
@@ -2291,6 +2286,7 @@ let isEditInvoiceModal = false;
 let invoiceItemId;
 
 const ShowModalInvoice = async (acType = 1, ParentId = null) => {
+    getAllBankAccounts();
     if (ParentId != null || acType === 2) { // وصول یا برگشتی بود
         document.getElementById("DivEtebariId").style.display = "none";
     } else {
@@ -2323,6 +2319,7 @@ const ShowModalInvoice = async (acType = 1, ParentId = null) => {
 async function showPayment(id, parent = false) {
     try {
         FLshowLoading();
+        await getAllBankAccounts();
         const res = (await axios(`/Accountancy/getAccountancy/${id}?parent=${parent}`)).data;
         const data = res.accData;
         
@@ -2365,22 +2362,21 @@ async function showPayment(id, parent = false) {
             }
         }
         
-        SanadPayList = res.listAttach;
+        const attachList = res.listAttach;
         
         const containerUploader = invoiceModalElm.querySelector("#ShowPaymentSanadParId").parentElement;
         const divShow = containerUploader.querySelector("#ShowPaymentDivShowSanadPar");
         divShow.innerHTML = "";
-        if (SanadPayList.length) {
+        if (attachList.length) {
             containerUploader.classList.remove("d-none");
-            SanadPayList.forEach(fileItem => {
+            attachList.forEach(fileItem => {
                 const imageBox = createImageBox(fileItem);
                 divShow.appendChild(imageBox);
             });
         } else {
             containerUploader.classList.add("d-none");
         }
-        
-        $("#ShowPaymentModal").modal("show");
+        ModalToggle(invoiceModalElm);
         
     } catch (err) {
         if (err.status === 404) {
@@ -2429,6 +2425,7 @@ async function showPayment(id, parent = false) {
 
 const ShowEditModalInvoice = async (id, type = 1) => {
     FLshowLoading();
+    getAllBankAccounts();
     const res = await axios(`/Accountancy/getAccountancy/${id}`);
     const data = res.data.accData;
     
@@ -2578,6 +2575,11 @@ const submitInvoice = async () => {
                 await refreshInvoiceSuccess();
                 toastifySuccess(isEditInvoiceModal ? "ویرایش انجام شد" : "ثبت انجام شد");
                 closeModalInvoice();
+                
+                const pfListModal = document.getElementById("preFactorListModal");
+                if (pfListModal.classList.contains("show")) {
+                    ModalToggle(pfListModal, "hide");
+                }
             } else {
                 toastifyError(res.error);
             }
@@ -2969,7 +2971,7 @@ const CheckAcPfAtach = async (id) => {
 };
 const AcceptPfactor = async (id, type, dealId) => {
     document.getElementById("FLshowLoading").style.display = "";
-    $.get("/Factor/AcceptPreFactor/" + id, async (res) => {
+    $.get("/Factor/AcceptPreFactorManual/" + id, async (res) => {
         if (type === 1) {
             await getAllPreFactor();
         } else if (type === 4) {
@@ -3281,7 +3283,7 @@ const setCountEnvelope = (countObj, isAdmin) => {
         salesAdmin: { count: countObj.salesAdmin || 0, id: "TSalesAdminId" },
         tamin: { count: countObj.tamin || 0, id: "TTaminExpertId" },
         financial: {
-            count: (countObj.financial?.invoiceCount || 0) + (countObj.financial?.preFactorCount || 0),
+            count: (countObj.financial?.invoiceCount || 0) + (countObj.financial?.preFactorCount || 0) + (countObj.financial?.requestCount || 0),
             id: "TFinancialExpertId",
         },
         managingDirector: {
@@ -3309,6 +3311,7 @@ const setCountEnvelope = (countObj, isAdmin) => {
     // sub tabs
     setBadge("#FinancialPrefactorTab .badgeCircle", countObj.financial?.preFactorCount || 0);
     setBadge("#FinancialInvoiceTab .badgeCircle", countObj.financial?.invoiceCount || 0);
+    setBadge("#FinancialRequestTab .badgeCircle", countObj.financial?.requestCount || 0);
     setBadge("#MDRequestAmountTab .badgeCircle", countObj.managingDirector?.requestCount || 0);
     setBadge("#MDInvoiceTab .badgeCircle", countObj.managingDirector?.invoiceCount || 0);
 };
@@ -3439,33 +3442,50 @@ const cancelShowAccModal = () => {
     document.getElementById("showImageDisplayAccAt").innerHTML = "";
 };
 
-const getAllBankAccountsJson = async () => {
+const getAllBankAccountsJson = async (type) => {
     try {
-        const res = await axios.post("/Accountancy/GetAllBankAccountJson");
-        return res.data.map(i => ({ text: i.text, value: i.id }));
+        const res = await axios(`/Accountancy/GetAllBankAccountJson?type=${type}`);
+        return res.data;
     } catch (err) {
         console.log(err);
     }
 };
+
+let isLoadedBankAccounts = false;
+
 const getAllBankAccounts = async () => {
+    if (isLoadedBankAccounts) return;
+    
+    const selects = [
+        { element: document.querySelector("#InvoiceModalId select[name='BankAccountId']"), type: 1 },
+        { element: document.querySelector("#ShowPaymentModal select[name='BankAccountId']"), type: 1, isDisable: true },
+        { element: document.querySelector("#reqAmountAttachModal select[name='fromAccountId']"), type: 1 },
+        { element: document.querySelector("#reqAmountAttachModal select[name='toAccountId']"), type: 2 },
+    ].filter(e => e.element);
+    
+    const elementsToToggleDisable = selects.filter(s => !s.isDisable).map(s => s.element);
+    toggleElementsDisabled(elementsToToggleDisable);
+    
     try {
         const data = await getAllBankAccountsJson();
         
-        const applyToModal = (modalId) => {
-            const modal = document.getElementById(modalId);
-            if (!modal) return;
-            
-            const select = modal.querySelector("select[name='BankAccountId']");
-            createOption(select, data, true, "انتخاب کنید");
-        };
+        selects.forEach(x => {
+            createOption(
+                x.element,
+                data.filter(d => d.type === x.type),
+                true,
+                "انتخاب کنید",
+            );
+        });
         
-        applyToModal("InvoiceModalId");
-        applyToModal("ShowPaymentModal");
-        
+        isLoadedBankAccounts = true;
     } catch (err) {
         console.log(err);
+    } finally {
+        toggleElementsDisabled(elementsToToggleDisable, false);
     }
 };
+
 
 const hideFact = () => {
     document.getElementById("DivFacListId").style.display = "none";
@@ -4119,14 +4139,21 @@ window.onload = () => {
 // console.log(dateTime)
 
 
-lightbox.option({
+/*lightbox.option({
     resizeDuration: 500, wrapAround: true,
-});
+});*/
 
+function initLightbox() {
+    if (!window.Lightbox3) return;
+    
+    const { Lightbox } = Lightbox3;
+    Lightbox.init();
+}
 
 const overlay = document.getElementById("overlay");
 const moreMenuBtn = document.getElementById("moreMenuBtn");
 const moreMenuDropdown = document.getElementById("moreMenuDropdown");
+/*
 moreMenuBtn?.addEventListener("click", () => {
     if (!moreMenuDropdown || !moreMenuBtn || !overlay) return;
     const isVisible = moreMenuDropdown.classList.toggle("show");
@@ -4140,6 +4167,43 @@ document.addEventListener("click", (e) => {
         overlay.classList.remove("show");
     }
 });
+*/
+
+
+const mobileDrawer = document.getElementById("mobileDrawer");
+const mobileDrawerOverlay = document.getElementById("mobileDrawerOverlay");
+const closeMobileDrawer = document.getElementById("closeMobileDrawer");
+
+function toggleMobileDrawer(state) {
+    
+    const isOpen = state ?? !mobileDrawer.classList.contains("show");
+    
+    mobileDrawer.classList.toggle("show", isOpen);
+    mobileDrawerOverlay.classList.toggle("show", isOpen);
+    
+    document.body.style.overflow = isOpen ? "hidden" : "";
+}
+
+moreMenuBtn?.addEventListener("click", () => {
+    toggleMobileDrawer(true);
+});
+
+closeMobileDrawer?.addEventListener("click", () => {
+    toggleMobileDrawer(false);
+});
+
+mobileDrawerOverlay?.addEventListener("click", () => {
+    toggleMobileDrawer(false);
+});
+
+/*document.querySelectorAll("#mobileDrawer .has-submenu > .menuBox").forEach(el => {
+    el.addEventListener("click", () => {
+        const parent = el.closest(".has-submenu");
+        console.log(parent);
+        parent.classList.add("open");
+    });
+});*/
+
 
 function sortableMobileMenu() {
     const navMenu = document.getElementById("navMenuBar");
@@ -4231,7 +4295,7 @@ function sortableMobileMenu() {
         });
     });
     
-    restoreMenuOrder();
+    // restoreMenuOrder();
 }
 
 sortableMobileMenu();
@@ -4430,17 +4494,18 @@ const showAttachments = async (id, typeAtt) => {
 /*--------------------------------------------------------------------------------*/
 const addSupplyFactorModal = document.getElementById("addSupplyFactorModal");
 let supplyFactorsSelectedIds = [];
+let tempSupFacSelectedIds = [];
+let tempSupFacSelectedMap = new Map();  // id -> number
+
 let supplyFactorsTargetInput;
 async function showAddSupplyFactorModal(elm) {
     supplyFactorsTargetInput = elm.parentElement.querySelector("input");
+    
+    tempSupFacSelectedIds = [...supplyFactorsSelectedIds];
+    tempSupFacSelectedMap.clear();
+    
     await getAllSupplyFactorsTable();
-    addSupplyFactorModal.querySelectorAll("input[type='checkbox']").forEach((checkbox) => {
-        if (supplyFactorsSelectedIds.includes(checkbox.value)) {
-            checkbox.checked = true;
-        }
-    });
     toggleAddSupplyFactorModal();
-    addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !supplyFactorsSelectedIds.length);
 }
 
 
@@ -4450,28 +4515,37 @@ function toggleAddSupplyFactorModal() {
 }
 
 const getAllSupplyFactorsTable = async (search = "") => {
-    const res = await axios(`/Supply/GetAllSupplyFactorsTablePartial?search=${search}`);
+    const model = { search, selectedIds: tempSupFacSelectedIds };
+    const res = await axios.post(`/Supply/GetAllSupplyFactorsTablePartial`, model);
     
     addSupplyFactorModal.querySelector("#addSupplyFactorContainer").innerHTML = res.data;
+    
+    restoreSelectedSupplyFactor();
 };
 
 addSupplyFactorModal?.querySelector("#addSupplyFactorContainer").addEventListener("change", (e) => {
     const checkbox = e.target.closest("input[type='checkbox']");
     if (!checkbox) return;
     
-    const anyChecked = addSupplyFactorModal.querySelector("#addSupplyFactorContainer input[type='checkbox']:checked");
+    if (checkbox.checked) {
+        if (!tempSupFacSelectedIds.includes(checkbox.value)) {
+            tempSupFacSelectedIds.push(checkbox.value);
+            tempSupFacSelectedMap.set(checkbox.value, checkbox.dataset.number);
+        }
+    } else {
+        const idx = tempSupFacSelectedIds.indexOf(checkbox.value);
+        if (idx !== -1) tempSupFacSelectedIds.splice(idx, 1);
+        tempSupFacSelectedMap.delete(checkbox.value);
+    }
     
-    addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !anyChecked);
+    const anySelected = tempSupFacSelectedIds.length > 0;
+    addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !anySelected);
 });
 
 const submitSelectedSupplyFactor = () => {
-    const checkedBoxes = [...addSupplyFactorModal.querySelectorAll("#addSupplyFactorContainer input[type='checkbox']:checked")];
+    supplyFactorsSelectedIds = [...tempSupFacSelectedIds];
     
-    supplyFactorsSelectedIds.length = 0;
-    supplyFactorsSelectedIds.push(...checkedBoxes.map(cb => cb.value).reverse());
-    
-    //const inpElm = document.getElementById("reqAmountSupplyFactor");
-    supplyFactorsTargetInput.value = checkedBoxes.map(cb => cb.dataset.number).join(", ");
+    supplyFactorsTargetInput.value = [...tempSupFacSelectedMap.values()].join(", ");
     supplyFactorsTargetInput.classList.remove("AlertReq");
     ModalToggle(addSupplyFactorModal);
 };
@@ -4485,15 +4559,753 @@ addSupplyFactorModal?.querySelector("#addSupplyFactorSearch").addEventListener("
         e.target.focus();
     }
 });
+
+
+function restoreSelectedSupplyFactor() {
+    addSupplyFactorModal.querySelectorAll("#addSupplyFactorContainer input").forEach(inp => {
+        if (tempSupFacSelectedIds.includes(inp.value)) {
+            inp.checked = true;
+            tempSupFacSelectedMap.set(inp.value, inp.dataset.number);
+        }
+    });
+    const anySelected = tempSupFacSelectedIds.length > 0;
+    addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !anySelected);
+}
+
 /*--------------------------------------------------------------------------------*/
 
+const preFactorListModal = document.getElementById("preFactorListModal");
+let accType_pfList;
+async function showModalPreFactorList(accType) {
+    accType_pfList = accType;
+    await getAllPreFactorList();
+    preFactorListModal.querySelector("#preFactorListSearch").value = "";
+    ModalToggle(preFactorListModal);
+}
+
+const getAllPreFactorList = async (search = "") => {
+    const res = await axios(`/Factor/GetAllPreFactorList?search=${search}`);
+    
+    preFactorListModal.querySelector("#preFactorListContainer").innerHTML = res.data;
+};
+
+preFactorListModal.querySelector("#preFactorListSearch").addEventListener("keyup", async (e) => {
+    if (e.key === "Enter") {
+        toggleElementsDisabled(e.target);
+        await getAllPreFactorList(e.target.value.trim());
+        toggleElementsDisabled(e.target, false);
+        e.target.focus();
+    }
+});
 
 
+async function selectPfFromPfListModal(pfId) {
+    InvoiceType = 1;
+    pfactorID = pfId;
+    await ShowModalInvoice(accType_pfList);
+}
 
 
+/*--------------------------------------------------------------------------------*/
+
+async function getOrderHeadIdsBySupplier(supplierId) {
+    try {
+        const res = await axios(`/Supply/GetOrderHeadsBySupplier?supplierId=${supplierId}`);
+        if (res.status === 200) {
+            return res.data;
+        }
+        return [];
+    } catch (err) {
+        console.log(err);
+        return [];
+    }
+}
+/*--------------------------------------------------------------------------------*/
+
+let paymentData = {};
+var reqAmountAttachment = [];
+let reqAmountId;
+let paymentTable;
+let isFinancialPaymentTable;
+
+async function changeStatusReqAmount(id, status) {
+    try {
+        FLshowLoading();
+        const res = await axios(`/Amount/ChangeStatusRequestAmount?id=${id}&status=${status}`);
+        if (res.status === 200) {
+            const currentPath = window.location.pathname.toLowerCase();
+            if (currentPath.includes("cartable")) {
+                const { tab } = getUrlParams();
+                switch (tab) {
+                    case "TManagingDirectorId":
+                        await GetRequestManagingDirector();
+                        break;
+                    case "TFinancialExpertId":
+                        await GetRequestFinancialExpert();
+                        break;
+                }
+            } else if (currentPath.includes("order")) {
+                await getAllRequestAmountByOrderHead(ohReqAmountId);
+                
+            } else if (currentPath.includes("requestamount")) {
+                await getAllRequestAmount();
+                
+            }
+        }
+    } catch (err) {
+        console.log(err);
+        toastifyError("خطای سرور");
+    } finally {
+        FLshowLoading(false);
+    }
+}
+
+const ShowModalListPayment = async (id) => {
+    getAllPaymentsList(id);
+    ModalToggle("paymentListModalId", "show");
+};
+const initPaymentTable = () => {
+    paymentTable = $("#paymentListTable").DataTable({
+        paging: false,
+        processing: true,
+        serverSide: true,
+        searching: false,
+        ordering: true,
+        order: [[1, "desc"]],
+        scrollCollapse: true,
+        scrollY: "calc(100dvh - 400px)",
+        responsive: true,
+        ajax: {
+            url: ``,
+            type: "POST",
+            dataSrc: function (json) {
+                isFinancialPaymentTable = json.isFinancial;
+                return json.data;
+            },
+        },
+        language: {
+            emptyTable: "هیچ رکوردی موجود نمی باشد.",
+            info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
+            infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
+            infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
+            lengthMenu: "نمایش _MENU_ ردیف",
+            loadingRecords: "در حال بارگزاری...",
+            search: "",
+            zeroRecords: "رکوردی با این مشخصات پیدا نشد",
+            aria: {
+                sortAscending: ": فعال سازی نمایش به صورت صعودی",
+                sortDescending: ": فعال سازی نمایش به صورت نزولی",
+            },
+        },
+        columnDefs: [
+            {
+                targets: [3, 4, 6, 7],
+                orderable: false,
+            },
+            {
+                targets: [1],
+                render: data => `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>`,
+            },
+            {
+                targets: [2],
+                render: (data, type, row) => {
+                    return `
+                        <span class="d-inline-flex flex-column fbold">
+                            <span dir="ltr">${data ? data.toLocaleString() : "-"}</span>
+                           ${row.payment.paymentMode === 1
+                        ? `<span style="font-size: 12px;color: #008077">پرداخت ${row.payment.paymentModeTxt} (<span>${row.payment.amount.toLocaleString()}</span>)</span>` : ""}
+                        </span>
+                    `;
+                },
+            },
+        ],
+        columns: [
+            { data: "payment.paymentNumber", name: "PaymentNumber", defaultContent: "-" },
+            { data: "payment.createDateTxt", name: "CreateDateTxt", defaultContent: "-" },
+            { data: "requestPaymentAmount", name: "RequestPaymentAmount", defaultContent: "-" },
+            { data: "payment.fromAccountTxt", name: "FromAccountTxt", defaultContent: "-" },
+            { data: "payment.toAccountTxt", name: "ToAccountTxt", defaultContent: "-" },
+            { data: "payment.paymentDateTxt", name: "PaymentDateTxt", defaultContent: "-" },
+            { data: "payment.userCreator", name: "UserCreator", defaultContent: "-" },
+            {
+                data: null,
+                render: function (data, type, row) {
+                    return `
+                        <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                            <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.payment.id}', 9)"><i class="fa fa-paperclip"></i></button>
+                          ${isFinancialPaymentTable
+                        ? ` <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditPaymentModal('${row.payment.id}')"><i class="fa fa-pencil"></i></button>
+                            <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deletePayment('${row.payment.id}')"><i class="fa fa-trash"></i></button>`
+                        : ""}
+                            
+                        </div>
+                    `;
+                },
+            },
+        ],
+        layout: null,
+    });
+};
+
+const getAllPaymentsList = (id) => {
+    reqAmountId = id;
+    if (!paymentTable) {
+        initPaymentTable();
+    }
+    paymentTable.ajax.url(`/Amount/GetAllPaymentsByRequestAmount?id=${id}`).load();
+};
 
 
+const deletePayment = async (id) => {
+    Swal.fire({
+        title: "حذف!",
+        text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
+        icon: "warning",
+        showCancelButton: true,
+        cancelButtonColor: "#adadad",
+        confirmButtonColor: "#e64942",
+        cancelButtonText: "انصراف",
+        confirmButtonText: "بله، حذف شود",
+    }).then(async (willDelete) => {
+        if (willDelete.isConfirmed) {
+            FLshowLoading();
+            const res = await axios(`/Amount/DeletePayment/${id}`);
+            if (res.status === 200) {
+                toastifySuccess("با موفقیت حذف شد");
+                paymentTable.ajax.reload();
+                
+                const currentPath = window.location.pathname.toLowerCase();
+                if (currentPath.includes("cartable")) {
+                    const { tab } = getUrlParams();
+                    switch (tab) {
+                        case "TManagingDirectorId":
+                            await GetRequestManagingDirector();
+                            break;
+                        case "TFinancialExpertId":
+                            await GetRequestFinancialExpert();
+                            break;
+                    }
+                } else if (currentPath.includes("requestamount")) {
+                    await getAllRequestAmount();
+                }
+                
+            }
+            FLshowLoading(false);
+        }
+    });
+};
 
+async function showEditPaymentModal(id) {
+    FLshowLoading();
+    getAllBankAccounts();
+    ModalToggle("reqAmountAttachModal", "show");
+    
+    try {
+        const res = await axios(`/Supply/GetPayment?paymentId=${id}`);
+        if (res.status === 200) {
+            paymentData = res.data.payment;
+            mySer.convertJsonToForm(paymentData, "reqAmountAttachForm");
+            if (paymentData.paymentMode === 1) {
+                const targetInputAmount = document.querySelector("#reqAmountAttachModal input[name='amount']");
+                toggleElementsDisabled(targetInputAmount, true);
+                const amountEditIcon = document.querySelector("#reqAmountAttachModal #paymentAmountGroupEditIcon");
+                amountEditIcon.classList.remove("d-none");
+            }
+            
+            reqAmountAttachment = res.data.attachments;
+            FileUpReload("reqAmountAttach");
+            /*supplyFactorsSelectedIds = paymentData.paymentSupplyFactors.map(p => p.supplyFactorId);
+            const factorSerials = res.data.supplyFactorSerials;
+            const inpElm = document.getElementById("paymentSupplyFactor");
+            inpElm.value = factorSerials.join(", ");*/
+        }
+    } catch (err) {
+        console.log(err);
+    } finally {
+        FLshowLoading(false);
+    }
+}
+
+
+////////////////////////////////////////////////////////
+let requestAmountListData;
+let reqAmountPaymentModal = document.getElementById("requestAmountPaymentModal");
+
+let isGroupPayment = false;
+async function showSetAmountPaymentItemModal(filterIds) {
+    isGroupPayment = true;
+    FLshowLoading();
+    try {
+        const res = await axios.post("/Amount/GetRequestsAmountByFilteredIds", { filterIds });
+        if (res.status === 200) {
+            requestAmountListData = res.data;
+            
+            createSetAmountPaymentItem();
+            ModalToggle(reqAmountPaymentModal);
+        }
+    } catch (err) {
+        console.error(err);
+        toastifyError("خطا در بارگذاری اطلاعات");
+    } finally {
+        FLshowLoading(false);
+    }
+}
+
+async function showEditAmountPaymentItemModal() {
+    isGroupPayment = true;
+    FLshowLoading();
+    try {
+        const res = await axios(`/Amount/GetRequestAmountsWithPaidAmountByPayment?paymentId=${paymentData.id}`);
+        if (res.status === 200) {
+            requestAmountListData = res.data;
+            
+            createSetAmountPaymentItem();
+            ModalToggle(reqAmountPaymentModal);
+        }
+    } catch (err) {
+        console.error(err);
+        toastifyError("خطا در بارگذاری اطلاعات");
+    } finally {
+        FLshowLoading(false);
+    }
+}
+
+
+function createSetAmountPaymentItem() {
+    const container = reqAmountPaymentModal.querySelector("#setAmountPaymentForm");
+    container.innerHTML = "";
+    
+    requestAmountListData.forEach((item, index) => {
+        const fieldset = document.createElement("fieldset");
+        fieldset.id = `setAmountPaymentItem-${index}`;
+        fieldset.dataset.id = item.id;
+        fieldset.innerHTML = `
+            <div class="d-flex flex-wrap align-items-center justify-content-around setAmountPaymentItem bgGreen" style="border: 1px solid;border-radius: 6px;overflow: hidden">
+                <div class="d-flex col-12 justify-content-around p-1 px-2" style="background-color:#04857c;color: #fff">
+                    <div class="d-flex align-items-center justify-content-center gap-1 pe-2">
+                        <span class="flex-shrink-0" style="color: #e1e1e1">شماره درخواست: </span>
+                        <span class="fMedium text-center">${item.requestNumber ?? ""}</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-center gap-1">
+                        <span class="flex-shrink-0" style="color: #e1e1e1">مبلغ درخواست: </span>
+                        <span class="fMedium text-center" style="white-space: nowrap">
+                            <span>${item.amount.toLocaleString()}</span>
+                            <span style="font-size: 11px">ریال</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap col-12 justify-content-around p-2 row-gap-2">
+                    <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto pe-xl-2">
+                        <span class="flex-shrink-0" style="color: #535353">مبلغ تایید شده: </span>
+
+                        <div class="fbold flex-center align-items-baseline column-gap-1 badgeGreen-border">
+                            <span style="font-size: 16px;">${item.acceptedAmount.toLocaleString()}</span>
+                            <span style="font-size: 11px;">ريال</span>
+                            <span style="font-size: 16px; color:#888">${item.acceptedAmountPercent ? item.acceptedAmountPercent + "%" : ""}</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto">
+                        <span class="flex-shrink-0" style="color: #535353">مبلغ پرداختی: </span>
+                        <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="amount"  value="${item.paidAmount ? item.paidAmount.toLocaleString() : ""}" required>
+                    </div>
+                </div>
+            </div>
+            ${index !== requestAmountListData.length - 1 ? `<div style="width: 95%;height:1px; margin: 10px auto;background-color:darkviolet"></div>` : ""}
+            `;
+        container.appendChild(fieldset);
+    });
+}
+
+
+let reqAmountAttachModal = document.getElementById("reqAmountAttachModal");
+let requestAmountPaymentMap = [];
+async function goToStepAttachReqAmount() {
+    if (!await mySer.CheckValidForm("setAmountPaymentForm")) return;
+    
+    const allItemsArray = Array.from(reqAmountPaymentModal.querySelectorAll("fieldset"));
+    
+    requestAmountPaymentMap = allItemsArray.map(item => {
+        const amountValue = item.querySelector("input[name='amount']").value;
+        return {
+            paymentId: paymentData.id,
+            requestAmountId: item.dataset.id,
+            amount: Number(SeparatedNumberRemove(amountValue)),
+        };
+    });
+    getAllBankAccounts();
+    
+    const allInputsAmount = Array.from(reqAmountPaymentModal.querySelectorAll("input[name='amount']"));
+    const totalAmount = allInputsAmount.reduce((sum, i) => sum + Number(SeparatedNumberRemove(i.value) || 0), 0);
+    const targetInputAmount = reqAmountAttachModal.querySelector("input[name='amount']");
+    
+    targetInputAmount.value = totalAmount.toLocaleString();
+    toggleElementsDisabled(targetInputAmount, true);
+    ModalToggle(reqAmountPaymentModal, "hide");
+    ModalToggle(reqAmountAttachModal, "show");
+}
+
+function cancelRequestAmountPaymentModal() {
+    isGroupPayment = false;
+    mySer.emptyForm("setAmountPaymentForm");
+    ModalToggle(reqAmountPaymentModal, "hide");
+}
+
+
+const showAttachReqAmount = (id) => {
+    reqAmountId = id;
+    getAllBankAccounts();
+    ModalToggle("reqAmountAttachModal", "show");
+};
+
+
+const cancelReqAmountAttach = () => {
+    ModalToggle("reqAmountAttachModal", "hide");
+    reqAmountAttachment = [];
+    paymentData = {};
+    document.getElementById("imageDisplayReqAmountAt").innerHTML = "";
+    document.getElementById("reqAmountAttach").value = "";
+    mySer.emptyForm("reqAmountAttachForm");
+    const targetInputAmount = document.querySelector("#reqAmountAttachModal input[name='amount']");
+    const amountEditIcon = reqAmountAttachModal.querySelector("#paymentAmountGroupEditIcon");
+    toggleElementsDisabled(targetInputAmount, false);
+    amountEditIcon.classList.add("d-none");
+};
+
+
+const submitReqAmountAttach = async () => {
+    if (!await mySer.CheckValidForm("reqAmountAttachForm")) return;
+    
+    if (reqAmountAttachment.every(item => item.isDeleted)) {
+        toastifyError("رسید واریزی اجباری است");
+        return;
+    }
+    
+    const fromAccountElm = document.querySelector("#reqAmountAttachForm select[name='fromAccountId']");
+    const toAccountElm = document.querySelector("#reqAmountAttachForm select[name='toAccountId']");
+    
+    const formData = mySer.convertFormToJSON("reqAmountAttachForm");
+    
+    const requestAmountPayments = isGroupPayment
+        ? requestAmountPaymentMap
+        : [{ paymentId: paymentData.id, requestAmountId: reqAmountId, amount: formData.amount }];
+    
+    const model = {
+        ...paymentData,
+        ...formData,
+        requestAmountPayments,
+        attachments: reqAmountAttachment,
+        toAccountTxt: toAccountElm.selectedOptions[0].innerText,
+        fromAccountTxt: fromAccountElm.selectedOptions[0].innerText,
+        paymentMode: isGroupPayment && requestAmountPaymentMap?.length > 1 ? 1 : 0,
+    };
+    
+    FLshowLoading();
+    try {
+        const res = await axios.post("/Amount/AddPaymentByRequestAmount", model);
+        if (res.status === 200) {
+            toastifySuccess("ثبت با موفقیت انجام شد");
+            cancelReqAmountAttach();
+            if (isGroupPayment) {
+                cancelRequestAmountPaymentModal();
+                requestSelection.hideSelectionMode();
+            }
+            if (model.id && paymentTable) {
+                paymentTable.ajax.reload();
+            }
+            const currentPath = window.location.pathname.toLowerCase();
+            if (currentPath.includes("cartable")) {
+                await GetRequestFinancialExpert();
+            } else if (currentPath.includes("requestamount")) {
+                await getAllRequestAmount();
+            } else if (currentPath.includes("order")) {
+                await getAllRequestAmountByOrderHead(ohReqAmountId);
+            }
+        } else if (res.status === 201) {
+            console.log(res);
+            toastifyError(res.data);
+        }
+    } catch (err) {
+        toastifyError("خطای سرور!");
+        console.log(err);
+        setTimeout(async () => await submitReqAmountAttach(), 3000);
+        
+    } finally {
+        FLshowLoading(false);
+    }
+};
+
+
+/*--------------------------------------------------------------------------------*/
+
+const addReqAmountModal = document.getElementById("addRequestAmountModal");
+let orderHeadsSelectedIds = [];
+let requestAmountData = {};
+let isFromOrderHead = false;
+let ohReqAmountId;
+async function showAddRequestAmountModal(ohId, ohNumber) {
+    await setupSelectOptionsReqAmount();
+    if (ohId) {
+        ohReqAmountId = ohId;
+        isFromOrderHead = true;
+        requestAmountData.requestAmountType = 1;
+        orderHeadsSelectedIds = [ohId];
+        addReqAmountModal.querySelector("#reqAmountModalTitleId").textContent = `درخواست پیش پرداخت حواله ${ohNumber}`;
+    }
+    
+    if (ohId || ohReqAmountId) {
+        const reqAmountTypeWrapper = addReqAmountModal.querySelector("#requestAmountTypeWrapper");
+        reqAmountTypeWrapper?.remove();
+        /*reqAmountType.value = "1";
+        toggleElementsDisabled(reqAmountType, true);*/
+    }
+    ModalToggle(addReqAmountModal);
+}
+
+async function showAllRequestAmountModal(ohId, ohNumber) {
+    const modal = document.getElementById("allRequestAmountsModal");
+    modal.querySelector(".modal-title").innerText = ohNumber ? `درخواست های حواله شماره ${ohNumber}` : "درخواست های وجه";
+    
+    ohReqAmountId = ohId;
+    await getAllRequestAmountByOrderHead(ohId);
+    ModalToggle(modal, "show");
+}
+
+async function getAllRequestAmountByOrderHead(ohId) {
+    try {
+        FLshowLoading();
+        const res = await axios(`/Amount/GetAllRequestAmountsPartial?orderHeadId=${ohId}&passType=1`);
+        if (res.status === 200) {
+            document.querySelector("#allRequestAmountsModal #requestAmountsBodyModal").innerHTML = res.data.html;
+        }
+    } catch (err) {
+        console.log(err);
+        toastifyError("خطای سرور");
+    } finally {
+        FLshowLoading(false);
+    }
+}
+
+
+let isSetupReqAmountModal = false;
+async function setupSelectOptionsReqAmount(targetId) {
+    if (isSetupReqAmountModal) return;
+    const totalAmountSupFactorElm = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
+    
+    const [resSuppliers, resCashiers] = await Promise.all([axios("/Supply/GetSupplyBaseData"), axios("/Cash/GetAllCashiers")]);
+    
+    const selectSupplier = new TomSelect("#reqAmountSupplierId", {
+        options: resSuppliers.data.suppliers,
+        placeholder: "انتخاب تامین کننده",
+        maxItems: 1,
+        selectOnTab: true,
+        
+        async onItemAdd(supplierId) {
+            selectSupplier.disable();
+            const totalSupplyFactorAmount = await getTotalAmountSupplyFactor(supplierId);
+            if (totalSupplyFactorAmount !== null) {
+                totalAmountSupFactorElm.innerHTML = `جمع مبالغ فاکتور: <b style="color: #333">${totalSupplyFactorAmount?.toLocaleString()}</b> ريال`;
+            }
+            selectSupplier.enable();
+        },
+        
+        onDelete() {
+            totalAmountSupFactorElm.innerHTML = "";
+        },
+    });
+    
+    new TomSelect("#reqAmountCashierId", {
+        options: resCashiers.data,
+        items: resCashiers.data.find(i => i.target)?.value,
+        placeholder: "انتخاب تنخواه دار",
+        maxItems: 1,
+        selectOnTab: true,
+    });
+    
+    isSetupReqAmountModal = true;
+}
+
+
+async function getTotalAmountSupplyFactor(supplierId) {
+    try {
+        const res = await axios(`/Supply/GetTotalAmountSupplyFactor?supplierId=${supplierId}`);
+        if (res.status === 200) {
+            return res.data;
+        }
+        return null;
+    } catch (err) {
+        console.log(err);
+        return null;
+    }
+}
+
+
+async function submitRequestAmountModal() {
+    if (!await mySer.CheckValidForm("requestAmountForm")) return;
+    const supplierSelect = addReqAmountModal.querySelector("#reqAmountSupplierId");
+    const cashierSelect = addReqAmountModal.querySelector("#reqAmountCashierId");
+    
+    const formData = mySer.convertFormToJSON("requestAmountForm");
+    const model = {
+        ...requestAmountData,
+        ...formData,
+        cashierId: formData.cashierId || null,
+        supplierId: formData.supplierId || null,
+        supplierTxt: supplierSelect.selectedOptions[0].innerText,
+        cashierTxt: cashierSelect.selectedOptions[0].innerText,
+        requestAmountSupplyFactor: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id, requestAmountId: requestAmountData.id })),
+        requestAmountOrderHeads: orderHeadsSelectedIds.map(id => ({ orderHeadId: id, requestAmountId: requestAmountData.id })),
+    };
+    try {
+        FLshowLoading();
+        const apiUrl = model.id ? "/Amount/UpdateRequestAmount" : "/Amount/AddRequestAmount";
+        const res = await axios.post(apiUrl, model);
+        if (res.status === 200) {
+            const currentPath = window.location.pathname.toLowerCase();
+            if (currentPath.includes("requestamount")) {
+                getAllRequestAmount();
+            } else if (currentPath.includes("order")) {
+                refreshOrders();
+                if (model.id) {
+                    await getAllRequestAmountByOrderHead(ohReqAmountId);
+                } else {
+                    await showAllRequestAmountModal(ohReqAmountId);
+                }
+            }
+            
+            toastifySuccess("با موفقیت ثبت شد");
+            cancelRequestAmountModal();
+        }
+    } catch (err) {
+        toastifyError("خطای سرور");
+        console.log(err);
+    } finally {
+        FLshowLoading(false);
+    }
+    
+}
+
+
+function cancelRequestAmountModal() {
+    ModalToggle(addReqAmountModal);
+    mySer.emptyForm("requestAmountForm");
+    supplyFactorsSelectedIds = [];
+    orderHeadsSelectedIds = [];
+    requestAmountData = {};
+    isFromOrderHead = false;
+    
+    const ohInputWrapper = addReqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
+    const ohInput = addReqAmountModal.querySelector("input#reqAmountOrderHead");
+    ohInputWrapper.classList.add("d-none");
+    toggleElementsRequired(ohInput, false);
+    const totalAmountSupFactorElm = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
+    totalAmountSupFactorElm.innerHTML = "";
+    /*  const reqAmountType = addReqAmountModal.querySelector("#requestAmountTypeId");
+      if (reqAmountType) toggleElementsDisabled(reqAmountType, false);*/
+}
+
+
+async function showEditRequestAmountModal(id) {
+    FLshowLoading();
+    await showAddRequestAmountModal();
+    
+    try {
+        const res = await axios(`/Amount/GetRequestAmount/${id}`);
+        if (res.status === 200) {
+            requestAmountData = res.data.requestAmount;
+            const supplyFactorSerials = res.data.supplyFactorSerials;
+            const orderHeadSerials = res.data.orderHeadSerials;
+            mySer.convertJsonToForm(requestAmountData, "requestAmountForm");
+            supplyFactorsSelectedIds = requestAmountData.requestAmountSupplyFactor.map(r => r.supplyFactorId);
+            orderHeadsSelectedIds = requestAmountData.requestAmountOrderHeads.map(r => r.orderHeadId);
+            
+            const inpElmSupplyFactor = addReqAmountModal.querySelector("#reqAmountSupplyFactor");
+            if (inpElmSupplyFactor) {
+                inpElmSupplyFactor.value = supplyFactorSerials.join(", ");
+            }
+            
+            const inpElmOrderHead = addReqAmountModal.querySelector("#reqAmountOrderHead");
+            if (inpElmOrderHead) {
+                inpElmOrderHead.value = orderHeadSerials.join(", ");
+            }
+        }
+        
+    } catch (err) {
+        console.log(err);
+    } finally {
+        FLshowLoading(false);
+    }
+}
+
+
+const deleteRequestAmount = async (id) => {
+    Swal.fire({
+        title: "حذف!",
+        text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
+        icon: "warning",
+        showCancelButton: true,
+        cancelButtonColor: "#adadad",
+        confirmButtonColor: "#e64942",
+        cancelButtonText: "انصراف",
+        confirmButtonText: "بله، حذف شود",
+    }).then(async (willDelete) => {
+        if (willDelete.isConfirmed) {
+            FLshowLoading();
+            const res = await axios(`/Amount/DeleteRequestAmount/${id}`);
+            if (res.status === 200) {
+                toastifySuccess("با موفقیت حذف شد");
+                const currentPath = window.location.pathname.toLowerCase();
+                if (currentPath.includes("requestamount")) {
+                    getAllRequestAmount();
+                } else if (currentPath.includes("order")) {
+                    await getAllRequestAmountByOrderHead(ohReqAmountId);
+                    refreshOrders();
+                }
+            }
+            FLshowLoading(false);
+        }
+    });
+};
+
+addReqAmountModal.querySelector("select#requestAmountTypeId")?.addEventListener("change", async (e) => {
+    const type = Number(e.target.value);
+    
+    const ohWrapper = addReqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
+    const cashierWrapper = addReqAmountModal.querySelector("#reqAmountCashierWrapper");
+    const supplierWrapper = addReqAmountModal.querySelector("#reqAmountSupplierWrapper");
+    
+    const totalAmountSupFactorElm = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
+    
+    const toggleField = (wrapper, show) => {
+        const input = wrapper.querySelector("input, select");
+        wrapper.classList.toggle("d-none", !show);
+        toggleElementsRequired(input, show);
+        
+        if (show) {
+            if (wrapper.id === "reqAmountCashierWrapper") {
+                const target = Object.values(input.tomselect.options).find(o => o.target)?.value;
+                if (target) input.tomselect.setValue(target);
+            }
+        } else {
+            if (input?.tomselect) {
+                input.tomselect.clear();
+            }
+            
+            if (wrapper.id === "reqAmountOrderHeadWrapper") {
+                orderHeadsSelectedIds = [];
+                input.value = "";
+            }
+            
+            if (wrapper.id === "reqAmountSupplierWrapper") {
+                totalAmountSupFactorElm.innerHTML = "";
+            }
+        }
+    };
+    
+    toggleField(ohWrapper, type === 1);
+    toggleField(supplierWrapper, type === 1 || type === 2);
+    toggleField(cashierWrapper, type === 3);
+});
 
 /*--------------------------------------------------------------------------------*/
 
@@ -4527,6 +5339,7 @@ document.addEventListener("input", (e) => {
          }*/
     }
 });
+
 
 
 

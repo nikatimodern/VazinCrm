@@ -468,7 +468,8 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
                 }
 
                 break;
-            case RequestAmount:
+            case RequestAmount oldReq:
+                var newReq = newEntity as RequestAmount;
                 switch (action)
                 {
                     case LogActionEnum.ثبت:
@@ -482,6 +483,10 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
 
                     case LogActionEnum.تایید_و_تغییر_وضعیت:
                         return $"یک درخواست وجه به شماره درخواست {serialNumber} توسط <b>{fullName}</b> تایید شد.";
+
+                    case LogActionEnum.تغییر_وضعیت:
+                        return
+                            $"درخواست وجه شماره {serialNumber} توسط <b>{fullName}</b> از وضعیت <b>{oldReq.RequestStatusTxt}</b> به وضعیت <b class=\"text-dark\">{newReq?.RequestStatusTxt}</b> تغییر یافت.";
                 }
 
                 break;

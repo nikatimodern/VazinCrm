@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using CRM.Framework.Domain;
 
-namespace CRM.Core.Domain.Accountancies.Entities
-{
-    public class BankAccount:BaseEntity
-    {
+namespace CRM.Core.Domain.Accountancies.Entities {
+    public class BankAccount : BaseEntity {
         public string ShebaNumber { get; set; }
         public string AccountNumber { get; set; }
         public string CartNumber { get; set; }
@@ -16,6 +14,17 @@ namespace CRM.Core.Domain.Accountancies.Entities
         public byte OfficialType { get; set; }
         public bool Active { get; set; }
 
+        public BankAccountTypeEnum BankAccountType { get; set; }
+        public string BankAccountTypeTxt { get; set; }
+
+        public Guid? CustomerId { get; set; }
+        public int? CustomerCode { get; set; }
+
         public List<Accountancy> Accountancies { get; set; }
+    }
+
+    public enum BankAccountTypeEnum {
+        شرکت = 1,
+        دیگران = 2
     }
 }

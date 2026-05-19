@@ -11,8 +11,11 @@
             </button>
         </div>
         <div class="col-12 col-lg-5 d-flex align-items-center gap-2 flex-wrap">
-            <div class="d-flex align-items-center flex-grow-1 gap-2">
+            <div class="search-group flex-grow-1">
                 <input class="form-control" id="supplyFactorSearch" placeholder="جستجو">
+                <div class="search-icon">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                </div>
             </div>
         </div>
         <div class="d-flex align-items-start justify-content-start justify-content-lg-end gap-2 col-lg-3">
@@ -72,7 +75,7 @@
                     <div>
                         <label for="supplyFactorOrderHead">بابت حواله تولید:</label>
                         <div class="input-group mb-3">
-                            <input id="supplyFactorOrderHead" type="text" class="form-control" placeholder="حواله تولید.." disabled required>
+                            <input id="supplyFactorOrderHead" type="text" class="form-control direction-ltr" placeholder="حواله تولید.." disabled required>
                             <button id="showAddOrderHeadBtn" class="btn btn-sm btn-secondary" type="button" onclick="showAddOrderHeadModal()" disabled>انتخاب</button>
                         </div>
                         @* <input name="supplierId" class="form-control" id="supplyFactorOrderHead" /> *@
@@ -108,17 +111,19 @@
 @section Scripts {
     <script>
         var supplyFactorAttachments = [];
-        let orderHeadsSelectedIds = [];
+
         let supplyFactorData = {};
         const addOrderHeadModal = document.getElementById("addOrderHeadModal");
 
         document.addEventListener("DOMContentLoaded", async () => {
             await getAllSupplyFactors();
-            document.getElementById("supplyFactorSearch").addEventListener("keyup", async (e) => {
+            const searchSupplyFactorElm = document.getElementById("supplyFactorSearch");
+            searchSupplyFactorElm.addEventListener("keyup", async (e) => {
                 if (e.key === "Enter") {
                     await getAllSupplyFactors();
                 }
             });
+            searchSupplyFactorElm.nextElementSibling.addEventListener("click", async () => await getAllSupplyFactors());
         });
 
         async function showSupplyFactorModal() {
@@ -128,47 +133,41 @@
 
         function cancelSupplyFactorModal() {
             supplyFactorAttachments = [];
-            orderHeadsSelectedIds = [];
-            supplyFactorData = [];
+            supplyFactorData = {};
+
+            orderHeadsSupFactorSelectedIds = [];
+            tempSelectedIds = [];
+            tempSelectedMap.clear();
+
             mySer.emptyForm("supplyFactorForm");
 
             toggleElementsDisabled(document.getElementById("showAddOrderHeadBtn"), true);
             ModalToggle("#supplyFactorModal", "hide");
         }
 
+        ///////////////////
+        let orderHeadsSupFactorSelectedIds = [];
+        let orderHeadsFilterIds = null;
+        let tempSelectedIds = [];
+        let tempSelectedMap = new Map(); // id -> number
         async function showAddOrderHeadModal() {
-            const supplierId = document.getElementById("supplyFactorSupplierId").value;
-            const orderHeadIds = (supplierId && !orderHeadsSelectedIds.length)
-                ? await getOrderHeadIdsBySupplier(supplierId)
-                : orderHeadsSelectedIds;
+            tempSelectedMap.clear();
+            tempSelectedIds = [...orderHeadsSupFactorSelectedIds];
 
-            await getAllOrderHeads("", orderHeadIds);
-            setCheckedCheckboxes(orderHeadIds);
+            const supplierId = document.getElementById("supplyFactorSupplierId").value;
+            if (supplierId) {
+                FLshowLoading();
+                orderHeadsFilterIds = await getOrderHeadIdsBySupplier(supplierId);
+                await getAllOrderHeads();
+                FLshowLoading(false);
+            } else {
+                FLshowLoading();
+                await getAllOrderHeads();
+                FLshowLoading(false);
+            }
             toggleAddOrderHeadModal();
         }
 
-
-        function setCheckedCheckboxes(idsToSelect = []) {
-            addOrderHeadModal.querySelectorAll("input[type='checkbox']").forEach((checkbox) => {
-                if (idsToSelect.includes(checkbox.value)) {
-                    checkbox.checked = true;
-                }
-            });
-            addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !idsToSelect.length);
-        }
-
-        async function getOrderHeadIdsBySupplier(supplierId) {
-            try {
-                const res = await axios(`/Supply/GetOrderHeadsBySupplier?supplierId=${supplierId}`);
-                if (res.status === 200) {
-                    return res.data;
-                }
-                return [];
-            } catch (err) {
-                console.log(err);
-                return [];
-            }
-        }
 
         function toggleAddOrderHeadModal() {
             addOrderHeadModal.querySelector("#addOrderHeadSearch").value = "";
@@ -176,30 +175,40 @@
         }
 
 
-        const getAllOrderHeads = async (search = "", selectedIds = []) => {
-            const model = { search, passType: 3, selectedIds };
+        const getAllOrderHeads = async (search = "") => {
+            const model = { search, passType: 3, selectedIds: tempSelectedIds, filterIds: orderHeadsFilterIds };
             const res = await axios.post(`/Order/GetAllOrderHeads`, model);
 
             addOrderHeadModal.querySelector("#addOrderHeadContainer").innerHTML = res.data;
+            restoreSelectedOrderHeads();
         };
 
         addOrderHeadModal.querySelector("#addOrderHeadContainer").addEventListener("change", (e) => {
             const checkbox = e.target.closest("input[type='checkbox']");
             if (!checkbox) return;
 
-            const anyChecked = addOrderHeadModal.querySelector("#addOrderHeadContainer input[type='checkbox']:checked");
+            if (checkbox.checked) {
+                if (!tempSelectedIds.includes(checkbox.value)) {
+                    tempSelectedIds.push(checkbox.value);
+                    tempSelectedMap.set(checkbox.value, checkbox.dataset.number);
+                }
+            } else {
+                const idx = tempSelectedIds.indexOf(checkbox.value);
+                if (idx !== -1) {
+                    tempSelectedIds.splice(idx, 1);
+                }
+                tempSelectedMap.delete(checkbox.value);
+            }
 
+            const anyChecked = tempSelectedIds.length > 0;
             addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !anyChecked);
         });
 
         const submitSelectedOrderHeads = () => {
-            const checkedBoxes = [...addOrderHeadModal.querySelectorAll("#addOrderHeadContainer input[type='checkbox']:checked")];
-
-            orderHeadsSelectedIds.length = 0;
-            orderHeadsSelectedIds.push(...checkedBoxes.map(cb => cb.value).reverse());
+            orderHeadsSupFactorSelectedIds = [...tempSelectedIds];
 
             const inpElm = document.getElementById("supplyFactorOrderHead");
-            inpElm.value = checkedBoxes.map(cb => cb.dataset.number).join(", ");
+            inpElm.value = [...tempSelectedMap.values()].join(", ");
             inpElm.classList.remove("AlertReq");
 
             ModalToggle(addOrderHeadModal);
@@ -213,6 +222,21 @@
                 e.target.focus();
             }
         });
+
+
+        function restoreSelectedOrderHeads() {
+            addOrderHeadModal.querySelectorAll("#addOrderHeadContainer input").forEach(inp => {
+                if (tempSelectedIds.includes(inp.value)) {
+                    inp.checked = true;
+                    tempSelectedMap.set(inp.value, inp.dataset.number);
+                }
+            });
+
+            const anySelected = tempSelectedIds.length > 0;
+            addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !anySelected);
+        }
+
+        /////////////////////
 
         let isSetupSupplyModal = false;
         async function setupSelectOptions() {
@@ -228,7 +252,7 @@
                 onItemAdd() {
                     toggleElementsDisabled(addOrderBtn, false);
                     document.getElementById("supplyFactorOrderHead").value = "";
-                    orderHeadsSelectedIds = [];
+                    orderHeadsSupFactorSelectedIds = [];
                 },
 
                 onDelete() {
@@ -251,7 +275,7 @@
                 ...supplyFactorData,
                 ...mySer.convertFormToJSON("supplyFactorForm"),
                 supplierTxt: supplierSelect.options[supplierSelect.selectedIndex].text,
-                supplyFactorOrderHeads: orderHeadsSelectedIds.map(id => ({ orderHeadId: id, supplyFactorId: supplyFactorData.id })),
+                supplyFactorOrderHeads: orderHeadsSupFactorSelectedIds.map(id => ({ orderHeadId: id, supplyFactorId: supplyFactorData.id })),
                 attachments: supplyFactorAttachments,
             };
 
@@ -290,7 +314,7 @@
                     supplyFactorData = res.data.supplyFactor;
                     const orderSerials = res.data.orderSerials;
                     mySer.convertJsonToForm(supplyFactorData, "supplyFactorForm");
-                    orderHeadsSelectedIds = supplyFactorData.supplyFactorOrderHeads.map(o => o.orderHeadId);
+                    orderHeadsSupFactorSelectedIds = supplyFactorData.supplyFactorOrderHeads.map(o => o.orderHeadId);
 
                     const inpElm = document.getElementById("supplyFactorOrderHead");
                     inpElm.value = orderSerials.join(", ");
