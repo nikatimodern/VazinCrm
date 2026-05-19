@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Serilog;
+using Serilog.Enrichers.ShortTypeName;
 using Serilog.Events;
 
 namespace CRM.EndPoint.FrontEnd {
@@ -45,7 +46,7 @@ namespace CRM.EndPoint.FrontEnd {
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Error) // مایکروسافت فقط ارور
                 .MinimumLevel.Override("System", LogEventLevel.Error) // سیستم فقط ارور
                 .Enrich.FromLogContext()
-                //.Enrich.WithShortTypeName()
+                .Enrich.WithShortTypeName()
                 .WriteTo.Async(x =>
                     x.File(
                         "Logs/log-.txt",
