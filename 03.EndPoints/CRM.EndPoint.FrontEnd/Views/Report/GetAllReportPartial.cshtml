@@ -13,16 +13,21 @@
         </div>
     }
     @foreach (var item in Model.OrderByDescending(f => f.CreateDate)) {
+        var badgeClass = item.ReportType switch {
+            ReportTypeEnum.گزارش_پیگیری => "report-follow-up",
+            ReportTypeEnum.گزارش_تماس_های_ورودی => "report-call",
+            ReportTypeEnum.گزارش_رضایتمندی => "report-satisfaction",
+            _ => ""
+        };
         <div class="report-wrapper">
             <img class="reporter-image" src="@(string.IsNullOrEmpty(item.UserImage) ? "/Img/User.png" : item.UserImage)" />
-
-            <div class="report-box @(item.ReportType == ReportTypeEnum.گزارش_پیگیری ? "report-follow-up" : item.ReportType == ReportTypeEnum.گزارش_تماس_های_ورودی ? "report-call" : "report-satisfaction")">
+            <div class="report-box @badgeClass">
                 <div class="report-badges">
                     @if (item.AI) {
                         <span class="report-ai-badge">
-                                @* <span>ساخته‌شده با هوش مصنوعی</span> *@
-                            <img src="~/Img/aiLogo2.png" alt="AI">
-                            </span>
+                            @* <span style="line-height: normal">ساخته‌شده با هوش مصنوعی</span> *@
+                            <img src="~/Img/aiLogo.png" alt="AI">
+                        </span>
                     }
                     <span class="report-type-badge">@item.ReportTypeTxt</span>
                 </div>

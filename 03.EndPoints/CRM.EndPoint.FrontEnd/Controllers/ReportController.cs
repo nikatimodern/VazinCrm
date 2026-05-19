@@ -235,12 +235,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var rols = await userManager.GetRolesAsync(user);
-            var qData = db.Reports.AsQueryable();
+            var qData = db.Reports.AsNoTracking().OrderByDescending(f => f.CreateDate).AsQueryable();
 
             if (dealId != null)
             {
                 ViewBag.PassType = 4;
-                qData = qData.Where(f => f.DealId == dealId).OrderByDescending(f => f.CreateDate);
+                qData = qData.Where(f => f.DealId == dealId);
             } else
             {
                 ViewBag.PassType = 0;
@@ -250,7 +250,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     var val = $"%{model.serVal}%";
                     qData = qData.Where(r =>
                         EF.Functions.Like(r.CustomerTxt, val) ||
-                        EF.Functions.Like(r.ReportText, val));
+                        EF.Functions.Like(r.ReportText, val)
+                    );
                 }
 
                 if (model._type != -1)
@@ -286,18 +287,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (!rols.Contains("مدیر ارشد") && !rols.Contains("مدیر فروش"))
                 {
                     qData = qData.Where(r =>
-                        (r.ReportType == ReportTypeEnum.گزارش_رضایتمندی && r.UserCreatorID == user.Id)
-                        || r.ReportType != ReportTypeEnum.گزارش_رضایتمندی
+                        (r.ReportType == ReportTypeEnum.گزارش_رضایتمندی && r.UserCreatorID == user.Id) ||
+                         r.ReportType != ReportTypeEnum.گزارش_رضایتمندی
                     );
                 }
-
-                qData = qData.OrderByDescending(f => f.CreateDate);
 
                 if (model.Count != -1)
                     qData = qData.Take(model.Count);
             }
 
-            var data = await qData.AsNoTracking().ToListAsync();
+            var data = await qData.ToListAsync();
             return data;
         }
 

@@ -54,12 +54,11 @@ public class ViraAi {
                 var resJson = await response.Content.ReadFromJsonAsync<AiAvanegarModel>();
                 logger.LogInformation("Transcription completed");
 
-                return resJson.Data.Data.AiResponse;
+                return resJson?.Data?.Data?.AiResponse;
             } else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                logger.LogError($"Transcription API Error ({response.StatusCode}): {errorContent}");
-                Console.WriteLine($"Transcription API Error ({response.StatusCode}): {errorContent}");
+                logger.LogError("Transcription API Error ({Code}): {Error}", response.StatusCode, errorContent);
                 return null;
             }
         }
@@ -67,7 +66,6 @@ public class ViraAi {
         {
             logger.LogError(ex, "Transcription error");
 
-            Console.WriteLine($"Error during transcription API call: {ex.Message}");
             return null;
         }
     }
