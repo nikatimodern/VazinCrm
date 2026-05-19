@@ -477,8 +477,9 @@ function createUploadProgress(containerUploader) {
 
 
 function updateUploadProgress(progressElement, percent, text) {
-    const fill = progressElement.querySelector(".upload-progress-bar-fill");
+    if (!progressElement) return;
     
+    const fill = progressElement.querySelector(".upload-progress-bar-fill");
     const txt = progressElement.querySelector(".upload-progress-text");
     
     fill.style.width = `${percent}%`;

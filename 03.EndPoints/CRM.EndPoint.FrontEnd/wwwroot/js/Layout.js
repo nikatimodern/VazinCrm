@@ -4589,7 +4589,7 @@ const getAllPreFactorList = async (search = "") => {
     preFactorListModal.querySelector("#preFactorListContainer").innerHTML = res.data;
 };
 
-preFactorListModal.querySelector("#preFactorListSearch").addEventListener("keyup", async (e) => {
+preFactorListModal?.querySelector("#preFactorListSearch")?.addEventListener("keyup", async (e) => {
     if (e.key === "Enter") {
         toggleElementsDisabled(e.target);
         await getAllPreFactorList(e.target.value.trim());
@@ -5267,7 +5267,7 @@ const deleteRequestAmount = async (id) => {
     });
 };
 
-addReqAmountModal.querySelector("select#requestAmountTypeId")?.addEventListener("change", async (e) => {
+addReqAmountModal?.querySelector("select#requestAmountTypeId")?.addEventListener("change", async (e) => {
     const type = Number(e.target.value);
     
     const ohWrapper = addReqAmountModal.querySelector("#reqAmountOrderHeadWrapper");

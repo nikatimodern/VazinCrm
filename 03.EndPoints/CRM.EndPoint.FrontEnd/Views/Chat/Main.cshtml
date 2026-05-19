@@ -13,7 +13,7 @@
             <div id="chatListContainer" style="max-height: calc(100dvh - 160px);"></div>
         </div>
 
-        <div id="chatContainer" class="d-none d-md-block email-content" style="height: calc(100dvh - 90px);background-color: #f9f9f9"></div>
+        <div id="chatContainer" class="d-none d-md-block email-content" style="height: calc(100dvh - 90px)"></div>
     </div>
 </div>
 
@@ -152,7 +152,7 @@
                 }
 
                 const chatWrapper = document.getElementById("chatWrapper");
-                chatWrapper.scrollTop = chatWrapper.scrollHeight;
+                if (chatWrapper) chatWrapper.scrollTop = chatWrapper.scrollHeight;
             } else {
                 toastifyError("خطای سرور!");
             }
@@ -235,15 +235,78 @@
             attachChatModalElm.querySelector("#chatAttachInp").value = "";*/
         }
 
-        async function handleChatAttach(inp) {
+        async function handleChatAttachOld(inp) {
             if (inp.files?.length > 0) {
                 await addToList(inp.files, "chatAttachment");
-                chatContainerElm.querySelector("#chatAttachFileName").textContent = inp.filename;
+
+
+                chatContainerElm.classList.add("upload-attach");
+                const chatWrapper = document.getElementById("chatWrapper");
+                if (chatWrapper) chatWrapper.scrollTop = chatWrapper.scrollHeight;
             }
-            console.log(chatAttachment);
-            chatContainerElm.classList.add("upload-attach");
+        }
+
+
+        async function handleChatAttach(input) {
+            const file = input.files[0];
+
+            const preview = document.getElementById("chatAttachPreview");
+            preview.innerHTML = "";
+
+            if (!file) {
+                preview.style.display = "none";
+                return;
+            }
+            await addToList(input.files, "chatAttachment");
+            preview.style.display = "block";
+
+            const size = (file.size / 1024).toFixed(1) + " KB";
+
+            let thumbHtml;
+            if (file.type.startsWith("image/")) {
+                const url = URL.createObjectURL(file);
+                thumbHtml = `<img src="${url}" class="chat-attach-thumb" alt="">`;
+            } else {
+                thumbHtml = `
+                    <div class="chat-attach-file-icon">
+                        <i class="fa fa-file"></i>
+                    </div>
+                `;
+            }
+
+            preview.innerHTML = `
+                <div class="chat-attach-preview-item">
+                    ${thumbHtml}
+
+                    <div class="chat-attach-info">
+                        <div class="chat-attach-name">
+                            ${file.name}
+                        </div>
+
+                        <div class="chat-attach-size">
+                            ${size}
+                        </div>
+                    </div>
+
+                    <button class="chat-remove-attach" onclick="removeChatAttach()">
+                        <svg style="width: 16px" viewBox="0 0 16 16" fill="currentColor"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>
+                    </button>
+
+                </div>
+            `;
+
             const chatWrapper = document.getElementById("chatWrapper");
-            chatWrapper.scrollTop = chatWrapper.scrollHeight;
+            if (chatWrapper) chatWrapper.scrollTop = chatWrapper.scrollHeight;
+        }
+
+        function removeChatAttach() {
+            document.getElementById("chatAttachInput").value = "";
+
+            const preview = document.getElementById("chatAttachPreview");
+
+            preview.innerHTML = "";
+            preview.style.display = "none";
+            chatAttachment = [];
         }
 
 
@@ -271,7 +334,7 @@
                         transitionDuration: 200,
                         originalDisplay: "flex",
                         effect: "zoom",
-                        placement: "",
+                        placement: "right",
                     });
                 }
                 clickedToggle.dropdownInstance.toggle();
