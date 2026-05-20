@@ -73,7 +73,6 @@ public class AiService(
         catch (Exception ex)
         {
             logger.LogError(ex, ex.Message);
-            Console.WriteLine(ex.Message);
         }
     }
 

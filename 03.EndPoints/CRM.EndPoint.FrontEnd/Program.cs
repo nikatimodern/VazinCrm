@@ -58,7 +58,7 @@ namespace CRM.EndPoint.FrontEnd {
                         outputTemplate:
                         "[{Timestamp:HH:mm:ss}] " +
                         "[{Level:u3}] " +
-                        "[{SourceContext}] " +
+                        "[{ShortTypeName}] " +
                         "{Message:lj}" +
                         "{NewLine}{Exception}"
                     )
