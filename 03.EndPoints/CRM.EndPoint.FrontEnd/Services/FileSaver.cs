@@ -83,11 +83,11 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
         public IList<Attachment> saveAttach(IList<Attachment> list, _AttachType type, bool removeFile = true)
         {
-            foreach (var item in list)
+            foreach (var item in list ?? [])
             {
                 if (item.Id == Guid.Empty)
                 {
-                    item.Filename = type.ToString() + "_" + Guid.NewGuid().ToString().Substring(0, 8);
+                    item.Filename = type + "_" + Path.GetFileName(item.Filename) + "_" + Guid.NewGuid().ToString()[..8];
                     item.Url = CreateFileAtt(item.File, item.Filename, item.fileExten);
                     item.CreateDate = DateTime.Now;
                     item.CreateDateTxt = dtService.GetDatePersian();
@@ -108,9 +108,9 @@ namespace CRM.EndPoint.FrontEnd.Services {
         private string CreateFileAtt(byte[] StrImage, string FileName, string Filetype)
         {
             string fileName = FileName + "." + Filetype;
-            CheckUrl(appEnvironment.WebRootPath.ToString() + @"\Uploaded\ContractAtt");
+            CheckUrl(appEnvironment.WebRootPath + @"\Uploaded\ContractAtt");
 
-            var filePath = appEnvironment.WebRootPath.ToString() + @"\Uploaded\ContractAtt\" + fileName;
+            var filePath = appEnvironment.WebRootPath + @"\Uploaded\ContractAtt\" + fileName;
 
             File.WriteAllBytes(filePath, StrImage);
             return @"\Uploaded\ContractAtt\" + fileName;

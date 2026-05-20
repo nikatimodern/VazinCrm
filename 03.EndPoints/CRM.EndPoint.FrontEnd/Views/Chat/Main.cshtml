@@ -374,17 +374,19 @@
         }
 
 
-        /* async function editChat(id) {
-             FLshowLoading();
+        async function editChat(id, btn) {
+            const box = btn.closest(".report-box")
+            const text = box.querySelector(".report-text");
+            FLshowLoading();
 
-             try {
+            try {
 
-             } catch (err) {
-                 console.log(err);
-             } finally {
-                 FLshowLoading(false);
-             }
-         }*/
+            } catch (err) {
+                console.log(err);
+            } finally {
+                FLshowLoading(false);
+            }
+        }
 
     </script>
 }

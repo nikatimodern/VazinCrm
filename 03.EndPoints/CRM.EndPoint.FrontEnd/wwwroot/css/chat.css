@@ -382,6 +382,12 @@
 }
 
 
+.report-content .report-text {
+  white-space: break-spaces;
+  word-wrap: anywhere
+}
+
+
 .chat-file-box {
   display: flex;
   align-items: center;
@@ -393,12 +399,6 @@
   color: inherit;
   min-width: 220px;
   transition: .2s;
-}
-
-
-.chat-file-box:hover {
-  /* background: #f8f8f8; */
-  transform: translateY(-1px);
 }
 
 

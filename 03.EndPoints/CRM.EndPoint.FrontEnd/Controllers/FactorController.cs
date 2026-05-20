@@ -2963,6 +2963,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 factor.Date = sepidar.DateTXT;
                 factor.SepidarId = sepidar.InvoiceId;
                 factor.SnFinancial = sepidar.Number.ToString();
+
                 factor.UserModify = user.FullName;
                 factor.UserModifyID = user.Id;
                 factor.ModifyDate = DateTime.Now;

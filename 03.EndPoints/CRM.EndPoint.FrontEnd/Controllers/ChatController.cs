@@ -231,13 +231,13 @@ public class ChatController : Controller {
             if (model.Attachments.Any())
             {
                 var attachments = fileSaver.saveAttach(model.Attachments, _AttachType.Chat);
-                foreach (var item in attachments)
+                foreach (var item in attachments ?? [])
                 {
                     var chat = new Chat {
                         UserCreatorID = fromUser.Id,
                         UserCreator = fromUser.FullName,
                         MainChatId = Guid.Parse(mainChatId),
-                        Text = string.IsNullOrWhiteSpace(model.Chat?.Text) ? "فایل" : model.Chat.Text,
+                        Text = model.Chat?.Text?.Trim(),
                         FileAddress = item.Url
                     };
                     db.Chats.Add(chat);
@@ -268,7 +268,6 @@ public class ChatController : Controller {
 
             await hub.Clients.User(notifUserId).SendAsync("Chat", mainChatId, $"{fromUser?.FullName}: {displayText}".Trim());
 
-            var rnd = new Random();
             pushQueue.Enqueue(new PushQueueItem {
                 UserId = notifUserId,
                 Title = fromUser?.FullName ?? "پیام رسان",
