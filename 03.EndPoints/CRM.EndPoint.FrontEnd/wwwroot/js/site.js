@@ -3404,3 +3404,48 @@ const updateTabSwitchState = ({ wrapperSelector, tabData, searchValue, filter })
     if (!firstAvailableTab) return;
     ShowTab(firstAvailableTab);
 };
+
+
+function initEyeToggle({ selector, onShow, onHide, showTitle = "نمایش", hideTitle = "مخفی کردن", titlePosition = "" }) {
+    const btn = document.querySelector(selector);
+    if (!btn) return;
+    
+    let isVisible = false;
+    
+    const visibleIcon = btn.querySelector(".openEye-icon");
+    const hiddenIcon = btn.querySelector(".closedEye-icon");
+    
+    const titleAttribute = titlePosition ? `data-title-${titlePosition}` : "data-title";
+    
+    const updateUI = () => {
+        visibleIcon?.classList.toggle("d-none", !isVisible);
+        hiddenIcon?.classList.toggle("d-none", isVisible);
+        btn.setAttribute(titleAttribute, isVisible ? hideTitle : showTitle);
+    };
+    
+    btn.addEventListener("click", async () => {
+        isVisible = !isVisible;
+        toggleElementsDisabled(btn);
+        if (isVisible) {
+            await onShow?.();
+        } else {
+            await onHide?.();
+        }
+        toggleElementsDisabled(btn, false);
+        
+        updateUI();
+    });
+    
+    updateUI();
+    
+    return {
+        get isVisible() {
+            return isVisible;
+        },
+        
+        set isVisible(show) {
+            isVisible = show;
+            updateUI();
+        },
+    };
+}
