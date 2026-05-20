@@ -971,47 +971,41 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         //    return View(model);
         //}
 
+
+        private async Task<UpdateCustomerVModel> BuildAcceptingSmsViewModel(PreFactor pf, Customer cus, ASetting setting)
+        {
+            var workSenf = await db.BaseItems.Where(f => f.TypeCode == BaseItemEnum.صنف).OrderBy(f => f.Title).ToListAsync();
+            var bankAccList = await db.BankAccounts.Where(f => f.OfficialType == pf.OfficialType && f.Active).ToListAsync();
+
+            ViewBag.isLogin = User.Identity?.Name == pf.Cus_Mobile ? 1 : 0;
+
+            if (ViewBag.isLogin == 0)
+                await signInManager.SignOutAsync();
+
+            return new UpdateCustomerVModel {
+                PreFactor = pf,
+                WorkSenf = workSenf,
+                Customer = cus,
+                BankAccounts = bankAccList,
+                Setting = setting
+            };
+        }
+
         [AllowAnonymous]
         [Route("{se}")]
         [HttpGet("{se}")]
         public async Task<IActionResult> AcceptingSMS(string se)
         {
+                if (se == null) return BadRequest();
             try
             {
-                if (se == null)
-                {
-                    return null;
-                }
+                var pf = await db.PreFactors.FirstOrDefaultAsync(f => f.Id.ToString().StartsWith(se));
+                if (pf == null) return NotFound();
 
-                var preFactor = await db.PreFactors.Where(f => f.Id.ToString().StartsWith(se)).FirstOrDefaultAsync();
-                if (preFactor == null)
-                {
-                    return NotFound();
-                }
+                var cus = await db.Customers.Where(f => f.Id == pf.CustomerId).FirstOrDefaultAsync();
+                var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
 
-                var customer = await db.Customers.Where(f => f.Id == preFactor.CustomerId).FirstOrDefaultAsync();
-                var workSenf = await db.BaseItems.Where(f => f.TypeCode == BaseItemEnum.صنف).OrderBy(f => f.Title).ToListAsync();
-                var bankAccList = await db.BankAccounts.Where(f => f.OfficialType == preFactor.OfficialType && f.Active).ToListAsync();
-
-                ViewBag.isLogin = 0;
-                var isSameUser = User.Identity.Name == preFactor.Cus_Mobile;
-                if (isSameUser)
-                {
-                    ViewBag.isLogin = 1;
-                } else
-                {
-                    await signInManager.SignOutAsync();
-                }
-
-                var setting = await db.ASettings.FirstOrDefaultAsync();
-
-                var model = new UpdateCustomerVModel {
-                    PreFactor = preFactor,
-                    WorkSenf = workSenf,
-                    Customer = customer,
-                    BankAccounts = bankAccList,
-                    Setting = setting
-                };
+                var model = await BuildAcceptingSmsViewModel(pf, cus, setting);
                 return View(model);
             }
             catch
@@ -1028,7 +1022,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var transAction = await db.Database.BeginTransactionAsync();
             try
             {
-                var setting = await db.ASettings.FirstOrDefaultAsync();
+                var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
                 var oldPf = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
                 var pf = await db.PreFactors.FirstOrDefaultAsync(f => f.Id == model.Id);
 
@@ -1038,7 +1032,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var user = await CreateUserForCustomer(cus, pf.Cus_Mobile);
 
                 pf.Signature = Convert.FromBase64String(model.Emza?.Split(',')[1]);
-                pf.SignatureDes = "پیش فاکتور شماره " + pf.SerialNumber + " توسط اینجانب " + model.AgentName + " مورد تایید می باشد ";
+                pf.SignatureDes = $"پیش فاکتور شماره {pf.SerialNumber} توسط اینجانب {model.AgentName} مورد تایید می باشد";
                 pf.UserModify = user.FullName;
                 pf.UserModifyID = user.Id;
 
@@ -1083,28 +1077,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     });
                 }
 
-
-                var workSenf = await db.BaseItems.Where(f => f.TypeCode == BaseItemEnum.صنف).OrderBy(f => f.Title).ToListAsync();
-                var bankAccList = await db.BankAccounts.Where(f => f.OfficialType == pf.OfficialType && f.Active).ToListAsync();
-
-                ViewBag.isLogin = 0;
-                var isSameUser = User.Identity?.Name == pf.Cus_Mobile;
-                if (isSameUser)
-                {
-                    ViewBag.isLogin = 1;
-                } else
-                {
-                    await signInManager.SignOutAsync();
-                }
-
-                var _model = new UpdateCustomerVModel {
-                    PreFactor = pf,
-                    WorkSenf = workSenf,
-                    Customer = cus,
-                    BankAccounts = bankAccList,
-                    Setting = setting
-                };
-                return View(_model);
+                var modelView = await BuildAcceptingSmsViewModel(pf, cus, setting);
+                return View(modelView);
             }
             catch (Exception e)
             {
