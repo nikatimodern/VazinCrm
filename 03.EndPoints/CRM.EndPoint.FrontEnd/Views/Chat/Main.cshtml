@@ -374,18 +374,12 @@
         }
 
 
-        async function editChat(id, btn) {
-            const box = btn.closest(".report-box")
-            const text = box.querySelector(".report-text");
-            FLshowLoading();
+        function editChat(btn) {
+            const box = btn.closest(".report-box");
 
-            try {
+            editingChatId = box.dataset.chatId;
 
-            } catch (err) {
-                console.log(err);
-            } finally {
-                FLshowLoading(false);
-            }
+            chatInput.value = box.dataset.chatText;
         }
 
     </script>
