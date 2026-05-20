@@ -301,7 +301,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     await _logSystemService.LogChange(oldModel, model, LogActionEnum.ویرایش, user);
                 }
 
-                var attachList = fileSaver.saveAttach(model.Attachments, _AttachType.Payment);
+                var attachList = fileSaver.SaveAttachments(model.Attachments, _AttachType.Payment);
                 foreach (var att in attachList ?? [])
                 {
                     att?.EntityId = model.Id;

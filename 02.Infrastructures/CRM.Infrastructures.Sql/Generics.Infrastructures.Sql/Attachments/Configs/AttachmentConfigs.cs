@@ -12,11 +12,8 @@ namespace CRM.Infrastructures.Sql.Attachments.Configs
         public void Configure(EntityTypeBuilder<Attachment> builder)
         {
             builder.HasKey(f => f.Id);
+
+            builder.HasIndex(x => x.EntityId);
         }
-
-
-
-
-
     }
 }

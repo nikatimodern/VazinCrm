@@ -313,7 +313,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     foreach (var item in att)
                     {
-                        fileSaver.DelFile(item.Url);
+                        fileSaver.DeleteFile(item.Url);
                         item.IsDeleted = true;
                     }
                 }
@@ -391,7 +391,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 foreach (var item in att)
                 {
-                    fileSaver.DelFile(item.Url);
+                    fileSaver.DeleteFile(item.Url);
                     item.IsDeleted = true;
                 }
             }
@@ -1506,7 +1506,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     if (item.IsDeleted)
                     {
-                        fileSaver.DelFile(item.Url);
+                        fileSaver.DeleteFile(item.Url);
                     } else
                     {
                         if (item.Id == Guid.Empty)
@@ -1624,7 +1624,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     if (item.IsDeleted)
                     {
                         db.Attachments.Update(item);
-                        fileSaver.DelFile(item.Url);
+                        fileSaver.DeleteFile(item.Url);
                     } else
                     {
                         if (item.Id == Guid.Empty)

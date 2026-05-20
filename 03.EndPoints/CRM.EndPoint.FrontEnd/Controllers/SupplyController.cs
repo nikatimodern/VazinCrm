@@ -94,7 +94,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 await db.SupplyFactors.AddAsync(model);
 
-                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.SupplyFactor);
+                var attach = fileSaver.SaveAttachments(model.Attachments, _AttachType.SupplyFactor);
                 foreach (var att in attach)
                 {
                     att.EntityId = model.Id;
@@ -138,7 +138,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 entity.SupplyFactorOrderHeads = model.SupplyFactorOrderHeads;
 
-                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.SupplyFactor, false);
+                var attach = fileSaver.SaveAttachments(model.Attachments, _AttachType.SupplyFactor, null, false);
                 foreach (var att in attach.Where(f => f.EntityId == null))
                 {
                     att.EntityId = model.Id;
@@ -175,7 +175,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await db.Payments.AddAsync(model);
                 await db.SaveChangesAsync();
 
-                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.Payment);
+                var attach = fileSaver.SaveAttachments(model.Attachments, _AttachType.Payment);
                 foreach (var att in attach)
                 {
                     att.EntityId = model.Id;
@@ -221,7 +221,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 entity.PaymentSupplyFactors = model.PaymentSupplyFactors;
                 db.Entry(entity).CurrentValues.SetValues(model);
 
-                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.Payment);
+                var attach = fileSaver.SaveAttachments(model.Attachments, _AttachType.Payment);
                 foreach (var att in attach)
                 {
                     att.EntityId = model.Id;

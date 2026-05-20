@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
@@ -21,7 +22,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
-
 
 public class ChatController : Controller {
     private readonly DateTimeServices dtService;
@@ -45,7 +45,6 @@ public class ChatController : Controller {
         this.hub = hub;
         this.pushQueue = pushQueue;
     }
-
 
 
     [HttpGet]
@@ -158,30 +157,56 @@ public class ChatController : Controller {
     public async Task<IActionResult> ShowChat(Guid mainChatId)
     {
         var fromUser = await userManager.GetUserAsync(HttpContext.User);
+        if (fromUser == null) return Unauthorized();
 
         var mainChat = await db.MainChats
-            .Where(f => f.Id == mainChatId)
-            .OrderBy(f => f.CreateDate)
-            .Include(f => f.Chats)
-            .FirstOrDefaultAsync();
+            .Include(x => x.Chats.OrderBy(c => c.CreateDate))
+            .FirstOrDefaultAsync(x => x.Id == mainChatId);
 
+        if (mainChat == null) return NotFound();
+
+        var userIds = mainChat.Chats.Select(x => x.UserCreatorID).Distinct().ToList();
+        var userImages = await udb.Users
+            .Where(x => userIds.Contains(x.Id))
+            .ToDictionaryAsync(x => x.Id, x => x.PersonImageUrl);
+
+        var chatIds = mainChat.Chats.Select(x => x.Id).ToList();
+        var attachments = await db.Attachments.Where(x => chatIds.Contains(x.EntityId.Value))
+            .Select(x => new {
+                x.EntityId,
+                x.OriginalFilename,
+                x.FileSize
+            })
+            .ToListAsync();
+
+        var hasUnreadChats = false;
 
         foreach (var chat in mainChat.Chats)
         {
-            var userImage = await udb.Users.Where(f => f.Id == chat.UserCreatorID).Select(u => u.PersonImageUrl).FirstOrDefaultAsync();
-            chat.UserImage = userImage;
-            if (fromUser.Id != chat.UserCreatorID)
+            userImages.TryGetValue(chat.UserCreatorID, out var image);
+            chat.UserImage = image;
+
+            var attachment = attachments.FirstOrDefault(x => x.EntityId == chat.Id);
+
+            chat.FileName = attachment?.OriginalFilename ?? Path.GetFileName(chat.FileAddress);
+            chat.FileSize = fileSaver.FormatFileSize(attachment?.FileSize);
+
+            if (!chat.Read && chat.UserCreatorID != fromUser.Id)
             {
                 chat.Read = true;
+                hasUnreadChats = true;
             }
         }
 
-        await db.SaveChangesAsync();
+        if (hasUnreadChats)
+            await db.SaveChangesAsync();
+
 
         HttpContext.Session.SetString("mainChatId", mainChat.Id.ToString());
         ViewBag.FromUserId = fromUser.Id;
         return PartialView(mainChat);
     }
+
 
     public async Task<IActionResult> CreateMainChat(string toUserId, string toUserTxt)
     {
@@ -222,68 +247,99 @@ public class ChatController : Controller {
     [HttpPost]
     public async Task<IActionResult> SendChat([FromBody] SendChatVModel model)
     {
+        if (model == null) return BadRequest();
+        await using var transaction = await db.Database.BeginTransactionAsync();
         try
         {
             var fromUser = await userManager.GetUserAsync(HttpContext.User);
-            var mainChatId = HttpContext.Session.GetString("mainChatId");
+            if (fromUser == null) return Unauthorized();
 
+            var mainChatIdStr = HttpContext.Session.GetString("mainChatId");
+            if (!Guid.TryParse(mainChatIdStr, out var mainChatId)) return BadRequest();
+
+            var text = model.Chat?.Text?.Trim();
+            var chats = new List<Chat>();
 
             if (model.Attachments.Any())
             {
-                var attachments = fileSaver.saveAttach(model.Attachments, _AttachType.Chat);
-                foreach (var item in attachments ?? [])
+                var attachments = fileSaver.SaveAttachments(model.Attachments, _AttachType.Chat);
+
+                foreach (var att in attachments ?? [])
                 {
-                    var chat = new Chat {
+                    var chatId = Guid.NewGuid();
+
+                    chats.Add(new Chat {
+                        Id = chatId,
                         UserCreatorID = fromUser.Id,
                         UserCreator = fromUser.FullName,
-                        MainChatId = Guid.Parse(mainChatId),
-                        Text = model.Chat?.Text?.Trim(),
-                        FileAddress = item.Url
-                    };
-                    db.Chats.Add(chat);
-                    item.EntityId = chat.Id;
+                        MainChatId = mainChatId,
+                        Text = text,
+                        FileAddress = att.Url
+                    });
+
+                    att.EntityId = chatId;
+                    att.UserCreator = fromUser.FullName;
+                    att.UserCreatorID = fromUser.Id;
                 }
+
+                db.Attachments.AddRange(attachments);
             } else
             {
-                var chat = new Chat {
-                    UserCreatorID = fromUser?.Id,
-                    UserCreator = fromUser?.FullName,
-                    MainChatId = Guid.Parse(mainChatId),
-                    Text = model.Chat?.Text,
-                };
-                db.Chats.Add(chat);
+                chats.Add(new Chat {
+                    UserCreatorID = fromUser.Id,
+                    UserCreator = fromUser.FullName,
+                    MainChatId = mainChatId,
+                    Text = text
+                });
             }
 
-            var mainChat = await db.MainChats.Where(f => f.Id.ToString() == mainChatId).FirstOrDefaultAsync();
+            db.Chats.AddRange(chats);
 
-            mainChat?.ModifyDate = DateTime.Now;
-            mainChat?.ModifyDateTxt = dtService.GetDateTimePersian();
-
-
-            var notifUserId = mainChat?.FromUserId == fromUser?.Id ? mainChat?.ToUserId : mainChat?.FromUserId;
-
-            const int maxLength = 50;
-            var text = model.Chat?.Text ?? "";
-            var displayText = text.Length > maxLength ? text.Substring(0, maxLength) + "..." : text;
-
-            await hub.Clients.User(notifUserId).SendAsync("Chat", mainChatId, $"{fromUser?.FullName}: {displayText}".Trim());
-
-            pushQueue.Enqueue(new PushQueueItem {
-                UserId = notifUserId,
-                Title = fromUser?.FullName ?? "پیام رسان",
-                Body = displayText,
-                Url = "/Chat/Main",
-                Tag = "chat" + fromUser?.FullName
-            });
+            var mainChat = await db.MainChats.FirstOrDefaultAsync(f => f.Id == mainChatId);
+            if (mainChat != null)
+            {
+                mainChat.ModifyDate = DateTime.Now;
+                mainChat.ModifyDateTxt = dtService.GetDateTimePersian();
+            }
 
             await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            await SendChatNotification(mainChat, fromUser, text, mainChatId);
+
             return Ok(mainChatId);
         }
         catch (Exception e)
         {
+            await transaction.RollbackAsync();
             Console.WriteLine(e);
             throw;
         }
+    }
+
+    private async Task SendChatNotification(MainChat mainChat, AppUser fromUser, string text, Guid mainChatId)
+    {
+        if (mainChat == null) return;
+        var notifUserId = mainChat.FromUserId == fromUser?.Id ? mainChat.ToUserId : mainChat.FromUserId;
+
+        const int maxLength = 50;
+        var displayText = "";
+        if (!string.IsNullOrEmpty(text))
+        {
+            displayText = text.Length > maxLength ? $"{text[..maxLength]}..." : text;
+        } else if (mainChat.Chats.Any(f => f.FileAddress != null))
+        {
+            displayText = "فایل";
+        }
+
+        await hub.Clients.User(notifUserId).SendAsync("Chat", mainChatId, $"{fromUser?.FullName}: {displayText}".Trim());
+
+        pushQueue?.Enqueue(new PushQueueItem {
+            UserId = notifUserId,
+            Title = fromUser?.FullName ?? "پیام رسان",
+            Body = displayText,
+            Url = "/Chat/Main",
+            Tag = "chat" + fromUser?.FullName
+        });
     }
 
     public async Task<IActionResult> DeleteChat(Guid id)
@@ -291,7 +347,7 @@ public class ChatController : Controller {
         try
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
-            var item = await db.Chats.Where(f => f.Id == id).FirstOrDefaultAsync();
+            var item = await db.Chats.FirstOrDefaultAsync(f => f.Id == id);
             if (item == null) return NotFound();
 
             item.IsDeleted = true;
@@ -299,6 +355,20 @@ public class ChatController : Controller {
             item.ModifyDateTxt = dtService.GetDateTimePersian();
             item.UserModify = user.FullName;
             item.UserModifyID = user.Id;
+
+            if (item.FileAddress != null)
+            {
+                var att = await db.Attachments.FirstOrDefaultAsync(f => f.EntityId == item.Id);
+                if (att != null)
+                {
+                    fileSaver.DeleteFile(att.Url);
+                    att.IsDeleted = true;
+                    att.ModifyDate = DateTime.Now;
+                    att.ModifyDateTxt = dtService.GetDateTimePersian();
+                    att.UserModify = user.FullName;
+                    att.UserModifyID = user.Id;
+                }
+            }
 
             await db.SaveChangesAsync();
             return Ok();
@@ -308,5 +378,4 @@ public class ChatController : Controller {
             return BadRequest(e.Message);
         }
     }
-
 }

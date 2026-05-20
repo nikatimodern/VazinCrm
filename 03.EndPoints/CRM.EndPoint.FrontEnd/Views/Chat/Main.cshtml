@@ -188,6 +188,8 @@
             const res = await axios.post(`/Chat/SendChat`, model);
             if (res.status === 200) {
                 chatInput.value = "";
+                removeChatAttach();
+
                 await showChat(currentMainChatId, false);
                 showListChats();
 

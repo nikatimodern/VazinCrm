@@ -394,11 +394,8 @@
   
   gap: 10px;
   border-radius: 12px;
-  text-decoration: none;
   
-  color: inherit;
   min-width: 220px;
-  transition: .2s;
 }
 
 
@@ -413,6 +410,7 @@
   justify-content: center;
   color: #008077;
   border: 1px solid #dfdfdf;
+  transition: .2s;
 }
 
 
@@ -425,7 +423,7 @@
 .chat-file-info {
   flex: 1;
   min-width: 0;
-  text-align: end;
+  direction: ltr;
 }
 
 
