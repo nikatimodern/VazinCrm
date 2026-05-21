@@ -1,5 +1,4 @@
 ﻿var taskList = [];
-let currentMainChatId;
 
 // اتصال به SignalR Hub
 const connection = new signalR.HubConnectionBuilder()
@@ -46,14 +45,25 @@ connection.on("ShowReport", async () => {
 connection.on("ShowAccessDeniedMessage", function (message) {
     toastifyError(message);
 });
-connection.on("Chat", async (mainChatId, text) => {
-    if (location.pathname !== "/Chat/Main") {
+
+////////// Chat ////////////
+connection.on("NotifChat", async (mainChatId, text) => {
+    if (location.pathname.toLowerCase() !== "/chat/main") {
         notificationChange(text, { link: "/Chat/Main", isBlank: false }, "chat");
         refreshCounterCartable();
         return;
     }
-    if (currentMainChatId === mainChatId) {
-        showChat(mainChatId, false);
+    const { mci } = getUrlParams();
+    if (mci === mainChatId) {
+       await showChat(mainChatId, false);
+    }
+    showListChats();
+});
+connection.on("UpdateChat", async (mainChatId) => {
+    if (location.pathname.toLowerCase() !== "/chat/main") return;
+    const { mci } = getUrlParams();
+    if (mci === mainChatId) {
+       await showChat(mainChatId, false);
     }
     showListChats();
 });

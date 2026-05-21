@@ -915,10 +915,19 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("CreateDateTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("EditDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EditDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("FileAddress")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsEdited")
                         .HasColumnType("bit");
 
                     b.Property<Guid>("MainChatId")

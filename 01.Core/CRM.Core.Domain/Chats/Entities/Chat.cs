@@ -10,6 +10,10 @@ public class Chat : BaseEntity {
     public bool Read { get; set; }
     public Guid MainChatId { get; set; }
 
+    public bool IsEdited { get; set; }
+    public DateTime? EditDate { get; set; }
+    public string EditDateTxt { get; set; }
+
     [NotMapped] public string FileName { get; set; }
 
     [NotMapped] public string FileSize { get; set; }

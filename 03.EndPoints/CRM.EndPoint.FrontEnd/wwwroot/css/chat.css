@@ -104,11 +104,6 @@
 }
 
 
-#chatContainer.upload-attach #chatWrapper {
-  margin-bottom: 96px !important;
-}
-
-
 #chatContainer #chatAttachWrapper {
   display: none;
   align-items: center;
@@ -122,11 +117,6 @@
 }
 
 
-#chatContainer.upload-attach #chatAttachWrapper {
-  display: flex;
-}
-
-
 #chatContainer #chatInput {
   height: 60px;
   padding: 2px 8px 2px 64px;
@@ -134,12 +124,6 @@
   border-color: #d4dbde;
   border-radius: 8px;
   text-align: start;
-}
-
-
-#chatContainer.upload-attach #chatInput {
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
 }
 
 
@@ -194,6 +178,8 @@
 .chat-attach-info {
   flex: 1;
   min-width: 0;
+  direction: ltr;
+  text-align: end;
 }
 
 
@@ -342,8 +328,6 @@
 .chat-input-area {
   flex: none;
   padding: 6px;
-  /*  background: #fff;
-   border-top: 1px solid #e5e5e5; */
 }
 
 
@@ -440,4 +424,80 @@
   color: #888;
   font-size: 11px;
   margin-top: 3px;
+}
+
+
+#chatEditPreview {
+  display: none;
+  margin-bottom: 8px;
+}
+
+
+.chat-edit-preview-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+  padding: 10px 12px;
+  
+  background: #f6ecff;
+  
+  border-right: 4px solid rebeccapurple;
+  border-radius:12px;
+  animation: attachFade .2s ease;
+}
+
+
+.chat-edit-icon {
+  width: 42px;
+  height: 42px;
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  border-radius: 10px;
+  
+  background: #fcf8ff;
+  
+  color: rebeccapurple;
+}
+
+
+.chat-edit-info {
+  flex: 1;
+  min-width: 0;
+}
+
+
+.chat-edit-title {
+  color: rebeccapurple;
+  font-size: 12px;
+  
+  font-family: IRANSansBold;
+}
+
+
+.chat-edit-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  
+  color: #777;
+  margin-top:3px;
+}
+
+
+.chat-remove-edit {
+  width: 32px;
+  height: 32px;
+  
+  border-radius: 50%;
+  
+  background: #fcf8ff;
+  color: rebeccapurple;
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

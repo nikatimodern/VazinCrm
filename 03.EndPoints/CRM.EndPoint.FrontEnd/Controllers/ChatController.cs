@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
@@ -199,7 +200,11 @@ public class ChatController : Controller {
         }
 
         if (hasUnreadChats)
+        {
+            var updateUserId = mainChat.FromUserId == fromUser.Id ? mainChat.ToUserId : mainChat.FromUserId;
             await db.SaveChangesAsync();
+            await hub.Clients.User(updateUserId).SendAsync("UpdateChat", mainChat.Id);
+        }
 
 
         HttpContext.Session.SetString("mainChatId", mainChat.Id.ToString());
@@ -256,7 +261,16 @@ public class ChatController : Controller {
 
             var mainChatIdStr = HttpContext.Session.GetString("mainChatId");
             if (!Guid.TryParse(mainChatIdStr, out var mainChatId)) return BadRequest();
+            var mainChat = await db.MainChats.FirstOrDefaultAsync(f => f.Id == mainChatId);
 
+
+            // EDIT
+            if (model.Chat?.Id != Guid.Empty)
+            {
+                return await EditChat(model.Chat, mainChat, fromUser, transaction);
+            }
+
+            // ADD
             var text = model.Chat?.Text?.Trim();
             var chats = new List<Chat>();
 
@@ -295,7 +309,7 @@ public class ChatController : Controller {
 
             db.Chats.AddRange(chats);
 
-            var mainChat = await db.MainChats.FirstOrDefaultAsync(f => f.Id == mainChatId);
+
             if (mainChat != null)
             {
                 mainChat.ModifyDate = DateTime.Now;
@@ -304,7 +318,7 @@ public class ChatController : Controller {
 
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
-            await SendChatNotification(mainChat, fromUser, text, mainChatId);
+            await SendChatNotification(mainChat, fromUser, text);
 
             return Ok(mainChatId);
         }
@@ -316,7 +330,30 @@ public class ChatController : Controller {
         }
     }
 
-    private async Task SendChatNotification(MainChat mainChat, AppUser fromUser, string text, Guid mainChatId)
+    private async Task<IActionResult> EditChat(Chat editedChat, MainChat mainChat, AppUser fromUser, IDbContextTransaction transaction)
+    {
+        var chat = await db.Chats.FirstOrDefaultAsync(x => x.Id == editedChat.Id);
+
+        if (chat == null) return NotFound();
+
+        chat.Text = editedChat?.Text?.Trim();
+        chat.IsEdited = true;
+        chat.EditDate = DateTime.Now;
+        chat.EditDateTxt = dtService.GetDateTimePersian();
+
+        await db.SaveChangesAsync();
+
+        if (mainChat != null)
+        {
+            var updateUserId = mainChat.FromUserId == fromUser?.Id ? mainChat.ToUserId : mainChat.FromUserId;
+            await hub.Clients.User(updateUserId).SendAsync("UpdateChat", mainChat.Id);
+        }
+
+        await transaction.CommitAsync();
+        return Ok();
+    }
+
+    private async Task SendChatNotification(MainChat mainChat, AppUser fromUser, string text)
     {
         if (mainChat == null) return;
         var notifUserId = mainChat.FromUserId == fromUser?.Id ? mainChat.ToUserId : mainChat.FromUserId;
@@ -331,7 +368,7 @@ public class ChatController : Controller {
             displayText = "فایل";
         }
 
-        await hub.Clients.User(notifUserId).SendAsync("Chat", mainChatId, $"{fromUser?.FullName}: {displayText}".Trim());
+        await hub.Clients.User(notifUserId).SendAsync("NotifChat", mainChat.Id, $"{fromUser?.FullName}: {displayText}".Trim());
 
         pushQueue?.Enqueue(new PushQueueItem {
             UserId = notifUserId,
