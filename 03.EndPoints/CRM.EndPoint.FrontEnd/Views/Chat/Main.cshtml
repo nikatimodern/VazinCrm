@@ -160,9 +160,15 @@
                     chatListElm.classList.add("d-none");
                     chatContainerElm.classList.remove("d-none");
                 }
+                initChatDateSticky();
 
-                const chatWrapper = document.getElementById("chatWrapper");
-                if (chatWrapper) chatWrapper.scrollTop = chatWrapper.scrollHeight;
+                const unread = chatContainerElm.querySelector(".chat-unread-divider");
+                if (unread) {
+                    unread.scrollIntoView({ block: "center" });
+                } else {
+                    const chatWrapper = document.getElementById("chatWrapper");
+                    if (chatWrapper) chatWrapper.scrollTop = chatWrapper.scrollHeight;
+                }
             } else {
                 toastifyError("خطای سرور!");
             }
@@ -204,9 +210,9 @@
                 await showChat(currentMainChatId, false);
                 showListChats();
 
-                chatInput.focus();
                 if (editingChatId) removeChatEdit();
                 if (chatAttachment.length) removeChatAttach();
+                chatContainerElm.querySelector("#chatInput").focus();
             } else {
                 toastifyError("خطای سرور!");
             }
@@ -390,5 +396,46 @@
             chatInput.value = "";
             chatContainerElm.querySelector(".chat-attach-btn").classList.remove("d-none");
         }
+
+
+        function initChatDateSticky() {
+            const wrapper = chatContainerElm.querySelector("#chatWrapper");
+            const floating = chatContainerElm.querySelector("#chatDateFloating");
+
+            if (!wrapper || !floating) return;
+
+            const groups = [...wrapper.querySelectorAll(".chat-date-group")];
+
+            let timer;
+            function updateDate() {
+                let current = groups[0];
+
+                groups.forEach(x => {
+                    const top = x.offsetTop - wrapper.scrollTop;
+
+                    if (top <= 70)
+                        current = x;
+                });
+
+                if (!current) return;
+
+                floating.textContent = current.dataset.chatDate;
+
+                floating.style.opacity = 1;
+
+                clearTimeout(timer);
+
+                timer = setTimeout(() => {
+                    floating.style.opacity = 0;
+                }, 1200);
+            }
+
+            wrapper.removeEventListener("scroll", wrapper._dateHandler);
+
+            wrapper._dateHandler = updateDate;
+
+            wrapper.addEventListener("scroll", updateDate);
+        }
+
     </script>
 }

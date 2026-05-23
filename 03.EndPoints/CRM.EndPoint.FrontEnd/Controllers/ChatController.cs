@@ -180,8 +180,13 @@ public class ChatController : Controller {
             })
             .ToListAsync();
 
-        var hasUnreadChats = false;
+        var firstUnreadChatId = mainChat.Chats
+            .Where(x => !x.Read && x.UserCreatorID != fromUser.Id)
+            .Select(x => x.Id)
+            .FirstOrDefault();
 
+
+        var hasUnreadChats = false;
         foreach (var chat in mainChat.Chats)
         {
             userImages.TryGetValue(chat.UserCreatorID, out var image);
@@ -208,8 +213,39 @@ public class ChatController : Controller {
 
 
         HttpContext.Session.SetString("mainChatId", mainChat.Id.ToString());
-        ViewBag.FromUserId = fromUser.Id;
-        return PartialView(mainChat);
+
+        var groups = mainChat.Chats
+            .GroupBy(x => x.CreateDate.Date)
+            .Select(g => new ChatGroupVModel {
+                DateTitle = GetChatDateTitle(g.Key),
+                Chats = g.ToList()
+            })
+            .ToList();
+
+        var vm = new ShowChatVModel {
+            MainChat = mainChat,
+            Groups = groups,
+            CurrentUserId = fromUser.Id,
+            FirstUnreadChatId = firstUnreadChatId
+        };
+
+        return PartialView(vm);
+    }
+
+
+    private string GetChatDateTitle(DateTime? date)
+    {
+        if (date == null) return "";
+
+        var today = DateTime.Today;
+
+        if (date.Value.Date == today)
+            return "امروز";
+
+        if (date.Value.Date == today.AddDays(-1))
+            return "دیروز";
+
+        return dtService.GetDatePersian(date.Value);
     }
 
 
