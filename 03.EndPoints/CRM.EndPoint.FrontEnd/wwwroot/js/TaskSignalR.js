@@ -13,10 +13,6 @@ connection.on("ReceiveNotification", async (item) => {
         taskList.push(item.id);
         notification(item.id, item.title, item.description, item.dateMiladi, item.entityType, item.entityId);
     }
-    /*if (!preventGetRemind) {
-        await getRemind();
-    }*/
-    
 });
 
 ////////// notificationChange ////////////

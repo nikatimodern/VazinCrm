@@ -369,7 +369,6 @@
 
             removeDealsTabsDesktop();
             initSortableDeal();
-            showDealDropdown();
             getAllOrders();
 
             await showTaminDropdown();
@@ -390,40 +389,20 @@
             });
         });
 
-        let openDealDropdownToggle = null;
-        function showDealDropdown() {
-            document.getElementById("allDealsContainer").addEventListener("click", function (e) {
-                const clickedToggle = e.target.closest(".deal-dropdown__toggle");
-                if (clickedToggle) {
-                    if (openDealDropdownToggle && openDealDropdownToggle !== clickedToggle && openDealDropdownToggle.dropdownInstance && openDealDropdownToggle.dropdownInstance.isOpen) {
-                        openDealDropdownToggle.dropdownInstance.close();
-                        openDealDropdownToggle = null;
-                    }
 
-                    if (!clickedToggle.dropdownInstance) {
-                        const currentDropdown = clickedToggle.nextElementSibling;
-                        clickedToggle.dropdownInstance = new Dropdown({
-                            button: clickedToggle,
-                            content: currentDropdown,
-                            transitionDuration: 200,
-                            originalDisplay: "flex",
-                            effect: "zoom",
-                        });
-                    }
-                    clickedToggle.dropdownInstance.toggle();
+        const dealDropdown = Dropdown.setupDelegate({
+            container: document.getElementById("allDealsContainer"),
+            toggleSelector: ".deal-dropdown__toggle",
+            options: {
+                transitionDuration: 200,
+                originalDisplay: "flex",
+                effect: "zoom",
+            },
+        });
 
-                    openDealDropdownToggle = clickedToggle.dropdownInstance.isOpen ? clickedToggle : null;
-                } else {
-                    if (openDealDropdownToggle && openDealDropdownToggle.dropdownInstance && openDealDropdownToggle.dropdownInstance.isOpen) {
-                        openDealDropdownToggle.dropdownInstance.close();
-                        openDealDropdownToggle = null;
-                    }
-                }
-            });
-        }
 
         const deleteDeal = (id) => {
-            openDealDropdownToggle.dropdownInstance.close();
+            dealDropdown.close();
             Swal.fire({
                 title: "حذف!",
                 text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
