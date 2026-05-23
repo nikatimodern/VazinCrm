@@ -2,6 +2,7 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 using Microsoft.Extensions.Configuration;
@@ -48,8 +49,19 @@ public class GapgptAi {
                 return summary;
             } else
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                logger.LogError("Summarize API Error ({ResponseStatusCode}): {ErrorContent}", response.StatusCode, errorContent);
+                var raw = await response.Content.ReadAsStringAsync();
+/*
+
+                var clean = response.Content.Headers.ContentType?.MediaType == "text/html"
+                    ? ExtractImportantError(raw)
+                    : raw;*/
+
+                var clean = StripHtml(raw);
+                var clean2 = ExtractImportantError(raw);
+
+                logger.LogError("Summarize API Error ({StatusCode}): {Error}", response.StatusCode, clean);
+                /*var errorContent = await response.Content.ReadAsStringAsync();
+                logger.LogError("Summarize API Error ({ResponseStatusCode}): {ErrorContent}", response.StatusCode, errorContent);*/
                 return null;
             }
         }
@@ -58,5 +70,43 @@ public class GapgptAi {
             logger.LogError(ex, "Summarize error");
             return null;
         }
+    }
+
+    private static string ExtractImportantError(string html)
+    {
+        if (string.IsNullOrWhiteSpace(html))
+            return string.Empty;
+
+        var text = StripHtml(html);
+
+        // فقط قسمت مهم
+        var match = Regex.Match(text, @"Error\s\d+.*?Unavailable!", RegexOptions.IgnoreCase);
+
+        if (match.Success)
+            return match.Value;
+
+        return text.Length > 300
+            ? text[..300]
+            : text;
+    }
+    private static string StripHtml(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return string.Empty;
+
+        // remove script/style
+        input = Regex.Replace(input, "<script.*?</script>", "", RegexOptions.Singleline);
+        input = Regex.Replace(input, "<style.*?</style>", "", RegexOptions.Singleline);
+
+        // remove all tags
+        input = Regex.Replace(input, "<.*?>", " ");
+
+        // decode HTML entities
+        input = System.Net.WebUtility.HtmlDecode(input);
+
+        // normalize spaces
+        input = Regex.Replace(input, @"\s+", " ").Trim();
+
+        return input;
     }
 }
