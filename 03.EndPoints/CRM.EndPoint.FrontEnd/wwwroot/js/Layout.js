@@ -1855,8 +1855,7 @@ const SendToCustomer = async () => {
     } catch (err) {
         console.log(err);
         CounterSmsSend = CounterSmsSend + 1;
-        
-        if (CounterSmsSend <= 3) {
+        if (CounterSmsSend < 3) {
             toastifyError("ارسال با خطا روبرو شد");
             setTimeout(async () => await SendToCustomer(), 3000);
         } else {
