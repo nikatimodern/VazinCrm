@@ -206,6 +206,10 @@ public class ChatController : Controller {
 
         if (hasUnreadChats)
         {
+            mainChat.ReminderSentUserId = null;
+            mainChat.ReminderSentDate = null;
+
+
             var updateUserId = mainChat.FromUserId == fromUser.Id ? mainChat.ToUserId : mainChat.FromUserId;
             await db.SaveChangesAsync();
             await hub.Clients.User(updateUserId).SendAsync("UpdateChat", mainChat.Id);

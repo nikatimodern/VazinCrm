@@ -994,6 +994,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("ModifyDateTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("ReminderSentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReminderSentUserId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ToUserId")
                         .HasColumnType("nvarchar(max)");
 
