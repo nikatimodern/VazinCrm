@@ -3197,6 +3197,7 @@ const GetUserLogin = async () => {
 
 let locationTabIdEnvelope;
 const checkRoles = (roles) => {
+    if (!roles) return;
     roles.forEach(role => {
         const elements = document.querySelectorAll(`.${role.name}`);
         elements.forEach(el => {

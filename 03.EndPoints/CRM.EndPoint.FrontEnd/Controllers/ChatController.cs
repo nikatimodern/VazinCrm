@@ -14,6 +14,7 @@ using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Generics.Infrastructures.Sql;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -105,11 +106,10 @@ public class ChatController : Controller {
         }
     }
 
+    [Authorize]
     [HttpGet]
     public IActionResult Main()
     {
-        //var user = userManager.GetUserAsync(HttpContext.User).Result;
-
         return View();
     }
 
@@ -126,6 +126,7 @@ public class ChatController : Controller {
     }
 
 
+    [Authorize]
     public async Task<IActionResult> ShowListChats()
     {
         var fromUser = await userManager.GetUserAsync(HttpContext.User);
@@ -155,6 +156,7 @@ public class ChatController : Controller {
         return Ok(chatList);
     }
 
+    [Authorize]
     public async Task<IActionResult> ShowChat(Guid mainChatId)
     {
         var fromUser = await userManager.GetUserAsync(HttpContext.User);
@@ -253,6 +255,7 @@ public class ChatController : Controller {
     }
 
 
+    [Authorize]
     public async Task<IActionResult> CreateMainChat(string toUserId, string toUserTxt)
     {
         var user = await udb.Users.Where(f => f.PhoneNumber == toUserId).AsNoTracking().FirstOrDefaultAsync();
@@ -289,6 +292,7 @@ public class ChatController : Controller {
     }
 
 
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> SendChat([FromBody] SendChatVModel model)
     {
@@ -370,6 +374,7 @@ public class ChatController : Controller {
         }
     }
 
+    [Authorize]
     private async Task<IActionResult> EditChat(Chat editedChat, MainChat mainChat, AppUser fromUser, IDbContextTransaction transaction)
     {
         var chat = await db.Chats.FirstOrDefaultAsync(x => x.Id == editedChat.Id);
@@ -419,6 +424,7 @@ public class ChatController : Controller {
         });
     }
 
+    [Authorize]
     public async Task<IActionResult> DeleteChat(Guid id)
     {
         try
