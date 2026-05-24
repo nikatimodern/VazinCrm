@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Text;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Models;
@@ -61,7 +63,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
             return res;
         }*/
-        private async Task<ResponseSmsModel> SendPatternSms(string toNumber, string patternCode, string number, string link = null)
+        private async Task<ResponseSmsModel> SendPatternSms(string toNumber, string patternCode, string number = null, string link = null)
         {
             ResponseSmsModel res = new();
 
