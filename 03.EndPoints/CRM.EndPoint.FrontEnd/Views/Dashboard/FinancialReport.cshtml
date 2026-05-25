@@ -1,0 +1,119 @@
+
+@{
+    ViewBag.Title = "title";
+    Layout = "_Layout";
+}
+
+<div>
+    <div class="dashGridContainer">
+        <div class="dashGridItem" style="container-type: inline-size">
+            <div class="dashCardItem">
+                <div class="dashCardIcon" style="border-color: #006400;color:#006400;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                </div>
+                <div class="dashCardContent">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span style="font-size: clamp(11px, 3.75cqw, 12px);color:gray">موجودی بانک</span>
+                    </div>
+                    <div class="d-flex flex-column align-items-start flex-grow-1">
+                        <div class="d-flex align-items-baseline justify-content-between flex-wrap" style="column-gap:.5rem">
+                            <div class="d-flex align-items-baseline flex-wrap" style="column-gap:.25rem">
+                                <span class="fbold direction-ltr" id="bankBalanceId" style="font-size: clamp(19px, 6.4cqw, 22px);"></span>
+                                <span style="font-size: clamp(11px, 3.75cqw, 13px);">ريال</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashGridItem" style="container-type: inline-size">
+            <div class="dashCardItem">
+                <div class="dashCardIcon" style="border-color: #006400;color:#006400;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                </div>
+                <div class="dashCardContent">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span style="font-size: clamp(11px, 3.75cqw, 12px);color:gray">مطالبات</span>
+                    </div>
+                    <div class="d-flex flex-column align-items-start flex-grow-1">
+                        <div class="d-flex align-items-baseline justify-content-between flex-wrap" style="column-gap:.5rem">
+                            <div class="d-flex align-items-baseline flex-wrap" style="column-gap:.25rem">
+                                <span class="fbold direction-ltr" id="totalDemandId" style="font-size: clamp(19px, 6.4cqw, 22px);"></span>
+                                <span style="font-size: clamp(11px, 3.75cqw, 13px);">ريال</span>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-column" style="font-size:11px;">
+                            <div class="w-100 d-flex align-items-baseline gap-2">
+                                <div style="color:rgb(0 103 139)">
+                                    <span>فاکتور فروش: </span>
+                                    <span id="inOrderCount" class="fbold" style="font-size:clamp(14px, 4.5cqw, 15px)"></span>
+                                </div>
+                                /
+                                <div style="color:rgb(137 139 0)">
+                                    <span id="ordersProgressCount" class="fbold" style="font-size:clamp(14px, 4.5cqw, 15px)"></span>
+                                    <span>مرحله تولید</span>
+                                </div>
+                            </div>
+
+                            <div class="w-100 d-flex align-items-baseline gap-2">
+                                <div style="color:rgb(0 131 17)">
+                                    <span id="ordersDoneCount" class="fbold" style="font-size:clamp(14px, 4.5cqw, 15px)"></span>
+                                    <span>آماده تحویل</span>
+                                </div>
+                                /
+                                <div style="color:rgb(120 120 120)">
+                                    <span id="ordersDeliverCount" class="fbold" style="font-size:clamp(14px, 4.5cqw, 15px)"></span>
+                                    <span>تحویل شده</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashGridItem" style="container-type: inline-size">
+            <div class="dashCardItem">
+                <div class="dashCardIcon" style="border-color: #006400;color:#006400;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                </div>
+                <div class="dashCardContent">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span style="font-size: clamp(11px, 3.75cqw, 12px);color:gray">بدهی</span>
+                    </div>
+                    <div class="d-flex flex-column align-items-start flex-grow-1">
+                        <div class="d-flex align-items-baseline justify-content-between flex-wrap" style="column-gap:.5rem">
+                            <div class="d-flex align-items-baseline flex-wrap" style="column-gap:.25rem">
+                                <span class="fbold direction-ltr" id="totalDebitId" style="font-size: clamp(19px, 6.4cqw, 22px);"></span>
+                                <span style="font-size: clamp(11px, 3.75cqw, 13px);">ريال</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const res = await axios.post("/Dashboard/GetFinancialReport", {});
+            if (res.status === 200) {
+                const data = res.data;
+                document.getElementById("bankBalanceId").textContent = data.bankBalance?.toLocaleString() || "-";
+                document.getElementById("totalDemandId").textContent = data.demands?.toLocaleString() || "-";
+                document.getElementById("totalDebitId").textContent = data.debit?.toLocaleString() || "-";
+            }
+        });
+
+
+
+
+
+    </script>
+}

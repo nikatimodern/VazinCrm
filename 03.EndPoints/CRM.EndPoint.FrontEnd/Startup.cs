@@ -24,7 +24,6 @@ using Microsoft.Extensions.Hosting;
 using System;
 using System.Security.Claims;
 using CRM.EndPoint.FrontEnd.Services.PushServices;
-
 using System.Net;
 using System.Net.Http;
 using WebPush;
@@ -43,7 +42,6 @@ namespace CRM.EndPoint.FrontEnd {
         {
             return EnCodeDeCode.Decrypt(EncodeText);
         }
-
 
 
         public void ConfigureServices(IServiceCollection services)
@@ -67,22 +65,21 @@ namespace CRM.EndPoint.FrontEnd {
 
             //All AddScoped
             services.AddDbContext<Sepidar1ContextDb>(op =>
-                op.UseSqlServer(Configuration.GetConnectionString("Sepidar1Connection")
-                ));
+                op.UseSqlServer(Configuration.GetConnectionString("Sepidar1Connection"))
+            );
 
             services.AddDbContext<Sepidar2ContextDb>(op =>
-                op.UseSqlServer(Configuration.GetConnectionString("Sepidar2Connection")
-                ));
+                op.UseSqlServer(Configuration.GetConnectionString("Sepidar2Connection"))
+            );
 
             services.AddDbContext<CRMContextDb>(op =>
-                op.UseSqlServer(_Decode(Configuration.GetConnectionString("CRMConnection"))
-                ));
+                op.UseSqlServer(_Decode(Configuration.GetConnectionString("CRMConnection")))
+            );
 
 
             services.AddDbContext<UserContextDb>(op =>
-                op.UseSqlServer(_Decode(Configuration.GetConnectionString("UserConnection")),
-                    op => op.EnableRetryOnFailure()
-                ));
+                op.UseSqlServer(_Decode(Configuration.GetConnectionString("UserConnection")), op => op.EnableRetryOnFailure())
+            );
 
             /*services.AddDbContext<IsabelleContextDb>(options =>
                 options.UseMySql(Configuration.GetConnectionString("IsabelleConnection"),
@@ -141,16 +138,13 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddHostedService<PushBackgroundService>();
             services.AddScoped<IPushService, PushService>();
 
-            services.AddSingleton<WebPushClient>(sp =>
-            {
-                var handler = new SocketsHttpHandler
-                {
+            services.AddSingleton<WebPushClient>(sp => {
+                var handler = new SocketsHttpHandler {
                     EnableMultipleHttp2Connections = false,
                     PooledConnectionLifetime = TimeSpan.FromMinutes(5)
                 };
 
-                var httpClient = new HttpClient(handler)
-                {
+                var httpClient = new HttpClient(handler) {
                     Timeout = TimeSpan.FromSeconds(30)
                 };
 
