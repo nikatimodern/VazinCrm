@@ -2897,7 +2897,13 @@ document.querySelectorAll(".chip").forEach(chip => {
 
 const toggleElementsDisabled = (elms, isDisabled = true) => {
     const items = elms instanceof NodeList || elms instanceof Array ? elms : [elms];
-    items.forEach(el => el.disabled = isDisabled);
+    items.forEach(el => {
+        if (el.tomselect) {
+            isDisabled ? el.tomselect.disable() : el.tomselect.enable();
+        } else {
+            el.disabled = isDisabled;
+        }
+    });
 };
 
 const toggleElementsRequired = (elms, isRequired) => {
@@ -3085,7 +3091,7 @@ document.addEventListener("click", function (e) {
             placement: target.dataset.bsPlacement || "top",
             customClass: target.dataset.bsCustomClass || "fMedium",
             trigger: "manual",
-            html: target.dataset.bsHtml === "true"
+            html: target.dataset.bsHtml === "true",
         };
         
         pop = new bootstrap.Popover(target, options);

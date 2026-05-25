@@ -3472,7 +3472,6 @@ const getAllBankAccounts = async () => {
             const filteredData = data.filter(d => d.type === x.type);
             if (x.type === 2) {
                 createSupplierTomSelect(x.element, filteredData);
-                
                 return;
             }
             
@@ -3483,10 +3482,7 @@ const getAllBankAccounts = async () => {
                     
                     return {
                         value: item.value,
-                        text: `
-                            ${ui.title}
-                            ${ui.details ? ` (${ui.details})` : ""}
-                        `,
+                        text: `${ui.title}${ui.details ? ` (${ui.details})` : ""}`,
                     };
                 }),
                 true,
@@ -3539,9 +3535,7 @@ const buildBankAccountUi = (item) => {
     return {
         title: item.accountName,
         details: details.join(" | "),
-        officialText: item.officialType === 1
-            ? "رسمی"
-            : "غیررسمی",
+        officialText: item.officialType === 1 ? "رسمی" : "غیررسمی",
         isOfficial: item.officialType === 1,
     };
 };
@@ -3551,17 +3545,14 @@ const createSupplierTomSelect = (element, items) => {
     if (element.tomselect) {
         element.tomselect.destroy();
     }
-    
-    const tomSelect = new TomSelect(element, {
-        
+    console.log(items);
+    new TomSelect(element, {
         options: items.map(item => {
-            
             const ui = buildBankAccountUi(item);
-            
             return {
                 value: item.value,
                 
-                text: ui.title,
+                title: ui.title,
                 details: ui.details,
                 
                 officialText: ui.officialText,
@@ -3575,7 +3566,7 @@ const createSupplierTomSelect = (element, items) => {
             };
         }),
         searchField: ["search"],
-        
+        labelField: ["title"],
         placeholder: "جستجو و انتخاب حساب مقصد",
         
         maxItems: 1,
@@ -3612,8 +3603,6 @@ const createSupplierTomSelect = (element, items) => {
             `,
         },
     });
-    
-    tomSelect.enable();
 };
 
 const hideFact = () => {
@@ -4940,7 +4929,6 @@ async function showEditPaymentModal(id) {
                 const amountEditIcon = document.querySelector("#reqAmountAttachModal #paymentAmountGroupEditIcon");
                 amountEditIcon.classList.remove("d-none");
             }
-            
             reqAmountAttachment = res.data.attachments;
             FileUpReload("reqAmountAttach");
             /*supplyFactorsSelectedIds = paymentData.paymentSupplyFactors.map(p => p.supplyFactorId);
