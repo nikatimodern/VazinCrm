@@ -17,14 +17,17 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
+using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using CRM.Infrastructures.Sql.Factors.QueryExtensions;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
@@ -59,6 +62,68 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return View();
         }
 
+
+        [HttpPost]
+        public async Task<IActionResult> GetFinancialReport([FromBody] filterVModel model)
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var roles = await userManager.GetRolesAsync(user);
+            if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر مالی") && !roles.Contains("کارشناس مالی") && !roles.Contains("مدیر عامل"))
+                return NoContent();
+
+
+            var hasFilter = model?.filt != null;
+
+            var accountancyQuery = db.Accountancies
+                .AsNoTracking()
+                .ForPreFactor()
+                .Where(a =>
+                    a.Status == AccStatusEnum.تایید_شده &&
+                    (a.PayType == PayTypeEnum.نقدی || a.PayType == PayTypeEnum.تهاتری)
+                );
+
+            var factorQuery = db.Factors.AsNoTracking().Where(f => f.status == FactorStatus.تایید_شده);
+            var paymentQuery = db.Payments.AsNoTracking();
+            var supplyFactorQuery = db.SupplyFactors.AsNoTracking();
+
+            if (hasFilter)
+            {
+                accountancyQuery = accountancyQuery.ApplyFilter(model, null, x => x.VosolDateM);
+                factorQuery = factorQuery.ApplyFilter(model, null, x => x.DateMiladi);
+                paymentQuery = paymentQuery.ApplyFilter(model, null, x => x.PaymentDate);
+                supplyFactorQuery = supplyFactorQuery.ApplyFilter(model, null, x => x.FactorDate);
+            }
+
+            var accountancies = await accountancyQuery
+                .GroupBy(x => x.PayType)
+                .Select(g => new {
+                    PayType = g.Key,
+                    Amount = g.Sum(x => x.AccType == AcEnum.واریزی ? x.credit : -x.BackWard)
+                })
+                .ToListAsync();
+
+            var bankBalance = accountancies.Where(x => x.PayType == PayTypeEnum.نقدی).Sum(x => x.Amount);
+            var tahatori = accountancies.Where(x => x.PayType == PayTypeEnum.تهاتری).Sum(x => x.Amount);
+
+            var factorAmount = await factorQuery.SumAsync(f => f.ParentReturnedId == null ? f.PaymentAmount : -f.PaymentAmount);
+            var paymentAmount = await paymentQuery.SumAsync(x => x.Amount);
+            var supplyFactorAmount = await supplyFactorQuery.SumAsync(x => x.Amount);
+
+
+            var data = new {
+                bankBalance,
+                tahatori,
+
+                factorAmount,
+                paymentAmount,
+                supplyFactorAmount,
+
+                demands = factorAmount - (bankBalance + tahatori),
+
+                debit = supplyFactorAmount - (paymentAmount + tahatori)
+            };
+            return Ok(data);
+        }
 
         [HttpPost]
         public async Task<IActionResult> GetLogSystem([FromBody] filterVModel model)
@@ -173,16 +238,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (model.filt != null)
             {
                 reports = reports.ApplyFilter(model, f => f.CustomerId, f => f.CreateDate, f => f.UserCreatorID);
-                /*var fd = dtService.GetDateMiladi(model.filt.fromDate);
-                var td = dtService.GetDateMiladi(model.filt.toDate);
-                fd = fd ?? dtService.GetDateMiladi("1000/01/01");
-                td = (td ?? DateTime.Today).Date.AddDays(1).AddTicks(-1);
-                if (model.filt.CusFilterChd == true)
-                    reports = reports.Where(f => f.CustomerId == model.filt.customerFilter);
-                if (model.filt.DateFilterChk == true)
-                    reports = reports.Where(f => f.CreateDate >= fd && f.CreateDate <= td);
-                if (model.filt.SelFilterChd == true)
-                    reports = reports.Where(f => f.UserCreatorID == model.filt.selFilter.ToString());*/
             }
 
 
