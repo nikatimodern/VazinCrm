@@ -3517,35 +3517,47 @@ const buildBankAccountText = (item) => {
 };
 
 const buildBankAccountUi = (item) => {
+    const number = item.accountNumber || item.cartNumber || item.shebaNumber;
     
     const details = [];
     
     if (item.bankName)
-        details.push(`بانک: ${item.bankName}`);
+        details.push(item.bankName);
     
-    if (item.accountNumber)
-        details.push(`حساب: ${item.accountNumber}`);
+    if (number)
+        details.push(number);
     
-    if (item.shebaNumber)
-        details.push(`شبا: ${item.shebaNumber}`);
+    const detailsText = details.join(" - ");
     
-    if (item.cartNumber)
-        details.push(`کارت: ${item.cartNumber}`);
+    const displayText = detailsText
+        ? `${item.accountName} (${detailsText})`
+        : item.accountName;
     
     return {
         title: item.accountName,
-        details: details.join(" | "),
+        
+        details: [
+            item.bankName ? `بانک: ${item.bankName}` : null,
+            item.accountNumber ? `حساب: ${item.accountNumber}` : null,
+            item.cartNumber ? `کارت: ${item.cartNumber}` : null,
+            item.shebaNumber ? `شبا: ${item.shebaNumber}` : null,
+        ].filter(Boolean).join(" | "),
+        
+        displayText,
+        
         officialText: item.officialType === 1 ? "رسمی" : "غیررسمی",
+        
         isOfficial: item.officialType === 1,
     };
 };
+
 
 const createSupplierTomSelect = (element, items) => {
     
     if (element.tomselect) {
         element.tomselect.destroy();
     }
-    console.log(items);
+    
     new TomSelect(element, {
         options: items.map(item => {
             const ui = buildBankAccountUi(item);
@@ -3554,6 +3566,7 @@ const createSupplierTomSelect = (element, items) => {
                 
                 title: ui.title,
                 details: ui.details,
+                text: ui.displayText,
                 
                 officialText: ui.officialText,
                 isOfficial: ui.isOfficial,
@@ -3566,7 +3579,7 @@ const createSupplierTomSelect = (element, items) => {
             };
         }),
         searchField: ["search"],
-        labelField: ["title"],
+        //labelField: ["title"],
         placeholder: "جستجو و انتخاب حساب مقصد",
         
         maxItems: 1,
@@ -3593,7 +3606,7 @@ const createSupplierTomSelect = (element, items) => {
             item: (data, escape) => `
                 <div class="bank-item">
                     <div class="item-title">
-                        ${escape(data.title)}
+                        ${escape(data.text)}
                     </div>
 
                     <div class="bank-badge ${!data.isOfficial ? "unofficial" : ""}">

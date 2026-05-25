@@ -69,15 +69,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-                /*var customers = await db.Customers.IgnoreQueryFilters()
-                    .Where(f => string.IsNullOrEmpty(f.NormalizedAgentName) || string.IsNullOrEmpty(f.NormalizedCompanyName))
-                    .ToListAsync();
-
-                foreach (var customer in customers)
-                {
-                    customer?.NormalizedCompanyName = TextService.NormalizeText(customer.CompanyName);
-                    customer?.NormalizedAgentName = TextService.NormalizeText(customer.AgentName);
-                }*/
 
                 await trans.CommitAsync();
                 //await db.SaveChangesAsync();
