@@ -5829,3 +5829,136 @@ table tr.payment-vosoled > td {
   transition: width .8s linear;
   background: #0d6efd;
 }
+
+
+/* wrapper */
+
+.ts-wrapper.single .ts-control:hover {
+  border-color: #c9d2dc;
+}
+
+
+/* فلش پایین */
+.ts-wrapper.single .ts-control::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid #7b8794;
+  border-bottom: 2px solid #7b8794;
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+  transition: .15s;
+}
+
+
+.ts-wrapper.single.dropdown-active .ts-control::after {
+  transform: translateY(-30%) rotate(-135deg);
+}
+
+
+/* dropdown */
+.ts-dropdown {
+  border-radius: .5rem;
+  border: 1px solid #e6eaef;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .06), 0 2px 8px rgba(0, 0, 0, .04);
+}
+
+
+/* option */
+.bank-option {
+  padding: 10px 12px;
+}
+
+
+.bank-option:not(:last-child) {
+  border-bottom: 1px solid #f1f3f5;
+}
+
+
+.bank-option .top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+
+.bank-option .title {
+  font-family: IRANSansBold;
+  color: #1f2937;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+.bank-option .details {
+  margin-top: 3px;
+  font-size: 11px;
+  color: #7b8794;
+  
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+/* badge */
+.bank-badge {
+  flex-shrink: 0;
+  
+  font-size: 10px;
+  font-family: IRANSansMedium;
+  
+  padding: 2px 8px;
+  border-radius: 999px;
+  
+  background: rgba(4, 133, 124, .08);
+  color: #04857c;
+}
+
+
+.bank-badge.unofficial {
+  background: rgba(245, 158, 11, .10);
+  color: #b45309;
+}
+
+
+/* selected item */
+.bank-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  overflow: hidden;
+}
+
+
+.bank-item .item-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+/* mobile */
+@media (max-width: 576px) {
+  
+  .bank-option {
+    padding: 9px 10px;
+  }
+  
+  .bank-option .title {
+    font-size: 12px;
+  }
+  
+  .bank-option .details {
+    font-size: 10px;
+  }
+}

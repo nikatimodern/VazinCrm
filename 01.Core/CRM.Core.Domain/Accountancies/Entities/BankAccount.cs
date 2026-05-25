@@ -25,6 +25,6 @@ namespace CRM.Core.Domain.Accountancies.Entities {
 
     public enum BankAccountTypeEnum {
         شرکت = 1,
-        دیگران = 2
+        تامین_کننده = 2
     }
 }

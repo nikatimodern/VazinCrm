@@ -3469,9 +3469,26 @@ const getAllBankAccounts = async () => {
         const data = await getAllBankAccountsJson();
         
         selects.forEach(x => {
+            const filteredData = data.filter(d => d.type === x.type);
+            if (x.type === 2) {
+                createSupplierTomSelect(x.element, filteredData);
+                
+                return;
+            }
+            
             createOption(
                 x.element,
-                data.filter(d => d.type === x.type),
+                filteredData.reverse().map(item => {
+                    const ui = buildBankAccountText(item);
+                    
+                    return {
+                        value: item.value,
+                        text: `
+                            ${ui.title}
+                            ${ui.details ? ` (${ui.details})` : ""}
+                        `,
+                    };
+                }),
                 true,
                 "انتخاب کنید",
             );
@@ -3485,6 +3502,119 @@ const getAllBankAccounts = async () => {
     }
 };
 
+const buildBankAccountText = (item) => {
+    const parts = [];
+    
+    if (item.bankName)
+        parts.push(item.bankName);
+    
+    const number = item.accountNumber || item.shebaNumber || item.cartNumber;
+    
+    if (number)
+        parts.push(number);
+    
+    return {
+        title: item.accountName,
+        details: parts.join(" "),
+        officialText: item.officialType === 1 ? "رسمی" : "غیررسمی",
+    };
+};
+
+const buildBankAccountUi = (item) => {
+    
+    const details = [];
+    
+    if (item.bankName)
+        details.push(`بانک: ${item.bankName}`);
+    
+    if (item.accountNumber)
+        details.push(`حساب: ${item.accountNumber}`);
+    
+    if (item.shebaNumber)
+        details.push(`شبا: ${item.shebaNumber}`);
+    
+    if (item.cartNumber)
+        details.push(`کارت: ${item.cartNumber}`);
+    
+    return {
+        title: item.accountName,
+        details: details.join(" | "),
+        officialText: item.officialType === 1
+            ? "رسمی"
+            : "غیررسمی",
+        isOfficial: item.officialType === 1,
+    };
+};
+
+const createSupplierTomSelect = (element, items) => {
+    
+    if (element.tomselect) {
+        element.tomselect.destroy();
+    }
+    
+    const tomSelect = new TomSelect(element, {
+        
+        options: items.map(item => {
+            
+            const ui = buildBankAccountUi(item);
+            
+            return {
+                value: item.value,
+                
+                text: ui.title,
+                details: ui.details,
+                
+                officialText: ui.officialText,
+                isOfficial: ui.isOfficial,
+                
+                search: `
+                    ${ui.title}
+                    ${ui.details}
+                    ${ui.officialText}
+                `,
+            };
+        }),
+        searchField: ["search"],
+        
+        placeholder: "جستجو و انتخاب حساب مقصد",
+        
+        maxItems: 1,
+        persist: false,
+        create: false,
+        
+        render: {
+            option: (data, escape) => `
+                <div class="bank-option">
+                    <div class="top">
+                        <div class="title">
+                            ${escape(data.title)}
+                        </div>
+
+                        <div class="bank-badge ${!data.isOfficial ? "unofficial" : ""}">
+                            ${escape(data.officialText)}
+                        </div>
+                    </div>
+
+                    ${data.details ? `<div class="details">${escape(data.details)}</div>` : ""}
+                </div>
+            `,
+            
+            item: (data, escape) => `
+                <div class="bank-item">
+                    <div class="item-title">
+                        ${escape(data.title)}
+                    </div>
+
+                    <div class="bank-badge ${!data.isOfficial ? "unofficial" : ""}">
+                        ${escape(data.officialText)}
+                    </div>
+                </div>
+            `,
+        },
+    });
+    
+    tomSelect.enable();
+};
 
 const hideFact = () => {
     document.getElementById("DivFacListId").style.display = "none";

@@ -633,18 +633,37 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                var query = type != null
-                    ? db.BankAccounts.Where(f => f.BankAccountType == type).AsQueryable()
-                    : db.BankAccounts.AsQueryable();
+                var query = db.BankAccounts.OrderBy(f => f.AccountName).AsQueryable();
 
-                var data = await query
+                if (type.HasValue)
+                    query = query.Where(f => f.BankAccountType == type);
+
+
+                var items = await query
                     .Select(f => new {
-                        value = f.Id,
-                        text = f.AccountName + " (" + f.BankName + " " + f.AccountNumber + ")",
-                        type = f.BankAccountType
+                        f.Id,
+                        f.AccountName,
+                        f.BankName,
+                        f.AccountNumber,
+                        f.ShebaNumber,
+                        f.CartNumber,
+                        f.BankAccountType,
+                        f.OfficialType
                     })
-                    .OrderByDescending(f => f.text)
                     .ToListAsync();
+
+                var data = items.Select(f => new
+                {
+                    value = f.Id,
+                    accountName = f.AccountName,
+                    bankName = f.BankName,
+                    accountNumber = f.AccountNumber,
+                    shebaNumber = f.ShebaNumber,
+                    cartNumber = f.CartNumber,
+                    officialType = f.OfficialType,
+                    type = f.BankAccountType
+                });
+
 
                 return Ok(data);
             }
