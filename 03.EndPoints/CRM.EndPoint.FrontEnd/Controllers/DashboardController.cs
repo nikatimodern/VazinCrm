@@ -63,16 +63,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        [Authorize(Roles = "مدیر ارشد, مدیر عامل, مدیر مالی, مدیر اجرایی")]
-        public IActionResult FinancialReport()
-        {
-            return View();
-        }
-
-        [Authorize(Roles = "مدیر ارشد, مدیر عامل, مدیر مالی, مدیر اجرایی")]
         [HttpPost]
         public async Task<IActionResult> GetFinancialReport([FromBody] filterVModel model)
         {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var roles = await userManager.GetRolesAsync(user);
+            if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر مالی") && !roles.Contains("کارشناس مالی") && !roles.Contains("مدیر عامل"))
+                return NoContent();
+
+
             var hasFilter = model?.filt != null;
 
             var accountancyQuery = db.Accountancies
@@ -113,20 +112,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             var data = new {
                 bankBalance,
+                tahatori,
 
-                demands = new {
-                    factorAmount,
-                    bankBalance,
-                    tahatori,
-                    remaining = factorAmount - (bankBalance + tahatori)
-                },
+                factorAmount,
+                paymentAmount,
+                supplyFactorAmount,
 
-                debit = new {
-                    supplyFactorAmount,
-                    paymentAmount,
-                    tahatori,
-                    remaining = supplyFactorAmount - (paymentAmount + tahatori)
-                }
+                demands = factorAmount - (bankBalance + tahatori),
+
+                debit = supplyFactorAmount - (paymentAmount + tahatori)
             };
             return Ok(data);
         }

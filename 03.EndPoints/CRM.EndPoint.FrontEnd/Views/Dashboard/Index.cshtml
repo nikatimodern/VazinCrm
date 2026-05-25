@@ -163,20 +163,76 @@
             </div>
         </div>
 
-        <div class="dashGridItem gridItemTarget" style="position:relative">
-            <div class="d-flex flex-column h-100 w-100 p-3">
-                <p class="fbold mb-2" style="font-size:clamp(15px,1.5vw,18px);">تارگت ماهانه</p>
-                <canvas id="gaugeChart"></canvas>
-            </div>
+        <div class="dashGridItem gridItemFinancial">
+            <div id="financialReportContainer" class="Admin FinancialExpert FinancialAdmin ManagingDirector w-100 h-100" style="display: none">
+                <div class="d-flex flex-column h-100 w-100 p-3">
+                    <div class="d-flex align-items-center justify-content-between w-100 mb-2">
+                        <div class="fbold d-flex align-items-center gap-2" style="font-size:clamp(15px,1.5vw,18px);color: #1f8557;">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <svg width="24px" height="24px" stroke-width="1.5" viewBox="0 0 24 24" fill="none" color="currentColor"><path d="M3 9.5L12 4L21 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M5 20H19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 9L14 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M6 17L6 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 17L10 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M14 17L14 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M18 17L18 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                            </div>
+                            <span>گزارش مالی</span>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 mt-1" style="overflow:auto">
+                        <div class="financialSummary">
+                            <div class="financialItem">
+                                <div class="financialHead">
+                                    <span class="financialTitle">موجودی بانک</span>
+                                </div>
 
-            <div>
-                <div style="background-color:rgba(250,250,250,0.63); position:absolute;inset:0;z-index:10;border-bottom-left-radius: 5px;border-top-left-radius: 5px;border-bottom-right-radius: 10px;border-top-right-radius: 10px;">
+                                <div class="financialValueWrap">
+                                    <span class="financialValue direction-ltr" id="bankBalanceId"></span>
+                                    <span class="financialCurrency">ريال</span>
+                                </div>
+                            </div>
+
+                            <div class="financialItem">
+                                <div class="financialHead">
+                                    <span class="financialTitle">مطالبات</span>
+                                    <span id="demandInfo" data-bs-title="جزئیات" data-bs-toggle="popover" data-bs-html="true" data-bs-placement="top">
+                                        <svg class="financialInfoIcon" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM9 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.75 8a.75.75 0 0 0 0 1.5h.75v1.75a.75.75 0 0 0 1.5 0v-2.5A.75.75 0 0 0 8.25 8h-1.5Z" /></svg>
+                                    </span>
+                                </div>
+
+                                <div class="financialValueWrap">
+                                    <span class="financialValue direction-ltr" id="totalDemandId"></span>
+                                    <span class="financialCurrency">ريال</span>
+                                </div>
+                            </div>
+
+                            <div class="financialItem">
+                                <div class="financialHead">
+                                    <span class="financialTitle">بدهی</span>
+                                    <span id="debitInfo" data-bs-title="جزئیات" data-bs-toggle="popover" data-bs-html="true" data-bs-placement="bottom">
+                                    <svg class="financialInfoIcon" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM9 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.75 8a.75.75 0 0 0 0 1.5h.75v1.75a.75.75 0 0 0 1.5 0v-2.5A.75.75 0 0 0 8.25 8h-1.5Z" /></svg>
+                                </span>
+                                </div>
+                                <div class="financialValueWrap">
+                                    <span class="financialValue direction-ltr" id="totalDebitId"></span>
+                                    <span class="financialCurrency">ريال</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div style="user-select:none;padding:clamp(8px,1.5vw,10px); border-radius:50px; background-color:#888; color:aliceblue; opacity:30%;  position:absolute;font-family:'IRANSansBold'; font-size:clamp(13px, 2vw, 16px); top: 50%;left: 50%;transform: rotate(350deg) translate(-50%, -70%);z-index:12">
-                    <p>در حال توسعه</p>
+            </div>
+            <div id="targetChartContainer" class="position-relative w-100 h-100 d-none">
+                <div class="d-flex flex-column h-100 w-100 p-3">
+                    <p class="fbold mb-2" style="font-size:clamp(15px,1.5vw,18px);">تارگت ماهانه</p>
+                    <canvas id="gaugeChart"></canvas>
+                </div>
+
+                <div>
+                    <div style="background-color:rgba(250,250,250,0.63); position:absolute;inset:0;z-index:10;border-bottom-left-radius: 5px;border-top-left-radius: 5px;border-bottom-right-radius: 10px;border-top-right-radius: 10px;">
+                    </div>
+                    <div style="user-select:none;padding:clamp(8px,1.5vw,10px); border-radius:50px; background-color:#888; color:aliceblue; opacity:30%;  position:absolute;font-family:'IRANSansBold'; font-size:clamp(13px, 2vw, 16px); top: 50%;left: 50%;transform: rotate(350deg) translate(-50%, -70%);z-index:12">
+                        <p>در حال توسعه</p>
+                    </div>
                 </div>
             </div>
         </div>
+
 
         <div class="dashGridItem gridItemReports">
             <div class="d-flex flex-column h-100 w-100 p-3">
@@ -264,22 +320,29 @@
                         </span>
                     </div>
                     <div id="LogSystemId" class="d-flex flex-column gap-2" style="width:100%">
-
                     </div>
                 </div>
             </div>
         </div>
+
 
     </div>
 
 </div>
 
 
-@section scripts {
+@section Scripts {
     <script defer>
         let modelDash = { filt: {} };
         var systematicTask = 0;
         var filterDashboardConfig = { filterVar: {} };
+
+        document.addEventListener("UserLoginReady", () => {
+            if (!currentUser.rollNames.some(i => ["Admin", "FinancialExpert", "FinancialAdmin", "ManagingDirector"].includes(i.name))) {
+                document.getElementById("targetChartContainer").classList.remove("d-none");
+                document.getElementById("financialReportContainer").remove();
+            }
+        });
 
         document.addEventListener("DOMContentLoaded", async () => {
             FLshowLoading();
@@ -318,6 +381,7 @@
                 getInfoFactors(),
                 getReportsCount(),
                 getLogSystem(),
+                getFinancialReport(),
             ]);
             FLshowLoading(false);
         }
@@ -495,9 +559,47 @@
             } catch (err) {
                 console.log(err);
             }
-
-
         }
+
+        async function getFinancialReport() {
+            try {
+                const container = document.getElementById("financialReportContainer");
+                if (!container) return;
+
+                const res = await axios.post("/Dashboard/GetFinancialReport", modelDash);
+                if (res.status !== 200) return;
+
+                const data = res.data;
+
+                container.querySelector("#bankBalanceId").textContent = data.bankBalance?.toLocaleString() || "-";
+                container.querySelector("#totalDemandId").textContent = data.demands?.toLocaleString() || "-";
+                container.querySelector("#totalDebitId").textContent = data.debit?.toLocaleString() || "-";
+
+                container.querySelector("#demandInfo").dataset.bsContent = `<div class="popover-financial">
+                    <div>جمع کل فاکتور فروش: <b>${(data.factorAmount || 0).toLocaleString()}</b></div>
+                    <div>جمع واریزها به بانک: <b>${(data.bankBalance || 0).toLocaleString()}</b></div>
+                    <div>جمع واریز های تهاتری: <b>${(data.tahatori || 0).toLocaleString()}</b></div>
+                </div>`;
+
+                container.querySelector("#debitInfo").dataset.bsContent = `<div class="popover-financial">
+                    <div>جمع کل فاکتورهای خرید: <b>${(data.supplyFactorAmount || 0).toLocaleString()}</b></div>
+                    <div>جمع پرداختی ها: <b>${(data.paymentAmount || 0).toLocaleString()}</b></div>
+                    <div>جمع واریزی های تهاتری: <b>${(data.tahatori || 0).toLocaleString()}</b></div>
+                </div>`;
+
+                ["#demandInfo", "#debitInfo"].forEach(selector => {
+                    const el = container.querySelector(selector);
+                    const pop = bootstrap.Popover.getInstance(el);
+
+                    if (pop) {
+                        pop.dispose();
+                    }
+                });
+            } catch (err) {
+                console.log(err);
+            }
+        }
+
 
         async function showDetailsLog(changeDetails, commentTxt) {
             document.getElementById("ShowDetailsLog").innerHTML = changeDetails || commentTxt;

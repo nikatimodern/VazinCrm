@@ -3074,18 +3074,22 @@ document.addEventListener("click", function (e) {
     const target = e.target.closest("[data-bs-toggle='popover']");
     
     if (target) {
+        
         let pop = bootstrap.Popover.getInstance(target);
+        
         if (pop) {
             pop.toggle();
-        } else {
-            pop = new bootstrap.Popover(target, {
-                placement: "top",
-                customClass: "fMedium",
-                trigger: "manual",
-                html: true,
-            });
-            pop.show();
+            return;
         }
+        const options = {
+            placement: target.dataset.bsPlacement || "top",
+            customClass: target.dataset.bsCustomClass || "fMedium",
+            trigger: "manual",
+            html: target.dataset.bsHtml === "true"
+        };
+        
+        pop = new bootstrap.Popover(target, options);
+        pop.show();
     } else {
         document.querySelectorAll("[data-bs-toggle='popover']").forEach(el => {
             const openPop = bootstrap.Popover.getInstance(el);
