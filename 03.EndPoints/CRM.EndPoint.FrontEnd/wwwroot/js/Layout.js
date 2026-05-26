@@ -3452,8 +3452,8 @@ const getAllBankAccountsJson = async (type) => {
 
 let isLoadedBankAccounts = false;
 
-const getAllBankAccounts = async () => {
-    if (isLoadedBankAccounts) return;
+const getAllBankAccounts = async (rerender = false) => {
+    if (isLoadedBankAccounts && !rerender) return;
     
     const selects = [
         { element: document.querySelector("#InvoiceModalId select[name='BankAccountId']"), type: 1 },
@@ -5165,6 +5165,51 @@ const submitReqAmountAttach = async () => {
     }
 };
 
+
+const addBankAccountModal = document.getElementById("addBankAccountModal");
+function toggleAddBankAccountModal() {
+    mySer.emptyForm("addBankAccountForm");
+    ModalToggle(addBankAccountModal);
+}
+
+async function submitAddBankAccount() {
+    if (!await mySer.CheckValidForm("addBankAccountForm")) return;
+    
+    const cartNumber = addBankAccountModal.querySelector("#cartNumberId").value.trim();
+    const accountNumber = addBankAccountModal.querySelector("#accountNumberId").value.trim();
+    const shebaNumber = addBankAccountModal.querySelector("#shebaNumberId").value.trim();
+    
+    const hasValue = cartNumber || accountNumber || shebaNumber;
+    
+    if (!hasValue) {
+        addBankAccountModal.querySelector("#cartNumberId").focus();
+        toastifyError("حداقل یکی از موارد شماره کارت، شماره حساب یا شماره شبا باید وارد شود.");
+        return;
+    }
+    
+    
+    const model = mySer.convertFormToJSON("addBankAccountForm");
+    if (model.shebaNumber?.trim()) {
+        model.shebaNumber = "IR " + model.shebaNumber.trim();
+    }
+    
+    model.bankAccountType = 2; // تامین کننده
+    try {
+        FLshowLoading();
+        const res = await axios.post("/Accountancy/AddBankAccount", model);
+        if (res.status === 200) {
+            toastifySuccess("با موفقیت ثبت شد");
+            
+            toggleAddBankAccountModal();
+            await getAllBankAccounts(true);
+        }
+    } catch (err) {
+        toastifyError("خطای سرور");
+        console.log(err);
+    } finally {
+        FLshowLoading(false);
+    }
+}
 
 /*--------------------------------------------------------------------------------*/
 

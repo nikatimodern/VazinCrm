@@ -2593,6 +2593,8 @@ class MyService {
             let isValid = true;
             
             const addAlert = (el, className = "AlertReq") => {
+                if (!el) return;
+                
                 if (el.tomselect) {
                     el.tomselect.control.classList.add(className);
                     el.tomselect.on("change", remove);

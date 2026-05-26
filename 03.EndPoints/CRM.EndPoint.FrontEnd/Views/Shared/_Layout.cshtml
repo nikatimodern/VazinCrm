@@ -343,7 +343,7 @@
                 <img class="logoCompany-text" src="~/Img/logo-vazinplast2.png" style="height:36px;" alt="">
             </a>
             <button id="closeMobileDrawer">
-                <svg style="width: 20px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#fff"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+                <svg style="width: 20px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#fff"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
             </button>
         </div>
 
@@ -1002,7 +1002,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <select class="w-100 center fs-6" name="productCode" id="productCode" required>
+                                    <select class="w-100 center fs-6 show-dropdown-arrow" name="productCode" id="productCode" required>
                                     </select>
                                 </div>
                                 <div class="d-flex flex-column align-items-center">
@@ -1476,7 +1476,7 @@
                             </div>
 
 
-                            <select class="w-100 center fs-6" name="productCode" id="productCode" required>
+                            <select class="w-100 center fs-6 show-dropdown-arrow" name="productCode" id="productCode" required>
                             </select>
                         </div>
                         <div style=" display:flex;flex-direction:column;align-items:center; ">
@@ -3130,9 +3130,12 @@
                                         <select id="reqAttachFromAccountId" class="form-select" name="fromAccountId" type="text" required></select>
                                         @* <input class="form-control" name="fromAccount" type="text" placeholder="از کدام حساب پرداخت شده است." required /> *@
                                     </div>
-                                    <div class="mt-2">
-                                        <label for="reqAttachToAccountId">حساب مقصد</label>
-                                        <select id="reqAttachToAccountId" name="toAccountId" type="text" required></select>
+                                    <div class="mt-3">
+                                        <div class="d-flex gap-2 align-items-end justify-content-between mb-1">
+                                            <label for="reqAttachToAccountId">حساب مقصد</label>
+                                            <button class="buttonPurple3" type="button" onclick="toggleAddBankAccountModal()">افزودن شماره‌حساب جدید</button>
+                                        </div>
+                                        <select id="reqAttachToAccountId" class="show-dropdown-arrow" name="toAccountId" type="text" required></select>
                                     </div>
                                 </div>
                             </div>
@@ -3210,14 +3213,14 @@
 
                     <div id="reqAmountSupplierWrapper">
                         <label for="reqAmountSupplierId">تامین‌ کننده:</label>
-                        <select name="supplierId" id="reqAmountSupplierId" required>
+                        <select class="show-dropdown-arrow" name="supplierId" id="reqAmountSupplierId" required>
                         </select>
                         <p id="reqAmountTotalAmountSupFactor" class="mt-2 text-end" style="color: #666"></p>
                     </div>
 
                     <div id="reqAmountCashierWrapper" class="d-none">
                         <label for="reqAmountCashierId">تنخواه دار:</label>
-                        <select name="cashierId" id="reqAmountCashierId">
+                        <select class="show-dropdown-arrow" name="cashierId" id="reqAmountCashierId">
                         </select>
                     </div>
 
@@ -3286,6 +3289,62 @@
                     <button class="btnGroupBase btnRight btnRightRed" type="button" onclick="cancelRequestAmountPaymentModal()">انصراف</button>
                     <button class="btnGroupBase btnLeft btnLeftGreen fMedium" style="line-height: 1.1" type="button" onclick="goToStepAttachReqAmount()">تایید</button>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Modal addBankAccount -->
+<div class="modal fade" id="addBankAccountModal" tabindex="-1" role="dialog" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content col-12 p-2">
+            <div class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">افزودن حساب بانکی</div>
+            <div class="modal-body pb-2">
+                <form id="addBankAccountForm" class="d-flex flex-column gap-2">
+                    <div>
+                        <label>نوع حساب: </label>
+                        <div id="officialTypeBankModalAlert" class="d-flex align-items-center gap-3">
+                            <div class="d-flex align-items-center gap-1">
+                                <label for="officialTypeBankId1">رسمی</label>
+                                <input class="valueNumber" type="radio" name="officialType" id="officialTypeBankId1" value="1" data-alertId="officialTypeBankModalAlert" required>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <label for="officialTypeBankId0">غیر رسمی</label>
+                                <input class="valueNumber" type="radio" name="officialType" id="officialTypeBankId0" value="0" data-alertId="officialTypeBankModalAlert" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="accountNameId">نام حساب:</label>
+                        <input id="accountNameId" class="form-control" name="accountName" type="text" required>
+                    </div>
+                    <div>
+                        <label for="bankNameId">نام بانک:</label>
+                        <input id="bankNameId" class="form-control" name="bankName" type="text" />
+                    </div>
+                    <div>
+                        <label for="cartNumberId">شماره کارت: </label>
+                        <input id="cartNumberId" class="form-control digitNumberString" name="cartNumber" type="text">
+                    </div>
+                    <div>
+                        <label for="accountNumberId">شماره حساب: </label>
+                        <input id="accountNumberId" class="form-control digitNumberString" name="accountNumber" type="text">
+                    </div>
+                    <div>
+                        <label for="shebaNumberId">شماره شبا: </label>
+                        <div class="input-group input-group-sm">
+                            <input id="shebaNumberId" class="form-control digitNumberString" name="shebaNumber" type="text">
+                            <span class="input-group-text fbold">IR</span>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-center gap-1 mt-3">
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="toggleAddBankAccountModal()">انصراف</button>
+                        <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitAddBankAccount()">ثبت</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

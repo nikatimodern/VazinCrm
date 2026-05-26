@@ -3110,6 +3110,29 @@ user-select: none;
 }
 
 
+.buttonPurple3 {
+  background-color: rebeccapurple;
+  padding: 2px 8px !important;
+  font-size: 12px;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px #66339947;
+  color: #fff;
+  border: none;
+  user-select: none;
+  transition: all 0.3s;
+}
+
+
+.buttonPurple3:hover {
+  background-color: #57248b;
+}
+
+
+.buttonPurple3:active {
+  background-color: #57248b;
+}
+
+
 .buttonPurple2 {
   background-color: rebeccapurple;
   color: #fff;
@@ -5839,7 +5862,7 @@ table tr.payment-vosoled > td {
 
 
 /* فلش پایین */
-.ts-wrapper.single .ts-control::after {
+.ts-wrapper.single.show-dropdown-arrow .ts-control::after {
   content: "";
   position: absolute;
   left: 12px;
@@ -5854,8 +5877,13 @@ table tr.payment-vosoled > td {
 }
 
 
-.ts-wrapper.single.dropdown-active .ts-control::after {
+.ts-wrapper.single.dropdown-active.show-dropdown-arrow .ts-control::after {
   transform: translateY(-30%) rotate(-135deg);
+}
+
+
+.ts-wrapper.single.show-dropdown-arrow .ts-control:not(.rtl) {
+  padding-left: 28px !important;
 }
 
 

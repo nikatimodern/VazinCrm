@@ -652,8 +652,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     })
                     .ToListAsync();
 
-                var data = items.Select(f => new
-                {
+                var data = items.Select(f => new {
                     value = f.Id,
                     accountName = f.AccountName,
                     bankName = f.BankName,
@@ -683,48 +682,53 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
                 var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
                 var searchValue = Request.Form["search[value]"].FirstOrDefault();
+                var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
                 int pageSize = length != null ? Convert.ToInt32(length) : 0;
                 int skip = start != null ? Convert.ToInt32(start) : 0;
                 int recordsTotal = 0;
+
                 var dataF = db.BankAccounts.AsQueryable();
 
                 if (!(string.IsNullOrEmpty(sortColumn) && string.IsNullOrEmpty(sortColumnDirection)))
                 {
                     if (sortColumnDirection == "asc")
                     {
-                        switch (sortColumn)
-                        {
-                            case "AccountName":
-                                dataF = dataF.OrderBy(f => f.AccountName);
-                                break;
-                            default:
-                                dataF = dataF.OrderBy(f => f.AccountName);
-                                break;
-                        }
+                        dataF = sortColumn switch {
+                            "AccountName" => dataF.OrderBy(f => f.AccountName),
+                            _ => dataF.OrderBy(f => f.CreateDate)
+                        };
                     } else
                     {
-                        switch (sortColumn)
-                        {
-                            case "AccountName":
-                                dataF = dataF.OrderByDescending(f => f.AccountName);
-                                break;
-                            default:
-                                dataF = dataF.OrderByDescending(f => f.AccountName);
-                                break;
-                        }
+                        dataF = sortColumn switch {
+                            "AccountName" => dataF.OrderByDescending(f => f.AccountName),
+                            _ => dataF.OrderByDescending(f => f.CreateDate)
+                        };
                     }
                 }
 
                 if (!string.IsNullOrEmpty(searchValue))
                 {
-                    dataF = dataF.Where(m =>
-                        m.AccountName.Contains(searchValue)
-                    );
+                    dataF = dataF.Where(m => m.AccountName.Contains(searchValue));
                 }
 
+                dataF = model?._type switch {
+                    1 => dataF.Where(f => f.BankAccountType == BankAccountTypeEnum.شرکت),
+                    2 => dataF.Where(f => f.BankAccountType == BankAccountTypeEnum.تامین_کننده),
+                    _ => dataF
+                };
+
+                if (pageSize != -1)
+                    dataF = dataF.Skip(skip).Take(pageSize);
+
+                var data = await dataF.ToListAsync();
                 recordsTotal = dataF.Count();
-                var data = await dataF.Skip(skip).Take(pageSize).ToListAsync();
-                var jsonData = new { draw, recordsFiltered = recordsTotal, recordsTotal, data };
+
+                var jsonData = new {
+                    draw,
+                    recordsFiltered = recordsTotal,
+                    recordsTotal,
+                    data
+                };
                 return Ok(jsonData);
             }
             catch
@@ -745,31 +749,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
-
                 var oldBa = await db.BankAccounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
-                var ba = await db.BankAccounts.FirstOrDefaultAsync(f => f.Id == model.Id);
 
-                bool isChangeActive = false;
-                if (model.AccountNumber == null && model.BankName == null)
-                {
-                    isChangeActive = true;
-                    ba.Active = model.Active;
-                } else
-                {
-                    db.Entry(ba).CurrentValues.SetValues(model);
-                    db.Entry(ba).Property(f => f.CreateDate).IsModified = false;
-                    db.Entry(ba).Property(f => f.CreateDateTxt).IsModified = false;
-                }
+                model.UserModify = user.FullName;
+                model.UserModifyID = user.Id;
+                model.ModifyDate = DateTime.Now;
+                model.ModifyDateTxt = dtService.GetDateTimePersian();
 
-                ba.UserModify = user.FullName;
-                ba.UserModifyID = user.Id;
-                ba.ModifyDate = DateTime.Now;
-                ba.ModifyDateTxt = dtService.GetDateTimePersian();
+                db.BankAccounts.Update(model);
 
-                var action = isChangeActive ? LogActionEnum.تغییر_وضعیت : LogActionEnum.ویرایش;
-                await _logSystemService.LogChange(oldBa, ba, action, user);
+                await _logSystemService.LogChange(oldBa, model, LogActionEnum.ویرایش, user);
                 await db.SaveChangesAsync();
-
                 return Ok();
             }
             catch (Exception ex)
@@ -778,19 +768,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+
         [HttpPost]
         public async Task<IActionResult> AddBankAccount([FromBody] BankAccount model)
         {
             try
             {
-                var user = userManager.GetUserAsync(HttpContext.User).Result;
-                model.UserModify = user.FullName;
-                model.UserModifyID = user.Id;
+                var user = await userManager.GetUserAsync(HttpContext.User);
                 model.UserCreator = user.FullName;
                 model.UserCreatorID = user.Id;
-                model.BankAccountType = BankAccountTypeEnum.شرکت;
-                model.BankAccountTypeTxt = nameof(BankAccountTypeEnum.شرکت);
-                db.BankAccounts.Add(model);
+                model.BankAccountTypeTxt = model.BankAccountType.ToString().Replace("_", " ");
+                await db.BankAccounts.AddAsync(model);
 
                 await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
                 await db.SaveChangesAsync();
@@ -800,6 +788,34 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (Exception e)
             {
                 return BadRequest(e.Message);
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ChangeActiveBankAccount([FromBody] BankAccount model)
+        {
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+
+                var oldBa = await db.BankAccounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
+                var ba = await db.BankAccounts.FirstOrDefaultAsync(f => f.Id == model.Id);
+
+                ba.Active = model.Active;
+
+                ba.UserModify = user.FullName;
+                ba.UserModifyID = user.Id;
+                ba.ModifyDate = DateTime.Now;
+                ba.ModifyDateTxt = dtService.GetDateTimePersian();
+
+                await _logSystemService.LogChange(oldBa, ba, LogActionEnum.تغییر_وضعیت, user);
+                await db.SaveChangesAsync();
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
 

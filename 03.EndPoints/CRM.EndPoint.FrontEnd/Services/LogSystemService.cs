@@ -375,17 +375,17 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
                 switch (action)
                 {
                     case LogActionEnum.ثبت:
-                        return $"یک حساب بانکی به نام {bank.AccountName} (بانک {bank.BankName}) توسط <b>{fullName}</b> ثبت شد.";
+                        return $"یک حساب بانکی به نام {bank.AccountName} توسط <b>{fullName}</b> ثبت شد.";
 
                     case LogActionEnum.ویرایش:
-                        return $"حساب بانکی به نام {bank.AccountName} (بانک {bank.BankName}) توسط <b>{fullName}</b> ویرایش شد.";
+                        return $"حساب بانکی به نام {bank.AccountName} توسط <b>{fullName}</b> ویرایش شد.";
 
                     case LogActionEnum.حذف:
-                        return $"حساب بانکی به نام {bank.AccountName} (بانک {bank.BankName}) توسط <b>{fullName}</b> حذف شد.";
+                        return $"حساب بانکی به نام {bank.AccountName} توسط <b>{fullName}</b> حذف شد.";
 
                     case LogActionEnum.تغییر_وضعیت:
                         return
-                            $"حساب بانکی به نام {bank.AccountName} (بانک {bank.BankName}) توسط <b>{fullName}</b> به وضعیت <b>{(bank.Active ? "فعال" : "غیرفعال")}</b> تغییر یافت.";
+                            $"حساب بانکی به نام {bank.AccountName} توسط <b>{fullName}</b> به وضعیت <b>{(bank.Active ? "فعال" : "غیرفعال")}</b> تغییر یافت.";
                 }
 
                 break;
