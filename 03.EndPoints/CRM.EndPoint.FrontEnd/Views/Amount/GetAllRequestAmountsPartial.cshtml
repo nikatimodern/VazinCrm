@@ -155,7 +155,11 @@
                         case RequestStatusEnum.در_انتظار_پرداخت:
                             if (isFinancial) {
                                 <div class="flex-center flex-xl-column gap-1">
-                                    <button class="buttonGreen2" onclick="showAttachReqAmount('@reqAmount.Id')">ثبت پرداختی</button>
+                                    @if (item.TotalPaymentAmount < reqAmount.AcceptedAmount) {
+                                        <button class="buttonGreen2" onclick="showAttachReqAmount('@reqAmount.Id')">ثبت پرداختی</button>
+                                    } else {
+                                        <button class="buttonGreen2" onclick="changeStatusReqAmount('@reqAmount.Id', 4)">پرداخت شد</button>
+                                    }
                                     <button class="buttonCancel3" onclick="changeStatusReqAmount('@reqAmount.Id', 1)">برگشت</button>
                                 </div>
                             } else {
@@ -171,6 +175,7 @@
                                     </div>
                                 }
                             }
+
                             <div class="flex-center flex-wrap column-gap-2">
                                 <span class="fbold" style="color: #04857c">@reqAmount.RequestStatusTxt</span>
                                 @if (isFinancial) {

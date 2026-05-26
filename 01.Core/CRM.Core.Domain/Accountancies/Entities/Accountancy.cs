@@ -83,5 +83,10 @@ namespace CRM.Core.Domain.Accountancies.Entities {
 
         [NotMapped]
         public decimal ReciveAmount { get; set; }
+
+        public Guid? CashId { get; set; }
+        public Guid? CashierId { get; set; }
+        public Guid? RequestAmountId { get; set; }
+
     }
 }

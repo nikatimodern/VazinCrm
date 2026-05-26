@@ -20,6 +20,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Accountancies.Entities;
+using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.Payments.Enums;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
@@ -170,7 +172,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var user = await userManager.GetUserAsync(HttpContext.User);
 
                 var oldItem = await db.RequestAmounts.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
-                var item = await db.RequestAmounts.Where(f => f.Id == id).FirstOrDefaultAsync();
+                var item = await db.RequestAmounts.Include(f => f.RequestAmountPayments).FirstOrDefaultAsync(f => f.Id == id);
 
                 item.RequestStatus = status;
                 item.RequestStatusTxt = item.RequestStatus.ToString().Replace("_", " ");
@@ -181,13 +183,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     item.AcceptedAmountPercent = null;
                 } else if (status == RequestStatusEnum.در_انتظار_پرداخت)
                 {
-                    /*var attaches = await db.Attachments.Where(f => f.EntityId == item.Id).ToListAsync();
-                    foreach (var attach in attaches)
-                        attach?.IsDeleted = true;
-                    item.FromAccountId = Guid.Empty;
-                    item.FromAccountTxt = null;
-                    item.ToAccountId = Guid.Empty;
-                    item.ToAccountTxt = null;*/
+                    /*foreach (var requestAmountPayment in item.RequestAmountPayments ?? [])
+                    {
+                        requestAmountPayment.IsDeleted = true;
+                        requestAmountPayment.ModifyDate = DateTime.Now;
+                        requestAmountPayment.ModifyDateTxt = dtService.GetDateTimePersian();
+                    }*/
+                }
+                if (item.RequestAmountType == RequestAmountTypeEnum.تنخواه)
+                {
+                    await CashAccountancyCredit(item, user);
                 }
 
                 item.UserModify = user.FullName;
@@ -249,6 +254,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     reqAmount.ModifyDate = DateTime.Now;
                     reqAmount.ModifyDateTxt = dtService.GetDateTimePersian();
 
+                    if (reqAmount.RequestAmountType == RequestAmountTypeEnum.تنخواه)
+                    {
+                        await CashAccountancyCredit(reqAmount, user);
+                    }
+
                     await _logSystemService.LogChange(oldReqAmount, reqAmount, LogActionEnum.تغییر_وضعیت, user);
                 }
 
@@ -263,6 +273,41 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 throw;
             }
         }
+
+
+        private async Task CashAccountancyCredit(RequestAmount requestAmount, AppUser user)
+        {
+            if (requestAmount == null) return;
+
+            if (requestAmount.RequestStatus == RequestStatusEnum.پرداخت_شده)
+            {
+                var acc = new Accountancy {
+                    CashierId = requestAmount.CashierId,
+                    RequestAmountId = requestAmount.Id,
+                    InvoiceType = InvoiceTypeEnum.تنخواه,
+                    InvoiceTypeTxt = nameof(InvoiceTypeEnum.تنخواه),
+                    AccType = AcEnum.واریزی,
+                    AccTypeTxt = nameof(AcEnum.واریزی),
+                    credit = requestAmount.AcceptedAmount,
+                    UserCreatorID = user.Id,
+                    UserCreator = user.FullName,
+                    Accepted = true,
+                    AcceptedUserId = user.Id,
+                    AcceptedUser = user.FullName,
+                    PayType = PayTypeEnum.نقدی,
+                    PayTypeTxt = nameof(PayTypeEnum.نقدی),
+                    Status = AccStatusEnum.تایید_شده,
+                };
+                await db.AddAsync(acc);
+
+            } else if (requestAmount.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت)
+            {
+                var acc = await db.Accountancies.FirstOrDefaultAsync(f => f.RequestAmountId == requestAmount.Id);
+                if (acc == null) return;
+                db.Accountancies.Remove(acc);
+            }
+        }
+
 
         private async Task<(bool IsSuccess, string Message)> AddOrUpdatePayment(Payment model, AppUser user)
         {
@@ -319,6 +364,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 return (false, "خطا در ثبت پرداخت");
             }
         }
+
+
 
         private async Task<(bool IsValid, string Message)> ValidateRequestAmountsPayment(Payment model)
         {

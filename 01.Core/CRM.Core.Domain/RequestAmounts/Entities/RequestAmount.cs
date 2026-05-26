@@ -1,6 +1,7 @@
 ﻿using CRM.Framework.Domain;
 using System;
 using System.Collections.Generic;
+using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.RequestAmounts.Enums;
 
@@ -35,5 +36,7 @@ namespace CRM.Core.Domain.RequestAmounts.Entities {
         public string RequestAmountTypeTxt { get; set; }
 
         public IList<RequestAmountPayment> RequestAmountPayments { get; set; }
+
+        public Accountancy Accountancy { get; set; }
     }
 }

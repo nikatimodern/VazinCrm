@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Accountancies.Entities;
+using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.Cashes.Entities;
@@ -181,7 +183,7 @@ public class CashController : Controller {
         try
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
-            var data = await db.Cashes.Where(f => f.Id == id).FirstOrDefaultAsync();
+            var data = await db.Cashes.FirstOrDefaultAsync(f => f.Id == id);
             if (data == null) return NotFound();
 
             data.Status = status;
@@ -191,6 +193,9 @@ public class CashController : Controller {
             data.ModifyDateTxt = dtService.GetDateTimePersian();
             data.UserModify = user.FullName;
             data.UserModifyID = user.Id;
+
+            await CashAccountancyDebit(data, user);
+
             await db.SaveChangesAsync();
             return Ok();
         }
@@ -199,6 +204,40 @@ public class CashController : Controller {
             return BadRequest(e.Message);
         }
     }
+
+    private async Task CashAccountancyDebit(Cash cash, AppUser user)
+    {
+        if (cash == null) return;
+
+        if (cash.Status == CashStatusEnum.تایید_شده)
+        {
+            var acc = new Accountancy {
+                CashId = cash.Id,
+                CashierId = Guid.Parse(cash.UserCreatorID),
+                InvoiceType = InvoiceTypeEnum.تنخواه,
+                InvoiceTypeTxt = nameof(InvoiceTypeEnum.تنخواه),
+                AccType = AcEnum.بدهکاری,
+                AccTypeTxt = nameof(AcEnum.بدهکاری),
+                debit = cash.Amount,
+                UserCreatorID = user.Id,
+                UserCreator = user.FullName,
+                Accepted = true,
+                AcceptedUserId = user.Id,
+                AcceptedUser = user.FullName,
+                PayType = PayTypeEnum.نقدی,
+                PayTypeTxt = nameof(PayTypeEnum.نقدی),
+                Status = AccStatusEnum.تایید_شده,
+            };
+            await db.AddAsync(acc);
+        } else
+        {
+            var acc = await db.Accountancies.FirstOrDefaultAsync(f => f.CashId == cash.Id);
+            if (acc == null) return;
+            db.Accountancies.Remove(acc);
+        }
+    }
+
+
 
     public async Task<IActionResult> ChangeStatusAllCashToPending()
     {

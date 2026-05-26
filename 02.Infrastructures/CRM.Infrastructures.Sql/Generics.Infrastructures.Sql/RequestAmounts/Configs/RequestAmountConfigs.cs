@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using CRM.Core.Domain.Accountancies.Entities;
 
 namespace CRM.Infrastructures.Sql.RequestAmounts.Configs {
     public class RequestAmountConfigs : IEntityTypeConfiguration<RequestAmount> {
@@ -26,6 +27,11 @@ namespace CRM.Infrastructures.Sql.RequestAmounts.Configs {
             builder.HasMany(f => f.RequestAmountPayments)
                 .WithOne(f => f.RequestAmount)
                 .HasForeignKey(f => f.RequestAmountId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(f => f.Accountancy)
+                .WithOne()
+                .HasForeignKey<Accountancy>(f => f.RequestAmountId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.Property(f => f.Amount).HasPrecision(20, 0);

@@ -4928,7 +4928,7 @@ const deletePayment = async (id) => {
 
 async function showEditPaymentModal(id) {
     FLshowLoading();
-    getAllBankAccounts();
+    await getAllBankAccounts();
     ModalToggle("reqAmountAttachModal", "show");
     
     try {
