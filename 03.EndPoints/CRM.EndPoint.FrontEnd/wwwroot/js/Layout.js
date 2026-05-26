@@ -2618,8 +2618,8 @@ async function refreshInvoiceSuccess() {
                         break;
                 }
                 break;
-            case "TManagingDirectorId": //5 مدیرعامل
-                await GetInvoicesManagingDirector();
+            case "TTaminExpertId": //5 تامین
+                await GetInvoicesTaminExpert();
                 break;
             case "TSalesExpertId": //3 کارشناس فروش
                 await GetSelesExpertPartial();
@@ -3279,14 +3279,20 @@ const setCountEmail = (emailsCount, isAdmin) => {
 let oldSumCount = null;
 const setCountEnvelope = (countObj, isAdmin) => {
     const countResult = {
-        salesAdmin: { count: countObj.salesAdmin || 0, id: "TSalesAdminId" },
-        tamin: { count: countObj.tamin || 0, id: "TTaminExpertId" },
+        salesAdmin: {
+            count: countObj.salesAdmin || 0,
+            id: "TSalesAdminId",
+        },
+        tamin: {
+            count: (countObj.tamin?.invoiceCount || 0) + (countObj.tamin?.preFactorCount || 0),
+            id: "TTaminExpertId",
+        },
         financial: {
             count: (countObj.financial?.invoiceCount || 0) + (countObj.financial?.preFactorCount || 0) + (countObj.financial?.requestCount || 0),
             id: "TFinancialExpertId",
         },
         managingDirector: {
-            count: (countObj.managingDirector?.invoiceCount || 0) + (countObj.managingDirector?.requestCount || 0),
+            count: (countObj.managingDirector?.requestCount || 0),
             id: "TManagingDirectorId",
         },
     };
@@ -3308,11 +3314,12 @@ const setCountEnvelope = (countObj, isAdmin) => {
     });
     
     // sub tabs
+    setBadge("#MDRequestAmountTab .badgeCircle", countObj.managingDirector?.requestCount || 0);
     setBadge("#FinancialPrefactorTab .badgeCircle", countObj.financial?.preFactorCount || 0);
     setBadge("#FinancialInvoiceTab .badgeCircle", countObj.financial?.invoiceCount || 0);
     setBadge("#FinancialRequestTab .badgeCircle", countObj.financial?.requestCount || 0);
-    setBadge("#MDRequestAmountTab .badgeCircle", countObj.managingDirector?.requestCount || 0);
-    setBadge("#MDInvoiceTab .badgeCircle", countObj.managingDirector?.invoiceCount || 0);
+    setBadge("#TaminPrefactorTab .badgeCircle", countObj.tamin?.preFactorCount || 0);
+    setBadge("#TaminInvoiceTab .badgeCircle", countObj.tamin?.invoiceCount || 0);
 };
 
 const setBadge = (target, count) => {

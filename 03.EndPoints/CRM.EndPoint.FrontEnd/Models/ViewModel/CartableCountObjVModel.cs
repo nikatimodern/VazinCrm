@@ -4,7 +4,7 @@ namespace CRM.EndPoint.FrontEnd.Models.ViewModel;
 
 public class CartableCountObjVModel {
     public int SalesAdmin { get; set; }
-    public int Tamin { get; set; }
+    public SubCartableCountVModel Tamin { get; set; }
     public SubCartableCountVModel Financial { get; set; }
     public SubCartableCountVModel ManagingDirector { get; set; }
 }
