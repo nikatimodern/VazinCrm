@@ -54,7 +54,7 @@
                     <span style="font-size: 13px; color: #777">نوع:</span>
                     <span class="fbold">@reqAmount.RequestAmountTypeTxt (@reqAmount.DocTypeTxt)</span>
                 </div>
-                @if (!string.IsNullOrEmpty(reqAmount.CashierTxt)) {
+                @if (reqAmount.RequestAmountType == RequestAmountTypeEnum.تنخواه && !string.IsNullOrEmpty(reqAmount.CashierTxt)) {
                     <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mt-2 text-center">
                         <span style="font-size: 13px; color: #777">تنخواه دار:</span>
                         <span class="fbold">@reqAmount.CashierTxt</span>

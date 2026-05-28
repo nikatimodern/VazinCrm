@@ -4883,6 +4883,7 @@ const getAllPaymentsList = (id) => {
     if (!paymentTable) {
         initPaymentTable();
     }
+    paymentTable.clear().draw(); // TODO
     paymentTable.ajax.url(`/Amount/GetAllPaymentsByRequestAmount?id=${id}`).load();
 };
 

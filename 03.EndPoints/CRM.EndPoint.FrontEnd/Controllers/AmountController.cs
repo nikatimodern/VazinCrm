@@ -171,36 +171,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
 
-                var oldItem = await db.RequestAmounts.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
                 var item = await db.RequestAmounts.Include(f => f.RequestAmountPayments).FirstOrDefaultAsync(f => f.Id == id);
+                if (item == null) return NotFound();
 
-                item.RequestStatus = status;
-                item.RequestStatusTxt = item.RequestStatus.ToString().Replace("_", " ");
+                await ChangeRequestAmountStatus(item, status, user);
 
-                if (status == RequestStatusEnum.ثبت_اولیه)
-                {
-                    item.AcceptedAmount = 0;
-                    item.AcceptedAmountPercent = null;
-                } else if (status == RequestStatusEnum.در_انتظار_پرداخت)
-                {
-                    /*foreach (var requestAmountPayment in item.RequestAmountPayments ?? [])
-                    {
-                        requestAmountPayment.IsDeleted = true;
-                        requestAmountPayment.ModifyDate = DateTime.Now;
-                        requestAmountPayment.ModifyDateTxt = dtService.GetDateTimePersian();
-                    }*/
-                }
-                if (item.RequestAmountType == RequestAmountTypeEnum.تنخواه)
-                {
-                    await CashAccountancyCredit(item, user);
-                }
-
-                item.UserModify = user.FullName;
-                item.UserModifyID = user.Id;
-                item.ModifyDate = DateTime.Now;
-                item.ModifyDateTxt = dtService.GetDateTimePersian();
-
-                await _logSystemService.LogChange(oldItem, item, LogActionEnum.تغییر_وضعیت, user);
                 await db.SaveChangesAsync();
                 await hub.Clients.Groups("مدیر عامل", "مدیر ارشد", "کارشناس مالی").SendAsync("countPreFactorToAccept");
                 return Ok();
@@ -211,112 +186,168 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+        private async Task ChangeRequestAmountStatus(RequestAmount requestAmount, RequestStatusEnum newStatus, AppUser user)
+        {
+            try
+            {
+                if (requestAmount == null) return;
+
+                if (requestAmount.RequestStatus != newStatus)
+                {
+                    var oldItem = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(x => x.Id == requestAmount.Id);
+
+                    requestAmount.RequestStatus = newStatus;
+                    requestAmount.RequestStatusTxt = newStatus.ToString().Replace("_", " ");
+
+                    if (newStatus == RequestStatusEnum.ثبت_اولیه)
+                    {
+                        requestAmount.AcceptedAmount = 0;
+                        requestAmount.AcceptedAmountPercent = null;
+                    }
+
+                    requestAmount.UserModify = user.FullName;
+                    requestAmount.UserModifyID = user.Id;
+                    requestAmount.ModifyDate = DateTime.Now;
+                    requestAmount.ModifyDateTxt = dtService.GetDateTimePersian();
+
+                    await _logSystemService.LogChange(oldItem, requestAmount, LogActionEnum.تغییر_وضعیت, user);
+                }
+
+                if (requestAmount.RequestAmountType == RequestAmountTypeEnum.تنخواه)
+                {
+                    await SyncCashAccountancyCredit(requestAmount, user);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
         [Authorize(Roles = "کارشناس مالی, مدیر مالی, مدیر ارشد")]
         [HttpPost]
         public async Task<IActionResult> AddPaymentByRequestAmount([FromBody] Payment model)
         {
             if (model == null) return BadRequest();
 
+            await using var transaction = await db.Database.BeginTransactionAsync();
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
-                var result = await AddOrUpdatePayment(model, user);
-                if (!result.IsSuccess) return StatusCode(201, result.Message);
 
-                var RequestAmountIdList = model.RequestAmountPayments.Select(f => f.RequestAmountId).ToList();
-                await SetRequestAmountsToPaid(RequestAmountIdList, user);
+                var validation = await ValidateRequestAmountsPayment(model);
+                if (!validation.IsValid) return StatusCode(201, validation.Message);
+
+                await AddOrUpdatePayment(model, user);
+
+                await SyncRequestAmountsPaymentState(model, user);
+
+                await transaction.CommitAsync();
                 return Ok();
             }
             catch (Exception ex)
             {
+                await transaction.RollbackAsync();
                 return BadRequest(ex.Message);
             }
         }
 
-        private async Task SetRequestAmountsToPaid(List<Guid> idsList, AppUser user)
+        private async Task SyncRequestAmountsPaymentState(Payment payment, AppUser user)
         {
-            await using var transaction = await db.Database.BeginTransactionAsync();
             try
             {
-                var requestAmounts = await db.RequestAmounts.Where(x =>
-                    idsList.Contains(x.Id) &&
-                    x.RequestStatus != RequestStatusEnum.پرداخت_شده
-                ).ToListAsync();
+                var idsList = payment?.RequestAmountPayments?.Select(x => x.RequestAmountId).Distinct().ToList();
+
+                var requestAmounts = await db.RequestAmounts
+                    .Where(x => idsList.Contains(x.Id))
+                    .Where(x => x.RequestStatus == RequestStatusEnum.پرداخت_شده || x.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت)
+                    .Include(x => x.RequestAmountPayments)
+                    .ToListAsync();
+
+                if (requestAmounts.Count == 0) return;
 
                 foreach (var reqAmount in requestAmounts)
                 {
-                    var oldReqAmount = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == reqAmount.Id);
+                    var totalPaid = reqAmount.RequestAmountPayments.Sum(x => x.Amount);
+                    var shouldBePaid = totalPaid >= reqAmount.AcceptedAmount;
+                    //var shouldBePaid = totalPaid > 0;
 
-                    reqAmount.RequestStatus = RequestStatusEnum.پرداخت_شده;
-                    reqAmount.RequestStatusTxt = nameof(RequestStatusEnum.پرداخت_شده).Replace("_", " ");
-                    reqAmount.UserModify = user.FullName;
-                    reqAmount.UserModifyID = user.Id;
-                    reqAmount.ModifyDate = DateTime.Now;
-                    reqAmount.ModifyDateTxt = dtService.GetDateTimePersian();
-
-                    if (reqAmount.RequestAmountType == RequestAmountTypeEnum.تنخواه)
-                    {
-                        await CashAccountancyCredit(reqAmount, user);
-                    }
-
-                    await _logSystemService.LogChange(oldReqAmount, reqAmount, LogActionEnum.تغییر_وضعیت, user);
+                    var newStatus = shouldBePaid ? RequestStatusEnum.پرداخت_شده : RequestStatusEnum.در_انتظار_پرداخت;
+                    await ChangeRequestAmountStatus(reqAmount, newStatus, user);
                 }
 
                 await db.SaveChangesAsync();
                 await hub.Clients.Groups("مدیر ارشد", "کارشناس مالی").SendAsync("countPreFactorToAccept");
-                await transaction.CommitAsync();
             }
             catch (Exception e)
             {
-                await transaction.RollbackAsync();
                 Console.WriteLine(e);
                 throw;
             }
         }
 
 
-        private async Task CashAccountancyCredit(RequestAmount requestAmount, AppUser user)
+        private async Task SyncCashAccountancyCredit(RequestAmount requestAmount, AppUser user)
         {
-            if (requestAmount == null) return;
-
-            if (requestAmount.RequestStatus == RequestStatusEnum.پرداخت_شده)
+            try
             {
-                var acc = new Accountancy {
-                    CashierId = requestAmount.CashierId,
-                    RequestAmountId = requestAmount.Id,
-                    InvoiceType = InvoiceTypeEnum.تنخواه,
-                    InvoiceTypeTxt = nameof(InvoiceTypeEnum.تنخواه),
-                    AccType = AcEnum.واریزی,
-                    AccTypeTxt = nameof(AcEnum.واریزی),
-                    credit = requestAmount.AcceptedAmount,
-                    UserCreatorID = user.Id,
-                    UserCreator = user.FullName,
-                    Accepted = true,
-                    AcceptedUserId = user.Id,
-                    AcceptedUser = user.FullName,
-                    PayType = PayTypeEnum.نقدی,
-                    PayTypeTxt = nameof(PayTypeEnum.نقدی),
-                    Status = AccStatusEnum.تایید_شده,
-                };
-                await db.AddAsync(acc);
+                if (requestAmount == null) return;
 
-            } else if (requestAmount.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت)
+                var acc = await db.Accountancies.FirstOrDefaultAsync(x => x.RequestAmountId == requestAmount.Id);
+
+                if (requestAmount.RequestStatus == RequestStatusEnum.پرداخت_شده)
+                {
+                    var totalPaid = requestAmount.RequestAmountPayments.Sum(x => x.Amount);
+                    if (acc == null)
+                    {
+                        acc = new Accountancy {
+                            CashierId = requestAmount.CashierId,
+                            RequestAmountId = requestAmount.Id,
+                            InvoiceType = InvoiceTypeEnum.تنخواه,
+                            InvoiceTypeTxt = nameof(InvoiceTypeEnum.تنخواه),
+                            AccType = AcEnum.واریزی,
+                            AccTypeTxt = nameof(AcEnum.واریزی),
+                            credit = totalPaid,
+                            UserCreatorID = user.Id,
+                            UserCreator = user.FullName,
+                            Accepted = true,
+                            AcceptedUserId = user.Id,
+                            AcceptedUser = user.FullName,
+                            PayType = PayTypeEnum.نقدی,
+                            PayTypeTxt = nameof(PayTypeEnum.نقدی),
+                            Status = AccStatusEnum.تایید_شده,
+                        };
+
+                        await db.Accountancies.AddAsync(acc);
+                    } else
+                    {
+                        acc.credit = totalPaid;
+                        acc.UserModifyID = user.Id;
+                        acc.UserModify = user.FullName;
+                        acc.ModifyDate = DateTime.Now;
+                        acc.ModifyDateTxt = dtService.GetDateTimePersian();
+                    }
+                } else
+                {
+                    if (acc != null)
+                    {
+                        db.Accountancies.Remove(acc);
+                    }
+                }
+            }
+            catch (Exception e)
             {
-                var acc = await db.Accountancies.FirstOrDefaultAsync(f => f.RequestAmountId == requestAmount.Id);
-                if (acc == null) return;
-                db.Accountancies.Remove(acc);
+                Console.WriteLine(e);
+                throw;
             }
         }
 
 
-        private async Task<(bool IsSuccess, string Message)> AddOrUpdatePayment(Payment model, AppUser user)
+        private async Task AddOrUpdatePayment(Payment model, AppUser user)
         {
-            if (model == null) return (false, "اطلاعات پرداخت نامعتبر است.");
+            if (model == null) return;
 
-            var validation = await ValidateRequestAmountsPayment(model);
-            if (!validation.IsValid) return (false, validation.Message);
-
-            await using var transaction = await db.Database.BeginTransactionAsync();
             try
             {
                 model.PaymentDate = dtService.GetDateMiladi(model.PaymentDateTxt);
@@ -354,25 +385,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 db.Attachments.UpdateRange(attachList);
                 await db.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return (true, "");
             }
             catch (Exception e)
             {
-                await transaction.RollbackAsync();
                 Console.WriteLine(e);
-                return (false, "خطا در ثبت پرداخت");
+                throw;
             }
         }
 
 
-
         private async Task<(bool IsValid, string Message)> ValidateRequestAmountsPayment(Payment model)
         {
-            var requestAmountIds = model.RequestAmountPayments?.Select(x => x.RequestAmountId).Distinct().ToList();
-
-            if (requestAmountIds == null || requestAmountIds.Count == 0)
-                return (true, "");
+            var requestAmountIds = model.RequestAmountPayments.Select(x => x.RequestAmountId).Distinct().ToList();
 
             var requestAmounts = await db.RequestAmounts
                 .AsNoTracking()
@@ -380,12 +404,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 .Select(x => new {
                     x.Id,
                     x.AcceptedAmount,
-
                     PaidAmount = x.RequestAmountPayments.Where(p => p.PaymentId != model.Id).Sum(p => p.Amount)
                 })
                 .ToDictionaryAsync(x => x.Id);
 
-            foreach (var reqAmountPayment in model.RequestAmountPayments)
+            foreach (var reqAmountPayment in model.RequestAmountPayments ?? [])
             {
                 if (!requestAmounts.TryGetValue(reqAmountPayment.RequestAmountId, out var requestAmount))
                     continue;
@@ -404,6 +427,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         public async Task<IActionResult> DeletePayment(Guid id)
         {
+            await using var transaction = await db.Database.BeginTransactionAsync();
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
@@ -424,61 +448,32 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
                 await db.SaveChangesAsync();
 
-                var requestAmountIds = item.RequestAmountPayments?
-                    .Select(x => x.RequestAmountId)
-                    .Distinct()
-                    .ToList() ?? [];
 
+                var requestAmountIds = item.RequestAmountPayments?.Select(x => x.RequestAmountId).Distinct().ToList() ?? [];
                 var requestIdsWithPayment = await db.RequestAmountPayments
                     .Where(x => requestAmountIds.Contains(x.RequestAmountId))
                     .Select(x => x.RequestAmountId)
                     .Distinct()
                     .ToListAsync();
-
                 var requestIdsWithoutPayment = requestAmountIds.Except(requestIdsWithPayment).ToList();
-                await SetRequestAmountsToPendingPaid(requestIdsWithoutPayment, user);
 
+                var requestWithoutPayment = await db.RequestAmounts
+                    .Where(f => requestIdsWithoutPayment.Contains(f.Id))
+                    .Include(f => f.RequestAmountPayments)
+                    .ToListAsync();
+                foreach (var reqAmount in requestWithoutPayment)
+                {
+                    await ChangeRequestAmountStatus(reqAmount, RequestStatusEnum.در_انتظار_پرداخت, user);
+                }
+
+                await db.SaveChangesAsync();
+                await transaction.CommitAsync();
                 return Ok();
             }
             catch (Exception e)
             {
-                return BadRequest(e.Message);
-            }
-        }
-
-        private async Task SetRequestAmountsToPendingPaid(List<Guid> idsList, AppUser user)
-        {
-            await using var transaction = await db.Database.BeginTransactionAsync();
-            try
-            {
-                var requestAmounts = await db.RequestAmounts.Where(f =>
-                    idsList.Contains(f.Id) &&
-                    f.RequestStatus != RequestStatusEnum.در_انتظار_پرداخت
-                ).ToListAsync();
-
-                foreach (var reqAmount in requestAmounts)
-                {
-                    var oldReqAmount = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == reqAmount.Id);
-
-                    reqAmount.RequestStatus = RequestStatusEnum.در_انتظار_پرداخت;
-                    reqAmount.RequestStatusTxt = nameof(RequestStatusEnum.در_انتظار_پرداخت).Replace("_", " ");
-                    reqAmount.UserModify = user.FullName;
-                    reqAmount.UserModifyID = user.Id;
-                    reqAmount.ModifyDate = DateTime.Now;
-                    reqAmount.ModifyDateTxt = dtService.GetDateTimePersian();
-
-                    await _logSystemService.LogChange(oldReqAmount, reqAmount, LogActionEnum.تغییر_وضعیت, user);
-                }
-
-                await db.SaveChangesAsync();
-                await hub.Clients.Groups("مدیر ارشد", "کارشناس مالی").SendAsync("countPreFactorToAccept");
-                await transaction.CommitAsync();
-            }
-            catch (Exception e)
-            {
                 await transaction.RollbackAsync();
-                Console.WriteLine(e);
-                throw;
+                return BadRequest(e.Message);
             }
         }
 

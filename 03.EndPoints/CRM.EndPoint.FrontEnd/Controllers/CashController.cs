@@ -209,34 +209,46 @@ public class CashController : Controller {
     {
         if (cash == null) return;
 
+        var acc = await db.Accountancies.FirstOrDefaultAsync(x => x.CashId == cash.Id);
+
         if (cash.Status == CashStatusEnum.تایید_شده)
         {
-            var acc = new Accountancy {
-                CashId = cash.Id,
-                CashierId = Guid.Parse(cash.UserCreatorID),
-                InvoiceType = InvoiceTypeEnum.تنخواه,
-                InvoiceTypeTxt = nameof(InvoiceTypeEnum.تنخواه),
-                AccType = AcEnum.بدهکاری,
-                AccTypeTxt = nameof(AcEnum.بدهکاری),
-                debit = cash.Amount,
-                UserCreatorID = user.Id,
-                UserCreator = user.FullName,
-                Accepted = true,
-                AcceptedUserId = user.Id,
-                AcceptedUser = user.FullName,
-                PayType = PayTypeEnum.نقدی,
-                PayTypeTxt = nameof(PayTypeEnum.نقدی),
-                Status = AccStatusEnum.تایید_شده,
-            };
-            await db.AddAsync(acc);
+            if (acc == null)
+            {
+                acc = new Accountancy {
+                    CashId = cash.Id,
+                    CashierId = Guid.Parse(cash.UserCreatorID),
+                    InvoiceType = InvoiceTypeEnum.تنخواه,
+                    InvoiceTypeTxt = nameof(InvoiceTypeEnum.تنخواه),
+                    AccType = AcEnum.بدهکاری,
+                    AccTypeTxt = nameof(AcEnum.بدهکاری),
+                    debit = cash.Amount,
+                    UserCreatorID = user.Id,
+                    UserCreator = user.FullName,
+                    Accepted = true,
+                    AcceptedUserId = user.Id,
+                    AcceptedUser = user.FullName,
+                    PayType = PayTypeEnum.نقدی,
+                    PayTypeTxt = nameof(PayTypeEnum.نقدی),
+                    Status = AccStatusEnum.تایید_شده,
+                };
+                await db.AddAsync(acc);
+            } else
+            {
+                acc.debit = cash.Amount;
+                acc.UserModifyID = user.Id;
+                acc.UserModify = user.FullName;
+                acc.ModifyDate = DateTime.Now;
+                acc.ModifyDateTxt = dtService.GetDateTimePersian();
+            }
         } else
         {
-            var acc = await db.Accountancies.FirstOrDefaultAsync(f => f.CashId == cash.Id);
-            if (acc == null) return;
-            db.Accountancies.Remove(acc);
+            if (acc != null)
+            {
+                db.Accountancies.Remove(acc);
+            }
         }
     }
-
 
 
     public async Task<IActionResult> ChangeStatusAllCashToPending()

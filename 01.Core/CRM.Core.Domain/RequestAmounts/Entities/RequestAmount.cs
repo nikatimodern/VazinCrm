@@ -18,8 +18,6 @@ namespace CRM.Core.Domain.RequestAmounts.Entities {
 
 
         public int? AcceptedAmountPercent { get; set; }
-        public bool Vosoled { get; set; }
-
         public IList<RequestAmountSupplyFactor> RequestAmountSupplyFactor { get; set; }
         public IList<RequestAmountOrderHead> RequestAmountOrderHeads { get; set; }
 
@@ -29,7 +27,6 @@ namespace CRM.Core.Domain.RequestAmounts.Entities {
         public Guid? CashierId { get; set; } // تنخواه دار
         public string CashierTxt { get; set; }
 
-        public bool Prepayment { get; set; }
         public string Description { get; set; }
 
         public RequestAmountTypeEnum RequestAmountType { get; set; }
