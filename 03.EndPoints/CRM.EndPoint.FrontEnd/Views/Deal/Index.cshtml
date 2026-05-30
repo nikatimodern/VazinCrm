@@ -652,16 +652,13 @@
 
                     card.insertAdjacentHTML("beforeend", suspendElm);
 
-                    if (isAdmin) {
-
+                    const suspendSelect = card.querySelector(`select.assignUser-suspendSelect`);
+                    if (isAdmin && suspendSelect) {
                         card.querySelector("#assignUserSuspendBtn")?.addEventListener("click", async () => {
-                            const selectElm = card.querySelector(`select.assignUser-suspendSelect`);
-                            const userId = selectElm.value;
-                            const userFullName = selectElm.selectedOptions[0].textContent;
+                            const userId = suspendSelect.value;
+                            const userFullName = suspendSelect.selectedOptions[0].textContent;
                             await assignUserSuspendDeal(item.id, userId, userFullName);
                         });
-
-                        const suspendSelect = card.querySelector(`.assignUser-suspendSelect`);
 
                         const options = item.userIdsForSuspend.map(u => ({ value: u.id, text: u.firstName }));
 
@@ -991,6 +988,7 @@
                 new Sortable(list, {
                     group: "sharedDeal",
                     draggable: ".deal-card",
+                    filter: ".suspend-deal",
                     sort: false,
                     animation: 150,
                     touchStartThreshold: 120,
@@ -1234,7 +1232,7 @@
             onHide: async () => await getPreFactorFromDeal(currentDealData.id, false, false),
             showTitle: "نمایش حذف‌شده‌ها",
             hideTitle: "مخفی کردن حذف‌شده‌ها",
-            titlePosition: "left"
+            titlePosition: "left",
         });
 
         document.getElementById("dealPreFactorsModal")?.addEventListener("hidden.bs.modal", () => {
