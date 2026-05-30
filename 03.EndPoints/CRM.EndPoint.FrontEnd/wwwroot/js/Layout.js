@@ -1608,10 +1608,13 @@ async function changeStatusHd(id, status, sourceStatus, passType, dealId = null,
         if (res.status === 200) {
             if (status === 3) {
                 if (fromDrop) {
-                    openIcon.style.display = "none";
+                    if (finishedOrderToggleIcon) {
+                        finishedOrderToggleIcon.isVisible = false;
+                    }
+                    /*openIcon.style.display = "none";
                     closedIcon.style.display = "block";
-                    document.getElementById("showFinishedOrderIcon").setAttribute("data-title", "نمایش تحویل شده ها");
-                    showHidden = false;
+                    document.getElementById("showFinishedOrderIcon").setAttribute("data-title", "نمایش تحویل شده ها");*/
+                    //showHidden = false;
                 }
                 if (sendSms) {
                     toastifySuccess("اطلاع رسانی از طریق پیامک انجام شد");

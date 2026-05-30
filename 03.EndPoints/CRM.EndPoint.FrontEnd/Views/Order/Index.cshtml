@@ -222,7 +222,7 @@
         function showHiddenOrdersCount(count) {
             const hiddenOrdersCountElm = document.getElementById("hiddenOrdersCount");
 
-            if (count > 0 && !showHidden) {
+            if (count > 0 && !finishedOrderToggleIcon.isVisible) {
                 hiddenOrdersCountElm.style.display = "flex";
                 hiddenOrdersCountElm.textContent = count;
             } else {
@@ -301,7 +301,7 @@
             });
         }
 
-        initEyeToggle({
+        const finishedOrderToggleIcon = initEyeToggle({
             selector: "#showFinishedOrderIcon",
             showTitle: "نمایش تحویل شده",
             hideTitle: "نمایش آماده تحویل",
