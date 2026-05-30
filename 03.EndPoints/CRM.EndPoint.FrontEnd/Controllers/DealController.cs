@@ -136,7 +136,7 @@ public class DealController : Controller {
             var users = await udb.Users.Where(f => f.IsEmployee).Select(f => new { f.Id, f.FirstName, f.LastName })
                 .ToDictionaryAsync(x => Guid.Parse(x.Id), x => x.FirstName + " " + x.LastName);
 
-            foreach (var item in open)
+            foreach (var item in open.Concat(success).Concat(failed))
             {
                 item.Counts.PreFactor = preFactorCounts.GetValueOrDefault(item.Id);
                 item.Counts.Factor = factorCounts.GetValueOrDefault(item.Id);
@@ -161,24 +161,6 @@ public class DealController : Controller {
 
                     item.UserIdsForSuspend = userList.DistinctBy(u => Guid.Parse(u.Id)).Reverse().ToList();
                 }
-            }
-
-            foreach (var item in success)
-            {
-                item.Counts.PreFactor = preFactorCounts.GetValueOrDefault(item.Id);
-                item.Counts.Factor = factorCounts.GetValueOrDefault(item.Id);
-                item.Counts.Report = reportCounts.GetValueOrDefault(item.Id);
-                item.Counts.OrderHead = orderHeadCounts.GetValueOrDefault(item.Id);
-                item.Counts.Accountancy = accCounts.GetValueOrDefault(item.Id);
-            }
-
-            foreach (var item in failed)
-            {
-                item.Counts.PreFactor = preFactorCounts.GetValueOrDefault(item.Id);
-                item.Counts.Factor = factorCounts.GetValueOrDefault(item.Id);
-                item.Counts.Report = reportCounts.GetValueOrDefault(item.Id);
-                item.Counts.OrderHead = orderHeadCounts.GetValueOrDefault(item.Id);
-                item.Counts.Accountancy = accCounts.GetValueOrDefault(item.Id);
             }
 
             return Ok(new {
