@@ -480,6 +480,18 @@ public class CashController : Controller {
             if (length != -1)
                 query = query.Skip(start).Take(length);
 
+
+            var cashierBalance = await db.Accountancies
+                .Where(x => x.CashierId == Guid.Parse(user.Id))
+                .GroupBy(x => x.CashierId)
+                .Select(g => new
+                {
+                    CashierId = g.Key,
+                    TotalCredit = g.Sum(x => x.credit),
+                    TotalDebit = g.Sum(x => x.debit)
+                })
+                .FirstOrDefaultAsync();
+
             var data = await query.ToListAsync();
 
             return Json(new {
@@ -488,6 +500,7 @@ public class CashController : Controller {
                 recordsFiltered = recordsTotal,
                 data,
                 isManager,
+                cashierBalance
             });
         }
         catch (Exception ex)

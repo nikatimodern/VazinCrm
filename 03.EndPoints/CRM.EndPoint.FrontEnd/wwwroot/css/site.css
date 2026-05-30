@@ -5990,3 +5990,88 @@ table tr.payment-vosoled > td {
     font-size: 10px;
   }
 }
+
+
+.cash-status {
+  direction: ltr;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  
+  min-width: 420px;
+  max-width: 100%;
+  
+  padding: 4px 12px;
+  
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  
+  background: #fff;
+}
+
+
+.cash-status__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  
+  min-height: 20px;
+  
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+
+.cash-status__balance {
+  font-weight: 600;
+}
+
+
+.cash-status__balance strong {
+  font-size: 13px;
+}
+
+
+.cash-status__separator {
+  width: 1px;
+  height: 12px;
+  background: #d1d5db;
+}
+
+
+.cash-status__item {
+  color: #6b7280;
+}
+
+
+.cash-status__item strong {
+  color: #111827;
+  font-weight: 600;
+}
+
+
+.cash-status__progress {
+  height: 5px;
+  
+  overflow: hidden;
+  
+  border-radius: 999px;
+  
+  background: #eceff3;
+}
+
+
+.cash-status__fill {
+  height: 100%;
+  
+  border-radius: 999px;
+  
+  background: linear-gradient(
+      90deg,
+      #22c55e,
+      #84cc16
+  );
+}

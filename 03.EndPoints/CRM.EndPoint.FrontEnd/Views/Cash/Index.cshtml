@@ -1,15 +1,39 @@
-@using CRM.Core.Domain.Cashes.Entities
 @{
     Layout = "_Layout";
 }
 
 
 <div>
-    <div class="mb-2">
+    <div class="d-flex justify-content-between mb-2">
         <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" data-bs-toggle="modal" data-bs-target="#cashModal">
             <span style="line-height: 1">ثبت تنخواه</span>
             <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
         </button>
+        <div class="cash-status">
+            <div class="cash-status__header">
+                <span class="cash-status__balance">
+                    مانده تنخواه:
+                    <strong id="cashierBalance">-</strong>
+                    ریال
+                </span>
+
+                <span class="cash-status__separator"></span>
+
+                <span class="cash-status__item">
+                    هزینه شده:
+                    <strong id="cashierTotalDebit">-</strong>
+                </span>
+
+                <span class="cash-status__item">
+                    شارژ شده:
+                    <strong id="cashierTotalCredit">-</strong>
+                </span>
+            </div>
+
+            <div class="cash-status__progress">
+                <div class="cash-status__fill" style="width:0%"></div>
+            </div>
+        </div>
     </div>
     <div id="cashContainer" style="width: 99%;">
         <table class="table table-striped table-bordered table-hover nowrap w-100" id="cashTable">
@@ -258,6 +282,7 @@
                     },
                     dataSrc: function (json) {
                         isManager = json.isManager;
+                        initCashierBalanceUI(json.cashierBalance);
                         return json.data;
                     },
                 },
@@ -456,6 +481,16 @@
             modelCash.filt = window[filterVarConfig]?.filterVar;
 
             cashTbl.ajax.reload();
+        };
+        const initCashierBalanceUI = (data) => {
+            if (!data) return;
+            document.getElementById("cashierBalance").innerText = (data.totalCredit - data.totalDebit).toLocaleString();
+            document.getElementById("cashierTotalDebit").innerText = data.totalDebit.toLocaleString();
+            document.getElementById("cashierTotalCredit").innerText = data.totalCredit.toLocaleString();
+            const usedPercent = data.totalCredit <= 0
+                ? 0
+                : Math.min(Math.round((data.totalDebit / data.totalCredit) * 100), 100);
+            document.querySelector(".cash-status__fill").style.width = usedPercent + "%";
         };
 
         document.body.addEventListener("change", async (e) => {

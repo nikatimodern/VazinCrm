@@ -269,7 +269,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 foreach (var reqAmount in requestAmounts)
                 {
-                    var totalPaid = reqAmount.RequestAmountPayments.Sum(x => x.Amount);
+                    var totalPaid = await db.RequestAmountPayments.Where(x => x.RequestAmountId == reqAmount.Id).SumAsync(x => x.Amount);
+
                     var shouldBePaid = totalPaid >= reqAmount.AcceptedAmount;
                     //var shouldBePaid = totalPaid > 0;
 
@@ -449,7 +450,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await db.SaveChangesAsync();
 
 
-                var requestAmountIds = item.RequestAmountPayments?.Select(x => x.RequestAmountId).Distinct().ToList() ?? [];
+                /*var requestAmountIds = item.RequestAmountPayments?.Select(x => x.RequestAmountId).Distinct().ToList() ?? [];
                 var requestIdsWithPayment = await db.RequestAmountPayments
                     .Where(x => requestAmountIds.Contains(x.RequestAmountId))
                     .Select(x => x.RequestAmountId)
@@ -464,7 +465,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 foreach (var reqAmount in requestWithoutPayment)
                 {
                     await ChangeRequestAmountStatus(reqAmount, RequestStatusEnum.در_انتظار_پرداخت, user);
-                }
+                }*/
+
+                await SyncRequestAmountsPaymentState(item, user);
 
                 await db.SaveChangesAsync();
                 await transaction.CommitAsync();
