@@ -239,9 +239,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var validation = await ValidateRequestAmountsPayment(model);
                 if (!validation.IsValid) return StatusCode(201, validation.Message);
 
-                await AddOrUpdatePayment(model, user);
+                var isNewPayment = model.Id == Guid.Empty;
+                await AddOrUpdatePayment(model, user, isNewPayment);
 
-                await SyncRequestAmountsPaymentState(model, user);
+                await SyncRequestAmountsPaymentState(model, user, isNewPayment);
 
                 await transaction.CommitAsync();
                 return Ok();
@@ -253,7 +254,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        private async Task SyncRequestAmountsPaymentState(Payment payment, AppUser user)
+        private async Task SyncRequestAmountsPaymentState(Payment payment, AppUser user, bool changeStatus)
         {
             try
             {
@@ -262,19 +263,21 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var requestAmounts = await db.RequestAmounts
                     .Where(x => idsList.Contains(x.Id))
                     .Where(x => x.RequestStatus == RequestStatusEnum.پرداخت_شده || x.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت)
-                    .Include(x => x.RequestAmountPayments)
                     .ToListAsync();
 
                 if (requestAmounts.Count == 0) return;
 
                 foreach (var reqAmount in requestAmounts)
                 {
-                    var totalPaid = await db.RequestAmountPayments.Where(x => x.RequestAmountId == reqAmount.Id).SumAsync(x => x.Amount);
+                    var newStatus = reqAmount.RequestStatus;
 
-                    var shouldBePaid = totalPaid >= reqAmount.AcceptedAmount;
-                    //var shouldBePaid = totalPaid > 0;
+                    if (changeStatus)
+                    {
+                        var totalPaid = await db.RequestAmountPayments.Where(x => x.RequestAmountId == reqAmount.Id).SumAsync(x => x.Amount);
 
-                    var newStatus = shouldBePaid ? RequestStatusEnum.پرداخت_شده : RequestStatusEnum.در_انتظار_پرداخت;
+                        newStatus = totalPaid > 0 ? RequestStatusEnum.پرداخت_شده : RequestStatusEnum.در_انتظار_پرداخت;
+                    }
+
                     await ChangeRequestAmountStatus(reqAmount, newStatus, user);
                 }
 
@@ -299,7 +302,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (requestAmount.RequestStatus == RequestStatusEnum.پرداخت_شده)
                 {
-                    var totalPaid = requestAmount.RequestAmountPayments.Sum(x => x.Amount);
+                    var totalPaid = await db.RequestAmountPayments.Where(x => x.RequestAmountId == requestAmount.Id).SumAsync(x => x.Amount);
                     if (acc == null)
                     {
                         acc = new Accountancy {
@@ -345,14 +348,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        private async Task AddOrUpdatePayment(Payment model, AppUser user)
+        private async Task AddOrUpdatePayment(Payment model, AppUser user, bool isNewPayment)
         {
             if (model == null) return;
 
             try
             {
                 model.PaymentDate = dtService.GetDateMiladi(model.PaymentDateTxt);
-                if (model.Id == Guid.Empty)
+                if (isNewPayment)
                 {
                     model.UserCreator = user.FullName;
                     model.UserCreatorID = user.Id;
@@ -467,7 +470,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     await ChangeRequestAmountStatus(reqAmount, RequestStatusEnum.در_انتظار_پرداخت, user);
                 }*/
 
-                await SyncRequestAmountsPaymentState(item, user);
+                await SyncRequestAmountsPaymentState(item, user, true);
 
                 await db.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -583,6 +586,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         f.RequestNumber == TextService.convertToInt(search) ||
                         f.Description.Contains(search) ||
                         f.SupplierTxt.Contains(search) ||
+                        f.UserCreator.Contains(search) ||
+                        f.CashierTxt.Contains(search) ||
                         f.RequestAmountSupplyFactor.Any(raSf =>
                             db.SupplyFactors.Any(sf => sf.Id == raSf.SupplyFactorId && sf.FactorSerial == search)
                         ) ||

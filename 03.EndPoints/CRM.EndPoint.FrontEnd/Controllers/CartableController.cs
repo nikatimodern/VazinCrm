@@ -194,7 +194,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     worksheet.Column(6).Style.NumberFormat.Format = "#,##0_-ريال";
                     worksheet.Column(7).Style.NumberFormat.Format = "#,##0_-ريال";
                     var preFactors = await GetPrefactors(model1, user, roles);
-                    foreach (var item in preFactors)
+                    foreach (var item in preFactors ?? [])
                     {
                         currentRow++;
                         if (currentRow % 2 == 0)

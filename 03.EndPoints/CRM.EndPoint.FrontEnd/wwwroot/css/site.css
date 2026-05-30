@@ -5118,6 +5118,13 @@ option[value=""] {
 }
 
 
+.popover-sm .popover-body {
+  font-family: IRANSansMedium;
+  --bs-popover-body-padding-x: .5rem;
+  --bs-popover-body-padding-y: .25rem;
+}
+
+
 .invoice-modal .modalHeader-invoice {
   padding: 5px;
   font-size: 16px;
@@ -5992,68 +5999,98 @@ table tr.payment-vosoled > td {
 }
 
 
-.cash-status {
-  direction: ltr;
+.cash-summary {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 4px;
   
-  min-width: 420px;
-  max-width: 100%;
+  padding: 6px 10px;
   
-  padding: 4px 12px;
-  
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border: 1px solid #00a13b;
+  border-radius: 10px;
   
   background: #fff;
+  
+  max-width: 100%;
 }
 
 
-.cash-status__header {
+.cash-summary.cash-summary--pending {
+  border-color: #bb7600;
+}
+
+
+.cash-summary.cash-summary--negative {
+  border-color: #dc2626;
+}
+
+
+.cash-summary__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
-  
-  min-height: 20px;
+  width: 100%;
+  column-gap: 24px;
+  row-gap: 8px;
+}
+
+
+.cash-summary__meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   
   font-size: 12px;
-  line-height: 1.2;
-}
-
-
-.cash-status__balance {
-  font-weight: 600;
-}
-
-
-.cash-status__balance strong {
-  font-size: 13px;
-}
-
-
-.cash-status__separator {
-  width: 1px;
-  height: 12px;
-  background: #d1d5db;
-}
-
-
-.cash-status__item {
   color: #6b7280;
+  flex-grow: 1;
+  flex-wrap: wrap;
+  justify-content: space-around;
 }
 
 
-.cash-status__item strong {
+.cash-summary__meta strong {
   color: #111827;
-  font-weight: 600;
 }
 
 
-.cash-status__progress {
+.cash-summary__balance-row {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+}
+
+
+.cash-balance-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .25rem;
+  padding: 3px 10px;
+  
+  border-radius: 999px;
+  
+  font-size: 14px;
+  font-family: IRANSansBold;
+  
+  background: #dcfce7;
+  color: #166534;
+}
+
+
+.cash-summary.cash-summary--pending .cash-balance-badge {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+
+.cash-summary.cash-summary--negative .cash-balance-badge {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+
+.cash-summary__progress {
+  direction: ltr;
   height: 5px;
   
   overflow: hidden;
@@ -6064,9 +6101,8 @@ table tr.payment-vosoled > td {
 }
 
 
-.cash-status__fill {
+.cash-summary__fill {
   height: 100%;
-  
   border-radius: 999px;
   
   background: linear-gradient(
