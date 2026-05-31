@@ -782,7 +782,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-
         [HttpPost]
         public async Task<IActionResult> FactorPartial([FromBody] FactorVmodel model)
         {

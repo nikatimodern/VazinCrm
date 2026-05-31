@@ -1652,21 +1652,27 @@
             try {
                 FLshowLoading();
                 const res = await axios(`/Amount/GetAllRequestAmountsPartial?search=${val}&type=${type}&passType=2`);
-                const data = res.data;
-                document.getElementById("MDRequestAmountContentId").innerHTML = data.html;
-                document.getElementById("MDRequestAmountCount").textContent = data.count;
-                updateFilterSwitchState({
-                    wrapperSelector: "#MDRequestAmountTab-pane",
-                    filterData: res.data.filterCounts,
-                    currentFilterValue: type,
-                    searchValue: val,
-                    onChange: async () => {
-                        await GetRequestManagingDirector();
-                    },
-                });
-                FLshowLoading(false);
+                if (res.status === 200) {
+                    const data = res.data;
+                    document.getElementById("MDRequestAmountContentId").innerHTML = data.html;
+                    document.getElementById("MDRequestAmountCount").textContent = data.count;
+                    updateFilterSwitchState({
+                        wrapperSelector: "#MDRequestAmountTab-pane",
+                        filterData: res.data.filterCounts,
+                        currentFilterValue: type,
+                        searchValue: val,
+                        onChange: async () => {
+                            await GetRequestManagingDirector();
+                        },
+                    });
+
+                } else if (res.status === 204) {
+                    toastifyError("شما به این بخش دسترسی ندارید");
+                }
             } catch (err) {
                 console.log(err);
+            } finally {
+                FLshowLoading(false);
             }
         };
 
