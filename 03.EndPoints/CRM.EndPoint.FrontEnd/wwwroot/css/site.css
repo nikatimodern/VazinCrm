@@ -6003,14 +6003,10 @@ table tr.payment-vosoled > td {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  
   padding: 6px 10px;
-  
   border: 1px solid #00a13b;
   border-radius: 10px;
-  
   background: #fff;
-  
   max-width: 100%;
 }
 
@@ -6042,14 +6038,14 @@ table tr.payment-vosoled > td {
   gap: 14px;
   
   font-size: 12px;
-  color: #6b7280;
+  color: #525865;
   flex-grow: 1;
   flex-wrap: wrap;
   justify-content: space-around;
 }
 
 
-.cash-summary__meta strong {
+.cash-summary__meta b {
   color: #111827;
 }
 
@@ -6092,11 +6088,8 @@ table tr.payment-vosoled > td {
 .cash-summary__progress {
   direction: ltr;
   height: 5px;
-  
   overflow: hidden;
-  
   border-radius: 999px;
-  
   background: #eceff3;
 }
 
@@ -6105,9 +6098,5 @@ table tr.payment-vosoled > td {
   height: 100%;
   border-radius: 999px;
   
-  background: linear-gradient(
-      90deg,
-      #22c55e,
-      #84cc16
-  );
+  background: linear-gradient(-90deg, #22c55e, #84cc16);
 }

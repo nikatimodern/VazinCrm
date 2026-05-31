@@ -115,12 +115,18 @@ const RepairPf = async (pfi, passType, dealId) => {
 
 let tooltipList = [];
 function initTooltipsIfCollapsed() {
-    if (document.documentElement.classList.contains("sidebar-collapsed")) {
-        const triggers = document.querySelectorAll("[data-tooltip-left]");
-        tooltipList = [...triggers].map(el => new bootstrap.Tooltip(el, {
-            title: el.getAttribute("data-tooltip-left"), delay: { show: 150, hide: 0 }, customClass: "main-font", placement: "left",
-        }));
-    }
+    if (!document.documentElement.classList.contains("sidebar-collapsed")) return;
+    
+    const triggers = document.querySelectorAll("[data-tooltip-left]");
+    tooltipList = [...triggers].map(el =>
+        new bootstrap.Tooltip(el, {
+            title: el.getAttribute("data-tooltip-left"),
+            delay: { show: 150, hide: 0 },
+            customClass: "main-font",
+            placement: "left",
+        }),
+    );
+    
 }
 
 function toggleMenu() {
