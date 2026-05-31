@@ -711,11 +711,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     dataF = dataF.Where(m => m.AccountName.Contains(searchValue));
                 }
 
-                dataF = model?._type switch {
-                    1 => dataF.Where(f => f.BankAccountType == BankAccountTypeEnum.شرکت),
-                    2 => dataF.Where(f => f.BankAccountType == BankAccountTypeEnum.تامین_کننده),
-                    _ => dataF
-                };
+                if (model?._type != null && model._type != -1)
+                {
+                    dataF = dataF.Where(f => f.BankAccountType == (BankAccountTypeEnum)model._type);
+                }
 
                 if (pageSize != -1)
                     dataF = dataF.Skip(skip).Take(pageSize);
@@ -772,6 +771,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> AddBankAccount([FromBody] BankAccount model)
         {
+            if (model == null) return BadRequest();
+
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);

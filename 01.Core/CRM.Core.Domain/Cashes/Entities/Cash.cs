@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Attachments.Entities;
+using CRM.Core.Domain.Cashes.Enums;
 
 namespace CRM.Core.Domain.Cashes.Entities {
     public class Cash : BaseEntity {
@@ -24,12 +25,5 @@ namespace CRM.Core.Domain.Cashes.Entities {
 
         [NotMapped]
         public IList<Attachment> Attachments { get; set; }
-    }
-
-
-    public enum CashStatusEnum {
-        ثبت_موقت,
-        در_دست_تایید,
-        تایید_شده
     }
 }

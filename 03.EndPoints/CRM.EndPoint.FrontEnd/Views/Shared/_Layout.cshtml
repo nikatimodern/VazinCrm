@@ -3306,21 +3306,30 @@
             <div class="modal-body pb-2">
                 <form id="addBankAccountForm" class="d-flex flex-column gap-2">
                     <div>
-                        <label>نوع حساب: </label>
-                        <div id="officialTypeBankModalAlert" class="d-flex align-items-center gap-3">
-                            <div class="d-flex align-items-center gap-1">
-                                <label for="officialTypeBankId1">رسمی</label>
-                                <input class="valueNumber" type="radio" name="officialType" id="officialTypeBankId1" value="1" data-alertId="officialTypeBankModalAlert" required>
-                            </div>
-                            <div class="d-flex align-items-center gap-1">
-                                <label for="officialTypeBankId0">غیر رسمی</label>
-                                <input class="valueNumber" type="radio" name="officialType" id="officialTypeBankId0" value="0" data-alertId="officialTypeBankModalAlert" required>
-                            </div>
-                        </div>
+                        <label for="bankAccountTypeModalId">مالک حساب: </label>
+                        <select class="form-select form-select-sm valueNumber" name="bankAccountType" id="bankAccountTypeModalId" required>
+                            <option value="">انتخاب کنید</option>
+                            <option value="1">حساب‌های داخلی شرکت</option>
+                            <option value="2">تامین کننده</option>
+                            <option value="3">تنخواه دار</option>
+                        </select>
                     </div>
 
-                    <div>
-                        <label for="accountNameId">نام حساب:</label>
+                    <div class="mt-2">
+                        <div class="d-flex align-items-center justify-content-between gap-2">
+
+                            <label for="accountNameId">نام حساب:</label>
+                            <div id="officialTypeBankModalAlert" class="d-flex align-items-center gap-3">
+                                <div class="d-flex align-items-center gap-1">
+                                    <label for="officialTypeBankId1">رسمی</label>
+                                    <input class="valueNumber" type="radio" name="officialType" id="officialTypeBankId1" value="1" data-alertId="officialTypeBankModalAlert" required>
+                                </div>
+                                <div class="d-flex align-items-center gap-1">
+                                    <label for="officialTypeBankId0">غیر رسمی</label>
+                                    <input class="valueNumber" type="radio" name="officialType" id="officialTypeBankId0" value="0" data-alertId="officialTypeBankModalAlert" required>
+                                </div>
+                            </div>
+                        </div>
                         <input id="accountNameId" class="form-control" name="accountName" type="text" required>
                     </div>
                     <div>

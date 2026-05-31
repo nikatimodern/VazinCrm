@@ -3465,10 +3465,10 @@ const getAllBankAccounts = async (rerender = false) => {
     if (isLoadedBankAccounts && !rerender) return;
     
     const selects = [
-        { element: document.querySelector("#InvoiceModalId select[name='BankAccountId']"), type: 1 },
-        { element: document.querySelector("#ShowPaymentModal select[name='BankAccountId']"), type: 1, isDisable: true },
-        { element: document.querySelector("#reqAmountAttachModal select[name='fromAccountId']"), type: 1 },
-        { element: document.querySelector("#reqAmountAttachModal select[name='toAccountId']"), type: 2 },
+        { element: document.querySelector("#InvoiceModalId select[name='BankAccountId']"), type: [1] },
+        { element: document.querySelector("#ShowPaymentModal select[name='BankAccountId']"), type: [1], isDisable: true },
+        { element: document.querySelector("#reqAmountAttachModal select[name='fromAccountId']"), type: [1] },
+        { element: document.querySelector("#reqAmountAttachModal select[name='toAccountId']"), type: [2, 3], isTomSelect: true },
     ].filter(e => e.element);
     
     const elementsToToggleDisable = selects.filter(s => !s.isDisable).map(s => s.element);
@@ -3478,8 +3478,8 @@ const getAllBankAccounts = async (rerender = false) => {
         const data = await getAllBankAccountsJson();
         
         selects.forEach(x => {
-            const filteredData = data.filter(d => d.type === x.type);
-            if (x.type === 2) {
+            const filteredData = data.filter(d => x.type.includes(d.type));
+            if (x.isTomSelect) {
                 createSupplierTomSelect(x.element, filteredData);
                 return;
             }
@@ -5203,7 +5203,6 @@ async function submitAddBankAccount() {
         model.shebaNumber = "IR " + model.shebaNumber.trim();
     }
     
-    model.bankAccountType = 2; // تامین کننده
     try {
         FLshowLoading();
         const res = await axios.post("/Accountancy/AddBankAccount", model);
