@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.SignalR;
 using System.Text.Json;
 using CRM.Core.Domain.Customers.Enum;
 using CRM.Core.Domain.LogSystems.Entities;
+using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Customer;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using DocumentFormat.OpenXml.Office2010.Excel;
@@ -37,11 +38,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly Service genService;
         private readonly CRMContextDb db;
         private readonly LogSystemService _logSystemService;
+        private readonly ISmsQueue smsQueue;
 
         public AccountController(IConfiguration configuration, FileSaver fileSaver, UserContextDb UDb,
             UserManager<AppUser> userManager,
             SignInManager<AppUser> signInManager, IHubContext<TaskHub> hub, SmsService SmsServ, DateTimeServices dtS,
-            Service GenService, CRMContextDb db, LogSystemService logSystemService)
+            Service GenService, CRMContextDb db, LogSystemService logSystemService, ISmsQueue smsQueue)
         {
             this.configuration = configuration;
             this.fileSaver = fileSaver;
@@ -54,6 +56,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             genService = GenService;
             this.db = db;
             _logSystemService = logSystemService;
+            this.smsQueue = smsQueue;
         }
 
 
@@ -216,7 +219,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var otp = new Random().Next(1000, 9999).ToString();
 
-            await smsServ.SendOtpSms(mobile, otp, type);
+            //await smsServ.SendOtpSms(mobile, otp, type);
+            await smsQueue.QueueAsync(new SmsJob {
+                Type = type == "Forgot" ? SmsType.OtpForgot : SmsType.OtpLogin,
+                Mobile = mobile,
+                Code = otp
+            });
 
             HttpContext.Session.SetString($"{type}IsExpireOtp", "false");
             HttpContext.Session.SetString($"{type}OtpCode", otp);

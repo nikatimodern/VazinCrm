@@ -7,23 +7,23 @@ using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Services.SmsServices {
     public class SmsService {
         private readonly RequestServices request;
-        private readonly IConfiguration config;
+        private readonly HttpClient httpClient;
         private readonly appSettingSms smsConfig;
 
-        public SmsService(RequestServices request, IConfiguration config)
+        public SmsService(RequestServices request, HttpClient httpClient, IConfiguration config)
         {
             this.request = request;
-            this.config = config;
-            this.smsConfig = config.GetSection("smsConfig").Get<appSettingSms>();
+            this.httpClient = httpClient;
+            smsConfig = config.GetSection("smsConfig").Get<appSettingSms>();
         }
 
-
-        private async Task<ResponseSmsModel> SendPatternSms(string toNumber, string patternCode, string number, string link = null)
+        private async Task<ResponseSmsModel> SendPatternSms(string toNumber, string patternCode, Dictionary<string, string> attrs)
         {
             ResponseSmsModel res = new();
 
@@ -36,13 +36,6 @@ namespace CRM.EndPoint.FrontEnd.Services.SmsServices {
 
             try
             {
-                Dictionary<string, string> attrs = new() {
-                    ["number"] = number
-                };
-
-                if (!string.IsNullOrWhiteSpace(link))
-                    attrs["link"] = link;
-
                 var model = new PatternSmsRequest {
                     code = patternCode,
                     recipient = toNumber,
@@ -50,13 +43,10 @@ namespace CRM.EndPoint.FrontEnd.Services.SmsServices {
                     attributes = attrs
                 };
 
-                using HttpClient client = new();
-
-                client.DefaultRequestHeaders.Add("Api-Key", smsConfig._apiKey);
 
                 var content = new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json");
 
-                var response = await client.PostAsync(smsConfig._Url, content);
+                var response = await httpClient.PostAsync("", content);
 
                 var responseText = await response.Content.ReadAsStringAsync();
 
@@ -75,7 +65,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SmsServices {
             }
         }
 
-        // تایید پیش‌فاکتور توسط مشتری
+/*        // تایید پیش‌فاکتور توسط مشتری
         public Task<ResponseSmsModel> SendAcceptPfactorToCustomer(string toNumber, int serialNum, Guid pfactorId)
         {
             var link = pfactorId.ToString().Substring(0, 7);
@@ -118,29 +108,79 @@ namespace CRM.EndPoint.FrontEnd.Services.SmsServices {
             };
 
             return SendPatternSms(mobileNumber, patternCode, code);
-        }
+        }*/
 
 
         public async Task<ResponseSmsModel> SendAsync(SmsJob job)
         {
-            return job.Type switch
+            string patternCode;
+            Dictionary<string, string> attrs;
+
+            switch (job.Type)
             {
-                SmsType.AcceptPfactorToCustomer => await SendAcceptPfactorToCustomer(job.Mobile, job.SerialNumber!.Value, job.PfactorId!.Value)!,
+                // تایید پیش‌فاکتور توسط مشتری
+                case SmsType.AcceptPfactorToCustomer:
+                    patternCode = smsConfig.Patterns.AcceptPfactorToCustomer;
+                    attrs = new Dictionary<string, string> {
+                        ["number"] = job.SerialNumber,
+                        ["link"] = job.PfactorId?.ToString().Substring(0, 7)
+                    };
+                    break;
 
-                SmsType.AcceptPfactorToTamin => await SendAcceptPfactorToTamin(job.Mobile, job.SerialNumber!.Value)!,
+                // تایید پیش‌فاکتور توسط تامین
+                case SmsType.AcceptPfactorToTamin:
+                    patternCode = smsConfig.Patterns.AcceptPfactorToTamin;
+                    attrs = new Dictionary<string, string> {
+                        ["number"] = job.SerialNumber,
+                        ["link"] = "Cartable/Index?tab=TTaminExpertId"
+                    };
+                    break;
 
-                SmsType.AcceptedSalesAdminToCustomer => await SendAcceptedSalesAdminToCustomer(job.Mobile, job.SerialNumber!.Value)!,
+                // تایید مدیر فروش (برای مشتری)
+                case SmsType.AcceptedSalesAdminToCustomer:
+                    patternCode = smsConfig.Patterns.AcceptedSalesAdminToCustomer;
+                    attrs = new Dictionary<string, string> {
+                        ["number"] = job.SerialNumber
+                    };
+                    break;
 
-                SmsType.ReadyToDeliverToCustomer => await SendReadyToDeliverToCustomer(job.Mobile, job.SerialNumber)!,
+                // محصول آماده تحویل (برای مشتری)
+                case SmsType.ReadyToDeliverToCustomer:
+                    patternCode = smsConfig.Patterns.ReadyToDeliverToCustomer;
+                    attrs = new Dictionary<string, string> {
+                        ["number"] = job.SerialNumber
+                    };
+                    break;
 
-                SmsType.PaymentLinkToCustomer => await SendPaymentLinkToCustomer(job.Mobile, job.SerialNumber!.Value, job.PfactorId!.Value)!,
+                // لینک واریز پیش پرداخت (برای مشتری)
+                case SmsType.PaymentLinkToCustomer:
+                    patternCode = smsConfig.Patterns.PaymentPfactorLink;
+                    attrs = new Dictionary<string, string> {
+                        ["number"] = job.SerialNumber!,
+                        ["link"] = job.PfactorId?.ToString().Substring(0, 7)
+                    };
+                    break;
 
-                SmsType.OtpLogin => await SendOtpSms(job.Mobile, job.Code, "Login")!,
+                // ارسال OTP
+                case SmsType.OtpLogin:
+                    patternCode = smsConfig.Patterns.OtpLogin;
+                    attrs = new Dictionary<string, string> {
+                        ["number"] = job.Code
+                    };
+                    break;
 
-                SmsType.OtpForgot => await SendOtpSms(job.Mobile, job.Code, "Forgot")!,
+                case SmsType.OtpForgot:
+                    patternCode = smsConfig.Patterns.OtpForgot;
+                    attrs = new Dictionary<string, string> {
+                        ["number"] = job.Code
+                    };
+                    break;
 
-                _ => throw new NotSupportedException()
-            };
+                default:
+                    throw new NotSupportedException();
+            }
+
+            return await SendPatternSms(job.Mobile, patternCode, attrs);
         }
     }
 }

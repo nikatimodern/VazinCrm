@@ -5,6 +5,7 @@ using CRM.EndPoint.FrontEnd.Models.Sms;
 
 namespace CRM.EndPoint.FrontEnd.Services.SmsServices;
 
+
 public class SmsQueue : ISmsQueue {
     private readonly Channel<SmsJob> _queue = Channel.CreateUnbounded<SmsJob>();
 

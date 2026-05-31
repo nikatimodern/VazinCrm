@@ -84,10 +84,63 @@ connectionCall.on("CallAnswered", function (uniqueid) {
 
 
 ////////// sms toastify ////////////
-connection.on("SmsSent", () => {
-    toastifySuccess("پیامک با موفقیت ارسال شد");
+connection.on("SmsSuccess", () => {
+    smsToastUpdate("ارسال شد", "success");
+    
+    setTimeout(() => {
+        smsToast?.hideToast();
+    }, 3000);
+});
+connection.on("SmsSending", () => {
+    smsToastUpdate("در حال ارسال...");
 });
 
 connection.on("SmsFailed", () => {
-    toastifyError("ارسال پیامک ناموفق بود");
+    smsToastUpdate("ارسال پیامک ناموفق بود", "error");
 });
+
+
+let smsToast = null;
+function smsToastUpdate(text, type = "info") {
+    
+    if (smsToast) {
+        smsToast.hideToast();
+    }
+    
+    let background;
+    
+    switch (type) {
+        case "success":
+            background = "linear-gradient(135deg, rgba(2,81,75,1) 21%, rgba(0,59,54,1) 100%)";
+            break;
+        
+        case "error":
+            background = "linear-gradient(135deg, rgba(121,9,9,1) 21%, rgba(78,0,0,0.9) 100%)";
+            break;
+        
+        default:
+            background = "linear-gradient(135deg, rgba(110,73,0,1) 18%, rgba(185,124,0,1) 100%)";
+            break;
+    }
+    
+    smsToast = Toastify({
+        text,
+        duration: -1,
+        close: false,
+        gravity: "top",
+        position: "center",
+        stopOnFocus: false,
+        style: {
+            background,
+            borderRadius: "8px",
+        },
+    });
+    
+    smsToast.showToast();
+}
+smsToastUpdate("در حال ارسال...");
+console.log(smsToast);
+
+setTimeout(function () {
+    smsToastUpdate("ارسال شد", "success");
+}, 3000)

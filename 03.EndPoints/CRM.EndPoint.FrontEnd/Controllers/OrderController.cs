@@ -19,6 +19,7 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
+using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Order;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
 using CRM.EndPoint.FrontEnd.Services.Factor;
@@ -39,9 +40,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly UserManager<AppUser> userManager;
         private readonly SmsService smsServ;
         private readonly LogSystemService _logSystemService;
+        private readonly ISmsQueue smsQueue;
 
         public OrderController(IVeiwRenderService vrs, Service GenService, FileSaver fileSaver, DateTimeServices dtService,
-            CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, SmsService SmsServ, LogSystemService logSystemService)
+            CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, SmsService SmsServ, LogSystemService logSystemService, ISmsQueue smsQueue)
         {
             this.vrs = vrs;
             genService = GenService;
@@ -52,6 +54,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.userManager = userManager;
             smsServ = SmsServ;
             _logSystemService = logSystemService;
+            this.smsQueue = smsQueue;
         }
 
         public IActionResult Index( /*Guid? CuId,Guid? PfId*/)
@@ -213,7 +216,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             cusMobile = deal.MobileNumber;
                         }
 
-                        await smsServ.SendReadyToDeliverToCustomer(cusMobile, hd.PrefactorSer);
+                        // await smsServ.SendReadyToDeliverToCustomer(cusMobile, hd.PrefactorSer);
+                        await smsQueue.QueueAsync(new SmsJob {
+                            Type = SmsType.ReadyToDeliverToCustomer,
+                            Mobile = cusMobile,
+                            SerialNumber = hd.PrefactorSer.ToString(),
+                            UserId = user.Id
+                        });
                     }
 
                     await db.SaveChangesAsync();

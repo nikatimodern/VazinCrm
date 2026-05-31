@@ -26,6 +26,7 @@ using System.Security.Claims;
 using CRM.EndPoint.FrontEnd.Services.PushServices;
 using System.Net;
 using System.Net.Http;
+using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using WebPush;
 
@@ -155,6 +156,14 @@ namespace CRM.EndPoint.FrontEnd {
                 return new WebPushClient(httpClient);
             });
 
+
+            services.AddHttpClient<SmsService>(client =>
+            {
+                var smsConfig = Configuration?.GetSection("smsConfig").Get<appSettingSms>();
+
+                client.BaseAddress = new Uri(smsConfig?._Url);
+                client.DefaultRequestHeaders.Add("Api-Key", smsConfig?._apiKey);
+            });
 
             services
                 .AddControllersWithViews()
