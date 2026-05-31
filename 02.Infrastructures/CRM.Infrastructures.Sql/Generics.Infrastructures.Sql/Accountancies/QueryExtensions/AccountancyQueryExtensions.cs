@@ -59,7 +59,7 @@ public static class AccountancyQueryExtensions {
         return query.Where(a => a.PayType == PayTypeEnum.نقدی || a.PayType == PayTypeEnum.چکی);
     }
 
-    public static IQueryable<Accountancy> OnlyManagingDirector(this IQueryable<Accountancy> query)
+    public static IQueryable<Accountancy> OnlyTamin(this IQueryable<Accountancy> query)
     {
         return query.Where(a => a.PayType == PayTypeEnum.اعتباری || a.PayType == PayTypeEnum.تهاتری);
     }

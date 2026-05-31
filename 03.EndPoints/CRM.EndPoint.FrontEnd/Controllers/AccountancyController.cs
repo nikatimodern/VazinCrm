@@ -305,9 +305,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var roles = await userManager.GetRolesAsync(user);
 
                 var baseQuery = db.Accountancies.OrderByDescending(f => f.CreateDate).ForPreFactor().AsQueryable();
-                if (cartable == CartableEnum.مدیر_عامل)
+                if (cartable == CartableEnum.کارشناس_تامین)
                 {
-                    baseQuery = baseQuery.OnlyManagingDirector();
+                    baseQuery = baseQuery.OnlyTamin();
                 }
 
 
@@ -343,7 +343,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var model = new PaymentPartialVModel {
                     Items = accS,
-                    PassType = cartable == CartableEnum.مدیر_عامل ? 56 : 55,
+                    PassType = cartable == CartableEnum.کارشناس_تامین ? 56 : 55,
                     UserId = user.Id,
                     IsAdmin = roles.Contains("مدیر ارشد"),
                     IsSalesAdmin = roles.Contains("مدیر فروش"),
@@ -1094,16 +1094,23 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> ChangeStatusAcc(Guid id)
         {
-            var user = await userManager.GetUserAsync(HttpContext.User);
-            var oldAcc = await db.Accountancies.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
-            var acc = await db.Accountancies.Where(f => f.Id == id).FirstOrDefaultAsync();
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var oldAcc = await db.Accountancies.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
+                var acc = await db.Accountancies.Where(f => f.Id == id).FirstOrDefaultAsync();
 
-            acc.Status = AccStatusEnum.در_دست_تایید;
+                acc.Status = AccStatusEnum.در_دست_تایید;
 
-            await _logSystemService.LogChange(oldAcc, acc, LogActionEnum.تغییر_وضعیت, user, null, "ارسال به مالی");
-            await db.SaveChangesAsync();
+                await _logSystemService.LogChange(oldAcc, acc, LogActionEnum.تغییر_وضعیت, user, null, "ارسال به مالی");
+                await db.SaveChangesAsync();
 
-            return Ok();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
 
 

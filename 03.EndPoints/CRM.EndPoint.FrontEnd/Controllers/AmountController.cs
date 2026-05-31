@@ -566,6 +566,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var isAdmin = roles.Contains("مدیر ارشد");
                 var isManager = roles.Contains("مدیر عامل");
 
+                if (passType == 2 && !isManager && !isAdmin)
+                {
+                    return NoContent();
+                }
+
                 var baseQuery = db.RequestAmounts.OrderByDescending(f => f.CreateDate).AsNoTracking();
 
                 if (!isAdmin && !isFinancial && !isManager)
