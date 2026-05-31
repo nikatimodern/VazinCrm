@@ -43,6 +43,7 @@ using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.Core.Domain.Supplies.Enums;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Accountency;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
+using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
@@ -59,12 +60,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly CrmSaveCahngeAsync crmSaveCahngeAsync;
         private readonly TaskServices ts;
         private readonly SepidarService sps;
-        private readonly SmsServices smsServ;
+        private readonly SmsService smsServ;
         private readonly UserManager<AppUser> userManager;
         private readonly SignInManager<AppUser> signInManager;
         private readonly RoleManager<IdentityRole> roleManager;
 
-        public FactorController(CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, SepidarService sps, SmsServices SmsServ,
+        public FactorController(CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, SepidarService sps, SmsService SmsServ,
             UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, RoleManager<IdentityRole> roleManager, Service GenService,
             FileSaver fileSaver,
             DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb S1db,

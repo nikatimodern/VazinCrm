@@ -21,6 +21,7 @@ using System.Text.Json;
 using CRM.Core.Domain.Customers.Enum;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Customer;
+using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using DocumentFormat.OpenXml.Office2010.Excel;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
@@ -31,7 +32,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly UserManager<AppUser> userManager;
         private readonly SignInManager<AppUser> signInManager;
         private readonly IHubContext<TaskHub> hub;
-        private readonly SmsServices smsServ;
+        private readonly SmsService smsServ;
         private readonly DateTimeServices dtS;
         private readonly Service genService;
         private readonly CRMContextDb db;
@@ -39,7 +40,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         public AccountController(IConfiguration configuration, FileSaver fileSaver, UserContextDb UDb,
             UserManager<AppUser> userManager,
-            SignInManager<AppUser> signInManager, IHubContext<TaskHub> hub, SmsServices SmsServ, DateTimeServices dtS,
+            SignInManager<AppUser> signInManager, IHubContext<TaskHub> hub, SmsService SmsServ, DateTimeServices dtS,
             Service GenService, CRMContextDb db, LogSystemService logSystemService)
         {
             this.configuration = configuration;

@@ -23,6 +23,7 @@ using CRM.EndPoint.FrontEnd.Models.ViewModel.Order;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
 using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
+using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using DocumentFormat.OpenXml.Spreadsheet;
 
 
@@ -36,11 +37,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly CRMContextDb db;
         private readonly UserContextDb udb;
         private readonly UserManager<AppUser> userManager;
-        private readonly SmsServices smsServ;
+        private readonly SmsService smsServ;
         private readonly LogSystemService _logSystemService;
 
         public OrderController(IVeiwRenderService vrs, Service GenService, FileSaver fileSaver, DateTimeServices dtService,
-            CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, SmsServices SmsServ, LogSystemService logSystemService)
+            CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, SmsService SmsServ, LogSystemService logSystemService)
         {
             this.vrs = vrs;
             genService = GenService;

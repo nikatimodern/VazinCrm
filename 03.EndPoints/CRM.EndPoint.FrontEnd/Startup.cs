@@ -26,6 +26,7 @@ using System.Security.Claims;
 using CRM.EndPoint.FrontEnd.Services.PushServices;
 using System.Net;
 using System.Net.Http;
+using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using WebPush;
 
 namespace CRM.EndPoint.FrontEnd {
@@ -122,7 +123,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<DateTimeServices>();
             services.AddTransient<FileSaver>();
             services.AddScoped<Service>();
-            services.AddTransient<SmsServices>();
+            services.AddTransient<SmsService>();
             services.AddHttpContextAccessor();
             services.AddScoped<SepidarService>();
             services.AddSignalR();
@@ -137,6 +138,9 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddSingleton<IPushQueue, PushQueue>();
             services.AddHostedService<PushBackgroundService>();
             services.AddScoped<IPushService, PushService>();
+
+            services.AddSingleton<ISmsQueue, SmsQueue>();
+            services.AddHostedService<SmsBackgroundService>();
 
             services.AddSingleton<WebPushClient>(sp => {
                 var handler = new SocketsHttpHandler {

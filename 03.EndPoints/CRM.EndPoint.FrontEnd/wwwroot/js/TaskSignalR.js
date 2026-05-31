@@ -82,3 +82,12 @@ connectionCall.on("CallAnswered", function (uniqueid) {
     answerCallNotif(uniqueid);
 });
 
+
+////////// sms toastify ////////////
+connection.on("SmsSent", () => {
+    toastifySuccess("پیامک با موفقیت ارسال شد");
+});
+
+connection.on("SmsFailed", () => {
+    toastifyError("ارسال پیامک ناموفق بود");
+});
