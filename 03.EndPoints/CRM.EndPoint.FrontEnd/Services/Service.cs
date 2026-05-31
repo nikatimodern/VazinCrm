@@ -240,14 +240,25 @@ namespace CRM.EndPoint.FrontEnd.Services {
             }
 
             // Tamin
-            if (roles.Contains("مدیر ارشد") || roles.Contains("مدیر تامین"))
+            if (roles.Contains("مدیر ارشد") || roles.Contains("مدیر تامین") || roles.Contains("کارشناس تامین"))
             {
-                countObj.Tamin = await pf.CountAsync(f => f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین);
-            } else if (roles.Contains("کارشناس تامین"))
-            {
-                var userId = Guid.Parse(user.Id);
+                int pfCount;
+                if (roles.Contains("مدیر ارشد") || roles.Contains("مدیر تامین"))
+                {
+                    pfCount = await pf.CountAsync(f => f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین);
+                } else
+                {
+                    var userId = Guid.Parse(user.Id);
+                    pfCount = await pf.CountAsync(f => f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین && f.UserTaminId == userId);
+                }
 
-                countObj.Tamin = await pf.CountAsync(f => f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین && f.UserTaminId == userId);
+                var invoiceCount = await accPf.OnlyTamin()
+                    .CountAsync(a => a.Status == AccStatusEnum.در_دست_تایید || a.Status == AccStatusEnum.ثبت_اولیه);
+
+                countObj.Tamin = new SubCartableCountVModel {
+                    InvoiceCount = invoiceCount,
+                    PreFactorCount = pfCount,
+                };
             }
 
             // Financial
@@ -269,12 +280,9 @@ namespace CRM.EndPoint.FrontEnd.Services {
             // Managing Director
             if (roles.Contains("مدیر ارشد") || roles.Contains("مدیر عامل"))
             {
-                var invoiceCount = await accPf.OnlyManagingDirector()
-                    .CountAsync(a => a.Status == AccStatusEnum.در_دست_تایید || a.Status == AccStatusEnum.ثبت_اولیه);
                 var reqCount = await db.RequestAmounts.CountAsync(f =>
                     f.RequestStatus == RequestStatusEnum.در_انتظار_تایید_مدیرعامل || f.RequestStatus == RequestStatusEnum.در_انتظار_ارسال_به_مالی);
                 countObj.ManagingDirector = new SubCartableCountVModel {
-                    InvoiceCount = invoiceCount,
                     RequestCount = reqCount
                 };
             }
