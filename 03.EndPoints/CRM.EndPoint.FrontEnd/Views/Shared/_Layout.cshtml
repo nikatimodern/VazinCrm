@@ -1020,24 +1020,26 @@
 
                                 <div class="unitAmountBoxPrefactorModal" style="display:flex;flex-direction:column;align-items:center; ">
                                     <label>مبلغ واحد</label>
-                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="unitAmount" required />
+                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="unitAmount" required data-currency-hint="next"/>
+                                    <span class="currencyHint"></span>
                                 </div>
                                 <div class="totalAmountBoxPrefactorModal" style="display:flex;flex-direction:column;align-items:center; ">
                                     <label>مبلغ کل</label>
                                     <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="totalAmount" id="totalAmount" disabled />
                                 </div>
-                                <div style="align-self:end">
+                                <div>
+                                    <label>&nbsp;</label>
                                     <button id="AddBtnId" class="buttonPurple2 align-items-center justify-content-center w-100" style="display: flex;height: 2rem;padding-inline: 10px" type="button" onclick="AddPfItem()">
                                         <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
                                         </svg>
                                     </button>
                                     <div id="UpBtnId" style="display:none;flex-direction:column">
                                         <button class="buttonGreen3" onclick="UpPfItem()" type="button" style="display:flex;justify-content:center; align-items:center;height: 26px;padding-inline: 10px">
-                                            <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                                            <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
                                         </button>
                                         <button class="buttonCancel2" onclick="UpPfItemCancel()" type="button" style="display:flex;justify-content:center; align-items:center;height: 26px;padding-inline: 10px">
-                                            <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                                            <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                                         </button>
                                     </div>
                                 </div>
@@ -1260,14 +1262,16 @@
                                 </div>
                                 <div style="display:flex;flex-direction:column;align-items:center; ">
                                     <label>مبلغ واحد</label>
-                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="unitAmount" required />
+                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="unitAmount" required data-currency-hint="next"/>
+                                    <span class="currencyHint"></span>
                                 </div>
                                 <div style="display:flex;flex-direction:column;align-items:center; ">
                                     <label>مبلغ کل</label>
                                     <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="totalAmount" id="totalAmount" disabled />
                                 </div>
 
-                                <div style="align-self:end">
+                                <div>
+                                    <label>&nbsp;</label>
                                     <button id="f_AddBtnId" type="button" class="buttonGreen3 align-items-center justify-content-center" style="display: flex;height: 2rem;padding-inline: 10px" onclick="AddfItem()">
                                         <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -1494,7 +1498,8 @@
                         </div>
                         <div class="unitAmountBoxPrefactorModal" style="display:flex;flex-direction:column;align-items:center; ">
                             <label>مبلغ واحد (ریال)</label>
-                            <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="unitAmount" required />
+                            <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="unitAmount" required data-currency-hint="next"/>
+                            <span class="currencyHint"></span>
                         </div>
                         <div class="totalAmountBoxPrefactorModal" style="display:flex;flex-direction:column;align-items:center; ">
                             <label>مبلغ کل (ریال)</label>
@@ -1504,8 +1509,6 @@
                                 <label>تخفیف</label>
                                 <input class="form-control" type="text" placeholder="تخفیف" />
                                 </div>*@
-
-
                     </form>
                 </div>
                 <div style="padding-block: 16px; width:95%;margin-inline:auto  ">
@@ -1589,7 +1592,8 @@
                         </div>
                         <div style="display:flex;flex-direction:column;align-items:center; ">
                             <label>مبلغ واحد (ریال)</label>
-                            <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="unitAmount" required />
+                            <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="unitAmount" required data-currency-hint="next" />
+                            <span class="currencyHint"></span>
                         </div>
                         <div style="display:flex;flex-direction:column;align-items:center; ">
                             <label>مبلغ کل (ریال)</label>
@@ -1968,7 +1972,7 @@
 
                         <div class="sectionBox-invoice">
                             <span class="sectionTitle-invoice">اطلاعات تراکنش بانکی</span>
-                            <div class="d-flex flex-wrap row-gap-2 justify-content-center align-items-center w-100">
+                            <div class="d-flex flex-wrap row-gap-2 justify-content-center align-items-start w-100">
                                 <div class="col-12 col-sm-6 col-lg-4 pe-sm-2 d-none ReciveDateDiv">
                                     <label>تاریخ دریافت چک از مشتری</label>
                                     <input class="sdate form-control" name="ReciveDate" type="text" placeholder="ثبت تاریخ" data-mask-date required />
@@ -1976,7 +1980,8 @@
 
                                 <div class="col-12 col-sm-6 col-lg-4 pe-sm-2">
                                     <label>مبلغ (ریال)</label>
-                                    <input inputmode="numeric" class="currencyNumber form-control" name="ReciveAmount" type="text" placeholder="مبلغ دریافتی به ریال" required />
+                                    <input inputmode="numeric" class="currencyNumber form-control" name="ReciveAmount" type="text" placeholder="مبلغ دریافتی به ریال" required data-currency-hint="next" />
+                                    <span class="currencyHint"></span>
                                 </div>
 
                                 <div class="col-12 col-sm-6 col-lg-4 VosolDateDiv">
@@ -2045,7 +2050,7 @@
 
                         <div class="sectionBox-invoice">
                             <span class="sectionTitle-invoice">اطلاعات تراکنش بانکی</span>
-                            <div class="d-flex flex-wrap row-gap-2 justify-content-center align-items-center" style="width:100%">
+                            <div class="d-flex flex-wrap row-gap-2 justify-content-center align-items-start" style="width:100%">
                                 <div class="col-12 col-sm-6 col-lg-4 pe-sm-2 d-none ReciveDateDiv">
                                     <label>تاریخ دریافت چک از مشتری</label>
                                     <input class="sdate form-control" name="ReciveDate" type="text" placeholder="ثبت تاریخ" data-mask-date disabled />
@@ -2053,7 +2058,8 @@
 
                                 <div class="col-12 col-sm-6 col-lg-4 pe-sm-2">
                                     <label>مبلغ (ریال)</label>
-                                    <input inputmode="numeric" class="currencyNumber form-control" name="ReciveAmount" type="text" placeholder="مبلغ دریافتی به ریال" disabled />
+                                    <input inputmode="numeric" class="currencyNumber form-control" name="ReciveAmount" type="text" placeholder="مبلغ دریافتی به ریال" disabled data-currency-hint="next" />
+                                    <span class="currencyHint"></span>
                                 </div>
 
                                 <div class="col-12 col-sm-6 col-lg-4 VosolDateDiv">
@@ -2061,7 +2067,8 @@
                                     <input class="sdate form-control" name="VosolDate" type="text" placeholder="تاریخ پرداخت" data-mask-date disabled />
                                 </div>
                             </div>
-                            @*                <div class="d-none FromBankAccountWrapper" style="width:100% ;">
+
+                            @*<div class="d-none FromBankAccountWrapper" style="width:100% ;">
                                 <div class="mt-2">
                                     <label>واریز از حساب بانکی</label>
                                     <input class="form-control" name="FromBankAccountTxt" type="text" placeholder="از کدام حساب و توسط چه کسی واریز صورت گرفته است."/>
@@ -3107,14 +3114,15 @@
                             <div class="sectionBox-invoice">
                                 <span class="sectionTitle-invoice">اطلاعات تراکنش بانکی</span>
 
-                                <div class="flex-center flex-wrap row-gap-2 w-100">
+                                <div class="flex-center align-items-start flex-wrap row-gap-2 w-100">
                                     <div class="col-12 col-sm-6 col-lg-4 pe-sm-2">
                                         <label>مبلغ (ریال)</label>
                                         <div class="position-relative">
                                             <span id="paymentAmountGroupEditIcon" class="position-absolute flex-center top-0 bottom-0 px-2 text-dark cursor-pointer d-none" onclick="showEditAmountPaymentItemModal()">
                                                 <i class="fa fa-pencil" style="font-size: 12px"></i>
                                             </span>
-                                            <input inputmode="numeric" class="currencyNumber form-control inpAmount" name="amount" type="text" placeholder="مبلغ پرداختی به ریال" required />
+                                            <input inputmode="numeric" class="currencyNumber form-control inpAmount" name="amount" type="text" placeholder="مبلغ پرداختی به ریال" required data-currency-hint="next" />
+                                            <span class="currencyHint"></span>
                                         </div>
                                     </div>
 
@@ -3137,7 +3145,7 @@
                                                 افزودن شماره‌حساب جدید
                                             </button>
                                         </div>
-                                        <select id="reqAttachToAccountId" class="show-dropdown-arrow" name="toAccountId" type="text" required></select>
+                                        <select id="reqAttachToAccountId" class="show-dropdown-arrow w-100" name="toAccountId" type="text" required></select>
                                     </div>
                                 </div>
                             </div>
@@ -3193,7 +3201,8 @@
 
                     <div>
                         <label for="reqAmountAmount">مبلغ:</label>
-                        <input id="reqAmountAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="amount" required>
+                        <input id="reqAmountAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="amount" required data-currency-hint="next">
+                        <span class="currencyHint"></span>
                     </div>
 
                     <div>

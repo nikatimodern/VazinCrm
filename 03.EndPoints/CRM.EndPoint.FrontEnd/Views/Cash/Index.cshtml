@@ -61,7 +61,8 @@
 
                     <div>
                         <label for="cashAmount">مبلغ:</label>
-                        <input id="cashAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="amount" required>
+                        <input id="cashAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="amount" required data-currency-hint="next">
+                        <span class="currencyHint"></span>
                     </div>
 
                     <div>
@@ -499,7 +500,7 @@
                         <div class="cash-summary__balance-row">
                             <span class="cash-balance-badge">
                                 مانده:
-                                ${balance.toLocaleString()}
+                                <span class="direction-ltr">${balance.toLocaleString()}</span>
                                 <span style="font-size: 11px">ريال</span>
                             </span>
                         </div>

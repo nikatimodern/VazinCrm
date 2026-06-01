@@ -1811,7 +1811,8 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return;
         
         if (el.classList.contains("currencyNumber")) {
-            handlerSeparateCurrencyNumbers(e);
+            handlerSeparateCurrencyNumbers(el);
+            updateCurrencyHint(el);
         } else if (el.classList.contains("digitNumber") || el.classList.contains("digitNumberString")) {
             handlerSeparateDigitNumbers(e);
         } else if (el.classList.contains("mobileNumber")) {
@@ -1914,9 +1915,7 @@ function handlerIranMobileInput(e) {
 }
 
 
-function handlerSeparateCurrencyNumbers(e) {
-    const el = e.target;
-    
+function handlerSeparateCurrencyNumbers(el) {
     const numericValue = getNumericValue(el.value);
     
     el.value = numericValue
@@ -1957,8 +1956,34 @@ function getNumericValue(value) {
     return ConvertToNumEnglishCharNoCallBack(value).replace(/\D/g, "");
 }
 
+
+function getPriceTextElement(input) {
+    
+    const selector = input.dataset.priceText;
+    
+    if (!selector)
+        return null;
+    
+    if (selector === "next")
+        return input.nextElementSibling;
+    
+    return document.querySelector(selector);
+}
+
+function updateCurrencyHint(input) {
+    const targetSelector = input.dataset.currencyHint;
+    if (!targetSelector) return;
+    const target = targetSelector === "next" ? input.nextElementSibling : document.querySelector(targetSelector);
+    if (!target) return;
+    if (!target.classList.contains("currencyHint")) return;
+    
+    const amount = Number(getNumericValue(input.value));
+    
+    target.textContent = formatAmountHint(amount);
+}
+
 function formatAmountHint(rialAmount) {
-    if (isNaN(rialAmount)) return;
+    if (isNaN(rialAmount)) return "";
     
     const toman = Math.floor(rialAmount / 10);
     
@@ -2379,8 +2404,8 @@ class MyService {
         blacklist = [],    // ['name1', 'name2']
     ) {
         this.RemoveAlertForm(formId);
-        
-        const elements = document.getElementById(formId).elements;
+        const form = document.getElementById(formId);
+        const elements = form.elements;
         for (const elm of elements) {
             const name = elm.name;
             let defVal = null;
@@ -2389,7 +2414,6 @@ class MyService {
                 if (blacklist.includes(name)) continue;
                 defVal = defaultVals.find(v => v.name === name)?.val ?? null;
             }
-            
             
             switch (elm.type) {
                 case "text":
@@ -2440,6 +2464,7 @@ class MyService {
                     break;
             }
         }
+        form.querySelectorAll(".currencyHint").forEach(elm => elm.innerHTML = "");
     }
     
     
@@ -2531,6 +2556,9 @@ class MyService {
                     case "number":
                     case "tel":
                         elm.value = value;
+                        if (elm.dataset.currencyHint) {
+                            updateCurrencyHint(elm);
+                        }
                         break;
                     case "select-one":
                         if (elm.tomselect) {

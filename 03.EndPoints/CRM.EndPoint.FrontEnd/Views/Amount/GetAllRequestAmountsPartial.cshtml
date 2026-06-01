@@ -7,10 +7,12 @@
     var isFinancial = ViewBag.IsFinancial;
     var isAdmin = ViewBag.isAdmin;
     var userId = ViewBag.UserId;
+    var index = 0;
 }
 
 <div class="col-12 mx-auto d-flex flex-column" style="gap:12px">
     @foreach (var item in Model) {
+        index += 1;
         var reqAmount = item.RequestAmount;
         var isCreator = reqAmount.UserCreatorID == userId;
         var supplyFactorSerials = item.SupplyFactorSerials;
@@ -206,7 +208,7 @@
                         <span style="font-size: 13px; color: #777" class="flex-shrink-0">مبلغ تایید شده:</span>
                         @if (pendingMd) {
                             <div class="input-group">
-                                <input @(pendingMd ? "" : "disabled") type="text" class="acceptedAmount form-control currencyNumber" min="@item.TotalPaymentAmount" oninput="changeAcceptedRequestAmount(this, @reqAmount.Amount, @reqAmount.AcceptedAmount)" value="@(reqAmount.AcceptedAmount > 0 ? $"{reqAmount.AcceptedAmount:n0}" : "")" required>
+                                <input @(pendingMd ? "" : "disabled") type="text" class="acceptedAmount form-control currencyNumber" min="@item.TotalPaymentAmount" oninput="changeAcceptedRequestAmount(this, @reqAmount.Amount, @reqAmount.AcceptedAmount)" value="@(reqAmount.AcceptedAmount > 0 ? $"{reqAmount.AcceptedAmount:n0}" : "")" required data-currency-hint="#reqAmountCurrencyHint@(index)">
                                 <select class="acceptedAmountPercent form-select form-select-xs" @(pendingMd ? "" : "disabled") style="@(acceptedAmountPercentList.Contains(percent) ? "background-color: #cef5ce" : "border-color: #b5b5b5");color: #333" onchange="changePercentAcceptedRequestAmount(this, @reqAmount.Amount, @reqAmount.AcceptedAmount)">
                                     <option value="" selected="@(percent == 0 ? "selected" : null)">درصد</option>
                                     @foreach (var p in acceptedAmountPercentList) {
@@ -214,6 +216,7 @@
                                     }
                                 </select>
                             </div>
+                            <span class="currencyHint" id="reqAmountCurrencyHint@(index)"></span>
                         } else {
                             <div class="fbold flex-center align-items-baseline column-gap-1 @(status is RequestStatusEnum.در_انتظار_پرداخت or RequestStatusEnum.پرداخت_شده ? "badgeGreen-border" : "")">
                                 <span style="font-size: 16px;">@($"{reqAmount.AcceptedAmount:n0}")</span>
@@ -277,5 +280,6 @@
                 </div>
             }
         </div>
+
     }
 </div>
