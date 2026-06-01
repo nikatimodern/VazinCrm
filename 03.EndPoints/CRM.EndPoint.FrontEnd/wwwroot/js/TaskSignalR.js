@@ -110,10 +110,16 @@ connectionCall.on("CallAnswered", function (uniqueid) {
 
 ////////// sms toastify ////////////
 connection.on("SmsSuccess", () => {
+    //toastifySuccess("پیامک با موفقیت ارسال شد");
     updateSmsToast("پیامک با موفقیت ارسال شد", "success");
 });
 
 connection.on("SmsFailed", () => {
+    //toastifyError("ارسال پیامک ناموفق بود");
     updateSmsToast("ارسال پیامک ناموفق بود", "error");
+});
+
+connection.on("SmsSending", () => {
+    showSmsSendingToast()
 });
 

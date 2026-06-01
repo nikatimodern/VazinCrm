@@ -1820,7 +1820,7 @@ const regUtamin = async (pfId, type, dealId) => {
             }
             
             FLshowLoading(false);
-            showSmsSendingToast();
+           // showSmsSendingToast();
             //toastifySuccess("به مسئول تامین واگذار شد");
         }
     } catch (err) {
@@ -1842,7 +1842,8 @@ const resendRegUtamin = async (pfId, userTaminId, type, dealId) => {
             } else if (type === 4) {
                 await getPreFactorFromDeal(dealId);
             }
-            showSmsSendingToast();
+            //showSmsSendingToast();
+           // toastifyInfo("پیامک در صف ارسال قرار گرفت");
             //toastifySuccess("ارسال مجدد انجام شد");
         }
     } catch (err) {
@@ -1882,7 +1883,7 @@ const SendToCustomer = async () => {
                 await getPreFactorFromDeal(dealIdSubmitSmsSendPf);
             }
             
-            showSmsSendingToast();
+           // showSmsSendingToast();
             //toastifySuccess("ارسال انجام شد");
             $("#MobileModal").modal("toggle");
         }

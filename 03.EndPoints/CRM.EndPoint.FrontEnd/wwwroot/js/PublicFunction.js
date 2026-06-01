@@ -834,7 +834,6 @@ const AddPfItem = async () => {
         data.id = null;
         _pfactorItems.push(data);
         pfactor.PreFactorItems = _pfactorItems;
-        console.log(_pfactorItems);
         
         ShowItemPfactor();
         mySer.emptyForm("PreFacItem");
@@ -1209,7 +1208,6 @@ const showModalAddPfactor = async (type, cusId = null, deal) => {
     baseDesPfactor.filter(f => !f.official).filter(f => f.type === 0).map(item => {
         PreFactorDescItems.push({ text: item.text, isDeleted: false, official: item.official });
     });
-    console.log(PreFactorDescItems);
     showPreFactorDescItems();
     toggleDisplayPrefactorModal();
     //_officialType = 1;//رسمی

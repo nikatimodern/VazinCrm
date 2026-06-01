@@ -34,6 +34,7 @@ public class SmsBackgroundService(
         var smsService = scope.ServiceProvider.GetRequiredService<SmsService>();
         var notifyUser = !string.IsNullOrEmpty(job.ConnectionId);
 
+        if (notifyUser) await hub.Clients.Client(job.ConnectionId).SendAsync("SmsSending", cancellationToken: token);
         const int maxRetry = 5;
 
         for (var retry = 1; retry <= maxRetry; retry++)
@@ -45,7 +46,7 @@ public class SmsBackgroundService(
                 if (result.code == 200)
                 {
                     logger.LogInformation("Sms sent successfully. Mobile:{Mobile}", job.Mobile);
-                    if (notifyUser) await hub.Clients.Client(job.ConnectionId).SendAsync("SmsSuccess", job.Mobile, token);
+                    if (notifyUser) await hub.Clients.Client(job.ConnectionId).SendAsync("SmsSuccess", cancellationToken: token);
 
                     return;
                 }
@@ -64,6 +65,6 @@ public class SmsBackgroundService(
         }
 
         logger.LogError("Sms failed after all retries. Mobile:{Mobile}", job.Mobile);
-        if (notifyUser) await hub.Clients.Client(job.ConnectionId).SendAsync("SmsFailed", job.Mobile, token);
+        if (notifyUser) await hub.Clients.Client(job.ConnectionId).SendAsync("SmsFailed", cancellationToken: token);
     }
 }
