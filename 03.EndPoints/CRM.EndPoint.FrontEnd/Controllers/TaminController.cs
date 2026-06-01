@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Tamin;
+using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using Microsoft.AspNetCore.Authorization;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
@@ -23,7 +24,7 @@ public class TaminController : Controller
 {
     private readonly CRMContextDb db;
 
-    public TaminController(CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, SepidarService sps, SmsServices SmsServ,
+    public TaminController(CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, SepidarService sps, SmsService SmsServ,
             UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager, Service GenService, FileSaver fileSaver,
             DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb S1db,
             IHubContext<TaskHub> hub)

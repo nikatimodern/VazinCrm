@@ -19,10 +19,12 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
+using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Order;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
 using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
+using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using DocumentFormat.OpenXml.Spreadsheet;
 
 
@@ -36,11 +38,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly CRMContextDb db;
         private readonly UserContextDb udb;
         private readonly UserManager<AppUser> userManager;
-        private readonly SmsServices smsServ;
+        private readonly SmsService smsServ;
         private readonly LogSystemService _logSystemService;
+        private readonly ISmsQueue smsQueue;
 
         public OrderController(IVeiwRenderService vrs, Service GenService, FileSaver fileSaver, DateTimeServices dtService,
-            CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, SmsServices SmsServ, LogSystemService logSystemService)
+            CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, SmsService SmsServ, LogSystemService logSystemService, ISmsQueue smsQueue)
         {
             this.vrs = vrs;
             genService = GenService;
@@ -51,6 +54,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.userManager = userManager;
             smsServ = SmsServ;
             _logSystemService = logSystemService;
+            this.smsQueue = smsQueue;
         }
 
         public IActionResult Index( /*Guid? CuId,Guid? PfId*/)
@@ -182,11 +186,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                var oldHd = await db.OrderHeads.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
-                var hd = await db.OrderHeads.Where(f => f.Id == id).FirstOrDefaultAsync();
+                var oldHd = await db.OrderHeads.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
+                var hd = await db.OrderHeads.FirstOrDefaultAsync(f => f.Id == id);
                 var user = userManager.GetUserAsync(HttpContext.User).Result;
 
-                var roles = userManager.GetRolesAsync(user).Result.ToArray();
+                var roles = await userManager.GetRolesAsync(user);
 
                 if (user.Id == hd.UserCreatorID || user.Id == hd.UserTaminId.ToString()
                                                 || roles.Contains("مدیر ارشد") || roles.Contains("مدیر فروش") || roles.Contains("مدیر تامین"))
@@ -212,7 +216,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             cusMobile = deal.MobileNumber;
                         }
 
-                        await smsServ.SendReadyToDeliverToCustomer(cusMobile, hd.PrefactorSer);
+                        // await smsServ.SendReadyToDeliverToCustomer(cusMobile, hd.PrefactorSer);
+                        await smsQueue.QueueAsync(new SmsJob {
+                            Type = SmsType.ReadyToDeliverToCustomer,
+                            Mobile = cusMobile,
+                            SerialNumber = hd.PrefactorSer.ToString(),
+                        });
                     }
 
                     await db.SaveChangesAsync();

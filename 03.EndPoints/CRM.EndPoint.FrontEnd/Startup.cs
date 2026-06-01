@@ -26,6 +26,8 @@ using System.Security.Claims;
 using CRM.EndPoint.FrontEnd.Services.PushServices;
 using System.Net;
 using System.Net.Http;
+using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using WebPush;
 
 namespace CRM.EndPoint.FrontEnd {
@@ -122,7 +124,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<DateTimeServices>();
             services.AddTransient<FileSaver>();
             services.AddScoped<Service>();
-            services.AddTransient<SmsServices>();
+            services.AddTransient<SmsService>();
             services.AddHttpContextAccessor();
             services.AddScoped<SepidarService>();
             services.AddSignalR();
@@ -138,6 +140,9 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddHostedService<PushBackgroundService>();
             services.AddScoped<IPushService, PushService>();
 
+            services.AddSingleton<ISmsQueue, SmsQueue>();
+            services.AddHostedService<SmsBackgroundService>();
+
             services.AddSingleton<WebPushClient>(sp => {
                 var handler = new SocketsHttpHandler {
                     EnableMultipleHttp2Connections = false,
@@ -151,6 +156,14 @@ namespace CRM.EndPoint.FrontEnd {
                 return new WebPushClient(httpClient);
             });
 
+
+            services.AddHttpClient<SmsService>(client =>
+            {
+                var smsConfig = Configuration?.GetSection("smsConfig").Get<appSettingSms>();
+
+                client.BaseAddress = new Uri(smsConfig?._Url);
+                client.DefaultRequestHeaders.Add("Api-Key", smsConfig?._apiKey);
+            });
 
             services
                 .AddControllersWithViews()

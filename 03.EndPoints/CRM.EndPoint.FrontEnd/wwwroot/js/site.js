@@ -1171,6 +1171,64 @@ const toastifyError2 = (text, options = {}) => {
 };
 
 
+let smsToast = null;
+function showSmsSendingToast() {
+    
+    if (smsToast) {
+        smsToast.hideToast();
+    }
+    const notifDiv = document.createElement("div");
+    notifDiv.className = "flex-center gap-3";
+    notifDiv.innerHTML = `
+        در حال ارسال پیامک
+        <span class="spinner-border spinner-border-sm"></span>
+    `;
+    
+    smsToast = Toastify({
+        //text: "در حال ارسال پیامک...",
+        node: notifDiv,
+        duration: -1,
+        close: false,
+        gravity: "top",
+        position: "center",
+        stopOnFocus: false,
+        style: {
+            background: "linear-gradient(135deg, rgba(110,73,0,1) 18%, rgba(185,124,0,1) 100%)",
+            borderRadius: "8px",
+            cursor: "auto",
+        },
+    }).showToast();
+    
+}
+
+function updateSmsToast(text, type) {
+    if (!smsToast) return;
+    const smsToastElement = smsToast.toastElement;
+    
+    smsToastElement.textContent = text;
+    
+    switch (type) {
+        case "success":
+            smsToastElement.style.background = "linear-gradient(135deg, rgba(2,81,75,1) 21%, rgba(0,59,54,1) 100%)";
+            setTimeout(() => {
+                smsToast?.hideToast();
+                smsToast = null;
+            }, 3000);
+            
+            break;
+        
+        case "error":
+            smsToastElement.style.background = "linear-gradient(135deg, rgba(121,9,9,1) 21%, rgba(78,0,0,0.9) 100%)";
+            setTimeout(() => {
+                smsToast?.hideToast();
+                smsToast = null;
+            }, 5000);
+            
+            break;
+    }
+}
+
+
 const checkAccess = async (elId) => {
     let rols = JSON.parse(sessionStorage.getItem("Rols"));
     let hasAccess = false;

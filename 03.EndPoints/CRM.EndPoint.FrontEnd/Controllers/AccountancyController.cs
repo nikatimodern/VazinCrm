@@ -32,6 +32,7 @@ using CRM.EndPoint.FrontEnd.Models.Payment;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
+using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using CRM.EndPoint.FrontEnd.Services.TaskServices;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Microsoft.AspNetCore.Authorization;
@@ -50,12 +51,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly LogSystemService _logSystemService;
         private readonly IPushQueue pushQueue;
         private readonly CrmSaveCahngeAsync crmSaveCahngeAsync;
-        private readonly SmsServices smsServ;
+        private readonly SmsService smsServ;
         private readonly UserManager<AppUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
 
 
-        public AccountancyController(CrmSaveCahngeAsync crmSaveCahngeAsync, SmsServices SmsServ, UserManager<AppUser> userManager,
+        public AccountancyController(CrmSaveCahngeAsync crmSaveCahngeAsync, SmsService SmsServ, UserManager<AppUser> userManager,
             RoleManager<IdentityRole> roleManager, Service GenService, FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db,
             UserContextDb Udb, TaskServices ts, IHubContext<TaskHub> hub, IVeiwRenderService vrs, LogSystemService logSystemService,
             IPushQueue pushQueue)
@@ -711,11 +712,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     dataF = dataF.Where(m => m.AccountName.Contains(searchValue));
                 }
 
-                dataF = model?._type switch {
-                    1 => dataF.Where(f => f.BankAccountType == BankAccountTypeEnum.شرکت),
-                    2 => dataF.Where(f => f.BankAccountType == BankAccountTypeEnum.تامین_کننده),
-                    _ => dataF
-                };
+                if (model?._type != null && model._type != -1)
+                {
+                    dataF = dataF.Where(f => f.BankAccountType == (BankAccountTypeEnum)model._type);
+                }
 
                 if (pageSize != -1)
                     dataF = dataF.Skip(skip).Take(pageSize);
@@ -772,6 +772,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> AddBankAccount([FromBody] BankAccount model)
         {
+            if (model == null) return BadRequest();
+
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
