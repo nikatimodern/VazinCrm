@@ -186,11 +186,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                var oldHd = await db.OrderHeads.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
-                var hd = await db.OrderHeads.Where(f => f.Id == id).FirstOrDefaultAsync();
+                var oldHd = await db.OrderHeads.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
+                var hd = await db.OrderHeads.FirstOrDefaultAsync(f => f.Id == id);
                 var user = userManager.GetUserAsync(HttpContext.User).Result;
 
-                var roles = userManager.GetRolesAsync(user).Result.ToArray();
+                var roles = await userManager.GetRolesAsync(user);
 
                 if (user.Id == hd.UserCreatorID || user.Id == hd.UserTaminId.ToString()
                                                 || roles.Contains("مدیر ارشد") || roles.Contains("مدیر فروش") || roles.Contains("مدیر تامین"))
@@ -221,7 +221,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             Type = SmsType.ReadyToDeliverToCustomer,
                             Mobile = cusMobile,
                             SerialNumber = hd.PrefactorSer.ToString(),
-                            UserId = user.Id
                         });
                     }
 

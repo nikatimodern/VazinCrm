@@ -6,9 +6,24 @@ const connection = new signalR.HubConnectionBuilder()
     .withUrl("/taskHub") // آدرس SignalR Hub
     .build();
 
-connection.start();
+connection
+    .start()
+    .then(() => {
+        window.signalRConnectionId = connection.connectionId;
+    })
+    .catch(err => console.error("SignalR Error:", err));
 
 
+////////// Set ConnectionId in Header Axios ////////////
+axios.interceptors.request.use(config => {
+    if (window.signalRConnectionId) {
+        config.headers["X-SignalR-ConnectionId"] = window.signalRConnectionId;
+    }
+    return config;
+});
+
+
+////////// Carizo notification ////////////
 connection.on("ReceiveNotification", async (item) => {
     if (!taskList.includes(item.id)) {
         taskList.push(item.id);
@@ -33,19 +48,28 @@ connection.on("notifTask", (text, link = "/carizo/Index") => {
 connection.on("notifSystem", (text, link) => {
     notificationChange(text, { link, isBlank: true }, "default");
 });
-///////////////////////////////////////////
+
+
+////////// Count Cartable ////////////
 
 connection.on("countPreFactorToAccept", (countObj) => {
     refreshCounterCartable();
     //setCountEnvelope(countObj);
 });
+
+////////// ShowReport ////////////
 connection.on("ShowReport", async () => {
     await getAllReports(false);
 });
 
+
+////////// AccessDeniedMessage ////////////
 connection.on("ShowAccessDeniedMessage", function (message) {
     toastifyError(message);
 });
+
+
+////////// Chat ////////////
 connection.on("Chat", async (mainChatId, text) => {
     if (location.pathname !== "/Chat/Main") {
         notificationChange(text, { link: "/Chat/Main", isBlank: false }, "chat");
@@ -64,8 +88,9 @@ const connectionCall = new signalR.HubConnectionBuilder()
     .withUrl("/CallHub")
     .build();
 
-connectionCall.start()
-              .catch(err => console.error("خطا: " + err));
+connectionCall
+    .start()
+    .catch(err => console.error("SignalR Error:", err));
 
 connectionCall.on("IncomingCall", function (callerNumber, destNumber, uniqueid) {
     // console.log("IncomingCall " + uniqueid);
@@ -85,62 +110,10 @@ connectionCall.on("CallAnswered", function (uniqueid) {
 
 ////////// sms toastify ////////////
 connection.on("SmsSuccess", () => {
-    smsToastUpdate("ارسال شد", "success");
-    
-    setTimeout(() => {
-        smsToast?.hideToast();
-    }, 3000);
-});
-connection.on("SmsSending", () => {
-    smsToastUpdate("در حال ارسال...");
+    updateSmsToast("پیامک با موفقیت ارسال شد", "success");
 });
 
 connection.on("SmsFailed", () => {
-    smsToastUpdate("ارسال پیامک ناموفق بود", "error");
+    updateSmsToast("ارسال پیامک ناموفق بود", "error");
 });
 
-
-let smsToast = null;
-function smsToastUpdate(text, type = "info") {
-    
-    if (smsToast) {
-        smsToast.hideToast();
-    }
-    
-    let background;
-    
-    switch (type) {
-        case "success":
-            background = "linear-gradient(135deg, rgba(2,81,75,1) 21%, rgba(0,59,54,1) 100%)";
-            break;
-        
-        case "error":
-            background = "linear-gradient(135deg, rgba(121,9,9,1) 21%, rgba(78,0,0,0.9) 100%)";
-            break;
-        
-        default:
-            background = "linear-gradient(135deg, rgba(110,73,0,1) 18%, rgba(185,124,0,1) 100%)";
-            break;
-    }
-    
-    smsToast = Toastify({
-        text,
-        duration: -1,
-        close: false,
-        gravity: "top",
-        position: "center",
-        stopOnFocus: false,
-        style: {
-            background,
-            borderRadius: "8px",
-        },
-    });
-    
-    smsToast.showToast();
-}
-smsToastUpdate("در حال ارسال...");
-console.log(smsToast);
-
-setTimeout(function () {
-    smsToastUpdate("ارسال شد", "success");
-}, 3000)

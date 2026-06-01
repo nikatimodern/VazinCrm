@@ -44,6 +44,7 @@ using CRM.Core.Domain.Supplies.Enums;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Accountency;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
+using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 
@@ -264,7 +265,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 Type = SmsType.AcceptedSalesAdminToCustomer,
                 Mobile = cusMobile,
                 SerialNumber = pf.SerialNumber.ToString(),
-                UserId = user.Id
             });
 
             await hub.Clients.User(pf.UserCreatorID).SendAsync("notifInfo",
@@ -1287,7 +1287,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 Mobile = toNumber,
                 SerialNumber = pfactor.SerialNumber.ToString(),
                 PfactorId = id,
-                UserId = user.Id
+                ConnectionId = Request.GetSignalRConnectionId()
             });
 
             return Ok();
@@ -2700,7 +2700,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 Type = SmsType.AcceptPfactorToTamin,
                 Mobile = userTamin.PhoneNumber,
                 SerialNumber = pf.SerialNumber.ToString(),
-                UserId = user.Id
+                ConnectionId = Request.GetSignalRConnectionId()
             });
 
 
@@ -2728,7 +2728,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                var user = await userManager.GetUserAsync(HttpContext.User);
                 var pf = await db.PreFactors.AsNoTracking().Where(f => f.Id == pfId).Include(f => f.CustomerEntity).FirstOrDefaultAsync();
                 var userTamin = await udb.Users.AsNoTracking().Where(f => f.Id == usId.ToString()).FirstOrDefaultAsync();
 
@@ -2737,7 +2736,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     Type = SmsType.AcceptPfactorToTamin,
                     Mobile = userTamin.PhoneNumber,
                     SerialNumber = pf.SerialNumber.ToString(),
-                    UserId = user.Id
+                    ConnectionId = Request.GetSignalRConnectionId()
                 });
 
                 var cusTxt = pf.CustomerEntity != null ? $"{pf.CustomerEntity.CompanyName} ({pf.CustomerEntity.AgentName})".Trim() : pf.AgentName;

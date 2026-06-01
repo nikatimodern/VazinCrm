@@ -30,18 +30,11 @@ public class SmsBackgroundService(
     {
         if (job.Mobile?.Length < 8) return;
 
-
         using var scope = scopeFactory.CreateScope();
         var smsService = scope.ServiceProvider.GetRequiredService<SmsService>();
-        var hasUserId = !string.IsNullOrEmpty(job.UserId);
+        var notifyUser = !string.IsNullOrEmpty(job.ConnectionId);
 
         const int maxRetry = 5;
-
-        logger.LogInformation("Start sms send. Mobile:{Mobile} Type:{Type}", job.Mobile, job.Type);
-
-
-        if (hasUserId) await hub.Clients.User(job.UserId).SendAsync("SmsSending", job.Mobile, token);
-
 
         for (var retry = 1; retry <= maxRetry; retry++)
         {
@@ -52,8 +45,7 @@ public class SmsBackgroundService(
                 if (result.code == 200)
                 {
                     logger.LogInformation("Sms sent successfully. Mobile:{Mobile}", job.Mobile);
-                    if (hasUserId) await hub.Clients.User(job.UserId).SendAsync("SmsSuccess", job.Mobile, token);
-
+                    if (notifyUser) await hub.Clients.Client(job.ConnectionId).SendAsync("SmsSuccess", job.Mobile, token);
 
                     return;
                 }
@@ -72,6 +64,6 @@ public class SmsBackgroundService(
         }
 
         logger.LogError("Sms failed after all retries. Mobile:{Mobile}", job.Mobile);
-        if (hasUserId) await hub.Clients.User(job.UserId).SendAsync("SmsFailed", job.Mobile, token);
+        if (notifyUser) await hub.Clients.Client(job.ConnectionId).SendAsync("SmsFailed", job.Mobile, token);
     }
 }

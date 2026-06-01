@@ -1814,10 +1814,15 @@ const regUtamin = async (pfId, type, dealId) => {
             }
             
             FLshowLoading(false);
-            toastifySuccess("به مسئول تامین واگذار شد");
+            showSmsSendingToast();
+            //toastifySuccess("به مسئول تامین واگذار شد");
         }
     } catch (err) {
-        setTimeout(async () => await regUtamin(id), 3000);
+        console.log(err);
+        toastifyError("خطای سرور")
+        //setTimeout(async () => await regUtamin(id), 3000);
+    } finally {
+        FLshowLoading(false)
     }
 };
 
@@ -1831,12 +1836,14 @@ const resendRegUtamin = async (pfId, userTaminId, type, dealId) => {
             } else if (type === 4) {
                 await getPreFactorFromDeal(dealId);
             }
-            FLshowLoading();
-            toastifySuccess("ارسال مجدد انجام شد");
+            showSmsSendingToast();
+            //toastifySuccess("ارسال مجدد انجام شد");
         }
     } catch (err) {
         console.log(err);
-        setTimeout(async () => await resendRegUtamin(pfId, userTaminId), 3000);
+        //setTimeout(async () => await resendRegUtamin(pfId, userTaminId), 3000);
+    } finally {
+        FLshowLoading(false);
     }
 };
 
@@ -1859,7 +1866,7 @@ const showMobileModal = async (id, type, dealId) => {
 
 const SendToCustomer = async () => {
     try {
-        document.getElementById("FLshowLoading").style.display = "";
+        FLshowLoading();
         const toNumber = $("#mobileid").val();
         const res = await axios(`/Factor/SendToCustomer?id=${smsSendedPfId}&toNumber=${toNumber}`);
         if (res.status === 200) {
@@ -1868,14 +1875,15 @@ const SendToCustomer = async () => {
             } else if (typeSubmitSmsSendPf === 4) {
                 await getPreFactorFromDeal(dealIdSubmitSmsSendPf);
             }
-            document.getElementById("FLshowLoading").style.display = "none";
             
-            toastifySuccess("ارسال انجام شد");
+            showSmsSendingToast();
+            //toastifySuccess("ارسال انجام شد");
             $("#MobileModal").modal("toggle");
         }
     } catch (err) {
         console.log(err);
-        CounterSmsSend = CounterSmsSend + 1;
+        toastifyError("خطای سرور");
+        /*CounterSmsSend = CounterSmsSend + 1;
         if (CounterSmsSend < 3) {
             toastifyError("ارسال با خطا روبرو شد");
             setTimeout(async () => await SendToCustomer(), 3000);
@@ -1892,7 +1900,9 @@ const SendToCustomer = async () => {
                 title: "خطا!", text: "لینک تایید ارسال نشد", icon: "error", confirmButtonText: "بستن",
             });
             
-        }
+        }*/
+    } finally {
+        FLshowLoading(false);
     }
 };
 

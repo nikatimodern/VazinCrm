@@ -8,7 +8,7 @@ public class SmsJob {
     public string SerialNumber { get; set; }
     public Guid? PfactorId { get; set; }
     public string Code { get; set; }
-    public string UserId { get; set; }
+    public string ConnectionId { get; set; }
 }
 
 public enum SmsType {
