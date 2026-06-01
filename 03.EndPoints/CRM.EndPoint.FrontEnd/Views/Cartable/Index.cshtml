@@ -511,7 +511,7 @@
                                 </div>
 
 
-                                <div id="FinancialRequestContentId" class="pt-2" style="max-height:74dvh; overflow:auto;">
+                                <div id="FinancialRequestContentId" class="pt-2" style="max-height:72dvh; overflow:auto;">
                                 </div>
                             </div>
                         </div>
@@ -967,11 +967,13 @@
                     <div id="supplierAmountInputsWrapper" class="d-flex flex-column gap-2">
                         <div>
                             <label for="unitAmountMobile">بهای واحد (ریال)</label>
-                            <input type="text" inputmode="numeric" name="unitAmount" id="unitAmountMobile" class="form-control currencyNumber inpAmount" required />
+                            <input type="text" inputmode="numeric" name="unitAmount" id="unitAmountMobile" class="form-control currencyNumber inpAmount" required data-currency-hint="next" />
+                            <span class="currencyHint"></span>
                         </div>
                         <div>
                             <label for="totalAmountMobile">بهای کل (ریال)</label>
-                            <input type="text" inputmode="numeric" name="totalAmount" id="totalAmountMobile" class="form-control currencyNumber inpAmount" disabled />
+                            <input type="text" inputmode="numeric" name="totalAmount" id="totalAmountMobile" class="form-control currencyNumber inpAmount" disabled data-currency-hint="next" />
+                            <span class="currencyHint"></span>
                         </div>
                     </div>
                     <div class="d-flex justify-content-center gap-1 mt-2">
@@ -1007,7 +1009,8 @@
 
                     <div>
                         <label for="addExtraItemSupplyAmount">بهای کل (ریال)</label>
-                        <input type="text" id="addExtraItemSupplyAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="totalAmount" required>
+                        <input type="text" id="addExtraItemSupplyAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="totalAmount" required data-currency-hint="next">
+                        <span class="currencyHint"></span>
                     </div>
 
                     <div class="d-flex justify-content-center gap-1 mt-2">
@@ -1041,7 +1044,8 @@
 
                     <div>
                         <label for="addWasteItemSupplyAmount">بهای کل (ریال)</label>
-                        <input type="text" id="addWasteItemSupplyAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="totalAmount" required>
+                        <input type="text" id="addWasteItemSupplyAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="totalAmount" required data-currency-hint="next">
+                        <span class="currencyHint"></span>
                     </div>
                     <div class="d-flex justify-content-center gap-1 mt-2">
                         <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="toggleSupplyWasteItemModal()">انصراف</button>
@@ -1941,15 +1945,16 @@
                             </div>
                             <div class="d-flex align-items-center gap-1 gap-xl-2 col-6 col-xl-auto">
                                 <span class="flex-shrink-0" style="color: #535353">مبلغ کل: </span>
-                                <input type="text"  inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="totalAmount" value="${item.totalAmount ? item.totalAmount.toLocaleString() : ""}" disabled>
+                                <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="totalAmount" value="${item.totalAmount ? item.totalAmount.toLocaleString() : ""}" disabled>
                             </div>
                         </div>
                     </div>
                     ${index !== taminPreFac.preFactorItems.length - 1 ? `<div style="width: 95%;height:1px; margin: 10px auto;background-color:darkviolet"></div>` : ""}
-                    `;
+                `;
 
                 fieldset.querySelector("input[name='unitAmount']").addEventListener("input", (e) => {
-                    fieldset.querySelector("input[name='totalAmount']").value = calculateTotalPrice(item.weightCount, e.target.value);
+                    const totalInput = fieldset.querySelector("input[name='totalAmount']");
+                    totalInput.value = calculateTotalPrice(item.weightCount, e.target.value);
                     setAmountSalesModal.querySelector(".btnLeft").textContent = "ثبت و تایید";
                 });
 
@@ -2099,9 +2104,14 @@
                 const unitPriceInput = addItemSupplyModal.querySelector("#unitAmountMobile");
                 const addItemSupplyForm = addItemSupplyModal.querySelector("#addItemSupplyForm");
 
+                function updateTotal() {
+                    totalPriceInput.value = calculateTotalPrice(weightInputSupplyItemModal.value, unitPriceInput.value);
+                    updateCurrencyHint(totalPriceInput);
+                }
+
                 if (hasSupplyAmountSetting) {
                     unitPriceInput.addEventListener("input", () => {
-                        totalPriceInput.value = calculateTotalPrice(weightInputSupplyItemModal.value, unitPriceInput.value);
+                        updateTotal();
                     });
                 }
 
@@ -2114,9 +2124,10 @@
                     }*/
 
                     if (hasSupplyAmountSetting) {
-                        totalPriceInput.value = calculateTotalPrice(weightInputSupplyItemModal.value, unitPriceInput.value);
+                        updateTotal();
                     }
                 });
+
 
 
                 addItemSupplyForm.addEventListener("submit", (e) => {

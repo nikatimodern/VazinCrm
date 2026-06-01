@@ -56,16 +56,18 @@
 
                     <div class="form-group col-12 mb-3">
                         <label class="fbold">رسمی</label>
-                        <input type="text" inputmode="numeric" required class="currencyNumber  form-control" style="padding:5px!important; font-size:clamp(15px,2vw,18px) !important" name="rasmiAmount" id="RasmiAmount" />
+                        <input type="text" inputmode="numeric" required class="currencyNumber form-control" style="padding:5px!important; font-size:clamp(15px,2vw,18px) !important" name="rasmiAmount" id="RasmiAmount" data-currency-hint="next"/>
+                        <span class="currencyHint"></span>
                     </div>
                     <div class="form-group col-12">
                         <label class="fbold"> غیر رسمی</label>
-                        <input type="text" inputmode="numeric" required class="currencyNumber  form-control" style="padding:5px!important; font-size:clamp(15px,2vw,18px) !important" name="nonRasmiAmount" id="NonRasmiAmount" />
+                        <input type="text" inputmode="numeric" required class="currencyNumber form-control" style="padding:5px!important; font-size:clamp(15px,2vw,18px) !important" name="nonRasmiAmount" id="NonRasmiAmount" data-currency-hint="next"/>
+                        <span class="currencyHint"></span>
                     </div>
 
 
                     <div class="align-self-end" style="padding:0 5px 5px;margin-top:1.5rem; display:flex;justify-content:center;align-items:end;gap:4px">
-                        <button type="button" class="buttonCancel2 py-0 fs-6" style="padding-inline:15px !important;  height: 32px !important;" onclick="$('#EditAmountModel').modal('toggle') ">
+                        <button type="button" class="buttonCancel2 py-0 fs-6" style="padding-inline:15px !important;  height: 32px !important;" onclick="cancelRegisterAmount()">
                             انصراف
                         </button>
                         <button id="registerButtonModal" type="button" class=" buttonGreen3 py-0 fs-6" style="padding-inline:15px !important; height: 32px !important;" onclick="registerAmount()">ثبت</button>
@@ -170,7 +172,7 @@
                         await getAndSetAllProduct("amountIndex");
 
                         document.getElementById("FLshowLoading").style.display = "none";
-                        $("#EditAmountModel").modal("toggle");
+                        cancelRegisterAmount()
                         toastifySuccess("با موفقیت ثبت شد");
 
                     }).catch(() => {
@@ -184,6 +186,9 @@
 
         };
 
-
+        const cancelRegisterAmount = () => {
+            ModalToggle("EditAmountModel", "hide")
+            mySer.emptyForm("formAmount")
+        }
     </script>
 }

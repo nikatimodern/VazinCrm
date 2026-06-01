@@ -5118,6 +5118,13 @@ option[value=""] {
 }
 
 
+.popover-sm .popover-body {
+  font-family: IRANSansMedium;
+  --bs-popover-body-padding-x: .5rem;
+  --bs-popover-body-padding-y: .25rem;
+}
+
+
 .invoice-modal .modalHeader-invoice {
   padding: 5px;
   font-size: 16px;
@@ -5989,4 +5996,123 @@ table tr.payment-vosoled > td {
   .bank-option .details {
     font-size: 10px;
   }
+}
+
+
+.cash-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid #00a13b;
+  border-radius: 10px;
+  background: #fff;
+  max-width: 100%;
+}
+
+
+.cash-summary.cash-summary--pending {
+  border-color: #bb7600;
+}
+
+
+.cash-summary.cash-summary--negative {
+  border-color: #dc2626;
+}
+
+
+.cash-summary__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  width: 100%;
+  column-gap: 24px;
+  row-gap: 8px;
+}
+
+
+.cash-summary__meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  
+  font-size: 12px;
+  color: #525865;
+  flex-grow: 1;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+
+
+.cash-summary__meta b {
+  color: #111827;
+}
+
+
+.cash-summary__balance-row {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+}
+
+
+.cash-balance-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .25rem;
+  padding: 3px 10px;
+  
+  border-radius: 999px;
+  
+  font-size: 14px;
+  font-family: IRANSansBold;
+  
+  background: #dcfce7;
+  color: #166534;
+}
+
+
+.cash-summary.cash-summary--pending .cash-balance-badge {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+
+.cash-summary.cash-summary--negative .cash-balance-badge {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+
+.cash-summary__progress {
+  direction: ltr;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eceff3;
+}
+
+
+.cash-summary__fill {
+  height: 100%;
+  border-radius: 999px;
+  
+  background: linear-gradient(-90deg, #22c55e, #84cc16);
+}
+
+
+.currencyHint {
+  display: block;
+  margin-top: 2px;
+  
+  font-size: 11px;
+  line-height: 1.3;
+  
+  color: #6c757d;
+  
+  text-align: center;
+  
+  word-break: break-word;
+  overflow-wrap: break-word;
 }

@@ -2,9 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Accountancies.Entities;
+using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.Cashes.Entities;
+using CRM.Core.Domain.Cashes.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
@@ -62,10 +65,10 @@ public class CashController : Controller {
         try
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
-            var isAdd = model.Id == Guid.Empty;
+            var isNewCash = model.Id == Guid.Empty;
             Cash oldCash = null;
 
-            if (isAdd)
+            if (isNewCash)
             {
                 model.UserCreator = user.FullName;
                 model.UserCreatorID = user.Id;
@@ -82,12 +85,12 @@ public class CashController : Controller {
             model.StatusTxt = model.Status.ToString().Replace("_", " ");
 
             db.Cashes.Update(model);
-            if (!isAdd)
+            if (!isNewCash)
                 db.Entry(model).Property(f => f.Serial).IsModified = false;
 
             await db.SaveChangesAsync();
 
-            if (isAdd)
+            if (isNewCash)
             {
                 await logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
             } else
@@ -102,6 +105,9 @@ public class CashController : Controller {
             }
 
             db.Attachments.UpdateRange(attach);
+
+
+            await SyncCashAccountancyDebit(model, user);
 
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -181,16 +187,11 @@ public class CashController : Controller {
         try
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
-            var data = await db.Cashes.Where(f => f.Id == id).FirstOrDefaultAsync();
+            var data = await db.Cashes.FirstOrDefaultAsync(f => f.Id == id);
             if (data == null) return NotFound();
 
-            data.Status = status;
-            data.StatusTxt = status.ToString().Replace("_", " ");
+            await ChangeCashStatus(status, data, user);
 
-            data.ModifyDate = DateTime.Now;
-            data.ModifyDateTxt = dtService.GetDateTimePersian();
-            data.UserModify = user.FullName;
-            data.UserModifyID = user.Id;
             await db.SaveChangesAsync();
             return Ok();
         }
@@ -199,6 +200,20 @@ public class CashController : Controller {
             return BadRequest(e.Message);
         }
     }
+
+    private async Task ChangeCashStatus(CashStatusEnum status, Cash data, AppUser user)
+    {
+        data.Status = status;
+        data.StatusTxt = status.ToString().Replace("_", " ");
+
+        data.ModifyDate = DateTime.Now;
+        data.ModifyDateTxt = dtService.GetDateTimePersian();
+        data.UserModify = user.FullName;
+        data.UserModifyID = user.Id;
+
+        await SyncCashAccountancyDebit(data, user);
+    }
+
 
     public async Task<IActionResult> ChangeStatusAllCashToPending()
     {
@@ -212,13 +227,7 @@ public class CashController : Controller {
 
             foreach (var cash in cashes)
             {
-                cash.Status = CashStatusEnum.در_دست_تایید;
-                cash.StatusTxt = nameof(CashStatusEnum.در_دست_تایید).Replace("_", " ");
-
-                cash.ModifyDate = DateTime.Now;
-                cash.ModifyDateTxt = dtService.GetDateTimePersian();
-                cash.UserModify = user.FullName;
-                cash.UserModifyID = user.Id;
+                await ChangeCashStatus(CashStatusEnum.در_دست_تایید, cash, user);
             }
 
             await db.SaveChangesAsync();
@@ -227,6 +236,82 @@ public class CashController : Controller {
         catch (Exception e)
         {
             return BadRequest(e.Message);
+        }
+    }
+
+
+    private async Task SyncCashAccountancyDebit(Cash cash, AppUser user)
+    {
+        if (cash == null) return;
+
+        var acc = await db.Accountancies.FirstOrDefaultAsync(x => x.CashId == cash.Id);
+
+        switch (cash.Status)
+        {
+            case CashStatusEnum.ثبت_موقت:
+            {
+                if (acc == null)
+                {
+                    acc = new Accountancy {
+                        CashId = cash.Id,
+                        CashierId = Guid.Parse(cash.UserCreatorID),
+                        InvoiceType = InvoiceTypeEnum.تنخواه,
+                        InvoiceTypeTxt = nameof(InvoiceTypeEnum.تنخواه),
+                        AccType = AcEnum.بدهکاری,
+                        AccTypeTxt = nameof(AcEnum.بدهکاری),
+                        debit = cash.Amount,
+                        UserCreatorID = user?.Id,
+                        UserCreator = user?.FullName,
+                        PayType = PayTypeEnum.نقدی,
+                        PayTypeTxt = nameof(PayTypeEnum.نقدی),
+                        Status = AccStatusEnum.ثبت_اولیه,
+                    };
+                    await db.AddAsync(acc);
+                } else
+                {
+                    if (acc.debit != cash.Amount)
+                    {
+                        acc.debit = cash.Amount;
+                        acc.UserModifyID = user?.Id;
+                        acc.UserModify = user?.FullName;
+                        acc.ModifyDate = DateTime.Now;
+                        acc.ModifyDateTxt = dtService.GetDateTimePersian();
+                    }
+
+                    acc.Status = AccStatusEnum.ثبت_اولیه;
+                    acc.Accepted = false;
+                    acc.AcceptedUser = null;
+                    acc.AcceptedUserId = null;
+                }
+
+                break;
+            }
+
+            case CashStatusEnum.در_دست_تایید:
+            {
+                if (acc != null)
+                {
+                    acc.Status = AccStatusEnum.در_دست_تایید;
+                    acc.Accepted = false;
+                    acc.AcceptedUser = null;
+                    acc.AcceptedUserId = null;
+                }
+
+                break;
+            }
+
+            case CashStatusEnum.تایید_شده:
+            {
+                if (acc != null)
+                {
+                    acc.Status = AccStatusEnum.تایید_شده;
+                    acc.Accepted = true;
+                    acc.AcceptedUser = user?.FullName;
+                    acc.AcceptedUserId = user?.Id;
+                }
+
+                break;
+            }
         }
     }
 
@@ -298,6 +383,12 @@ public class CashController : Controller {
             item.UserModifyID = user.Id;
 
             await logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
+
+            var acc = await db.Accountancies.FirstOrDefaultAsync(x => x.CashId == id);
+            if (acc != null)
+            {
+                db.Accountancies.Remove(acc);
+            }
 
             await db.SaveChangesAsync();
             return Ok();
@@ -429,6 +520,25 @@ public class CashController : Controller {
             if (length != -1)
                 query = query.Skip(start).Take(length);
 
+
+            object cashierBalance = null;
+            if (roles.Contains("تنخواه دار"))
+            {
+                var cashierId = Guid.Parse(user.Id);
+                var accS = await db.Accountancies
+                    .Where(x => x.CashierId == cashierId)
+                    .Select(x => new { x.debit, x.credit, x.Accepted })
+                    .ToListAsync();
+
+                cashierBalance = new {
+                    CashierId = cashierId,
+                    TotalCredit = accS.Sum(a => a.credit),
+                    TotalDebit = accS.Sum(a => a.debit),
+                    isAccepted = accS.All(a => a.Accepted == true)
+                };
+            }
+
+
             var data = await query.ToListAsync();
 
             return Json(new {
@@ -437,6 +547,7 @@ public class CashController : Controller {
                 recordsFiltered = recordsTotal,
                 data,
                 isManager,
+                cashierBalance
             });
         }
         catch (Exception ex)
