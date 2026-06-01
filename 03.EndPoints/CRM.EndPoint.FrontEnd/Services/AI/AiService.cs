@@ -164,24 +164,16 @@ public class AiService(
 
     private async Task CreateReportWithCallData(CallRecording callRecording)
     {
+        if (callRecording == null) return;
         try
         {
-            int? customerCode = null;
-            if (callRecording.CallerCustomerId.HasValue)
-            {
-                customerCode = await db.Customers
-                    .Where(f => f.Id == callRecording.CallerCustomerId)
-                    .Select(f => f.CustomerCode)
-                    .FirstOrDefaultAsync();
-            }
-
             var newReport = new Report {
                 RepTel = callRecording.CallerNumber,
                 UserCreatorID = callRecording.DestinationUserId,
                 UserCreator = callRecording.DestinationUserTxt,
                 CustomerId = callRecording.CallerCustomerId,
                 CustomerTxt = callRecording.CallerCustomerTxt,
-                CustomerCode = customerCode,
+                CustomerCode = callRecording.CallerCustomerCode,
                 ReportText = callRecording.SummaryText + " *",
                 RegDate = DateTime.Now,
                 RegDateTxt = dts.GetDatePersian(),

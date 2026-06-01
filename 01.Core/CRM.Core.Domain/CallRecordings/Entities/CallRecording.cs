@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 using CRM.Framework.Domain;
 
 namespace CRM.Core.Domain.CallRecordings.Entities;
@@ -7,6 +8,7 @@ public class CallRecording : BaseEntity {
     public string CallerNumber { get; set; }
     public Guid? CallerCustomerId { get; set; }
     public string CallerCustomerTxt { get; set; }
+    [NotMapped] public int? CallerCustomerCode { get; set; }
     public string DestinationNumber { get; set; }
     public string DestinationUserId { get; set; }
     public string DestinationUserTxt { get; set; }

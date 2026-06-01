@@ -259,22 +259,30 @@ public class AsteriskAmiListener : BackgroundService {
             if (!srcIsInternal && destIsInternal)
             {
                 var user = await GetUsers(dest);
-                var customer = GetCallerCustomer(src);
                 if (user == null)
                 {
                     logger.LogWarning("hangup: user is null: {dest}", dest);
                 }
 
-                logger.LogInformation("hangup and Enqueue: {FilePath}", call.RecordingPath);
-                _aiQueue?.Enqueue(new CallRecording {
+                var callRecording = new CallRecording {
                     CallerNumber = src,
-                    CallerCustomerId = customer?.Id,
-                    CallerCustomerTxt = customer != null ? $"{customer.CompanyName} {customer.AgentName}" : null,
                     DestinationNumber = dest,
                     DestinationUserId = user?.Id,
                     DestinationUserTxt = user?.FullName,
                     RecordingFilePath = call.RecordingPath
-                });
+                };
+
+                var customer = GetCallerCustomer(src);
+                if (customer != null)
+                {
+                    var customerName = $"{customer.CompanyName} {customer.AgentName}".Trim();
+                    callRecording.CallerCustomerId = customer.Id;
+                    callRecording.CallerCustomerTxt = $"{customerName} (کد مشتری: {customer.CustomerCode})";
+                    callRecording.CallerCustomerCode = customer.CustomerCode;
+                }
+
+                logger.LogInformation("hangup and Enqueue: {FilePath}", call.RecordingPath);
+                _aiQueue?.Enqueue(callRecording);
             } else
             {
                 logger.LogInformation("hangup: the call is not external to internal: {FilePath}", call.RecordingPath);
@@ -375,6 +383,8 @@ public class AsteriskAmiListener : BackgroundService {
             var db = scope.ServiceProvider.GetRequiredService<CRMContextDb>();
 
             var list = db.Customers.Select(c => new {
+                c.Id,
+                c.CustomerCode,
                 c.CompanyName,
                 c.AgentName,
                 c.Tel,
@@ -387,7 +397,9 @@ public class AsteriskAmiListener : BackgroundService {
             {
                 var customer = new Customer {
                     CompanyName = c.CompanyName,
-                    AgentName = c.AgentName
+                    AgentName = c.AgentName,
+                    Id = c.Id,
+                    CustomerCode = c.CustomerCode,
                 };
 
                 if (!string.IsNullOrEmpty(c.Tel))
