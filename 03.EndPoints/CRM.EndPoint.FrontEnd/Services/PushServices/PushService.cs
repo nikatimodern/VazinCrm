@@ -20,18 +20,20 @@ namespace CRM.EndPoint.FrontEnd.Services.PushServices;
 public class PushService : IPushService {
     private readonly IConfiguration _config;
     private readonly CRMContextDb db;
-    private readonly UserContextDb udb;
     private readonly UserManager<AppUser> userManager;
     private readonly WebPushClient client;
-    private static PushSubscription _lastSubscription;
-
-    public PushService(IConfiguration config, CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, WebPushClient client)
+    private readonly VapidDetails _vapidDetails;
+    public PushService(IConfiguration config, CRMContextDb db, UserManager<AppUser> userManager, WebPushClient client)
     {
         _config = config;
         this.db = db;
-        this.udb = udb;
         this.userManager = userManager;
         this.client = client;
+        _vapidDetails = new VapidDetails(
+            "mailto:it@vazinplast.com",
+            config?["Vapid:PublicKey"],
+            config?["Vapid:PrivateKey"]
+        );
     }
 
     public string GetPublicKey()
@@ -125,27 +127,28 @@ public class PushService : IPushService {
     {
         const int maxRetries = 3;
         var delay = TimeSpan.FromMilliseconds(500);
+
+        var payload = JsonConvert.SerializeObject(new {
+            title,
+            body,
+            url,
+            tag = string.IsNullOrEmpty(tag) ? "general" : tag,
+        });
+
+        var options = new Dictionary<string, object>
+        {
+            ["vapidDetails"] = _vapidDetails,
+            ["TTL"] = 300,
+        };
+
         for (int attempt = 1; attempt <= maxRetries; attempt++)
         {
             try
             {
-                var vapidDetails = new VapidDetails(
-                    "mailto:it@vazinplast.com",
-                    _config["Vapid:PublicKey"],
-                    _config["Vapid:PrivateKey"]
-                );
-
-                var payload = JsonConvert.SerializeObject(new {
-                    title,
-                    body,
-                    url,
-                    tag = string.IsNullOrEmpty(tag) ? "general" : tag,
-                });
-
-                await client.SendNotificationAsync(sub, payload, vapidDetails, ctsToken);
+                await client.SendNotificationAsync(sub, payload, options, ctsToken);
                 return;
             }
-            catch (WebPushException ex) when (ex.StatusCode == HttpStatusCode.Gone)
+            catch (WebPushException ex) when (ex.StatusCode is HttpStatusCode.Gone or HttpStatusCode.NotFound)
             {
                 throw;
             }
@@ -154,7 +157,7 @@ public class PushService : IPushService {
                 Console.WriteLine($"Attempt {attempt} failed, retrying...");
 
                 await Task.Delay(delay, ctsToken);
-                delay += delay;
+                delay *= 2;
             }
             catch (Exception ex)
             {

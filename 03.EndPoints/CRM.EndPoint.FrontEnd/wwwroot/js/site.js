@@ -3491,16 +3491,20 @@ const updateFilterSwitchState = ({ wrapperSelector, filterData, currentFilterVal
     
     let firstAvailableValue = null;
     const radios = wrapper.querySelectorAll(`.filter-switch-item input[type="radio"]`);
+    if (!radios.length) return;
     radios.forEach(radio => {
+        if (!radio.dataset.bound) {
+            radio.addEventListener("click", () => {
+                wrapper.dataset.userInteracted = "true";
+            });
+            radio.dataset.bound = "1";
+        }
+        
         const value = radio.value;
         const count = filterData?.[value];
         
         const item = radio.closest(".filter-switch-item");
         const badge = item?.querySelector(".filter-count-badge");
-        
-        radio.addEventListener("click", () => {
-            wrapper.dataset.userInteracted = "true";
-        });
         
         if (count === undefined) {
             item.style.opacity = "1";
