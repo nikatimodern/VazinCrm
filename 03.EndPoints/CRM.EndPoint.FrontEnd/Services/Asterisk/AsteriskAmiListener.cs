@@ -303,7 +303,7 @@ public class AsteriskAmiListener : BackgroundService {
     {
         return (IsInternal(src), IsInternal(dest));
 
-        bool IsInternal(string n) => !string.IsNullOrWhiteSpace(n) && n.Length <= 4;
+        bool IsInternal(string n) => !string.IsNullOrWhiteSpace(n) && n.Length <= 3;
     }
 
     private async Task<string> GetSrcText(bool isInternal, string src)
