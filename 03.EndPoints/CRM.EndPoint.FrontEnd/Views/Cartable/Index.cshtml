@@ -511,7 +511,7 @@
                                 </div>
 
 
-                                <div id="FinancialRequestContentId" class="pt-2" style="max-height:74dvh; overflow:auto;">
+                                <div id="FinancialRequestContentId" class="pt-2" style="max-height:72dvh; overflow:auto;">
                                 </div>
                             </div>
                         </div>
@@ -582,44 +582,124 @@
 
             @*کارتابل کارشناس تامین*@
             <div class="CTaminExpert col-12 col-xl-10 col-xxl-9 gap-3" id="CTaminExpertId">
-                <div class="px-2 flex-wrap gap-2 align-items-center align-items-md-end" style="width:100%; display:flex; justify-content:space-between;">
 
-                    <div class="mp  d-flex align-items-center justify-content-start gap-1 " style="font-family:'IRANSansBold'; font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
-                        تعداد: <span id="T_CountId"></span>
-                    </div>
+                <ul class="nav nav-pills" id="taminExpertsTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link position-relative" onclick="GetInvoicesTaminExpert()" id="TaminInvoiceTab" data-bs-target="#TaminInvoiceTab-pane" type="button" role="tab">
+                            صورتحساب ها
+                            <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active position-relative" onclick="GetPreFactorTaminExpert()" id="TaminPrefactorTab" data-bs-target="#TaminPrefactorTab-pane" type="button" role="tab">
+                            پیش‌فاکتور ها
+                            <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content p-2 px-1 px-sm-2 col-12" id="tabContentTaminExperts">
 
 
-                    <div class="search-group col-12 order-last order-md-0 col-md-5">
-                        <input class="form-control" type="text" id="TSearchId" placeholder="جستجو..." />
-                        <div class="search-icon">
-                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                    <div class="tab-pane fade border-0" id="TaminInvoiceTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
+                        <div class="w-100">
+                            <div class="px-2 w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center align-items-md-center">
+
+                                <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
+                                    تعداد: <span id="taminInvoiceCount"></span>
+                                </div>
+
+                                <div class="search-group col-12 order-5 order-md-0 col-md-5">
+                                    <input class="form-control" type="text" id="taminInvoiceSearchId" placeholder="جستجو..." />
+                                    <div class="search-icon">
+                                        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                                    </div>
+                                </div>
+
+
+                                <div class="d-flex gap-2">
+                                    <ul class="filter-switch filter-switch-sm">
+                                        <li class="filter-switch-item">
+                                            <input type="radio" name="taminInvoiceFilter" id="taminInvoiceFilterAll" value="-1" />
+                                            <label for="taminInvoiceFilterAll">همه</label>
+                                        </li>
+                                        <li class="filter-switch-item">
+                                            <input type="radio" name="taminInvoiceFilter" id="taminInvoiceFilter1" value="1" checked />
+                                            <label for="taminInvoiceFilter1">
+                                                در انتظار تایید
+                                                <span class="badgeCircle filter-count-badge"></span>
+                                            </label>
+                                        </li>
+                                        <li class="filter-switch-item">
+                                            <input type="radio" name="taminInvoiceFilter" id="taminInvoiceFilter2" value="2" />
+                                            <label for="taminInvoiceFilter2">
+                                                تایید شده
+                                                <span class="badgeCircle filter-count-badge"></span>
+                                            </label>
+                                        </li>
+                                        <li class="filter-switch-item">
+                                            <input type="radio" name="taminInvoiceFilter" id="taminInvoiceFilter3" value="3" />
+                                            <label for="taminInvoiceFilter3">
+                                                رد شده
+                                                <span class="badgeCircle filter-count-badge"></span>
+                                            </label>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="w-100 mt-3" id="taminInvoiceContentId">
+                            </div>
                         </div>
                     </div>
 
+                    <div class="tab-pane fade show active border-0w w-100 flex-column" id="TaminPrefactorTab-pane" role="tabpanel" tabindex="0">
 
-                    <ul class="filter-switch">
-                        <li class="filter-switch-item">
-                            <input type="radio" name="TFilter" id="TpfAll" value="-1" />
-                            <label class="fbold" for="TpfAll">همه</label>
-                        </li>
-                        <li class="filter-switch-item">
-                            <input type="radio" name="TFilter" id="Tpf1" value="1" checked />
-                            <label class="fbold position-relative" for="Tpf1">
-                                در انتظار تایید
-                                <span class="badgeCircle filter-count-badge"></span>
-                            </label>
-                        </li>
-                        <li class="filter-switch-item">
-                            <input type="radio" name="TFilter" id="Tpf5" value="2" />
-                            <label class="fbold position-relative" for="Tpf5">
-                                تایید شده
-                                <span class="badgeCircle filter-count-badge"></span>
-                            </label>
-                        </li>
-                    </ul>
-                </div>
+                        <div class="d-flex flex-column align-items-center w-100 gap-3">
+                            <div class="w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center align-items-md-center">
 
-                <div id="TContentId" style="width:100%; max-height:75dvh; overflow:auto;">
+                                <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
+                                    تعداد: <span id="T_CountId"></span>
+                                </div>
+
+                                <div class="search-group col-12 order-5 order-md-0 col-md-5">
+                                    <input class="form-control" type="text" id="TSearchId" placeholder="جستجو..." />
+                                    <div class="search-icon">
+                                        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    <ul class="filter-switch">
+                                        <li class="filter-switch-item">
+                                            <input type="radio" name="TFilter" id="TpfAll" value="-1" />
+                                            <label class="fbold" for="TpfAll">همه</label>
+                                        </li>
+                                        <li class="filter-switch-item">
+                                            <input type="radio" name="TFilter" id="Tpf1" value="1" checked />
+                                            <label class="fbold position-relative" for="Tpf1">
+                                                در انتظار تایید
+                                                <span class="badgeCircle filter-count-badge"></span>
+                                            </label>
+                                        </li>
+                                        <li class="filter-switch-item">
+                                            <input type="radio" name="TFilter" id="Tpf5" value="2" />
+                                            <label class="fbold position-relative" for="Tpf5">
+                                                تایید شده
+                                                <span class="badgeCircle filter-count-badge"></span>
+                                            </label>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+
+                            <div class="w-100 overflow-auto" id="TContentId" style="max-height:72dvh">
+                            </div>
+                        </div>
+
+                    </div>
+
+
                 </div>
             </div>
 
@@ -628,72 +708,13 @@
                 <div class="d-flex flex-column w-100">
                     <ul class="nav nav-pills" id="ManagingDirectorTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link position-relative" onclick="GetInvoicesManagingDirector()" id="MDInvoiceTab" data-bs-target="#MDInvoiceTab-pane" type="button" role="tab">
-                                صورتحساب ها
-                                <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
                             <button class="nav-link active position-relative" onclick="GetRequestManagingDirector()" id="MDRequestAmountTab" data-bs-target="#MDRequestAmountTab-pane" type="button" role="tab">
                                 درخواست ها
                                 <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
                             </button>
                         </li>
                     </ul>
-                    <div class="parent-all-managingDirector tab-content p-2 px-1 px-sm-2 col-12" id="tabContentManagingDirector">
-
-                        <div class="tab-pane fade border-0" id="MDInvoiceTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
-                            <div class="d-flex flex-column align-items-center w-100 gap-3">
-                                <div class="w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center">
-
-                                    <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
-                                        تعداد: <span id="ManagingDirectorCount"></span>
-                                    </div>
-
-                                    <div class="search-group col-12 order-last order-md-0 col-md-5">
-                                        <input class="form-control" type="text" id="ManagingDirectorSearchId" placeholder="جستجو..." />
-                                        <div class="search-icon">
-                                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
-                                        </div>
-                                    </div>
-
-                                    <div class="d-flex gap-2">
-                                        <ul class="filter-switch filter-switch-sm">
-                                            <li class="filter-switch-item">
-                                                <input type="radio" name="managingDirectorFilter" id="managingDirectorFilterAll" value="-1" />
-                                                <label for="managingDirectorFilterAll">همه</label>
-                                            </li>
-                                            <li class="filter-switch-item">
-                                                <input type="radio" name="managingDirectorFilter" id="managingDirectorFilter1" value="1" checked />
-                                                <label for="managingDirectorFilter1">
-                                                    در انتظار تایید
-                                                    <span class="badgeCircle filter-count-badge"></span>
-                                                </label>
-                                            </li>
-                                            <li class="filter-switch-item">
-                                                <input type="radio" name="managingDirectorFilter" id="managingDirectorFilter2" value="2" />
-                                                <label for="managingDirectorFilter2">
-                                                    تایید شده
-                                                    <span class="badgeCircle filter-count-badge"></span>
-                                                </label>
-                                            </li>
-                                            <li class="filter-switch-item">
-                                                <input type="radio" name="managingDirectorFilter" id="managingDirectorFilter3" value="3" />
-                                                <label for="managingDirectorFilter3">
-                                                    رد شده
-                                                    <span class="badgeCircle filter-count-badge"></span>
-                                                </label>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-
-
-                                <div class="w-100" id="ManagingDirectorPfContentId">
-                                </div>
-                            </div>
-                        </div>
-
+                    <div class="tab-content p-2 px-1 px-sm-2 col-12" id="tabContentManagingDirector">
                         <div class="tab-pane fade show active border-0" id="MDRequestAmountTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
 
                             <div class="d-flex flex-column align-items-center w-100 gap-3">
@@ -749,7 +770,6 @@
                                 </div>
                             </div>
                         </div>
-
                     </div>
                 </div>
 
@@ -933,7 +953,7 @@
                 <form id="addItemSupplyForm" class="d-flex flex-column gap-2">
                     <div>
                         <label for="supplierIdMobile">تامین‌ کننده</label>
-                        <select name="supplierId" id="supplierIdMobile" required>
+                        <select class="show-dropdown-arrow" name="supplierId" id="supplierIdMobile" required>
                         </select>
                     </div>
                     <div>
@@ -947,11 +967,13 @@
                     <div id="supplierAmountInputsWrapper" class="d-flex flex-column gap-2">
                         <div>
                             <label for="unitAmountMobile">بهای واحد (ریال)</label>
-                            <input type="text" inputmode="numeric" name="unitAmount" id="unitAmountMobile" class="form-control currencyNumber inpAmount" required />
+                            <input type="text" inputmode="numeric" name="unitAmount" id="unitAmountMobile" class="form-control currencyNumber inpAmount" required data-currency-hint="next" />
+                            <span class="currencyHint"></span>
                         </div>
                         <div>
                             <label for="totalAmountMobile">بهای کل (ریال)</label>
-                            <input type="text" inputmode="numeric" name="totalAmount" id="totalAmountMobile" class="form-control currencyNumber inpAmount" disabled />
+                            <input type="text" inputmode="numeric" name="totalAmount" id="totalAmountMobile" class="form-control currencyNumber inpAmount" disabled data-currency-hint="next" />
+                            <span class="currencyHint"></span>
                         </div>
                     </div>
                     <div class="d-flex justify-content-center gap-1 mt-2">
@@ -981,13 +1003,14 @@
 
                     <div>
                         <label for="addExtraItemSupplierId">تامین‌ کننده</label>
-                        <select name="supplierId" id="addExtraItemSupplierId">
+                        <select class="show-dropdown-arrow" name="supplierId" id="addExtraItemSupplierId">
                         </select>
                     </div>
 
                     <div>
                         <label for="addExtraItemSupplyAmount">بهای کل (ریال)</label>
-                        <input type="text" id="addExtraItemSupplyAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="totalAmount" required>
+                        <input type="text" id="addExtraItemSupplyAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="totalAmount" required data-currency-hint="next">
+                        <span class="currencyHint"></span>
                     </div>
 
                     <div class="d-flex justify-content-center gap-1 mt-2">
@@ -1021,7 +1044,8 @@
 
                     <div>
                         <label for="addWasteItemSupplyAmount">بهای کل (ریال)</label>
-                        <input type="text" id="addWasteItemSupplyAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="totalAmount" required>
+                        <input type="text" id="addWasteItemSupplyAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="totalAmount" required data-currency-hint="next">
+                        <span class="currencyHint"></span>
                     </div>
                     <div class="d-flex justify-content-center gap-1 mt-2">
                         <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="toggleSupplyWasteItemModal()">انصراف</button>
@@ -1104,7 +1128,7 @@
             const salesAdminFilterRadios = document.querySelectorAll("input[type='radio'][name='SalesAdminFilter']");
             salesAdminFilterRadios.forEach(elm => elm.addEventListener("change", async () => await GetPreFactorSalesAdmin()));
 
-            //////////////////////tamin//////////////////////
+            //////////////////////tamin pf//////////////////////
             const searchTaminElm = document.getElementById("TSearchId");
             searchTaminElm.addEventListener("keyup", async (e) => {
                 if (e.key === "Enter") {
@@ -1116,6 +1140,17 @@
             const taminFilterRadios = document.querySelectorAll("input[type='radio'][name='TFilter']");
             taminFilterRadios.forEach(elm => elm.addEventListener("change", async () => await GetPreFactorTaminExpert()));
 
+            //////////////////////tamin inv//////////////////////
+            const searchTaminInvElm = document.getElementById("taminInvoiceSearchId");
+            searchTaminInvElm.addEventListener("keyup", async (e) => {
+                if (e.key === "Enter") {
+                    await GetInvoicesTaminExpert();
+                }
+            });
+            searchTaminInvElm.nextElementSibling.addEventListener("click", async () => await GetInvoicesTaminExpert());
+
+            const taminInvFilterRadios = document.querySelectorAll("input[type='radio'][name='taminInvoiceFilter']");
+            taminInvFilterRadios.forEach(elm => elm.addEventListener("change", async () => await GetInvoicesTaminExpert()));
 
             //////////////////////financial pf//////////////////////
             const searchFinancialPfElm = document.getElementById("FinancialExpertSearchId");
@@ -1154,18 +1189,6 @@
             const financialRequestAmountRadios = document.querySelectorAll("input[type='radio'][name='FinancialRequestFilter']");
             financialRequestAmountRadios.forEach(elm => elm.addEventListener("change", async () => await GetRequestFinancialExpert()));
 
-
-            //////////////////////MD inv//////////////////////
-            const searchMDInvElm = document.getElementById("ManagingDirectorSearchId");
-            searchMDInvElm.addEventListener("keyup", async (e) => {
-                if (e.key === "Enter") {
-                    await GetInvoicesManagingDirector();
-                }
-            });
-            searchMDInvElm.nextElementSibling.addEventListener("click", async () => await GetInvoicesManagingDirector());
-
-            const managingFilterRadios = document.querySelectorAll("input[type='radio'][name='managingDirectorFilter']");
-            managingFilterRadios.forEach(elm => elm.addEventListener("change", async () => await GetInvoicesManagingDirector()));
 
             //////////////////////MD req//////////////////////
             const searchMDReqElm = document.getElementById("MDRequestAmountSearchId");
@@ -1406,7 +1429,6 @@
                 case "TaminAdmin":
                     document.getElementById("TPrefactorFactorId").style.display = "flex";
                     document.getElementById("TTaminExpertId").style.display = "flex";
-                    document.getElementById("TManagingDirectorId").style.display = "flex";
                     break;
 
 
@@ -1477,16 +1499,16 @@
 
                         case "TTaminExpertId":
                             document.getElementById("CTaminExpertId").style.display = "flex";
-                            await GetPreFactorTaminExpert();
+                            if (subId === "TaminInvoiceTab") {
+                                await GetInvoicesTaminExpert();
+                            } else {
+                                await GetPreFactorTaminExpert();
+                            }
                             break;
 
                         case "TManagingDirectorId":
                             document.getElementById("CManagingDirectorId").style.display = "flex";
-                            if (subId === "MDInvoiceTab") {
-                                await GetInvoicesManagingDirector();
-                            } else {
-                                await GetRequestManagingDirector();
-                            }
+                            await GetRequestManagingDirector();
                             break;
                     }
                 } else {
@@ -1567,6 +1589,9 @@
             const val = document.getElementById("TSearchId")?.value.trim() ?? "";
             const type = document.querySelector("input[type='radio'][name='TFilter']:checked")?.value;
             if (type === undefined) return;
+
+            setUrlParams({ sub: "TaminPrefactorTab" });
+            ShowTab("#TaminPrefactorTab");
             try {
                 FLshowLoading();
                 const res = await axios(`/Cartable/GetPreFactorTaminExpert?serVal=${val}&type=${type}`);
@@ -1590,45 +1615,27 @@
             }
         };
 
-        @*const GetPreFactorManagingDirector = async () => {
-            const val = document.getElementById("ManagingDirectorSearchId")?.value.trim() ?? "";
-            const type = document.querySelector("input[type='radio'][name='managingDirectorFilter']:checked")?.value;
-            if (type === undefined) return;
-            try {
-                FLshowLoading();
-                const res = await axios(`/Cartable/GetPreFactorManagingDirector?serVal=${val}&type=${type}`);
-                if (res.status === 200) {
-                    document.getElementById("ManagingDirectorPfContentId").innerHTML = res.data.html;
-                    document.getElementById("ManagingDirectorCount").textContent = res.data.count;
-                    FLshowLoading(false);
-                }
 
-            } catch (err) {
-                console.log(err);
-            }
-        };*@;
-
-
-        const GetInvoicesManagingDirector = async () => {
-            const val = document.getElementById("ManagingDirectorSearchId")?.value.trim() ?? "";
-            const type = document.querySelector("input[type='radio'][name='managingDirectorFilter']:checked")?.value;
+        const GetInvoicesTaminExpert = async () => {
+            const val = document.getElementById("taminInvoiceSearchId")?.value.trim() ?? "";
+            const type = document.querySelector("input[type='radio'][name='taminInvoiceFilter']:checked")?.value;
             if (type === undefined) return;
 
-            setUrlParams({ sub: "MDInvoiceTab" });
-            ShowTab("#MDInvoiceTab");
+            setUrlParams({ sub: "TaminInvoiceTab" });
+            ShowTab("#TaminInvoiceTab");
             try {
                 FLshowLoading();
-                const res = await axios(`/Accountancy/GetAllPaymentCartablePartial?serVal=${val}&type=${type}&cartable=@((int)CartableEnum.مدیر_عامل)`);
+                const res = await axios(`/Accountancy/GetAllPaymentCartablePartial?serVal=${val}&type=${type}&cartable=@((int)CartableEnum.کارشناس_تامین)`);
                 const data = res.data;
-                document.getElementById("ManagingDirectorPfContentId").innerHTML = data.html;
-                document.getElementById("ManagingDirectorCount").textContent = data.count;
+                document.getElementById("taminInvoiceContentId").innerHTML = data.html;
+                document.getElementById("taminInvoiceCount").textContent = data.count;
                 updateFilterSwitchState({
-                    wrapperSelector: "#MDInvoiceTab-pane",
+                    wrapperSelector: "#TaminInvoiceTab-pane",
                     filterData: res.data.filterCounts,
                     currentFilterValue: type,
                     searchValue: val,
                     onChange: async () => {
-                        await GetInvoicesManagingDirector();
+                        await GetInvoicesTaminExpert();
                     },
                 });
                 initPaymentPartial(56);
@@ -1649,21 +1656,27 @@
             try {
                 FLshowLoading();
                 const res = await axios(`/Amount/GetAllRequestAmountsPartial?search=${val}&type=${type}&passType=2`);
-                const data = res.data;
-                document.getElementById("MDRequestAmountContentId").innerHTML = data.html;
-                document.getElementById("MDRequestAmountCount").textContent = data.count;
-                updateFilterSwitchState({
-                    wrapperSelector: "#MDRequestAmountTab-pane",
-                    filterData: res.data.filterCounts,
-                    currentFilterValue: type,
-                    searchValue: val,
-                    onChange: async () => {
-                        await GetRequestManagingDirector();
-                    },
-                });
-                FLshowLoading(false);
+                if (res.status === 200) {
+                    const data = res.data;
+                    document.getElementById("MDRequestAmountContentId").innerHTML = data.html;
+                    document.getElementById("MDRequestAmountCount").textContent = data.count;
+                    updateFilterSwitchState({
+                        wrapperSelector: "#MDRequestAmountTab-pane",
+                        filterData: res.data.filterCounts,
+                        currentFilterValue: type,
+                        searchValue: val,
+                        onChange: async () => {
+                            await GetRequestManagingDirector();
+                        },
+                    });
+
+                } else if (res.status === 204) {
+                    toastifyError("شما به این بخش دسترسی ندارید");
+                }
             } catch (err) {
                 console.log(err);
+            } finally {
+                FLshowLoading(false);
             }
         };
 
@@ -1932,15 +1945,16 @@
                             </div>
                             <div class="d-flex align-items-center gap-1 gap-xl-2 col-6 col-xl-auto">
                                 <span class="flex-shrink-0" style="color: #535353">مبلغ کل: </span>
-                                <input type="text"  inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="totalAmount" value="${item.totalAmount ? item.totalAmount.toLocaleString() : ""}" disabled>
+                                <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="totalAmount" value="${item.totalAmount ? item.totalAmount.toLocaleString() : ""}" disabled>
                             </div>
                         </div>
                     </div>
                     ${index !== taminPreFac.preFactorItems.length - 1 ? `<div style="width: 95%;height:1px; margin: 10px auto;background-color:darkviolet"></div>` : ""}
-                    `;
+                `;
 
                 fieldset.querySelector("input[name='unitAmount']").addEventListener("input", (e) => {
-                    fieldset.querySelector("input[name='totalAmount']").value = calculateTotalPrice(item.weightCount, e.target.value);
+                    const totalInput = fieldset.querySelector("input[name='totalAmount']");
+                    totalInput.value = calculateTotalPrice(item.weightCount, e.target.value);
                     setAmountSalesModal.querySelector(".btnLeft").textContent = "ثبت و تایید";
                 });
 
@@ -2090,9 +2104,14 @@
                 const unitPriceInput = addItemSupplyModal.querySelector("#unitAmountMobile");
                 const addItemSupplyForm = addItemSupplyModal.querySelector("#addItemSupplyForm");
 
+                function updateTotal() {
+                    totalPriceInput.value = calculateTotalPrice(weightInputSupplyItemModal.value, unitPriceInput.value);
+                    updateCurrencyHint(totalPriceInput);
+                }
+
                 if (hasSupplyAmountSetting) {
                     unitPriceInput.addEventListener("input", () => {
-                        totalPriceInput.value = calculateTotalPrice(weightInputSupplyItemModal.value, unitPriceInput.value);
+                        updateTotal();
                     });
                 }
 
@@ -2105,9 +2124,10 @@
                     }*/
 
                     if (hasSupplyAmountSetting) {
-                        totalPriceInput.value = calculateTotalPrice(weightInputSupplyItemModal.value, unitPriceInput.value);
+                        updateTotal();
                     }
                 });
+
 
 
                 addItemSupplyForm.addEventListener("submit", (e) => {

@@ -111,6 +111,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("Beneficiary")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("CashId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CashierId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("CommentText")
                         .HasColumnType("nvarchar(max)");
 
@@ -176,6 +182,9 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.Property<DateTime?>("ReciveDateM")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("RequestAmountId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("SerialNum")
                         .ValueGeneratedOnAdd()
@@ -257,7 +266,15 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasIndex("BankAccountId");
 
+                    b.HasIndex("CashId")
+                        .IsUnique()
+                        .HasFilter("[CashId] IS NOT NULL");
+
                     b.HasIndex("CustomerId");
+
+                    b.HasIndex("RequestAmountId")
+                        .IsUnique()
+                        .HasFilter("[RequestAmountId] IS NOT NULL");
 
                     b.ToTable("Accountancies");
                 });
@@ -3687,9 +3704,19 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasForeignKey("BankAccountId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("CRM.Core.Domain.Cashes.Entities.Cash", null)
+                        .WithOne("Accountancy")
+                        .HasForeignKey("CRM.Core.Domain.Accountancies.Entities.Accountancy", "CashId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("CRM.Core.Domain.Customers.Entities.Customer", null)
                         .WithMany("Accountancies")
                         .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", null)
+                        .WithOne("Accountancy")
+                        .HasForeignKey("CRM.Core.Domain.Accountancies.Entities.Accountancy", "RequestAmountId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
@@ -3921,17 +3948,21 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountSupplyFactor", b =>
                 {
-                    b.HasOne("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", null)
+                    b.HasOne("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", "RequestAmount")
                         .WithMany("RequestAmountSupplyFactor")
                         .HasForeignKey("RequestAmountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("CRM.Core.Domain.Supplies.Entities.SupplyFactor", null)
+                    b.HasOne("CRM.Core.Domain.Supplies.Entities.SupplyFactor", "SupplyFactor")
                         .WithMany("RequestAmountSupplyFactor")
                         .HasForeignKey("SupplyFactorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("RequestAmount");
+
+                    b.Navigation("SupplyFactor");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.Invoices.Entities.InvoiceItem", b =>
@@ -3974,6 +4005,11 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Carizos.Entities.Carizo", b =>
                 {
                     b.Navigation("TaskUsers");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.Cash", b =>
+                {
+                    b.Navigation("Accountancy");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Chats.Entities.MainChat", b =>
@@ -4062,6 +4098,8 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", b =>
                 {
+                    b.Navigation("Accountancy");
+
                     b.Navigation("RequestAmountOrderHeads");
 
                     b.Navigation("RequestAmountPayments");

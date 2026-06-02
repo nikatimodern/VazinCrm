@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using System.Threading.Tasks;
+using CRM.EndPoint.FrontEnd.Services.SmsServices;
 
 namespace CRM.EndPoint.FrontEnd.Controllers
 {
@@ -18,10 +19,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         private readonly DateTimeServices dtService;
         private readonly CRMContextDb db;
         private readonly UserContextDb udb;
-        private readonly SmsServices smsServ;
+        private readonly SmsService smsServ;
         private readonly UserManager<AppUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
-        public ProductController(Service genService, FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db, UserContextDb udb, SmsServices smsServ, UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager)
+        public ProductController(Service genService, FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db, UserContextDb udb, SmsService smsServ, UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             this.genService = genService;
             this.fileSaver = fileSaver;

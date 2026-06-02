@@ -33,11 +33,11 @@ const addDes = (e) => {
 
 
 const f_getAllProductOp = async () => {
-
+    
     return new Promise(async (resolve) => {
         const el = document.querySelector("#FacItem select[name='productCode']");
         $.get(baseUrl + "Product/GetAllProduct", (res) => {
-
+            
             $(el).select2({
                 data: res,
                 dir: "rtl",
@@ -46,19 +46,19 @@ const f_getAllProductOp = async () => {
                 dropdownParent: window.innerWidth < 992 ? $("#ItemFactorModal") : $("#Factor"),
             });
             $(el).val(null).trigger("change");
-
+            
             resolve();
-
+            
         }).fail(() => {
             setTimeout(() => {
                 f_getAllProductOp();
             }, 3000);
         });
-
-
+        
+        
     });
-
-
+    
+    
 };
 
 
@@ -69,30 +69,30 @@ const calculateTotalFactor = async () => {
             let _SumTotalAmount = 0;
             let _TotalTax = 0;
             let _PaymentAmount;
-
+            
             let _Discount = Number(SeparatedNumberRemove(document.getElementById("f_discount").value)) || 0;
-
+            
             data.forEach(item => {
                 let itemAmount = item.totalAmount;
                 _SumTotalAmount += itemAmount;
             });
-
+            
             _SumTotalAmount = Math.round(_SumTotalAmount);
             _Discount = Math.round(_Discount);
-
+            
             if (f_officialType === 1) {
                 _TotalTax = Math.round(((_SumTotalAmount - _Discount) * 10) / 100);
             }
-
+            
             _PaymentAmount = _SumTotalAmount - _Discount + _TotalTax;
             factor.sumTotalAmount = _SumTotalAmount;
             factor.discount = _Discount;
             factor.totalTax = _TotalTax;
             factor.paymentAmount = Math.round(_PaymentAmount);
-
-
+            
+            
             factor.officialType = f_officialType;
-
+            
             document.getElementById("f_sumTotalAmount").innerText = factor.sumTotalAmount.toLocaleString();
             document.getElementById("f_totalTax").innerText = factor.totalTax.toLocaleString();
             document.getElementById("f_paymentAmount").innerText = factor.paymentAmount.toLocaleString();
@@ -101,7 +101,7 @@ const calculateTotalFactor = async () => {
             return reject(false);
         }
     });
-
+    
 };
 
 
@@ -109,24 +109,24 @@ const calculateTotal = () => {
     let data = _pfactorItems.filter(f => f.isDeleted !== true);
     let _SumTotalAmount = 0;
     let _TotalTax = 0;
-
+    
     let _PaymentAmount;
     let _Discount = Number(SeparatedNumberRemove($("#discount").val()));
-
+    
     data.forEach(item => {
         _SumTotalAmount = Number(_SumTotalAmount) + Number(SeparatedNumberRemove(item.totalAmount));
     });
-
+    
     if (_officialType === 1) {
         _TotalTax = Math.round(((_SumTotalAmount - _Discount) * 10) / 100);
     }
     _PaymentAmount = (Number(_SumTotalAmount) - _Discount + Number(_TotalTax));
-
+    
     pfactor.sumTotalAmount = Math.round(_SumTotalAmount);
     pfactor.discount = Math.round(_Discount);
     pfactor.totalTax = Math.round(_TotalTax);
     pfactor.paymentAmount = Math.round(_PaymentAmount);
-
+    
     $("#sumTotalAmount").text(pfactor.sumTotalAmount.toLocaleString());
     $("#discount").val(pfactor.discount.toLocaleString());
     $("#totalTax").text(pfactor.totalTax.toLocaleString());
@@ -147,23 +147,23 @@ function calculateItem(formId, weightSelector = "[name='weightCount']", unitSele
             el.innerText = val;
         }
     };
-
+    
     let unitAmount = Number(SeparatedNumberRemove(getValue(unitSelector)));
     let weightCount = Number(getValue(weightSelector));
     let total = Math.round(unitAmount * weightCount);
-
+    
     if (total.toString().includes(".")) {
         total = Number(total.toString().split(".")[0]);
     }
-
+    
     setValue(totalSelector, total.toLocaleString());
 }
 const calcTotalAmount = (weight, unitValue) => {
     const w = parseFloat(weight);
     const u = parseFloat(unitValue);
-
+    
     if (isNaN(w) || isNaN(u)) return 0;
-
+    
     return w * u;
 };
 
@@ -237,7 +237,7 @@ const descGenerate = () => {
             if (item.official === true) {
                 if (item.id == null) {
                     return false;
-
+                    
                 } else {
                     item.isDeleted = true;
                 }
@@ -271,7 +271,7 @@ const descGenerate = () => {
 
 
 const Unit = (type, formId, defaultValueId) => {
-
+    
     let unitItems = [
         { id: 1, text: "گرم" },
         { id: 2, text: "کیلوگرم" },
@@ -281,7 +281,7 @@ const Unit = (type, formId, defaultValueId) => {
         { id: 6, text: "شاخه" },
         { id: 7, text: "رول" },
     ];
-
+    
     if (type === 1) {
         const unitElm = document.querySelector("#PreFacItem select[name='unit']");
         $(unitElm).select2({
@@ -306,7 +306,7 @@ const Unit = (type, formId, defaultValueId) => {
     } else if (type === 3) {
         const unitInput = document.querySelector(`#${formId} select[name='unit']`);
         unitInput.innerHTML = "";
-
+        
         const fragment = document.createDocumentFragment();
         if (!defaultValueId) {
             const opt = document.createElement("option");
@@ -329,21 +329,21 @@ const Unit = (type, formId, defaultValueId) => {
 
 
 const SubmitdescExpirePfactor = async () => {
-
+    
     if (await mySer.CheckValidForm("#descExpirePfactor")) {
-
+        
         var data = mySer.convertFormToJSON("#descExpirePfactor");
-
-
+        
+        
         if (data.M_ex_Item == 0) {
             await changeTypePfactor(pfAbort, 8, FormCode, data.des);
         } else {
             var ss = document.getElementById("M_ex_Item");
             await changeTypePfactor(pfAbort, 8, FormCode, ss.options[ss.selectedIndex].text);
         }
-
+        
         $("#ModalExpireDescription").modal("toggle");
-
+        
     }
 };
 
@@ -359,15 +359,15 @@ const M_ex_cheItem = () => {
 
 
 const ShowModalExpireDescription = (PfId, amount, serial, name, _formCode) => {
-
+    
     FormCode = _formCode;
     pfAbort = PfId;
     document.getElementById("M_ex_Serial").innerHTML = serial;
     document.getElementById("M_ex_Name").innerHTML = name;
     document.getElementById("M_ex_TAmount").innerHTML = amount;
     $("#ModalExpireDescription").modal("toggle");
-
-
+    
+    
 };
 
 
@@ -383,16 +383,16 @@ const ShowModalDes = (pfId) => {
 };
 const submitNotAcceptSelAdmin = () => {
     $("#FLshowLoading").css("display", "");
-
+    
     var ss = document.getElementById("NotAcceptSelAdminDescTextId").value;
     var model = {
         desc: ss, pfid: notAcceptSelAdminPfId,
     };
-
+    
     $.post(baseUrl + "factor/notAcceptPfactor", model, async (res) => {
-
+        
         $("#FLshowLoading").css("display", "none");
-
+        
         if (res.ok) {
             $("#NotAcceptDescModal").modal("toggle");
             toastifySuccess("پیش فاکتور عدم تایید خورد");
@@ -401,17 +401,17 @@ const submitNotAcceptSelAdmin = () => {
         } else {
             toastifyError("خطای سرور");
         }
-
-
+        
+        
     }).fail(() => {
         setTimeout(() => submitNotAcceptSelAdmin(), 1000);
     });
-
+    
 };
 
 
 const changeTypePfactor = async (_PfId, _type, FormCode, des = null) => {
-
+    
     await changeTypePfactorOk(_PfId, _type, des);
     switch (FormCode) {
         case 1: // کارتابل کارشناس مالی
@@ -438,21 +438,21 @@ const changeTypePfactor = async (_PfId, _type, FormCode, des = null) => {
             await GetPreFactorFinancialExpert();
             break;
     }
-
+    
 };
 
 
 const changeTypePfactorOk = async (_PfId, type, des) => {
-
+    
     const model = { id: _PfId, type, des };
-
+    
     FLshowLoading();
     return new Promise(resolve => {
         $.post(baseUrl + "factor/changeTypePfactor", model, () => {
             FLshowLoading(false);
             resolve();
         });
-
+        
     });
 };
 
@@ -460,7 +460,7 @@ const changeTypePfactorOk = async (_PfId, type, des) => {
 let loadAllProduct = false;
 const getAllProductOp = () => {
     if (loadAllProduct) return;
-
+    
     const productCodeElm = document.querySelector("#PreFacItem select[name='productCode']");
     axios(`/Product/GetAllProduct`).then((res) => {
         new TomSelect(productCodeElm, {
@@ -471,10 +471,10 @@ const getAllProductOp = () => {
             selectOnTab: true,
             // dropdownParent
         });
-
+        
         loadAllProduct = true;
     });
-
+    
     /* $.get(baseUrl + "Product/GetAllProduct", (res) => {
          $(el).select2({
              data: res,
@@ -496,10 +496,10 @@ const getAllProductOp = () => {
 
 const upfactor = (fid, cid, type = 1) => {
     typeSubmitfactor = type;
-
-
+    
+    
     customerId = cid;
-
+    
     document.getElementById("FLshowLoading").style.display = "";
     Unit(2);
     f_getAllProductOp();
@@ -509,45 +509,45 @@ const upfactor = (fid, cid, type = 1) => {
         _factorItems = res.factorItems;
         f_officialType = res.officialType;
         FactorDescItems = res.descriptions;
-
+        
         const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
         currencyTypeElm.value = res.currencyType ?? 0;
         currencyTypeElm.toggleAttribute("disabled", f_officialType === 1);
-
+        
         document.getElementsByName("f_official").forEach((o, v) => {
             if (o.type === "radio" && o.value == factor.officialType) {
                 o.checked = true;
             }
         });
-
+        
         document.getElementsByName("f_export").forEach((o, v) => {
             if (o.type === "radio" && o.value == res.export) {
                 o.checked = true;
             }
         });
-
-
+        
+        
         Array.from(document.getElementById("f_SerialFormId").elements)
-            .filter(f => f.name === "f_serialNumber")[0].value = factor.serialNumber;
+             .filter(f => f.name === "f_serialNumber")[0].value = factor.serialNumber;
         Array.from(document.getElementById("f_dateFormId").elements)
-            .filter(f => f.name === "f_date")[0].value = factor.date;
+             .filter(f => f.name === "f_date")[0].value = factor.date;
         Array.from(document.getElementById("snFinancialFormId").elements)
-            .filter(f => f.name === "snFinancial")[0].value = factor.snFinancial;
-
-
+             .filter(f => f.name === "snFinancial")[0].value = factor.snFinancial;
+        
+        
         ShowItemfactor();
         showFactorDescItems();
-
+        
         $("#f_sumTotalAmount").text(SeperatedNumberGenerate(factor.sumTotalAmount));
         $("#f_discount").val(SeperatedNumberGenerate(factor.discount));
         $("#f_totalTax").text(SeperatedNumberGenerate(factor.totalTax));
-
+        
         $("#f_reciveAmount").val(SeperatedNumberGenerate(factor.reciveAmount));
         $("#f_paymentAmount").text(SeperatedNumberGenerate(factor.paymentAmount));
-
+        
         $("#Factor").modal("show");
         document.getElementById("FLshowLoading").style.display = "none";
-
+        
     });
 };
 
@@ -557,8 +557,8 @@ const returnFactor = async (fid, cid, type = 1) => {
     customerId = cid;
     const modalFactor = document.getElementById("Factor");
     modalFactor.classList.add("returned-factor");
-
-
+    
+    
     FLshowLoading();
     Unit(2);
     f_getAllProductOp();
@@ -571,46 +571,46 @@ const returnFactor = async (fid, cid, type = 1) => {
     factor.descriptions = factor.descriptions.map((f) => ({ ...f, id: null }));
     factor.factorItems = factor.factorItems.map((f) => ({ ...f, id: null }));
     factor.date = await todayDate();
-
+    
     _factorItems = factor.factorItems;
     f_officialType = factor.officialType;
     FactorDescItems = factor.descriptions;
-
-
+    
+    
     const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
     currencyTypeElm.value = factor.currencyType ?? 0;
     toggleElementsDisabled(currencyTypeElm, f_officialType === 1);
-
-
+    
+    
     modalFactor.querySelectorAll("input[name='f_official']").forEach((i) => {
         i.checked = Number(i.value) === f_officialType;
     });
-
+    
     const exportValue = factor.export ? "1" : "0";
     modalFactor.querySelectorAll("input[name='f_export']").forEach((i) => {
         i.checked = (i.value === exportValue);
     });
-
-
+    
+    
     modalFactor.querySelector("#f_dateFormId input[name='f_date']").value = factor.date;
     modalFactor.querySelector("#snFinancialFormId input[name='snFinancial']").value = factor.snFinancial;
-
+    
     const modalTitle = modalFactor.querySelector("#factorModalTitle");
     modalTitle.textContent = "فاکتور برگشتی";
     modalTitle.style.backgroundColor = "darkred";
-
+    
     modalFactor.querySelectorAll(".modal-body .buttonGreen3").forEach((el) => {
         el.classList.replace("buttonGreen3", "buttonCancel3");
     });
-
-
+    
+    
     ShowItemfactor();
     showFactorDescItems();
     modalFactor.querySelector("#f_sumTotalAmount").textContent = factor.sumTotalAmount.toLocaleString();
     modalFactor.querySelector("#f_totalTax").textContent = factor.totalTax.toLocaleString();
     modalFactor.querySelector("#f_paymentAmount").textContent = factor.paymentAmount.toLocaleString();
     modalFactor.querySelector("#f_discount").value = factor.discount.toLocaleString();
-
+    
     ModalToggle(modalFactor, "show");
     FLshowLoading(false);
 };
@@ -619,14 +619,14 @@ const returnFactor = async (fid, cid, type = 1) => {
 const upPfactor = async (id, type) => {
     FLshowLoading();
     typeSubmitPfactor = type;
-
+    
     getAllProductOp();
     Unit(1, "PreFacItem");
     baseDesPfactor = (await getbaseDescription()).filter(f => f.type === 0);
-
+    
     $.get(baseUrl + "Factor/GetPFactor/" + id, (res) => {
         toggleDisplayPrefactorModal(res.paymentAmount === 0);
-
+        
         pfactor = res;
         _pfactorItems = res.preFactorItems;
         _officialType = res.officialType;
@@ -634,37 +634,37 @@ const upPfactor = async (id, type) => {
         dealData.id = res.dealId;
         dealData.serialNumber = res.dealSerialNumber;
         customerId = res.customerId;
-
+        
         document.querySelectorAll("#PreFactor input[name='official']").forEach((i) => {
             i.checked = Number(i.value) === _officialType;
         });
-
+        
         const exportValue = res.export ? "1" : "0";
         document.querySelectorAll("#PreFactor input[name='export']").forEach((i) => {
             i.checked = (i.value === exportValue);
         });
-
+        
         const currencyTypeElm = document.querySelector("#PfHeadFormId select[name='currencyType']");
         currencyTypeElm.value = res.currencyType ?? 0;
         currencyTypeElm.toggleAttribute("disabled", _officialType === 1);
-
+        
         $("#serialNumber").val(pfactor.serialNumber);
         $("#date").val(pfactor.date);
         $("#validityDade").val(pfactor.validityDade);
-
+        
         $("#sumTotalAmount").text(pfactor.sumTotalAmount.toLocaleString());
         $("#discount").val(pfactor.discount.toLocaleString());
         $("#totalTax").text(pfactor.totalTax.toLocaleString());
         $("#paymentAmount").text(pfactor.paymentAmount.toLocaleString());
-
+        
         ModalToggle("#PreFactor");
         ShowItemPfactor();
         showPreFactorDescItems();
         FLshowLoading(false);
     })
-        .fail(() => {
-            setTimeout(async () => await upPfactor(id, type), 3000);
-        });
+     .fail(() => {
+         setTimeout(async () => await upPfactor(id, type), 3000);
+     });
 };
 
 const ShowItemfactor = () => {
@@ -674,12 +674,12 @@ const ShowItemfactor = () => {
         _factorItems[index].row = index + 1;
         const uAmount = item.unitAmount.toLocaleString();
         const tAmount = item.totalAmount.toLocaleString();
-
-
+        
+        
         if (item.productSmallName == null) {
             item.productSmallName = "";
         }
-
+        
         ob += `
             <div class="d-flex w-100">
                 <div class="InfoDataItemHeadFactor" style="display:flex;width:24px;flex-shrink: 0">
@@ -724,9 +724,9 @@ const ShowItemfactor = () => {
             </div>
         `;
     });
-
+    
     ob += `</div>`;
-
+    
     $("#FactorItemId").children().remove();
     $("#FactorItemId").append(ob);
 };
@@ -742,14 +742,14 @@ const generateItemPfactorDom = (data, type = "edit-delete") => {
     data.forEach((item, index) => {
         if (item.isDeleted) return;
         if (item.product == null) item.product = "";
-
+        
         item.row = index + 1;
         const uAmount = item.unitAmount.toLocaleString();
         const tAmount = item.totalAmount.toLocaleString();
         item.printableTxt = Number(item.printable) === 1 ? "چـاپـدار" : "";
-
+        
         let actionButtons = "";
-
+        
         if (type === "edit-delete") {
             actionButtons = `
                 <button class="flex-center" style="color:#3f0e6e">
@@ -766,7 +766,7 @@ const generateItemPfactorDom = (data, type = "edit-delete") => {
                 </button>
             `;
         }
-
+        
         ob += `
             <div style="width:100%;display:flex">
                 <div class="InfoDataItemHead" style="display:flex;width:24px;flex-shrink: 0">
@@ -812,7 +812,7 @@ const generateItemPfactorDom = (data, type = "edit-delete") => {
             </div>
         `;
     });
-
+    
     ob += `</div>`;
     return ob;
 };
@@ -820,13 +820,13 @@ const generateItemPfactorDom = (data, type = "edit-delete") => {
 
 const AddPfItem = async () => {
     document.getElementById("preFactorItemId").classList.remove("AlertReq");
-
+    
     if (await mySer.CheckValidForm("#PreFacItem")) {
         const productCodeElm = document.querySelector("#PreFacItem select[name='productCode']");
         const unitElm = document.querySelector("#PreFacItem select[name='unit']");
-
+        
         const data = mySer.convertFormToJSON("#PreFacItem");
-
+        
         data.productSmallName = productCodeElm.options[productCodeElm.selectedIndex].text;
         data.unitTxt = unitElm.options[unitElm.selectedIndex].text;
         data.totalAmount = SeparatedNumberRemove(data.totalAmount);
@@ -834,17 +834,16 @@ const AddPfItem = async () => {
         data.id = null;
         _pfactorItems.push(data);
         pfactor.PreFactorItems = _pfactorItems;
-        console.log(_pfactorItems);
-
+        
         ShowItemPfactor();
         mySer.emptyForm("PreFacItem");
-
+        
         calculateTotal();
         calculateText();
-
+        
         document.getElementById("printableF")?.focus();
         return true;
-
+        
     } else {
         return false;
     }
@@ -855,24 +854,24 @@ const calculateTextFactor = () => {
     const model = _factorItems.filter(f => !f.isDeleted);
     const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
     const currencyTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
-
+    
     let sumTotal = $("#f_sumTotalAmount").text();
     let totalTax = $("#f_totalTax").text();
     let sumTotalTax = $("#f_paymentAmount").text();
-
+    
     sumTotal = Number(SeparatedNumberRemove(sumTotal));
     totalTax = Number(SeparatedNumberRemove(totalTax));
     sumTotalTax = Number(SeparatedNumberRemove(sumTotalTax));
-
+    
     let valueText;
     const kelisheItems = model.filter(item => item.productSmallName.includes("کلیشه"));
     const cilandrItems = model.filter(item => item.productSmallName.includes("سیلندر"));
-
+    
     let kelisheTotalAmount = kelisheItems.reduce((sum, item) => sum + Number(SeparatedNumberRemove(item.totalAmount)), 0);
     let cilandrTotalAmount = cilandrItems.reduce((sum, item) => sum + Number(SeparatedNumberRemove(item.totalAmount)), 0);
-
+    
     const totalWithoutBoth = sumTotal - (kelisheTotalAmount + cilandrTotalAmount); //مبلغ کل بدون کلیشه و سیلندر و مالیات
-
+    
     if (kelisheItems.length > 0 && cilandrItems.length > 0) {
         const finalTotalAmount = (totalWithoutBoth / 2) + kelisheTotalAmount + cilandrTotalAmount;
         valueText = `50 درصد مبلغ کل ${SeperatedNumberGenerate(totalWithoutBoth / 2)} ${currencyTxt} و تمام مبلغ کلیشه و سیلندر ${SeperatedNumberGenerate(kelisheTotalAmount + cilandrTotalAmount)} ${currencyTxt} که جمعا معادل ${SeperatedNumberGenerate(finalTotalAmount)} ${currencyTxt} می‌شود در ابتدای کار دریافت خواهد شد`;
@@ -885,7 +884,7 @@ const calculateTextFactor = () => {
     } else {
         valueText = `50 درصد از مبلغ کل معادل ${SeperatedNumberGenerate(sumTotal / 2)} ${currencyTxt} در ابتدای کار دریافت می‌شود `;
     }
-
+    
     $("#f_descriptionId").val(valueText);
     $("#f_descriptionIdMobile").val(valueText);
     $("#f_descriptionIdTablet").val(valueText);
@@ -916,43 +915,41 @@ const calculateText = () => {
     const currencyTypeElm = document.querySelector("#PfHeadFormId select[name='currencyType']");
     const currencyTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
     const prePaymentPercent = Number(prePaymentPercentElm.value);
-
+    
     /*let sumTotal = document.getElementById("sumTotalAmount").innerText;
     sumTotal = Number(SeparatedNumberRemove(sumTotal));*/
-
+    
     let sumTotal = pfactor.paymentAmount;
     //let totalTax = pfactor.totalTax;
     //let sumTotalTax = pfactor.paymentAmount;
-
+    
     let valueText;
     const kelisheItems = model.filter(item => item.productSmallName.includes("کلیشه"));
     const cilandrItems = model.filter(item => item.productSmallName.includes("سیلندر"));
-
+    
     let kelisheTotalAmount, cilandrTotalAmount;
-
+    
     if (_officialType) {
-         kelisheTotalAmount = kelisheItems.reduce((sum, item) => {
-            let totalAmount = Number(SeparatedNumberRemove(item.totalAmount))
-            return sum + totalAmount + (totalAmount * 0.1)
-        }, 0)
-
-
-         cilandrTotalAmount = cilandrItems.reduce((sum, item) => {
-            let totalAmount = Number(SeparatedNumberRemove(item.totalAmount))
-            return sum + totalAmount + (totalAmount * 0.1)
-         }, 0)
+        kelisheTotalAmount = kelisheItems.reduce((sum, item) => {
+            let totalAmount = Number(SeparatedNumberRemove(item.totalAmount));
+            return sum + totalAmount + (totalAmount * 0.1);
+        }, 0);
+        
+        
+        cilandrTotalAmount = cilandrItems.reduce((sum, item) => {
+            let totalAmount = Number(SeparatedNumberRemove(item.totalAmount));
+            return sum + totalAmount + (totalAmount * 0.1);
+        }, 0);
+    } else {
+        kelisheTotalAmount = kelisheItems.reduce((sum, item) => sum + Number(SeparatedNumberRemove(item.totalAmount)), 0);
+        cilandrTotalAmount = cilandrItems.reduce((sum, item) => sum + Number(SeparatedNumberRemove(item.totalAmount)), 0);
     }
-
-    else {
-         kelisheTotalAmount = kelisheItems.reduce((sum, item) => sum + Number(SeparatedNumberRemove(item.totalAmount)), 0);
-         cilandrTotalAmount = cilandrItems.reduce((sum, item) => sum + Number(SeparatedNumberRemove(item.totalAmount)), 0);
-    }
-
-
+    
+    
     const totalWithoutBoth = sumTotal - (kelisheTotalAmount + cilandrTotalAmount); //مبلغ کل بدون کلیشه و سیلندر و مالیات
-
+    
     const prePayment = (totalWithoutBoth * (prePaymentPercent / 100)) || 0;
-
+    
     if (kelisheItems.length > 0 && cilandrItems.length > 0) {
         const finalTotalAmount = prePayment + kelisheTotalAmount + cilandrTotalAmount;
         valueText = `${prePaymentPercent} درصد مبلغ کل ${prePayment.toLocaleString()} ${currencyTxt} و تمام مبلغ کلیشه و سیلندر ${(kelisheTotalAmount + cilandrTotalAmount).toLocaleString()} ${currencyTxt} که جمعا معادل ${(finalTotalAmount).toLocaleString()} ${currencyTxt} می‌شود در ابتدای کار دریافت خواهد شد`;
@@ -965,7 +962,7 @@ const calculateText = () => {
     } else {
         valueText = `${prePaymentPercent} درصد از مبلغ کل معادل ${prePayment.toLocaleString()} ${currencyTxt} در ابتدای کار دریافت می‌شود `;
     }
-
+    
     document.getElementById(descriptionInpId).value = valueText;
 };
 
@@ -975,14 +972,14 @@ const showFactorDescItems = () => {
     FactorDescItems.forEach((item, index) => {
         if (item.isDeleted === false) {
             items = items + `<li style="display:flex;gap:2px"><p class="mp"> ${item.text}</p> <span onclick="DelFactorDescItem(${index})"> <i style="cursor:pointer;" class="fa fa-trash"></i> </span>  </li>`;
-
+            
         }
     });
     items = "<ul class='mp'>" + items + "</ul>";
     $("#factorDescId").children().remove();
     $("#factorDescIdTablet").children().remove();
     $("#factorDescIdMobile").children().remove();
-
+    
     $("#factorDescId").append(items);
     $("#factorDescIdTablet").append(items);
     $("#factorDescIdMobile").append(items);
@@ -992,20 +989,20 @@ const addFactorDescItem = () => {
     let val;
     if (window.innerWidth >= 992 && window.innerWidth < 1200) {
         val = $("#f_descriptionIdTablet").val();
-
+        
     } else if (window.innerWidth < 992) {
         val = $("#f_descriptionIdMobile").val();
     } else {
         val = $("#f_descriptionId").val();
     }
-
+    
     FactorDescItems.push({ text: val, isDeleted: false, dir: "" });
-
+    
     $("#f_descriptionId").val("");
     $("#f_descriptionIdMobile").val("");
     $("#f_descriptionIdTablet").val("");
     showFactorDescItems();
-
+    
 };
 
 const DelFactorDescItem = (index) => {
@@ -1035,7 +1032,7 @@ const showPreFactorDescItems = () => {
         }
     });
     items = `<ul class="mp">${items}</ul>`;
-
+    
     document.getElementById(descriptionListId).innerHTML = items;
 };
 
@@ -1043,11 +1040,11 @@ const addPreFactorDescItem = () => {
     const inputElement = document.getElementById(descriptionInpId);
     const val = inputElement.value;
     inputElement.value = "";
-
+    
     if (val.length) {
         PreFactorDescItems.push({ text: val, isDeleted: false, dir: null });
         showPreFactorDescItems();
-
+        
         setTimeout(() => {
             const listElement = document.getElementById(descriptionListId);
             listElement.scrollTop = listElement.scrollHeight;
@@ -1070,13 +1067,13 @@ const isAllowedToAddFactor = async (pfId) => {
     if (res.data?.status === false) {
         const errorModalElm = document.getElementById("ErrorModalId");
         //errorModalElm.querySelector(".modal-title").textContent = "برای صدور فاکتور ابتدا باید موارد زیر را برطرف نمایید:";
-
+        
         const container = document.createElement("div");
         container.classList.add("error-list");
         res.data.errors.forEach(err => {
             const wrapper = document.createElement("div");
             wrapper.classList.add("error-item");
-
+            
             wrapper.innerHTML = `
                 <h6>${err.title}</h6>
                 <div class="d-flex align-items-center gap-2">
@@ -1090,7 +1087,7 @@ const isAllowedToAddFactor = async (pfId) => {
                     await ShowModalListInvoice(pfId, 1, "", 5, null, true);
                 }
             });
-
+            
             container.appendChild(wrapper);
         });
         errorModalElm.querySelector("#ErrorContentId").innerHTML = "";
@@ -1103,14 +1100,14 @@ const isAllowedToAddFactor = async (pfId) => {
 
 let supplyData = [];
 const AddFactor = async (pfId = null, type = 1) => {
-
+    
     if (!await isAllowedToAddFactor(pfId)) return;
     typeSubmitfactor = type;
-
+    
     FLshowLoading();
     await f_getAllProductOp();
     Unit(2);
-
+    
     baseDesFactor = await getbaseDescription();
     const pfData = (await axios(`/Factor/GetPFactor/${pfId}`)).data;
     supplyData = (await axios(`/Supply/GetSupplies?pfId=${pfId}`)).data;
@@ -1119,25 +1116,25 @@ const AddFactor = async (pfId = null, type = 1) => {
         FLshowLoading(false);
         return;
     }
-
+    
     _factorItems = pfData.preFactorItems;
-
+    
     _factorItems = _factorItems.filter(pfItem => supplyData.some(sup => sup.pfItemId === pfItem.id));
     _factorItems.forEach(pfItem => {
         pfItem.weightCount = supplyData.filter(sup => sup.pfItemId === pfItem.id).reduce((sum, cur) => sum + Number(cur.weight), 0);
         pfItem.totalAmount = calcTotalAmount(pfItem.weightCount, pfItem.unitAmount);
     });
-
-
+    
+    
     Array.from(pfData.descriptions).forEach((item) => {
         item.id = null;
     });
-
+    
     Array.from(_factorItems).forEach((item) => {
         item.pfItemId = item.id;
         item.id = null;
     });
-
+    
     customerId = pfData.customerId;
     factor = pfData;
     factor.pfactorID = pfData.id;
@@ -1146,17 +1143,17 @@ const AddFactor = async (pfId = null, type = 1) => {
     factor.id = null;
     factor.factorItems = _factorItems;
     factor.date = await todayDate();
-
+    
     factor.officialType = pfData.officialType;
     f_officialType = pfData.officialType;
-
+    
     factor.descriptions = [];
     FactorDescItems = [];
-
+    
     const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
     currencyTypeElm.value = pfData.currencyType ?? 0;
     currencyTypeElm.toggleAttribute("disabled", f_officialType === 1);
-
+    
     if (factor.officialType === 0) {
         baseDesFactor.filter(f => f.official === false && f.type === 1).map((item) => {
             item = { ...item, isDeleted: false };
@@ -1170,34 +1167,34 @@ const AddFactor = async (pfId = null, type = 1) => {
             FactorDescItems.push(item);
         });
     }
-
+    
     document.getElementsByName("f_official").forEach((o) => {
         if (o.type === "radio" && Number(o.value) === f_officialType) {
             o.checked = true;
         }
     });
-
+    
     const exportValue = pfData.export ? "1" : "0";
     document.getElementsByName("f_export").forEach(r => {
         r.checked = (r.value === exportValue);
     });
-
+    
     $("#f_serialNumber").val(factor.serialNumber);
     $("#f_date").val(factor.date);
     //$("#validityDade").val(factor.validityDade);
-
+    
     /*    $("#f_sumTotalAmount").text(SeperatedNumberGenerate(factor.sumTotalAmount));
         $("#f_totalTax").text(SeperatedNumberGenerate(factor.totalTax));
         $("#f_paymentAmount").text(SeperatedNumberGenerate(factor.paymentAmount));*/
     $("#f_discount").val(factor.discount.toLocaleString());
     await calculateTotalFactor();
     $("#Factor").modal("show");
-
+    
     ShowItemfactor();
     f_showDescItem();
     FLshowLoading(false);
-
-
+    
+    
 };
 
 const showModalAddPfactor = async (type, cusId = null, deal) => {
@@ -1207,11 +1204,10 @@ const showModalAddPfactor = async (type, cusId = null, deal) => {
     FLshowLoading();
     baseDesPfactor = await getbaseDescription();
     PreFactorDescItems = [];
-
+    
     baseDesPfactor.filter(f => !f.official).filter(f => f.type === 0).map(item => {
         PreFactorDescItems.push({ text: item.text, isDeleted: false, official: item.official });
     });
-    console.log(PreFactorDescItems);
     showPreFactorDescItems();
     toggleDisplayPrefactorModal();
     //_officialType = 1;//رسمی
@@ -1243,9 +1239,9 @@ const submitPrefactor = async () => {
 
 const submitPrefactorOK = async (type) => {
     if (await mySer.CheckValidForm("#PfHeadFormId") & await mySer.CheckValidForm("#validityDadeFormId") & await mySer.CheckValidForm("#dateFormId")) {
-
+        
         if (_pfactorItems.filter(f => f.isDeleted !== true).length > 0) {
-
+            
             FLshowLoading();
             pfactor.serialNumber = $("#serialNumber").val();
             pfactor.date = toEnglishDigits($("#date").val());
@@ -1256,11 +1252,11 @@ const submitPrefactorOK = async (type) => {
             pfactor.export = document.getElementById("export").checked;
             pfactor.dealId = dealData.id;
             pfactor.dealSerialNumber = dealData.serialNumber;
-
+            
             const currencyTypeElm = document.querySelector("#PfHeadFormId select[name='currencyType']");
             pfactor.currencyType = currencyTypeElm.value;
             pfactor.currencyTypeTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
-
+            
             $.post(baseUrl + "Factor/AddPrefactor", pfactor, async (res) => {
                 if (type === 1) { // CustomerProfile
                     await getAllPreFactor();
@@ -1275,24 +1271,24 @@ const submitPrefactorOK = async (type) => {
                         await showModalDealPreFactors(dealData);
                     }
                 }
-
+                
                 toastifySuccess("پیش فاکتور با موفقیت ثبت شد.");
                 cancelPreFactor();
                 $("#PreFactor").modal("toggle");
                 FLshowLoading(false);
             })
-                .fail(() => {
-                    setTimeout(async () => {
-                        await submitPrefactorOK(type);
-                    }, 2000);
-                });
+             .fail(() => {
+                 setTimeout(async () => {
+                     await submitPrefactorOK(type);
+                 }, 2000);
+             });
         } else {
             document.getElementById("preFactorItemId").classList.add("AlertReq");
             FLshowLoading(false);
             toastifyError("پیش فاکتور خالی است");
         }
     }
-
+    
 };
 
 
@@ -1324,7 +1320,7 @@ const submitFactorOK = async (type, unlinkSepidar = false) => {
             toastifyError("فاکتور خالی");
             return;
         }
-
+        
         FLshowLoading();
         factor.snFinancial = document.querySelector("#snFinancialFormId input[name='snFinancial']").value || null;
         factor.date = document.querySelector("#f_dateFormId input[name='f_date']").value;
@@ -1332,11 +1328,11 @@ const submitFactorOK = async (type, unlinkSepidar = false) => {
         factor.customerId = customerId;
         factor.descriptions = FactorDescItems;
         factor.export = document.getElementById("f_export").checked;
-
+        
         const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
         factor.currencyType = Number(currencyTypeElm.value);
         factor.currencyTypeTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
-
+        
         $.post(`/Factor/AddFactor?unlinkSepidar=${unlinkSepidar}`, factor, async (res) => {
             FLshowLoading(false);
             if (res.status === 200) {
@@ -1345,7 +1341,7 @@ const submitFactorOK = async (type, unlinkSepidar = false) => {
                     await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
                 } else if (type === 1) {
                     await getAllPreFactor();
-
+                    
                     await GetFactorPartial(null, factor.pfactorID, null, null, factor.officialType, factor.pfactorSerialNumber, type);
                     getFacAmount(factor.pfactorID, factor.pfactorSerialNumber, null);
                     getAllDetailAmount();
@@ -1377,27 +1373,27 @@ const submitFactorOK = async (type, unlinkSepidar = false) => {
                     cancelButtonText: "انصراف",
                     confirmButtonText: "ارتباط قطع شود",
                 });
-
+                
                 if (result.isConfirmed) {
                     await submitFactorOK(type, true);
                 }
             }
-
+            
         }).fail((err) => {
             console.log(err);
             setTimeout(async () => await submitFactorOK(type), 3000);
         });
-
-
+        
+        
     }
 };
 
 const cancelPreFactor = () => {
     ModalToggle("#PreFactor", "hide");
-
+    
     mySer.emptyForm("PreFacItem");
     mySer.emptyForm("PfHeadFormId", [{ name: "currencyType", val: "0" }]);
-
+    
     document.getElementById("serialNumber").value = "";
     document.getElementById("date").value = "";
     document.getElementById("validityDade").value = "";
@@ -1406,13 +1402,13 @@ const cancelPreFactor = () => {
     document.getElementById("totalTax").innerHTML = "";
     document.getElementById("paymentAmount").innerHTML = "";
     document.getElementById("preFactorItemId").innerHTML = "";
-
+    
     document.getElementById("descriptionId").value = "";
     document.getElementById("descriptionIdTablet").value = "";
     document.getElementById("descriptionIdMobile").value = "";
-
+    
     prePaymentPercentElm.value = Array.from(prePaymentPercentElm.children).find(i => i.defaultSelected).value;
-
+    
     pfactor = {};
     _pfactorItems = [];
     _officialType = null;
@@ -1433,13 +1429,13 @@ const cancelFactor = () => {
     $("#paymentAmount").text("");
     $("#f_descriptionId").val("");
     $("#F_currencyTypeSelect").val("0");
-
+    
     factor = {};
     _factorItems = [];
     _officialType = null;
     $("#FactorItemId").children().remove();
     UpfItemCancel();
-
+    
     const modalTitle = document.getElementById("factorModalTitle");
     modalTitle.textContent = "صدور فاکتور";
     modalTitle.style.backgroundColor = "#00302d";
@@ -1466,7 +1462,7 @@ const delPfactor = (id, type, dealId) => {
 const delPfactorOk = (id, type, dealId) => {
     if (!id) return;
     FLshowLoading();
-
+    
     axios(`/Factor/DelPreFactor/${id}`).then(async () => {
         if (type === 1) { // CustomerProfile
             await getAllPreFactor();
@@ -1478,14 +1474,14 @@ const delPfactorOk = (id, type, dealId) => {
         } else if (type === 4) { //deal
             await getPreFactorFromDeal(dealId);
         }
-
+        
         FLshowLoading(false);
         toastifySuccess("پیش‌فاکتور حذف شد");
     }).catch((err) => {
         console.log(err);
         setTimeout(() => delPfactorOk(id), 3000);
     });
-
+    
 };
 
 
@@ -1501,37 +1497,37 @@ const delFactor = (id, type, dealId) => {
         confirmButtonText: "بله، حذف شود",
     })
         .then((willDelete) => {
-
+            
             if (willDelete.isConfirmed) delFactorOk(id, type, dealId);
         });
 };
 const delFactorOk = (id, type, dealId) => {
     if (!id) return;
-
+    
     FLshowLoading();
     $.get(baseUrl + "Factor/DelFactor/" + id, async () => {
         if (type === 0) {
             await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, modelFactor._type, pFactorSerialNumber, type);
             //await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
-
+            
         } else if (type === 1) {
             await getAllPreFactor();
             await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, modelFactor._type, pFactorSerialNumber, type);
-
+            
             getAllDetailAmount();
         } else if (type === 4) {
             await getAllFactorsModal(dealId, 4);
         } else if (type === 5 || type === 6) {
             await getAllFactorsModal(id, type);
         }
-
+        
         FLshowLoading(false);
         toastifySuccess("عملیات انجام شد");
     })
-        .fail(() => {
-            setTimeout(() => delFactorOk(id, type), 3000);
-        });
-
+     .fail(() => {
+         setTimeout(() => delFactorOk(id, type), 3000);
+     });
+    
 };
 
 
@@ -1545,23 +1541,23 @@ const getFacSepidar = async (pfId, serialNumber = null, _this, PassType, dealId)
     FLshowLoading();
     document.querySelector(".SelectedPf")?.classList.remove("SelectedPf");
     _this.closest(".InfoDataItem_Prefactor").classList.add("SelectedPf");
-
+    
     // PfSelForFactor = pfId;
     const res = await getAllFactorSepidar(pfId, serialNumber);
-
+    
     if (PassType === 1) {
         document.getElementById("DetailDivList").innerHTML = res;
         document.getElementById("DivFacListId").style.display = "flex";
         document.getElementById("FactorDivTitleId").innerHTML = pfId
             ? `<span class="mp buttonGreen hide-factor__btn" style="border-radius:5px; font-size:20px; height:20px;width:20px !important; cursor:pointer" onclick="hideFact()"><i class="fas fa-times" style="font-size: 14px;"></i></span><span>تمام فاکتورهای مربوط به پیش فاکتور  ${serialNumber} </span>`
             : "تمام فاکتور ها";
-
+        
     } else if (PassType === 0) {
         document.getElementById("fAcceptedList").innerHTML = res;
         document.getElementById("f_all").checked = true;
         document.getElementById("HideFactorPartialId").style.display = "flex";
     }
-
+    
     if (window.innerWidth < 1400) {
         const allFactorTab = new bootstrap.Tab(document.getElementById(PassType === 0 ? "allFactorTab" : "factorTab"));
         allFactorTab.show();
@@ -1574,10 +1570,10 @@ const getAllFactorSepidar = async (pfId = null, ser = null) => {
         $.get(baseUrl + `Customer/GetFactorsSepidar?customerId=${customerId}&pfId=${pfId}&sNumber=${ser}`, (res) => {
             resolve(res.html);
         })
-            .fail(() => {
-                setTimeout(() => getAllFactorSepidar(), 3000);
-            });
-
+         .fail(() => {
+             setTimeout(() => getAllFactorSepidar(), 3000);
+         });
+        
     });
 };
 
@@ -1631,27 +1627,27 @@ const GetFactorPartial = async (val = null, id = null, _this = null, filt = null
         await showModalDealFactors(dealRes.data);
         return;
     }
-
+    
     if (PassType === 0 && _this) document.getElementById("f_all").checked = true;
     modelFactor.serVal = val;
     modelFactor._type = officialType;
     modelFactor.filt = filt;
     modelFactor.EntityId = id;
-
-
+    
+    
     CartableFSearchVal = val;
     PfSelForFactorThis = _this;
     pFactorSerialNumber = serialNumber;
-
+    
     document.querySelector(".SelectedPf")?.classList.remove("SelectedPf");
-
+    
     if (_this != null) {
         _this.closest(".InfoDataItem_Prefactor").classList.add("SelectedPf");
         if (PassType === 0) {
             document.getElementById("HideFactorPartialId").style.display = "flex";
             document.getElementById("f_searchId").value = "";
         }
-
+        
         if (window.innerWidth < 1400) {
             const allFactorTab = new bootstrap.Tab(document.getElementById(PassType === 0 ? "allFactorTab" : "factorTab"));
             allFactorTab.show();
@@ -1659,14 +1655,14 @@ const GetFactorPartial = async (val = null, id = null, _this = null, filt = null
     } else if (PassType === 0) {
         document.getElementById("HideFactorPartialId").style.display = "none";
     }
-
+    
     if (val === "") {
         document.getElementById("f_searchId").value = "";
         $("#f_searchId").val("");
         document.getElementById("HideFactorPartialId").style.display = "none";
     }
-
-
+    
+    
     showLoading && FLshowLoading();
     PfSelForFactor = id;
     const _model = { fmodel: modelFactor, PassType };
@@ -1678,24 +1674,24 @@ const GetFactorPartial = async (val = null, id = null, _this = null, filt = null
                 document.getElementById("fCountId").innerHTML = res.data.count;
                 document.getElementById("fCountMobileId").innerText = res.data.count;
             } else {
-
+                
                 if (id != null) {
                     document.getElementById("FactorDivTitleId").innerHTML = `<span class="mp buttonGreen hide-factor__btn" style="border-radius:5px; font-size:20px; height:20px;width:20px !important; cursor:pointer" onclick="hideFact()"> <i class="fas fa-times" style="font-size: 14px;"></i></span> <span>تمام فاکتورهای مربوط به پیش فاکتور ${serialNumber}</span> `;
                 } else {
                     document.getElementById("FactorDivTitleId").innerHTML = "تمام فاکتور ها";
                 }
-
+                
                 document.getElementById("DivFacListId").style.display = "flex";
                 document.getElementById("DetailDivList").innerHTML = res.data.html;
             }
         }
-
-
+        
+        
         showLoading && FLshowLoading(false);
     } catch (e) {
         console.log(e);
     }
-
+    
 };
 
 
@@ -1705,7 +1701,7 @@ const getAllFactorsModal = async (id, type, sNumber) => {
     const apiUrl = sNumber
         ? `/Customer/GetFactorsSepidar?sNumber=${sNumber}`
         : `/Cartable/GetAllFactorsPartialModal?id=${id}&type=${type}`;
-
+    
     const res = await axios(apiUrl);
     if (res.status === 200) {
         if (res.data.count) {
@@ -1728,7 +1724,7 @@ const acceptFactor = async (id, type, passType, PfactorSerialNumber, dealId) => 
     try {
         FLshowLoading();
         const res = await axios(`${baseUrl}Factor/AcceptFactor?id=${id}&type=${type}`);
-
+        
         if (res.status === 200) {
             if (type === 2) {
                 toastifySuccess("با موفقیت ثبت نهایی شد.");
@@ -1737,7 +1733,7 @@ const acceptFactor = async (id, type, passType, PfactorSerialNumber, dealId) => 
             } else if (type === 1) {
                 toastifySuccess("برگشت انجام شد.");
             }
-
+            
             if (passType === 0) {
                 await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, modelFactor._type, PfactorSerialNumber, passType);
             } else if (passType === 1) {
@@ -1748,7 +1744,7 @@ const acceptFactor = async (id, type, passType, PfactorSerialNumber, dealId) => 
             } else if (passType === 6) {
                 await getAllFactorsModal(id, 6);
             }
-
+            
         } else if (res.status === 204) {
             toastifyError("شماره فاکتور مالی وارد نشده است!");
         } else {
@@ -1770,8 +1766,8 @@ async function showModalChangeUserPf(pfId, cusId) {
     try {
         const res = await fetch(`/Customer/GetUsersForCustomer?cusId=${cusId}&pfId=${pfId}`);
         const data = await res.json();
-
-
+        
+        
         const wrapper = document.getElementById("selectOptUserPf");
         wrapper.innerHTML = "";
         if (data.length) {
@@ -1786,7 +1782,7 @@ async function showModalChangeUserPf(pfId, cusId) {
             });
             wrapper.appendChild(fragment);
         }
-
+        
         document.getElementById("FLshowLoading").style.display = "none";
     } catch (err) {
         console.log(err);
@@ -1795,14 +1791,14 @@ async function showModalChangeUserPf(pfId, cusId) {
 async function submitChangeUserPf() {
     const userId = document.getElementById("selectOptUserPf").value;
     const userFullName = document.getElementById("selectOptUserPf").selectedOptions[0].innerText;
-
+    
     try {
         document.getElementById("FLshowLoading").style.display = "";
         const res = await fetch(`/Customer/ChangeUserPf?userId=${userId}&pfId=${pfIdChangeUser}&userFullName=${userFullName}`);
         if (res.ok) {
             $("#changeUserPfModal").modal("toggle");
             toastifySuccess("با موفقیت ویرایش شد");
-
+            
             document.getElementById("FLshowLoading").style.display = "none";
         }
     } catch (err) {
@@ -1838,11 +1834,11 @@ const upPfactorItem = (index) => {
 const UpfItemCancel = () => {
     mySer.emptyForm("FacItem");
     fItemUpIndex = null;
-
+    
     document.getElementById("f_AddBtnId").style.display = "flex";
     document.getElementById("f_CancelBtnId").style.display = "flex";
     document.getElementById("f_UpBtnId").style.display = "none";
-
+    
     if (window.innerWidth < 992) {
         canselModalItemFactor();
     }
@@ -1852,11 +1848,11 @@ const UpfItemCancel = () => {
 const UpPfItemCancel = () => {
     mySer.emptyForm("PreFacItem");
     PfItemUpIndex = null;
-
+    
     document.getElementById("AddBtnId").style.display = "flex";
     document.getElementById("CancelBtnId").style.display = "flex";
     document.getElementById("UpBtnId").style.display = "none";
-
+    
     if (window.innerWidth < 992) {
         canselModalItemPreFactor();
     }
@@ -1864,38 +1860,38 @@ const UpPfItemCancel = () => {
 
 
 const UpfItem = async () => {
-
+    
     let el_procode = Array.from(document.getElementById("FacItem").elements).filter(f => f.name == "productCode")[0];
     let data = mySer.convertFormToJSON("#FacItem");
-
-
+    
+    
     if (el_procode.value != "") {
         data.productSmallName = el_procode.options[el_procode.selectedIndex].text;
     }
-
+    
     data.id = _factorItems[fItemUpIndex].id;
     data.factorId = _factorItems[fItemUpIndex].factorId;
     data.pfItemId = _factorItems[fItemUpIndex].pfItemId;
-
-
+    
+    
     //اگر کسب و کار کوچک بود این موارد باید برداشته شود
     data.unit = _factorItems[fItemUpIndex].unit;
     data.unitTxt = _factorItems[fItemUpIndex].unitTxt;
     //تا اینجا
-
+    
     //اگر کسب و کار کوچک بود این موارد باید فعال شود
     //var el_Unit = Array.from(document.getElementById("FacItem").elements).filter(f => f.name == "unit")[0]
     //if (el_Unit.value != "") {
     //    data.unitTxt = el_Unit.options[el_Unit.selectedIndex].text;
     //}
     //تا اینجا
-
+    
     data.officialType = _officialType;
     _factorItems[fItemUpIndex] = data;
-
+    
     data.unit = Number(data.unit);
-
-
+    
+    
     $("#f_AddBtnId").css("display", "flex");
     $("#f_UpBtnId").css("display", "none");
     ShowItemfactor();
@@ -1903,44 +1899,44 @@ const UpfItem = async () => {
     mySer.emptyForm("FacItem");
     let calcStatus = await calculateTotalFactor();
     //calculateTextFactor();
-
-
+    
+    
     toastifySuccess("با موفقیت ویرایش شد!");
-
+    
     if (window.innerWidth < 992) {
         canselModalItemFactor();
     }
 };
 
 const UpPfItem = () => {
-
+    
     //ایندکس فیلتر شده 
-
-
+    
+    
     var el_procode = Array.from(document.getElementById("PreFacItem").elements).filter(f => f.name == "productCode")[0];
-
+    
     var data = mySer.convertFormToJSON("#PreFacItem");
-
+    
     if (el_procode.value != "") {
         data.productSmallName = el_procode.options[el_procode.selectedIndex].text;
     }
-
-
+    
+    
     data.id = _pfactorItems[PfItemUpIndex].id;
     data.prefactorId = _pfactorItems[PfItemUpIndex].prefactorId;
-
+    
     var el_Unit = Array.from(document.getElementById("PreFacItem").elements).filter(f => f.name == "unit")[0];
     data.unitTxt = el_Unit.options[el_Unit.selectedIndex].text;
-
-
+    
+    
     data.officialType = _officialType;
     data.isDeleted = false;
-
+    
     data.totalAmount = Number(SeparatedNumberRemove(data.totalAmount));
     data.unit = Number(SeparatedNumberRemove(data.unit));
     data.unitAmount = Number(SeparatedNumberRemove(data.unitAmount));
-
-
+    
+    
     _pfactorItems[PfItemUpIndex].printable = data.printable;
     _pfactorItems[PfItemUpIndex].printableTxt = data.printableTxt;
     _pfactorItems[PfItemUpIndex].product = data.product;
@@ -1953,35 +1949,35 @@ const UpPfItem = () => {
     _pfactorItems[PfItemUpIndex].totalAmount = data.totalAmount;
     _pfactorItems[PfItemUpIndex].productGroup = data.productGroup;
     _pfactorItems[PfItemUpIndex].productGroupTxt = data.productGroupTxt;
-
-
+    
+    
     $("#AddBtnId").css("display", "flex");
     $("#CancelBtnId").css("display", "flex");
     $("#UpBtnId").css("display", "none");
-
-
+    
+    
     ShowItemPfactor();
     PfItemUpIndex = null;
     mySer.emptyForm("PreFacItem");
     calculateTotal();
     calculateText();
-
+    
     toastifySuccess("با موفقیت ویرایش شد!");
-
+    
     if (window.innerWidth < 992) {
         canselModalItemPreFactor();
     }
-
+    
 };
 
 
 const delPfactorItem = (index) => {
     let item = _pfactorItems[index];
-
+    
     if (item.id != null) {
         item.isDeleted = true;
         //_pfactorItems = _pfactorItems.filter(f => f.isDeleted != true);
-
+        
         ShowItemPfactor();
         calculateTotal();
         calculateText();
@@ -1992,31 +1988,31 @@ const delPfactorItem = (index) => {
         calculateText();
     }
     console.log(index, _pfactorItems);
-
+    
 };
 
 const delfactorItem = async (index) => {
-
-
+    
+    
     let item = _factorItems[index];
-
+    
     if (item.id != null) {
         item.isDeleted = true;
-
+        
         _factorItems = _factorItems.filter(f => f.isDeleted !== true);
         ShowItemfactor();
         await calculateTotalFactor();
         calculateTextFactor();
-
+        
     } else {
-
+        
         _factorItems.splice(index, 1);
         ShowItemfactor();
         await calculateTotalFactor();
         calculateTextFactor();
-
+        
     }
-
+    
 };
 
 
@@ -2031,16 +2027,16 @@ const getAllReceiptsPreFactor = async (id) => {
         const res = await axios(`/Factor/GetAttachmentsInvoiceUploaded/${id}`);
         if (res.status === 200) {
             const { attachments: receipts, accCredits } = res.data;
-
+            
             const container = document.getElementById("ReceiptsContainer");
             container.innerHTML = "";
             if (receipts.length || accCredits.length) {
                 receipts.forEach((fileItem) => {
                     const wrapperCard = document.createElement("div");
                     wrapperCard.style = "border:1px solid #ccc; border-radius:8px; padding:10px; text-align:center; box-shadow:0 0 4px rgba(0,0,0,0.1)";
-
+                    
                     const imageBox = createImageBox(fileItem, null, null, false, fileItem._AttachType === 4, "ثبت شد");
-
+                    
                     const footerCard = document.createElement("div");
                     footerCard.style.marginTop = "10px";
                     if (fileItem._AttachType === 5 || fileItem._AttachType === 6) {
@@ -2050,14 +2046,14 @@ const getAllReceiptsPreFactor = async (id) => {
                         footerCard.innerHTML = `<button class="buttonGray" style="min-width: 72px">ویرایش</button>`;
                         footerCard.querySelector("button").addEventListener("click", () => ShowEditModalInvoice(fileItem.entityId));
                     }
-
+                    
                     wrapperCard.append(imageBox, footerCard);
                     container.appendChild(wrapperCard);
                 });
                 accCredits.forEach((acc) => {
                     const wrapperCard = document.createElement("div");
                     wrapperCard.style = "border:1px solid #ccc; border-radius:8px; padding:10px; text-align:center; box-shadow:0 0 4px rgba(0,0,0,0.1);";
-
+                    
                     wrapperCard.innerHTML = `
                         <div class="boxAttach d-flex flex-column align-items-center justify-content-evenly gap-2" style="pointer-events: none;background-color: #f3f3f3">
                             <span class="fbold" style="font-size: 20px;color: #333">اعتباری</span>
@@ -2074,8 +2070,8 @@ const getAllReceiptsPreFactor = async (id) => {
                             ${acc.accepted ? `<div class="watermark watermark--success">تایید شد</div>` : ""}
                         </div>
                     `;
-
-
+                    
+                    
                     const footerCard = document.createElement("div");
                     footerCard.style.marginTop = "10px";
                     footerCard.innerHTML = `
@@ -2084,7 +2080,7 @@ const getAllReceiptsPreFactor = async (id) => {
                         </button>
                     `;
                     footerCard.querySelector("button").addEventListener("click", () => acceptAcc(acc.id, !acc.accepted, acc.pfid));
-
+                    
                     wrapperCard.appendChild(footerCard);
                     container.appendChild(wrapperCard);
                 });
@@ -2119,9 +2115,9 @@ async function acceptAcc(id, accepted, pfId) {
         const res = await axios(`/Accountancy/ToggleAcceptAcc/${id}?accepted=${accepted}`);
         if (res.status === 200) {
             await getAllReceiptsPreFactor(pfId);
-
+            
             await GetPreFactorFinancialExpert();
-
+            
             FLshowLoading(false);
         }
     } catch (err) {
@@ -2149,29 +2145,6 @@ async function acceptAccountancy(id, status, description = null) {
     }
 }
 
-
-async function changeStatusAcc(id, status) {
-    try {
-        FLshowLoading();
-        const res = await axios(`/Accountancy/ChangeStatusAcc?id=${id}&status=${status}`);
-        if (res.status === 200) {
-            await RefreshDataInvoice();
-            const urlParams = new URLSearchParams(window.location.search);
-            const tabId = urlParams.get("tab");
-
-            if (tabId === "TFinancialExpertId") {
-                await GetPreFactorFinancialExpert();
-            } else if (tabId === "TManagingDirectorId") {
-                await GetInvoicesManagingDirector();
-            }
-            FLshowLoading(false);
-            return true;
-        }
-    } catch (err) {
-        console.log(err);
-        return false;
-    }
-}
 
 
 

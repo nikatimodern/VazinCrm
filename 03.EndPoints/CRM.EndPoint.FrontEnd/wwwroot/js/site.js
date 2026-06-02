@@ -1171,6 +1171,64 @@ const toastifyError2 = (text, options = {}) => {
 };
 
 
+let smsToast = null;
+function showSmsSendingToast() {
+    
+    if (smsToast) {
+        smsToast.hideToast();
+    }
+    const notifDiv = document.createElement("div");
+    notifDiv.className = "flex-center gap-3";
+    notifDiv.innerHTML = `
+        در حال ارسال پیامک
+        <span class="spinner-border spinner-border-sm"></span>
+    `;
+    
+    smsToast = Toastify({
+        //text: "در حال ارسال پیامک...",
+        node: notifDiv,
+        duration: -1,
+        close: false,
+        gravity: "top",
+        position: "center",
+        stopOnFocus: false,
+        style: {
+            background: "linear-gradient(135deg, rgba(110,73,0,1) 18%, rgba(185,124,0,1) 100%)",
+            borderRadius: "8px",
+            cursor: "auto",
+        },
+    }).showToast();
+    
+}
+
+function updateSmsToast(text, type) {
+    if (!smsToast) return;
+    const smsToastElement = smsToast.toastElement;
+    
+    smsToastElement.textContent = text;
+    
+    switch (type) {
+        case "success":
+            smsToastElement.style.background = "linear-gradient(135deg, rgba(2,81,75,1) 21%, rgba(0,59,54,1) 100%)";
+            setTimeout(() => {
+                smsToast?.hideToast();
+                smsToast = null;
+            }, 3000);
+            
+            break;
+        
+        case "error":
+            smsToastElement.style.background = "linear-gradient(135deg, rgba(121,9,9,1) 21%, rgba(78,0,0,0.9) 100%)";
+            setTimeout(() => {
+                smsToast?.hideToast();
+                smsToast = null;
+            }, 5000);
+            
+            break;
+    }
+}
+
+
 const checkAccess = async (elId) => {
     let rols = JSON.parse(sessionStorage.getItem("Rols"));
     let hasAccess = false;
@@ -1807,27 +1865,54 @@ function generateCodePColor(PCode) {
 
 document.addEventListener("DOMContentLoaded", function () {
     document.addEventListener("input", function (e) {
-        if (e.target.classList.contains("currencyNumber")) {
-            handlerSeparateCurrencyNumbers.call(e.target, e);
-        } else if (e.target.classList.contains("digitNumber") || e.target.classList.contains("digitNumberString")) {
-            handlerSeparateDigitNumbers.call(e.target, e);
-        } else if (e.target.classList.contains("mobileNumber")) {
-            handlerMobileInput.call(e.target, e);
-        } else if (e.target.classList.contains("IranMobileNumber")) {
-            handlerIranMobileInput.call(e.target, e);
+        const el = e.target;
+        if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return;
+        
+        if (el.classList.contains("currencyNumber")) {
+            handlerSeparateCurrencyNumbers(el);
+            updateCurrencyHint(el);
+        } else if (el.classList.contains("digitNumber") || el.classList.contains("digitNumberString")) {
+            handlerSeparateDigitNumbers(e);
+        } else if (el.classList.contains("mobileNumber")) {
+            handlerMobileInput(e);
+        } else if (el.classList.contains("IranMobileNumber")) {
+            handlerIranMobileInput(e);
         }
+        
+        applyMinMaxValue(el);
     });
     
-    /*document.addEventListener("focus", function (e) {
-        if (e.target.classList.contains("mobileNumber")) {
-            if (!e.target.value.startsWith("09")) {
-                e.target.value = "09";
-            }
-        }
-    }, true);*/
 });
 
 
+function applyMinMaxValue(el) {
+    const min = el.getAttribute("min");
+    const max = el.getAttribute("max");
+    
+    if (min === null && max === null) return;
+    
+    let value = ConvertToNumEnglishCharNoCallBack(el.value)
+        .replace(/,/g, "")
+        .trim();
+    
+    if (value === "" || isNaN(value)) return;
+    
+    let numValue = Number(value);
+    
+    if (min !== null && !isNaN(min) && numValue < Number(min)) {
+        numValue = Number(min);
+    }
+    
+    if (max !== null && !isNaN(max) && numValue > Number(max)) {
+        numValue = Number(max);
+    }
+    
+    if (el.classList.contains("currencyNumber")) {
+        el.value = numValue.toLocaleString();
+    } else {
+        el.value = numValue;
+    }
+}
 const getGeneralRef = () => {
     return new Promise(resolve => {
         $.get(baseUrl + "Person/_GeneralReferencePartial?FormName=Person", (res) => {
@@ -1888,8 +1973,14 @@ function handlerIranMobileInput(e) {
 }
 
 
-function handlerSeparateCurrencyNumbers(e) {
-    const thisElement = e.target;
+function handlerSeparateCurrencyNumbers(el) {
+    const numericValue = getNumericValue(el.value);
+    
+    el.value = numericValue
+        ? Number(numericValue).toLocaleString()
+        : "";
+    
+    /*const thisElement = e.target;
     
     let thisElementValue = ConvertToNumEnglishCharNoCallBack(thisElement.value);
     
@@ -1914,8 +2005,70 @@ function handlerSeparateCurrencyNumbers(e) {
     }
     seperatedNumber = funcReverseString(tmpSeperatedNumber);
     if (seperatedNumber[0] === ",") seperatedNumber = seperatedNumber.replace(",", "");
-    thisElement.value = seperatedNumber;
+    thisElement.value = seperatedNumber;*/
 }
+
+function getNumericValue(value) {
+    if (!value) return "";
+    
+    return ConvertToNumEnglishCharNoCallBack(value).replace(/\D/g, "");
+}
+
+
+function getPriceTextElement(input) {
+    
+    const selector = input.dataset.priceText;
+    
+    if (!selector)
+        return null;
+    
+    if (selector === "next")
+        return input.nextElementSibling;
+    
+    return document.querySelector(selector);
+}
+
+function updateCurrencyHint(input) {
+    const targetSelector = input.dataset.currencyHint;
+    if (!targetSelector) return;
+    const target = targetSelector === "next" ? input.nextElementSibling : document.querySelector(targetSelector);
+    if (!target) return;
+    if (!target.classList.contains("currencyHint")) return;
+    
+    const amount = Number(getNumericValue(input.value));
+    
+    target.textContent = formatAmountHint(amount);
+}
+
+function formatAmountHint(rialAmount) {
+    if (isNaN(rialAmount)) return "";
+    
+    const toman = Math.floor(rialAmount / 10);
+    
+    if (!toman) return "";
+    
+    const billion = Math.floor(toman / 1_000_000_000);
+    const million = Math.floor((toman % 1_000_000_000) / 1_000_000);
+    const thousand = Math.floor((toman % 1_000_000) / 1_000);
+    const remain = toman % 1_000;
+    
+    const parts = [];
+    
+    if (billion)
+        parts.push(`${billion} میلیارد`);
+    
+    if (million)
+        parts.push(`${million} میلیون`);
+    
+    if (thousand)
+        parts.push(`${thousand} هزار`);
+    
+    if (remain)
+        parts.push(remain.toString());
+    
+    return parts.join(" و ") + " تومان";
+}
+
 
 const SeperatedNumberGenerate = (val) => {
     let seperatedNumber = SeparatedNumberRemove(val.toString());
@@ -2309,8 +2462,8 @@ class MyService {
         blacklist = [],    // ['name1', 'name2']
     ) {
         this.RemoveAlertForm(formId);
-        
-        const elements = document.getElementById(formId).elements;
+        const form = document.getElementById(formId);
+        const elements = form.elements;
         for (const elm of elements) {
             const name = elm.name;
             let defVal = null;
@@ -2319,7 +2472,6 @@ class MyService {
                 if (blacklist.includes(name)) continue;
                 defVal = defaultVals.find(v => v.name === name)?.val ?? null;
             }
-            
             
             switch (elm.type) {
                 case "text":
@@ -2370,6 +2522,7 @@ class MyService {
                     break;
             }
         }
+        form.querySelectorAll(".currencyHint").forEach(elm => elm.innerHTML = "");
     }
     
     
@@ -2461,6 +2614,9 @@ class MyService {
                     case "number":
                     case "tel":
                         elm.value = value;
+                        if (elm.dataset.currencyHint) {
+                            updateCurrencyHint(elm);
+                        }
                         break;
                     case "select-one":
                         if (elm.tomselect) {
@@ -2593,6 +2749,8 @@ class MyService {
             let isValid = true;
             
             const addAlert = (el, className = "AlertReq") => {
+                if (!el) return;
+                
                 if (el.tomselect) {
                     el.tomselect.control.classList.add(className);
                     el.tomselect.on("change", remove);
@@ -2816,23 +2974,27 @@ function AlertFormStatus(status, Message, liss) {
 }
 
 
-function ConvertToNumEnglishCharNoCallBack(item) {
-    if (item === null) {
-        return null;
-    } else {
-        
-        let s = item;
-        for (let i = 0; i < item.length; i++) {
+function ConvertToNumEnglishCharNoCallBack(value) {
+    if (value == null) return null;
+    
+    return value.replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+    
+    /*    if (value === null) {
+            return null;
+        } else {
             
-            s = s.replace("۰", "0").replace("۱", "1")
-                 .replace("۲", "2").replace("۳", "3")
-                 .replace("۴", "4").replace("۵", "5")
-                 .replace("۶", "6").replace("۷", "7")
-                 .replace("۸", "8").replace("۹", "9");
-        }
-        
-        return s;
-    }
+            let s = value;
+            for (let i = 0; i < value.length; i++) {
+                
+                s = s.replace("۰", "0").replace("۱", "1")
+                     .replace("۲", "2").replace("۳", "3")
+                     .replace("۴", "4").replace("۵", "5")
+                     .replace("۶", "6").replace("۷", "7")
+                     .replace("۸", "8").replace("۹", "9");
+            }
+            
+            return s;
+        }*/
 }
 
 function ConvertToNumEnglishChar(item, callback) {
@@ -2897,7 +3059,13 @@ document.querySelectorAll(".chip").forEach(chip => {
 
 const toggleElementsDisabled = (elms, isDisabled = true) => {
     const items = elms instanceof NodeList || elms instanceof Array ? elms : [elms];
-    items.forEach(el => el.disabled = isDisabled);
+    items.forEach(el => {
+        if (el.tomselect) {
+            isDisabled ? el.tomselect.disable() : el.tomselect.enable();
+        } else {
+            el.disabled = isDisabled;
+        }
+    });
 };
 
 const toggleElementsRequired = (elms, isRequired) => {
@@ -3074,18 +3242,22 @@ document.addEventListener("click", function (e) {
     const target = e.target.closest("[data-bs-toggle='popover']");
     
     if (target) {
+        
         let pop = bootstrap.Popover.getInstance(target);
+        
         if (pop) {
             pop.toggle();
-        } else {
-            pop = new bootstrap.Popover(target, {
-                placement: "top",
-                customClass: "fMedium",
-                trigger: "manual",
-                html: true,
-            });
-            pop.show();
+            return;
         }
+        const options = {
+            placement: target.dataset.bsPlacement || "top",
+            customClass: target.dataset.bsCustomClass || "fMedium",
+            trigger: "manual",
+            html: target.dataset.bsHtml === "true",
+        };
+        
+        pop = new bootstrap.Popover(target, options);
+        pop.show();
     } else {
         document.querySelectorAll("[data-bs-toggle='popover']").forEach(el => {
             const openPop = bootstrap.Popover.getInstance(el);

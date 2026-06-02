@@ -7,10 +7,6 @@ Array.from(uploadButtons).forEach((item, index) => {
     const listName = item.getAttribute("data-varList");
     
     item.addEventListener("change", async () => {
-        /*if (item.files?.length > 0) {
-            await addToList(item.files, listName);
-            ShowPreview(index);
-        }*/
         await processUploadFiles(item.files, listName, index, containerUploader);
     });
     
@@ -64,8 +60,8 @@ async function processUploadFiles(files, listName, previewIndex, containerUpload
     if (!files?.length) return;
     
     const progress = createUploadProgress(containerUploader);
-    const minDuration = 800;
-    const startTime = performance.now();
+    const minDuration = 500;
+    const startTime = Date.now();
     
     try {
         containerUploader.classList.add("uploading");
@@ -73,7 +69,7 @@ async function processUploadFiles(files, listName, previewIndex, containerUpload
         
         ShowPreview(previewIndex);
         
-        const elapsed = performance.now() - startTime;
+        const elapsed = Date.now() - startTime;
         if (elapsed < minDuration) {
             await delay(minDuration - elapsed);
         }

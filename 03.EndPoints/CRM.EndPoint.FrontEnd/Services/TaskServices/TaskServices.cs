@@ -213,19 +213,22 @@ namespace CRM.EndPoint.FrontEnd.Services.TaskServices {
 
                 if (ac.PayType == PayTypeEnum.اعتباری || ac.PayType == PayTypeEnum.چکی)
                 {
-                    tu.Add(new TaskUser {
-                        TaskId = _Task.Id,
-                        UserId = Guid.Parse(pf.UserCreatorID),
-                        FullName = pf.UserCreator
-                    });
+                    if (!allMali.Select(f => f.Id).Contains(pf.UserCreatorID))
+                    {
+                        tu.Add(new TaskUser {
+                            TaskId = _Task.Id,
+                            UserId = Guid.Parse(pf.UserCreatorID),
+                            FullName = pf.UserCreator
+                        });
 
-                    var cl2 = _Task.Clone();
-                    cl2.Systematic = true;
-                    cl2.ShareTaskId = _Task.Id;
-                    cl2.AssignUser = pf.UserCreator;
-                    cl2.AssignUserId = pf.UserCreatorID;
+                        var cl2 = _Task.Clone();
+                        cl2.Systematic = true;
+                        cl2.ShareTaskId = _Task.Id;
+                        cl2.AssignUser = pf.UserCreator;
+                        cl2.AssignUserId = pf.UserCreatorID;
 
-                    carizos.Add(cl2);
+                        carizos.Add(cl2);
+                    }
                 }
 
 

@@ -41,8 +41,11 @@ using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.Core.Domain.Supplies.Enums;
+using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Accountency;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
+using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
+using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
@@ -56,19 +59,20 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly IHubContext<TaskHub> hub;
         private readonly LogSystemService _logSystemService;
         private readonly IPushQueue pushQueue;
+        private readonly ISmsQueue smsQueue;
         private readonly CrmSaveCahngeAsync crmSaveCahngeAsync;
         private readonly TaskServices ts;
         private readonly SepidarService sps;
-        private readonly SmsServices smsServ;
+        private readonly SmsService smsServ;
         private readonly UserManager<AppUser> userManager;
         private readonly SignInManager<AppUser> signInManager;
         private readonly RoleManager<IdentityRole> roleManager;
 
-        public FactorController(CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, SepidarService sps, SmsServices SmsServ,
+        public FactorController(CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, SepidarService sps, SmsService SmsServ,
             UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, RoleManager<IdentityRole> roleManager, Service GenService,
             FileSaver fileSaver,
             DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb S1db,
-            IHubContext<TaskHub> hub, LogSystemService logSystemService, IPushQueue pushQueue)
+            IHubContext<TaskHub> hub, LogSystemService logSystemService, IPushQueue pushQueue, ISmsQueue smsQueue)
         {
             this.crmSaveCahngeAsync = crmSaveCahngeAsync;
             this.ts = ts;
@@ -86,6 +90,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.hub = hub;
             _logSystemService = logSystemService;
             this.pushQueue = pushQueue;
+            this.smsQueue = smsQueue;
         }
 
         [Authorize(Policy = "NotCustomerOnly")]
@@ -255,7 +260,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 cusText = pf.AgentName;
             }
 
-            await smsServ.SendAcceptedSalesAdminToCustomer(cusMobile, pf.SerialNumber);
+            //await smsServ.SendAcceptedSalesAdminToCustomer(cusMobile, pf.SerialNumber);
+            await smsQueue.QueueAsync(new SmsJob {
+                Type = SmsType.AcceptedSalesAdminToCustomer,
+                Mobile = cusMobile,
+                SerialNumber = pf.SerialNumber.ToString(),
+            });
 
             await hub.Clients.User(pf.UserCreatorID).SendAsync("notifInfo",
                 $"پیش‌فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusText} توسط <b>{user.FullName}</b> تایید شد و در انتظار تایید مالی قرار گرفت",
@@ -996,7 +1006,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet("{se}")]
         public async Task<IActionResult> AcceptingSMS(string se)
         {
-                if (se == null) return BadRequest();
+            if (se == null) return BadRequest();
             try
             {
                 var pf = await db.PreFactors.FirstOrDefaultAsync(f => f.Id.ToString().StartsWith(se));
@@ -1271,16 +1281,23 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             await _logSystemService.LogChange(oldPfactor, pfactor, LogActionEnum.تغییر_وضعیت, user);
             await db.SaveChangesAsync();
-            var res = await smsServ.SendAcceptPfactorToCustomer(toNumber, pfactor.SerialNumber, id);
+            //var res = await smsServ.SendAcceptPfactorToCustomer(toNumber, pfactor.SerialNumber, id);
+            await smsQueue.QueueAsync(new SmsJob {
+                Type = SmsType.AcceptPfactorToCustomer,
+                Mobile = toNumber,
+                SerialNumber = pfactor.SerialNumber.ToString(),
+                PfactorId = id,
+                ConnectionId = Request.GetSignalRConnectionId()
+            });
 
-
-            if (res.code == 200)
+            return Ok();
+            /*if (res.code == 200)
             {
                 return Ok(res);
             } else
             {
                 return BadRequest(res);
-            }
+            }*/
         }
 
         [Authorize]
@@ -2691,7 +2708,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await _logSystemService.LogChange(oldPf, pf, LogActionEnum.تغییر_وضعیت, user);
 
             await db.SaveChangesAsync();
-            await smsServ.SendAcceptPfactorToTamin(userTamin.PhoneNumber, pf.SerialNumber);
+            //await smsServ.SendAcceptPfactorToTamin(userTamin.PhoneNumber, pf.SerialNumber);
+            await smsQueue.QueueAsync(new SmsJob {
+                Type = SmsType.AcceptPfactorToTamin,
+                Mobile = userTamin.PhoneNumber,
+                SerialNumber = pf.SerialNumber.ToString(),
+                ConnectionId = Request.GetSignalRConnectionId()
+            });
+
+
 
             await hub.Clients.Groups("کارشناس تامین", "مدیر ارشد").SendAsync("countPreFactorToAccept");
             var cusTxt = pf.CustomerEntity != null ? $"{pf.CustomerEntity.CompanyName} ({pf.CustomerEntity.AgentName})".Trim() : pf.AgentName;
@@ -2714,24 +2739,38 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [Authorize]
         public async Task<IActionResult> ResendRegUtamin(Guid pfId, Guid usId)
         {
-            var pf = await db.PreFactors.AsNoTracking().Where(f => f.Id == pfId).Include(f => f.CustomerEntity).FirstOrDefaultAsync();
-            var userTamin = await udb.Users.AsNoTracking().Where(f => f.Id == usId.ToString()).FirstOrDefaultAsync();
+            try
+            {
+                var pf = await db.PreFactors.AsNoTracking().Where(f => f.Id == pfId).Include(f => f.CustomerEntity).FirstOrDefaultAsync();
+                var userTamin = await udb.Users.AsNoTracking().Where(f => f.Id == usId.ToString()).FirstOrDefaultAsync();
 
-            await smsServ.SendAcceptPfactorToTamin(userTamin.PhoneNumber, pf.SerialNumber);
+                //await smsServ.SendAcceptPfactorToTamin(userTamin.PhoneNumber, pf.SerialNumber);
+                await smsQueue.QueueAsync(new SmsJob {
+                    Type = SmsType.AcceptPfactorToTamin,
+                    Mobile = userTamin.PhoneNumber,
+                    SerialNumber = pf.SerialNumber.ToString(),
+                    ConnectionId = Request.GetSignalRConnectionId()
+                });
 
-            var cusTxt = pf.CustomerEntity != null ? $"{pf.CustomerEntity.CompanyName} ({pf.CustomerEntity.AgentName})".Trim() : pf.AgentName;
-            await hub.Clients.User(pf.UserTaminId.ToString()).SendAsync("notifActionRequired",
-                $"پیش فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusTxt} توسط <b>{pf.UserCreator}</b> جهت تایید در کارتابل شما قرار گرفت",
-                "/Cartable/Index?tab=TTaminExpertId"
-            );
-            pushQueue.Enqueue(new PushQueueItem {
-                UserId = pf.UserTaminId.ToString(),
-                Title = "تایید پیش‌فاکتور",
-                Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
-                Url = "/Cartable/Index?tab=TTaminExpertId",
-                Tag = "pf" + pf.SerialNumber
-            });
-            return Ok();
+                var cusTxt = pf.CustomerEntity != null ? $"{pf.CustomerEntity.CompanyName} ({pf.CustomerEntity.AgentName})".Trim() : pf.AgentName;
+                await hub.Clients.User(pf.UserTaminId.ToString()).SendAsync("notifActionRequired",
+                    $"پیش فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusTxt} توسط <b>{pf.UserCreator}</b> جهت تایید در کارتابل شما قرار گرفت",
+                    "/Cartable/Index?tab=TTaminExpertId"
+                );
+                pushQueue.Enqueue(new PushQueueItem {
+                    UserId = pf.UserTaminId.ToString(),
+                    Title = "تایید پیش‌فاکتور",
+                    Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
+                    Url = "/Cartable/Index?tab=TTaminExpertId",
+                    Tag = "pf" + pf.SerialNumber
+                });
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         [Authorize]

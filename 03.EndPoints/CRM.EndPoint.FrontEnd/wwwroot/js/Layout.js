@@ -115,12 +115,18 @@ const RepairPf = async (pfi, passType, dealId) => {
 
 let tooltipList = [];
 function initTooltipsIfCollapsed() {
-    if (document.documentElement.classList.contains("sidebar-collapsed")) {
-        const triggers = document.querySelectorAll("[data-tooltip-left]");
-        tooltipList = [...triggers].map(el => new bootstrap.Tooltip(el, {
-            title: el.getAttribute("data-tooltip-left"), delay: { show: 150, hide: 0 }, customClass: "main-font", placement: "left",
-        }));
-    }
+    if (!document.documentElement.classList.contains("sidebar-collapsed")) return;
+    
+    const triggers = document.querySelectorAll("[data-tooltip-left]");
+    tooltipList = [...triggers].map(el =>
+        new bootstrap.Tooltip(el, {
+            title: el.getAttribute("data-tooltip-left"),
+            delay: { show: 150, hide: 0 },
+            customClass: "main-font",
+            placement: "left",
+        }),
+    );
+    
 }
 
 function toggleMenu() {
@@ -1608,10 +1614,13 @@ async function changeStatusHd(id, status, sourceStatus, passType, dealId = null,
         if (res.status === 200) {
             if (status === 3) {
                 if (fromDrop) {
-                    openIcon.style.display = "none";
+                    if (finishedOrderToggleIcon) {
+                        finishedOrderToggleIcon.isVisible = false;
+                    }
+                    /*openIcon.style.display = "none";
                     closedIcon.style.display = "block";
-                    document.getElementById("showFinishedOrderIcon").setAttribute("data-title", "نمایش تحویل شده ها");
-                    showHidden = false;
+                    document.getElementById("showFinishedOrderIcon").setAttribute("data-title", "نمایش تحویل شده ها");*/
+                    //showHidden = false;
                 }
                 if (sendSms) {
                     toastifySuccess("اطلاع رسانی از طریق پیامک انجام شد");
@@ -1811,10 +1820,15 @@ const regUtamin = async (pfId, type, dealId) => {
             }
             
             FLshowLoading(false);
-            toastifySuccess("به مسئول تامین واگذار شد");
+           // showSmsSendingToast();
+            //toastifySuccess("به مسئول تامین واگذار شد");
         }
     } catch (err) {
-        setTimeout(async () => await regUtamin(id), 3000);
+        console.log(err);
+        toastifyError("خطای سرور")
+        //setTimeout(async () => await regUtamin(id), 3000);
+    } finally {
+        FLshowLoading(false)
     }
 };
 
@@ -1828,12 +1842,15 @@ const resendRegUtamin = async (pfId, userTaminId, type, dealId) => {
             } else if (type === 4) {
                 await getPreFactorFromDeal(dealId);
             }
-            FLshowLoading();
-            toastifySuccess("ارسال مجدد انجام شد");
+            //showSmsSendingToast();
+           // toastifyInfo("پیامک در صف ارسال قرار گرفت");
+            //toastifySuccess("ارسال مجدد انجام شد");
         }
     } catch (err) {
         console.log(err);
-        setTimeout(async () => await resendRegUtamin(pfId, userTaminId), 3000);
+        //setTimeout(async () => await resendRegUtamin(pfId, userTaminId), 3000);
+    } finally {
+        FLshowLoading(false);
     }
 };
 
@@ -1856,7 +1873,7 @@ const showMobileModal = async (id, type, dealId) => {
 
 const SendToCustomer = async () => {
     try {
-        document.getElementById("FLshowLoading").style.display = "";
+        FLshowLoading();
         const toNumber = $("#mobileid").val();
         const res = await axios(`/Factor/SendToCustomer?id=${smsSendedPfId}&toNumber=${toNumber}`);
         if (res.status === 200) {
@@ -1865,14 +1882,15 @@ const SendToCustomer = async () => {
             } else if (typeSubmitSmsSendPf === 4) {
                 await getPreFactorFromDeal(dealIdSubmitSmsSendPf);
             }
-            document.getElementById("FLshowLoading").style.display = "none";
             
-            toastifySuccess("ارسال انجام شد");
+           // showSmsSendingToast();
+            //toastifySuccess("ارسال انجام شد");
             $("#MobileModal").modal("toggle");
         }
     } catch (err) {
         console.log(err);
-        CounterSmsSend = CounterSmsSend + 1;
+        toastifyError("خطای سرور");
+        /*CounterSmsSend = CounterSmsSend + 1;
         if (CounterSmsSend < 3) {
             toastifyError("ارسال با خطا روبرو شد");
             setTimeout(async () => await SendToCustomer(), 3000);
@@ -1889,7 +1907,9 @@ const SendToCustomer = async () => {
                 title: "خطا!", text: "لینک تایید ارسال نشد", icon: "error", confirmButtonText: "بستن",
             });
             
-        }
+        }*/
+    } finally {
+        FLshowLoading(false);
     }
 };
 
@@ -2618,8 +2638,8 @@ async function refreshInvoiceSuccess() {
                         break;
                 }
                 break;
-            case "TManagingDirectorId": //5 مدیرعامل
-                await GetInvoicesManagingDirector();
+            case "TTaminExpertId": //5 تامین
+                await GetInvoicesTaminExpert();
                 break;
             case "TSalesExpertId": //3 کارشناس فروش
                 await GetSelesExpertPartial();
@@ -3279,14 +3299,20 @@ const setCountEmail = (emailsCount, isAdmin) => {
 let oldSumCount = null;
 const setCountEnvelope = (countObj, isAdmin) => {
     const countResult = {
-        salesAdmin: { count: countObj.salesAdmin || 0, id: "TSalesAdminId" },
-        tamin: { count: countObj.tamin || 0, id: "TTaminExpertId" },
+        salesAdmin: {
+            count: countObj.salesAdmin || 0,
+            id: "TSalesAdminId",
+        },
+        tamin: {
+            count: (countObj.tamin?.invoiceCount || 0) + (countObj.tamin?.preFactorCount || 0),
+            id: "TTaminExpertId",
+        },
         financial: {
             count: (countObj.financial?.invoiceCount || 0) + (countObj.financial?.preFactorCount || 0) + (countObj.financial?.requestCount || 0),
             id: "TFinancialExpertId",
         },
         managingDirector: {
-            count: (countObj.managingDirector?.invoiceCount || 0) + (countObj.managingDirector?.requestCount || 0),
+            count: (countObj.managingDirector?.requestCount || 0),
             id: "TManagingDirectorId",
         },
     };
@@ -3308,11 +3334,12 @@ const setCountEnvelope = (countObj, isAdmin) => {
     });
     
     // sub tabs
+    setBadge("#MDRequestAmountTab .badgeCircle", countObj.managingDirector?.requestCount || 0);
     setBadge("#FinancialPrefactorTab .badgeCircle", countObj.financial?.preFactorCount || 0);
     setBadge("#FinancialInvoiceTab .badgeCircle", countObj.financial?.invoiceCount || 0);
     setBadge("#FinancialRequestTab .badgeCircle", countObj.financial?.requestCount || 0);
-    setBadge("#MDRequestAmountTab .badgeCircle", countObj.managingDirector?.requestCount || 0);
-    setBadge("#MDInvoiceTab .badgeCircle", countObj.managingDirector?.invoiceCount || 0);
+    setBadge("#TaminPrefactorTab .badgeCircle", countObj.tamin?.preFactorCount || 0);
+    setBadge("#TaminInvoiceTab .badgeCircle", countObj.tamin?.invoiceCount || 0);
 };
 
 const setBadge = (target, count) => {
@@ -3452,14 +3479,14 @@ const getAllBankAccountsJson = async (type) => {
 
 let isLoadedBankAccounts = false;
 
-const getAllBankAccounts = async () => {
-    if (isLoadedBankAccounts) return;
+const getAllBankAccounts = async (rerender = false) => {
+    if (isLoadedBankAccounts && !rerender) return;
     
     const selects = [
-        { element: document.querySelector("#InvoiceModalId select[name='BankAccountId']"), type: 1 },
-        { element: document.querySelector("#ShowPaymentModal select[name='BankAccountId']"), type: 1, isDisable: true },
-        { element: document.querySelector("#reqAmountAttachModal select[name='fromAccountId']"), type: 1 },
-        { element: document.querySelector("#reqAmountAttachModal select[name='toAccountId']"), type: 2 },
+        { element: document.querySelector("#InvoiceModalId select[name='BankAccountId']"), type: [1] },
+        { element: document.querySelector("#ShowPaymentModal select[name='BankAccountId']"), type: [1], isDisable: true },
+        { element: document.querySelector("#reqAmountAttachModal select[name='fromAccountId']"), type: [1] },
+        { element: document.querySelector("#reqAmountAttachModal select[name='toAccountId']"), type: [2, 3], isTomSelect: true },
     ].filter(e => e.element);
     
     const elementsToToggleDisable = selects.filter(s => !s.isDisable).map(s => s.element);
@@ -3469,9 +3496,22 @@ const getAllBankAccounts = async () => {
         const data = await getAllBankAccountsJson();
         
         selects.forEach(x => {
+            const filteredData = data.filter(d => x.type.includes(d.type));
+            if (x.isTomSelect) {
+                createSupplierTomSelect(x.element, filteredData);
+                return;
+            }
+            
             createOption(
                 x.element,
-                data.filter(d => d.type === x.type),
+                filteredData.reverse().map(item => {
+                    const ui = buildBankAccountText(item);
+                    
+                    return {
+                        value: item.value,
+                        text: `${ui.title}${ui.details ? ` (${ui.details})` : ""}`,
+                    };
+                }),
                 true,
                 "انتخاب کنید",
             );
@@ -3485,6 +3525,125 @@ const getAllBankAccounts = async () => {
     }
 };
 
+const buildBankAccountText = (item) => {
+    const parts = [];
+    
+    if (item.bankName)
+        parts.push(item.bankName);
+    
+    const number = item.accountNumber || item.shebaNumber || item.cartNumber;
+    
+    if (number)
+        parts.push(number);
+    
+    return {
+        title: item.accountName,
+        details: parts.join(" "),
+        officialText: item.officialType === 1 ? "رسمی" : "غیررسمی",
+    };
+};
+
+const buildBankAccountUi = (item) => {
+    const number = item.accountNumber || item.cartNumber || item.shebaNumber;
+    
+    const details = [];
+    
+    if (item.bankName)
+        details.push(item.bankName);
+    
+    if (number)
+        details.push(number);
+    
+    const detailsText = details.join(" - ");
+    
+    const displayText = detailsText
+        ? `${item.accountName} (${detailsText})`
+        : item.accountName;
+    
+    return {
+        title: item.accountName,
+        
+        details: [
+            item.bankName ? `بانک: ${item.bankName}` : null,
+            item.accountNumber ? `حساب: ${item.accountNumber}` : null,
+            item.cartNumber ? `کارت: ${item.cartNumber}` : null,
+            item.shebaNumber ? `شبا: ${item.shebaNumber}` : null,
+        ].filter(Boolean).join(" | "),
+        
+        displayText,
+        
+        officialText: item.officialType === 1 ? "رسمی" : "غیررسمی",
+        
+        isOfficial: item.officialType === 1,
+    };
+};
+
+
+const createSupplierTomSelect = (element, items) => {
+    
+    if (element.tomselect) {
+        element.tomselect.destroy();
+    }
+    
+    new TomSelect(element, {
+        options: items.map(item => {
+            const ui = buildBankAccountUi(item);
+            return {
+                value: item.value,
+                
+                title: ui.title,
+                details: ui.details,
+                text: ui.displayText,
+                
+                officialText: ui.officialText,
+                isOfficial: ui.isOfficial,
+                
+                search: `
+                    ${ui.title}
+                    ${ui.details}
+                    ${ui.officialText}
+                `,
+            };
+        }),
+        searchField: ["search"],
+        //labelField: ["title"],
+        placeholder: "جستجو و انتخاب حساب مقصد",
+        
+        maxItems: 1,
+        persist: false,
+        create: false,
+        
+        render: {
+            option: (data, escape) => `
+                <div class="bank-option">
+                    <div class="top">
+                        <div class="title">
+                            ${escape(data.title)}
+                        </div>
+
+                        <div class="bank-badge ${!data.isOfficial ? "unofficial" : ""}">
+                            ${escape(data.officialText)}
+                        </div>
+                    </div>
+
+                    ${data.details ? `<div class="details">${escape(data.details)}</div>` : ""}
+                </div>
+            `,
+            
+            item: (data, escape) => `
+                <div class="bank-item">
+                    <div class="item-title">
+                        ${escape(data.text)}
+                    </div>
+
+                    <div class="bank-badge ${!data.isOfficial ? "unofficial" : ""}">
+                        ${escape(data.officialText)}
+                    </div>
+                </div>
+            `,
+        },
+    });
+};
 
 const hideFact = () => {
     document.getElementById("DivFacListId").style.display = "none";
@@ -4294,7 +4453,7 @@ function sortableMobileMenu() {
         });
     });
     
-    // restoreMenuOrder();
+     restoreMenuOrder();
 }
 
 sortableMobileMenu();
@@ -4751,6 +4910,7 @@ const getAllPaymentsList = (id) => {
     if (!paymentTable) {
         initPaymentTable();
     }
+    paymentTable.clear().draw(); // TODO
     paymentTable.ajax.url(`/Amount/GetAllPaymentsByRequestAmount?id=${id}`).load();
 };
 
@@ -4796,7 +4956,7 @@ const deletePayment = async (id) => {
 
 async function showEditPaymentModal(id) {
     FLshowLoading();
-    getAllBankAccounts();
+    await getAllBankAccounts();
     ModalToggle("reqAmountAttachModal", "show");
     
     try {
@@ -4810,7 +4970,6 @@ async function showEditPaymentModal(id) {
                 const amountEditIcon = document.querySelector("#reqAmountAttachModal #paymentAmountGroupEditIcon");
                 amountEditIcon.classList.remove("d-none");
             }
-            
             reqAmountAttachment = res.data.attachments;
             FileUpReload("reqAmountAttach");
             /*supplyFactorsSelectedIds = paymentData.paymentSupplyFactors.map(p => p.supplyFactorId);
@@ -5034,6 +5193,50 @@ const submitReqAmountAttach = async () => {
     }
 };
 
+
+const addBankAccountModal = document.getElementById("addBankAccountModal");
+function toggleAddBankAccountModal() {
+    mySer.emptyForm("addBankAccountForm");
+    ModalToggle(addBankAccountModal);
+}
+
+async function submitAddBankAccount() {
+    if (!await mySer.CheckValidForm("addBankAccountForm")) return;
+    
+    const cartNumber = addBankAccountModal.querySelector("#cartNumberId").value.trim();
+    const accountNumber = addBankAccountModal.querySelector("#accountNumberId").value.trim();
+    const shebaNumber = addBankAccountModal.querySelector("#shebaNumberId").value.trim();
+    
+    const hasValue = cartNumber || accountNumber || shebaNumber;
+    
+    if (!hasValue) {
+        addBankAccountModal.querySelector("#cartNumberId").focus();
+        toastifyError("حداقل یکی از موارد شماره کارت، شماره حساب یا شماره شبا باید وارد شود.");
+        return;
+    }
+    
+    
+    const model = mySer.convertFormToJSON("addBankAccountForm");
+    if (model.shebaNumber?.trim()) {
+        model.shebaNumber = "IR " + model.shebaNumber.trim();
+    }
+    
+    try {
+        FLshowLoading();
+        const res = await axios.post("/Accountancy/AddBankAccount", model);
+        if (res.status === 200) {
+            toastifySuccess("با موفقیت ثبت شد");
+            
+            toggleAddBankAccountModal();
+            await getAllBankAccounts(true);
+        }
+    } catch (err) {
+        toastifyError("خطای سرور");
+        console.log(err);
+    } finally {
+        FLshowLoading(false);
+    }
+}
 
 /*--------------------------------------------------------------------------------*/
 

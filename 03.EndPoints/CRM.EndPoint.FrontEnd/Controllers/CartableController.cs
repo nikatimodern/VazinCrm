@@ -194,7 +194,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     worksheet.Column(6).Style.NumberFormat.Format = "#,##0_-ريال";
                     worksheet.Column(7).Style.NumberFormat.Format = "#,##0_-ريال";
                     var preFactors = await GetPrefactors(model1, user, roles);
-                    foreach (var item in preFactors)
+                    foreach (var item in preFactors ?? [])
                     {
                         currentRow++;
                         if (currentRow % 2 == 0)
@@ -624,7 +624,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                                 .Count(a => a.pfid == pf.Id && a.Status != AccStatusEnum.تایید_شده),
 
                         NotAcceptedMdAccCount =
-                            db.Accountancies.AsNoTracking().ForPreFactor().OnlyManagingDirector()
+                            db.Accountancies.AsNoTracking().ForPreFactor().OnlyTamin()
                                 .Count(a => a.pfid == pf.Id && a.Status != AccStatusEnum.تایید_شده),
 
                         TotalAccCount =
@@ -666,7 +666,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     case 1:
                         query = query.Where(f => f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی && f.AcceptedManagingDirector == null)
                             .Where(pf =>
-                                db.Accountancies.ForPreFactor().OnlyManagingDirector()
+                                db.Accountancies.ForPreFactor().OnlyTamin()
                                     .Any(a => a.pfid == pf.Id && a.Status != AccStatusEnum.ثبت_اولیه)
                             );
 
@@ -692,11 +692,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                                 .Sum(f => f.AccType == AcEnum.واریزی ? f.credit : -f.BackWard) ?? 0,
 
                         NotAcceptedMdAccCount =
-                            db.Accountancies.AsNoTracking().ForPreFactor().OnlyManagingDirector()
+                            db.Accountancies.AsNoTracking().ForPreFactor().OnlyTamin()
                                 .Count(a => a.pfid == pf.Id && a.Status != AccStatusEnum.تایید_شده),
 
                         TotalAccCount =
-                            db.Accountancies.AsNoTracking().ForPreFactor().OnlyManagingDirector()
+                            db.Accountancies.AsNoTracking().ForPreFactor().OnlyTamin()
                                 .Count(a => a.pfid == pf.Id),
                     })
                     .ToListAsync();
@@ -781,7 +781,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 return BadRequest(e.Message);
             }
         }
-
 
         [HttpPost]
         public async Task<IActionResult> FactorPartial([FromBody] FactorVmodel model)

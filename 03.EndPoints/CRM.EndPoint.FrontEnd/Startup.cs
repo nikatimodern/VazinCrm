@@ -24,12 +24,13 @@ using Microsoft.Extensions.Hosting;
 using System;
 using System.Security.Claims;
 using CRM.EndPoint.FrontEnd.Services.PushServices;
-
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using CRM.EndPoint.FrontEnd.Services.AI;
 using Serilog;
+using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using WebPush;
 
 namespace CRM.EndPoint.FrontEnd {
@@ -46,7 +47,6 @@ namespace CRM.EndPoint.FrontEnd {
         {
             return EnCodeDeCode.Decrypt(EncodeText);
         }
-
 
 
         public void ConfigureServices(IServiceCollection services)
@@ -70,22 +70,21 @@ namespace CRM.EndPoint.FrontEnd {
 
             //All AddScoped
             services.AddDbContext<Sepidar1ContextDb>(op =>
-                op.UseSqlServer(Configuration.GetConnectionString("Sepidar1Connection")
-                ));
+                op.UseSqlServer(Configuration.GetConnectionString("Sepidar1Connection"))
+            );
 
             services.AddDbContext<Sepidar2ContextDb>(op =>
-                op.UseSqlServer(Configuration.GetConnectionString("Sepidar2Connection")
-                ));
+                op.UseSqlServer(Configuration.GetConnectionString("Sepidar2Connection"))
+            );
 
             services.AddDbContext<CRMContextDb>(op =>
-                op.UseSqlServer(_Decode(Configuration.GetConnectionString("CRMConnection"))
-                ));
+                op.UseSqlServer(_Decode(Configuration.GetConnectionString("CRMConnection")))
+            );
 
 
             services.AddDbContext<UserContextDb>(op =>
-                op.UseSqlServer(_Decode(Configuration.GetConnectionString("UserConnection")),
-                    op => op.EnableRetryOnFailure()
-                ));
+                op.UseSqlServer(_Decode(Configuration.GetConnectionString("UserConnection")), op => op.EnableRetryOnFailure())
+            );
 
             /*services.AddDbContext<IsabelleContextDb>(options =>
                 options.UseMySql(Configuration.GetConnectionString("IsabelleConnection"),
@@ -128,7 +127,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<DateTimeServices>();
             services.AddTransient<FileSaver>();
             services.AddScoped<Service>();
-            services.AddTransient<SmsServices>();
+            services.AddTransient<SmsService>();
             services.AddHttpContextAccessor();
             services.AddScoped<SepidarService>();
             services.AddSignalR();
@@ -152,6 +151,9 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<GapgptAi>();
             services.AddScoped<AiPrompts>();
 
+            services.AddSingleton<ISmsQueue, SmsQueue>();
+            services.AddHostedService<SmsBackgroundService>();
+
             services.AddSingleton<WebPushClient>(sp =>
             {
                 var handler = new SocketsHttpHandler
@@ -168,8 +170,7 @@ namespace CRM.EndPoint.FrontEnd {
                 return new WebPushClient(httpClient);
             });
 
-
-            services.AddHttpClient<ViraAi>(client =>
+ services.AddHttpClient<ViraAi>(client =>
             {
                 client.BaseAddress = new Uri("https://partai.gw.isahab.ir/");
                 client.DefaultRequestHeaders.Add("gateway-token", "eyJhbGciOiJIUzI1NiJ9.eyJzeXN0ZW0iOiJzYWhhYiIsImNyZWF0ZVRpbWUiOiIxNDA1MDIyMzE0MjA0MTAwNiIsInVuaXF1ZUZpZWxkcyI6eyJ1c2VybmFtZSI6Ijg3YzM0ZDI2LTE0OWQtNGNlYS1hMTNhLTg3YWNhZWNmZjg4MiJ9LCJncm91cE5hbWUiOiJiZmNmZDI5YzJmOGJkMjA5M2NjMWIzM2ZkNzUxZTkyNiIsImRhdGEiOnsic2VydmljZUlEIjoiNGVkNzY5ZTYtNDgxNC00ZGNiLWEzZWQtZTU1ZWI5Y2FiZjhlIiwicmFuZG9tVGV4dCI6IklvQ1VSIn19.Hvu7g2cRpMnmV7gz6yn09m_zMKBab-d9d5StzTvtT7I");
@@ -202,6 +203,14 @@ namespace CRM.EndPoint.FrontEnd {
                 client.DefaultRequestHeaders.Add("VIRA_API_KEY", "eyJhbGciOiJIUzI1NiJ9.eyJzeXN0ZW0iOiJzYWhhYiIsImNyZWF0ZVRpbWUiOiIxNDA1MDIyMzE0MjA0MTAwNiIsInVuaXF1ZUZpZWxkcyI6eyJ1c2VybmFtZSI6Ijg3YzM0ZDI2LTE0OWQtNGNlYS1hMTNhLTg3YWNhZWNmZjg4MiJ9LCJncm91cE5hbWUiOiJiZmNmZDI5YzJmOGJkMjA5M2NjMWIzM2ZkNzUxZTkyNiIsImRhdGEiOnsic2VydmljZUlEIjoiNGVkNzY5ZTYtNDgxNC00ZGNiLWEzZWQtZTU1ZWI5Y2FiZjhlIiwicmFuZG9tVGV4dCI6IklvQ1VSIn19.Hvu7g2cRpMnmV7gz6yn09m_zMKBab-d9d5StzTvtT7I");
                 client.DefaultRequestHeaders.Add("User", "admin");
                 client.DefaultRequestHeaders.Add("Pass", "admin@54321");
+            });
+
+            services.AddHttpClient<SmsService>(client =>
+            {
+                var smsConfig = Configuration?.GetSection("smsConfig").Get<appSettingSms>();
+
+                client.BaseAddress = new Uri(smsConfig?._Url);
+                client.DefaultRequestHeaders.Add("Api-Key", smsConfig?._apiKey);
             });
 
             services

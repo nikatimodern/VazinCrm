@@ -58,13 +58,13 @@
                             } else if (isCreator || Model.IsCreatorParent || Model.IsAdmin || Model.IsSalesAdmin) {
                                 <span class="d-inline-flex align-items-center justify-content-center gap-2">
 
-                                        @if (item.Status == AccStatusEnum.ثبت_اولیه || item.Status == AccStatusEnum.رد_شده) {
+                                    @if (item.Status == AccStatusEnum.ثبت_اولیه || item.Status == AccStatusEnum.رد_شده) {
                                         <button class="mp d-inline-flex align-items-center justify-content-center" data-title-right="حذف" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="delPayment('@item.Id', '@item.DealId')">
-                                                <i class="mp fa fa-trash"></i>
-                                            </button>
+                                            <i class="mp fa fa-trash"></i>
+                                        </button>
                                         <button class="mp d-inline-flex align-items-center justify-content-center" data-title-right="ویرایش" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="ShowEditModalInvoice('@item.Id', 1)">
-                                                <i class="mp fa fa-pencil"></i>
-                                            </button>
+                                            <i class="mp fa fa-pencil"></i>
+                                        </button>
                                     } else {
                                         <button class="buttonGray" onclick="showPayment('@item.Id')">مشاهده</button>
                                     }

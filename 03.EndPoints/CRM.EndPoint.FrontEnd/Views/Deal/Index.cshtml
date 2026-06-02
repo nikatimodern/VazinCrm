@@ -183,12 +183,12 @@
                             <div class="row g-1 w-100 mt-2 border-top">
                                 <div class="col-6 col-lg-4">
                                     <label for="acquaintanceWayDeal" style="font-size:12px;">طریقه آشنایی:</label>
-                                    <select id="acquaintanceWayDeal" name="cusAcquaintanceWay" class="w-100"></select>
+                                    <select id="acquaintanceWayDeal" name="cusAcquaintanceWay" class="w-100 show-dropdown-arrow"></select>
                                 </div>
 
                                 <div class="col-6 col-lg-4">
                                     <label for="workSenfIDDeal" style="font-size:12px;">صنف کاری:</label>
-                                    <select id="workSenfIDDeal" name="cusWorkSenf" class="w-100"></select>
+                                    <select id="workSenfIDDeal" name="cusWorkSenf" class="w-100 show-dropdown-arrow"></select>
                                 </div>
 
                                 <div class="col-12 col-lg-4">
@@ -641,7 +641,7 @@
                             <p class="fMedium" style="font-size: 12px; color: #333;">${text}</p>
                             ${isAdmin ? `<div class="d-flex align-items-center gap-1 mt-3">
                                 <label for="assignUserSuspendSelect${index}" class="flex-shrink-0" style="font-size: 11px">اختصاص به کارشناس</label>
-                                <select class="w-100 assignUser-suspendSelect" id="assignUserSuspendSelect${index}" >
+                                <select class="w-100 assignUser-suspendSelect show-dropdown-arrow" id="assignUserSuspendSelect${index}" >
                                 </select>
                                 <button id="assignUserSuspendBtn" class="flex-center">
                                     <svg style="width: 24px;color: #198754" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
@@ -652,16 +652,13 @@
 
                     card.insertAdjacentHTML("beforeend", suspendElm);
 
-                    if (isAdmin) {
-
+                    const suspendSelect = card.querySelector(`select.assignUser-suspendSelect`);
+                    if (isAdmin && suspendSelect) {
                         card.querySelector("#assignUserSuspendBtn")?.addEventListener("click", async () => {
-                            const selectElm = card.querySelector(`select.assignUser-suspendSelect`);
-                            const userId = selectElm.value;
-                            const userFullName = selectElm.selectedOptions[0].textContent;
+                            const userId = suspendSelect.value;
+                            const userFullName = suspendSelect.selectedOptions[0].textContent;
                             await assignUserSuspendDeal(item.id, userId, userFullName);
                         });
-
-                        const suspendSelect = card.querySelector(`.assignUser-suspendSelect`);
 
                         const options = item.userIdsForSuspend.map(u => ({ value: u.id, text: u.firstName }));
 
@@ -991,6 +988,7 @@
                 new Sortable(list, {
                     group: "sharedDeal",
                     draggable: ".deal-card",
+                    filter: ".suspend-deal",
                     sort: false,
                     animation: 150,
                     touchStartThreshold: 120,
@@ -1234,7 +1232,7 @@
             onHide: async () => await getPreFactorFromDeal(currentDealData.id, false, false),
             showTitle: "نمایش حذف‌شده‌ها",
             hideTitle: "مخفی کردن حذف‌شده‌ها",
-            titlePosition: "left"
+            titlePosition: "left",
         });
 
         document.getElementById("dealPreFactorsModal")?.addEventListener("hidden.bs.modal", () => {
