@@ -45,10 +45,10 @@ public class IssabelService(ILogger<IssabelService> logger) {
     {
         try
         {
-            logger.LogInformation("Audio retry started");
+            //logger.LogInformation("Audio retry started");
             for (var i = 0; i < 5; i++)
             {
-                logger.LogInformation("Audio attempt {Attempt}/5", i + 1);
+                logger.LogInformation("Audio retry started {Attempt}/5", i + 1);
                 try
                 {
                     var stream = await GetAudioFromIsabel(path);

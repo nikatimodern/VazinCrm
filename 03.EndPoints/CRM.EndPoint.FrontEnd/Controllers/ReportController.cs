@@ -40,7 +40,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly IssabelService issabelService;
 
         public ReportController(IHubContext<TaskHub> hub, UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db,
-            DateTimeServices dts, UserContextDb udb, Service GenService, IVeiwRenderService vrs, LogSystemService logSystemService, IssabelService issabelService)
+            DateTimeServices dts, UserContextDb udb, Service GenService, IVeiwRenderService vrs, LogSystemService logSystemService,
+            IssabelService issabelService)
         {
             this.hub = hub;
             this.userManager = userManager;
@@ -291,7 +292,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     qData = qData.Where(r =>
                         (r.ReportType == ReportTypeEnum.گزارش_رضایتمندی && r.UserCreatorID == user.Id) ||
-                         r.ReportType != ReportTypeEnum.گزارش_رضایتمندی
+                        r.ReportType != ReportTypeEnum.گزارش_رضایتمندی
                     );
                 }
 
@@ -385,7 +386,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             if (stream == null) return NotFound();
 
-            return File(stream, "audio/wav");
+            return File(stream, "audio/wav", Path.GetFileName(call.RecordingFilePath));
         }
     }
 }
