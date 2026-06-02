@@ -4747,7 +4747,7 @@ const getAllPreFactorList = async (search = "") => {
     preFactorListModal.querySelector("#preFactorListContainer").innerHTML = res.data;
 };
 
-preFactorListModal.querySelector("#preFactorListSearch").addEventListener("keyup", async (e) => {
+preFactorListModal?.querySelector("#preFactorListSearch")?.addEventListener("keyup", async (e) => {
     if (e.key === "Enter") {
         toggleElementsDisabled(e.target);
         await getAllPreFactorList(e.target.value.trim());
@@ -5469,7 +5469,7 @@ const deleteRequestAmount = async (id) => {
     });
 };
 
-addReqAmountModal.querySelector("select#requestAmountTypeId")?.addEventListener("change", async (e) => {
+addReqAmountModal?.querySelector("select#requestAmountTypeId")?.addEventListener("change", async (e) => {
     const type = Number(e.target.value);
     
     const ohWrapper = addReqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
@@ -5544,8 +5544,8 @@ document.addEventListener("input", (e) => {
 
 
 const audioModal = document.getElementById("audioModal");
-const playerAudioModal = audioModal.querySelector("audio");
-const sourceAudioModal = audioModal.querySelector("source");
+const playerAudioModal = audioModal?.querySelector("audio");
+const sourceAudioModal = audioModal?.querySelector("source");
 
 function playAudio(src) {
     sourceAudioModal.src = src;
@@ -5553,7 +5553,7 @@ function playAudio(src) {
     
     ModalToggle(audioModal);
 }
-audioModal.addEventListener("hidden.bs.modal", () => {
+audioModal?.addEventListener("hidden.bs.modal", () => {
     playerAudioModal.pause();
     playerAudioModal.currentTime = 0;
     sourceAudioModal.src = "";
