@@ -12,9 +12,6 @@ using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Http;
-using OpenAI;
-using OpenAI.Models;
-using OpenAI.Responses;
 using Renci.SshNet;
 
 namespace CRM.EndPoint.FrontEnd.Services.AI;
