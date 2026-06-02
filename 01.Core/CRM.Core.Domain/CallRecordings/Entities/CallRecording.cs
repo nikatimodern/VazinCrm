@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using CRM.Core.Domain.Reports.Entities;
 using CRM.Framework.Domain;
 
 namespace CRM.Core.Domain.CallRecordings.Entities;
@@ -15,4 +16,6 @@ public class CallRecording : BaseEntity {
     public string RecordingFilePath { get; set; }
     public string TranscriptionText { get; set; }
     public string SummaryText { get; set; }
+
+    public Report Report { get; set; }
 }

@@ -2950,6 +2950,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<bool>("AI")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("CallRecordingId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("CommentText")
                         .HasColumnType("nvarchar(max)");
 
@@ -3036,6 +3039,10 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CallRecordingId")
+                        .IsUnique()
+                        .HasFilter("[CallRecordingId] IS NOT NULL");
+
                     b.ToTable("Reports");
                 });
 
@@ -3089,9 +3096,6 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("ModifyDateTxt")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("Prepayment")
-                        .HasColumnType("bit");
-
                     b.Property<int>("RequestAmountType")
                         .HasColumnType("int");
 
@@ -3127,9 +3131,6 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.Property<string>("UserModifyID")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("Vosoled")
-                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 
@@ -3908,6 +3909,16 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Reports.Entities.Report", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.CallRecordings.Entities.CallRecording", "CallRecordings")
+                        .WithOne("Report")
+                        .HasForeignKey("CRM.Core.Domain.Reports.Entities.Report", "CallRecordingId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("CallRecordings");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountOrderHead", b =>
                 {
                     b.HasOne("CRM.Core.Domain.Orders.Entities.OrderHead", "OrderHead")
@@ -4000,6 +4011,11 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Accountancies.Entities.BankAccount", b =>
                 {
                     b.Navigation("Accountancies");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.CallRecordings.Entities.CallRecording", b =>
+                {
+                    b.Navigation("Report");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Carizos.Entities.Carizo", b =>

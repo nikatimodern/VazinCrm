@@ -1,5 +1,6 @@
 ﻿using CRM.Framework.Domain;
 using System;
+using CRM.Core.Domain.CallRecordings.Entities;
 using CRM.Core.Domain.Reports.Enum;
 
 namespace CRM.Core.Domain.Reports.Entities {
@@ -26,6 +27,8 @@ namespace CRM.Core.Domain.Reports.Entities {
         public string ReasonCancelTxt { get; set; }
 
         public bool AI { get; set; }
+        public Guid? CallRecordingId { get; set; }
+        public CallRecording CallRecordings { get; set; }
     }
 }
 

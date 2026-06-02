@@ -1820,15 +1820,15 @@ const regUtamin = async (pfId, type, dealId) => {
             }
             
             FLshowLoading(false);
-           // showSmsSendingToast();
+            // showSmsSendingToast();
             //toastifySuccess("به مسئول تامین واگذار شد");
         }
     } catch (err) {
         console.log(err);
-        toastifyError("خطای سرور")
+        toastifyError("خطای سرور");
         //setTimeout(async () => await regUtamin(id), 3000);
     } finally {
-        FLshowLoading(false)
+        FLshowLoading(false);
     }
 };
 
@@ -1843,7 +1843,7 @@ const resendRegUtamin = async (pfId, userTaminId, type, dealId) => {
                 await getPreFactorFromDeal(dealId);
             }
             //showSmsSendingToast();
-           // toastifyInfo("پیامک در صف ارسال قرار گرفت");
+            // toastifyInfo("پیامک در صف ارسال قرار گرفت");
             //toastifySuccess("ارسال مجدد انجام شد");
         }
     } catch (err) {
@@ -1883,7 +1883,7 @@ const SendToCustomer = async () => {
                 await getPreFactorFromDeal(dealIdSubmitSmsSendPf);
             }
             
-           // showSmsSendingToast();
+            // showSmsSendingToast();
             //toastifySuccess("ارسال انجام شد");
             $("#MobileModal").modal("toggle");
         }
@@ -4453,7 +4453,7 @@ function sortableMobileMenu() {
         });
     });
     
-     restoreMenuOrder();
+    restoreMenuOrder();
 }
 
 sortableMobileMenu();
@@ -5543,5 +5543,19 @@ document.addEventListener("input", (e) => {
 });
 
 
+const audioModal = document.getElementById("audioModal");
+const playerAudioModal = audioModal.querySelector("audio");
+const sourceAudioModal = audioModal.querySelector("source");
 
+function playAudio(src) {
+    sourceAudioModal.src = src;
+    playerAudioModal.load();
+    
+    ModalToggle(audioModal);
+}
+audioModal.addEventListener("hidden.bs.modal", () => {
+    playerAudioModal.pause();
+    playerAudioModal.currentTime = 0;
+    sourceAudioModal.src = "";
+});
 

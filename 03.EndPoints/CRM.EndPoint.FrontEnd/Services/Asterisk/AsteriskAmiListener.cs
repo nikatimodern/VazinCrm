@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,21 +9,16 @@ using CRM.Core.Domain.CallRecordings.Entities;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.AsteriskAmi;
-using CRM.EndPoint.FrontEnd.Services.AI;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Generics.Infrastructures.Sql;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Renci.SshNet;
 
-namespace CRM.EndPoint.FrontEnd.Services;
+namespace CRM.EndPoint.FrontEnd.Services.Asterisk;
 
 public class AsteriskAmiListener : BackgroundService {
     private readonly IHubContext<CallHub> _hubContext;
