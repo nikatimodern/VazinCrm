@@ -170,7 +170,7 @@
                     <button class="flex-center" data-title-right="نمایش فاکتور" style="color:var(--DarkColor);" onclick="ShowPreviewFactor('@item.Id')">
                         <i class="mp fa fa-eye"></i>
                     </button>
-                    @if (item.CustomerId != null) {
+                    @if (item.CustomerId != null && !Model.Rols.Contains("مشتری")) {
                         <button class="flex-center" data-title-right="پروفایل" style="color:var(--DarkColor);" onclick="openCustomerProfile('@item.CustomerId', '@item.PfactorSerialNumber')">
                             <i class="mp fa fa-user"></i>
                         </button>
