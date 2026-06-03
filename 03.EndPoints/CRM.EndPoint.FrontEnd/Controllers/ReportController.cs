@@ -229,7 +229,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             var html = await vrs.RenderToStringAsync("GetAllReportPartial", data,
                 new Dictionary<string, object> {
-                    { "PassType", ViewBag.PassType }
+                    { "PassType", ViewBag.PassType },
+                    { "IsManager", ViewBag.IsManager },
+                    { "CurrentUserId", ViewBag.CurrentUserId },
                 });
 
             return Ok(new { count = data.Count, html });
@@ -240,6 +242,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var rols = await userManager.GetRolesAsync(user);
             var qData = db.Reports.AsNoTracking().OrderByDescending(f => f.CreateDate).AsQueryable();
+
+            ViewBag.IsManager = rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش") || rols.Contains("مدیر عامل") || rols.Contains("مدیر اجرایی");
+            ViewBag.CurrentUserId = user.Id;
 
             if (dealId != null)
             {

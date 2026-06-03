@@ -24,8 +24,6 @@ public class AiService(
     DateTimeServices dts,
     IssabelService issabelService,
     ILogger<AiService> logger) {
-
-
     public async Task ProcessCallRecording(CallRecording callData)
     {
         var filePath = @"C:\Users\a.gorji\Desktop\test1.wav";
@@ -52,6 +50,7 @@ public class AiService(
             if (resSummary != null)
             {
                 callData.SummaryText = resSummary.summary?.Trim();
+                callData.Product = resSummary.product?.Trim();
                 if (string.IsNullOrEmpty(callData.CallerCustomerTxt))
                     callData.CallerCustomerTxt = resSummary.customer?.Trim();
             }
@@ -75,8 +74,6 @@ public class AiService(
             logger.LogError(ex, ex.Message);
         }
     }
-
-
 
 
     private async Task SaveCallDataToDatabase(CallRecording callData)
@@ -107,7 +104,7 @@ public class AiService(
                 CustomerId = callRecording.CallerCustomerId,
                 CustomerTxt = callRecording.CallerCustomerTxt,
                 CustomerCode = callRecording.CallerCustomerCode,
-                ReportText = callRecording.SummaryText + " *",
+                ReportText = callRecording.SummaryText + " **",
                 RegDate = DateTime.Now,
                 RegDateTxt = dts.GetDatePersian(),
                 RegTimeTxt = dts.GetNowTime("HH:mm:ss"),

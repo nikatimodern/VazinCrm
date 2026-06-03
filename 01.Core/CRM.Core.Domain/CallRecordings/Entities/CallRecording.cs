@@ -16,6 +16,7 @@ public class CallRecording : BaseEntity {
     public string RecordingFilePath { get; set; }
     public string TranscriptionText { get; set; }
     public string SummaryText { get; set; }
+    public string Product { get; set; }
 
     public Report Report { get; set; }
 }
