@@ -489,6 +489,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("ModifyDateTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Product")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("RecordingFilePath")
                         .HasColumnType("nvarchar(max)");
 

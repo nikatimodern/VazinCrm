@@ -233,7 +233,7 @@ public class AsteriskAmiListener : BackgroundService {
 
             if (!call.Answered || string.IsNullOrWhiteSpace(call.RecordingPath))
             {
-                logger.LogWarning("hangup: call not Answered or path is null: {FilePath}", call.RecordingPath);
+                logger.LogWarning("hangup: call not Answered or path is null: {FilePath}", call.RecordingPath?.Split("/").Last());
                 _calls.TryRemove(uniqueId, out _);
                 return;
             }
@@ -275,11 +275,11 @@ public class AsteriskAmiListener : BackgroundService {
                     callRecording.CallerCustomerCode = customer.CustomerCode;
                 }
 
-                logger.LogInformation("hangup and Enqueue: {FilePath}", call.RecordingPath);
+                logger.LogInformation("hangup and Enqueue: {FilePath}", call.RecordingPath.Split("/").Last());
                 _aiQueue?.Enqueue(callRecording);
             } else
             {
-                logger.LogInformation("hangup: the call is not external to internal: {FilePath}", call.RecordingPath);
+                logger.LogInformation("hangup: the call is not external to internal: {FilePath}", call.RecordingPath.Split("/").Last());
             }
 
             _calls.TryRemove(uniqueId, out _);
