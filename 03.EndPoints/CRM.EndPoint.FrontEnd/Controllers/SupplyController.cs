@@ -342,11 +342,28 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         public async Task<IActionResult> GetTotalAmountSupplyFactor(Guid supplierId)
         {
-            var totalAmount = await db.SupplyFactors
+            /*var totalAmount = await db.SupplyFactors
                 .AsNoTracking()
                 .Where(f => f.SupplierId == supplierId)
-                .SumAsync(f => f.Amount);
-            return Ok(totalAmount);
+                .SumAsync(f => f.Amount);*/
+
+
+            var grouped = await db.SupplyFactors
+                .AsNoTracking()
+                .Where(f => f.SupplierId == supplierId)
+                .GroupBy(f => f.OfficialType)
+                .Select(g => new {
+                    OfficialType = g.Key,
+                    TotalAmount = g.Sum(f => f.Amount)
+                })
+                .ToListAsync();
+
+            var data = new {
+                official = grouped.FirstOrDefault(x => x.OfficialType == 1)?.TotalAmount ?? 0,
+                notOfficial = grouped.FirstOrDefault(x => x.OfficialType == 0)?.TotalAmount ?? 0
+            };
+
+            return Ok(data);
         }
 
         public async Task<IActionResult> DeleteSupplyFactor(Guid id)

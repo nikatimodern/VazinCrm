@@ -5,7 +5,8 @@
 @{
     var passType = ViewBag.PassType; //1: requestAmount | 2: cartable MD
     var isFinancial = ViewBag.IsFinancial;
-    var isAdmin = ViewBag.isAdmin;
+    var isAdmin = ViewBag.IsAdmin;
+    var isManager = ViewBag.IsManager;
     var userId = ViewBag.UserId;
     var index = 0;
 }
@@ -20,6 +21,8 @@
         var customerNames = item.CustomerNames;
         var status = reqAmount.RequestStatus;
         var isFullyPaid = item.TotalPaymentAmount >= reqAmount.AcceptedAmount;
+        var canEditDocType = (isFinancial && reqAmount.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت) ||
+                             (passType == 2 && reqAmount.RequestStatus == RequestStatusEnum.در_انتظار_تایید_مدیرعامل);
 
         var bgCssClass = status switch {
             RequestStatusEnum.در_انتظار_پرداخت => "layered-green-light",
@@ -55,7 +58,20 @@
             <div class="layered-card__layer col-12 col-xl-3 d-flex flex-column justify-content-center align-items-center px-3 px-xl-2 py-2">
                 <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 text-center">
                     <span style="font-size: 13px; color: #777">نوع:</span>
-                    <span class="fbold">@reqAmount.RequestAmountTypeTxt (@reqAmount.DocTypeTxt)</span>
+                    <span class="fbold doc-type-wrapper">
+                        <span>@reqAmount.RequestAmountTypeTxt</span>
+                        <span class="doc-type-text">(@reqAmount.DocTypeTxt)</span>
+                        @if (canEditDocType) {
+                            <select class="doc-type-select w-auto form-select form-select-sm d-none">
+                                <option value="1" selected="@(reqAmount.DocType == RequestAmountDocTypeEnum.نقدی)">نقدی</option>
+                                <option value="2" selected="@(reqAmount.DocType == RequestAmountDocTypeEnum.چکی)">چکی</option>
+                            </select>
+
+                            <button type="button" class="doc-type-edit-btn">
+                                <svg style="width: 14px" viewBox="0 0 16 16" fill="currentColor"><path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.262a1.75 1.75 0 0 0 0-2.474Z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0 1 14 9v2.25A2.75 2.75 0 0 1 11.25 14h-6.5A2.75 2.75 0 0 1 2 11.25v-6.5A2.75 2.75 0 0 1 4.75 2H7a.75.75 0 0 1 0 1.5H4.75Z" /></svg>
+                            </button>
+                        }
+                    </span>
                 </div>
                 @if (reqAmount.RequestAmountType == RequestAmountTypeEnum.تنخواه && !string.IsNullOrEmpty(reqAmount.CashierTxt)) {
                     <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mt-2 text-center">
@@ -280,6 +296,5 @@
                 </div>
             }
         </div>
-
     }
 </div>

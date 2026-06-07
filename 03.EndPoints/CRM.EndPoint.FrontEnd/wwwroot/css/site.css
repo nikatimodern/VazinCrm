@@ -6116,3 +6116,24 @@ table tr.payment-vosoled > td {
   word-break: break-word;
   overflow-wrap: break-word;
 }
+
+
+.doc-type-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+
+.doc-type-edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: .15s;
+  color: #777;
+}
+
+
+.doc-type-edit-btn:hover {
+  color: #333;
+}

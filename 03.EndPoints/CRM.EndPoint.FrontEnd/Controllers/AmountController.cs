@@ -129,6 +129,40 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 return BadRequest(e.Message);
             }
         }
+        [HttpPost]
+        public async Task<IActionResult> ChangeDocTypeRequestAmount([FromBody] RequestAmount model)
+        {
+            if (model == null) return BadRequest();
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var oldItem = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id);
+                var item = await db.RequestAmounts.FirstOrDefaultAsync(x => x.Id == model.Id);
+                if (item == null) return NotFound();
+
+
+                item.DocType = model.DocType;
+                item.DocTypeTxt = model.DocType.ToString().Replace("_", " ");
+                item.ModifyDate = DateTime.Now;
+                item.ModifyDateTxt = dtService.GetDateTimePersian();
+                item.UserModify = user.FullName;
+                item.UserModifyID = user.Id;
+
+
+
+                await _logSystemService.LogChange(oldItem, item, LogActionEnum.ویرایش, user, ["RequestAmountSupplyFactor"]);
+
+                await db.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                await transaction.RollbackAsync();
+                return BadRequest(e.Message);
+            }
+        }
 
 
         [HttpPost]
@@ -639,7 +673,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     new Dictionary<string, object> {
                         { "PassType", passType },
                         { "IsFinancial", isFinancial },
-                        { "isAdmin", isAdmin },
+                        { "IsAdmin", isAdmin },
+                        { "IsManager", isManager },
                         { "UserId", user.Id }
                     }
                 );
