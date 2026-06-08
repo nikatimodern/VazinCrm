@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using CRM.Core.Domain.Reports.Entities;
 using CRM.Framework.Domain;
@@ -18,5 +19,13 @@ public class CallRecording : BaseEntity {
     public string SummaryText { get; set; }
     public string Product { get; set; }
 
+    [NotMapped] public List<CallParticipant> CallParticipant { get; set; } = [];
     public Report Report { get; set; }
+}
+
+public class CallParticipant {
+    public string Extension { get; set; }
+    public DateTime AnswerTime { get; set; }
+    public string UserId { get; set; }
+    public string UserFullName { get; set; }
 }

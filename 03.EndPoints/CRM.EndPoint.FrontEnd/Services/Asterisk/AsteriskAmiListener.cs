@@ -84,10 +84,6 @@ public class AsteriskAmiListener : BackgroundService {
     private async Task HandleEvent(Dictionary<string, string> ev)
     {
         var evt = Get(ev, "Event")?.ToLowerInvariant();
-        /*if (!test.Contains(evt.ToLowerInvariant()))
-        {
-            Console.WriteLine(evt);
-        }*/
 
         switch (evt)
         {
@@ -115,7 +111,8 @@ public class AsteriskAmiListener : BackgroundService {
         try
         {
             var uniqueId = Get(ev, "Uniqueid");
-            //var linkedId = Get(ev, "Linkedid");
+            var linkedId = Get(ev, "Linkedid") ?? uniqueId;
+
             var destUid = Get(ev, "DestUniqueid");
 
             if (string.IsNullOrEmpty(uniqueId) && string.IsNullOrEmpty(destUid)) return;
@@ -127,7 +124,11 @@ public class AsteriskAmiListener : BackgroundService {
             var dest = Get(ev, "DestCallerIDNum"); //DestExten
 
             var (srcIsInternal, destIsInternal) = GetDirection(src, dest);
-
+            if (destIsInternal)
+            {
+                var call = _calls.GetOrAdd(linkedId, new CallSessionModel { LinkedId = linkedId });
+                call.PendingDest = dest;
+            }
 
             var userDest = await GetUsers(dest);
             if (userDest == null) return;
@@ -154,6 +155,7 @@ public class AsteriskAmiListener : BackgroundService {
             if (variable != "MIXMONITOR_FILENAME") return;
 
             var uniqueId = Get(ev, "Uniqueid");
+            var linkedId = Get(ev, "Linkedid") ?? uniqueId;
             var filePath = Get(ev, "Value");
 
             if (string.IsNullOrWhiteSpace(uniqueId) || string.IsNullOrWhiteSpace(filePath))
@@ -162,9 +164,19 @@ public class AsteriskAmiListener : BackgroundService {
                 return;
             }
 
-            _calls.AddOrUpdate(uniqueId,
+            /*_calls.AddOrUpdate(uniqueId,
                 _ => new CallSessionModel {
                     UniqueId = uniqueId,
+                    RecordingPath = filePath
+                },
+                (_, existing) => {
+                    existing.RecordingPath = filePath;
+                    return existing;
+                }
+            );*/
+            _calls.AddOrUpdate(linkedId,
+                _ => new CallSessionModel {
+                    LinkedId = linkedId,
                     RecordingPath = filePath
                 },
                 (_, existing) => {
@@ -185,19 +197,28 @@ public class AsteriskAmiListener : BackgroundService {
     {
         try
         {
-            var uniqueid = Get(ev, "Uniqueid");
-            //var linkedId = Get(ev, "LinkedId");
+            var uniqueId = Get(ev, "Uniqueid");
+            var linkedId = Get(ev, "Linkedid") ?? uniqueId;
             var destUid = Get(ev, "DestUniqueid");
 
-            if (!string.IsNullOrEmpty(uniqueid) || !string.IsNullOrEmpty(destUid))
+            if (!string.IsNullOrEmpty(uniqueId) || !string.IsNullOrEmpty(destUid))
             {
-                await _hubContext.Clients.All.SendAsync("CallAnswered", !string.IsNullOrEmpty(destUid) ? destUid : uniqueid);
+                await _hubContext.Clients.All.SendAsync("CallAnswered", !string.IsNullOrEmpty(destUid) ? destUid : uniqueId);
             }
 
-            if (_calls.TryGetValue(uniqueid, out var call))
+            if (_calls.TryGetValue(linkedId, out var call))
             {
                 call.Answered = true;
-                call.AnswerTime = DateTime.Now;
+                call.AnswerTime ??= DateTime.Now;
+
+
+                var connectedLine = Get(ev, "ConnectedLineNum");
+                var exten = IsInternal(connectedLine) ? connectedLine : call.PendingDest;
+
+                if (!string.IsNullOrEmpty(exten) && !call.Participants.Any(p => p.Extension == exten))
+                {
+                    call.Participants.Add(new CallParticipant { Extension = exten, AnswerTime = DateTime.Now });
+                }
             }
         }
         catch (Exception ex)
@@ -212,8 +233,9 @@ public class AsteriskAmiListener : BackgroundService {
         try
         {
             var uniqueId = Get(ev, "Uniqueid");
-            //var linkedId = Get(ev, "LinkedId");
+            var linkedId = Get(ev, "Linkedid") ?? uniqueId;
             var destUid = Get(ev, "DestUniqueid");
+
 
             if (string.IsNullOrEmpty(uniqueId) && string.IsNullOrEmpty(destUid))
             {
@@ -221,20 +243,21 @@ public class AsteriskAmiListener : BackgroundService {
                 return;
             }
 
-
             await _hubContext.Clients.All.SendAsync("CallEnded", !string.IsNullOrEmpty(destUid) ? destUid : uniqueId);
 
-            if (!_calls.TryGetValue(uniqueId, out var call))
+            if (uniqueId != linkedId) return;
+
+            if (!_calls.TryGetValue(linkedId, out var call))
             {
                 //logger.LogWarning("hangup: this uniqueId not exist in _calls obj: {uniqueId}", uniqueId);
                 return;
             }
 
 
-            if (!call.Answered || string.IsNullOrWhiteSpace(call.RecordingPath))
+            if (!call.Answered || string.IsNullOrWhiteSpace(call.RecordingPath) || !call.Participants.Any())
             {
                 logger.LogWarning("hangup: call not Answered or path is null: {FilePath}", call.RecordingPath?.Split("/").Last());
-                _calls.TryRemove(uniqueId, out _);
+                _calls.TryRemove(linkedId, out _);
                 return;
             }
 
@@ -242,47 +265,59 @@ public class AsteriskAmiListener : BackgroundService {
             if (duration.TotalSeconds < 5)
             {
                 logger.LogInformation("Call ignored. Duration={Duration}", duration.TotalSeconds);
-                _calls.TryRemove(uniqueId, out _);
+                _calls.TryRemove(linkedId, out _);
                 return;
             }
 
             var src = GetSrc(ev);
-            var dest = Get(ev, "ConnectedLineNum");
+            //var dest = Get(ev, "ConnectedLineNum");
 
-            var (srcIsInternal, destIsInternal) = GetDirection(src, dest);
-            if (!srcIsInternal && destIsInternal)
-            {
-                var user = await GetUsers(dest);
-                if (user == null)
-                {
-                    logger.LogWarning("hangup: user is null: {dest}", dest);
-                }
-
-                var callRecording = new CallRecording {
-                    CallerNumber = src,
-                    DestinationNumber = dest,
-                    DestinationUserId = user?.Id,
-                    DestinationUserTxt = user?.FullName,
-                    RecordingFilePath = call.RecordingPath
-                };
-
-                var customer = GetCallerCustomer(src);
-                if (customer != null)
-                {
-                    var customerName = $"{customer.CompanyName} {customer.AgentName}".Trim();
-                    callRecording.CallerCustomerId = customer.Id;
-                    callRecording.CallerCustomerTxt = $"{customerName} (کد مشتری: {customer.CustomerCode})";
-                    callRecording.CallerCustomerCode = customer.CustomerCode;
-                }
-
-                logger.LogInformation("hangup and Enqueue: {FilePath}", call.RecordingPath.Split("/").Last());
-                _aiQueue?.Enqueue(callRecording);
-            } else
+            var srcIsInternal = IsInternal(src);
+            if (srcIsInternal)
             {
                 logger.LogInformation("hangup: the call is not external to internal: {FilePath}", call.RecordingPath.Split("/").Last());
+                return;
             }
 
-            _calls.TryRemove(uniqueId, out _);
+            var firstParticipant = call.Participants.First();
+            var user = await GetUsers(firstParticipant.Extension);
+            if (user == null)
+            {
+                logger.LogWarning("hangup: user is null: {dest}", firstParticipant.Extension);
+            }
+
+            var callRecording = new CallRecording {
+                CallerNumber = src,
+                DestinationNumber = firstParticipant.Extension,
+                DestinationUserId = user?.Id,
+                DestinationUserTxt = user?.FullName,
+                RecordingFilePath = call.RecordingPath,
+            };
+            foreach (var p in call.Participants)
+            {
+                var u = await GetUsers(p.Extension);
+                callRecording.CallParticipant?.Add(new CallParticipant {
+                    Extension = p.Extension,
+                    AnswerTime = p.AnswerTime,
+                    UserId = u?.Id,
+                    UserFullName = u?.FullName
+                });
+            }
+            var customer = GetCallerCustomer(src);
+            if (customer != null)
+            {
+                var customerName = $"{customer.CompanyName} {customer.AgentName}".Trim();
+                callRecording.CallerCustomerId = customer.Id;
+                callRecording.CallerCustomerTxt = $"{customerName} (کد مشتری: {customer.CustomerCode})";
+                callRecording.CallerCustomerCode = customer.CustomerCode;
+            }
+
+            logger.LogInformation("hangup and Enqueue: {FilePath}", call.RecordingPath.Split("/").Last());
+            Console.WriteLine(callRecording.ToString());
+            //_aiQueue?.Enqueue(callRecording);
+
+
+            _calls.TryRemove(linkedId, out _);
         }
         catch (Exception ex)
         {
@@ -302,9 +337,9 @@ public class AsteriskAmiListener : BackgroundService {
     private static (bool srcInternal, bool destInternal) GetDirection(string src, string dest)
     {
         return (IsInternal(src), IsInternal(dest));
-
-        bool IsInternal(string n) => !string.IsNullOrWhiteSpace(n) && n.Length <= 3;
     }
+
+    private static bool IsInternal(string n) => !string.IsNullOrWhiteSpace(n) && n.Length <= 3;
 
     private async Task<string> GetSrcText(bool isInternal, string src)
     {

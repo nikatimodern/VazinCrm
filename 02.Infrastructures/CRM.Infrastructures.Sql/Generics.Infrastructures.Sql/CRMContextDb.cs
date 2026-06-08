@@ -91,6 +91,7 @@ namespace Generics.Infrastructures.Sql {
         public DbSet<RequestAmountOrderHead> RequestAmountOrderHeads { get; set; }
         public DbSet<RequestAmountPayment> RequestAmountPayments { get; set; }
         public DbSet<CallRecording> CallRecordings { get; set; }
+        public DbSet<ReportParticipant> ReportParticipants { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

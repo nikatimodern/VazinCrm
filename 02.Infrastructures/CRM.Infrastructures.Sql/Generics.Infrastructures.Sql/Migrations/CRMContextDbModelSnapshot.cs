@@ -3049,6 +3049,37 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("Reports");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Reports.Entities.ReportParticipant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AnswerTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Extension")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ReportId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserFullName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReportId");
+
+                    b.ToTable("ReportParticipants");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3922,6 +3953,17 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Navigation("CallRecordings");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Reports.Entities.ReportParticipant", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Reports.Entities.Report", "Report")
+                        .WithMany("Participants")
+                        .HasForeignKey("ReportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Report");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountOrderHead", b =>
                 {
                     b.HasOne("CRM.Core.Domain.Orders.Entities.OrderHead", "OrderHead")
@@ -4113,6 +4155,11 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Products.Entities.ProductGroup", b =>
                 {
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Reports.Entities.Report", b =>
+                {
+                    b.Navigation("Participants");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", b =>

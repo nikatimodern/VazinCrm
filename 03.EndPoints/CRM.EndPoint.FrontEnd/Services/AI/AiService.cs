@@ -80,7 +80,7 @@ public class AiService(
     {
         try
         {
-            //logger.LogInformation("Saving call");
+
             await db.CallRecordings.AddAsync(callData);
             await db.SaveChangesAsync();
             logger.LogInformation("Call saved: {path}", callData.RecordingFilePath);
@@ -97,6 +97,7 @@ public class AiService(
         if (callRecording == null) return;
         try
         {
+
             var newReport = new Report {
                 RepTel = callRecording.CallerNumber,
                 UserCreatorID = callRecording.DestinationUserId,
@@ -114,7 +115,18 @@ public class AiService(
                 CallRecordingId = callRecording.Id,
             };
 
-            //logger.LogInformation("Saving report");
+            int order = 1;
+            foreach (var participant in callRecording.CallParticipant ?? [])
+            {
+                newReport.Participants?.Add(new ReportParticipant {
+                    Extension = participant.Extension,
+                    UserId = participant.UserId,
+                    UserFullName = participant.UserFullName,
+                    AnswerTime = participant.AnswerTime,
+                    SortOrder = order++
+                });
+            }
+
             await db.Reports.AddAsync(newReport);
 
             await db.SaveChangesAsync();
