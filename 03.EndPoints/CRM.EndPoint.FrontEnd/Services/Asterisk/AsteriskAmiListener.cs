@@ -262,7 +262,7 @@ public class AsteriskAmiListener : BackgroundService {
             }
 
             var duration = call.AnswerTime.HasValue ? DateTime.Now - call.AnswerTime.Value : TimeSpan.Zero;
-            if (duration.TotalSeconds < 5)
+            if (duration.TotalSeconds < 6)
             {
                 logger.LogInformation("Call ignored. Duration={Duration}", duration.TotalSeconds);
                 _calls.TryRemove(linkedId, out _);
@@ -313,9 +313,8 @@ public class AsteriskAmiListener : BackgroundService {
             }
 
             logger.LogInformation("hangup and Enqueue: {FilePath}", call.RecordingPath.Split("/").Last());
-            Console.WriteLine(callRecording.ToString());
-            //_aiQueue?.Enqueue(callRecording);
 
+            _aiQueue?.Enqueue(callRecording);
 
             _calls.TryRemove(linkedId, out _);
         }
