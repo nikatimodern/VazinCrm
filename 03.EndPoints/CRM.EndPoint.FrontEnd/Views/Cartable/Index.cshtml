@@ -311,7 +311,7 @@
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link position-relative" onclick="GetCheckFinancialExpert()" id="FinancialCheckTab" data-bs-target="#FinancialCheckTab-pane" type="button" role="tab">
+                            <button class="nav-link position-relative" onclick="GetAllCheckbooks()" id="FinancialCheckTab" data-bs-target="#FinancialCheckTab-pane" type="button" role="tab">
                                 چک ها
                                 <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
                             </button>
@@ -525,105 +525,64 @@
                         <div class="tab-pane fade border-0" id="FinancialCheckTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
 
                             <div>
-                                <div class="w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center align-items-md-center mb-3">
 
-                                    <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
-                                        تعداد: <span id="FinancialCheckCount"></span>
-                                    </div>
-
-                                    <div class="search-group col-12 order-5 order-md-0 col-md-5">
-                                        <input class="form-control" type="text" id="FinancialCheckSearchId" placeholder="جستجو..." />
-                                        <div class="search-icon">
-                                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <ul class="filter-switch filter-switch-sm">
-                                            <li class="filter-switch-item">
-                                                <input type="radio" name="financialCheckFilter" id="financialCheckFilterAll" value="-1" />
-                                                <label for="financialCheckFilterAll">همه</label>
-                                            </li>
-                                            <li class="filter-switch-item">
-                                                <input type="radio" name="financialCheckFilter" id="financialCheckFilter1" value="1" checked />
-                                                <label for="financialCheckFilter1">
-                                                    نزد ما
-                                                    <span class="badgeCircle filter-count-badge"></span>
-                                                </label>
-                                            </li>
-                                            <li class="filter-switch-item">
-                                                <input type="radio" name="financialCheckFilter" id="financialCheckFilter2" value="2" />
-                                                <label for="financialCheckFilter2">
-                                                    نزد بانک
-                                                    <span class="badgeCircle filter-count-badge"></span>
-                                                </label>
-                                            </li>
-                                            <li class="filter-switch-item">
-                                                <input type="radio" name="financialCheckFilter" id="financialCheckFilter3" value="3" />
-                                                <label for="financialCheckFilter3">
-                                                    وصول شده
-                                                    <span class="badgeCircle filter-count-badge"></span>
-                                                </label>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-
-                                @*
-                                <div class="">
-                                    <button class="buttonGreen2 d-flex align-items-center gap-2 mt-2 mb-1" style="padding: 4px 8px !important" onclick="showModalCheckbook()">
-                                        <svg style="width: 18px;" viewBox="0 0 20 20" fill="currentColor"><path d="M1 4.25a3.733 3.733 0 0 1 2.25-.75h13.5c.844 0 1.623.279 2.25.75A2.25 2.25 0 0 0 16.75 2H3.25A2.25 2.25 0 0 0 1 4.25ZM1 7.25a3.733 3.733 0 0 1 2.25-.75h13.5c.844 0 1.623.279 2.25.75A2.25 2.25 0 0 0 16.75 5H3.25A2.25 2.25 0 0 0 1 7.25ZM7 8a1 1 0 0 1 1 1 2 2 0 1 0 4 0 1 1 0 0 1 1-1h3.75A2.25 2.25 0 0 1 19 10.25v5.5A2.25 2.25 0 0 1 16.75 18H3.25A2.25 2.25 0 0 1 1 15.75v-5.5A2.25 2.25 0 0 1 3.25 8H7Z" /></svg>
-                                        <span style="line-height: 1">ثبت دسته چک</span>
-                                    </button>
-                                </div>*@
 
                                 <div class="w-100" id="FinancialCheckContentId" style="max-height:72dvh; overflow:auto;">
                                     <div id="checkbooks-section">
-                                        <h4 class="fbold mb-3 text-dark">دسته چک‌های شما</h4>
 
-                                        <div id="checkbooksContainer" />
-                                    </div>
-                                    <div id="checks-section" style="display: none;">
-                                        <div class="d-flex justify-content-between align-items-center mb-4">
-                                            <h4 id="selected-checkbook-title" class="fbold text-dark">لیست چک‌ها</h4>
+                                        @*<div class="w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center align-items-md-center mb-3">
+
+                                            <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
+                                                تعداد: <span id="FinancialCheckCount"></span>
+                                            </div>
+
+                                            <div class="search-group col-12 order-5 order-md-0 col-md-5">
+                                                <input class="form-control" type="text" id="FinancialCheckSearchId" placeholder="جستجو..." />
+                                                <div class="search-icon">
+                                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                                                </div>
+                                            </div>
+
                                             <div>
-                                                <button class="btn btn-success px-4" onclick="openNewCheckModal()">+ ثبت چک جدید</button>
-                                                <button class="btn btn-outline-secondary" onclick="backToCheckbooks()">بازگشت</button>
+                                            </div>
+                                        </div>*@
+                                        <h4 class="fbold my-2 text-dark">دسته چک‌ها</h4>
+
+                                        <div id="checkbooksContainer"></div>
+                                    </div>
+                                    <div id="checks-section" class="d-none">
+                                        <div class="d-flex justify-content-between align-items-center mb-4">
+                                            <h4 id="selected-checkbook-title" class="fw-bold text-dark">لیست چک‌ها</h4>
+                                            <div class="d-flex gap-2">
+                                                <button class="buttonGreen0" onclick="openNewCheckModal()">
+                                                    ثبت چک جدید
+                                                    <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
+                                                </button>
+                                                <button class="buttonCancel-white" onclick="backToCheckbooks()">
+                                                    بازگشت
+                                                    <svg style="width: 16px;transform: scaleX(-1)" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M12.5 9.75A2.75 2.75 0 0 0 9.75 7H4.56l2.22 2.22a.75.75 0 1 1-1.06 1.06l-3.5-3.5a.75.75 0 0 1 0-1.06l3.5-3.5a.75.75 0 0 1 1.06 1.06L4.56 5.5h5.19a4.25 4.25 0 0 1 0 8.5h-1a.75.75 0 0 1 0-1.5h1a2.75 2.75 0 0 0 2.75-2.75Z" clip-rule="evenodd" /></svg>
+                                                </button>
                                             </div>
                                         </div>
 
-                                        <div class="card shadow-sm border-0">
-                                            <div class="card-body">
-                                                <table id="checksTable" class="table table-hover align-middle" style="width:100%">
-                                                    <thead class="table-light">
-                                                    <tr>
-                                                        <th>شماره سریال</th>
-                                                        <th>مبلغ (ریال)</th>
-                                                        <th>تاریخ سررسید</th>
-                                                        <th>در وجه</th>
-                                                        <th>وضعیت</th>
-                                                        <th>عملیات</th>
-                                                    </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                    <tr>
-                                                        <td>۸۸۴۵12</td>
-                                                        <td>۲۵۰,۰۰۰,۰۰۰</td>
-                                                        <td>۱۴۰۵/۰۳/۲۰</td>
-                                                        <td>بازرگانی حسینی</td>
-                                                        <td>
-                                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle">نزد بانک</span>
-                                                        </td>
-                                                        <td>
-                                                            <button class="btn btn-sm btn-outline-primary" onclick="editCheck(12)">ویرایش</button>
-                                                        </td>
-                                                    </tr>
-                                                    </tbody>
-                                                </table>
-                                            </div>
+                                        <div>
+                                            <table id="checksTable" class="table-hover table table-bordered table-striped">
+                                                <thead>
+                                                <tr>
+                                                    <th>شماره سریال</th>
+                                                    <th>مبلغ <span style="font-size: 11px">(ريال)</span></th>
+                                                    <th>تاریخ سررسید</th>
+                                                    <th>در وجه</th>
+                                                    <th>توضیحات</th>
+                                                    <th>وضعیت</th>
+                                                    <th>عملیات</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
-
 
                                 </div>
                             </div>
@@ -1946,58 +1905,134 @@
             }
         };
 
-        const GetCheckFinancialExpert = async () => {
+        const GetAllCheckbooks = async () => {
             @*const val = document.getElementById("FinancialCheckSearchId")?.value.trim() ?? "";
             const type = document.querySelector("input[type='radio'][name='FinancialCheckFilter']:checked")?.value;
             if (type === undefined) return;*@;
 
             setUrlParams({ sub: "FinancialCheckTab" });
             ShowTab("#FinancialCheckTab");
-            @*try {
+            try {
                 FLshowLoading();
-                const res = await axios(``);
-                const data = res.data;
-                document.getElementById("FinancialCheckContentId").innerHTML = data.html;
-                document.getElementById("FinancialCheckCount").textContent = data.count;
-                updateFilterSwitchState({
-                    wrapperSelector: "#FinancialCheckTab-pane",
-                    filterData: res.data.filterCounts,
-                    currentFilterValue: type,
-                    searchValue: val,
-                    onChange: async () => {
-                        await GetCheckFinancialExpert();
-                    },
-                });
-                FLshowLoading(false);
+                const res = await axios(`/Check/GetAllCheckbooksPartial`);
+                document.getElementById("checkbooksContainer").innerHTML = res.data;
+
             } catch (err) {
                 console.log(err);
-            }*@;
+                document.getElementById("checkbooksContainer").innerHTML = "خطای دریافت اطلاعات";
+            } finally {
+                FLshowLoading(false);
+            }
         };
 
-        const showModalCheckbook = async () => {
+        function openNewCheckbookModal() {
             ModalToggle("checkbookModal");
-        };
+        }
 
         const submitCheckbookModal = async () => {
             if (!await mySer.CheckValidForm("checkbookForm")) return;
             const model = mySer.convertFormToJSON("checkbookForm");
-            console.log(model);
+
+            try {
+                FLshowLoading();
+                const res = await axios.post(`/Check/AddCheckbook`, model);
+                if (res.status === 200) {
+                    toastifySuccess("با موفقیت ثبت شد");
+                    await GetAllCheckbooks();
+                }
+            } catch (err) {
+                console.log(err);
+                toastifyError("خطای سرور");
+            } finally {
+                FLshowLoading(false);
+            }
+
             mySer.emptyForm("checkbookForm");
             ModalToggle("checkbookModal");
         };
 
-        function showChecks(checkbookName) {
-            const checkbooksSec = document.getElementById("checkbooks-section");
-            const checksSec = document.getElementById("checks-section");
-
-            checkbooksSec.style.display = "none";
-            document.getElementById("selected-checkbook-title").innerText = "لیست چک‌های " + checkbookName;
-            checksSec.style.display = "block";
+        let checksDataTable = null;
+        function initCheckbookTable() {
+            checksDataTable = $("#checksTable").DataTable({
+                paging: false,
+                scrollCollapse: true,
+                scrollY: "calc(100dvh - 400px)",
+                responsive: true,
+                ordering: false,
+                searching: false,
+                ajax: {
+                    url: "",
+                    dataSrc: "",
+                },
+                columns: [
+                    { data: "serialNumber" },
+                    {
+                        data: "amount",
+                        render: data => `<span class="direction-ltr">${data.toLocaleString()}</span>`,
+                    },
+                    { data: "dueDate" },
+                    { data: "payee" },
+                    { data: "description" },
+                    {
+                        data: "statusTxt",
+                        render: data => `<span class="badgeGray d-inline-flex">${data || "-"}</span>`,
+                    },
+                    {
+                        data: "id",
+                        render: data => `
+                            <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                                <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="editCheck('${data}')"><i class="fa fa-pencil"></i></button>
+                                <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deleteCheck('${data}')"><i class="fa fa-trash"></i></button>
+                            </div>
+                        `,
+                    },
+                ],
+                language: {
+                    emptyTable: "هیچ رکوردی موجود نمی باشد.",
+                    info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
+                    infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
+                    infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
+                    lengthMenu: "نمایش _MENU_ ردیف",
+                    loadingRecords: "در حال بارگزاری...",
+                    search: "",
+                    zeroRecords: "رکوردی با این مشخصات پیدا نشد",
+                    aria: {
+                        sortAscending: ": فعال سازی نمایش به صورت صعودی",
+                        sortDescending: ": فعال سازی نمایش به صورت نزولی",
+                    },
+                },
+                layout: null,
+                initComplete: () => {
+                    document.querySelectorAll("#checksTable_wrapper > div.row").forEach((row) => {
+                        row.classList.add("d-flex", "flex-wrap");
+                        row.classList.remove("row");
+                    });
+                },
+            });
         }
 
+
+        let checkbookId;
+        const showChecks = (id, checkbookName) => {
+            document.getElementById("checkbooks-section").classList.add("d-none");
+            document.getElementById("selected-checkbook-title").innerText = "لیست چک‌های " + checkbookName;
+            document.getElementById("checks-section").classList.remove("d-none");
+
+            checkbookId = id;
+
+            if (!checksDataTable) {
+                initCheckbookTable();
+            }
+
+            checksDataTable.clear().draw(); // TODO
+            checksDataTable.ajax.url(`/Check/GetCheckListByCheckbookId?checkbookId=${checkbookId}`).load();
+        };
+
+
         function backToCheckbooks() {
-            document.getElementById("checks-section").style.display = "none";
-            document.getElementById("checkbooks-section").style.display = "block";
+            checkbookId = null;
+            document.getElementById("checks-section").classList.add("d-none");
+            document.getElementById("checkbooks-section").classList.remove("d-none");
         }
 
 
@@ -2006,35 +2041,40 @@
         }
 
         async function submitCheckForm() {
-            if (!await mySer.CheckValidForm("checkbookForm")) return;
+            if (!await mySer.CheckValidForm("newCheckForm")) return;
             const model = mySer.convertFormToJSON("newCheckForm");
+            model.checkbookId = checkbookId;
+            try {
+                FLshowLoading();
+                const res = await axios.post(`/Check/AddCheck`, model);
+                if (res.status === 200) {
+                    toastifySuccess("با موفقیت ثبت شد");
+                    cancelNewCheckModal();
+                    checksDataTable.ajax.reload();
+                }
+            } catch (err) {
+                console.log(err);
+                toastifyError("خطای سرور");
+            } finally {
+                FLshowLoading(false);
+            }
+        }
 
-            console.log(model);
-            ModalToggle("newCheckModal");
+
+        function cancelNewCheckModal() {
+            ModalToggle("newCheckModal", "hide");
             mySer.emptyForm("newCheckForm");
         }
 
-        function openNewCheckbookModal() {
-            showModalCheckbook();
-        }
-
         function editCheck(id) {
-            console.log("ویرایش چک با شناسه: " + id);
+            console.log(id);
         }
 
-        @*// --- راه‌اندازی کتابخانه DataTables (تنها بخش وابسته به جی‌کوئری به اجبارِ خودِ کتابخانه) ---
-        $(document).ready(function () {
-            if ($.fn.DataTable) {
-                $("#checksTable").DataTable({
-                    "language": {
-                        "url": "https://cdn.datatables.net/plug-ins/1.13.5/i18n/fa.json",
-                    },
-                    "responsive": true,
-                });
-            }
+        function deleteCheck(id) {
+            console.log(id);
+        }
 
 
-        });*@;
         ////////////////////////////////////////////////////////
         const requestSelection = new SelectionManager({
             container: "#FinancialRequestContentId",
