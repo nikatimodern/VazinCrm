@@ -6119,7 +6119,6 @@ table tr.payment-vosoled > td {
 
 
 
-
 .checkbook-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -6127,24 +6126,72 @@ table tr.payment-vosoled > td {
   margin-top: 1.5rem;
 }
 
-.custom-checkbook-card {
-  background: #ffffff;
+.checkbook-card {
+  background: #fff;
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--checkbook-card-color);
+  border-top-width: 5px;
   padding: 1.5rem;
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-  position: relative;
+  transition: all 0.25s ease-in-out;
 }
 
-.custom-checkbook-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
-  border-color: #0d6efd;
+.checkbook-card .checkbook-card__title {
+  font-family: IRANSansBold;
+  margin-bottom: .5rem;
+  color: var(--checkbook-card-color);
+  transition: color 0.25s;
 }
+
+.checkbook-card .checkbook-card__badge {
+  background-color: var(--checkbook-card-bg);
+  color: var(--checkbook-card-color);
+  border: 1px solid var(--checkbook-card-bg-border);
+  padding: 0.25rem 0.5rem;
+  font-size: 11px;
+  font-family: IRANSansBold;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.checkbook-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
+  border-color: var(--checkbook-card-color);
+}
+
+.checkbook-card {
+  --checkbook-card-color: #475569;
+  --checkbook-card-bg: #f8fafc;
+  --checkbook-card-bg-border: #e2e8f0;
+}
+
+/* .checkbook-card:nth-child(4n+1) {
+  --theme-color: #2563eb;
+  --theme-bg: #eff6ff;
+  --theme-bg-border: #bfdbfe;
+}
+
+.checkbook-card:nth-child(4n+2) {
+  --theme-color: #0d9488;
+  --theme-bg: #f0fdfa;
+  --theme-bg-border: #ccfbf1;
+}
+
+.checkbook-card:nth-child(4n+3) {
+  --theme-color: #4f46e5;
+  --theme-bg: #f5f3ff;
+  --theme-bg-border: #ddd6fe;
+}
+
+.checkbook-card:nth-child(4n+4) {
+  --theme-color: #475569;
+  --theme-bg: #f8fafc;
+  --theme-bg-border: #e2e8f0;
+} */
 
 .card-add-dashed {
-  border: 2px dashed #cbd5e1;
+  border: 2px dashed #cbd5e1 !important;
   background: transparent;
   display: flex;
   flex-direction: column;
@@ -6155,6 +6202,7 @@ table tr.payment-vosoled > td {
 }
 
 .card-add-dashed:hover {
-  border-color: #0d6efd;
-  color: #0d6efd;
+  border-color: #475569 !important;
+  color: #475569;
+  transform: translateY(-4px);
 }
