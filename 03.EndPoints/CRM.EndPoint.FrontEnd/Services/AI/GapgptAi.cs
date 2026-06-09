@@ -33,8 +33,8 @@ public class GapgptAi {
             var requestBody = new {
                 //model = "gapgpt-qwen-3.6",
                 //model = "gapgpt-qwen-3.6-thinking",
-                //model= "gpt-5-mini",
-                model= "gemini-2.5-flash",
+                model= "gpt-5-mini",
+                //model= "gemini-2.5-flash",
                 messages = new[] {
                     new { role = "user", content = prompt }
                 }
