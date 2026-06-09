@@ -105,7 +105,7 @@ public class AiService(
                 CustomerId = callRecording.CallerCustomerId,
                 CustomerTxt = callRecording.CallerCustomerTxt,
                 CustomerCode = callRecording.CallerCustomerCode,
-                ReportText = callRecording.SummaryText + " **",
+                ReportText = callRecording.SummaryText + " ***",
                 RegDate = DateTime.Now,
                 RegDateTxt = dts.GetDatePersian(),
                 RegTimeTxt = dts.GetNowTime("HH:mm:ss"),
