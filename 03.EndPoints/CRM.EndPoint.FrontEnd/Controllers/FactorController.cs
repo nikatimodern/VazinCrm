@@ -985,7 +985,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private async Task<UpdateCustomerVModel> BuildAcceptingSmsViewModel(PreFactor pf, Customer cus, ASetting setting)
         {
             var workSenf = await db.BaseItems.Where(f => f.TypeCode == BaseItemEnum.صنف).OrderBy(f => f.Title).ToListAsync();
-            var bankAccList = await db.BankAccounts.Where(f => f.OfficialType == pf.OfficialType && f.Active).ToListAsync();
+            var bankAccList = await db.BankAccounts.Where(f =>
+                f.BankAccountType == BankAccountTypeEnum.شرکت
+                && f.OfficialType == pf.OfficialType
+                && f.Active
+            ).ToListAsync();
 
             ViewBag.isLogin = User.Identity?.Name == pf.Cus_Mobile ? 1 : 0;
 
@@ -2715,7 +2719,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 SerialNumber = pf.SerialNumber.ToString(),
                 ConnectionId = Request.GetSignalRConnectionId()
             });
-
 
 
             await hub.Clients.Groups("کارشناس تامین", "مدیر ارشد").SendAsync("countPreFactorToAccept");
