@@ -1020,7 +1020,7 @@
 
                                 <div class="unitAmountBoxPrefactorModal" style="display:flex;flex-direction:column;align-items:center; ">
                                     <label>مبلغ واحد</label>
-                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="unitAmount" required data-currency-hint="next"/>
+                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="unitAmount" required data-currency-hint="next" />
                                     <span class="currencyHint"></span>
                                 </div>
                                 <div class="totalAmountBoxPrefactorModal" style="display:flex;flex-direction:column;align-items:center; ">
@@ -1031,15 +1031,15 @@
                                     <label>&nbsp;</label>
                                     <button id="AddBtnId" class="buttonPurple2 align-items-center justify-content-center w-100" style="display: flex;height: 2rem;padding-inline: 10px" type="button" onclick="AddPfItem()">
                                         <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                                         </svg>
                                     </button>
                                     <div id="UpBtnId" style="display:none;flex-direction:column">
                                         <button class="buttonGreen3" onclick="UpPfItem()" type="button" style="display:flex;justify-content:center; align-items:center;height: 26px;padding-inline: 10px">
-                                            <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
+                                            <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                                         </button>
                                         <button class="buttonCancel2" onclick="UpPfItemCancel()" type="button" style="display:flex;justify-content:center; align-items:center;height: 26px;padding-inline: 10px">
-                                            <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                                            <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
                                         </button>
                                     </div>
                                 </div>
@@ -1267,7 +1267,7 @@
                                 </div>
                                 <div style="display:flex;flex-direction:column;align-items:center; ">
                                     <label>مبلغ واحد</label>
-                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="unitAmount" required data-currency-hint="next"/>
+                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="unitAmount" required data-currency-hint="next" />
                                     <span class="currencyHint"></span>
                                 </div>
                                 <div style="display:flex;flex-direction:column;align-items:center; ">
@@ -1506,7 +1506,7 @@
                         </div>
                         <div class="unitAmountBoxPrefactorModal" style="display:flex;flex-direction:column;align-items:center; ">
                             <label>مبلغ واحد (ریال)</label>
-                            <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="unitAmount" required data-currency-hint="next"/>
+                            <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="unitAmount" required data-currency-hint="next" />
                             <span class="currencyHint"></span>
                         </div>
                         <div class="totalAmountBoxPrefactorModal" style="display:flex;flex-direction:column;align-items:center; ">
@@ -3378,6 +3378,74 @@
     </div>
 </div>
 
+
+
+<!-- Modal checkbook -->
+<div class="modal fade" id="checkbookModal" tabindex="-1" role="dialog" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content col-12 p-2">
+            <div class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">ثبت دسته چک</div>
+            <div class="modal-body pb-2">
+                <form id="checkbookForm" class="d-flex flex-column gap-2">
+
+                    <div>
+                        <label for="bankName-checkbook">نام بانک:</label>
+                        <input name="bankName" class="form-control" id="bankName-checkbook" required />
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-1 mt-2">
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" data-bs-dismiss="modal">انصراف</button>
+                        <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitCheckbookModal()">ثبت</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="newCheckModal" tabindex="-1" aria-hidden="true" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">ثبت برگه چک جدید</h5>
+                <button type="button" class="btn-close m-0" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newCheckForm">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">شماره سریال برگه چک *</label>
+                        <input type="text" class="form-control" name="serialNumber" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">مبلغ (ریال) *</label>
+                        <input type="number" class="form-control" name="amount" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">تاریخ سررسید *</label>
+                        <input type="text" class="form-control" name="dueDate" placeholder="۱۴۰۵/۰۴/۰۱" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">در وجه</label>
+                        <input type="text" class="form-control" name="payee">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">وضعیت چک</label>
+                        <select class="form-select" name="status">
+                            <option value="1">نزد ما</option>
+                            <option value="2">نزد بانک</option>
+                            <option value="5">انتقالی</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-success px-4" onclick="submitCheckForm()">ذخیره چک</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 
