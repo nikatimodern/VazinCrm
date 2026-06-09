@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -80,7 +81,6 @@ public class AiService(
     {
         try
         {
-
             await db.CallRecordings.AddAsync(callData);
             await db.SaveChangesAsync();
             logger.LogInformation("Call saved: {path}", callData.RecordingFilePath);
@@ -97,7 +97,6 @@ public class AiService(
         if (callRecording == null) return;
         try
         {
-
             var newReport = new Report {
                 RepTel = callRecording.CallerNumber,
                 UserCreatorID = callRecording.DestinationUserId,
@@ -113,12 +112,13 @@ public class AiService(
                 ReportTypeTxt = nameof(ReportTypeEnum.گزارش_تماس_های_ورودی).Replace("_", " "),
                 AI = true,
                 CallRecordingId = callRecording.Id,
+                Participants = new List<ReportParticipant>()
             };
 
             int order = 1;
             foreach (var participant in callRecording.CallParticipant ?? [])
             {
-                newReport.Participants?.Add(new ReportParticipant {
+                newReport.Participants.Add(new ReportParticipant {
                     Extension = participant.Extension,
                     UserId = participant.UserId,
                     UserFullName = participant.UserFullName,
