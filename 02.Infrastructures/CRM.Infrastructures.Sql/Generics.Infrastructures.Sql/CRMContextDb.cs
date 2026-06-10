@@ -30,6 +30,7 @@ using CRM.Core.Domain.WebPushSubscriptions.Entities;
 using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.RequestAmounts.Entities;
 using CRM.Core.Domain.Cashes.Entities;
+using CRM.Core.Domain.Checks.Entities;
 
 namespace Generics.Infrastructures.Sql {
     public class CRMContextDb : DbContext {
@@ -89,6 +90,8 @@ namespace Generics.Infrastructures.Sql {
         public DbSet<BaseCenterCash> BaseCenterCashes { get; set; }
         public DbSet<RequestAmountOrderHead> RequestAmountOrderHeads { get; set; }
         public DbSet<RequestAmountPayment> RequestAmountPayments { get; set; }
+        public DbSet<Checkbook> Checkbooks { get; set; }
+        public DbSet<Check> Checks { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -141,6 +144,8 @@ namespace Generics.Infrastructures.Sql {
             modelBuilder.Entity<Cash>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<RequestAmountOrderHead>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<RequestAmountPayment>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<Checkbook>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<Check>().HasQueryFilter(f => f.IsDeleted == false);
 
 
             modelBuilder.Entity<Order>().Ignore(f => f.Row);

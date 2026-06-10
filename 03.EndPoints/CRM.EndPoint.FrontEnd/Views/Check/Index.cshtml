@@ -1,0 +1,54 @@
+@model List<CRM.EndPoint.FrontEnd.Models.ViewModel.Check.CheckbookVModel>
+
+@{
+    Layout = "_Layout";
+    var hasCheckbookId = Context.Request.Query.ContainsKey("cBook");
+}
+
+<div>
+    <div id="checkbooks-section" class="@(hasCheckbookId ? "d-none" : "")">
+        <h4 class="fbold text-dark">دسته چک‌ها</h4>
+
+        <div id="checkbooksContainer">
+            <partial name="GetAllCheckbooksPartial" model="Model" />
+        </div>
+    </div>
+    <div id="checks-section" class="@(hasCheckbookId ? "" : "d-none")">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 id="selected-checkbook-title" class="fbold text-dark">لیست چک‌ها</h4>
+            <div class="d-flex gap-2">
+                <button class="buttonGreen0" onclick="openNewCheckModal()">
+                    ثبت چک جدید
+                    <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
+                </button>
+                <button class="buttonCancel-white" onclick="backToCheckbooks()">
+                    بازگشت
+                    <svg style="width: 16px;transform: scaleX(-1)" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M12.5 9.75A2.75 2.75 0 0 0 9.75 7H4.56l2.22 2.22a.75.75 0 1 1-1.06 1.06l-3.5-3.5a.75.75 0 0 1 0-1.06l3.5-3.5a.75.75 0 0 1 1.06 1.06L4.56 5.5h5.19a4.25 4.25 0 0 1 0 8.5h-1a.75.75 0 0 1 0-1.5h1a2.75 2.75 0 0 0 2.75-2.75Z" clip-rule="evenodd" /></svg>
+                </button>
+            </div>
+        </div>
+
+        <div>
+            <table id="checksTable" class="table-hover table table-bordered table-striped">
+                <thead>
+                <tr>
+                    <th>شماره سریال</th>
+                    <th>مبلغ <span style="font-size: 11px">(ريال)</span></th>
+                    <th>تاریخ سررسید</th>
+                    <th>در وجه</th>
+                    <th>توضیحات</th>
+                    <th>وضعیت</th>
+                    <th>عملیات</th>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/check.js?v=3.13.2"></script>
+}
+

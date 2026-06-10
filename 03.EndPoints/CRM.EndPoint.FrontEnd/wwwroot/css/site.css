@@ -6137,3 +6137,95 @@ table tr.payment-vosoled > td {
 .doc-type-edit-btn:hover {
   color: #333;
 }
+
+
+
+
+.checkbook-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.checkbook-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid var(--checkbook-card-color);
+  border-top-width: 8px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.25s ease-in-out;
+  position: relative;
+}
+
+.checkbook-card .checkbook-card__title {
+  font-family: IRANSansBold;
+  margin-bottom: .5rem;
+  color: var(--checkbook-card-color);
+  transition: color 0.25s;
+}
+
+.checkbook-card .checkbook-card__badge {
+  background-color: var(--checkbook-card-bg);
+  color: var(--checkbook-card-color);
+  border: 1px solid var(--checkbook-card-bg-border);
+  padding: 0.25rem 0.5rem;
+  font-size: 11px;
+  font-family: IRANSansBold;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.checkbook-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
+  border-color: var(--checkbook-card-color);
+}
+
+.checkbook-card {
+  --checkbook-card-color: #475569;
+  --checkbook-card-bg: #f8fafc;
+  --checkbook-card-bg-border: #e2e8f0;
+}
+
+/* .checkbook-card:nth-child(4n+1) {
+  --checkbook-card-color: #2563eb;
+  --checkbook-card-bg: #eff6ff;
+  --checkbook-card-bg-border: #bfdbfe;
+}
+
+.checkbook-card:nth-child(4n+2) {
+  --checkbook-card-color: #0d9488;
+  --checkbook-card-bg: #f0fdfa;
+  --checkbook-card-bg-border: #ccfbf1;
+}
+
+.checkbook-card:nth-child(4n+3) {
+  --checkbook-card-color: #4f46e5;
+  --checkbook-card-bg: #f5f3ff;
+  --checkbook-card-bg-border: #ddd6fe;
+}
+
+.checkbook-card:nth-child(4n+4) {
+  --checkbook-card-color: #475569;
+  --checkbook-card-bg: #f8fafc;
+  --checkbook-card-bg-border: #e2e8f0;
+} */
+
+.card-add-dashed {
+  border: 2px dashed #cbd5e1 !important;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  color: #64748b;
+}
+
+.card-add-dashed:hover {
+  border-color: #475569 !important;
+  color: #475569;
+  transform: translateY(-4px);
+}

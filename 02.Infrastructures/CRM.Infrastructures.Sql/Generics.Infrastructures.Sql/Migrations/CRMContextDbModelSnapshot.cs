@@ -1021,6 +1021,120 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("MainChats", (string)null);
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Checks.Entities.Check", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("CheckbookId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DueDate")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DueDateMiladi")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Payee")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SerialNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StatusTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CheckbookId");
+
+                    b.ToTable("Checks");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Checks.Entities.Checkbook", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BankName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Checkbooks");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Cities.Entities.City", b =>
                 {
                     b.Property<int>("Id")
@@ -3675,6 +3789,17 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Checks.Entities.Check", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Checks.Entities.Checkbook", "Checkbook")
+                        .WithMany("Checks")
+                        .HasForeignKey("CheckbookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Checkbook");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Cities.Entities.City", b =>
                 {
                     b.HasOne("CRM.Core.Domain.States.Entities.State", "State")
@@ -3942,6 +4067,11 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Chats.Entities.MainChat", b =>
                 {
                     b.Navigation("Chats");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Checks.Entities.Checkbook", b =>
+                {
+                    b.Navigation("Checks");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Company.Entities.Company", b =>
