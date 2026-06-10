@@ -192,6 +192,8 @@
                 console.log(err);
                 if (err.status === 404) {
                     toastifyError(err.response.data);
+                } else {
+                    toastifyError("خطای سرور");
                 }
             } finally {
                 FLshowLoading(false);
