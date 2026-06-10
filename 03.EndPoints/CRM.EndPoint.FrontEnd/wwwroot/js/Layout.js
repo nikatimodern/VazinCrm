@@ -1820,15 +1820,15 @@ const regUtamin = async (pfId, type, dealId) => {
             }
             
             FLshowLoading(false);
-           // showSmsSendingToast();
+            // showSmsSendingToast();
             //toastifySuccess("به مسئول تامین واگذار شد");
         }
     } catch (err) {
         console.log(err);
-        toastifyError("خطای سرور")
+        toastifyError("خطای سرور");
         //setTimeout(async () => await regUtamin(id), 3000);
     } finally {
-        FLshowLoading(false)
+        FLshowLoading(false);
     }
 };
 
@@ -1843,7 +1843,7 @@ const resendRegUtamin = async (pfId, userTaminId, type, dealId) => {
                 await getPreFactorFromDeal(dealId);
             }
             //showSmsSendingToast();
-           // toastifyInfo("پیامک در صف ارسال قرار گرفت");
+            // toastifyInfo("پیامک در صف ارسال قرار گرفت");
             //toastifySuccess("ارسال مجدد انجام شد");
         }
     } catch (err) {
@@ -1883,7 +1883,7 @@ const SendToCustomer = async () => {
                 await getPreFactorFromDeal(dealIdSubmitSmsSendPf);
             }
             
-           // showSmsSendingToast();
+            // showSmsSendingToast();
             //toastifySuccess("ارسال انجام شد");
             $("#MobileModal").modal("toggle");
         }
@@ -4453,7 +4453,7 @@ function sortableMobileMenu() {
         });
     });
     
-     restoreMenuOrder();
+    restoreMenuOrder();
 }
 
 sortableMobileMenu();
@@ -5306,7 +5306,12 @@ async function setupSelectOptionsReqAmount(targetId) {
             selectSupplier.disable();
             const totalSupplyFactorAmount = await getTotalAmountSupplyFactor(supplierId);
             if (totalSupplyFactorAmount !== null) {
-                totalAmountSupFactorElm.innerHTML = `جمع مبالغ فاکتور: <b style="color: #333">${totalSupplyFactorAmount?.toLocaleString()}</b> ريال`;
+                totalAmountSupFactorElm.innerHTML = `
+                    <div class="d-flex flex-column" style="font-size: 12px">
+                         <span>جمع مبالغ فاکتور رسمی: <b style="color: #333">${totalSupplyFactorAmount?.official?.toLocaleString()}</b> ريال</span>
+                         <span>جمع مبالغ فاکتور غیررسمی: <b style="color: #333">${totalSupplyFactorAmount?.notOfficial?.toLocaleString()}</b> ريال</span>
+                    </div>
+                `;
             }
             selectSupplier.enable();
         },
@@ -5508,6 +5513,66 @@ addReqAmountModal?.querySelector("select#requestAmountTypeId")?.addEventListener
     toggleField(supplierWrapper, type === 1 || type === 2);
     toggleField(cashierWrapper, type === 3);
 });
+
+const closeDocTypeSelect = (select) => {
+    select.classList.add("d-none");
+    const wrapper = select.closest(".doc-type-wrapper");
+    wrapper.querySelector(".doc-type-text").classList.remove("d-none");
+};
+
+document.addEventListener("click", e => {
+    const editBtn = e.target.closest(".doc-type-edit-btn");
+    
+    if (editBtn) {
+        document.querySelectorAll("select.doc-type-select:not(.d-none)").forEach(closeDocTypeSelect);
+        
+        const card = editBtn.closest(".layered-card");
+        const select = card.querySelector(".doc-type-select");
+        
+        card.querySelector(".doc-type-text").classList.add("d-none");
+        
+        select.classList.remove("d-none");
+        select.focus();
+        
+        return;
+    }
+    
+    document.querySelectorAll("select.doc-type-select:not(.d-none)").forEach(select => {
+        if (select.closest(".doc-type-wrapper").contains(e.target)) return;
+        
+        closeDocTypeSelect(select);
+    });
+});
+
+document.addEventListener("change", async (e) => {
+    if (!e.target.classList.contains("doc-type-select")) return;
+    
+    const select = e.target;
+    const card = select.closest(".layered-card");
+    
+    const id = card.dataset.id;
+    const docType = Number(select.value);
+    select.disabled = true;
+    
+    try {
+        const res = await axios.post("/Amount/ChangeDocTypeRequestAmount", { id, docType });
+        if (res.status === 200) {
+            const selectedText = select.options[select.selectedIndex].text;
+            const docTypeText = card.querySelector(".doc-type-text");
+            docTypeText.textContent = `(${selectedText})`;
+            
+            select.classList.add("d-none");
+            docTypeText.classList.remove("d-none");
+        }
+        
+    } catch (err) {
+        console.log(err);
+        toastifyError("خطای سرور");
+    } finally {
+        select.disabled = false;
+    }
+});
+
 
 /*--------------------------------------------------------------------------------*/
 
