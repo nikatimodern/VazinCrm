@@ -6130,10 +6130,11 @@ table tr.payment-vosoled > td {
   background: #fff;
   border-radius: 12px;
   border: 1px solid var(--checkbook-card-color);
-  border-top-width: 5px;
+  border-top-width: 8px;
   padding: 1.5rem;
   cursor: pointer;
   transition: all 0.25s ease-in-out;
+  position: relative;
 }
 
 .checkbook-card .checkbook-card__title {
@@ -6167,27 +6168,27 @@ table tr.payment-vosoled > td {
 }
 
 /* .checkbook-card:nth-child(4n+1) {
-  --theme-color: #2563eb;
-  --theme-bg: #eff6ff;
-  --theme-bg-border: #bfdbfe;
+  --checkbook-card-color: #2563eb;
+  --checkbook-card-bg: #eff6ff;
+  --checkbook-card-bg-border: #bfdbfe;
 }
 
 .checkbook-card:nth-child(4n+2) {
-  --theme-color: #0d9488;
-  --theme-bg: #f0fdfa;
-  --theme-bg-border: #ccfbf1;
+  --checkbook-card-color: #0d9488;
+  --checkbook-card-bg: #f0fdfa;
+  --checkbook-card-bg-border: #ccfbf1;
 }
 
 .checkbook-card:nth-child(4n+3) {
-  --theme-color: #4f46e5;
-  --theme-bg: #f5f3ff;
-  --theme-bg-border: #ddd6fe;
+  --checkbook-card-color: #4f46e5;
+  --checkbook-card-bg: #f5f3ff;
+  --checkbook-card-bg-border: #ddd6fe;
 }
 
 .checkbook-card:nth-child(4n+4) {
-  --theme-color: #475569;
-  --theme-bg: #f8fafc;
-  --theme-bg-border: #e2e8f0;
+  --checkbook-card-color: #475569;
+  --checkbook-card-bg: #f8fafc;
+  --checkbook-card-bg-border: #e2e8f0;
 } */
 
 .card-add-dashed {

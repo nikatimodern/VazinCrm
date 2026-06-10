@@ -184,7 +184,10 @@
                             <a class="menuLink text-white" href="/Amount/RequestAmount">
                                 <li>ثبت درخواست وجه</li>
                             </a>
-                            @*                             <a class="menuLink text-white" href="/Supply/Payment">
+                            <a class="menuLink text-white Admin ManagingDirector ExecutiveDirector FinancialExpert FinancialAdmin" href="/Check/Index">
+                                <li>چک ها</li>
+                            </a>
+                            @* <a class="menuLink text-white" href="/Supply/Payment">
                                 <li>ثبت پرداختی</li>
                             </a> *@
                         </ul>
@@ -383,7 +386,7 @@
                         </a>
                     </ul>
                 </div>
-                <div class="w-100 has-submenu Admin ManagingDirector ExecutiveDirector TaminExpert TaminAdmin FinancialExpert FinancialAdmin" style="display:none">
+                <div class="w-100 has-submenu Admin ManagingDirector ExecutiveDirector TaminExpert TaminAdmin FinancialExpert FinancialAdmin TanKhah" style="display:none">
                     <span data-tooltip-left="خزانه" class="menuBox">
                         <svg style="width: 18px" fill="currentColor" viewBox="0 0 16 16"><path d="M9.778 9.414A2 2 0 1 1 6.95 6.586a2 2 0 0 1 2.828 2.828" /><path d="M2.5 0A1.5 1.5 0 0 0 1 1.5V3H.5a.5.5 0 0 0 0 1H1v3.5H.5a.5.5 0 0 0 0 1H1V12H.5a.5.5 0 0 0 0 1H1v1.5A1.5 1.5 0 0 0 2.5 16h12a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 14.5 0zm3.036 4.464 1.09 1.09a3 3 0 0 1 3.476 0l1.09-1.09a.5.5 0 1 1 .707.708l-1.09 1.09c.74 1.037.74 2.44 0 3.476l1.09 1.09a.5.5 0 1 1-.707.708l-1.09-1.09a3 3 0 0 1-3.476 0l-1.09 1.09a.5.5 0 1 1-.708-.708l1.09-1.09a3 3 0 0 1 0-3.476l-1.09-1.09a.5.5 0 1 1 .708-.708M14 6.5v3a.5.5 0 0 1-1 0v-3a.5.5 0 0 1 1 0" /></svg>
                         <span style="font-size:14px" class="flex-grow-1 d-flex justify-content-between">
@@ -392,12 +395,15 @@
                         </span>
                     </span>
 
-                    <ul class="submenu text-white">
+                    <ul class="submenu text-white  Admin ManagingDirector ExecutiveDirector TaminExpert TaminAdmin FinancialExpert FinancialAdmin">
                         <a class="menuLink text-white" href="/Supply/SupplyFactor">
                             <li>ثبت فاکتور تامین</li>
                         </a>
                         <a class="menuLink text-white" href="/Amount/RequestAmount">
                             <li>ثبت درخواست وجه</li>
+                        </a>
+                        <a class="menuLink text-white Admin ManagingDirector ExecutiveDirector FinancialExpert FinancialAdmin" href="/Check/Index">
+                            <li>چک ها</li>
                         </a>
                         @*   <a class="menuLink text-white" href="/Supply/Payment">
                                 <li>ثبت پرداختی</li>
@@ -3394,7 +3400,7 @@
                     </div>
 
                     <div class="d-flex justify-content-center gap-1 mt-2">
-                        <button type="button" class="buttonCancel2" style="padding-block: 4px" data-bs-dismiss="modal">انصراف</button>
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="toggleNewCheckbookModal()">انصراف</button>
                         <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitCheckbookModal()">ثبت</button>
                     </div>
                 </form>
@@ -3430,7 +3436,7 @@
                     <div>
                         <label>وضعیت چک</label>
                         <select class="form-select form-select-sm valueNumber" name="status">
-                            <option value="0">سفید</option>
+                            @* <option value="0">سفید</option> *@
                             <option value="1">نزد ما</option>
                             <option value="2">نزد بانک</option>
                             <option value="5">انتقالی</option>
