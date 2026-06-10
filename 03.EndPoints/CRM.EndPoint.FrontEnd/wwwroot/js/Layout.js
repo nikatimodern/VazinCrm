@@ -144,43 +144,25 @@ connection.on("RefreshTasks", async () => {
     }
 });
 
-let preventGetRemind = false;
-const toggleEl = document.getElementById("notification-icon");
-const dropdown = document.getElementById("notification-dropdown");
-showNotificationDropdown();
+
+const notifDropdown = Dropdown.setup({
+    toggle: document.getElementById("notification-icon"),
+    content: document.getElementById("notification-dropdown"),
+    
+    async onOpen() {
+        await getRemind();
+    },
+    
+    options: {
+        originalDisplay: "flex",
+        effect: "zoom",
+        zIndex: 100,
+        transitionDuration: 200
+    }
+});
 
 function closeNotification() {
-    if (!toggleEl) return;
-    toggleEl.dropdownInstance.close();
-    preventGetRemind = false;
-}
-
-function showNotificationDropdown() {
-    if (!toggleEl) return;
-    toggleEl.addEventListener("click", async (e) => {
-        await getRemind();
-        preventGetRemind = true;
-        e.stopPropagation();
-        
-        if (!toggleEl.dropdownInstance) {
-            toggleEl.dropdownInstance = new Dropdown({
-                button: toggleEl,
-                content: dropdown,
-                originalDisplay: "flex",
-                effect: "zoom",
-                zIndex: 100,
-                transitionDuration: 200,
-            });
-        }
-        toggleEl.dropdownInstance.toggle();
-        
-    });
-    
-    document.addEventListener("click", function (e) {
-        if (toggleEl.dropdownInstance && toggleEl.dropdownInstance.isOpen && !dropdown.contains(e.target) && !toggleEl.contains(e.target)) {
-            closeNotification();
-        }
-    });
+    notifDropdown?.close();
 }
 
 
@@ -3234,6 +3216,7 @@ const GetUserLogin = async () => {
 
 let locationTabIdEnvelope;
 const checkRoles = (roles) => {
+    if (!roles) return;
     roles.forEach(role => {
         const elements = document.querySelectorAll(`.${role.name}`);
         elements.forEach(el => {
@@ -3660,39 +3643,22 @@ const hideFact = () => {
 
 let openDropdownToggle = null;
 async function showTaminDropdown() {
-    document.addEventListener("click", async function (e) {
-        const clickedToggle = e.target.closest(".taminDropdownToggle");
-        if (clickedToggle) {
-            if (openDropdownToggle && openDropdownToggle !== clickedToggle && openDropdownToggle.dropdownInstance && openDropdownToggle.dropdownInstance.isOpen) {
-                openDropdownToggle.dropdownInstance.close();
-                openDropdownToggle = null;
-            }
-            
-            if (!clickedToggle.dropdownInstance) {
-                const currentDropdown = clickedToggle.nextElementSibling;
-                clickedToggle.dropdownInstance = new Dropdown({
-                    button: clickedToggle,
-                    content: currentDropdown,
-                    transitionDuration: 200,
-                    originalDisplay: "flex",
-                    effect: "zoom",
-                    zIndex: 1070,
-                });
-                const pfId = clickedToggle.getAttribute("data-pfId");
-                
-                const res = await axios(`/order/GetOrderHead?pfId=${pfId}`);
-                currentDropdown.innerHTML = res.data;
-            }
-            clickedToggle.dropdownInstance.toggle();
-            
-            openDropdownToggle = clickedToggle.dropdownInstance.isOpen ? clickedToggle : null;
-            
-        } else {
-            if (openDropdownToggle && openDropdownToggle.dropdownInstance && openDropdownToggle.dropdownInstance.isOpen) {
-                openDropdownToggle.dropdownInstance.close();
-                openDropdownToggle = null;
-            }
-        }
+    Dropdown.setupDelegate({
+        container: document,
+        toggleSelector: ".taminDropdownToggle",
+        
+        options: {
+            transitionDuration: 200,
+            originalDisplay: "flex",
+            effect: "zoom",
+            zIndex: 1070,
+        },
+        
+        async onOpen({ toggle, content }) {
+            const pfId = toggle.dataset.pfid;
+            const res = await axios(`/order/GetOrderHead?pfId=${pfId}`);
+            content.innerHTML = res.data;
+        },
     });
 }
 /////////
@@ -3810,33 +3776,15 @@ async function snoozeNotif(id, btn) {
 }
 
 
-let openTaskUsersDropdownToggle = null;
 function showTaskUsersDropdown() {
-    document.addEventListener("click", function (e) {
-        const clickedToggle = e.target.closest(".taskUsers-dropdown__toggle");
-        
-        if (clickedToggle) {
-            
-            if (openTaskUsersDropdownToggle && openTaskUsersDropdownToggle !== clickedToggle && openTaskUsersDropdownToggle.dropdownInstance && openTaskUsersDropdownToggle.dropdownInstance.isOpen) {
-                openTaskUsersDropdownToggle.dropdownInstance.close();
-                openTaskUsersDropdownToggle = null;
-            }
-            
-            if (!clickedToggle.dropdownInstance) {
-                const dropdown = clickedToggle.nextElementSibling;
-                clickedToggle.dropdownInstance = new Dropdown({
-                    button: clickedToggle, content: dropdown, originalDisplay: "flex", effect: "slide", transitionDuration: 300, placement: "right",
-                });
-            }
-            clickedToggle.dropdownInstance.toggle();
-            
-            openTaskUsersDropdownToggle = clickedToggle.dropdownInstance.isOpen ? clickedToggle : null;
-        } else {
-            if (openTaskUsersDropdownToggle && openTaskUsersDropdownToggle.dropdownInstance && openTaskUsersDropdownToggle.dropdownInstance.isOpen) {
-                openTaskUsersDropdownToggle.dropdownInstance.close();
-                openTaskUsersDropdownToggle = null;
-            }
-        }
+    Dropdown.setupDelegate({
+        container: document,
+        toggleSelector: ".taskUsers-dropdown__toggle",
+        options: {
+            originalDisplay: "flex",
+            effect: "slide",
+            placement: "right",
+        },
     });
 }
 

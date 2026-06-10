@@ -383,6 +383,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<byte[]>("File")
                         .HasColumnType("varbinary(max)");
 
+                    b.Property<long?>("FileSize")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Filename")
                         .HasColumnType("nvarchar(max)");
 
@@ -396,6 +399,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OriginalFilename")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Url")
@@ -424,7 +430,9 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Attachments", (string)null);
+                    b.HasIndex("EntityId");
+
+                    b.ToTable("Attachments");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.BaseItems.Entities.BaseItem", b =>
@@ -928,10 +936,19 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("CreateDateTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("EditDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EditDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("FileAddress")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsEdited")
                         .HasColumnType("bit");
 
                     b.Property<Guid>("MainChatId")
@@ -996,6 +1013,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ReminderSentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReminderSentUserId")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ToUserId")

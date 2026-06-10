@@ -19,6 +19,10 @@ namespace CRM.Core.Domain.Attachments.Entities
         public Guid? EntityId { get; set; }
         public string Url { get; set; }
         public string Filename { get; set; }
+        public string OriginalFilename { get; set; }
+
+        public long? FileSize { get; set; }
+
         public string Filetype { get; set; }
         public string fileExten { get; set; }
         public byte[] File { get; set; }

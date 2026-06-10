@@ -98,7 +98,7 @@ public class CashController : Controller {
                 await logSystemService.LogChange(oldCash, model, LogActionEnum.ویرایش, user);
             }
 
-            var attach = fileSaver.saveAttach(model.Attachments, _AttachType.Cash);
+            var attach = fileSaver.SaveAttachments(model.Attachments, _AttachType.Cash);
             foreach (var att in attach)
             {
                 att.EntityId = model.Id;

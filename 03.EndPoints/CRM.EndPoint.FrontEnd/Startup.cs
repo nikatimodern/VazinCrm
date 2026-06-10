@@ -28,6 +28,7 @@ using System.Net;
 using System.Net.Http;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
+using CRM.EndPoint.FrontEnd.Services.Chat;
 using WebPush;
 
 namespace CRM.EndPoint.FrontEnd {
@@ -142,6 +143,10 @@ namespace CRM.EndPoint.FrontEnd {
 
             services.AddSingleton<ISmsQueue, SmsQueue>();
             services.AddHostedService<SmsBackgroundService>();
+
+
+            services.AddHostedService<ChatReminderWorker>();
+            services.AddScoped<ChatReminderService>();
 
             services.AddSingleton<WebPushClient>(sp => {
                 var handler = new SocketsHttpHandler {

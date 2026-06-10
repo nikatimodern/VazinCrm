@@ -2351,8 +2351,8 @@ input[type=checkbox], input[type=radio] {
 
 
 .bgLightBlue {
-  background-color: #e9f6ff !important;
-  border-color: #c4e7ff;
+  background-color: #e8f3ff !important;
+  border-color: #c8ddff !important;
 }
 
 
@@ -5858,6 +5858,28 @@ table tr.payment-vosoled > td {
   width: 0%;
   transition: width .5s linear;
   background: #0d6efd;
+}
+/*
+ */
+
+
+.custom-context-menu {
+  background: #1f1f1f;
+  color: #fff;
+  border-radius: 8px;
+  min-width: 160px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.3);
+  overflow: hidden;
+}
+
+.ccm-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.ccm-item:hover {
+  background: #333;
 }
 
 
