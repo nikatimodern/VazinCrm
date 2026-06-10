@@ -18,12 +18,14 @@
         <table class="table table-striped table-bordered table-hover nowrap w-100" id="cashTable">
             <thead>
             <tr>
-                <th>شماره سریال</th>
+                <th>شماره</th>
                 <th>تاریخ ثبت</th>
                 <th>عنوان هزینه</th>
                 <th>مرکز هزینه</th>
                 <th>تاریخ پرداخت</th>
                 <th>مبلغ</th>
+                <th>کارمزد</th>
+                <th>مبلغ نهایی</th>
                 <th>شرح هزینه</th>
                 <th>ثبت توسط</th>
                 <th>وضعیت</th>
@@ -39,7 +41,7 @@
 
 <!-- Modal cash -->
 <div class="modal fade" id="cashModal" tabindex="-1" role="dialog" data-bs-focus="false">
-    <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-md">
         <div class="modal-content col-12 p-2">
             <div class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">ثبت تنخواه</div>
             <div class="modal-body pb-2">
@@ -62,6 +64,11 @@
                     <div>
                         <label for="cashAmount">مبلغ:</label>
                         <input id="cashAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="amount" required data-currency-hint="next">
+                        <span class="currencyHint"></span>
+                    </div>
+                    <div>
+                        <label for="cashFee">کارمزد بانکی:</label>
+                        <input id="cashFee" inputmode="numeric" class="form-control currencyNumber inpAmount" placeholder="0" name="fee" data-currency-hint="next">
                         <span class="currencyHint"></span>
                     </div>
 
@@ -284,7 +291,7 @@
                 },
                 columnDefs: [
                     {
-                        targets: [8, 9],
+                        targets: [10, 11],
                         orderable: false,
                     },
                     {
@@ -292,7 +299,11 @@
                         render: data => `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>`,
                     },
                     {
-                        targets: [5],
+                        targets: [5, 6],
+                        render: data => `<span dir="ltr">${data ? data.toLocaleString() : "-"}</span>`,
+                    },
+                    {
+                        targets: [7],
                         render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>`,
                     },
                 ],
@@ -303,6 +314,8 @@
                     { data: "costCenterTxt", name: "CostCenterTxt", defaultContent: "-" },
                     { data: "costDate", name: "CostDate", defaultContent: "-" },
                     { data: "amount", name: "Amount", defaultContent: "-" },
+                    { data: "fee", name: "Fee", defaultContent: "-" },
+                    { data: "totalAmount", name: "TotalAmount", defaultContent: "-" },
                     { data: "costDescription", name: "CostDescription", defaultContent: "-" },
                     { data: "userCreator", name: "UserCreator", defaultContent: "-" },
                     {
