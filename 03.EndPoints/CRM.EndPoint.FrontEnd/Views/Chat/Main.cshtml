@@ -33,7 +33,6 @@
 
         document.addEventListener("UserLoginReady", () => {
             const isOthers = currentUser.rollNames.length === 0 || currentUser.rollNames.some(item => item.name === "Customer");
-            console.log(currentUser);
             const vazinLogoLink = document.querySelector("#customerLogo a");
             if (isOthers) {
                 vazinLogoLink.href = "https://www.vazinplast.com/";

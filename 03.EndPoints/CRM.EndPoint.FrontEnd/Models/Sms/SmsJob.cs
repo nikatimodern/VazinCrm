@@ -18,5 +18,6 @@ public enum SmsType {
     ReadyToDeliverToCustomer,
     PaymentLinkToCustomer,
     OtpLogin,
-    OtpForgot
+    OtpForgot,
+    ChatReminder
 }

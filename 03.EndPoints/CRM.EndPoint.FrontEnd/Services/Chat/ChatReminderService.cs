@@ -2,28 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CRM.EndPoint.FrontEnd.Services.Factor;
+using CRM.EndPoint.FrontEnd.Models.Sms;
+using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using Generics.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace CRM.EndPoint.FrontEnd.Services.Chat;
 
-public class ChatReminderService {
-    private readonly CRMContextDb db;
-    private readonly UserContextDb udb;
-    private readonly SmsServices sms;
-    private readonly ILogger<ChatReminderService> logger;
-
-    public ChatReminderService(CRMContextDb db, UserContextDb udb, SmsServices sms, ILogger<ChatReminderService> logger)
-    {
-        this.db = db;
-        this.udb = udb;
-        this.sms = sms;
-        this.logger = logger;
-        this.sms = sms;
-    }
-
+public class ChatReminderService(CRMContextDb db, UserContextDb udb, ISmsQueue smsQueue, ILogger<ChatReminderService> logger) {
     public async Task CheckUnreadChats()
     {
         try
@@ -70,7 +57,10 @@ public class ChatReminderService {
                     continue;
 
 
-                await sms.SendChatRemind(phone);
+                await smsQueue.QueueAsync(new SmsJob {
+                    Type = SmsType.ChatReminder,
+                    Mobile = phone,
+                });
 
                 mainChat.ReminderSentUserId = targetUserId;
 

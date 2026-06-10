@@ -219,7 +219,7 @@ const deleteCheck = async (id) => {
     });
 };
 const deleteCheckbook = async (id) => {
-    toggle.dropdownInstance.close();
+    checkbookDropdown.close();
     Swal.fire({
         title: "حذف!",
         text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
@@ -242,36 +242,22 @@ const deleteCheckbook = async (id) => {
     });
 };
 
-let toggle = null;
-checkbooksSection.addEventListener("click", function (e) {
-    const clickedToggle = e.target.closest(".checkbook-dropdown__toggle");
-    if (clickedToggle) {
+
+document.addEventListener("click", (e) => {
+    const card = e.target.closest(".checkbook-card");
+    if (!card) return;
     
-    } else {
-        if (toggle && toggle.dropdownInstance && toggle.dropdownInstance.isOpen) {
-            toggle.dropdownInstance.close();
-            toggle = null;
-        }
-    }
+    if (e.target.closest(".checkbook-dropdown__toggle")) return;
+    
+    showChecks(card.dataset.id, card.dataset.bankName);
 });
 
-function openDrop(clickedToggle) {
-    if (toggle && toggle !== clickedToggle && toggle.dropdownInstance && toggle.dropdownInstance.isOpen) {
-        toggle.dropdownInstance.close();
-        toggle = null;
-    }
-    
-    if (!clickedToggle.dropdownInstance) {
-        const currentDropdown = clickedToggle.nextElementSibling;
-        clickedToggle.dropdownInstance = new Dropdown({
-            button: clickedToggle,
-            content: currentDropdown,
-            transitionDuration: 200,
-            originalDisplay: "flex",
-            effect: "zoom",
-        });
-    }
-    clickedToggle.dropdownInstance.toggle();
-    
-    toggle = clickedToggle.dropdownInstance.isOpen ? clickedToggle : null;
-}
+const checkbookDropdown = Dropdown.setupDelegate({
+    container: document,
+    toggleSelector: ".checkbook-dropdown__toggle",
+    options: {
+        transitionDuration: 200,
+        originalDisplay: "flex",
+        effect: "zoom",
+    },
+});
