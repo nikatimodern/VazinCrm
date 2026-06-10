@@ -1,16 +1,16 @@
 let checksDataTable = null;
 let checkData = {};
+
 let checkbooksSection = document.getElementById("checkbooks-section");
 let checkSection = document.getElementById("checks-section");
 document.addEventListener("DOMContentLoaded", () => {
     const { cBook, cBookName } = getUrlParams();
     if (cBook) showChecks(cBook, decodeURIComponent(cBookName || "دسته چک"));
     
-    window.addEventListener("popstate", (e) => {
-        //const { cBook, cBookName } = getUrlParams();
-        console.log(e.state);
-        if (e.state?.cBook) {
-            showChecks(e.state.cBook, decodeURIComponent(ee.state.cBookName || "دسته چک"));
+    window.addEventListener("popstate", () => {
+        const { cBook, cBookName } = getUrlParams();
+        if (cBook) {
+            showChecks(cBook, decodeURIComponent(cBookName || "دسته چک"));
         } else {
             checkbooksSection.classList.remove("d-none");
             checkSection.classList.add("d-none");
@@ -120,7 +120,7 @@ function initCheckbookTable() {
 
 function showChecks(id, checkbookName) {
     checkbooksSection.classList.add("d-none");
-    checkSection.querySelector("#selected-checkbook-title").innerText = "لیست چک‌های " + checkbookName || "";
+    checkSection.querySelector("#selected-checkbook-title").innerText = "لیست چک‌های بانک " + checkbookName || "";
     checkSection.classList.remove("d-none");
     
     checkData.checkbookId = id;
@@ -160,6 +160,7 @@ async function submitCheckForm() {
             toastifySuccess("با موفقیت ثبت شد");
             cancelNewCheckModal();
             checksDataTable.ajax.reload();
+            await GetAllCheckbooks();
         }
     } catch (err) {
         console.log(err);
@@ -187,7 +188,6 @@ const getCheck = async (id) => {
         const res = await axios(`/Check/GetCheck/${id}`);
         
         return res.status === 200 ? res.data : null;
-        
     } catch (err) {
         console.log(err);
         toastifyError("خطا در دریافت اطلاعات");
@@ -212,6 +212,7 @@ const deleteCheck = async (id) => {
             if (res.status === 200) {
                 toastifySuccess("با موفقیت حذف شد");
                 checksDataTable.ajax.reload();
+                await GetAllCheckbooks();
             }
             FLshowLoading(false);
         }
@@ -234,7 +235,7 @@ const deleteCheckbook = async (id) => {
             const res = await axios(`/Check/DeleteCheckbook/${id}`);
             if (res.status === 200) {
                 toastifySuccess("با موفقیت حذف شد");
-                GetAllCheckbooks();
+                await GetAllCheckbooks();
             }
             FLshowLoading(false);
         }

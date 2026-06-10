@@ -5,7 +5,7 @@
     @foreach (var item in Model ?? []) {
         var checkbook = item.Checkbook;
         <div class="checkbook-card" onclick="showChecks('@checkbook.Id', '@checkbook.BankName')">
-            <h5 class="checkbook-card__title">@checkbook.BankName</h5>
+            <h5 class="checkbook-card__title">بانک @checkbook.BankName</h5>
             @* <p class="text-muted small mb-3">شماره حساب: @checkbook.AccountNumber</p> *@
 
             <span class="checkbook-card__badge">@item.ChecksCount چک ثبت شده</span>
