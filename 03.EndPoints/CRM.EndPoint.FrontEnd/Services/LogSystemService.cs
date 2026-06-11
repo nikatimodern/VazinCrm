@@ -10,6 +10,7 @@ using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.Cartables.Entities;
 using CRM.Core.Domain.Cartables.Enums;
 using CRM.Core.Domain.Cashes.Entities;
+using CRM.Core.Domain.Checks.Entities;
 using CRM.Core.Domain.Contracts.Entities;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Deals.Entities;
@@ -504,6 +505,31 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
                 }
 
                 break;
+            case Checkbook cb:
+                switch (action)
+                {
+                    case LogActionEnum.ثبت:
+                        return $"یک دسته چک برای بانک {cb.BankName} توسط <b>{fullName}</b> ثبت شد.";
+
+                    case LogActionEnum.حذف:
+                        return $"دسته چک بانک {cb.BankName} توسط <b>{fullName}</b> حذف شد.";
+                }
+
+                break;
+            case Check check:
+                switch (action)
+                {
+                    case LogActionEnum.ثبت:
+                        return $"یک برگه چک به شماره سریال {check.SerialNumber} توسط <b>{fullName}</b> ثبت شد.";
+
+                    case LogActionEnum.ویرایش:
+                        return $"یک برگه چک به شماره سریال {check.SerialNumber} توسط <b>{fullName}</b> ویرایش شد.";
+
+                    case LogActionEnum.حذف:
+                        return $"یک برگه چک به شماره سریال {check.SerialNumber} توسط <b>{fullName}</b> حذف شد.";
+                }
+
+                break;
         }
 
         return null;
@@ -523,6 +549,7 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
             SupplyFactor s => TextService.ExtractNumber(s.FactorSerial),
             RequestAmount r => r.RequestNumber,
             Cash c => c.Serial,
+            Check c => TextService.ExtractNumber(c.SerialNumber),
             _ => null
         };
     }

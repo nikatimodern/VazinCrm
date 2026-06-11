@@ -81,23 +81,27 @@ namespace CRM.EndPoint.FrontEnd.Services {
             return data;
         }
 
-        public IList<Attachment> saveAttach(IList<Attachment> list, _AttachType type, bool removeFile = true)
+        public IList<Attachment> SaveAttachments(IList<Attachment> list, _AttachType type, string folder = null, bool removeFile = true)
         {
-            foreach (var item in list)
+            folder ??= type.ToString();
+            foreach (var item in list ?? [])
             {
                 if (item.Id == Guid.Empty)
                 {
-                    item.Filename = type.ToString() + "_" + Guid.NewGuid().ToString().Substring(0, 8);
-                    item.Url = CreateFileAtt(item.File, item.Filename, item.fileExten);
+                    item.OriginalFilename = item.Filename;
+                    item.FileSize = item.File?.LongLength;
+                    item.Filename = $"{type}_{Guid.NewGuid().ToString()[..8]}";
+                    item.Url = SaveFile(item.File, item.Filename, item.fileExten, folder);
                     item.CreateDate = DateTime.Now;
                     item.CreateDateTxt = dtService.GetDatePersian();
                     item._AttachType = type;
+                    item._AttachTypeTxt = type.ToString();
                     item.AttachDate = DateTime.Now;
                     item.AttachDateTxt = dtService.GetDateTimePersian();
                     item.File = null;
                 } else if (item.IsDeleted && removeFile)
                 {
-                    DelFile(item.Url);
+                    DeleteFile(item.Url);
                 }
             }
 
@@ -105,15 +109,47 @@ namespace CRM.EndPoint.FrontEnd.Services {
         }
 
 
-        private string CreateFileAtt(byte[] StrImage, string FileName, string Filetype)
+        /*private string SaveFile(byte[] StrImage, string FileName, string Filetype, string folder)
         {
             string fileName = FileName + "." + Filetype;
-            CheckUrl(appEnvironment.WebRootPath.ToString() + @"\Uploaded\ContractAtt");
 
-            var filePath = appEnvironment.WebRootPath.ToString() + @"\Uploaded\ContractAtt\" + fileName;
+            CheckUrl(appEnvironment.WebRootPath + @"\Uploaded\ContractAtt");
+
+            var filePath = appEnvironment.WebRootPath + @"\Uploaded\ContractAtt\" + fileName;
 
             File.WriteAllBytes(filePath, StrImage);
             return @"\Uploaded\ContractAtt\" + fileName;
+        }*/
+
+        public string SaveFile(byte[] fileBytes, string fileName, string fileExten, string folder)
+        {
+            if (fileBytes == null || fileBytes.Length == 0 || string.IsNullOrWhiteSpace(fileExten)) return null;
+
+            fileExten = fileExten.TrimStart('.').ToLower();
+            fileName = $"{fileName}.{fileExten}";
+            var relativePath = Path.Combine("Uploaded", folder);
+            var folderPath = Path.Combine(appEnvironment.WebRootPath, relativePath);
+
+            CheckUrl(folderPath);
+
+            File.WriteAllBytes(Path.Combine(folderPath, fileName), fileBytes);
+            return $@"\{relativePath.Replace('/', '\\')}\{fileName}";
+        }
+
+        public string CreateFileAtt1(byte[] fileBytes, string fileName, string fileExten, string folder)
+        {
+            if (fileBytes == null || fileBytes.Length <= 0) return null;
+
+            fileExten = fileExten?.TrimStart('.').ToLower();
+            var fullFileName = $"{fileName}.{fileExten}";
+            var relativePath = Path.Combine("Uploaded", folder, fullFileName);
+            var fullPath = Path.Combine(appEnvironment?.WebRootPath, relativePath);
+
+            CheckUrl(Path.GetDirectoryName(fullPath));
+
+            File.WriteAllBytes(fullPath, fileBytes);
+
+            return "/" + relativePath.Replace("\\", "/");
         }
 
 
@@ -345,22 +381,39 @@ namespace CRM.EndPoint.FrontEnd.Services {
             return ms.ToArray();
         }
 
-        public void DelFile(string Path)
+        public void DeleteFile(string path)
         {
-            if (Path != null && Path != "")
-            {
-                string fullPath = appEnvironment.WebRootPath + Path.Replace('/', '\\');
-                if (File.Exists(fullPath))
-                {
-                    File.Delete(fullPath);
-                }
-            }
+            if (string.IsNullOrWhiteSpace(path))
+                return;
+
+            var fullPath = appEnvironment?.WebRootPath + path.Replace('/', '\\');
+
+            if (File.Exists(fullPath))
+                File.Delete(fullPath);
         }
 
         public void CheckUrl(string Path)
         {
             if (!Directory.Exists(Path))
                 Directory.CreateDirectory(Path);
+        }
+
+        public string FormatFileSize(long? bytes)
+        {
+            if (bytes == null) return null;
+
+            string[] sizes = ["B", "KB", "MB", "GB"];
+
+            double len = bytes.Value;
+
+            int order = 0;
+            while (len >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                len /= 1024;
+            }
+
+            return $"{len:0.#} {sizes[order]}";
         }
     }
 }

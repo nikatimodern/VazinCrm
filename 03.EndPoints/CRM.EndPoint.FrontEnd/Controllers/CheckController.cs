@@ -181,7 +181,7 @@ public class CheckController : Controller {
         try
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
-            var item = await db.Checkbooks.FirstOrDefaultAsync(f => f.Id == id);
+            var item = await db.Checkbooks.Include(f => f.Checks).FirstOrDefaultAsync(f => f.Id == id);
             if (item == null) return NotFound();
 
             item.IsDeleted = true;
@@ -189,6 +189,11 @@ public class CheckController : Controller {
             item.ModifyDateTxt = dtService.GetDateTimePersian();
             item.UserModify = user.FullName;
             item.UserModifyID = user.Id;
+
+            foreach (var check in item.Checks ?? [])
+            {
+                check.IsDeleted = true;
+            }
 
             await logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
 

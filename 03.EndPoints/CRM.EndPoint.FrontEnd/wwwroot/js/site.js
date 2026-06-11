@@ -262,7 +262,6 @@ class Dropdown {
         
         this.isOpen = false;
         this.content.style.display = "none";
-        
         if (!this.portal.contains(this.content)) {
             this.portal.appendChild(this.content);
         }
@@ -275,6 +274,104 @@ class Dropdown {
         this.boundPositionDropdown = this.positionDropdown.bind(this);
         
     }
+    
+    static setup({ toggle, content, onOpen, closeOnOutsideClick = true, options = {} }) {
+        if (!toggle) return;
+        if (toggle.dropdownInstance) return toggle.dropdownInstance;
+        
+        toggle.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            
+            toggle.dropdownInstance ??= new Dropdown({
+                button: toggle,
+                content,
+                ...options,
+            });
+            
+            await onOpen?.({
+                toggle,
+                dropdown: toggle.dropdownInstance,
+                content,
+            });
+            
+            toggle.dropdownInstance.toggle();
+        });
+        
+        if (closeOnOutsideClick) {
+            document.addEventListener("click", e => {
+                if (toggle.dropdownInstance?.isOpen && !content.contains(e.target) && !toggle.contains(e.target)) {
+                    toggle.dropdownInstance.close();
+                }
+            });
+        }
+        
+        return {
+            close() {
+                toggle.dropdownInstance?.close();
+            },
+            
+            get dropdown() {
+                return toggle.dropdownInstance ?? null;
+            },
+            
+            get toggle() {
+                return toggle;
+            },
+        };
+    }
+    
+    
+    static setupDelegate({ container, toggleSelector, getContent = toggle => toggle.nextElementSibling, onOpen, options = {} }) {
+        const state = {
+            activeToggle: null,
+            
+            close() {
+                this.activeToggle?.dropdownInstance?.close();
+                this.activeToggle = null;
+            },
+            
+            get dropdown() {
+                return this.activeToggle?.dropdownInstance ?? null;
+            },
+            
+            get toggle() {
+                return this.activeToggle;
+            },
+        };
+        
+        container?.addEventListener("click", async (e) => {
+            const toggle = e.target.closest(toggleSelector);
+            if (!toggle) {
+                state.close();
+                return;
+            }
+            
+            if (state.toggle && state.toggle !== toggle && state.dropdown?.isOpen) {
+                state.close();
+            }
+            
+            if (!toggle.dropdownInstance) {
+                toggle.dropdownInstance = new Dropdown({
+                    button: toggle,
+                    content: getContent(toggle),
+                    ...options,
+                });
+                
+                await onOpen?.({
+                    toggle,
+                    dropdown: toggle.dropdownInstance,
+                    content: toggle.dropdownInstance.content,
+                    state,
+                });
+            }
+            toggle.dropdownInstance.toggle();
+            
+            state.activeToggle = toggle.dropdownInstance.isOpen ? toggle : null;
+        });
+        
+        return state;
+    }
+    
     
     open() {
         if (this.isOpen) return;

@@ -64,7 +64,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (ModelState.IsValid)
                 {
                     if (model.Attachments != null)
-                        model.Attachments = fileSaver.saveAttach(model.Attachments, _AttachType.ContractAttach);
+                        model.Attachments = fileSaver.SaveAttachments(model.Attachments, _AttachType.ContractAttach);
                     db.Contracts.Update(model);
                     await db.SaveChangesAsync();
                     return Ok(new { Status = true, Result = new { } });

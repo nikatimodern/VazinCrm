@@ -1,16 +1,16 @@
 let checksDataTable = null;
 let checkData = {};
+
 let checkbooksSection = document.getElementById("checkbooks-section");
 let checkSection = document.getElementById("checks-section");
 document.addEventListener("DOMContentLoaded", () => {
     const { cBook, cBookName } = getUrlParams();
     if (cBook) showChecks(cBook, decodeURIComponent(cBookName || "دسته چک"));
     
-    window.addEventListener("popstate", (e) => {
-        //const { cBook, cBookName } = getUrlParams();
-        console.log(e.state);
-        if (e.state?.cBook) {
-            showChecks(e.state.cBook, decodeURIComponent(ee.state.cBookName || "دسته چک"));
+    window.addEventListener("popstate", () => {
+        const { cBook, cBookName } = getUrlParams();
+        if (cBook) {
+            showChecks(cBook, decodeURIComponent(cBookName || "دسته چک"));
         } else {
             checkbooksSection.classList.remove("d-none");
             checkSection.classList.add("d-none");
@@ -78,10 +78,10 @@ function initCheckbookTable() {
             },
             { data: "dueDate" },
             { data: "payee" },
-            { data: "description" },
+            { data: "description", render: data => data || "-" },
             {
                 data: "statusTxt",
-                render: data => `<span class="badgeGray d-inline-flex">${data || "-"}</span>`,
+                render: data => `<span class="badgeGray d-inline-flex box-shadow-none">${data || "-"}</span>`,
             },
             {
                 data: "id",
@@ -93,20 +93,7 @@ function initCheckbookTable() {
                 `,
             },
         ],
-        language: {
-            emptyTable: "هیچ رکوردی موجود نمی باشد.",
-            info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
-            infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
-            infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
-            lengthMenu: "نمایش _MENU_ ردیف",
-            loadingRecords: "در حال بارگزاری...",
-            search: "",
-            zeroRecords: "رکوردی با این مشخصات پیدا نشد",
-            aria: {
-                sortAscending: ": فعال سازی نمایش به صورت صعودی",
-                sortDescending: ": فعال سازی نمایش به صورت نزولی",
-            },
-        },
+        language: languageDatatable,
         layout: null,
         initComplete: () => {
             document.querySelectorAll("#checksTable_wrapper > div.row").forEach((row) => {
@@ -120,7 +107,7 @@ function initCheckbookTable() {
 
 function showChecks(id, checkbookName) {
     checkbooksSection.classList.add("d-none");
-    checkSection.querySelector("#selected-checkbook-title").innerText = "لیست چک‌های " + checkbookName || "";
+    checkSection.querySelector("#selected-checkbook-title").innerText = "لیست چک‌های بانک " + checkbookName || "";
     checkSection.classList.remove("d-none");
     
     checkData.checkbookId = id;
@@ -160,6 +147,7 @@ async function submitCheckForm() {
             toastifySuccess("با موفقیت ثبت شد");
             cancelNewCheckModal();
             checksDataTable.ajax.reload();
+            await GetAllCheckbooks();
         }
     } catch (err) {
         console.log(err);
@@ -187,7 +175,6 @@ const getCheck = async (id) => {
         const res = await axios(`/Check/GetCheck/${id}`);
         
         return res.status === 200 ? res.data : null;
-        
     } catch (err) {
         console.log(err);
         toastifyError("خطا در دریافت اطلاعات");
@@ -212,13 +199,14 @@ const deleteCheck = async (id) => {
             if (res.status === 200) {
                 toastifySuccess("با موفقیت حذف شد");
                 checksDataTable.ajax.reload();
+                await GetAllCheckbooks();
             }
             FLshowLoading(false);
         }
     });
 };
 const deleteCheckbook = async (id) => {
-    toggle.dropdownInstance.close();
+    checkbookDropdown.close();
     Swal.fire({
         title: "حذف!",
         text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
@@ -234,43 +222,32 @@ const deleteCheckbook = async (id) => {
             const res = await axios(`/Check/DeleteCheckbook/${id}`);
             if (res.status === 200) {
                 toastifySuccess("با موفقیت حذف شد");
-                GetAllCheckbooks();
+                await GetAllCheckbooks();
             }
             FLshowLoading(false);
         }
     });
 };
 
-let toggle = null;
-checkbooksSection.addEventListener("click", function (e) {
-    const clickedToggle = e.target.closest(".checkbook-dropdown__toggle");
-    if (clickedToggle) {
+
+document.addEventListener("click", (e) => {
+    const card = e.target.closest(".checkbook-card");
+    if (!card) return;
     
-    } else {
-        if (toggle && toggle.dropdownInstance && toggle.dropdownInstance.isOpen) {
-            toggle.dropdownInstance.close();
-            toggle = null;
-        }
-    }
+    if (e.target.closest(".checkbook-dropdown__toggle")) return;
+    const { id, bankName } = card.dataset;
+    if (!id) return;
+    
+    showChecks(id, bankName);
 });
 
-function openDrop(clickedToggle) {
-    if (toggle && toggle !== clickedToggle && toggle.dropdownInstance && toggle.dropdownInstance.isOpen) {
-        toggle.dropdownInstance.close();
-        toggle = null;
-    }
-    
-    if (!clickedToggle.dropdownInstance) {
-        const currentDropdown = clickedToggle.nextElementSibling;
-        clickedToggle.dropdownInstance = new Dropdown({
-            button: clickedToggle,
-            content: currentDropdown,
-            transitionDuration: 200,
-            originalDisplay: "flex",
-            effect: "zoom",
-        });
-    }
-    clickedToggle.dropdownInstance.toggle();
-    
-    toggle = clickedToggle.dropdownInstance.isOpen ? clickedToggle : null;
-}
+const checkbookDropdown = Dropdown.setupDelegate({
+    container: document,
+    toggleSelector: ".checkbook-dropdown__toggle",
+    options: {
+        transitionDuration: 200,
+        originalDisplay: "flex",
+        effect: "zoom",
+        placement: "right",
+    },
+});
