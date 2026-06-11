@@ -78,10 +78,10 @@ function initCheckbookTable() {
             },
             { data: "dueDate" },
             { data: "payee" },
-            { data: "description" },
+            { data: "description", render: data => data || "-" },
             {
                 data: "statusTxt",
-                render: data => `<span class="badgeGray d-inline-flex">${data || "-"}</span>`,
+                render: data => `<span class="badgeGray d-inline-flex box-shadow-none">${data || "-"}</span>`,
             },
             {
                 data: "id",
@@ -93,20 +93,7 @@ function initCheckbookTable() {
                 `,
             },
         ],
-        language: {
-            emptyTable: "هیچ رکوردی موجود نمی باشد.",
-            info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
-            infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
-            infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
-            lengthMenu: "نمایش _MENU_ ردیف",
-            loadingRecords: "در حال بارگزاری...",
-            search: "",
-            zeroRecords: "رکوردی با این مشخصات پیدا نشد",
-            aria: {
-                sortAscending: ": فعال سازی نمایش به صورت صعودی",
-                sortDescending: ": فعال سازی نمایش به صورت نزولی",
-            },
-        },
+        language: languageDatatable,
         layout: null,
         initComplete: () => {
             document.querySelectorAll("#checksTable_wrapper > div.row").forEach((row) => {
@@ -248,8 +235,10 @@ document.addEventListener("click", (e) => {
     if (!card) return;
     
     if (e.target.closest(".checkbook-dropdown__toggle")) return;
+    const { id, bankName } = card.dataset;
+    if (!id) return;
     
-    showChecks(card.dataset.id, card.dataset.bankName);
+    showChecks(id, bankName);
 });
 
 const checkbookDropdown = Dropdown.setupDelegate({
@@ -259,5 +248,6 @@ const checkbookDropdown = Dropdown.setupDelegate({
         transitionDuration: 200,
         originalDisplay: "flex",
         effect: "zoom",
+        placement: "right",
     },
 });

@@ -35,6 +35,23 @@ var CartableFSearchVal = null;//متن جستجو
 
 var filterReportConfig = {};
 
+
+const languageDatatable = {
+    emptyTable: "هیچ رکوردی موجود نمی باشد.",
+    info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
+    infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
+    infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
+    lengthMenu: "نمایش _MENU_ ردیف",
+    loadingRecords: "در حال بارگزاری...",
+    search: "",
+    zeroRecords: "رکوردی با این مشخصات پیدا نشد",
+    aria: {
+        sortAscending: ": فعال سازی نمایش به صورت صعودی",
+        sortDescending: ": فعال سازی نمایش به صورت نزولی",
+    },
+}
+
+
 //
 // var mySer = null;
 // var CrmSer = null;
