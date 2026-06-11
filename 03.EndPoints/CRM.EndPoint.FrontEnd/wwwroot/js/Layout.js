@@ -49,7 +49,23 @@ const languageDatatable = {
         sortAscending: ": فعال سازی نمایش به صورت صعودی",
         sortDescending: ": فعال سازی نمایش به صورت نزولی",
     },
-}
+};
+const layoutDatatable = {
+    bottomEnd: "info",
+    bottomStart: {
+        paging: {
+            type: "simple_numbers",
+        },
+    },
+    topEnd: {
+        pageLength: true,
+    },
+    topStart: {
+        search: {
+            placeholder: "جستجو",
+        },
+    },
+};
 
 
 //
@@ -174,8 +190,8 @@ const notifDropdown = Dropdown.setup({
         originalDisplay: "flex",
         effect: "zoom",
         zIndex: 100,
-        transitionDuration: 200
-    }
+        transitionDuration: 200,
+    },
 });
 
 function closeNotification() {
@@ -2304,7 +2320,7 @@ let isEditInvoiceModal = false;
 let invoiceItemId;
 
 const ShowModalInvoice = async (acType = 1, ParentId = null) => {
-    getAllBankAccounts();
+    await getAllBankAccounts([{ element: "#InvoiceModalId select[name='BankAccountId']", type: [1] }]);
     if (ParentId != null || acType === 2) { // وصول یا برگشتی بود
         document.getElementById("DivEtebariId").style.display = "none";
     } else {
@@ -2337,7 +2353,7 @@ const ShowModalInvoice = async (acType = 1, ParentId = null) => {
 async function showPayment(id, parent = false) {
     try {
         FLshowLoading();
-        await getAllBankAccounts();
+        await getAllBankAccounts([{ element: "#ShowPaymentModal select[name='BankAccountId']", type: [1], isDisable: true }]);
         const res = (await axios(`/Accountancy/getAccountancy/${id}?parent=${parent}`)).data;
         const data = res.accData;
         
@@ -2443,7 +2459,7 @@ async function showPayment(id, parent = false) {
 
 const ShowEditModalInvoice = async (id, type = 1) => {
     FLshowLoading();
-    getAllBankAccounts();
+    await getAllBankAccounts([{ element: "#InvoiceModalId select[name='BankAccountId']", type: [1] }]);
     const res = await axios(`/Accountancy/getAccountancy/${id}`);
     const data = res.data.accData;
     
@@ -3478,19 +3494,33 @@ const getAllBankAccountsJson = async (type) => {
 };
 
 let isLoadedBankAccounts = false;
-
-const getAllBankAccounts = async (rerender = false) => {
+/**
+ * @typedef {Object} BankAccountSelectOptions
+ * @property {HTMLSelectElement|string} element
+ * @property {number[]} type
+ * @property {boolean} [isDisable]
+ * @property {boolean} [isTomSelect]
+ */
+/**
+ * @param {BankAccountSelectOptions[]} selects
+ * @param {boolean} [rerender=false]
+ */
+const getAllBankAccounts = async (selects, rerender = false) => {
     if (isLoadedBankAccounts && !rerender) return;
     
-    const selects = [
+    /*const selects = [
         { element: document.querySelector("#InvoiceModalId select[name='BankAccountId']"), type: [1] },
         { element: document.querySelector("#InvoiceModalId select[name='BankAccountId']"), type: [1] },
         { element: document.querySelector("#ShowPaymentModal select[name='BankAccountId']"), type: [1], isDisable: true },
         { element: document.querySelector("#reqAmountAttachModal select[name='fromAccountId']"), type: [1] },
         { element: document.querySelector("#reqAmountAttachModal select[name='toAccountId']"), type: [2, 3], isTomSelect: true },
-        { element: document.querySelector("#transferModal select[name='fromAccountId']"), type: [1]},
+        { element: document.querySelector("#transferModal select[name='fromAccountId']"), type: [1] },
         { element: document.querySelector("#transferModal select[name='toAccountId']"), type: [2, 3], isTomSelect: true },
-    ].filter(e => e.element);
+    ].filter(e => e.element);*/
+    selects = selects.map(x => ({
+        ...x,
+        element: typeof x.element === "string" ? document.querySelector(x.element) : x.element,
+    })).filter(x => x.element);
     
     const elementsToToggleDisable = selects.filter(s => !s.isDisable).map(s => s.element);
     toggleElementsDisabled(elementsToToggleDisable);
@@ -4924,7 +4954,10 @@ const deletePayment = async (id) => {
 
 async function showEditPaymentModal(id) {
     FLshowLoading();
-    await getAllBankAccounts();
+    await getAllBankAccounts([
+        { element: "#reqAmountAttachModal select[name='fromAccountId']", type: [1] },
+        { element: "#reqAmountAttachModal select[name='toAccountId']", type: [2, 3], isTomSelect: true },
+    ]);
     ModalToggle("reqAmountAttachModal", "show");
     
     try {
@@ -5059,7 +5092,10 @@ async function goToStepAttachReqAmount() {
             amount: Number(SeparatedNumberRemove(amountValue)),
         };
     });
-    getAllBankAccounts();
+    await getAllBankAccounts([
+        { element: "#reqAmountAttachModal select[name='fromAccountId']", type: [1] },
+        { element: "#reqAmountAttachModal select[name='toAccountId']", type: [2, 3], isTomSelect: true },
+    ]);
     
     const allInputsAmount = Array.from(reqAmountPaymentModal.querySelectorAll("input[name='amount']"));
     const totalAmount = allInputsAmount.reduce((sum, i) => sum + Number(SeparatedNumberRemove(i.value) || 0), 0);
@@ -5080,7 +5116,10 @@ function cancelRequestAmountPaymentModal() {
 
 const showAttachReqAmount = (id) => {
     reqAmountId = id;
-    getAllBankAccounts();
+    getAllBankAccounts([
+        { element: "#reqAmountAttachModal select[name='fromAccountId']", type: [1] },
+        { element: "#reqAmountAttachModal select[name='toAccountId']", type: [2, 3], isTomSelect: true },
+    ]);
     ModalToggle("reqAmountAttachModal", "show");
 };
 
@@ -5196,7 +5235,10 @@ async function submitAddBankAccount() {
             toastifySuccess("با موفقیت ثبت شد");
             
             toggleAddBankAccountModal();
-            await getAllBankAccounts(true);
+            await getAllBankAccounts([
+                { element: "#reqAmountAttachModal select[name='fromAccountId']", type: [1] },
+                { element: "#reqAmountAttachModal select[name='toAccountId']", type: [2, 3], isTomSelect: true },
+            ], true);
         }
     } catch (err) {
         toastifyError("خطای سرور");

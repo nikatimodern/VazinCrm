@@ -81,7 +81,7 @@ function initCheckbookTable() {
             { data: "description", render: data => data || "-" },
             {
                 data: "statusTxt",
-                render: data => `<span class="badgeGray d-inline-flex box-shadow-none">${data || "-"}</span>`,
+                render: data => `<span class="badgeGray d-inline-flex shadow-none">${data || "-"}</span>`,
             },
             {
                 data: "id",

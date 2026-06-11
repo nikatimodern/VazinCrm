@@ -7,12 +7,14 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Transfers.Entities;
 using CRM.EndPoint.FrontEnd.Services;
 using Generics.Infrastructures.Sql;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
+[Authorize(Policy = "NotCustomerOnly")]
 public class TransferController(
     LogSystemService logSystemService,
     FileSaver fileSaver,
@@ -28,8 +30,8 @@ public class TransferController(
     public async Task<IActionResult> GetAllTransfersDt()
     {
         var draw = Request.Query["draw"].FirstOrDefault();
-        var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
-        var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
+        var start = Convert.ToInt32(Request.Query["start"].FirstOrDefault() ?? "0");
+        var length = Convert.ToInt32(Request.Query["length"].FirstOrDefault() ?? "10");
         var searchValue = Request.Query["search[value]"].FirstOrDefault();
         var sortColumnIndex = Request.Query["order[0][column]"].FirstOrDefault();
         var sortDirection = Request.Query["order[0][dir]"].FirstOrDefault();
@@ -114,7 +116,7 @@ public class TransferController(
             else await logSystemService.LogChange(oldData, model, LogActionEnum.ویرایش, user);
 
 
-            var attach = fileSaver.saveAttach(model.Attachments, _AttachType.transfer);
+            var attach = fileSaver.SaveAttachments(model.Attachments, _AttachType.transfer);
             foreach (var att in attach ?? [])
             {
                 att.EntityId = model.Id;
@@ -138,10 +140,18 @@ public class TransferController(
     {
         try
         {
-            var item = await db.Transfers.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
-            if (item == null) return NotFound();
+            var data = await db.Transfers.Where(f => f.Id == id).AsNoTracking()
+                .Select(t => new {
+                    Transfer = t,
+                    Attachments = db.Attachments
+                        .Where(a => a.EntityId == t.Id && a._AttachType == _AttachType.transfer)
+                        .ToList()
+                })
+                .FirstOrDefaultAsync();
 
-            return Ok(item);
+            if (data == null) return NotFound();
+
+            return Ok(data);
         }
         catch (Exception e)
         {

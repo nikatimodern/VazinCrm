@@ -2569,7 +2569,6 @@ class MyService {
                 if (blacklist.includes(name)) continue;
                 defVal = defaultVals.find(v => v.name === name)?.val ?? null;
             }
-            console.log(elm);
             switch (elm.type) {
                 case "text":
                 case "textarea":
@@ -3722,4 +3721,71 @@ function initEyeToggle({ selector, onShow, onHide, showTitle = "نمایش", hid
             updateUI();
         },
     };
+}
+/**
+ * Sends a GET request and returns response data.
+ * @template T
+ * @param {string} url
+ * @returns {Promise<T|null>}
+ */
+async function getData(url) {
+    try {
+        const res = await axios.get(url);
+        return res.status === 200 ? res.data : null;
+    } catch (err) {
+        console.error(err);
+        toastifyError("خطا در دریافت اطلاعات");
+        return null;
+    }
+}
+
+
+/**
+ * @typedef {Object} DeleteItemOptions
+ * @property {string} url
+ * @property {string} [title="حذف!"]
+ * @property {string} [text="آیا مطمئن هستید که میخواهید حذف کنید؟"]
+ * @property {(data: any) => (void|Promise<void>)} [callback]
+ */
+
+/**
+ * Shows confirmation dialog and sends a DELETE request.
+ * @param {DeleteItemOptions} options
+ * @returns {Promise<boolean>}
+ */
+async function deleteItem(options) {
+    const { url, callback = null, title = "حذف!", text = "آیا مطمئن هستید که میخواهید حذف کنید؟" } = options;
+    
+    const result = await Swal.fire({
+        title,
+        text,
+        icon: "warning",
+        showCancelButton: true,
+        cancelButtonColor: "#adadad",
+        confirmButtonColor: "#e64942",
+        cancelButtonText: "انصراف",
+        confirmButtonText: "بله، حذف شود",
+    });
+    
+    if (!result.isConfirmed) return false;
+    
+    try {
+        FLshowLoading();
+        const res = await axios.delete(url);
+        if (res.status === 200) {
+            toastifySuccess("با موفقیت حذف شد");
+            
+            if (typeof callback === "function")
+                await callback(res.data);
+            
+            return true;
+        }
+        return false;
+    } catch (err) {
+        console.error(err);
+        toastifyError("خطا در حذف اطلاعات");
+        return false;
+    } finally {
+        FLshowLoading(false);
+    }
 }

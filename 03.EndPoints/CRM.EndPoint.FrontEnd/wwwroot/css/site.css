@@ -1913,11 +1913,6 @@ a.navbar-brand {
 }
 
 
-.box-shadow-none {
-  box-shadow: none !important;
-}
-
-
 button.accept-policy {
   font-size: 1rem;
   line-height: inherit;
@@ -3378,6 +3373,24 @@ button.badgeGray:hover {
   border-radius: 100px;
   padding: 5px 12px;
   background-color: var(--color8);
+  font-size: 12px;
+  line-height: 1;
+  color: #fff;
+  border: none;
+  user-select: none;
+  transition: all 0.3s;
+}
+
+
+.badgeRed2 {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: .5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border-radius: 100px;
+  padding: 5px 12px;
+  background-color: #851b1d;
   font-size: 12px;
   line-height: 1;
   color: #fff;
@@ -5220,8 +5233,8 @@ table tr.payment-vosoled > td {
 
 
 .invoice-modal .form-check-input:checked {
-  background-color: var(--invoice-accent-color);
-  border-color: var(--invoice-accent-color);
+  background-color: var(--invoice-accent-color) !important;
+  border-color: var(--invoice-accent-color) !important;
 }
 
 
@@ -5843,6 +5856,8 @@ table tr.payment-vosoled > td {
   transition: width .5s linear;
   background: #0d6efd;
 }
+
+
 /*
  */
 
@@ -5852,15 +5867,17 @@ table tr.payment-vosoled > td {
   color: #fff;
   border-radius: 8px;
   min-width: 160px;
-  box-shadow: 0 10px 30px rgba(0,0,0,.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .3);
   overflow: hidden;
 }
+
 
 .ccm-item {
   padding: 10px 12px;
   cursor: pointer;
   font-size: 14px;
 }
+
 
 .ccm-item:hover {
   background: #333;

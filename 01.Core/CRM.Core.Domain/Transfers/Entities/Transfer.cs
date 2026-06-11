@@ -11,9 +11,9 @@ public class Transfer : BaseEntity {
     public int TransferNumber { get; set; }
     public decimal Amount { get; set; }
     public string FromAccountTxt { get; set; }
-    public Guid FromAccountId { get; set; }
+    public Guid? FromAccountId { get; set; }
     public string ToAccountTxt { get; set; }
-    public Guid ToAccountId { get; set; }
+    public Guid? ToAccountId { get; set; }
 
 
     public TransferTypeEnum TransferType { get; set; }

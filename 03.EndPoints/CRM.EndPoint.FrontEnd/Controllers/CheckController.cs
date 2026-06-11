@@ -8,26 +8,17 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Check;
 using CRM.EndPoint.FrontEnd.Services;
 using Generics.Infrastructures.Sql;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
-public class CheckController : Controller {
-    private readonly CRMContextDb db;
-    private readonly UserManager<AppUser> userManager;
-    private readonly DateTimeServices dtService;
-    private readonly LogSystemService logSystemService;
+[Authorize(Policy = "NotCustomerOnly")]
+public class CheckController(CRMContextDb db, UserManager<AppUser> userManager, DateTimeServices dtService, LogSystemService logSystemService)
+    : Controller {
 
-
-    public CheckController(CRMContextDb db, UserManager<AppUser> userManager, DateTimeServices dtService, LogSystemService logSystemService)
-    {
-        this.db = db;
-        this.userManager = userManager;
-        this.dtService = dtService;
-        this.logSystemService = logSystemService;
-    }
 
     [HttpGet]
     public async Task<IActionResult> Index()
