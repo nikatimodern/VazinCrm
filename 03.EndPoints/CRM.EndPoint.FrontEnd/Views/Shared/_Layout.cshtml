@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿@using System.Configuration
+<!DOCTYPE html>
 <html lang="fa">
 
 <head>
@@ -186,6 +187,9 @@
                             </a>
                             <a class="menuLink text-white Admin ManagingDirector ExecutiveDirector FinancialExpert FinancialAdmin" href="/Check/Index">
                                 <li>چک ها</li>
+                            </a>
+                            <a class="menuLink text-white Admin ManagingDirector ExecutiveDirector FinancialExpert FinancialAdmin" asp-controller="Transfer" asp-action="Index">
+                                <li>نقل و انتقال</li>
                             </a>
                             @* <a class="menuLink text-white" href="/Supply/Payment">
                                 <li>ثبت پرداختی</li>
@@ -404,6 +408,10 @@
                         </a>
                         <a class="menuLink text-white Admin ManagingDirector ExecutiveDirector FinancialExpert FinancialAdmin" href="/Check/Index">
                             <li>چک ها</li>
+                        </a>
+
+                        <a class="menuLink text-white Admin ManagingDirector ExecutiveDirector FinancialExpert FinancialAdmin" asp-controller="Transfer" asp-action="Index">
+                            <li>نقل و انتقال</li>
                         </a>
                         @*   <a class="menuLink text-white" href="/Supply/Payment">
                                 <li>ثبت پرداختی</li>
@@ -3155,7 +3163,7 @@
                                     <div class="mt-3">
                                         <div class="d-flex gap-2 justify-content-between">
                                             <label for="reqAttachToAccountId">حساب مقصد</label>
-                                            <button class="hoverLink fMedium" style="color: rebeccapurple;font-size: 12px" type="button" onclick="toggleAddBankAccountModal()">
+                                            <button class="addBankBtn-invoice" type="button" onclick="toggleAddBankAccountModal()">
                                                 افزودن شماره‌حساب جدید
                                             </button>
                                         </div>

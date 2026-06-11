@@ -5181,99 +5181,78 @@ table tr.payment-vosoled > td {
 }
 
 
-.invoice-modal.deposit-mode .modalHeader-invoice {
-  background-color: #02514C;
+.invoice-modal .modalHeader-invoice {
+  background-color: var(--invoice-head-color);
 }
 
 
-.invoice-modal.deposit-mode .modalContent-invoice {
-  border-color: #0A6B55;
+.invoice-modal .modalContent-invoice {
+  border-color: var(--invoice-main-border);
 }
 
 
-.invoice-modal.deposit-mode .sectionTitle-invoice {
-  color: #147A4E;
+.invoice-modal .sectionTitle-invoice {
+  color: var(--invoice-accent-color);
 }
 
 
-.invoice-modal.deposit-mode .sectionBox-invoice {
-  border-color: #A4D0BB;
+.invoice-modal .addBankBtn-invoice {
+  color: var(--invoice-accent-color);
+  font-size: 12px;
+  font-family: IRANSansMedium;
 }
 
 
-.invoice-modal.deposit-mode .form-check-input:checked {
-  background-color: #147A4E;
-  border-color: #147A4E;
+.invoice-modal .addBankBtn-invoice:hover,
+.invoice-modal .addBankBtn-invoice:focus {
+  text-decoration: underline;
 }
 
 
-.invoice-modal.deposit-mode .form-check-input:focus {
-  border-color: #A4D0BB;
-  box-shadow: 0 0 0 .25rem #A4D0BB40;
+.invoice-modal .sectionBox-invoice {
+  border-color: var(--invoice-soft-border);
 }
 
 
-.invoice-modal.backward-mode .modalHeader-invoice {
-  background-color: #750002;
+.invoice-modal .form-check-input:checked {
+  background-color: var(--invoice-accent-color);
+  border-color: var(--invoice-accent-color);
 }
 
 
-.invoice-modal.backward-mode .modalContent-invoice {
-  border-color: #8A1E14;
+.invoice-modal .form-check-input:focus {
+  border-color: var(--invoice-soft-border);
+  box-shadow: 0 0 0 .25rem var(--invoice-focus-shadow);
 }
 
 
-.invoice-modal.backward-mode .sectionTitle-invoice {
-  color: #B3392A;
+/* Deposit */
+.invoice-modal.deposit-mode {
+  --invoice-head-color: #02514C;
+  --invoice-main-border: #0A6B55;
+  --invoice-accent-color: #147A4E;
+  --invoice-soft-border: #A4D0BB;
+  --invoice-focus-shadow: #A4D0BB40;
 }
 
 
-.invoice-modal.backward-mode .sectionBox-invoice {
-  border-color: #E8C5C0;
+/* Backward */
+.invoice-modal.backward-mode {
+  --invoice-head-color: #750002;
+  --invoice-main-border: #8A1E14;
+  --invoice-accent-color: #B3392A;
+  --invoice-soft-border: #E8C5C0;
+  --invoice-focus-shadow: #E8C5C040;
 }
 
 
-.invoice-modal.backward-mode .form-check-input:checked {
-  background-color: #B3392A;
-  border-color: #B3392A;
-}
-
-
-.invoice-modal.backward-mode .form-check-input:focus {
-  border-color: #E8C5C0;
-  box-shadow: 0 0 0 .25rem #E8C5C040;
-}
-
-
-.invoice-modal.payment-mode .modalHeader-invoice {
-  background-color: #4B247A;
-}
-
-
-.invoice-modal.payment-mode .modalContent-invoice {
-  border-color: #6F42C1;
-}
-
-
-.invoice-modal.payment-mode .sectionTitle-invoice {
-  color: #663399;
-}
-
-
-.invoice-modal.payment-mode .sectionBox-invoice {
-  border-color: #CBB7E6;
-}
-
-
-.invoice-modal.payment-mode .form-check-input:checked {
-  background-color: #663399;
-  border-color: #663399;
-}
-
-
-.invoice-modal.payment-mode .form-check-input:focus {
-  border-color: #CBB7E6;
-  box-shadow: 0 0 0 .25rem #CBB7E640;
+/* Payment */
+.invoice-modal.payment-mode {
+  --invoice-head-color: #4B247A;
+  --invoice-main-border: #6F42C1;
+  --invoice-accent-color: #663399;
+  --invoice-soft-border: #CBB7E6;
+  --invoice-focus-shadow: #CBB7E640;
 }
 
 
@@ -6139,14 +6118,13 @@ table tr.payment-vosoled > td {
 }
 
 
-
-
 .checkbook-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
   margin-top: 1.5rem;
 }
+
 
 .checkbook-card {
   background: #fff;
@@ -6159,12 +6137,14 @@ table tr.payment-vosoled > td {
   position: relative;
 }
 
+
 .checkbook-card .checkbook-card__title {
   font-family: IRANSansBold;
   margin-bottom: .5rem;
   color: var(--checkbook-card-color);
   transition: color 0.25s;
 }
+
 
 .checkbook-card .checkbook-card__badge {
   background-color: var(--checkbook-card-bg);
@@ -6177,17 +6157,20 @@ table tr.payment-vosoled > td {
   display: inline-block;
 }
 
+
 .checkbook-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
   border-color: var(--checkbook-card-color);
 }
 
+
 .checkbook-card {
   --checkbook-card-color: #475569;
   --checkbook-card-bg: #f8fafc;
   --checkbook-card-bg-border: #e2e8f0;
 }
+
 
 /* .checkbook-card:nth-child(4n+1) {
   --checkbook-card-color: #2563eb;
@@ -6223,6 +6206,7 @@ table tr.payment-vosoled > td {
   min-height: 140px;
   color: #64748b;
 }
+
 
 .card-add-dashed:hover {
   border-color: #475569 !important;

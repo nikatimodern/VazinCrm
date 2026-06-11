@@ -2472,7 +2472,7 @@ class MyService {
                 if (blacklist.includes(name)) continue;
                 defVal = defaultVals.find(v => v.name === name)?.val ?? null;
             }
-            
+            console.log(elm);
             switch (elm.type) {
                 case "text":
                 case "textarea":
@@ -2502,6 +2502,7 @@ class MyService {
                     break;
                 
                 case "file":
+                    elm.value = defVal ?? "";
                     const previewId = elm.getAttribute("data-showList");
                     if (previewId) {
                         const previewDiv = document.getElementById(previewId);

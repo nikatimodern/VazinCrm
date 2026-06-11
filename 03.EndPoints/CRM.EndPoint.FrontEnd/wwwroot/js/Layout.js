@@ -3484,9 +3484,12 @@ const getAllBankAccounts = async (rerender = false) => {
     
     const selects = [
         { element: document.querySelector("#InvoiceModalId select[name='BankAccountId']"), type: [1] },
+        { element: document.querySelector("#InvoiceModalId select[name='BankAccountId']"), type: [1] },
         { element: document.querySelector("#ShowPaymentModal select[name='BankAccountId']"), type: [1], isDisable: true },
         { element: document.querySelector("#reqAmountAttachModal select[name='fromAccountId']"), type: [1] },
         { element: document.querySelector("#reqAmountAttachModal select[name='toAccountId']"), type: [2, 3], isTomSelect: true },
+        { element: document.querySelector("#transferModal select[name='fromAccountId']"), type: [1]},
+        { element: document.querySelector("#transferModal select[name='toAccountId']"), type: [2, 3], isTomSelect: true },
     ].filter(e => e.element);
     
     const elementsToToggleDisable = selects.filter(s => !s.isDisable).map(s => s.element);
