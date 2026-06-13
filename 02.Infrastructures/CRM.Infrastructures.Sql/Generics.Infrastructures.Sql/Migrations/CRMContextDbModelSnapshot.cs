@@ -3200,6 +3200,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<DateTime>("AnswerTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("AnswerTimeTxt")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Extension")
                         .HasColumnType("nvarchar(max)");
 

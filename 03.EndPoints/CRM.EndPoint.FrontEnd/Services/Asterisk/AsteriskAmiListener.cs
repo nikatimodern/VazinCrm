@@ -123,12 +123,7 @@ public class AsteriskAmiListener : BackgroundService {
 
             var dest = Get(ev, "DestCallerIDNum"); //DestExten
 
-            var (srcIsInternal, destIsInternal) = GetDirection(src, dest);
-            if (destIsInternal)
-            {
-                var call = _calls.GetOrAdd(linkedId, new CallSessionModel { LinkedId = linkedId });
-                call.PendingDest = dest;
-            }
+            var srcIsInternal = IsInternal(src);
 
             var userDest = await GetUsers(dest);
             if (userDest == null) return;
@@ -211,9 +206,18 @@ public class AsteriskAmiListener : BackgroundService {
                 call.Answered = true;
                 call.AnswerTime ??= DateTime.Now;
 
+                var callerIdNum = Get(ev, "CallerIDNum");
+                var connectedLineNum = Get(ev, "ConnectedLineNum");
 
-                var connectedLine = Get(ev, "ConnectedLineNum");
-                var exten = IsInternal(connectedLine) ? connectedLine : call.PendingDest;
+                string exten = null;
+                if (IsInternal(connectedLineNum))
+                {
+                    exten = connectedLineNum;
+                } else if (IsInternal(callerIdNum))
+                {
+                    exten = callerIdNum;
+                }
+
 
                 if (!string.IsNullOrEmpty(exten) && !call.Participants.Any(p => p.Extension == exten))
                 {
@@ -303,6 +307,7 @@ public class AsteriskAmiListener : BackgroundService {
                     UserFullName = u?.FullName
                 });
             }
+
             var customer = GetCallerCustomer(src);
             if (customer != null)
             {
@@ -331,11 +336,6 @@ public class AsteriskAmiListener : BackgroundService {
         if (src == "9506")
             src = Get(ev, "Channel")?.Substring(4, 3);
         return src;
-    }
-
-    private static (bool srcInternal, bool destInternal) GetDirection(string src, string dest)
-    {
-        return (IsInternal(src), IsInternal(dest));
     }
 
     private static bool IsInternal(string n) => !string.IsNullOrWhiteSpace(n) && n.Length <= 3;

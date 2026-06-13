@@ -11,5 +11,6 @@ public class ReportParticipant {
     public string UserId { get; set; }
     public string UserFullName { get; set; }
     public DateTime AnswerTime { get; set; }
+    public string AnswerTimeTxt { get; set; }
     public int SortOrder { get; set; }
 }

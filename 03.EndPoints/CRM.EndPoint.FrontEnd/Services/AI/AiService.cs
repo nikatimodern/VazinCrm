@@ -123,6 +123,7 @@ public class AiService(
                     UserId = participant.UserId,
                     UserFullName = participant.UserFullName,
                     AnswerTime = participant.AnswerTime,
+                    AnswerTimeTxt = dts.GetDatePersian(),
                     SortOrder = order++
                 });
             }
