@@ -164,6 +164,13 @@ function getAllTransfersDt() {
                 orderable: false,
             },
         ],
+        createdRow: function (row, data, dataIndex) {
+            if (data.transferType === 1) {
+                row.classList.add('tableRow-bgGreen');
+            } else if (data.transferType === 2) {
+                row.classList.add('tableRow-bgRed');
+            }
+        },
         language: languageDatatable,
         layout: layoutDatatable,
         initComplete: () => {
