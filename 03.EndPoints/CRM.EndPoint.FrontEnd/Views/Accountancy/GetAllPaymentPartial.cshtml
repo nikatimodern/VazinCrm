@@ -110,11 +110,11 @@
                             case AccStatusEnum.در_دست_تایید:
                                 if (
                                     fromFinancial
-                                    && (Model.IsAdmin
-                                        || (Model.IsFinancial && (item.PayType == PayTypeEnum.نقدی || item.PayType == PayTypeEnum.چکی))
-                                        || ((Model.IsManagingDirector || Model.IsTamin) && (item.PayType == PayTypeEnum.تهاتری || item.PayType == PayTypeEnum.اعتباری))
+                                    && (Model.IsAdmin ||
+                                        (Model.IsFinancial && (item.PayType == PayTypeEnum.نقدی || item.PayType == PayTypeEnum.چکی)) ||
+                                        ((Model.IsManagingDirector || Model.IsTamin) && item.PayType == PayTypeEnum.تهاتری) ||
+                                        (Model.IsManagingDirector && item.PayType == PayTypeEnum.اعتباری)
                                     )
-                                    && !(Model.IsTamin && !Model.IsManagingDirector && item.PayType == PayTypeEnum.اعتباری)
                                 ) {
                                     <button class="buttonCancel3 btn-accept" style="min-width: 28px" onclick="showModalNotAccept('@item.Id', 0)">رد</button>
                                     <button class="buttonGreen2 btn-accept" onclick="acceptAccountancy('@item.Id', @((int)AccStatusEnum.تایید_شده))">تایید</button>
@@ -137,11 +137,11 @@
                                     <span class="fbold" style="color:darkgreen">تایید شده</span>
                                     if (
                                         fromFinancial
-                                        && ((Model.IsAdmin)
-                                            || (Model.IsFinancial && (item.PayType == PayTypeEnum.نقدی || item.PayType == PayTypeEnum.چکی))
-                                            || ((Model.IsManagingDirector || Model.IsTamin) && (item.PayType == PayTypeEnum.تهاتری || item.PayType == PayTypeEnum.اعتباری))
+                                        && (Model.IsAdmin ||
+                                            (Model.IsFinancial && (item.PayType == PayTypeEnum.نقدی || item.PayType == PayTypeEnum.چکی)) ||
+                                            ((Model.IsManagingDirector || Model.IsTamin) && item.PayType == PayTypeEnum.تهاتری) ||
+                                            (Model.IsManagingDirector && item.PayType == PayTypeEnum.اعتباری)
                                         )
-                                        && !(Model.IsTamin && !Model.IsManagingDirector && item.PayType == PayTypeEnum.اعتباری)
                                     ) {
                                         <span style="cursor:pointer;color:#333" onclick="acceptAccountancy('@item.Id', @((int)AccStatusEnum.در_دست_تایید))" data-title-right="بازگشت">
                                             <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>

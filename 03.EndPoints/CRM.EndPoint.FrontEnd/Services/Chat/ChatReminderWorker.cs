@@ -18,14 +18,14 @@ public class ChatReminderWorker(IServiceProvider serviceProvider, ILogger<ChatRe
 
                 var reminderService = scope.ServiceProvider.GetRequiredService<ChatReminderService>();
 
-                await reminderService.CheckUnreadChats();*/
+                await reminderService.CheckUnreadChats(stoppingToken);*/
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "ChatReminderWorker Error");
             }
 
-            await Task.Delay(TimeSpan.FromMinutes(10), stoppingToken);
+            await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
         }
     }
 }
