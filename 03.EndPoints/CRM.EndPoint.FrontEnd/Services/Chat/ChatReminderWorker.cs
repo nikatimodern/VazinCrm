@@ -14,11 +14,11 @@ public class ChatReminderWorker(IServiceProvider serviceProvider, ILogger<ChatRe
         {
             try
             {
-                /*using var scope = serviceProvider.CreateScope();
+                using var scope = serviceProvider.CreateScope();
 
                 var reminderService = scope.ServiceProvider.GetRequiredService<ChatReminderService>();
 
-                await reminderService.CheckUnreadChats(stoppingToken);*/
+                await reminderService.CheckUnreadChats(stoppingToken);
             }
             catch (Exception ex)
             {
