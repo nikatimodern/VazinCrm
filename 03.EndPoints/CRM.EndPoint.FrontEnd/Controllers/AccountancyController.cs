@@ -348,7 +348,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     UserId = user.Id,
                     IsAdmin = roles.Contains("مدیر ارشد"),
                     IsSalesAdmin = roles.Contains("مدیر فروش"),
-                    IsManagingDirector = roles.Contains("مدیر عامل"),
+                    IsManagingDirector = roles.Contains("مدیر عامل") || user.NormalizedUserName == "A.NIROMAND",
                     IsTamin = roles.Contains("مدیر تامین") || roles.Contains("کارشناس تامین"),
                     IsFinancial = roles.Contains("کارشناس مالی") || roles.Contains("مدیر مالی"),
                     IsCustomer = roles.Contains("مشتری"),
@@ -414,7 +414,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     model.IsAdmin = roles.Contains("مدیر ارشد");
                     model.IsSalesAdmin = roles.Contains("مدیر فروش");
-                    model.IsManagingDirector = roles.Contains("مدیر عامل");
+                    model.IsManagingDirector = roles.Contains("مدیر عامل") || user.NormalizedUserName == "A.NIROMAND";
                     model.IsTamin = roles.Contains("مدیر تامین") || roles.Contains("کارشناس تامین");
                     model.IsFinancial = roles.Contains("کارشناس مالی") || roles.Contains("مدیر مالی");
                     model.IsCustomer = roles.Contains("مشتری");
@@ -949,7 +949,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
             await db.SaveChangesAsync();
-            await hub.Clients.Groups("کارشناس مالی", "مدیر عامل", "مدیر ارشد").SendAsync("countPreFactorToAccept");
+            await hub.Clients.Groups("کارشناس مالی", "مدیر تامین", "کارشناس تامین", "مدیر ارشد").SendAsync("countPreFactorToAccept");
             return Ok();
         }
 

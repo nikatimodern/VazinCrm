@@ -46,11 +46,11 @@ public class ChatReminderService(CRMContextDb db, UserContextDb udb, ISmsQueue s
 
                 var shouldSendSms = false;
 
-                // شرط اول: آیا اصلاً تا حالا پیامکی برای این چت رفته؟
-                // یا اینکه پیامکی که قبلاً رفته، مال قبل از این پیام‌های جدید بوده؟ (کاربر قبلی‌ها را خوانده و اینا کاملاً جدیدن)
+                // شرط اول: آیا اصلا تا حالا پیامکی برای این چت رفته؟
+                // یا اینکه پیامکی که قبلا رفته، مال قبل از این پیام‌های جدید بوده؟ (کاربر قبلی‌ها را خوانده و اینا کاملاً جدیدن)
                 if (!mainChat.ReminderSentDate.HasValue || oldestUnread.CreateDate > mainChat.ReminderSentDate)
                 {
-                    shouldSendSms = true; // این یک بچ (Batch) کاملاً جدید از پیام‌های نخوانده است
+                    shouldSendSms = true;
                 } else
                 {
                     // شرط دوم: کاربر پیام‌های قبلی را "نخوانده" است.
