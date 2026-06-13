@@ -26,16 +26,16 @@ public class TransferController(
         return View();
     }
 
-    [HttpGet]
+    [HttpPost]
     public async Task<IActionResult> GetAllTransfersDt()
     {
-        var draw = Request.Query["draw"].FirstOrDefault();
-        var start = Convert.ToInt32(Request.Query["start"].FirstOrDefault() ?? "0");
-        var length = Convert.ToInt32(Request.Query["length"].FirstOrDefault() ?? "10");
-        var searchValue = Request.Query["search[value]"].FirstOrDefault();
-        var sortColumnIndex = Request.Query["order[0][column]"].FirstOrDefault();
-        var sortDirection = Request.Query["order[0][dir]"].FirstOrDefault();
-        var sortColumn = Request.Query[$"columns[{sortColumnIndex}][data]"].FirstOrDefault();
+        var draw = Request.Form["draw"].FirstOrDefault();
+        var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
+        var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
+        var searchValue = Request.Form["search[value]"].FirstOrDefault();
+        var sortColumnIndex = Request.Form["order[0][column]"].FirstOrDefault();
+        var sortDirection = Request.Form["order[0][dir]"].FirstOrDefault();
+        var sortColumn = Request.Form[$"columns[{sortColumnIndex}][data]"].FirstOrDefault();
 
         var query = db.Transfers.AsNoTracking();
 
@@ -57,8 +57,11 @@ public class TransferController(
             var isAsc = sortDirection == "asc";
 
             query = sortColumn switch {
-                "searchNumber" => isAsc ? query.OrderBy(c => c.TransferNumber) : query.OrderByDescending(c => c.TransferNumber),
+                "transferNumber" => isAsc ? query.OrderBy(c => c.TransferNumber) : query.OrderByDescending(c => c.TransferNumber),
                 "amount" => isAsc ? query.OrderBy(c => c.Amount) : query.OrderByDescending(c => c.Amount),
+                "createDateTxt" => isAsc ? query.OrderBy(c => c.CreateDate) : query.OrderByDescending(c => c.CreateDate),
+                "fromAccountTxt" => isAsc ? query.OrderBy(c => c.FromAccountTxt) : query.OrderByDescending(c => c.FromAccountTxt),
+                "toAccountTxt" => isAsc ? query.OrderBy(c => c.ToAccountTxt) : query.OrderByDescending(c => c.ToAccountTxt),
                 "transferDate" => isAsc ? query.OrderBy(c => c.TransferDateMiladi) : query.OrderByDescending(c => c.TransferDateMiladi),
                 _ => query.OrderByDescending(c => c.CreateDate)
             };

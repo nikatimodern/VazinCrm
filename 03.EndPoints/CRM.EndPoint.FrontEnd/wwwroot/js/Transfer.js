@@ -131,6 +131,7 @@ function getAllTransfersDt() {
         responsive: true,
         ajax: {
             url: `/Transfer/GetAllTransfersDt`,
+            type: "POST",
         },
         columns: [
             { data: "transferNumber" },
@@ -151,7 +152,7 @@ function getAllTransfersDt() {
                 orderable: false,
             },
             { data: "transferDate" },
-            { data: "userCreator" },
+            { data: "userCreator", orderable: false },
             {
                 data: "id",
                 render: data => `
