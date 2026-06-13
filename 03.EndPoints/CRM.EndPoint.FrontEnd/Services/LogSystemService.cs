@@ -22,6 +22,8 @@ using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Reports.Entities;
 using CRM.Core.Domain.RequestAmounts.Entities;
 using CRM.Core.Domain.Supplies.Entities;
+using CRM.Core.Domain.Transfers.Entities;
+using CRM.Core.Domain.Transfers.Enums;
 using CRM.EndPoint.FrontEnd.Models.LogSystem;
 using Generics.Infrastructures.Sql;
 using Newtonsoft.Json;
@@ -530,6 +532,22 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
                 }
 
                 break;
+            case Transfer transfer:
+                switch (action)
+                {
+                    case LogActionEnum.ثبت:
+                        return transfer.TransferType == TransferTypeEnum.واریز
+                            ? $"یک نقل و انتقال از نوع واریز به شماره {serialNumber} توسط <b>{fullName}</b> ثبت شد."
+                            : $"یک نقل و انتقال از نوع برداشت به شماره {serialNumber} توسط <b>{fullName}</b> ثبت شد.";
+
+                    case LogActionEnum.ویرایش:
+                        return $"یک نقل و انتقال به شماره {serialNumber} توسط <b>{fullName}</b> ویرایش شد.";
+
+                    case LogActionEnum.حذف:
+                        return $"یک نقل و انتقال به شماره {serialNumber} توسط <b>{fullName}</b> حذف شد.";
+                }
+
+                break;
         }
 
         return null;
@@ -550,6 +568,7 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
             RequestAmount r => r.RequestNumber,
             Cash c => c.Serial,
             Check c => TextService.ExtractNumber(c.SerialNumber),
+            Transfer c => c.TransferNumber,
             _ => null
         };
     }

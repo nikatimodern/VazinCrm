@@ -1,7 +1,15 @@
 let transferTable;
 let transferData = {};
 var transferAttachment = [];
+
 const transferModal = document.getElementById("transferModal");
+const transferFields = {
+    fromSelect: transferModal.querySelector("[name='fromAccountId']"),
+    fromInput: transferModal.querySelector("[name='fromAccountTxt']"),
+    toSelect: transferModal.querySelector("[name='toAccountId']"),
+    toInput: transferModal.querySelector("[name='toAccountTxt']"),
+    header: transferModal.querySelector(".modalHeader-invoice"),
+};
 
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -10,16 +18,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 async function showModalTransfer(type) {
     transferData.transferType = type;
-    const fromSelect = transferModal.querySelector("[name='fromAccountId']");
-    const fromInput = transferModal.querySelector("[name='fromAccountTxt']");
-    const toSelect = transferModal.querySelector("[name='toAccountId']");
-    const toInput = transferModal.querySelector("[name='toAccountTxt']");
     
+    setTransferModalUI(type);
+    ModalToggle(transferModal, "show");
+    await loadTransferAccounts(type);
+}
+
+function setTransferModalUI(type) {
+    const { fromSelect, fromInput, toSelect, toInput, header } = transferFields;
     
     if (type === 1) {
         fromSelect.classList.add("d-none");
         fromInput.classList.remove("d-none");
-        
         
         toSelect.classList.remove("d-none");
         toInput.classList.add("d-none");
@@ -31,9 +41,7 @@ async function showModalTransfer(type) {
         toSelect.required = true;
         toInput.required = false;
         
-        await getAllBankAccounts([{ element: toSelect, type: [1] }], true);
-        
-        transferModal.querySelector(".modalHeader-invoice").innerText = "ثبت واریز";
+        header.innerText = "ثبت واریز";
         transferModal.classList.add("deposit-mode");
         transferModal.classList.remove("backward-mode");
     }
@@ -52,14 +60,16 @@ async function showModalTransfer(type) {
         toSelect.required = false;
         toInput.required = true;
         
-        await getAllBankAccounts([{ element: fromSelect, type: [1] }], true);
-        transferModal.querySelector(".modalHeader-invoice").innerText = "ثبت برداشت";
+        header.innerText = "ثبت برداشت";
         transferModal.classList.remove("deposit-mode");
         transferModal.classList.add("backward-mode");
     }
-    
-    ModalToggle(transferModal);
 }
+
+const loadTransferAccounts = async (type) => {
+    const { fromSelect, toSelect } = transferFields;
+    await getAllBankAccounts([{ element: type === 1 ? toSelect : fromSelect, type: [1] }]);
+};
 
 function cancelTransferModal() {
     ModalToggle(transferModal, "hide");
@@ -172,16 +182,13 @@ const editTransfer = async (id) => {
     transferData = data.transfer;
     transferAttachment = data.attachments;
     
-    await showModalTransfer(transferData.transferType);
+    await loadTransferAccounts(transferData.transferType);
     mySer.convertJsonToForm(transferData, "transferForm");
-    
-    if (transferData.transferType === 1) {
-        transferModal.querySelector("[name='toAccountTxt']").value = "";
-    } else if (transferData.transferType === 2) {
-        transferModal.querySelector("[name='fromAccountTxt']").value = "";
-    }
+    setTransferModalUI(transferData.transferType);
     
     FileUpReload("transferAttach");
+    
+    ModalToggle(transferModal);
 };
 
 const deleteTransfer = async (id) => {

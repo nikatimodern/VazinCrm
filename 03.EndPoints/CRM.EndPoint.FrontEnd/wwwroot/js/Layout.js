@@ -3484,19 +3484,24 @@ const cancelShowAccModal = () => {
     document.getElementById("showImageDisplayAccAt").innerHTML = "";
 };
 
-const getAllBankAccountsJson = async (type) => {
+const bankAccountsCache = {};
+const getAllBankAccountsJson = async (rerender, type) => {
+    const key = type ?? "all";
+    
     try {
-        const res = await axios(`/Accountancy/GetAllBankAccountJson?type=${type}`);
-        return res.data;
+        if (rerender || !bankAccountsCache[key]) {
+            bankAccountsCache[key] = axios(`/Accountancy/GetAllBankAccountJson?type=${type}`).then(res => res.data);
+        }
+        return await bankAccountsCache[key];
     } catch (err) {
+        delete bankAccountsCache[key];
         console.log(err);
     }
 };
 
-let isLoadedBankAccounts = false;
 /**
  * @typedef {Object} BankAccountSelectOptions
- * @property {HTMLSelectElement|string} element
+ * @property {Element|string} element
  * @property {number[]} type
  * @property {boolean} [isDisable]
  * @property {boolean} [isTomSelect]
@@ -3506,7 +3511,6 @@ let isLoadedBankAccounts = false;
  * @param {boolean} [rerender=false]
  */
 const getAllBankAccounts = async (selects, rerender = false) => {
-    if (isLoadedBankAccounts && !rerender) return;
     
     /*const selects = [
         { element: document.querySelector("#InvoiceModalId select[name='BankAccountId']"), type: [1] },
@@ -3517,18 +3521,18 @@ const getAllBankAccounts = async (selects, rerender = false) => {
         { element: document.querySelector("#transferModal select[name='fromAccountId']"), type: [1] },
         { element: document.querySelector("#transferModal select[name='toAccountId']"), type: [2, 3], isTomSelect: true },
     ].filter(e => e.element);*/
-    selects = selects.map(x => ({
+    const resolvedSelects = selects.map(x => ({
         ...x,
         element: typeof x.element === "string" ? document.querySelector(x.element) : x.element,
     })).filter(x => x.element);
     
-    const elementsToToggleDisable = selects.filter(s => !s.isDisable).map(s => s.element);
+    const elementsToToggleDisable = resolvedSelects.filter(s => !s.isDisable).map(s => s.element);
     toggleElementsDisabled(elementsToToggleDisable);
     
     try {
-        const data = await getAllBankAccountsJson();
+        const data = await getAllBankAccountsJson(rerender);
         
-        selects.forEach(x => {
+        resolvedSelects.forEach(x => {
             const filteredData = data.filter(d => x.type.includes(d.type));
             if (x.isTomSelect) {
                 createSupplierTomSelect(x.element, filteredData);
@@ -3550,7 +3554,6 @@ const getAllBankAccounts = async (selects, rerender = false) => {
             );
         });
         
-        isLoadedBankAccounts = true;
     } catch (err) {
         console.log(err);
     } finally {
@@ -5114,9 +5117,9 @@ function cancelRequestAmountPaymentModal() {
 }
 
 
-const showAttachReqAmount = (id) => {
+const showAttachReqAmount = async (id) => {
     reqAmountId = id;
-    getAllBankAccounts([
+    await getAllBankAccounts([
         { element: "#reqAmountAttachModal select[name='fromAccountId']", type: [1] },
         { element: "#reqAmountAttachModal select[name='toAccountId']", type: [2, 3], isTomSelect: true },
     ]);
