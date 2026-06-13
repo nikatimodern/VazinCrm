@@ -35,6 +35,39 @@ var CartableFSearchVal = null;//متن جستجو
 
 var filterReportConfig = {};
 
+
+const languageDatatable = {
+    emptyTable: "هیچ رکوردی موجود نمی باشد.",
+    info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
+    infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
+    infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
+    lengthMenu: "نمایش _MENU_ ردیف",
+    loadingRecords: "در حال بارگزاری...",
+    search: "",
+    zeroRecords: "رکوردی با این مشخصات پیدا نشد",
+    aria: {
+        sortAscending: ": فعال سازی نمایش به صورت صعودی",
+        sortDescending: ": فعال سازی نمایش به صورت نزولی",
+    },
+};
+const layoutDatatable = {
+    bottomEnd: "info",
+    bottomStart: {
+        paging: {
+            type: "simple_numbers",
+        },
+    },
+    topEnd: {
+        pageLength: true,
+    },
+    topStart: {
+        search: {
+            placeholder: "جستجو",
+        },
+    },
+};
+
+
 //
 // var mySer = null;
 // var CrmSer = null;
@@ -144,43 +177,25 @@ connection.on("RefreshTasks", async () => {
     }
 });
 
-let preventGetRemind = false;
-const toggleEl = document.getElementById("notification-icon");
-const dropdown = document.getElementById("notification-dropdown");
-showNotificationDropdown();
+
+const notifDropdown = Dropdown.setup({
+    toggle: document.getElementById("notification-icon"),
+    content: document.getElementById("notification-dropdown"),
+    
+    async onOpen() {
+        await getRemind();
+    },
+    
+    options: {
+        originalDisplay: "flex",
+        effect: "zoom",
+        zIndex: 100,
+        transitionDuration: 200,
+    },
+});
 
 function closeNotification() {
-    if (!toggleEl) return;
-    toggleEl.dropdownInstance.close();
-    preventGetRemind = false;
-}
-
-function showNotificationDropdown() {
-    if (!toggleEl) return;
-    toggleEl.addEventListener("click", async (e) => {
-        await getRemind();
-        preventGetRemind = true;
-        e.stopPropagation();
-        
-        if (!toggleEl.dropdownInstance) {
-            toggleEl.dropdownInstance = new Dropdown({
-                button: toggleEl,
-                content: dropdown,
-                originalDisplay: "flex",
-                effect: "zoom",
-                zIndex: 100,
-                transitionDuration: 200,
-            });
-        }
-        toggleEl.dropdownInstance.toggle();
-        
-    });
-    
-    document.addEventListener("click", function (e) {
-        if (toggleEl.dropdownInstance && toggleEl.dropdownInstance.isOpen && !dropdown.contains(e.target) && !toggleEl.contains(e.target)) {
-            closeNotification();
-        }
-    });
+    notifDropdown?.close();
 }
 
 
@@ -2305,7 +2320,7 @@ let isEditInvoiceModal = false;
 let invoiceItemId;
 
 const ShowModalInvoice = async (acType = 1, ParentId = null) => {
-    getAllBankAccounts();
+    await getAllBankAccounts([{ element: "#InvoiceModalId select[name='BankAccountId']", type: [1] }]);
     if (ParentId != null || acType === 2) { // وصول یا برگشتی بود
         document.getElementById("DivEtebariId").style.display = "none";
     } else {
@@ -2338,7 +2353,7 @@ const ShowModalInvoice = async (acType = 1, ParentId = null) => {
 async function showPayment(id, parent = false) {
     try {
         FLshowLoading();
-        await getAllBankAccounts();
+        await getAllBankAccounts([{ element: "#ShowPaymentModal select[name='BankAccountId']", type: [1], isDisable: true }]);
         const res = (await axios(`/Accountancy/getAccountancy/${id}?parent=${parent}`)).data;
         const data = res.accData;
         
@@ -2444,7 +2459,7 @@ async function showPayment(id, parent = false) {
 
 const ShowEditModalInvoice = async (id, type = 1) => {
     FLshowLoading();
-    getAllBankAccounts();
+    await getAllBankAccounts([{ element: "#InvoiceModalId select[name='BankAccountId']", type: [1] }]);
     const res = await axios(`/Accountancy/getAccountancy/${id}`);
     const data = res.data.accData;
     
@@ -3234,6 +3249,7 @@ const GetUserLogin = async () => {
 
 let locationTabIdEnvelope;
 const checkRoles = (roles) => {
+    if (!roles) return;
     roles.forEach(role => {
         const elements = document.querySelectorAll(`.${role.name}`);
         elements.forEach(el => {
@@ -3468,34 +3484,55 @@ const cancelShowAccModal = () => {
     document.getElementById("showImageDisplayAccAt").innerHTML = "";
 };
 
-const getAllBankAccountsJson = async (type) => {
+const bankAccountsCache = {};
+const getAllBankAccountsJson = async (rerender, type) => {
+    const key = type ?? "all";
+    
     try {
-        const res = await axios(`/Accountancy/GetAllBankAccountJson?type=${type}`);
-        return res.data;
+        if (rerender || !bankAccountsCache[key]) {
+            bankAccountsCache[key] = axios(`/Accountancy/GetAllBankAccountJson?type=${type}`).then(res => res.data);
+        }
+        return await bankAccountsCache[key];
     } catch (err) {
+        delete bankAccountsCache[key];
         console.log(err);
     }
 };
 
-let isLoadedBankAccounts = false;
-
-const getAllBankAccounts = async (rerender = false) => {
-    if (isLoadedBankAccounts && !rerender) return;
+/**
+ * @typedef {Object} BankAccountSelectOptions
+ * @property {Element|string} element
+ * @property {number[]} type
+ * @property {boolean} [isDisable]
+ * @property {boolean} [isTomSelect]
+ */
+/**
+ * @param {BankAccountSelectOptions[]} selects
+ * @param {boolean} [rerender=false]
+ */
+const getAllBankAccounts = async (selects, rerender = false) => {
     
-    const selects = [
+    /*const selects = [
+        { element: document.querySelector("#InvoiceModalId select[name='BankAccountId']"), type: [1] },
         { element: document.querySelector("#InvoiceModalId select[name='BankAccountId']"), type: [1] },
         { element: document.querySelector("#ShowPaymentModal select[name='BankAccountId']"), type: [1], isDisable: true },
         { element: document.querySelector("#reqAmountAttachModal select[name='fromAccountId']"), type: [1] },
         { element: document.querySelector("#reqAmountAttachModal select[name='toAccountId']"), type: [2, 3], isTomSelect: true },
-    ].filter(e => e.element);
+        { element: document.querySelector("#transferModal select[name='fromAccountId']"), type: [1] },
+        { element: document.querySelector("#transferModal select[name='toAccountId']"), type: [2, 3], isTomSelect: true },
+    ].filter(e => e.element);*/
+    const resolvedSelects = selects.map(x => ({
+        ...x,
+        element: typeof x.element === "string" ? document.querySelector(x.element) : x.element,
+    })).filter(x => x.element);
     
-    const elementsToToggleDisable = selects.filter(s => !s.isDisable).map(s => s.element);
+    const elementsToToggleDisable = resolvedSelects.filter(s => !s.isDisable).map(s => s.element);
     toggleElementsDisabled(elementsToToggleDisable);
     
     try {
-        const data = await getAllBankAccountsJson();
+        const data = await getAllBankAccountsJson(rerender);
         
-        selects.forEach(x => {
+        resolvedSelects.forEach(x => {
             const filteredData = data.filter(d => x.type.includes(d.type));
             if (x.isTomSelect) {
                 createSupplierTomSelect(x.element, filteredData);
@@ -3517,7 +3554,6 @@ const getAllBankAccounts = async (rerender = false) => {
             );
         });
         
-        isLoadedBankAccounts = true;
     } catch (err) {
         console.log(err);
     } finally {
@@ -3660,39 +3696,22 @@ const hideFact = () => {
 
 let openDropdownToggle = null;
 async function showTaminDropdown() {
-    document.addEventListener("click", async function (e) {
-        const clickedToggle = e.target.closest(".taminDropdownToggle");
-        if (clickedToggle) {
-            if (openDropdownToggle && openDropdownToggle !== clickedToggle && openDropdownToggle.dropdownInstance && openDropdownToggle.dropdownInstance.isOpen) {
-                openDropdownToggle.dropdownInstance.close();
-                openDropdownToggle = null;
-            }
-            
-            if (!clickedToggle.dropdownInstance) {
-                const currentDropdown = clickedToggle.nextElementSibling;
-                clickedToggle.dropdownInstance = new Dropdown({
-                    button: clickedToggle,
-                    content: currentDropdown,
-                    transitionDuration: 200,
-                    originalDisplay: "flex",
-                    effect: "zoom",
-                    zIndex: 1070,
-                });
-                const pfId = clickedToggle.getAttribute("data-pfId");
-                
-                const res = await axios(`/order/GetOrderHead?pfId=${pfId}`);
-                currentDropdown.innerHTML = res.data;
-            }
-            clickedToggle.dropdownInstance.toggle();
-            
-            openDropdownToggle = clickedToggle.dropdownInstance.isOpen ? clickedToggle : null;
-            
-        } else {
-            if (openDropdownToggle && openDropdownToggle.dropdownInstance && openDropdownToggle.dropdownInstance.isOpen) {
-                openDropdownToggle.dropdownInstance.close();
-                openDropdownToggle = null;
-            }
-        }
+    Dropdown.setupDelegate({
+        container: document,
+        toggleSelector: ".taminDropdownToggle",
+        
+        options: {
+            transitionDuration: 200,
+            originalDisplay: "flex",
+            effect: "zoom",
+            zIndex: 1070,
+        },
+        
+        async onOpen({ toggle, content }) {
+            const pfId = toggle.dataset.pfid;
+            const res = await axios(`/order/GetOrderHead?pfId=${pfId}`);
+            content.innerHTML = res.data;
+        },
     });
 }
 /////////
@@ -3810,33 +3829,15 @@ async function snoozeNotif(id, btn) {
 }
 
 
-let openTaskUsersDropdownToggle = null;
 function showTaskUsersDropdown() {
-    document.addEventListener("click", function (e) {
-        const clickedToggle = e.target.closest(".taskUsers-dropdown__toggle");
-        
-        if (clickedToggle) {
-            
-            if (openTaskUsersDropdownToggle && openTaskUsersDropdownToggle !== clickedToggle && openTaskUsersDropdownToggle.dropdownInstance && openTaskUsersDropdownToggle.dropdownInstance.isOpen) {
-                openTaskUsersDropdownToggle.dropdownInstance.close();
-                openTaskUsersDropdownToggle = null;
-            }
-            
-            if (!clickedToggle.dropdownInstance) {
-                const dropdown = clickedToggle.nextElementSibling;
-                clickedToggle.dropdownInstance = new Dropdown({
-                    button: clickedToggle, content: dropdown, originalDisplay: "flex", effect: "slide", transitionDuration: 300, placement: "right",
-                });
-            }
-            clickedToggle.dropdownInstance.toggle();
-            
-            openTaskUsersDropdownToggle = clickedToggle.dropdownInstance.isOpen ? clickedToggle : null;
-        } else {
-            if (openTaskUsersDropdownToggle && openTaskUsersDropdownToggle.dropdownInstance && openTaskUsersDropdownToggle.dropdownInstance.isOpen) {
-                openTaskUsersDropdownToggle.dropdownInstance.close();
-                openTaskUsersDropdownToggle = null;
-            }
-        }
+    Dropdown.setupDelegate({
+        container: document,
+        toggleSelector: ".taskUsers-dropdown__toggle",
+        options: {
+            originalDisplay: "flex",
+            effect: "slide",
+            placement: "right",
+        },
     });
 }
 
@@ -4956,7 +4957,10 @@ const deletePayment = async (id) => {
 
 async function showEditPaymentModal(id) {
     FLshowLoading();
-    await getAllBankAccounts();
+    await getAllBankAccounts([
+        { element: "#reqAmountAttachModal select[name='fromAccountId']", type: [1] },
+        { element: "#reqAmountAttachModal select[name='toAccountId']", type: [2, 3], isTomSelect: true },
+    ]);
     ModalToggle("reqAmountAttachModal", "show");
     
     try {
@@ -5091,7 +5095,10 @@ async function goToStepAttachReqAmount() {
             amount: Number(SeparatedNumberRemove(amountValue)),
         };
     });
-    getAllBankAccounts();
+    await getAllBankAccounts([
+        { element: "#reqAmountAttachModal select[name='fromAccountId']", type: [1] },
+        { element: "#reqAmountAttachModal select[name='toAccountId']", type: [2, 3], isTomSelect: true },
+    ]);
     
     const allInputsAmount = Array.from(reqAmountPaymentModal.querySelectorAll("input[name='amount']"));
     const totalAmount = allInputsAmount.reduce((sum, i) => sum + Number(SeparatedNumberRemove(i.value) || 0), 0);
@@ -5110,9 +5117,12 @@ function cancelRequestAmountPaymentModal() {
 }
 
 
-const showAttachReqAmount = (id) => {
+const showAttachReqAmount = async (id) => {
     reqAmountId = id;
-    getAllBankAccounts();
+    await getAllBankAccounts([
+        { element: "#reqAmountAttachModal select[name='fromAccountId']", type: [1] },
+        { element: "#reqAmountAttachModal select[name='toAccountId']", type: [2, 3], isTomSelect: true },
+    ]);
     ModalToggle("reqAmountAttachModal", "show");
 };
 
@@ -5228,7 +5238,10 @@ async function submitAddBankAccount() {
             toastifySuccess("با موفقیت ثبت شد");
             
             toggleAddBankAccountModal();
-            await getAllBankAccounts(true);
+            await getAllBankAccounts([
+                { element: "#reqAmountAttachModal select[name='fromAccountId']", type: [1] },
+                { element: "#reqAmountAttachModal select[name='toAccountId']", type: [2, 3], isTomSelect: true },
+            ], true);
         }
     } catch (err) {
         toastifyError("خطای سرور");
@@ -5306,7 +5319,12 @@ async function setupSelectOptionsReqAmount(targetId) {
             selectSupplier.disable();
             const totalSupplyFactorAmount = await getTotalAmountSupplyFactor(supplierId);
             if (totalSupplyFactorAmount !== null) {
-                totalAmountSupFactorElm.innerHTML = `جمع مبالغ فاکتور: <b style="color: #333">${totalSupplyFactorAmount?.toLocaleString()}</b> ريال`;
+                totalAmountSupFactorElm.innerHTML = `
+                    <div class="d-flex flex-column" style="font-size: 12px">
+                         <span>جمع مبالغ فاکتور رسمی: <b style="color: #333">${totalSupplyFactorAmount?.official?.toLocaleString()}</b> ريال</span>
+                         <span>جمع مبالغ فاکتور غیررسمی: <b style="color: #333">${totalSupplyFactorAmount?.notOfficial?.toLocaleString()}</b> ريال</span>
+                    </div>
+                `;
             }
             selectSupplier.enable();
         },
@@ -5508,6 +5526,66 @@ addReqAmountModal?.querySelector("select#requestAmountTypeId")?.addEventListener
     toggleField(supplierWrapper, type === 1 || type === 2);
     toggleField(cashierWrapper, type === 3);
 });
+
+const closeDocTypeSelect = (select) => {
+    select.classList.add("d-none");
+    const wrapper = select.closest(".doc-type-wrapper");
+    wrapper.querySelector(".doc-type-text").classList.remove("d-none");
+};
+
+document.addEventListener("click", e => {
+    const editBtn = e.target.closest(".doc-type-edit-btn");
+    
+    if (editBtn) {
+        document.querySelectorAll("select.doc-type-select:not(.d-none)").forEach(closeDocTypeSelect);
+        
+        const card = editBtn.closest(".layered-card");
+        const select = card.querySelector(".doc-type-select");
+        
+        card.querySelector(".doc-type-text").classList.add("d-none");
+        
+        select.classList.remove("d-none");
+        select.focus();
+        
+        return;
+    }
+    
+    document.querySelectorAll("select.doc-type-select:not(.d-none)").forEach(select => {
+        if (select.closest(".doc-type-wrapper").contains(e.target)) return;
+        
+        closeDocTypeSelect(select);
+    });
+});
+
+document.addEventListener("change", async (e) => {
+    if (!e.target.classList.contains("doc-type-select")) return;
+    
+    const select = e.target;
+    const card = select.closest(".layered-card");
+    
+    const id = card.dataset.id;
+    const docType = Number(select.value);
+    select.disabled = true;
+    
+    try {
+        const res = await axios.post("/Amount/ChangeDocTypeRequestAmount", { id, docType });
+        if (res.status === 200) {
+            const selectedText = select.options[select.selectedIndex].text;
+            const docTypeText = card.querySelector(".doc-type-text");
+            docTypeText.textContent = `(${selectedText})`;
+            
+            select.classList.add("d-none");
+            docTypeText.classList.remove("d-none");
+        }
+        
+    } catch (err) {
+        console.log(err);
+        toastifyError("خطای سرور");
+    } finally {
+        select.disabled = false;
+    }
+});
+
 
 /*--------------------------------------------------------------------------------*/
 

@@ -14,6 +14,7 @@ namespace CRM.Core.Domain.Attachments.Enum {
         SupplyFactor = 8, // تصویر بارگزاری شده فاکتور تامین
         Payment = 9, // تصویر بارگزاری شده پرداختی به تامین کننده
         Cash = 10, // رسید بارگزاری شده تنخواه
-        requestAmount = 11 // رسید بارگزاری شده درخواست وجه
+        requestAmount = 11, // رسید بارگزاری شده درخواست وجه
+        transfer = 12 // رسید بارگزاری شده نقل و انتقال
     }
 }

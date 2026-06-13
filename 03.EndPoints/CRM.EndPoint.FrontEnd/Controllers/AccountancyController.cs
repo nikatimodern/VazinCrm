@@ -524,15 +524,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 int skip = start != null ? Convert.ToInt32(start) : 0;
                 int recordsTotal = 0;
 
-                var dataF = db.Accountancies
-                    .Where(f =>
-                            f.FirstAcc == false
-                        /*&& (
-                            ((f.AccType == AcEnum.واریزی || f.AccType == AcEnum.برگشتی) && f.Accepted == true)
-                            ||
-                            (f.AccType == AcEnum.بدهکاری)
-                        )*/
-                    ).AsQueryable();
+                var dataF = db.Accountancies.Where(f =>
+                    f.FirstAcc == false &&
+                    f.InvoiceType != InvoiceTypeEnum.تنخواه
+                ).AsQueryable();
 
                 if (!rols.Any(f => new[] { "مدیر ارشد", "مدیر فروش", "کارشناس مالی", "مدیر مالی", "مدیر تامین" }.Contains(f)))
                 {

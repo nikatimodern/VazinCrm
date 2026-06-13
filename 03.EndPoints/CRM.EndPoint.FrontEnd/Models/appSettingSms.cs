@@ -19,6 +19,7 @@ namespace CRM.EndPoint.FrontEnd.Models {
         public string OtpForgot { get; set; }
         public string AcceptPfactorToTamin { get; set; }
         public string PaymentPfactorLink { get; set; }
+        public string ChatReminder { get; set; }
     }
 
     public class PatternSmsRequest {

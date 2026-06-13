@@ -21,9 +21,9 @@ namespace CRM.Core.Domain.Cashes.Entities {
         public CashStatusEnum Status { get; set; } = CashStatusEnum.ثبت_موقت; //وضعیت
         public string StatusTxt { get; set; }
 
+        public decimal Fee { get; set; } // کارمزد
+        public decimal TotalAmount => Amount + Fee; // مجموع مبلغ و کارمزد
         public Accountancy Accountancy { get; set; }
-
-        [NotMapped]
-        public IList<Attachment> Attachments { get; set; }
+        [NotMapped] public IList<Attachment> Attachments { get; set; }
     }
 }

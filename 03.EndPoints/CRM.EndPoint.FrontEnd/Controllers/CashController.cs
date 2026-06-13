@@ -98,7 +98,7 @@ public class CashController : Controller {
                 await logSystemService.LogChange(oldCash, model, LogActionEnum.ویرایش, user);
             }
 
-            var attach = fileSaver.saveAttach(model.Attachments, _AttachType.Cash);
+            var attach = fileSaver.SaveAttachments(model.Attachments, _AttachType.Cash);
             foreach (var att in attach)
             {
                 att.EntityId = model.Id;
@@ -259,7 +259,7 @@ public class CashController : Controller {
                         InvoiceTypeTxt = nameof(InvoiceTypeEnum.تنخواه),
                         AccType = AcEnum.بدهکاری,
                         AccTypeTxt = nameof(AcEnum.بدهکاری),
-                        debit = cash.Amount,
+                        debit = cash.TotalAmount,
                         UserCreatorID = user?.Id,
                         UserCreator = user?.FullName,
                         PayType = PayTypeEnum.نقدی,
@@ -269,9 +269,9 @@ public class CashController : Controller {
                     await db.AddAsync(acc);
                 } else
                 {
-                    if (acc.debit != cash.Amount)
+                    if (acc.debit != cash.TotalAmount)
                     {
-                        acc.debit = cash.Amount;
+                        acc.debit = cash.TotalAmount;
                         acc.UserModifyID = user?.Id;
                         acc.UserModify = user?.FullName;
                         acc.ModifyDate = DateTime.Now;
@@ -465,6 +465,7 @@ public class CashController : Controller {
                 query = query.Where(f =>
                     f.Amount == searchNumber ||
                     f.Serial == searchNumber ||
+                    f.CostDescription.Contains(searchValue) ||
                     f.CostCenterTxt.Contains(searchValue) ||
                     f.CostTitleTxt.Contains(searchValue)
                 );
@@ -506,6 +507,12 @@ public class CashController : Controller {
                     "Amount" => isAscending
                         ? query.OrderBy(f => f.Amount)
                         : query.OrderByDescending(f => f.Amount),
+                    "Fee" => isAscending
+                        ? query.OrderBy(f => f.Fee)
+                        : query.OrderByDescending(f => f.Fee),
+                    "TotalAmount" => isAscending
+                        ? query.OrderBy(f => f.Amount + f.Fee)
+                        : query.OrderByDescending(f => f.Amount + f.Fee),
                     "CostDescription" => isAscending
                         ? query.OrderBy(f => f.CostDescription)
                         : query.OrderByDescending(f => f.CostDescription),

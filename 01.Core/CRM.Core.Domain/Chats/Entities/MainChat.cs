@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using CRM.Framework.Domain;
 
@@ -9,4 +10,7 @@ public class MainChat : BaseEntity {
     public string ToUserTxt { get; set; }
     public string ToUserId { get; set; }
     public List<Chat> Chats { get; set; }
+
+    public string ReminderSentUserId  { get; set; }
+    public DateTime? ReminderSentDate { get; set; }
 }

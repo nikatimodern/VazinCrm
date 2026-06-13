@@ -99,6 +99,7 @@ p[contenteditable]:empty:before {
   display: none;
 }
 
+
 #taskDescription-input {
   padding-right: 4px !important;
   padding-top: 8px !important;
@@ -303,7 +304,7 @@ p[contenteditable]:empty:before {
 }
 
 
-.task-dropdown__item {
+.dropdown-item {
   padding: 4px 12px 4px 32px;
   color: #414c5d;
   cursor: pointer;
@@ -316,107 +317,112 @@ p[contenteditable]:empty:before {
 }
 
 
-.task-dropdown__item.itemGray:hover {
+.dropdown-item.itemGray:hover {
   color: #1d293d;
   background-color: #ededed;
 }
 
 
-.task-dropdown__item.itemGray .badgeCircle {
+.dropdown-item.itemGray .badgeCircle {
   background-color: #ededed;
   color: #1d293d;
 }
 
 
-.task-dropdown__item.itemRed {
+.dropdown-item.itemRed {
   color: #8b0000;
 }
 
 
-.task-dropdown__item.itemRed:hover {
+.dropdown-item.itemRed:hover {
   background-color: #fce8e8;
 }
 
 
-.task-dropdown__item.itemRed .badgeCircle {
+.dropdown-item.itemRed .badgeCircle {
   background-color: #fce8e8;
   color: #8b0000;
 }
 
 
-.task-dropdown__item.itemGreen {
+.dropdown-item.itemGreen {
   color: #006400;
 }
 
 
-.task-dropdown__item.itemGreen:hover {
+.dropdown-item.itemGreen:hover {
   background-color: #dcfbdc;
 }
 
 
-.task-dropdown__item.itemGreen .badgeCircle {
+.dropdown-item.itemGreen .badgeCircle {
   background-color: #dcfbdc;
   color: #006400;
 }
 
 
-.task-dropdown__item.itemGold {
+.dropdown-item.itemGold {
   color: #7e5900;
 }
 
 
-.task-dropdown__item.itemGold:hover {
+.dropdown-item.itemGold:hover {
   background-color: #fff1d1;
 }
 
 
-.task-dropdown__item.itemGold .badgeCircle {
+.dropdown-item.itemGold .badgeCircle {
   background-color: #fff1d1;
   color: #7e5900;
 }
 
 
-.task-dropdown__item.itemPurple {
+.dropdown-item.itemPurple {
   color: #663399;
 }
 
 
-.task-dropdown__item.itemPurple:hover {
+.dropdown-item.itemPurple:hover {
   background-color: #f1e9ff;
 }
 
 
-.task-dropdown__item.itemPurple .badgeCircle {
+.dropdown-item.itemPurple .badgeCircle {
   background-color: #f1e9ff;
   color: #663399;
 }
 
 
-.task-dropdown__item.itemBlue {
+.dropdown-item.itemBlue {
   color: #00678b;
 }
 
 
-.task-dropdown__item.itemBlue:hover {
+.dropdown-item.itemBlue:hover {
   background-color: #dcf9ff;
 }
 
 
-.task-dropdown__item.itemBlue .badgeCircle {
+.dropdown-item.itemBlue .badgeCircle {
   background-color: #f1f9ff;
   color: #00678b;
 }
 
 
-.task-dropdown__toggle {
+.ellipsis-icon {
   color: #6c757d;
   transition: all 0.2s;
   padding: 3px 4px;
   border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
 
-.task-dropdown__toggle:hover, .task-dropdown__toggle:focus {
+.ellipsis-icon:hover,
+.ellipsis-icon:focus {
   background-color: rgba(0, 0, 0, 0.05);
 }
 

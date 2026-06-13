@@ -323,7 +323,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     foreach (var item in att)
                     {
-                        fileSaver.DelFile(item.Url);
+                        fileSaver.DeleteFile(item.Url);
                         item.IsDeleted = true;
                     }
                 }
@@ -401,7 +401,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 foreach (var item in att)
                 {
-                    fileSaver.DelFile(item.Url);
+                    fileSaver.DeleteFile(item.Url);
                     item.IsDeleted = true;
                 }
             }
@@ -1527,7 +1527,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     if (item.IsDeleted)
                     {
-                        fileSaver.DelFile(item.Url);
+                        fileSaver.DeleteFile(item.Url);
                     } else
                     {
                         if (item.Id == Guid.Empty)
@@ -1645,7 +1645,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     if (item.IsDeleted)
                     {
                         db.Attachments.Update(item);
-                        fileSaver.DelFile(item.Url);
+                        fileSaver.DeleteFile(item.Url);
                     } else
                     {
                         if (item.Id == Guid.Empty)
@@ -1762,12 +1762,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             item.UserCreatorID = user.Id;
                             item.UserCreator = user.FullName;
                             db.Attachments.Add(item);
-                            await _logSystemService.LogChange(item, null, LogActionEnum.ثبت, user, null,
-                                $"پیوست تایید برای پیش‌فاکتور {pf.SerialNumber}");
+                            await _logSystemService.LogChange(item, null, LogActionEnum.ثبت, user, null, $"پیوست تایید برای پیش‌فاکتور {pf.SerialNumber}");
                         } else if (item.IsDeleted)
                         {
-                            await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user, null,
-                                $"پیوست تایید برای پیش‌فاکتور {pf.SerialNumber}");
+                            await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user, null, $"پیوست تایید برای پیش‌فاکتور {pf.SerialNumber}");
                             db.Attachments.Update(item);
                         }
                     }
@@ -3020,6 +3018,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 factor.Date = sepidar.DateTXT;
                 factor.SepidarId = sepidar.InvoiceId;
                 factor.SnFinancial = sepidar.Number.ToString();
+
                 factor.UserModify = user.FullName;
                 factor.UserModifyID = user.Id;
                 factor.ModifyDate = DateTime.Now;

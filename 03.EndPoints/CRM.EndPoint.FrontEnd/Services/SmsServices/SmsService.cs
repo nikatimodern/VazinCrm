@@ -108,13 +108,21 @@ namespace CRM.EndPoint.FrontEnd.Services.SmsServices {
             };
 
             return SendPatternSms(mobileNumber, patternCode, code);
+
+
+
+
+        // chat reminder
+        public Task<ResponseSmsModel> SendChatRemind(string toNumber) {
+            return SendPatternSms(toNumber, smsConfig.Patterns.ChatReminder);
+        }
         }*/
 
 
         public async Task<ResponseSmsModel> SendAsync(SmsJob job)
         {
             string patternCode;
-            Dictionary<string, string> attrs;
+            Dictionary<string, string> attrs = null;
 
             switch (job.Type)
             {
@@ -174,6 +182,11 @@ namespace CRM.EndPoint.FrontEnd.Services.SmsServices {
                     attrs = new Dictionary<string, string> {
                         ["number"] = job.Code
                     };
+                    break;
+
+                // chat reminder
+                case SmsType.ChatReminder:
+                    patternCode = smsConfig.Patterns.ChatReminder;
                     break;
 
                 default:

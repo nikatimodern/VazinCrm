@@ -94,7 +94,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 await db.SupplyFactors.AddAsync(model);
 
-                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.SupplyFactor);
+                var attach = fileSaver.SaveAttachments(model.Attachments, _AttachType.SupplyFactor);
                 foreach (var att in attach)
                 {
                     att.EntityId = model.Id;
@@ -138,7 +138,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 entity.SupplyFactorOrderHeads = model.SupplyFactorOrderHeads;
 
-                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.SupplyFactor, false);
+                var attach = fileSaver.SaveAttachments(model.Attachments, _AttachType.SupplyFactor, null, false);
                 foreach (var att in attach.Where(f => f.EntityId == null))
                 {
                     att.EntityId = model.Id;
@@ -175,7 +175,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await db.Payments.AddAsync(model);
                 await db.SaveChangesAsync();
 
-                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.Payment);
+                var attach = fileSaver.SaveAttachments(model.Attachments, _AttachType.Payment);
                 foreach (var att in attach)
                 {
                     att.EntityId = model.Id;
@@ -221,7 +221,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 entity.PaymentSupplyFactors = model.PaymentSupplyFactors;
                 db.Entry(entity).CurrentValues.SetValues(model);
 
-                var attach = fileSaver.saveAttach(model.Attachments, _AttachType.Payment);
+                var attach = fileSaver.SaveAttachments(model.Attachments, _AttachType.Payment);
                 foreach (var att in attach)
                 {
                     att.EntityId = model.Id;
@@ -342,11 +342,28 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         public async Task<IActionResult> GetTotalAmountSupplyFactor(Guid supplierId)
         {
-            var totalAmount = await db.SupplyFactors
+            /*var totalAmount = await db.SupplyFactors
                 .AsNoTracking()
                 .Where(f => f.SupplierId == supplierId)
-                .SumAsync(f => f.Amount);
-            return Ok(totalAmount);
+                .SumAsync(f => f.Amount);*/
+
+
+            var grouped = await db.SupplyFactors
+                .AsNoTracking()
+                .Where(f => f.SupplierId == supplierId)
+                .GroupBy(f => f.OfficialType)
+                .Select(g => new {
+                    OfficialType = g.Key,
+                    TotalAmount = g.Sum(f => f.Amount)
+                })
+                .ToListAsync();
+
+            var data = new {
+                official = grouped.FirstOrDefault(x => x.OfficialType == 1)?.TotalAmount ?? 0,
+                notOfficial = grouped.FirstOrDefault(x => x.OfficialType == 0)?.TotalAmount ?? 0
+            };
+
+            return Ok(data);
         }
 
         public async Task<IActionResult> DeleteSupplyFactor(Guid id)

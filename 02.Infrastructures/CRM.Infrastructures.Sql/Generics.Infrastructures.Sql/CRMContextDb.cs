@@ -31,6 +31,8 @@ using CRM.Core.Domain.WebPushSubscriptions.Entities;
 using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.RequestAmounts.Entities;
 using CRM.Core.Domain.Cashes.Entities;
+using CRM.Core.Domain.Checks.Entities;
+using CRM.Core.Domain.Transfers.Entities;
 
 namespace Generics.Infrastructures.Sql {
     public class CRMContextDb : DbContext {
@@ -92,6 +94,9 @@ namespace Generics.Infrastructures.Sql {
         public DbSet<RequestAmountPayment> RequestAmountPayments { get; set; }
         public DbSet<CallRecording> CallRecordings { get; set; }
         public DbSet<ReportParticipant> ReportParticipants { get; set; }
+        public DbSet<Checkbook> Checkbooks { get; set; }
+        public DbSet<Check> Checks { get; set; }
+        public DbSet<Transfer> Transfers { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -145,6 +150,9 @@ namespace Generics.Infrastructures.Sql {
             modelBuilder.Entity<RequestAmountOrderHead>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<RequestAmountPayment>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<CallRecording>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<Checkbook>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<Check>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<Transfer>().HasQueryFilter(f => f.IsDeleted == false);
 
 
             modelBuilder.Entity<Order>().Ignore(f => f.Row);

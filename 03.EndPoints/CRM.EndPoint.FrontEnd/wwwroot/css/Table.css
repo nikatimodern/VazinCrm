@@ -317,15 +317,13 @@ table.supplyItemsTable.table > :not(caption) > * > * {
 }
 
 
-table tr.tableRow-bgRed > td, table tr.tableRow-bgRed > th {
-  background-color: #ffe6e6 !important;
-  box-shadow: none !important;
+table tr.tableRow-bgRed td, table tr.tableRow-bgRed th {
+  background-color: #fef2f2 !important;
 }
 
 
-table tr.tableRow-bgGreen > td, table tr.tableRow-bgGreen > th {
-  background-color: #ecffe6 !important;
-  box-shadow: none !important;
+table tr.tableRow-bgGreen td, table tr.tableRow-bgGreen th {
+  background-color: #f0fdf4 !important;
 }
 
 

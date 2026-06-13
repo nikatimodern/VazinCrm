@@ -1,0 +1,128 @@
+@model List<CRM.EndPoint.FrontEnd.Models.ViewModel.Check.CheckbookVModel>
+
+@{
+    Layout = "_Layout";
+    var hasCheckbookId = Context.Request.Query.ContainsKey("cBook");
+}
+
+<div>
+    <div id="checkbooks-section" class="@(hasCheckbookId ? "d-none" : "")">
+        <h4 class="fbold text-dark">دسته چک‌ها</h4>
+
+        <div id="checkbooksContainer">
+            <partial name="GetAllCheckbooksPartial" model="Model" />
+        </div>
+    </div>
+    <div id="checks-section" class="@(hasCheckbookId ? "" : "d-none")">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 id="selected-checkbook-title" class="fbold text-dark">لیست چک‌ها</h4>
+            <div class="d-flex gap-2">
+                <button class="buttonGreen0" onclick="openNewCheckModal()">
+                    ثبت چک جدید
+                    <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
+                </button>
+                <button class="buttonCancel-white" onclick="backToCheckbooks()">
+                    بازگشت
+                    <svg style="width: 16px;transform: scaleX(-1)" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M12.5 9.75A2.75 2.75 0 0 0 9.75 7H4.56l2.22 2.22a.75.75 0 1 1-1.06 1.06l-3.5-3.5a.75.75 0 0 1 0-1.06l3.5-3.5a.75.75 0 0 1 1.06 1.06L4.56 5.5h5.19a4.25 4.25 0 0 1 0 8.5h-1a.75.75 0 0 1 0-1.5h1a2.75 2.75 0 0 0 2.75-2.75Z" clip-rule="evenodd" /></svg>
+                </button>
+            </div>
+        </div>
+
+        <div>
+            <table id="checksTable" class="table-hover table table-bordered table-striped">
+                <thead>
+                <tr>
+                    <th>شماره سریال</th>
+                    <th>مبلغ <span style="font-size: 11px">(ريال)</span></th>
+                    <th>تاریخ سررسید</th>
+                    <th>در وجه</th>
+                    <th>توضیحات</th>
+                    <th>وضعیت</th>
+                    <th>عملیات</th>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+
+
+<!-- Modal checkbook -->
+<div class="modal fade" id="checkbookModal" tabindex="-1" role="dialog" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content col-12 p-2">
+            <div class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">ثبت دسته چک</div>
+            <div class="modal-body pb-2">
+                <form id="checkbookForm" class="d-flex flex-column gap-2">
+
+                    <div>
+                        <label for="bankName-checkbook">نام بانک:</label>
+                        <input name="bankName" class="form-control" id="bankName-checkbook" required />
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-1 mt-2">
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="toggleNewCheckbookModal()">انصراف</button>
+                        <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitCheckbookModal()">ثبت</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="newCheckModal" tabindex="-1" aria-hidden="true" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content col-12 p-2">
+            <div class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">ثبت برگه چک جدید</div>
+            <div class="modal-body pb-2">
+                <form id="newCheckForm" class="d-flex flex-column gap-2">
+                    <div>
+                        <label>شماره سریال برگه چک </label>
+                        <input class="form-control" name="serialNumber" required>
+                    </div>
+                    <div>
+                        <label>مبلغ</label>
+                        <input class="form-control currencyNumber inpAmount" name="amount" required data-currency-hint="next">
+                        <span class="currencyHint"></span>
+                    </div>
+                    <div>
+                        <label>تاریخ سررسید</label>
+                        <input class="form-control sdate" name="dueDate" data-mask-date required>
+                    </div>
+                    <div>
+                        <label>در وجه</label>
+                        <input class="form-control" name="payee" required>
+                    </div>
+                    <div>
+                        <label>وضعیت چک</label>
+                        <select class="form-select form-select-sm valueNumber" name="status">
+                            @* <option value="0">سفید</option> *@
+                            <option value="1">نزد ما</option>
+                            <option value="2">نزد بانک</option>
+                            <option value="5">انتقالی</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>توضیحات:</label>
+                        <textarea class="form-control h-auto px-2 py-1 text-start" name="description" rows="3"></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-1 mt-3">
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="cancelNewCheckModal()">انصراف</button>
+                        <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitCheckForm()">ثبت</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/check.js?v=3.13.2"></script>
+}
+

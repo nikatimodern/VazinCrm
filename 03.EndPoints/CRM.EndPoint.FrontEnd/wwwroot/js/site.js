@@ -262,7 +262,6 @@ class Dropdown {
         
         this.isOpen = false;
         this.content.style.display = "none";
-        
         if (!this.portal.contains(this.content)) {
             this.portal.appendChild(this.content);
         }
@@ -275,6 +274,104 @@ class Dropdown {
         this.boundPositionDropdown = this.positionDropdown.bind(this);
         
     }
+    
+    static setup({ toggle, content, onOpen, closeOnOutsideClick = true, options = {} }) {
+        if (!toggle) return;
+        if (toggle.dropdownInstance) return toggle.dropdownInstance;
+        
+        toggle.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            
+            toggle.dropdownInstance ??= new Dropdown({
+                button: toggle,
+                content,
+                ...options,
+            });
+            
+            await onOpen?.({
+                toggle,
+                dropdown: toggle.dropdownInstance,
+                content,
+            });
+            
+            toggle.dropdownInstance.toggle();
+        });
+        
+        if (closeOnOutsideClick) {
+            document.addEventListener("click", e => {
+                if (toggle.dropdownInstance?.isOpen && !content.contains(e.target) && !toggle.contains(e.target)) {
+                    toggle.dropdownInstance.close();
+                }
+            });
+        }
+        
+        return {
+            close() {
+                toggle.dropdownInstance?.close();
+            },
+            
+            get dropdown() {
+                return toggle.dropdownInstance ?? null;
+            },
+            
+            get toggle() {
+                return toggle;
+            },
+        };
+    }
+    
+    
+    static setupDelegate({ container, toggleSelector, getContent = toggle => toggle.nextElementSibling, onOpen, options = {} }) {
+        const state = {
+            activeToggle: null,
+            
+            close() {
+                this.activeToggle?.dropdownInstance?.close();
+                this.activeToggle = null;
+            },
+            
+            get dropdown() {
+                return this.activeToggle?.dropdownInstance ?? null;
+            },
+            
+            get toggle() {
+                return this.activeToggle;
+            },
+        };
+        
+        container?.addEventListener("click", async (e) => {
+            const toggle = e.target.closest(toggleSelector);
+            if (!toggle) {
+                state.close();
+                return;
+            }
+            
+            if (state.toggle && state.toggle !== toggle && state.dropdown?.isOpen) {
+                state.close();
+            }
+            
+            if (!toggle.dropdownInstance) {
+                toggle.dropdownInstance = new Dropdown({
+                    button: toggle,
+                    content: getContent(toggle),
+                    ...options,
+                });
+                
+                await onOpen?.({
+                    toggle,
+                    dropdown: toggle.dropdownInstance,
+                    content: toggle.dropdownInstance.content,
+                    state,
+                });
+            }
+            toggle.dropdownInstance.toggle();
+            
+            state.activeToggle = toggle.dropdownInstance.isOpen ? toggle : null;
+        });
+        
+        return state;
+    }
+    
     
     open() {
         if (this.isOpen) return;
@@ -2472,7 +2569,6 @@ class MyService {
                 if (blacklist.includes(name)) continue;
                 defVal = defaultVals.find(v => v.name === name)?.val ?? null;
             }
-            
             switch (elm.type) {
                 case "text":
                 case "textarea":
@@ -2502,6 +2598,7 @@ class MyService {
                     break;
                 
                 case "file":
+                    elm.value = defVal ?? "";
                     const previewId = elm.getAttribute("data-showList");
                     if (previewId) {
                         const previewDiv = document.getElementById(previewId);
@@ -3624,4 +3721,71 @@ function initEyeToggle({ selector, onShow, onHide, showTitle = "نمایش", hid
             updateUI();
         },
     };
+}
+/**
+ * Sends a GET request and returns response data.
+ * @template T
+ * @param {string} url
+ * @returns {Promise<T|null>}
+ */
+async function getData(url) {
+    try {
+        const res = await axios.get(url);
+        return res.status === 200 ? res.data : null;
+    } catch (err) {
+        console.error(err);
+        toastifyError("خطا در دریافت اطلاعات");
+        return null;
+    }
+}
+
+
+/**
+ * @typedef {Object} DeleteItemOptions
+ * @property {string} url
+ * @property {string} [title="حذف!"]
+ * @property {string} [text="آیا مطمئن هستید که میخواهید حذف کنید؟"]
+ * @property {(data: any) => (void|Promise<void>)} [callback]
+ */
+
+/**
+ * Shows confirmation dialog and sends a DELETE request.
+ * @param {DeleteItemOptions} options
+ * @returns {Promise<boolean>}
+ */
+async function deleteItem(options) {
+    const { url, callback = null, title = "حذف!", text = "آیا مطمئن هستید که میخواهید حذف کنید؟" } = options;
+    
+    const result = await Swal.fire({
+        title,
+        text,
+        icon: "warning",
+        showCancelButton: true,
+        cancelButtonColor: "#adadad",
+        confirmButtonColor: "#e64942",
+        cancelButtonText: "انصراف",
+        confirmButtonText: "بله، حذف شود",
+    });
+    
+    if (!result.isConfirmed) return false;
+    
+    try {
+        FLshowLoading();
+        const res = await axios.delete(url);
+        if (res.status === 200) {
+            toastifySuccess("با موفقیت حذف شد");
+            
+            if (typeof callback === "function")
+                await callback(res.data);
+            
+            return true;
+        }
+        return false;
+    } catch (err) {
+        console.error(err);
+        toastifyError("خطا در حذف اطلاعات");
+        return false;
+    } finally {
+        FLshowLoading(false);
+    }
 }
