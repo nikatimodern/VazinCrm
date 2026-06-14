@@ -19,8 +19,23 @@
             ReportTypeEnum.گزارش_رضایتمندی => "report-satisfaction",
             _ => ""
         };
+        var hasTimeline = item.AI && item.Participants != null && item.Participants.Count > 1;
         <div class="report-wrapper">
-            <img class="reporter-image" src="@(string.IsNullOrEmpty(item.UserImage) ? "/Img/User.png" : item.UserImage)" />
+            @* <img class="reporter-image" src="@(string.IsNullOrEmpty(item.UserImage) ? "/Img/User.png" : item.UserImage)" /> *@
+            <div class="report-sidebar-timeline @(hasTimeline ? "has-timeline" : "")">
+                <img class="reporter-image main-avatar" src="@(string.IsNullOrEmpty(item.UserImage) ? "/Img/User.png" : item.UserImage)" />
+
+                @if (hasTimeline) {
+                    <div class="timeline-connection-line"></div>
+
+                    var transfers = item.Participants.OrderBy(p => p.SortOrder).Skip(1).ToList();
+                    foreach (var participant in transfers) {
+                        <img class="reporter-image transfer-avatar"
+                             src="@(string.IsNullOrEmpty(participant.UserImage) ? "/Img/User.png" : participant.UserImage)"
+                             title="انتقال به: @participant.UserFullName" />
+                    }
+                }
+            </div>
             <div class="report-box @badgeClass">
                 <div class="report-badges">
                     @if (item.AI) {
@@ -30,31 +45,32 @@
                             </button>
                         }
 
-                        <span class="report-ai-badge">
-                            @* <span style="line-height: normal">تولید‌شده با هوش مصنوعی</span> *@
-                            <img src="~/Img/aiLogo.png" alt="AI">
+                        <span class="report-ai-badge" title="تولید شده با هوش مصنوعی">
+                            <img src="~/Img/ai-svg.svg" class="ai-svg-icon" alt="AI" />
                         </span>
                     }
                     <span class="report-type-badge">@item.ReportTypeTxt</span>
                 </div>
 
-                <span class="reporter-name">@item.CustomerTxt</span>
+                <div class="d-flex flex-column w-100">
+                    <span class="reporter-name">@item.CustomerTxt</span>
 
-                <div class="report-text">
-                    <span style="white-space: pre-wrap">@item.ReportText?.Trim()</span>
-                    @if (!string.IsNullOrEmpty(item.ResultCallTxt) || !string.IsNullOrEmpty(item.FinalResultCallTxt) || !string.IsNullOrEmpty(item.ReasonCancelTxt)) {
-                        <p class="d-flex flex-wrap column-gap-2">
-                            @if (!string.IsNullOrEmpty(item.ResultCallTxt)) {
-                                <span>(نتیجه تماس: @item.ResultCallTxt)</span>
-                            }
-                            @if (!string.IsNullOrEmpty(item.FinalResultCallTxt)) {
-                                <span>(نتیجه نهایی: @item.FinalResultCallTxt)</span>
-                            }
-                            @if (!string.IsNullOrEmpty(item.ReasonCancelTxt)) {
-                                <span>(علت انصراف: @item.ReasonCancelTxt)</span>
-                            }
-                        </p>
-                    }
+                    <div class="report-text">
+                        <span style="white-space: pre-wrap">@item.ReportText?.Trim()</span>
+                        @if (!string.IsNullOrEmpty(item.ResultCallTxt) || !string.IsNullOrEmpty(item.FinalResultCallTxt) || !string.IsNullOrEmpty(item.ReasonCancelTxt)) {
+                            <p class="d-flex flex-wrap column-gap-2">
+                                @if (!string.IsNullOrEmpty(item.ResultCallTxt)) {
+                                    <span>(نتیجه تماس: @item.ResultCallTxt)</span>
+                                }
+                                @if (!string.IsNullOrEmpty(item.FinalResultCallTxt)) {
+                                    <span>(نتیجه نهایی: @item.FinalResultCallTxt)</span>
+                                }
+                                @if (!string.IsNullOrEmpty(item.ReasonCancelTxt)) {
+                                    <span>(علت انصراف: @item.ReasonCancelTxt)</span>
+                                }
+                            </p>
+                        }
+                    </div>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-end gap-1 gap-md-4">

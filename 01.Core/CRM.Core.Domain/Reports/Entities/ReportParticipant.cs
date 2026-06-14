@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CRM.Core.Domain.Reports.Entities;
 
@@ -13,4 +14,6 @@ public class ReportParticipant {
     public DateTime AnswerTime { get; set; }
     public string AnswerTimeTxt { get; set; }
     public int SortOrder { get; set; }
+
+    [NotMapped] public string UserImage { get; set; }
 }

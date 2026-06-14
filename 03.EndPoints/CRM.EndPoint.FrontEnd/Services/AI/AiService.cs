@@ -47,7 +47,7 @@ public class AiService(
             }
 
             // 3. Summary
-            var resSummary = await gapgptAi.SummarizeText(callData.TranscriptionText, callData.DestinationUserTxt);
+            var resSummary = await gapgptAi.SummarizeText(callData.TranscriptionText, callData.CallParticipant.Select(f => f?.UserFullName).ToList());
             if (resSummary != null)
             {
                 callData.SummaryText = resSummary.summary?.Trim();
@@ -123,7 +123,7 @@ public class AiService(
                     UserId = participant.UserId,
                     UserFullName = participant.UserFullName,
                     AnswerTime = participant.AnswerTime,
-                    AnswerTimeTxt = dts.GetDatePersian(),
+                    AnswerTimeTxt = dts.GetDateTimePersian(participant.AnswerTime),
                     SortOrder = order++
                 });
             }

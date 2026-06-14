@@ -216,7 +216,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var data = await GetAllReports(model, dealId);
 
-            var userIds = data.Select(r => r.UserCreatorID).Distinct().ToList();
+            //var userIds = data.Select(r => r.UserCreatorID).Distinct().ToList();
+
+            var userIds = data.Select(r => r.UserCreatorID)
+                .Union(data.SelectMany(r => r.Participants.Select(p => p.UserId)))
+                .Where(id => !string.IsNullOrEmpty(id))
+                .Distinct()
+                .ToList();
+
             var userImages = await udb.Users
                 .Where(u => userIds.Contains(u.Id))
                 .ToDictionaryAsync(u => u.Id, u => u.PersonImageUrl);
@@ -225,6 +232,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 if (userImages.TryGetValue(r.UserCreatorID, out var img))
                     r.UserImage = img;
+
+                foreach (var p in r.Participants ?? [])
+                {
+                    if (userImages.TryGetValue(p.UserId, out var pImg))
+                        p.UserImage = pImg;
+                }
             }
 
             var html = await vrs.RenderToStringAsync("GetAllReportPartial", data,
@@ -241,9 +254,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var rols = await userManager.GetRolesAsync(user);
-            var qData = db.Reports.AsNoTracking().OrderByDescending(f => f.CreateDate).AsQueryable();
+            var qData = db.Reports.AsNoTracking()
+                .Include(r => r.Participants)
+                .OrderByDescending(r => r.CreateDate)
+                .AsQueryable();
 
-            ViewBag.IsManager = rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش") || rols.Contains("مدیر عامل") || rols.Contains("مدیر اجرایی");
+            ViewBag.IsManager = rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش") || rols.Contains("مدیر عامل") ||
+                                rols.Contains("مدیر اجرایی");
             ViewBag.CurrentUserId = user.Id;
 
             if (dealId != null)

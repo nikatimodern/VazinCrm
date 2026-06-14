@@ -19,18 +19,8 @@
 
 .report-wrapper {
   display: flex;
-  align-items: start;
+  /* align-items: start; */
   gap: 16px;
-}
-
-
-.reporter-image {
-  object-fit: cover;
-  aspect-ratio: 1;
-  width: clamp(33px, 4vw, 50px);
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  margin-top: 6px;
 }
 
 
@@ -44,6 +34,7 @@
   padding: 4px 10px;
   /*    padding-right: 10px;*/
   width: 100%;
+  justify-content: space-between;
 }
 
 
@@ -127,9 +118,11 @@
 
 
 .report-ai-badge img {
-  /* width: 24px; */
-  object-fit: contain;
-  filter: brightness(0) invert(1);
+  color: white;
+  height: 14px;
+  width: auto;
+  display: block;
+  flex-shrink: 0;
 }
 
 
@@ -199,6 +192,65 @@
 }
 
 
+/*  */
+
+
+.report-sidebar-timeline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  gap: 10px;
+  margin-top: 6px;
+  min-width: clamp(34px, 5vw, 50px);
+  flex-shrink: 0;
+  align-self: start;
+}
+
+
+.reporter-image {
+  object-fit: cover;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background-color: #ffffff;
+  /* border: 1px solid rgba(0, 0, 0, 0.2); */
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+  margin-top: 0 !important;
+  z-index: 2;
+  flex-shrink: 0;
+  
+  width: clamp(34px, 4vw, 50px);
+}
+
+
+.report-sidebar-timeline.has-timeline .reporter-image.main-avatar {
+  width: clamp(34px, 4vw, 44px);
+}
+
+
+.reporter-image.transfer-avatar {
+  width: clamp(30px, 3.5vw, 34px);
+  cursor: help;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+
+.reporter-image.transfer-avatar:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 1px #a8b1bd;
+}
+
+
+.timeline-connection-line {
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  width: 2px;
+  background: linear-gradient(to bottom, #d1d5db 0%, #a8b1bd 100%);
+  z-index: 0;
+}
+
+
 .report-dropdown {
   background-color: #fff;
   border-radius: 8px;
@@ -210,16 +262,6 @@
 }
 
 
-/*.report-dropdown__item {
-  padding: 4px 12px 4px 32px;
-  color: #414c5d;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  transition: all 0.3s;
-  user-select: none;
-}*/
 .report-dropdown__item {
   color: #414c5d;
   cursor: pointer;
@@ -233,7 +275,6 @@
 
 .report-dropdown__item:first-child:hover {
   color: #1d293d;
-  /*    background-color: #ededed;*/
 }
 
 
@@ -244,7 +285,6 @@
 
 .report-dropdown__item:last-child:hover {
   color: #630000;
-  /*    background-color: #fce8e8;*/
 }
 
 
@@ -265,15 +305,19 @@
 
 
 @media (max-width: 767px) {
+  .report-wrapper {
+    gap: 12px;
+  }
+  
   .report-box {
     padding-right: 8px;
   }
   
   .report-box::before {
     top: 16px;
-    /*        right: -6px;
-            border: 7px solid transparent;
-            border-right: transparent;*/
+    /* right: -6px;
+    border: 7px solid transparent;
+    border-right: transparent; */
   }
   
   .report-info {
@@ -284,17 +328,16 @@
     padding-left: 8px;
   }
   
-  .report-wrapper {
-    gap: 13px;
-  }
-  
   .report-type-badge, .report-ai-badge {
     padding: 3px 8px;
   }
   
-  
   #allReportsId {
     padding-inline: .5rem;
-    height: calc(100dvh - 186px)
+    height: calc(100dvh - 186px);
+  }
+  
+  .report-sidebar-timeline {
+    gap: 16px;
   }
 }

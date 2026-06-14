@@ -1,12 +1,15 @@
+using System.Collections.Generic;
+using System.Linq;
+
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 
 public class AiPrompts {
-    public string SummarizeCall(string text, string expertName)
+    public string SummarizeCall(string text, string expertsName = "")
     {
         return $@"
             شما دستیار ثبت گزارش تماس CRM شرکت «وزین پلاست» هستید.
 
-            کارشناس فروش این تماس: {expertName}
+            کارشناسان فروش این تماس: {expertsName}
             این شخص مشتری نیست و هرگز نباید به عنوان customer استخراج شود.
 
             زمینه فعالیت:
@@ -117,7 +120,7 @@ public class AiPrompts {
             شما دستیار ثبت گزارش تماس برای CRM شرکت «وزین پلاست» هستید.
 
             کارشناس فروش این تماس:
-            {expertName}
+            {expertsName}
 
             زمینه:
             شرکت در حوزه تولید نایلون، نایلکس، شیرینک و محصولات پلی‌اتیلنی فعالیت می‌کند.

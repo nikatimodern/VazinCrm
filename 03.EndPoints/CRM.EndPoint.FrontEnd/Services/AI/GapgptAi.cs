@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -23,12 +24,12 @@ public class GapgptAi {
     }
 
     // خلاصه نویسی
-    public async Task<SummaryModel> SummarizeText(string textToSummarize, string userName) // https://gapgpt.app/platform-v2/tokens
+    public async Task<SummaryModel> SummarizeText(string textToSummarize, List<string> userNames) // https://gapgpt.app/platform-v2/tokens
     {
         try
         {
             logger.LogInformation("Summarize started");
-            var prompt = _aiPrompts.SummarizeCall(textToSummarize, userName);
+            var prompt = _aiPrompts.SummarizeCall(textToSummarize, string.Join(", ", userNames));
 
             var requestBody = new {
                 //model = "gapgpt-qwen-3.6",
