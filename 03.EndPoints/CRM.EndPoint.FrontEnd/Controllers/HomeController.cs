@@ -31,6 +31,8 @@ using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.RequestAmounts.Entities;
 using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.Core.Domain.Supplies.Entities;
+using CRM.EndPoint.FrontEnd.Models.Sms;
+using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Microsoft.AspNetCore.Http;
 using WebPush;
@@ -56,10 +58,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly Service genService;
         private readonly UserContextDb udb;
         private readonly Sepidar1ContextDb S1db;
+        private readonly ISmsQueue smsQueue;
 
         public HomeController(IWebHostEnvironment appEnvironment, TimedHostedService hostService, IConfiguration conf,
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
-            Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db)
+            Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue)
         {
             this.appEnvironment = appEnvironment;
             this.hostService = hostService;
@@ -71,6 +74,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.sdb = sdb;
             this.udb = udb;
             this.S1db = S1db;
+            this.smsQueue = smsQueue;
             this.genService = genService;
         }
 

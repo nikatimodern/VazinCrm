@@ -65,59 +65,6 @@ namespace CRM.EndPoint.FrontEnd.Services.SmsServices {
             }
         }
 
-/*        // تایید پیش‌فاکتور توسط مشتری
-        public Task<ResponseSmsModel> SendAcceptPfactorToCustomer(string toNumber, int serialNum, Guid pfactorId)
-        {
-            var link = pfactorId.ToString().Substring(0, 7);
-            return SendPatternSms(toNumber, smsConfig.Patterns.AcceptPfactorToCustomer, serialNum.ToString(), link);
-        }
-
-        // تایید پیش‌فاکتور توسط تامین
-        public Task<ResponseSmsModel> SendAcceptPfactorToTamin(string toNumber, int serialNum)
-        {
-            var link = "Cartable/Index?tab=TTaminExpertId";
-            return SendPatternSms(toNumber, smsConfig.Patterns.AcceptPfactorToTamin, serialNum.ToString(), link);
-        }
-
-        // تایید مدیر فروش (برای مشتری)
-        public Task<ResponseSmsModel> SendAcceptedSalesAdminToCustomer(string toNumber, int serialNum)
-        {
-            return SendPatternSms(toNumber, smsConfig.Patterns.AcceptedSalesAdminToCustomer, serialNum.ToString());
-        }
-
-        // محصول آماده تحویل (برای مشتری)
-        public Task<ResponseSmsModel> SendReadyToDeliverToCustomer(string toNumber, int? serialNum)
-        {
-            return SendPatternSms(toNumber, smsConfig.Patterns.ReadyToDeliverToCustomer, serialNum.ToString());
-        }
-
-        // لینک واریز پیش پرداخت (برای مشتری)
-        public Task<ResponseSmsModel> SendPaymentLinkToCustomer(string toNumber, int serialNum, Guid pfactorId)
-        {
-            var link = pfactorId.ToString().Substring(0, 7);
-            return SendPatternSms(toNumber, smsConfig.Patterns.PaymentPfactorLink, serialNum.ToString(), link);
-        }
-
-        // ارسال OTP
-        public Task<ResponseSmsModel> SendOtpSms(string mobileNumber, string code, string type)
-        {
-            string patternCode = type switch {
-                "Login" or "Chat" => smsConfig.Patterns.OtpLogin,
-                "Forgot" => smsConfig.Patterns.OtpForgot,
-                _ => throw new ArgumentException("Invalid OTP type")
-            };
-
-            return SendPatternSms(mobileNumber, patternCode, code);
-
-
-
-
-        // chat reminder
-        public Task<ResponseSmsModel> SendChatRemind(string toNumber) {
-            return SendPatternSms(toNumber, smsConfig.Patterns.ChatReminder);
-        }
-        }*/
-
 
         public async Task<ResponseSmsModel> SendAsync(SmsJob job)
         {
