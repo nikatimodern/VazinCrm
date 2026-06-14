@@ -81,7 +81,9 @@
 
 .reporter-image {
   width: clamp(33px, 4vw, 42px);
+  margin-top: 6px !important;
 }
+
 
 
 @media (max-width: 767px) {
@@ -101,6 +103,7 @@
 
 .report-wrapper {
   gap: 12px;
+  align-items: start;
 }
 
 

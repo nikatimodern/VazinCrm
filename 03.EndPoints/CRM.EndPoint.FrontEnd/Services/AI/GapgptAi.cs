@@ -34,11 +34,14 @@ public class GapgptAi {
             var requestBody = new {
                 //model = "gapgpt-qwen-3.6",
                 //model = "gapgpt-qwen-3.6-thinking",
-                model= "gpt-5-mini",
-                //model= "gemini-2.5-flash",
+                //model= "gpt-5-mini",
+                model = "gemini-2.5-flash",
                 messages = new[] {
                     new { role = "user", content = prompt }
-                }
+                },
+                response_format = new { type = "json_object" },
+                temperature = 0.1,
+                top_p = 0.1,
             };
 
             var response = await _httpClient.PostAsJsonAsync("chat/completions", requestBody);
@@ -60,7 +63,7 @@ public class GapgptAi {
                     : raw;*/
 
                 var clean = StripHtml(raw);
-                var clean2 = ExtractImportantError(raw);
+                //var clean2 = ExtractImportantError(raw);
 
                 logger.LogError("Summarize API Error ({StatusCode}): {Error}", response.StatusCode, clean);
                 /*var errorContent = await response.Content.ReadAsStringAsync();
@@ -82,7 +85,6 @@ public class GapgptAi {
 
         var text = StripHtml(html);
 
-        // فقط قسمت مهم
         var match = Regex.Match(text, @"Error\s\d+.*?Unavailable!", RegexOptions.IgnoreCase);
 
         if (match.Success)
@@ -92,6 +94,7 @@ public class GapgptAi {
             ? text[..300]
             : text;
     }
+
     private static string StripHtml(string input)
     {
         if (string.IsNullOrWhiteSpace(input))

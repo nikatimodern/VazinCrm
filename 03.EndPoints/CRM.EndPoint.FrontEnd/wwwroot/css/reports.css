@@ -111,9 +111,7 @@
 
 
 .report-ai-badge {
-  background: linear-gradient(135deg, #ff4fd8, #7b61ff);
   background: linear-gradient(135deg, #c2188f, #5b21b6);
-  /* background: linear-gradient(135deg, #a21caf, #4338ca); */
 }
 
 
@@ -236,7 +234,7 @@
 
 
 .reporter-image.transfer-avatar:hover {
-  transform: scale(1.15);
+  transform: scale(1.12);
   box-shadow: 0 0 0 1px #a8b1bd;
 }
 
@@ -246,7 +244,7 @@
   top: 18px;
   bottom: 18px;
   width: 2px;
-  background: linear-gradient(to bottom, #d1d5db 0%, #a8b1bd 100%);
+  background: rgba(0, 0, 0, 0.25);
   z-index: 0;
 }
 
