@@ -24,6 +24,7 @@ public class ChatReminderService(CRMContextDb db, UserContextDb udb, ISmsQueue s
             // فقط چت‌هایی را می‌گیریم که پیام نخوانده‌ای دارند که عمرش بین 30 دقیقه تا 24 ساعت است
             var pendingMainChats = await db.MainChats
                 .Include(m => m.Chats.Where(c => !c.Read && c.CreateDate >= maxAgeLimit))
+                .Where(m => m.FromUserId != m.ToUserId)
                 .Where(m => m.Chats.Any(c => !c.Read && c.CreateDate <= initialDelayLimit && c.CreateDate >= maxAgeLimit))
                 .ToListAsync(cancellationToken);
 
