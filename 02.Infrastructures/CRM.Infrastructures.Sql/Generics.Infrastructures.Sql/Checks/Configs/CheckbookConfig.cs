@@ -8,5 +8,6 @@ public class CheckbookConfig :IEntityTypeConfiguration<Checkbook> {
     public void Configure(EntityTypeBuilder<Checkbook> builder)
     {
         builder.HasKey(f => f.Id);
+        builder.HasOne(f => f.BankAccount)
     }
 }
