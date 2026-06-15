@@ -40,8 +40,8 @@ public class GapgptAi {
                     new { role = "user", content = prompt }
                 },
                 response_format = new { type = "json_object" },
-                temperature = 0.3,
-                top_p = 0.1,
+                temperature = 0.8,
+                top_p = 0.7,
             };
 
             var response = await _httpClient.PostAsJsonAsync("chat/completions", requestBody);
