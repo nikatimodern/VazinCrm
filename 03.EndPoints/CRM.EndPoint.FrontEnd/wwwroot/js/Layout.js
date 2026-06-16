@@ -5061,7 +5061,7 @@ function createSetAmountPaymentItem() {
                     <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto pe-xl-2">
                         <span class="flex-shrink-0" style="color: #535353">مبلغ تایید شده: </span>
 
-                        <div class="fbold flex-center align-items-baseline column-gap-1 badgeGreen-border">
+                        <div class="fbold column-gap-1 badge badge-outline-green">
                             <span style="font-size: 16px;">${item.acceptedAmount.toLocaleString()}</span>
                             <span style="font-size: 11px;">ريال</span>
                             <span style="font-size: 16px; color:#888">${item.acceptedAmountPercent ? item.acceptedAmountPercent + "%" : ""}</span>

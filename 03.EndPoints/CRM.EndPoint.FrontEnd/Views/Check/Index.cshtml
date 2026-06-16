@@ -33,6 +33,7 @@
                 <thead>
                 <tr>
                     <th>شماره سریال</th>
+                    <th>شماره صیادی</th>
                     <th>مبلغ <span style="font-size: 11px">(ريال)</span></th>
                     <th>تاریخ سررسید</th>
                     <th>در وجه</th>
@@ -60,12 +61,12 @@
                 <form id="checkbookForm" class="d-flex flex-column gap-2">
 
                     <div>
-                        <label for="bankName-checkbook">نام بانک:</label>
-                        <input name="bankName" class="form-control" id="bankName-checkbook" required />
+                        <label for="bankAccountId-checkbook" class="mb-1">انتخاب حساب بانکی:</label>
+                        <select name="bankAccountId" class="form-select" id="bankAccountId-checkbook" required></select>
                     </div>
 
                     <div class="d-flex justify-content-center gap-1 mt-2">
-                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="toggleNewCheckbookModal()">انصراف</button>
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="cancelNewCheckbookModal()">انصراف</button>
                         <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitCheckbookModal()">ثبت</button>
                     </div>
                 </form>
@@ -80,10 +81,14 @@
         <div class="modal-content col-12 p-2">
             <div class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">ثبت برگه چک جدید</div>
             <div class="modal-body pb-2">
-                <form id="newCheckForm" class="d-flex flex-column gap-2">
+                <form id="newCheckForm" class="d-flex flex-column gap-2 required-mark">
                     <div>
-                        <label>شماره سریال برگه چک </label>
-                        <input class="form-control" name="serialNumber" required>
+                        <label>شماره سریال برگه چک</label>
+                        <input class="form-control direction-ltr" name="serialNumber" required>
+                    </div>
+                    <div>
+                        <label>شماره صیادی</label>
+                        <input class="form-control digitNumberString" name="sayyadNumber" required>
                     </div>
                     <div>
                         <label>مبلغ</label>
@@ -104,6 +109,8 @@
                             @* <option value="0">سفید</option> *@
                             <option value="1">نزد ما</option>
                             <option value="2">نزد بانک</option>
+                            <option value="3">وصول شده</option>
+                            <option value="4">برگشت شده</option>
                             <option value="5">انتقالی</option>
                         </select>
                     </div>

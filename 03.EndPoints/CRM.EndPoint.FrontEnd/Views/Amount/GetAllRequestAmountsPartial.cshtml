@@ -67,7 +67,7 @@
                                 <option value="2" selected="@(reqAmount.DocType == RequestAmountDocTypeEnum.چکی)">چکی</option>
                             </select>
 
-                            <button type="button" class="doc-type-edit-btn">
+                            <button type="button" class="doc-type-edit-btn edit-icon-btn">
                                 <svg style="width: 14px" viewBox="0 0 16 16" fill="currentColor"><path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.262a1.75 1.75 0 0 0 0-2.474Z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0 1 14 9v2.25A2.75 2.75 0 0 1 11.25 14h-6.5A2.75 2.75 0 0 1 2 11.25v-6.5A2.75 2.75 0 0 1 4.75 2H7a.75.75 0 0 1 0 1.5H4.75Z" /></svg>
                             </button>
                         }
@@ -122,7 +122,7 @@
                 <div class="layered-card__layer col-12 col-xl d-flex flex-column justify-content-xl-evenly align-items-center gap-2 px-3 px-xl-2 py-2">
                     <div class="w-100 d-flex flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
                         <span style="font-size: 13px; color: #777">مبلغ تایید شده:</span>
-                        <div class="fbold flex-center align-items-baseline column-gap-1 @(status is RequestStatusEnum.در_انتظار_پرداخت or RequestStatusEnum.پرداخت_شده ? "badgeGreen-border" : "")">
+                        <div class="fbold column-gap-1 @(status is RequestStatusEnum.در_انتظار_پرداخت or RequestStatusEnum.پرداخت_شده ? "badge badge-outline-green" : "")">
                             <span style="font-size: 16px;">@($"{reqAmount.AcceptedAmount:n0}")</span>
                             <span style="font-size: 11px;">ريال</span>
                             <span style="font-size: 16px; color:darkgray">
@@ -133,7 +133,7 @@
                     @if (item.TotalPaymentAmount > 0) {
                         <div class="w-100 d-flex flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
                             <span style="font-size: 13px; color: #777">مبلغ پرداخت شده:</span>
-                            <div class="fbold flex-center badgeGreen cursor-pointer" onclick="ShowModalListPayment('@reqAmount.Id')">
+                            <button class="fbold flex-center badge badge-green" onclick="ShowModalListPayment('@reqAmount.Id')">
                                 <span class="d-flex align-items-baseline column-gap-1">
                                     <span style="font-size: 14px;">@($"{item.TotalPaymentAmount:n0}")</span>
                                     <span style="font-size: 10px;">ريال</span>
@@ -141,7 +141,7 @@
                                 <span class="flex-center ps-2 ms-1" style="border-right: 1px solid whitesmoke">
                                     <i class="fa @(isFinancial ? "fa-pencil" : "fa-eye") " style="font-size: 10px;color: white"></i>
                                 </span>
-                            </div>
+                            </button>
                         </div>
                     }
                 </div>
@@ -234,7 +234,7 @@
                             </div>
                             <span class="currencyHint" id="reqAmountCurrencyHint@(index)"></span>
                         } else {
-                            <div class="fbold flex-center align-items-baseline column-gap-1 @(status is RequestStatusEnum.در_انتظار_پرداخت or RequestStatusEnum.پرداخت_شده ? "badgeGreen-border" : "")">
+                            <div class="fbold column-gap-1 @(status is RequestStatusEnum.در_انتظار_پرداخت or RequestStatusEnum.پرداخت_شده ? "badge badge-outline-green" : "")">
                                 <span style="font-size: 16px;">@($"{reqAmount.AcceptedAmount:n0}")</span>
                                 <span style="font-size: 11px;">ريال</span>
                                 <span style="font-size: 16px; color:darkgray">
@@ -246,7 +246,7 @@
                     @if (item.TotalPaymentAmount > 0) {
                         <div class="w-100 d-flex flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
                             <span style="font-size: 13px; color: #777">مبلغ پرداخت شده:</span>
-                            <div class="fbold flex-center badgeGreen cursor-pointer" onclick="ShowModalListPayment('@reqAmount.Id')">
+                            <button class="fbold flex-center badge badge-green" onclick="ShowModalListPayment('@reqAmount.Id')">
                                 <span class="d-flex align-items-baseline column-gap-1">
                                     <span style="font-size: 14px;">@($"{item.TotalPaymentAmount:n0}")</span>
                                     <span style="font-size: 10px;">ريال</span>
@@ -254,7 +254,7 @@
                                 <span class="flex-center ps-2 ms-1" style="border-right: 1px solid whitesmoke">
                                     <i class="fa @(isFinancial ? "fa-pencil" : "fa-eye") " style="font-size: 10px;color: white"></i>
                                 </span>
-                            </div>
+                            </button>
                         </div>
                     }
                 </div>

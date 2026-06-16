@@ -4,9 +4,9 @@
 <div class="checkbook-grid">
     @foreach (var item in Model ?? []) {
         var checkbook = item.Checkbook;
-        <div class="checkbook-card" data-id="@checkbook.Id" data-bank-name="@checkbook.BankName">
-            <h5 class="checkbook-card__title">بانک @checkbook.BankName</h5>
-            @* <p class="text-muted small mb-3">شماره حساب: @checkbook.AccountNumber</p> *@
+        <div class="checkbook-card" data-id="@checkbook.Id" data-bank-name="@checkbook.BankAccount?.BankName">
+            <h5 class="checkbook-card__title">بانک @checkbook.BankAccount?.BankName</h5>
+            <p class="text-muted small mb-3">شماره حساب: @checkbook.BankAccount?.AccountNumber</p>
 
             <span class="checkbook-card__badge">@item.ChecksCount چک ثبت شده</span>
             <div class="position-absolute" style="bottom: 4px;right: auto;left: 4px">
@@ -35,7 +35,7 @@
         <p class="text-muted small mb-3">شماره حساب: ۴۵۶۷۸۹۱۲۳</p>
         <span class="checkbook-card__badge">۴ چک ثبت شده</span>
     </div>*@
-    <div class="checkbook-card card-add-dashed" onclick="toggleNewCheckbookModal()">
+    <div class="checkbook-card card-add-dashed" onclick="showNewCheckbookModal()">
         <span class="fs-3 fbold">
             <svg style="width: 24px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
         </span>

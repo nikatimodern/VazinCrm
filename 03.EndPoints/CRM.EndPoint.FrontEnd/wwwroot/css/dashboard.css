@@ -32,6 +32,7 @@
   max-height: 350px;
 }
 
+
 .dashGridItem.gridItemFinancial {
   grid-row: span 2;
   border-top: 1px solid #1f8557;
@@ -255,12 +256,12 @@
     width: 36px !important;
   }
   
-  .user__item .badgeGray, .user__item .badgeGreen {
+  .user__item .badge {
     font-size: 10px;
     padding-inline: 9px;
   }
   
-  .user__item .badgeGray span, .user__item .badgeGreen span {
+  .user__item .badge span {
     font-size: 11px !important;
   }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Checks.Entities;
+using CRM.Core.Domain.Checks.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Check;
 using CRM.EndPoint.FrontEnd.Services;
@@ -18,8 +19,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 [Authorize(Policy = "NotCustomerOnly")]
 public class CheckController(CRMContextDb db, UserManager<AppUser> userManager, DateTimeServices dtService, LogSystemService logSystemService)
     : Controller {
-
-
     [HttpGet]
     public async Task<IActionResult> Index()
     {
@@ -32,6 +31,7 @@ public class CheckController(CRMContextDb db, UserManager<AppUser> userManager, 
     {
         var checkbooks = await db.Checkbooks
             .AsNoTracking()
+            .Include(f => f.BankAccount)
             .Select(c => new CheckbookVModel {
                 Checkbook = c,
                 ChecksCount = c.Checks.Count
@@ -57,7 +57,15 @@ public class CheckController(CRMContextDb db, UserManager<AppUser> userManager, 
             .OrderByDescending(f => f.CreateDate)
             .ToListAsync();
 
-        return Ok(checks);
+        var model = new {
+            data = checks,
+            Statuses = Enum.GetValues<CheckStatus>()
+                .Select(x => new {
+                    Value = x,
+                    Text = x.ToString().Replace("_", " ")
+                })
+        };
+        return Ok(model);
     }
 
     [HttpPost]
@@ -113,6 +121,34 @@ public class CheckController(CRMContextDb db, UserManager<AppUser> userManager, 
 
             if (isCreate) await logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
             else await logSystemService.LogChange(oldCheck, model, LogActionEnum.ویرایش, user);
+
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }
+
+
+    public async Task<IActionResult> ChangeStatus(Guid id, CheckStatus status)
+    {
+        if (id == Guid.Empty) return BadRequest();
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var oldCheck = await db.Checks.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
+            var check = await db.Checks.FirstOrDefaultAsync(f => f.Id == id);
+
+            check.ModifyDate = DateTime.Now;
+            check.ModifyDateTxt = dtService.GetDateTimePersian();
+            check.UserModify = user.FullName;
+            check.UserModifyID = user.Id;
+            check.Status = status;
+
+            await logSystemService.LogChange(oldCheck, check, LogActionEnum.تغییر_وضعیت, user);
 
             await db.SaveChangesAsync();
             return Ok();

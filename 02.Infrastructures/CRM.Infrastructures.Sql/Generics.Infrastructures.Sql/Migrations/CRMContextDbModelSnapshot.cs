@@ -1087,6 +1087,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("Payee")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("SayyadNumber")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("SerialNumber")
                         .HasColumnType("nvarchar(max)");
 
@@ -1121,8 +1124,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("BankName")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid>("BankAccountId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("CommentText")
                         .HasColumnType("nvarchar(max)");
@@ -1155,6 +1158,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BankAccountId");
 
                     b.ToTable("Checkbooks");
                 });
@@ -3899,6 +3904,17 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Navigation("Checkbook");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Checks.Entities.Checkbook", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Accountancies.Entities.BankAccount", "BankAccount")
+                        .WithMany("Checkbooks")
+                        .HasForeignKey("BankAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BankAccount");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Cities.Entities.City", b =>
                 {
                     b.HasOne("CRM.Core.Domain.States.Entities.State", "State")
@@ -4151,6 +4167,8 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Accountancies.Entities.BankAccount", b =>
                 {
                     b.Navigation("Accountancies");
+
+                    b.Navigation("Checkbooks");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Carizos.Entities.Carizo", b =>

@@ -511,14 +511,15 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
                 switch (action)
                 {
                     case LogActionEnum.ثبت:
-                        return $"یک دسته چک برای بانک {cb.BankName} توسط <b>{fullName}</b> ثبت شد.";
+                        return $"یک دسته چک برای بانک {cb.BankAccount?.BankName} توسط <b>{fullName}</b> ثبت شد.";
 
                     case LogActionEnum.حذف:
-                        return $"دسته چک بانک {cb.BankName} توسط <b>{fullName}</b> حذف شد.";
+                        return $"دسته چک بانک {cb.BankAccount?.BankName} توسط <b>{fullName}</b> حذف شد.";
                 }
 
                 break;
             case Check check:
+                var newCheck = newEntity as Check;
                 switch (action)
                 {
                     case LogActionEnum.ثبت:
@@ -529,6 +530,10 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
 
                     case LogActionEnum.حذف:
                         return $"یک برگه چک به شماره سریال {check.SerialNumber} توسط <b>{fullName}</b> حذف شد.";
+
+                    case LogActionEnum.تغییر_وضعیت:
+                        return
+                            $"یک برگه چک به شماره سریال {check.SerialNumber} توسط <b>{fullName}</b> از وضعیت <b>{check.StatusTxt}</b> به وضعیت <b class=\"text-dark\">{newCheck?.StatusTxt}</b> تغییر یافت.";
                 }
 
                 break;

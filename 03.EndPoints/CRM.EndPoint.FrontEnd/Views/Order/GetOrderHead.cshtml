@@ -41,12 +41,6 @@
                 <div class="order-cell">@item.OrderDate</div>
                 <div class="order-cell">
                     @{
-                        var classBadge = item.Status switch {
-                            OrderHeadStatusEnum.ثبت_اولیه => "badgeBlue",
-                            OrderHeadStatusEnum.تولید => "badgeGold",
-                            OrderHeadStatusEnum.آماده_تحویل => "badgeGreen",
-                            _ => "badgeGray"
-                        };
                         var color = item.Status switch {
                             OrderHeadStatusEnum.ثبت_اولیه => "#00678b",
                             OrderHeadStatusEnum.تولید => "#898b00",

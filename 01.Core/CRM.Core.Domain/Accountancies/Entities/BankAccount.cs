@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using CRM.Core.Domain.Checks.Entities;
 using CRM.Framework.Domain;
 
 namespace CRM.Core.Domain.Accountancies.Entities {
@@ -21,6 +22,7 @@ namespace CRM.Core.Domain.Accountancies.Entities {
         public int? CustomerCode { get; set; }
 
         public List<Accountancy> Accountancies { get; set; }
+        public List<Checkbook> Checkbooks { get; set; }
     }
 
     public enum BankAccountTypeEnum {

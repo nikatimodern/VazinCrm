@@ -8,6 +8,10 @@ public class CheckbookConfig :IEntityTypeConfiguration<Checkbook> {
     public void Configure(EntityTypeBuilder<Checkbook> builder)
     {
         builder.HasKey(f => f.Id);
+
         builder.HasOne(f => f.BankAccount)
+            .WithMany(f => f.Checkbooks)
+            .HasForeignKey(f => f.BankAccountId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

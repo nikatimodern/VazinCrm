@@ -15,9 +15,9 @@ public class Check : BaseEntity {
     public DateTime? DueDateMiladi { get; set; }
     public string Payee { get; set; } // در وجه (گیرنده چک)
     public string Description { get; set; } // توضیحات
+    public string SayyadNumber { get; set; } // شماره صیادی
 
-
-    private CheckStatus _status = CheckStatus.سفید;
+    private CheckStatus _status = CheckStatus.نزد_ما;
     public CheckStatus Status {
         get => _status;
         set {

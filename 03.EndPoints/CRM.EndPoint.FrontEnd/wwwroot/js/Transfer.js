@@ -145,8 +145,8 @@ function getAllTransfersDt() {
             {
                 data: "transferType",
                 render: data => {
-                    if (data === 1) return `<span class="badgeGreen d-inline-flex">واریز</span>`;
-                    if (data === 2) return `<span class="badgeRed2">برداشت</span>`;
+                    if (data === 1) return `<span class="badge badge-green">واریز</span>`;
+                    if (data === 2) return `<span class="badge badge-red">برداشت</span>`;
                     
                 },
                 orderable: false,
