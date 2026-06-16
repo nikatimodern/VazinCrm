@@ -1,8 +1,9 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+
+namespace CRM.EndPoint.FrontEnd.Services.Asterisk;
 
 public class AsteriskAMI {
     private TcpClient _client;

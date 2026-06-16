@@ -13,29 +13,64 @@
         </div>
     }
     @foreach (var item in Model.OrderByDescending(f => f.CreateDate)) {
+        var badgeClass = item.ReportType switch {
+            ReportTypeEnum.گزارش_پیگیری => "report-follow-up",
+            ReportTypeEnum.گزارش_تماس_های_ورودی => "report-call",
+            ReportTypeEnum.گزارش_رضایتمندی => "report-satisfaction",
+            _ => ""
+        };
+        var hasTimeline = item.AI && item.Participants != null && item.Participants.Count > 1;
         <div class="report-wrapper">
-            <img class="reporter-image" src="@(string.IsNullOrEmpty(item.UserImage) ? "/Img/User.png" : item.UserImage)" />
+            @* <img class="reporter-image" src="@(string.IsNullOrEmpty(item.UserImage) ? "/Img/User.png" : item.UserImage)" /> *@
+            <div class="report-sidebar-timeline @(hasTimeline ? "has-timeline" : "")">
+                <img class="reporter-image main-avatar" src="@(string.IsNullOrEmpty(item.UserImage) ? "/Img/User.png" : item.UserImage)" />
 
-            <div class="report-box @(item.ReportType == ReportTypeEnum.گزارش_پیگیری ? "report-follow-up" : item.ReportType == ReportTypeEnum.گزارش_تماس_های_ورودی ? "report-call" : "report-satisfaction")">
+                @if (hasTimeline) {
+                    <div class="timeline-connection-line"></div>
 
-                <span class="report-badge">@item.ReportTypeTxt</span>
-                <span class="reporter-name">@item.CustomerTxt</span>
-
-                <div class="report-text">
-                    <span>@item.ReportText</span>
-                    @if (!string.IsNullOrEmpty(item.ResultCallTxt) || !string.IsNullOrEmpty(item.FinalResultCallTxt) || !string.IsNullOrEmpty(item.ReasonCancelTxt)) {
-                        <p class="d-flex flex-wrap column-gap-2">
-                            @if (!string.IsNullOrEmpty(item.ResultCallTxt)) {
-                                <span>(نتیجه تماس: @item.ResultCallTxt)</span>
-                            }
-                            @if (!string.IsNullOrEmpty(item.FinalResultCallTxt)) {
-                                <span>(نتیجه نهایی: @item.FinalResultCallTxt)</span>
-                            }
-                            @if (!string.IsNullOrEmpty(item.ReasonCancelTxt)) {
-                                <span>(علت انصراف: @item.ReasonCancelTxt)</span>
-                            }
-                        </p>
+                    var transfers = item.Participants.OrderBy(p => p.SortOrder).Skip(1).ToList();
+                    foreach (var participant in transfers) {
+                        <img class="reporter-image transfer-avatar"
+                             src="@(string.IsNullOrEmpty(participant.UserImage) ? "/Img/User.png" : participant.UserImage)"
+                             title="انتقال به: @participant.UserFullName" />
                     }
+                }
+            </div>
+            <div class="report-box @badgeClass">
+                <div class="report-badges">
+                    @if (item.AI) {
+                        if (item.CallRecordingId != null && (ViewBag.IsManager || item.UserCreatorID == ViewBag.CurrentUserId)) {
+                            <button data-title-right="پخش ضبط تماس" onclick="playAudio('/Report/GetCallAudio?callId=@(item.CallRecordingId)')">
+                                <svg style="width: 22px;color: #5b21b6" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm14.024-.983a1.125 1.125 0 0 1 0 1.966l-5.603 3.113A1.125 1.125 0 0 1 9 15.113V8.887c0-.857.921-1.4 1.671-.983l5.603 3.113Z" clip-rule="evenodd" /></svg>
+                            </button>
+                        }
+
+                        <span class="report-ai-badge" title="تولید شده با هوش مصنوعی">
+                            <img src="~/Img/ai-svg.svg" class="ai-svg-icon" alt="AI" />
+                        </span>
+                    }
+                    <span class="report-type-badge">@item.ReportTypeTxt</span>
+                </div>
+
+                <div class="d-flex flex-column w-100">
+                    <span class="reporter-name">@item.CustomerTxt</span>
+
+                    <div class="report-text">
+                        <span style="white-space: pre-wrap">@item.ReportText?.Trim()</span>
+                        @if (!string.IsNullOrEmpty(item.ResultCallTxt) || !string.IsNullOrEmpty(item.FinalResultCallTxt) || !string.IsNullOrEmpty(item.ReasonCancelTxt)) {
+                            <p class="d-flex flex-wrap column-gap-2">
+                                @if (!string.IsNullOrEmpty(item.ResultCallTxt)) {
+                                    <span>(نتیجه تماس: @item.ResultCallTxt)</span>
+                                }
+                                @if (!string.IsNullOrEmpty(item.FinalResultCallTxt)) {
+                                    <span>(نتیجه نهایی: @item.FinalResultCallTxt)</span>
+                                }
+                                @if (!string.IsNullOrEmpty(item.ReasonCancelTxt)) {
+                                    <span>(علت انصراف: @item.ReasonCancelTxt)</span>
+                                }
+                            </p>
+                        }
+                    </div>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-end gap-1 gap-md-4">

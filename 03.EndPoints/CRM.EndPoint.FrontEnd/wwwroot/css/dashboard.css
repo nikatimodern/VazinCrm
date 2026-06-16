@@ -88,7 +88,17 @@
 
 
 #allReportsDashboardId .reporter-image {
-  width: clamp(33px, 2.6vw, 36px);
+  width: clamp(34px, 2.6vw, 36px);
+}
+
+
+#allReportsDashboardId .reporter-image.transfer-avatar {
+  width: clamp(30px, 3.5vw, 32px);
+}
+
+
+#allReportsDashboardId .report-sidebar-timeline {
+  min-width: 38px;
 }
 
 
@@ -117,7 +127,7 @@
 }
 
 
-#allReportsDashboardId .report-badge {
+#allReportsDashboardId .report-type-badge {
   padding: 3px 8px;
 }
 

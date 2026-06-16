@@ -5,16 +5,16 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CRM.Infrastructures.Sql.Reports.Configs
-{
-    public class ReportConfigs : IEntityTypeConfiguration<Report>
-    {
+namespace CRM.Infrastructures.Sql.Reports.Configs {
+    public class ReportConfigs : IEntityTypeConfiguration<Report> {
         public void Configure(EntityTypeBuilder<Report> builder)
         {
-
             builder.HasKey(f => f.Id);
 
-
+            builder.HasOne(f => f.CallRecordings)
+                .WithOne(c => c.Report)
+                .HasForeignKey<Report>(f => f.CallRecordingId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

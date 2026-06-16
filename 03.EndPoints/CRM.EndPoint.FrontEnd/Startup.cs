@@ -26,7 +26,11 @@ using System.Security.Claims;
 using CRM.EndPoint.FrontEnd.Services.PushServices;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using CRM.EndPoint.FrontEnd.Services.AI;
+using Serilog;
 using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Services.Asterisk;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using CRM.EndPoint.FrontEnd.Services.Chat;
 using WebPush;
@@ -141,6 +145,15 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddHostedService<PushBackgroundService>();
             services.AddScoped<IPushService, PushService>();
 
+            services.AddSingleton<IAiQueue, AiQueue>();
+            services.AddHostedService<AiBackgroundService>();
+            services.AddScoped<AiProcessAudio>();
+            services.AddScoped<AiService>();
+            services.AddScoped<ViraAi>();
+            services.AddScoped<GapgptAi>();
+            services.AddScoped<AiPrompts>();
+            services.AddScoped<IssabelService>();
+
             services.AddSingleton<ISmsQueue, SmsQueue>();
             services.AddHostedService<SmsBackgroundService>();
 
@@ -161,9 +174,42 @@ namespace CRM.EndPoint.FrontEnd {
                 return new WebPushClient(httpClient);
             });
 
+            services.AddHttpClient<ViraAi>(client => {
+                client.BaseAddress = new Uri("https://partai.gw.isahab.ir/");
+                client.DefaultRequestHeaders.Add("gateway-token",
+                    "eyJhbGciOiJIUzI1NiJ9.eyJzeXN0ZW0iOiJzYWhhYiIsImNyZWF0ZVRpbWUiOiIxNDA1MDIyMzE0MjA0MTAwNiIsInVuaXF1ZUZpZWxkcyI6eyJ1c2VybmFtZSI6Ijg3YzM0ZDI2LTE0OWQtNGNlYS1hMTNhLTg3YWNhZWNmZjg4MiJ9LCJncm91cE5hbWUiOiJiZmNmZDI5YzJmOGJkMjA5M2NjMWIzM2ZkNzUxZTkyNiIsImRhdGEiOnsic2VydmljZUlEIjoiNGVkNzY5ZTYtNDgxNC00ZGNiLWEzZWQtZTU1ZWI5Y2FiZjhlIiwicmFuZG9tVGV4dCI6IklvQ1VSIn19.Hvu7g2cRpMnmV7gz6yn09m_zMKBab-d9d5StzTvtT7I");
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                client.Timeout = TimeSpan.FromMinutes(5);
+            });
 
-            services.AddHttpClient<SmsService>(client =>
+            /*services.AddHttpClient("SummarizeApi", client =>
             {
+                client.BaseAddress = new Uri("https://dadmatech.gw.isahab.ir/summarize/v1/summarize");
+                client.DefaultRequestHeaders.Add("gateway-token", "eyJhbGciOiJIUzI1NiJ9.eyJzeXN0ZW0iOiJzYWhhYiIsImNyZWF0ZVRpbWUiOiIxNDA1MDEyNzE0MDEwNjYxMCIsInVuaXF1ZUZpZWxkcyI6eyJ1c2VybmFtZSI6Ijg3YzM0ZDI2LTE0OWQtNGNlYS1hMTNhLTg3YWNhZWNmZjg4MiJ9LCJncm91cE5hbWUiOiJiOTc2MWUzNTdmMDZiODFjZTFiNTQ0YjY1M2QyYTEzYiIsImRhdGEiOnsic2VydmljZUlEIjoiNTUyMWYxYjgtYmJiYS00ZGI0LWI0YTctYjA2OGI5NGQ1ZTQyIiwicmFuZG9tVGV4dCI6IkN3anp0In19.ez-ICJWTBcu3NJ_Og5ohFrjWj55hzUEDZO0xhnjxXWw");
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            });*/
+
+            services.AddHttpClient<GapgptAi>(client => {
+                client.BaseAddress = new Uri("https://api.gapgpt.app/v1/");
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", "sk-hRMArn3FmKRS130Tgez4rtYOVVlWaGVNsG6dnwgtA4jjKwfd");
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                client.Timeout = TimeSpan.FromMinutes(5);
+            });
+
+            services.AddHttpClient<AiProcessAudio>(client => {
+                client.BaseAddress = new Uri("http://192.168.1.149:8000/");
+
+                client.Timeout = TimeSpan.FromMinutes(5);
+
+                client.DefaultRequestHeaders.Add("GAPGPT_API_KEY", "sk-hRMArn3FmKRS130Tgez4rtYOVVlWaGVNsG6dnwgtA4jjKwfd");
+                client.DefaultRequestHeaders.Add("VIRA_API_KEY",
+                    "eyJhbGciOiJIUzI1NiJ9.eyJzeXN0ZW0iOiJzYWhhYiIsImNyZWF0ZVRpbWUiOiIxNDA1MDIyMzE0MjA0MTAwNiIsInVuaXF1ZUZpZWxkcyI6eyJ1c2VybmFtZSI6Ijg3YzM0ZDI2LTE0OWQtNGNlYS1hMTNhLTg3YWNhZWNmZjg4MiJ9LCJncm91cE5hbWUiOiJiZmNmZDI5YzJmOGJkMjA5M2NjMWIzM2ZkNzUxZTkyNiIsImRhdGEiOnsic2VydmljZUlEIjoiNGVkNzY5ZTYtNDgxNC00ZGNiLWEzZWQtZTU1ZWI5Y2FiZjhlIiwicmFuZG9tVGV4dCI6IklvQ1VSIn19.Hvu7g2cRpMnmV7gz6yn09m_zMKBab-d9d5StzTvtT7I");
+                client.DefaultRequestHeaders.Add("User", "admin");
+                client.DefaultRequestHeaders.Add("Pass", "admin@54321");
+            });
+
+            services.AddHttpClient<SmsService>(client => {
                 var smsConfig = Configuration?.GetSection("smsConfig").Get<appSettingSms>();
 
                 client.BaseAddress = new Uri(smsConfig?._Url);
@@ -222,6 +268,8 @@ namespace CRM.EndPoint.FrontEnd {
             var licenseFile = System.IO.Path.Combine(contentRoot, "wwwroot\\Reports", "license.key");
             //Stimulsoft.Base.StiLicense.LoadFromFile(licenseFile);
 
+            //app.UseSerilogRequestLogging();
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -243,6 +291,8 @@ namespace CRM.EndPoint.FrontEnd {
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseSession();
+
+            app.UseMiddleware<ErrorLoggingMiddleware>();
 
             app.UseEndpoints(endpoints => {
                 endpoints.MapControllerRoute(

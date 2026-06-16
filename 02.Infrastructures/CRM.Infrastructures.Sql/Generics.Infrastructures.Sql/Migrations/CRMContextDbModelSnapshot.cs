@@ -455,6 +455,77 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("BaseItems");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.CallRecordings.Entities.CallRecording", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CallerCustomerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CallerCustomerTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CallerNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DestinationNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DestinationUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DestinationUserTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Product")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RecordingFilePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SummaryText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TranscriptionText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CallRecordings");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Carizos.Entities.Carizo", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3026,6 +3097,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("AI")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("CallRecordingId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("CommentText")
                         .HasColumnType("nvarchar(max)");
 
@@ -3112,7 +3189,45 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CallRecordingId")
+                        .IsUnique()
+                        .HasFilter("[CallRecordingId] IS NOT NULL");
+
                     b.ToTable("Reports");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Reports.Entities.ReportParticipant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AnswerTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AnswerTimeTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Extension")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ReportId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserFullName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReportId");
+
+                    b.ToTable("ReportParticipants");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", b =>
@@ -4075,6 +4190,27 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Reports.Entities.Report", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.CallRecordings.Entities.CallRecording", "CallRecordings")
+                        .WithOne("Report")
+                        .HasForeignKey("CRM.Core.Domain.Reports.Entities.Report", "CallRecordingId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("CallRecordings");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Reports.Entities.ReportParticipant", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Reports.Entities.Report", "Report")
+                        .WithMany("Participants")
+                        .HasForeignKey("ReportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Report");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountOrderHead", b =>
                 {
                     b.HasOne("CRM.Core.Domain.Orders.Entities.OrderHead", "OrderHead")
@@ -4169,6 +4305,11 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Navigation("Accountancies");
 
                     b.Navigation("Checkbooks");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.CallRecordings.Entities.CallRecording", b =>
+                {
+                    b.Navigation("Report");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Carizos.Entities.Carizo", b =>
@@ -4268,6 +4409,11 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Products.Entities.ProductGroup", b =>
                 {
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Reports.Entities.Report", b =>
+                {
+                    b.Navigation("Participants");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", b =>

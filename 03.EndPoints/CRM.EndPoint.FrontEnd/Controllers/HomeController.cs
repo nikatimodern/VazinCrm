@@ -15,7 +15,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Entities;
@@ -30,8 +34,15 @@ using CRM.Core.Domain.Supplies.Entities;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
+using Microsoft.AspNetCore.Http;
 using WebPush;
-
+using System;
+using System.IO;
+using System.Net;
+using Renci.SshNet;
+using System.Net.Http;
+using System.Threading.Tasks;
+using CRM.EndPoint.FrontEnd.Services.AI;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
@@ -74,8 +85,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
 
-                await trans.CommitAsync();
+
                 //await db.SaveChangesAsync();
+                await trans.CommitAsync();
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();
             }

@@ -18,6 +18,7 @@ using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Reports.Enum;
 using CRM.EndPoint.FrontEnd.ISerives;
+using CRM.EndPoint.FrontEnd.Services.Asterisk;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.AspNetCore.SignalR;
@@ -36,9 +37,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly Service genService;
         private readonly IVeiwRenderService vrs;
         private readonly LogSystemService _logSystemService;
+        private readonly IssabelService issabelService;
 
         public ReportController(IHubContext<TaskHub> hub, UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db,
-            DateTimeServices dts, UserContextDb udb, Service GenService, IVeiwRenderService vrs, LogSystemService logSystemService)
+            DateTimeServices dts, UserContextDb udb, Service GenService, IVeiwRenderService vrs, LogSystemService logSystemService,
+            IssabelService issabelService)
         {
             this.hub = hub;
             this.userManager = userManager;
@@ -49,6 +52,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             genService = GenService;
             this.vrs = vrs;
             _logSystemService = logSystemService;
+            this.issabelService = issabelService;
         }
 
         public IActionResult Index()
@@ -212,7 +216,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var data = await GetAllReports(model, dealId);
 
-            var userIds = data.Select(r => r.UserCreatorID).Distinct().ToList();
+            //var userIds = data.Select(r => r.UserCreatorID).Distinct().ToList();
+
+            var userIds = data.Select(r => r.UserCreatorID)
+                .Union(data.SelectMany(r => r.Participants.Select(p => p.UserId)))
+                .Where(id => !string.IsNullOrEmpty(id))
+                .Distinct()
+                .ToList();
+
             var userImages = await udb.Users
                 .Where(u => userIds.Contains(u.Id))
                 .ToDictionaryAsync(u => u.Id, u => u.PersonImageUrl);
@@ -221,11 +232,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 if (userImages.TryGetValue(r.UserCreatorID, out var img))
                     r.UserImage = img;
+
+                foreach (var p in r.Participants ?? [])
+                {
+                    if (userImages.TryGetValue(p.UserId, out var pImg))
+                        p.UserImage = pImg;
+                }
             }
 
             var html = await vrs.RenderToStringAsync("GetAllReportPartial", data,
                 new Dictionary<string, object> {
-                    { "PassType", ViewBag.PassType }
+                    { "PassType", ViewBag.PassType },
+                    { "IsManager", ViewBag.IsManager },
+                    { "CurrentUserId", ViewBag.CurrentUserId },
                 });
 
             return Ok(new { count = data.Count, html });
@@ -235,12 +254,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var rols = await userManager.GetRolesAsync(user);
-            var qData = db.Reports.AsQueryable();
+            var qData = db.Reports.AsNoTracking()
+                .Include(r => r.Participants)
+                .OrderByDescending(r => r.CreateDate)
+                .AsQueryable();
+
+            ViewBag.IsManager = rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش") || rols.Contains("مدیر عامل") ||
+                                rols.Contains("مدیر اجرایی");
+            ViewBag.CurrentUserId = user.Id;
 
             if (dealId != null)
             {
                 ViewBag.PassType = 4;
-                qData = qData.Where(f => f.DealId == dealId).OrderByDescending(f => f.CreateDate);
+                qData = qData.Where(f => f.DealId == dealId);
             } else
             {
                 ViewBag.PassType = 0;
@@ -250,7 +276,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     var val = $"%{model.serVal}%";
                     qData = qData.Where(r =>
                         EF.Functions.Like(r.CustomerTxt, val) ||
-                        EF.Functions.Like(r.ReportText, val));
+                        EF.Functions.Like(r.ReportText, val)
+                    );
                 }
 
                 if (model._type != -1)
@@ -286,18 +313,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (!rols.Contains("مدیر ارشد") && !rols.Contains("مدیر فروش"))
                 {
                     qData = qData.Where(r =>
-                        (r.ReportType == ReportTypeEnum.گزارش_رضایتمندی && r.UserCreatorID == user.Id)
-                        || r.ReportType != ReportTypeEnum.گزارش_رضایتمندی
+                        (r.ReportType == ReportTypeEnum.گزارش_رضایتمندی && r.UserCreatorID == user.Id) ||
+                        r.ReportType != ReportTypeEnum.گزارش_رضایتمندی
                     );
                 }
-
-                qData = qData.OrderByDescending(f => f.CreateDate);
 
                 if (model.Count != -1)
                     qData = qData.Take(model.Count);
             }
 
-            var data = await qData.AsNoTracking().ToListAsync();
+            var data = await qData.ToListAsync();
             return data;
         }
 
@@ -371,72 +396,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        /*[HttpPost]
-        public async Task<IActionResult> GetAllReport() {
-            try {
-                var user = await userManager.GetUserAsync(HttpContext.User);
 
-                var draw = Request.Form["draw"].FirstOrDefault();
-                var start = Request.Form["start"].FirstOrDefault();
-                var length = Request.Form["length"].FirstOrDefault();
-                var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
-                var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
-                var searchValue = Request.Form["search[value]"].FirstOrDefault();
-                int pageSize = length != null ? Convert.ToInt32(length) : 0;
-                int skip = start != null ? Convert.ToInt32(start) : 0;
-                int recordsTotal = 0;
-                IQueryable<Report> dataF = null;
+        [HttpGet]
+        public async Task<IActionResult> GetCallAudio(Guid callId)
+        {
+            var call = await db.CallRecordings.FirstOrDefaultAsync(x => x.Id == callId);
 
-                if (await userManager.IsInRoleAsync(user, "مدیر فروش") || await userManager.IsInRoleAsync(user, "مدیر ارشد")) {
-                    dataF = db.Reports.AsQueryable();
-                } else {
-                    //dataF = db.Reports.Where(f => f.UserCreatorID == user.Id).AsQueryable();
-                    dataF = db.Reports.AsQueryable();
-                }
+            if (call == null) return NotFound();
 
+            var stream = await issabelService.GetAudioWithRetry(call.RecordingFilePath);
 
-                if (!(string.IsNullOrEmpty(sortColumn) && string.IsNullOrEmpty(sortColumnDirection))) {
-                    if (sortColumnDirection == "asc") {
-                        switch (sortColumn) {
-                            case "OrderNumber":
-                                dataF = dataF.OrderBy(f => f.RegDate);
-                                break;
-                            default:
-                                dataF = dataF.OrderBy(f => f.RegDate);
-                                break;
-                        }
-                    } else {
-                        switch (sortColumn) {
-                            case "OrderNumber":
-                                dataF = dataF.OrderByDescending(f => f.RegDate);
-                                break;
-                            default:
-                                dataF = dataF.OrderByDescending(f => f.RegDate);
-                                break;
-                        }
-                    }
-                }
+            if (stream == null) return NotFound();
 
-                if (!string.IsNullOrEmpty(searchValue)) {
-                    dataF = dataF.Where(
-                        m =>
-                            m.RegDateTxt.Contains(searchValue) ||
-                            m.CustomerTxt.Contains(searchValue)
-                    );
-                }
-
-                recordsTotal = dataF.Count();
-                List<Report> data = new List<Report>();
-                if (pageSize == -1)
-                    data = await dataF.ToListAsync();
-                else
-                    data = await dataF.Skip(skip).Take(pageSize).ToListAsync();
-                var jsonData = new { draw, recordsFiltered = recordsTotal, recordsTotal, data };
-                return Ok(jsonData);
-            }
-            catch {
-                return null;
-            }
-        }*/
+            return File(stream, "audio/wav", Path.GetFileName(call.RecordingFilePath));
+        }
     }
 }

@@ -5621,5 +5621,19 @@ document.addEventListener("input", (e) => {
 });
 
 
+const audioModal = document.getElementById("audioModal");
+const playerAudioModal = audioModal?.querySelector("audio");
+const sourceAudioModal = audioModal?.querySelector("source");
 
+function playAudio(src) {
+    sourceAudioModal.src = src;
+    playerAudioModal.load();
+    
+    ModalToggle(audioModal);
+}
+audioModal?.addEventListener("hidden.bs.modal", () => {
+    playerAudioModal.pause();
+    playerAudioModal.currentTime = 0;
+    sourceAudioModal.src = "";
+});
 

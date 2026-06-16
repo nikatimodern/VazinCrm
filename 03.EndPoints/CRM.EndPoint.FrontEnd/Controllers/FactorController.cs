@@ -2095,7 +2095,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                var accountancies = await db.Accountancies.NotVosoled().Where(f => f.CustomerId == cusId).ToListAsync();
+
+               // var date = Convert.ToDateTime("2026-03-21");
+               // var pfs = await db.PreFactors.Where(f => f.DateMiladi > date).Select(f => f.Id).ToListAsync();
+                var accountancies = await db.Accountancies
+                    .NotVosoled()
+                    .Where(f => f.CustomerId == cusId)
+                //    .Where(f => pfs.Contains(f.pfid.Value))
+                    .ToListAsync();
 
                 var pFacPayment = accountancies.Where(f =>
                     f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
@@ -2114,14 +2121,21 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var allPrePayment = pFacPayment - returnPayment;
 
-                //FacAmount = db.Accountancies.Where(f => f.AccType == (int)AcEnum.بدهکاری && f.CustomerId == cusId && f.FirstAcc == false).Sum(f => f.debit);
-
                 var facIds = await db.Factors.Where(f =>
                     f.CustomerId == cusId
                     && f.status == FactorStatus.تایید_شده
                     && !f.Returned
                     && f.ParentReturnedId == null
-                ).Select(f => f.Id).ToListAsync();
+                )
+                    //.Where(f => pfs.Contains(f.PfactorID))
+                    .Select(f => f.Id)
+                    .ToListAsync();
+
+                /*var facAmount = await db.Accountancies.Where(f =>
+                    f.InvoiceType == InvoiceTypeEnum.فاکتور
+                    && f.fid != null
+                    && facIds.Contains(f.fid.Value)
+                ).SumAsync(f => f.debit) ?? 0;*/
 
                 var facAmount = accountancies.Where(f =>
                     f.InvoiceType == InvoiceTypeEnum.فاکتور
@@ -2132,7 +2146,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var remained = facAmount - allPrePayment > 0 ? facAmount - allPrePayment : 0;
 
-//                var balance = Math.Max(0, allPrePayment - facAmount);
                 var wallet = accountancies.Where(f => f.Wallet && f.Status == AccStatusEnum.تایید_شده).Sum(f => f.credit) ?? 0;
 
                 return Ok(new { remained, facAmount, allPrePayment, wallet });
