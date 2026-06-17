@@ -159,16 +159,6 @@ public class AsteriskAmiListener : BackgroundService {
                 return;
             }
 
-            /*_calls.AddOrUpdate(uniqueId,
-                _ => new CallSessionModel {
-                    UniqueId = uniqueId,
-                    RecordingPath = filePath
-                },
-                (_, existing) => {
-                    existing.RecordingPath = filePath;
-                    return existing;
-                }
-            );*/
             _calls.AddOrUpdate(linkedId,
                 _ => new CallSessionModel {
                     LinkedId = linkedId,
@@ -296,6 +286,7 @@ public class AsteriskAmiListener : BackgroundService {
                 DestinationUserId = user?.Id,
                 DestinationUserTxt = user?.FullName,
                 RecordingFilePath = call.RecordingPath,
+                DurationSeconds = (int)duration.TotalSeconds,
             };
             foreach (var p in call.Participants)
             {
