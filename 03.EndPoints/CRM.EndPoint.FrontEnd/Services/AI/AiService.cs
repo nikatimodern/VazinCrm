@@ -9,8 +9,10 @@ using CRM.Core.Domain.Reports.Entities;
 using CRM.Core.Domain.Reports.Enum;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 using CRM.EndPoint.FrontEnd.Services.Asterisk;
+using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Renci.SshNet;
@@ -24,7 +26,8 @@ public class AiService(
     AiProcessAudio aiProcessAudio,
     DateTimeServices dts,
     IssabelService issabelService,
-    ILogger<AiService> logger) {
+    ILogger<AiService> logger,
+    IHubContext<TaskHub> hub) {
     public async Task ProcessCallRecording(CallRecording callData)
     {
         var filePath = @"C:\Users\a.gorji\Desktop\test1.wav";
@@ -58,14 +61,13 @@ public class AiService(
 
             // 4. Save To Database
             await SaveCallDataToDatabase(callData);
-
-            // 4. Create Report
             if (string.IsNullOrEmpty(callData.SummaryText))
             {
                 logger.LogWarning($"Summarize is null or empty: {callData.SummaryText}");
                 return;
             }
 
+            // 4. Create Report
             await CreateReportWithCallData(callData);
             //var result = await aiProcessAudio.ProcessAudioAsync(audioStream, Path.GetFileName(callData.RecordingFilePath));
             //Console.WriteLine(result);
@@ -97,6 +99,14 @@ public class AiService(
         if (callRecording == null) return;
         try
         {
+            var firstAnswerTime = callRecording.CallParticipant?
+                .Where(p => p.AnswerTime != null && p.AnswerTime != DateTime.MinValue)
+                .OrderBy(p => p.AnswerTime)
+                .Select(p => p.AnswerTime)
+                .FirstOrDefault();
+
+            var reportDate = firstAnswerTime ?? DateTime.Now;
+
             var newReport = new Report {
                 RepTel = callRecording.CallerNumber,
                 UserCreatorID = callRecording.DestinationUserId,
@@ -105,9 +115,9 @@ public class AiService(
                 CustomerTxt = callRecording.CallerCustomerTxt,
                 CustomerCode = callRecording.CallerCustomerCode,
                 ReportText = callRecording.SummaryText,
-                RegDate = DateTime.Now,
-                RegDateTxt = dts.GetDatePersian(),
-                RegTimeTxt = dts.GetNowTime("HH:mm:ss"),
+                RegDate = reportDate,
+                RegDateTxt = dts.GetDatePersian(reportDate),
+                RegTimeTxt = reportDate.ToString("HH:mm:ss"),
                 ReportType = ReportTypeEnum.گزارش_تماس_های_ورودی,
                 ReportTypeTxt = nameof(ReportTypeEnum.گزارش_تماس_های_ورودی).Replace("_", " "),
                 AI = true,
@@ -131,6 +141,7 @@ public class AiService(
             await db.Reports.AddAsync(newReport);
 
             await db.SaveChangesAsync();
+            await hub.Clients.All.SendAsync("ShowReport");
             logger.LogInformation("Report created");
         }
         catch (Exception ex)
