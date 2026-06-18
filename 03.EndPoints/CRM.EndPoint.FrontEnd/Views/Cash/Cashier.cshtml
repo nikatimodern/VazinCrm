@@ -29,7 +29,6 @@
             <thead>
             <tr>
                 <th>کاربر</th>
-                @* <th>مرکز هزینه</th> *@
                 <th>ثبت توسط</th>
                 <th>تاریخ ثبت</th>
                 <th>عملیات</th>
@@ -153,7 +152,7 @@
             const model = {
                 ...cashierData,
                 ...mySer.convertFormToJSON("cashierForm"),
-                userTxt: cashierUserElm.options[cashierUserElm.selectedIndex].text
+                userTxt: cashierUserElm.options[cashierUserElm.selectedIndex].text,
             };
             //model.cashierUsers = selectedUsers.map(i => ({ userId: i, cashierId: cashierData.id }));
 
@@ -194,63 +193,24 @@
                         d.model = JSON.stringify(modelCashier);
                     },
                 },
-                language: {
-                    emptyTable: "هیچ رکوردی موجود نمی باشد.",
-                    info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
-                    infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
-                    infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
-                    lengthMenu: "نمایش _MENU_ ردیف",
-                    loadingRecords: "در حال بارگزاری...",
-                    search: "",
-                    zeroRecords: "رکوردی با این مشخصات پیدا نشد",
-                    aria: {
-                        sortAscending: ": فعال سازی نمایش به صورت صعودی",
-                        sortDescending: ": فعال سازی نمایش به صورت نزولی",
-                    },
-                },
-                columnDefs: [
-                    {
-                        targets: [0, 2, 3],
-                        orderable: false,
-                    },
-                    {
-                        targets: [2],
-                        render: data => `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>`,
-                    },
-                ],
+                language: languageDatatable,
                 columns: [
-                    { data: "userTxt", name: "UserTxt", defaultContent: "-" },
-                    // { data: "title", name: "Title", defaultContent: "-" },
-                    { data: "userCreator", name: "UserCreator", defaultContent: "-" },
-                    { data: "createDateTxt", name: "CreateDateTxt", defaultContent: "-" },
+                    { data: "userTxt" },
+                    { data: "userCreator", orderable: false },
+                    { data: "createDateTxt", render: data => `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>` },
                     {
-                        data: null,
-                        render: function (data, type, row) {
-                            //<button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditCashierModal('${row.id}')"><i class="fa fa-pencil"></i></button>
+                        data: "id",
+                        orderable: false,
+                        render: function (data) {
                             return `
                                 <div class="d-inline-flex align-items-center justify-content-center gap-1">
-                                    <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deleteCashier('${row.id}')"><i class="fa fa-trash"></i></button>
+                                    <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deleteCashier('${data}')"><i class="fa fa-trash"></i></button>
                                 </div>
                             `;
                         },
                     },
                 ],
-                layout: {
-                    bottomEnd: "info",
-                    bottomStart: {
-                        paging: {
-                            type: "simple_numbers",
-                        },
-                    },
-                    topEnd: {
-                        pageLength: true,
-                    },
-                    topStart: {
-                        search: {
-                            placeholder: "جستجو",
-                        },
-                    },
-                },
+                layout: layoutDatatable,
             });
         };
     </script>

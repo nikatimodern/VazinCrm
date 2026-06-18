@@ -10,6 +10,7 @@ using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Cashes.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.Cash;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
@@ -135,7 +136,7 @@ public class CashController : Controller {
             {
                 model.UserCreator = user.FullName;
                 model.UserCreatorID = user.Id;
-                db.Cashiers.Add(model);
+                await db.Cashiers.AddAsync(model);
             } else
             {
                 var data = await db.Cashiers.Where(f => f.Id == model.Id).FirstOrDefaultAsync();
@@ -571,44 +572,70 @@ public class CashController : Controller {
             var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
             // var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
             var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
-            var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
+            var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][data]"].FirstOrDefault();
             var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
             var searchValue = Request.Form["search[value]"].FirstOrDefault()?.ToLower().Trim();
 
-            var cashiers = db.Cashiers.AsNoTracking();
+            var query = db.Cashiers.AsNoTracking();
+            var recordsTotal = await query.CountAsync();
 
             if (!string.IsNullOrEmpty(searchValue))
             {
-                cashiers = cashiers.Where(x =>
+                query = query.Where(x =>
                     x.UserTxt.Contains(searchValue) ||
                     x.Title.Contains(searchValue)
                 );
             }
 
+            var recordsFiltered = await query.CountAsync();
+
             if (!string.IsNullOrEmpty(sortColumn))
             {
                 var asc = sortColumnDirection == "asc";
-                cashiers = sortColumn switch {
-                    "Title" => asc
-                        ? cashiers.OrderBy(x => x.Title)
-                        : cashiers.OrderByDescending(x => x.Title),
+                query = sortColumn switch {
+                    "createDateTxt" => asc ? query.OrderBy(x => x.CreateDate) : query.OrderByDescending(x => x.CreateDate),
+                    "userTxt" => asc ? query.OrderBy(x => x.UserTxt) : query.OrderByDescending(x => x.UserTxt),
 
-                    _ => cashiers.OrderByDescending(x => x.CreateDate)
+                    _ => query.OrderByDescending(x => x.CreateDate)
                 };
             }
 
-            var recordsTotal = await cashiers.CountAsync();
-
             if (length != -1)
-                cashiers = cashiers.Skip(start).Take(length);
+                query = query.Skip(start).Take(length);
 
-            var data = await cashiers.ToListAsync();
+            var cashierIds = query.Select(c => Guid.Parse(c.UserId)).ToList();
+            var accSDictionary = await db.Accountancies
+                .Where(x => cashierIds.Contains(x.CashierId.Value))
+                .GroupBy(x => x.CashierId)
+                .ToDictionaryAsync(x => x.Key, x => new {
+                    TotalDebit = x.Sum(a => a.debit ?? 0),
+                    TotalCredit = x.Sum(a => a.credit ?? 0),
+                    isAccepted = x.All(a => a.Accepted == true)
+                });
+
+
+            var model = new List<CashierVModel>();
+            foreach (var item in query)
+            {
+                accSDictionary.TryGetValue(item.Id, out var accS);
+                if (accS == null) continue;
+
+                model.Add(new CashierVModel {
+                    Id = item.Id,
+                    CashierId = item.UserId,
+                    CashierTxt = item.UserTxt,
+                    TotalCredit = accS.TotalCredit,
+                    TotalDebit = accS.TotalDebit,
+                    isAccepted = accS.isAccepted
+                });
+            }
+
 
             return Json(new {
                 draw,
                 recordsTotal,
-                recordsFiltered = recordsTotal,
-                data,
+                recordsFiltered,
+                data = model,
             });
         }
         catch (Exception ex)
