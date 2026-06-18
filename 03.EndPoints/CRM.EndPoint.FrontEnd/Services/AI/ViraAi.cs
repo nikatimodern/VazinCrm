@@ -9,17 +9,18 @@ using Microsoft.Extensions.Logging;
 
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 
-public class ViraAi(HttpClient httpClient, ILogger<ViraAi> logger) {
-    private const string domainHotWords =
-        "وزین پلاست,روبیکا,بله,ایتا,واتساپ,تلگرام," +
-        "نایلون,نایلکس,سلفون,پلی‌اتیلن,پلاستیک,شیرینگ,گلخانه‌ای,کشاورزی,مالچ,یووی," +
-        "پاکت,کرافت,سوپاپ‌دار,زیپ‌دار,فویل,آلومینیوم,پنجره‌دار,بغل‌کاست,ته‌کاست,ایستاده,دورونما,شفاف,مات,لفاف," +
-        "استرچ,پالت,حبابدار,رکابی,خیاری,فریزر,زباله,لیبل,غلاف," +
-        "او پی پی,سی پی پی,پی او اف,متالایز,صدفی,لمینت,گرانول," +
-        "سیلک,کلیشه,سیلندر,چاپ,رنگی,تصویری," +
-        "تناژ,پارت,میکرون,ضخامت,عرض,طول,سایز,ابعاد,کیلو,کیلوگرم,پیش‌فاکتور,فاکتور,تسویه,باربری,اسنپ,پیک,نمونه";
+public class ViraAi {
+    private readonly HttpClient _httpClient;
+    private readonly ILogger<ViraAi> logger;
 
-    public async Task<string> ConvertAudioToText(Stream audioStream, string audioFileName, int durationSeconds)
+    public ViraAi(HttpClient httpClient, ILogger<ViraAi> logger)
+    {
+        _httpClient = httpClient;
+        this.logger = logger;
+    }
+
+
+    public async Task<AiResponseDetails> ConvertAudioToText(Stream audioStream, string audioFileName)
     {
         logger.LogInformation("Transcription started: {FileName}", audioFileName);
         using var form = new MultipartFormDataContent();
@@ -33,104 +34,61 @@ public class ViraAi(HttpClient httpClient, ILogger<ViraAi> logger) {
         form.Add(new StringContent("true"), "punctuation");
         form.Add(new StringContent("2"), "numSpeakers");
         form.Add(new StringContent("true"), "diarize");
+        const string domainHotWords =
+            // نام شرکت و پیام‌رسان‌های رایج برای ارسال فاکتور
+            "وزین پلاست,روبیکا,بله,ایتا,واتساپ,تلگرام," +
+
+            // محصولات پایه و کشاورزی/گلخانه‌ای (تخصص وزین پلاست)
+            "نایلون,نایلکس,سلفون,پلی‌اتیلن,پلاستیک,شیرینگ,گلخانه‌ای,کشاورزی,مالچ,یووی," +
+
+            // پاکت‌ها و لفاف‌های بسته‌بندی (محصولات ویژه سایت)
+            "پاکت,کرافت,سوپاپ‌دار,زیپ‌دار,فویل,آلومینیوم,پنجره‌دار,بغل‌کاست,ته‌کاست,ایستاده,دورونما,شفاف,مات,لفاف," +
+
+            // انواع فیلم و پلاستیک‌های صنعتی و فروشگاهی
+            "استرچ,پالت,حبابدار,رکابی,خیاری,فریزر,زباله,لیبل,غلاف," +
+
+            // جنس و متریال تخصصی
+            "او پی پی,سی پی پی,پی او اف,متالایز,صدفی,لمینت,گرانول," +
+
+            // اصطلاحات چاپ (فلکسو و هلیو)
+            "سیلک,کلیشه,سیلندر,چاپ,رنگی,تصویری," +
+
+            // واحدها، ابعاد و اصطلاحات فروش
+            "تناژ,پارت,میکرون,ضخامت,عرض,طول,سایز,ابعاد,کیلو,کیلوگرم,پیش‌فاکتور,فاکتور,تسویه,باربری,اسنپ,پیک,نمونه";
+
         form.Add(new StringContent(domainHotWords), "hotwords[]");
+        // فایل صوتی
+        //var filePath = Path.Combine("wwwroot", "a.mp3");
+        //var fileBytess = await File.ReadAllBytesAsync(filePath);
 
         var fileContent = new StreamContent(audioStream);
-        fileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/mpeg");
-        form.Add(fileContent, "audio", audioFileName);
 
-        const int threshold = 100;
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/mpeg");
+
+        form.Add(fileContent, "audio", audioFileName);
 
         try
         {
-            if (durationSeconds <= threshold)
-            {
-                logger.LogInformation("Routing to SHORT API. Duration: {Duration}s - File: {File}", durationSeconds, audioFileName);
+            var response = await _httpClient.PostAsync("avanegar/v2/avanegar/request", form);
 
-                return await QueryShortAudioApi(form, audioFileName);
+            if (response.IsSuccessStatusCode)
+            {
+                var resJson = await response.Content.ReadFromJsonAsync<AiAvanegarModel>();
+                logger.LogInformation("Transcription completed");
+
+                return resJson?.Data?.Data?.AiResponse;
             } else
             {
-                logger.LogInformation("Routing to LONG API (Async). Duration: {Duration}s - File: {File}", durationSeconds, audioFileName);
-
-                return await HandleLongAudioApi(form, audioFileName);
+                var errorContent = await response.Content.ReadAsStringAsync();
+                logger.LogError("Transcription API Error ({Code}): {Error}", response.StatusCode, errorContent);
+                return null;
             }
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Transcription error: {File}", audioFileName);
+            logger.LogError(ex, "Transcription error");
 
             return null;
         }
-    }
-
-    private async Task<string> QueryShortAudioApi(MultipartFormDataContent form, string fileName)
-    {
-        var response = await httpClient.PostAsync("avanegar/v2/avanegar/request", form);
-
-        if (response.IsSuccessStatusCode)
-        {
-            var resJson = await response.Content.ReadFromJsonAsync<AiAvanegarModel>();
-            logger.LogInformation("Short Transcription completed: {File}", fileName);
-            return resJson?.Data?.Data?.AiResponse?.Result?.Text;
-        }
-
-        var errorContent = await response.Content.ReadAsStringAsync();
-        logger.LogError("Short Transcription Error ({Code}) for {File}: {Error}", response.StatusCode, fileName, errorContent);
-        return null;
-    }
-
-
-    private async Task<string> HandleLongAudioApi(MultipartFormDataContent form, string fileName)
-    {
-        var response = await httpClient.PostAsync("avanegar/v2/avanegar-large/request", form);
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            logger.LogError("Long Transcription Init Error ({Code}) for {File}: {Error}", response.StatusCode, fileName, errorContent);
-            return null;
-        }
-
-        var postResult = await response.Content.ReadFromJsonAsync<AiAvanegarModel>();
-        var requestId = postResult?.Data?.Data?.Id;
-
-        if (string.IsNullOrEmpty(requestId))
-        {
-            logger.LogError("Long Transcription failed to generate RequestId for: {File}", fileName);
-            return null;
-        }
-
-        logger.LogInformation("Long transcription tracking initialized. ID: {Id} for {File}", requestId, fileName);
-        const int maxAttempts = 40; // حداکثر ۴۰ بار چک میکنه (حدود ۶ دقیقه)
-        for (var i = 0; i < maxAttempts; i++)
-        {
-            await Task.Delay(TimeSpan.FromSeconds(10)); // هر ۱۰ ثانیه یکبار چک میکنه
-
-            var trackResponse = await httpClient.GetAsync($"avanegar/v2/avanegar-large/track/{requestId}");
-            if (!trackResponse.IsSuccessStatusCode)
-            {
-                logger.LogWarning("Tracking connection warning ({Code}) for ID: {Id}. Retrying...", trackResponse.StatusCode, requestId);
-                continue;
-            }
-
-            var trackResult = await trackResponse.Content.ReadFromJsonAsync<AiAvanegarModel>();
-            var status = trackResult?.Data?.Status?.ToLowerInvariant();
-            var errorContent = await trackResponse.Content.ReadAsStringAsync();
-            var ew = await trackResponse.Content.ReadFromJsonAsync<DataAvanegar>();
-            if (status == "success")
-            {
-                logger.LogInformation("Long Transcription completed successfully for: {File} after {Attempts} attempts", fileName, i + 1);
-                return trackResult.Data.Data?.AiResponse?.Result?.Text;
-            }
-            if (status == "failed" || status == "fail")
-            {
-                logger.LogError("Long Transcription internal processing failed on server for: {File}. Message: {Msg}", fileName, trackResult.Data?.Message);
-                return null;
-            }
-
-            logger.LogDebug("File {Id} is still processing... (Attempt {Num})", requestId, i + 1);
-        }
-
-        logger.LogError("Long API tracking timed out (6 min) for ID: {Id} ({File})", requestId, fileName);
-        return null;
     }
 }

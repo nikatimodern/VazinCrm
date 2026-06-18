@@ -18,7 +18,6 @@ public class CallRecording : BaseEntity {
     public string TranscriptionText { get; set; }
     public string SummaryText { get; set; }
     public string Product { get; set; }
-    public int DurationSeconds { get; set; }
 
     [NotMapped] public List<CallParticipant> CallParticipant { get; set; } = [];
     public Report Report { get; set; }
