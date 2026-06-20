@@ -148,7 +148,7 @@ public class CashController : Controller {
                 data.UserTxt = model.UserTxt;
             }
 
-            var usr = await udb.Users.Where(f => f.Id == model.UserId).FirstOrDefaultAsync();
+            var usr = await udb.Users.Where(f => f.Id == model.UserId.ToString()).FirstOrDefaultAsync();
             await userManager.AddToRoleAsync(usr, "تنخواه دار");
 
 
@@ -415,7 +415,7 @@ public class CashController : Controller {
             item.UserModifyID = user.Id;
 
 
-            var usr = await udb.Users.FirstOrDefaultAsync(f => f.Id == item.UserId);
+            var usr = await udb.Users.FirstOrDefaultAsync(f => f.Id == item.UserId.ToString());
             await userManager.RemoveFromRoleAsync(usr, "تنخواه دار");
 
 
@@ -576,14 +576,26 @@ public class CashController : Controller {
             var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
             var searchValue = Request.Form["search[value]"].FirstOrDefault()?.ToLower().Trim();
 
-            var query = db.Cashiers.AsNoTracking();
+
+            var query = db.Cashiers.AsNoTracking()
+                .GroupJoin(db.Accountancies.AsNoTracking(),
+                    c => c.UserId,
+                    ac => ac.CashierId,
+                    (c, ac) => new CashierVModel {
+                        Cashier = c,
+                        TotalCredit = ac.Sum(x => x.credit ?? 0),
+                        TotalDebit = ac.Sum(x => x.debit ?? 0),
+                        Balance = ac.Sum(x => (x.credit ?? 0) - (x.debit ?? 0)),
+                        IsAccepted = ac.All(x => x.Accepted == true)
+                    }
+                );
+
             var recordsTotal = await query.CountAsync();
 
             if (!string.IsNullOrEmpty(searchValue))
             {
                 query = query.Where(x =>
-                    x.UserTxt.Contains(searchValue) ||
-                    x.Title.Contains(searchValue)
+                    x.Cashier.UserTxt.Contains(searchValue)
                 );
             }
 
@@ -593,49 +605,24 @@ public class CashController : Controller {
             {
                 var asc = sortColumnDirection == "asc";
                 query = sortColumn switch {
-                    "createDateTxt" => asc ? query.OrderBy(x => x.CreateDate) : query.OrderByDescending(x => x.CreateDate),
-                    "userTxt" => asc ? query.OrderBy(x => x.UserTxt) : query.OrderByDescending(x => x.UserTxt),
+                    "createDateTxt" => asc ? query.OrderBy(x => x.Cashier.CreateDate) : query.OrderByDescending(x => x.Cashier.CreateDate),
+                    "cashierTxt" => asc ? query.OrderBy(x => x.Cashier.UserTxt) : query.OrderByDescending(x => x.Cashier.UserTxt),
 
-                    _ => query.OrderByDescending(x => x.CreateDate)
+                    _ => query.OrderByDescending(x => x.Cashier.CreateDate)
                 };
             }
 
             if (length != -1)
                 query = query.Skip(start).Take(length);
 
-            var cashierIds = query.Select(c => Guid.Parse(c.UserId)).ToList();
-            var accSDictionary = await db.Accountancies
-                .Where(x => cashierIds.Contains(x.CashierId.Value))
-                .GroupBy(x => x.CashierId)
-                .ToDictionaryAsync(x => x.Key, x => new {
-                    TotalDebit = x.Sum(a => a.debit ?? 0),
-                    TotalCredit = x.Sum(a => a.credit ?? 0),
-                    isAccepted = x.All(a => a.Accepted == true)
-                });
-
-
-            var model = new List<CashierVModel>();
-            foreach (var item in query)
-            {
-                accSDictionary.TryGetValue(item.Id, out var accS);
-                if (accS == null) continue;
-
-                model.Add(new CashierVModel {
-                    Id = item.Id,
-                    CashierId = item.UserId,
-                    CashierTxt = item.UserTxt,
-                    TotalCredit = accS.TotalCredit,
-                    TotalDebit = accS.TotalDebit,
-                    isAccepted = accS.isAccepted
-                });
-            }
+            var data = await query.ToListAsync();
 
 
             return Json(new {
                 draw,
                 recordsTotal,
                 recordsFiltered,
-                data = model,
+                data,
             });
         }
         catch (Exception ex)
@@ -656,7 +643,7 @@ public class CashController : Controller {
             var data = await query.Select(f => new {
                 value = f.UserId,
                 text = f.UserTxt,
-                target = f.UserId == user.Id
+                target = f.UserId == Guid.Parse(user.Id)
             }).ToListAsync();
 
             return Ok(data);

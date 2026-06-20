@@ -7,7 +7,7 @@ namespace CRM.Core.Domain.Cashes.Entities {
     public class Cashier : BaseEntity
     {
         public string Title { get; set; }
-        public string UserId { get; set; }
+        public Guid UserId { get; set; }
 
         public string UserTxt { get; set; }
 

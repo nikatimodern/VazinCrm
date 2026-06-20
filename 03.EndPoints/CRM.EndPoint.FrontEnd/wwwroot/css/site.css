@@ -5282,6 +5282,22 @@ table tr.payment-vosoled > td {
 }
 
 
+.cursor-help {
+  cursor: help;
+}
+
+
+.info-icon-popover {
+  cursor: help;
+  transition: all .15s;
+}
+
+
+.info-icon-popover:hover {
+  transform: scale(1.1);
+}
+
+
 .flex-center {
   display: flex;
   justify-content: center;
@@ -6189,7 +6205,6 @@ table tr.payment-vosoled > td {
 }
 
 
-
 .doc-type-wrapper {
   display: inline-flex;
   align-items: center;
@@ -6311,4 +6326,9 @@ table tr.payment-vosoled > td {
 .required-mark label:has(+ :is(input, textarea, select)[required])::after {
   content: " *";
   color: #dc3545;
+}
+
+
+.fs-small {
+  font-size: 11px !important;
 }

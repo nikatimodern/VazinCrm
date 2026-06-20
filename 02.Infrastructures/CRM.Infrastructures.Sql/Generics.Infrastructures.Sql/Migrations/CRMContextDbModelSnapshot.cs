@@ -975,8 +975,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("UserCreatorID")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("UserModify")
                         .HasColumnType("nvarchar(max)");

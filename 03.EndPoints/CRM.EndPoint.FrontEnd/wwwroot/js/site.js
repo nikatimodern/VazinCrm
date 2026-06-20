@@ -3789,3 +3789,20 @@ async function deleteItem(options) {
         FLshowLoading(false);
     }
 }
+
+function renderMoneyHtml(value, { currency = "ريال", empty = "-", className = "" } = {}) {
+    if (value == null || Number.isNaN(Number(value)))
+        return empty;
+    
+    return `
+        <span class="d-inline-flex gap-1 align-items-baseline ${className}">
+            <span dir="ltr">${Number(value).toLocaleString()}</span>
+            <span class="fs-small">${currency}</span>
+        </span>
+    `;
+}
+function renderDateTimeHtml(value, { empty = "-", className = "" } = {}) {
+    if (!value) return empty;
+    
+    return `<span dir="ltr" class="${className}">${value.slice(0, -3).split(" ").join(" | ")}</span>`;
+}

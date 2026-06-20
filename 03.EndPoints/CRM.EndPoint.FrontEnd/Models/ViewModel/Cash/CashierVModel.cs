@@ -1,12 +1,13 @@
 using System;
+using CRM.Core.Domain.Cashes.Entities;
 
 namespace CRM.EndPoint.FrontEnd.Models.ViewModel.Cash;
 
 public class CashierVModel {
-    public Guid Id { get; set; }
-    public string CashierId { get; set; }
-    public string CashierTxt { get; set; }
+    public Cashier Cashier { get; set; }
+
+    public bool IsAccepted { get; set; }
     public decimal TotalCredit { get; set; }
     public decimal TotalDebit { get; set; }
-    public bool isAccepted { get; set; }
+    public decimal Balance { get; set; }
 }
