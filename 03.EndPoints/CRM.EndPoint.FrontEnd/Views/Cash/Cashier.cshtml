@@ -202,20 +202,27 @@
                     { data: "cashier.userCreator", orderable: false },
                     { data: "cashier.createDateTxt", render: data => renderDateTimeHtml(data) },
                     { data: "totalCredit", render: data => renderMoneyHtml(data, { className: "fbold" }) },
-                    { data: "totalDebit", render: data => renderMoneyHtml(data, { className: "fbold" }) },
                     {
-                        data: "balance",
+                        data: "totalDebit",
                         render: (data, _, row) => {
-                            let classBadge = data > 0 ? "badge-green" : data < 0 ? "badge-red" : "badge-gray";
-
                             return `
-                            <span class="d-inline-flex align-items-center fbold fs-6 badge ${classBadge}">
-                                ${renderMoneyHtml(data)}
-                                ${!row.isAccepted ? `
-                                    <span class="info-icon-popover" data-bs-toggle="popover" data-bs-placement="top" data-bs-content="این مبلغ شامل تراکنش‌های تایید نشده است.">
+                            <span class="d-inline-flex align-items-center gap-2">
+                                ${renderMoneyHtml(data, { className: "fbold" })}
+                                ${!row.isAccepted && data ? `
+                                    <span class="info-icon-popover" style="color: #666" data-bs-toggle="popover" data-bs-placement="top" data-bs-content="این مبلغ شامل تراکنش‌های تایید نشده است.">
                                         <svg style="width: 13px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM9 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.75 8a.75.75 0 0 0 0 1.5h.75v1.75a.75.75 0 0 0 1.5 0v-2.5A.75.75 0 0 0 8.25 8h-1.5Z"></path></svg>
                                     </span>
                                 ` : ""}
+                            </span>`;
+                        },
+                    },
+                    {
+                        data: "balance",
+                        render: data => {
+                            let classBadge = data > 0 ? "badge-green" : data < 0 ? "badge-red" : "badge-gray";
+                            return `
+                            <span class="fbold fs-6 badge ${classBadge}">
+                                ${renderMoneyHtml(data)}
                             </span>`;
                         },
                     },
