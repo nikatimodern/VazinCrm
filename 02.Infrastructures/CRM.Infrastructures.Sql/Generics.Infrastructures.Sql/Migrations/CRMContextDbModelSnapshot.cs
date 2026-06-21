@@ -1158,6 +1158,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("Payee")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("PayeeId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("SayyadNumber")
                         .HasColumnType("nvarchar(max)");
 
@@ -3879,6 +3882,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StatusTxt")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("ToAccountId")

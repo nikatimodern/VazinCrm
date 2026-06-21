@@ -949,7 +949,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
             await db.SaveChangesAsync();
-            await hub.Clients.Groups("کارشناس مالی", "مدیر تامین", "کارشناس تامین", "مدیر ارشد").SendAsync("countPreFactorToAccept");
+            await hub.Clients.Groups("کارشناس مالی", "مدیر تامین", "کارشناس تامین", "مدیر ارشد").SendAsync("countOfPendingCartable");
             return Ok();
         }
 
@@ -1070,7 +1070,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var countObj = await genService.GetCountEnvelopeObj();
                 allRoles.Add(pf.UserCreatorID);
-                await hub.Clients.Users(allRoles).SendAsync("countPreFactorToAccept", countObj);
+                await hub.Clients.Users(allRoles).SendAsync("countOfPendingCartable", countObj);
             }
 
             return Ok();

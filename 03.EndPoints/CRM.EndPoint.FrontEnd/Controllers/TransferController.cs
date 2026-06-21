@@ -1,16 +1,22 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Transfers.Entities;
+using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Services;
+using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
@@ -20,7 +26,8 @@ public class TransferController(
     FileSaver fileSaver,
     DateTimeServices dtService,
     CRMContextDb db,
-    UserManager<AppUser> userManager) : Controller {
+    UserManager<AppUser> userManager,
+    IHubContext<TaskHub> hub) : Controller {
     public IActionResult Index()
     {
         return View();
@@ -36,19 +43,39 @@ public class TransferController(
         var sortColumnIndex = Request.Form["order[0][column]"].FirstOrDefault();
         var sortDirection = Request.Form["order[0][dir]"].FirstOrDefault();
         var sortColumn = Request.Form[$"columns[{sortColumnIndex}][data]"].FirstOrDefault();
+        var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
 
-        var query = db.Transfers.AsNoTracking();
+        if (string.IsNullOrEmpty(searchValue)) searchValue = model?.serVal;
 
-        var recordsTotal = await query.CountAsync();
+        var baseQuery = db.Transfers.AsNoTracking();
+
+        var recordsTotal = await baseQuery.CountAsync();
 
         if (!string.IsNullOrEmpty(searchValue))
         {
             var searchNumber = TextService.convertToInt(searchValue);
-            query = query.Where(t =>
+            baseQuery = baseQuery.Where(t =>
                 t.TransferNumber == searchNumber ||
-                t.Description.Contains(searchValue)
+                t.Description.Contains(searchValue) ||
+                t.ToAccountTxt.Contains(searchValue) ||
+                t.FromAccountTxt.Contains(searchValue)
             );
         }
+
+        /*var filterCounts = new Dictionary<int, int> {
+            [-1] = await baseQuery.CountAsync(),
+            [1] = await baseQuery.Where(f => f.Status == TransferStatusEnum.در_دست_تایید || f.Status == TransferStatusEnum.ثبت_اولیه).CountAsync(),
+            [2] = await baseQuery.Where(f => f.Status == TransferStatusEnum.تایید_شده).CountAsync(),
+            [3] = await baseQuery.Where(f => f.Status == TransferStatusEnum.رد_شده).CountAsync(),
+        };*/
+
+
+        var query = model?._type switch {
+            1 => baseQuery.Where(f => f.Status == TransferStatusEnum.در_دست_تایید),
+            2 => baseQuery.Where(f => f.Status == TransferStatusEnum.تایید_شده),
+            3 => baseQuery.Where(f => f.Status == TransferStatusEnum.رد_شده),
+            _ => baseQuery
+        };
 
         var recordsFiltered = await query.CountAsync();
 
@@ -77,7 +104,8 @@ public class TransferController(
             draw,
             recordsTotal,
             recordsFiltered,
-            data
+            data,
+//            filterCounts
         });
     }
 
@@ -186,6 +214,72 @@ public class TransferController(
         catch (Exception e)
         {
             return BadRequest(e.Message);
+        }
+    }
+
+    /*[HttpGet]
+    public async Task<IActionResult> ChangeTransferStatus(Guid id, TransferStatusEnum newStatus)
+    {
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var transfer = await db.Transfers.FirstOrDefaultAsync(f => f.Id == id);
+            if (transfer == null) return NotFound();
+
+            if (transfer.Status != newStatus)
+            {
+                var oldItem = await db.Transfers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == transfer.Id);
+
+                transfer.Status = newStatus;
+
+                transfer.UserModify = user.FullName;
+                transfer.UserModifyID = user.Id;
+                transfer.ModifyDate = DateTime.Now;
+                transfer.ModifyDateTxt = dtService.GetDateTimePersian();
+
+                await logSystemService.LogChange(oldItem, transfer, LogActionEnum.تغییر_وضعیت, user);
+            }
+
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }*/
+
+    [HttpPatch]
+    public async Task<IActionResult> ChangeTransferStatus(Guid id, [FromBody] TransferStatusEnum newStatus)
+    {
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            if (user == null) return Unauthorized();
+
+            var transfer = await db.Transfers.FindAsync(id);
+            if (transfer == null) return NotFound("نقل و انتقال مورد نظر یافت نشد.");
+
+            if (transfer.Status == newStatus) return Ok();
+
+
+            transfer.Status = newStatus;
+            transfer.UserModify = user.FullName;
+            transfer.UserModifyID = user.Id;
+            transfer.ModifyDate = DateTime.Now;
+            transfer.ModifyDateTxt = dtService.GetDateTimePersian();
+
+            var oldItem = (Transfer)db.Entry(transfer).OriginalValues.ToObject();
+            await logSystemService.LogChange(oldItem, transfer, LogActionEnum.تغییر_وضعیت, user);
+
+            await db.SaveChangesAsync();
+            await hub.Clients.Groups("مدیر عامل", "مدیر ارشد").SendAsync("countOfPendingCartable");
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
         }
     }
 }

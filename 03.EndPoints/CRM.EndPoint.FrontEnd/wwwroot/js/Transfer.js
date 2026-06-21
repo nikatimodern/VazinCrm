@@ -1,20 +1,17 @@
-let transferTable;
+let transferTbl;
+let transferModel = { _type: -1, serVal: "" };
 let transferData = {};
 var transferAttachment = [];
 
 const transferModal = document.getElementById("transferModal");
 const transferFields = {
-    fromSelect: transferModal.querySelector("[name='fromAccountId']"),
-    fromInput: transferModal.querySelector("[name='fromAccountTxt']"),
-    toSelect: transferModal.querySelector("[name='toAccountId']"),
-    toInput: transferModal.querySelector("[name='toAccountTxt']"),
-    header: transferModal.querySelector(".modalHeader-invoice"),
+    fromSelect: transferModal?.querySelector("[name='fromAccountId']"),
+    fromInput: transferModal?.querySelector("[name='fromAccountTxt']"),
+    toSelect: transferModal?.querySelector("[name='toAccountId']"),
+    toInput: transferModal?.querySelector("[name='toAccountTxt']"),
+    header: transferModal?.querySelector(".modalHeader-invoice"),
 };
 
-
-document.addEventListener("DOMContentLoaded", async () => {
-    getAllTransfersDt();
-});
 
 async function showModalTransfer(type) {
     transferData.transferType = type;
@@ -103,7 +100,7 @@ async function submitTransferModal() {
         if (res.status === 200) {
             toastifySuccess("با موفقیت ثبت شد");
             cancelTransferModal();
-            transferTable.ajax.reload();
+            transferTbl.ajax.reload();
         }
     } catch (err) {
         console.log(err);
@@ -113,8 +110,8 @@ async function submitTransferModal() {
     }
 }
 
-function getAllTransfersDt() {
-    transferTable = $("#transferTable").DataTable({
+function getAllTransfersDt(selector, isMdCartable = false) {
+    transferTbl = $(selector).DataTable({
         lengthMenu: [10, 25, 50, 100, { label: "همه", value: -1 }],
         pageLength: 10,
         processing: true,
@@ -132,13 +129,21 @@ function getAllTransfersDt() {
         ajax: {
             url: `/Transfer/GetAllTransfersDt`,
             type: "POST",
+            data: (d) => {
+                console.log(d.search.value);
+                // transferModel.serVal = d.search.value;
+                d.model = JSON.stringify(transferModel);
+            },
+            dataSrc: function (json) {
+                return json.data;
+            },
         },
         columns: [
             { data: "transferNumber" },
-            { data: "createDateTxt", render: data => `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>` },
+            { data: "createDateTxt", render: data => `<span dir="ltr">${renderDateTimeHtml(data)}</span>` },
             {
                 data: "amount",
-                render: data => `<span class="direction-ltr">${data.toLocaleString()}</span>`,
+                render: data => renderMoneyHtml(data, { className: "fbold" }),
             },
             { data: "fromAccountTxt" },
             { data: "toAccountTxt" },
@@ -147,38 +152,73 @@ function getAllTransfersDt() {
                 render: data => {
                     if (data === 1) return `<span class="badge badge-green">واریز</span>`;
                     if (data === 2) return `<span class="badge badge-red">برداشت</span>`;
-                    
                 },
                 orderable: false,
             },
             { data: "transferDate" },
             { data: "userCreator", orderable: false },
             {
+                data: "status",
+                orderable: false,
+                render: (data, _, row) => {
+                    if (isMdCartable && data === 1) {
+                        return `
+                            <button class="buttonGreen2" onclick="changeStatusTransfer('${row.id}', 2)">تایید</button>
+                            <button class="buttonCancel3" onclick="changeStatusTransfer('${row.id}', 0)">برگشت</button>
+                        `;
+                    }
+                    
+                    if (!isMdCartable && data === 0) {
+                        return `<button class="buttonGreen2" onclick="changeStatusTransfer('${row.id}', 1)">ارسال به مدیرعامل</button>`;
+                    }
+                    
+                    const STATUS_COLORS = { 0: "#777", 1: "#CC9900", 2: "#006400", 3: "#8b0000" };
+                    let label = `<span class="fbold" style="color: ${STATUS_COLORS[data]}">${row.statusTxt}</span>`;
+                    if (isMdCartable && data === 2) {
+                        label += `
+                            <span style="cursor:pointer;color:#333" onclick="changeStatusTransfer('${row.id}', 1)" data-title-right="بازگشت">
+                              <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"></path></svg>
+                            </span>
+                        `;
+                    }
+                    return label;
+                },
+            },
+            {
                 data: "id",
-                render: data => `
-                    <div class="d-inline-flex align-items-center justify-content-center gap-1">
-                        <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="editTransfer('${data}')"><i class="fa fa-pencil"></i></button>
-                        <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deleteTransfer('${data}')"><i class="fa fa-trash"></i></button>
-                    </div>
-                `,
+                render: (data, _, row) => {
+                    if (!isMdCartable && (row.status === 0 || row.status === 3)) return `
+                        <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                            <button type="button" style="padding: 6px 6px;font-size: 12px" class="buttonGreen3 d-inline-flex shadow-none" onclick="editTransfer('${data}')"><i class="fa fa-pencil"></i></button>
+                            <button type="button" style="padding: 6px 7px;font-size: 12px" class="buttonCancel2 d-inline-flex shadow-none" onclick="deleteTransfer('${data}')"><i class="fa fa-trash"></i></button>
+                        </div>
+                    `;
+                    
+                    return `
+                        <button type="button" style="padding: 6px 7px;font-size: 12px" class="buttonGray d-inline-flex shadow-none" onclick="showAttachments('${data}', 12)">
+                            <i class="fa fa-paperclip"></i>
+                        </button>
+                    `;
+                },
                 orderable: false,
             },
         ],
-        createdRow: function (row, data, dataIndex) {
+        createdRow: (row, data) => {
             if (data.transferType === 1) {
-                row.classList.add('tableRow-bgGreen');
+                row.classList.add("tableRow-bgGreen");
             } else if (data.transferType === 2) {
-                row.classList.add('tableRow-bgRed');
+                row.classList.add("tableRow-bgRed");
             }
         },
         language: languageDatatable,
-        layout: layoutDatatable,
+        layout: isMdCartable ? null : layoutDatatable,
         initComplete: () => {
             document.querySelectorAll("#transferTable_wrapper > div.row").forEach((row) => {
                 row.classList.add("d-flex", "flex-wrap");
                 row.classList.remove("row");
             });
         },
+        
     });
 }
 
@@ -203,7 +243,23 @@ const deleteTransfer = async (id) => {
     await deleteItem({
         url: `/Transfer/DeleteTransfer/${id}`,
         callback: () => {
-            transferTable.ajax.reload();
+            transferTbl.ajax.reload(null, false);
         },
     });
 };
+
+async function changeStatusTransfer(id, status) {
+    try {
+        FLshowLoading();
+        await axios.patch(`/Transfer/ChangeTransferStatus/${id}`, status);
+        
+        transferTbl.ajax.reload(null, false);
+        
+    } catch (err) {
+        console.log(err);
+        const errorMessage = err.response?.data?.message || err.response?.data || "خطای سرور";
+        toastifyError(errorMessage);
+    } finally {
+        FLshowLoading(false);
+    }
+}

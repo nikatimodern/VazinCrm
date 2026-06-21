@@ -714,6 +714,12 @@
                                 <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
                             </button>
                         </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link position-relative" onclick="GetTransferManagingDirector()" id="MDTransferTab" data-bs-target="#MDTransferTab-pane" type="button" role="tab">
+                                نقل و انتقال
+                                <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                            </button>
+                        </li>
                     </ul>
                     <div class="tab-content p-2 px-1 px-sm-2 col-12" id="tabContentManagingDirector">
                         <div class="tab-pane fade show active border-0" id="MDRequestAmountTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
@@ -768,6 +774,62 @@
 
 
                                 <div class="w-100" id="MDRequestAmountContentId" style="max-height:74dvh; overflow:auto;">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade border-0" id="MDTransferTab-pane" role="tabpanel" tabindex="0">
+
+                            <div class="d-flex flex-column align-items-center w-100 gap-3">
+                                <div class="w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center">
+
+                                    <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
+                                        تعداد: <span id="MDTransferCount"></span>
+                                    </div>
+
+                                    <div class="search-group col-12 order-5 order-md-0 col-md-5">
+                                        <input class="form-control" type="text" id="MDTransferSearchId" placeholder="جستجو..." />
+                                        <div class="search-icon">
+                                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                                        </div>
+                                    </div>
+
+
+                                    <div class="d-flex gap-2">
+                                        <ul class="filter-switch">
+                                            <li class="filter-switch-item">
+                                                <input type="radio" name="MDTransferFilter" id="MDTransferFilterAll" value="-1" />
+                                                <label for="MDTransferFilterAll">همه</label>
+                                            </li>
+                                            <li class="filter-switch-item">
+                                                <input type="radio" name="MDTransferFilter" id="MDTransferFilter1" value="1" checked />
+                                                <label for="MDTransferFilter1">
+                                                    در انتظار تایید
+                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                </label>
+                                            </li>
+                                            <li class="filter-switch-item">
+                                                <input type="radio" name="MDTransferFilter" id="MDTransferFilter2" value="2" />
+                                                <label for="MDTransferFilter2">
+                                                    تایید شده
+                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                </label>
+                                            </li>
+
+                                            @*<li class="filter-switch-item">
+                                                <input type="radio" name="MDTransferFilter" id="MDTransferFilter3" value="3" />
+                                                <label for="MDTransferFilter3">
+                                                    رد شده
+                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                </label>
+                                            </li>*@
+
+                                        </ul>
+                                    </div>
+                                </div>
+
+
+                                <div class="w-100" id="MDTransferContentId">
+                                    <partial name="~/Views/Transfer/_TransferTable.cshtml" model='"mdTransferTable"' />
                                 </div>
                             </div>
                         </div>
@@ -1060,7 +1122,7 @@
 
 
 @section scripts {
-
+    <script src="~/js/Transfer.js" asp-append-version="true"></script>
     <script>
         let targetUserId;
         var smsSendedPfId;
@@ -1202,6 +1264,19 @@
 
             const MDRequestAmountRadios = document.querySelectorAll("input[type='radio'][name='MDRequestAmountFilter']");
             MDRequestAmountRadios.forEach(elm => elm.addEventListener("change", async () => await GetRequestManagingDirector()));
+
+
+            //////////////////////MD transfer//////////////////////
+            const searchMDTransferElm = document.getElementById("MDTransferSearchId");
+            searchMDTransferElm.addEventListener("keyup", async (e) => {
+                if (e.key === "Enter") {
+                    await GetTransferManagingDirector();
+                }
+            });
+            searchMDTransferElm.nextElementSibling.addEventListener("click", async () => await GetTransferManagingDirector());
+
+            const MDTransferRadios = document.querySelectorAll("input[type='radio'][name='MDTransferFilter']");
+            MDTransferRadios.forEach(elm => elm.addEventListener("change", async () => await GetTransferManagingDirector()));
 
             //////////////////////////////////////////////////
 
@@ -1679,6 +1754,35 @@
             } finally {
                 FLshowLoading(false);
             }
+        };
+
+
+        const GetTransferManagingDirector = async () => {
+            const val = document.getElementById("MDTransferSearchId")?.value.trim() ?? "";
+            const type = document.querySelector("input[type='radio'][name='MDTransferFilter']:checked")?.value;
+            if (type === undefined) return;
+
+            setUrlParams({ sub: "MDTransferTab" });
+            ShowTab("#MDTransferTab");
+
+            transferModel._type = Number(type);
+            transferModel.serVal = val;
+
+            if (transferTbl) {
+                transferTbl.ajax.reload();
+            } else {
+                getAllTransfersDt("#mdTransferTable", true);
+            }
+
+            updateFilterSwitchState({
+                wrapperSelector: "#MDTransferTab-pane",
+                filterData: res.data.filterCounts,
+                currentFilterValue: type,
+                searchValue: val,
+                onChange: async () => {
+                    transferTbl.ajax.reload();
+                },
+            });
         };
 
         function changePercentAcceptedRequestAmount(select, amount, acceptedAmount) {

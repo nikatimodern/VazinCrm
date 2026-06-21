@@ -188,7 +188,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 await _logSystemService.LogChange(oldItem, item, LogActionEnum.تایید_و_تغییر_وضعیت, user);
                 await db.SaveChangesAsync();
-                await hub.Clients.Groups("مدیر عامل", "مدیر ارشد").SendAsync("countPreFactorToAccept");
+                await hub.Clients.Groups("مدیر عامل", "مدیر ارشد").SendAsync("countOfPendingCartable");
                 return Ok();
             }
             catch (Exception e)
@@ -211,7 +211,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await ChangeRequestAmountStatus(item, status, user);
 
                 await db.SaveChangesAsync();
-                await hub.Clients.Groups("مدیر عامل", "مدیر ارشد", "کارشناس مالی").SendAsync("countPreFactorToAccept");
+                await hub.Clients.Groups("مدیر عامل", "مدیر ارشد", "کارشناس مالی").SendAsync("countOfPendingCartable");
                 return Ok();
             }
             catch (Exception e)
@@ -316,7 +316,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
 
                 await db.SaveChangesAsync();
-                await hub.Clients.Groups("مدیر ارشد", "کارشناس مالی").SendAsync("countPreFactorToAccept");
+                await hub.Clients.Groups("مدیر ارشد", "کارشناس مالی").SendAsync("countOfPendingCartable");
             }
             catch (Exception e)
             {

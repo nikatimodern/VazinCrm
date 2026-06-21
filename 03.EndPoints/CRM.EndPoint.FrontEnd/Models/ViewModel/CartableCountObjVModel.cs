@@ -13,4 +13,5 @@ public class SubCartableCountVModel {
     public int PreFactorCount { get; set; } = 0;
     public int InvoiceCount { get; set; } = 0;
     public int RequestCount { get; set; } = 0;
+    public int TransferCount { get; set; } = 0;
 }

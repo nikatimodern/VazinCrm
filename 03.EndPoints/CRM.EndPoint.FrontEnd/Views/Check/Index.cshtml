@@ -29,7 +29,7 @@
         </div>
 
         <div>
-            <table id="checksTable" class="table-hover table table-bordered table-striped">
+            <table id="checksTable" class="table-hover table table-bordered nowrap table-striped">
                 <thead>
                 <tr>
                     <th>شماره سریال</th>
@@ -101,7 +101,7 @@
                     </div>
                     <div>
                         <label>در وجه</label>
-                        <input class="form-control" name="payee" required>
+                        <select class="w-100" name="payeeId" required></select>
                     </div>
                     <div>
                         <label>وضعیت چک</label>
@@ -112,6 +112,7 @@
                             <option value="3">وصول شده</option>
                             <option value="4">برگشت خورده</option>
                             <option value="5">انتقالی</option>
+                            <option value="6">استرداد شده</option>
                         </select>
                     </div>
                     <div>

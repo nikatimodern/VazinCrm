@@ -47,7 +47,7 @@ connection.on("notifSystem", (text, link) => {
 
 ////////// Count Cartable ////////////
 
-connection.on("countPreFactorToAccept", (countObj) => {
+connection.on("countOfPendingCartable", (countObj) => {
     refreshCounterCartable();
     //setCountEnvelope(countObj);
 });
@@ -73,7 +73,7 @@ connection.on("NotifChat", async (mainChatId, text) => {
     }
     const { mci } = getUrlParams();
     if (mci === mainChatId) {
-       await showChat(mainChatId, false);
+        await showChat(mainChatId, false);
     }
     showListChats();
 });
@@ -81,7 +81,7 @@ connection.on("UpdateChat", async (mainChatId) => {
     if (location.pathname.toLowerCase() !== "/chat/main") return;
     const { mci } = getUrlParams();
     if (mci === mainChatId) {
-       await showChat(mainChatId, false);
+        await showChat(mainChatId, false);
     }
     showListChats();
 });
@@ -124,6 +124,6 @@ connection.on("SmsFailed", () => {
 });
 
 connection.on("SmsSending", () => {
-    showSmsSendingToast()
+    showSmsSendingToast();
 });
 

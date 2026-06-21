@@ -1,9 +1,10 @@
 let checksDataTable = null;
 let checkData = {};
+let payeeCheckTomSelect;
 
 let checkbooksSection = document.getElementById("checkbooks-section");
 let checkSection = document.getElementById("checks-section");
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     const { cBook, cBookName } = getUrlParams();
     if (cBook) showChecks(cBook, decodeURIComponent(cBookName || "دسته چک"));
     
@@ -16,6 +17,8 @@ document.addEventListener("DOMContentLoaded", () => {
             checkSection.classList.add("d-none");
         }
     });
+    
+    await initSelectTomCheck();
 });
 
 const GetAllCheckbooks = async () => {
@@ -145,6 +148,7 @@ function getCheckStatusBadgeClass(status) {
         case 3:
             return "badge-green";
         case 4:
+        case 6:
             return "badge-red";
         case 5:
             return "badge-orange";
@@ -254,6 +258,8 @@ async function submitCheckForm() {
         ...checkData,
         ...mySer.convertFormToJSON("newCheckForm"),
     };
+    if (model.payeeId.startsWith("custom")) model.payeeId = null;
+    
     try {
         FLshowLoading();
         const res = await axios.post(`/Check/AddCheck`, model);
@@ -282,6 +288,12 @@ const editCheck = async (id) => {
     if (!checkData) return;
     
     mySer.convertJsonToForm(checkData, "newCheckForm");
+    if (checkData.payeeId === null) {
+        const customId = `custom-${checkData.payee}`;
+        payeeCheckTomSelect.addOption({ value: customId, text: checkData.payee });
+        payeeCheckTomSelect.setValue(customId, true);
+    }
+    
     openNewCheckModal();
 };
 const getCheck = async (id) => {
@@ -365,3 +377,42 @@ const checkbookDropdown = Dropdown.setupDelegate({
         placement: "right",
     },
 });
+
+const initSelectTomCheck = async () => {
+    const allPeople = await axios("/Customer/GetAllCustomers");
+    const select = document.querySelector("#newCheckForm select[name='payeeId']");
+    
+    payeeCheckTomSelect = new TomSelect(select, {
+        options: allPeople.data.map(c => ({
+            text: `${c.customerName} (کد ${c.roleType === 2 ? "تامین کننده" : "مشتری"}: ${c.customerCode})`,
+            value: c.id,
+        })),
+        maxItems: 1,
+        persist: false,
+        openOnFocus: false,
+        createOnBlur: true,
+        selectOnTab: true,
+        
+        create: (input, callback) => callback({ value: `custom-${input}`, text: input }),
+        
+        async onChange(value) {
+            if (!value) return;
+            const opt = payeeCheckTomSelect.options[value];
+            checkData.payee = opt.text.trim();
+        },
+        
+        onDelete(values) {
+            const value = values[0];
+            if (value.startsWith("custom")) {
+                const opt = payeeCheckTomSelect.options[value];
+                
+                payeeCheckTomSelect.removeItem(value, true);
+                payeeCheckTomSelect.setTextboxValue(opt.text.trim());
+                payeeCheckTomSelect.refreshOptions(true);
+                return false;
+            }
+            checkData.payee = null;
+            return true;
+        },
+    });
+};

@@ -74,7 +74,6 @@
 @section Scripts {
     <script>
         let cashierTbl;
-        let modelCashier = {};
         let cashierData = {};
         const cashierModal = document.getElementById("cashierModal");
         document.addEventListener("DOMContentLoaded", async () => {
@@ -192,9 +191,6 @@
                 ajax: {
                     url: `/Cash/GetAllCashiersDt`,
                     type: "POST",
-                    data: (d) => {
-                        d.model = JSON.stringify(modelCashier);
-                    },
                 },
                 language: languageDatatable,
                 columns: [

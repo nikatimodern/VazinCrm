@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using CRM.Core.Domain.Attachments.Entities;
+using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.Core.Domain.Transfers.Enums;
 using CRM.Framework.Domain;
 
@@ -19,6 +20,18 @@ public class Transfer : BaseEntity {
     public TransferTypeEnum TransferType { get; set; }
     public DateTime? TransferDateMiladi { get; set; }
     public string TransferDate { get; set; }
+
+    private TransferStatusEnum _status = TransferStatusEnum.ثبت_اولیه;
+
+    public TransferStatusEnum Status {
+        get => _status;
+        set {
+            _status = value;
+            StatusTxt = _status.ToString().Replace("_", " ");
+        }
+    }
+
+    public string StatusTxt { get; private set; }
 
     public string Description { get; set; }
 

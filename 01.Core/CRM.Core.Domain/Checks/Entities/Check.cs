@@ -14,6 +14,7 @@ public class Check : BaseEntity {
     public string DueDate { get; set; } // تاریخ سررسید چک
     public DateTime? DueDateMiladi { get; set; }
     public string Payee { get; set; } // در وجه (گیرنده چک)
+    public Guid? PayeeId { get; set; } // در وجه (گیرنده چک)
     public string Description { get; set; } // توضیحات
     public string SayyadNumber { get; set; } // شماره صیادی
 

@@ -6,7 +6,7 @@
 
 
 <div>
-    <div>
+    <div class="d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center gap-1 mb-3">
             <button class="buttonGreen0 py-1 px-2" style="font-size: 12px" onclick="showModalTransfer(1)">
                 ثبت واریز
@@ -15,25 +15,30 @@
                 ثبت برداشت
             </button>
         </div>
+        <div class="d-flex column-gap-2 align-items-center justify-content-between flex-wrap">
+            <ul class="filter-switch mt-2 mt-md-0">
+                <li class="filter-switch-item">
+                    <input type="radio" name="transferStatus" id="transfer-all" value="-1" checked>
+                    <label for="transfer-all">همه</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="transferStatus" id="transfer-1" value="1">
+                    <label for="transfer-1">در انتظار تایید</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="transferStatus" id="transfer-2" value="2">
+                    <label for="transfer-2">تایید شده</label>
+                </li>
+                @*<li class="filter-switch-item">
+                    <input type="radio" name="transferStatus" id="transfer-3" value="3">
+                    <label for="transfer-3">رد شده</label>
+                </li>*@
+            </ul>
+        </div>
     </div>
     <div id="transferContainer" style="width: 99%;">
-        <table class="table table-bordered table-hover nowrap w-100" id="transferTable">
-            <thead>
-            <tr>
-                <th>شماره ثبت</th>
-                <th>تاریخ ثبت</th>
-                <th>مبلغ</th>
-                <th>از حساب</th>
-                <th>به حساب</th>
-                <th>نوع</th>
-                <th>تاریخ پرداخت</th>
-                <th>ثبت توسط</th>
-                <th>عملیات</th>
-            </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
+        <partial name="_TransferTable" model='"transferTable"' />
+        @* @await Html.PartialAsync("TransferTable", "transferTable") *@
     </div>
 </div>
 
@@ -109,4 +114,15 @@
 
 @section Scripts {
     <script src="~/js/Transfer.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            getAllTransfersDt("#transferTable");
+
+            const transferRadios = document.querySelectorAll("input[type='radio'][name='transferStatus']");
+            transferRadios?.forEach(elm => elm.addEventListener("change", async (e) => {
+                transferModel._type = Number(e.target.value);
+                transferTbl.ajax.reload(null, false);
+            }));
+        });
+    </script>
 }

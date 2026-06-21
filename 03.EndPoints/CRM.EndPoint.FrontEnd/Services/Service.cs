@@ -24,6 +24,7 @@ using CRM.Core.Domain.Reports.Entities;
 using CRM.Core.Domain.Reports.Enum;
 using CRM.Core.Domain.RequestAmounts.Entities;
 using CRM.Core.Domain.RequestAmounts.Enums;
+using CRM.Core.Domain.Transfers.Entities;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.LogSystem;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
@@ -101,7 +102,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
             await db.SaveChangesAsync();
 
-            await hub.Clients.All.SendAsync("countPreFactorToAccept");
+            await hub.Clients.All.SendAsync("countOfPendingCartable");
             return pf;
         }
 
@@ -282,8 +283,10 @@ namespace CRM.EndPoint.FrontEnd.Services {
             {
                 var reqCount = await db.RequestAmounts.CountAsync(f =>
                     f.RequestStatus == RequestStatusEnum.در_انتظار_تایید_مدیرعامل || f.RequestStatus == RequestStatusEnum.در_انتظار_ارسال_به_مالی);
+                var transferCount = await db.Transfers.CountAsync(f => f.Status == TransferStatusEnum.در_دست_تایید);
                 countObj.ManagingDirector = new SubCartableCountVModel {
-                    RequestCount = reqCount
+                    RequestCount = reqCount,
+                    TransferCount = transferCount
                 };
             }
 

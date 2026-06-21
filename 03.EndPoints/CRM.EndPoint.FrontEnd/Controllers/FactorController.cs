@@ -685,7 +685,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 await db.SaveChangesAsync();
 
-                await hub.Clients.Groups("کارشناس تامین", "مدیر ارشد").SendAsync("countPreFactorToAccept");
+                await hub.Clients.Groups("کارشناس تامین", "مدیر ارشد").SendAsync("countOfPendingCartable");
                 return Ok();
             }
             catch (Exception e)
@@ -824,7 +824,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 await db.SaveChangesAsync();
 
-                await hub.Clients.Groups("کارشناس مالی", "مدیر ارشد").SendAsync("countPreFactorToAccept");
+                await hub.Clients.Groups("کارشناس مالی", "مدیر ارشد").SendAsync("countOfPendingCartable");
                 return Ok();
             }
             catch (Exception e)
@@ -2719,7 +2719,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             });
 
 
-            await hub.Clients.Groups("کارشناس تامین", "مدیر ارشد").SendAsync("countPreFactorToAccept");
+            await hub.Clients.Groups("کارشناس تامین", "مدیر ارشد").SendAsync("countOfPendingCartable");
             var cusTxt = pf.CustomerEntity != null ? $"{pf.CustomerEntity.CompanyName} ({pf.CustomerEntity.AgentName})".Trim() : pf.AgentName;
 
             await hub.Clients.User(pf.UserTaminId.ToString()).SendAsync("notifActionRequired",
@@ -3142,7 +3142,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (pf.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی)
                 {
-                    await hub.Clients.Group("کارشناس مالی").SendAsync("countPreFactorToAccept");
+                    await hub.Clients.Group("کارشناس مالی").SendAsync("countOfPendingCartable");
                 }
 
                 return Ok();

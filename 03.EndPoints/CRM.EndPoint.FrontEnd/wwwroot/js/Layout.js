@@ -68,6 +68,10 @@ const layoutDatatable = {
 };
 
 
+////////// Set defaults patch in Header Axios ////////////
+axios.defaults.headers.patch["Content-Type"] = "application/json";
+
+
 //
 // var mySer = null;
 // var CrmSer = null;
@@ -3328,7 +3332,7 @@ const setCountEnvelope = (countObj, isAdmin) => {
             id: "TFinancialExpertId",
         },
         managingDirector: {
-            count: (countObj.managingDirector?.requestCount || 0),
+            count: (countObj.managingDirector?.requestCount || 0) + (countObj.managingDirector?.transferCount || 0),
             id: "TManagingDirectorId",
         },
     };
@@ -3351,6 +3355,7 @@ const setCountEnvelope = (countObj, isAdmin) => {
     
     // sub tabs
     setBadge("#MDRequestAmountTab .badgeCircle", countObj.managingDirector?.requestCount || 0);
+    setBadge("#MDTransferTab .badgeCircle", countObj.managingDirector?.transferCount || 0);
     setBadge("#FinancialPrefactorTab .badgeCircle", countObj.financial?.preFactorCount || 0);
     setBadge("#FinancialInvoiceTab .badgeCircle", countObj.financial?.invoiceCount || 0);
     setBadge("#FinancialRequestTab .badgeCircle", countObj.financial?.requestCount || 0);
