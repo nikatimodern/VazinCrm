@@ -40,8 +40,9 @@ public class AiService(
             var audioStream = new MemoryStream(audioBytes);*/
 
             // 2. Audio To Text
-            var transcriptionResult = await viraAi.ConvertAudioToText(audioStream, Path.GetFileName(callData.RecordingFilePath));
-            callData.TranscriptionText = transcriptionResult?.Result?.Text?.Trim() ?? string.Empty;
+            var audioFileName = Path.GetFileName(callData.RecordingFilePath);
+            var transcriptionText = await viraAi.ConvertAudioToText(audioStream, audioFileName, callData.DurationSeconds);
+            callData.TranscriptionText = transcriptionText?.Trim() ?? string.Empty;
 
             if (string.IsNullOrEmpty(callData.TranscriptionText))
             {
@@ -49,6 +50,7 @@ public class AiService(
                 return;
             }
 
+            return;
             // 3. Summary
             var resSummary = await gapgptAi.SummarizeText(callData.TranscriptionText, callData.CallParticipant.Select(f => f?.UserFullName).ToList());
             if (resSummary != null)
