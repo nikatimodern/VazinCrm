@@ -112,18 +112,16 @@ public class ViraAi(HttpClient httpClient, ILogger<ViraAi> logger) {
                 continue;
             }
 
-            var trackResult = await trackResponse.Content.ReadFromJsonAsync<AiAvanegarModel>();
-            var status = trackResult?.Data?.Status?.ToLowerInvariant();
-            var errorContent = await trackResponse.Content.ReadAsStringAsync();
-            var ew = await trackResponse.Content.ReadFromJsonAsync<DataAvanegar>();
+            var trackResult = await trackResponse.Content.ReadFromJsonAsync<DataAvanegar>();
+            var status = trackResult?.Status?.ToLowerInvariant();
             if (status == "success")
             {
                 logger.LogInformation("Long Transcription completed successfully for: {File} after {Attempts} attempts", fileName, i + 1);
-                return trackResult.Data.Data?.AiResponse?.Result?.Text;
+                return trackResult.Data?.AiResponse?.Result?.Text;
             }
             if (status == "failed" || status == "fail")
             {
-                logger.LogError("Long Transcription internal processing failed on server for: {File}. Message: {Msg}", fileName, trackResult.Data?.Message);
+                logger.LogError("Long Transcription internal processing failed on server for: {File}. Message: {Msg}", fileName, trackResult.Message);
                 return null;
             }
 
