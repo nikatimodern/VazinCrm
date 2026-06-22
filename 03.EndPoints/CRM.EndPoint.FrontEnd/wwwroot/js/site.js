@@ -3570,6 +3570,7 @@ const updateFilterSwitchState = ({ wrapperSelector, filterData, currentFilterVal
     if (!wrapper) return;
     
     const hasSearch = !!searchValue.trim();
+    console.log(searchValue);
     if (!hasSearch) {
         wrapper.dataset.userInteracted = "false";
         
@@ -3583,7 +3584,6 @@ const updateFilterSwitchState = ({ wrapperSelector, filterData, currentFilterVal
         
         return;
     }
-    
     if (!filterData) return;
     
     let firstAvailableValue = null;
@@ -3628,6 +3628,8 @@ const updateFilterSwitchState = ({ wrapperSelector, filterData, currentFilterVal
     
     const targetRadio = wrapper.querySelector(`input[value="${firstAvailableValue}"]`);
     if (!targetRadio) return;
+    if (targetRadio.checked) return;
+    
     targetRadio.checked = true;
     
     onChange?.(firstAvailableValue);

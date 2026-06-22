@@ -112,6 +112,7 @@ async function submitTransferModal() {
 
 function getAllTransfersDt(selector, isMdCartable = false) {
     transferTbl = $(selector).DataTable({
+        paging: !isMdCartable,
         lengthMenu: [10, 25, 50, 100, { label: "همه", value: -1 }],
         pageLength: 10,
         processing: true,
@@ -130,11 +131,23 @@ function getAllTransfersDt(selector, isMdCartable = false) {
             url: `/Transfer/GetAllTransfersDt`,
             type: "POST",
             data: (d) => {
-                console.log(d.search.value);
-                // transferModel.serVal = d.search.value;
                 d.model = JSON.stringify(transferModel);
             },
             dataSrc: function (json) {
+                if (isMdCartable) {
+                    document.getElementById("MDTransferCount").textContent = json.recordsFiltered;
+                    
+                    updateFilterSwitchState({
+                        wrapperSelector: "#MDTransferTab-pane",
+                        filterData: json.filterCounts,
+                        currentFilterValue: transferModel._type,
+                        searchValue: transferModel.serVal,
+                        onChange: (type) => {
+                            transferModel._type = Number(type);
+                            transferTbl.ajax.reload();
+                        },
+                    });
+                }
                 return json.data;
             },
         },
@@ -154,6 +167,7 @@ function getAllTransfersDt(selector, isMdCartable = false) {
                     if (data === 2) return `<span class="badge badge-red">برداشت</span>`;
                 },
                 orderable: false,
+                defaultContent: "-"
             },
             { data: "transferDate" },
             { data: "userCreator", orderable: false },

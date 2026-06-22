@@ -1584,7 +1584,11 @@
 
                         case "TManagingDirectorId":
                             document.getElementById("CManagingDirectorId").style.display = "flex";
-                            await GetRequestManagingDirector();
+                            if (subId === "MDTransferTab") {
+                                await GetTransferManagingDirector();
+                            } else {
+                                await GetRequestManagingDirector();
+                            }
                             break;
                     }
                 } else {
@@ -1774,15 +1778,6 @@
                 getAllTransfersDt("#mdTransferTable", true);
             }
 
-            updateFilterSwitchState({
-                wrapperSelector: "#MDTransferTab-pane",
-                filterData: res.data.filterCounts,
-                currentFilterValue: type,
-                searchValue: val,
-                onChange: async () => {
-                    transferTbl.ajax.reload();
-                },
-            });
         };
 
         function changePercentAcceptedRequestAmount(select, amount, acceptedAmount) {

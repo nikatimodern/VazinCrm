@@ -62,12 +62,12 @@ public class TransferController(
             );
         }
 
-        /*var filterCounts = new Dictionary<int, int> {
+        var filterCounts = new Dictionary<int, int> {
             [-1] = await baseQuery.CountAsync(),
             [1] = await baseQuery.Where(f => f.Status == TransferStatusEnum.در_دست_تایید || f.Status == TransferStatusEnum.ثبت_اولیه).CountAsync(),
             [2] = await baseQuery.Where(f => f.Status == TransferStatusEnum.تایید_شده).CountAsync(),
             [3] = await baseQuery.Where(f => f.Status == TransferStatusEnum.رد_شده).CountAsync(),
-        };*/
+        };
 
 
         var query = model?._type switch {
@@ -105,7 +105,7 @@ public class TransferController(
             recordsTotal,
             recordsFiltered,
             data,
-//            filterCounts
+            filterCounts
         });
     }
 

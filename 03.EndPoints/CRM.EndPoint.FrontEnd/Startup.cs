@@ -192,7 +192,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddHttpClient<GapgptAi>(client => {
                 client.BaseAddress = new Uri("https://api.gapgpt.app/v1/");
                 client.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Bearer", "sk-hRMArn3FmKRS130Tgez4rtYOVVlWaGVNsG6dnwgtA4jjKwfd");
+                    new AuthenticationHeaderValue("Bearer", "sk-DqOst76fwb3UtC05ZW1mraSTwfsJtz6B8xPpXuWfwCjEm2Uw");
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 client.Timeout = TimeSpan.FromMinutes(5);
             });
@@ -202,7 +202,7 @@ namespace CRM.EndPoint.FrontEnd {
 
                 client.Timeout = TimeSpan.FromMinutes(5);
 
-                client.DefaultRequestHeaders.Add("GAPGPT_API_KEY", "sk-hRMArn3FmKRS130Tgez4rtYOVVlWaGVNsG6dnwgtA4jjKwfd");
+                client.DefaultRequestHeaders.Add("GAPGPT_API_KEY", "sk-DqOst76fwb3UtC05ZW1mraSTwfsJtz6B8xPpXuWfwCjEm2Uw");
                 client.DefaultRequestHeaders.Add("VIRA_API_KEY",
                     "eyJhbGciOiJIUzI1NiJ9.eyJzeXN0ZW0iOiJzYWhhYiIsImNyZWF0ZVRpbWUiOiIxNDA1MDIyMzE0MjA0MTAwNiIsInVuaXF1ZUZpZWxkcyI6eyJ1c2VybmFtZSI6Ijg3YzM0ZDI2LTE0OWQtNGNlYS1hMTNhLTg3YWNhZWNmZjg4MiJ9LCJncm91cE5hbWUiOiJiZmNmZDI5YzJmOGJkMjA5M2NjMWIzM2ZkNzUxZTkyNiIsImRhdGEiOnsic2VydmljZUlEIjoiNGVkNzY5ZTYtNDgxNC00ZGNiLWEzZWQtZTU1ZWI5Y2FiZjhlIiwicmFuZG9tVGV4dCI6IklvQ1VSIn19.Hvu7g2cRpMnmV7gz6yn09m_zMKBab-d9d5StzTvtT7I");
                 client.DefaultRequestHeaders.Add("User", "admin");
