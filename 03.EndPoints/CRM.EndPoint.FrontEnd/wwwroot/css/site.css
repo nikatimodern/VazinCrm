@@ -6332,3 +6332,80 @@ table tr.payment-vosoled > td {
 .fs-small {
   font-size: 11px !important;
 }
+
+/* افکت انیمیشن لودینگ */
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+/* کلاس اصلی که باید به تمام المان‌های اسکلتون داده شود */
+.skel-base {
+  animation: shimmer 2s infinite linear;
+  background: #f6f7f8;
+  background: linear-gradient(to right, #eeeeee 8%, #dddddd 18%, #eeeeee 33%);
+  background-size: 1000px 100%;
+  border-radius: 4px;
+}
+
+/* کلاس‌های کمکی برای ابعاد مختلف (اختیاری - می‌توانید از استایل خطی هم استفاده کنید) */
+.skel-line { height: 14px; margin-bottom: 8px; width: 100%; }
+.skel-line-short { height: 14px; margin-bottom: 8px; width: 60%; }
+.skel-title { height: 18px; margin-bottom: 12px; width: 40%; }
+.skel-circle { border-radius: 50%; flex-shrink: 0; }
+.skel-box { height: 80px; width: 100%; border-radius: 8px; }
+
+
+
+
+.sk{
+  position:relative;
+  overflow:hidden;
+  background:#ececec;
+  border-radius:8px;
+}
+
+.sk::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  transform:translateX(-100%);
+  background:linear-gradient(
+      90deg,
+      transparent,
+      rgba(255,255,255,.55),
+      transparent
+  );
+  animation:skeleton 1.2s infinite;
+}
+
+@keyframes skeleton{
+  100%{
+    transform:translateX(100%);
+  }
+}
+
+.sk-line{
+  height:12px;
+  border-radius:6px;
+}
+
+.sk-circle{
+  border-radius:50%;
+}
+
+.sk-pill{
+  border-radius:999px;
+}
+
+.sk-avatar{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+}
+
+.sk-gap{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}

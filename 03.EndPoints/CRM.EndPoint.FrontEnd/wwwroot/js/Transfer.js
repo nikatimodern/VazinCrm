@@ -32,18 +32,14 @@ function setTransferModalUI(type) {
         toInput.classList.add("d-none");
         toInput.value = "";
         
-        fromSelect.required = false;
-        fromInput.required = true;
-        
-        toSelect.required = true;
-        toInput.required = false;
+        toggleElementsRequired([fromInput, toSelect], true);
+        toggleElementsRequired([fromSelect, toInput], false);
         
         header.innerText = "ثبت واریز";
         transferModal.classList.add("deposit-mode");
         transferModal.classList.remove("backward-mode");
-    }
-    
-    if (type === 2) {
+        
+    } else if (type === 2) {
         fromSelect.classList.remove("d-none");
         fromInput.classList.add("d-none");
         fromInput.value = "";
@@ -51,11 +47,8 @@ function setTransferModalUI(type) {
         toSelect.classList.add("d-none");
         toInput.classList.remove("d-none");
         
-        fromSelect.required = true;
-        fromInput.required = false;
-        
-        toSelect.required = false;
-        toInput.required = true;
+        toggleElementsRequired([fromInput, toSelect], false);
+        toggleElementsRequired([fromSelect, toInput], true);
         
         header.innerText = "ثبت برداشت";
         transferModal.classList.remove("deposit-mode");
@@ -167,7 +160,7 @@ function getAllTransfersDt(selector, isMdCartable = false) {
                     if (data === 2) return `<span class="badge badge-red">برداشت</span>`;
                 },
                 orderable: false,
-                defaultContent: "-"
+                defaultContent: "-",
             },
             { data: "transferDate" },
             { data: "userCreator", orderable: false },
