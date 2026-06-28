@@ -2,6 +2,20 @@ using System.Text.Json.Serialization;
 
 namespace CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 
+public class AvanegarRequestResult {
+    public bool Success { get; init; }
+    public string RequestId { get; init; }
+    public string Error { get; init; }
+}
+
+public class AvanegarTrackResult
+{
+    public bool Completed { get; set; }
+    public bool Failed { get; set; }
+    public string Text { get; set; }
+    public string Error { get; set; }
+}
+
 public class AiAvanegarModel {
     [JsonPropertyName("data")] public DataAvanegar Data { get; set; }
 

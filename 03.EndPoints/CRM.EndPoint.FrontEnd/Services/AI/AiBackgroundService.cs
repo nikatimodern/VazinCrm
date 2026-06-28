@@ -10,19 +10,8 @@ using Microsoft.Extensions.Logging;
 
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 
-public class AiBackgroundService : BackgroundService {
-    private readonly IAiQueue _queue;
-    private readonly IServiceProvider _sp;
-    private readonly ILogger<AiBackgroundService> logger;
-
-    private const int WorkerCount = 2;
-
-    public AiBackgroundService(IAiQueue queue, IServiceProvider sp, ILogger<AiBackgroundService> logger)
-    {
-        _queue = queue;
-        _sp = sp;
-        this.logger = logger;
-    }
+public class AiBackgroundService(IAiQueue queue, IServiceProvider sp, ILogger<AiBackgroundService> logger) : BackgroundService {
+    private const int WorkerCount = 1;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -41,10 +30,10 @@ public class AiBackgroundService : BackgroundService {
             try
             {
                 logger.LogInformation("Waiting queue item");
-                var item = await _queue.DequeueAsync(stoppingToken);
+                var item = await queue.DequeueAsync(stoppingToken);
                 logger.LogInformation("Queue item received");
 
-                using var scope = _sp.CreateScope();
+                using var scope = sp.CreateScope();
 
                 var aiService = scope.ServiceProvider.GetRequiredService<AiService>();
 

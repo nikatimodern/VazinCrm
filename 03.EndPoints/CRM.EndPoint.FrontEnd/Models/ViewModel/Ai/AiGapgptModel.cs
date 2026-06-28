@@ -2,6 +2,13 @@ using System.Collections.Generic;
 
 namespace CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 
+public class SummaryResult
+{
+    public bool Success { get; set; }
+    public SummaryModel Data { get; set; }
+    public string Error { get; set; }
+}
+
 public class AiGapgptModel {
     public List<Choice> Choices { get; set; }
 }

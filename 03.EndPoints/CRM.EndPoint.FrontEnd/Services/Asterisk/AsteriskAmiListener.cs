@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.CallRecordings.Entities;
+using CRM.Core.Domain.CallRecordings.Enums;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models;
@@ -317,6 +318,27 @@ public class AsteriskAmiListener : BackgroundService {
         catch (Exception ex)
         {
             logger.LogError(ex, $"Hangup Error: {ex.Message}");
+        }
+    }
+
+    private async Task<Guid?> AddCallRecordingAsync(CallRecording callRecording)
+    {
+        if (callRecording == null) return null;
+
+        try
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<CRMContextDb>();
+
+            db.CallRecordings.Add(callRecording);
+            await db.SaveChangesAsync();
+
+            return callRecording.Id;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, $"AddCallRecording Error: {ex.Message}");
+            return null;
         }
     }
 

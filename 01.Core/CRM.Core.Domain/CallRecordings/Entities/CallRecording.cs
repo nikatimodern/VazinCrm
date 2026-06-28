@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using CRM.Core.Domain.CallRecordings.Enums;
 using CRM.Core.Domain.Reports.Entities;
 using CRM.Framework.Domain;
 
@@ -22,6 +23,22 @@ public class CallRecording : BaseEntity {
 
     [NotMapped] public List<CallParticipant> CallParticipant { get; set; } = [];
     public Report Report { get; set; }
+
+    private AiProcessStatusEnum _AiProcessStatus = AiProcessStatusEnum.Pending;
+    public AiProcessStatusEnum AiStatus {
+        get => _AiProcessStatus;
+        set {
+            _AiProcessStatus = value;
+            AiStatusTxt = _AiProcessStatus.ToString();
+        }
+    }
+    public string AiStatusTxt { get; private set; }
+
+    public string AiError { get; set; }
+    public string AvanegarRequestId { get; set; }
+    public int AvanegarAttempts { get; set; }
+    public DateTime? LastTrackDate { get; set; }
+    public DateTime? NextTrackDate { get; set; }
 }
 
 public class CallParticipant {

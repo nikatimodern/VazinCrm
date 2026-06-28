@@ -11,25 +11,14 @@ using Microsoft.Extensions.Logging;
 
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 
-public class GapgptAi {
-    private readonly HttpClient _httpClient;
-    private readonly AiPrompts _aiPrompts;
-    private readonly ILogger<GapgptAi> logger;
-
-    public GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<GapgptAi> logger)
-    {
-        _httpClient = httpClient;
-        _aiPrompts = aiPrompts;
-        this.logger = logger;
-    }
-
+public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<GapgptAi> logger) {
     // خلاصه نویسی
-    public async Task<SummaryModel> SummarizeText(string textToSummarize, List<string> userNames) // https://gapgpt.app/platform-v2/tokens
+    public async Task<SummaryResult> SummarizeText(string textToSummarize, List<string> userNames) // https://gapgpt.app/platform-v2/tokens
     {
         try
         {
             logger.LogInformation("Summarize started");
-            var prompt = _aiPrompts.SummarizeCall(textToSummarize, string.Join(", ", userNames));
+            var prompt = aiPrompts.SummarizeCall(textToSummarize, string.Join(", ", userNames));
 
             var requestBody = new {
                 //model = "gapgpt-qwen-3.6",
@@ -44,37 +33,39 @@ public class GapgptAi {
                 top_p = 0.7,
             };
 
-            var response = await _httpClient.PostAsJsonAsync("chat/completions", requestBody);
+            var response = await httpClient.PostAsJsonAsync("chat/completions", requestBody);
             if (response.IsSuccessStatusCode)
             {
                 var resJson = await response.Content.ReadFromJsonAsync<AiGapgptModel>();
                 logger.LogInformation("Summarize completed");
 
                 var content = resJson?.Choices?[0]?.Message?.Content;
-                var summary = JsonSerializer.Deserialize<SummaryModel>(content);
-                return summary;
-            } else
-            {
-                var raw = await response.Content.ReadAsStringAsync();
-/*
+                if (string.IsNullOrWhiteSpace(content))
+                {
+                    return new SummaryResult { Success = true, Data = null };
+                }
 
-                var clean = response.Content.Headers.ContentType?.MediaType == "text/html"
-                    ? ExtractImportantError(raw)
-                    : raw;*/
-
-                var clean = StripHtml(raw);
-                //var clean2 = ExtractImportantError(raw);
-
-                logger.LogError("Summarize API Error ({StatusCode}): {Error}", response.StatusCode, clean);
-                /*var errorContent = await response.Content.ReadAsStringAsync();
-                logger.LogError("Summarize API Error ({ResponseStatusCode}): {ErrorContent}", response.StatusCode, errorContent);*/
-                return null;
+                try
+                {
+                    var summary = JsonSerializer.Deserialize<SummaryModel>(content);
+                    return new SummaryResult { Success = true, Data = summary };
+                }
+                catch (JsonException ex)
+                {
+                    return new SummaryResult { Success = false, Error = $"JSON Deserialize Error: {ex.Message} | Raw Content: {content}" };
+                }
             }
+
+            var raw = await response.Content.ReadAsStringAsync();
+            var clean = StripHtml(raw);
+
+            logger.LogError("Summarize API Error ({StatusCode}): {Error}", response.StatusCode, clean);
+            return new SummaryResult { Success = false, Error = $"API Error ({response.StatusCode}): {clean}" };
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Summarize error");
-            return null;
+            return new SummaryResult { Success = false, Error = $"Exception: {ex.Message}" };
         }
     }
 

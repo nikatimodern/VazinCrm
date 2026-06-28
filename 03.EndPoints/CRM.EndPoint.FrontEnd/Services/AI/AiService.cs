@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.CallRecordings.Entities;
+using CRM.Core.Domain.CallRecordings.Enums;
 using CRM.Core.Domain.Reports.Entities;
 using CRM.Core.Domain.Reports.Enum;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
@@ -28,6 +30,141 @@ public class AiService(
     IssabelService issabelService,
     ILogger<AiService> logger,
     IHubContext<TaskHub> hub) {
+    public async Task ProcessCallRecording(CallRecording call)
+    {
+        if (call == null) return;
+        db.CallRecordings.Add(call);
+        await db.SaveChangesAsync();
+
+
+        try
+        {
+            await UpdateStatus(call, AiProcessStatusEnum.DownloadingAudio);
+
+            var audio = await issabelService.GetAudioWithRetry(call.RecordingFilePath);
+            if (audio == null)
+            {
+                await UpdateStatus(call, AiProcessStatusEnum.DownloadFailed, "Audio download failed");
+                return;
+            }
+
+            await UpdateStatus(call, AiProcessStatusEnum.SendingToAvanegar);
+
+            var result = await viraAi.SendRequestAudio(audio, Path.GetFileName(call.RecordingFilePath));
+
+            if (!result.Success)
+            {
+                await UpdateStatus(call, AiProcessStatusEnum.AvanegarFailed, result.Error);
+                return;
+            }
+
+            call.AvanegarRequestId = result.RequestId;
+            await UpdateStatus(call, AiProcessStatusEnum.AvanegarPending);
+            logger.LogInformation("Queued to Avanegar. File={File} RequestId={RequestId}", Path.GetFileName(call.RecordingFilePath),
+                result.RequestId);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "ProcessCallRecording failed. Call={Id}", call.Id);
+
+            await UpdateStatus(call, AiProcessStatusEnum.SystemError, ex.Message);
+        }
+    }
+
+    private async Task UpdateStatus(CallRecording call, AiProcessStatusEnum status, string error = null)
+    {
+        if (call == null) return;
+        call.AiStatus = status;
+        call.AiError = error;
+
+        await db.SaveChangesAsync();
+    }
+
+    public async Task ProcessPendingCalls(CancellationToken ct)
+    {
+        var calls = await db.CallRecordings
+            .Include(x => x.CallParticipant)
+            .Where(x => x.AiStatus == AiProcessStatusEnum.AvanegarPending)
+            .OrderBy(x => x.CreateDate)
+            .Take(10)
+            .ToListAsync(ct);
+
+        foreach (var call in calls)
+        {
+            if (ct.IsCancellationRequested) break;
+            await ProcessPendingCall(call);
+        }
+    }
+
+    private async Task ProcessPendingCall(CallRecording call)
+    {
+        try
+        {
+            call.AiStatus = AiProcessStatusEnum.TrackingAvanegar;
+            call.AvanegarAttempts++;
+            call.LastTrackDate = DateTime.Now;
+            await db.SaveChangesAsync();
+
+            var result = await viraAi.TrackRequest(call.AvanegarRequestId);
+
+            if (!result.Completed && !result.Failed)
+            {
+                await UpdateStatus(call, AiProcessStatusEnum.AvanegarPending);
+                return;
+            }
+
+            if (result.Failed)
+            {
+                await UpdateStatus(call, AiProcessStatusEnum.AvanegarFailed, result.Error);
+                return;
+            }
+
+            if (result.Completed)
+            {
+                if (string.IsNullOrWhiteSpace(result.Text))
+                {
+                    await UpdateStatus(call, AiProcessStatusEnum.AvanegarFailed, "Empty transcription");
+                    return;
+                }
+
+                call.TranscriptionText = result.Text;
+                await UpdateStatus(call, AiProcessStatusEnum.Summarizing);
+
+                var userNames = call.CallParticipant?.Select(x => x.UserFullName).ToList() ?? [];
+                var resultSummary = await gapgptAi.SummarizeText(call.TranscriptionText, userNames);
+                if (!resultSummary.Success)
+                {
+                    await UpdateStatus(call, AiProcessStatusEnum.SummaryFailed, resultSummary.Error);
+                    return;
+                }
+
+                if (resultSummary.Data == null || string.IsNullOrWhiteSpace(resultSummary.Data.summary))
+                {
+                    await UpdateStatus(call, AiProcessStatusEnum.SummaryIgnored, "Summary skipped by AI rules (Null or Empty)");
+                    return;
+                }
+
+                call.SummaryText = resultSummary.Data.summary.Trim();
+                call.Product = resultSummary.Data.product?.Trim();
+                if (string.IsNullOrEmpty(call.CallerCustomerTxt) && !string.IsNullOrEmpty(resultSummary.Data.customer))
+                {
+                    call.CallerCustomerTxt = resultSummary.Data.customer.Trim();
+                }
+
+                await UpdateStatus(call, AiProcessStatusEnum.SummaryCompleted);
+
+                await CreateReportWithCallData(call);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error processing pending call ID: {Id}", call.Id);
+            await UpdateStatus(call, AiProcessStatusEnum.SystemError, $"Pending error: {ex.Message}");
+        }
+    }
+
+
+/*
     public async Task ProcessCallRecording(CallRecording callData)
     {
         var filePath = @"C:\Users\a.gorji\Desktop\test1.wav";
@@ -37,7 +174,7 @@ public class AiService(
             var audioStream = await issabelService.GetAudioWithRetry(callData.RecordingFilePath);
             if (audioStream == null) return;
             /*var audioBytes = await File.ReadAllBytesAsync(filePath);
-            var audioStream = new MemoryStream(audioBytes);*/
+            var audioStream = new MemoryStream(audioBytes);#1#
 
             // 2. Audio To Text
             var audioFileName = Path.GetFileName(callData.RecordingFilePath);
@@ -50,7 +187,6 @@ public class AiService(
                 return;
             }
 
-            return;
             // 3. Summary
             var resSummary = await gapgptAi.SummarizeText(callData.TranscriptionText, callData.CallParticipant.Select(f => f?.UserFullName).ToList());
             if (resSummary != null)
@@ -79,6 +215,7 @@ public class AiService(
             logger.LogError(ex, ex.Message);
         }
     }
+*/
 
 
     private async Task SaveCallDataToDatabase(CallRecording callData)
@@ -142,7 +279,8 @@ public class AiService(
 
             await db.Reports.AddAsync(newReport);
 
-            await db.SaveChangesAsync();
+            await UpdateStatus(callRecording, AiProcessStatusEnum.ReportCreated);
+
             await hub.Clients.All.SendAsync("ShowReport");
             logger.LogInformation("Report created");
         }
@@ -150,6 +288,7 @@ public class AiService(
         {
             logger.LogError(ex, "Report creation failed");
             Console.WriteLine(ex.Message);
+            await UpdateStatus(callRecording, AiProcessStatusEnum.ReportFailed, ex.Message);
         }
     }
 }

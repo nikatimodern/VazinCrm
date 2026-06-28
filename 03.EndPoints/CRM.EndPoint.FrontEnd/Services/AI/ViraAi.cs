@@ -19,6 +19,98 @@ public class ViraAi(HttpClient httpClient, ILogger<ViraAi> logger) {
         "سیلک,کلیشه,سیلندر,چاپ,رنگی,تصویری," +
         "تناژ,پارت,میکرون,ضخامت,عرض,طول,سایز,ابعاد,کیلو,کیلوگرم,پیش‌فاکتور,فاکتور,تسویه,باربری,اسنپ,پیک,نمونه";
 
+    public async Task<AvanegarRequestResult> SendRequestAudio(Stream audioStream, string fileName)
+    {
+        logger.LogInformation("Avanegar started: {FileName}", fileName);
+        using var form = new MultipartFormDataContent();
+
+        // API Parameters
+        form.Add(new StringContent("telephony"), "model"); // https://api.ivira.ai/partai/avanegar?type=document
+        form.Add(new StringContent("false"), "srt");
+        form.Add(new StringContent("true"), "inverseNormalizer");
+        form.Add(new StringContent("false"), "timestamp");
+        form.Add(new StringContent("false"), "spokenPunctuation");
+        form.Add(new StringContent("true"), "punctuation");
+        form.Add(new StringContent("2"), "numSpeakers");
+        form.Add(new StringContent("true"), "diarize");
+        form.Add(new StringContent(domainHotWords), "hotwords[]");
+
+        var fileContent = new StreamContent(audioStream);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/mpeg");
+        form.Add(fileContent, "audio", fileName);
+
+
+        try
+        {
+            var response = await httpClient.PostAsync("avanegar/v2/avanegar-large/request", form);
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                logger.LogError("Avanegar Init Error ({Code}) for {File}: {Error}", response.StatusCode, fileName, errorContent);
+                return new AvanegarRequestResult { Success = false, Error = errorContent };
+            }
+
+            var postResult = await response.Content.ReadFromJsonAsync<AiAvanegarModel>();
+            var requestId = postResult?.Data?.Data?.Id;
+
+            if (string.IsNullOrEmpty(requestId))
+            {
+                logger.LogError("Avanegar failed to generate RequestId for: {File}", fileName);
+                return new AvanegarRequestResult { Success = false, Error = "Avanegar failed to generate RequestId" };
+            }
+
+            logger.LogInformation("Avanegar tracking initialized. ID: {Id} for {File}", requestId, fileName);
+            return new AvanegarRequestResult { Success = true, RequestId = requestId };
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Avanegar error: {File}", fileName);
+            return new AvanegarRequestResult { Success = false, Error = ex.Message };
+        }
+    }
+
+    public async Task<AvanegarTrackResult> TrackRequest(string requestId)
+    {
+        try
+        {
+            var response = await httpClient.GetAsync($"avanegar/v2/avanegar-large/track/{requestId}");
+            if (!response.IsSuccessStatusCode)
+            {
+                var errContent = await response.Content.ReadAsStringAsync();
+                return new AvanegarTrackResult { Completed = false, Failed = true, Error = $"HTTP Error {response.StatusCode}: {errContent}" };
+            }
+
+
+            var trackResult = await response.Content.ReadFromJsonAsync<DataAvanegar>();
+            var status = trackResult?.Status?.ToLowerInvariant();
+
+            if (status == "success")
+            {
+                return new AvanegarTrackResult {
+                    Completed = true,
+                    Failed = false,
+                    Text = trackResult.Data?.AiResponse?.Result?.Text
+                };
+            }
+
+            if (status == "failed" || status == "fail")
+            {
+                return new AvanegarTrackResult {
+                    Completed = true,
+                    Failed = true,
+                    Error = trackResult.Message ?? "Vira internal server fail"
+                };
+            }
+
+            return new AvanegarTrackResult { Completed = false, Failed = false };
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "TrackRequest critically failed for ID: {Id}", requestId);
+            return new AvanegarTrackResult { Completed = false, Failed = true, Error = ex.Message };
+        }
+    }
+
     public async Task<string> ConvertAudioToText(Stream audioStream, string audioFileName, int durationSeconds)
     {
         logger.LogInformation("Transcription started: {FileName}", audioFileName);
@@ -119,6 +211,7 @@ public class ViraAi(HttpClient httpClient, ILogger<ViraAi> logger) {
                 logger.LogInformation("Long Transcription completed successfully for: {File} after {Attempts} attempts", fileName, i + 1);
                 return trackResult.Data?.AiResponse?.Result?.Text;
             }
+
             if (status == "failed" || status == "fail")
             {
                 logger.LogError("Long Transcription internal processing failed on server for: {File}. Message: {Msg}", fileName, trackResult.Message);
