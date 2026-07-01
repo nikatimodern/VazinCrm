@@ -80,30 +80,14 @@ public class AiService(
         await db.SaveChangesAsync();
     }
 
-    public async Task ProcessPendingCalls(CancellationToken ct)
-    {
-        var calls = await db.CallRecordings
-            .Include(x => x.CallParticipant)
-            .Where(x => x.AiStatus == AiProcessStatusEnum.AvanegarPending)
-            .OrderBy(x => x.CreateDate)
-            .Take(10)
-            .ToListAsync(ct);
 
-        foreach (var call in calls)
-        {
-            if (ct.IsCancellationRequested) break;
-            await ProcessPendingCall(call);
-        }
-    }
-
-    private async Task ProcessPendingCall(CallRecording call)
+    public async Task ProcessPendingCall(CallRecording call)
     {
         try
         {
-            call.AiStatus = AiProcessStatusEnum.TrackingAvanegar;
             call.AvanegarAttempts++;
             call.LastTrackDate = DateTime.Now;
-            await db.SaveChangesAsync();
+            await UpdateStatus(call, AiProcessStatusEnum.TrackingAvanegar);
 
             var result = await viraAi.TrackRequest(call.AvanegarRequestId);
 
@@ -247,6 +231,7 @@ public class AiService(
             var reportDate = firstAnswerTime ?? DateTime.Now;
 
             var newReport = new Report {
+                Id = Guid.NewGuid(),
                 RepTel = callRecording.CallerNumber,
                 UserCreatorID = callRecording.DestinationUserId,
                 UserCreator = callRecording.DestinationUserTxt,
@@ -261,20 +246,14 @@ public class AiService(
                 ReportTypeTxt = nameof(ReportTypeEnum.گزارش_تماس_های_ورودی).Replace("_", " "),
                 AI = true,
                 CallRecordingId = callRecording.Id,
-                Participants = new List<ReportParticipant>()
             };
 
             int order = 1;
             foreach (var participant in callRecording.CallParticipant ?? [])
             {
-                newReport.Participants.Add(new ReportParticipant {
-                    Extension = participant.Extension,
-                    UserId = participant.UserId,
-                    UserFullName = participant.UserFullName,
-                    AnswerTime = participant.AnswerTime,
-                    AnswerTimeTxt = dts.GetDateTimePersian(participant.AnswerTime),
-                    SortOrder = order++
-                });
+                participant.ReportId = newReport.Id;
+                participant.AnswerTimeTxt = dts.GetDateTimePersian(participant.AnswerTime);
+                participant.SortOrder = order++;
             }
 
             await db.Reports.AddAsync(newReport);

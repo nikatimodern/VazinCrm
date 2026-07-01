@@ -21,7 +21,7 @@ public class CallRecording : BaseEntity {
     public string Product { get; set; }
     public int DurationSeconds { get; set; }
 
-    [NotMapped] public List<CallParticipant> CallParticipant { get; set; } = [];
+    public List<ReportParticipant> CallParticipant { get; set; } = [];
     public Report Report { get; set; }
 
     private AiProcessStatusEnum _AiProcessStatus = AiProcessStatusEnum.Pending;
@@ -39,11 +39,4 @@ public class CallRecording : BaseEntity {
     public int AvanegarAttempts { get; set; }
     public DateTime? LastTrackDate { get; set; }
     public DateTime? NextTrackDate { get; set; }
-}
-
-public class CallParticipant {
-    public string Extension { get; set; }
-    public DateTime AnswerTime { get; set; }
-    public string UserId { get; set; }
-    public string UserFullName { get; set; }
 }

@@ -1,6 +1,10 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CRM.Core.Domain.CallRecordings.Enums;
+using Generics.Infrastructures.Sql;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -34,7 +38,18 @@ public class AiPendingWorker(IServiceScopeFactory scopeFactory, ILogger<AiPendin
         using var scope = scopeFactory.CreateScope();
 
         var ai = scope.ServiceProvider.GetRequiredService<AiService>();
+        var db = scope.ServiceProvider.GetRequiredService<CRMContextDb>();
 
-        await ai.ProcessPendingCalls(ct);
+        var calls = await db.CallRecordings
+            .Include(x => x.CallParticipant)
+            .Where(x => x.AiStatus == AiProcessStatusEnum.AvanegarPending)
+            .OrderBy(x => x.CreateDate)
+            .Take(10)
+            .ToListAsync(ct);
+
+        foreach (var call in calls)
+        {
+            await ai.ProcessPendingCall(call);
+        }
     }
 }

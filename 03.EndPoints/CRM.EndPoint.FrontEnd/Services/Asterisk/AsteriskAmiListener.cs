@@ -8,6 +8,7 @@ using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.CallRecordings.Entities;
 using CRM.Core.Domain.CallRecordings.Enums;
 using CRM.Core.Domain.Customers.Entities;
+using CRM.Core.Domain.Reports.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.AsteriskAmi;
@@ -212,7 +213,7 @@ public class AsteriskAmiListener : BackgroundService {
 
                 if (!string.IsNullOrEmpty(exten) && !call.Participants.Any(p => p.Extension == exten))
                 {
-                    call.Participants.Add(new CallParticipant { Extension = exten, AnswerTime = DateTime.Now });
+                    call.Participants.Add(new ReportParticipant() { Extension = exten, AnswerTime = DateTime.Now });
                 }
             }
         }
@@ -292,7 +293,7 @@ public class AsteriskAmiListener : BackgroundService {
             foreach (var p in call.Participants)
             {
                 var u = await GetUsers(p.Extension);
-                callRecording.CallParticipant?.Add(new CallParticipant {
+                callRecording.CallParticipant?.Add(new ReportParticipant {
                     Extension = p.Extension,
                     AnswerTime = p.AnswerTime,
                     UserId = u?.Id,

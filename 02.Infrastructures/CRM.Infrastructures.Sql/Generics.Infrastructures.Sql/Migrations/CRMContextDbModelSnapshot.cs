@@ -461,6 +461,21 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AiError")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("AiStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AiStatusTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("AvanegarAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AvanegarRequestId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid?>("CallerCustomerId")
                         .HasColumnType("uniqueidentifier");
 
@@ -488,14 +503,23 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("DestinationUserTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("DurationSeconds")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastTrackDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("ModifyDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ModifyDateTxt")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("NextTrackDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Product")
                         .HasColumnType("nvarchar(max)");
@@ -3211,10 +3235,13 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("AnswerTimeTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("CallRecordingId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Extension")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("ReportId")
+                    b.Property<Guid?>("ReportId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("SortOrder")
@@ -3227,6 +3254,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CallRecordingId");
 
                     b.HasIndex("ReportId");
 
@@ -4211,11 +4240,17 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.Reports.Entities.ReportParticipant", b =>
                 {
+                    b.HasOne("CRM.Core.Domain.CallRecordings.Entities.CallRecording", "CallRecording")
+                        .WithMany("CallParticipant")
+                        .HasForeignKey("CallRecordingId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("CRM.Core.Domain.Reports.Entities.Report", "Report")
                         .WithMany("Participants")
                         .HasForeignKey("ReportId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("CallRecording");
 
                     b.Navigation("Report");
                 });
@@ -4318,6 +4353,8 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.CallRecordings.Entities.CallRecording", b =>
                 {
+                    b.Navigation("CallParticipant");
+
                     b.Navigation("Report");
                 });
 
