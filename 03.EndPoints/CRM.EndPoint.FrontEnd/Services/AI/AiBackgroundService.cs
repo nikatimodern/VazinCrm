@@ -37,7 +37,7 @@ public class AiBackgroundService(IAiQueue queue, IServiceProvider sp, ILogger<Ai
 
                 var aiService = scope.ServiceProvider.GetRequiredService<AiService>();
 
-                await aiService.ProcessCallRecording(item);
+                await aiService.ProcessCallRecording(item, stoppingToken);
                 logger.LogInformation("Queue item processed");
             }
             catch (OperationCanceledException)

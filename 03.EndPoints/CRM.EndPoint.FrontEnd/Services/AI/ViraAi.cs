@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 using Microsoft.Extensions.Logging;
@@ -19,7 +20,7 @@ public class ViraAi(HttpClient httpClient, ILogger<ViraAi> logger) {
         "سیلک,کلیشه,سیلندر,چاپ,رنگی,تصویری," +
         "تناژ,پارت,میکرون,ضخامت,عرض,طول,سایز,ابعاد,کیلو,کیلوگرم,پیش‌فاکتور,فاکتور,تسویه,باربری,اسنپ,پیک,نمونه";
 
-    public async Task<AvanegarRequestResult> SendRequestAudio(Stream audioStream, string fileName)
+    public async Task<AvanegarRequestResult> SendRequestAudio(Stream audioStream, string fileName, CancellationToken ct)
     {
         logger.LogInformation("Avanegar started: {FileName}", fileName);
         using var form = new MultipartFormDataContent();
@@ -42,15 +43,15 @@ public class ViraAi(HttpClient httpClient, ILogger<ViraAi> logger) {
 
         try
         {
-            var response = await httpClient.PostAsync("avanegar/v2/avanegar-large/request", form);
+            var response = await httpClient.PostAsync("avanegar/v2/avanegar-large/request", form, ct);
             if (!response.IsSuccessStatusCode)
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
+                var errorContent = await response.Content.ReadAsStringAsync(ct);
                 logger.LogError("Avanegar Init Error ({Code}) for {File}: {Error}", response.StatusCode, fileName, errorContent);
                 return new AvanegarRequestResult { Success = false, Error = errorContent };
             }
 
-            var postResult = await response.Content.ReadFromJsonAsync<AiAvanegarModel>();
+            var postResult = await response.Content.ReadFromJsonAsync<AiAvanegarModel>(cancellationToken: ct);
             var requestId = postResult?.Data?.Data?.Id;
 
             if (string.IsNullOrEmpty(requestId))
@@ -69,19 +70,19 @@ public class ViraAi(HttpClient httpClient, ILogger<ViraAi> logger) {
         }
     }
 
-    public async Task<AvanegarTrackResult> TrackRequest(string requestId)
+    public async Task<AvanegarTrackResult> TrackRequest(string requestId, CancellationToken ct)
     {
         try
         {
-            var response = await httpClient.GetAsync($"avanegar/v2/avanegar-large/track/{requestId}");
+            var response = await httpClient.GetAsync($"avanegar/v2/avanegar-large/track/{requestId}", ct);
             if (!response.IsSuccessStatusCode)
             {
-                var errContent = await response.Content.ReadAsStringAsync();
+                var errContent = await response.Content.ReadAsStringAsync(ct);
                 return new AvanegarTrackResult { Completed = false, Failed = true, Error = $"HTTP Error {response.StatusCode}: {errContent}" };
             }
 
 
-            var trackResult = await response.Content.ReadFromJsonAsync<DataAvanegar>();
+            var trackResult = await response.Content.ReadFromJsonAsync<DataAvanegar>(cancellationToken: ct);
             var status = trackResult?.Status?.ToLowerInvariant();
 
             if (status == "success")

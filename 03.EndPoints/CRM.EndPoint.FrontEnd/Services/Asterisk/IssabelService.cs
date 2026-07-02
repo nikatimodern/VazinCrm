@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Renci.SshNet;
@@ -11,7 +12,7 @@ public class IssabelService(ILogger<IssabelService> logger) {
     private const string FtpUser = "root";
     private const string FtpPass = "123";
 
-    private async Task<MemoryStream> GetAudioFromIsabel(string remoteFilePath)
+    private async Task<MemoryStream> GetAudioFromIsabel(string remoteFilePath, CancellationToken ct)
     {
         logger.LogInformation("Downloading audio: {Path}", remoteFilePath);
         var memoryStream = new MemoryStream();
@@ -22,7 +23,7 @@ public class IssabelService(ILogger<IssabelService> logger) {
             client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(30);
             client.OperationTimeout = TimeSpan.FromSeconds(60);
 
-            client.Connect();
+            await client.ConnectAsync(ct);
             logger.LogInformation("SFTP connected");
 
             client.DownloadFile(remoteFilePath, memoryStream);
@@ -41,17 +42,16 @@ public class IssabelService(ILogger<IssabelService> logger) {
         }
     }
 
-    public async Task<MemoryStream> GetAudioWithRetry(string path)
+    public async Task<MemoryStream> GetAudioWithRetry(string path, CancellationToken ct = default)
     {
         try
         {
-            //logger.LogInformation("Audio retry started");
             for (var i = 0; i < 5; i++)
             {
                 logger.LogInformation("Audio retry started {Attempt}/5", i + 1);
                 try
                 {
-                    var stream = await GetAudioFromIsabel(path);
+                    var stream = await GetAudioFromIsabel(path, ct);
 
                     if (stream != null && stream.Length > 0)
                     {
@@ -65,7 +65,7 @@ public class IssabelService(ILogger<IssabelService> logger) {
                     Console.WriteLine(ex);
                 }
 
-                await Task.Delay(2000);
+                await Task.Delay(2000, ct);
             }
 
             logger.LogWarning("Audio retries exhausted");

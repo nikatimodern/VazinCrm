@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 using Microsoft.Extensions.Configuration;
@@ -13,7 +14,7 @@ namespace CRM.EndPoint.FrontEnd.Services.AI;
 
 public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<GapgptAi> logger) {
     // خلاصه نویسی
-    public async Task<SummaryResult> SummarizeText(string textToSummarize, List<string> userNames) // https://gapgpt.app/platform-v2/tokens
+    public async Task<SummaryResult> SummarizeText(string textToSummarize, List<string> userNames, CancellationToken ct) // https://gapgpt.app/platform-v2/tokens
     {
         try
         {
@@ -33,10 +34,10 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
                 top_p = 0.7,
             };
 
-            var response = await httpClient.PostAsJsonAsync("chat/completions", requestBody);
+            var response = await httpClient.PostAsJsonAsync("chat/completions", requestBody, cancellationToken: ct);
             if (response.IsSuccessStatusCode)
             {
-                var resJson = await response.Content.ReadFromJsonAsync<AiGapgptModel>();
+                var resJson = await response.Content.ReadFromJsonAsync<AiGapgptModel>(cancellationToken: ct);
                 logger.LogInformation("Summarize completed");
 
                 var content = resJson?.Choices?[0]?.Message?.Content;
@@ -56,7 +57,7 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
                 }
             }
 
-            var raw = await response.Content.ReadAsStringAsync();
+            var raw = await response.Content.ReadAsStringAsync(ct);
             var clean = StripHtml(raw);
 
             logger.LogError("Summarize API Error ({StatusCode}): {Error}", response.StatusCode, clean);

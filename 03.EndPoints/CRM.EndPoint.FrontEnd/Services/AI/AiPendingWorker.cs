@@ -49,7 +49,7 @@ public class AiPendingWorker(IServiceScopeFactory scopeFactory, ILogger<AiPendin
 
         foreach (var call in calls)
         {
-            await ai.ProcessPendingCall(call);
+            await ai.ProcessPendingCall(call, ct);
         }
     }
 }
