@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="~/lib/viewerJs/css/viewer.min.css" />
 
     <link rel="stylesheet" href="~/css/site.css?v=5.3.1" />
-
+    <link href="~/css/bottom-sheet.css" rel="stylesheet" />
     <style>
 
         body {
@@ -202,7 +202,7 @@
             <p class="mt-2 text-muted">لطفا با کارشناسان فروش تماس بگیرید</p>
         </div>
     } else {
-        if (Model.PreFactor.Accepted) {
+        if (!Model.PreFactor.Accepted) {
             <div class="status-box">
                 <img src="~/Img/accept-icon.png" alt="Accepted" class="mb-2" />
                 <h6 class="mt-2" style="font-size: 15px;margin-bottom: 10px;"> پیش‌فاکتور تأیید شد؛ از اعتماد شما سپاسگزاریم.</h6>
@@ -303,11 +303,20 @@
                         </button>
                     </div>
                 </div>
+                <div class="form-check bootstrap-only mb-2 text-justify">
+                    <input type="checkbox" class="form-check-input" id="chkAccept">
+                    <label class="form-check-label fbold" style="font-size: 12px" for="chkAccept">
+                        خریدار اقرار می‌نماید که مفاد پیش‌فاکتور و
+                        <a href="javascript:void(0)" id="toggleTermsBtn" class="text-decoration-underline">«شرایط و توضیحات تکمیلی»</a>
+                        پیوست آن را به‌طور کامل مطالعه نموده و پذیرفته است؛ این تأیید به منزله پذیرش کامل و لازم‌الاجرا بودن کلیه مفاد پیش‌فاکتور و پیوست آن خواهد بود.
+                    </label>
+                </div>
 
-                <div class="form-check mb-2">
+
+                @*<div class="form-check mb-2">
                     <input type="checkbox" class="form-check-input" id="chkAccept">
                     <label class="form-check-label fbold" style="font-size: 12px" for="chkAccept">پیش‌فاکتور شماره @Model.PreFactor.SerialNumber مورد تایید می ‌باشد</label>
-                </div>
+                </div>*@
 
                 <button type="submit" id="btnSubmitAcceptForm" class="btn btn-primary w-100 mb-2 p-2 rounded-pill" disabled>
                     تایید
@@ -390,6 +399,7 @@
 </div>
 
 
+
 <script src="~/lib/Signature_pad/signature_pad.umd.min.js"></script>
 <script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js"></script>
 <script src="~/lib/jquery/jquery.min.js"></script>
@@ -400,6 +410,7 @@
 <script src="~/lib/viewerJs/js/viewer.min.js"></script>
 <script src="~/js/UploadFile.js?v=5.3.1"></script>
 <script src="~/js/site.js?v=5.3.1"></script>
+<script src="~/js/bottom-sheet.js"></script>
 
 
 <script>
@@ -409,6 +420,93 @@
     let userMobile = "@Model.PreFactor.Cus_Mobile";
     let selectedCustomerUserId;
     let verified = @ViewBag.isLogin;
+
+
+    const preFactorTerms = [
+        {
+            id: 1,
+            text: "این پیش‌فاکتور پس از واریز 'مبلغ پیش‌پرداخت توافق‌شده' به منزله تأیید نهایی خریدار محسوب و لازم‌الاجرا بوده و مبنای انجام سفارش خواهد بود.",
+        },
+        {
+            id: 2,
+            text: "فروشنده در قبال تأخیرات ناشی از هر یک از موارد زیر مسئولیتی نخواهد داشت: عدم واریز به‌موقع پیش‌پرداخت یا سایر مبالغ توافق‌شده توسط خریدار، عدم ارائه به‌موقع اطلاعات، مدارک، مشخصات فنی یا تأییدات لازم از سوی خریدار، تغییرات درخواستی خریدار پس از تأیید سفارش، مشکلات یا تأخیرات مربوط به حمل‌ونقل، افزایش شدید قیمت، کمیابی، محدودیت یا اختلال در تأمین مواد اولیه، جنگ، آشوب، اعتصاب، حوادث غیرمترقبه، تصمیمات و محدودیت‌های دولتی، یا هر عامل دیگری که خارج از کنترل متعارف فروشنده باشد. در چنین مواردی، زمان تحویل به میزان مدت تأخیر ایجادشده و آثار ناشی از آن تمدید خواهد شد و خریدار حق مطالبه خسارت، جریمه یا فسخ قرارداد به استناد تأخیر مذکور را نخواهد داشت.",
+        },
+        {
+            id: 3,
+            text: "کلیه مشخصات فنی، ابعاد، طرح، رنگ، متن، کلیشه، مقدار، وزن و سایر مشخصات سفارش باید توسط خریدار تأیید گردد و مسئولیت صحت اطلاعات و تأییدات ارائه‌شده بر عهده خریدار خواهد بود.",
+        },
+        {
+            id: 4,
+            text: "هرگونه تغییر در مشخصات سفارش پس از تأیید نهایی خریدار صرفاً درصورت موافقت فروشنده امکان‌پذیر بوده و کلیه آثار ناشی از تغییرات شامل هزینه‌های اضافی، تغییر زمان تحویل، تغییر قیمت یا سایر تبعات بر عهده خریدار خواهد بود.",
+        },
+        {
+            id: 5,
+            text: "خریدار موظف است حداکثر ظرف مدت 10 روز تقویمی پس از تحویل، نسبت به بررسی کالای تحویلی اقدام و هرگونه مغایرت احتمالی با پیش‌فاکتور را به صورت کتبی به اطلاع فروشنده برساند. عدم اعلام کتبی مغایرت در مهلت مقرر، به منزله تأیید کامل کالا و پذیرش مطابقت آن با سفارش خواهد بود.",
+        },
+        {
+            id: 6,
+            text: "محصولات تولیدی با توجه به ماهیت فرآیند تولید، دارای تلرانس‌های متعارف تولید و چاپ بوده و خریدار با اطلاع از این موضوع، تلرانس‌های اعلامی از جمله رنگ، چاپ، وزن، ضخامت، ابعاد و مشخصات فنی را پذیرفته است.",
+        },
+        { id: 7, text: "هزینه حمل و نقل کالا بر عهده خریدار بوده مگر آنکه خلاف آن به‌صورت کتبی توافق شده باشد." },
+        {
+            id: 8,
+            text: "در صورت آماده بودن سفارش و عدم دریافت کالا توسط خریدار، پس از گذشت 5 روز تقویمی از اعلام آمادگی تحویل، فروشنده مجاز خواهد بود قیمت کالا را بر اساس قیمت روز محاسبه و نسبت به صدور صورتحساب جدید اقدام نماید.",
+        },
+        { id: 9, text: "محصولات تولیدی و سفارشی پس از شروع فرآیند تولید، در صورت عدم وجود مغایرت اثبات‌شده، قابل لغو یا مرجوعی نمی باشد." },
+        {
+            id: 10,
+            text: "مالکیت کالا تا زمان تسویه کامل مبلغ پیش‌فاکتور متعلق به فروشنده بوده و مالکیت کالا با تسویه حساب کامل و صدور فاکتور منتقل خواهد شد.",
+        },
+        {
+            id: 11,
+            text: "هرگونه تأیید انجام‌شده توسط خریدار از طریق امضا، مهر، مکاتبات رسمی، پیام‌رسان‌ها، ایمیل یا سایر روش‌های ارتباطی مورد توافق طرفین، به منزله تأیید سفارش و مشخصات آن تلقی خواهد شد.",
+        },
+        {
+            id: 12,
+            text: "در صورت بروز هرگونه اختلاف، ادعا یا دعوای ناشی از یا مرتبط با این پیش‌فاکتور، از جمله در خصوص تفسیر، اجرا، عدم اجرا، تأخیر، کیفیت، کمیت، پرداخت، تحویل، فسخ یا آثار آن، طرفین مکلف‌اند ابتدا موضوع را از طریق مذاکره ظرف مدت ۱۰ روز تقویمی از تاریخ اعلام کتبی اختلاف پیگیری نمایند. در صورت عدم حصول توافق، رسیدگی به اختلاف در اتحادیه نایلون و پلاستیک تهران خواهد بود و خریدار با تأیید این پیش‌فاکتور، صلاحیت مرجع مذکور را پذیرفته و حق ایراد نسبت به آن را از خود سلب و ساقط می‌نماید.",
+        },
+        { id: 13, text: "با تأیید این پیش‌فاکتور، خریدار کلیه شرایط و توضیحات مندرج در آن را مطالعه، قبول و تأیید نموده است." },
+    ];
+
+    const generateTermsHtml = (termsArray) => {
+        const listItems = termsArray.map(item => `
+            <li class="mb-3" style="padding-right: 4px;">
+                ${item.text}
+            </li>
+        `).join("");
+
+        return `
+            <div class="text-justify" style="font-size: 13px; line-height: 1.8; color: #333;">
+                <ol style="padding-right: 20px; margin: 0;">
+                    ${listItems}
+                </ol>
+            </div>
+        `;
+    };
+
+    const termsSheet = new BottomSheet({
+        title: "شرایط و توضیحات تکمیلی",
+        content: generateTermsHtml(preFactorTerms),
+        snapPoints: [0.65, 0.9],
+        className: "terms-bottom-sheet",
+    });
+
+    termsSheet.setActions([
+        {
+            text: "بندها را مطالعه کردم و قبول دارم",
+            className: "w-100 btn-accept-terms",
+            primary: true,
+            close: true,
+            onClick: function(e, button) {
+                const chkAccept = document.getElementById('chkAccept');
+                if(chkAccept) {
+                    chkAccept.checked = true;
+                    document.getElementById('btnSubmitAcceptForm').disabled = false;
+                }
+            }
+        }
+    ]);
+
 
     document.addEventListener("DOMContentLoaded", async () => {
         // signature
@@ -450,6 +548,13 @@
             }
         });
 
+        const toggleBtn = document.getElementById("toggleTermsBtn");
+        if (toggleBtn) {
+            toggleBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                termsSheet.open();
+            });
+        }
 
         // attach Receipt
         //ShowPaymentReceiptAttach('@pfId');

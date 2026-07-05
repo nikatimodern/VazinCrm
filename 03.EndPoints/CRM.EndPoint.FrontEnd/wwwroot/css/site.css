@@ -6332,3 +6332,8 @@ table tr.payment-vosoled > td {
 .fs-small {
   font-size: 11px !important;
 }
+
+
+.text-justify {
+  text-align: justify !important;
+}
