@@ -1,6 +1,7 @@
 class BottomSheet {
     
     static activeSheet = null;
+    static ANIMATION = 350;
     
     constructor(options = {}) {
         this.options = {
@@ -20,7 +21,6 @@ class BottomSheet {
         this._create();
         this._setSnapPoints(this.options.snapPoints);
         this._initGesture();
-        this._initScrollController();
         this._bindEvents();
     }
     
@@ -62,15 +62,26 @@ class BottomSheet {
     /*==============================
         Events
     ==============================*/
-    emit(name, data = null) {
-        if (!this.events[name]) return;
-        this.events[name].forEach(fn => fn(data));
+    
+    emit(name, data) {
+        const list = this.events[name];
+        if (!list) return;
+        
+        for (const fn of list) {
+            try {
+                fn(data);
+            } catch (e) {
+                console.error(e);
+            }
+        }
     }
     
     /*==============================
         Public Methods
     ==============================*/
     open() {
+        if (this.isOpen) return;
+        
         if (BottomSheet.activeSheet && BottomSheet.activeSheet !== this) {
             BottomSheet.activeSheet.close();
         }
@@ -82,8 +93,10 @@ class BottomSheet {
         this.root.style.display = "block"; // اطمینان از دیده شدن دیاموند
         
         requestAnimationFrame(() => {
-            this.root.classList.add("show");
-            this._animateSnap(); // اعمال ارتفاع اولین Snap Point
+            requestAnimationFrame(() => {
+                this.root.classList.add("show");
+                this._animateSnap(); // اعمال ارتفاع اولین Snap Point
+            });
         });
         
         this.isOpen = true;
@@ -94,6 +107,8 @@ class BottomSheet {
     
     close() {
         if (!this.isOpen) return;
+        if (this.isClosing) return;
+        this.isClosing = true;
         
         this.emit("beforeClose");
         
@@ -108,12 +123,13 @@ class BottomSheet {
         
         setTimeout(() => {
             this.emit("close");
+            this.isClosing = false;
             if (this.options.destroyOnClose) {
                 this.destroy();
             } else {
                 this.root.style.display = "none";
             }
-        }, 300);
+        }, BottomSheet.ANIMATION);
     }
     
     /*==============================
@@ -143,13 +159,13 @@ class BottomSheet {
     /*==================================================
         Gesture & Dragging
     ==================================================*/
+    
     /*==================================================
         Gesture & Dragging (اصلاح شده)
     ==================================================*/
     _initGesture() {
         this.drag = {
             active: false,
-            draggingSheet: false,
             startY: 0,
             currentY: 0,
             startTranslate: 0,
@@ -166,6 +182,7 @@ class BottomSheet {
         if (handle) handle.addEventListener("pointerdown", this._pointerDown.bind(this));
         if (header) header.addEventListener("pointerdown", this._pointerDown.bind(this));
     }
+    
     _pointerDown(e) {
         if (e.button !== undefined && e.button !== 0) return;
         if (this.isLocked()) return;
@@ -177,7 +194,6 @@ class BottomSheet {
         
         this.drag.pointerId = e.pointerId;
         this.drag.active = true;
-        this.drag.draggingSheet = false;
         this.drag.startY = e.clientY;
         this.drag.currentY = e.clientY;
         this.drag.lastY = e.clientY;
@@ -185,7 +201,8 @@ class BottomSheet {
         this.drag.velocity = 0;
         this.drag.startTranslate = this.drag.translate || 0;
         
-        this.sheet.setPointerCapture(e.pointerId);
+        this.drag.captureTarget = e.currentTarget;
+        this.drag.captureTarget.setPointerCapture(e.pointerId);
         this.sheet.classList.add("bs-dragging");
         
         this._boundPointerMove = this._pointerMove.bind(this);
@@ -198,13 +215,9 @@ class BottomSheet {
     
     _pointerMove(e) {
         if (!this.drag.active) return;
+        if (e.pointerId !== this.drag.pointerId) return;
         
         const delta = e.clientY - this.drag.startY;
-        
-        if (!this.drag.draggingSheet) {
-            if (!this._canStartDrag(delta)) return;
-            this.drag.draggingSheet = true;
-        }
         
         let translate = this.drag.startTranslate + delta;
         
@@ -214,9 +227,10 @@ class BottomSheet {
         }
         
         this.drag.translate = translate;
-        this.sheet.style.transition = "none";
         this.sheet.style.transform = `translateY(${translate}px)`;
-        
+        if (this.currentSnap === this.snapPoints.length - 1 && translate > 0) {
+            this.sheet.classList.remove("bs-full");
+        }
         const now = performance.now();
         const dt = now - this.drag.lastTime;
         if (dt > 0) {
@@ -229,14 +243,14 @@ class BottomSheet {
         this.emit("drag", { translate, velocity: this.drag.velocity });
     }
     
-    _pointerUp() {
+    _pointerUp(e) {
         if (!this.drag.active) return;
+        if (e.pointerId !== this.drag.pointerId) return;
         
         this.drag.active = false;
-        this.drag.draggingSheet = false;
         
         try {
-            this.sheet.releasePointerCapture(this.drag.pointerId);
+            this.drag.captureTarget.releasePointerCapture(this.drag.pointerId);
         } catch (err) {
         }
         
@@ -245,11 +259,14 @@ class BottomSheet {
         window.removeEventListener("pointercancel", this._boundPointerUp);
         
         this.sheet.classList.remove("bs-dragging");
-        this.sheet.style.transition = "";
+        
+        this.drag.pointerId = null;
+        this.drag.captureTarget = null;
         
         this._finishGesture();
     }
-    _finishGesture() {
+    
+    /*_finishGesture() {
         const velocity = this.drag.velocity;
         const translate = this.drag.translate;
         const height = this.sheet.offsetHeight;
@@ -275,7 +292,7 @@ class BottomSheet {
         // در غیر این صورت، بر اساس متد حساسیت جدید، نزدیک‌ترین اسنپ را پیدا کن
         this.currentSnap = this._findNearestSnap(translate);
         this._animateSnap();
-    }/*
+    }*/
     _finishGesture() {
         const velocity = this.drag.velocity;
         const translate = this.drag.translate;
@@ -293,65 +310,42 @@ class BottomSheet {
             return;
         }
         
-        this.currentSnap = this._findNearestSnap(translate);
+        this.currentSnap = this._resolveSnap(translate);
         this._animateSnap();
     }
-    */
+    
     /*==================================================
         Snap Points Engine
     ==================================================*/
-    _setSnapPoints(points = [0.5, 1]) {
+    _setSnapPoints(points) {
         this.snapPoints = [...points].filter(v => v > 0 && v <= 1).sort((a, b) => a - b);
         if (!this.snapPoints.length) this.snapPoints = [1];
         this.currentSnap = 0; // شروع از کمترین ارتفاع هندل شده
     }
     
     _getSnapHeight(index = this.currentSnap) {
-        return window.innerHeight * this.snapPoints[index];
-    }
-    _findNearestSnap(translate) {
-        const vh = window.innerHeight;
+        const h = window.innerHeight * this.snapPoints[index];
         
-        const startHeight = this._getSnapHeight(this.currentSnap);
-        const currentHeight = startHeight - translate;
+        return Math.min(window.innerHeight, h);
+    }
+    
+    
+    _resolveSnap(translate) {
+        const threshold = Math.min(80, window.innerHeight * 0.07);
         
         let nearest = this.currentSnap;
-        
-        const movementRatio = translate / vh;
-        const threshold = 0.05;
-        
-        if (movementRatio < -threshold) {
-            if (this.currentSnap < this.snapPoints.length - 1) {
-                nearest = this.currentSnap + 1;
-            }
-        } else if (movementRatio > threshold) {
-            if (this.currentSnap > 0) {
-                nearest = this.currentSnap - 0;
-            }
+        if (translate < -threshold && this.currentSnap < this.snapPoints.length - 1) {
+            nearest++;
+        } else if (translate > threshold && this.currentSnap > 0) {
+            nearest--;
         }
         
         return nearest;
     }
-    /*_findNearestSnap(translate) {
-        const vh = window.innerHeight;
-        const currentHeight = this._getSnapHeight(this.currentSnap) - translate;
-        let nearest = 0;
-        let distance = Infinity;
-        
-        this.snapPoints.forEach((p, i) => {
-            const h = vh * p;
-            const d = Math.abs(h - currentHeight);
-            if (d < distance) {
-                distance = d;
-                nearest = i;
-            }
-        });
-        return nearest;
-    }
-    */
+    
     _animateSnap() {
         const height = this._getSnapHeight();
-        this.sheet.style.transition = "height .3s cubic-bezier(.25, 1, .5, 1), transform .3s cubic-bezier(.25, 1, .5, 1)";
+        this.sheet.classList.toggle("bs-full", this.currentSnap === this.snapPoints.length - 1);
         this.sheet.style.height = `${height}px`;
         this.sheet.style.transform = "translateY(0)";
         this.drag.translate = 0;
@@ -378,39 +372,6 @@ class BottomSheet {
         if (this.currentSnap === this.snapPoints.length - 1) this.collapse(); else this.expand();
     }
     
-    /*==================================================
-        Nested Scroll Engine
-    ==================================================*/
-    _initScrollController() {
-        this.scrollContainer = this.content;
-    }
-    
-    /*_canStartDrag(deltaY) {
-        if (!this.scrollContainer) return true;
-        const scrollTop = this.scrollContainer.scrollTop;
-        const maxScroll = this.scrollContainer.scrollHeight - this.scrollContainer.clientHeight;
-        
-        if (deltaY > 0) return scrollTop <= 0; // کشیدن به پایین فقط در صورت بالای اسکرول بودن
-        if (deltaY < 0) return scrollTop >= maxScroll;
-        return true;
-    }*/
-    _canStartDrag(deltaY) {
-        if (!this.scrollContainer) return true;
-        
-        const scrollTop = this.scrollContainer.scrollTop;
-        
-        // اگر کاربر در حال اسکرول به سمت پایین (مشاهده بندهای بعدی) است، شیت نباید درگ شود
-        if (deltaY > 0) {
-            return scrollTop <= 0;
-        }
-        
-        // اگر کاربر به سمت بالا اسکرول می‌کند، فقط زمانی درگ فعال شود که اسکرول باکس کاملاً در بالا (0) باشد
-        if (deltaY < 0) {
-            return scrollTop <= 0;
-        }
-        
-        return true;
-    }
     
     /*==================================================
         Content & Helpers
@@ -418,7 +379,7 @@ class BottomSheet {
     setContent(content) {
         this.content.innerHTML = "";
         if (content instanceof HTMLElement) this.content.appendChild(content);
-        else this.content.innerHTML = content;
+        else this.content.innerHTML = content ?? "";
         this.emit("contentChanged");
         return this;
     }
@@ -433,8 +394,7 @@ class BottomSheet {
         actions.forEach(action => {
             const button = document.createElement("button");
             button.type = "button";
-            button.className = "bs-btn " + (action.className || "");
-            if (action.primary) button.classList.add("bs-btn-primary");
+            button.className = action.className || "";
             button.innerHTML = action.html || action.text;
             button.addEventListener("click", e => {
                 if (action.close !== false) this.close();
@@ -458,6 +418,7 @@ class BottomSheet {
     }
     
     lock() {
+        this.drag.active = false;
         this.sheet.classList.add("bs-locked");
     }
     
@@ -472,6 +433,15 @@ class BottomSheet {
     destroy() {
         window.removeEventListener("resize", this._resizeHandler);
         document.removeEventListener("keydown", this._escHandler);
+        
+        window.removeEventListener("pointermove", this._boundPointerMove);
+        window.removeEventListener("pointerup", this._boundPointerUp);
+        window.removeEventListener("pointercancel", this._boundPointerUp);
+        
+        if (BottomSheet.activeSheet === this) {
+            BottomSheet.activeSheet = null;
+        }
+        
         this.root.remove();
         this.events = {};
     }

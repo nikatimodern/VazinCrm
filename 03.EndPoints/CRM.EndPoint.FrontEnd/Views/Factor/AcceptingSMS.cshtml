@@ -21,171 +21,9 @@
     <link rel="stylesheet" href="~/lib/viewerJs/css/viewer.min.css" />
 
     <link rel="stylesheet" href="~/css/site.css?v=5.3.1" />
-    <link href="~/css/bottom-sheet.css" rel="stylesheet" />
-    <style>
+    <link rel="stylesheet" href="~/css/acceptingSms.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/bottom-sheet.css" asp-append-version="true" />
 
-        body {
-            color: #333;
-            background-color: #f7f7f7;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100dvh;
-        }
-
-
-        .form-label {
-            margin-bottom: .25rem;
-            font-size: 13px;
-        }
-
-
-        .status-box {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding-block: 12px;
-        }
-
-
-        .status-box img {
-            height: 60px;
-            margin-bottom: 4px;
-        }
-
-
-        .container-main {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            max-width: 650px;
-            margin: 12px;
-            padding: 8px 16px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, .08);
-            background-color: #fff;
-            border-radius: 12px;
-        }
-
-
-        .info-box {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
-        }
-
-
-        .info-box div {
-            text-align: center;
-            flex: 1;
-        }
-
-
-        .info-title {
-            font-size: 13px;
-            color: #888;
-        }
-
-
-        .info-value {
-            font-family: IRANSansBold;
-            font-size: 16px;
-            color: #222;
-        }
-
-
-        .pdf-link {
-            color: #0d6efd;
-            cursor: pointer;
-            font-family: IRANSansBold;
-            text-align: center;
-            padding: 8px;
-            border-bottom: 1px solid #eee;
-        }
-
-
-        .pdf-link svg {
-            width: 20px;
-            margin-left: 6px;
-            vertical-align: middle;
-        }
-
-
-        #btnSubmitAcceptForm:disabled {
-            opacity: 0.5;
-        }
-
-
-        .signature-box {
-            position: relative;
-            margin-top: 8px;
-        }
-
-
-        canvas {
-            border: 2px dashed #ccc;
-            border-radius: 12px;
-            background: #fafafa;
-            width: 100%;
-            height: 240px;
-        }
-
-
-        .clear-btn {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 50%;
-            padding: 6px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, .1);
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-
-        .clear-btn:hover {
-            background: #f8f9fa;
-            border-color: #bbb;
-        }
-
-
-        .brand {
-            text-align: center;
-            padding: 15px;
-            font-size: 11px;
-            border-top: 1px solid #eee;
-            margin-top: 10px;
-        }
-
-
-        .swal2-title {
-            font-size: 18px;
-        }
-
-
-        .swal2-popup {
-            border-radius: 16px;
-        }
-
-
-        .swal2-html-container {
-            font-size: 15px;
-            margin-bottom: 10px;
-        }
-
-
-        label[for]:has(+ input[required])::after,
-        label[for]:has(+ textarea[required])::after {
-            content: " *";
-            color: red;
-        }
-
-    </style>
 </head>
 <body dir="rtl">
 <div id="FLshowLoading" style="z-index: 9000;position: fixed;inset: 0;height:100dvh;display:none">
@@ -305,7 +143,7 @@
                 </div>
                 <div class="form-check bootstrap-only mb-2 text-justify">
                     <input type="checkbox" class="form-check-input" id="chkAccept">
-                    <label class="form-check-label fbold" style="font-size: 12px" for="chkAccept">
+                    <label class="form-check-label fbold" style="font-size: 12px" >
                         خریدار اقرار می‌نماید که مفاد پیش‌فاکتور و
                         <a href="javascript:void(0)" id="toggleTermsBtn" class="text-decoration-underline">«شرایط و توضیحات تکمیلی»</a>
                         پیوست آن را به‌طور کامل مطالعه نموده و پذیرفته است؛ این تأیید به منزله پذیرش کامل و لازم‌الاجرا بودن کلیه مفاد پیش‌فاکتور و پیوست آن خواهد بود.
@@ -410,7 +248,7 @@
 <script src="~/lib/viewerJs/js/viewer.min.js"></script>
 <script src="~/js/UploadFile.js?v=5.3.1"></script>
 <script src="~/js/site.js?v=5.3.1"></script>
-<script src="~/js/bottom-sheet.js"></script>
+<script src="~/js/bottom-sheet.js" asp-append-version="true"></script>
 
 
 <script>
@@ -425,7 +263,7 @@
     const preFactorTerms = [
         {
             id: 1,
-            text: "این پیش‌فاکتور پس از واریز 'مبلغ پیش‌پرداخت توافق‌شده' به منزله تأیید نهایی خریدار محسوب و لازم‌الاجرا بوده و مبنای انجام سفارش خواهد بود.",
+            text: `این پیش‌فاکتور پس از واریز "مبلغ پیش‌پرداخت توافق‌شده" به منزله تأیید نهایی خریدار محسوب و لازم‌الاجرا بوده و مبنای انجام سفارش خواهد بود.`,
         },
         {
             id: 2,
@@ -487,24 +325,22 @@
     const termsSheet = new BottomSheet({
         title: "شرایط و توضیحات تکمیلی",
         content: generateTermsHtml(preFactorTerms),
-        snapPoints: [0.65, 0.9],
-        className: "terms-bottom-sheet",
+        snapPoints: [0.8, 1],
     });
 
     termsSheet.setActions([
         {
-            text: "بندها را مطالعه کردم و قبول دارم",
-            className: "w-100 btn-accept-terms",
-            primary: true,
+            text: "مفاد پیش‌فاکتور و پیوست آن را مطالعه کرده و می‌پذیرم.",
+            className: "w-100 btn btn-primary rounded-pill",
             close: true,
-            onClick: function(e, button) {
-                const chkAccept = document.getElementById('chkAccept');
-                if(chkAccept) {
+            onClick: function (e, button) {
+                const chkAccept = document.getElementById("chkAccept");
+                if (chkAccept) {
                     chkAccept.checked = true;
-                    document.getElementById('btnSubmitAcceptForm').disabled = false;
+                    document.getElementById("btnSubmitAcceptForm").disabled = false;
                 }
-            }
-        }
+            },
+        },
     ]);
 
 

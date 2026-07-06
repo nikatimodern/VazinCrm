@@ -2084,7 +2084,7 @@ a {
 
 a:hover {
   /*color: rgb(141, 147, 0) !important;*/
-  color: inherit !important;
+  /* color: inherit !important; */
 }
 
 
