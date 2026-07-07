@@ -1,33 +1,64 @@
+/**
+ * @typedef {Object} BottomSheetAction
+ * @property {string} [text] - The text label for the button.
+ * @property {string} [html] - HTML content to inject inside the button (takes precedence over text).
+ * @property {string} [className] - CSS classes to apply to the button.
+ * @property {boolean} [close=true] - If false, prevents the BottomSheet from closing automatically when the button is clicked.
+ * @property {function(BottomSheet, MouseEvent, HTMLButtonElement): void} [onClick] - Callback function triggered on button click.
+ */
+
+/**
+ * @typedef {Object} BottomSheetOptions
+ * @property {string|HTMLElement} [title=""] - The title text or element shown in the header.
+ * @property {string|HTMLElement} [content=""] - The main content body text or element.
+ * @property {boolean} [closeOnOverlay=true] - Close the sheet when clicking on the dark backdrop.
+ * @property {boolean} [closeOnEsc=true] - Close the sheet when pressing the 'Escape' key.
+ * @property {boolean} [showCloseButton=true] - Render the default 'X' close button in the header.
+ * @property {boolean} [destroyOnClose=false] - Completely remove DOM elements and events from memory upon closing.
+ * @property {string} [className=""] - Custom CSS class added to the `.bs-sheet` container.
+ * @property {number[]} [snapPoints=[0.8, 1]] - Sorted array of heights (decimals between 0 and 1) representing viewport ratios.
+ */
+
+/**
+ * A highly performant, production-ready BottomSheet component featuring smooth
+ * momentum-based snapping, touch/mouse dragging gestures, and flexible lifecycle events.
+ */
+
 class BottomSheet {
-    
+    /** @type {BottomSheet|null} Reference to the currently active/open sheet instance in the DOM. */
     static activeSheet = null;
+    
+    /** @type {number} Duration of the opening/closing CSS transition animations in milliseconds. */
     static ANIMATION = 350;
     
+    /**
+     * Creates an instance of BottomSheet.
+     * @param {BottomSheetOptions} [options={}] - Configuration options for the instance.
+     */
     constructor(options = {}) {
+        /** @type {BottomSheetOptions} */
         this.options = {
             title: "",
             content: "",
             closeOnOverlay: true,
             closeOnEsc: true,
+            showCloseButton: true,
             destroyOnClose: false,
             className: "",
-            snapPoints: [0.5, 0.85], // نقاط توقف (مثلاً ۵۰٪ و ۸۵٪ ارتفاع صفحه)
+            snapPoints: [0.8, 1],
             ...options,
         };
         
         this.events = {};
         this.isOpen = false;
         
-        this._create();
-        this._setSnapPoints(this.options.snapPoints);
-        this._initGesture();
-        this._bindEvents();
+        this.#create();
+        this.#setSnapPoints(this.options.snapPoints);
+        this.#initGesture();
+        this.#bindEvents();
     }
     
-    /*==============================
-        Create
-    ==============================*/
-    _create() {
+    #create() {
         this.root = document.createElement("div");
         this.root.className = "bs";
         
@@ -37,9 +68,11 @@ class BottomSheet {
                 <div class="bs-handle"></div>
                 <div class="bs-header">
                     <div class="bs-title"></div>
-                    <button class="bs-close" type="button">
-                        <svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg>
-                    </button>
+                    ${this.options.showCloseButton ? `
+                        <button class="bs-close" type="button">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg>
+                        </button>
+                    ` : ""}
                 </div>
                 <div class="bs-content"></div>
                 <div class="bs-footer"></div>
@@ -59,14 +92,9 @@ class BottomSheet {
         this.setContent(this.options.content);
     }
     
-    /*==============================
-        Events
-    ==============================*/
-    
     emit(name, data) {
         const list = this.events[name];
         if (!list) return;
-        
         for (const fn of list) {
             try {
                 fn(data);
@@ -76,9 +104,6 @@ class BottomSheet {
         }
     }
     
-    /*==============================
-        Public Methods
-    ==============================*/
     open() {
         if (this.isOpen) return;
         
@@ -90,36 +115,35 @@ class BottomSheet {
         this.emit("beforeOpen");
         
         document.body.classList.add("bs-lock");
-        this.root.style.display = "block"; // اطمینان از دیده شدن دیاموند
+        this.root.style.display = "block";
         
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 this.root.classList.add("show");
-                this._animateSnap(); // اعمال ارتفاع اولین Snap Point
+                this.#animateSnap();
             });
         });
         
         this.isOpen = true;
         this.emit("open");
-        
-        window.addEventListener("resize", this._resizeHandler);
+        window.addEventListener("resize", this.#resizeHandler);
     }
     
     close() {
-        if (!this.isOpen) return;
-        if (this.isClosing) return;
+        if (!this.isOpen || this.isClosing) return;
         this.isClosing = true;
         
         this.emit("beforeClose");
-        
         this.root.classList.remove("show");
-        this.sheet.style.transform = "translateY(100%)"; // هدایت به پایین صفحه
+        
+        // هدایت مستقیم به پایین صفحه بر اساس محاسبات پیکسل
+        const currentHeight = this.#getSnapHeight();
+        this.sheet.style.transform = `translateY(${currentHeight}px)`;
         document.body.classList.remove("bs-lock");
         
         this.isOpen = false;
         BottomSheet.activeSheet = null;
-        
-        window.removeEventListener("resize", this._resizeHandler);
+        window.removeEventListener("resize", this.#resizeHandler);
         
         setTimeout(() => {
             this.emit("close");
@@ -132,44 +156,34 @@ class BottomSheet {
         }, BottomSheet.ANIMATION);
     }
     
-    /*==============================
-        Private & Bindings
-    ==============================*/
-    _bindEvents() {
-        this.closeBtn.onclick = () => this.close();
-        
+    #bindEvents() {
+        if (this.options.showCloseButton) {
+            this.closeBtn.onclick = () => this.close();
+        }
         if (this.options.closeOnOverlay) {
             this.overlay.onclick = () => this.close();
         }
-        
         this._escHandler = e => {
             if (this.options.closeOnEsc && e.key === "Escape" && this.isOpen) {
                 this.close();
             }
         };
-        
         document.addEventListener("keydown", this._escHandler);
     }
     
-    _resizeHandler = () => {
+    #resizeHandler = () => {
         if (!this.isOpen) return;
-        this._animateSnap();
+        this.#animateSnap();
     };
     
     /*==================================================
-        Gesture & Dragging
+        Gesture Engine
     ==================================================*/
-    
-    /*==================================================
-        Gesture & Dragging (اصلاح شده)
-    ==================================================*/
-    _initGesture() {
+    #initGesture() {
         this.drag = {
             active: false,
             startY: 0,
             currentY: 0,
-            startTranslate: 0,
-            translate: 0,
             velocity: 0,
             lastY: 0,
             lastTime: 0,
@@ -179,11 +193,11 @@ class BottomSheet {
         const handle = this.sheet.querySelector(".bs-handle");
         const header = this.sheet.querySelector(".bs-header");
         
-        if (handle) handle.addEventListener("pointerdown", this._pointerDown.bind(this));
-        if (header) header.addEventListener("pointerdown", this._pointerDown.bind(this));
+        if (handle) handle.addEventListener("pointerdown", this.#pointerDown.bind(this));
+        if (header) header.addEventListener("pointerdown", this.#pointerDown.bind(this));
     }
     
-    _pointerDown(e) {
+    #pointerDown(e) {
         if (e.button !== undefined && e.button !== 0) return;
         if (this.isLocked()) return;
         
@@ -195,42 +209,29 @@ class BottomSheet {
         this.drag.pointerId = e.pointerId;
         this.drag.active = true;
         this.drag.startY = e.clientY;
-        this.drag.currentY = e.clientY;
         this.drag.lastY = e.clientY;
         this.drag.lastTime = performance.now();
         this.drag.velocity = 0;
-        this.drag.startTranslate = this.drag.translate || 0;
         
         this.drag.captureTarget = e.currentTarget;
         this.drag.captureTarget.setPointerCapture(e.pointerId);
         this.sheet.classList.add("bs-dragging");
         
-        this._boundPointerMove = this._pointerMove.bind(this);
-        this._boundPointerUp = this._pointerUp.bind(this);
+        this._boundPointerMove = this.#pointerMove.bind(this);
+        this._boundPointerUp = this.#pointerUp.bind(this);
         
         window.addEventListener("pointermove", this._boundPointerMove);
         window.addEventListener("pointerup", this._boundPointerUp);
         window.addEventListener("pointercancel", this._boundPointerUp);
     }
     
-    _pointerMove(e) {
-        if (!this.drag.active) return;
-        if (e.pointerId !== this.drag.pointerId) return;
+    #pointerMove(e) {
+        if (!this.drag.active || e.pointerId !== this.drag.pointerId) return;
         
-        const delta = e.clientY - this.drag.startY;
+        const deltaY = e.clientY - this.drag.startY;
         
-        let translate = this.drag.startTranslate + delta;
+        this.#updateSheetDragStyle(deltaY);
         
-        // حالت کشسانی به سمت بالا (مقاومت تاچ)
-        if (translate < 0) {
-            translate *= 0.25;
-        }
-        
-        this.drag.translate = translate;
-        this.sheet.style.transform = `translateY(${translate}px)`;
-        if (this.currentSnap === this.snapPoints.length - 1 && translate > 0) {
-            this.sheet.classList.remove("bs-full");
-        }
         const now = performance.now();
         const dt = now - this.drag.lastTime;
         if (dt > 0) {
@@ -243,10 +244,8 @@ class BottomSheet {
         this.emit("drag", { translate, velocity: this.drag.velocity });
     }
     
-    _pointerUp(e) {
-        if (!this.drag.active) return;
-        if (e.pointerId !== this.drag.pointerId) return;
-        
+    #pointerUp(e) {
+        if (!this.drag.active || e.pointerId !== this.drag.pointerId) return;
         this.drag.active = false;
         
         try {
@@ -260,95 +259,95 @@ class BottomSheet {
         
         this.sheet.classList.remove("bs-dragging");
         
-        this.drag.pointerId = null;
-        this.drag.captureTarget = null;
-        
-        this._finishGesture();
+        // محاسبه جابه‌جایی نهایی بر اساس تفاوت مختصات کنونی و اولیه
+        const finalTranslate = e.clientY - this.drag.startY;
+        this.#finishGesture(finalTranslate);
     }
     
-    /*_finishGesture() {
+    #updateSheetDragStyle(translate) {
+        if (translate < 0) {
+            translate *= 0.2; // افکت کشسانی سقف (Rubber-banding)
+        }
+        
+        // بهبود تجربه کاربری: اگر کاربر حتی ۱ پیکسل رو به پایین بکشد، بورد ردیوس فوراً برمی‌گردد
+        if (translate > 1) {
+            this.sheet.classList.remove("bs-full");
+        }
+        
+        this.sheet.style.transform = `translateY(${translate}px)`;
+    }
+    
+    #finishGesture(translate) {
         const velocity = this.drag.velocity;
-        const translate = this.drag.translate;
-        const height = this.sheet.offsetHeight;
+        const currentHeight = this.#getSnapHeight();
         
-        // اگر با سرعت به سمت پایین کشید -> بسته شود
-        if (velocity > 0.5) {
-            this.close();
-            return;
-        }
-        
-        // اگر با سرعت به سمت بالا پرتاب کرد (Flick کرد) -> رفتن به حداکثر ارتفاع
-        if (velocity < -0.5) {
-            this.expand();
-            return;
-        }
-        
-        // اگر بیش از 45 درصد ارتفاع کل شیت به پایین کشیده شد -> بسته شود
-        if (translate > height * 0.45) {
-            this.close();
-            return;
-        }
-        
-        // در غیر این صورت، بر اساس متد حساسیت جدید، نزدیک‌ترین اسنپ را پیدا کن
-        this.currentSnap = this._findNearestSnap(translate);
-        this._animateSnap();
-    }*/
-    _finishGesture() {
-        const velocity = this.drag.velocity;
-        const translate = this.drag.translate;
-        const height = this.sheet.offsetHeight;
-        
-        // اگر با سرعت زیاد به پایین کشیده شد -> بسته شود
+        // ۱. اگر سرعت حرکت رو به پایین زیاد بود -> بستن فوری
         if (velocity > 0.8) {
             this.close();
             return;
         }
         
-        // اگر بیش از ۴۵ درصد کل ارتفاع به پایین کشیده شد -> بسته شود
-        if (translate > height * 0.45) {
+        // ۲. اگر سرعت حرکت رو به بالا زیاد بود -> جهش به اسنپ‌پوینت بالاتر
+        if (velocity < -0.8 && this.currentSnap < this.snapPoints.length - 1) {
+            this.currentSnap++;
+            this.#animateSnap();
+            return;
+        }
+        
+        // ۳. تصمیم‌گیری بر اساس موقعیت (آیا از مرز اسنپ‌پوینت‌ها رد شده‌ایم؟)
+        const targetVisualHeight = currentHeight - translate;
+        const totalHeight = window.innerHeight;
+        
+        // اگر کاربر کاملاً کشیده پایین، بجای قفل شدن روی اسنپ‌پوینت صفر، بسته شود
+        if (targetVisualHeight < totalHeight * (this.snapPoints[0] / 2)) {
             this.close();
             return;
         }
         
-        this.currentSnap = this._resolveSnap(translate);
-        this._animateSnap();
+        // پیدا کردن نزدیک‌ترین اسنپ پوینت به موقعیت فعلی دست کاربر
+        let nearestSnap = 0;
+        let minDist = Infinity;
+        
+        this.snapPoints.forEach((point, idx) => {
+            const snapHeight = totalHeight * point;
+            const dist = Math.abs(snapHeight - targetVisualHeight);
+            if (dist < minDist) {
+                minDist = dist;
+                nearestSnap = idx;
+            }
+        });
+        
+        this.currentSnap = nearestSnap;
+        this.#animateSnap();
     }
     
     /*==================================================
         Snap Points Engine
     ==================================================*/
-    _setSnapPoints(points) {
+    #setSnapPoints(points) {
         this.snapPoints = [...points].filter(v => v > 0 && v <= 1).sort((a, b) => a - b);
         if (!this.snapPoints.length) this.snapPoints = [1];
-        this.currentSnap = 0; // شروع از کمترین ارتفاع هندل شده
+        this.currentSnap = 0;
     }
     
-    _getSnapHeight(index = this.currentSnap) {
-        const h = window.innerHeight * this.snapPoints[index];
-        
-        return Math.min(window.innerHeight, h);
+    #getSnapHeight(index = this.currentSnap) {
+        return Math.min(window.innerHeight, window.innerHeight * this.snapPoints[index]);
     }
     
-    
-    _resolveSnap(translate) {
-        const threshold = Math.min(80, window.innerHeight * 0.07);
-        
-        let nearest = this.currentSnap;
-        if (translate < -threshold && this.currentSnap < this.snapPoints.length - 1) {
-            nearest++;
-        } else if (translate > threshold && this.currentSnap > 0) {
-            nearest--;
-        }
-        
-        return nearest;
+    #checkFullScreenCondition() {
+        const currentTargetPoint = this.snapPoints[this.currentSnap];
+        const isViewportFullScreen = currentTargetPoint === 1;
+        this.sheet.classList.toggle("bs-full", isViewportFullScreen);
     }
     
-    _animateSnap() {
-        const height = this._getSnapHeight();
-        this.sheet.classList.toggle("bs-full", this.currentSnap === this.snapPoints.length - 1);
+    #animateSnap() {
+        const height = this.#getSnapHeight();
+        
+        this.#checkFullScreenCondition();
+        
+        // اعمال هم‌زمان تغییر ارتفاع و ریست کردن ترنسلیت
         this.sheet.style.height = `${height}px`;
         this.sheet.style.transform = "translateY(0)";
-        this.drag.translate = 0;
         
         this.emit("snap", { index: this.currentSnap, height });
     }
@@ -357,7 +356,7 @@ class BottomSheet {
         if (index < 0) index = 0;
         if (index >= this.snapPoints.length) index = this.snapPoints.length - 1;
         this.currentSnap = index;
-        this._animateSnap();
+        this.#animateSnap();
     }
     
     expand() {
@@ -369,13 +368,10 @@ class BottomSheet {
     }
     
     toggle() {
-        if (this.currentSnap === this.snapPoints.length - 1) this.collapse(); else this.expand();
+        if (this.currentSnap === this.snapPoints.length - 1) this.collapse();
+        else this.expand();
     }
     
-    
-    /*==================================================
-        Content & Helpers
-    ==================================================*/
     setContent(content) {
         this.content.innerHTML = "";
         if (content instanceof HTMLElement) this.content.appendChild(content);
@@ -431,17 +427,9 @@ class BottomSheet {
     }
     
     destroy() {
-        window.removeEventListener("resize", this._resizeHandler);
+        window.removeEventListener("resize", this.#resizeHandler);
         document.removeEventListener("keydown", this._escHandler);
-        
-        window.removeEventListener("pointermove", this._boundPointerMove);
-        window.removeEventListener("pointerup", this._boundPointerUp);
-        window.removeEventListener("pointercancel", this._boundPointerUp);
-        
-        if (BottomSheet.activeSheet === this) {
-            BottomSheet.activeSheet = null;
-        }
-        
+        if (BottomSheet.activeSheet === this) BottomSheet.activeSheet = null;
         this.root.remove();
         this.events = {};
     }

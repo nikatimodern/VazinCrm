@@ -1877,23 +1877,23 @@ const showMobileModal = async (id, type, dealId) => {
     typeSubmitSmsSendPf = type;
     dealIdSubmitSmsSendPf = dealId;
     try {
-        $("#MobileModal").modal("show");
+        ModalToggle("MobileModal")
         smsSendedPfId = id;
         const res = await axios(`/factor/GetCustomerPhone/${id}`);
         if (res.status === 200) {
-            $("#mobileid").val(res.data);
+            document.getElementById("mobileid").value = res.data;
         }
         
     } catch (err) {
         console.log(err);
-        setTimeout(() => showMobileModal(id), 3000);
+        setTimeout(async () => await showMobileModal(id), 3000);
     }
 };
 
 const SendToCustomer = async () => {
     try {
         FLshowLoading();
-        const toNumber = $("#mobileid").val();
+        const toNumber = document.getElementById("mobileid").value;
         const res = await axios(`/Factor/SendToCustomer?id=${smsSendedPfId}&toNumber=${toNumber}`);
         if (res.status === 200) {
             if (typeSubmitSmsSendPf === 1) {

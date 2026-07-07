@@ -143,10 +143,10 @@
                 </div>
                 <div class="form-check bootstrap-only mb-2 text-justify">
                     <input type="checkbox" class="form-check-input" id="chkAccept">
-                    <label class="form-check-label fbold" style="font-size: 12px" >
-                        خریدار اقرار می‌نماید که مفاد پیش‌فاکتور و
+                    <label class="form-check-label fbold" style="font-size: 12px" for="chkAccept">
+                        مفاد پیش‌فاکتور و
                         <a href="javascript:void(0)" id="toggleTermsBtn" class="text-decoration-underline">«شرایط و توضیحات تکمیلی»</a>
-                        پیوست آن را به‌طور کامل مطالعه نموده و پذیرفته است؛ این تأیید به منزله پذیرش کامل و لازم‌الاجرا بودن کلیه مفاد پیش‌فاکتور و پیوست آن خواهد بود.
+                        پیوست آن را به‌طور کامل مطالعه کرده و می‌پذیرم.
                     </label>
                 </div>
 
@@ -325,21 +325,22 @@
     const termsSheet = new BottomSheet({
         title: "شرایط و توضیحات تکمیلی",
         content: generateTermsHtml(preFactorTerms),
-        snapPoints: [0.8, 1],
+        showCloseButton: false,
+
     });
 
     termsSheet.setActions([
         {
-            text: "مفاد پیش‌فاکتور و پیوست آن را مطالعه کرده و می‌پذیرم.",
+            text: "بستن",
             className: "w-100 btn btn-primary rounded-pill",
             close: true,
-            onClick: function (e, button) {
+            @*onClick: function (e, button) {
                 const chkAccept = document.getElementById("chkAccept");
                 if (chkAccept) {
                     chkAccept.checked = true;
                     document.getElementById("btnSubmitAcceptForm").disabled = false;
                 }
-            },
+            },*@
         },
     ]);
 

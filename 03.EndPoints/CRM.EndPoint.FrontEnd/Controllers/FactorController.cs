@@ -519,10 +519,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             if (id == Guid.Empty)
             {
-                return null;
+                return BadRequest();
             }
 
-            var pf = db.PreFactors.Where(f => f.Id == id).FirstOrDefaultAsync().Result;
+            var pf = await db.PreFactors.Where(f => f.Id == id).FirstOrDefaultAsync();
+            if (pf == null) return NotFound();
+
             string cusMobile;
             if (pf.CustomerId != null)
             {
