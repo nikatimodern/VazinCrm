@@ -37,6 +37,4 @@ public class CallRecording : BaseEntity {
     public string AiError { get; set; }
     public string AvanegarRequestId { get; set; }
     public int AvanegarAttempts { get; set; }
-    public DateTime? LastTrackDate { get; set; }
-    public DateTime? NextTrackDate { get; set; }
 }

@@ -509,17 +509,11 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime?>("LastTrackDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime?>("ModifyDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ModifyDateTxt")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("NextTrackDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Product")
                         .HasColumnType("nvarchar(max)");

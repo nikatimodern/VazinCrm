@@ -93,7 +93,6 @@ public class AiService(
         }
 
         call.AvanegarAttempts++;
-        call.LastTrackDate = DateTime.Now;
         await UpdateStatus(call, AiProcessStatusEnum.TrackingAvanegar, ct: ct);
 
         var result = await viraAi.TrackRequest(call.AvanegarRequestId, ct);
