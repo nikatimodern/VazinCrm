@@ -2811,11 +2811,22 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> getItemsDescription()
+        public async Task<IActionResult> getItemsDescription(BaseDescriptionTypeEnum? type = null)
         {
             try
             {
-                var items = await db.BaseDescriptions.OrderBy(f => f.Order).Select(f => new { f.Text, f.Official, f.Type }).ToListAsync();
+                var query = db.BaseDescriptions.AsQueryable();
+
+                if (type.HasValue)
+                {
+                    query = query.Where(f => f.Type == type);
+                }
+
+                var items = await query
+                    .OrderBy(f => f.Order)
+                    .Select(f => new { f.Text, f.Official, f.Type })
+                    .ToListAsync();
+
                 return Ok(items);
             }
             catch

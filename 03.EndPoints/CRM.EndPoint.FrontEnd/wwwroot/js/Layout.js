@@ -310,15 +310,17 @@ const closeModalAmount = () => {
 };
 
 
-const getbaseDescription = async () => {
-    return new Promise((resolve) => {
-        $.get("/Factor/getItemsDescription", (res) => {
-            resolve(res);
-        })
-         .fail(() => {
-             getbaseDescription();
-         });
-    });
+const getBaseDescription = async (type = null) => {  // 0: preFactor | 1: Factor
+    try {
+        const res = await axios(`/Factor/getItemsDescription?type=${type}`)
+        if (res.status === 200) {
+            return res.data
+        }
+        return null;
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
 };
 
 
