@@ -16,7 +16,8 @@
  * @property {boolean} [showCloseButton=true] - Render the default 'X' close button in the header.
  * @property {boolean} [destroyOnClose=false] - Completely remove DOM elements and events from memory upon closing.
  * @property {string} [className=""] - Custom CSS class added to the `.bs-sheet` container.
- * @property {number[]} [snapPoints=[0.8, 1]] - Sorted array of heights (decimals between 0 and 1) representing viewport ratios.  Default: [0.8, 1]
+ * @property {number[]} [snapPoints=[]] - Sorted array of heights (decimals between 0 and 1) representing viewport ratios.
+ * @property {BottomSheetAction[]} [actions=[]] - Default action buttons to render in the footer.
  */
 
 /**
@@ -30,6 +31,9 @@ class BottomSheet {
     
     /** @type {number} Duration of the opening/closing CSS transition animations in milliseconds. */
     static ANIMATION = 350;
+    
+    /** @type {number} The maximum viewport height ratio allowed for dynamic content sheets (default 95%). */
+    static MAX_SNAP = 0.95;
     
     /**
      * Creates an instance of BottomSheet.
@@ -45,7 +49,8 @@ class BottomSheet {
             showCloseButton: true,
             destroyOnClose: false,
             className: "",
-            snapPoints: [0.8, 1],
+            snapPoints: [],
+            actions: [],
             ...options,
         };
         
@@ -55,8 +60,11 @@ class BottomSheet {
         /** @type {boolean} Indicates whether the sheet is currently open. */
         this.isOpen = false;
         
+        this.hasSnap = this.options.snapPoints && this.options.snapPoints.length > 0;
+        
         this.#create();
-        this.#setSnapPoints(this.options.snapPoints);
+        this.#setupStaticSnaps();
+        this.setActions(this.options.actions);
         this.#initGesture();
         this.#bindEvents();
     }
@@ -135,6 +143,12 @@ class BottomSheet {
         document.body.classList.add("bs-lock");
         this.root.style.display = "block";
         
+        this.currentSnap = 0;
+        
+        if (!this.hasSnap) {
+            this.#setupDynamicSnap();
+        }
+        
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 this.root.classList.add("show");
@@ -160,7 +174,7 @@ class BottomSheet {
         this.emit("beforeClose");
         this.root.classList.remove("show");
         
-        const currentHeight = this.#getSnapHeight();
+        const currentHeight = this.sheet.offsetHeight;
         this.sheet.style.transform = `translateY(${currentHeight}px)`;
         document.body.classList.remove("bs-lock");
         
@@ -302,7 +316,8 @@ class BottomSheet {
         
         try {
             this.drag.captureTarget.releasePointerCapture(this.drag.pointerId);
-        } catch (err) {}
+        } catch (err) {
+        }
         
         window.removeEventListener("pointermove", this._boundPointerMove);
         window.removeEventListener("pointerup", this._boundPointerUp);
@@ -379,16 +394,6 @@ class BottomSheet {
         Snap Points Engine
     ==================================================*/
     
-    /**
-     * Cleans up, filters, and saves valid viewport snap ratio coordinates.
-     * @param {number[]} points - Array containing height percentages (0 to 1).
-     * @private
-     */
-    #setSnapPoints(points) {
-        this.snapPoints = [...points].filter(v => v > 0 && v <= 1).sort((a, b) => a - b);
-        if (!this.snapPoints.length) this.snapPoints = [1];
-        this.currentSnap = 0;
-    }
     
     /**
      * Converts a ratio into an exact pixel height based on current viewport bounds.
@@ -398,6 +403,37 @@ class BottomSheet {
      */
     #getSnapHeight(index = this.currentSnap) {
         return Math.min(window.innerHeight, window.innerHeight * this.snapPoints[index]);
+    }
+    
+    /**
+     * Filters, validates, and stores user-defined static snap points.
+     * Called exactly once during initialization.
+     * @private
+     */
+    #setupStaticSnaps() {
+        if (!this.hasSnap) return;
+        
+        let points = [...this.options.snapPoints].filter(v => typeof v === "number" && v > 0 && v <= 1).sort((a, b) => a - b);
+        if (!points.length) points = [BottomSheet.MAX_SNAP];
+        
+        this.snapPoints = points;
+    }
+    
+    /**
+     * Dynamically computes a single snap point ratio based on the total rendered layout height.
+     * Used strictly for content-driven sheets without fixed snap points.
+     * @private
+     */
+    #setupDynamicSnap() {
+        const headerH = this.sheet.querySelector(".bs-header")?.offsetHeight || 0;
+        const contentH = this.content.scrollHeight || 0;
+        const footerH = this.footer?.offsetHeight || 0;
+        const handleH = 24;
+        
+        const totalContentHeight = headerH + contentH + footerH + handleH;
+        const contentRatio = Math.min(BottomSheet.MAX_SNAP, totalContentHeight / window.innerHeight);
+        
+        this.snapPoints = [contentRatio];
     }
     
     /**

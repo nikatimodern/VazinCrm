@@ -948,9 +948,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 pfactor.PaymentAmount = pfactor.SumTotalAmount + pfactor.TotalTax - pfactor.Discount - pfactor.ReciveAmount;
                 pfactor.SumTotalAmountTax = pfactor.SumTotalAmount + pfactor.TotalTax - pfactor.Discount;
 
+
+                var terms = await GetBaseDescriptions(BaseDescriptionTypeEnum.PrefactorTerms);
                 var model = new PfactorViewModel {
                     PreFactor = pfactor,
                     Company = myCompany,
+                    TermsPreFactor = terms,
                     _Setting = set,
                     Siq = fileSaver.GetStringImage(pfactor.Signature),
                     Mohr = fileSaver.GetStringImage(myCompany?.CompanyFiles?.FirstOrDefault(f => f.Filename == "Mohr")?.file),
@@ -1764,10 +1767,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             item.UserCreatorID = user.Id;
                             item.UserCreator = user.FullName;
                             db.Attachments.Add(item);
-                            await _logSystemService.LogChange(item, null, LogActionEnum.ثبت, user, null, $"پیوست تایید برای پیش‌فاکتور {pf.SerialNumber}");
+                            await _logSystemService.LogChange(item, null, LogActionEnum.ثبت, user, null,
+                                $"پیوست تایید برای پیش‌فاکتور {pf.SerialNumber}");
                         } else if (item.IsDeleted)
                         {
-                            await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user, null, $"پیوست تایید برای پیش‌فاکتور {pf.SerialNumber}");
+                            await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user, null,
+                                $"پیوست تایید برای پیش‌فاکتور {pf.SerialNumber}");
                             db.Attachments.Update(item);
                         }
                     }
@@ -2097,13 +2102,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-
-               // var date = Convert.ToDateTime("2026-03-21");
-               // var pfs = await db.PreFactors.Where(f => f.DateMiladi > date).Select(f => f.Id).ToListAsync();
+                // var date = Convert.ToDateTime("2026-03-21");
+                // var pfs = await db.PreFactors.Where(f => f.DateMiladi > date).Select(f => f.Id).ToListAsync();
                 var accountancies = await db.Accountancies
                     .NotVosoled()
                     .Where(f => f.CustomerId == cusId)
-                //    .Where(f => pfs.Contains(f.pfid.Value))
+                    //    .Where(f => pfs.Contains(f.pfid.Value))
                     .ToListAsync();
 
                 var pFacPayment = accountancies.Where(f =>
@@ -2124,11 +2128,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var allPrePayment = pFacPayment - returnPayment;
 
                 var facIds = await db.Factors.Where(f =>
-                    f.CustomerId == cusId
-                    && f.status == FactorStatus.تایید_شده
-                    && !f.Returned
-                    && f.ParentReturnedId == null
-                )
+                        f.CustomerId == cusId
+                        && f.status == FactorStatus.تایید_شده
+                        && !f.Returned
+                        && f.ParentReturnedId == null
+                    )
                     //.Where(f => pfs.Contains(f.PfactorID))
                     .Select(f => f.Id)
                     .ToListAsync();
@@ -2811,28 +2815,53 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> getItemsDescription(BaseDescriptionTypeEnum? type = null)
+        public async Task<IActionResult> GetItemsDescription(BaseDescriptionTypeEnum? type = null)
         {
             try
             {
-                var query = db.BaseDescriptions.AsQueryable();
-
-                if (type.HasValue)
-                {
-                    query = query.Where(f => f.Type == type);
-                }
-
-                var items = await query
-                    .OrderBy(f => f.Order)
-                    .Select(f => new { f.Text, f.Official, f.Type })
-                    .ToListAsync();
-
+                var items = await GetBaseDescriptions(type);
                 return Ok(items);
             }
-            catch
+            catch (Exception ex)
             {
-                return Ok();
+                return BadRequest(ex.Message);
             }
+        }
+
+
+        public async Task<IActionResult> GetPrefactorTerms()
+        {
+            try
+            {
+                var items = await GetBaseDescriptions(BaseDescriptionTypeEnum.PrefactorTerms);
+                return Ok(items);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+        private async Task<List<BaseDescriptionVModel>> GetBaseDescriptions(BaseDescriptionTypeEnum? type)
+        {
+            var query = db.BaseDescriptions.AsQueryable();
+
+            if (type.HasValue)
+            {
+                query = query.Where(f => f.Type == type);
+            }
+
+            var items = await query
+                .OrderBy(f => f.Order)
+                .Select(f => new BaseDescriptionVModel {
+                    Text = f.Text,
+                    Official = f.Official,
+                    Type = f.Type
+                })
+                .ToListAsync();
+
+            return items;
         }
 
         [Authorize(Roles = "مدیر ارشد,مدیر مالی,کارشناس مالی")]

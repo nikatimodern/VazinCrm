@@ -310,9 +310,9 @@ const closeModalAmount = () => {
 };
 
 
-const getBaseDescription = async (type = null) => {  // 0: preFactor | 1: Factor
+const getBaseDescription = async (type = null) => {  // 0: preFactor | 1: Factor | 2: termsPrefactor
     try {
-        const res = await axios(`/Factor/getItemsDescription?type=${type}`)
+        const res = await axios(`/Factor/GetItemsDescription?type=${type}`)
         if (res.status === 200) {
             return res.data
         }
