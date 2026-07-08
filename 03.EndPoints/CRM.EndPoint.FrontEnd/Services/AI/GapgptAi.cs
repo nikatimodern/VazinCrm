@@ -14,7 +14,7 @@ namespace CRM.EndPoint.FrontEnd.Services.AI;
 
 public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<GapgptAi> logger) {
     // خلاصه نویسی
-    public async Task<SummaryResult> SummarizeText(string textToSummarize, List<string> userNames, CancellationToken ct) // https://gapgpt.app/platform-v2/tokens
+    public async Task<SummaryResult> SummarizeText(string textToSummarize, List<string> userNames, CancellationToken ct = default) // https://gapgpt.app/platform-v2/tokens
     {
         try
         {

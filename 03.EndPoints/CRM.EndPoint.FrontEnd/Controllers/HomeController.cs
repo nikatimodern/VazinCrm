@@ -41,8 +41,11 @@ using System.IO;
 using System.Net;
 using Renci.SshNet;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 using CRM.EndPoint.FrontEnd.Services.AI;
+using CRM.EndPoint.FrontEnd.Services.Asterisk;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
@@ -59,10 +62,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly UserContextDb udb;
         private readonly Sepidar1ContextDb S1db;
         private readonly ISmsQueue smsQueue;
+        private readonly IssabelService issabelService;
+        private readonly AiPrompts aiPrompts;
+        private readonly ViraAi viraAi;
+        private readonly GapgptAi gapgptAi;
 
         public HomeController(IWebHostEnvironment appEnvironment, TimedHostedService hostService, IConfiguration conf,
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
-            Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue)
+            Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue, IssabelService issabelService,
+            AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi)
         {
             this.appEnvironment = appEnvironment;
             this.hostService = hostService;
@@ -75,6 +83,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.udb = udb;
             this.S1db = S1db;
             this.smsQueue = smsQueue;
+            this.issabelService = issabelService;
+            this.aiPrompts = aiPrompts;
+            this.viraAi = viraAi;
+            this.gapgptAi = gapgptAi;
             this.genService = genService;
         }
 
@@ -84,6 +96,48 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
+                //return null;
+                const string path = "/var/spool/asterisk/monitor/2026/07/08/rg-600-989125381547-20260708-145328-1783506175.161870.wav";
+                var stream = await issabelService.GetAudioWithRetry(path);
+                /*var text = await viraAi.ConvertAudioToText(stream, Path.GetFileName(path), 12);
+
+                var sum = await gapgptAi.SummarizeText(text, ["رضا سلامی"]);
+
+                return null;*/
+                stream.Position = 0;
+                var audioBase64 = Convert.ToBase64String(stream.ToArray());
+                var prompt = aiPrompts.SummarizeCall("", "مهدیه فتحی");
+                var requestBody = new {
+                    model = "gemini-2.5-flash",
+                    messages = new[] {
+                        new {
+                            role = "user",
+                            content = new object[] {
+                                new { type = "text", text = prompt },
+                                new { type = "input_audio", input_audio = new { data = audioBase64, format = "wav" } }
+                            }
+                        }
+                    },
+                    response_format = new { type = "json_object" },
+                    temperature = 0.8,
+                    top_p = 0.7,
+                };
+
+                var client = new HttpClient();
+                client.BaseAddress = new Uri("https://api.gapgpt.app/v1/");
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", "sk-DqOst76fwb3UtC05ZW1mraSTwfsJtz6B8xPpXuWfwCjEm2Uw");
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                client.Timeout = TimeSpan.FromMinutes(5);
+
+                var response = await client.PostAsJsonAsync("chat/completions", requestBody);
+                var raw = await response.Content.ReadAsStringAsync();
+                if (response.IsSuccessStatusCode)
+                {
+                    var resJson = await response.Content.ReadFromJsonAsync<AiGapgptModel>();
+
+                    var content = resJson?.Choices?[0]?.Message?.Content;
+                }
 
 
                 //await db.SaveChangesAsync();
