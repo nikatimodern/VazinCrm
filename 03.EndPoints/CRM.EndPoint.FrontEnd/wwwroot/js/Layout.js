@@ -2743,11 +2743,11 @@ let typeNotAccept;
 const notAcceptCommentElm = document.getElementById("NotAcceptComment");
 
 async function showModalNotAccept(id, type) { // type: acc= 0 / pf= 12 financial | 13 tamin | 14: SaleAdmin
-    notAcceptCommentElm.value = type === 12 ? "پیش‌فاکتور در بررسی تأیید نشد، لطفا اصلاح شود." : "";
+    notAcceptCommentElm.value = "";
     document.getElementById("NotAcceptHeader").textContent = type !== 0 ? "عدم تایید پیش‌فاکتور" : "عدم تایید واریزی";
     idNotAccept = id;
     typeNotAccept = type;
-    $("#NotAcceptModal").modal("toggle");
+    ModalToggle("#NotAcceptModal");
 }
 
 async function submitNotAccept() { // رد تایید و بازگشت | عدم تایید
@@ -2757,9 +2757,10 @@ async function submitNotAccept() { // رد تایید و بازگشت | عدم �
             return;
         }
         
+        const userFullName = `${currentUser?.firstName || ""} ${currentUser?.lastName || ""}`.trim();
         const model = {
             id: idNotAccept,
-            description: `${notAcceptCommentElm.value.trim()} (${document.getElementById("NameUser").textContent.trim()})`,
+            description: `${notAcceptCommentElm.value.trim()} (${userFullName})`,
         };
         
         if (typeNotAccept === 0) { // acc

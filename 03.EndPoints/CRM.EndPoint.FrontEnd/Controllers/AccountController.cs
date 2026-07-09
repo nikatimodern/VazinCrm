@@ -469,8 +469,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             var model = new GetUserLogin {
                 Id = user.Id,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
+                FirstName = user.FirstName?.Trim(),
+                LastName = user.LastName?.Trim(),
                 PersonImageUrl = user.PersonImageUrl,
                 RollName = roles.FirstOrDefault(),
                 RollNames = roles.Select(r => new RoleInfo { Name = roleMap.GetValueOrDefault(r, r), FaName = r }).ToList(),
