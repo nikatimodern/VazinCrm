@@ -97,7 +97,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 //return null;
-                const string path = "/var/spool/asterisk/monitor/2026/07/08/rg-600-989125381547-20260708-145328-1783506175.161870.wav";
+                const string path = "/var/spool/asterisk/monitor/2026/07/08/q-0000-76266369-20260708-175510-1783517086.166630.wav";
                 var stream = await issabelService.GetAudioWithRetry(path);
                 /*var text = await viraAi.ConvertAudioToText(stream, Path.GetFileName(path), 12);
 
@@ -106,7 +106,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 return null;*/
                 stream.Position = 0;
                 var audioBase64 = Convert.ToBase64String(stream.ToArray());
-                var prompt = aiPrompts.SummarizeCall("", "مهدیه فتحی");
+                var prompt = aiPrompts.SummarizeCall("", "دکتر امیر محمد حسین زاده");
                 var requestBody = new {
                     model = "gemini-2.5-flash",
                     messages = new[] {
