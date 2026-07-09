@@ -26,6 +26,7 @@ using CRM.Core.Domain.Transfers.Entities;
 using CRM.Core.Domain.Transfers.Enums;
 using CRM.EndPoint.FrontEnd.Models.LogSystem;
 using Generics.Infrastructures.Sql;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Services;
@@ -787,4 +788,49 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
 
         return (parentNameValue, parentIdValue);
     }
-}
+
+    public async Task<List<LogSystem>> GetEntityLogSystem(string entityName, string entityId)
+    {
+        return await db.logSystems
+            .FromSqlInterpolated($"EXEC dbo.GetEntityLogSystem {entityName}, {entityId}")
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    public async Task<List<LogSystem>> GetEntityTimelineAsync(string entityName, string entityId)
+    {
+        const string sql = @"
+            ;WITH EntityTree AS
+            (
+                SELECT EntityName, EntityId
+                FROM LogSystems
+                WHERE EntityName = @p0 AND EntityId = @p1
+                GROUP BY EntityName, EntityId
+
+                UNION ALL
+
+                SELECT child.EntityName, child.EntityId
+                FROM LogSystems child
+                INNER JOIN EntityTree parent
+                    ON child.ParentEntityName = parent.EntityName
+                   AND child.ParentEntityId = parent.EntityId
+                GROUP BY child.EntityName, child.EntityId
+            )
+
+            SELECT l.*
+            FROM LogSystems l
+            INNER JOIN (
+                SELECT DISTINCT EntityName, EntityId
+                FROM EntityTree
+            ) t
+            ON l.EntityName = t.EntityName
+            AND l.EntityId = t.EntityId
+            ORDER BY l.ChangeTime DESC
+            OPTION (MAXRECURSION 0);
+        ";
+
+        return await db.logSystems
+            .FromSqlRaw(sql, entityName, entityId)
+            .AsNoTracking()
+            .ToListAsync();
+    }}

@@ -2253,21 +2253,29 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("EntityId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("EntityName")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int?>("EntitySerialNumber")
                         .HasColumnType("int");
 
                     b.Property<string>("ParentEntityId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ParentEntityName")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("EntityName", "EntityId");
+
+                    b.HasIndex("ParentEntityName", "ParentEntityId");
 
                     b.ToTable("logSystems");
                 });
