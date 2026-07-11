@@ -315,6 +315,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 pf.UserModifyID = user.Id;
 
                 pf.AcceptedFinancial = null;
+                if (pf.AcceptedTerms == true) pf.AcceptedTerms = false;
                 pf.Accepted = false;
                 pf.Signature = null;
                 pf.SignatureDes = "";
@@ -382,6 +383,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 pf.TaminStepTxt = nameof(TaminStepEnum.تعیین_مبلغ_فروش).Replace("_", " ");
             }
 
+            if (pf.AcceptedTerms == true) pf.AcceptedTerms = false;
             pf.Accepted = false;
             pf.Signature = null;
             pf.SignatureDes = "";
@@ -949,9 +951,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 pfactor.SumTotalAmountTax = pfactor.SumTotalAmount + pfactor.TotalTax - pfactor.Discount;
 
 
-                var terms = pfactor.Accepted && pfactor.AcceptedDate >= new DateTime(2026, 7, 11, 11, 0, 0) // تاریخی که شرایط پیش فاکتور قرار گرفته
-                    ? await GetBaseDescriptions(BaseDescriptionTypeEnum.PrefactorTerms)
-                    : [];
+                var terms = //pfactor.Accepted &&
+                    //pfactor.AcceptedDate >= new DateTime(2026, 7, 11, 11, 0, 0) // تاریخی که شرایط پیش فاکتور قرار گرفته
+                    pfactor.AcceptedTerms != null
+                        ? await GetBaseDescriptions(BaseDescriptionTypeEnum.PrefactorTerms)
+                        : [];
 
 
                 var model = new PfactorViewModel {
@@ -1188,6 +1192,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             pf.Accepted = true;
             pf.AcceptedDate = DateTime.Now;
             pf.AcceptedDateTxt = dtService.GetDateTimePersian();
+            pf.AcceptedTerms = true;
 
             pf.ModifyDate = DateTime.Now;
             pf.ModifyDateTxt = dtService.GetDateTimePersian();
@@ -1289,6 +1294,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             pfactor.Pftype = (int)PreFactorEnum.در_انتظار_تایید_مشتری;
             pfactor.PftypeTxt = Service.GetTypeTxtPfactor(pfactor.Pftype);
             pfactor.Accepted = false;
+            if (pfactor.AcceptedTerms == true) pfactor.AcceptedTerms = false;
             pfactor.CommentText = null;
 
 
@@ -2802,6 +2808,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 model.PftypeTxt = Service.GetTypeTxtPfactor(model.Pftype);
                 model.Accepted = false;
+                model.AcceptedTerms = false;
             }
 
 
@@ -2811,6 +2818,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.Pftype = (int)PreFactorEnum.فاقد_اعتبار;
                 model.PftypeTxt = Service.GetTypeTxtPfactor(model.Pftype);
                 model.Accepted = false;
+                if (model.AcceptedTerms == true) model.AcceptedTerms = false;
             }
 
 

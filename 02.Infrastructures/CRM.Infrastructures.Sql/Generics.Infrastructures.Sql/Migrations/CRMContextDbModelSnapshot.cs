@@ -2653,6 +2653,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<bool?>("AcceptedManagingDirector")
                         .HasColumnType("bit");
 
+                    b.Property<bool?>("AcceptedTerms")
+                        .HasColumnType("bit");
+
                     b.Property<string>("AgentMeliCode")
                         .HasColumnType("nvarchar(max)");
 
