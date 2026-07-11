@@ -59,10 +59,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly UserContextDb udb;
         private readonly Sepidar1ContextDb S1db;
         private readonly ISmsQueue smsQueue;
+        private readonly LogSystemService logSystemService;
 
         public HomeController(IWebHostEnvironment appEnvironment, TimedHostedService hostService, IConfiguration conf,
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
-            Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue)
+            Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue, LogSystemService logSystemService)
         {
             this.appEnvironment = appEnvironment;
             this.hostService = hostService;
@@ -75,6 +76,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.udb = udb;
             this.S1db = S1db;
             this.smsQueue = smsQueue;
+            this.logSystemService = logSystemService;
             this.genService = genService;
         }
 
@@ -84,7 +86,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-
 
                 //await db.SaveChangesAsync();
                 await trans.CommitAsync();
@@ -160,6 +161,21 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var warnings = await db.SystemWarnings.ToListAsync();
             return Ok(warnings);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetEntityLogSystem(string entityName, string entityId)
+        {
+            try
+            {
+                var logs = await logSystemService.GetEntityLogSystemAsync(entityName, entityId);
+                return Ok(logs);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
+                throw;
+            }
         }
 
 
