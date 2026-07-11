@@ -40,7 +40,7 @@
             <p class="mt-2 text-muted">لطفا با کارشناسان فروش تماس بگیرید</p>
         </div>
     } else {
-        if (!Model.PreFactor.Accepted) {
+        if (Model.PreFactor.Accepted) {
             <div class="status-box">
                 <img src="~/Img/accept-icon.png" alt="Accepted" class="mb-2" />
                 <h6 class="mt-2" style="font-size: 15px;margin-bottom: 10px;"> پیش‌فاکتور تأیید شد؛ از اعتماد شما سپاسگزاریم.</h6>
