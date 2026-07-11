@@ -14,9 +14,9 @@
     <title>پیش فاکتور @Model.PreFactor.SerialNumber</title>
 
     <link rel="stylesheet" href="~/lib/Bootstrap/bootstrap5.3.rtl.min.css" />
-    <link rel="stylesheet" href="~/css/site.css?v=5.3.1" />
+    <link rel="stylesheet" href="~/css/site.css?v=5.4.0" />
     <link rel="stylesheet" href="~/css/normalize.min.css">
-    <link rel="stylesheet" href="~/css/paper.css?v=5.3.1">
+    <link rel="stylesheet" href="~/css/paper.css?v=5.4.0">
 
     <style>
         /* استایل برای یکی در میان طوسی شدن ردیف‌های جدول */
@@ -278,34 +278,36 @@
 </section>
 
 <!-- صفحه دوم: شرایط و توضیحات تکمیلی (فقط در زمان پرینت نمایش داده می‌شود) -->
-<section id="termsSection" class="sheet d-none d-print-flex" style="border-radius:12px; page-break-before: always;">
-    <article class="d-flex flex-column flex-grow-1 m-3 text-justify" style="border: 2px solid gray; border-radius:8px; padding: 10px; line-height: 1.8;">
-        <p class="w-100 text-center fbold mb-3" style="border-radius:5px; border:2px solid gray; background-color:lightgray; font-size: 18px; padding: 5px;">
-            شرایط و توضیحات تکمیلی پیش‌فاکتور
-        </p>
-        <div class="d-flex flex-column flex-grow-1" style="border:1px solid gray">
-            <div class="p-3">
-                <ol style="padding-right: 20px;">
-                    @foreach (var term in termsPreFactor) {
-                        <li class="mb-2">@term</li>
-                    }
-                </ol>
-            </div>
+@if (termsPreFactor.Any()) {
+    <section id="termsSection" class="sheet d-none d-print-flex" style="border-radius:12px; page-break-before: always;">
+        <article class="d-flex flex-column flex-grow-1 m-3 text-justify" style="border: 2px solid gray; border-radius:8px; padding: 10px; line-height: 1.8;">
+            <p class="w-100 text-center fbold mb-3" style="border-radius:5px; border:2px solid gray; background-color:lightgray; font-size: 18px; padding: 5px;">
+                شرایط و توضیحات تکمیلی پیش‌فاکتور
+            </p>
+            <div class="d-flex flex-column flex-grow-1" style="border:1px solid gray">
+                <div class="p-3">
+                    <ol style="padding-right: 20px;">
+                        @foreach (var term in termsPreFactor) {
+                            <li class="mb-2">@term</li>
+                        }
+                    </ol>
+                </div>
 
-            <div class="d-flex flex-grow-1" style="border-top:1px solid gray ">
-                <div class="d-flex flex-column align-items-center col-6" style="border-left:1px solid gray ">
-                    <label class="mb-2">مهر و امضای فروشنده</label>
-                    <img style="max-width:30%;width: fit-content" src="@(isOfficial ? Model.MohrR : Model.Mohr)" />
-                </div>
-                <div class="d-flex flex-column align-items-center col-6">
-                    <label class="mb-2">مهر و امضای خریدار</label>
-                    <img style="max-width:30%;width: fit-content" src="@Model.Siq" />
-                    <label class="fbold mt-2">@Model.PreFactor.SignatureDes</label>
+                <div class="d-flex flex-grow-1" style="border-top:1px solid gray ">
+                    <div class="d-flex flex-column align-items-center col-6" style="border-left:1px solid gray ">
+                        <label class="mb-2">مهر و امضای فروشنده</label>
+                        <img style="max-width:30%;width: fit-content" src="@(isOfficial ? Model.MohrR : Model.Mohr)" />
+                    </div>
+                    <div class="d-flex flex-column align-items-center col-6">
+                        <label class="mb-2">مهر و امضای خریدار</label>
+                        <img style="max-width:30%;width: fit-content" src="@Model.Siq" />
+                        <label class="fbold mt-2">@Model.PreFactor.SignatureDes</label>
+                    </div>
                 </div>
             </div>
-        </div>
-    </article>
-</section>
+        </article>
+    </section>
+}
 
 <!-- دکمه‌ها -->
 <div class="d-flex flex-column align-items-center justify-content-center w-100" style="position:fixed;top:85%; z-index:9999" id="previewPrintBtns">

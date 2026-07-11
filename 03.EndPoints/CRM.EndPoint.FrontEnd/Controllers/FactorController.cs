@@ -949,7 +949,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 pfactor.SumTotalAmountTax = pfactor.SumTotalAmount + pfactor.TotalTax - pfactor.Discount;
 
 
-                var terms = await GetBaseDescriptions(BaseDescriptionTypeEnum.PrefactorTerms);
+                var terms = pfactor.Accepted && pfactor.AcceptedDate >= new DateTime(2026, 7, 11, 11, 0, 0) // تاریخی که شرایط پیش فاکتور قرار گرفته
+                    ? await GetBaseDescriptions(BaseDescriptionTypeEnum.PrefactorTerms)
+                    : [];
+
+
                 var model = new PfactorViewModel {
                     PreFactor = pfactor,
                     Company = myCompany,
