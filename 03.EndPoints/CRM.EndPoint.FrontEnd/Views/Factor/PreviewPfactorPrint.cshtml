@@ -4,6 +4,7 @@
     Layout = null;
     var isOfficial = Model.PreFactor.OfficialType == 1;
     var isJuridical = Model.PreFactor.Cus_Juridical == 1;
+    var termsPreFactor = Model.TermsPreFactor.Select(f => f.Text).ToList();
 }
 
 <!DOCTYPE html>
@@ -23,6 +24,7 @@
             background-color: #f2f2f2 !important;
         }
 
+
         /* فیکس کردن نمایش Borderها در هنگام گرفتن عکس/PDF */
         #captureSection table,
         #captureSection table tr,
@@ -31,6 +33,7 @@
             border: 1px solid #808080 !important;
             border-collapse: collapse !important;
         }
+
 
         /* برای جلوگیری از بهم ریختگی فونت در خروجی */
         .capture-mode {
@@ -41,309 +44,328 @@
 
 <body dir="rtl" class="A4">
 
-    <!-- اضافه کردن ID برای کپچر کردن -->
-    <section id="captureSection" class="sheet d-flex" style="border-radius:12px">
-        <article class="d-flex flex-column flex-grow-1 m-3" style="border: 2px solid gray; border-radius:8px; padding: 10px">
-            @if (Model.PreFactor.Pftype == (int)PreFactorEnum.حذف_شده || Model.PreFactor.IsDeleted)
-            {
-                <div class="invalid-pf">حذف شده</div>
-            }
-            else if (Model.PreFactor.Pftype == (int)PreFactorEnum.فاقد_اعتبار)
-            {
-                <div class="invalid-pf">فـاقداعـتبار</div>
-            }
-            else if (Model.PreFactor.Pftype == (int)PreFactorEnum.برگشت_خورده_از_طرف_مدیر_فروش)
-            {
-                <div class="invalid-pf">برگشت‌خورده</div>
-            }
-            else if (Model.PreFactor.Pftype == (int)PreFactorEnum.بسته_شده)
-            {
-                <div class="invalid-pf">بسته‌شده</div>
-            }
+<!-- اضافه کردن ID برای کپچر کردن -->
+<section id="captureSection" class="sheet d-flex" style="border-radius:12px">
+    <article class="d-flex flex-column flex-grow-1 m-3" style="border: 2px solid gray; border-radius:8px; padding: 10px">
+        @if (Model.PreFactor.Pftype == (int)PreFactorEnum.حذف_شده || Model.PreFactor.IsDeleted) {
+            <div class="invalid-pf">حذف شده</div>
+        } else if (Model.PreFactor.Pftype == (int)PreFactorEnum.فاقد_اعتبار) {
+            <div class="invalid-pf">فـاقداعـتبار</div>
+        } else if (Model.PreFactor.Pftype == (int)PreFactorEnum.برگشت_خورده_از_طرف_مدیر_فروش) {
+            <div class="invalid-pf">برگشت‌خورده</div>
+        } else if (Model.PreFactor.Pftype == (int)PreFactorEnum.بسته_شده) {
+            <div class="invalid-pf">بسته‌شده</div>
+        }
 
-            <div class="d-flex justify-content-between align-items-center w-100">
-                <div style="width: 120px">
-                    @if (isOfficial)
-                    {
-                        <img src="@Model.Logo" style="width:100%" alt="Logo" />
-                    }
+        <div class="d-flex justify-content-between align-items-center w-100">
+            <div style="width: 120px">
+                @if (isOfficial) {
+                    <img src="@Model.Logo" style="width:100%" alt="Logo" />
+                }
+            </div>
+            <p class="fbold" style="font-size:24px">پیش فاکتور فروش کالاوخدمات</p>
+            <div class="py-2" style="width:135px">
+                <div class="d-flex align-items-center w-100">
+                    <label class="w-50 text-muted text-end">شماره سریال:</label>
+                    <label class="w-50 fbold text-center">@Model.PreFactor.SerialNumber</label>
                 </div>
-                <p class="fbold" style="font-size:24px">پیش فاکتور فروش کالاوخدمات</p>
-                <div class="py-2" style="width:135px">
-                    <div class="d-flex align-items-center w-100">
-                        <label class="w-50 text-muted text-end">شماره سریال:</label>
-                        <label class="w-50 fbold text-center">@Model.PreFactor.SerialNumber</label>
-                    </div>
-                    <div class="d-flex align-items-center w-100">
-                        <label class="w-50 text-muted text-end">تاریخ:</label>
-                        <label class="w-50 fbold text-center">@Model.PreFactor.Date</label>
-                    </div>
-                    <div class="d-flex align-items-center w-100">
-                        <label class="w-50 text-muted text-end">تاریخ اعتبار:</label>
-                        <label class="w-50 fbold text-center">@Model.PreFactor.ValidityDade</label>
-                    </div>
+                <div class="d-flex align-items-center w-100">
+                    <label class="w-50 text-muted text-end">تاریخ:</label>
+                    <label class="w-50 fbold text-center">@Model.PreFactor.Date</label>
+                </div>
+                <div class="d-flex align-items-center w-100">
+                    <label class="w-50 text-muted text-end">تاریخ اعتبار:</label>
+                    <label class="w-50 fbold text-center">@Model.PreFactor.ValidityDade</label>
                 </div>
             </div>
+        </div>
 
-            <div>
-                <p class="w-100 text-center fbold" style="border-radius:5px; border:2px solid gray; background-color:lightgray;">
-                    مشخصات فروشنده
-                </p>
-                <div class="px-1">
-                    <div class="d-flex align-items-center w-100">
-                        <div class="col-4 d-flex align-items-center gap-2">
-                            <label class="text-muted">نام فروشنده: </label>
-                            <label class="fbold">@(isOfficial? Model.Company?.CompanyName : Model.Company?.CompanyBrandName)</label>
-                        </div>
-                        <div class="col-4 d-flex align-items-center gap-2">
-                            <label class="text-muted">شماره اقتصادی: </label>
-                            <label class="fbold">@(isOfficial? Model.Company?.EghtesadiCode : "")</label>
-                        </div>
-                        <div class="col-4 d-flex align-items-center gap-2">
-                            <label class="text-muted">شماره ملی/شماره ثبت: </label>
-                            <label class="fbold">@(isOfficial? Model.Company?.NumberRegister : "")</label>
-                        </div>
+        <div>
+            <p class="w-100 text-center fbold" style="border-radius:5px; border:2px solid gray; background-color:lightgray;">
+                مشخصات فروشنده
+            </p>
+            <div class="px-1">
+                <div class="d-flex align-items-center w-100">
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">نام فروشنده: </label>
+                        <label class="fbold">@(isOfficial ? Model.Company?.CompanyName : Model.Company?.CompanyBrandName)</label>
                     </div>
-                    <div class="d-flex align-items-center w-100">
-                        <div class="col-4 d-flex align-items-center gap-2">
-                            <label class="text-muted">شناسه ملی: </label>
-                            <label class="fbold">@(isOfficial? Model.Company?.ShenaseMeli : "")</label>
-                        </div>
-                        <div class="col-4 d-flex align-items-center gap-2">
-                            <label class="text-muted">کدپستی: </label>
-                            <label class="fbold">@(isOfficial? Model.Company?.PostalCode : "")</label>
-                        </div>
-                        <div class="col-4 d-flex align-items-center gap-2">
-                            <label class="text-muted">تلفن: </label>
-                            <label class="fbold">
-                                @if (isOfficial)
-                                {
-                                    @Model.Company?.Mobile
-                                    @Model.Company?.Tel
-                                }
-                            </label>
-                        </div>
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">شماره اقتصادی: </label>
+                        <label class="fbold">@(isOfficial ? Model.Company?.EghtesadiCode : "")</label>
                     </div>
-                    <div class="d-flex align-items-center w-100">
-                        <div class="col-12 d-flex align-items-center gap-2">
-                            <label class="text-muted">نشانی: </label>
-                            <label class="fbold">@(isOfficial? Model.Company?.Address : "")</label>
-                        </div>
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">شماره ملی/شماره ثبت: </label>
+                        <label class="fbold">@(isOfficial ? Model.Company?.NumberRegister : "")</label>
                     </div>
                 </div>
-            </div>
-
-            <div>
-                <div class="w-100 text-center fbold position-relative" style="border-radius:5px; border:2px solid gray; background-color:lightgray;">
-                    <p>مشخصات خریدار</p>
-                    <div id="upHeadPrefactorIcon" class="align-items-center justify-content-center position-absolute" style="display: flex;left: 4px;right: auto;top: 0;bottom: 0" data-title="بروزرسانی" onclick="upHeadPrefactor('@Model.PreFactor.Id')">
-                        <svg style="width: 16px;height: 16px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                <div class="d-flex align-items-center w-100">
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">شناسه ملی: </label>
+                        <label class="fbold">@(isOfficial ? Model.Company?.ShenaseMeli : "")</label>
                     </div>
-                </div>
-
-                <div class="px-1">
-                    <div class="d-flex align-items-center w-100">
-                        <div class="col-4 d-flex align-items-center gap-2">
-                            <label class="text-muted">نام خریدار: </label>
-                            <label class="fbold">
-                                @(isOfficial
-                                                                ? (isJuridical ? Model.PreFactor.Customer : Model.PreFactor.AgentName)
-                                                                : Model.PreFactor.AgentName)
-                            </label>
-                        </div>
-                        <div class="col-4 d-flex align-items-center gap-2">
-                            <label class="text-muted">شماره اقتصادی: </label>
-                            <label class="fbold">@(isOfficial && isJuridical ? Model.PreFactor.Cus_EghtesadiCode : "")</label>
-                        </div>
-                        <div class="col-4 d-flex align-items-center gap-2">
-                            <label class="text-muted">شماره ملی/شماره ثبت: </label>
-                            <label class="fbold">
-                                @(isOfficial
-                                                                ? (isJuridical ? Model.PreFactor.Cus_NumberRegister : Model.PreFactor.AgentMeliCode)
-                                                                : "")
-                            </label>
-                        </div>
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">کدپستی: </label>
+                        <label class="fbold">@(isOfficial ? Model.Company?.PostalCode : "")</label>
                     </div>
-                    <div class="d-flex align-items-center w-100">
-                        <div class="col-4 d-flex align-items-center gap-2">
-                            <label class="text-muted">شناسه ملی: </label>
-                            <label class="fbold">
-                                @(isOfficial
-                                                                ? (isJuridical ? Model.PreFactor.Cus_ShenaseMeli : Model.PreFactor.AgentMeliCode)
-                                                                : "")
-                            </label>
-                        </div>
-                        <div class="col-4 d-flex align-items-center gap-2">
-                            <label class="text-muted">کدپستی: </label>
-                            <label class="fbold">@Model.PreFactor.Cus_PostalCode</label>
-                        </div>
-                        <div class="col-4 d-flex align-items-center gap-2">
-                            <label class="text-muted">تلفن: </label>
-                            <label class="fbold">@Model.PreFactor.Cus_Mobile @Model.PreFactor.Cus_Tel</label>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center w-100">
-                        <div class="col-12 d-flex align-items-center gap-2">
-                            <label class="text-muted">نشانی: </label>
-                            <label class="fbold">@Model.PreFactor.Cus_Address</label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <p class="w-100 text-center fbold" style="border-radius:5px; border:2px solid gray; background-color:lightgray;">
-                    مشخصات کالا یا خدمات مورد معامله
-                </p>
-                <div class="w-100">
-                    <table class="table table-bordered table-hover m-0 w-100 @(Model.PreFactor.PreFactorItems?.Count >= 8 ? "table-sm" : "")" style="border-color: gray">
-                        <thead>
-                            <tr>
-                                <th>ردیف</th>
-                                <th>شرح کالا/خدمت</th>
-                                <th>تعداد/مقدار</th>
-                                <th>واحد</th>
-                                <th>مبلغ واحد</th>
-                                <th>مبلغ کل</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in Model.PreFactor.PreFactorItems ?? [])
-                            {
-                                <tr>
-                                    <td>@item.Row</td>
-                                    <td>
-                                        <span class="d-inline-flex gap-1">
-                                            <span>@item.ProductSmallName</span>
-                                            <span>@item.Product</span>
-                                        </span>
-                                        @(item.Printable == 1 ? " (چـاپدار)" : "")
-                                    </td>
-                                    <td>@item.WeightCount</td>
-                                    <td>@item.UnitTxt</td>
-                                    <td>@($"{item.UnitAmount:n0}")</td>
-                                    <td>@($"{item.TotalAmount:n0}")</td>
-                                </tr>
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">تلفن: </label>
+                        <label class="fbold">
+                            @if (isOfficial) {
+                                @Model.Company?.Mobile
+                                @Model.Company?.Tel
                             }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="d-flex justify-content-end w-100">
-                <div class="col-5" style="background-color:lightgray">
-                    <div class="d-flex align-items-center" style="border:1px solid gray">
-                        <label class="col-6 text-center">جمع کل: </label>
-                        <label class="col-6 text-center fbold">@($"{Model.PreFactor.SumTotalAmount:n0}")</label>
-                    </div>
-                    <div class="d-flex align-items-center" style="border:1px solid gray">
-                        <label class="col-6 text-center">تخفیف: </label>
-                        <label class="col-6 text-center fbold">@($"{Model.PreFactor.Discount:n0}")</label>
-                    </div>
-                    <div class="d-flex align-items-center" style="border:1px solid gray">
-                        <label class="col-6 text-center">مالیات و عوارض: </label>
-                        <label class="col-6 text-center fbold">@($"{Model.PreFactor.TotalTax:n0}")</label>
-                    </div>
-                    <div class="d-flex align-items-center" style="border:1px solid gray">
-                        <label class="col-6 text-center">پیش پرداخت: </label>
-                        <label class="col-6 text-center fbold">@($"{Model.PreFactor.ReciveAmount:n0}")</label>
-                    </div>
-                    <div class="d-flex align-items-center" style="font-size:18px; border:1px solid gray">
-                        <label class="col-6 text-center">مـبلغ نـهایی: </label>
-                        <label class="col-6 flex-center column-gap-1 fbold">
-                            <span class="direction-ltr">@($"{Model.PreFactor.PaymentAmount:n0}")</span>
-                            <span style="font-size: 16px">@(Model.PreFactor.CurrencyTypeTxt ?? "ريال")</span>
                         </label>
                     </div>
                 </div>
-            </div>
-
-            <div class="d-flex flex-column flex-grow-1" style="border:1px solid gray">
-                <div class="d-flex flex-column" style="border-bottom:1px solid gray">
-                    <label class="fbold ps-1 pt-1">توضیحات:</label>
-                    <ul style="padding-right: 22px">
-                        @foreach (var item in Model.PreFactor.Descriptions.OrderBy(f => f.Order))
-                        {
-                            <li>@item.Text</li>
-                        }
-                    </ul>
-                </div>
-
-                <div class="d-flex flex-grow-1">
-                    <div class="d-flex flex-column align-items-center col-6" style="border-left:1px solid gray ">
-                        <label class="mb-2">مهر و امضای فروشنده</label>
-                        <img style="max-width:30%;width: fit-content" src="@(isOfficial? Model.MohrR: Model.Mohr)" />
-                    </div>
-                    <div class="d-flex flex-column align-items-center col-6">
-                        <label class="mb-2">مهر و امضای خریدار</label>
-                        <img style="max-width:30%;width: fit-content" src="@Model.Siq" />
-                        <label class="fbold mt-2">@Model.PreFactor.SignatureDes</label>
+                <div class="d-flex align-items-center w-100">
+                    <div class="col-12 d-flex align-items-center gap-2">
+                        <label class="text-muted">نشانی: </label>
+                        <label class="fbold">@(isOfficial ? Model.Company?.Address : "")</label>
                     </div>
                 </div>
             </div>
-
-        </article>
-    </section>
-
-    <!-- دکمه‌ها -->
-    <div class="d-flex flex-column align-items-center justify-content-center w-100" style="position:fixed;top:85%; z-index:9999" id="previewPrintBtns">
-        <div class="btn-group " >
-            <button class="btn buttonCancel fbold" style="width: 100px" onclick="window.close()">انصراف</button>
-            <button class="btn buttonCancel fbold" style="width: 100px" onclick="window.print()">چاپ</button>
-            <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadImage()">دانلود تصویر</button>
-            <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadPDF()">دانلود PDF</button>
         </div>
+
+        <div>
+            <div class="w-100 text-center fbold position-relative" style="border-radius:5px; border:2px solid gray; background-color:lightgray;">
+                <p>مشخصات خریدار</p>
+                <div id="upHeadPrefactorIcon" class="align-items-center justify-content-center position-absolute" style="display: flex;left: 4px;right: auto;top: 0;bottom: 0" data-title="بروزرسانی" onclick="upHeadPrefactor('@Model.PreFactor.Id')">
+                    <svg style="width: 16px;height: 16px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                </div>
+            </div>
+
+            <div class="px-1">
+                <div class="d-flex align-items-center w-100">
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">نام خریدار: </label>
+                        <label class="fbold">
+                            @(isOfficial
+                                ? (isJuridical ? Model.PreFactor.Customer : Model.PreFactor.AgentName)
+                                : Model.PreFactor.AgentName)
+                        </label>
+                    </div>
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">شماره اقتصادی: </label>
+                        <label class="fbold">@(isOfficial && isJuridical ? Model.PreFactor.Cus_EghtesadiCode : "")</label>
+                    </div>
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">شماره ملی/شماره ثبت: </label>
+                        <label class="fbold">
+                            @(isOfficial
+                                ? (isJuridical ? Model.PreFactor.Cus_NumberRegister : Model.PreFactor.AgentMeliCode)
+                                : "")
+                        </label>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center w-100">
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">شناسه ملی: </label>
+                        <label class="fbold">
+                            @(isOfficial
+                                ? (isJuridical ? Model.PreFactor.Cus_ShenaseMeli : Model.PreFactor.AgentMeliCode)
+                                : "")
+                        </label>
+                    </div>
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">کدپستی: </label>
+                        <label class="fbold">@Model.PreFactor.Cus_PostalCode</label>
+                    </div>
+                    <div class="col-4 d-flex align-items-center gap-2">
+                        <label class="text-muted">تلفن: </label>
+                        <label class="fbold">@Model.PreFactor.Cus_Mobile @Model.PreFactor.Cus_Tel</label>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center w-100">
+                    <div class="col-12 d-flex align-items-center gap-2">
+                        <label class="text-muted">نشانی: </label>
+                        <label class="fbold">@Model.PreFactor.Cus_Address</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <p class="w-100 text-center fbold" style="border-radius:5px; border:2px solid gray; background-color:lightgray;">
+                مشخصات کالا یا خدمات مورد معامله
+            </p>
+            <div class="w-100">
+                <table class="table table-bordered table-hover m-0 w-100 @(Model.PreFactor.PreFactorItems?.Count >= 8 ? "table-sm" : "")" style="border-color: gray">
+                    <thead>
+                    <tr>
+                        <th>ردیف</th>
+                        <th>شرح کالا/خدمت</th>
+                        <th>تعداد/مقدار</th>
+                        <th>واحد</th>
+                        <th>مبلغ واحد</th>
+                        <th>مبلغ کل</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var item in Model.PreFactor.PreFactorItems ?? []) {
+                        <tr>
+                            <td>@item.Row</td>
+                            <td>
+                                <span class="d-inline-flex gap-1">
+                                    <span>@item.ProductSmallName</span>
+                                    <span>@item.Product</span>
+                                </span>
+                                @(item.Printable == 1 ? " (چـاپدار)" : "")
+                            </td>
+                            <td>@item.WeightCount</td>
+                            <td>@item.UnitTxt</td>
+                            <td>@($"{item.UnitAmount:n0}")</td>
+                            <td>@($"{item.TotalAmount:n0}")</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end w-100">
+            <div class="col-5" style="background-color:lightgray">
+                <div class="d-flex align-items-center" style="border:1px solid gray">
+                    <label class="col-6 text-center">جمع کل: </label>
+                    <label class="col-6 text-center fbold">@($"{Model.PreFactor.SumTotalAmount:n0}")</label>
+                </div>
+                <div class="d-flex align-items-center" style="border:1px solid gray">
+                    <label class="col-6 text-center">تخفیف: </label>
+                    <label class="col-6 text-center fbold">@($"{Model.PreFactor.Discount:n0}")</label>
+                </div>
+                <div class="d-flex align-items-center" style="border:1px solid gray">
+                    <label class="col-6 text-center">مالیات و عوارض: </label>
+                    <label class="col-6 text-center fbold">@($"{Model.PreFactor.TotalTax:n0}")</label>
+                </div>
+                <div class="d-flex align-items-center" style="border:1px solid gray">
+                    <label class="col-6 text-center">پیش پرداخت: </label>
+                    <label class="col-6 text-center fbold">@($"{Model.PreFactor.ReciveAmount:n0}")</label>
+                </div>
+                <div class="d-flex align-items-center" style="font-size:18px; border:1px solid gray">
+                    <label class="col-6 text-center">مـبلغ نـهایی: </label>
+                    <label class="col-6 flex-center column-gap-1 fbold">
+                        <span class="direction-ltr">@($"{Model.PreFactor.PaymentAmount:n0}")</span>
+                        <span style="font-size: 16px">@(Model.PreFactor.CurrencyTypeTxt ?? "ريال")</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex flex-column flex-grow-1" style="border:1px solid gray">
+            <div class="d-flex flex-column" style="border-bottom:1px solid gray">
+                <label class="fbold ps-1 pt-1">توضیحات:</label>
+                <ul style="padding-right: 22px">
+                    @foreach (var item in Model.PreFactor.Descriptions.OrderBy(f => f.Order)) {
+                        <li>@item.Text</li>
+                    }
+                </ul>
+            </div>
+
+            <div class="d-flex flex-grow-1">
+                <div class="d-flex flex-column align-items-center col-6" style="border-left:1px solid gray ">
+                    <label class="mb-2">مهر و امضای فروشنده</label>
+                    <img style="max-width:30%;width: fit-content" src="@(isOfficial ? Model.MohrR : Model.Mohr)" />
+                </div>
+                <div class="d-flex flex-column align-items-center col-6">
+                    <label class="mb-2">مهر و امضای خریدار</label>
+                    <img style="max-width:30%;width: fit-content" src="@Model.Siq" />
+                    <label class="fbold mt-2">@Model.PreFactor.SignatureDes</label>
+                </div>
+            </div>
+        </div>
+
+    </article>
+</section>
+
+<!-- صفحه دوم: شرایط و توضیحات تکمیلی (فقط در زمان پرینت نمایش داده می‌شود) -->
+<section id="termsSection" class="sheet d-none d-print-flex" style="border-radius:12px; page-break-before: always;">
+    <article class="d-flex flex-column flex-grow-1 m-3 text-justify" style="border: 2px solid gray; border-radius:8px; padding: 10px; line-height: 1.8;">
+        <p class="w-100 text-center fbold mb-3" style="border-radius:5px; border:2px solid gray; background-color:lightgray; font-size: 18px; padding: 5px;">
+            شرایط و توضیحات تکمیلی پیش‌فاکتور
+        </p>
+        <div class="d-flex flex-column flex-grow-1" style="border:1px solid gray">
+            <div class="p-3">
+                <ol style="padding-right: 20px;">
+                    @foreach (var term in termsPreFactor) {
+                        <li class="mb-2">@term</li>
+                    }
+                </ol>
+            </div>
+
+            <div class="d-flex flex-grow-1" style="border-top:1px solid gray ">
+                <div class="d-flex flex-column align-items-center col-6" style="border-left:1px solid gray ">
+                    <label class="mb-2">مهر و امضای فروشنده</label>
+                    <img style="max-width:30%;width: fit-content" src="@(isOfficial ? Model.MohrR : Model.Mohr)" />
+                </div>
+                <div class="d-flex flex-column align-items-center col-6">
+                    <label class="mb-2">مهر و امضای خریدار</label>
+                    <img style="max-width:30%;width: fit-content" src="@Model.Siq" />
+                    <label class="fbold mt-2">@Model.PreFactor.SignatureDes</label>
+                </div>
+            </div>
+        </div>
+    </article>
+</section>
+
+<!-- دکمه‌ها -->
+<div class="d-flex flex-column align-items-center justify-content-center w-100" style="position:fixed;top:85%; z-index:9999" id="previewPrintBtns">
+    <div class="btn-group ">
+        <button class="btn buttonCancel fbold" style="width: 100px" onclick="window.close()">انصراف</button>
+        <button class="btn buttonCancel fbold" style="width: 100px" onclick="window.print()">چاپ</button>
+        <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadImage()">دانلود تصویر</button>
+        <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadPDF()">دانلود PDF</button>
     </div>
+</div>
 
-    <script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js"></script>
+<script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js"></script>
 
-    <!-- کتابخانه‌های مورد نیاز برای خروجی -->
-    <script src="~/lib/html2canvas/html2canvas.min.js"></script>
-    <script src="~/lib/html2canvas/jspdf.umd.min.js"></script>
+<!-- کتابخانه‌های مورد نیاز برای خروجی -->
+<script src="~/lib/html2canvas/html2canvas.min.js"></script>
+<script src="~/lib/html2canvas/jspdf.umd.min.js"></script>
 
-    <script>
-        const upHeadPrefactor = async (pfId) => {
-            const res = await fetch(`/Factor/UpHeadPf?Pfid=${pfId}`);
-            if (res.ok) {
-                location.reload();
-            }
-        };
-
-        // تابع دانلود تصویر PNG
-        function downloadImage() {
-            const section = document.getElementById("captureSection");
-            html2canvas(section, {
-                scale: 2,
-                useCORS: true,
-                allowTaint: true
-            }).then(canvas => {
-                const link = document.createElement("a");
-                link.download = "PreFactor-@Model.PreFactor.SerialNumber" + ".png";
-                link.href = canvas.toDataURL("image/png");
-                link.click();
-            });
+<script>
+    const upHeadPrefactor = async (pfId) => {
+        const res = await fetch(`/Factor/UpHeadPf?Pfid=${pfId}`);
+        if (res.ok) {
+            location.reload();
         }
+    };
 
-        // تابع دانلود PDF در سایز A4 عمودی
-        async function downloadPDF() {
-            const section = document.getElementById("captureSection");
-            const canvas = await html2canvas(section, {
-                scale: 2,
-                useCORS: true,
-                allowTaint: true
-            });
+    // تابع دانلود تصویر PNG
+    function downloadImage() {
+        const section = document.getElementById("captureSection");
+        html2canvas(section, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+        }).then(canvas => {
+            const link = document.createElement("a");
+            link.download = "PreFactor-@Model.PreFactor.SerialNumber" + ".png";
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        });
+    }
 
-            const imgData = canvas.toDataURL("image/png");
-            const { jsPDF } = window.jspdf;
+    // تابع دانلود PDF در سایز A4 عمودی
+    async function downloadPDF() {
+        const section = document.getElementById("captureSection");
+        const canvas = await html2canvas(section, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+        });
 
-            // تنظیمات A4 عمودی
-            const pdf = new jsPDF("p", "mm", "a4");
-            const imgWidth = 210; // عرض A4
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const imgData = canvas.toDataURL("image/png");
+        const { jsPDF } = window.jspdf;
 
-            pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-            pdf.save("PreFactor-@Model.PreFactor.SerialNumber" + ".pdf");
-        }
-    </script>
+        // تنظیمات A4 عمودی
+        const pdf = new jsPDF("p", "mm", "a4");
+        const imgWidth = 210; // عرض A4
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+        pdf.save("PreFactor-@Model.PreFactor.SerialNumber" + ".pdf");
+    }
+</script>
 </body>
 </html>

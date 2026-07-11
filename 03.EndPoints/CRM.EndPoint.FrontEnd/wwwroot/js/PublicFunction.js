@@ -245,19 +245,9 @@ const descGenerate = () => {
             return true;
         });
     } else { //اگر رسمی بود
-        /*PreFactorDescItems.forEach((item, index) => {
-            if (item.official === true) {
-                PreFactorDescItems.splice(index, 1);
-            }
-        });
-        baseDesPfactor.filter(f => f.type === 0).forEach((item, index) => {
-            if (item.official === true) {
-                PreFactorDescItems.push({ text: item.text, official: item.official, isDeleted: false });
-            }
-        });*/
         PreFactorDescItems = [
             ...PreFactorDescItems.filter(item => !item.official),
-            ...baseDesPfactor.filter(item => item.type === 0 && item.official),
+            ...baseDesPfactor.filter(item => item.official),
         ];
     }
     showPreFactorDescItems();
@@ -622,7 +612,7 @@ const upPfactor = async (id, type) => {
     
     getAllProductOp();
     Unit(1, "PreFacItem");
-    baseDesPfactor = (await getbaseDescription()).filter(f => f.type === 0);
+    baseDesPfactor = await getBaseDescription(0);
     
     $.get(baseUrl + "Factor/GetPFactor/" + id, (res) => {
         toggleDisplayPrefactorModal(res.paymentAmount === 0);
@@ -1108,7 +1098,7 @@ const AddFactor = async (pfId = null, type = 1) => {
     await f_getAllProductOp();
     Unit(2);
     
-    baseDesFactor = await getbaseDescription();
+    baseDesFactor = await getBaseDescription(1);
     const pfData = (await axios(`/Factor/GetPFactor/${pfId}`)).data;
     supplyData = (await axios(`/Supply/GetSupplies?pfId=${pfId}`)).data;
     if (!supplyData?.length) {
@@ -1155,13 +1145,13 @@ const AddFactor = async (pfId = null, type = 1) => {
     currencyTypeElm.toggleAttribute("disabled", f_officialType === 1);
     
     if (factor.officialType === 0) {
-        baseDesFactor.filter(f => f.official === false && f.type === 1).map((item) => {
+        baseDesFactor.filter(f => f.official === false).map((item) => {
             item = { ...item, isDeleted: false };
             factor.descriptions.push(item);
             FactorDescItems.push(item);
         });
     } else {
-        baseDesFactor.filter(f => f.official === true && f.type === 1).map((item) => {
+        baseDesFactor.filter(f => f.official === true).map((item) => {
             item = { ...item, isDeleted: false };
             factor.descriptions.push(item);
             FactorDescItems.push(item);
@@ -1202,10 +1192,10 @@ const showModalAddPfactor = async (type, cusId = null, deal) => {
     dealData = deal;
     customerId = cusId;
     FLshowLoading();
-    baseDesPfactor = await getbaseDescription();
+    baseDesPfactor = await getBaseDescription(0);
     PreFactorDescItems = [];
     
-    baseDesPfactor.filter(f => !f.official).filter(f => f.type === 0).map(item => {
+    baseDesPfactor.filter(f => !f.official).map(item => {
         PreFactorDescItems.push({ text: item.text, isDeleted: false, official: item.official });
     });
     showPreFactorDescItems();
