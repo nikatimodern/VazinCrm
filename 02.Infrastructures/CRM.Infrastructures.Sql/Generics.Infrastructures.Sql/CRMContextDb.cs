@@ -153,6 +153,8 @@ namespace Generics.Infrastructures.Sql {
             modelBuilder.Entity<Checkbook>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<Check>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<Transfer>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<BaseCash>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<BaseCenterCash>().HasQueryFilter(f => f.IsDeleted == false);
 
 
             modelBuilder.Entity<Order>().Ignore(f => f.Row);

@@ -1,0 +1,171 @@
+
+@{
+    ViewBag.Title = "title";
+    Layout = "_Layout";
+}
+
+<div class="p-1">
+    <div class="col-12">
+        <label class="fbold mb-1" style="font-size:18px">عنوان های هزینه تنخواه</label>
+        <div class="InfoData">
+            <form class="w-100 d-flex flex-wrap" id="baseCashForm">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-2 form-group">
+                    <label>عنوان هزینه</label>
+                    <input class="form-control" name="costTitle" type="text" required />
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-1 form-group">
+                    <label>کد معین</label>
+                    <input class="form-control digitNumber" name="moeinCode" type="text" required />
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-2 form-group">
+                    <label>عنوان حساب</label>
+                    <input class="form-control" name="accountTitle" type="text" />
+                </div>
+                <div class="col-12 col-sm form-group">
+                    <label>مورد هزینه</label>
+                    <input class="form-control" name="costItem" type="text" />
+                </div>
+
+                <div class="col-12 col-lg-auto d-flex justify-content-center align-items-end" style="padding: 5px 0 5px 5px">
+                    <span id="submitBaseCashFormId" class="buttonGreen2 flex-center" style="height: 2rem;width: 3rem" type="button" onclick="submitBaseCashForm()">ثبت</span>
+                    <div id="UpBaseCashFormId" class="d-flex flex-lg-column gap-1 gap-lg-0 d-none">
+                        <button class="buttonGreen2 flex-center" onclick="submitBaseCashForm()" type="button" style="height: 24px;padding-inline: 10px">
+                            <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                        </button>
+                        <button class="buttonCancel2 flex-center" onclick="UpBaseCashCancel()" type="button" style="height: 24px;padding-inline: 10px">
+                            <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="line mb-3 mt-2 mt-lg-3" style="border-bottom-color: #aaa"></div>
+            <table class="table-hover table table-bordered nowrap table-striped" id="baseCashTable">
+                <thead>
+                <tr>
+                    <th>عنوان هزینه</th>
+                    <th>کد معین</th>
+                    <th>عنوان حساب</th>
+                    <th>مورد هزینه</th>
+                    <th>عملیات</th>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        let baseCashData = {};
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            getAllBaseCashes();
+        });
+
+        let baseCashTbl;
+        const getAllBaseCashes = () => {
+            baseCashTbl = $("#baseCashTable").DataTable({
+                paging: false,
+                //lengthMenu: [5, 10, 25, 50, 100],
+                processing: true,
+                serverSide: true,
+                filter: true,
+                scrollCollapse: true,
+                scrollY: "400px",
+                ordering: true,
+                responsive: true,
+                order: [],
+                ajax: {
+                    url: "/Cash/GetAllBaseCashesDt",
+                    type: "POST",
+                },
+                language: languageDatatable,
+                columns: [
+                    { data: "costTitle" },
+                    { data: "moeinCode" },
+                    { data: "accountTitle" },
+                    { data: "costItem", orderable: false, className: "wrap-text" },
+                    {
+                        data: "id",
+                        orderable: false,
+                        render: function (data) {
+                            return `
+                                <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                                    <button type="button" style="padding: 6px 6px;font-size: 12px" class="buttonGreen3 flex-center" onclick='ShowUpdateBaseCash("${data}")'><i class="fa fa-pencil"></i></button>
+                                    <button type="button" style="padding: 6px 7px;font-size: 12px" class="Admin buttonCancel2 flex-center" onclick='DelBaseCashItem("${data}")'><i class="fa fa-trash"></i></button>
+                                </div>
+                            `;
+                        },
+                    },
+                ],
+                layout: {
+                    bottomEnd: null,
+                    bottomStart: null,
+                    topEnd: null,
+                    topStart: {
+                        search: {
+                            placeholder: "جستجو",
+                        },
+                    },
+                },
+            });
+        };
+
+
+        const submitBaseCashForm = async () => {
+            if (!await mySer.CheckValidForm("baseCashForm")) return;
+
+            const model = { ...baseCashData, ...mySer.convertFormToJSON("baseCashForm") };
+            try {
+                FLshowLoading();
+                const res = await axios.post("/Cash/AddBaseCash", model);
+
+                if (res.status === 200) {
+                    baseCashTbl.ajax.reload();
+                    mySer.emptyForm("baseCashForm");
+                    toastifySuccess("با موفقیت ثبت شد");
+                    UpBaseCashCancel();
+                }
+            } catch (err) {
+                console.log(err);
+                toastifyError("خطای سرور");
+            } finally {
+                FLshowLoading(false);
+            }
+        };
+
+        const DelBaseCashItem = async (id) => {
+            await deleteItem({
+                url: `/Cash/DeleteBaseCash/${id}`,
+                callback: () => {
+                    baseCashTbl.ajax.reload();
+                },
+            });
+        };
+
+        const ShowUpdateBaseCash = async (id) => {
+            FLshowLoading();
+            const res = await axios(`/Cash/GetBaseCash/${id}`);
+            if (res.status === 200) {
+                baseCashData = res.data;
+                mySer.convertJsonToForm(baseCashData, "baseCashForm");
+                FLshowLoading(false);
+
+                document.getElementById("UpBaseCashFormId").classList.remove("d-none");
+                document.getElementById("submitBaseCashFormId").classList.add("d-none");
+            }
+        };
+
+        const UpBaseCashCancel = () => {
+            baseCashData = {};
+            document.getElementById("UpBaseCashFormId").classList.add("d-none");
+            document.getElementById("submitBaseCashFormId").classList.remove("d-none");
+            mySer.emptyForm("baseCashForm");
+        };
+
+    </script>
+}

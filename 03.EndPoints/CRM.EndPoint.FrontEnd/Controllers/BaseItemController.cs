@@ -29,8 +29,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             this.dtService = dtService;
             this.db = db;
         }
+
         [Authorize(Roles = "مدیر ارشد, مدیر فروش, مدیر تامین, مدیر مالی")]
         public IActionResult Index()
+        {
+            return View();
+        }
+
+        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        public IActionResult Financial()
         {
             return View();
         }
@@ -52,6 +59,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             await db.SaveChangesAsync();
             return Ok();
         }
+
         public async Task<IActionResult> GetItemsOp(int typeCode)
         {
             var data = await db.BaseItems

@@ -553,6 +553,22 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
                 }
 
                 break;
+
+
+            case BaseCash baseCash:
+                switch (action)
+                {
+                    case LogActionEnum.ثبت:
+                        return $"یک عنوان هزینه تنخواه ({baseCash.CostTitle}) توسط <b>{fullName}</b> ثبت شد.";
+
+                    case LogActionEnum.ویرایش:
+                        return $"یک عنوان هزینه تنخواه ({baseCash.CostTitle}) توسط <b>{fullName}</b> ویرایش شد.";
+
+                    case LogActionEnum.حذف:
+                        return $"یک عنوان هزینه تنخواه ({baseCash.CostTitle}) توسط <b>{fullName}</b> حذف شد.";
+                }
+
+                break;
         }
 
         return null;

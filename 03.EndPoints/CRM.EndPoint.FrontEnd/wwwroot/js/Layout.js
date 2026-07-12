@@ -5645,3 +5645,8 @@ audioModal?.addEventListener("hidden.bs.modal", () => {
     sourceAudioModal.src = "";
 });
 
+function showModalSetting() {
+    toggleMobileDrawer(false);
+    ModalToggle("BaseSetting")
+}
+

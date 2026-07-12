@@ -119,7 +119,7 @@
 
         async function initCashierSelectOpt() {
             const baseCashCenter = (await axios(`/Cash/GetAllBaseCashCenter`)).data;
-            const baseCash = (await axios(`/Cash/GetAllBaseCash`)).data;
+            const baseCash = (await axios(`/Cash/GetAllBaseCashTitle`)).data;
             createOption(costCenterElm, baseCashCenter);
             createOption("cashCostTitle", baseCash);
         }
