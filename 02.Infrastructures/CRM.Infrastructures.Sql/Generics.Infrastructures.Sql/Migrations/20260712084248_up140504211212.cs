@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace CRM.Infrastructures.Sql.Migrations
 {
     /// <inheritdoc />
-    public partial class up140504101340 : Migration
+    public partial class up140504211212 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -14,6 +14,10 @@ namespace CRM.Infrastructures.Sql.Migrations
             migrationBuilder.DropForeignKey(
                 name: "FK_ReportParticipants_Reports_ReportId",
                 table: "ReportParticipants");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_Reports_CallRecordings_CallRecordingId",
+                table: "Reports");
 
             migrationBuilder.AlterColumn<Guid>(
                 name: "ReportId",
@@ -28,6 +32,45 @@ namespace CRM.Infrastructures.Sql.Migrations
                 table: "ReportParticipants",
                 type: "uniqueidentifier",
                 nullable: true);
+
+            migrationBuilder.AddColumn<string>(
+                name: "AiError",
+                table: "CallRecordings",
+                type: "nvarchar(max)",
+                nullable: true);
+
+            migrationBuilder.AddColumn<int>(
+                name: "AiStatus",
+                table: "CallRecordings",
+                type: "int",
+                nullable: false,
+                defaultValue: 0);
+
+            migrationBuilder.AddColumn<string>(
+                name: "AiStatusTxt",
+                table: "CallRecordings",
+                type: "nvarchar(max)",
+                nullable: true);
+
+            migrationBuilder.AddColumn<int>(
+                name: "AvanegarAttempts",
+                table: "CallRecordings",
+                type: "int",
+                nullable: false,
+                defaultValue: 0);
+
+            migrationBuilder.AddColumn<string>(
+                name: "AvanegarRequestId",
+                table: "CallRecordings",
+                type: "nvarchar(max)",
+                nullable: true);
+
+            migrationBuilder.AddColumn<int>(
+                name: "DurationSeconds",
+                table: "CallRecordings",
+                type: "int",
+                nullable: false,
+                defaultValue: 0);
 
             migrationBuilder.CreateIndex(
                 name: "IX_ReportParticipants_CallRecordingId",
@@ -48,6 +91,13 @@ namespace CRM.Infrastructures.Sql.Migrations
                 column: "ReportId",
                 principalTable: "Reports",
                 principalColumn: "Id");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_Reports_CallRecordings_CallRecordingId",
+                table: "Reports",
+                column: "CallRecordingId",
+                principalTable: "CallRecordings",
+                principalColumn: "Id");
         }
 
         /// <inheritdoc />
@@ -61,6 +111,10 @@ namespace CRM.Infrastructures.Sql.Migrations
                 name: "FK_ReportParticipants_Reports_ReportId",
                 table: "ReportParticipants");
 
+            migrationBuilder.DropForeignKey(
+                name: "FK_Reports_CallRecordings_CallRecordingId",
+                table: "Reports");
+
             migrationBuilder.DropIndex(
                 name: "IX_ReportParticipants_CallRecordingId",
                 table: "ReportParticipants");
@@ -68,6 +122,30 @@ namespace CRM.Infrastructures.Sql.Migrations
             migrationBuilder.DropColumn(
                 name: "CallRecordingId",
                 table: "ReportParticipants");
+
+            migrationBuilder.DropColumn(
+                name: "AiError",
+                table: "CallRecordings");
+
+            migrationBuilder.DropColumn(
+                name: "AiStatus",
+                table: "CallRecordings");
+
+            migrationBuilder.DropColumn(
+                name: "AiStatusTxt",
+                table: "CallRecordings");
+
+            migrationBuilder.DropColumn(
+                name: "AvanegarAttempts",
+                table: "CallRecordings");
+
+            migrationBuilder.DropColumn(
+                name: "AvanegarRequestId",
+                table: "CallRecordings");
+
+            migrationBuilder.DropColumn(
+                name: "DurationSeconds",
+                table: "CallRecordings");
 
             migrationBuilder.AlterColumn<Guid>(
                 name: "ReportId",
@@ -84,6 +162,14 @@ namespace CRM.Infrastructures.Sql.Migrations
                 table: "ReportParticipants",
                 column: "ReportId",
                 principalTable: "Reports",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_Reports_CallRecordings_CallRecordingId",
+                table: "Reports",
+                column: "CallRecordingId",
+                principalTable: "CallRecordings",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Cascade);
         }

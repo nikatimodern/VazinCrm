@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CRM.Infrastructures.Sql.Migrations
 {
     [DbContext(typeof(CRMContextDb))]
-    [Migration("20260701055628_up140504100925")]
-    partial class up140504100925
+    [Migration("20260712084248_up140504211212")]
+    partial class up140504211212
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -512,17 +512,11 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime?>("LastTrackDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime?>("ModifyDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ModifyDateTxt")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("NextTrackDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Product")
                         .HasColumnType("nvarchar(max)");
@@ -3238,10 +3232,13 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("AnswerTimeTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("CallRecordingId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Extension")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("ReportId")
+                    b.Property<Guid?>("ReportId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("SortOrder")
@@ -3254,6 +3251,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CallRecordingId");
 
                     b.HasIndex("ReportId");
 
@@ -4228,21 +4227,27 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.Reports.Entities.Report", b =>
                 {
-                    b.HasOne("CRM.Core.Domain.CallRecordings.Entities.CallRecording", "CallRecordings")
+                    b.HasOne("CRM.Core.Domain.CallRecordings.Entities.CallRecording", "CallRecording")
                         .WithOne("Report")
                         .HasForeignKey("CRM.Core.Domain.Reports.Entities.Report", "CallRecordingId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.NoAction);
 
-                    b.Navigation("CallRecordings");
+                    b.Navigation("CallRecording");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Reports.Entities.ReportParticipant", b =>
                 {
+                    b.HasOne("CRM.Core.Domain.CallRecordings.Entities.CallRecording", "CallRecording")
+                        .WithMany("Participants")
+                        .HasForeignKey("CallRecordingId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("CRM.Core.Domain.Reports.Entities.Report", "Report")
                         .WithMany("Participants")
                         .HasForeignKey("ReportId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("CallRecording");
 
                     b.Navigation("Report");
                 });
@@ -4345,6 +4350,8 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.CallRecordings.Entities.CallRecording", b =>
                 {
+                    b.Navigation("Participants");
+
                     b.Navigation("Report");
                 });
 

@@ -123,7 +123,7 @@ public class AiService(
     {
         await UpdateStatus(call, AiProcessStatusEnum.Summarizing, ct: ct);
 
-        var userNames = call.CallParticipant?.Select(x => x.UserFullName).ToList() ?? [];
+        var userNames = call.Participants?.Select(x => x.UserFullName).ToList() ?? [];
         var resultSummary = await gapgptAi.SummarizeText(call.TranscriptionText, userNames, ct);
 
         if (!resultSummary.Success)
@@ -233,7 +233,7 @@ public class AiService(
         if (callRecording == null) return;
         try
         {
-            var firstAnswerTime = callRecording.CallParticipant?
+            var firstAnswerTime = callRecording.Participants?
                 .Where(p => p.AnswerTime != DateTime.MinValue)
                 .OrderBy(p => p.AnswerTime)
                 .Select(p => p.AnswerTime)
@@ -260,9 +260,8 @@ public class AiService(
             };
 
             int order = 1;
-            foreach (var participant in callRecording.CallParticipant ?? [])
+            foreach (var participant in callRecording.Participants ?? [])
             {
-                participant.ReportId = newReport.Id;
                 participant.AnswerTimeTxt = dts.GetDateTimePersian(participant.AnswerTime);
                 participant.SortOrder = order++;
             }

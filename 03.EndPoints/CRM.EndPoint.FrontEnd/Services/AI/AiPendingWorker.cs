@@ -41,7 +41,7 @@ public class AiPendingWorker(IServiceScopeFactory scopeFactory, ILogger<AiPendin
         var db = scope.ServiceProvider.GetRequiredService<CRMContextDb>();
 
         var calls = await db.CallRecordings
-            .Include(x => x.CallParticipant)
+            .Include(x => x.Participants)
             .Where(x => x.AiStatus == AiProcessStatusEnum.AvanegarPending)
             .OrderBy(x => x.CreateDate)
             .Take(10)

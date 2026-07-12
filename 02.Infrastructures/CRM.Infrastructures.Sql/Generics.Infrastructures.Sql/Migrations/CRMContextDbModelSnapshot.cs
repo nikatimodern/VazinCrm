@@ -4224,18 +4224,18 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.Reports.Entities.Report", b =>
                 {
-                    b.HasOne("CRM.Core.Domain.CallRecordings.Entities.CallRecording", "CallRecordings")
+                    b.HasOne("CRM.Core.Domain.CallRecordings.Entities.CallRecording", "CallRecording")
                         .WithOne("Report")
                         .HasForeignKey("CRM.Core.Domain.Reports.Entities.Report", "CallRecordingId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.NoAction);
 
-                    b.Navigation("CallRecordings");
+                    b.Navigation("CallRecording");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Reports.Entities.ReportParticipant", b =>
                 {
                     b.HasOne("CRM.Core.Domain.CallRecordings.Entities.CallRecording", "CallRecording")
-                        .WithMany("CallParticipant")
+                        .WithMany("Participants")
                         .HasForeignKey("CallRecordingId")
                         .OnDelete(DeleteBehavior.Cascade);
 
@@ -4347,7 +4347,7 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.CallRecordings.Entities.CallRecording", b =>
                 {
-                    b.Navigation("CallParticipant");
+                    b.Navigation("Participants");
 
                     b.Navigation("Report");
                 });

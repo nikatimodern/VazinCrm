@@ -11,7 +11,7 @@ public class ReportParticipantConfig : IEntityTypeConfiguration<ReportParticipan
         builder.HasKey(f => f.Id);
 
         builder.HasOne(f => f.CallRecording)
-            .WithMany(f => f.CallParticipant)
+            .WithMany(f => f.Participants)
             .HasForeignKey(f => f.CallRecordingId)
             .OnDelete(DeleteBehavior.Cascade);
 

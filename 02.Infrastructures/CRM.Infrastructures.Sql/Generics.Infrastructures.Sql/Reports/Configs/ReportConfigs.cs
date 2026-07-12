@@ -11,10 +11,10 @@ namespace CRM.Infrastructures.Sql.Reports.Configs {
         {
             builder.HasKey(f => f.Id);
 
-            builder.HasOne(f => f.CallRecordings)
+            builder.HasOne(f => f.CallRecording)
                 .WithOne(c => c.Report)
                 .HasForeignKey<Report>(f => f.CallRecordingId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 }

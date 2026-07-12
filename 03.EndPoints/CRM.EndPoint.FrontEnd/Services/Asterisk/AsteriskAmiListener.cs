@@ -299,7 +299,7 @@ public class AsteriskAmiListener : BackgroundService {
         foreach (var p in call.Participants)
         {
             var u = await GetUsers(p.Extension);
-            callRecording.CallParticipant?.Add(new ReportParticipant {
+            callRecording.Participants?.Add(new ReportParticipant {
                 Extension = p.Extension,
                 AnswerTime = p.AnswerTime,
                 UserId = u?.Id,

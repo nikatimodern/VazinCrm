@@ -219,9 +219,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             //var userIds = data.Select(r => r.UserCreatorID).Distinct().ToList();
 
             var userIds = data.Select(r => r.UserCreatorID)
-                .Union(data.SelectMany(r => r.Participants.Select(p => p.UserId)))
+                .Union(data.Where(r => r.CallRecording != null).SelectMany(r => r.CallRecording.Participants.Select(p => p.UserId)))
                 .Where(id => !string.IsNullOrEmpty(id))
-                .Distinct()
                 .ToList();
 
             var userImages = await udb.Users
@@ -233,7 +232,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (userImages.TryGetValue(r.UserCreatorID, out var img))
                     r.UserImage = img;
 
-                foreach (var p in r.Participants ?? [])
+                foreach (var p in r.CallRecording?.Participants ?? [])
                 {
                     if (userImages.TryGetValue(p.UserId, out var pImg))
                         p.UserImage = pImg;
@@ -255,7 +254,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var rols = await userManager.GetRolesAsync(user);
             var qData = db.Reports.AsNoTracking()
-                .Include(r => r.Participants)
+                .Include(r => r.CallRecording.Participants)
                 .OrderByDescending(r => r.CreateDate)
                 .AsQueryable();
 
