@@ -3570,7 +3570,6 @@ const updateFilterSwitchState = ({ wrapperSelector, filterData, currentFilterVal
     if (!wrapper) return;
     
     const hasSearch = !!searchValue.trim();
-    console.log(searchValue);
     if (!hasSearch) {
         wrapper.dataset.userInteracted = "false";
         

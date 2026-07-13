@@ -10,34 +10,22 @@ using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
 
-namespace CRM.EndPoint.FrontEnd.Controllers
-{
-    public class ProductController : Controller
-    {
-        private readonly Service genService;
-        private readonly FileSaver fileSaver;
-        private readonly DateTimeServices dtService;
+namespace CRM.EndPoint.FrontEnd.Controllers {
+    public class ProductController : Controller {
         private readonly CRMContextDb db;
-        private readonly UserContextDb udb;
-        private readonly SmsService smsServ;
-        private readonly UserManager<AppUser> userManager;
-        private readonly RoleManager<IdentityRole> roleManager;
-        public ProductController(Service genService, FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db, UserContextDb udb, SmsService smsServ, UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager)
+
+        public ProductController(CRMContextDb db)
         {
-            this.genService = genService;
-            this.fileSaver = fileSaver;
-            this.dtService = dtService;
             this.db = db;
-            this.udb = udb;
-            this.smsServ = smsServ;
-            this.userManager = userManager;
-            this.roleManager = roleManager;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAllProduct()
         {
-            var pr= await db.Products.Select(f=> new OpViewModelGuid() { id=f.Id,text=f.Title} ) .ToListAsync();
+            var pr = await db.Products.Select(f => new SelectOptionIdDto() {
+                id = f.Id,
+                text = f.Title
+            }).ToListAsync();
             return Ok(pr);
         }
     }

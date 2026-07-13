@@ -622,9 +622,9 @@ public class CashController : Controller {
             var query = db.BaseCenterCashes.AsNoTracking();
 
 
-            var data = await query.Select(f => new {
-                value = f.Id,
-                text = f.Title
+            var data = await query.Select(f => new SelectOptionDto<Guid> {
+                Value = f.Id,
+                Text = f.Title
             }).ToListAsync();
 
             return Ok(data);
@@ -640,11 +640,20 @@ public class CashController : Controller {
     {
         try
         {
-            var query = db.BaseCashes.AsNoTracking();
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var roles = await userManager.GetRolesAsync(user);
 
-            var data = await query.Select(f => new {
-                value = f.Id,
-                text = f.CostTitle
+            var targetType = roles.Contains("مدیر تامین") || roles.Contains("کارشناس تامین")
+                ? BaseCashTypeEnum.تامین
+                : BaseCashTypeEnum.عمومی;
+
+            var query = db.BaseCashes
+                .Where(f => f.BaseCashType == targetType || f.BaseCashType == BaseCashTypeEnum.هردو)
+                .AsNoTracking();
+
+            var data = await query.Select(f => new SelectOptionDto<Guid> {
+                Value = f.Id,
+                Text = f.CostTitle
             }).ToListAsync();
 
             return Ok(data);
@@ -729,13 +738,21 @@ public class CashController : Controller {
     {
         if (model == null) return BadRequest();
 
+        var isDuplicate = await db.BaseCashes.AnyAsync(x =>
+            x.Id != model.Id &&
+            (x.MoeinCode == model.MoeinCode || x.CostTitle.Trim() == model.CostTitle.Trim())
+        );
+
+        if (isDuplicate) return BadRequest("این عنوان هزینه قبلاً ثبت شده است.");
+
+
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
-            var isNew = model.Id == Guid.Empty;
+            model.BaseCashTypeTxt = model.BaseCashType.ToString();
 
-            if (isNew)
+            if (model.Id == Guid.Empty)
             {
                 model.UserCreator = user.FullName;
                 model.UserCreatorID = user.Id;

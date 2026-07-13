@@ -1,3 +1,4 @@
+@model CRM.EndPoint.FrontEnd.Models.ViewModel.BaseItem.FinancialSettingVModel
 
 @{
     ViewBag.Title = "title";
@@ -9,24 +10,33 @@
         <label class="fbold mb-1" style="font-size:18px">عنوان های هزینه تنخواه</label>
         <div class="InfoData">
             <form class="w-100 d-flex flex-wrap" id="baseCashForm">
-                <div class="col-12 col-sm-6 col-lg-4 col-xl-2 form-group">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-2 p-1">
                     <label>عنوان هزینه</label>
                     <input class="form-control" name="costTitle" type="text" required />
                 </div>
-                <div class="col-12 col-sm-6 col-lg-4 col-xl-1 form-group">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-1 p-1">
                     <label>کد معین</label>
                     <input class="form-control digitNumber" name="moeinCode" type="text" required />
                 </div>
-                <div class="col-12 col-sm-6 col-lg-4 col-xl-2 form-group">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-2 p-1">
                     <label>عنوان حساب</label>
                     <input class="form-control" name="accountTitle" type="text" />
                 </div>
-                <div class="col-12 col-sm form-group">
+                <div class="col-12 col-sm p-1">
                     <label>مورد هزینه</label>
                     <input class="form-control" name="costItem" type="text" />
                 </div>
+                <div class="col-12 col-sm-auto p-1">
+                    <label>نوع هزینه</label>
+                    <select class="form-select form-select-sm valueNumber" name="baseCashType" required>
+                        <option value="">انتخاب</option>
+                        @foreach (var item in Model?.BaseCashTypes ?? []) {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                </div>
 
-                <div class="col-12 col-lg-auto d-flex justify-content-center align-items-end" style="padding: 5px 0 5px 5px">
+                <div class="col-12 col-lg-auto d-flex justify-content-center align-items-end p-1">
                     <span id="submitBaseCashFormId" class="buttonGreen2 flex-center" style="height: 2rem;width: 3rem" type="button" onclick="submitBaseCashForm()">ثبت</span>
                     <div id="UpBaseCashFormId" class="d-flex flex-lg-column gap-1 gap-lg-0 d-none">
                         <button class="buttonGreen2 flex-center" onclick="submitBaseCashForm()" type="button" style="height: 24px;padding-inline: 10px">
@@ -47,6 +57,7 @@
                     <th>کد معین</th>
                     <th>عنوان حساب</th>
                     <th>مورد هزینه</th>
+                    <th>نوع هزینه</th>
                     <th>عملیات</th>
                 </tr>
                 </thead>
@@ -89,6 +100,7 @@
                     { data: "moeinCode" },
                     { data: "accountTitle" },
                     { data: "costItem", orderable: false, className: "wrap-text" },
+                    { data: "baseCashTypeTxt", orderable: false },
                     {
                         data: "id",
                         orderable: false,
@@ -132,7 +144,7 @@
                 }
             } catch (err) {
                 console.log(err);
-                toastifyError("خطای سرور");
+                toastifyError(err.response.data || "خطای سرور");
             } finally {
                 FLshowLoading(false);
             }

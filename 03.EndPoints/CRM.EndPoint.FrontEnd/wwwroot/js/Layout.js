@@ -1319,8 +1319,6 @@ const submitOrder = async () => {
         model.push(data);
     });
     
-    console.log(model);
-    
     axios.post(`/Order/AddHeadOrder`, model).then((res) => {
         if (res.status === 200) {
             toastifySuccess("حواله تولید با موفقیت ثبت شد");

@@ -42,6 +42,7 @@ using CRM.Core.Domain.Supplies.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.Core.Domain.Supplies.Enums;
 using CRM.EndPoint.FrontEnd.Models.Sms;
+using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Accountency;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;

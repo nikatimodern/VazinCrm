@@ -118,8 +118,10 @@
         });
 
         async function initCashierSelectOpt() {
-            const baseCashCenter = (await axios(`/Cash/GetAllBaseCashCenter`)).data;
-            const baseCash = (await axios(`/Cash/GetAllBaseCashTitle`)).data;
+            const [baseCashCenter, baseCash] = await Promise.all([
+                axios('/Cash/GetAllBaseCashCenter').then(r => r.data),
+                axios('/Cash/GetAllBaseCashTitle').then(r => r.data)
+            ]);
             createOption(costCenterElm, baseCashCenter);
             createOption("cashCostTitle", baseCash);
         }
@@ -133,7 +135,6 @@
             try {
                 const res = await axios(`/Cash/GetCash/${id}`);
                 if (res.status === 200) {
-                    console.log(res);
                     cashData = res.data.cash;
                     mySer.convertJsonToForm(cashData, "cashForm");
                     cashAttachments = res.data.attachments;

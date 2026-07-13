@@ -81,7 +81,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var data = await db.PreFactors
                 .Where(f => f.CustomerId == id && f.Pftype == (int)PreFactorEnum.در_انتظار_تولید)
-                .Select(f => new SelectOptionGuidDto() { id = f.Id, text = f.SerialNumber.ToString() })
+                .Select(f => new SelectOptionIdDto() { id = f.Id, text = f.SerialNumber.ToString() })
                 .ToListAsync();
 
             return Ok(data);
@@ -89,18 +89,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         public async Task<IActionResult> GetFactorOp(Guid id)
         {
-            List<SelectOptionGuidDto> fact = null;
+            List<SelectOptionIdDto> fact = null;
             if (id == Guid.Empty)
             {
                 fact = await db.Factors
                     .Where(f => f.CustomerId == id)
-                    .Select(f => new SelectOptionGuidDto() { id = f.Id, text = f.SerialNumber.ToString() })
+                    .Select(f => new SelectOptionIdDto() { id = f.Id, text = f.SerialNumber.ToString() })
                     .ToListAsync();
             } else
             {
                 fact = await db.Factors
                     .Where(f => f.CustomerId == id)
-                    .Select(f => new SelectOptionGuidDto() { id = f.Id, text = f.SerialNumber.ToString() })
+                    .Select(f => new SelectOptionIdDto() { id = f.Id, text = f.SerialNumber.ToString() })
                     .ToListAsync();
             }
 
@@ -130,7 +130,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             var data = await db.Customers.Where(f =>
                 usCu.Contains(f.Id) && (f.RoleType == RoleTypeEnum.مشتری || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری)
-            ).Select(g => new SelectOptionGuidDto {
+            ).Select(g => new SelectOptionIdDto {
                 id = g.Id,
                 text = $"{g.CompanyName} {g.AgentName} _ (کد مشتری  {g.CustomerCode})"
             }).ToListAsync();
