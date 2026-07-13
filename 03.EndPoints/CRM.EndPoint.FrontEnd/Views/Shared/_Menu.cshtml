@@ -1,0 +1,168 @@
+@using System.Security.Claims
+@using CRM.EndPoint.FrontEnd.Services
+@inject MenuService MenuService
+
+@{
+    var userMenus = MenuService.GetMenus(User);
+
+    var desktopMenus = userMenus.Where(m => m.ShowInDesktop).ToList();
+    var mobileBottomMenu = userMenus.Where(m => m.ShowInMobileBottomMenu).ToList();
+    var mobileDrawerMenu = userMenus.Where(m => !m.ShowInMobileBottomMenu).ToList();
+}
+
+<!-- ========================================================================= -->
+<!-- ۱. منوی دسکتاپ (Sidebar) -->
+<!-- ========================================================================= -->
+<div id="menuId" class="MenuRight" style="width:210px;">
+    <div style="height:100dvh; width:100%; display:flex; flex-direction:column;">
+
+        <!-- هدر سایدبار و لوگوها -->
+        <div class="flex-center flex-column w-100" style="min-height:64px; height:64px; background-color:#004944; border-bottom:1px solid rgba(255, 255, 255, 0.1); padding:8px">
+            <div class="d-flex justify-content-between align-content-center w-100">
+                <a href="/Dashboard/Index" class="flex-center gap-2 text-white">
+                    <img class="logoCompany-icon" src="~/Img/logo-vazinplast1.png" style="height:30px;" alt="">
+                    <img class="logoCompany-text" src="~/Img/logo-vazinplast2.png" style="height:36px;" alt="">
+                </a>
+                <div id="collapseMenuIcon" onclick="toggleMenu()" class="cursor-pointer text-white">
+                    <svg style="width:20px; height:20px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12H12m-8.25 5.25h16.5" /></svg>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- آیتم‌های منوی دسکتاپ -->
+        <nav class="d-flex flex-column justify-content-between h-100 overflow-auto text-white w-100 p-2">
+            <div class="d-flex flex-column justify-content-around align-content-center gap-1">
+                @foreach (var item in desktopMenus.Where(x => !x.IsStandalone)) {
+                    if (item.SubItems != null && item.SubItems.Any()) {
+                        <div class="w-100 has-submenu @($"{item.Id}-menu")">
+                            <span data-tooltip-left="@item.Title" class="menuBox">
+                                @Html.Raw(item.IconHtml)
+                                <span style="font-size:14px" class="flex-grow-1 d-flex justify-content-between">
+                                    <span>@item.Title</span>
+                                    <svg class="submenu-arrow" style="width: 16px;" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" /></svg>
+                                </span>
+                            </span>
+                            <ul class="submenu text-white">
+                                @foreach (var sub in item.SubItems) {
+                                    <a class="menuLink text-white" href="@sub.Url">
+                                        <li>@sub.Title</li>
+                                    </a>
+                                }
+                            </ul>
+                        </div>
+                    } else {
+                        <a data-tooltip-left="@item.Title" class="menuBox menuLink" href="@item.Url">
+                            @Html.Raw(item.IconHtml)
+                            <span style="font-size:14px" class="flex-grow-1">@item.Title</span>
+                        </a>
+                    }
+                }
+            </div>
+
+            @foreach (var item in desktopMenus.Where(x => x.IsStandalone)) { // TODO menuItemPartial
+                if (string.IsNullOrEmpty(item.Url)) {
+                    <button type="button" id="@item.ElementId" class="menuBox @item.className" style="display:none" data-tooltip-left="@item.Title" onclick="@item.OnClick">
+
+                        @Html.Raw(item.IconHtml)
+
+                        <span style="font-size:14px" class="flex-grow-1 d-flex align-items-center justify-content-between">
+                            <span>@item.Title</span>
+                            @if (item.HasBadge) {
+                                <span class="badgeCircle"></span>
+                            }
+                        </span>
+
+                    </button>
+                }
+            }
+
+        </nav>
+    </div>
+
+    <!-- بخش پانویس سایدبار -->
+    <div id="natixCompany" class="flex-center cursor-pointer w-100 text-white" style="height:48px; border-top:1px solid rgba(255, 255, 255, 0.1); padding:8px;gap:12px;padding-inline:16px" onclick="window.open('https://www.natix.ir')">
+        <img style="width:28px;" src="~/Img/ownerLogoEW.png" alt="Natix">
+        <div class="d-flex flex-column flex-grow-1">
+            <span style="font-size:12px; width:100%">ناتیکس</span>
+            <span style="font-size:8px; width:100%; white-space:nowrap">شرکت مهندسی نرم افزاری </span>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- ۲. منوی پایین موبایل (Bottom Navigation Bar) -->
+<!-- ========================================================================= -->
+<div id="mobileMenuId" style="width:100%; height:53px !important;">
+    <div style="display:flex; justify-content:space-between; align-items:center; height:100%">
+        <nav id="navbarNavMobile" style="direction:ltr" class="p-0 h-100 p-md-2 navbar navbar-light flex-grow-1">
+            <div id="navMenuBar" class="w-100 h-100" style="color:#fff; display:flex; justify-content:space-around; align-items:center">
+
+                <!-- دکمه همبرگری "بیشتر" برای باز کردن دراور موبایل -->
+                <span id="moreMenuBtn" class="menuBox">
+                    <i class="mp fa fa-bars" style="width:100%; font-size:30px"></i>
+                    <span style="width:100%; font-size:15px" class="mp">بیشتر</span>
+                </span>
+
+                <!-- رندر داینامیک منوهای مخصوص Bottom Bar موبایل -->
+                @foreach (var item in mobileBottomMenu) {
+                    <a class="menuBox menuLink MyBtn" href="@item.Url">
+                        @Html.Raw(item.IconHtml)
+                        <span style="width:100%; font-size:15px" class="mp">@item.Title</span>
+                    </a>
+                }
+            </div>
+        </nav>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- ۳. دراور موبایل (Mobile Drawer) برای مابقی منوها -->
+<!-- ========================================================================= -->
+<div id="mobileDrawerOverlay"></div>
+
+<div id="mobileDrawer">
+    <div class="mobileDrawerHeader">
+        <a href="/Dashboard/Index" class="flex-center gap-2 text-white">
+            <img class="logoCompany-icon" src="~/Img/logo-vazinplast1.png" style="height:30px;" alt="">
+            <img class="logoCompany-text" src="~/Img/logo-vazinplast2.png" style="height:36px;" alt="">
+        </a>
+        <button id="closeMobileDrawer">
+            <svg style="width: 20px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#fff"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+        </button>
+    </div>
+
+    <div class="mobileDrawerContent">
+        <div class="d-flex flex-column justify-content-around align-content-center gap-2">
+            @foreach (var item in mobileDrawerMenu) {
+                if (item.SubItems != null && item.SubItems.Any()) {
+                    <!-- زیرمنوها در دراور موبایل -->
+                    <div class="w-100 has-submenu">
+                        <span class="menuBox">
+                            @Html.Raw(item.IconHtml)
+                            <span style="font-size:14px" class="flex-grow-1 d-flex justify-content-between align-items:center;">
+                                <span>@item.Title</span>
+                                <svg class="submenu-arrow" style="width: 16px; height:16px;" viewBox="0 0 16 16" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" />
+                                </svg>
+                            </span>
+                        </span>
+                        <ul class="submenu text-white">
+                            @foreach (var sub in item.SubItems) {
+                                <a class="menuLink text-white" href="@sub.Url">
+                                    <li style="padding: 6px 0; font-size:13px;">@sub.Title</li>
+                                </a>
+                            }
+                        </ul>
+                    </div>
+                } else {
+                    <!-- منوهای معمولی در دراور موبایل -->
+                    <a class="menuBox menuLink" href="@item.Url">
+                        @Html.Raw(item.IconHtml)
+                        <span style="font-size:14px" class="flex-grow-1">@item.Title</span>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+</div>

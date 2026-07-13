@@ -157,9 +157,10 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddSingleton<ISmsQueue, SmsQueue>();
             services.AddHostedService<SmsBackgroundService>();
 
-
             services.AddHostedService<ChatReminderWorker>();
             services.AddScoped<ChatReminderService>();
+
+            services.AddScoped<MenuService>();
 
             services.AddSingleton<WebPushClient>(sp => {
                 var handler = new SocketsHttpHandler {
