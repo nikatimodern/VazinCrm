@@ -23,6 +23,60 @@ public class AiService(
     IssabelService issabelService,
     ILogger<AiService> logger,
     IHubContext<TaskHub> hub) {
+    public async Task ProcessPendingCallDirectGemini(CallRecording call, CancellationToken ct = default)
+    {
+        try
+        {
+            await UpdateStatus(call, AiProcessStatusEnum.DownloadingAudio, ct: ct);
+            using var audioStream = await issabelService.GetAudioWithRetry(call.RecordingFilePath, ct);
+
+            if (audioStream == null)
+            {
+                await UpdateStatus(call, AiProcessStatusEnum.DownloadFailed, "Audio download from Issabel failed.", ct);
+                return;
+            }
+
+            var audioBase64 = Convert.ToBase64String(audioStream.ToArray());
+            await UpdateStatus(call, AiProcessStatusEnum.Summarizing, ct: ct);
+
+            var userNames = call.Participants?.Select(x => x.UserFullName).ToList() ?? [];
+            var aiResult = await gapgptAi.ProcessAudioWithGemini(audioBase64, userNames, ct);
+
+            if (!aiResult.Success)
+            {
+                await UpdateStatus(call, AiProcessStatusEnum.SummaryFailed, aiResult.Error, ct);
+                return;
+            }
+
+            if (aiResult.Data == null || string.IsNullOrWhiteSpace(aiResult.Data.Summary))
+            {
+                await UpdateStatus(call, AiProcessStatusEnum.SummaryIgnored, "Summary skipped by AI rules.", ct);
+                return;
+            }
+
+            call.SummaryText = aiResult.Data.Summary.Trim();
+            call.Product = aiResult.Data.Product?.Trim();
+
+            if (string.IsNullOrEmpty(call.CallerCustomerTxt) && !string.IsNullOrEmpty(aiResult.Data.Customer))
+            {
+                call.CallerCustomerTxt = aiResult.Data.Customer.Trim();
+            }
+
+            call.AgentReview = aiResult.Data.SalesAgent?.Review;
+            call.AgentScore = aiResult.Data.SalesAgent?.Score;
+
+            await UpdateStatus(call, AiProcessStatusEnum.SummaryCompleted, ct: ct);
+
+            await CreateReportWithCallData(call, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error in direct Gemini process for call ID: {Id}", call.Id);
+            await UpdateStatus(call, AiProcessStatusEnum.SystemError, $"Direct Gemini error: {ex.Message}", ct);
+        }
+    }
+
+
     public async Task ProcessCallRecording(CallRecording call, CancellationToken ct)
     {
         if (call == null) return;
@@ -84,6 +138,7 @@ public class AiService(
     }
 
     private const int MaxAvanegarAttempts = 60;
+
     private async Task<bool> TrackAvanegarAsync(CallRecording call, CancellationToken ct)
     {
         if (call.AvanegarAttempts >= MaxAvanegarAttempts)
@@ -132,18 +187,18 @@ public class AiService(
             return false;
         }
 
-        if (resultSummary.Data == null || string.IsNullOrWhiteSpace(resultSummary.Data.summary))
+        if (resultSummary.Data == null || string.IsNullOrWhiteSpace(resultSummary.Data.Summary))
         {
             await UpdateStatus(call, AiProcessStatusEnum.SummaryIgnored, "Summary skipped by AI rules (Null or Empty)", ct);
             return false;
         }
 
-        call.SummaryText = resultSummary.Data.summary.Trim();
-        call.Product = resultSummary.Data.product?.Trim();
+        call.SummaryText = resultSummary.Data.Summary.Trim();
+        call.Product = resultSummary.Data.Product?.Trim();
 
-        if (string.IsNullOrEmpty(call.CallerCustomerTxt) && !string.IsNullOrEmpty(resultSummary.Data.customer))
+        if (string.IsNullOrEmpty(call.CallerCustomerTxt) && !string.IsNullOrEmpty(resultSummary.Data.Customer))
         {
-            call.CallerCustomerTxt = resultSummary.Data.customer.Trim();
+            call.CallerCustomerTxt = resultSummary.Data.Customer.Trim();
         }
 
         await UpdateStatus(call, AiProcessStatusEnum.SummaryCompleted, ct: ct);

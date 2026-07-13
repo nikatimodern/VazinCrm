@@ -13,8 +13,63 @@ using Microsoft.Extensions.Logging;
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 
 public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<GapgptAi> logger) {
+    public async Task<SummaryResult> ProcessAudioWithGemini(string audioBase64, List<string> userNames, CancellationToken ct = default)
+    {
+        try
+        {
+            logger.LogInformation("Gemini Audio Processing started.");
+            var prompt = aiPrompts.AnalyzeAudioCall(string.Join(", ", userNames));
+
+            var requestBody = new {
+                model = "gemini-2.5-flash",
+                messages = new[] {
+                    new {
+                        role = "user",
+                        content = new object[] {
+                            new { type = "text", text = prompt },
+                            new { type = "input_audio", input_audio = new { data = audioBase64, format = "wav" } }
+                        }
+                    }
+                },
+                response_format = new { type = "json_object" },
+                temperature = 0.8,
+                top_p = 0.7
+            };
+
+            var response = await httpClient.PostAsJsonAsync("chat/completions", requestBody, cancellationToken: ct);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var resJson = await response.Content.ReadFromJsonAsync<AiGapgptModel>(cancellationToken: ct);
+                var content = resJson?.Choices?[0]?.Message?.Content;
+
+                if (string.IsNullOrWhiteSpace(content))
+                {
+                    return new SummaryResult { Success = false, Error = "AI returned an empty response." };
+                }
+
+                var resultData = JsonSerializer.Deserialize<SummaryModel>(content);
+                logger.LogInformation("Gemini Audio Processing completed.");
+
+                return new SummaryResult { Success = true, Data = resultData };
+            }
+
+            var rawError = await response.Content.ReadAsStringAsync(ct);
+            var clean = StripHtml(rawError);
+            logger.LogError("Gemini API Error ({StatusCode}): {Error}", response.StatusCode, clean);
+            return new SummaryResult { Success = false, Error = $"API Error ({response.StatusCode}): {clean}" };
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error Gemini audio processing.");
+            return new SummaryResult { Success = false, Error = ex.Message };
+        }
+    }
+
+
     // خلاصه نویسی
-    public async Task<SummaryResult> SummarizeText(string textToSummarize, List<string> userNames, CancellationToken ct = default) // https://gapgpt.app/platform-v2/tokens
+    public async Task<SummaryResult>
+        SummarizeText(string textToSummarize, List<string> userNames, CancellationToken ct = default) // https://gapgpt.app/platform-v2/tokens
     {
         try
         {
@@ -24,7 +79,7 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
             var requestBody = new {
                 //model = "gapgpt-qwen-3.6",
                 //model = "gapgpt-qwen-3.6-thinking",
-                model= "gpt-5-mini",
+                model = "gpt-5-mini",
                 //model = "gemini-2.5-flash",
                 messages = new[] {
                     new { role = "user", content = prompt }
@@ -43,7 +98,7 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
                 var content = resJson?.Choices?[0]?.Message?.Content;
                 if (string.IsNullOrWhiteSpace(content))
                 {
-                    return new SummaryResult { Success = true, Data = null };
+                    return new SummaryResult { Success = true, Error = "AI returned an empty response." };
                 }
 
                 try
@@ -70,22 +125,6 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
         }
     }
 
-    private static string ExtractImportantError(string html)
-    {
-        if (string.IsNullOrWhiteSpace(html))
-            return string.Empty;
-
-        var text = StripHtml(html);
-
-        var match = Regex.Match(text, @"Error\s\d+.*?Unavailable!", RegexOptions.IgnoreCase);
-
-        if (match.Success)
-            return match.Value;
-
-        return text.Length > 300
-            ? text[..300]
-            : text;
-    }
 
     private static string StripHtml(string input)
     {

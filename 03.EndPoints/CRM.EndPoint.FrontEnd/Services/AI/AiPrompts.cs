@@ -4,7 +4,7 @@ using System.Linq;
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 
 public class AiPrompts {
-    public string SummarizeCall(string text, string expertsName = "")
+    public string AnalyzeAudioCall(string expertsName = "")
     {
         return $@"
             شما دستیار ثبت گزارش تماس CRM شرکت «وزین پلاست» هستید.
@@ -134,8 +134,11 @@ public class AiPrompts {
               }}
             }}
         ";
+    }
 
-return $@"
+    public string SummarizeCall(string text, string expertsName = "")
+    {
+        return $@"
             شما دستیار ثبت گزارش تماس CRM شرکت «وزین پلاست» هستید.
 
             کارشناسان فروش این تماس: {expertsName}

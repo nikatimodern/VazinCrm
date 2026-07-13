@@ -1,9 +1,9 @@
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 
-public class SummaryResult
-{
+public class SummaryResult {
     public bool Success { get; set; }
     public SummaryModel Data { get; set; }
     public string Error { get; set; }
@@ -23,7 +23,17 @@ public class Message {
 }
 
 public class SummaryModel {
-    public string summary { get; set; }
-    public string customer { get; set; }
-    public string product { get; set; }
+    [JsonPropertyName("summary")] public string Summary { get; set; }
+
+    [JsonPropertyName("customer")] public string Customer { get; set; }
+
+    [JsonPropertyName("product")] public string Product { get; set; }
+
+    [JsonPropertyName("salesAgent")] public SalesAgentModel SalesAgent { get; set; }
+}
+
+public class SalesAgentModel {
+    [JsonPropertyName("review")] public string Review { get; set; }
+
+    [JsonPropertyName("score")] public int Score { get; set; }
 }
