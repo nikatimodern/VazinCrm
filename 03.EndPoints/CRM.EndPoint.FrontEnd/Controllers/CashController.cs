@@ -240,6 +240,41 @@ public class CashController : Controller {
         }
     }
 
+    [HttpPost]
+    public async Task<IActionResult> ChangeStatusGroupCashToPending([FromBody] List<Guid> listIds)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var cashes = await db.Cashes.Where(f =>
+                listIds.Contains(f.Id) &&
+                f.UserCreatorID == user.Id &&
+                f.Status == CashStatusEnum.ثبت_موقت
+            ).ToListAsync();
+
+            if (cashes.Count == 0) return BadRequest("موردی برای ارسال یافت نشد.");
+
+            var group = new CashGroup();
+            db.CashGroups?.Add(group);
+
+            foreach (var cash in cashes)
+            {
+                await ChangeCashStatus(CashStatusEnum.در_دست_تایید, cash, user);
+                cash.CashGroup = group;
+            }
+
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            await transaction.RollbackAsync();
+            return BadRequest(e.Message);
+        }
+    }
+
 
     private async Task SyncCashAccountancyDebit(Cash cash, AppUser user)
     {

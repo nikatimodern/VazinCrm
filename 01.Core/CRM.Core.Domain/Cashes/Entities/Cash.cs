@@ -25,5 +25,8 @@ namespace CRM.Core.Domain.Cashes.Entities {
         public decimal TotalAmount => Amount + Fee; // مجموع مبلغ و کارمزد
         public Accountancy Accountancy { get; set; }
         [NotMapped] public IList<Attachment> Attachments { get; set; }
+
+        public Guid? CashGroupId { get; set; }
+        public CashGroup CashGroup { get; set; }
     }
 }

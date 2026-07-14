@@ -876,6 +876,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasPrecision(20)
                         .HasColumnType("decimal(20,0)");
 
+                    b.Property<Guid?>("CashGroupId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("CommentText")
                         .HasColumnType("nvarchar(max)");
 
@@ -945,7 +948,59 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CashGroupId");
+
                     b.ToTable("Cashes");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.CashGroup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("GroupNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("GroupNumber"));
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupNumber")
+                        .IsUnique();
+
+                    b.ToTable("CashGroups");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.Cashier", b =>
@@ -4017,6 +4072,16 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Navigation("LogSystem");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.Cash", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Cashes.Entities.CashGroup", "CashGroup")
+                        .WithMany("Cashes")
+                        .HasForeignKey("CashGroupId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CashGroup");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Chats.Entities.Chat", b =>
                 {
                     b.HasOne("CRM.Core.Domain.Chats.Entities.MainChat", null)
@@ -4338,6 +4403,11 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.Cash", b =>
                 {
                     b.Navigation("Accountancy");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.CashGroup", b =>
+                {
+                    b.Navigation("Cashes");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Chats.Entities.MainChat", b =>

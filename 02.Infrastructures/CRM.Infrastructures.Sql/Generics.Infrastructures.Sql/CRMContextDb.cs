@@ -97,6 +97,7 @@ namespace Generics.Infrastructures.Sql {
         public DbSet<Checkbook> Checkbooks { get; set; }
         public DbSet<Check> Checks { get; set; }
         public DbSet<Transfer> Transfers { get; set; }
+        public DbSet<CashGroup> CashGroups { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -155,6 +156,7 @@ namespace Generics.Infrastructures.Sql {
             modelBuilder.Entity<Transfer>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<BaseCash>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<BaseCenterCash>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<CashGroup>().HasQueryFilter(f => f.IsDeleted == false);
 
 
             modelBuilder.Entity<Order>().Ignore(f => f.Row);
