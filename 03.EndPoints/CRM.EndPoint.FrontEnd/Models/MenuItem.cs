@@ -14,10 +14,11 @@ public class MenuItem
     public bool ShowInMobileBottomMenu { get; set; }
 
     public bool ShowInDesktop { get; set; } = true;
+    public bool ShowInMobile { get; set; } = true;
 
     public string OnClick { get; set; }
     public string ElementId { get; set; }
-    public string className { get; set; }
+    public string ClassName { get; set; }
     public bool HasBadge { get; set; }
     public bool IsStandalone { get; set; }   // بیرون از لیست اصلی (مثل هشدارها)
 

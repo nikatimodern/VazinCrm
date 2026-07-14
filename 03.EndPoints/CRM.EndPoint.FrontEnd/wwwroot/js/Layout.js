@@ -4337,7 +4337,6 @@ document.addEventListener("click", (e) => {
 
 const mobileDrawer = document.getElementById("mobileDrawer");
 const mobileDrawerOverlay = document.getElementById("mobileDrawerOverlay");
-const closeMobileDrawer = document.getElementById("closeMobileDrawer");
 
 function toggleMobileDrawer(state) {
     
@@ -4353,9 +4352,6 @@ moreMenuBtn?.addEventListener("click", () => {
     toggleMobileDrawer(true);
 });
 
-closeMobileDrawer?.addEventListener("click", () => {
-    toggleMobileDrawer(false);
-});
 
 mobileDrawerOverlay?.addEventListener("click", () => {
     toggleMobileDrawer(false);
