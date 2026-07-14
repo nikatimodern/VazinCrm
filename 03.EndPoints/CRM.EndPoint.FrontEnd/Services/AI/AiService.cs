@@ -23,8 +23,11 @@ public class AiService(
     IssabelService issabelService,
     ILogger<AiService> logger,
     IHubContext<TaskHub> hub) {
-    public async Task ProcessPendingCallDirectGemini(CallRecording call, CancellationToken ct = default)
+    public async Task ProcessCallRecordingGemini(CallRecording call, CancellationToken ct = default)
     {
+        if (call == null) return;
+        await SaveCallDataToDatabase(call, ct);
+
         try
         {
             await UpdateStatus(call, AiProcessStatusEnum.DownloadingAudio, ct: ct);
