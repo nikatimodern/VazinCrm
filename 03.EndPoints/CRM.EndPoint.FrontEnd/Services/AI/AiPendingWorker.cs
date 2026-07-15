@@ -1,4 +1,4 @@
-using System;
+/*using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,4 +52,4 @@ public class AiPendingWorker(IServiceScopeFactory scopeFactory, ILogger<AiPendin
             await ai.ProcessPendingCall(call, ct);
         }
     }
-}
+}*/

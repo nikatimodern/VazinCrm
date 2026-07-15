@@ -461,6 +461,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AgentReview")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("AgentScore")
+                        .HasColumnType("int");
+
                     b.Property<string>("AiError")
                         .HasColumnType("nvarchar(max)");
 

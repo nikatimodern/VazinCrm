@@ -39,11 +39,11 @@ public class AiService(
                 return;
             }
 
-            var audioBase64 = Convert.ToBase64String(audioStream.ToArray());
+            //var audioBase64 = Convert.ToBase64String(audioStream.ToArray());
             await UpdateStatus(call, AiProcessStatusEnum.Summarizing, ct: ct);
 
             var userNames = call.Participants?.Select(x => x.UserFullName).ToList() ?? [];
-            var aiResult = await gapgptAi.ProcessAudioWithGemini(audioBase64, userNames, ct);
+            var aiResult = await gapgptAi.ProcessAudioWithGemini(audioStream, userNames, ct);
 
             if (!aiResult.Success)
             {
@@ -80,7 +80,7 @@ public class AiService(
     }
 
 
-    public async Task ProcessCallRecording(CallRecording call, CancellationToken ct)
+    /*    public async Task ProcessCallRecording(CallRecording call, CancellationToken ct)
     {
         if (call == null) return;
         await SaveCallDataToDatabase(call, ct);
@@ -206,9 +206,9 @@ public class AiService(
 
         await UpdateStatus(call, AiProcessStatusEnum.SummaryCompleted, ct: ct);
         return true;
-    }
+    }*/
 
-/*
+    /*
     public async Task ProcessCallRecording(CallRecording callData)
     {
         var filePath = @"C:\Users\a.gorji\Desktop\test1.wav";

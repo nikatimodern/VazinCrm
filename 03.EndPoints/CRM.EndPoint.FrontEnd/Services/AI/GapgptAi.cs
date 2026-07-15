@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -7,33 +8,31 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 
 public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<GapgptAi> logger) {
-    public async Task<SummaryResult> ProcessAudioWithGemini(string audioBase64, List<string> userNames, CancellationToken ct = default)
+    public async Task<SummaryResult> ProcessAudioWithGemini(MemoryStream audio, List<string> userNames, CancellationToken ct = default)
     {
         try
         {
             logger.LogInformation("Gemini Audio Processing started.");
             var prompt = aiPrompts.AnalyzeAudioCall(string.Join(", ", userNames));
 
-            var requestBody = new {
+            var requestBody = new { // https://gapgpt.app/platform-v2/tokens
                 model = "gemini-2.5-flash",
                 messages = new[] {
                     new {
                         role = "user",
                         content = new object[] {
                             new { type = "text", text = prompt },
-                            new { type = "input_audio", input_audio = new { data = audioBase64, format = "wav" } }
+                            new { type = "input_audio", input_audio = new { data = audio.ToArray(), format = "wav" } }
                         }
                     }
                 },
                 response_format = new { type = "json_object" },
-                temperature = 0.8,
-                top_p = 0.7
+//                temperature = 0.8,
             };
 
             var response = await httpClient.PostAsJsonAsync("chat/completions", requestBody, cancellationToken: ct);
@@ -68,8 +67,7 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
 
 
     // خلاصه نویسی
-    public async Task<SummaryResult>
-        SummarizeText(string textToSummarize, List<string> userNames, CancellationToken ct = default) // https://gapgpt.app/platform-v2/tokens
+    public async Task<SummaryResult> SummarizeText(string textToSummarize, List<string> userNames, CancellationToken ct = default)
     {
         try
         {

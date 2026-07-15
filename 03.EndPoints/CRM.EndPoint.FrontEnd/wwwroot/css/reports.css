@@ -115,7 +115,7 @@
 }
 
 
-.report-ai-badge img {
+.ai-svg-icon {
   color: white;
   height: 14px;
   width: auto;
@@ -299,6 +299,86 @@
 
 .report-dropdown__toggle:hover, .report-dropdown__toggle:focus {
   background-color: rgba(0, 0, 0, 0.05);
+}
+
+
+/*  */
+
+.agent-review-box {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #fafbfe;
+  border-right: 4px solid #6d28d9;
+}
+
+
+.agent-review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+
+
+.agent-review-header span {
+  font-size: 12px;
+  font-family: IRANSansBold;
+  color: #333;
+}
+
+
+.agent-review-icon {
+  width: 22px;
+  height: 22px;
+  line-height: 22px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #c2188f, #5b21b6);
+  
+  color: #fff !important;
+  text-align: center;
+  font-family: "Segoe UI", sans-serif, Arial, Helvetica !important;
+  font-weight: bold;
+  letter-spacing: .5px;
+  user-select: none;
+}
+
+
+.agent-stars {
+  margin-right: auto;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 2px;
+}
+
+
+.agent-stars svg {
+  font-size: 12px;
+  color: #d1d5db;
+  transition: color .2s;
+}
+
+
+.agent-stars svg.filled {
+  color: #f59e0b;
+}
+
+
+.agent-review-text {
+  margin-top: 8px;
+  color: #555;
+  line-height: 1.8;
+  font-size: 13px;
+  display: none;
+}
+
+
+.agent-score-text {
+  font-size: 12px;
+  color: #666;
+  font-family: IRANSansBold;
 }
 
 
