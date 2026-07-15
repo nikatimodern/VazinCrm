@@ -1153,6 +1153,17 @@ animation: loading 0.9s infinite linear;
 }*/
 
 /* HTML: <div class="loader"></div> */
+
+
+#FLshowLoading {
+  display: none;
+  position: fixed;
+  height: 100dvh;
+  inset: 0;
+  z-index: 9000;
+}
+
+
 .loader {
   height: 50px;
   aspect-ratio: 2.5;
@@ -1931,38 +1942,6 @@ button.accept-policy {
 }
 
 
-.MyBtn {
-  display: inline-block;
-  font-weight: 400;
-  line-height: 1.5;
-  color: white;
-  text-align: center;
-  text-decoration: none;
-  vertical-align: middle;
-  cursor: pointer;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-  background-color: transparent;
-  border: 1px transparent;
-  padding: .375rem .75rem;
-  font-size: 1rem;
-  border-radius: .30rem;
-  transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
-  /*margin: 2px;*/
-}
-
-
-.MyBtn:hover {
-  /*background-color: #395978;*/
-  /*        background-color: #f2f2f2;
-color: black;*/
-  font-size: 15px;
-  /*border: solid 2px white;*/
-  transition: color .3s ease-in-out, background-color 0.2s ease-in-out, border-color .3s ease-in-out, box-shadow 12.4s ease-in-out;
-}
-
-
 .l-default {
   background-color: #f5f7fa;
   min-height: calc(100dvh - 105px);
@@ -2368,10 +2347,10 @@ input[type=checkbox], input[type=radio] {
 }
 
 
-.MenuRight {
-  /*background-color: var(--DarkColor);*/
+.sidebar {
   background: linear-gradient(to bottom, #025751, #00302d);
-  height: 100% !important;
+  width: 210px;
+  height: 100%;
   position: fixed;
   right: 0;
   z-index: 1000;
@@ -2380,19 +2359,44 @@ input[type=checkbox], input[type=radio] {
   justify-content: space-between;
   transition: width 0.5s;
   align-items: center;
-  /* overflow: hidden; */
 }
 
 
-#mobileMenuId {
+#desktopNavbar {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-grow: 1;
+  overflow: auto;
+  width: 100%;
+  padding: .5rem;
+}
+
+
+.sidebar-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+}
+
+
+#mobileMenuBottom {
   display: none;
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   background: linear-gradient(to bottom, #025751, #00302d);
-  height: 100% !important;
+  height: 53px !important;
   z-index: 1000;
+}
+
+
+#mobileNavbar {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 100%;
 }
 
 
@@ -2467,7 +2471,7 @@ html.sidebar-collapsed #mainWrapper {
 }
 
 
-.menuBox {
+.menu-item {
   width: 100%;
   padding: 7px;
   display: flex;
@@ -2482,14 +2486,24 @@ html.sidebar-collapsed #mainWrapper {
 }
 
 
-.MenuRight .menuBox span {
+.menu-item .menu-item-title {
+  font-size: 1rem;
+  flex-grow: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   white-space: nowrap;
 }
 
 
-.MenuRight .menuBox:hover,
-.MenuRight .menuBox:focus,
-.menuBox.active-menu {
+.menu-link {
+  color: white;
+}
+
+
+.sidebar .menu-item:hover,
+.sidebar .menu-item:focus,
+.menu-item.active-menu {
   background-color: #19a19763;
   font-family: IRANSansBold !important;
 }
@@ -2522,6 +2536,7 @@ html:not(.sidebar-collapsed) .has-submenu.open ul.submenu {
 .has-submenu .submenu-arrow {
   cursor: pointer;
   transition: .25s;
+  width: 16px;
 }
 
 
@@ -2553,31 +2568,20 @@ html:not(.sidebar-collapsed) .has-submenu.open ul.submenu {
 }
 
 
-.menuBox.warning {
+.menu-item.warning {
+  display: none;
   background-color: rgba(239, 83, 80, 0.1);
   color: #EF5350;
 }
 
 
-.menuBox.warning:hover,
-.menuBox.warning:focus {
+.menu-item.warning:hover,
+.menu-item.warning:focus {
   background-color: rgba(239, 83, 80, 0.3);
 }
 
 
-.menuBox.warning1 {
-  background-color: rgba(255, 152, 0, 0.1);
-  color: #FF9800;
-}
-
-
-.menuBox.warning1:hover,
-.menuBox.warning1:focus {
-  background-color: rgba(255, 152, 0, 0.3);
-}
-
-
-.menuIcon {
+.menu-icon {
   width: 22px !important;
   height: 22px;
 }
@@ -2594,14 +2598,14 @@ html:not(.sidebar-collapsed) .has-submenu.open ul.submenu {
 }
 
 
-html.sidebar-collapsed .MenuRight {
+html.sidebar-collapsed .sidebar {
   width: 64px !important;
 }
 
 
-html.sidebar-collapsed .MenuRight .menuBox span,
-html.sidebar-collapsed .MenuRight #natixCompany > div,
-html.sidebar-collapsed .MenuRight .logoCompany-text,
+html.sidebar-collapsed .sidebar .menu-item span,
+html.sidebar-collapsed .sidebar .menuFooter > div,
+html.sidebar-collapsed .sidebar .logoCompany-text,
 html.sidebar-collapsed #collapseMenuIcon {
   display: none !important;
 }
@@ -2613,7 +2617,7 @@ html.sidebar-collapsed #expandMenuIcon,
 }
 
 
-html.sidebar-collapsed .MenuRight nav {
+html.sidebar-collapsed .sidebar nav {
   overflow: visible !important;
 }
 
@@ -2653,17 +2657,6 @@ html.sidebar-collapsed .has-submenu:hover > ul.submenu {
   visibility: visible;
   transform: translateX(0);
 }
-
-
-/*html.sidebar-collapsed .MenuRight:hover {
-    width: 210px !important;
-}
-
-html.sidebar-collapsed .MenuRight:hover .menuBox span,
-html.sidebar-collapsed .MenuRight:hover #natixCompany span,
-html.sidebar-collapsed .MenuRight:hover .logoCompany-text {
-    display: block;
-}*/
 
 
 #mobileDrawerOverlay {
@@ -2713,6 +2706,7 @@ html.sidebar-collapsed .MenuRight:hover .logoCompany-text {
 .menuHeader {
   height: 64px;
   min-height: 64px;
+  width: 100%;
   
   display: flex;
   align-items: center;
@@ -2728,7 +2722,50 @@ html.sidebar-collapsed .MenuRight:hover .logoCompany-text {
 }
 
 
-.mobileDrawerContent {
+.menuFooter {
+  height: 48px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px;
+  padding-inline: 16px;
+  width: 100%;
+}
+
+
+.menuFooter .ownerCompany-link {
+  gap: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+
+.menuFooter .ownerCompany-logo {
+  width: 28px;
+}
+
+
+.menuFooter .ownerCompany-info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+
+.menuFooter .ownerCompany-name {
+  font-size: 12px;
+  width: 100%;
+}
+
+
+.menuFooter .ownerCompany-subtitle {
+  font-size: 8px;
+  width: 100%;
+  white-space: nowrap;
+}
+
+
+#mobileDrawerNavbar {
   flex-grow: 1;
   overflow-y: auto;
   padding: .5rem;
@@ -2736,13 +2773,13 @@ html.sidebar-collapsed .MenuRight:hover .logoCompany-text {
 }
 
 
-#mobileDrawer .menuBox {
+#mobileDrawer .menu-item {
   padding: 10px;
 }
 
 
-#mobileDrawer .menuBox:hover,
-#mobileDrawer .menuBox:focus {
+#mobileDrawer .menu-item:hover,
+#mobileDrawer .menu-item:focus {
   background-color: #19a19763;
   font-family: IRANSansBold !important;
 }

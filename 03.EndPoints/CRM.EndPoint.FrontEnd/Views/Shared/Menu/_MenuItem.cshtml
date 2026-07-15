@@ -1,26 +1,30 @@
 @model MenuItem
 
 @if (Model.SubItems != null && Model.SubItems.Any()) {
-    <div class="w-100 has-submenu @($"{Model.Id}-menu")">
-        <span data-tooltip-left="@Model.Title" class="menuBox">
+    // Menu item with submenu
+    <div class="has-submenu @($"{Model.Id}-menu")">
+        <span data-tooltip-left="@Model.Title" class="menu-item">
             @Html.Raw(Model.IconHtml)
-            <span style="font-size:14px" class="flex-grow-1 d-flex justify-content-between align-items-center">
+            <span class="menu-item-title">
                 <span>@Model.Title</span>
-                <svg class="submenu-arrow" style="width: 16px;" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" /></svg>
+                <svg class="submenu-arrow" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" /></svg>
             </span>
         </span>
-        <ul class="submenu text-white">
+        <ul class="submenu">
             @foreach (var sub in Model.SubItems) {
-                <a class="menuLink text-white" href="@sub.Url">
-                    <li>@sub.Title</li>
+                <a class="menu-link" href="@sub.Url">
+                    <li>
+                        @sub.Title
+                    </li>
                 </a>
             }
         </ul>
     </div>
 } else if (string.IsNullOrEmpty(Model.Url)) {
-    <button type="button" id="@Model.ElementId" class="menuBox @Model.ClassName" data-tooltip-left="@Model.Title" onclick="@Model.OnClick">
+    // Menu button
+    <button type="button" id="@Model.ElementId" class="menu-item @Model.ClassName" data-tooltip-left="@Model.Title" onclick="@Model.OnClick">
         @Html.Raw(Model.IconHtml)
-        <span style="font-size:14px" class="flex-grow-1 d-flex align-items-center justify-content-between">
+        <span class="menu-item-title">
             <span>@Model.Title</span>
             @if (Model.HasBadge) {
                 <span class="badgeCircle"></span>
@@ -28,10 +32,14 @@
         </span>
     </button>
 } else {
-    <a href="@Model.Url" id="@Model.ElementId" class="menuBox menuLink @Model.ClassName" data-tooltip-left="@Model.Title">
+    // Menu link
+    <a href="@Model.Url" id="@Model.ElementId" class="menu-item menu-link @Model.ClassName" data-tooltip-left="@Model.Title">
         @Html.Raw(Model.IconHtml)
-        <span style="font-size:14px" class="flex-grow-1">
-            @Model.Title
+        <span class="menu-item-title">
+            <span>@Model.Title</span>
+            @if (Model.HasBadge) {
+                <span class="badgeCircle"></span>
+            }
         </span>
     </a>
 }

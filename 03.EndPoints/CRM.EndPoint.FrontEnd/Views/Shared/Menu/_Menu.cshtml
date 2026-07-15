@@ -13,79 +13,68 @@
     var mobileDrawerMenu = mobileMenus.Where(m => !m.ShowInMobileBottomMenu).ToList();
 }
 
-<!-- ========================================================================= -->
-<!-- ۱. منوی دسکتاپ (Sidebar) -->
-<!-- ========================================================================= -->
-<div id="menuId" class="MenuRight" style="width:210px;">
-    <div style="height:100dvh; width:100%; display:flex; flex-direction:column;">
+@*----- Desktop Sidebar -----*@
+<div id="desktopSidebar" class="sidebar">
+    @* Header & logo *@
+    <partial name="Menu/_MenuHeader" model="false" />
 
-        <!-- هدر سایدبار و لوگوها -->
-        <partial name="Menu/_MenuHeader" model="false" />
-
-        <!-- آیتم‌های منوی دسکتاپ -->
-        <nav class="d-flex flex-column justify-content-between h-100 overflow-auto text-white w-100 p-2">
-            <div class="d-flex flex-column justify-content-around align-content-center gap-1">
-                @foreach (var item in normalItems) {
-                    <partial name="Menu/_MenuItem" model="item" />
-                }
-            </div>
-
-            @foreach (var item in standaloneItems) {
+    @* Desktop nav items  *@
+    <nav id="desktopNavbar">
+        <div class="sidebar-menu-list">
+            @foreach (var item in normalItems) {
                 <partial name="Menu/_MenuItem" model="item" />
             }
-        </nav>
-    </div>
-
-    <!-- بخش پانویس سایدبار -->
-    <div id="natixCompany" class="flex-center cursor-pointer w-100 text-white" style="height:48px; border-top:1px solid rgba(255, 255, 255, 0.1); padding:8px;gap:12px;padding-inline:16px" onclick="window.open('https://www.natix.ir')">
-        <img style="width:28px;" src="~/Img/ownerLogoEW.png" alt="Natix">
-        <div class="d-flex flex-column flex-grow-1">
-            <span style="font-size:12px; width:100%">ناتیکس</span>
-            <span style="font-size:8px; width:100%; white-space:nowrap">شرکت مهندسی نرم افزاری </span>
         </div>
-    </div>
-</div>
 
-<!-- ========================================================================= -->
-<!-- ۲. منوی پایین موبایل (Bottom Navigation Bar) -->
-<!-- ========================================================================= -->
-<div id="mobileMenuId" style="width:100%; height:53px !important;">
-    <div style="display:flex; justify-content:space-between; align-items:center; height:100%">
-        <nav id="navbarNavMobile" class="p-0 h-100 p-md-2 navbar navbar-light flex-grow-1">
-            <div id="navMenuBar" class="w-100 h-100" style="color:#fff; display:flex; justify-content:space-around; align-items:center">
+        @foreach (var item in standaloneItems) {
+            <partial name="Menu/_MenuItem" model="item" />
+        }
+    </nav>
 
-                <!-- رندر داینامیک منوهای مخصوص Bottom Bar موبایل -->
-                @foreach (var item in mobileBottomMenu) {
-                    <a class="menuBox menuLink MyBtn" href="@item.Url">
-                        @Html.Raw(item.IconHtml)
-                        <span style="width:100%; font-size:15px" class="mp">@item.Title</span>
-                    </a>
-                }
-
-                <!-- دکمه همبرگری "بیشتر" برای باز کردن دراور موبایل -->
-                <span id="moreMenuBtn" class="menuBox">
-                    <i class="mp fa fa-bars" style="width:100%; font-size:30px"></i>
-                    <span style="width:100%; font-size:15px" class="mp">بیشتر</span>
-                </span>
-
+    @* Sidebar footer *@
+    <div class="menuFooter">
+        <a class="ownerCompany-link" href="https://www.natix.ir" target="_blank">
+            <img class="ownerCompany-logo" src="~/Img/ownerLogoEW.png" alt="Natix">
+            <div class="ownerCompany-info">
+                <span class="ownerCompany-name">ناتیکس</span>
+                <span class="ownerCompany-subtitle">شرکت مهندسی نرم افزاری</span>
             </div>
-        </nav>
+        </a>
     </div>
 </div>
 
-<!-- ========================================================================= -->
-<!-- ۳. دراور موبایل (Mobile Drawer) برای مابقی منوها -->
-<!-- ========================================================================= -->
+
+@*----- Mobile Bottom Bar -----*@
+<div id="mobileMenuBottom">
+    <nav id="mobileNavbar">
+        @foreach (var item in mobileBottomMenu) {
+            <a class="menu-item menu-link" href="@item.Url">
+                @Html.Raw(item.IconHtml)
+                <span>@item.Title</span>
+            </a>
+        }
+
+        @* More menu button *@
+        <span id="mobileMoreMenuBtn" class="menu-item">
+            <i class="fa fa-bars menu-icon"></i>
+            <span>بیشتر</span>
+        </span>
+
+    </nav>
+</div>
+
+
+@*----- Mobile Drawer -----*@
 <div id="mobileDrawerOverlay"></div>
 
 <div id="mobileDrawer">
     <partial name="Menu/_MenuHeader" model="true" />
 
-    <div class="mobileDrawerContent">
-        <div class="d-flex flex-column justify-content-around align-content-center gap-2">
+    <nav id="mobileDrawerNavbar">
+        <div class="sidebar-menu-list">
             @foreach (var item in mobileDrawerMenu) {
                 <partial name="Menu/_MenuItem" model="item" />
             }
         </div>
-    </div>
+    </nav>
 </div>

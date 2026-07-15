@@ -104,7 +104,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function setActiveMenu() {
     const currentPath = window.location.pathname.toLowerCase();
-    document.querySelectorAll(".menuLink").forEach(link => {
+    document.querySelectorAll(".menu-link").forEach(link => {
         const href = link.getAttribute("href")?.toLowerCase();
         if (!href || !href.includes(currentPath)) return;
         link.classList.add("active-menu");
@@ -112,14 +112,14 @@ function setActiveMenu() {
         const submenu = link.closest(".submenu");
         if (submenu) {
             const wrapper = link.closest(".has-submenu");
-            const menuBox = wrapper.querySelector(".menuBox");
+            const menuItem = wrapper.querySelector(".menu-item");
             wrapper?.classList.add("open");
-            menuBox?.classList.add("active-menu");
+            menuItem?.classList.add("active-menu");
         }
     });
     
     
-    document.querySelectorAll(".has-submenu > .menuBox").forEach(menu => {
+    document.querySelectorAll(".has-submenu > .menu-item").forEach(menu => {
         menu.addEventListener("click", () => {
             const wrapper = menu.closest(".has-submenu");
             wrapper.classList.toggle("open");
@@ -3106,8 +3106,8 @@ const OpenCloseMenu = () => {
 };
 
 const OpenMenu = () => {
-    $("#menuId").removeClass("closeMenu");
-    $("#menuId").addClass("openMenu");
+    $("#desktopSidebar").removeClass("closeMenu");
+    $("#desktopSidebar").addClass("openMenu");
     
     $("#ImgUser").removeClass("personImageCloseMenu");
     $("#ImgUser").addClass("personImageOpenMenu");
@@ -3117,8 +3117,8 @@ const OpenMenu = () => {
     
 };
 const CloseMenu = () => {
-    $("#menuId").removeClass("openMenu");
-    $("#menuId").addClass("closeMenu");
+    $("#desktopSidebar").removeClass("openMenu");
+    $("#desktopSidebar").addClass("closeMenu");
     
     $("#ImgUser").removeClass("personImageOpenMenu");
     $("#ImgUser").addClass("personImageCloseMenu");
@@ -4316,18 +4316,18 @@ function initLightbox() {
 }
 
 const overlay = document.getElementById("overlay");
-const moreMenuBtn = document.getElementById("moreMenuBtn");
+const mobileMoreMenuBtn = document.getElementById("mobileMoreMenuBtn");
 const moreMenuDropdown = document.getElementById("moreMenuDropdown");
 /*
-moreMenuBtn?.addEventListener("click", () => {
-    if (!moreMenuDropdown || !moreMenuBtn || !overlay) return;
+mobileMoreMenuBtn?.addEventListener("click", () => {
+    if (!moreMenuDropdown || !mobileMoreMenuBtn || !overlay) return;
     const isVisible = moreMenuDropdown.classList.toggle("show");
     overlay.classList.toggle("show", isVisible);
 });
 
 document.addEventListener("click", (e) => {
-    if (!moreMenuDropdown || !moreMenuBtn || !overlay) return;
-    if (!moreMenuBtn.contains(e.target) && !moreMenuDropdown.contains(e.target)) {
+    if (!moreMenuDropdown || !mobileMoreMenuBtn || !overlay) return;
+    if (!mobileMoreMenuBtn.contains(e.target) && !moreMenuDropdown.contains(e.target)) {
         moreMenuDropdown.classList.remove("show");
         overlay.classList.remove("show");
     }
@@ -4348,7 +4348,7 @@ function toggleMobileDrawer(state) {
     document.body.style.overflow = isOpen ? "hidden" : "";
 }
 
-moreMenuBtn?.addEventListener("click", () => {
+mobileMoreMenuBtn?.addEventListener("click", () => {
     toggleMobileDrawer(true);
 });
 
@@ -4357,7 +4357,7 @@ mobileDrawerOverlay?.addEventListener("click", () => {
     toggleMobileDrawer(false);
 });
 
-/*document.querySelectorAll("#mobileDrawer .has-submenu > .menuBox").forEach(el => {
+/*document.querySelectorAll("#mobileDrawer .has-submenu > .menu-item").forEach(el => {
     el.addEventListener("click", () => {
         const parent = el.closest(".has-submenu");
         console.log(parent);
@@ -4373,7 +4373,7 @@ function sortableMobileMenu() {
     
     function handleMoveSortable(e) {
         if (e.to === navMenu && e.from === moreMenu) {
-            const navItems = Array.from(navMenu.querySelectorAll(".menuBox"))
+            const navItems = Array.from(navMenu.querySelectorAll(".menu-item"))
                                   .filter(el => getComputedStyle(el).display !== "none");
             
             if (navItems.length >= 6) {
@@ -4389,10 +4389,10 @@ function sortableMobileMenu() {
     function handleEndSortable() {
         navMenu.classList.remove("nav-deny-drop");
         
-        const updatedNavMenu = Array.from(navMenu.querySelectorAll(".menuBox")).map(el => ({
+        const updatedNavMenu = Array.from(navMenu.querySelectorAll(".menu-item")).map(el => ({
             key: el.getAttribute("href") || el.id, location: "nav",
         }));
-        const updatedMoreMenu = Array.from(moreMenu.querySelectorAll(".menuBox")).map(el => ({
+        const updatedMoreMenu = Array.from(moreMenu.querySelectorAll(".menu-item")).map(el => ({
             key: el.getAttribute("href") || el.id, location: "more",
         }));
         const updatedOrder = [...updatedNavMenu, ...updatedMoreMenu];
@@ -4404,7 +4404,7 @@ function sortableMobileMenu() {
         const order = JSON.parse(localStorage.getItem("mobileMenuOrder")) || [];
         if (!order.length) return;
         
-        const allItems = document.querySelectorAll("#navbarNavMobile .menuBox");
+        const allItems = document.querySelectorAll("#mobileNavbar .menu-item");
         const allMap = {};
         allItems.forEach(item => {
             const key = item.getAttribute("href") || item.id;
@@ -4447,7 +4447,7 @@ function sortableMobileMenu() {
             delayOnTouchOnly: true,
             swapThreshold: 0.7,
             invertSwap: true,
-            filter: "#moreMenuBtn",
+            filter: "#mobileMoreMenuBtn",
             ghostClass: "lightGreen-background-class",
             chosenClass: "lightGreen-background-class",
             dragClass: "dragging",
@@ -4469,7 +4469,6 @@ function showModalWarnings() {
 async function getAllWarnings(isRefresh = false) {
     const roles = JSON.parse(sessionStorage.getItem("Rols"));
     const hasAccess = roles.some(rol => "Admin FinancialExpert FinancialAdmin".includes(rol?.name));
-    //const isAdmin = roles.some(rol => rol?.name === "Admin");
     if (!hasAccess) return;
     const container = document.getElementById("warningContainer");
     if (!container) return;
@@ -4480,9 +4479,8 @@ async function getAllWarnings(isRefresh = false) {
         const res = await axios(url);
         
         warningData = res.data;
-        
-        const badgeWarningCount = document.getElementById(`${window.innerWidth < 768 ? "warningIconBadge" : "badgeWarningCount"}`);
         const warningElmBtn = document.getElementById(`${window.innerWidth < 768 ? "warningIconHeader" : "warningsMenuId"}`);
+        const badgeWarningCount = warningElmBtn.querySelector(".badgeCircle");
         if (warningData.length) {
             warningElmBtn.style.display = "flex";
             badgeWarningCount.innerText = warningData.length.toString();
@@ -4492,8 +4490,6 @@ async function getAllWarnings(isRefresh = false) {
         
         if (warningData.length > 0) {
             warningData.forEach(item => {
-                
-                
                 const div = document.createElement("div");
                 div.className = "warning-box";
                 div.innerHTML = `
