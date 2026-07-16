@@ -1,7 +1,7 @@
 namespace CRM.Core.Domain.CallRecordings.Enums;
 
 public enum AiProcessStatusEnum {
-    Pending = 0,
+    Enqueued = 0,
 
     DownloadingAudio = 10,
     DownloadFailed = 11,
@@ -12,12 +12,13 @@ public enum AiProcessStatusEnum {
     AvanegarFailed = 23,
 
     Summarizing = 30,
-    SummaryFailed = 31,
-    SummaryIgnored = 32,
-    SummaryCompleted = 33,
+    WaitingForRetry = 31,
+    SummaryCompleted = 32,
+    SummaryFailed = 33,
+    SummaryIgnored = 34,
 
     ReportCreated = 40,
     ReportFailed = 41,
 
-    SystemError = 50
+    SystemError = 50,
 }

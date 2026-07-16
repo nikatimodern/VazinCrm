@@ -11,6 +11,7 @@ using CRM.EndPoint.FrontEnd.Services.Asterisk;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace CRM.EndPoint.FrontEnd.Services.AI;
@@ -42,14 +43,26 @@ public class AiService(
             //var audioBase64 = Convert.ToBase64String(audioStream.ToArray());
             await UpdateStatus(call, AiProcessStatusEnum.Summarizing, ct: ct);
 
+            call.AiAttempts++;
+
             var userNames = call.Participants?.Select(x => x.UserFullName).ToList() ?? [];
             var aiResult = await gapgptAi.ProcessAudioWithGemini(audioStream, userNames, ct);
 
+            call.AiDurationSeconds = aiResult?.ElapsedSeconds;
             if (!aiResult.Success)
             {
-                await UpdateStatus(call, AiProcessStatusEnum.SummaryFailed, aiResult.Error, ct);
+                if (call.AiAttempts < 3)
+                {
+                    logger.LogWarning("Transient error for Call ID: {Id}. Waiting for retry. Attempt {Attempt}/3", call.Id, call.AiAttempts);
+                    await UpdateStatus(call, AiProcessStatusEnum.WaitingForRetry, $"Transient error: {aiResult.Error}", ct);
+                } else
+                {
+                    await UpdateStatus(call, AiProcessStatusEnum.SummaryFailed, aiResult.Error, ct);
+                }
+
                 return;
             }
+
 
             if (aiResult.Data == null || string.IsNullOrWhiteSpace(aiResult.Data.Summary))
             {
@@ -275,6 +288,9 @@ public class AiService(
     {
         try
         {
+            var isAlreadyTracked = await db.CallRecordings.AnyAsync(x => x.Id == callData.Id, ct);
+            if (isAlreadyTracked) return;
+
             db.CallRecordings.Add(callData);
             await db.SaveChangesAsync(ct);
             logger.LogInformation("Call saved: {path}", callData.RecordingFilePath);

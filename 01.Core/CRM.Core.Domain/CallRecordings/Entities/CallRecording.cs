@@ -24,7 +24,7 @@ public class CallRecording : BaseEntity {
     public List<ReportParticipant> Participants { get; set; } = [];
     public Report Report { get; set; }
 
-    private AiProcessStatusEnum _AiProcessStatus = AiProcessStatusEnum.Pending;
+    private AiProcessStatusEnum _AiProcessStatus = AiProcessStatusEnum.Enqueued;
     public AiProcessStatusEnum AiStatus {
         get => _AiProcessStatus;
         set {
@@ -36,8 +36,9 @@ public class CallRecording : BaseEntity {
 
     public string AiError { get; set; }
     public string AvanegarRequestId { get; set; }
-    public int AvanegarAttempts { get; set; }
+    public int AiAttempts { get; set; }
 
     public string AgentReview { get; set; }
     public int? AgentScore { get; set; }
+    public double? AiDurationSeconds { get; set; }
 }

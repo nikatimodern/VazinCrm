@@ -7,6 +7,7 @@ public class SummaryResult {
     public bool Success { get; set; }
     public SummaryModel Data { get; set; }
     public string Error { get; set; }
+    public double ElapsedSeconds { get; set; }
 }
 
 public class AiGapgptModel {

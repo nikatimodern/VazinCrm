@@ -104,40 +104,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var sum = await gapgptAi.SummarizeText(text, ["رضا سلامی"]);
 
                 return null;*/
-                stream.Position = 0;
-                var audioBase64 = Convert.ToBase64String(stream.ToArray());
-                var prompt = aiPrompts.SummarizeCall("", "دکتر امیر محمد حسین زاده");
-                var requestBody = new {
-                    model = "gemini-2.5-flash",
-                    messages = new[] {
-                        new {
-                            role = "user",
-                            content = new object[] {
-                                new { type = "text", text = prompt },
-                                new { type = "input_audio", input_audio = new { data = audioBase64, format = "wav" } }
-                            }
-                        }
-                    },
-                    response_format = new { type = "json_object" },
-                    temperature = 0.8,
-                    top_p = 0.7,
-                };
-
-                var client = new HttpClient();
-                client.BaseAddress = new Uri("https://api.gapgpt.app/v1/");
-                client.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Bearer", "sk-DqOst76fwb3UtC05ZW1mraSTwfsJtz6B8xPpXuWfwCjEm2Uw");
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                client.Timeout = TimeSpan.FromMinutes(5);
-
-                var response = await client.PostAsJsonAsync("chat/completions", requestBody);
-                var raw = await response.Content.ReadAsStringAsync();
-                if (response.IsSuccessStatusCode)
-                {
-                    var resJson = await response.Content.ReadFromJsonAsync<AiGapgptModel>();
-
-                    var content = resJson?.Choices?[0]?.Message?.Content;
-                }
 
 
                 //await db.SaveChangesAsync();

@@ -6,6 +6,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 using Microsoft.Extensions.Logging;
@@ -15,6 +16,7 @@ namespace CRM.EndPoint.FrontEnd.Services.AI;
 public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<GapgptAi> logger) {
     public async Task<SummaryResult> ProcessAudioWithGemini(MemoryStream audio, List<string> userNames, CancellationToken ct = default)
     {
+        var sw = Stopwatch.StartNew();
         try
         {
             logger.LogInformation("Gemini Audio Processing.");
@@ -36,7 +38,7 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
             };
 
             var response = await httpClient.PostAsJsonAsync("chat/completions", requestBody, cancellationToken: ct);
-
+            sw.Stop();
             if (response.IsSuccessStatusCode)
             {
                 var resJson = await response.Content.ReadFromJsonAsync<AiGapgptModel>(cancellationToken: ct);
@@ -44,24 +46,25 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
 
                 if (string.IsNullOrWhiteSpace(content))
                 {
-                    return new SummaryResult { Success = false, Error = "AI returned an empty response." };
+                    return new SummaryResult { Success = false, Error = "AI returned an empty response.", ElapsedSeconds = sw.Elapsed.TotalSeconds };
                 }
 
                 var resultData = JsonSerializer.Deserialize<SummaryModel>(content);
-                logger.LogInformation("Gemini Audio Processing completed.");
+                logger.LogInformation("Gemini Audio Processing completed in {Elapsed}s.", sw.Elapsed.TotalSeconds);
 
                 return new SummaryResult { Success = true, Data = resultData };
             }
 
             var rawError = await response.Content.ReadAsStringAsync(ct);
             var clean = StripHtml(rawError);
-            logger.LogError("Gemini API Error ({StatusCode}): {Error}", response.StatusCode, clean);
-            return new SummaryResult { Success = false, Error = $"API Error ({response.StatusCode}): {clean}" };
+            logger.LogError("Gemini API Error ({StatusCode}) in {Elapsed}s: {Error}", response.StatusCode, sw.Elapsed.TotalSeconds, clean);
+            return new SummaryResult { Success = false, Error = $"API Error ({response.StatusCode}): {clean}", ElapsedSeconds = sw.Elapsed.TotalSeconds };
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error Gemini audio processing.");
-            return new SummaryResult { Success = false, Error = ex.Message };
+            sw.Stop();
+            logger.LogError(ex, "Error Gemini audio processing after {Elapsed}s.", sw.Elapsed.TotalSeconds);
+            return new SummaryResult { Success = false, Error = ex.Message, ElapsedSeconds = sw.Elapsed.TotalSeconds };
         }
     }
 

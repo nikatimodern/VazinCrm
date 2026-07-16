@@ -75,19 +75,16 @@
                         <div class="agent-review-box">
 
                             <div class="agent-review-header" onclick="showAgentReviewText(this)">
-                                <div class="d-flex align-items-center justify-content-between flex-grow-1 gap-2 gap-md-3">
-
+                                <div class="agent-review-content">
                                     <span class="agent-review-title">ارزیابی عملکرد کارشناس</span>
 
                                     @if (item.CallRecording.AgentScore != null) {
-                                        <div class="flex-center gap-2">
+                                        <div class="agent-rating-wrapper">
                                             <div class="agent-stars">
                                                 @for (var i = 1; i <= 5; i++) {
                                                     <i class="fas fa-star @(i <= item.CallRecording.AgentScore ? "filled" : "")"></i>
-                                                    @* <i class="@(i <= item.CallRecording.AgentScore ? "fas fa-star filled" : "far fa-star")"></i> *@
                                                 }
                                             </div>
-
                                             <span class="agent-score-text">
                                                 @(item.CallRecording.AgentScore switch {
                                                     5 => "عالی",
@@ -98,17 +95,17 @@
                                                     _ => ""
                                                 })
                                             </span>
-
                                         </div>
                                     }
                                 </div>
+
                                 <button class="agent-review-toggle">
                                     <svg viewBox="0 0 20 20" fill="currentColor">
                                         <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
                                     </svg>
                                 </button>
-
                             </div>
+
                             @if (!string.IsNullOrWhiteSpace(item.CallRecording.AgentReview)) {
                                 <div class="agent-review-collapse">
                                     <div class="agent-review-text">
@@ -118,8 +115,7 @@
                             }
 
                         </div>
-                    }
-                </div>
+                    }                </div>
 
                 <div class="d-flex justify-content-between align-items-end gap-1 gap-md-4">
                     <div class="report-info">
