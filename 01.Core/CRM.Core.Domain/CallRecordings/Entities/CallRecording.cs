@@ -24,7 +24,8 @@ public class CallRecording : BaseEntity {
     public List<ReportParticipant> Participants { get; set; } = [];
     public Report Report { get; set; }
 
-    private AiProcessStatusEnum _AiProcessStatus = AiProcessStatusEnum.Enqueued;
+    private AiProcessStatusEnum _AiProcessStatus;
+
     public AiProcessStatusEnum AiStatus {
         get => _AiProcessStatus;
         set {
@@ -32,6 +33,7 @@ public class CallRecording : BaseEntity {
             AiStatusTxt = _AiProcessStatus.ToString();
         }
     }
+
     public string AiStatusTxt { get; private set; }
 
     public string AiError { get; set; }

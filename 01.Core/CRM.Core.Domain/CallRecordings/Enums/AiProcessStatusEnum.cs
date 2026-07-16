@@ -1,7 +1,7 @@
 namespace CRM.Core.Domain.CallRecordings.Enums;
 
 public enum AiProcessStatusEnum {
-    Enqueued = 0,
+    Enqueued = 1,
 
     DownloadingAudio = 10,
     DownloadFailed = 11,

@@ -7,7 +7,7 @@ public class SummaryResult {
     public bool Success { get; set; }
     public SummaryModel Data { get; set; }
     public string Error { get; set; }
-    public double ElapsedSeconds { get; set; }
+    public double? ElapsedSeconds { get; set; }
 }
 
 public class AiGapgptModel {
@@ -36,5 +36,5 @@ public class SummaryModel {
 public class SalesAgentModel {
     [JsonPropertyName("review")] public string Review { get; set; }
 
-    [JsonPropertyName("score")] public int Score { get; set; }
+    [JsonPropertyName("score")] public int? Score { get; set; }
 }

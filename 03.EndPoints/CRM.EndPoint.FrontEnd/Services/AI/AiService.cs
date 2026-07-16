@@ -27,37 +27,37 @@ public class AiService(
     public async Task ProcessCallRecordingGemini(CallRecording call, CancellationToken ct = default)
     {
         if (call == null) return;
-        await SaveCallDataToDatabase(call, ct);
+        var trackedCall = await GetOrCreateTrackedCall(call, ct);
 
         try
         {
-            await UpdateStatus(call, AiProcessStatusEnum.DownloadingAudio, ct: ct);
-            using var audioStream = await issabelService.GetAudioWithRetry(call.RecordingFilePath, ct);
+            await UpdateStatus(trackedCall, AiProcessStatusEnum.DownloadingAudio, ct: ct);
+            using var audioStream = await issabelService.GetAudioWithRetry(trackedCall.RecordingFilePath, ct);
 
             if (audioStream == null)
             {
-                await UpdateStatus(call, AiProcessStatusEnum.DownloadFailed, "Audio download from Issabel failed.", ct);
+                await UpdateStatus(trackedCall, AiProcessStatusEnum.DownloadFailed, "Audio download from Issabel failed.", ct);
                 return;
             }
 
             //var audioBase64 = Convert.ToBase64String(audioStream.ToArray());
-            await UpdateStatus(call, AiProcessStatusEnum.Summarizing, ct: ct);
+            await UpdateStatus(trackedCall, AiProcessStatusEnum.Summarizing, ct: ct);
 
-            call.AiAttempts++;
+            trackedCall.AiAttempts++;
 
-            var userNames = call.Participants?.Select(x => x.UserFullName).ToList() ?? [];
+            var userNames = trackedCall.Participants?.Select(x => x.UserFullName).ToList() ?? [];
             var aiResult = await gapgptAi.ProcessAudioWithGemini(audioStream, userNames, ct);
 
-            call.AiDurationSeconds = aiResult?.ElapsedSeconds;
+            trackedCall.AiDurationSeconds = aiResult?.ElapsedSeconds;
             if (!aiResult.Success)
             {
-                if (call.AiAttempts < 3)
+                if (trackedCall.AiAttempts < 3)
                 {
-                    logger.LogWarning("Transient error for Call ID: {Id}. Waiting for retry. Attempt {Attempt}/3", call.Id, call.AiAttempts);
-                    await UpdateStatus(call, AiProcessStatusEnum.WaitingForRetry, $"Transient error: {aiResult.Error}", ct);
+                    logger.LogWarning("Transient error for Call ID: {Id}. Waiting for retry. Attempt {Attempt}/3", trackedCall.Id, trackedCall.AiAttempts);
+                    await UpdateStatus(trackedCall, AiProcessStatusEnum.WaitingForRetry, $"Transient error: {aiResult.Error}", ct);
                 } else
                 {
-                    await UpdateStatus(call, AiProcessStatusEnum.SummaryFailed, aiResult.Error, ct);
+                    await UpdateStatus(trackedCall, AiProcessStatusEnum.SummaryFailed, aiResult.Error, ct);
                 }
 
                 return;
@@ -66,29 +66,29 @@ public class AiService(
 
             if (aiResult.Data == null || string.IsNullOrWhiteSpace(aiResult.Data.Summary))
             {
-                await UpdateStatus(call, AiProcessStatusEnum.SummaryIgnored, "Summary skipped by AI rules.", ct);
+                await UpdateStatus(trackedCall, AiProcessStatusEnum.SummaryIgnored, "Summary skipped by AI rules.", ct);
                 return;
             }
 
-            call.SummaryText = aiResult.Data.Summary.Trim();
-            call.Product = aiResult.Data.Product?.Trim();
+            trackedCall.SummaryText = aiResult.Data.Summary.Trim();
+            trackedCall.Product = aiResult.Data.Product?.Trim();
 
-            if (string.IsNullOrEmpty(call.CallerCustomerTxt) && !string.IsNullOrEmpty(aiResult.Data.Customer))
+            if (string.IsNullOrEmpty(trackedCall.CallerCustomerTxt) && !string.IsNullOrEmpty(aiResult.Data.Customer))
             {
-                call.CallerCustomerTxt = aiResult.Data.Customer.Trim();
+                trackedCall.CallerCustomerTxt = aiResult.Data.Customer.Trim();
             }
 
-            call.AgentReview = aiResult.Data.SalesAgent?.Review;
-            call.AgentScore = aiResult.Data.SalesAgent?.Score;
+            trackedCall.AgentReview = aiResult.Data.SalesAgent?.Review;
+            trackedCall.AgentScore = aiResult.Data.SalesAgent?.Score;
 
-            await UpdateStatus(call, AiProcessStatusEnum.SummaryCompleted, ct: ct);
+            await UpdateStatus(trackedCall, AiProcessStatusEnum.SummaryCompleted, ct: ct);
 
-            await CreateReportWithCallData(call, ct);
+            await CreateReportWithCallData(trackedCall, ct);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error in direct Gemini process for call ID: {Id}", call.Id);
-            await UpdateStatus(call, AiProcessStatusEnum.SystemError, $"Direct Gemini error: {ex.Message}", ct);
+            logger.LogError(ex, "Error in direct Gemini process for call ID: {Id}", trackedCall.Id);
+            await UpdateStatus(trackedCall, AiProcessStatusEnum.SystemError, $"Direct Gemini error: {ex.Message}", ct);
         }
     }
 
@@ -280,25 +280,40 @@ public class AiService(
         if (call == null) return;
         call.AiStatus = status;
         call.AiError = error;
+        call.ModifyDate = DateTime.Now;
+        call.ModifyDateTxt = dts.GetDateTimePersian();
 
         await db.SaveChangesAsync(ct);
     }
 
-    private async Task SaveCallDataToDatabase(CallRecording callData, CancellationToken ct)
+    private async Task<CallRecording> GetOrCreateTrackedCall(CallRecording call, CancellationToken ct)
     {
         try
         {
-            var isAlreadyTracked = await db.CallRecordings.AnyAsync(x => x.Id == callData.Id, ct);
-            if (isAlreadyTracked) return;
+            if (call == null) return null;
 
-            db.CallRecordings.Add(callData);
+            if (call.Id != Guid.Empty)
+            {
+                var trackedCall = await db.CallRecordings
+                    .Include(x => x.Participants)
+                    .FirstOrDefaultAsync(x => x.Id == call.Id, ct);
+
+                if (trackedCall != null)
+                {
+                    return trackedCall;
+                }
+            }
+
+            await db.CallRecordings.AddAsync(call, ct);
             await db.SaveChangesAsync(ct);
-            logger.LogInformation("Call saved: {path}", callData.RecordingFilePath);
+            logger.LogInformation("Call saved: {path}", call.RecordingFilePath);
+            return call;
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Save call failed");
             Console.WriteLine(ex.Message);
+            return call;
         }
     }
 

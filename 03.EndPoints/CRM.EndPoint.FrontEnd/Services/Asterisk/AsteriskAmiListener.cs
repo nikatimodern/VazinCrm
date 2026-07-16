@@ -294,6 +294,7 @@ public class AsteriskAmiListener : BackgroundService {
             DestinationUserTxt = user?.FullName,
             RecordingFilePath = call.RecordingPath,
             DurationSeconds = (int)duration.TotalSeconds,
+            AiStatus = AiProcessStatusEnum.Enqueued
         };
 
         foreach (var p in call.Participants)

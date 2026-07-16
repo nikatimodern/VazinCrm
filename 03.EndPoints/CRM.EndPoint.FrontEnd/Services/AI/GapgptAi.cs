@@ -52,13 +52,14 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
                 var resultData = JsonSerializer.Deserialize<SummaryModel>(content);
                 logger.LogInformation("Gemini Audio Processing completed in {Elapsed}s.", sw.Elapsed.TotalSeconds);
 
-                return new SummaryResult { Success = true, Data = resultData };
+                return new SummaryResult { Success = true, Data = resultData, ElapsedSeconds = sw.Elapsed.TotalSeconds };
             }
 
             var rawError = await response.Content.ReadAsStringAsync(ct);
             var clean = StripHtml(rawError);
             logger.LogError("Gemini API Error ({StatusCode}) in {Elapsed}s: {Error}", response.StatusCode, sw.Elapsed.TotalSeconds, clean);
-            return new SummaryResult { Success = false, Error = $"API Error ({response.StatusCode}): {clean}", ElapsedSeconds = sw.Elapsed.TotalSeconds };
+            return new SummaryResult
+                { Success = false, Error = $"API Error ({response.StatusCode}): {clean}", ElapsedSeconds = sw.Elapsed.TotalSeconds };
         }
         catch (Exception ex)
         {

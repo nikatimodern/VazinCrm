@@ -467,6 +467,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<int?>("AgentScore")
                         .HasColumnType("int");
 
+                    b.Property<int>("AiAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<double?>("AiDurationSeconds")
+                        .HasColumnType("float");
+
                     b.Property<string>("AiError")
                         .HasColumnType("nvarchar(max)");
 
@@ -475,9 +481,6 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.Property<string>("AiStatusTxt")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("AvanegarAttempts")
-                        .HasColumnType("int");
 
                     b.Property<string>("AvanegarRequestId")
                         .HasColumnType("nvarchar(max)");
