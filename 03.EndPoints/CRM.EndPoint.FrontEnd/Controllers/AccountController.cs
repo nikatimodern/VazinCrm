@@ -469,8 +469,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             var model = new GetUserLogin {
                 Id = user.Id,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
+                FirstName = user.FirstName?.Trim(),
+                LastName = user.LastName?.Trim(),
                 PersonImageUrl = user.PersonImageUrl,
                 RollName = roles.FirstOrDefault(),
                 RollNames = roles.Select(r => new RoleInfo { Name = roleMap.GetValueOrDefault(r, r), FaName = r }).ToList(),
@@ -516,14 +516,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public async Task<IActionResult> GetUsers(int? type = 2)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
-            List<SelectOptionGuidDto> data = null;
+            List<SelectOptionIdDto> data = null;
 
             switch (type)
             {
                 case 1:
                     data = await UDb.Users
                         .Where(u => u.IsEmployee)
-                        .Select(g => new SelectOptionGuidDto {
+                        .Select(g => new SelectOptionIdDto {
                             id = Guid.Parse(g.Id),
                             text = g.FullName
                         })
@@ -532,7 +532,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 case 2:
                     data = userManager.GetUsersInRoleAsync("کارشناس فروش").Result
-                        .Select(g => new SelectOptionGuidDto() {
+                        .Select(g => new SelectOptionIdDto() {
                             id = Guid.Parse(g.Id),
                             text = g.FullName
                         }).ToList();

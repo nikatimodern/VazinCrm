@@ -232,6 +232,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
                         var oldPf = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == item.Id);
 
                         item.Accepted = false;
+                        if (item.AcceptedTerms == true) item.AcceptedTerms = false;
                         item.PrePftype = item.Pftype;
                         item.Pftype = (int)PreFactorEnum.فاقد_اعتبار;
                         item.PftypeTxt = Service.GetTypeTxtPfactor(item.Pftype);

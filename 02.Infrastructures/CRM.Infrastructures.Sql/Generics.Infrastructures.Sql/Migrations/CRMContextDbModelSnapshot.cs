@@ -793,6 +793,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("AccountTitle")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("BaseCashType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BaseCashTypeTxt")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("CommentText")
                         .HasColumnType("nvarchar(max)");
 
@@ -2675,6 +2681,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("bit");
 
                     b.Property<bool?>("AcceptedManagingDirector")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("AcceptedTerms")
                         .HasColumnType("bit");
 
                     b.Property<string>("AgentMeliCode")

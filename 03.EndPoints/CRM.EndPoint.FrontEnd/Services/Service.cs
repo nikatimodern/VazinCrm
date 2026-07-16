@@ -88,14 +88,21 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
 
             pf.PrePftype = pf.Pftype;
-            switch (type)
+            var targetDict = type switch {
+                1 => acceptedDict,
+                2 => rejectDict,
+                _ => null
+            };
+
+            if (targetDict == null) throw new InvalidOperationException($"Invalid type value: {type}. Expected 1 (accept) or 2 (reject).");
+
+            var currentStatus = pf.Pftype;
+            if (targetDict.TryGetValue(pf.Pftype, out var newStatus))
             {
-                case 1:
-                    pf.Pftype = acceptedDict[pf.Pftype];
-                    break;
-                case 2:
-                    pf.Pftype = rejectDict[pf.Pftype];
-                    break;
+                pf.Pftype = newStatus;
+            } else
+            {
+                throw new KeyNotFoundException($"Current status '({currentStatus}) is not defined in '{(type == 1 ? "acceptedDict" : "rejectDict")}'");
             }
 
             pf.PftypeTxt = GetTypeTxtPfactor(pf.Pftype);

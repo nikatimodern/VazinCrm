@@ -8,20 +8,21 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.BaseItems.Enums;
+using CRM.Core.Domain.Cashes.Enums;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.BaseItem;
 
-namespace CRM.EndPoint.FrontEnd.Controllers
-{
+namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
-
-    public class BaseItemController : Controller
-    {
+    public class BaseItemController : Controller {
         private readonly Service genService;
         private readonly FileSaver fileSaver;
         private readonly DateTimeServices dtService;
         private readonly CRMContextDb db;
+
         public BaseItemController(Service GenService, FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db)
         {
             genService = GenService;
@@ -29,35 +30,51 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             this.dtService = dtService;
             this.db = db;
         }
+
         [Authorize(Roles = "مدیر ارشد, مدیر فروش, مدیر تامین, مدیر مالی")]
         public IActionResult Index()
         {
             return View();
         }
 
+        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        public IActionResult Financial()
+        {
+            var baseCashTypes = Enum.GetValues<BaseCashTypeEnum>().Select(x => new SelectOptionDto<int> {
+                Value = (int)x,
+                Text = x.ToString()
+            }).ToList();
+
+            var model = new FinancialSettingVModel {
+                BaseCashTypes = baseCashTypes,
+            };
+            return View(model);
+        }
+
         public async Task<IActionResult> getCompany()
         {
-            var data= await db.Companies.Include(f => f.CompanyFiles).FirstOrDefaultAsync();
+            var data = await db.Companies.Include(f => f.CompanyFiles).FirstOrDefaultAsync();
             return Ok(data);
         }
+
         public async Task<IActionResult> addCompany(Company model)
         {
             db.CompanyFile.RemoveRange(db.CompanyFile.ToList());
-            foreach(var item in model.CompanyFiles ?? Enumerable.Empty<CompanyFile>())
+            foreach (var item in model.CompanyFiles ?? Enumerable.Empty<CompanyFile>())
             {
-                
                 item.FileUrl = fileSaver.SaveBaseItemImage(item.file, item.Filename, item.fileExten);
             }
+
             db.Companies.Update(model);
             await db.SaveChangesAsync();
             return Ok();
         }
+
         public async Task<IActionResult> GetItemsOp(int typeCode)
         {
             var data = await db.BaseItems
                 .Where(f => f.TypeCode == (BaseItemEnum)typeCode)
-                .Select(g => new SelectOptionGuidDto()
-                {
+                .Select(g => new SelectOptionIdDto() {
                     id = g.Id,
                     text = g.Title
                 }).ToListAsync();
@@ -94,8 +111,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                                 dataF = dataF.OrderBy(f => f.Title);
                                 break;
                         }
-                    }
-                    else
+                    } else
                     {
                         switch (sortColumn)
                         {
@@ -108,19 +124,20 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                         }
                     }
                 }
+
                 if (!string.IsNullOrEmpty(searchValue))
                 {
-                    dataF = dataF.Where(
-                        m =>
+                    dataF = dataF.Where(m =>
                         m.Title.Contains(searchValue)
                     );
                 }
+
                 recordsTotal = dataF.Count();
                 var data = await dataF.Skip(skip).Take(pageSize).ToListAsync();
                 var jsonData = new { draw, recordsFiltered = recordsTotal, recordsTotal, data };
                 return Ok(jsonData);
             }
-            catch 
+            catch
             {
                 return null;
             }
@@ -128,7 +145,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
         public async Task<IActionResult> GetAllFamillyWay()
         {
-
             try
             {
                 var draw = Request.Form["draw"].FirstOrDefault();
@@ -155,8 +171,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                                 dataF = dataF.OrderBy(f => f.Title);
                                 break;
                         }
-                    }
-                    else
+                    } else
                     {
                         switch (sortColumn)
                         {
@@ -169,31 +184,27 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                         }
                     }
                 }
+
                 if (!string.IsNullOrEmpty(searchValue))
                 {
-                    dataF = dataF.Where(
-                        m =>
+                    dataF = dataF.Where(m =>
                         m.Title.Contains(searchValue)
                     );
                 }
+
                 recordsTotal = dataF.Count();
                 var data = await dataF.Skip(skip).Take(pageSize).ToListAsync();
                 var jsonData = new { draw, recordsFiltered = recordsTotal, recordsTotal, data };
                 return Ok(jsonData);
             }
-            catch 
+            catch
             {
                 return null;
             }
-
-
-
-
         }
 
         public async Task<IActionResult> GetAllSenf()
         {
-
             try
             {
                 var draw = Request.Form["draw"].FirstOrDefault();
@@ -220,8 +231,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                                 dataF = dataF.OrderBy(f => f.Title);
                                 break;
                         }
-                    }
-                    else
+                    } else
                     {
                         switch (sortColumn)
                         {
@@ -234,13 +244,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                         }
                     }
                 }
+
                 if (!string.IsNullOrEmpty(searchValue))
                 {
-                    dataF = dataF.Where(
-                        m =>
+                    dataF = dataF.Where(m =>
                         m.Title.Contains(searchValue)
                     );
                 }
+
                 recordsTotal = dataF.Count();
                 var data = await dataF.Skip(skip).Take(pageSize).ToListAsync();
                 var jsonData = new { draw, recordsFiltered = recordsTotal, recordsTotal, data };
@@ -250,7 +261,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             {
                 return null;
             }
-
         }
 
         public async Task<IActionResult> AddItem(BaseItem model)
@@ -258,7 +268,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             using var transaction = db.Database.BeginTransaction();
             try
             {
-
                 db.Add(model);
                 await db.SaveChangesAsync();
                 transaction.Commit();
@@ -269,7 +278,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                 transaction.Rollback();
                 return BadRequest();
             }
-
         }
 
 
@@ -281,6 +289,5 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
             return Ok();
         }
-
     }
 }

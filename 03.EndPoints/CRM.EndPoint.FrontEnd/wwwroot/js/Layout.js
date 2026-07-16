@@ -310,15 +310,17 @@ const closeModalAmount = () => {
 };
 
 
-const getbaseDescription = async () => {
-    return new Promise((resolve) => {
-        $.get("/Factor/getItemsDescription", (res) => {
-            resolve(res);
-        })
-         .fail(() => {
-             getbaseDescription();
-         });
-    });
+const getBaseDescription = async (type = null) => {  // 0: preFactor | 1: Factor | 2: termsPrefactor
+    try {
+        const res = await axios(`/Factor/GetItemsDescription?type=${type}`)
+        if (res.status === 200) {
+            return res.data
+        }
+        return null;
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
 };
 
 
@@ -1317,8 +1319,6 @@ const submitOrder = async () => {
         model.push(data);
     });
     
-    console.log(model);
-    
     axios.post(`/Order/AddHeadOrder`, model).then((res) => {
         if (res.status === 200) {
             toastifySuccess("حواله تولید با موفقیت ثبت شد");
@@ -1877,23 +1877,23 @@ const showMobileModal = async (id, type, dealId) => {
     typeSubmitSmsSendPf = type;
     dealIdSubmitSmsSendPf = dealId;
     try {
-        $("#MobileModal").modal("show");
+        ModalToggle("MobileModal")
         smsSendedPfId = id;
         const res = await axios(`/factor/GetCustomerPhone/${id}`);
         if (res.status === 200) {
-            $("#mobileid").val(res.data);
+            document.getElementById("mobileid").value = res.data;
         }
         
     } catch (err) {
         console.log(err);
-        setTimeout(() => showMobileModal(id), 3000);
+        setTimeout(async () => await showMobileModal(id), 3000);
     }
 };
 
 const SendToCustomer = async () => {
     try {
         FLshowLoading();
-        const toNumber = $("#mobileid").val();
+        const toNumber = document.getElementById("mobileid").value;
         const res = await axios(`/Factor/SendToCustomer?id=${smsSendedPfId}&toNumber=${toNumber}`);
         if (res.status === 200) {
             if (typeSubmitSmsSendPf === 1) {
@@ -2743,11 +2743,11 @@ let typeNotAccept;
 const notAcceptCommentElm = document.getElementById("NotAcceptComment");
 
 async function showModalNotAccept(id, type) { // type: acc= 0 / pf= 12 financial | 13 tamin | 14: SaleAdmin
-    notAcceptCommentElm.value = type === 12 ? "پیش‌فاکتور در بررسی تأیید نشد، لطفا اصلاح شود." : "";
+    notAcceptCommentElm.value = "";
     document.getElementById("NotAcceptHeader").textContent = type !== 0 ? "عدم تایید پیش‌فاکتور" : "عدم تایید واریزی";
     idNotAccept = id;
     typeNotAccept = type;
-    $("#NotAcceptModal").modal("toggle");
+    ModalToggle("#NotAcceptModal");
 }
 
 async function submitNotAccept() { // رد تایید و بازگشت | عدم تایید
@@ -2757,9 +2757,10 @@ async function submitNotAccept() { // رد تایید و بازگشت | عدم �
             return;
         }
         
+        const userFullName = `${currentUser?.firstName || ""} ${currentUser?.lastName || ""}`.trim();
         const model = {
             id: idNotAccept,
-            description: `${notAcceptCommentElm.value.trim()} (${document.getElementById("NameUser").textContent.trim()})`,
+            description: `${notAcceptCommentElm.value.trim()} (${userFullName})`,
         };
         
         if (typeNotAccept === 0) { // acc
@@ -5641,6 +5642,12 @@ audioModal?.addEventListener("hidden.bs.modal", () => {
     playerAudioModal.currentTime = 0;
     sourceAudioModal.src = "";
 });
+
+function showModalSetting() {
+    toggleMobileDrawer(false);
+    ModalToggle("BaseSetting")
+}
+
 
 function showAgentReviewText(btn) {
     btn.closest(".agent-review-box")?.classList.toggle("open");
