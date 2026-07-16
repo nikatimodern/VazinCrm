@@ -5642,3 +5642,6 @@ audioModal?.addEventListener("hidden.bs.modal", () => {
     sourceAudioModal.src = "";
 });
 
+function showAgentReviewText(btn) {
+    btn.closest(".agent-review-box")?.classList.toggle("open");
+}
