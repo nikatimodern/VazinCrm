@@ -17,7 +17,7 @@ public class CallSessionModel {
     public bool Answered { get; set; }
 
     public DateTime? AnswerTime { get; set; }
-    public List<ReportParticipant> Participants { get; set; } = [];
+    public List<CallParticipant> Participants { get; set; } = [];
 }
 
 

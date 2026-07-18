@@ -21,7 +21,7 @@ public class CallRecording : BaseEntity {
     public string Product { get; set; }
     public int DurationSeconds { get; set; }
 
-    public List<ReportParticipant> Participants { get; set; } = [];
+    public List<CallParticipant> Participants { get; set; } = [];
     public Report Report { get; set; }
 
     private AiProcessStatusEnum _AiProcessStatus;

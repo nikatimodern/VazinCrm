@@ -93,7 +93,7 @@ namespace Generics.Infrastructures.Sql {
         public DbSet<RequestAmountOrderHead> RequestAmountOrderHeads { get; set; }
         public DbSet<RequestAmountPayment> RequestAmountPayments { get; set; }
         public DbSet<CallRecording> CallRecordings { get; set; }
-        public DbSet<ReportParticipant> ReportParticipants { get; set; }
+        public DbSet<CallParticipant> CallParticipants { get; set; }
         public DbSet<Checkbook> Checkbooks { get; set; }
         public DbSet<Check> Checks { get; set; }
         public DbSet<Transfer> Transfers { get; set; }

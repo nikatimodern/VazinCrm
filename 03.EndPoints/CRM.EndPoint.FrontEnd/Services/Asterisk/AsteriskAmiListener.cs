@@ -213,7 +213,7 @@ public class AsteriskAmiListener : BackgroundService {
 
                 if (!string.IsNullOrEmpty(exten) && !call.Participants.Any(p => p.Extension == exten))
                 {
-                    call.Participants.Add(new ReportParticipant() { Extension = exten, AnswerTime = DateTime.Now });
+                    call.Participants.Add(new CallParticipant() { Extension = exten, AnswerTime = DateTime.Now });
                 }
             }
         }
@@ -300,7 +300,7 @@ public class AsteriskAmiListener : BackgroundService {
         foreach (var p in call.Participants)
         {
             var u = await GetUsers(p.Extension);
-            callRecording.Participants?.Add(new ReportParticipant {
+            callRecording.Participants?.Add(new CallParticipant {
                 Extension = p.Extension,
                 AnswerTime = p.AnswerTime,
                 UserId = u?.Id,

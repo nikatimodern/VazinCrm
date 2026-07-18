@@ -503,11 +503,11 @@
             const successSkeleton = new DynamicSkeleton({ container: "#successDealsContainerId .deal-column-list", template: dealCardSkeletonTemplate, count: 4 });
             const failedSkeleton = new DynamicSkeleton({ container: "#failedDealsContainerId .deal-column-list", template: dealCardSkeletonTemplate, count: 4 });
             try {
-                @* FLshowLoading(); *@
+                FLshowLoading();
               //  openSkeleton.render();
                 //successSkeleton.render();
                // failedSkeleton.render();
-                Skeleton.show({
+                @*Skeleton.show({
                     container:"#openDealsContainerId .deal-column-list",
                     count:6,
                     template:"deal-card"
@@ -523,7 +523,7 @@
                     container:"#failedDealsContainerId .deal-column-list",
                     count:6,
                     template:"deal-card"
-                });
+                });*@
                 const res = await axios.post(`/Deal/GetAllDeals`, modelDeal);
                 if (res.status === 200) {
                     const items = res.data.items;
@@ -535,10 +535,10 @@
                             filter: modelDeal.filt,
                         });
                     }
-                    @*createDomAllDeals(items.open, "#openDealsContainerId", res.data.isAdmin);
+                    createDomAllDeals(items.open, "#openDealsContainerId", res.data.isAdmin);
                     createDomAllDeals(items.success, "#successDealsContainerId", res.data.isAdmin);
-                    createDomAllDeals(items.failed, "#failedDealsContainerId", res.data.isAdmin);*@
-                    @* FLshowLoading(false); *@
+                    createDomAllDeals(items.failed, "#failedDealsContainerId", res.data.isAdmin);
+                    FLshowLoading(false);
                 }
             } catch (err) {
                 console.log(err);

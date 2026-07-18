@@ -1,3 +1,4 @@
+using CRM.Core.Domain.CallRecordings.Entities;
 using CRM.Core.Domain.Reports.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -5,8 +6,8 @@ using Microsoft.Extensions.Configuration;
 
 namespace CRM.Infrastructures.Sql.Reports.Configs;
 
-public class ReportParticipantConfig : IEntityTypeConfiguration<ReportParticipant> {
-    public void Configure(EntityTypeBuilder<ReportParticipant> builder)
+public class ReportParticipantConfig : IEntityTypeConfiguration<CallParticipant> {
+    public void Configure(EntityTypeBuilder<CallParticipant> builder)
     {
         builder.HasKey(f => f.Id);
 
