@@ -6,7 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.CallRecordings.Entities;
+using CRM.Core.Domain.CallRecordings.Enums;
 using CRM.Core.Domain.Customers.Entities;
+using CRM.Core.Domain.Reports.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.AsteriskAmi;
@@ -159,16 +161,6 @@ public class AsteriskAmiListener : BackgroundService {
                 return;
             }
 
-            /*_calls.AddOrUpdate(uniqueId,
-                _ => new CallSessionModel {
-                    UniqueId = uniqueId,
-                    RecordingPath = filePath
-                },
-                (_, existing) => {
-                    existing.RecordingPath = filePath;
-                    return existing;
-                }
-            );*/
             _calls.AddOrUpdate(linkedId,
                 _ => new CallSessionModel {
                     LinkedId = linkedId,
@@ -221,7 +213,7 @@ public class AsteriskAmiListener : BackgroundService {
 
                 if (!string.IsNullOrEmpty(exten) && !call.Participants.Any(p => p.Extension == exten))
                 {
-                    call.Participants.Add(new CallParticipant { Extension = exten, AnswerTime = DateTime.Now });
+                    call.Participants.Add(new ReportParticipant() { Extension = exten, AnswerTime = DateTime.Now });
                 }
             }
         }
@@ -251,11 +243,7 @@ public class AsteriskAmiListener : BackgroundService {
 
             if (uniqueId != linkedId) return;
 
-            if (!_calls.TryGetValue(linkedId, out var call))
-            {
-                //logger.LogWarning("hangup: this uniqueId not exist in _calls obj: {uniqueId}", uniqueId);
-                return;
-            }
+            if (!_calls.TryGetValue(linkedId, out var call)) return;
 
 
             if (!call.Answered || string.IsNullOrWhiteSpace(call.RecordingPath) || !call.Participants.Any())
@@ -274,52 +262,13 @@ public class AsteriskAmiListener : BackgroundService {
             }
 
             var src = GetSrc(ev);
-            //var dest = Get(ev, "ConnectedLineNum");
-
-            var srcIsInternal = IsInternal(src);
-            if (srcIsInternal)
+            if (IsInternal(src))
             {
                 logger.LogInformation("hangup: the call is not external to internal: {FilePath}", call.RecordingPath.Split("/").Last());
                 return;
             }
 
-            var firstParticipant = call.Participants.First();
-            var user = await GetUsers(firstParticipant.Extension);
-            if (user == null)
-            {
-                logger.LogWarning("hangup: user is null: {dest}", firstParticipant.Extension);
-            }
-
-            var callRecording = new CallRecording {
-                CallerNumber = src,
-                DestinationNumber = firstParticipant.Extension,
-                DestinationUserId = user?.Id,
-                DestinationUserTxt = user?.FullName,
-                RecordingFilePath = call.RecordingPath,
-            };
-            foreach (var p in call.Participants)
-            {
-                var u = await GetUsers(p.Extension);
-                callRecording.CallParticipant?.Add(new CallParticipant {
-                    Extension = p.Extension,
-                    AnswerTime = p.AnswerTime,
-                    UserId = u?.Id,
-                    UserFullName = u?.FullName
-                });
-            }
-
-            var customer = GetCallerCustomer(src);
-            if (customer != null)
-            {
-                var customerName = $"{customer.CompanyName} {customer.AgentName}".Trim();
-                callRecording.CallerCustomerId = customer.Id;
-                callRecording.CallerCustomerTxt = $"{customerName} (کد مشتری: {customer.CustomerCode})";
-                callRecording.CallerCustomerCode = customer.CustomerCode;
-            }
-
-            logger.LogInformation("hangup and Enqueue: {FilePath}", call.RecordingPath.Split("/").Last());
-
-            _aiQueue?.Enqueue(callRecording);
+            await EnqueueCallAsync(call, src, duration);
 
             _calls.TryRemove(linkedId, out _);
         }
@@ -327,6 +276,50 @@ public class AsteriskAmiListener : BackgroundService {
         {
             logger.LogError(ex, $"Hangup Error: {ex.Message}");
         }
+    }
+
+    private async Task EnqueueCallAsync(CallSessionModel call, string src, TimeSpan duration)
+    {
+        var firstParticipant = call.Participants.First();
+        var user = await GetUsers(firstParticipant.Extension);
+        if (user == null)
+        {
+            logger.LogWarning("hangup: user is null: {dest}", firstParticipant.Extension);
+        }
+
+        var callRecording = new CallRecording {
+            CallerNumber = src,
+            DestinationNumber = firstParticipant.Extension,
+            DestinationUserId = user?.Id,
+            DestinationUserTxt = user?.FullName,
+            RecordingFilePath = call.RecordingPath,
+            DurationSeconds = (int)duration.TotalSeconds,
+            AiStatus = AiProcessStatusEnum.Enqueued
+        };
+
+        foreach (var p in call.Participants)
+        {
+            var u = await GetUsers(p.Extension);
+            callRecording.Participants?.Add(new ReportParticipant {
+                Extension = p.Extension,
+                AnswerTime = p.AnswerTime,
+                UserId = u?.Id,
+                UserFullName = u?.FullName
+            });
+        }
+
+        var customer = GetCallerCustomer(src);
+        if (customer != null)
+        {
+            var customerName = $"{customer.CompanyName} {customer.AgentName}".Trim();
+            callRecording.CallerCustomerId = customer.Id;
+            callRecording.CallerCustomerTxt = $"{customerName} (کد مشتری: {customer.CustomerCode})";
+            callRecording.CallerCustomerCode = customer.CustomerCode;
+        }
+
+        logger.LogInformation("hangup and Enqueue: {FilePath}", call.RecordingPath?.Split("/").Last());
+
+        _aiQueue?.Enqueue(callRecording);
     }
 
 

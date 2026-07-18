@@ -461,6 +461,30 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AgentReview")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("AgentScore")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AiAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<double?>("AiDurationSeconds")
+                        .HasColumnType("float");
+
+                    b.Property<string>("AiError")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("AiStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AiStatusTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AvanegarRequestId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid?>("CallerCustomerId")
                         .HasColumnType("uniqueidentifier");
 
@@ -487,6 +511,9 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.Property<string>("DestinationUserTxt")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DurationSeconds")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -3275,10 +3302,13 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("AnswerTimeTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("CallRecordingId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Extension")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("ReportId")
+                    b.Property<Guid?>("ReportId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("SortOrder")
@@ -3291,6 +3321,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CallRecordingId");
 
                     b.HasIndex("ReportId");
 
@@ -4275,21 +4307,27 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.Reports.Entities.Report", b =>
                 {
-                    b.HasOne("CRM.Core.Domain.CallRecordings.Entities.CallRecording", "CallRecordings")
+                    b.HasOne("CRM.Core.Domain.CallRecordings.Entities.CallRecording", "CallRecording")
                         .WithOne("Report")
                         .HasForeignKey("CRM.Core.Domain.Reports.Entities.Report", "CallRecordingId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.NoAction);
 
-                    b.Navigation("CallRecordings");
+                    b.Navigation("CallRecording");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Reports.Entities.ReportParticipant", b =>
                 {
+                    b.HasOne("CRM.Core.Domain.CallRecordings.Entities.CallRecording", "CallRecording")
+                        .WithMany("Participants")
+                        .HasForeignKey("CallRecordingId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("CRM.Core.Domain.Reports.Entities.Report", "Report")
                         .WithMany("Participants")
                         .HasForeignKey("ReportId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("CallRecording");
 
                     b.Navigation("Report");
                 });
@@ -4392,6 +4430,8 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.CallRecordings.Entities.CallRecording", b =>
                 {
+                    b.Navigation("Participants");
+
                     b.Navigation("Report");
                 });
 

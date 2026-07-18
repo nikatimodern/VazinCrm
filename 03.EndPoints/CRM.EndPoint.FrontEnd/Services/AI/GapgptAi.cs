@@ -1,40 +1,87 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 
-public class GapgptAi {
-    private readonly HttpClient _httpClient;
-    private readonly AiPrompts _aiPrompts;
-    private readonly ILogger<GapgptAi> logger;
-
-    public GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<GapgptAi> logger)
+public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<GapgptAi> logger) {
+    public async Task<SummaryResult> ProcessAudioWithGemini(MemoryStream audio, List<string> userNames, CancellationToken ct = default)
     {
-        _httpClient = httpClient;
-        _aiPrompts = aiPrompts;
-        this.logger = logger;
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            logger.LogInformation("Gemini Audio Processing.");
+            var prompt = aiPrompts.AnalyzeAudioCall(string.Join(", ", userNames));
+
+            var requestBody = new { // https://gapgpt.app/platform-v2/tokens
+                model = "gemini-2.5-flash",
+                messages = new[] {
+                    new {
+                        role = "user",
+                        content = new object[] {
+                            new { type = "text", text = prompt },
+                            new { type = "input_audio", input_audio = new { data = audio.ToArray(), format = "wav" } }
+                        }
+                    }
+                },
+                response_format = new { type = "json_object" },
+//                temperature = 0.8,
+            };
+
+            var response = await httpClient.PostAsJsonAsync("chat/completions", requestBody, cancellationToken: ct);
+            sw.Stop();
+            if (response.IsSuccessStatusCode)
+            {
+                var resJson = await response.Content.ReadFromJsonAsync<AiGapgptModel>(cancellationToken: ct);
+                var content = resJson?.Choices?[0]?.Message?.Content;
+
+                if (string.IsNullOrWhiteSpace(content))
+                {
+                    return new SummaryResult { Success = false, Error = "AI returned an empty response.", ElapsedSeconds = sw.Elapsed.TotalSeconds };
+                }
+
+                var resultData = JsonSerializer.Deserialize<SummaryModel>(content);
+                logger.LogInformation("Gemini Audio Processing completed in {Elapsed}s.", sw.Elapsed.TotalSeconds);
+
+                return new SummaryResult { Success = true, Data = resultData, ElapsedSeconds = sw.Elapsed.TotalSeconds };
+            }
+
+            var rawError = await response.Content.ReadAsStringAsync(ct);
+            var clean = StripHtml(rawError);
+            logger.LogError("Gemini API Error ({StatusCode}) in {Elapsed}s: {Error}", response.StatusCode, sw.Elapsed.TotalSeconds, clean);
+            return new SummaryResult
+                { Success = false, Error = $"API Error ({response.StatusCode}): {clean}", ElapsedSeconds = sw.Elapsed.TotalSeconds };
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            logger.LogError(ex, "Error Gemini audio processing after {Elapsed}s.", sw.Elapsed.TotalSeconds);
+            return new SummaryResult { Success = false, Error = ex.Message, ElapsedSeconds = sw.Elapsed.TotalSeconds };
+        }
     }
 
+
     // خلاصه نویسی
-    public async Task<SummaryModel> SummarizeText(string textToSummarize, List<string> userNames) // https://gapgpt.app/platform-v2/tokens
+    public async Task<SummaryResult> SummarizeText(string textToSummarize, List<string> userNames, CancellationToken ct = default)
     {
         try
         {
             logger.LogInformation("Summarize started");
-            var prompt = _aiPrompts.SummarizeCall(textToSummarize, string.Join(", ", userNames));
+            var prompt = aiPrompts.SummarizeCall(textToSummarize, string.Join(", ", userNames));
 
             var requestBody = new {
                 //model = "gapgpt-qwen-3.6",
                 //model = "gapgpt-qwen-3.6-thinking",
-                model= "gpt-5-mini",
+                model = "gpt-5-mini",
                 //model = "gemini-2.5-flash",
                 messages = new[] {
                     new { role = "user", content = prompt }
@@ -44,56 +91,42 @@ public class GapgptAi {
                 top_p = 0.7,
             };
 
-            var response = await _httpClient.PostAsJsonAsync("chat/completions", requestBody);
+            var response = await httpClient.PostAsJsonAsync("chat/completions", requestBody, cancellationToken: ct);
             if (response.IsSuccessStatusCode)
             {
-                var resJson = await response.Content.ReadFromJsonAsync<AiGapgptModel>();
+                var resJson = await response.Content.ReadFromJsonAsync<AiGapgptModel>(cancellationToken: ct);
                 logger.LogInformation("Summarize completed");
 
                 var content = resJson?.Choices?[0]?.Message?.Content;
-                var summary = JsonSerializer.Deserialize<SummaryModel>(content);
-                return summary;
-            } else
-            {
-                var raw = await response.Content.ReadAsStringAsync();
-/*
+                if (string.IsNullOrWhiteSpace(content))
+                {
+                    return new SummaryResult { Success = true, Error = "AI returned an empty response." };
+                }
 
-                var clean = response.Content.Headers.ContentType?.MediaType == "text/html"
-                    ? ExtractImportantError(raw)
-                    : raw;*/
-
-                var clean = StripHtml(raw);
-                //var clean2 = ExtractImportantError(raw);
-
-                logger.LogError("Summarize API Error ({StatusCode}): {Error}", response.StatusCode, clean);
-                /*var errorContent = await response.Content.ReadAsStringAsync();
-                logger.LogError("Summarize API Error ({ResponseStatusCode}): {ErrorContent}", response.StatusCode, errorContent);*/
-                return null;
+                try
+                {
+                    var summary = JsonSerializer.Deserialize<SummaryModel>(content);
+                    return new SummaryResult { Success = true, Data = summary };
+                }
+                catch (JsonException ex)
+                {
+                    return new SummaryResult { Success = false, Error = $"JSON Deserialize Error: {ex.Message} | Raw Content: {content}" };
+                }
             }
+
+            var raw = await response.Content.ReadAsStringAsync(ct);
+            var clean = StripHtml(raw);
+
+            logger.LogError("Summarize API Error ({StatusCode}): {Error}", response.StatusCode, clean);
+            return new SummaryResult { Success = false, Error = $"API Error ({response.StatusCode}): {clean}" };
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Summarize error");
-            return null;
+            return new SummaryResult { Success = false, Error = $"Exception: {ex.Message}" };
         }
     }
 
-    private static string ExtractImportantError(string html)
-    {
-        if (string.IsNullOrWhiteSpace(html))
-            return string.Empty;
-
-        var text = StripHtml(html);
-
-        var match = Regex.Match(text, @"Error\s\d+.*?Unavailable!", RegexOptions.IgnoreCase);
-
-        if (match.Success)
-            return match.Value;
-
-        return text.Length > 300
-            ? text[..300]
-            : text;
-    }
 
     private static string StripHtml(string input)
     {

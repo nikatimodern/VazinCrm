@@ -41,8 +41,11 @@ using System.IO;
 using System.Net;
 using Renci.SshNet;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 using CRM.EndPoint.FrontEnd.Services.AI;
+using CRM.EndPoint.FrontEnd.Services.Asterisk;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
@@ -59,10 +62,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly UserContextDb udb;
         private readonly Sepidar1ContextDb S1db;
         private readonly ISmsQueue smsQueue;
+        private readonly IssabelService issabelService;
+        private readonly AiPrompts aiPrompts;
+        private readonly ViraAi viraAi;
+        private readonly GapgptAi gapgptAi;
 
         public HomeController(IWebHostEnvironment appEnvironment, TimedHostedService hostService, IConfiguration conf,
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
-            Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue)
+            Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue, IssabelService issabelService,
+            AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi)
         {
             this.appEnvironment = appEnvironment;
             this.hostService = hostService;
@@ -75,6 +83,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.udb = udb;
             this.S1db = S1db;
             this.smsQueue = smsQueue;
+            this.issabelService = issabelService;
+            this.aiPrompts = aiPrompts;
+            this.viraAi = viraAi;
+            this.gapgptAi = gapgptAi;
             this.genService = genService;
         }
 
@@ -84,6 +96,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
+                //return null;
+                const string path = "/var/spool/asterisk/monitor/2026/07/08/q-0000-76266369-20260708-175510-1783517086.166630.wav";
+                var stream = await issabelService.GetAudioWithRetry(path);
+                /*var text = await viraAi.ConvertAudioToText(stream, Path.GetFileName(path), 12);
+
+                var sum = await gapgptAi.SummarizeText(text, ["رضا سلامی"]);
+
+                return null;*/
 
 
                 //await db.SaveChangesAsync();

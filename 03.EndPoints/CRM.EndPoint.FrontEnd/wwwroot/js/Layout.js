@@ -5648,3 +5648,7 @@ function showModalSetting() {
     ModalToggle("BaseSetting")
 }
 
+
+function showAgentReviewText(btn) {
+    btn.closest(".agent-review-box")?.classList.toggle("open");
+}

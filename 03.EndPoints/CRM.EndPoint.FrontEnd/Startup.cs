@@ -153,6 +153,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<GapgptAi>();
             services.AddScoped<AiPrompts>();
             services.AddScoped<IssabelService>();
+            services.AddHostedService<AiPendingWorker>();
 
             services.AddSingleton<ISmsQueue, SmsQueue>();
             services.AddHostedService<SmsBackgroundService>();

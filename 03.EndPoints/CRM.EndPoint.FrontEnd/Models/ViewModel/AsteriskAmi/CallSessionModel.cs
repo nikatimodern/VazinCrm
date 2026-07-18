@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using CRM.Core.Domain.CallRecordings.Entities;
+using CRM.Core.Domain.Reports.Entities;
 
 namespace CRM.EndPoint.FrontEnd.Models.ViewModel.AsteriskAmi;
 
@@ -16,7 +17,7 @@ public class CallSessionModel {
     public bool Answered { get; set; }
 
     public DateTime? AnswerTime { get; set; }
-    public List<CallParticipant> Participants { get; set; } = [];
+    public List<ReportParticipant> Participants { get; set; } = [];
 }
 
 

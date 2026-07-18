@@ -3888,3 +3888,96 @@ function renderDateTimeHtml(value, { empty = "-", className = "" } = {}) {
     
     return `<span dir="ltr" class="${className}">${value.slice(0, -3).split(" ").join(" | ")}</span>`;
 }
+
+class DynamicSkeleton {
+    /**
+     * @param {Object} options
+     * @param {string|HTMLElement} options.container - سلکتور یا المنت والد که اسکلتون ها در آن قرار میگیرند
+     * @param {string} options.template - ساختار HTML یک آیتم اسکلتون
+     * @param {number} options.count - تعداد اسکلتون‌هایی که باید ساخته شود (پیش‌فرض 3)
+     */
+    constructor(options) {
+        this.container = typeof options.container === 'string'
+            ? document.querySelector(options.container)
+            : options.container;
+        this.template = options.template;
+        this.count = options.count || 3;
+    }
+    
+    // متد نمایش لودینگ
+    render() {
+        if (!this.container) return;
+        
+        let skeletonsHTML = '';
+        for (let i = 0; i < this.count; i++) {
+            skeletonsHTML += this.template;
+        }
+        
+        this.container.innerHTML = skeletonsHTML;
+    }
+    
+    // متد پاک کردن لودینگ (البته وقتی دیتای واقعی رو innerHTML کنید خود به خود پاک میشه)
+    clear() {
+        if (this.container) {
+            this.container.innerHTML = '';
+        }
+    }
+}
+
+const Skeleton = (() => {
+    
+    const templates = {};
+    
+    function register(name, builder){
+        templates[name] = builder;
+    }
+    
+    function show({
+                      container,
+                      count = 1,
+                      template
+                  }){
+        
+        const el = typeof container === "string"
+            ? document.querySelector(container)
+            : container;
+        
+        if(!el) return;
+        
+        el.dataset.skeleton = "true";
+        
+        const html = [];
+        
+        const builder =
+            typeof template === "function"
+                ? template
+                : templates[template];
+        
+        for(let i=0;i<count;i++){
+            
+            html.push(builder(i));
+            
+        }
+        
+        el.innerHTML = html.join("");
+        
+    }
+    
+    function hide(container){
+        
+        const el = typeof container === "string"
+            ? document.querySelector(container)
+            : container;
+        
+        if(el)
+            el.innerHTML = "";
+        
+    }
+    
+    return {
+        show,
+        hide,
+        register
+    };
+    
+})();
