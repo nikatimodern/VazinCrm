@@ -49,6 +49,7 @@
             <thead>
             <tr>
                 <th>شماره</th>
+                <th>گروه</th>
                 <th>تاریخ ثبت</th>
                 <th>عنوان هزینه</th>
                 <th>مرکز هزینه</th>
@@ -311,7 +312,7 @@
                     return: true,
                 },
                 ordering: true,
-                order: [[1, "desc"]],
+                order: [[2, "desc"]],
                 scrollCollapse: true,
                 scrollY: "70dvh",
                 responsive: true,
@@ -322,6 +323,7 @@
                         d.model = JSON.stringify(modelCash);
                     },
                     dataSrc: function (json) {
+                        console.log(json.data);
                         isManager = json.isManager;
                         initCashierBalanceUI(json.cashierBalance);
                         return json.data;
@@ -330,24 +332,25 @@
                 language: languageDatatable,
                 columnDefs: [
                     {
-                        targets: [10, 11],
+                        targets: [11, 12],
                         orderable: false,
                     },
                     {
-                        targets: [1],
+                        targets: [2],
                         render: data => `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>`,
                     },
                     {
-                        targets: [5, 6],
+                        targets: [6, 7],
                         render: data => `<span dir="ltr">${data ? data.toLocaleString() : "-"}</span>`,
                     },
                     {
-                        targets: [7],
+                        targets: [8],
                         render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>`,
                     },
                 ],
                 columns: [
                     { data: "serial", name: "Serial", defaultContent: "-", responsivePriority: 1 },
+                    { data: "cashGroup.groupNumber", name: "GroupNumber", defaultContent: "-" },
                     { data: "createDateTxt", name: "CreateDateTxt", defaultContent: "-" },
                     { data: "costTitleTxt", name: "CostTitleTxt", defaultContent: "-", responsivePriority: 2 },
                     { data: "costCenterTxt", name: "CostCenterTxt", defaultContent: "-", responsivePriority: 3 },
