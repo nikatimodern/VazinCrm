@@ -2,7 +2,6 @@
 @model List<CRM.Core.Domain.Reports.Entities.Report>
 @{
     ViewData["Title"] = "GetAllReportPartial";
-    // Layout = "~/Views/Shared/_Layout.cshtml";
 }
 <div class="container-reports">
 
@@ -19,16 +18,18 @@
             ReportTypeEnum.گزارش_رضایتمندی => "report-satisfaction",
             _ => ""
         };
-        var hasTimeline = item.AI && item.CallRecording.Participants != null && item.CallRecording.Participants.Count > 1;
+        var hasTimeline = item.AI && item.CallRecording?.Participants != null && item.CallRecording?.Participants.Count > 1;
+        var review = item.CallRecording?.AgentReview;
+        var score = item.CallRecording?.AgentScore;
+
         <div class="report-wrapper">
-            @* <img class="reporter-image" src="@(string.IsNullOrEmpty(item.UserImage) ? "/Img/User.png" : item.UserImage)" /> *@
             <div class="report-sidebar-timeline @(hasTimeline ? "has-timeline" : "")">
                 <img class="reporter-image main-avatar" src="@(string.IsNullOrEmpty(item.UserImage) ? "/Img/User.png" : item.UserImage)" />
 
                 @if (hasTimeline) {
                     <div class="timeline-connection-line"></div>
 
-                    var transfers = item.CallRecording.Participants.OrderBy(p => p.SortOrder).Skip(1).ToList();
+                    var transfers = item.CallRecording?.Participants.OrderBy(p => p.SortOrder).Skip(1).ToList();
                     foreach (var participant in transfers) {
                         <img class="reporter-image transfer-avatar"
                              src="@(string.IsNullOrEmpty(participant.UserImage) ? "/Img/User.png" : participant.UserImage)"
@@ -71,22 +72,22 @@
                             </p>
                         }
                     </div>
-                    @if (item.AI && (!string.IsNullOrWhiteSpace(item.CallRecording.AgentReview) || item.CallRecording.AgentScore != null)) {
+                    @if (item.AI && (!string.IsNullOrWhiteSpace(review) || score != null)) {
                         <div class="agent-review-box">
 
                             <div class="agent-review-header" onclick="showAgentReviewText(this)">
                                 <div class="agent-review-content">
-                                    <span class="agent-review-title">ارزیابی عملکرد کارشناس</span>
+                                    <span class="agent-review-title">ارزیابی پاسخگویی کارشناس</span>
 
-                                    @if (item.CallRecording.AgentScore != null) {
+                                    @if (score != null) {
                                         <div class="agent-rating-wrapper">
                                             <div class="agent-stars">
                                                 @for (var i = 1; i <= 5; i++) {
-                                                    <i class="fas fa-star @(i <= item.CallRecording.AgentScore ? "filled" : "")"></i>
+                                                    <i class="fas fa-star @(i <= score ? "filled" : "")"></i>
                                                 }
                                             </div>
                                             <span class="agent-score-text">
-                                                @(item.CallRecording.AgentScore switch {
+                                                @(score switch {
                                                     5 => "عالی",
                                                     4 => "خوب",
                                                     3 => "متوسط",
@@ -99,23 +100,25 @@
                                     }
                                 </div>
 
-                                <button class="agent-review-toggle">
-                                    <svg viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
-                                    </svg>
-                                </button>
+                                @if (!string.IsNullOrWhiteSpace(review)) {
+                                    <button class="agent-review-toggle">
+                                        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg>
+                                    </button>
+                                }
                             </div>
 
-                            @if (!string.IsNullOrWhiteSpace(item.CallRecording.AgentReview)) {
+
+                            @if (!string.IsNullOrWhiteSpace(review)) {
                                 <div class="agent-review-collapse">
                                     <div class="agent-review-text">
-                                        @item.CallRecording.AgentReview
+                                        @review
                                     </div>
                                 </div>
                             }
 
                         </div>
-                    }                </div>
+                    }
+                </div>
 
                 <div class="d-flex justify-content-between align-items-end gap-1 gap-md-4">
                     <div class="report-info">
