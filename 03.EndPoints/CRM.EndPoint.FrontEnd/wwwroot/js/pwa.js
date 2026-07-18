@@ -4,9 +4,9 @@ window.addEventListener("load", async () => {
     await navigator.serviceWorker.ready;
     
     
-    initInstallPrompt();
+    // initInstallPrompt();
     await initPush();
-    await showIosPwaInstall();
+    // await showIosPwaInstall();
 });
 
 
