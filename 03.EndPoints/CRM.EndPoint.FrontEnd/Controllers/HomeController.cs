@@ -96,16 +96,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-                //return null;
-                const string path = "/var/spool/asterisk/monitor/2026/07/08/q-0000-76266369-20260708-175510-1783517086.166630.wav";
+                /*const string path = "/var/spool/asterisk/monitor/2026/07/18/q-0006-9124606687-20260718-145823-1784370449.414873.wav";
                 var stream = await issabelService.GetAudioWithRetry(path);
-                /*var text = await viraAi.ConvertAudioToText(stream, Path.GetFileName(path), 12);
-
-                var sum = await gapgptAi.SummarizeText(text, ["رضا سلامی"]);
-
-                return null;*/
-
-
+                stream = await issabelService.ConvertToFlac(stream);*/
                 //await db.SaveChangesAsync();
                 await trans.CommitAsync();
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";

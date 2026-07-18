@@ -24,6 +24,7 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
 
             var requestBody = new { // https://gapgpt.app/platform-v2/tokens
                 model = "gemini-2.5-flash",
+//                model = "gemini-3.1-flash-lite",
                 messages = new[] {
                     new {
                         role = "user",
@@ -34,7 +35,7 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
                     }
                 },
                 response_format = new { type = "json_object" },
-//                temperature = 0.8,
+                temperature = 0,
             };
 
             var response = await httpClient.PostAsJsonAsync("chat/completions", requestBody, cancellationToken: ct);

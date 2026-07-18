@@ -33,7 +33,7 @@ public class AiService(
         {
             await UpdateStatus(trackedCall, AiProcessStatusEnum.DownloadingAudio, ct: ct);
             using var audioStream = await issabelService.GetAudioWithRetry(trackedCall.RecordingFilePath, ct);
-
+//            using var flacStream = await issabelService.ConvertToFlac(audioStream);
             if (audioStream == null)
             {
                 await UpdateStatus(trackedCall, AiProcessStatusEnum.DownloadFailed, "Audio download from Issabel failed.", ct);

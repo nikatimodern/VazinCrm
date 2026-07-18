@@ -41,7 +41,7 @@ public class AiPendingWorker(IServiceScopeFactory scopeFactory, ILogger<AiPendin
 
         var pendingCalls = await db.CallRecordings
             .Include(x => x.Participants)
-            .Where(x => x.AiStatus == AiProcessStatusEnum.WaitingForRetry && x.AiAttempts <= 3 && x.Report == null)
+            .Where(x => x.AiStatus == AiProcessStatusEnum.WaitingForRetry && x.AiAttempts < 3 && x.Report == null)
             .OrderBy(x => x.CreateDate)
             .Take(10)
             .ToListAsync(ct);
