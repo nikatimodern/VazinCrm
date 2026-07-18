@@ -39,6 +39,51 @@
         .capture-mode {
             font-family: 'Tahoma', 'Arial', sans-serif !important;
         }
+
+
+        .terms-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+
+        .term-item {
+            display: flex;
+            align-items: flex-start;
+            text-align: justify;
+            line-height: 1.8;
+        }
+
+
+        .term-number {
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+
+
+        .term-text {
+            flex: 1;
+        }
+
+
+        .description-item {
+            display: flex;
+            align-items: flex-start;
+        }
+
+
+        .description-item .bullet {
+            flex-shrink: 0;
+            margin-left: 8px;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+
+        .description-item .text {
+            flex: 1;
+            text-align: justify;
+        }
     </style>
 </head>
 
@@ -254,11 +299,14 @@
         <div class="d-flex flex-column flex-grow-1" style="border:1px solid gray">
             <div class="d-flex flex-column" style="border-bottom:1px solid gray">
                 <label class="fbold ps-1 pt-1">توضیحات:</label>
-                <ul style="padding-right: 22px">
+                <div class="px-2 mb-3">
                     @foreach (var item in Model.PreFactor.Descriptions.OrderBy(f => f.Order)) {
-                        <li>@item.Text</li>
+                        <div class="description-item">
+                            <span class="bullet">•</span>
+                            <span class="text">@item.Text</span>
+                        </div>
                     }
-                </ul>
+                </div>
             </div>
 
             <div class="d-flex flex-grow-1">
@@ -286,11 +334,18 @@
             </p>
             <div class="d-flex flex-column flex-grow-1" style="border:1px solid gray">
                 <div class="p-3">
-                    <ol style="padding-right: 20px;">
+                    <div class="terms-list">
+                        @{ var index = 1; }
+
                         @foreach (var term in termsPreFactor) {
-                            <li class="mb-2">@term</li>
+                            <div class="term-item mb-2">
+                                <span class="term-number">@index.</span>
+                                <span class="term-text">@term</span>
+                            </div>
+
+                            index++;
                         }
-                    </ol>
+                    </div>
                 </div>
 
                 <div class="d-flex flex-grow-1" style="border-top:1px solid gray ">
@@ -334,39 +389,54 @@
     };
 
     // تابع دانلود تصویر PNG
-    function downloadImage() {
-        const section = document.getElementById("captureSection");
-        html2canvas(section, {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-        }).then(canvas => {
+    async function downloadImage() {
+        const sections = [
+            document.getElementById("captureSection"),
+            document.getElementById("termsSection"),
+        ].filter(Boolean);
+
+        for (let i = 0; i < sections.length; i++) {
+            const canvas = await html2canvas(sections[i], {
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+            });
+
             const link = document.createElement("a");
-            link.download = "PreFactor-@Model.PreFactor.SerialNumber" + ".png";
+            link.download = `PreFactor-@Model.PreFactor.SerialNumber-${i + 1}.png`;
             link.href = canvas.toDataURL("image/png");
             link.click();
-        });
+        }
     }
 
-    // تابع دانلود PDF در سایز A4 عمودی
     async function downloadPDF() {
-        const section = document.getElementById("captureSection");
-        const canvas = await html2canvas(section, {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-        });
+        const sections = [
+            document.getElementById("captureSection"),
+            document.getElementById("termsSection"),
+        ].filter(Boolean);
 
-        const imgData = canvas.toDataURL("image/png");
         const { jsPDF } = window.jspdf;
-
-        // تنظیمات A4 عمودی
         const pdf = new jsPDF("p", "mm", "a4");
-        const imgWidth = 210; // عرض A4
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-        pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-        pdf.save("PreFactor-@Model.PreFactor.SerialNumber" + ".pdf");
+        for (let i = 0; i < sections.length; i++) {
+            const canvas = await html2canvas(sections[i], {
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+            });
+
+            const imgData = canvas.toDataURL("image/png");
+
+            const imgWidth = 210;
+            const imgHeight = canvas.height * imgWidth / canvas.width;
+
+            if (i > 0)
+                pdf.addPage();
+
+            pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+        }
+
+        pdf.save("PreFactor-@(Model.PreFactor.SerialNumber).pdf");
     }
 </script>
 </body>
