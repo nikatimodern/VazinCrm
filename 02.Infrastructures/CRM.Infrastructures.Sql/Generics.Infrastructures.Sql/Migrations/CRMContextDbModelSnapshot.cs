@@ -3326,7 +3326,7 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasIndex("ReportId");
 
-                    b.ToTable("ReportParticipants");
+                    b.ToTable("CallParticipants");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", b =>

@@ -4,7 +4,7 @@ using CRM.Core.Domain.CallRecordings.Entities;
 
 namespace CRM.Core.Domain.Reports.Entities;
 
-//[Table("CallParticipants")]
+[Table("CallParticipants")]
 public class ReportParticipant {
     public Guid Id { get; set; }
     public Guid? ReportId { get; set; }
