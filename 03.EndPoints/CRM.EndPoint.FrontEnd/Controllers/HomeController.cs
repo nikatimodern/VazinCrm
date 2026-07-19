@@ -98,7 +98,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-
                 /*const string path = "/var/spool/asterisk/monitor/2026/07/18/q-0006-9124606687-20260718-145823-1784370449.414873.wav";
                 var stream = await issabelService.GetAudioWithRetry(path);
                 stream = await issabelService.ConvertToFlac(stream);*/
@@ -183,7 +182,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                var logs = await logSystemService.GetEntityLogSystemAsync(entityName, entityId);
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var roles = await userManager.GetRolesAsync(user);
+                var isAdmin = roles.Contains("مدیر ارشد");
+
+                var logs = await logSystemService.GetEntityLogSystemAsync(entityName, entityId, isAdmin);
                 return Ok(logs);
             }
             catch (Exception ex)

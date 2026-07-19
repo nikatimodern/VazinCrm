@@ -805,10 +805,12 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
         return (parentNameValue, parentIdValue);
     }
 
-    public async Task<List<LogSystem>> GetEntityLogSystemAsync(string entityName, string entityId)
+    public async Task<List<LogSystem>> GetEntityLogSystemAsync(string entityName, string entityId, bool isAdmin)
     {
+        var includeChangeDetails = isAdmin;
+        var includeCommentTxt = isAdmin;
         return await db.logSystems
-            .FromSqlInterpolated($"EXEC dbo.GetEntityLogSystem {entityName}, {entityId}")
+            .FromSqlInterpolated($"EXEC dbo.GetEntityLogSystem {entityName}, {entityId}, {includeChangeDetails}, {includeCommentTxt}")
             .AsNoTracking()
             .ToListAsync();
     }

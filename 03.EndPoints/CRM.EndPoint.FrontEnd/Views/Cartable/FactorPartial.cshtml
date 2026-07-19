@@ -141,7 +141,7 @@
                                         <div class="fbold" style="color:darkred">
                                             ابطال شده
                                         </div>
-                                        @if ((Model.Rols.Contains("کارشناس مالی") || Model.Rols.Contains("مدیر مالی") || Model.Rols.Contains("مدیر ارشد"))) {
+                                        @if (Model.Rols.Contains("کارشناس مالی") || Model.Rols.Contains("مدیر مالی") || Model.Rols.Contains("مدیر ارشد")) {
                                             <div style="cursor:pointer;color:#333" onclick="acceptFactor('@item.Id', 1, @ViewBag.PassType, '@item.PfactorSerialNumber', '@item.DealId')" data-title="بازگشت">
                                                 <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>
                                             </div>

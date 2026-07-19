@@ -312,9 +312,9 @@ const closeModalAmount = () => {
 
 const getBaseDescription = async (type = null) => {  // 0: preFactor | 1: Factor | 2: termsPrefactor
     try {
-        const res = await axios(`/Factor/GetItemsDescription?type=${type}`)
+        const res = await axios(`/Factor/GetItemsDescription?type=${type}`);
         if (res.status === 200) {
-            return res.data
+            return res.data;
         }
         return null;
     } catch (err) {
@@ -1877,7 +1877,7 @@ const showMobileModal = async (id, type, dealId) => {
     typeSubmitSmsSendPf = type;
     dealIdSubmitSmsSendPf = dealId;
     try {
-        ModalToggle("MobileModal")
+        ModalToggle("MobileModal");
         smsSendedPfId = id;
         const res = await axios(`/factor/GetCustomerPhone/${id}`);
         if (res.status === 200) {
@@ -5645,16 +5645,49 @@ audioModal?.addEventListener("hidden.bs.modal", () => {
 
 function showModalSetting() {
     toggleMobileDrawer(false);
-    ModalToggle("BaseSetting")
+    ModalToggle("BaseSetting");
 }
 
-async function showDetailsLog(changeDetails, commentTxt) {
+function showDetailsLog(changeDetails, commentTxt) {
     document.getElementById("ShowDetailsLog").innerHTML = changeDetails || commentTxt;
-    $("#ShowDetailsLogModal").modal("show");
+    ModalToggle("#ShowDetailsLogModal");
+}
+
+async function showLogEntity(entityName, entityId) {
+    const data = await getLogEntity(entityName, entityId);
+    if (!data) return;
+    
+    const container = document.getElementById("logContainer");
+    container.innerHTML = "";
+    const dom = createDomLogSystem(data);
+    container.appendChild(dom);
+    
+    ModalToggle("logModal");
+}
+
+async function getLogEntity(entityName, entityId) {
+    try {
+        FLshowLoading();
+        const res = await axios(`/Home/GetEntityLogSystem?entityName=${entityName}&entityId=${entityId}`);
+        console.log(res.data);
+        if (res.status === 200) {
+            return res.data;
+        }
+        return false;
+    } catch (err) {
+        console.log(err);
+        toastifyError("خطای سرور");
+        return false;
+    } finally {
+        FLshowLoading(false);
+    }
 }
 
 function createDomLogSystem(data) {
     if (!data) return;
+    
+    const container = document.createElement("div");
+    container.className = "logSystem-container";
     
     const ul = document.createElement("ul");
     data.forEach(item => {
@@ -5675,7 +5708,8 @@ function createDomLogSystem(data) {
         ul.appendChild(li);
     });
     
-    return ul;
+    container.appendChild(ul);
+    return container;
 }
 
 function showAgentReviewText(btn) {
