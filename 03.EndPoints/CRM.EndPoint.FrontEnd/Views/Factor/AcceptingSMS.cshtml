@@ -20,172 +20,10 @@
     <link rel="stylesheet" href="~/lib/toastify/toastify.min.css" />
     <link rel="stylesheet" href="~/lib/viewerJs/css/viewer.min.css" />
 
-    <link rel="stylesheet" href="~/css/site.css?v=5.3.1" />
+    <link rel="stylesheet" href="~/css/site.css?v=5.8.0" />
+    <link rel="stylesheet" href="~/css/acceptingSms.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/bottom-sheet.css" asp-append-version="true" />
 
-    <style>
-
-        body {
-            color: #333;
-            background-color: #f7f7f7;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100dvh;
-        }
-
-
-        .form-label {
-            margin-bottom: .25rem;
-            font-size: 13px;
-        }
-
-
-        .status-box {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding-block: 12px;
-        }
-
-
-        .status-box img {
-            height: 60px;
-            margin-bottom: 4px;
-        }
-
-
-        .container-main {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            max-width: 650px;
-            margin: 12px;
-            padding: 8px 16px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, .08);
-            background-color: #fff;
-            border-radius: 12px;
-        }
-
-
-        .info-box {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
-        }
-
-
-        .info-box div {
-            text-align: center;
-            flex: 1;
-        }
-
-
-        .info-title {
-            font-size: 13px;
-            color: #888;
-        }
-
-
-        .info-value {
-            font-family: IRANSansBold;
-            font-size: 16px;
-            color: #222;
-        }
-
-
-        .pdf-link {
-            color: #0d6efd;
-            cursor: pointer;
-            font-family: IRANSansBold;
-            text-align: center;
-            padding: 8px;
-            border-bottom: 1px solid #eee;
-        }
-
-
-        .pdf-link svg {
-            width: 20px;
-            margin-left: 6px;
-            vertical-align: middle;
-        }
-
-
-        #btnSubmitAcceptForm:disabled {
-            opacity: 0.5;
-        }
-
-
-        .signature-box {
-            position: relative;
-            margin-top: 8px;
-        }
-
-
-        canvas {
-            border: 2px dashed #ccc;
-            border-radius: 12px;
-            background: #fafafa;
-            width: 100%;
-            height: 240px;
-        }
-
-
-        .clear-btn {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 50%;
-            padding: 6px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, .1);
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-
-        .clear-btn:hover {
-            background: #f8f9fa;
-            border-color: #bbb;
-        }
-
-
-        .brand {
-            text-align: center;
-            padding: 15px;
-            font-size: 11px;
-            border-top: 1px solid #eee;
-            margin-top: 10px;
-        }
-
-
-        .swal2-title {
-            font-size: 18px;
-        }
-
-
-        .swal2-popup {
-            border-radius: 16px;
-        }
-
-
-        .swal2-html-container {
-            font-size: 15px;
-            margin-bottom: 10px;
-        }
-
-
-        label[for]:has(+ input[required])::after,
-        label[for]:has(+ textarea[required])::after {
-            content: " *";
-            color: red;
-        }
-
-    </style>
 </head>
 <body dir="rtl">
 <div id="FLshowLoading" style="z-index: 9000;position: fixed;inset: 0;height:100dvh;display:none">
@@ -303,11 +141,20 @@
                         </button>
                     </div>
                 </div>
+                <div class="form-check bootstrap-only mb-2 text-justify">
+                    <input type="checkbox" class="form-check-input" id="chkAccept">
+                    <label class="form-check-label fbold" style="font-size: 12px" for="chkAccept">
+                        مفاد پیش‌فاکتور و
+                        <a href="javascript:void(0)" id="toggleTermsBtn" class="text-decoration-underline">«شرایط و توضیحات تکمیلی»</a>
+                        پیوست آن را به‌طور کامل مطالعه کرده و می‌پذیرم.
+                    </label>
+                </div>
 
-                <div class="form-check mb-2">
+
+                @*<div class="form-check mb-2">
                     <input type="checkbox" class="form-check-input" id="chkAccept">
                     <label class="form-check-label fbold" style="font-size: 12px" for="chkAccept">پیش‌فاکتور شماره @Model.PreFactor.SerialNumber مورد تایید می ‌باشد</label>
-                </div>
+                </div>*@
 
                 <button type="submit" id="btnSubmitAcceptForm" class="btn btn-primary w-100 mb-2 p-2 rounded-pill" disabled>
                     تایید
@@ -390,6 +237,7 @@
 </div>
 
 
+
 <script src="~/lib/Signature_pad/signature_pad.umd.min.js"></script>
 <script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js"></script>
 <script src="~/lib/jquery/jquery.min.js"></script>
@@ -398,8 +246,10 @@
 <script src="~/lib/toastify/toastify-js.js"></script>
 @* <script src="~/lib/lightBox2/js/lightbox.min.js"></script> *@
 <script src="~/lib/viewerJs/js/viewer.min.js"></script>
-<script src="~/js/UploadFile.js?v=5.3.1"></script>
-<script src="~/js/site.js?v=5.3.1"></script>
+
+<script src="~/js/UploadFile.js?v=5.8.0"></script>
+<script src="~/js/site.js?v=5.8.0"></script>
+<script src="~/js/bottom-sheet.js" asp-append-version="true"></script>
 
 
 <script>
@@ -409,6 +259,7 @@
     let userMobile = "@Model.PreFactor.Cus_Mobile";
     let selectedCustomerUserId;
     let verified = @ViewBag.isLogin;
+
 
     document.addEventListener("DOMContentLoaded", async () => {
         // signature
@@ -451,6 +302,28 @@
         });
 
 
+        // terms Sheet
+        const termsSheet = new BottomSheet({
+            title: "شرایط و توضیحات تکمیلی",
+            content: generateTermsHtml(await getPrefactorTerms()),
+            snapPoints: [0.8, 1],
+            actions: [
+                {
+                    text: "بستن",
+                    className: "w-100 btn btn-primary rounded-pill",
+                    close: true,
+                },
+            ],
+        });
+
+        const toggleBtn = document.getElementById("toggleTermsBtn");
+        if (toggleBtn) {
+            toggleBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                termsSheet.open();
+            });
+        }
+
         // attach Receipt
         //ShowPaymentReceiptAttach('@pfId');
 
@@ -466,6 +339,34 @@
         await readOtp(input, btn);
     });
 
+    const generateTermsHtml = (termsArray) => {
+        const listItems = termsArray.map(item => `
+            <li class="mb-3" style="padding-right: 4px;">
+                ${item.text}
+            </li>
+        `).join("");
+
+        return `
+            <div class="text-justify" style="font-size: 13px; line-height: 1.8; color: #333;">
+                <ol style="padding-right: 20px; margin: 0;">
+                    ${listItems}
+                </ol>
+            </div>
+        `;
+    };
+
+    const getPrefactorTerms = async () => {
+        try {
+            const res = await fetch(`/Factor/GetPrefactorTerms`);
+            if (res.status === 200) {
+                return await res.json();
+            }
+            return null;
+        } catch (err) {
+            console.error(err);
+            return null;
+        }
+    };
 
     async function sendSignature(officialType = null) {
         try {

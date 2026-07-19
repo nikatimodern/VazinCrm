@@ -127,7 +127,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                               EF.Functions.Like(cus.CompanyName, "%" + search + "%") ||
                               EF.Functions.Like(cus.CustomerCode.ToString(), "%" + search + "%")
                         select cus)
-                    .Select(g => new SelectOptionGuidDto() {
+                    .Select(g => new SelectOptionIdDto() {
                         id = g.Id,
                         text = g.CompanyName + " " + g.AgentName + " کد مشتری: " + g.CustomerCode
                     }).Take(20).ToListAsync();
@@ -1166,7 +1166,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
             var result = await udb.Users.Where(u => cusUsers.Contains(u.Id))
-                .Select(u => new SelectOptionGuidDto {
+                .Select(u => new SelectOptionIdDto {
                     id = Guid.Parse(u.Id),
                     text = u.FullName,
                     Target = u.Id == userCreatorId

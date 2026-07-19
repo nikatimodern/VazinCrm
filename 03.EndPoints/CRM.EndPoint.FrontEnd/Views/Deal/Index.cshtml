@@ -371,7 +371,7 @@
 
 
         document.addEventListener("DOMContentLoaded", async () => {
-            FLshowLoading();
+            @* FLshowLoading(); *@
 
             removeDealsTabsDesktop();
             initSortableDeal();
@@ -380,7 +380,7 @@
             await showTaminDropdown();
             await getAllDeals();
 
-            FLshowLoading(false);
+            @* FLshowLoading(false); *@
 
             const searchDealElm = document.getElementById("dealSearchId");
             searchDealElm.addEventListener("keyup", async (e) => {
@@ -447,9 +447,83 @@
             await getAllDeals();
         }
 
+        const dealCardSkeletonTemplate = `
+            <div class="deal-card" style="border-right-color: #ddd; pointer-events: none;">
+                <div class="position-relative w-100 h-100">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+                        <div class="skel-base skel-title"></div>
+                        <div class="d-flex gap-2">
+                            <div class="skel-base skel-circle" style="width: 20px; height: 20px;"></div>
+                            <div class="skel-base skel-circle" style="width: 20px; height: 20px;"></div>
+                        </div>
+                    </div>
+                    <div class="skel-base skel-line-short"></div>
+                    <div class="skel-base skel-line mt-2" style="height: 25px;"></div>
+                    <div class="d-flex justify-content-between align-items-end mt-3 gap-2">
+                        <div class="w-100">
+                            <div class="skel-base skel-line" style="width: 70%;"></div>
+                            <div class="skel-base skel-line" style="width: 50%;"></div>
+                        </div>
+                        <div class="skel-base skel-circle" style="width: 24px; height: 24px;"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        Skeleton.register("deal-card",()=>`
+
+<div class="deal-card">
+
+    <div class="sk sk-line mb-2" style="width:45%;height:16px"></div>
+
+    <div class="sk sk-line mb-3" style="width:70%"></div>
+
+    <div class="sk-gap">
+
+        <div class="sk sk-line"></div>
+
+        <div class="sk sk-line" style="width:80%"></div>
+
+        <div class="d-flex justify-content-between">
+
+            <div class="sk sk-pill" style="width:90px;height:14px"></div>
+
+            <div class="sk sk-pill" style="width:70px;height:14px"></div>
+
+            <div class="sk sk-pill" style="width:110px;height:14px"></div>
+
+        </div>
+
+    </div>
+
+</div>
+
+`);
         const getAllDeals = async () => {
+            const openSkeleton = new DynamicSkeleton({ container: "#openDealsContainerId .deal-column-list", template: dealCardSkeletonTemplate, count: 4 });
+            const successSkeleton = new DynamicSkeleton({ container: "#successDealsContainerId .deal-column-list", template: dealCardSkeletonTemplate, count: 4 });
+            const failedSkeleton = new DynamicSkeleton({ container: "#failedDealsContainerId .deal-column-list", template: dealCardSkeletonTemplate, count: 4 });
             try {
                 FLshowLoading();
+              //  openSkeleton.render();
+                //successSkeleton.render();
+               // failedSkeleton.render();
+                @*Skeleton.show({
+                    container:"#openDealsContainerId .deal-column-list",
+                    count:6,
+                    template:"deal-card"
+                });
+
+                Skeleton.show({
+                    container:"#successDealsContainerId .deal-column-list",
+                    count:6,
+                    template:"deal-card"
+                });
+
+                Skeleton.show({
+                    container:"#failedDealsContainerId .deal-column-list",
+                    count:6,
+                    template:"deal-card"
+                });*@
                 const res = await axios.post(`/Deal/GetAllDeals`, modelDeal);
                 if (res.status === 200) {
                     const items = res.data.items;

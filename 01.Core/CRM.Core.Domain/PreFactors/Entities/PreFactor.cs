@@ -73,6 +73,7 @@ namespace CRM.Core.Domain.PreFactors.Entities {
         public byte[] Signature { get; set; }
         public string SignatureDes { get; set; }
         public bool? Export { get; set; }
+        public bool? AcceptedTerms { get; set; } // شرایط تکمیلی پیش فاکتور
 
         public Guid? UserTaminId { get; set; }
         public string UserTaminTxt { get; set; }

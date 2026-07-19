@@ -29,8 +29,8 @@ namespace CRM.Core.Domain.Reports.Entities {
 
         public bool AI { get; set; }
         public Guid? CallRecordingId { get; set; }
-        public CallRecording CallRecordings { get; set; }
-        public IList<ReportParticipant> Participants { get; set; }
+        public CallRecording CallRecording { get; set; }
+        public IList<CallParticipant> Participants { get; set; }
     }
 }
 

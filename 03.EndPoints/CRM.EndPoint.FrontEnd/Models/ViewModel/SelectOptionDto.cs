@@ -1,12 +1,15 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System;
 
-namespace CRM.EndPoint.FrontEnd.Models.ViewModel
-{
-    public class SelectOptionDto
+namespace CRM.EndPoint.FrontEnd.Models.ViewModel {
+    public class SelectOptionDto<T>
     {
-        public int id { get; set; }
+        public T Value { get; set; }
+        public string Text { get; set; }
+    }
+
+    public class SelectOptionIdDto {
+        public Guid id { get; set; }
         public string text { get; set; }
+        public bool? Target { get; set; } = false;
     }
 }

@@ -53,17 +53,15 @@ class SelectionManager {
             selectionModeClass: "selection-mode",
             
             onAction: null,
+            onSelectionModeEnter: null,
+            onSelectionModeExit: null,
+            onSelectionChanged: null,
             
+            
+            isSelectable: null,
+            itemsProvider: null,
             ...options,
         };
-        
-        this.container = this.resolveElement(this.options.container);
-        this.selectionBar = this.resolveElement(this.options.selectionBar);
-        this.toggleBtn = this.resolveElement(this.options.toggleBtn);
-        
-        if (!this.container) throw new Error("SelectionManager: container element not found.");
-        if (!this.selectionBar) throw new Error("SelectionManager: selectionBar element not found.");
-        if (!this.toggleBtn) throw new Error("SelectionManager: toggleBtn element not found.");
         
         this.cancelBtn = this.selectionBar.querySelector(".cancel-selection");
         this.clearBtn = this.selectionBar.querySelector(".clear-selection");
@@ -78,7 +76,11 @@ class SelectionManager {
     
     
     init() {
-        this.toggleBtn?.addEventListener("click", () => this.showSelectionMode());
+        document.addEventListener("click", e => {
+            const btn = e.target.closest(this.options.toggleBtn);
+            if (!btn) return;
+            this.showSelectionMode();
+        });
         this.cancelBtn?.addEventListener("click", () => this.hideSelectionMode());
         this.clearBtn?.addEventListener("click", () => this.clearSelection());
         this.selectAll?.addEventListener("change", () => this.toggleSelectAll());
@@ -91,6 +93,27 @@ class SelectionManager {
         this.container?.addEventListener("click", (e) => this.handleItemClick(e));
     }
     
+    get toggleBtn() {
+        const elm = this.resolveElement(this.options.toggleBtn);
+        if (!elm) throw new Error("SelectionManager: toggleBtn element not found.");
+        
+        return elm;
+    }
+    
+    get selectionBar() {
+        const elm = this.resolveElement(this.options.selectionBar);
+        if (!elm) throw new Error("SelectionManager: selectionBar element not found.");
+        
+        return elm;
+    }
+    
+    get container() {
+        const elm = this.resolveElement(this.options.container);
+        if (!elm) throw new Error("SelectionManager: container element not found.");
+        
+        return elm;
+    }
+    
     resolveElement(elementOrSelector) {
         if (elementOrSelector instanceof HTMLElement) {
             return elementOrSelector;
@@ -100,6 +123,9 @@ class SelectionManager {
     }
     
     getItems() {
+        if (typeof this.options.itemsProvider === "function")
+            return this.options.itemsProvider();
+        
         return this.container.querySelectorAll(this.options.itemSelector);
     }
     
@@ -109,6 +135,12 @@ class SelectionManager {
         this.container.classList.toggle(this.options.selectionModeClass, enable);
         this.selectionBar?.classList.toggle("d-none", !enable);
         this.toggleBtn?.classList.toggle("d-none", enable);
+        
+        if (enable) {
+            this.options.onSelectionModeEnter?.(this);
+        } else {
+            this.options.onSelectionModeExit?.(this);
+        }
     }
     
     showSelectionMode() {
@@ -127,14 +159,23 @@ class SelectionManager {
         const item = e.target.closest(this.options.itemSelector);
         if (!item) return;
         
-        const checkbox = item.querySelector(this.options.checkboxSelector);
-        if (!checkbox) return;
+        if (!this.#isItemSelectable(item)) return;
         
-        if (!e.target.matches(this.options.checkboxSelector)) {
-            checkbox.checked = !checkbox.checked;
+        let isChecked;
+        if (this.options.checkboxSelector) {
+            const checkbox = item.querySelector(this.options.checkboxSelector);
+            if (!checkbox) return;
+            
+            if (!e.target.matches(this.options.checkboxSelector)) {
+                checkbox.checked = !checkbox.checked;
+            }
+            
+            isChecked = checkbox.checked;
+        } else {
+            isChecked = !this.selectedIds.has(item.dataset.id);
         }
         
-        this.toggleItem(item, checkbox.checked);
+        this.toggleItem(item, isChecked);
     }
     
     
@@ -156,32 +197,50 @@ class SelectionManager {
     updateUI() {
         const count = this.selectedIds.size;
         
-        if (this.selectedCounts) {
-            this.selectedCounts.forEach(i => i.textContent = count);
-        }
+        this.selectedCounts?.forEach(i => i.textContent = count);
         
         if (this.actionBtn) {
             this.actionBtn.disabled = count === 0;
         }
         
         if (this.selectAll) {
-            const visibleItems = this.getItems();
+            const selectableItems = Array.from(this.getItems()).filter(item => this.#isItemSelectable(item));
             
             this.selectAll.checked =
-                visibleItems.length > 0 &&
-                Array.from(visibleItems).every(item => this.selectedIds.has(item.dataset.id));
+                selectableItems.length > 0 &&
+                selectableItems.every(item => this.selectedIds.has(item.dataset.id));
+            
+            this.selectAll.indeterminate =
+                count > 0 && count < selectableItems.length;
         }
+        
+        this.options.onSelectionChanged?.(this.getSelectedIds(), this);
+    }
+    
+    #isItemSelectable(item) {
+        if (typeof this.options.isSelectable === "function")
+            return this.options.isSelectable(item);
+        
+        if (this.options.checkboxSelector)
+            return item.querySelector(this.options.checkboxSelector) !== null;
+        
+        return true;
     }
     
     
     toggleSelectAll() {
         const isChecked = this.selectAll.checked;
         
-        this.getItems().forEach(item => {
-            const checkbox = item.querySelector(this.options.checkboxSelector);
-            if (!checkbox) return;
+        const selectableItems = Array.from(this.getItems()).filter(item => this.#isItemSelectable(item));
+        
+        selectableItems.forEach(item => {
+            if (this.options.checkboxSelector) {
+                const checkbox = item.querySelector(this.options.checkboxSelector);
+                if (!checkbox) return;
+                
+                checkbox.checked = isChecked;
+            }
             
-            checkbox.checked = isChecked;
             this.toggleItem(item, isChecked);
         });
     }
@@ -217,6 +276,28 @@ class SelectionManager {
         });
         
         this.updateUI();
+    }
+    
+    decorateItems() {
+        
+        this.getItems().forEach(item => {
+            
+            item.classList.remove("selection-enabled");
+            
+            if (this.#isItemSelectable(item)) {
+                item.classList.add("selection-enabled");
+            }
+            
+        });
+        
+    }
+    
+    refresh() {
+        
+        this.decorateItems();
+        
+        this.restoreSelection();
+        
     }
     
     
@@ -3570,7 +3651,6 @@ const updateFilterSwitchState = ({ wrapperSelector, filterData, currentFilterVal
     if (!wrapper) return;
     
     const hasSearch = !!searchValue.trim();
-    console.log(searchValue);
     if (!hasSearch) {
         wrapper.dataset.userInteracted = "false";
         
@@ -3808,3 +3888,96 @@ function renderDateTimeHtml(value, { empty = "-", className = "" } = {}) {
     
     return `<span dir="ltr" class="${className}">${value.slice(0, -3).split(" ").join(" | ")}</span>`;
 }
+
+class DynamicSkeleton {
+    /**
+     * @param {Object} options
+     * @param {string|HTMLElement} options.container - سلکتور یا المنت والد که اسکلتون ها در آن قرار میگیرند
+     * @param {string} options.template - ساختار HTML یک آیتم اسکلتون
+     * @param {number} options.count - تعداد اسکلتون‌هایی که باید ساخته شود (پیش‌فرض 3)
+     */
+    constructor(options) {
+        this.container = typeof options.container === 'string'
+            ? document.querySelector(options.container)
+            : options.container;
+        this.template = options.template;
+        this.count = options.count || 3;
+    }
+    
+    // متد نمایش لودینگ
+    render() {
+        if (!this.container) return;
+        
+        let skeletonsHTML = '';
+        for (let i = 0; i < this.count; i++) {
+            skeletonsHTML += this.template;
+        }
+        
+        this.container.innerHTML = skeletonsHTML;
+    }
+    
+    // متد پاک کردن لودینگ (البته وقتی دیتای واقعی رو innerHTML کنید خود به خود پاک میشه)
+    clear() {
+        if (this.container) {
+            this.container.innerHTML = '';
+        }
+    }
+}
+
+const Skeleton = (() => {
+    
+    const templates = {};
+    
+    function register(name, builder){
+        templates[name] = builder;
+    }
+    
+    function show({
+                      container,
+                      count = 1,
+                      template
+                  }){
+        
+        const el = typeof container === "string"
+            ? document.querySelector(container)
+            : container;
+        
+        if(!el) return;
+        
+        el.dataset.skeleton = "true";
+        
+        const html = [];
+        
+        const builder =
+            typeof template === "function"
+                ? template
+                : templates[template];
+        
+        for(let i=0;i<count;i++){
+            
+            html.push(builder(i));
+            
+        }
+        
+        el.innerHTML = html.join("");
+        
+    }
+    
+    function hide(container){
+        
+        const el = typeof container === "string"
+            ? document.querySelector(container)
+            : container;
+        
+        if(el)
+            el.innerHTML = "";
+        
+    }
+    
+    return {
+        show,
+        hide,
+        register
+    };
+    
+})();

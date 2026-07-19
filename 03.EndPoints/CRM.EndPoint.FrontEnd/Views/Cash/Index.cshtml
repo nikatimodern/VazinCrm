@@ -7,8 +7,38 @@
     <div class="d-flex justify-content-between align-items-end flex-row-reverse gap-1 flex-wrap mb-2">
         <div id="cashBalanceContainer" class="flex-grow-1 d-flex justify-content-end">
         </div>
+        <div id="cashSelectionToolbar" class="selection-bar d-none mt-2">
+            <div class="d-none d-lg-flex align-items-center gap-3">
+                <label class="d-flex align-items-center gap-3">
+                    <input type="checkbox" class="select-all" />
+                    <span>انتخاب همه</span>
+                </label>
+            </div>
+
+            <div class="col-12 col-lg-auto flex-center flex-wrap gap-3" style="color: #444">
+                <span class="selected-count fbold" style="color: var(--color8)">0</span>
+                <span>مورد انتخاب شده</span>
+
+                <button class="clear-selection link-green" style="font-size: 13px">
+                    حذف انتخاب
+                </button>
+            </div>
+
+            <div class="col-12 col-lg-auto d-flex align-items-center justify-content-between justify-content-lg-end gap-3">
+                <button class="cancel-selection buttonCancel-white">
+                    <svg style="width: 16px" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
+                    انصراف
+                </button>
+
+                <button class="selection-action-btn buttonGreen0" disabled>
+                    ارسال همه (<span class="selected-count">0</span>)
+                </button>
+            </div>
+        </div>
+
+
         <div class="d-flex flex-grow-1">
-            <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" data-bs-toggle="modal" data-bs-target="#cashModal">
+            <button id="cashModalBtn" class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" data-bs-toggle="modal" data-bs-target="#cashModal">
                 <span style="line-height: 1">ثبت تنخواه</span>
                 <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
             </button>
@@ -19,6 +49,7 @@
             <thead>
             <tr>
                 <th>شماره</th>
+                <th>گروه</th>
                 <th>تاریخ ثبت</th>
                 <th>عنوان هزینه</th>
                 <th>مرکز هزینه</th>
@@ -118,8 +149,10 @@
         });
 
         async function initCashierSelectOpt() {
-            const baseCashCenter = (await axios(`/Cash/GetAllBaseCashCenter`)).data;
-            const baseCash = (await axios(`/Cash/GetAllBaseCash`)).data;
+            const [baseCashCenter, baseCash] = await Promise.all([
+                axios("/Cash/GetAllBaseCashCenter").then(r => r.data),
+                axios("/Cash/GetAllBaseCashTitle").then(r => r.data),
+            ]);
             createOption(costCenterElm, baseCashCenter);
             createOption("cashCostTitle", baseCash);
         }
@@ -133,7 +166,6 @@
             try {
                 const res = await axios(`/Cash/GetCash/${id}`);
                 if (res.status === 200) {
-                    console.log(res);
                     cashData = res.data.cash;
                     mySer.convertJsonToForm(cashData, "cashForm");
                     cashAttachments = res.data.attachments;
@@ -244,10 +276,31 @@
                 FLshowLoading(false);
             }
         }
+        async function changeStatusGroupCashToPending(listIds = []) {
+            try {
+                FLshowLoading();
+                const res = await axios.post(`/Cash/ChangeStatusGroupCashToPending`,  listIds);
+                if (res.status === 200) {
+                    toastifySuccess("به مالی ارسال شد");
+                    cashTbl.ajax.reload(null, false);
+                }
+            } catch (err) {
+                console.log(err);
+                if (err.status === 404) {
+                    toastifyError(err.response.data);
+                }
+            } finally {
+                FLshowLoading(false);
+            }
+        }
 
         let cashTbl;
         let modelCash = {};
         let isManager;
+
+        let bulkMode = false;
+        const selectedCashIds = new Set();
+        let isBulkSelectMode = false;
         const getAllCashesDt = () => {
             cashTbl = $("#cashTable").DataTable({
                 pageLength: 10,
@@ -259,7 +312,7 @@
                     return: true,
                 },
                 ordering: true,
-                order: [[1, "desc"]],
+                order: [[2, "desc"]],
                 scrollCollapse: true,
                 scrollY: "70dvh",
                 responsive: true,
@@ -270,48 +323,37 @@
                         d.model = JSON.stringify(modelCash);
                     },
                     dataSrc: function (json) {
+                        console.log(json.data);
                         isManager = json.isManager;
                         initCashierBalanceUI(json.cashierBalance);
                         return json.data;
                     },
                 },
-                language: {
-                    emptyTable: "هیچ رکوردی موجود نمی باشد.",
-                    info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
-                    infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
-                    infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
-                    lengthMenu: "نمایش _MENU_ ردیف",
-                    loadingRecords: "در حال بارگزاری...",
-                    search: "",
-                    zeroRecords: "رکوردی با این مشخصات پیدا نشد",
-                    aria: {
-                        sortAscending: ": فعال سازی نمایش به صورت صعودی",
-                        sortDescending: ": فعال سازی نمایش به صورت نزولی",
-                    },
-                },
+                language: languageDatatable,
                 columnDefs: [
                     {
-                        targets: [10, 11],
+                        targets: [11, 12],
                         orderable: false,
                     },
                     {
-                        targets: [1],
+                        targets: [2],
                         render: data => `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>`,
                     },
                     {
-                        targets: [5, 6],
+                        targets: [6, 7],
                         render: data => `<span dir="ltr">${data ? data.toLocaleString() : "-"}</span>`,
                     },
                     {
-                        targets: [7],
+                        targets: [8],
                         render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>`,
                     },
                 ],
                 columns: [
-                    { data: "serial", name: "Serial", defaultContent: "-" },
+                    { data: "serial", name: "Serial", defaultContent: "-", responsivePriority: 1 },
+                    { data: "cashGroup.groupNumber", name: "GroupNumber", defaultContent: "-" },
                     { data: "createDateTxt", name: "CreateDateTxt", defaultContent: "-" },
-                    { data: "costTitleTxt", name: "CostTitleTxt", defaultContent: "-" },
-                    { data: "costCenterTxt", name: "CostCenterTxt", defaultContent: "-" },
+                    { data: "costTitleTxt", name: "CostTitleTxt", defaultContent: "-", responsivePriority: 2 },
+                    { data: "costCenterTxt", name: "CostCenterTxt", defaultContent: "-", responsivePriority: 3 },
                     { data: "costDate", name: "CostDate", defaultContent: "-" },
                     { data: "amount", name: "Amount", defaultContent: "-" },
                     { data: "fee", name: "Fee", defaultContent: "-" },
@@ -397,39 +439,97 @@
                         },
                     },
                 },
-
+                createdRow: (row, data) => {
+                    row.dataset.id = data.id;
+                },
                 initComplete: () => initFilterCashTable(),
                 drawCallback: function () {
-                    const api = this.api();
-                    const json = api.ajax.json();
-
+                    const json = this.api().ajax.json();
                     const container = document.querySelector(".dt-length");
-                    const existingBtn = container.querySelector(".sendAllBtn");
+
+                    if (!container) return;
 
                     const shouldShow = json?.data?.some(i => i.status === 0);
 
+                    let groupBtn = container.querySelector(".groupSelectCashBtn");
+                    let sendAllBtn = container.querySelector(".sendAllBtn");
+
                     if (!shouldShow) {
-                        existingBtn?.remove();
+                        groupBtn?.remove();
+                        sendAllBtn?.remove();
                         return;
                     }
 
-                    if (existingBtn) return;
+                    if (!groupBtn) {
+                        groupBtn = document.createElement("button");
+                        groupBtn.className = "buttonBlue2 groupSelectCashBtn";
+                        groupBtn.textContent = "ارسال گروهی";
+                    }
 
-                    const btn = document.createElement("button");
-                    btn.className = "buttonGreen2 sendAllBtn";
-                    btn.textContent = "ارسال همه به مالی";
+                    if (!sendAllBtn) {
+                        sendAllBtn = document.createElement("button");
+                        sendAllBtn.className = "buttonGreen2 sendAllBtn";
+                        sendAllBtn.innerHTML = `ارسال همه <span class="d-none d-sm-inline">به مالی</span>`;
 
-                    btn.onclick = async () => {
-                        btn.disabled = true;
-                        await changeStatusAllCashToPending();
-                        btn.disabled = false;
-                    };
+                        sendAllBtn.onclick = async () => {
+                            sendAllBtn.disabled = true;
+                            await changeStatusAllCashToPending();
+                            sendAllBtn.disabled = false;
+                        };
+                    }
 
-                    container.prepend(btn);
+                    container.prepend(sendAllBtn);
+                    container.prepend(groupBtn);
+                },
+            });
+
+
+            const cashSelection = new SelectionManager({
+                container: "#cashTable tbody",
+                selectionBar: "#cashSelectionToolbar",
+                toggleBtn: ".groupSelectCashBtn",
+                itemSelector: "tr",
+                selectedClass: "row-selected",
+                checkboxSelector: null,
+                itemsProvider: () => document.querySelectorAll("#cashTable tbody tr"),
+                isSelectable: item => {
+                    const row = cashTbl.row(item);
+                    return row.any() && row.data().status === 0;
+                },
+                onAction: async (ids, selection) => {
+                    console.log(ids);
+                    await changeStatusGroupCashToPending(ids)
+                    selection.hideSelectionMode();
+
+                    cashTbl.ajax.reload(null, false);
                 },
 
-
+                onSelectionModeEnter() {
+                    document.querySelector("#cashBalanceContainer").classList.add("d-none");
+                    document.querySelector("#cashModalBtn").classList.add("d-none");
+                    document.querySelector(".buttonExcel").classList.add("d-none");
+                    document.querySelector(".sendAllBtn").classList.add("d-none");
+                },
+                onSelectionModeExit() {
+                    document.querySelector("#cashBalanceContainer").classList.remove("d-none");
+                    document.querySelector("#cashModalBtn").classList.remove("d-none");
+                    document.querySelector(".buttonExcel").classList.remove("d-none");
+                    document.querySelector(".sendAllBtn").classList.remove("d-none");
+                },
             });
+
+
+            cashTbl.on("draw.dt", () => cashSelection.refresh());
+
+            @*
+            cashTbl.on("order.dt", () => cashSelection.refresh());
+
+            cashTbl.on("search.dt", () => cashSelection.refresh());
+
+            cashTbl.on("page.dt", () => cashSelection.refresh());
+
+            cashTbl.on("responsive-display.dt", () => cashSelection.refresh());*@;
+
 
             function initFilterCashTable() {
                 const dtLength = document.querySelector(".dt-length label");

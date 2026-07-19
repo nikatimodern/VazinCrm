@@ -331,3 +331,48 @@ table tr.tableRow-bgGreen td, table tr.tableRow-bgGreen th {
 #AcTable_wrapper > div.row {
   margin-inline: auto;
 }*/
+
+
+#cashContainer .selection-mode tr.selection-enabled {
+  border-right: 3px solid transparent;
+  position: relative;
+  cursor: pointer;
+  transition: .15s;
+}
+
+
+#cashContainer .selection-mode tr {
+  position: relative;
+}
+
+
+#cashContainer .selection-mode tr.selection-enabled.row-selected,
+#cashContainer .selection-mode tr.selection-enabled:hover {
+  border-right-color: #16a34a;
+  background: #f8f8f8 !important;
+}
+
+
+#cashContainer .selection-mode tr.row-selected td {
+  background: #e8f5e9 !important;
+}
+
+
+#cashContainer .selection-mode tr::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, .75);
+  opacity: 1;
+  transition: .2s ease;
+}
+
+
+#cashContainer .selection-mode tr.selection-enabled::after {
+  background: rgba(255, 255, 255, .3);
+}
+
+
+#cashContainer .selection-mode tr.row-selected::after {
+  background: rgba(0, 0, 0, .05);
+}

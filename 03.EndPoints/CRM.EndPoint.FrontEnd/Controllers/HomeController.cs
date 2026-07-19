@@ -41,8 +41,11 @@ using System.IO;
 using System.Net;
 using Renci.SshNet;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
+using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 using CRM.EndPoint.FrontEnd.Services.AI;
+using CRM.EndPoint.FrontEnd.Services.Asterisk;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
@@ -59,11 +62,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly UserContextDb udb;
         private readonly Sepidar1ContextDb S1db;
         private readonly ISmsQueue smsQueue;
+        private readonly IssabelService issabelService;
+        private readonly AiPrompts aiPrompts;
+        private readonly ViraAi viraAi;
+        private readonly GapgptAi gapgptAi;
         private readonly LogSystemService logSystemService;
 
         public HomeController(IWebHostEnvironment appEnvironment, TimedHostedService hostService, IConfiguration conf,
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
-            Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue, LogSystemService logSystemService)
+            Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue, IssabelService issabelService,
+            AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi, LogSystemService logSystemService)
         {
             this.appEnvironment = appEnvironment;
             this.hostService = hostService;
@@ -77,6 +85,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.S1db = S1db;
             this.smsQueue = smsQueue;
             this.logSystemService = logSystemService;
+            this.issabelService = issabelService;
+            this.aiPrompts = aiPrompts;
+            this.viraAi = viraAi;
+            this.gapgptAi = gapgptAi;
             this.genService = genService;
         }
 
@@ -87,6 +99,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
 
+                /*const string path = "/var/spool/asterisk/monitor/2026/07/18/q-0006-9124606687-20260718-145823-1784370449.414873.wav";
+                var stream = await issabelService.GetAudioWithRetry(path);
+                stream = await issabelService.ConvertToFlac(stream);*/
                 //await db.SaveChangesAsync();
                 await trans.CommitAsync();
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";

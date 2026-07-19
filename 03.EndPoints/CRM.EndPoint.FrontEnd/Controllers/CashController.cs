@@ -183,24 +183,6 @@ public class CashController : Controller {
         }
     }
 
-    public async Task<IActionResult> ChangeStatusCash(Guid id, CashStatusEnum status)
-    {
-        try
-        {
-            var user = await userManager.GetUserAsync(HttpContext.User);
-            var data = await db.Cashes.FirstOrDefaultAsync(f => f.Id == id);
-            if (data == null) return NotFound();
-
-            await ChangeCashStatus(status, data, user);
-
-            await db.SaveChangesAsync();
-            return Ok();
-        }
-        catch (Exception e)
-        {
-            return BadRequest(e.Message);
-        }
-    }
 
     private async Task ChangeCashStatus(CashStatusEnum status, Cash data, AppUser user)
     {
@@ -216,6 +198,71 @@ public class CashController : Controller {
     }
 
 
+    private async Task ChangeCashStatusGroup(List<Cash> cashList, CashStatusEnum status, AppUser user)
+    {
+        if (cashList == null || cashList.Count == 0) return;
+
+        CashGroup group = null;
+
+        var groupIds = cashList
+            .Where(x => x.CashGroupId != null)
+            .Select(x => x.CashGroupId!.Value)
+            .Distinct()
+            .ToList();
+
+        foreach (var groupId in groupIds)
+        {
+            var hasLockedMember = await db.Cashes.AnyAsync(x =>
+                x.CashGroupId == groupId &&
+                x.Status != CashStatusEnum.ثبت_موقت
+            );
+
+            if (!hasLockedMember)
+            {
+                group = await db.CashGroups.FindAsync(groupId);
+                break;
+            }
+        }
+
+        if (group == null)
+        {
+            group = new CashGroup();
+            db.CashGroups.Add(group);
+        }
+
+        foreach (var cash in cashList)
+        {
+            await ChangeCashStatus(status, cash, user);
+            cash.CashGroup = group;
+        }
+    }
+
+
+    public async Task<IActionResult> ChangeStatusCash(Guid id, CashStatusEnum status)
+    {
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var data = await db.Cashes.FirstOrDefaultAsync(f => f.Id == id);
+            if (data == null) return NotFound();
+
+            if (data.Status == CashStatusEnum.ثبت_موقت && status == CashStatusEnum.در_دست_تایید)
+            {
+                await ChangeCashStatusGroup([data], CashStatusEnum.در_دست_تایید, user);
+            } else
+            {
+                await ChangeCashStatus(status, data, user);
+            }
+
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+
     public async Task<IActionResult> ChangeStatusAllCashToPending()
     {
         try
@@ -226,16 +273,37 @@ public class CashController : Controller {
                 f.Status == CashStatusEnum.ثبت_موقت
             ).ToListAsync();
 
-            foreach (var cash in cashes)
-            {
-                await ChangeCashStatus(CashStatusEnum.در_دست_تایید, cash, user);
-            }
+            await ChangeCashStatusGroup(cashes, CashStatusEnum.در_دست_تایید, user);
 
             await db.SaveChangesAsync();
             return Ok();
         }
         catch (Exception e)
         {
+            return BadRequest(e.Message);
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ChangeStatusGroupCashToPending([FromBody] List<Guid> listIds)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var cashes = await db.Cashes.Where(f => listIds.Contains(f.Id)).ToListAsync();
+
+            if (cashes.Count == 0) return BadRequest("موردی برای ارسال یافت نشد.");
+
+            await ChangeCashStatusGroup(cashes, CashStatusEnum.در_دست_تایید, user);
+
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            await transaction.RollbackAsync();
             return BadRequest(e.Message);
         }
     }
@@ -329,46 +397,6 @@ public class CashController : Controller {
         }
     }
 
-    public async Task<IActionResult> GetAllBaseCashCenter()
-    {
-        try
-        {
-            var query = db.BaseCenterCashes.AsNoTracking();
-
-
-            var data = await query.Select(f => new {
-                value = f.Id,
-                text = f.Title
-            }).ToListAsync();
-
-            return Ok(data);
-        }
-        catch (Exception e)
-        {
-            return BadRequest(e.Message);
-        }
-    }
-
-    public async Task<IActionResult> GetAllBaseCash()
-    {
-        try
-        {
-            var query = db.BaseCashes.AsNoTracking();
-
-
-            var data = await query.Select(f => new {
-                value = f.Id,
-                text = f.CostTitle
-            }).ToListAsync();
-
-            return Ok(data);
-        }
-        catch (Exception e)
-        {
-            return BadRequest(e.Message);
-        }
-    }
-
     public async Task<IActionResult> DeleteCash(Guid id)
     {
         try
@@ -447,7 +475,7 @@ public class CashController : Controller {
             var roles = await userManager.GetRolesAsync(user);
 
 
-            var query = db.Cashes.AsQueryable();
+            var query = db.Cashes.Include(f => f.CashGroup).AsQueryable();
 
             var isManager = true;
             if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر مالی") && !roles.Contains("کارشناس مالی"))
@@ -465,6 +493,7 @@ public class CashController : Controller {
                 var searchNumber = TextService.convertToInt(searchValue);
                 query = query.Where(f =>
                     f.Amount == searchNumber ||
+                    f.CashGroup.GroupNumber == searchNumber ||
                     f.Serial == searchNumber ||
                     f.CostDescription.Contains(searchValue) ||
                     f.CostCenterTxt.Contains(searchValue) ||
@@ -520,6 +549,9 @@ public class CashController : Controller {
                     "UserCreator" => isAscending
                         ? query.OrderBy(f => f.UserCreator)
                         : query.OrderByDescending(f => f.UserCreator),
+                    "GroupNumber" => isAscending
+                        ? query.OrderBy(f => f.CashGroup == null).ThenBy(f => f.CashGroup.GroupNumber)
+                        : query.OrderBy(f => f.CashGroup == null).ThenByDescending(f => f.CashGroup.GroupNumber),
                     _ => query
                 };
             }
@@ -647,6 +679,204 @@ public class CashController : Controller {
             }).ToListAsync();
 
             return Ok(data);
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+
+    //    BaseCashCenter
+    public async Task<IActionResult> GetAllBaseCashCenter()
+    {
+        try
+        {
+            var query = db.BaseCenterCashes.AsNoTracking();
+
+
+            var data = await query.Select(f => new SelectOptionDto<Guid> {
+                Value = f.Id,
+                Text = f.Title
+            }).ToListAsync();
+
+            return Ok(data);
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+
+    //    BaseCash
+    public async Task<IActionResult> GetAllBaseCashTitle()
+    {
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var roles = await userManager.GetRolesAsync(user);
+
+            var targetType = roles.Contains("مدیر تامین") || roles.Contains("کارشناس تامین")
+                ? BaseCashTypeEnum.تامین
+                : BaseCashTypeEnum.عمومی;
+
+            var query = db.BaseCashes
+                .Where(f => f.BaseCashType == targetType || f.BaseCashType == BaseCashTypeEnum.هردو)
+                .AsNoTracking();
+
+            var data = await query.Select(f => new SelectOptionDto<Guid> {
+                Value = f.Id,
+                Text = f.CostTitle
+            }).ToListAsync();
+
+            return Ok(data);
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+
+    public async Task<IActionResult> GetBaseCash(Guid id)
+    {
+        try
+        {
+            var data = await db.BaseCashes.FindAsync(id);
+            return Ok(data);
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+
+    public async Task<IActionResult> GetAllBaseCashesDt()
+    {
+        var draw = Request.Form["draw"].FirstOrDefault();
+        var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
+        var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
+        var searchValue = Request.Form["search[value]"].FirstOrDefault();
+        var sortColumnIndex = Request.Form["order[0][column]"].FirstOrDefault();
+        var sortDirection = Request.Form["order[0][dir]"].FirstOrDefault();
+        var sortColumn = Request.Form[$"columns[{sortColumnIndex}][data]"].FirstOrDefault();
+
+        var query = db.BaseCashes.AsNoTracking();
+
+        var recordsTotal = await query.CountAsync();
+
+        if (!string.IsNullOrEmpty(searchValue))
+        {
+            query = query.Where(t =>
+                t.MoeinCode.ToString().Contains(searchValue) ||
+                t.CostTitle.Contains(searchValue) ||
+                t.AccountTitle.Contains(searchValue) ||
+                t.CostItem.Contains(searchValue)
+            );
+        }
+
+        var recordsFiltered = await query.CountAsync();
+
+        if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortDirection))
+        {
+            var isAsc = sortDirection == "asc";
+
+            query = sortColumn switch {
+                "moeinCode" => isAsc ? query.OrderBy(c => c.MoeinCode) : query.OrderByDescending(c => c.MoeinCode),
+                "costTitle" => isAsc ? query.OrderBy(c => c.CostTitle) : query.OrderByDescending(c => c.CostTitle),
+                "accountTitle" => isAsc ? query.OrderBy(c => c.AccountTitle) : query.OrderByDescending(c => c.AccountTitle),
+                _ => query.OrderByDescending(c => c.CreateDate)
+            };
+        } else
+        {
+            query = query.OrderByDescending(c => c.CreateDate);
+        }
+
+
+        if (length != -1)
+            query = query.Skip(start).Take(length);
+
+        var data = await query.ToListAsync();
+
+        return Json(new {
+            draw,
+            recordsTotal,
+            recordsFiltered,
+            data,
+        });
+    }
+
+    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+    [HttpPost]
+    public async Task<IActionResult> AddBaseCash([FromBody] BaseCash model)
+    {
+        if (model == null) return BadRequest();
+
+        var isDuplicate = await db.BaseCashes.AnyAsync(x =>
+            x.Id != model.Id &&
+            (x.MoeinCode == model.MoeinCode || x.CostTitle.Trim() == model.CostTitle.Trim())
+        );
+
+        if (isDuplicate) return BadRequest("این عنوان هزینه قبلاً ثبت شده است.");
+
+
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            model.BaseCashTypeTxt = model.BaseCashType.ToString();
+
+            if (model.Id == Guid.Empty)
+            {
+                model.UserCreator = user.FullName;
+                model.UserCreatorID = user.Id;
+
+                db.BaseCashes.Add(model);
+
+                await logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
+            } else
+            {
+                var oldBaseCash = await db.BaseCashes.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id);
+
+                model.ModifyDate = DateTime.Now;
+                model.ModifyDateTxt = dtService.GetDateTimePersian();
+                model.UserModify = user.FullName;
+                model.UserModifyID = user.Id;
+
+                db.BaseCashes.Update(model);
+
+                await logSystemService.LogChange(oldBaseCash, model, LogActionEnum.ویرایش, user);
+            }
+
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            await transaction.RollbackAsync();
+            return BadRequest(e.Message);
+        }
+    }
+
+    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+    public async Task<IActionResult> DeleteBaseCash(Guid id)
+    {
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var item = await db.BaseCashes.Where(f => f.Id == id).FirstOrDefaultAsync();
+            if (item == null) return NotFound();
+
+            item.IsDeleted = true;
+            item.ModifyDate = DateTime.Now;
+            item.ModifyDateTxt = dtService.GetDateTimePersian();
+            item.UserModify = user.FullName;
+            item.UserModifyID = user.Id;
+
+            await logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
+
+            await db.SaveChangesAsync();
+            return Ok();
         }
         catch (Exception e)
         {
