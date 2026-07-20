@@ -3655,6 +3655,12 @@ width: 100% !important;
 }
 
 
+.buttonCancel:disabled {
+  opacity: 0.75;
+  color: #fff !important;
+}
+
+
 .buttonCancel2 {
   background-color: #851b1d;
   color: #fff;

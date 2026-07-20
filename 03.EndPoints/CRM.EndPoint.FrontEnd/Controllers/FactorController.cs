@@ -48,6 +48,7 @@ using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
+using Microsoft.Playwright;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     public class FactorController : Controller {
@@ -977,6 +978,37 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 return null;
             }
         }
+
+        public async Task<IActionResult> DownloadPreFactorPdf(Guid id)
+        {
+            try
+            {
+                var url = Url.Action(nameof(PreviewPfactorPrint), "Factor", new { id }, Request.Scheme);
+                var pdf = await genService.GeneratePdfAsync(Request, url);
+
+                return File(pdf, "application/pdf", "PreFactor.pdf");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        public async Task<IActionResult> DownloadFactorPdf(Guid id)
+        {
+            try
+            {
+                var url = Url.Action(nameof(PreviewFactorPrint), "Factor", new { id }, Request.Scheme);
+                var pdf = await genService.GeneratePdfAsync(Request, url);
+
+                return File(pdf, "application/pdf", "Factor.pdf");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
 
         //[HttpGet]
         //public async Task<IActionResult> AcceptingSMS(Guid id)

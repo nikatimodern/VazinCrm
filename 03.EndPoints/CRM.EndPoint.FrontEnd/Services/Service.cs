@@ -33,11 +33,13 @@ using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Framework.Domain;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Generics.Infrastructures.Sql;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Playwright;
 using Newtonsoft.Json;
 
 
@@ -102,7 +104,8 @@ namespace CRM.EndPoint.FrontEnd.Services {
                 pf.Pftype = newStatus;
             } else
             {
-                throw new KeyNotFoundException($"Current status '({currentStatus}) is not defined in '{(type == 1 ? "acceptedDict" : "rejectDict")}'");
+                throw new KeyNotFoundException(
+                    $"Current status '({currentStatus}) is not defined in '{(type == 1 ? "acceptedDict" : "rejectDict")}'");
             }
 
             pf.PftypeTxt = GetTypeTxtPfactor(pf.Pftype);
@@ -517,6 +520,53 @@ namespace CRM.EndPoint.FrontEnd.Services {
             var isActive = await db.Factors.AsNoTracking().AnyAsync(f => f.CustomerId == customerId && f.status == FactorStatus.تایید_شده);
 
             return isActive;
+        }
+
+        public async Task<byte[]> GeneratePdfAsync(HttpRequest request, string url, PagePdfOptions options)
+        {
+            using var playwright = await Playwright.CreateAsync();
+
+            await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions {
+                Headless = true
+            });
+
+            var context = await browser.NewContextAsync(new BrowserNewContextOptions {
+                Locale = "fa-IR"
+            });
+
+            await context.AddCookiesAsync(
+                request.Cookies.Select(c => new Cookie {
+                    Name = c.Key,
+                    Value = c.Value,
+                    Domain = request.Host.Host,
+                    Path = "/"
+                })
+            );
+
+            var page = await context.NewPageAsync();
+
+            await page.GotoAsync(url, new PageGotoOptions {
+                WaitUntil = WaitUntilState.NetworkIdle
+            });
+
+
+            options ??= new PagePdfOptions();
+
+            options.Format ??= PaperFormat.A4;
+            options.PrintBackground ??= true;
+            options.PreferCSSPageSize ??= true;
+            options.Landscape ??= false;
+            options.Scale ??= 1;
+
+            options.Margin ??= new Margin
+            {
+                Top = "0",
+                Bottom = "0",
+                Left = "0",
+                Right = "0"
+            };
+
+            return await page.PdfAsync(options);
         }
     }
 }

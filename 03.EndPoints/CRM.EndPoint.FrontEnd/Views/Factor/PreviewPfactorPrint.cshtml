@@ -370,7 +370,10 @@
         <button class="btn buttonCancel fbold" style="width: 100px" onclick="window.close()">انصراف</button>
         <button class="btn buttonCancel fbold" style="width: 100px" onclick="window.print()">چاپ</button>
         <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadImage()">دانلود تصویر</button>
-        <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadPDF()">دانلود PDF</button>
+        <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadPDF(this,'@Model.PreFactor.Id')">
+            <span>دانلود PDF</span>
+            <div class="spinner-border spinner-border-sm d-none ms-2"></div>
+        </button>
     </div>
 </div>
 
@@ -409,34 +412,34 @@
         }
     }
 
-    async function downloadPDF() {
-        const sections = [
-            document.getElementById("captureSection"),
-            document.getElementById("termsSection"),
-        ].filter(Boolean);
+    async function downloadPDF(btn, id) {
+        try {
+            btn.disabled = true;
+            btn.querySelector(".spinner-border").classList.remove("d-none");
 
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF("p", "mm", "a4");
+            const response = await fetch(`/Factor/DownloadPreFactorPdf/${id}`);
+            if (!response.ok) {
+                throw new Error("خطا در تولید PDF");
+            }
 
-        for (let i = 0; i < sections.length; i++) {
-            const canvas = await html2canvas(sections[i], {
-                scale: 2,
-                useCORS: true,
-                allowTaint: true,
-            });
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `PreFactor-@(Model.PreFactor.SerialNumber).pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
 
-            const imgData = canvas.toDataURL("image/png");
 
-            const imgWidth = 210;
-            const imgHeight = canvas.height * imgWidth / canvas.width;
-
-            if (i > 0)
-                pdf.addPage();
-
-            pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+        } catch (e) {
+            console.log(e);
+            toastifyError(e.message);
+        } finally {
+            btn.disabled = false;
+            btn.querySelector(".spinner-border").classList.add("d-none");
         }
-
-        pdf.save("PreFactor-@(Model.PreFactor.SerialNumber).pdf");
     }
 </script>
 </body>
