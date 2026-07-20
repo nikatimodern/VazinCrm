@@ -312,9 +312,9 @@ const closeModalAmount = () => {
 
 const getBaseDescription = async (type = null) => {  // 0: preFactor | 1: Factor | 2: termsPrefactor
     try {
-        const res = await axios(`/Factor/GetItemsDescription?type=${type}`)
+        const res = await axios(`/Factor/GetItemsDescription?type=${type}`);
         if (res.status === 200) {
-            return res.data
+            return res.data;
         }
         return null;
     } catch (err) {
@@ -1877,7 +1877,7 @@ const showMobileModal = async (id, type, dealId) => {
     typeSubmitSmsSendPf = type;
     dealIdSubmitSmsSendPf = dealId;
     try {
-        ModalToggle("MobileModal")
+        ModalToggle("MobileModal");
         smsSendedPfId = id;
         const res = await axios(`/factor/GetCustomerPhone/${id}`);
         if (res.status === 200) {
@@ -3455,24 +3455,26 @@ const GoToCarEnvelope = () => {
     window.location.href = `/cartable/Index?tab=${locationTabIdEnvelope}`;
 };
 
-const SubmitAcAttach = (typeAttach) => {
-    const model = {
-        List: AccepedAttachment, pfId: pfactorID,
-    };
-    //acceptedImg.EntityId = pfactorID;
-    document.getElementById("FLshowLoading").style.display = "";
-    $.post(baseUrl + "Factor/addAcPrefacAttachment", model, () => {
-        
-        toastifySuccess("ثبت با موفقیت انجام شد");
-        AccepedAttachment = [];
-        $("#Attachments").modal("toggle");
-        document.getElementById("FLshowLoading").style.display = "none";
-        document.getElementById("imageDisplayAcAt").innerHTML = "";
-        document.getElementById("AcAtID").value = "";
-        
-    }).fail(() => {
-        setTimeout(() => SubmitAcAttach(typeAttach), 3000);
-    });
+const SubmitAcAttach = async (typeAttach) => {
+    const model = { listAttach: AccepedAttachment, id: pfactorID };
+    
+    try {
+        FLshowLoading();
+        const res = await axios.post("/Factor/addAcPrefacAttachment", model);
+        if (res.status === 200) {
+            toastifySuccess("ثبت با موفقیت انجام شد");
+            AccepedAttachment = [];
+            ModalToggle("Attachments", "hide");
+            document.getElementById("imageDisplayAcAt").innerHTML = "";
+            document.getElementById("AcAtID").value = "";
+        }
+    } catch (err) {
+        console.log(err);
+        toastifyError("خطای سرور");
+    } finally {
+        FLshowLoading(false);
+    }
+    
 };
 
 const cancelAttachment = () => {
@@ -5645,7 +5647,7 @@ audioModal?.addEventListener("hidden.bs.modal", () => {
 
 function showModalSetting() {
     toggleMobileDrawer(false);
-    ModalToggle("BaseSetting")
+    ModalToggle("BaseSetting");
 }
 
 

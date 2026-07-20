@@ -1600,13 +1600,14 @@ const updateFactorFinancial = async (sepidarId) => {
             } else if (typeSubmitfactor === 6) {
                 await getAllFactorsModal(model.crmFactorId, 6);
             }
-            FLshowLoading(false);
             toastifySuccess("با موفقیت ثبت شد");
             $("#sepidarFactorsModal").modal("hide");
         }
     } catch (err) {
-        setTimeout(async () => await updateFactorFinancial(sepidarId), 3000);
+        toastifyError(err.response.data || "خطای سرور");
         console.log(err);
+    } finally {
+        FLshowLoading(false)
     }
 };
 

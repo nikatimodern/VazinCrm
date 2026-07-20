@@ -1750,15 +1750,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> addAcPrefacAttachment(List<Attachment> list, Guid pfId)
+        public async Task<IActionResult> addAcPrefacAttachment([FromBody] AttachmentModel model)
         {
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
-                var pf = await db.PreFactors.AsNoTracking().Where(f => f.Id == pfId).FirstOrDefaultAsync();
+                var pf = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
                 if (pf != null)
                 {
-                    foreach (var item in list)
+                    foreach (var item in model.ListAttach)
                     {
                         if (item.Id == Guid.Empty)
                         {
@@ -1766,13 +1766,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             item.Filename = pf.SerialNumber + "_AcPfactor_" +
                                             dtService.GetDateTimeMilisecondsPersian().Replace("/", "").Replace("/", "").Replace(":", "")
                                                 .Replace(":", "").Replace(":", "").Replace(" ", "") + "_" + Guid.NewGuid().ToString().Substring(0, 4);
-                            item.EntityId = pfId;
+                            item.EntityId = model.Id;
                             item.Url = fileSaver.SaveAcceptedPreFactorImg(item.File, item.Filename, item.fileExten);
                             item.File = null;
                             item.CreateDate = DateTime.Now;
                             item.CreateDateTxt = dtService.GetDatePersian();
                             item._AttachType = _AttachType.AcceptedCusPreFactor;
-                            item._AttachTypeTxt = _AttachType.AcceptedCusPreFactor.ToString();
+                            item._AttachTypeTxt = nameof(_AttachType.AcceptedCusPreFactor);
                             item.AttachDate = DateTime.Now;
                             item.AttachDateTxt = dtService.GetDateTimePersian();
                             item.UserCreatorID = user.Id;
@@ -3066,8 +3066,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     })
                     .FirstOrDefaultAsync();
 
-                var oldFactor = await db.Factors.AsNoTracking().Where(f => f.Id == model.CrmFactorId).FirstOrDefaultAsync();
-                var factor = await db.Factors.Where(f => f.Id == model.CrmFactorId).FirstOrDefaultAsync();
+                var oldFactor = await db.Factors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.CrmFactorId);
+                var factor = await db.Factors.FirstOrDefaultAsync(f => f.Id == model.CrmFactorId);
                 factor.DateMiladi = sepidar.Date;
                 factor.Date = sepidar.DateTXT;
                 factor.SepidarId = sepidar.InvoiceId;
@@ -3079,7 +3079,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 factor.ModifyDateTxt = dtService.GetDateTimePersian();
 
 
-                var customer = await db.Customers.Where(f => f.Id == factor.CustomerId).FirstOrDefaultAsync();
+                var customer = await db.Customers.FirstOrDefaultAsync(f => f.Id == factor.CustomerId);
+                if (customer == null) return NotFound("خطا: مشتری این فاکتور در سیستم یافت نشد. لطفاً با پشتیبانی فنی تماس بگیرید.");
+
                 customer.FinancialCustomerId = sepidar.CustomerPartyRef;
                 customer.FinancialCustomerName = sepidar.CustomerPartyName;
 
