@@ -18,6 +18,11 @@ namespace CRM.Infrastructures.Sql.Cashes.Configs
                 .WithOne()
                 .HasForeignKey<Accountancy>(f => f.CashId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(f => f.BankAccount)
+                .WithMany(f => f.Cashes)
+                .HasForeignKey(f => f.BankAccountId)
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 

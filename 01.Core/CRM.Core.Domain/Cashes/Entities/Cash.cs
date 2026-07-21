@@ -23,10 +23,18 @@ namespace CRM.Core.Domain.Cashes.Entities {
 
         public decimal Fee { get; set; } // کارمزد
         public decimal TotalAmount => Amount + Fee; // مجموع مبلغ و کارمزد
+        public string ReferenceNumber { get; set; } // شماره پیگیری پرداخت
+        public int? PaymentVoucherNumber { get; set; } // شماره اعلامیه پرداخت
+
         public Accountancy Accountancy { get; set; }
         [NotMapped] public IList<Attachment> Attachments { get; set; }
 
         public Guid? CashGroupId { get; set; }
         public CashGroup CashGroup { get; set; }
+
+        public BankAccount BankAccount { get; set; }
+        public Guid? BankAccountId { get; set; }
+        public string BankAccountTxt { get; set; }
+
     }
 }

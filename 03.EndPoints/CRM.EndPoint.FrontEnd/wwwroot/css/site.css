@@ -6343,3 +6343,25 @@ table tr.payment-vosoled > td {
 .text-justify {
   text-align: justify !important;
 }
+
+#viewSwitchGroup .active-tab {
+  background-color: #fff !important;
+  color: #000 !important;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+#viewSwitchGroup button {
+  border-radius: 6px;
+  transition: all 0.2s ease-in-out;
+}
+#cashViewSwitcher .active-view-btn {
+  background-color: #fff !important;
+  color: #111 !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  border-radius: 4px;
+}
+
+#cashViewSwitcher button {
+  border: none;
+  font-size: 13px;
+  transition: all 0.15s ease-in-out;
+}

@@ -210,7 +210,7 @@ public class CashController : Controller {
             .Distinct()
             .ToList();
 
-        foreach (var groupId in groupIds)
+        /*foreach (var groupId in groupIds)
         {
             var hasLockedMember = await db.Cashes.AnyAsync(x =>
                 x.CashGroupId == groupId &&
@@ -222,7 +222,7 @@ public class CashController : Controller {
                 group = await db.CashGroups.FindAsync(groupId);
                 break;
             }
-        }
+        }*/
 
         if (group == null)
         {
@@ -477,6 +477,11 @@ public class CashController : Controller {
 
             var query = db.Cashes.Include(f => f.CashGroup).AsQueryable();
 
+            if (model != null && model.EntityId != null)
+            {
+                query = query.Where(f => f.CashGroupId == Guid.Parse(model.EntityId));
+            }
+
             var isManager = true;
             if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر مالی") && !roles.Contains("کارشناس مالی"))
             {
@@ -588,6 +593,64 @@ public class CashController : Controller {
                 data,
                 isManager,
                 cashierBalance
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> GetCashGroupsDt()
+    {
+        try
+        {
+            var draw = Request.Form["draw"].FirstOrDefault();
+            var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
+            var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
+            var searchValue = Request.Form["search[value]"].FirstOrDefault()?.ToLower().Trim();
+
+            var user = await userManager.GetUserAsync(HttpContext.User);
+
+            // کوئری روی جدول گروه‌ها یا مجتمع‌سازی روی Cashes
+            var query = db.Cashes
+                .Include(f => f.CashGroup)
+                .Where(f => f.CashGroupId != null && f.Status != CashStatusEnum.ثبت_موقت)
+                .GroupBy(f => new { f.CashGroupId, f.CashGroup.GroupNumber, f.UserCreator })
+                .Select(g => new {
+                    g.Key.CashGroupId,
+                    g.Key.GroupNumber,
+                    g.Key.UserCreator,
+                    CreateDateTxt = g.Select(f => f.CreateDateTxt).FirstOrDefault(),
+                    ItemsCount = g.Count(),
+                    TotalAmount = g.Sum(x => x.Amount + x.Fee),
+                    Status = g.All(x => x.Status == CashStatusEnum.تایید_شده) ? CashStatusEnum.تایید_شده : CashStatusEnum.در_دست_تایید,
+                    StatusTxt = g.All(x => x.Status == CashStatusEnum.تایید_شده) ? "تایید شده" : "در دست تایید"
+                });
+
+            if (!string.IsNullOrEmpty(searchValue))
+            {
+                var searchNumber = TextService.convertToInt(searchValue);
+                query = query.Where(f =>
+                    f.GroupNumber == searchNumber ||
+                    f.UserCreator.Contains(searchValue)
+                );
+            }
+
+            var recordsTotal = await query.CountAsync();
+
+            var data = await query
+                .OrderByDescending(f => f.GroupNumber)
+                .Skip(start)
+                .Take(length == -1 ? recordsTotal : length)
+                .ToListAsync();
+
+            return Json(new {
+                draw,
+                recordsTotal,
+                recordsFiltered = recordsTotal,
+                data
             });
         }
         catch (Exception ex)
