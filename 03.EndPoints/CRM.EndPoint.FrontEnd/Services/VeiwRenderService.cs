@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using System.Collections.Generic;
-using DocumentFormat.OpenXml.Drawing.Diagrams;
 
 namespace CRM.EndPoint.FrontEnd.Services
 {

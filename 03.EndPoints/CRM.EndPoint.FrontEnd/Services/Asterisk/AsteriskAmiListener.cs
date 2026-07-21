@@ -8,7 +8,6 @@ using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.CallRecordings.Entities;
 using CRM.Core.Domain.CallRecordings.Enums;
 using CRM.Core.Domain.Customers.Entities;
-using CRM.Core.Domain.Reports.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.AsteriskAmi;

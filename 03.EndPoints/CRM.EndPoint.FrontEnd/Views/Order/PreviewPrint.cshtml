@@ -14,194 +14,140 @@
     <link rel="stylesheet" href="~/css/site.css?v=5.8.0" />
     <link rel="stylesheet" href="~/css/normalize.min.css">
     <link rel="stylesheet" href="~/css/paper.css?v=5.8.0">
-
-    <style>
-        /* برای اینکه جدول کامل رندر شود */
-        #captureSection table,
-        #captureSection table * {
-            border-collapse: collapse !important;
-            border: 1px solid #dee2e6 !important;
-        }
-        /* اگر برخی borderها ناپدید می‌شوند */
-        #captureSection td,
-        #captureSection th {
-            background-clip: padding-box !important;
-        }
-
-    </style>
-
 </head>
 <body dir="rtl" class="A5 landscape">
 
-    <!-- کل Section که باید عکس و PDF شود -->
-    <section id="captureSection" class="sheet d-flex" style="border-radius:12px">
+<section class="sheet d-flex" style="border-radius:12px">
 
-        <article class="d-flex flex-column flex-grow-1 m-2"
-                 style="border: 2px solid gray; border-radius:8px; padding: 10px">
+    <article class="d-flex flex-column flex-grow-1 m-2"
+             style="border: 2px solid gray; border-radius:8px; padding: 10px">
 
-            <div class="d-flex align-items-center justify-content-between fbold p-2">
-                <p style="font-size:24px">دستور تولید</p>
-                <div class="d-flex flex-column align-items-center justify-content-center">
-                    <img style="width:20%" src="@Model.Logo" />
-                    <span style="font-size: 18px">
-                        @(isOfficial? Model.Company.CompanyName : Model.Company.CompanyBrandName)
+        <div class="d-flex align-items-center justify-content-between fbold p-2">
+            <p style="font-size:24px">دستور تولید</p>
+            <div class="d-flex flex-column align-items-center justify-content-center">
+                <img style="width:20%" src="@Model.Logo" />
+                <span style="font-size: 18px">
+                        @(isOfficial ? Model.Company.CompanyName : Model.Company.CompanyBrandName)
                     </span>
-                </div>
-                <div class="d-flex align-items-center gap-2" style="font-size:16px">
-                    <span>شماره:</span>
-                    <span style="color:red">@Model.OrderHead.OrderNumber _ @Model.OfficialType</span>
-                </div>
             </div>
-
-            <hr class="my-2" />
-
-            <div class="d-flex align-items-center justify-content-between py-2 px-3"
-                 style="border:1px solid gray;border-radius:5px;font-size: 14px">
-                <p>
-                    <span class="text-muted">کارشناس فروش:</span>
-                    <span class="fbold">@Model.OrderHead.UserCreator</span>
-                </p>
-                <p>
-                    <span class="text-muted">کارشناس تامین:</span>
-                    <span class="fbold">@Model.OrderHead.UserTaminTxt</span>
-                </p>
-                <p>
-                    <span class="text-muted">تلفن:</span>
-                    <span class="fbold">@Model.OrderHead.Tel</span>
-                </p>
-                <p>
-                    <span class="text-muted">تاریخ:</span>
-                    <span class="fbold">@Model.OrderHead.OrderDate</span>
-                </p>
+            <div class="d-flex align-items-center gap-2" style="font-size:16px">
+                <span>شماره:</span>
+                <span style="color:red">@Model.OrderHead.OrderNumber _ @Model.OfficialType</span>
             </div>
-
-            <div class="w-100 my-2">
-                <table class="table table-bordered table-hover table-striped m-0 w-100">
-                    <thead>
-                        <tr>
-                            <th>ردیف</th>
-                            <th>نوع جنس</th>
-                            <th>شرح کالا</th>
-                            <th>ابعاد</th>
-                            <th>نوع دسته</th>
-                            <th>کاست</th>
-                            <th>رنگ زمینه</th>
-                            <th>رنگ چاپ</th>
-                            <th>تعداد رنگ</th>
-                            <th>نام طرح</th>
-                            <th>مقدار</th>
-                            <th>ضخامت</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @{
-                            var i = 0;
-                            foreach (var item in Model.OrderHead.Orders)
-                            {
-                                i++;
-                                <tr>
-                                    <td>@i</td>
-                                    <td>@item.ProductSmallName</td>
-                                    <td>@item.Product</td>
-                                    <td>@item.Dimensions</td>
-                                    <td>@item.CategoryType</td>
-                                    <td>@item.Caset</td>
-                                    <td>@item.BackgroundColor</td>
-                                    <td>@item.PrintColor</td>
-                                    <td>@item.CountColor</td>
-                                    <td>@item.DesignName</td>
-                                    <td>@item.Weight @item.UnitTxt</td>
-                                    <td>@item.Thickness</td>
-                                </tr>
-                            }
-                        }
-                    </tbody>
-                </table>
-            </div>
-
-            <hr class="my-2" />
-
-            <div style="display:flex;flex-direction:column;width:100%">
-                <label style="font-size:14px;">توضیحات:</label>
-                <textarea class="mt-1 fbold"
-                          style="min-height: 100px; border:none;resize:none" disabled>
-@Model.OrderHead.Description
-            </textarea>
-            </div>
-
-        </article>
-    </section>
-
-    <!-- نوار دکمه‌ها -->
-    <div class="d-flex flex-column align-items-center justify-content-center w-100"
-         style="position:fixed;top:80%;" id="previewPrintBtns">
-
-        <div class="btn-group fbold">
-            <button class="btn buttonCancel" style="width:100px" onclick="window.close()">
-                انصراف
-            </button>
-
-            <button class="btn buttonCancel" style="width:100px" onclick="window.print()">
-                چاپ
-            </button>
-
-            <button class="btn buttonCancel" style="width:130px" onclick="downloadImage()">
-                دانلود تصویر
-            </button>
-
-            <button class="btn buttonCancel" style="width:130px" onclick="downloadPDF()">
-                دانلود PDF
-            </button>
         </div>
+
+        <hr class="my-2" />
+
+        <div class="d-flex align-items-center justify-content-between py-2 px-3"
+             style="border:1px solid gray;border-radius:5px;font-size: 14px">
+            <p>
+                <span class="text-muted">کارشناس فروش:</span>
+                <span class="fbold">@Model.OrderHead.UserCreator</span>
+            </p>
+            <p>
+                <span class="text-muted">کارشناس تامین:</span>
+                <span class="fbold">@Model.OrderHead.UserTaminTxt</span>
+            </p>
+            <p>
+                <span class="text-muted">تلفن:</span>
+                <span class="fbold">@Model.OrderHead.Tel</span>
+            </p>
+            <p>
+                <span class="text-muted">تاریخ:</span>
+                <span class="fbold">@Model.OrderHead.OrderDate</span>
+            </p>
+        </div>
+
+        <div class="w-100 my-2">
+            <table class="table table-bordered table-hover table-striped m-0 w-100">
+                <thead>
+                <tr>
+                    <th>ردیف</th>
+                    <th>نوع جنس</th>
+                    <th>شرح کالا</th>
+                    <th>ابعاد</th>
+                    <th>نوع دسته</th>
+                    <th>کاست</th>
+                    <th>رنگ زمینه</th>
+                    <th>رنگ چاپ</th>
+                    <th>تعداد رنگ</th>
+                    <th>نام طرح</th>
+                    <th>مقدار</th>
+                    <th>ضخامت</th>
+                </tr>
+                </thead>
+                <tbody>
+                @{
+                    var i = 0;
+                    foreach (var item in Model.OrderHead.Orders) {
+                        i++;
+                        <tr>
+                            <td>@i</td>
+                            <td>@item.ProductSmallName</td>
+                            <td>@item.Product</td>
+                            <td>@item.Dimensions</td>
+                            <td>@item.CategoryType</td>
+                            <td>@item.Caset</td>
+                            <td>@item.BackgroundColor</td>
+                            <td>@item.PrintColor</td>
+                            <td>@item.CountColor</td>
+                            <td>@item.DesignName</td>
+                            <td>@item.Weight @item.UnitTxt</td>
+                            <td>@item.Thickness</td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+
+        <hr class="my-2" />
+
+        <div style="display:flex;flex-direction:column;width:100%">
+            <label style="font-size:14px;">توضیحات:</label>
+            <textarea class="mt-1 fbold" style="min-height: 100px; border:none;resize:none" disabled>@Model.OrderHead.Description</textarea>
+        </div>
+
+    </article>
+</section>
+
+<!-- نوار دکمه‌ها -->
+<div class="d-flex flex-column align-items-center justify-content-center w-100"
+     style="position:fixed;top:80%;" id="previewPrintBtns">
+
+    <div class="btn-group fbold">
+        <button class="btn buttonCancel" style="width:100px" onclick="window.close()">
+            انصراف
+        </button>
+
+        <button class="btn buttonCancel" style="width:100px" onclick="window.print()">
+            چاپ
+        </button>
+
+        <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadImage(this)">
+            <span class="flex-shrink-0">دانلود تصویر</span>
+            <div class="spinner-border spinner-border-sm d-none ms-2"></div>
+        </button>
+
+        <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadPDF(this)">
+            <span>دانلود PDF</span>
+            <div class="spinner-border spinner-border-sm d-none ms-2"></div>
+        </button>
     </div>
+</div>
 
-    <script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js"></script>
-    <script src="~/lib/html2canvas/html2canvas.min.js"></script>
-    <script src="~/lib/html2canvas/jspdf.umd.min.js"></script>
+<script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js"></script>
+<script src="~/js/File.js?v=5.8.0"></script>
 
-    <script>
-        // دانلود PNG
-        function downloadImage() {
-            const section = document.getElementById("captureSection");
+<script>
+    async function downloadImage(btn) {
+        await downloadFile(btn, `/Order/DownloadOrderImage/@(Model.OrderHead.Id)`, `دستورتولید-@(Model.OrderHead.OrderNumber).png`);
+    }
 
-            html2canvas(section, {
-                scale: 3,
-                useCORS: true,
-                allowTaint: true
-            }).then(canvas => {
-                const link = document.createElement("a");
-                link.download = "OrderSection.png";
-                link.href = canvas.toDataURL("image/png");
-                link.click();
-            });
-        }
-
-        // دانلود PDF A5 افقی
-        async function downloadPDF() {
-            const section = document.getElementById("captureSection");
-
-            const canvas = await html2canvas(section, {
-                scale: 3,
-                useCORS: true,
-                allowTaint: true
-            });
-
-            const imgData = canvas.toDataURL("image/png");
-
-            const pdfWidth = 210;   // A5 landscape width (mm)
-            const pdfHeight = 148;  // A5 landscape height (mm)
-
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF("landscape", "mm", "a5");
-
-            const imgWidth = pdfWidth;
-            const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-
-            pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-
-            pdf.save("OrderSection-A5.pdf");
-        }
-    </script>
+    async function downloadPDF(btn) {
+        await downloadFile(btn, `/Order/DownloadOrderPdf/@(Model.OrderHead.Id)`, `دستورتولید-@(Model.OrderHead.OrderNumber).pdf`);
+    }
+</script>
 
 </body>
 </html>

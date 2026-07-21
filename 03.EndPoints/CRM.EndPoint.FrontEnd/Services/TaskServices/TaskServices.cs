@@ -2,9 +2,6 @@
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Carizos.Entities;
 using CRM.Core.Domain.Carizos.Enum;
-using CRM.Core.Domain.PreFactors.Entities;
-using DocumentFormat.OpenXml.Bibliography;
-using DocumentFormat.OpenXml.ExtendedProperties;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;

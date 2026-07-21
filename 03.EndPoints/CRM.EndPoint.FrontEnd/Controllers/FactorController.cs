@@ -35,12 +35,15 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.Core.Domain.Supplies.Enums;
+using CRM.EndPoint.FrontEnd.Models.DocumentRenderOptions;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Accountency;
@@ -62,6 +65,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly LogSystemService _logSystemService;
         private readonly IPushQueue pushQueue;
         private readonly ISmsQueue smsQueue;
+        private readonly IDocumentRenderService documentRender;
         private readonly CrmSaveCahngeAsync crmSaveCahngeAsync;
         private readonly TaskServices ts;
         private readonly SepidarService sps;
@@ -74,7 +78,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, RoleManager<IdentityRole> roleManager, Service GenService,
             FileSaver fileSaver,
             DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb S1db,
-            IHubContext<TaskHub> hub, LogSystemService logSystemService, IPushQueue pushQueue, ISmsQueue smsQueue)
+            IHubContext<TaskHub> hub, LogSystemService logSystemService, IPushQueue pushQueue, ISmsQueue smsQueue,
+            IDocumentRenderService documentRender)
         {
             this.crmSaveCahngeAsync = crmSaveCahngeAsync;
             this.ts = ts;
@@ -93,6 +98,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             _logSystemService = logSystemService;
             this.pushQueue = pushQueue;
             this.smsQueue = smsQueue;
+            this.documentRender = documentRender;
         }
 
         [Authorize(Policy = "NotCustomerOnly")]
@@ -984,9 +990,30 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 var url = Url.Action(nameof(PreviewPfactorPrint), "Factor", new { id }, Request.Scheme);
-                var pdf = await genService.GeneratePdfAsync(Request, url);
+                var pdf = await documentRender.GeneratePdfAsync(Request, url);
 
                 return File(pdf, "application/pdf", "PreFactor.pdf");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        public async Task<IActionResult> DownloadPreFactorImage(Guid id)
+        {
+            try
+            {
+                var url = Url.Action(nameof(PreviewPfactorPrint), "Factor", new { id }, Request.Scheme);
+                var images = await documentRender.GenerateImagesAsync(Request, url, new DocumentRenderImageOptions {
+                        Viewport = ViewportPresets.A4Portrait,
+                        Selectors = [".sheet"]
+                    }
+                );
+
+                var zip = await documentRender.CreateZipAsync(images, i => $"PreFactor-{i + 1}.png")!;
+
+                return File(zip, "application/zip", "PreFactorImages.zip");
             }
             catch (Exception ex)
             {
@@ -999,9 +1026,28 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 var url = Url.Action(nameof(PreviewFactorPrint), "Factor", new { id }, Request.Scheme);
-                var pdf = await genService.GeneratePdfAsync(Request, url);
+                var pdf = await documentRender.GeneratePdfAsync(Request, url, new PagePdfOptions { Landscape = true });
 
                 return File(pdf, "application/pdf", "Factor.pdf");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        public async Task<IActionResult> DownloadFactorImage(Guid id)
+        {
+            try
+            {
+                var url = Url.Action(nameof(PreviewFactorPrint), "Factor", new { id }, Request.Scheme);
+                var image = await documentRender.GenerateImageAsync(Request, url, new DocumentRenderImageOptions {
+                        Viewport = ViewportPresets.A4Landscape,
+                        Selectors = [".sheet"]
+                    }
+                );
+
+                return File(image, "image/png", "Factor.png");
             }
             catch (Exception ex)
             {

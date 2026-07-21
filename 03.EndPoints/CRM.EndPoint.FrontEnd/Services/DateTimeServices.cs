@@ -1,11 +1,8 @@
 ﻿using CRM.EndPoint.FrontEnd.Models.ViewModel.Login;
-using Microsoft.AspNetCore.Http.HttpResults;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace CRM.EndPoint.FrontEnd.Services
 {

@@ -1,46 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using CRM.Core.Domain;
-using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.AppUsers.Entities;
-using CRM.Core.Domain.ASettings.Entities;
-using CRM.Core.Domain.Attachments.Entities;
-using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Customers.Enum;
-using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.Emails.Entities;
 using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.LogSystems.Entities;
-using CRM.Core.Domain.Orders.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
-using CRM.Core.Domain.Reports.Entities;
 using CRM.Core.Domain.Reports.Enum;
-using CRM.Core.Domain.RequestAmounts.Entities;
 using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.Core.Domain.Transfers.Entities;
-using CRM.EndPoint.FrontEnd.Models;
-using CRM.EndPoint.FrontEnd.Models.LogSystem;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Customer;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
-using CRM.Framework.Domain;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Playwright;
-using Newtonsoft.Json;
 
 
 namespace CRM.EndPoint.FrontEnd.Services {
@@ -520,53 +504,6 @@ namespace CRM.EndPoint.FrontEnd.Services {
             var isActive = await db.Factors.AsNoTracking().AnyAsync(f => f.CustomerId == customerId && f.status == FactorStatus.تایید_شده);
 
             return isActive;
-        }
-
-        public async Task<byte[]> GeneratePdfAsync(HttpRequest request, string url, PagePdfOptions options)
-        {
-            using var playwright = await Playwright.CreateAsync();
-
-            await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions {
-                Headless = true
-            });
-
-            var context = await browser.NewContextAsync(new BrowserNewContextOptions {
-                Locale = "fa-IR"
-            });
-
-            await context.AddCookiesAsync(
-                request.Cookies.Select(c => new Cookie {
-                    Name = c.Key,
-                    Value = c.Value,
-                    Domain = request.Host.Host,
-                    Path = "/"
-                })
-            );
-
-            var page = await context.NewPageAsync();
-
-            await page.GotoAsync(url, new PageGotoOptions {
-                WaitUntil = WaitUntilState.NetworkIdle
-            });
-
-
-            options ??= new PagePdfOptions();
-
-            options.Format ??= PaperFormat.A4;
-            options.PrintBackground ??= true;
-            options.PreferCSSPageSize ??= true;
-            options.Landscape ??= false;
-            options.Scale ??= 1;
-
-            options.Margin ??= new Margin
-            {
-                Top = "0",
-                Bottom = "0",
-                Left = "0",
-                Right = "0"
-            };
-
-            return await page.PdfAsync(options);
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp", "jfif"];
+﻿/////////////////   UPLOAD FILE & VIEWER  //////////////////
+
+const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp", "jfif"];
 
 let uploadButtons = document.getElementsByClassName("uploadBtn");
 let imageViewer = null;
@@ -268,7 +270,7 @@ function setupViewer(wrapper) {
                 download() {
                     const currentImg = imageViewer.image;
                     
-                    downloadFile({
+                    downloadFileViewer({
                         url: currentImg.src,
                         filename: currentImg.alt,
                         extension: currentImg.dataset.extension,
@@ -425,7 +427,7 @@ document.addEventListener("keydown", (e) => {
 }, true);
 
 
-function downloadFile({ url, filename = "file", extension = "" }) {
+function downloadFileViewer({ url, filename = "file", extension = "" }) {
     if (!extension) {
         if (url.startsWith("data:image/")) { // base64
             const match = url.match(/^data:image\/([a-zA-Z0-9+]+);base64,/);
@@ -486,4 +488,41 @@ function updateUploadProgress(progressElement, percent, text) {
 
 function removeUploadProgress(containerUploader) {
     containerUploader.querySelector(".upload-progress")?.remove();
+}
+
+
+/////////////////   DOWNLOAD FILE   //////////////////
+
+
+async function downloadFile(btn, url, fileName) {
+    try {
+        btn.disabled = true;
+        btn.querySelector(".spinner-border")?.classList.remove("d-none");
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error("خطا در دانلود فایل");
+        }
+        
+        const blob = await response.blob();
+        
+        const objectUrl = URL.createObjectURL(blob);
+        
+        const a = document.createElement("a");
+        a.href = objectUrl;
+        a.download = fileName;
+        
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        
+        URL.revokeObjectURL(objectUrl);
+    } catch (e) {
+        console.error(e);
+        toastifyError(e.message);
+    } finally {
+        btn.disabled = false;
+        btn.querySelector(".spinner-border")?.classList.add("d-none");
+    }
 }
