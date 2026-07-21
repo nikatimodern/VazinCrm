@@ -445,12 +445,7 @@ function downloadFileViewer({ url, filename = "file", extension = "" }) {
         filename += `.${extension}`;
     }
     
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    triggerDownload(url, filename)
 }
 
 function createUploadProgress(containerUploader) {
@@ -501,28 +496,28 @@ async function downloadFile(btn, url, fileName) {
         
         const response = await fetch(url);
         
-        if (!response.ok) {
-            throw new Error("خطا در دانلود فایل");
+        if (response.ok) {
+            const blob = await response.blob();
+            
+            const objectUrl = URL.createObjectURL(blob);
+            triggerDownload(objectUrl, fileName);
+            URL.revokeObjectURL(objectUrl);
         }
-        
-        const blob = await response.blob();
-        
-        const objectUrl = URL.createObjectURL(blob);
-        
-        const a = document.createElement("a");
-        a.href = objectUrl;
-        a.download = fileName;
-        
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        
-        URL.revokeObjectURL(objectUrl);
     } catch (e) {
-        console.error(e);
-        toastifyError(e.message);
+        console.log(e);
+        toastifyError?.("خطا در دانلود فایل");
     } finally {
         btn.disabled = false;
         btn.querySelector(".spinner-border")?.classList.add("d-none");
     }
+}
+
+function triggerDownload(url, fileName) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
 }
