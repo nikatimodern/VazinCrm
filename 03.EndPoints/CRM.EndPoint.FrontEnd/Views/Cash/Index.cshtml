@@ -1,10 +1,12 @@
+@model bool
 @{
+    var isFinancial = Model;
     Layout = "_Layout";
 }
 
 
 <div>
-    <div class="d-flex justify-content-between align-items-end flex-row-reverse gap-1 flex-wrap mb-2">
+    <div class="d-flex justify-content-between flex-row-reverse gap-1 flex-wrap mb-2">
 
         <div id="cashBalanceContainer" class="flex-grow-1 d-flex justify-content-end">
         </div>
@@ -42,31 +44,31 @@
             <div class="d-flex column-gap-2 align-items-center justify-content-between flex-wrap">
                 <ul class="filter-switch mt-2 mt-md-0">
                     <li class="filter-switch-item">
-                        <input type="radio" name="cashViewType" id="cashViewTypeAll" value="cashes" checked>
+                        <input type="radio" name="cashViewType" id="cashViewTypeAll" value="cashes" @(!isFinancial ? "checked" : "")>
                         <label for="cashViewTypeAll" class="flex-center gap-2">
                             <i class="fa fa-list me-1"></i> ریز تنخواه‌ها
                         </label>
                     </li>
                     <li class="filter-switch-item">
-                        <input type="radio" name="cashViewType" id="cashViewTypeGroups" value="groups">
+                        <input type="radio" name="cashViewType" id="cashViewTypeGroups" value="groups" @(isFinancial ? "checked" : "")>
                         <label for="cashViewTypeGroups" class="flex-center gap-2">
                             <i class="fa fa-folder-open me-1"></i> گروه‌های ارسالی
                         </label>
                     </li>
                 </ul>
             </div>
-            <button id="cashModalBtn" class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" data-bs-toggle="modal" data-bs-target="#cashModal">
+            <button id="cashModalBtn" class="buttonGray2 d-flex align-items-center gap-1 @(isFinancial ? "d-none" : "")" style="padding: 4px 8px" data-bs-toggle="modal" data-bs-target="#cashModal">
                 <span style="line-height: 1">ثبت تنخواه</span>
                 <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
             </button>
         </div>
     </div>
 
-    <div id="cashItemsContainer" style="width: 99%;">
+    <div id="cashItemsContainer" class="@(isFinancial ? "d-none" : "")" style="width: 99%;">
         <partial name="_CashTablePartial" model='"cashTable"' />
     </div>
 
-    <div id="cashGroupsContainer" class="d-none" style="width: 99%;">
+    <div id="cashGroupsContainer" class="@(!isFinancial ? "d-none" : "")" style="width: 99%;">
         <table class="table table-striped table-bordered table-hover nowrap w-100" id="cashGroupTable">
             <thead>
             <tr>
@@ -74,7 +76,7 @@
                 <th>تاریخ ارسال</th>
                 <th>ثبت توسط</th>
                 <th>تعداد اقلام</th>
-                <th>مجموع مبلغ (ریال)</th>
+                <th>مجموع مبلغ</th>
                 <th>وضعیت</th>
                 <th>عملیات</th>
             </tr>
@@ -87,131 +89,65 @@
 <!-- ======================================================= -->
 <!-- مودال نمایش ریز اقلام گروه (مخصوص مالی بعد از کلیک روی جزئیات) -->
 <!-- ======================================================= -->
-<div class="modal fade" id="cashGroupDetailModal" tabindex="-1" aria-hidden="true">
+
+<div class="modal fade" id="cashGroupDetailModal" tabindex="-1" role="dialog" data-bs-focus="false">
     <div class="modal-dialog modal-xxl modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header d-flex justify-content-between align-items-center">
-                <h5 class="modal-title fbold fs-6">
-                    <i class="fa fa-folder-open text-primary me-1"></i>
-                    جزئیات گروه تنخواه شماره <span id="modalGroupNumber" class="text-primary fbold"></span>
+                <h5 class="modal-title fbold flex-center gap-1" style="font-size: 15px">
+                    <i class="fa fa-folder-open text-dark me-1"></i>
+                    جزئیات گروه تنخواه شماره <span id="modalGroupNumber" class="fbold"></span>
                 </h5>
                 <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <div class="modal-body">
-                <!-- خلاصه وضعیت (Summary Card) بالای مودال -->
-                <div class="card bg-light border-0 mb-3" style="border-radius: 8px;">
-                    <div class="card-body p-3">
+                <div class="card bg-light border-0 mb-3 rounded-3">
+                    <div class="card-body p-2">
                         <div class="row text-center g-2 align-items-center">
-                            <div class="col-6 col-md-3 border-end">
-                                <span class="text-muted fs-7 d-block mb-1">ارسال‌کننده</span>
+                            <div class="col-6 col-md-3 border-end flex-center flex-column gap-2">
+                                <span class="text-muted" style="font-size: 13px">ارسال‌کننده</span>
                                 <strong id="modalGroupUser" class="fbold text-dark">-</strong>
                             </div>
-                            <div class="col-6 col-md-3 border-end">
-                                <span class="text-muted fs-7 d-block mb-1">تاریخ ارسال</span>
+                            <div class="col-6 col-md-3 border-end flex-center flex-column gap-2">
+                                <span class="text-muted" style="font-size: 13px">تاریخ ارسال</span>
                                 <strong id="modalGroupDate" class="fbold text-dark" dir="ltr">-</strong>
                             </div>
-                            <div class="col-6 col-md-3 border-end">
-                                <span class="text-muted fs-7 d-block mb-1">تعداد اقلام</span>
-                                <strong id="modalGroupCount" class="fbold text-info fs-6">0</strong>
+                            <div class="col-6 col-md-3 border-end flex-center flex-column gap-2">
+                                <span class="text-muted" style="font-size: 13px">تعداد اقلام</span>
+                                <strong id="modalGroupCount" class="fbold text-dark">-</strong>
                             </div>
-                            <div class="col-6 col-md-3">
-                                <span class="text-muted fs-7 d-block mb-1">جمع کل مبلغ</span>
-                                <strong id="modalGroupTotal" class="fbold text-success fs-6" dir="ltr">0</strong>
-                                <small class="text-muted">ریال</small>
+                            <div class="col-6 col-md-3 flex-center flex-column gap-2">
+                                <span class="text-muted" style="font-size: 13px">جمع کل مبلغ</span>
+                                <div>
+                                    <strong id="modalGroupTotal" class="fbold text-success fs-5" dir="ltr">0</strong>
+                                    <small class="text-muted">ریال</small>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- فراخوانی Partial جدول اقلام جهت استفاده در داخل مودال -->
                 <div style="width: 100%;">
                     <partial name="_CashTablePartial" model='"cashTableModal"' />
                 </div>
             </div>
 
-            <div class="modal-footer d-flex justify-content-between align-items-center">
-                <div class="d-flex gap-2">
-                    <button type="button" class="buttonGreen2 d-flex align-items-center gap-1 px-3" id="btnApproveGroup" onclick="approveCurrentGroup()">
-                        <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+            <div class="modal-footer">
+                <div class="w-100 d-flex justify-content-between gap-2">
+                    <button type="button" class="buttonCancel3 d-flex align-items-center gap-2 d-none" style="padding-block: 4px !important" id="btnRejectGroup" onclick="rejectCashGroup()">
+                        بازگشت / ارسال به تنخواه‌دار
+                        <svg style="width:16px;height:16px;transform: scaleX(-1)" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>
+                    </button>
+                    <button type="button" class="buttonGreen2 d-flex align-items-center gap-2 d-none" style="padding-block: 4px !important" id="btnApproveGroup" onclick="approveCashGroup()">
                         تایید کل گروه
-                    </button>
-
-                    <button type="button" class="buttonCancel3 d-flex align-items-center gap-1 px-3" id="btnRejectGroup" onclick="rejectCurrentGroup()">
-                        <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>
-                        بازگشت/ارسال به تنخواه‌دار
+                        <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                     </button>
                 </div>
-
-                <button type="button" class="buttonCancel-white" data-bs-dismiss="modal">بستن</button>
             </div>
         </div>
     </div>
 </div>
-
-
-@*
-<!-- Modal جزئیات گروه تنخواه -->
-<div class="modal fade" id="cashGroupDetailModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xxl modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header d-flex justify-content-between align-items-center">
-                <h5 class="modal-title fbold">
-                    <i class="fa fa-folder-open me-2 text-primary"></i>
-                    جزئیات گروه تنخواه شماره <span id="modalGroupNumber" class="text-primary"></span>
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-
-            <div class="modal-body">
-                <!-- کارت سامری (خلاصه گروه) -->
-                <div class="card bg-light border-0 mb-3">
-                    <div class="card-body p-3">
-                        <div class="row g-3 text-center">
-                            <div class="col-6 col-md-3 border-end">
-                                <span class="text-muted fs-7 d-block">ارسال‌کننده</span>
-                                <strong id="modalGroupUser" class="fbold text-dark">-</strong>
-                            </div>
-                            <div class="col-6 col-md-3 border-end">
-                                <span class="text-muted fs-7 d-block">تاریخ ارسال</span>
-                                <strong id="modalGroupDate" class="fbold text-dark">-</strong>
-                            </div>
-                            <div class="col-6 col-md-3 border-end">
-                                <span class="text-muted fs-7 d-block">تعداد اقلام</span>
-                                <strong id="modalGroupCount" class="fbold text-info">0</strong>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <span class="text-muted fs-7 d-block">جمع کل مبلغ</span>
-                                <strong id="modalGroupTotal" class="fbold text-success">0</strong> <small>ریال</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- فراخوانی Partial جدول اقلام (برای مودال) -->
-                <partial name="_CashTablePartial" model='"cashTableModal"' />
-            </div>
-
-            <div class="modal-footer d-flex justify-content-between">
-                <div>
-                    <!-- دکمه‌های عملیات مالی روی کل گروه -->
-                    <button type="button" class="buttonGreen2 px-4" id="btnApproveGroup" onclick="approveCurrentGroup()">
-                        <i class="fa fa-check me-1"></i> تایید کل گروه
-                    </button>
-                    <button type="button" class="buttonCancel3 px-3 ms-1" id="btnRejectGroup" onclick="rejectCurrentGroup()">
-                        <i class="fa fa-undo me-1"></i> عودت کامل گروه
-                    </button>
-                </div>
-                <button type="button" class="buttonCancel-white" data-bs-dismiss="modal">بستن</button>
-            </div>
-        </div>
-    </div>
-</div>
-*@
-
-
-
-
 
 
 
@@ -280,11 +216,25 @@
         var cashAttachments = [];
         var searchVarCash;
         var cashConfigFilter = {};
+
+        let cashGroupTbl = null;
+
+        let isGroupDtInitialized = false;
+        let currentGroupId = null;
+        let cashTblModal = null;
+        let cashViewType;
+
         const cashModal = document.getElementById("cashModal");
         const costCenterElm = cashModal.querySelector("#cashCostCenter");
+
         document.addEventListener("DOMContentLoaded", async () => {
             getAllCashesDt();
             await initCashierSelectOpt();
+
+            const checkedRadio = document.querySelector(`input[name="cashViewType"]:checked`);
+            if (checkedRadio) {
+                switchCashView(checkedRadio.value);
+            }
 
             const radioButtons = document.querySelectorAll(`input[name="cashViewType"]`);
             radioButtons.forEach(radio => radio.addEventListener("change", (e) => switchCashView(e.target.value)));
@@ -343,7 +293,11 @@
                     const res = await axios(`/Cash/DeleteCash/${id}`);
                     if (res.status === 200) {
                         toastifySuccess("با موفقیت حذف شد");
-                        cashTbl.ajax.reload(null, false);
+                        if (cashViewType === "cashes") {
+                            cashTbl?.ajax.reload(null, false);
+                        } else {
+                            cashTblModal?.ajax.reload(null, false);
+                        }
                     }
                     FLshowLoading(false);
                 }
@@ -372,7 +326,7 @@
                 const res = await axios.post("/Cash/AddCash", model);
                 if (res.status === 200) {
                     toastifySuccess("با موفقیت ثبت شد");
-                    cashTbl.ajax.reload(null, false);
+                    cashTbl?.ajax.reload(null, false);
                     ModalToggle(cashModal);
                 }
             } catch (err) {
@@ -388,63 +342,87 @@
         }
 
         async function changeStatusCash(id, status) {
-            try {
-                FLshowLoading();
-                const res = await axios(`/Cash/ChangeStatusCash/${id}?status=${status}`);
-                if (res.status === 200) {
-                    if (status === 2) {
-                        toastifySuccess("تایید شد");
-                    }
-                    cashTbl.ajax.reload(null, false);
-                }
-            } catch (err) {
-                console.log(err);
-                if (err.status === 404) {
-                    toastifyError(err.response.data);
-                }
-            } finally {
-                FLshowLoading(false);
-            }
+            await sendApiRequest({
+                url: `/Cash/ChangeStatusCash/${id}`,
+                data: { status: status },
+                successMsg: status === 2 ? "تایید شد" : null,
+                onSuccess: () => {
+                    cashTbl?.ajax.reload(null, false);
+                    cashGroupTbl?.ajax.reload(null, false);
+                    cashTblModal?.ajax.reload(null, false);
+                },
+            });
         }
 
         async function changeStatusAllCashToPending() {
-            try {
-                FLshowLoading();
-                const res = await axios(`/Cash/ChangeStatusAllCashToPending`);
-                if (res.status === 200) {
-                    toastifySuccess("به مالی ارسال شد");
-                    cashTbl.ajax.reload(null, false);
-                }
-            } catch (err) {
-                console.log(err);
-                if (err.status === 404) {
-                    toastifyError(err.response.data);
-                }
-            } finally {
-                FLshowLoading(false);
-            }
+            await sendApiRequest({
+                url: `/Cash/ChangeStatusAllCashToPending`,
+                successMsg: "به مالی ارسال شد",
+                onSuccess: () => {
+                    cashTbl?.ajax.reload(null, false);
+                    cashGroupTbl?.ajax.reload(null, false);
+                },
+            });
         }
+
         async function changeStatusGroupCashToPending(listIds = []) {
-            try {
-                FLshowLoading();
-                const res = await axios.post(`/Cash/ChangeStatusGroupCashToPending`, listIds);
-                if (res.status === 200) {
-                    toastifySuccess("به مالی ارسال شد");
-                    cashTbl.ajax.reload(null, false);
+            await sendApiRequest({
+                url: `/Cash/ChangeStatusGroupCashToPending`,
+                method: "POST",
+                data: listIds,
+                successMsg: "به مالی ارسال شد",
+                onSuccess: () => {
+                    cashTbl?.ajax.reload(null, false);
+                    cashGroupTbl?.ajax.reload(null, false);
+                },
+            });
+        }
+
+        async function approveCashGroup() {
+            if (!currentGroupId) return;
+            await sendApiRequest({
+                url: `/Cash/ApproveCashGroup`,
+                data: { groupId: currentGroupId },
+                successMsg: "کل گروه با موفقیت تایید شد",
+                onSuccess: () => {
+                    cashTblModal?.ajax.reload(null, false);
+                    cashGroupTbl?.ajax.reload(null, false);
+                    cashTbl?.ajax.reload(null, false);
+                },
+            });
+        }
+
+        async function rejectCashGroup() {
+            if (!currentGroupId) return;
+
+            Swal.fire({
+                title: "برگشت!",
+                text: "آیا از برگشت کل این گروه به تنخواه‌دار اطمینان دارید؟",
+                icon: "warning",
+                showCancelButton: true,
+                cancelButtonColor: "#adadad",
+                confirmButtonColor: "#e64942",
+                cancelButtonText: "انصراف",
+                confirmButtonText: "بله، برگشت داده شود",
+            }).then(async (willDelete) => {
+                if (willDelete.isConfirmed) {
+                    await sendApiRequest({
+                        url: `/Cash/RejectCashGroup`,
+                        data: { groupId: currentGroupId },
+                        successMsg: "گروه با موفقیت برگشت داده شد",
+                        onSuccess: () => {
+                            ModalToggle("cashGroupDetailModal", "hide");
+                            cashGroupTbl?.ajax.reload(null, false);
+                            cashTbl?.ajax.reload(null, false);
+                        },
+                    });
                 }
-            } catch (err) {
-                console.log(err);
-                if (err.status === 404) {
-                    toastifyError(err.response.data);
-                }
-            } finally {
-                FLshowLoading(false);
-            }
+            });
         }
 
         let cashTbl;
         let modelCash = {};
-        let isManager;
+        let isFinancial;
 
         let bulkMode = false;
         const selectedCashIds = new Set();
@@ -471,7 +449,7 @@
                         d.model = JSON.stringify(modelCash);
                     },
                     dataSrc: function (json) {
-                        isManager = json.isManager;
+                        isFinancial = json.isFinancial;
                         initCashierBalanceUI(json.cashierBalance);
                         return json.data;
                     },
@@ -515,25 +493,23 @@
 
                                 return `<button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>`;
                             } else if (data === 1) { // در دست تایید
-                                if (isManager) return `
+                                if (isFinancial) return `
                                     <div class="d-inline-flex align-items-center justify-content-center gap-1">
                                         <button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 2)">تایید</button>
                                         <button class="buttonCancel3" onclick="changeStatusCash('${row.id}', 0)">برگشت</button>
-
                                     </div>
                                 `;
 
                                 return `
                                     <div class="d-inline-flex align-items-center justify-content-center gap-1">
                                         <span class="fMedium" style="color: #CC9900">${row.statusTxt}</span>
-
                                     </div>
                                 `;
                             } else { // تایید شده
-                                if (isManager) return `
+                                if (isFinancial) return `
                                     <div class="d-inline-flex align-items-center justify-content-center gap-1">
                                         <span class="fMedium" style="color: darkgreen">${row.statusTxt}</span>
-                                        <button class="cursor-pointer" style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
+                                        <button style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
                                             <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"></path></svg>
                                         </button>
                                     </div>
@@ -571,7 +547,7 @@
                             {
                                 extend: "excel",
                                 exportOptions: {
-                                    columns: [0, 1, 2, 3, 4, 5, 6, 7],
+                                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
                                 },
                                 text: `<svg style="color:#fff;width:78%" fill="currentColor" viewBox="0 0 256 256"><path d="M156,208a8,8,0,0,1-8,8H120a8,8,0,0,1-8-8V152a8,8,0,0,1,16,0v48h20A8,8,0,0,1,156,208ZM92.65,145.49a8,8,0,0,0-11.16,1.86L68,166.24,54.51,147.35a8,8,0,1,0-13,9.3L58.17,180,41.49,203.35a8,8,0,0,0,13,9.3L68,193.76l13.49,18.89a8,8,0,0,0,13-9.3L77.83,180l16.68-23.35A8,8,0,0,0,92.65,145.49Zm98.94,25.82c-4-1.16-8.14-2.35-10.45-3.84-1.25-.82-1.23-1-1.12-1.9a4.54,4.54,0,0,1,2-3.67c4.6-3.12,15.34-1.72,19.82-.56a8,8,0,0,0,4.07-15.48c-2.11-.55-21-5.22-32.83,2.76a20.58,20.58,0,0,0-8.95,14.95c-2,15.88,13.65,20.41,23,23.11,12.06,3.49,13.12,4.92,12.78,7.59-.31,2.41-1.26,3.33-2.15,3.93-4.6,3.06-15.16,1.55-19.54.35A8,8,0,0,0,173.93,214a60.63,60.63,0,0,0,15.19,2c5.82,0,12.3-1,17.49-4.46a20.81,20.81,0,0,0,9.18-15.23C218,179,201.48,174.17,191.59,171.31ZM40,112V40A16,16,0,0,1,56,24h96a8,8,0,0,1,5.66,2.34l56,56A8,8,0,0,1,216,88v24a8,8,0,1,1-16,0V96H152a8,8,0,0,1-8-8V40H56v72a8,8,0,0,1-16,0ZM160,80h28.68L160,51.31Z"></path></svg>`,
                                 titleAttr: "اکسل",
@@ -591,7 +567,7 @@
                 },
                 initComplete: () => initFilterCashTable(),
                 drawCallback: function () {
-                    const json = this.api().ajax.json();
+                    const json = this.api()?.ajax.json();
                     const container = document.querySelector(".dt-length");
 
                     if (!container) return;
@@ -644,11 +620,10 @@
                     return row.any() && row.data().status === 0;
                 },
                 onAction: async (ids, selection) => {
-                    console.log(ids);
                     await changeStatusGroupCashToPending(ids);
                     selection.hideSelectionMode();
 
-                    cashTbl.ajax.reload(null, false);
+                    cashTbl?.ajax.reload(null, false);
                 },
 
                 onSelectionModeEnter() {
@@ -667,15 +642,6 @@
 
 
             cashTbl.on("draw.dt", () => cashSelection.refresh());
-
-            @*
-            cashTbl.on("order.dt", () => cashSelection.refresh());
-
-            cashTbl.on("search.dt", () => cashSelection.refresh());
-
-            cashTbl.on("page.dt", () => cashSelection.refresh());
-
-            cashTbl.on("responsive-display.dt", () => cashSelection.refresh());*@;
 
 
             function initFilterCashTable() {
@@ -722,7 +688,7 @@
             modelCash.serVal = window[filterVarConfig]?.varSearch;
             modelCash.filt = window[filterVarConfig]?.filterVar;
 
-            cashTbl.ajax.reload();
+            cashTbl?.ajax.reload();
         };
 
 
@@ -780,55 +746,79 @@
         document.body.addEventListener("change", async (e) => {
             if (e.target.matches("input[name='cash_type']")) {
                 modelCash._type = Number(e.target.value);
-                cashTbl.ajax.reload();
+                cashTbl?.ajax.reload();
             }
         });
 
 
-        let currentSelectedGroupId = null;
-        let modalCashTable = null;
-        let cashGroupTbl = null;
-
-        let isGroupDtInitialized = false;
-        let currentGroupIdForModal = null;
-        let cashTableModalDt = null;
-
-        // ۱. انیمیشن و منطق سوییچ بین دو ویو
         function switchCashView(viewType) {
             const itemsContainer = document.getElementById("cashItemsContainer");
             const groupsContainer = document.getElementById("cashGroupsContainer");
-
+            cashViewType = viewType;
             if (viewType === "cashes") {
                 itemsContainer.classList.remove("d-none");
                 groupsContainer.classList.add("d-none");
-
-            } else {
+                document.querySelector("#cashModalBtn").classList.remove("d-none");
+            } else { // viewType === "groups"
                 groupsContainer.classList.remove("d-none");
                 itemsContainer.classList.add("d-none");
-
-                if (typeof initCashGroupDataTable === "function" && !window.isGroupDtInitialized) {
+                document.querySelector("#cashModalBtn").classList.add("d-none");
+                if (!cashGroupTbl) {
                     initCashGroupDataTable();
-                    window.isGroupDtInitialized = true;
                 }
             }
         }
 
-        // ۲. راه‌اندازی دیتاتیبل گروه‌ها (مخصوص مالی)
+        function updateGroupActionButtons(items) {
+            const btnApprove = document.getElementById("btnApproveGroup");
+            const btnReject = document.getElementById("btnRejectGroup");
+
+            if (!isFinancial) {
+                btnApprove?.remove();
+                btnReject?.remove();
+                return;
+            }
+
+            if (!items || items.length === 0) {
+                btnApprove?.classList.add("d-none");
+                btnReject?.classList.add("d-none");
+                return;
+            }
+
+            const isAllApproved = items.every(item => item.status === 2);
+
+            btnReject?.classList.remove("d-none");
+            btnApprove?.classList.toggle("d-none", isAllApproved);
+        }
+
         function initCashGroupDataTable() {
             cashGroupTbl = $("#cashGroupTable").DataTable({
                 pageLength: 10,
+                lengthMenu: [5, 10, 20, 50, 100, { label: "همه", value: -1 }],
                 processing: true,
                 serverSide: true,
+                searching: true,
+                search: {
+                    return: true,
+                },
                 ordering: true,
+                order: [[1, "desc"]],
+                scrollCollapse: true,
+                scrollY: "70dvh",
+                responsive: true,
                 ajax: {
                     url: `/Cash/GetCashGroupsDt`,
                     type: "POST",
                 },
                 language: languageDatatable,
+                columnDefs: [
+                    { targets: "_all", defaultContent: "-" },
+                ],
                 columns: [
-                    { data: "groupNumber" },
+                    { data: "groupNumber", responsivePriority: 1 },
                     {
                         data: "createDateTxt",
+                        responsivePriority: 2,
                         render: data => data ? `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>` : "-",
                     },
                     { data: "userCreator" },
@@ -841,19 +831,17 @@
                         data: "status",
                         orderable: false,
                         render: (data, type, row) => {
-                            if (data === 2) return `<span class="fMedium" style="color: darkgreen">${row.statusTxt}</span>`;
-                            return `<span class="fMedium" style="color: #CC9900">${row.statusTxt}</span>`;
+                            if (data === 2) return `<span class="fbold" style="color: darkgreen">${row.statusTxt}</span>`;
+                            return `<span class="fbold" style="color: #CC9900">${row.statusTxt}</span>`;
                         },
                     },
                     {
                         data: null,
                         orderable: false,
+                        responsivePriority: 3,
                         render: function (data, type, row) {
                             return `
-                                <button class="buttonBlue2 flex-center d-inline-flex gap-2 btn-sm" onclick="openGroupDetailModal('${row.cashGroupId}', '${row.groupNumber}', '${row.userCreator}', '${row.createDateTxt}', ${row.itemsCount}, ${row.totalAmount})">
-                                     جزئیات
-                                    <i class="fa fa-eye me-1"></i>
-                                </button>
+                                <button class="buttonGray" onclick="openGroupDetailModal('${row.cashGroupId}', '${row.groupNumber}', '${row.userCreator ?? "-"}', '${row.createDateTxt}', ${row.itemsCount}, ${row.totalAmount})">مشاهده</button>
                             `;
                         },
                     },
@@ -889,67 +877,114 @@
             });
         }
 
-        // ۳. باز کردن مودال و لود دیتاتیبل `#cashTableModal`
-        function openGroupDetailModal(groupId, groupNumber, userCreator, sendDate, itemsCount, totalAmount) {
-            currentGroupIdForModal = groupId;
 
-            document.getElementById("modalGroupNumber").textContent = groupNumber;
-            document.getElementById("modalGroupUser").textContent = userCreator;
+        function openGroupDetailModal(groupId, groupNumber, userCreator, sendDate, itemsCount, totalAmount) {
+            currentGroupId = groupId;
+
+            document.getElementById("modalGroupNumber").textContent = groupNumber || "-";
+            document.getElementById("modalGroupUser").textContent = userCreator || "-";
             document.getElementById("modalGroupDate").textContent = sendDate ? sendDate.split(" ")[0] : "-";
-            document.getElementById("modalGroupCount").textContent = itemsCount;
+            document.getElementById("modalGroupCount").textContent = itemsCount || "-";
             document.getElementById("modalGroupTotal").textContent = totalAmount ? totalAmount.toLocaleString() : "0";
 
             ModalToggle("cashGroupDetailModal");
 
-            const cashTable = document.querySelector("#cashTableModal");
-            if (cashTable && typeof $.fn !== "undefined" && $.fn.DataTable && $.fn.DataTable.isDataTable("#cashTableModal")) {
-                cashTableModalDt.ajax.reload();
-            } else {
+            if (!cashTblModal) {
                 initModalCashDataTable();
+            } else {
+                cashTblModal.clear().draw();
+                cashTblModal.ajax.reload(null, false);
             }
-
-
         }
 
-        // ۴. ساخت DataTable اقلام مودال
+
         function initModalCashDataTable() {
-            cashTableModalDt = $("#cashTableModal").DataTable({
+            cashTblModal = $("#cashTableModal").DataTable({
                 paging: false,
                 processing: true,
                 serverSide: true,
+                ordering: true,
+                order: [[2, "desc"]],
+                scrollCollapse: true,
+                scrollY: "calc(100dvh - 400px)",
+                responsive: true,
                 ajax: {
                     url: `/Cash/GetAllCashesDt`,
                     type: "POST",
                     data: (d) => {
-                        d.model = JSON.stringify({ ...modelCash, entityId: currentGroupIdForModal });
+                        d.model = JSON.stringify({ ...modelCash, entityId: currentGroupId });
+                    },
+                    dataSrc: function (json) {
+                        isFinancial = json.isFinancial;
+                        return json.data;
                     },
                 },
                 language: languageDatatable,
                 columnDefs: [
                     { targets: [11, 12], orderable: false },
+                    { targets: [2], render: data => `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>` },
                     { targets: [6, 7], render: data => `<span dir="ltr">${data ? data.toLocaleString() : "-"}</span>` },
                     { targets: [8], render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>` },
                 ],
                 columns: [
-                    { data: "serial" },
-                    { data: "cashGroup.groupNumber" },
+                    { data: "serial", responsivePriority: 1 },
+                    { data: "cashGroup.groupNumber", visible: false, searchable: false },
                     { data: "createDateTxt" },
-                    { data: "costTitleTxt" },
-                    { data: "costCenterTxt" },
+                    { data: "costTitleTxt", responsivePriority: 2 },
+                    { data: "costCenterTxt", responsivePriority: 3 },
                     { data: "costDate" },
                     { data: "amount" },
                     { data: "fee" },
                     { data: "totalAmount" },
                     { data: "costDescription" },
-                    { data: "userCreator" },
-                    { data: "statusTxt" },
+                    { data: "userCreator", visible: false, searchable: false },
+                    {
+                        data: "status",
+                        render: function (data, type, row) {
+                            if (data === 0) { // ثبت موقت
+                                //if (isManager) return `<span class="fMedium" style="color: #666">${row.statusTxt}</span>`;
+
+                                return `<button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>`;
+                            } else if (data === 1) { // در دست تایید
+                                if (isFinancial) return `
+                                    <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                                        <button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 2)">تایید</button>
+                                        <button class="buttonCancel3" onclick="changeStatusCash('${row.id}', 0)">برگشت</button>
+                                    </div>
+                                `;
+
+                                return `
+                                    <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                                        <span class="fMedium" style="color: #CC9900">${row.statusTxt}</span>
+                                    </div>
+                                `;
+                            } else { // تایید شده
+                                if (isFinancial) return `
+                                    <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                                        <span class="fMedium" style="color: darkgreen">${row.statusTxt}</span>
+                                        <button style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
+                                            <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"></path></svg>
+                                        </button>
+                                    </div>
+                                `;
+
+                                return `<span class="fMedium" style="color: darkgreen">${row.statusTxt}</span>`;
+                            }
+                        },
+                    },
                     {
                         data: null,
-                        render: (data, type, row) => `
-                            <button type="button" style="padding: 6px 7px;" class="buttonGray flex-center" onclick="showAttachments('${row.id}', 10)">
-                                <i class="fa fa-paperclip"></i>
-                            </button>
-                        `,
+                        render: function (data, type, row) {
+                            return `
+                                <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                                    <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
+                                    ${row.status === 0 ? `
+                                        <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditCashModal('${row.id}')"><i class="fa fa-pencil"></i></button>
+                                        <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deleteCash('${row.id}')"><i class="fa fa-trash"></i></button>
+                                    ` : ""}
+                                </div>
+                            `;
+                        },
                     },
                 ],
                 layout: {
@@ -960,7 +995,7 @@
                             {
                                 extend: "excel",
                                 exportOptions: {
-                                    columns: [0, 1, 2, 3, 4, 5, 6, 7],
+                                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
                                 },
                                 text: `<svg style="color:#fff;width:78%" fill="currentColor" viewBox="0 0 256 256"><path d="M156,208a8,8,0,0,1-8,8H120a8,8,0,0,1-8-8V152a8,8,0,0,1,16,0v48h20A8,8,0,0,1,156,208ZM92.65,145.49a8,8,0,0,0-11.16,1.86L68,166.24,54.51,147.35a8,8,0,1,0-13,9.3L58.17,180,41.49,203.35a8,8,0,0,0,13,9.3L68,193.76l13.49,18.89a8,8,0,0,0,13-9.3L77.83,180l16.68-23.35A8,8,0,0,0,92.65,145.49Zm98.94,25.82c-4-1.16-8.14-2.35-10.45-3.84-1.25-.82-1.23-1-1.12-1.9a4.54,4.54,0,0,1,2-3.67c4.6-3.12,15.34-1.72,19.82-.56a8,8,0,0,0,4.07-15.48c-2.11-.55-21-5.22-32.83,2.76a20.58,20.58,0,0,0-8.95,14.95c-2,15.88,13.65,20.41,23,23.11,12.06,3.49,13.12,4.92,12.78,7.59-.31,2.41-1.26,3.33-2.15,3.93-4.6,3.06-15.16,1.55-19.54.35A8,8,0,0,0,173.93,214a60.63,60.63,0,0,0,15.19,2c5.82,0,12.3-1,17.49-4.46a20.81,20.81,0,0,0,9.18-15.23C218,179,201.48,174.17,191.59,171.31ZM40,112V40A16,16,0,0,1,56,24h96a8,8,0,0,1,5.66,2.34l56,56A8,8,0,0,1,216,88v24a8,8,0,1,1-16,0V96H152a8,8,0,0,1-8-8V40H56v72a8,8,0,0,1-16,0ZM160,80h28.68L160,51.31Z"></path></svg>`,
                                 titleAttr: "اکسل",
@@ -975,34 +1010,11 @@
                         },
                     },
                 },
+                drawCallback: function () {
+                    const json = this.api()?.ajax.json();
+                    updateGroupActionButtons(json?.data);
+                },
             });
-        }
-
-        // ۵. تنظیم اولیه بر اساس رول کاربر (پس از لود شدن کامل صفحه)
-        $(document.ready || function (f) {
-            f();
-        })(function () {
-            // تابع اصلی کدهای دیتاتیبل قبلی خودت را صدا می‌زنیم
-            getAllCashesDt();
-
-            // اگر کاربر مالی بود، دیفالت روی گروهی تنظیم شود
-            if (typeof isManager !== "undefined" && isManager) {
-                switchView("groups");
-            }
-
-
-        });
-        // ۴. توابع تایید و رد کامل گروه از داخل مودال
-        async function approveCurrentGroup() {
-            if (!currentSelectedGroupId) return;
-
-            // ارسال ریکوئست به بک‌اند برای تایید گروهی
-            const response = await changeStatusGroupCashToApproved(currentSelectedGroupId);
-            if (response.isSuccess) {
-                bootstrap.Modal.getInstance(document.getElementById("cashGroupDetailModal")).hide();
-                cashGroupTbl.ajax.reload(null, false); // ریلود جدول اصلی
-            }
-
         }
 
     </script>

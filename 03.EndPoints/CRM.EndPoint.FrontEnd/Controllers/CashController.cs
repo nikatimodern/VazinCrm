@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Enum;
@@ -47,7 +48,8 @@ public class CashController : Controller {
     [Authorize(Roles = "مدیر ارشد,تنخواه دار,مدیر مالی,کارشناس مالی")]
     public IActionResult Index()
     {
-        return View();
+        var isFinancial = User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی") || User.IsInRole("مدیر ارشد");
+        return View(isFinancial);
     }
 
     [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
@@ -197,38 +199,16 @@ public class CashController : Controller {
         await SyncCashAccountancyDebit(data, user);
     }
 
-
-    private async Task ChangeCashStatusGroup(List<Cash> cashList, CashStatusEnum status, AppUser user)
+    private async Task AttachCashesToNewGroup(List<Cash> cashList, CashStatusEnum status, AppUser user)
     {
         if (cashList == null || cashList.Count == 0) return;
 
-        CashGroup group = null;
+        var group = new CashGroup {
+            UserCreator = user.FullName,
+            UserCreatorID = user.Id
+        };
 
-        var groupIds = cashList
-            .Where(x => x.CashGroupId != null)
-            .Select(x => x.CashGroupId!.Value)
-            .Distinct()
-            .ToList();
-
-        /*foreach (var groupId in groupIds)
-        {
-            var hasLockedMember = await db.Cashes.AnyAsync(x =>
-                x.CashGroupId == groupId &&
-                x.Status != CashStatusEnum.ثبت_موقت
-            );
-
-            if (!hasLockedMember)
-            {
-                group = await db.CashGroups.FindAsync(groupId);
-                break;
-            }
-        }*/
-
-        if (group == null)
-        {
-            group = new CashGroup();
-            db.CashGroups.Add(group);
-        }
+        db.CashGroups.Add(group);
 
         foreach (var cash in cashList)
         {
@@ -244,11 +224,11 @@ public class CashController : Controller {
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var data = await db.Cashes.FirstOrDefaultAsync(f => f.Id == id);
-            if (data == null) return NotFound();
+            if (data == null) return NotFound("تنخواه یافت نشد.");
 
-            if (data.Status == CashStatusEnum.ثبت_موقت && status == CashStatusEnum.در_دست_تایید)
+            if (data.CashGroupId == null && data.Status == CashStatusEnum.ثبت_موقت && status == CashStatusEnum.در_دست_تایید)
             {
-                await ChangeCashStatusGroup([data], CashStatusEnum.در_دست_تایید, user);
+                await AttachCashesToNewGroup([data], status, user);
             } else
             {
                 await ChangeCashStatus(status, data, user);
@@ -273,7 +253,9 @@ public class CashController : Controller {
                 f.Status == CashStatusEnum.ثبت_موقت
             ).ToListAsync();
 
-            await ChangeCashStatusGroup(cashes, CashStatusEnum.در_دست_تایید, user);
+            if (cashes.Count == 0) return BadRequest("هیچ تنخواه آماده ارسالی یافت نشد.");
+
+            await AttachCashesToNewGroup(cashes, CashStatusEnum.در_دست_تایید, user);
 
             await db.SaveChangesAsync();
             return Ok();
@@ -290,12 +272,71 @@ public class CashController : Controller {
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
         {
+            if (listIds == null || listIds.Count == 0) return BadRequest("لیست انتخاب‌شده خالی است.");
             var user = await userManager.GetUserAsync(HttpContext.User);
             var cashes = await db.Cashes.Where(f => listIds.Contains(f.Id)).ToListAsync();
 
             if (cashes.Count == 0) return BadRequest("موردی برای ارسال یافت نشد.");
 
-            await ChangeCashStatusGroup(cashes, CashStatusEnum.در_دست_تایید, user);
+            await AttachCashesToNewGroup(cashes, CashStatusEnum.در_دست_تایید, user);
+
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            await transaction.RollbackAsync();
+            return BadRequest(e.Message);
+        }
+    }
+
+    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+    public async Task<IActionResult> ApproveCashGroup(Guid groupId)
+    {
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var cashes = await db.Cashes.Where(f => f.CashGroupId == groupId).ToListAsync();
+
+            if (cashes.Count == 0) return NotFound("گروه یافت نشد یا تنخواهی در آن وجود ندارد.");
+
+            foreach (var cash in cashes)
+            {
+                await ChangeCashStatus(CashStatusEnum.تایید_شده, cash, user);
+            }
+
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+
+    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+    public async Task<IActionResult> RejectCashGroup(Guid groupId)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var group = await db.CashGroups.FirstOrDefaultAsync(g => g.Id == groupId);
+            var cashes = await db.Cashes.Where(f => f.CashGroupId == groupId).ToListAsync();
+
+            if (cashes.Count == 0 && group == null) return NotFound("گروه مورد نظر یافت نشد.");
+
+            foreach (var cash in cashes)
+            {
+                await ChangeCashStatus(CashStatusEnum.ثبت_موقت, cash, user);
+                cash.CashGroupId = null;
+            }
+
+            if (group != null)
+            {
+                db.CashGroups.Remove(group);
+            }
 
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -427,7 +468,7 @@ public class CashController : Controller {
             return BadRequest(e.Message);
         }
     }
-
+    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> DeleteCashier(Guid id)
     {
         try
@@ -482,11 +523,11 @@ public class CashController : Controller {
                 query = query.Where(f => f.CashGroupId == Guid.Parse(model.EntityId));
             }
 
-            var isManager = true;
+            var isFinancial = true;
             if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر مالی") && !roles.Contains("کارشناس مالی"))
             {
                 query = query.Where(f => f.UserCreatorID == user.Id);
-                isManager = false;
+                isFinancial = false;
             } else
             {
                 query = query.Where(f => f.Status != CashStatusEnum.ثبت_موقت || f.UserCreatorID == user.Id);
@@ -591,7 +632,7 @@ public class CashController : Controller {
                 recordsTotal,
                 recordsFiltered = recordsTotal,
                 data,
-                isManager,
+                isFinancial,
                 cashierBalance
             });
         }
@@ -608,26 +649,38 @@ public class CashController : Controller {
         {
             var draw = Request.Form["draw"].FirstOrDefault();
             var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
+//            var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
             var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
+            var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][data]"].FirstOrDefault();
+            var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
             var searchValue = Request.Form["search[value]"].FirstOrDefault()?.ToLower().Trim();
 
             var user = await userManager.GetUserAsync(HttpContext.User);
+            var roles = await userManager.GetRolesAsync(user);
 
-            // کوئری روی جدول گروه‌ها یا مجتمع‌سازی روی Cashes
-            var query = db.Cashes
-                .Include(f => f.CashGroup)
-                .Where(f => f.CashGroupId != null && f.Status != CashStatusEnum.ثبت_موقت)
-                .GroupBy(f => new { f.CashGroupId, f.CashGroup.GroupNumber, f.UserCreator })
-                .Select(g => new {
-                    g.Key.CashGroupId,
-                    g.Key.GroupNumber,
-                    g.Key.UserCreator,
-                    CreateDateTxt = g.Select(f => f.CreateDateTxt).FirstOrDefault(),
-                    ItemsCount = g.Count(),
-                    TotalAmount = g.Sum(x => x.Amount + x.Fee),
-                    Status = g.All(x => x.Status == CashStatusEnum.تایید_شده) ? CashStatusEnum.تایید_شده : CashStatusEnum.در_دست_تایید,
-                    StatusTxt = g.All(x => x.Status == CashStatusEnum.تایید_شده) ? "تایید شده" : "در دست تایید"
-                });
+            var baseQuery = db.CashGroups.AsQueryable();
+
+            if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر مالی") && !roles.Contains("کارشناس مالی"))
+            {
+                baseQuery = baseQuery.Where(g => g.UserCreatorID == user.Id || g.Cashes.Any(c => c.UserCreatorID == user.Id));
+            } else
+            {
+                baseQuery = baseQuery.Where(g =>
+                    g.Cashes.Any(c => c.Status != CashStatusEnum.ثبت_موقت) || g.Cashes.Any(c => c.UserCreatorID == user.Id));
+            }
+
+            var query = baseQuery.Select(g => new CashGroupVModel {
+                CashGroupId = g.Id,
+                GroupNumber = g.GroupNumber,
+                UserCreator = g.UserCreator,
+                CreateDate = g.CreateDate,
+                CreateDateTxt = g.CreateDateTxt,
+                ItemsCount = g.Cashes.Count,
+                TotalAmount = g.Cashes.Sum(c => c.Amount + c.Fee),
+                Status = g.Cashes.All(c => c.Status == CashStatusEnum.تایید_شده) ? CashStatusEnum.تایید_شده : CashStatusEnum.در_دست_تایید,
+                StatusTxt = g.Cashes.All(c => c.Status == CashStatusEnum.تایید_شده) ? "تایید شده" : "در دست تایید"
+            });
+
 
             if (!string.IsNullOrEmpty(searchValue))
             {
@@ -640,11 +693,36 @@ public class CashController : Controller {
 
             var recordsTotal = await query.CountAsync();
 
-            var data = await query
-                .OrderByDescending(f => f.GroupNumber)
-                .Skip(start)
-                .Take(length == -1 ? recordsTotal : length)
-                .ToListAsync();
+            if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortColumnDirection))
+            {
+                var isAscending = sortColumnDirection == "asc";
+                query = sortColumn switch {
+                    "groupNumber" => isAscending
+                        ? query.OrderBy(f => f.GroupNumber)
+                        : query.OrderByDescending(f => f.GroupNumber),
+                    "createDateTxt" => isAscending
+                        ? query.OrderBy(f => f.CreateDate)
+                        : query.OrderByDescending(f => f.CreateDate),
+                    "userCreator" => isAscending
+                        ? query.OrderBy(f => f.UserCreator)
+                        : query.OrderByDescending(f => f.UserCreator),
+                    "itemsCount" => isAscending
+                        ? query.OrderBy(f => f.ItemsCount)
+                        : query.OrderByDescending(f => f.ItemsCount),
+                    "totalAmount" => isAscending
+                        ? query.OrderBy(f => f.TotalAmount)
+                        : query.OrderByDescending(f => f.TotalAmount),
+                    _ => query
+                };
+            } else
+            {
+                query = query.OrderByDescending(x => x.CreateDate);
+            }
+
+            if (length != -1)
+                query = query.Skip(start).Take(length);
+
+            var data = await query.ToListAsync();
 
             return Json(new {
                 draw,

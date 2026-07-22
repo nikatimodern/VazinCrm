@@ -26,6 +26,75 @@ document.addEventListener("DOMContentLoaded", () => {
     MaskDate();
 });
 
+/**
+ * Sends HTTP API requests with automatic loading management, toast notifications, and success callbacks.
+ *
+ * @async
+ * @param {Object} options - Request configurations.
+ * @param {string} options.url - Target API endpoint URL.
+ * @param {"GET"|"POST"|"PUT"|"DELETE"} [options.method='GET'] - HTTP method.
+ * @param {Object|Array|null} [options.data=null] - Request payload (Query params for GET, Body for POST/PUT/DELETE).
+ * @param {Function|null} [options.onSuccess=null] - Success callback function `(responseData) => {}`.
+ * @param {string} [options.successMsg="عملیات با موفقیت انجام شد"] - Success toast message (set empty string "" to disable).
+ * @param {boolean} [options.showLoading=true] - Toggle loading indicator display.
+ * @returns {Promise<Object|null>} Returns response data on success, or null on failure.
+ */
+async function sendApiRequest(
+    {
+        url,
+        method = "GET",
+        data = null,
+        onSuccess = null,
+        successMsg = "عملیات با موفقیت انجام شد",
+        showLoading = true,
+    }) {
+    try {
+        if (showLoading && typeof FLshowLoading === "function") {
+            FLshowLoading(true);
+        }
+        
+        const config = {
+            url: url,
+            method: method.toUpperCase(),
+        };
+        
+        if (data !== null) {
+            if (config.method === "GET") {
+                config.params = data; // query strings: ?key=value
+            } else {
+                config.data = data;   // JSON Body
+            }
+        }
+        
+        const response = await axios(config);
+        
+        if (response.status >= 200 && response.status < 300) {
+            if (successMsg && typeof toastifySuccess === "function") {
+                toastifySuccess(successMsg);
+            }
+            
+            if (typeof onSuccess === "function") {
+                onSuccess(response.data);
+            }
+            
+            return response.data;
+        }
+    } catch (err) {
+        console.error("API Error:", err);
+        
+        const errorMessage = err.response?.data || "خطایی در ارتباط با سرور رخ داده است.";
+        
+        if (typeof toastifyError === "function") {
+            toastifyError(errorMessage);
+        }
+        
+        return null;
+    } finally {
+        if (showLoading && typeof FLshowLoading === "function") {
+            FLshowLoading(false);
+        }
+    }
+}
 
 class SelectionManager {
     /**
@@ -3897,7 +3966,7 @@ class DynamicSkeleton {
      * @param {number} options.count - تعداد اسکلتون‌هایی که باید ساخته شود (پیش‌فرض 3)
      */
     constructor(options) {
-        this.container = typeof options.container === 'string'
+        this.container = typeof options.container === "string"
             ? document.querySelector(options.container)
             : options.container;
         this.template = options.template;
@@ -3908,7 +3977,7 @@ class DynamicSkeleton {
     render() {
         if (!this.container) return;
         
-        let skeletonsHTML = '';
+        let skeletonsHTML = "";
         for (let i = 0; i < this.count; i++) {
             skeletonsHTML += this.template;
         }
@@ -3919,7 +3988,7 @@ class DynamicSkeleton {
     // متد پاک کردن لودینگ (البته وقتی دیتای واقعی رو innerHTML کنید خود به خود پاک میشه)
     clear() {
         if (this.container) {
-            this.container.innerHTML = '';
+            this.container.innerHTML = "";
         }
     }
 }
@@ -3928,21 +3997,21 @@ const Skeleton = (() => {
     
     const templates = {};
     
-    function register(name, builder){
+    function register(name, builder) {
         templates[name] = builder;
     }
     
     function show({
                       container,
                       count = 1,
-                      template
-                  }){
+                      template,
+                  }) {
         
         const el = typeof container === "string"
             ? document.querySelector(container)
             : container;
         
-        if(!el) return;
+        if (!el) return;
         
         el.dataset.skeleton = "true";
         
@@ -3953,7 +4022,7 @@ const Skeleton = (() => {
                 ? template
                 : templates[template];
         
-        for(let i=0;i<count;i++){
+        for (let i = 0; i < count; i++) {
             
             html.push(builder(i));
             
@@ -3963,13 +4032,13 @@ const Skeleton = (() => {
         
     }
     
-    function hide(container){
+    function hide(container) {
         
         const el = typeof container === "string"
             ? document.querySelector(container)
             : container;
         
-        if(el)
+        if (el)
             el.innerHTML = "";
         
     }
@@ -3977,7 +4046,7 @@ const Skeleton = (() => {
     return {
         show,
         hide,
-        register
+        register,
     };
     
 })();
