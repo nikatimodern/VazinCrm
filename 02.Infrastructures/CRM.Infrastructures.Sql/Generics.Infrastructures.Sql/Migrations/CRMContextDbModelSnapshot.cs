@@ -1033,6 +1033,14 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasIndex("CashGroupId");
 
+                    b.HasIndex("CostCenterId");
+
+                    b.HasIndex("CostTitleId");
+
+                    b.HasIndex("PaymentVoucherNumber")
+                        .IsUnique()
+                        .HasFilter("[PaymentVoucherNumber] IS NOT NULL");
+
                     b.ToTable("Cashes");
                 });
 
@@ -1058,6 +1066,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("GroupNumber"));
 
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsExported")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("ModifyDate")
@@ -4150,9 +4161,25 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasForeignKey("CashGroupId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("CRM.Core.Domain.Cashes.Entities.BaseCenterCash", "CostCenter")
+                        .WithMany("Cashes")
+                        .HasForeignKey("CostCenterId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("CRM.Core.Domain.Cashes.Entities.BaseCash", "CostTitle")
+                        .WithMany("Cashes")
+                        .HasForeignKey("CostTitleId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("BankAccount");
 
                     b.Navigation("CashGroup");
+
+                    b.Navigation("CostCenter");
+
+                    b.Navigation("CostTitle");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Chats.Entities.Chat", b =>
@@ -4464,6 +4491,16 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Carizos.Entities.Carizo", b =>
                 {
                     b.Navigation("TaskUsers");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.BaseCash", b =>
+                {
+                    b.Navigation("Cashes");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.BaseCenterCash", b =>
+                {
+                    b.Navigation("Cashes");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.Cash", b =>

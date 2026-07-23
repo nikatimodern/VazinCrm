@@ -5,5 +5,6 @@ namespace CRM.Core.Domain.Cashes.Entities;
 
 public class CashGroup : BaseEntity {
     public int GroupNumber { get; set; }
+    public bool IsExported { get; set; }
     public ICollection<Cash> Cashes { get; set; } = [];
 }

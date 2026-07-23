@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using CRM.Core.Domain.Cashes.Enums;
 using CRM.Framework.Domain;
 
@@ -10,4 +11,6 @@ public class BaseCash : BaseEntity {
     public string AccountTitle { get; set; } // عنوان حساب
     public BaseCashTypeEnum BaseCashType { get; set; } // نوع عنوان هزینه
     public string BaseCashTypeTxt { get; set; }
+
+    public ICollection<Cash> Cashes { get; set; }
 }

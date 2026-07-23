@@ -14,6 +14,16 @@ namespace CRM.Infrastructures.Sql.Cashes.Configs
             builder.Property(f => f.Fee).HasPrecision(20, 0);
             builder.Property(x => x.Serial).ValueGeneratedOnAdd();
 
+            builder.HasOne(x => x.CostCenter)
+                .WithMany(x => x.Cashes)
+                .HasForeignKey(x => x.CostCenterId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.HasOne(x => x.CostTitle)
+                .WithMany(x => x.Cashes)
+                .HasForeignKey(x => x.CostTitleId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             builder.HasOne(f => f.Accountancy)
                 .WithOne()
                 .HasForeignKey<Accountancy>(f => f.CashId)
@@ -23,6 +33,10 @@ namespace CRM.Infrastructures.Sql.Cashes.Configs
                 .WithMany(f => f.Cashes)
                 .HasForeignKey(f => f.BankAccountId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            builder.HasIndex(x => x.PaymentVoucherNumber)
+                .IsUnique()
+                .HasFilter("[PaymentVoucherNumber] IS NOT NULL");
         }
     }
 

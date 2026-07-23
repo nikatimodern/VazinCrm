@@ -445,7 +445,7 @@ function downloadFileViewer({ url, filename = "file", extension = "" }) {
         filename += `.${extension}`;
     }
     
-    triggerDownload(url, filename)
+    triggerDownload(url, filename);
 }
 
 function createUploadProgress(containerUploader) {
@@ -515,7 +515,9 @@ async function downloadFile(btn, url, fileName) {
 function triggerDownload(url, fileName) {
     const a = document.createElement("a");
     a.href = url;
-    a.download = fileName;
+    if (fileName) {
+        a.download = fileName;
+    }
     
     document.body.appendChild(a);
     a.click();

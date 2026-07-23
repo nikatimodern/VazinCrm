@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using ClosedXML.Excel;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.AppUsers.Entities;
@@ -468,6 +470,7 @@ public class CashController : Controller {
             return BadRequest(e.Message);
         }
     }
+
     [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> DeleteCashier(Guid id)
     {
@@ -508,20 +511,26 @@ public class CashController : Controller {
             var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
             var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
             var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
-            var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
+            var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][data]"].FirstOrDefault();
             var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
             var searchValue = Request.Form["search[value]"].FirstOrDefault()?.ToLower().Trim();
 
             var user = await userManager.GetUserAsync(HttpContext.User);
             var roles = await userManager.GetRolesAsync(user);
 
+            var isExported = false;
 
             var query = db.Cashes.Include(f => f.CashGroup).AsQueryable();
 
-            if (model != null && model.EntityId != null)
+            if (Guid.TryParse(model?.EntityId, out var groupId))
             {
                 query = query.Where(f => f.CashGroupId == Guid.Parse(model.EntityId));
+                isExported = await db.CashGroups
+                    .Where(g => g.Id == groupId)
+                    .Select(g => g.IsExported)
+                    .FirstOrDefaultAsync();
             }
+
 
             var isFinancial = true;
             if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر مالی") && !roles.Contains("کارشناس مالی"))
@@ -565,39 +574,42 @@ public class CashController : Controller {
             {
                 var isAscending = sortColumnDirection == "asc";
                 query = sortColumn switch {
-                    "Serial" => isAscending
+                    "serial" => isAscending
                         ? query.OrderBy(f => f.Serial)
                         : query.OrderByDescending(f => f.Serial),
-                    "CreateDateTxt" => isAscending
+                    "createDateTxt" => isAscending
                         ? query.OrderBy(f => f.CreateDate)
                         : query.OrderByDescending(f => f.CreateDate),
-                    "CostTitleTxt" => isAscending
+                    "costTitleTxt" => isAscending
                         ? query.OrderBy(f => f.CostTitleTxt)
                         : query.OrderByDescending(f => f.CostTitleTxt),
-                    "CostCenterTxt" => isAscending
+                    "costCenterTxt" => isAscending
                         ? query.OrderBy(f => f.CostCenterTxt)
                         : query.OrderByDescending(f => f.CostCenterTxt),
-                    "CostDate" => isAscending
+                    "costDate" => isAscending
                         ? query.OrderBy(f => f.CostDateMiladi)
                         : query.OrderByDescending(f => f.CostDateMiladi),
-                    "Amount" => isAscending
+                    "amount" => isAscending
                         ? query.OrderBy(f => f.Amount)
                         : query.OrderByDescending(f => f.Amount),
-                    "Fee" => isAscending
+                    "fee" => isAscending
                         ? query.OrderBy(f => f.Fee)
                         : query.OrderByDescending(f => f.Fee),
-                    "TotalAmount" => isAscending
+                    "totalAmount" => isAscending
                         ? query.OrderBy(f => f.Amount + f.Fee)
                         : query.OrderByDescending(f => f.Amount + f.Fee),
-                    "CostDescription" => isAscending
+                    "costDescription" => isAscending
                         ? query.OrderBy(f => f.CostDescription)
                         : query.OrderByDescending(f => f.CostDescription),
-                    "UserCreator" => isAscending
+                    "userCreator" => isAscending
                         ? query.OrderBy(f => f.UserCreator)
                         : query.OrderByDescending(f => f.UserCreator),
-                    "GroupNumber" => isAscending
+                    "cashGroup.groupNumber" => isAscending
                         ? query.OrderBy(f => f.CashGroup == null).ThenBy(f => f.CashGroup.GroupNumber)
                         : query.OrderBy(f => f.CashGroup == null).ThenByDescending(f => f.CashGroup.GroupNumber),
+                    "paymentVoucherNumber" => isAscending
+                        ? query.OrderBy(f => f.CashGroup == null).ThenBy(f => f.PaymentVoucherNumber)
+                        : query.OrderBy(f => f.CashGroup == null).ThenByDescending(f => f.PaymentVoucherNumber),
                     _ => query
                 };
             }
@@ -633,6 +645,7 @@ public class CashController : Controller {
                 recordsFiltered = recordsTotal,
                 data,
                 isFinancial,
+                isExported,
                 cashierBalance
             });
         }
@@ -736,6 +749,172 @@ public class CashController : Controller {
             return BadRequest(ex.Message);
         }
     }
+
+
+    [HttpGet]
+    public async Task<IActionResult> ExportCashGroupToExcel(Guid groupId, int? startVoucherNumber = null)
+    {
+        try
+        {
+            var cashItems = await db.Cashes
+                .Include(c => c.CashGroup).Include(c => c.CostCenter)
+                .Include(c => c.CostTitle).Include(c => c.BankAccount)
+                .Where(c => c.CashGroupId == groupId)
+                .OrderBy(c => c.CreateDate)
+                .ToListAsync();
+
+            if (cashItems.Count == 0)
+                return NotFound("اقلامی برای این گروه یافت نشد.");
+
+            if (startVoucherNumber.HasValue)
+            {
+                if (cashItems[0]?.CashGroup?.IsExported == true) return BadRequest("این گروه قبلاً خروجی گرفته است.");
+
+                var usedNumbers = await GetUsedVoucherNumbers(startVoucherNumber.Value, cashItems.Count);
+
+                if (usedNumbers.Any())
+                    return BadRequest($"شماره اعلامیه‌های {string.Join("، ", usedNumbers)} قبلاً ثبت شده‌اند. لطفاً شماره شروع دیگری وارد کنید.");
+
+
+                await AssignPaymentVoucherNumbers(cashItems, startVoucherNumber.Value);
+            }
+
+
+            using var workbook = new XLWorkbook();
+            var ws = workbook.Worksheets.Add("تنخواه");
+
+            string[] headers = [
+                "نوع قلم",
+                "اعلاميه پرداخت نوع پرداخت",
+                "اعلاميه پرداخت طرف مقابل",
+                "اعلاميه پرداخت كد تفصيل",
+                "اعلاميه پرداخت شماره",
+                "اعلاميه پرداخت تاريخ",
+                "اعلاميه پرداخت كد معين",
+                "اعلاميه پرداخت صندوق",
+                "اعلاميه پرداخت مبلغ پرداخت",
+                "اعلاميه پرداخت مبلغ نقد",
+                "اعلاميه پرداخت شرح",
+                "اعلاميه پرداخت شرح(2)",
+                "پرداخت چك حساب بانكي1",
+                "پرداخت چك شماره",
+                "پرداخت چك پشت نمره",
+                "پرداخت چك مبلغ",
+                "پرداخت چك تاريخ سررسيد",
+                "پرداخت چك نوع مدت",
+                "پرداخت چك شرح",
+                "پرداخت چك شرح(2)",
+                "پرداخت چك وضعيت",
+                "اعلاميه برداشت شماره",
+                "اعلاميه برداشت تاريخ",
+                "اعلاميه برداشت مبلغ",
+                "اعلاميه برداشت حساب بانكي",
+                "اعلاميه برداشت شرح",
+                "اعلاميه برداشت شرح(2)",
+                "اعلاميه برداشت تفصيل حساب بانكي",
+                "اعلاميه برداشت نرخ كارمزد بانكي",
+                "اعلاميه برداشت كارمزد بانكي",
+                "اعلاميه برداشت كارمزد بانكي به ارز پايه",
+                "اعلاميه پرداخت كد معين كارمزد بانكي",
+                "اعلاميه پرداخت تخفيف",
+                "اعلاميه پرداخت استقراري"
+            ];
+
+            for (var i = 0; i < headers.Length; i++)
+            {
+                ws.Cell(1, i + 1).Value = headers[i];
+                ws.Cell(1, i + 1).Style.Font.Bold = true;
+            }
+
+            var row = 2;
+
+            foreach (var item in cashItems)
+            {
+                ws.Cell(row, 1).Value = "PaymentDraft";
+                ws.Cell(row, 2).Value = 2;
+                ws.Cell(row, 3).Value = item.CostCenter.Title;
+                ws.Cell(row, 4).Value = item.CostCenter.Code;
+                ws.Cell(row, 5).Value = item.PaymentVoucherNumber;
+                ws.Cell(row, 6).Value = item.CostDate;
+                ws.Cell(row, 7).Value = item.CostTitle.MoeinCode;
+                ws.Cell(row, 8).Value = "صندوق";
+                ws.Cell(row, 9).Value = item.Amount; //TODO
+                ws.Cell(row, 10).Value = 0;
+                ws.Cell(row, 11).Value = item.CostDescription;
+                ws.Cell(row, 12).Value = item.CostDescription;
+                ws.Cell(row, 13).Value = "";
+                ws.Cell(row, 14).Value = "";
+                ws.Cell(row, 15).Value = "";
+                ws.Cell(row, 16).Value = "";
+                ws.Cell(row, 17).Value = "";
+                ws.Cell(row, 18).Value = "";
+                ws.Cell(row, 19).Value = "";
+                ws.Cell(row, 20).Value = "";
+                ws.Cell(row, 21).Value = "";
+                ws.Cell(row, 22).Value = item.ReferenceNumber;
+                ws.Cell(row, 23).Value = item.CostDate;
+                ws.Cell(row, 24).Value = item.Amount;
+                ws.Cell(row, 25).Value = item.BankAccountTxt;
+                ws.Cell(row, 26).Value = item.CostDescription;
+                ws.Cell(row, 27).Value = "";
+                ws.Cell(row, 28).Value = item.BankAccount?.AccountCode;
+                ws.Cell(row, 29).Value = 1;
+                ws.Cell(row, 30).Value = item.Fee == 0 ? "" : item.Fee;
+                ws.Cell(row, 31).Value = item.Fee == 0 ? "" : item.Fee;
+                ws.Cell(row, 32).Value = item.Fee == 0 ? "" : 7704;
+                ws.Cell(row, 33).Value = 0;
+                ws.Cell(row, 34).Value = "False";
+
+                row++;
+            }
+
+            ws.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
+            return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "CashGroup.xlsx");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    private async Task AssignPaymentVoucherNumbers(List<Cash> cashItems, int startVoucherNumber)
+    {
+        if (cashItems?.Count == 0) return;
+
+        var voucher = startVoucherNumber;
+        var group = cashItems[0].CashGroup;
+
+        foreach (var cash in cashItems)
+            cash.PaymentVoucherNumber = voucher++;
+
+        if (group != null)
+        {
+            group.IsExported = true;
+            group.ModifyDate = DateTime.Now;
+            group.ModifyDateTxt = dtService.GetDateTimePersian();
+        }
+
+        await db.SaveChangesAsync();
+    }
+
+    private async Task<List<int>> GetUsedVoucherNumbers(int startNumber, int count)
+    {
+        var endNumber = startNumber + count - 1;
+
+        return await db.Cashes
+            .Where(x =>
+                x.PaymentVoucherNumber != null &&
+                x.PaymentVoucherNumber >= startNumber &&
+                x.PaymentVoucherNumber <= endNumber)
+            .Select(x => x.PaymentVoucherNumber!.Value)
+            .OrderBy(x => x)
+            .ToListAsync();
+    }
+
 
     public async Task<IActionResult> GetAllCashiersDt()
     {
