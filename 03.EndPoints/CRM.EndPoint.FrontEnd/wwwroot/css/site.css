@@ -2301,6 +2301,11 @@ input[type=checkbox], input[type=radio] {
 }
 
 
+.btn-close:focus {
+  box-shadow: 0 0 0 .25rem rgb(180 180 180 / 25%);
+}
+
+
 :root {
   --color1: #0ace8c;
   --color2: #402aa9;
