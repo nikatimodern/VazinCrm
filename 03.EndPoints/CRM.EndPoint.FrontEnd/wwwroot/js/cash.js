@@ -17,7 +17,7 @@ let isFinancial;
 const cashModal = document.getElementById("cashModal");
 const costCenterElm = cashModal.querySelector("#cashCostCenter");
 document.addEventListener("DOMContentLoaded", async () => {
-    getAllCashesDt();
+    
     await initCashierSelectOpt();
     
     const checkedRadio = document.querySelector(`input[name="cashViewType"]:checked`);
@@ -142,9 +142,12 @@ async function changeStatusCash(id, status) {
         data: { status: status },
         successMsg: status === 2 ? "تایید شد" : null,
         onSuccess: () => {
-            cashTbl?.ajax.reload(null, false);
-            cashGroupTbl?.ajax.reload(null, false);
-            cashModalTbl?.ajax.reload(null, false);
+            if (cashViewType === "cashes") {
+                cashTbl?.ajax.reload(null, false);
+            } else {
+                cashModalTbl?.ajax.reload(null, false);
+                cashGroupTbl?.ajax.reload(null, false);
+            }
         },
     });
 }
@@ -155,7 +158,6 @@ async function changeStatusAllCashToPending() {
         successMsg: "به مالی ارسال شد",
         onSuccess: () => {
             cashTbl?.ajax.reload(null, false);
-            cashGroupTbl?.ajax.reload(null, false);
         },
     });
 }
@@ -168,7 +170,6 @@ async function changeStatusGroupCashToPending(listIds = []) {
         successMsg: "به مالی ارسال شد",
         onSuccess: () => {
             cashTbl?.ajax.reload(null, false);
-            cashGroupTbl?.ajax.reload(null, false);
         },
     });
 }
@@ -182,7 +183,6 @@ async function approveCashGroup() {
         onSuccess: () => {
             cashModalTbl?.ajax.reload(null, false);
             cashGroupTbl?.ajax.reload(null, false);
-            cashTbl?.ajax.reload(null, false);
         },
     });
 }
@@ -202,7 +202,6 @@ async function rejectCashGroup() {
                 onSuccess: () => {
                     ModalToggle("cashGroupDetailModal", "hide");
                     cashGroupTbl?.ajax.reload(null, false);
-                    cashTbl?.ajax.reload(null, false);
                 },
             });
         },
@@ -539,17 +538,25 @@ function switchCashView(viewType) {
         itemsContainer.classList.remove("d-none");
         groupsContainer.classList.add("d-none");
         document.querySelector("#cashModalBtn").classList.remove("d-none");
+        if (!cashTbl) {
+            getAllCashesDt();
+        } else {
+            cashTbl?.ajax.reload(null, false);
+        }
+    
     } else { // viewType === "groups"
         groupsContainer.classList.remove("d-none");
         itemsContainer.classList.add("d-none");
         document.querySelector("#cashModalBtn").classList.add("d-none");
         if (!cashGroupTbl) {
-            initCashGroupDataTable();
+            getAllCashesGroupDt();
+        } else {
+            cashGroupTbl?.ajax.reload(null, false);
         }
     }
 }
 
-function updateGroupActionButtons(items) {
+function updateCashModalActionButtons(items) {
     const btnApprove = document.getElementById("btnApproveGroup");
     const btnReject = document.getElementById("btnRejectGroup");
     
@@ -571,7 +578,7 @@ function updateGroupActionButtons(items) {
     btnApprove?.classList.toggle("d-none", isAllApproved);
 }
 
-function initCashGroupDataTable() {
+function getAllCashesGroupDt() {
     cashGroupTbl = $("#cashGroupTable").DataTable({
         pageLength: 10,
         lengthMenu: [5, 10, 20, 50, 100, { label: "همه", value: -1 }],
@@ -621,7 +628,7 @@ function initCashGroupDataTable() {
                 responsivePriority: 3,
                 render: function (data, type, row) {
                     return `
-                        <button class="buttonGray" onclick="openGroupDetailModal('${row.cashGroupId}', '${row.groupNumber}', '${row.userCreator ?? "-"}', '${row.createDateTxt}', ${row.itemsCount}, ${row.totalAmount})">مشاهده</button>
+                        <button class="buttonGray" onclick="cashGroupModal('${row.cashGroupId}', '${row.groupNumber}', '${row.userCreator ?? "-"}', '${row.createDateTxt}', ${row.itemsCount}, ${row.totalAmount})">مشاهده</button>
                     `;
                 },
             },
@@ -658,7 +665,7 @@ function initCashGroupDataTable() {
 }
 
 
-function openGroupDetailModal(groupId, groupNumber, userCreator, sendDate, itemsCount, totalAmount) {
+function cashGroupModal(groupId, groupNumber, userCreator, sendDate, itemsCount, totalAmount) {
     currentCashGroupId = groupId;
     
     document.getElementById("modalGroupNumber").textContent = groupNumber || "-";
@@ -670,7 +677,7 @@ function openGroupDetailModal(groupId, groupNumber, userCreator, sendDate, items
     ModalToggle("cashGroupDetailModal");
     
     if (!cashModalTbl) {
-        initModalCashDataTable();
+        getAllCashesModalDt();
     } else {
         cashModalTbl.clear().draw();
         cashModalTbl.ajax.reload(null, false);
@@ -678,7 +685,7 @@ function openGroupDetailModal(groupId, groupNumber, userCreator, sendDate, items
 }
 
 
-function initModalCashDataTable() {
+function getAllCashesModalDt() {
     cashModalTbl = $("#cashTableModal").DataTable({
         paging: false,
         processing: true,
@@ -782,7 +789,7 @@ function initModalCashDataTable() {
                         action: async function (e, dt, node, config, callback) {
                             try {
                                 node[0].disabled = true;
-                                await exportGroupToExcel();
+                                await exportGroupCashToExcel();
                             } finally {
                                 node[0].disabled = false;
                                 callback();
@@ -799,12 +806,12 @@ function initModalCashDataTable() {
         },
         drawCallback: function () {
             const json = this.api()?.ajax.json();
-            updateGroupActionButtons(json?.data);
+            updateCashModalActionButtons(json?.data);
         },
     });
 }
 
-async function exportGroupToExcel() {
+async function exportGroupCashToExcel() {
     if (!currentCashGroupId) return;
     
     let startVoucherNumber = null;

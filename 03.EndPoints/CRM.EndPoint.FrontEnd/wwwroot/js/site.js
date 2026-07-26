@@ -114,7 +114,7 @@ class SelectionManager {
      * @param {string|HTMLElement} [options.selectionBar=".selection-bar"] - Selection actions bar element
      * @param {string|HTMLElement} [options.toggleBtn=".selection-toggle-btn"] - Button used to enable selection mode
      * @param {string} [options.itemSelector=".selection-item"] - Selector for selectable items
-     * @param {string} [options.checkboxSelector=".selection-checkbox"] - Selector for item checkbox
+     * @param {string|null} [options.checkboxSelector=".selection-checkbox"] - Selector for item checkbox
      * @param {string} [options.selectedClass="selected"] - Class applied to selected items
      * @param {string} [options.selectionModeClass="selection-mode"] - Class applied when selection mode is active
      * @param {(selectedIds: string[], instance: SelectionManager) => void|Promise<void>} [options.onAction] - Callback triggered when action button is clicked
