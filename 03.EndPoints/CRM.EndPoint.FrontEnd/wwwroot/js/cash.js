@@ -12,7 +12,7 @@ let cashViewType;
 
 let cashData = {};
 let modelCash = {};
-let isFinancial;
+
 
 const cashModal = document.getElementById("cashModal");
 const costCenterElm = cashModal.querySelector("#cashCostCenter");
@@ -231,9 +231,8 @@ const getAllCashesDt = () => {
                 d.model = JSON.stringify(modelCash);
             },
             dataSrc: function (json) {
-                isFinancial = json.isFinancial;
-                cashTbl.column(1).visible(isFinancial);
-                cashTbl.settings()[0].aoColumns[1].bSearchable = isFinancial;
+                cashTbl.column(1).visible(window.isFinancial);
+                cashTbl.settings()[0].aoColumns[1].bSearchable = window.isFinancial;
                 initCashierBalanceUI(json.cashierBalance);
                 return json.data;
             },
@@ -260,7 +259,7 @@ const getAllCashesDt = () => {
         ],
         columns: [
             { data: "serial", responsivePriority: 1 },
-            { data: "paymentVoucherNumber", visible: isFinancial, searchable: isFinancial },
+            { data: "paymentVoucherNumber", visible: window.isFinancial, searchable: window.isFinancial },
             { data: "cashGroup.groupNumber" },
             { data: "createDateTxt" },
             { data: "costTitleTxt", responsivePriority: 2 },
@@ -279,7 +278,7 @@ const getAllCashesDt = () => {
                         
                         return `<button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>`;
                     } else if (data === 1) { // در دست تایید
-                        if (isFinancial) return `
+                        if (window.isFinancial) return `
                             <div class="d-inline-flex align-items-center justify-content-center gap-1">
                                 <button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 2)">تایید</button>
                                 <button class="buttonCancel3" onclick="changeStatusCash('${row.id}', 0)">برگشت</button>
@@ -292,7 +291,7 @@ const getAllCashesDt = () => {
                             </div>
                         `;
                     } else { // تایید شده
-                        if (isFinancial) return `
+                        if (window.isFinancial) return `
                             <div class="d-inline-flex align-items-center justify-content-center gap-1">
                                 <span class="fMedium" style="color: darkgreen">${row.statusTxt}</span>
                                 <button style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
@@ -560,7 +559,7 @@ function updateCashModalActionButtons(items) {
     const btnApprove = document.getElementById("btnApproveGroup");
     const btnReject = document.getElementById("btnRejectGroup");
     
-    if (!isFinancial) {
+    if (!window.isFinancial) {
         btnApprove?.remove();
         btnReject?.remove();
         return;
@@ -687,7 +686,8 @@ function cashGroupModal(groupId, groupNumber, userCreator, sendDate, itemsCount,
 
 function getAllCashesModalDt() {
     cashModalTbl = $("#cashTableModal").DataTable({
-        paging: false,
+        pageLength: 10,
+        lengthMenu: [5, 10, 20, 50, 100, { label: "همه", value: -1 }],
         processing: true,
         serverSide: true,
         ordering: true,
@@ -702,7 +702,6 @@ function getAllCashesModalDt() {
                 d.model = JSON.stringify({ ...modelCash, entityId: currentCashGroupId });
             },
             dataSrc: function (json) {
-                isFinancial = json.isFinancial;
                 currentCashGroupExported = json.isExported;
                 return json.data;
             },
@@ -736,7 +735,7 @@ function getAllCashesModalDt() {
                         
                         return `<button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>`;
                     } else if (data === 1) { // در دست تایید
-                        if (isFinancial) return `
+                        if (window.isFinancial) return `
                             <div class="d-inline-flex align-items-center justify-content-center gap-1">
                                 <button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 2)">تایید</button>
                                 <button class="buttonCancel3" onclick="changeStatusCash('${row.id}', 0)">برگشت</button>
@@ -749,7 +748,7 @@ function getAllCashesModalDt() {
                             </div>
                         `;
                     } else { // تایید شده
-                        if (isFinancial) return `
+                        if (window.isFinancial) return `
                             <div class="d-inline-flex align-items-center justify-content-center gap-1">
                                 <span class="fMedium" style="color: darkgreen">${row.statusTxt}</span>
                                 <button style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
@@ -778,10 +777,15 @@ function getAllCashesModalDt() {
             },
         ],
         layout: {
-            bottomEnd: null,
-            bottomStart: null,
+            bottomEnd: "info",
+            bottomStart: {
+                paging: {
+                    type: "simple_numbers",
+                },
+            },
             topEnd: {
-                buttons: isFinancial ? [
+                pageLength: true,
+                buttons: window.isFinancial ? [
                     {
                         extend: "excel",
                         className: "buttonExcel px-2",

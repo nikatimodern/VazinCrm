@@ -209,5 +209,8 @@
 </div>
 
 @section Scripts {
+    <script>
+        window.isFinancial = @(isFinancial ? "true" : "false");
+    </script>
     <script src="~/js/cash.js" asp-append-version="true"></script>
 }
