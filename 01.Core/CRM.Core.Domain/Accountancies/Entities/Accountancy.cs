@@ -88,5 +88,8 @@ namespace CRM.Core.Domain.Accountancies.Entities {
         public Guid? CashierId { get; set; }
         public Guid? RequestAmountId { get; set; }
 
+        public bool? IsTransferred { get; set; }
+        public string TransferredTo { get; set; }
+
     }
 }

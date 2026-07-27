@@ -162,6 +162,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool?>("IsTransferred")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("ModifyDate")
                         .HasColumnType("datetime2");
 
@@ -199,6 +202,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ToName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TransferredTo")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserCreator")

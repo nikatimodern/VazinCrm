@@ -13,7 +13,6 @@
     <EmbeddedResource Remove="Services\UserMangaer\**" />
     <None Remove="Services\UserMangaer\**" />
     <Content Remove="wwwroot\Uploaded\UserImg\**" />
-
   </ItemGroup>
   
   

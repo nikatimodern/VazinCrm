@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
  * @param {Object|Array|null} [options.data=null] - Request payload (Query params for GET, Body for POST/PUT/DELETE).
  * @param {"json"|"blob"|"arraybuffer"|"text"|"document"|"stream"} [options.responseType="json"] - Expected response type. Use `"blob"` for file downloads (Excel, PDF, Images, etc.).
  * @param {Function|null} [options.onSuccess=null] - Success callback function `(responseData) => {}`.
- * @param {string} [options.successMsg="عملیات با موفقیت انجام شد"] - Success toast message (set empty string "" to disable).
+ * @param {string} [options.successMsg="با موفقیت انجام شد"] - Success toast message (set empty string "" to disable).
  * @param {boolean} [options.showLoading=true] - Toggle loading indicator display.
  * @returns {Promise<Object|null>} Returns response data on success, or null on failure.
  */
@@ -47,7 +47,7 @@ async function sendApiRequest(
         data = null,
         responseType = "json",
         onSuccess = null,
-        successMsg = "عملیات با موفقیت انجام شد",
+        successMsg = "با موفقیت انجام شد",
         showLoading = true,
     }) {
     try {

@@ -2339,7 +2339,7 @@ const ShowModalInvoice = async (acType = 1, ParentId = null) => {
     
     const invoiceModalElm = document.getElementById("InvoiceModalId");
     if (AccType === 1) {
-        invoiceModalElm.querySelector(".modalHeader-invoice").innerText = InvoiceType === 1 ? "واریز پیش پرداخت" : "واریز وجه فاکتور";
+        invoiceModalElm.querySelector(".modalHeader-invoice").innerText = InvoiceType === 1 ? "واریز پیش پرداخت" : InvoiceType === 2 ? "واریز وجه فاکتور" : "ثبت واریز";
         invoiceModalElm.classList.add("deposit-mode");
         invoiceModalElm.classList.remove("backward-mode");
     } else if (AccType === 2) {
@@ -2423,6 +2423,29 @@ async function showPayment(id, parent = false) {
         console.log(err);
     }
     FLshowLoading(false);
+}
+
+let TransferCheckAccId;
+function showModalTransferCheckAcc(id) {
+    TransferCheckAccId = id;
+    ModalToggle("transferCheckAccModal");
+}
+
+function cancelModalTransferCheckAcc() {
+    ModalToggle("transferCheckAccModal", "hide");
+    TransferCheckAccId = null;
+}
+
+async function submitTransferCheckAcc() {
+    await sendApiRequest({
+        url: `/Accountancy/TransferCheckAcc`,
+        data: { id: TransferCheckAccId },
+        onSuccess: async (res) => {
+            console.log(res);
+            cancelModalTransferCheckAcc();
+            await refreshInvoiceSuccess();
+        },
+    });
 }
 
 
