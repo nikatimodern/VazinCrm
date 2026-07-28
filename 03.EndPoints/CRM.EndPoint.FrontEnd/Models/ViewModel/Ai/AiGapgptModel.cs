@@ -37,4 +37,6 @@ public class SalesAgentModel {
     [JsonPropertyName("review")] public string Review { get; set; }
 
     [JsonPropertyName("score")] public int? Score { get; set; }
+
+    [JsonPropertyName("customerScore")] public int? CustomerScore { get; set; }
 }

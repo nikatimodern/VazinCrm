@@ -545,6 +545,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("CreateDateTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("CustomerScore")
+                        .HasColumnType("int");
+
                     b.Property<string>("DestinationNumber")
                         .HasColumnType("nvarchar(max)");
 

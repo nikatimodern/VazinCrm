@@ -79,6 +79,7 @@ public class AiService(
 
             trackedCall.AgentReview = aiResult.Data.SalesAgent?.Review;
             trackedCall.AgentScore = aiResult.Data.SalesAgent?.Score;
+            trackedCall.CustomerScore = aiResult.Data.SalesAgent?.CustomerScore;
 
             await UpdateStatus(trackedCall, AiProcessStatusEnum.SummaryCompleted, ct: ct);
 

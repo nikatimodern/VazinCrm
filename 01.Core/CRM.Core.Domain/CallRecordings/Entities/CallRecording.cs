@@ -43,4 +43,5 @@ public class CallRecording : BaseEntity {
     public string AgentReview { get; set; }
     public int? AgentScore { get; set; }
     public double? AiDurationSeconds { get; set; }
+    public int? CustomerScore { get; set; }
 }
