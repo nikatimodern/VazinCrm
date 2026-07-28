@@ -279,20 +279,20 @@ const getAllCashesDt = () => {
                         return `<button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>`;
                     } else if (data === 1) { // در دست تایید
                         if (window.isFinancial) return `
-                            <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                            <div class="inline-flex-center gap-1">
                                 <button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 2)">تایید</button>
                                 <button class="buttonCancel3" onclick="changeStatusCash('${row.id}', 0)">برگشت</button>
                             </div>
                         `;
                         
                         return `
-                            <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                            <div class="inline-flex-center gap-1">
                                 <span class="fMedium" style="color: #CC9900">${row.statusTxt}</span>
                             </div>
                         `;
                     } else { // تایید شده
                         if (window.isFinancial) return `
-                            <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                            <div class="inline-flex-center gap-1">
                                 <span class="fMedium" style="color: darkgreen">${row.statusTxt}</span>
                                 <button style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
                                     <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"></path></svg>
@@ -308,7 +308,7 @@ const getAllCashesDt = () => {
                 data: null,
                 render: function (data, type, row) {
                     return `
-                        <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                        <div class="inline-flex-center gap-1">
                             <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
                             ${row.status === 0 ? `
                                 <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditCashModal('${row.id}')"><i class="fa fa-pencil"></i></button>
@@ -720,20 +720,20 @@ function getAllCashesModalDt() {
                         return `<button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>`;
                     } else if (data === 1) { // در دست تایید
                         if (window.isFinancial) return `
-                            <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                            <div class="inline-flex-center gap-1">
                                 <button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 2)">تایید</button>
                                 <button class="buttonCancel3" onclick="changeStatusCash('${row.id}', 0)">برگشت</button>
                             </div>
                         `;
                         
                         return `
-                            <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                            <div class="inline-flex-center gap-1">
                                 <span class="fMedium" style="color: #CC9900">${row.statusTxt}</span>
                             </div>
                         `;
                     } else { // تایید شده
                         if (window.isFinancial) return `
-                            <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                            <div class="inline-flex-center gap-1">
                                 <span class="fMedium" style="color: darkgreen">${row.statusTxt}</span>
                                 <button style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
                                     <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"></path></svg>
@@ -749,7 +749,7 @@ function getAllCashesModalDt() {
                 data: null,
                 render: function (data, type, row) {
                     return `
-                        <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                        <div class="inline-flex-center gap-1">
                             <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
                             ${row.status === 0 ? `
                                 <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditCashModal('${row.id}')"><i class="fa fa-pencil"></i></button>

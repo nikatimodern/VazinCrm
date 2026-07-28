@@ -195,7 +195,7 @@ function getAllTransfersDt(selector, isMdCartable = false) {
                 data: "id",
                 render: (data, _, row) => {
                     if (!isMdCartable && (row.status === 0 || row.status === 3)) return `
-                        <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                        <div class="inline-flex-center gap-1">
                             <button type="button" style="padding: 6px 6px;font-size: 12px" class="buttonGreen3 d-inline-flex shadow-none" onclick="editTransfer('${data}')"><i class="fa fa-pencil"></i></button>
                             <button type="button" style="padding: 6px 7px;font-size: 12px" class="buttonCancel2 d-inline-flex shadow-none" onclick="deleteTransfer('${data}')"><i class="fa fa-trash"></i></button>
                         </div>

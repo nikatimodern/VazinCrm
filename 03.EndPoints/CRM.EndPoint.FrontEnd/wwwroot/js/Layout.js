@@ -1586,7 +1586,7 @@ const getAllOrders = () => {
                 data: null,
                 render: function (data, type, row) {
                     return `
-                        <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                        <div class="inline-flex-center gap-1">
                             <button type="button" data-title-right="ویرایش" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 d-flex justify-content-center align-items-center" onclick='ShowUpdateOrder("${row._index}")'><i class="fa fa-pencil"></i></button>
                             <button type="button" data-title-right="حذف" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="Admin buttonCancel2 d-flex justify-content-center align-items-center" onclick='DelOrderItem("${row._index}")'><i class="fa fa-trash"></i></button>
                         </div>
@@ -4851,7 +4851,7 @@ const initPaymentTable = () => {
                 data: null,
                 render: function (data, type, row) {
                     return `
-                        <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                        <div class="inline-flex-center gap-1">
                             <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.payment.id}', 9)"><i class="fa fa-paperclip"></i></button>
                           ${isFinancialPaymentTable
                         ? ` <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditPaymentModal('${row.payment.id}')"><i class="fa fa-pencil"></i></button>

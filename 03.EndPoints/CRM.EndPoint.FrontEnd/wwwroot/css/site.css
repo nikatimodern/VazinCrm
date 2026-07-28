@@ -5336,6 +5336,13 @@ table tr.payment-vosoled > td {
 }
 
 
+.inline-flex-center {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
 .direction-ltr {
   direction: ltr;
 }

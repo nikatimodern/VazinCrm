@@ -119,7 +119,7 @@ function initCheckbookTable(id) {
             {
                 data: "id",
                 render: data => `
-                    <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                    <div class="inline-flex-center gap-1">
                         <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="editCheck('${data}')"><i class="fa fa-pencil"></i></button>
                         <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deleteCheck('${data}')"><i class="fa fa-trash"></i></button>
                     </div>
