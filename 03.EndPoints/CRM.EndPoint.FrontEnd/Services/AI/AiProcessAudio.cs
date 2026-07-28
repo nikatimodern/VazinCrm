@@ -3,16 +3,9 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using CRM.Core.Domain.CallRecordings.Entities;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
-using Generics.Infrastructures.Sql;
-using Microsoft.AspNetCore.Http;
-using Renci.SshNet;
 
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 

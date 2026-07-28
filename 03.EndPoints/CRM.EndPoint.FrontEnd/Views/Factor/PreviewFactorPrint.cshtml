@@ -13,38 +13,14 @@
     <title>فاکتور @Model.Factor.SerialNumber</title>
 
     <link rel="stylesheet" href="~/lib/Bootstrap/bootstrap5.3.rtl.min.css" />
-    <link rel="stylesheet" href="~/css/site.css?v=5.8.0" />
+    <link rel="stylesheet" href="~/css/site.css?v=5.10.0" />
     <link rel="stylesheet" href="~/css/normalize.min.css">
-    <link rel="stylesheet" href="~/css/paper.css?v=5.8.0">
-
-    <style>
-        /* فیکس کردن نمایش Borderها در هنگام گرفتن عکس/PDF */
-        #captureSection table,
-        #captureSection table tr,
-        #captureSection table td,
-        #captureSection table th {
-            border: 1px solid #808080 !important;
-            border-collapse: collapse !important;
-        }
-
-
-        #captureSection table thead th {
-            background: #eaeaea !important;
-        }
-
-
-        /* یکی در میان طوسی */
-        #captureSection table tbody tr:nth-child(even) {
-            background: #f5f5f5 !important;
-        }
-    </style>
-
-
+    <link rel="stylesheet" href="~/css/paper.css?v=5.10.0">
 </head>
 
 <body dir="rtl" class="A4 landscape">
 
-<section id="captureSection" class="sheet d-flex" style="border-radius:12px">
+<section class="sheet d-flex" style="border-radius:12px">
     <article class="d-flex flex-column flex-grow-1 m-3" style="border: 2px solid gray; border-radius:8px; padding: 10px">
 
         <div class="d-flex justify-content-between align-items-center w-100">
@@ -253,7 +229,7 @@
             <div class="d-flex flex-column" style="border-bottom:1px solid gray">
                 <label class="fbold ps-1 pt-1">توضیحات:</label>
                 <ul style="padding-right: 22px">
-                    @foreach (var item in Model.Factor.Descriptions) {
+                    @foreach (var item in Model.Factor.Descriptions ?? []) {
                         <li>@item.Text</li>
                     }
                 </ul>
@@ -283,8 +259,14 @@
             <span>چاپ</span>
             <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 2.75C5 1.784 5.784 1 6.75 1h6.5c.966 0 1.75.784 1.75 1.75v3.552c.377.046.752.097 1.126.153A2.212 2.212 0 0 1 18 8.653v4.097A2.25 2.25 0 0 1 15.75 15h-.241l.305 1.984A1.75 1.75 0 0 1 14.084 19H5.915a1.75 1.75 0 0 1-1.73-2.016L4.492 15H4.25A2.25 2.25 0 0 1 2 12.75V8.653c0-1.082.775-2.034 1.874-2.198.374-.056.75-.107 1.127-.153L5 6.25v-3.5Zm8.5 3.397a41.533 41.533 0 0 0-7 0V2.75a.25.25 0 0 1 .25-.25h6.5a.25.25 0 0 1 .25.25v3.397ZM6.608 12.5a.25.25 0 0 0-.247.212l-.693 4.5a.25.25 0 0 0 .247.288h8.17a.25.25 0 0 0 .246-.288l-.692-4.5a.25.25 0 0 0-.247-.212H6.608Z" clip-rule="evenodd" /></svg>
         </button>
-        <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadImage()">دانلود تصویر</button>
-        <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadPDF()">دانلود PDF</button>
+        <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadImage(this)">
+            <span class="flex-shrink-0">دانلود تصویر</span>
+            <div class="spinner-border spinner-border-sm d-none ms-2"></div>
+        </button>
+        <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadPDF(this)">
+            <span>دانلود PDF</span>
+            <div class="spinner-border spinner-border-sm d-none ms-2"></div>
+        </button>
     </div>
 </div>
 
@@ -294,9 +276,9 @@
     </a>
 </div>
 
-<script src="~/lib/html2canvas/html2canvas.min.js"></script>
-<script src="~/lib/html2canvas/jspdf.umd.min.js"></script>
 <script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js"></script>
+<script src="~/js/File.js?v=5.10.0"></script>
+
 <script>
     const upHeadFactor = async (fId) => {
         const res = await fetch(`/Factor/UpHeadF?Fid=${fId}`);
@@ -305,51 +287,13 @@
         }
     };
 
-    const upHeadPrefactor = async (pfId) => {
-        const res = await fetch(`/Factor/UpHeadPf?Pfid=${pfId}`);
-        if (res.ok) {
-            location.reload();
-        }
-    };
-
-    // تابع دانلود تصویر PNG
-    function downloadImage() {
-        const section = document.getElementById("captureSection");
-        html2canvas(section, {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-        }).then(canvas => {
-            const link = document.createElement("a");
-            link.download = "Factor-@Model.Factor.SerialNumber" + ".png";
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-        });
+    async function downloadImage(btn) {
+        await downloadFile(btn, `/Factor/DownloadFactorImage/@(Model.Factor.Id)`, `فاکتور-@(Model.Factor.SerialNumber).png`);
     }
 
-    // دانلود PDF در سایز A4 افقی
-    async function downloadPDF() {
-        const section = document.getElementById("captureSection");
-
-        const canvas = await html2canvas(section, {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-        });
-
-        const imgData = canvas.toDataURL("image/png");
-        const { jsPDF } = window.jspdf;
-
-        // تنظیمات A4 افقی
-        const pdf = new jsPDF("l", "mm", "a4");
-
-        const imgWidth = 297; // عرض A4 افقی
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-        pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-        pdf.save("Factor-@Model.Factor.SerialNumber" + ".pdf");
+    async function downloadPDF(btn) {
+        await downloadFile(btn, `/Factor/DownloadFactorPdf/@(Model.Factor.Id)`, `فاکتور-@(Model.Factor.SerialNumber).pdf`);
     }
-
 
 </script>
 </body>

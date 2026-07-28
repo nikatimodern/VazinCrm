@@ -1565,15 +1565,7 @@ const getAllOrders = () => {
         scrollCollapse: true,
         scrollY: "clamp(120px, calc(100dvh - 640px), 100dvh)",
         responsive: true,
-        language: {
-            emptyTable: "هیچ رکوردی موجود نمی باشد.",
-            loadingRecords: "در حال بارگزاری...",
-            search: "",
-            zeroRecords: "رکوردی با این مشخصات پیدا نشد",
-            aria: {
-                sortAscending: ": فعال سازی نمایش به صورت صعودی", sortDescending: ": فعال سازی نمایش به صورت نزولی",
-            },
-        },
+        language: languageDatatable,
         columns: [
             { data: null, render: (data, type, row, meta) => meta.row + 1 },
             { data: "productSmallName", name: "ProductSmallName", autoWidth: true, defaultContent: "-" },
@@ -2135,20 +2127,7 @@ const initPaymentPartial = (type) => {
         responsive: true,
         ordering: false,
         searching: false,
-        language: {
-            emptyTable: "هیچ رکوردی موجود نمی باشد.",
-            info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
-            infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
-            infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
-            lengthMenu: "نمایش _MENU_ ردیف",
-            loadingRecords: "در حال بارگزاری...",
-            search: "",
-            zeroRecords: "رکوردی با این مشخصات پیدا نشد",
-            aria: {
-                sortAscending: ": فعال سازی نمایش به صورت صعودی",
-                sortDescending: ": فعال سازی نمایش به صورت نزولی",
-            },
-        },
+        language: languageDatatable,
         columns: type === 55 || type === 56
             ? [
                 { responsivePriority: 4 },
@@ -2184,20 +2163,7 @@ const initWalletPartial = () => {
         responsive: true,
         ordering: false,
         searching: false,
-        language: {
-            emptyTable: "هیچ رکوردی موجود نمی باشد.",
-            info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
-            infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
-            infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
-            lengthMenu: "نمایش _MENU_ ردیف",
-            loadingRecords: "در حال بارگزاری...",
-            search: "",
-            zeroRecords: "رکوردی با این مشخصات پیدا نشد",
-            aria: {
-                sortAscending: ": فعال سازی نمایش به صورت صعودی",
-                sortDescending: ": فعال سازی نمایش به صورت نزولی",
-            },
-        },
+        language: languageDatatable,
         columns:
             [
                 { responsivePriority: 6 },
@@ -3455,24 +3421,26 @@ const GoToCarEnvelope = () => {
     window.location.href = `/cartable/Index?tab=${locationTabIdEnvelope}`;
 };
 
-const SubmitAcAttach = (typeAttach) => {
-    const model = {
-        List: AccepedAttachment, pfId: pfactorID,
-    };
-    //acceptedImg.EntityId = pfactorID;
-    document.getElementById("FLshowLoading").style.display = "";
-    $.post(baseUrl + "Factor/addAcPrefacAttachment", model, () => {
-        
-        toastifySuccess("ثبت با موفقیت انجام شد");
-        AccepedAttachment = [];
-        $("#Attachments").modal("toggle");
-        document.getElementById("FLshowLoading").style.display = "none";
-        document.getElementById("imageDisplayAcAt").innerHTML = "";
-        document.getElementById("AcAtID").value = "";
-        
-    }).fail(() => {
-        setTimeout(() => SubmitAcAttach(typeAttach), 3000);
-    });
+const SubmitAcAttach = async (typeAttach) => {
+    const model = { listAttach: AccepedAttachment, id: pfactorID };
+    
+    try {
+        FLshowLoading();
+        const res = await axios.post("/Factor/addAcPrefacAttachment", model);
+        if (res.status === 200) {
+            toastifySuccess("ثبت با موفقیت انجام شد");
+            AccepedAttachment = [];
+            ModalToggle("Attachments", "hide");
+            document.getElementById("imageDisplayAcAt").innerHTML = "";
+            document.getElementById("AcAtID").value = "";
+        }
+    } catch (err) {
+        console.log(err);
+        toastifyError("خطای سرور");
+    } finally {
+        FLshowLoading(false);
+    }
+    
 };
 
 const cancelAttachment = () => {
@@ -4848,20 +4816,7 @@ const initPaymentTable = () => {
                 return json.data;
             },
         },
-        language: {
-            emptyTable: "هیچ رکوردی موجود نمی باشد.",
-            info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
-            infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
-            infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
-            lengthMenu: "نمایش _MENU_ ردیف",
-            loadingRecords: "در حال بارگزاری...",
-            search: "",
-            zeroRecords: "رکوردی با این مشخصات پیدا نشد",
-            aria: {
-                sortAscending: ": فعال سازی نمایش به صورت صعودی",
-                sortDescending: ": فعال سازی نمایش به صورت نزولی",
-            },
-        },
+        language: languageDatatable,
         columnDefs: [
             {
                 targets: [3, 4, 6, 7],

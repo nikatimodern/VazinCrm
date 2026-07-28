@@ -14,83 +14,14 @@
     <title>پیش فاکتور @Model.PreFactor.SerialNumber</title>
 
     <link rel="stylesheet" href="~/lib/Bootstrap/bootstrap5.3.rtl.min.css" />
-    <link rel="stylesheet" href="~/css/site.css?v=5.8.0" />
+    <link rel="stylesheet" href="~/css/site.css?v=5.10.0" />
     <link rel="stylesheet" href="~/css/normalize.min.css">
-    <link rel="stylesheet" href="~/css/paper.css?v=5.8.0">
-
-    <style>
-        /* استایل برای یکی در میان طوسی شدن ردیف‌های جدول */
-        #captureSection table tbody tr:nth-child(even) {
-            background-color: #f2f2f2 !important;
-        }
-
-
-        /* فیکس کردن نمایش Borderها در هنگام گرفتن عکس/PDF */
-        #captureSection table,
-        #captureSection table tr,
-        #captureSection table td,
-        #captureSection table th {
-            border: 1px solid #808080 !important;
-            border-collapse: collapse !important;
-        }
-
-
-        /* برای جلوگیری از بهم ریختگی فونت در خروجی */
-        .capture-mode {
-            font-family: 'Tahoma', 'Arial', sans-serif !important;
-        }
-
-
-        .terms-list {
-            display: flex;
-            flex-direction: column;
-        }
-
-
-        .term-item {
-            display: flex;
-            align-items: flex-start;
-            text-align: justify;
-            line-height: 1.8;
-        }
-
-
-        .term-number {
-            flex-shrink: 0;
-            margin-left: 8px;
-        }
-
-
-        .term-text {
-            flex: 1;
-        }
-
-
-        .description-item {
-            display: flex;
-            align-items: flex-start;
-        }
-
-
-        .description-item .bullet {
-            flex-shrink: 0;
-            margin-left: 8px;
-            font-size: 18px;
-            line-height: 1;
-        }
-
-
-        .description-item .text {
-            flex: 1;
-            text-align: justify;
-        }
-    </style>
+    <link rel="stylesheet" href="~/css/paper.css?v=5.10.0">
 </head>
 
 <body dir="rtl" class="A4">
 
-<!-- اضافه کردن ID برای کپچر کردن -->
-<section id="captureSection" class="sheet d-flex" style="border-radius:12px">
+<section class="sheet d-flex" style="border-radius:12px">
     <article class="d-flex flex-column flex-grow-1 m-3" style="border: 2px solid gray; border-radius:8px; padding: 10px">
         @if (Model.PreFactor.Pftype == (int)PreFactorEnum.حذف_شده || Model.PreFactor.IsDeleted) {
             <div class="invalid-pf">حذف شده</div>
@@ -299,14 +230,11 @@
         <div class="d-flex flex-column flex-grow-1" style="border:1px solid gray">
             <div class="d-flex flex-column" style="border-bottom:1px solid gray">
                 <label class="fbold ps-1 pt-1">توضیحات:</label>
-                <div class="px-2 mb-3">
+                <ul style="padding-right: 22px">
                     @foreach (var item in Model.PreFactor.Descriptions.OrderBy(f => f.Order)) {
-                        <div class="description-item">
-                            <span class="bullet">•</span>
-                            <span class="text">@item.Text</span>
-                        </div>
+                        <li>@item.Text</li>
                     }
-                </div>
+                </ul>
             </div>
 
             <div class="d-flex flex-grow-1">
@@ -334,18 +262,11 @@
             </p>
             <div class="d-flex flex-column flex-grow-1" style="border:1px solid gray">
                 <div class="p-3">
-                    <div class="terms-list">
-                        @{ var index = 1; }
-
+                    <ol style="padding-right: 20px;">
                         @foreach (var term in termsPreFactor) {
-                            <div class="term-item mb-2">
-                                <span class="term-number">@index.</span>
-                                <span class="term-text">@term</span>
-                            </div>
-
-                            index++;
+                            <li class="mb-2">@term</li>
                         }
-                    </div>
+                    </ol>
                 </div>
 
                 <div class="d-flex flex-grow-1" style="border-top:1px solid gray ">
@@ -366,19 +287,22 @@
 
 <!-- دکمه‌ها -->
 <div class="d-flex flex-column align-items-center justify-content-center w-100" style="position:fixed;top:85%; z-index:9999" id="previewPrintBtns">
-    <div class="btn-group ">
+    <div class="btn-group">
         <button class="btn buttonCancel fbold" style="width: 100px" onclick="window.close()">انصراف</button>
         <button class="btn buttonCancel fbold" style="width: 100px" onclick="window.print()">چاپ</button>
-        <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadImage()">دانلود تصویر</button>
-        <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadPDF()">دانلود PDF</button>
+        <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadImage(this)">
+            <span class="flex-shrink-0">دانلود تصویر</span>
+            <div class="spinner-border spinner-border-sm d-none ms-2"></div>
+        </button>
+        <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadPDF(this)">
+            <span class="flex-shrink-0">دانلود PDF</span>
+            <div class="spinner-border spinner-border-sm d-none ms-2"></div>
+        </button>
     </div>
 </div>
 
 <script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js"></script>
-
-<!-- کتابخانه‌های مورد نیاز برای خروجی -->
-<script src="~/lib/html2canvas/html2canvas.min.js"></script>
-<script src="~/lib/html2canvas/jspdf.umd.min.js"></script>
+<script src="~/js/File.js?v=5.10.0"></script>
 
 <script>
     const upHeadPrefactor = async (pfId) => {
@@ -388,56 +312,14 @@
         }
     };
 
-    // تابع دانلود تصویر PNG
-    async function downloadImage() {
-        const sections = [
-            document.getElementById("captureSection"),
-            document.getElementById("termsSection"),
-        ].filter(Boolean);
-
-        for (let i = 0; i < sections.length; i++) {
-            const canvas = await html2canvas(sections[i], {
-                scale: 2,
-                useCORS: true,
-                allowTaint: true,
-            });
-
-            const link = document.createElement("a");
-            link.download = `PreFactor-@Model.PreFactor.SerialNumber-${i + 1}.png`;
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-        }
+    async function downloadImage(btn) {
+        await downloadFile(btn, `/Factor/DownloadPreFactorImage/@(Model.PreFactor.Id)`, `پیش‌فاکتور-@(Model.PreFactor.SerialNumber).zip`);
     }
 
-    async function downloadPDF() {
-        const sections = [
-            document.getElementById("captureSection"),
-            document.getElementById("termsSection"),
-        ].filter(Boolean);
-
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF("p", "mm", "a4");
-
-        for (let i = 0; i < sections.length; i++) {
-            const canvas = await html2canvas(sections[i], {
-                scale: 2,
-                useCORS: true,
-                allowTaint: true,
-            });
-
-            const imgData = canvas.toDataURL("image/png");
-
-            const imgWidth = 210;
-            const imgHeight = canvas.height * imgWidth / canvas.width;
-
-            if (i > 0)
-                pdf.addPage();
-
-            pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-        }
-
-        pdf.save("PreFactor-@(Model.PreFactor.SerialNumber).pdf");
+    async function downloadPDF(btn) {
+        await downloadFile(btn, `/Factor/DownloadPreFactorPdf/@(Model.PreFactor.Id)`, `پیش‌فاکتور-@(Model.PreFactor.SerialNumber).pdf`);
     }
+
 </script>
 </body>
 </html>

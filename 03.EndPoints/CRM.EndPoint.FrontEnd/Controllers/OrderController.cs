@@ -19,6 +19,7 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
+using CRM.EndPoint.FrontEnd.Models.DocumentRenderOptions;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Order;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
@@ -26,6 +27,7 @@ using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using DocumentFormat.OpenXml.Spreadsheet;
+using Microsoft.Playwright;
 
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
@@ -41,9 +43,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly SmsService smsServ;
         private readonly LogSystemService _logSystemService;
         private readonly ISmsQueue smsQueue;
+        private readonly IDocumentRenderService documentRender;
 
         public OrderController(IVeiwRenderService vrs, Service GenService, FileSaver fileSaver, DateTimeServices dtService,
-            CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, SmsService SmsServ, LogSystemService logSystemService, ISmsQueue smsQueue)
+            CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, SmsService SmsServ, LogSystemService logSystemService,
+            ISmsQueue smsQueue, IDocumentRenderService documentRender)
         {
             this.vrs = vrs;
             genService = GenService;
@@ -55,6 +59,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             smsServ = SmsServ;
             _logSystemService = logSystemService;
             this.smsQueue = smsQueue;
+            this.documentRender = documentRender;
         }
 
         public IActionResult Index( /*Guid? CuId,Guid? PfId*/)
@@ -178,6 +183,42 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
 
             return View(ss);
+        }
+
+
+        public async Task<IActionResult> DownloadOrderPdf(Guid id)
+        {
+            try
+            {
+                var url = Url.Action(nameof(PreviewPrint), "Order", new { id }, Request.Scheme);
+                var pdf = await documentRender.GeneratePdfAsync(Request, url,
+                    new PagePdfOptions { Landscape = true, Format = PaperFormat.A5 });
+
+                return File(pdf, "application/pdf", "Order.pdf");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        public async Task<IActionResult> DownloadOrderImage(Guid id)
+        {
+            try
+            {
+                var url = Url.Action(nameof(PreviewPrint), "Order", new { id }, Request.Scheme);
+                var image = await documentRender.GenerateImageAsync(Request, url, new DocumentRenderImageOptions {
+                        Viewport = ViewportPresets.A5Landscape,
+                        Selectors = [".sheet"]
+                    }
+                );
+
+                return File(image, "image/png", "Order.png");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
 

@@ -35,12 +35,15 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.Core.Domain.Supplies.Enums;
+using CRM.EndPoint.FrontEnd.Models.DocumentRenderOptions;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Accountency;
@@ -48,6 +51,7 @@ using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
+using Microsoft.Playwright;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     public class FactorController : Controller {
@@ -61,6 +65,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly LogSystemService _logSystemService;
         private readonly IPushQueue pushQueue;
         private readonly ISmsQueue smsQueue;
+        private readonly IDocumentRenderService documentRender;
         private readonly CrmSaveCahngeAsync crmSaveCahngeAsync;
         private readonly TaskServices ts;
         private readonly SepidarService sps;
@@ -73,7 +78,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, RoleManager<IdentityRole> roleManager, Service GenService,
             FileSaver fileSaver,
             DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb S1db,
-            IHubContext<TaskHub> hub, LogSystemService logSystemService, IPushQueue pushQueue, ISmsQueue smsQueue)
+            IHubContext<TaskHub> hub, LogSystemService logSystemService, IPushQueue pushQueue, ISmsQueue smsQueue,
+            IDocumentRenderService documentRender)
         {
             this.crmSaveCahngeAsync = crmSaveCahngeAsync;
             this.ts = ts;
@@ -92,6 +98,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             _logSystemService = logSystemService;
             this.pushQueue = pushQueue;
             this.smsQueue = smsQueue;
+            this.documentRender = documentRender;
         }
 
         [Authorize(Policy = "NotCustomerOnly")]
@@ -978,6 +985,77 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+        public async Task<IActionResult> DownloadPreFactorPdf(Guid id)
+        {
+            try
+            {
+                var url = Url.Action(nameof(PreviewPfactorPrint), "Factor", new { id }, Request.Scheme);
+                var pdf = await documentRender.GeneratePdfAsync(Request, url);
+
+                return File(pdf, "application/pdf", "PreFactor.pdf");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        public async Task<IActionResult> DownloadPreFactorImage(Guid id)
+        {
+            try
+            {
+                var url = Url.Action(nameof(PreviewPfactorPrint), "Factor", new { id }, Request.Scheme);
+                var images = await documentRender.GenerateImagesAsync(Request, url, new DocumentRenderImageOptions {
+                        Viewport = ViewportPresets.A4Portrait,
+                        Selectors = [".sheet"]
+                    }
+                );
+
+                var zip = await documentRender.CreateZipAsync(images, i => $"PreFactor-{i + 1}.png")!;
+
+                return File(zip, "application/zip", "PreFactorImages.zip");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        public async Task<IActionResult> DownloadFactorPdf(Guid id)
+        {
+            try
+            {
+                var url = Url.Action(nameof(PreviewFactorPrint), "Factor", new { id }, Request.Scheme);
+                var pdf = await documentRender.GeneratePdfAsync(Request, url, new PagePdfOptions { Landscape = true });
+
+                return File(pdf, "application/pdf", "Factor.pdf");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        public async Task<IActionResult> DownloadFactorImage(Guid id)
+        {
+            try
+            {
+                var url = Url.Action(nameof(PreviewFactorPrint), "Factor", new { id }, Request.Scheme);
+                var image = await documentRender.GenerateImageAsync(Request, url, new DocumentRenderImageOptions {
+                        Viewport = ViewportPresets.A4Landscape,
+                        Selectors = [".sheet"]
+                    }
+                );
+
+                return File(image, "image/png", "Factor.png");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
         //[HttpGet]
         //public async Task<IActionResult> AcceptingSMS(Guid id)
         //{
@@ -1750,15 +1828,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> addAcPrefacAttachment(List<Attachment> list, Guid pfId)
+        public async Task<IActionResult> addAcPrefacAttachment([FromBody] AttachmentModel model)
         {
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
-                var pf = await db.PreFactors.AsNoTracking().Where(f => f.Id == pfId).FirstOrDefaultAsync();
+                var pf = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
                 if (pf != null)
                 {
-                    foreach (var item in list)
+                    foreach (var item in model.ListAttach)
                     {
                         if (item.Id == Guid.Empty)
                         {
@@ -1766,13 +1844,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             item.Filename = pf.SerialNumber + "_AcPfactor_" +
                                             dtService.GetDateTimeMilisecondsPersian().Replace("/", "").Replace("/", "").Replace(":", "")
                                                 .Replace(":", "").Replace(":", "").Replace(" ", "") + "_" + Guid.NewGuid().ToString().Substring(0, 4);
-                            item.EntityId = pfId;
+                            item.EntityId = model.Id;
                             item.Url = fileSaver.SaveAcceptedPreFactorImg(item.File, item.Filename, item.fileExten);
                             item.File = null;
                             item.CreateDate = DateTime.Now;
                             item.CreateDateTxt = dtService.GetDatePersian();
                             item._AttachType = _AttachType.AcceptedCusPreFactor;
-                            item._AttachTypeTxt = _AttachType.AcceptedCusPreFactor.ToString();
+                            item._AttachTypeTxt = nameof(_AttachType.AcceptedCusPreFactor);
                             item.AttachDate = DateTime.Now;
                             item.AttachDateTxt = dtService.GetDateTimePersian();
                             item.UserCreatorID = user.Id;
@@ -2855,19 +2933,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-/*      id  order   text    official    type
-        1	2	زمان تحویل کالا 30 الی 35 روز کاری می باشد	False	0
-        3	3	شرکت در قبال تغییرات بعد از تایید پیش فاکتور هیچگونه مسئولیتی نخواهد داشت	False	0
-        4	4	هزینه حمل و نقل کالا به عهده سفارش دهنده می باشد	False	0
-        5	5	وزن اعلام شده سفارش با تلرانس 20درصد می باشد	False	0
-        6	6	پیش فاکتور بعد از تایید حکم قرارداد خواهد داشت 	False	0
-        8	7	تایید متن، طرح و رنگ چاپ و کلیشه تماما به عهده مشتری می باشد . قابل ذکر است اختلاف رنگ ، گرماژ و ضخامت با تلرانس 10درصد می باشد.	False	0
-        9	8	هر گونه تایید در فضای مجازی به مقوله تایید نهایی مشتری تلقی خواهد شد	False	0
-        10	9	امضای الکترونیک مشتری به منزله تایید مشتری خواهد بود	False	0
-        12	10	شماره شبا: IR710610000001001000199273 به نام شرکت وزین پلاست فرزین	True	0
-        14	11	در صورت آماده سازی سفارش و عدم دریافت بار توسط مشتری ،نهایتا تا 5 روز پس از صدور فاکتور ، قیمت کالا به قیمت روز محاسبه و مجددا فاکتور صادرخواهد گردید.	False	0
-        17	12	ابعاد سفارش‌های پاکتی با تلورانس تقریبی ۵ درصد، طبق استانداردهای تولید لحاظ می‌گردد.	False	0
-        18	1	در صورت عدم تغییر قیمت مواد اولیه، مدت اعتبار قیمت های ارائه شده تا پایان وقت اداری همان روز می‌باشد.	False	0*/
         private async Task<List<BaseDescriptionVModel>> GetBaseDescriptions(BaseDescriptionTypeEnum? type)
         {
             var query = db.BaseDescriptions.AsQueryable();
@@ -3079,8 +3144,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     })
                     .FirstOrDefaultAsync();
 
-                var oldFactor = await db.Factors.AsNoTracking().Where(f => f.Id == model.CrmFactorId).FirstOrDefaultAsync();
-                var factor = await db.Factors.Where(f => f.Id == model.CrmFactorId).FirstOrDefaultAsync();
+                var oldFactor = await db.Factors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.CrmFactorId);
+                var factor = await db.Factors.FirstOrDefaultAsync(f => f.Id == model.CrmFactorId);
                 factor.DateMiladi = sepidar.Date;
                 factor.Date = sepidar.DateTXT;
                 factor.SepidarId = sepidar.InvoiceId;
@@ -3092,7 +3157,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 factor.ModifyDateTxt = dtService.GetDateTimePersian();
 
 
-                var customer = await db.Customers.Where(f => f.Id == factor.CustomerId).FirstOrDefaultAsync();
+                var customer = await db.Customers.FirstOrDefaultAsync(f => f.Id == factor.CustomerId);
+                if (customer == null) return NotFound("خطا: مشتری این فاکتور در سیستم یافت نشد. لطفاً با پشتیبانی فنی تماس بگیرید.");
+
                 customer.FinancialCustomerId = sepidar.CustomerPartyRef;
                 customer.FinancialCustomerName = sepidar.CustomerPartyName;
 

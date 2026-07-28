@@ -162,6 +162,8 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddHostedService<ChatReminderWorker>();
             services.AddScoped<ChatReminderService>();
 
+            services.AddScoped<IDocumentRenderService, DocumentRenderService>();
+
             services.AddSingleton<WebPushClient>(sp => {
                 var handler = new SocketsHttpHandler {
                     EnableMultipleHttp2Connections = false,

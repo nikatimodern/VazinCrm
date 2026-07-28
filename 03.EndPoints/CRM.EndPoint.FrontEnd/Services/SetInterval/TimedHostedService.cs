@@ -5,26 +5,18 @@ using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.SystemWarnings.Entities;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Infrastructures.Sql;
-using DocumentFormat.OpenXml.Office2010.ExcelAc;
 using Generics.Infrastructures.Sql;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using CRM.Core.Domain.Cartables.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
-using CRM.EndPoint.FrontEnd.Services.PushServices;
 
 namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
     public class TimedHostedService : IHostedService, IDisposable {

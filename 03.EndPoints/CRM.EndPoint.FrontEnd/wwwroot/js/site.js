@@ -26,6 +26,86 @@ document.addEventListener("DOMContentLoaded", () => {
     MaskDate();
 });
 
+/**
+ * Sends HTTP API requests with automatic loading management, toast notifications, and success callbacks.
+ *
+ * @async
+ * @param {Object} options - Request configurations.
+ * @param {string} options.url - Target API endpoint URL.
+ * @param {"GET"|"POST"|"PUT"|"DELETE"} [options.method='GET'] - HTTP method.
+ * @param {Object|Array|null} [options.data=null] - Request payload (Query params for GET, Body for POST/PUT/DELETE).
+ * @param {"json"|"blob"|"arraybuffer"|"text"|"document"|"stream"} [options.responseType="json"] - Expected response type. Use `"blob"` for file downloads (Excel, PDF, Images, etc.).
+ * @param {Function|null} [options.onSuccess=null] - Success callback function `(responseData) => {}`.
+ * @param {string} [options.successMsg="عملیات با موفقیت انجام شد"] - Success toast message (set empty string "" to disable).
+ * @param {boolean} [options.showLoading=true] - Toggle loading indicator display.
+ * @returns {Promise<Object|null>} Returns response data on success, or null on failure.
+ */
+async function sendApiRequest(
+    {
+        url,
+        method = "GET",
+        data = null,
+        responseType = "json",
+        onSuccess = null,
+        successMsg = "عملیات با موفقیت انجام شد",
+        showLoading = true,
+    }) {
+    try {
+        if (showLoading && typeof FLshowLoading === "function") {
+            FLshowLoading(true);
+        }
+        
+        const config = {
+            url: url,
+            method: method.toUpperCase(),
+            responseType,
+        };
+        
+        if (data !== null) {
+            if (config.method === "GET") {
+                config.params = data; // query strings: ?key=value
+            } else {
+                config.data = data;   // JSON Body
+            }
+        }
+        
+        const response = await axios(config);
+        
+        if (response.status === 200) {
+            if (successMsg && typeof toastifySuccess === "function") {
+                toastifySuccess(successMsg);
+            }
+            
+            if (typeof onSuccess === "function") {
+                onSuccess(response);
+            }
+            
+            return response.data;
+        }
+    } catch (err) {
+        console.error("API Error:", err);
+        
+        let errorMessage = "خطایی در ارتباط با سرور رخ داده است.";
+        
+        if (err.response?.data instanceof Blob) {
+            errorMessage = await err.response.data.text();
+        } else if (typeof err.response?.data === "string") {
+            errorMessage = err.response.data;
+        } else if (err.response?.data?.message) {
+            errorMessage = err.response.data.message;
+        }
+        
+        if (typeof toastifyError === "function") {
+            toastifyError(errorMessage);
+        }
+        
+        return null;
+    } finally {
+        if (showLoading && typeof FLshowLoading === "function") {
+            FLshowLoading(false);
+        }
+    }
+}
 
 class SelectionManager {
     /**
@@ -34,7 +114,7 @@ class SelectionManager {
      * @param {string|HTMLElement} [options.selectionBar=".selection-bar"] - Selection actions bar element
      * @param {string|HTMLElement} [options.toggleBtn=".selection-toggle-btn"] - Button used to enable selection mode
      * @param {string} [options.itemSelector=".selection-item"] - Selector for selectable items
-     * @param {string} [options.checkboxSelector=".selection-checkbox"] - Selector for item checkbox
+     * @param {string|null} [options.checkboxSelector=".selection-checkbox"] - Selector for item checkbox
      * @param {string} [options.selectedClass="selected"] - Class applied to selected items
      * @param {string} [options.selectionModeClass="selection-mode"] - Class applied when selection mode is active
      * @param {(selectedIds: string[], instance: SelectionManager) => void|Promise<void>} [options.onAction] - Callback triggered when action button is clicked
@@ -3838,38 +3918,103 @@ async function getData(url) {
 async function deleteItem(options) {
     const { url, callback = null, title = "حذف!", text = "آیا مطمئن هستید که میخواهید حذف کنید؟" } = options;
     
-    const result = await Swal.fire({
+    return await confirmAlert({
         title,
         text,
         icon: "warning",
+        confirmText: "بله، حذف شود",
+        
+        onConfirm: async () => {
+            try {
+                FLshowLoading();
+                
+                const res = await axios.delete(url);
+                
+                if (res.status !== 200) return;
+                
+                toastifySuccess("با موفقیت حذف شد");
+                await callback?.(res.data);
+            } catch (err) {
+                console.error(err);
+                toastifyError("خطا در حذف اطلاعات");
+            } finally {
+                FLshowLoading(false);
+            }
+        },
+    });
+}
+
+/**
+ * Displays a customizable confirmation dialog using SweetAlert2.
+ *
+ * @async
+ * @param {Object} options Alert configuration.
+ * @param {string} [options.title="آیا مطمئن هستید؟"] Dialog title.
+ * @param {string} [options.text=""] Dialog message.
+ * @param {"warning"|"error"|"success"|"info"|"question"} [options.icon="warning"] Alert icon.
+ * @param {string} [options.confirmText] Confirm button text. If omitted, a default text is used based on the icon.
+ * @param {string} [options.cancelText="انصراف"] Cancel button text.
+ * @param {string} [options.confirmButtonColor] Overrides the default confirm button color.
+ * @param {string} [options.cancelButtonColor="#adadad"] Cancel button color.
+ * @param {(result: SweetAlertResult) => (void|Promise<void>)} [options.onConfirm] Executed when the user confirms.
+ * @param {(result: SweetAlertResult) => (void|Promise<void>)} [options.onCancel] Executed when the user cancels.
+ * @returns {Promise<boolean>} Returns true if confirmed; otherwise false.
+ */
+async function confirmAlert(
+    {
+        title = "آیا مطمئن هستید؟",
+        text = "",
+        icon = "warning",
+        confirmText,
+        cancelText = "انصراف",
+        confirmButtonColor,
+        cancelButtonColor = "#adadad",
+        onConfirm,
+        onCancel,
+    } = {}) {
+    
+    const primaryTheme = {
+        color: "#0d6efd",
+        confirmText: "تایید",
+    };
+    
+    const dangerTheme = {
+        color: "#e64942",
+        confirmText: "بله، انجام شود",
+    };
+    
+    const themes = {
+        success: primaryTheme,
+        info: primaryTheme,
+        question: primaryTheme,
+        warning: dangerTheme,
+        error: dangerTheme,
+    };
+    
+    const theme = themes[icon] ?? dangerTheme;
+    
+    const result = await Swal.fire({
+        title,
+        text,
+        icon,
         showCancelButton: true,
-        cancelButtonColor: "#adadad",
-        confirmButtonColor: "#e64942",
-        cancelButtonText: "انصراف",
-        confirmButtonText: "بله، حذف شود",
+        confirmButtonColor: confirmButtonColor ?? theme.color,
+        cancelButtonColor,
+        confirmButtonText: confirmText ?? theme.confirmText,
+        cancelButtonText: cancelText,
     });
     
-    if (!result.isConfirmed) return false;
-    
-    try {
-        FLshowLoading();
-        const res = await axios.delete(url);
-        if (res.status === 200) {
-            toastifySuccess("با موفقیت حذف شد");
-            
-            if (typeof callback === "function")
-                await callback(res.data);
-            
-            return true;
-        }
-        return false;
-    } catch (err) {
-        console.error(err);
-        toastifyError("خطا در حذف اطلاعات");
-        return false;
-    } finally {
-        FLshowLoading(false);
+    if (result.isConfirmed) {
+        if (typeof onConfirm === "function")
+            await onConfirm(result);
+        
+        return true;
     }
+    
+    if (typeof onCancel === "function")
+        await onCancel(result);
+    
+    return false;
 }
 
 function renderMoneyHtml(value, { currency = "ريال", empty = "-", className = "" } = {}) {
@@ -3897,7 +4042,7 @@ class DynamicSkeleton {
      * @param {number} options.count - تعداد اسکلتون‌هایی که باید ساخته شود (پیش‌فرض 3)
      */
     constructor(options) {
-        this.container = typeof options.container === 'string'
+        this.container = typeof options.container === "string"
             ? document.querySelector(options.container)
             : options.container;
         this.template = options.template;
@@ -3908,7 +4053,7 @@ class DynamicSkeleton {
     render() {
         if (!this.container) return;
         
-        let skeletonsHTML = '';
+        let skeletonsHTML = "";
         for (let i = 0; i < this.count; i++) {
             skeletonsHTML += this.template;
         }
@@ -3919,7 +4064,7 @@ class DynamicSkeleton {
     // متد پاک کردن لودینگ (البته وقتی دیتای واقعی رو innerHTML کنید خود به خود پاک میشه)
     clear() {
         if (this.container) {
-            this.container.innerHTML = '';
+            this.container.innerHTML = "";
         }
     }
 }
@@ -3928,21 +4073,21 @@ const Skeleton = (() => {
     
     const templates = {};
     
-    function register(name, builder){
+    function register(name, builder) {
         templates[name] = builder;
     }
     
     function show({
                       container,
                       count = 1,
-                      template
-                  }){
+                      template,
+                  }) {
         
         const el = typeof container === "string"
             ? document.querySelector(container)
             : container;
         
-        if(!el) return;
+        if (!el) return;
         
         el.dataset.skeleton = "true";
         
@@ -3953,7 +4098,7 @@ const Skeleton = (() => {
                 ? template
                 : templates[template];
         
-        for(let i=0;i<count;i++){
+        for (let i = 0; i < count; i++) {
             
             html.push(builder(i));
             
@@ -3963,13 +4108,13 @@ const Skeleton = (() => {
         
     }
     
-    function hide(container){
+    function hide(container) {
         
         const el = typeof container === "string"
             ? document.querySelector(container)
             : container;
         
-        if(el)
+        if (el)
             el.innerHTML = "";
         
     }
@@ -3977,7 +4122,7 @@ const Skeleton = (() => {
     return {
         show,
         hide,
-        register
+        register,
     };
     
 })();

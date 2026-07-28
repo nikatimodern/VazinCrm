@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
-
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 
 public class AiPrompts {

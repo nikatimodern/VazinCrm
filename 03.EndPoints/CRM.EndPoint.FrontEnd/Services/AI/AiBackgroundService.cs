@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CRM.Core.Domain.CallRecordings.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
