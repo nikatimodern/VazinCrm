@@ -320,12 +320,7 @@ const getAllCashesDt = () => {
             },
         ],
         layout: {
-            bottomEnd: "info",
-            bottomStart: {
-                paging: {
-                    type: "simple_numbers",
-                },
-            },
+            ...layoutDatatable,
             topEnd: {
                 pageLength: true,
                 buttons: [
@@ -340,11 +335,6 @@ const getAllCashesDt = () => {
                         className: "buttonExcel",
                     },
                 ],
-            },
-            topStart: {
-                search: {
-                    placeholder: "جستجو",
-                },
             },
         },
         createdRow: (row, data) => {
@@ -633,12 +623,7 @@ function getAllCashesGroupDt() {
             },
         ],
         layout: {
-            bottomEnd: "info",
-            bottomStart: {
-                paging: {
-                    type: "simple_numbers",
-                },
-            },
+            ...layoutDatatable,
             topEnd: {
                 pageLength: true,
                 buttons: [
@@ -653,11 +638,6 @@ function getAllCashesGroupDt() {
                         className: "buttonExcel",
                     },
                 ],
-            },
-            topStart: {
-                search: {
-                    placeholder: "جستجو",
-                },
             },
         },
     });
@@ -781,12 +761,7 @@ function getAllCashesModalDt() {
             },
         ],
         layout: {
-            bottomEnd: "info",
-            bottomStart: {
-                paging: {
-                    type: "simple_numbers",
-                },
-            },
+            ...layoutDatatable,
             topEnd: {
                 pageLength: true,
                 buttons: window.isFinancial ? [
@@ -805,11 +780,6 @@ function getAllCashesModalDt() {
                         },
                     },
                 ] : [],
-            },
-            topStart: {
-                search: {
-                    placeholder: "جستجو",
-                },
             },
         },
         drawCallback: function () {

@@ -86,20 +86,7 @@
                         d.modelF = JSON.stringify(modelAcc);
                     },
                 },
-                language: {
-                    emptyTable: "هیچ رکوردی موجود نمی باشد.",
-                    info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
-                    infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
-                    infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
-                    lengthMenu: "نمایش _MENU_ ردیف",
-                    loadingRecords: "در حال بارگزاری...",
-                    search: "",
-                    zeroRecords: "رکوردی با این مشخصات پیدا نشد",
-                    aria: {
-                        sortAscending: ": فعال سازی نمایش به صورت صعودی",
-                        sortDescending: ": فعال سازی نمایش به صورت نزولی",
-                    },
-                },
+                language: languageDatatable,
                 columnDefs: [
                     {
                         targets: [2, 4, 10, 11],
@@ -186,12 +173,7 @@
                 ],
 
                 layout: {
-                    bottomEnd: "info",
-                    bottomStart: {
-                        paging: {
-                            type: "simple_numbers",
-                        },
-                    },
+                    ...layoutDatatable,
                     topEnd: {
                         pageLength: true,
                         buttons: [
@@ -218,11 +200,6 @@
                                 // autoPrint: false,
                             },
                         ],
-                    },
-                    topStart: {
-                        search: {
-                            placeholder: "جستجو",
-                        },
                     },
                     /*div: {
                         className: "search-group",
