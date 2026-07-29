@@ -92,16 +92,11 @@
                                     }
 
                                     @if (canVosol) {
-                                        <button class="buttonBlue2" style="padding: 2px 6px !important" onclick="ShowModalInvoice(1, '@item.Id')">
+                                        <button class="buttonBlue2" style="padding: 2px 6px !important" onclick="ShowVosolInvoiceModal('@item.Id', '@item.pfid', @((int)item.InvoiceType))">
                                             وصول
                                         </button>
                                     }
 
-                                    @*@if (canTransfer) {
-                                        <button class="buttonGray2" style="padding: 2px 6px !important" onclick="showModalTransferCheckAcc('@item.Id')">
-                                            انتقال
-                                        </button>
-                                    }*@
                                 </span>
                             } else {
                                 <button class="buttonGray" onclick="showPayment('@item.Id')">مشاهده</button>

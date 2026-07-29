@@ -2133,11 +2133,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     ac.DealSerialNumber = model.DealSerialNumber ?? ac.DealSerialNumber;
 
                     ac.Beneficiary = model.Beneficiary;
+                    ac.ToName = model.ToName;
 
                     ac.Status = roles.Contains("کارشناس مالی") || model.AccType == AcEnum.برگشتی
                         ? AccStatusEnum.در_دست_تایید
                         : AccStatusEnum.ثبت_اولیه;
-                    ac.ToName = model.ToName;
 
                     switch (model.AccType)
                     {

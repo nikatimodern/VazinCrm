@@ -10,6 +10,7 @@ namespace CRM.Core.Domain.Accountancies.Enum
         چکی=2,
         اعتباری=3,
         تهاتری=4,
-        کیف=5
+        کیف=5,
+        انتقال=6,
     }
 }

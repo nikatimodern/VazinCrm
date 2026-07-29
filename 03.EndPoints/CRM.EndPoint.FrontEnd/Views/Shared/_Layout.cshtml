@@ -1956,6 +1956,11 @@
                                     <input class="form-check-input valueNumber" type="radio" name="PayType" id="TahatoriId" value="4">
                                     <label class="form-check-label" for="TahatoriId">تهاتری</label>
                                 </div>
+
+                                <div class="form-check form-check-inline me-0 d-none" id="TransferRadioWrapper">
+                                    <input class="form-check-input valueNumber" type="radio" name="PayType" id="TransferRadioId" value="6">
+                                    <label class="form-check-label" for="TransferRadioId">انتقال</label>
+                                </div>
                             </div>
                         </div>
 
@@ -1965,8 +1970,15 @@
                                 <input class="form-control" name="Beneficiary" type="text" placeholder="بابت بدهی به" />
                             </div>
                         </div>
+                        
+                        @*<div class="transferToBox d-none sectionBox-invoice">
+                            <span class="sectionTitle-invoice">انتقال به</span>
+                            <div>
+                                <input class="form-control" name="ToName" type="text" placeholder="انتقال به" />
+                            </div>
+                        </div>*@
 
-                        <div class="sectionBox-invoice">
+                        <div class="transactionBankBox sectionBox-invoice">
                             <span class="sectionTitle-invoice">اطلاعات تراکنش بانکی</span>
                             <div class="d-flex flex-wrap row-gap-2 justify-content-center align-items-start w-100">
                                 <div class="col-12 col-sm-6 col-lg-4 pe-sm-2 d-none ReciveDateDiv">
@@ -1974,7 +1986,7 @@
                                     <input class="sdate form-control" name="ReciveDate" type="text" placeholder="ثبت تاریخ" data-mask-date required />
                                 </div>
 
-                                <div class="col-12 col-sm-6 col-lg-4 pe-sm-2">
+                                <div class="col-12 col-sm-6 col-lg-4 pe-sm-2 transactionAmountWrapper">
                                     <label>مبلغ (ریال)</label>
                                     <input inputmode="numeric" class="currencyNumber form-control" name="ReciveAmount" type="text" placeholder="مبلغ دریافتی به ریال" required data-currency-hint="next" />
                                     <span class="currencyHint"></span>
@@ -1990,20 +2002,22 @@
                                 <label>واریز به حساب بانکی</label>
                                 <select class="form-select" name="BankAccountId" required></select>
                             </div>
+                            
                             <div class="ToBankAccountWrapperTxt mt-2 w-100 d-none">
-                                <div>
+                                <div class="bankAccountTxtWrapper">
                                     <label>واریز به حساب بانکی</label>
                                     <input class="form-control" name="BankAccountTxt" type="text" placeholder="به کدام (حساب / شبا / کارت) واریز شده است." />
                                 </div>
-                                <div class="mt-2">
+                                <div class="toNameWrapper mt-2">
                                     <label>واریز به نام</label>
                                     <input class="form-control" name="ToName" type="text" placeholder="نام صاحب حساب واریز شده" />
                                 </div>
                             </div>
                         </div>
+                        
                     </form>
 
-                    <div class="sectionBox-invoice mt-4">
+                    <div class="sanadPayBox sectionBox-invoice mt-4">
                         <span class="sectionTitle-invoice">رسید پرداخت</span>
                         <div class="container-uploader" id="SanadParId">
                             <input type="file" class="uploadBtn" data-varList="SanadPayList" data-showList="DivShowSanadPar" id="upSanadPay" accept="*/*" />
@@ -2044,7 +2058,14 @@
                             </div>
                         </div>
 
-                        <div class="sectionBox-invoice">
+                        <div class="transferToBox d-none sectionBox-invoice">
+                            <span class="sectionTitle-invoice">انتقال به</span>
+                            <div>
+                                <input class="form-control" name="ToName" type="text" placeholder="انتقال به" disabled />
+                            </div>
+                        </div>
+
+                        <div class="transactionBankBox sectionBox-invoice">
                             <span class="sectionTitle-invoice">اطلاعات تراکنش بانکی</span>
                             <div class="d-flex flex-wrap row-gap-2 justify-content-center align-items-start" style="width:100%">
                                 <div class="col-12 col-sm-6 col-lg-4 pe-sm-2 d-none ReciveDateDiv">
@@ -2092,7 +2113,7 @@
                             </div>
                         </div>
                     </form>
-                    <div class="sectionBox-invoice mt-4">
+                    <div class="sanadPayBox sectionBox-invoice mt-4">
                         <span class="sectionTitle-invoice">رسید پرداخت</span>
                         <div class="container-uploader" id="ShowPaymentSanadParId">
                             <div class="image-display" id="ShowPaymentDivShowSanadPar"></div>

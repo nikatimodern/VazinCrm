@@ -2952,7 +2952,7 @@ class MyService {
             }
         }
         
-        const checkboxes = formEl.querySelectorAll("input[type=\"checkbox\"]");
+        const checkboxes = formEl.querySelectorAll(`input[type="checkbox"]`);
         checkboxes.forEach(cb => {
             if (blackListArray.includes(cb.name)) return;
             jsonData[cb.name] = cb.checked;

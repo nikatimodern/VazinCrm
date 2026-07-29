@@ -27,8 +27,8 @@ var pfAbort = null;
 
 
 const addDes = (e) => {
-
-
+    
+    
 };
 
 
@@ -189,16 +189,16 @@ el_f_weightCount?.addEventListener("input", () => calculateItem("FacItem"));
 el_f_unitAmount?.addEventListener("input", () => calculateItem("FacItem"));
 
 
-document.querySelectorAll("#InvoiceModalId input[type='radio'][name='PayType']").forEach(radio => {
+document.querySelectorAll("#InvoiceModalId input[type='radio'][name='PayType']")?.forEach(radio => {
     radio.addEventListener("change", (e) => {
         const type = Number(e.target?.value);
-        if (type === 3) {
+        if (type === 3 || type === 6) {
             document.getElementById("SanadParId").classList.remove("AlertReqRadio");
         }
         PayFormChange("InvoiceModalId", type);
     });
 });
-document.querySelectorAll("#AttachInvoiceModalId input[type='radio'][name='payTypeAttach']").forEach(radio => {
+document.querySelectorAll("#AttachInvoiceModalId input[type='radio'][name='payTypeAttach']")?.forEach(radio => {
     radio.addEventListener("change", (e) => {
         const type = Number(e.target.value);
         PayAttachFormChange(type);
@@ -1607,7 +1607,7 @@ const updateFactorFinancial = async (sepidarId) => {
         toastifyError(err.response.data || "خطای سرور");
         console.log(err);
     } finally {
-        FLshowLoading(false)
+        FLshowLoading(false);
     }
 };
 

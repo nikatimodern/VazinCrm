@@ -707,6 +707,7 @@ const PayFormChange = (modalId, type) => {
     const elements = {
         vosolLabel: modal.querySelector(".VosolDateDiv label"),
         vosolInput: modal.querySelector(".VosolDateDiv input"),
+        amountInput: modal.querySelector("input[name='ReciveAmount']"),
         reciveDateDiv: modal.querySelector(".ReciveDateDiv"),
         reciveDateInput: modal.querySelector("input[name='ReciveDate']"),
         fromBankWrapper: modal.querySelector(".FromBankAccountWrapper"),
@@ -714,70 +715,127 @@ const PayFormChange = (modalId, type) => {
         toBankWrapperSelect: modal.querySelector(".ToBankAccountWrapperSelect"),
         toBankWrapperTxt: modal.querySelector(".ToBankAccountWrapperTxt"),
         uploaderSpan: modal.querySelector(".container-uploader span"),
+        sanadPayBox: modal.querySelector(".sanadPayBox"),
+        //transferToBox: modal.querySelector(".transferToBox"),
+        transactionBankBox: modal.querySelector(".transactionBankBox"),
+        transactionTitle: modal.querySelector(".transactionBankBox .sectionTitle-invoice"),
+        toNameWrapper: modal.querySelector(".ToBankAccountWrapperTxt > div:last-child"),
+        toNameInput: modal.querySelector(".ToBankAccountWrapperTxt > div:last-child input"),
     };
     
     const config = {
         1: { // نقدی
             vosolText: "تاریخ پرداخت",
+            transactionBankVisible: true,
             reciveVisible: false,
-            fromVisible: false,
+            beneficiaryVisible: false,
             toVisibleSelect: true,
             toVisibleTxt: false,
+            sanadPayVisible: true,
             uploaderText: "تصویر رسید را انتخاب کنید یا اینجا رها کنید",
         },
         2: { // چکی
             vosolText: "تاریخ وصول",
+            transactionBankVisible: true,
             reciveVisible: true,
-            fromVisible: false,
+            beneficiaryVisible: false,
             toVisibleSelect: false,
             toVisibleTxt: false,
+            sanadPayVisible: true,
             uploaderText: "تصویر چک را انتخاب کنید یا اینجا رها کنید",
         },
         3: { // اعتباری
             vosolText: "تاریخ وصول",
+            transactionBankVisible: true,
             reciveVisible: false,
-            fromVisible: false,
+            beneficiaryVisible: false,
             toVisibleSelect: false,
             toVisibleTxt: false,
+            sanadPayVisible: true,
             uploaderText: "تصویر رسید را انتخاب کنید یا اینجا رها کنید",
         },
         4: { // تهاتری
             vosolText: "تاریخ پرداخت",
+            transactionBankVisible: true,
             reciveVisible: false,
-            fromVisible: true,
+            beneficiaryVisible: true,
             toVisibleSelect: false,
             toVisibleTxt: true,
+            sanadPayVisible: true,
             uploaderText: "تصویر رسید را انتخاب کنید یا اینجا رها کنید",
+        },
+        6: { // انتقال
+            reciveVisible: false,
+            transactionBankVisible: true,
+            beneficiaryVisible: true,
+            toVisibleSelect: false,
+            toVisibleTxt: true,
+            sanadPayVisible: false,
         },
     };
     
     const current = config[selectedType];
     if (!current) return;
     
-    elements.vosolLabel.textContent = current.vosolText;
-    elements.vosolInput.placeholder = current.vosolText;
+    elements.vosolLabel.textContent = current.vosolText || "";
+    elements.vosolInput.placeholder = current.vosolText || "";
     
     elements.reciveDateDiv.classList.toggle("d-none", !current.reciveVisible);
     elements.reciveDateInput.toggleAttribute("required", current.reciveVisible);
     
-    //elements.fromBankWrapper.classList.toggle("d-none", !current.fromVisible);
-    elements.beneficiaryWrapper.classList.toggle("d-none", !current.fromVisible);
+    elements.beneficiaryWrapper.classList.toggle("d-none", !current.beneficiaryVisible);
     elements.toBankWrapperSelect.classList.toggle("d-none", !current.toVisibleSelect);
     elements.toBankWrapperTxt.classList.toggle("d-none", !current.toVisibleTxt);
     
-    //elements.fromBankWrapper.querySelectorAll("input").forEach(elm => elm.toggleAttribute("required", current.fromVisible));
-    elements.beneficiaryWrapper.querySelector("input").toggleAttribute("required", current.fromVisible);
+    elements.beneficiaryWrapper.querySelector("input").toggleAttribute("required", current.beneficiaryVisible);
     elements.toBankWrapperSelect.querySelector("select").toggleAttribute("required", current.toVisibleSelect);
     elements.toBankWrapperTxt.querySelectorAll("input").forEach(elm => elm.toggleAttribute("required", current.toVisibleTxt));
     
-    /* if (current.toVisibleSelect) {
-         const select = elements.toBankSelect;
-         const input = elements.toBankTxt;
-         if (select) select.setAttribute("required", "required");
-         if (input && !input.classList.contains("d-none")) input.setAttribute("required", "required");
-     }*/
+    /*    elements.transferToBox.classList.toggle("d-none", !current.transferToVisible);
+        elements.transferToBox.querySelector("input").toggleAttribute("required", current.transferToVisible);*/
+    
+    elements.sanadPayBox.classList.toggle("d-none", !current.sanadPayVisible);
+    
+    elements.transactionBankBox.classList.toggle("d-none", !current.transactionBankVisible);
+    if (selectedType === 6) { // TODO
+        elements.transactionTitle.textContent = "انتقال";
+        
+        elements.transactionBankBox.querySelector(".d-flex").classList.add("d-none");
+        
+        elements.toBankWrapperSelect.classList.add("d-none");
+        
+        elements.toBankWrapperTxt.classList.remove("d-none");
+        
+        elements.toBankWrapperTxt.querySelectorAll("input[name='BankAccountTxt']").forEach(elm => {
+            elm.closest("div")?.classList.add("d-none");
+            elm.toggleAttribute("required", false);
+        });
+        
+        elements.toNameWrapper.classList.remove("d-none");
+        elements.toNameInput.toggleAttribute("required", true);
+        
+        elements.toNameWrapper.querySelector("label").textContent = "انتقال به";
+    } else {
+        elements.transactionTitle.textContent = "اطلاعات تراکنش بانکی";
+        
+        elements.transactionBankBox.querySelector(".d-flex").classList.remove("d-none");
+        
+        elements.toBankWrapperSelect.classList.toggle("d-none", !current.toVisibleSelect);
+        
+        // حالت قبلی طبق config
+        elements.toBankWrapperTxt.classList.toggle("d-none", !current.toVisibleTxt);
+        
+        elements.toNameWrapper.classList.remove("d-none");
+        
+        elements.toNameWrapper.querySelector("label").textContent = "واریز به نام";
+    }
+    
+    
+    elements.vosolInput.toggleAttribute("required", current.transactionBankVisible);
+    elements.amountInput.toggleAttribute("required", current.transactionBankVisible);
+    
     if (elements.uploaderSpan)
-        elements.uploaderSpan.textContent = current.uploaderText;
+        elements.uploaderSpan.textContent = current.uploaderText || "";
 };
 
 
@@ -2289,6 +2347,17 @@ const addInvoiceWalletToPf = async (id) => {
     }
 };
 
+const ShowVosolInvoiceModal = async (parentId, pfId, invoiceType) => {
+    AccParentId = parentId;
+    InvoiceType = invoiceType;
+    pfactorID = pfId;
+    
+    document.getElementById("TransferRadioWrapper")?.classList.remove("d-none");
+    document.getElementById("DivEtebariId").style.display = "none";
+    
+    await ShowModalInvoice(1);
+};
+
 const ShowModalListInvoice = async (id, type, ser, passType, dealId, hideAddInvoiceBtns = false) => {
     invoiceDealId = dealId;
     invoicePassType = passType;
@@ -2323,9 +2392,9 @@ const ShowModalListInvoice = async (id, type, ser, passType, dealId, hideAddInvo
 let isEditInvoiceModal = false;
 let invoiceItemId;
 
-const ShowModalInvoice = async (acType = 1, ParentId = null) => {
+const ShowModalInvoice = async (acType = 1) => {
     await getAllBankAccounts([{ element: "#InvoiceModalId select[name='BankAccountId']", type: [1] }]);
-    if (ParentId != null || acType === 2) { // وصول یا برگشتی بود
+    if (acType === 2) { // برگشتی بود
         document.getElementById("DivEtebariId").style.display = "none";
     } else {
         if (!modalWalletCanceled) {
@@ -2334,7 +2403,7 @@ const ShowModalInvoice = async (acType = 1, ParentId = null) => {
         }
     }
     isEditInvoiceModal = false;
-    AccParentId = ParentId;
+    
     AccType = acType;
     
     const invoiceModalElm = document.getElementById("InvoiceModalId");
@@ -2372,7 +2441,7 @@ async function showPayment(id, parent = false) {
             invoiceModalElm.querySelector(".modalHeader-invoice").innerText = "برگشتی " + data.payTypeTxt;
         }
         
-        PayFormChange("ShowPaymentFormId", data.payType);
+        PayFormChange("ShowPaymentModal", data.payType);
         
         const payFactor = {
             id,
@@ -2386,6 +2455,7 @@ async function showPayment(id, parent = false) {
             Beneficiary: data.beneficiary,
             ToName: data.toName,
         };
+        
         mySer.convertJsonToForm(payFactor, "ShowPaymentFormId");
         
         if (data.payType === 1) {
@@ -2585,7 +2655,9 @@ async function checkEtebariWarning(isEditInvoiceModal, payType, AccParentId, Acc
 const submitInvoice = async () => {
     if (await mySer.CheckValidForm("PayFactorFormId")) {
         const accData = mySer.convertFormToJSON("PayFactorFormId");
-        if (setting.attPfPayment && accData.PayType !== 3 && SanadPayList.every(item => item.isDeleted)) {
+        console.log(accData);
+        //return;
+        if (setting.attPfPayment && (accData.PayType !== 3 && accData.PayType !== 6) && SanadPayList.every(item => item.isDeleted)) {
             toastifyError("سند واریزی اجباریست");
             document.getElementById("SanadParId").classList.add("AlertReqRadio");
             return;
@@ -2597,7 +2669,7 @@ const submitInvoice = async () => {
         
         if (isEditInvoiceModal) accData.id = invoiceItemId;
         
-        accData.InvoiceType = InvoiceType;
+        accData.InvoiceType = InvoiceType ?? 1;
         accData.AccType = AccType;
         accData.ParentId = AccParentId;
         accData.customerId = customerId;
@@ -2618,11 +2690,13 @@ const submitInvoice = async () => {
             accData.BankAccountTxt = null;
         }
         
-        if (accData.PayType !== 4) {
+        if (accData.PayType !== 4 && accData.PayType !== 6) {
             accData.Beneficiary = null;
-            accData.FromBankAccountTxt = null;
             accData.ToName = null;
+            if (accData.PayType !== 4)
+                accData.FromBankAccountTxt = null;
         }
+        
         
         const model = {
             accData,
@@ -2946,6 +3020,8 @@ const closeModalInvoice = () => {
     SanadPayList = [];
     document.getElementById("SanadParId").classList.remove("AlertReqRadio");
     document.getElementById("DivEtebariId").style.display = "";
+    document.getElementById("TransferRadioWrapper")?.classList.add("d-none");
+    document.getElementById("sanadPayBox")?.classList.remove("d-none");
     document.getElementById("DivShowSanadPar").innerHTML = "";
     // document.querySelector("#InvoiceModalId .FromBankAccountWrapper")?.classList.add("d-none");
     document.querySelector("#InvoiceModalId .beneficiaryWrapper")?.classList.add("d-none");
