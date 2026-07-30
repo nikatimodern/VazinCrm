@@ -12,7 +12,7 @@ let cashViewType;
 
 let cashData = {};
 let modelCash = {};
-let isFinancial;
+
 
 const cashModal = document.getElementById("cashModal");
 const costCenterElm = cashModal.querySelector("#cashCostCenter");
@@ -231,9 +231,8 @@ const getAllCashesDt = () => {
                 d.model = JSON.stringify(modelCash);
             },
             dataSrc: function (json) {
-                isFinancial = json.isFinancial;
-                cashTbl.column(1).visible(isFinancial);
-                cashTbl.settings()[0].aoColumns[1].bSearchable = isFinancial;
+                cashTbl.column(1).visible(window.isFinancial);
+                cashTbl.settings()[0].aoColumns[1].bSearchable = window.isFinancial;
                 initCashierBalanceUI(json.cashierBalance);
                 return json.data;
             },
@@ -260,7 +259,7 @@ const getAllCashesDt = () => {
         ],
         columns: [
             { data: "serial", responsivePriority: 1 },
-            { data: "paymentVoucherNumber", visible: isFinancial, searchable: isFinancial },
+            { data: "paymentVoucherNumber", visible: window.isFinancial, searchable: window.isFinancial },
             { data: "cashGroup.groupNumber" },
             { data: "createDateTxt" },
             { data: "costTitleTxt", responsivePriority: 2 },
@@ -279,21 +278,21 @@ const getAllCashesDt = () => {
                         
                         return `<button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>`;
                     } else if (data === 1) { // در دست تایید
-                        if (isFinancial) return `
-                            <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                        if (window.isFinancial) return `
+                            <div class="inline-flex-center gap-1">
                                 <button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 2)">تایید</button>
                                 <button class="buttonCancel3" onclick="changeStatusCash('${row.id}', 0)">برگشت</button>
                             </div>
                         `;
                         
                         return `
-                            <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                            <div class="inline-flex-center gap-1">
                                 <span class="fMedium" style="color: #CC9900">${row.statusTxt}</span>
                             </div>
                         `;
                     } else { // تایید شده
-                        if (isFinancial) return `
-                            <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                        if (window.isFinancial) return `
+                            <div class="inline-flex-center gap-1">
                                 <span class="fMedium" style="color: darkgreen">${row.statusTxt}</span>
                                 <button style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
                                     <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"></path></svg>
@@ -309,7 +308,7 @@ const getAllCashesDt = () => {
                 data: null,
                 render: function (data, type, row) {
                     return `
-                        <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                        <div class="inline-flex-center gap-1">
                             <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
                             ${row.status === 0 ? `
                                 <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditCashModal('${row.id}')"><i class="fa fa-pencil"></i></button>
@@ -321,12 +320,7 @@ const getAllCashesDt = () => {
             },
         ],
         layout: {
-            bottomEnd: "info",
-            bottomStart: {
-                paging: {
-                    type: "simple_numbers",
-                },
-            },
+            ...layoutDatatable,
             topEnd: {
                 pageLength: true,
                 buttons: [
@@ -341,11 +335,6 @@ const getAllCashesDt = () => {
                         className: "buttonExcel",
                     },
                 ],
-            },
-            topStart: {
-                search: {
-                    placeholder: "جستجو",
-                },
             },
         },
         createdRow: (row, data) => {
@@ -560,7 +549,7 @@ function updateCashModalActionButtons(items) {
     const btnApprove = document.getElementById("btnApproveGroup");
     const btnReject = document.getElementById("btnRejectGroup");
     
-    if (!isFinancial) {
+    if (!window.isFinancial) {
         btnApprove?.remove();
         btnReject?.remove();
         return;
@@ -634,12 +623,7 @@ function getAllCashesGroupDt() {
             },
         ],
         layout: {
-            bottomEnd: "info",
-            bottomStart: {
-                paging: {
-                    type: "simple_numbers",
-                },
-            },
+            ...layoutDatatable,
             topEnd: {
                 pageLength: true,
                 buttons: [
@@ -654,11 +638,6 @@ function getAllCashesGroupDt() {
                         className: "buttonExcel",
                     },
                 ],
-            },
-            topStart: {
-                search: {
-                    placeholder: "جستجو",
-                },
             },
         },
     });
@@ -687,9 +666,14 @@ function cashGroupModal(groupId, groupNumber, userCreator, sendDate, itemsCount,
 
 function getAllCashesModalDt() {
     cashModalTbl = $("#cashTableModal").DataTable({
-        paging: false,
+        pageLength: 10,
+        lengthMenu: [5, 10, 20, 50, 100, { label: "همه", value: -1 }],
         processing: true,
         serverSide: true,
+        searching: true,
+        search: {
+            return: true,
+        },
         ordering: true,
         order: [[3, "desc"]],
         scrollCollapse: true,
@@ -702,7 +686,6 @@ function getAllCashesModalDt() {
                 d.model = JSON.stringify({ ...modelCash, entityId: currentCashGroupId });
             },
             dataSrc: function (json) {
-                isFinancial = json.isFinancial;
                 currentCashGroupExported = json.isExported;
                 return json.data;
             },
@@ -736,21 +719,21 @@ function getAllCashesModalDt() {
                         
                         return `<button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>`;
                     } else if (data === 1) { // در دست تایید
-                        if (isFinancial) return `
-                            <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                        if (window.isFinancial) return `
+                            <div class="inline-flex-center gap-1">
                                 <button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 2)">تایید</button>
                                 <button class="buttonCancel3" onclick="changeStatusCash('${row.id}', 0)">برگشت</button>
                             </div>
                         `;
                         
                         return `
-                            <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                            <div class="inline-flex-center gap-1">
                                 <span class="fMedium" style="color: #CC9900">${row.statusTxt}</span>
                             </div>
                         `;
                     } else { // تایید شده
-                        if (isFinancial) return `
-                            <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                        if (window.isFinancial) return `
+                            <div class="inline-flex-center gap-1">
                                 <span class="fMedium" style="color: darkgreen">${row.statusTxt}</span>
                                 <button style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
                                     <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"></path></svg>
@@ -766,7 +749,7 @@ function getAllCashesModalDt() {
                 data: null,
                 render: function (data, type, row) {
                     return `
-                        <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                        <div class="inline-flex-center gap-1">
                             <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
                             ${row.status === 0 ? `
                                 <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditCashModal('${row.id}')"><i class="fa fa-pencil"></i></button>
@@ -778,10 +761,10 @@ function getAllCashesModalDt() {
             },
         ],
         layout: {
-            bottomEnd: null,
-            bottomStart: null,
+            ...layoutDatatable,
             topEnd: {
-                buttons: isFinancial ? [
+                pageLength: true,
+                buttons: window.isFinancial ? [
                     {
                         extend: "excel",
                         className: "buttonExcel px-2",
@@ -797,11 +780,6 @@ function getAllCashesModalDt() {
                         },
                     },
                 ] : [],
-            },
-            topStart: {
-                search: {
-                    placeholder: "جستجو",
-                },
             },
         },
         drawCallback: function () {

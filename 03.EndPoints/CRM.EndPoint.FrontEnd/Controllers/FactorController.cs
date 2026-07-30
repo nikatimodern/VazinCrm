@@ -1007,7 +1007,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var url = Url.Action(nameof(PreviewPfactorPrint), "Factor", new { id }, Request.Scheme);
                 var images = await documentRender.GenerateImagesAsync(Request, url, new DocumentRenderImageOptions {
                         Viewport = ViewportPresets.A4Portrait,
-                        Selectors = [".sheet"]
+                        Selectors = [".sheet"],
+//                        LocatorOptions = new LocatorScreenshotOptions { Type = ScreenshotType.Jpeg, Quality = 100 }
                     }
                 );
 

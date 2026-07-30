@@ -86,20 +86,7 @@
                         d.modelF = JSON.stringify(modelAcc);
                     },
                 },
-                language: {
-                    emptyTable: "هیچ رکوردی موجود نمی باشد.",
-                    info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
-                    infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
-                    infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
-                    lengthMenu: "نمایش _MENU_ ردیف",
-                    loadingRecords: "در حال بارگزاری...",
-                    search: "",
-                    zeroRecords: "رکوردی با این مشخصات پیدا نشد",
-                    aria: {
-                        sortAscending: ": فعال سازی نمایش به صورت صعودی",
-                        sortDescending: ": فعال سازی نمایش به صورت نزولی",
-                    },
-                },
+                language: languageDatatable,
                 columnDefs: [
                     {
                         targets: [2, 4, 10, 11],
@@ -186,12 +173,7 @@
                 ],
 
                 layout: {
-                    bottomEnd: "info",
-                    bottomStart: {
-                        paging: {
-                            type: "simple_numbers",
-                        },
-                    },
+                    ...layoutDatatable,
                     topEnd: {
                         pageLength: true,
                         buttons: [
@@ -219,11 +201,6 @@
                             },
                         ],
                     },
-                    topStart: {
-                        search: {
-                            placeholder: "جستجو",
-                        },
-                    },
                     /*div: {
                         className: "search-group",
                         html: `<input class="form-control" type="text" id="requestAmountSearchId" placeholder="جستجو..." />
@@ -249,7 +226,7 @@
                 if (!searchInput) return;
 
                 const refresh = `
-                    <span class="d-inline-flex align-items-center justify-content-center" onclick="callBackAccFilter()">
+                    <span class="inline-flex-center" onclick="callBackAccFilter()">
                         <svg style="width: 18px;height: 18px;color: #333" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
                     </span>
                 `;

@@ -1632,15 +1632,7 @@ const getAllOrders = () => {
         scrollCollapse: true,
         scrollY: "clamp(120px, calc(100dvh - 640px), 100dvh)",
         responsive: true,
-        language: {
-            emptyTable: "هیچ رکوردی موجود نمی باشد.",
-            loadingRecords: "در حال بارگزاری...",
-            search: "",
-            zeroRecords: "رکوردی با این مشخصات پیدا نشد",
-            aria: {
-                sortAscending: ": فعال سازی نمایش به صورت صعودی", sortDescending: ": فعال سازی نمایش به صورت نزولی",
-            },
-        },
+        language: languageDatatable,
         columns: [
             { data: null, render: (data, type, row, meta) => meta.row + 1 },
             { data: "productSmallName", name: "ProductSmallName", autoWidth: true, defaultContent: "-" },
@@ -1661,7 +1653,7 @@ const getAllOrders = () => {
                 data: null,
                 render: function (data, type, row) {
                     return `
-                        <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                        <div class="inline-flex-center gap-1">
                             <button type="button" data-title-right="ویرایش" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 d-flex justify-content-center align-items-center" onclick='ShowUpdateOrder("${row._index}")'><i class="fa fa-pencil"></i></button>
                             <button type="button" data-title-right="حذف" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="Admin buttonCancel2 d-flex justify-content-center align-items-center" onclick='DelOrderItem("${row._index}")'><i class="fa fa-trash"></i></button>
                         </div>
@@ -2202,20 +2194,7 @@ const initPaymentPartial = (type) => {
         responsive: true,
         ordering: false,
         searching: false,
-        language: {
-            emptyTable: "هیچ رکوردی موجود نمی باشد.",
-            info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
-            infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
-            infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
-            lengthMenu: "نمایش _MENU_ ردیف",
-            loadingRecords: "در حال بارگزاری...",
-            search: "",
-            zeroRecords: "رکوردی با این مشخصات پیدا نشد",
-            aria: {
-                sortAscending: ": فعال سازی نمایش به صورت صعودی",
-                sortDescending: ": فعال سازی نمایش به صورت نزولی",
-            },
-        },
+        language: languageDatatable,
         columns: type === 55 || type === 56
             ? [
                 { responsivePriority: 4 },
@@ -2251,20 +2230,7 @@ const initWalletPartial = () => {
         responsive: true,
         ordering: false,
         searching: false,
-        language: {
-            emptyTable: "هیچ رکوردی موجود نمی باشد.",
-            info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
-            infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
-            infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
-            lengthMenu: "نمایش _MENU_ ردیف",
-            loadingRecords: "در حال بارگزاری...",
-            search: "",
-            zeroRecords: "رکوردی با این مشخصات پیدا نشد",
-            aria: {
-                sortAscending: ": فعال سازی نمایش به صورت صعودی",
-                sortDescending: ": فعال سازی نمایش به صورت نزولی",
-            },
-        },
+        language: languageDatatable,
         columns:
             [
                 { responsivePriority: 6 },
@@ -4788,20 +4754,7 @@ const initPaymentTable = () => {
                 return json.data;
             },
         },
-        language: {
-            emptyTable: "هیچ رکوردی موجود نمی باشد.",
-            info: "نمایش _START_ تا _END_ از _TOTAL_ ردیف",
-            infoEmpty: "نمایش 0 تا 0 از 0 ردیف",
-            infoFiltered: "(فیلتر شده از _MAX_ ردیف)",
-            lengthMenu: "نمایش _MENU_ ردیف",
-            loadingRecords: "در حال بارگزاری...",
-            search: "",
-            zeroRecords: "رکوردی با این مشخصات پیدا نشد",
-            aria: {
-                sortAscending: ": فعال سازی نمایش به صورت صعودی",
-                sortDescending: ": فعال سازی نمایش به صورت نزولی",
-            },
-        },
+        language: languageDatatable,
         columnDefs: [
             {
                 targets: [3, 4, 6, 7],
@@ -4836,7 +4789,7 @@ const initPaymentTable = () => {
                 data: null,
                 render: function (data, type, row) {
                     return `
-                        <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                        <div class="inline-flex-center gap-1">
                             <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.payment.id}', 9)"><i class="fa fa-paperclip"></i></button>
                           ${isFinancialPaymentTable
                         ? ` <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditPaymentModal('${row.payment.id}')"><i class="fa fa-pencil"></i></button>

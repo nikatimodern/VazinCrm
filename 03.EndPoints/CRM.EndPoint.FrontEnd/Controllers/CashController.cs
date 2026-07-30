@@ -532,11 +532,9 @@ public class CashController : Controller {
             }
 
 
-            var isFinancial = true;
             if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر مالی") && !roles.Contains("کارشناس مالی"))
             {
                 query = query.Where(f => f.UserCreatorID == user.Id);
-                isFinancial = false;
             } else
             {
                 query = query.Where(f => f.Status != CashStatusEnum.ثبت_موقت || f.UserCreatorID == user.Id);
@@ -644,7 +642,6 @@ public class CashController : Controller {
                 recordsTotal,
                 recordsFiltered = recordsTotal,
                 data,
-                isFinancial,
                 isExported,
                 cashierBalance
             });

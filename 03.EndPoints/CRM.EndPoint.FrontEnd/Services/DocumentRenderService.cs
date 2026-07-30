@@ -29,13 +29,13 @@ public class DocumentRenderService : IDocumentRenderService {
     {
         options ??= new DocumentRenderImageOptions();
 
-        options.PageOptions.Type ??= ScreenshotType.Png;
+        options.PageOptions.Type ??= ScreenshotType.Png;  // FullPage
         options.PageOptions.FullPage ??= true;
         options.PageOptions.Scale ??= ScreenshotScale.Device;
         options.PageOptions.Animations ??= ScreenshotAnimations.Disabled;
         options.PageOptions.Caret ??= ScreenshotCaret.Hide;
 
-        options.LocatorOptions.Type ??= ScreenshotType.Png;
+        options.LocatorOptions.Type ??= ScreenshotType.Png; // ٍElement with selector
         options.LocatorOptions.Scale ??= ScreenshotScale.Device;
         options.LocatorOptions.Animations ??= ScreenshotAnimations.Disabled;
         options.LocatorOptions.Caret ??= ScreenshotCaret.Hide;
