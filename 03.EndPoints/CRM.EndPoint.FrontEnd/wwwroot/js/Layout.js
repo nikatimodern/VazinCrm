@@ -2195,6 +2195,9 @@ const initPaymentPartial = (type) => {
         ordering: false,
         searching: false,
         language: languageDatatable,
+        columnDefs: [
+            { targets: "_all", render: data => typeof data === "string" ? (data.trim() || "-") : (data ?? "-") },
+        ],
         columns: type === 55 || type === 56
             ? [
                 { responsivePriority: 4 },
