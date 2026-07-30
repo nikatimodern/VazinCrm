@@ -1688,67 +1688,6 @@
     </div>
 </div>
 
-<!-- Modal showAcc -->
-<div class="modal fade" id="showAcc" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-    <div class=" modal-dialog modal-dialog-centered modal-lg">
-
-
-        <div class="modal-content col-12" style="padding:10px!important">
-
-            <fieldset class="row g-2 justify-content-center" id="modalAccId">
-                <div class="col text-center d-flex align-items-center flex-column" style="white-space: nowrap">
-                    <label class="fbold">تاریخ</label>
-                    <input class="inpTlab w-100 " name="vosolDate" disabled />
-                </div>
-
-                <div class="col text-center d-flex align-items-center flex-column" style="white-space: nowrap">
-                    <label class="fbold">مبلغ</label>
-                    <input class="inpTlab w-100 inpAmount " name="credit" disabled />
-                </div>
-
-                <div class="col text-center d-flex align-items-center flex-column" style="white-space: nowrap">
-                    <label class="fbold">واریز به حساب</label>
-                    <input class="inpTlab w-100" name="bankAccountTxt" disabled />
-                </div>
-
-                <div class="col text-center d-flex align-items-center flex-column" style="white-space: nowrap">
-                    <label class="fbold">واریز از حساب</label>
-                    <input class="inpTlab w-100" name="fromBankAccountTxt" disabled />
-                </div>
-
-                <div class="col text-center d-flex align-items-center flex-column" style="white-space: nowrap">
-                    <label class="fbold">تامین کننده</label>
-                    <input class="inpTlab w-100" name="beneficiary" disabled />
-                </div>
-            </fieldset>
-
-
-            <div style="height:2px; margin-bottom:10px; display:flex; justify-content:center; background-color:rebeccapurple;color:white;border-radius:5px">
-            </div>
-            <div class=" modal-body" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
-                <div class="col-12">
-                    <div class="fmp ">
-                        <div>
-                            <div class="col-12">
-                                <div class="container-uploader">
-                                    <div class="image-display" id="showImageDisplayAccAt"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <div class="mt-3" style="width:100%; display:flex;justify-content:center;gap:4px">
-                    @* <button class="buttonGreen" style="border-radius:5px" onclick="SubmitAcAttach()">ثبت</button> *@
-                    <button class="buttonCancel2" style="border-radius:5px" onclick="cancelShowAccModal() ">انصراف</button>
-                </div>
-
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Modal AccepedAttachment -->
 <div class="modal fade " dir="ltr" id="Attachments" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -1801,7 +1740,7 @@
             </div>
             <div class="modal-body p-0" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
                 <div id="addInvoiceBtns" class="d-flex justify-content-center align-items-center gap-2 pb-2">
-                    <button class="buttonGreen0 deposit-btn py-1 d-flex align-items-center gap-2" onclick="ShowModalInvoice(1)">
+                    <button class="buttonGreen0 deposit-btn py-1 d-flex align-items-center gap-2" onclick="ShowModalAddInvoice(1)">
                         واریزی
                         <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                     </button>
@@ -1938,27 +1877,27 @@
                             <div class="d-flex justify-content-evenly flex-wrap" style="font-size:clamp(14px,2vw,19px)">
 
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input valueNumber" type="radio" name="PayType" id="NagdiId" value="1" checked>
+                                    <input class="form-check-input valueNumber" type="radio" name="payType" id="NagdiId" value="1" checked>
                                     <label class="form-check-label" for="NagdiId">نقدی</label>
                                 </div>
 
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input valueNumber" type="radio" name="PayType" id="ChekiId" value="2">
+                                    <input class="form-check-input valueNumber" type="radio" name="payType" id="ChekiId" value="2">
                                     <label class="form-check-label" for="ChekiId">چکی</label>
                                 </div>
 
                                 <div class="form-check form-check-inline" id="DivEtebariId">
-                                    <input class="form-check-input valueNumber" type="radio" name="PayType" id="EtebariId" value="3">
+                                    <input class="form-check-input valueNumber" type="radio" name="payType" id="EtebariId" value="3">
                                     <label class="form-check-label" for="EtebariId">اعتباری</label>
                                 </div>
 
                                 <div class="form-check form-check-inline me-0">
-                                    <input class="form-check-input valueNumber" type="radio" name="PayType" id="TahatoriId" value="4">
+                                    <input class="form-check-input valueNumber" type="radio" name="payType" id="TahatoriId" value="4">
                                     <label class="form-check-label" for="TahatoriId">تهاتری</label>
                                 </div>
 
                                 <div class="form-check form-check-inline me-0 d-none" id="TransferRadioWrapper">
-                                    <input class="form-check-input valueNumber" type="radio" name="PayType" id="TransferRadioId" value="6">
+                                    <input class="form-check-input valueNumber" type="radio" name="payType" id="TransferRadioId" value="6">
                                     <label class="form-check-label" for="TransferRadioId">انتقال</label>
                                 </div>
                             </div>
@@ -1967,54 +1906,46 @@
                         <div class="beneficiaryWrapper d-none sectionBox-invoice">
                             <span class="sectionTitle-invoice">بابت بدهی به</span>
                             <div>
-                                <input class="form-control" name="Beneficiary" type="text" placeholder="بابت بدهی به" />
+                                <input class="form-control" name="beneficiary" type="text" placeholder="بابت بدهی به" />
                             </div>
                         </div>
-                        
-                        @*<div class="transferToBox d-none sectionBox-invoice">
-                            <span class="sectionTitle-invoice">انتقال به</span>
-                            <div>
-                                <input class="form-control" name="ToName" type="text" placeholder="انتقال به" />
-                            </div>
-                        </div>*@
 
                         <div class="transactionBankBox sectionBox-invoice">
                             <span class="sectionTitle-invoice">اطلاعات تراکنش بانکی</span>
                             <div class="d-flex flex-wrap row-gap-2 justify-content-center align-items-start w-100">
-                                <div class="col-12 col-sm-6 col-lg-4 pe-sm-2 d-none ReciveDateDiv">
+                                <div class="ReceiveDateDiv col-12 col-sm-6 col-lg-4 pe-sm-2 d-none">
                                     <label>تاریخ دریافت چک از مشتری</label>
-                                    <input class="sdate form-control" name="ReciveDate" type="text" placeholder="ثبت تاریخ" data-mask-date required />
+                                    <input class="sdate form-control" name="reciveDate" type="text" placeholder="ثبت تاریخ" data-mask-date required />
                                 </div>
 
-                                <div class="col-12 col-sm-6 col-lg-4 pe-sm-2 transactionAmountWrapper">
+                                <div class="transactionAmountWrapper col-12 col-sm-6 col-lg-4 pe-sm-2">
                                     <label>مبلغ (ریال)</label>
-                                    <input inputmode="numeric" class="currencyNumber form-control" name="ReciveAmount" type="text" placeholder="مبلغ دریافتی به ریال" required data-currency-hint="next" />
+                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" name="reciveAmount" type="text" placeholder="مبلغ دریافتی به ریال" required data-currency-hint="next" />
                                     <span class="currencyHint"></span>
                                 </div>
 
-                                <div class="col-12 col-sm-6 col-lg-4 VosolDateDiv">
+                                <div class="VosolDateDiv col-12 col-sm-6 col-lg-4">
                                     <label>تاریخ واریزی</label>
-                                    <input class="sdate form-control" name="VosolDate" type="text" placeholder="تاریخ پرداخت" data-mask-date required />
+                                    <input class="sdate form-control" name="vosolDate" type="text" placeholder="تاریخ پرداخت" data-mask-date required />
                                 </div>
                             </div>
 
-                            <div class="ToBankAccountWrapperSelect mt-2 w-100">
+                            <div class="toBankAccountWrapperSelect my-2 w-100">
                                 <label>واریز به حساب بانکی</label>
-                                <select class="form-select" name="BankAccountId" required></select>
+                                <select class="form-select" name="bankAccountId" required></select>
                             </div>
-                            
-                            <div class="ToBankAccountWrapperTxt mt-2 w-100 d-none">
-                                <div class="bankAccountTxtWrapper">
-                                    <label>واریز به حساب بانکی</label>
-                                    <input class="form-control" name="BankAccountTxt" type="text" placeholder="به کدام (حساب / شبا / کارت) واریز شده است." />
-                                </div>
-                                <div class="toNameWrapper mt-2">
-                                    <label>واریز به نام</label>
-                                    <input class="form-control" name="ToName" type="text" placeholder="نام صاحب حساب واریز شده" />
-                                </div>
+
+                            <div class="toBankAccountWrapperTxt mb-2 d-none">
+                                <label>واریز به حساب بانکی</label>
+                                <input class="form-control" name="bankAccountTxt" type="text" placeholder="به کدام (حساب / شبا / کارت) واریز شده است." />
+                            </div>
+
+                            <div class="toNameWrapper d-none">
+                                <label>واریز به نام</label>
+                                <input class="form-control" name="toName" type="text" placeholder="نام صاحب حساب واریز شده" />
                             </div>
                         </div>
-                        
+
                     </form>
 
                     <div class="sanadPayBox sectionBox-invoice mt-4">
@@ -2054,69 +1985,51 @@
                         <div class="beneficiaryWrapper d-none sectionBox-invoice">
                             <span class="sectionTitle-invoice">بابت بدهی به</span>
                             <div>
-                                <input class="form-control" disabled name="Beneficiary" type="text" placeholder="بابت بدهی به" />
-                            </div>
-                        </div>
-
-                        <div class="transferToBox d-none sectionBox-invoice">
-                            <span class="sectionTitle-invoice">انتقال به</span>
-                            <div>
-                                <input class="form-control" name="ToName" type="text" placeholder="انتقال به" disabled />
+                                <input class="form-control" disabled name="beneficiary" type="text" placeholder="بابت بدهی به" />
                             </div>
                         </div>
 
                         <div class="transactionBankBox sectionBox-invoice">
                             <span class="sectionTitle-invoice">اطلاعات تراکنش بانکی</span>
                             <div class="d-flex flex-wrap row-gap-2 justify-content-center align-items-start" style="width:100%">
-                                <div class="col-12 col-sm-6 col-lg-4 pe-sm-2 d-none ReciveDateDiv">
+                                <div class="ReceiveDateDiv col-12 col-sm-6 col-lg-4 pe-sm-2 d-none">
                                     <label>تاریخ دریافت چک از مشتری</label>
-                                    <input class="sdate form-control" name="ReciveDate" type="text" placeholder="ثبت تاریخ" data-mask-date disabled />
+                                    <input class="sdate form-control" name="reciveDate" type="text" placeholder="ثبت تاریخ" data-mask-date disabled />
                                 </div>
 
-                                <div class="col-12 col-sm-6 col-lg-4 pe-sm-2">
+                                <div class="transactionAmountWrapper col-12 col-sm-6 col-lg-4 pe-sm-2">
                                     <label>مبلغ (ریال)</label>
-                                    <input inputmode="numeric" class="currencyNumber form-control" name="ReciveAmount" type="text" placeholder="مبلغ دریافتی به ریال" disabled data-currency-hint="next" />
+                                    <input inputmode="numeric" class="currencyNumber form-control" name="reciveAmount" type="text" placeholder="مبلغ دریافتی به ریال" disabled data-currency-hint="next" />
                                     <span class="currencyHint"></span>
                                 </div>
 
-                                <div class="col-12 col-sm-6 col-lg-4 VosolDateDiv">
+                                <div class="VosolDateDiv col-12 col-sm-6 col-lg-4">
                                     <label>تاریخ واریزی</label>
-                                    <input class="sdate form-control" name="VosolDate" type="text" placeholder="تاریخ پرداخت" data-mask-date disabled />
+                                    <input class="sdate form-control" name="vosolDate" type="text" placeholder="تاریخ پرداخت" data-mask-date disabled />
                                 </div>
                             </div>
-
-                            @*<div class="d-none FromBankAccountWrapper" style="width:100% ;">
-                                <div class="mt-2">
-                                    <label>واریز از حساب بانکی</label>
-                                    <input class="form-control" name="FromBankAccountTxt" type="text" placeholder="از کدام حساب و توسط چه کسی واریز صورت گرفته است."/>
-                                </div>
-                            </div> *@
-                            @*<div class="ToBankAccountWrapper mt-2" style="width:100% ; ">
+                            
+                            <div class="toBankAccountWrapperSelect my-2 w-100">
                                 <label>واریز به حساب بانکی</label>
-                                <select class="form-select" name="BankAccountId" disabled></select>
-                                <input disabled style="margin-top: 8px !important;" class="form-control d-none" name="BankAccountTxt" type="text" placeholder="به کدام حساب و به نام چه کسی واریز شد."/>
-                            </div>*@
-
-                            <div class="ToBankAccountWrapperSelect mt-2 w-100">
-                                <label>واریز به حساب بانکی</label>
-                                <select class="form-select" name="BankAccountId" disabled></select>
+                                <select disabled class="form-select" name="bankAccountId"></select>
                             </div>
-                            <div class="ToBankAccountWrapperTxt mt-2 w-100 d-none">
-                                <div>
-                                    <label>واریز به حساب بانکی</label>
-                                    <input disabled class="form-control" name="BankAccountTxt" type="text" placeholder="به کدام (حساب / شبا / کارت) واریز شده است." />
-                                </div>
-                                <div class="mt-2">
-                                    <label>واریز به نام</label>
-                                    <input disabled class="form-control" name="ToName" type="text" placeholder="نام صاحب حساب واریز شده" />
-                                </div>
+                            
+                            <div class="toBankAccountWrapperTxt mb-2 d-none">
+                                <label>واریز به حساب بانکی</label>
+                                <input disabled class="form-control" name="bankAccountTxt" type="text" placeholder="به کدام (حساب / شبا / کارت) واریز شده است." />
+                            </div>
+                            
+                            <div class="toNameWrapper d-none">
+                                <label>واریز به نام</label>
+                                <input disabled class="form-control" name="toName" type="text" placeholder="نام صاحب حساب واریز شده" />
                             </div>
                         </div>
                     </form>
+                    
                     <div class="sanadPayBox sectionBox-invoice mt-4">
                         <span class="sectionTitle-invoice">رسید پرداخت</span>
-                        <div class="container-uploader" id="ShowPaymentSanadParId">
-                            <div class="image-display" id="ShowPaymentDivShowSanadPar"></div>
+                        <div class="container-uploader">
+                            <div class="image-display"></div>
                         </div>
                     </div>
                 </div>

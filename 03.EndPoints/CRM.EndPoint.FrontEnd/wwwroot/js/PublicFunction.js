@@ -189,10 +189,10 @@ el_f_weightCount?.addEventListener("input", () => calculateItem("FacItem"));
 el_f_unitAmount?.addEventListener("input", () => calculateItem("FacItem"));
 
 
-document.querySelectorAll("#InvoiceModalId input[type='radio'][name='PayType']")?.forEach(radio => {
+document.querySelectorAll("#InvoiceModalId input[type='radio'][name='payType']")?.forEach(radio => {
     radio.addEventListener("change", (e) => {
         const type = Number(e.target?.value);
-        if (type === 3 || type === 6) {
+        if (type === 3) {
             document.getElementById("SanadParId").classList.remove("AlertReqRadio");
         }
         PayFormChange("InvoiceModalId", type);
