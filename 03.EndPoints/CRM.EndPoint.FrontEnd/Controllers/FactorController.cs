@@ -1909,7 +1909,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                     if (setting?.FinancialConfirm != true)
                     {
-                        var tasks = await ts.TaskReciveAmountPrefctor(acc, model.InvoiceType);
+                        var tasks = await ts.TaskReciveAmountPrefctor(acc, model.InvoiceType); //TODO: pf null reference
                         await db.Carizos.AddRangeAsync(tasks);
                     }
 
@@ -1942,7 +1942,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (setting?.FinancialConfirm != true)
                 {
-                    var tasks = await ts.TaskReciveAmountPrefctor(model, model.InvoiceType);
+                    var tasks = await ts.TaskReciveAmountPrefctor(model, model.InvoiceType); 
                     await db.Carizos.AddRangeAsync(tasks);
                 }
 

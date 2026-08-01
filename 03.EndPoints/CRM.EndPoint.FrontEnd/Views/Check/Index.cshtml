@@ -2,51 +2,133 @@
 
 @{
     Layout = "_Layout";
+    var isIncomingType = Context.Request.Query["type"] == "incoming";
     var hasCheckbookId = Context.Request.Query.ContainsKey("cBook");
 }
 
 <div>
-    <div id="checkbooks-section" class="@(hasCheckbookId ? "d-none" : "")">
-        <h4 class="fbold text-dark">دسته چک‌ها</h4>
-
-        <div id="checkbooksContainer">
-            <partial name="GetAllCheckbooksPartial" model="Model" />
-        </div>
+    <div class="mb-3 pb-2 border-bottom">
+        <ul class="filter-switch">
+            <li class="filter-switch-item">
+                <input type="radio" name="checkViewType" id="checkViewTypeOutgoing" value="outgoing" @(!isIncomingType ? "checked" : "")>
+                <label for="checkViewTypeOutgoing" class="flex-center gap-2">
+                    <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 1 0 1.09 1.03L9.25 4.636v8.614Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
+                    صدور چک
+                </label>
+            </li>
+            <li class="filter-switch-item">
+                <input type="radio" name="checkViewType" id="checkViewTypeIncoming" value="incoming" @(isIncomingType ? "checked" : "")>
+                <label for="checkViewTypeIncoming" class="flex-center gap-2">
+                    <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
+                    چک‌های دریافتی
+                </label>
+            </li>
+        </ul>
     </div>
-    <div id="checks-section" class="@(hasCheckbookId ? "" : "d-none")">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 id="selected-checkbook-title" class="fbold text-dark">لیست چک‌ها</h4>
-            <div class="d-flex gap-2">
-                <button class="buttonGreen0" onclick="openNewCheckModal()">
-                    ثبت چک جدید
-                    <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
-                </button>
-                <button class="buttonCancel-white" onclick="backToCheckbooks()">
-                    بازگشت
-                    <svg style="width: 16px;transform: scaleX(-1)" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M12.5 9.75A2.75 2.75 0 0 0 9.75 7H4.56l2.22 2.22a.75.75 0 1 1-1.06 1.06l-3.5-3.5a.75.75 0 0 1 0-1.06l3.5-3.5a.75.75 0 0 1 1.06 1.06L4.56 5.5h5.19a4.25 4.25 0 0 1 0 8.5h-1a.75.75 0 0 1 0-1.5h1a2.75 2.75 0 0 0 2.75-2.75Z" clip-rule="evenodd" /></svg>
-                </button>
+
+
+    <div id="outgoingChecksContainer" class="@(isIncomingType ? "d-none" : "")">
+        <div id="checkbooks-section" class="@(hasCheckbookId ? "d-none" : "")">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="section-title-dot"></span>
+                <h5 class="fbold text-dark m-0">دسته چک‌ها</h5>
+            </div>
+
+            <div id="checkbooksContainer">
+                <partial name="GetAllCheckbooksPartial" model="Model" />
             </div>
         </div>
 
-        <div>
-            <table id="checksTable" class="table-hover table table-bordered nowrap table-striped">
-                <thead>
-                <tr>
-                    <th>شماره سریال</th>
-                    <th>شماره صیادی</th>
-                    <th>مبلغ <span style="font-size: 11px">(ريال)</span></th>
-                    <th>تاریخ سررسید</th>
-                    <th>در وجه</th>
-                    <th>توضیحات</th>
-                    <th>وضعیت</th>
-                    <th>عملیات</th>
-                </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
+        <div id="checks-section" class="@(hasCheckbookId ? "" : "d-none")">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="section-title-dot"></span>
+                    <h5 id="selected-checkbook-title" class="fbold text-dark m-0">لیست چک‌ها</h5>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="buttonGreen0" onclick="openNewCheckModal()">
+                        ثبت چک جدید
+                        <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
+                    </button>
+                    <button class="buttonCancel-white" onclick="backToCheckbooks()">
+                        بازگشت
+                        <svg style="width: 16px;transform: scaleX(-1)" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M12.5 9.75A2.75 2.75 0 0 0 9.75 7H4.56l2.22 2.22a.75.75 0 1 1-1.06 1.06l-3.5-3.5a.75.75 0 0 1 0-1.06l3.5-3.5a.75.75 0 0 1 1.06 1.06L4.56 5.5h5.19a4.25 4.25 0 0 1 0 8.5h-1a.75.75 0 0 1 0-1.5h1a2.75 2.75 0 0 0 2.75-2.75Z" clip-rule="evenodd" /></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <table id="checksTable" class="table-hover table table-bordered nowrap table-striped">
+                    <thead>
+                    <tr>
+                        <th>شماره سریال</th>
+                        <th>شماره صیادی</th>
+                        <th>مبلغ <span style="font-size: 11px">(ريال)</span></th>
+                        <th>تاریخ سررسید</th>
+                        <th>در وجه</th>
+                        <th>توضیحات</th>
+                        <th>وضعیت</th>
+                        <th>عملیات</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+
+    <div id="incomingChecksContainer" class="@(!isIncomingType ? "d-none" : "")" style="width: 99%">
+        <div class="px-2 w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center align-items-md-center">
+
+            <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
+                تعداد: <span id="incomingChecksCount"></span>
+            </div>
+
+            <div class="search-group col-12 order-5 order-md-0 col-md-5">
+                <input class="form-control" type="text" id="incomingChecksSearchId" placeholder="جستجو..." />
+                <div class="search-icon">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <ul class="filter-switch filter-switch-sm">
+                    <li class="filter-switch-item">
+                        <input type="radio" name="incomingChecksFilter" id="incomingChecksFilterAll" value="-1" checked />
+                        <label for="incomingChecksFilterAll">همه</label>
+                    </li>
+                    <li class="filter-switch-item">
+                        <input type="radio" name="incomingChecksFilter" id="incomingChecksFilter1" value="1" />
+                        <label for="incomingChecksFilter1">
+                            در انتظار تایید
+                            <span class="badgeCircle filter-count-badge"></span>
+                        </label>
+                    </li>
+                    <li class="filter-switch-item">
+                        <input type="radio" name="incomingChecksFilter" id="incomingChecksFilter2" value="2" />
+                        <label for="incomingChecksFilter2">
+                            تایید شده
+                            <span class="badgeCircle filter-count-badge"></span>
+                        </label>
+                    </li>
+                    <li class="filter-switch-item">
+                        <input type="radio" name="incomingChecksFilter" id="incomingChecksFilter3" value="3" />
+                        <label for="incomingChecksFilter3">
+                            رد شده
+                            <span class="badgeCircle filter-count-badge"></span>
+                        </label>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="w-100 mt-3" id="incomingChecksContentId">
+        </div>
+    </div>
+
+
 </div>
 
 

@@ -32,11 +32,13 @@ document.addEventListener("DOMContentLoaded", () => {
  * @async
  * @param {Object} options - Request configurations.
  * @param {string} options.url - Target API endpoint URL.
- * @param {"GET"|"POST"|"PUT"|"DELETE"} [options.method='GET'] - HTTP method.
- * @param {Object|Array|null} [options.data=null] - Request payload (Query params for GET, Body for POST/PUT/DELETE).
- * @param {"json"|"blob"|"arraybuffer"|"text"|"document"|"stream"} [options.responseType="json"] - Expected response type. Use `"blob"` for file downloads (Excel, PDF, Images, etc.).
- * @param {Function|null} [options.onSuccess=null] - Success callback function `(responseData) => {}`.
- * @param {string} [options.successMsg="با موفقیت انجام شد"] - Success toast message (set empty string "" to disable).
+ * @param {"GET"|"POST"|"PUT"|"DELETE"|"PATCH"} [options.method='GET'] - HTTP method.
+ * @param {Object|Array|FormData|null} [options.data=null] - Request body payload (for POST, PUT, PATCH).
+ * @param {Object|null} [options.params=null] - URL query parameters (`?key=value`) for any HTTP method.
+ * @param {Object|null} [options.headers=null] - Custom HTTP request headers.
+ * @param {"json"|"blob"|"arraybuffer"|"text"|"document"|"stream"} [options.responseType="json"] - Expected response type.
+ * @param {Function|null} [options.onSuccess=null] - Success callback function `(response) => {}`.
+ * @param {string|null} [options.successMsg="با موفقیت انجام شد"] - Success toast message (set empty string "" or null to disable).
  * @param {boolean} [options.showLoading=true] - Toggle loading indicator display.
  * @returns {Promise<Object|null>} Returns response data on success, or null on failure.
  */
@@ -45,6 +47,8 @@ async function sendApiRequest(
         url,
         method = "GET",
         data = null,
+        params = null,
+        headers = null,
         responseType = "json",
         onSuccess = null,
         successMsg = "با موفقیت انجام شد",
@@ -61,12 +65,16 @@ async function sendApiRequest(
             responseType,
         };
         
+        if (params !== null) {
+            config.params = params;
+        }
+        
         if (data !== null) {
-            if (config.method === "GET") {
-                config.params = data; // query strings: ?key=value
-            } else {
-                config.data = data;   // JSON Body
-            }
+            config.data = data;
+        }
+        
+        if (headers !== null) {
+            config.headers = headers;
         }
         
         const response = await axios(config);
@@ -77,7 +85,7 @@ async function sendApiRequest(
             }
             
             if (typeof onSuccess === "function") {
-                onSuccess(response);
+                await onSuccess(response);
             }
             
             return response.data;

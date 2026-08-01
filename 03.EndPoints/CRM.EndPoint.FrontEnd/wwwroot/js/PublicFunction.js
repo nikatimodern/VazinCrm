@@ -2118,25 +2118,14 @@ async function acceptAcc(id, accepted, pfId) {
 
 
 async function acceptAccountancy(id, status, description = null) {
-    try {
-        FLshowLoading();
-        const model = { id, description };
-        const res = await axios.post(`/Accountancy/AcceptAccountancy?status=${status}`, model);
-        if (res.status === 200) {
-            await refreshInvoiceSuccess();
-            if (status === 2 || status === 3) {
-                toastifySuccess(`${status === 2 ? "تایید شد" : "رد شد"}`);
-            }
-            FLshowLoading(false);
-            return true;
-        }
-    } catch (err) {
-        console.log(err);
-        return false;
-    }
+    const result = await sendApiRequest({
+        url: `/Accountancy/AcceptAccountancy`,
+        method: "POST",
+        data: { id, description },
+        params: { status },
+        successMsg: status === 2 ? "تایید شد" : status === 3 ? "رد شد" : null,
+        onSuccess: async () => await refreshInvoiceSuccess(),
+    });
+    
+    return result !== null;
 }
-
-
-
-
-

@@ -6268,7 +6268,6 @@ table tr.payment-vosoled > td {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
-  margin-top: 1.5rem;
 }
 
 
@@ -6358,6 +6357,15 @@ table tr.payment-vosoled > td {
   border-color: #475569 !important;
   color: #475569;
   transform: translateY(-4px);
+}
+
+
+.section-title-dot {
+  display: inline-block;
+  width: 4px;
+  height: 18px;
+  background-color: #475569;
+  border-radius: 2px;
 }
 
 

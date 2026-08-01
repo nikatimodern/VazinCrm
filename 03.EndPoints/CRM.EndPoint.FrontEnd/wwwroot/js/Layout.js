@@ -2578,6 +2578,9 @@ async function refreshInvoiceSuccess() {
     } else if (currentPath.includes("deal")) { //4 سفارشات
         await getPreFactorFromDeal(invoiceDealId);
         
+    } else if (currentPath.includes("check")) { //چک ها
+        await getIncomingChecks();
+        
     } else if (currentPath.includes("cartable")) { // کارتابل
         const { tab, sub } = getUrlParams();
         switch (tab) {
@@ -2701,8 +2704,9 @@ async function submitNotAccept() { // رد تایید و بازگشت | عدم �
         };
         
         if (typeNotAccept === 0) { // acc
-            if (!await acceptAccountancy(model.id, 3, model.description)) {
-                toastifyError("خطای سرور!");
+            const a = await acceptAccountancy(model.id, 3, model.description);
+            console.log(a);
+            if (!a) {
                 return;
             }
         } else { // pf
@@ -5547,4 +5551,47 @@ function showModalSetting() {
 
 function showAgentReviewText(btn) {
     btn.closest(".agent-review-box")?.classList.toggle("open");
+}
+
+function initSearchInput(inputId, callback) {
+    const input = document.getElementById(inputId);
+    
+    if (!input) {
+        console.warn(`Search input not found: ${inputId}`);
+        return;
+    }
+    
+    const handleSearch = async (event) => {
+        await callback(event, input);
+    };
+    
+    input.addEventListener("keyup", async (event) => {
+        if (event.key === "Enter") {
+            await handleSearch(event);
+        }
+    });
+    
+    const searchGroup = input.closest(".search-group");
+    if (searchGroup) {
+        const searchIcon = searchGroup.querySelector(".search-icon");
+        
+        searchIcon?.addEventListener("click", async (event) => {
+            await handleSearch(event);
+        });
+    }
+}
+
+function initChangeRadio(name, callback) {
+    const radios = document.querySelectorAll(`input[name="${name}"]`);
+    
+    if (!radios.length) {
+        console.warn(`Radio group not found: ${name}`);
+        return;
+    }
+    
+    radios.forEach(radio => {
+        radio.addEventListener("change", async event => {
+            await callback(event, radio);
+        });
+    });
 }
