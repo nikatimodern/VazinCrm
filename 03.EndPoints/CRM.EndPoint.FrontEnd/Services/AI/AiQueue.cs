@@ -3,7 +3,6 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using CRM.Core.Domain.CallRecordings.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
 
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 

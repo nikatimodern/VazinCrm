@@ -659,17 +659,20 @@ font-family: 'IRANSansBold';
 .buttonExcel {
   background: linear-gradient(to bottom, var(--Excel0), var(--Excel1));
   color: #fff;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: .5rem;
   box-shadow: 0 2px 10px -1px #004f154f;
   border: none;
   user-select: none;
   cursor: pointer;
   border-radius: 5px;
-  padding: 0;
   height: 28px;
-  width: 34px
+  padding: 0 4px;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: normal;
 }
 
 
@@ -678,10 +681,17 @@ font-family: 'IRANSansBold';
 }
 
 
-.buttonExcel:active, .buttonExcel:focus {
+.buttonExcel:active,
+.buttonExcel:focus {
   background: linear-gradient(to bottom, var(--Excel0), var(--Excel1)) !important;
   border: none !important;
   box-shadow: 0 2px 10px -1px #004f154f !important;
+}
+
+
+.buttonExcel svg {
+  flex-shrink: 0;
+  width: 26px;
 }
 
 
@@ -733,6 +743,16 @@ font-family: 'IRANSansBold';
   overflow: hidden;
   border: none;
   user-select: none;
+}
+
+
+div.dt-buttons .btn.processing:after {
+  border-block-color: #fff !important;
+}
+
+
+div.dt-buttons .btn.processing {
+  color: rgb(255 255 255 / 20%) !important;
 }
 
 
@@ -2260,6 +2280,11 @@ input[type=checkbox], input[type=radio] {
 }
 
 
+.btn-close:focus {
+  box-shadow: 0 0 0 .25rem rgb(180 180 180 / 25%);
+}
+
+
 :root {
   --color1: #0ace8c;
   --color2: #402aa9;
@@ -2292,8 +2317,8 @@ input[type=checkbox], input[type=radio] {
   --DarkColor: #162636;
   --DarkColorLight: #3f5f80;
   --BDarkColor: #b4b4b4;
-  --Excel0: #01691d;
-  --Excel1: #01330e;
+  --Excel0: #217346;
+  --Excel1: #12452a;
   --shadow: 0 5px 5px rgba(0, 0, 0, 0.05);
   
   /* --bs-body-bg: transparent; */
@@ -3688,6 +3713,12 @@ width: 100% !important;
 
 .buttonCancel:active {
   background: linear-gradient(to bottom, var(--color16), var(--color15));
+  color: #fff !important;
+}
+
+
+.buttonCancel:disabled {
+  opacity: 0.75;
   color: #fff !important;
 }
 
@@ -5342,6 +5373,13 @@ table tr.payment-vosoled > td {
 }
 
 
+.inline-flex-center {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
 .direction-ltr {
   direction: ltr;
 }
@@ -6373,4 +6411,32 @@ table tr.payment-vosoled > td {
 
 .text-justify {
   text-align: justify !important;
+}
+
+
+#viewSwitchGroup .active-tab {
+  background-color: #fff !important;
+  color: #000 !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+
+#viewSwitchGroup button {
+  border-radius: 6px;
+  transition: all 0.2s ease-in-out;
+}
+
+
+#cashViewSwitcher .active-view-btn {
+  background-color: #fff !important;
+  color: #111 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+}
+
+
+#cashViewSwitcher button {
+  border: none;
+  font-size: 13px;
+  transition: all 0.15s ease-in-out;
 }

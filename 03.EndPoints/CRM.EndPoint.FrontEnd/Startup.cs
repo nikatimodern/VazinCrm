@@ -153,12 +153,15 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<GapgptAi>();
             services.AddScoped<AiPrompts>();
             services.AddScoped<IssabelService>();
+            services.AddHostedService<AiPendingWorker>();
 
             services.AddSingleton<ISmsQueue, SmsQueue>();
             services.AddHostedService<SmsBackgroundService>();
 
             services.AddHostedService<ChatReminderWorker>();
             services.AddScoped<ChatReminderService>();
+
+            services.AddScoped<IDocumentRenderService, DocumentRenderService>();
 
             services.AddScoped<MenuService>();
 

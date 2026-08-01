@@ -26,6 +26,86 @@ document.addEventListener("DOMContentLoaded", () => {
     MaskDate();
 });
 
+/**
+ * Sends HTTP API requests with automatic loading management, toast notifications, and success callbacks.
+ *
+ * @async
+ * @param {Object} options - Request configurations.
+ * @param {string} options.url - Target API endpoint URL.
+ * @param {"GET"|"POST"|"PUT"|"DELETE"} [options.method='GET'] - HTTP method.
+ * @param {Object|Array|null} [options.data=null] - Request payload (Query params for GET, Body for POST/PUT/DELETE).
+ * @param {"json"|"blob"|"arraybuffer"|"text"|"document"|"stream"} [options.responseType="json"] - Expected response type. Use `"blob"` for file downloads (Excel, PDF, Images, etc.).
+ * @param {Function|null} [options.onSuccess=null] - Success callback function `(responseData) => {}`.
+ * @param {string} [options.successMsg="عملیات با موفقیت انجام شد"] - Success toast message (set empty string "" to disable).
+ * @param {boolean} [options.showLoading=true] - Toggle loading indicator display.
+ * @returns {Promise<Object|null>} Returns response data on success, or null on failure.
+ */
+async function sendApiRequest(
+    {
+        url,
+        method = "GET",
+        data = null,
+        responseType = "json",
+        onSuccess = null,
+        successMsg = "عملیات با موفقیت انجام شد",
+        showLoading = true,
+    }) {
+    try {
+        if (showLoading && typeof FLshowLoading === "function") {
+            FLshowLoading(true);
+        }
+        
+        const config = {
+            url: url,
+            method: method.toUpperCase(),
+            responseType,
+        };
+        
+        if (data !== null) {
+            if (config.method === "GET") {
+                config.params = data; // query strings: ?key=value
+            } else {
+                config.data = data;   // JSON Body
+            }
+        }
+        
+        const response = await axios(config);
+        
+        if (response.status === 200) {
+            if (successMsg && typeof toastifySuccess === "function") {
+                toastifySuccess(successMsg);
+            }
+            
+            if (typeof onSuccess === "function") {
+                onSuccess(response);
+            }
+            
+            return response.data;
+        }
+    } catch (err) {
+        console.error("API Error:", err);
+        
+        let errorMessage = "خطایی در ارتباط با سرور رخ داده است.";
+        
+        if (err.response?.data instanceof Blob) {
+            errorMessage = await err.response.data.text();
+        } else if (typeof err.response?.data === "string") {
+            errorMessage = err.response.data;
+        } else if (err.response?.data?.message) {
+            errorMessage = err.response.data.message;
+        }
+        
+        if (typeof toastifyError === "function") {
+            toastifyError(errorMessage);
+        }
+        
+        return null;
+    } finally {
+        if (showLoading && typeof FLshowLoading === "function") {
+            FLshowLoading(false);
+        }
+    }
+}
 
 class SelectionManager {
     /**
@@ -34,7 +114,7 @@ class SelectionManager {
      * @param {string|HTMLElement} [options.selectionBar=".selection-bar"] - Selection actions bar element
      * @param {string|HTMLElement} [options.toggleBtn=".selection-toggle-btn"] - Button used to enable selection mode
      * @param {string} [options.itemSelector=".selection-item"] - Selector for selectable items
-     * @param {string} [options.checkboxSelector=".selection-checkbox"] - Selector for item checkbox
+     * @param {string|null} [options.checkboxSelector=".selection-checkbox"] - Selector for item checkbox
      * @param {string} [options.selectedClass="selected"] - Class applied to selected items
      * @param {string} [options.selectionModeClass="selection-mode"] - Class applied when selection mode is active
      * @param {(selectedIds: string[], instance: SelectionManager) => void|Promise<void>} [options.onAction] - Callback triggered when action button is clicked
@@ -53,17 +133,15 @@ class SelectionManager {
             selectionModeClass: "selection-mode",
             
             onAction: null,
+            onSelectionModeEnter: null,
+            onSelectionModeExit: null,
+            onSelectionChanged: null,
             
+            
+            isSelectable: null,
+            itemsProvider: null,
             ...options,
         };
-        
-        this.container = this.resolveElement(this.options.container);
-        this.selectionBar = this.resolveElement(this.options.selectionBar);
-        this.toggleBtn = this.resolveElement(this.options.toggleBtn);
-        
-        if (!this.container) throw new Error("SelectionManager: container element not found.");
-        if (!this.selectionBar) throw new Error("SelectionManager: selectionBar element not found.");
-        if (!this.toggleBtn) throw new Error("SelectionManager: toggleBtn element not found.");
         
         this.cancelBtn = this.selectionBar.querySelector(".cancel-selection");
         this.clearBtn = this.selectionBar.querySelector(".clear-selection");
@@ -78,7 +156,11 @@ class SelectionManager {
     
     
     init() {
-        this.toggleBtn?.addEventListener("click", () => this.showSelectionMode());
+        document.addEventListener("click", e => {
+            const btn = e.target.closest(this.options.toggleBtn);
+            if (!btn) return;
+            this.showSelectionMode();
+        });
         this.cancelBtn?.addEventListener("click", () => this.hideSelectionMode());
         this.clearBtn?.addEventListener("click", () => this.clearSelection());
         this.selectAll?.addEventListener("change", () => this.toggleSelectAll());
@@ -91,6 +173,27 @@ class SelectionManager {
         this.container?.addEventListener("click", (e) => this.handleItemClick(e));
     }
     
+    get toggleBtn() {
+        const elm = this.resolveElement(this.options.toggleBtn);
+        if (!elm) throw new Error("SelectionManager: toggleBtn element not found.");
+        
+        return elm;
+    }
+    
+    get selectionBar() {
+        const elm = this.resolveElement(this.options.selectionBar);
+        if (!elm) throw new Error("SelectionManager: selectionBar element not found.");
+        
+        return elm;
+    }
+    
+    get container() {
+        const elm = this.resolveElement(this.options.container);
+        if (!elm) throw new Error("SelectionManager: container element not found.");
+        
+        return elm;
+    }
+    
     resolveElement(elementOrSelector) {
         if (elementOrSelector instanceof HTMLElement) {
             return elementOrSelector;
@@ -100,6 +203,9 @@ class SelectionManager {
     }
     
     getItems() {
+        if (typeof this.options.itemsProvider === "function")
+            return this.options.itemsProvider();
+        
         return this.container.querySelectorAll(this.options.itemSelector);
     }
     
@@ -109,6 +215,12 @@ class SelectionManager {
         this.container.classList.toggle(this.options.selectionModeClass, enable);
         this.selectionBar?.classList.toggle("d-none", !enable);
         this.toggleBtn?.classList.toggle("d-none", enable);
+        
+        if (enable) {
+            this.options.onSelectionModeEnter?.(this);
+        } else {
+            this.options.onSelectionModeExit?.(this);
+        }
     }
     
     showSelectionMode() {
@@ -127,14 +239,23 @@ class SelectionManager {
         const item = e.target.closest(this.options.itemSelector);
         if (!item) return;
         
-        const checkbox = item.querySelector(this.options.checkboxSelector);
-        if (!checkbox) return;
+        if (!this.#isItemSelectable(item)) return;
         
-        if (!e.target.matches(this.options.checkboxSelector)) {
-            checkbox.checked = !checkbox.checked;
+        let isChecked;
+        if (this.options.checkboxSelector) {
+            const checkbox = item.querySelector(this.options.checkboxSelector);
+            if (!checkbox) return;
+            
+            if (!e.target.matches(this.options.checkboxSelector)) {
+                checkbox.checked = !checkbox.checked;
+            }
+            
+            isChecked = checkbox.checked;
+        } else {
+            isChecked = !this.selectedIds.has(item.dataset.id);
         }
         
-        this.toggleItem(item, checkbox.checked);
+        this.toggleItem(item, isChecked);
     }
     
     
@@ -156,32 +277,50 @@ class SelectionManager {
     updateUI() {
         const count = this.selectedIds.size;
         
-        if (this.selectedCounts) {
-            this.selectedCounts.forEach(i => i.textContent = count);
-        }
+        this.selectedCounts?.forEach(i => i.textContent = count);
         
         if (this.actionBtn) {
             this.actionBtn.disabled = count === 0;
         }
         
         if (this.selectAll) {
-            const visibleItems = this.getItems();
+            const selectableItems = Array.from(this.getItems()).filter(item => this.#isItemSelectable(item));
             
             this.selectAll.checked =
-                visibleItems.length > 0 &&
-                Array.from(visibleItems).every(item => this.selectedIds.has(item.dataset.id));
+                selectableItems.length > 0 &&
+                selectableItems.every(item => this.selectedIds.has(item.dataset.id));
+            
+            this.selectAll.indeterminate =
+                count > 0 && count < selectableItems.length;
         }
+        
+        this.options.onSelectionChanged?.(this.getSelectedIds(), this);
+    }
+    
+    #isItemSelectable(item) {
+        if (typeof this.options.isSelectable === "function")
+            return this.options.isSelectable(item);
+        
+        if (this.options.checkboxSelector)
+            return item.querySelector(this.options.checkboxSelector) !== null;
+        
+        return true;
     }
     
     
     toggleSelectAll() {
         const isChecked = this.selectAll.checked;
         
-        this.getItems().forEach(item => {
-            const checkbox = item.querySelector(this.options.checkboxSelector);
-            if (!checkbox) return;
+        const selectableItems = Array.from(this.getItems()).filter(item => this.#isItemSelectable(item));
+        
+        selectableItems.forEach(item => {
+            if (this.options.checkboxSelector) {
+                const checkbox = item.querySelector(this.options.checkboxSelector);
+                if (!checkbox) return;
+                
+                checkbox.checked = isChecked;
+            }
             
-            checkbox.checked = isChecked;
             this.toggleItem(item, isChecked);
         });
     }
@@ -217,6 +356,28 @@ class SelectionManager {
         });
         
         this.updateUI();
+    }
+    
+    decorateItems() {
+        
+        this.getItems().forEach(item => {
+            
+            item.classList.remove("selection-enabled");
+            
+            if (this.#isItemSelectable(item)) {
+                item.classList.add("selection-enabled");
+            }
+            
+        });
+        
+    }
+    
+    refresh() {
+        
+        this.decorateItems();
+        
+        this.restoreSelection();
+        
     }
     
     
@@ -3757,38 +3918,103 @@ async function getData(url) {
 async function deleteItem(options) {
     const { url, callback = null, title = "حذف!", text = "آیا مطمئن هستید که میخواهید حذف کنید؟" } = options;
     
-    const result = await Swal.fire({
+    return await confirmAlert({
         title,
         text,
         icon: "warning",
+        confirmText: "بله، حذف شود",
+        
+        onConfirm: async () => {
+            try {
+                FLshowLoading();
+                
+                const res = await axios.delete(url);
+                
+                if (res.status !== 200) return;
+                
+                toastifySuccess("با موفقیت حذف شد");
+                await callback?.(res.data);
+            } catch (err) {
+                console.error(err);
+                toastifyError("خطا در حذف اطلاعات");
+            } finally {
+                FLshowLoading(false);
+            }
+        },
+    });
+}
+
+/**
+ * Displays a customizable confirmation dialog using SweetAlert2.
+ *
+ * @async
+ * @param {Object} options Alert configuration.
+ * @param {string} [options.title="آیا مطمئن هستید؟"] Dialog title.
+ * @param {string} [options.text=""] Dialog message.
+ * @param {"warning"|"error"|"success"|"info"|"question"} [options.icon="warning"] Alert icon.
+ * @param {string} [options.confirmText] Confirm button text. If omitted, a default text is used based on the icon.
+ * @param {string} [options.cancelText="انصراف"] Cancel button text.
+ * @param {string} [options.confirmButtonColor] Overrides the default confirm button color.
+ * @param {string} [options.cancelButtonColor="#adadad"] Cancel button color.
+ * @param {(result: SweetAlertResult) => (void|Promise<void>)} [options.onConfirm] Executed when the user confirms.
+ * @param {(result: SweetAlertResult) => (void|Promise<void>)} [options.onCancel] Executed when the user cancels.
+ * @returns {Promise<boolean>} Returns true if confirmed; otherwise false.
+ */
+async function confirmAlert(
+    {
+        title = "آیا مطمئن هستید؟",
+        text = "",
+        icon = "warning",
+        confirmText,
+        cancelText = "انصراف",
+        confirmButtonColor,
+        cancelButtonColor = "#adadad",
+        onConfirm,
+        onCancel,
+    } = {}) {
+    
+    const primaryTheme = {
+        color: "#0d6efd",
+        confirmText: "تایید",
+    };
+    
+    const dangerTheme = {
+        color: "#e64942",
+        confirmText: "بله، انجام شود",
+    };
+    
+    const themes = {
+        success: primaryTheme,
+        info: primaryTheme,
+        question: primaryTheme,
+        warning: dangerTheme,
+        error: dangerTheme,
+    };
+    
+    const theme = themes[icon] ?? dangerTheme;
+    
+    const result = await Swal.fire({
+        title,
+        text,
+        icon,
         showCancelButton: true,
-        cancelButtonColor: "#adadad",
-        confirmButtonColor: "#e64942",
-        cancelButtonText: "انصراف",
-        confirmButtonText: "بله، حذف شود",
+        confirmButtonColor: confirmButtonColor ?? theme.color,
+        cancelButtonColor,
+        confirmButtonText: confirmText ?? theme.confirmText,
+        cancelButtonText: cancelText,
     });
     
-    if (!result.isConfirmed) return false;
-    
-    try {
-        FLshowLoading();
-        const res = await axios.delete(url);
-        if (res.status === 200) {
-            toastifySuccess("با موفقیت حذف شد");
-            
-            if (typeof callback === "function")
-                await callback(res.data);
-            
-            return true;
-        }
-        return false;
-    } catch (err) {
-        console.error(err);
-        toastifyError("خطا در حذف اطلاعات");
-        return false;
-    } finally {
-        FLshowLoading(false);
+    if (result.isConfirmed) {
+        if (typeof onConfirm === "function")
+            await onConfirm(result);
+        
+        return true;
     }
+    
+    if (typeof onCancel === "function")
+        await onCancel(result);
+    
+    return false;
 }
 
 function renderMoneyHtml(value, { currency = "ريال", empty = "-", className = "" } = {}) {
@@ -3807,3 +4033,96 @@ function renderDateTimeHtml(value, { empty = "-", className = "" } = {}) {
     
     return `<span dir="ltr" class="${className}">${value.slice(0, -3).split(" ").join(" | ")}</span>`;
 }
+
+class DynamicSkeleton {
+    /**
+     * @param {Object} options
+     * @param {string|HTMLElement} options.container - سلکتور یا المنت والد که اسکلتون ها در آن قرار میگیرند
+     * @param {string} options.template - ساختار HTML یک آیتم اسکلتون
+     * @param {number} options.count - تعداد اسکلتون‌هایی که باید ساخته شود (پیش‌فرض 3)
+     */
+    constructor(options) {
+        this.container = typeof options.container === "string"
+            ? document.querySelector(options.container)
+            : options.container;
+        this.template = options.template;
+        this.count = options.count || 3;
+    }
+    
+    // متد نمایش لودینگ
+    render() {
+        if (!this.container) return;
+        
+        let skeletonsHTML = "";
+        for (let i = 0; i < this.count; i++) {
+            skeletonsHTML += this.template;
+        }
+        
+        this.container.innerHTML = skeletonsHTML;
+    }
+    
+    // متد پاک کردن لودینگ (البته وقتی دیتای واقعی رو innerHTML کنید خود به خود پاک میشه)
+    clear() {
+        if (this.container) {
+            this.container.innerHTML = "";
+        }
+    }
+}
+
+const Skeleton = (() => {
+    
+    const templates = {};
+    
+    function register(name, builder) {
+        templates[name] = builder;
+    }
+    
+    function show({
+                      container,
+                      count = 1,
+                      template,
+                  }) {
+        
+        const el = typeof container === "string"
+            ? document.querySelector(container)
+            : container;
+        
+        if (!el) return;
+        
+        el.dataset.skeleton = "true";
+        
+        const html = [];
+        
+        const builder =
+            typeof template === "function"
+                ? template
+                : templates[template];
+        
+        for (let i = 0; i < count; i++) {
+            
+            html.push(builder(i));
+            
+        }
+        
+        el.innerHTML = html.join("");
+        
+    }
+    
+    function hide(container) {
+        
+        const el = typeof container === "string"
+            ? document.querySelector(container)
+            : container;
+        
+        if (el)
+            el.innerHTML = "";
+        
+    }
+    
+    return {
+        show,
+        hide,
+        register,
+    };
+    
+})();

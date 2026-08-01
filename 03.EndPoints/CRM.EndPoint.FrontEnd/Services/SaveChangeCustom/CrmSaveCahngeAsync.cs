@@ -1,9 +1,7 @@
 ﻿using CRM.Core.Domain.Carizos.Entities;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
-using DocumentFormat.OpenXml.Spreadsheet;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
 

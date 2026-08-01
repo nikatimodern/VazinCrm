@@ -52,17 +52,17 @@
                             <button class="buttonGray" onclick="showPayment('@item.Id')">مشاهده</button>
                         } else {
                             if (Model.IsCustomer) {
-                                <button class="mp d-inline-flex align-items-center justify-content-center" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none;background-color:transparent;" onclick="showAttachments('@item.Id')">
+                                <button class="mp inline-flex-center" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none;background-color:transparent;" onclick="showAttachments('@item.Id')">
                                     <i class="mp fa fa-paperclip"></i>
                                 </button>
                             } else if (isCreator || Model.IsCreatorParent || Model.IsAdmin || Model.IsSalesAdmin) {
-                                <span class="d-inline-flex align-items-center justify-content-center gap-2">
+                                <span class="inline-flex-center gap-2">
 
                                     @if (item.Status == AccStatusEnum.ثبت_اولیه || item.Status == AccStatusEnum.رد_شده) {
-                                        <button class="mp d-inline-flex align-items-center justify-content-center" data-title-right="حذف" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="delPayment('@item.Id', '@item.DealId')">
+                                        <button class="mp inline-flex-center" data-title-right="حذف" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="delPayment('@item.Id', '@item.DealId')">
                                             <i class="mp fa fa-trash"></i>
                                         </button>
-                                        <button class="mp d-inline-flex align-items-center justify-content-center" data-title-right="ویرایش" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="ShowEditModalInvoice('@item.Id', 1)">
+                                        <button class="mp inline-flex-center" data-title-right="ویرایش" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="ShowEditModalInvoice('@item.Id', 1)">
                                             <i class="mp fa fa-pencil"></i>
                                         </button>
                                     } else {
@@ -70,7 +70,7 @@
                                     }
 
                                     @if (item.Status == AccStatusEnum.ثبت_اولیه || item.Status == AccStatusEnum.رد_شده) {
-                                        <button class="mp d-inline-flex align-items-center justify-content-center" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none;background-color:transparent;" onclick="showAttachments('@item.Id')">
+                                        <button class="mp inline-flex-center" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none;background-color:transparent;" onclick="showAttachments('@item.Id')">
                                             <i class="mp fa fa-paperclip"></i>
                                         </button>
                                     }
@@ -88,7 +88,7 @@
                     </span>
                 </td>
                 <td>
-                    <span class="paymentTable-statusCol d-inline-flex align-items-center justify-content-center gap-2">
+                    <span class="paymentTable-statusCol inline-flex-center gap-2">
                         @if (!Model.IsCustomer && !string.IsNullOrEmpty(item.CommentText)) {
                             <span data-bs-toggle="popover" data-bs-title="توضیحات" data-bs-content="@Html.Raw(item.CommentText)">
                                 <svg style="width: 20px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg>

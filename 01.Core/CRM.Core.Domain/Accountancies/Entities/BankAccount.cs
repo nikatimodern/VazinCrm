@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Checks.Entities;
 using CRM.Framework.Domain;
 
@@ -14,6 +15,7 @@ namespace CRM.Core.Domain.Accountancies.Entities {
         public bool Status { get; set; } = true;
         public byte OfficialType { get; set; }
         public bool Active { get; set; }
+        public int? AccountCode { get; set; } // شماره تفضیل حساب
 
         public BankAccountTypeEnum BankAccountType { get; set; }
         public string BankAccountTypeTxt { get; set; }
@@ -21,8 +23,10 @@ namespace CRM.Core.Domain.Accountancies.Entities {
         public Guid? CustomerId { get; set; }
         public int? CustomerCode { get; set; }
 
+
         public List<Accountancy> Accountancies { get; set; }
         public List<Checkbook> Checkbooks { get; set; }
+        public List<Cash> Cashes { get; set; }
     }
 
     public enum BankAccountTypeEnum {

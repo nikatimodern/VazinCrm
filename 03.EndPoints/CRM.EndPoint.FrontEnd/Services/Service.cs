@@ -1,44 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using CRM.Core.Domain;
-using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.AppUsers.Entities;
-using CRM.Core.Domain.ASettings.Entities;
-using CRM.Core.Domain.Attachments.Entities;
-using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Customers.Enum;
-using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.Emails.Entities;
 using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.LogSystems.Entities;
-using CRM.Core.Domain.Orders.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
-using CRM.Core.Domain.Reports.Entities;
 using CRM.Core.Domain.Reports.Enum;
-using CRM.Core.Domain.RequestAmounts.Entities;
 using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.Core.Domain.Transfers.Entities;
-using CRM.EndPoint.FrontEnd.Models;
-using CRM.EndPoint.FrontEnd.Models.LogSystem;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Customer;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
-using CRM.Framework.Domain;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Generics.Infrastructures.Sql;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
+using Microsoft.Playwright;
 
 
 namespace CRM.EndPoint.FrontEnd.Services {
@@ -102,7 +88,8 @@ namespace CRM.EndPoint.FrontEnd.Services {
                 pf.Pftype = newStatus;
             } else
             {
-                throw new KeyNotFoundException($"Current status '({currentStatus}) is not defined in '{(type == 1 ? "acceptedDict" : "rejectDict")}'");
+                throw new KeyNotFoundException(
+                    $"Current status '({currentStatus}) is not defined in '{(type == 1 ? "acceptedDict" : "rejectDict")}'");
             }
 
             pf.PftypeTxt = GetTypeTxtPfactor(pf.Pftype);

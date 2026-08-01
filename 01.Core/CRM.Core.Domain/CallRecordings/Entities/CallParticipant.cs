@@ -1,12 +1,15 @@
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using CRM.Core.Domain.Reports.Entities;
 
-namespace CRM.Core.Domain.Reports.Entities;
+namespace CRM.Core.Domain.CallRecordings.Entities;
 
-public class ReportParticipant {
+public class CallParticipant {
     public Guid Id { get; set; }
-    public Guid ReportId { get; set; }
+    public Guid? ReportId { get; set; }
     public Report Report { get; set; }
+    public Guid? CallRecordingId { get; set; }
+    public CallRecording CallRecording { get; set; }
 
     public string Extension { get; set; }
     public string UserId { get; set; }

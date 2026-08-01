@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using ClosedXML.Excel;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.AppUsers.Entities;
@@ -47,7 +50,8 @@ public class CashController : Controller {
     [Authorize(Roles = "مدیر ارشد,تنخواه دار,مدیر مالی,کارشناس مالی")]
     public IActionResult Index()
     {
-        return View();
+        var isFinancial = User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی") || User.IsInRole("مدیر ارشد");
+        return View(isFinancial);
     }
 
     [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
@@ -183,24 +187,6 @@ public class CashController : Controller {
         }
     }
 
-    public async Task<IActionResult> ChangeStatusCash(Guid id, CashStatusEnum status)
-    {
-        try
-        {
-            var user = await userManager.GetUserAsync(HttpContext.User);
-            var data = await db.Cashes.FirstOrDefaultAsync(f => f.Id == id);
-            if (data == null) return NotFound();
-
-            await ChangeCashStatus(status, data, user);
-
-            await db.SaveChangesAsync();
-            return Ok();
-        }
-        catch (Exception e)
-        {
-            return BadRequest(e.Message);
-        }
-    }
 
     private async Task ChangeCashStatus(CashStatusEnum status, Cash data, AppUser user)
     {
@@ -215,6 +201,49 @@ public class CashController : Controller {
         await SyncCashAccountancyDebit(data, user);
     }
 
+    private async Task AttachCashesToNewGroup(List<Cash> cashList, CashStatusEnum status, AppUser user)
+    {
+        if (cashList == null || cashList.Count == 0) return;
+
+        var group = new CashGroup {
+            UserCreator = user.FullName,
+            UserCreatorID = user.Id
+        };
+
+        db.CashGroups.Add(group);
+
+        foreach (var cash in cashList)
+        {
+            await ChangeCashStatus(status, cash, user);
+            cash.CashGroup = group;
+        }
+    }
+
+
+    public async Task<IActionResult> ChangeStatusCash(Guid id, CashStatusEnum status)
+    {
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var data = await db.Cashes.FirstOrDefaultAsync(f => f.Id == id);
+            if (data == null) return NotFound("تنخواه یافت نشد.");
+
+            if (data.CashGroupId == null && data.Status == CashStatusEnum.ثبت_موقت && status == CashStatusEnum.در_دست_تایید)
+            {
+                await AttachCashesToNewGroup([data], status, user);
+            } else
+            {
+                await ChangeCashStatus(status, data, user);
+            }
+
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
 
     public async Task<IActionResult> ChangeStatusAllCashToPending()
     {
@@ -226,9 +255,57 @@ public class CashController : Controller {
                 f.Status == CashStatusEnum.ثبت_موقت
             ).ToListAsync();
 
+            if (cashes.Count == 0) return BadRequest("هیچ تنخواه آماده ارسالی یافت نشد.");
+
+            await AttachCashesToNewGroup(cashes, CashStatusEnum.در_دست_تایید, user);
+
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ChangeStatusGroupCashToPending([FromBody] List<Guid> listIds)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        try
+        {
+            if (listIds == null || listIds.Count == 0) return BadRequest("لیست انتخاب‌شده خالی است.");
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var cashes = await db.Cashes.Where(f => listIds.Contains(f.Id)).ToListAsync();
+
+            if (cashes.Count == 0) return BadRequest("موردی برای ارسال یافت نشد.");
+
+            await AttachCashesToNewGroup(cashes, CashStatusEnum.در_دست_تایید, user);
+
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            await transaction.RollbackAsync();
+            return BadRequest(e.Message);
+        }
+    }
+
+    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+    public async Task<IActionResult> ApproveCashGroup(Guid groupId)
+    {
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var cashes = await db.Cashes.Where(f => f.CashGroupId == groupId).ToListAsync();
+
+            if (cashes.Count == 0) return NotFound("گروه یافت نشد یا تنخواهی در آن وجود ندارد.");
+
             foreach (var cash in cashes)
             {
-                await ChangeCashStatus(CashStatusEnum.در_دست_تایید, cash, user);
+                await ChangeCashStatus(CashStatusEnum.تایید_شده, cash, user);
             }
 
             await db.SaveChangesAsync();
@@ -236,6 +313,40 @@ public class CashController : Controller {
         }
         catch (Exception e)
         {
+            return BadRequest(e.Message);
+        }
+    }
+
+    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+    public async Task<IActionResult> RejectCashGroup(Guid groupId)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        try
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var group = await db.CashGroups.FirstOrDefaultAsync(g => g.Id == groupId);
+            var cashes = await db.Cashes.Where(f => f.CashGroupId == groupId).ToListAsync();
+
+            if (cashes.Count == 0 && group == null) return NotFound("گروه مورد نظر یافت نشد.");
+
+            foreach (var cash in cashes)
+            {
+                await ChangeCashStatus(CashStatusEnum.ثبت_موقت, cash, user);
+                cash.CashGroupId = null;
+            }
+
+            if (group != null)
+            {
+                db.CashGroups.Remove(group);
+            }
+
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            await transaction.RollbackAsync();
             return BadRequest(e.Message);
         }
     }
@@ -360,6 +471,7 @@ public class CashController : Controller {
         }
     }
 
+    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> DeleteCashier(Guid id)
     {
         try
@@ -399,21 +511,30 @@ public class CashController : Controller {
             var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
             var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
             var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
-            var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
+            var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][data]"].FirstOrDefault();
             var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
             var searchValue = Request.Form["search[value]"].FirstOrDefault()?.ToLower().Trim();
 
             var user = await userManager.GetUserAsync(HttpContext.User);
             var roles = await userManager.GetRolesAsync(user);
 
+            var isExported = false;
 
-            var query = db.Cashes.AsQueryable();
+            var query = db.Cashes.Include(f => f.CashGroup).AsQueryable();
 
-            var isManager = true;
+            if (Guid.TryParse(model?.EntityId, out var groupId))
+            {
+                query = query.Where(f => f.CashGroupId == Guid.Parse(model.EntityId));
+                isExported = await db.CashGroups
+                    .Where(g => g.Id == groupId)
+                    .Select(g => g.IsExported)
+                    .FirstOrDefaultAsync();
+            }
+
+
             if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر مالی") && !roles.Contains("کارشناس مالی"))
             {
                 query = query.Where(f => f.UserCreatorID == user.Id);
-                isManager = false;
             } else
             {
                 query = query.Where(f => f.Status != CashStatusEnum.ثبت_موقت || f.UserCreatorID == user.Id);
@@ -425,6 +546,7 @@ public class CashController : Controller {
                 var searchNumber = TextService.convertToInt(searchValue);
                 query = query.Where(f =>
                     f.Amount == searchNumber ||
+                    f.CashGroup.GroupNumber == searchNumber ||
                     f.Serial == searchNumber ||
                     f.CostDescription.Contains(searchValue) ||
                     f.CostCenterTxt.Contains(searchValue) ||
@@ -450,36 +572,42 @@ public class CashController : Controller {
             {
                 var isAscending = sortColumnDirection == "asc";
                 query = sortColumn switch {
-                    "Serial" => isAscending
+                    "serial" => isAscending
                         ? query.OrderBy(f => f.Serial)
                         : query.OrderByDescending(f => f.Serial),
-                    "CreateDateTxt" => isAscending
+                    "createDateTxt" => isAscending
                         ? query.OrderBy(f => f.CreateDate)
                         : query.OrderByDescending(f => f.CreateDate),
-                    "CostTitleTxt" => isAscending
+                    "costTitleTxt" => isAscending
                         ? query.OrderBy(f => f.CostTitleTxt)
                         : query.OrderByDescending(f => f.CostTitleTxt),
-                    "CostCenterTxt" => isAscending
+                    "costCenterTxt" => isAscending
                         ? query.OrderBy(f => f.CostCenterTxt)
                         : query.OrderByDescending(f => f.CostCenterTxt),
-                    "CostDate" => isAscending
+                    "costDate" => isAscending
                         ? query.OrderBy(f => f.CostDateMiladi)
                         : query.OrderByDescending(f => f.CostDateMiladi),
-                    "Amount" => isAscending
+                    "amount" => isAscending
                         ? query.OrderBy(f => f.Amount)
                         : query.OrderByDescending(f => f.Amount),
-                    "Fee" => isAscending
+                    "fee" => isAscending
                         ? query.OrderBy(f => f.Fee)
                         : query.OrderByDescending(f => f.Fee),
-                    "TotalAmount" => isAscending
+                    "totalAmount" => isAscending
                         ? query.OrderBy(f => f.Amount + f.Fee)
                         : query.OrderByDescending(f => f.Amount + f.Fee),
-                    "CostDescription" => isAscending
+                    "costDescription" => isAscending
                         ? query.OrderBy(f => f.CostDescription)
                         : query.OrderByDescending(f => f.CostDescription),
-                    "UserCreator" => isAscending
+                    "userCreator" => isAscending
                         ? query.OrderBy(f => f.UserCreator)
                         : query.OrderByDescending(f => f.UserCreator),
+                    "cashGroup.groupNumber" => isAscending
+                        ? query.OrderBy(f => f.CashGroup == null).ThenBy(f => f.CashGroup.GroupNumber)
+                        : query.OrderBy(f => f.CashGroup == null).ThenByDescending(f => f.CashGroup.GroupNumber),
+                    "paymentVoucherNumber" => isAscending
+                        ? query.OrderBy(f => f.CashGroup == null).ThenBy(f => f.PaymentVoucherNumber)
+                        : query.OrderBy(f => f.CashGroup == null).ThenByDescending(f => f.PaymentVoucherNumber),
                     _ => query
                 };
             }
@@ -514,7 +642,7 @@ public class CashController : Controller {
                 recordsTotal,
                 recordsFiltered = recordsTotal,
                 data,
-                isManager,
+                isExported,
                 cashierBalance
             });
         }
@@ -523,6 +651,267 @@ public class CashController : Controller {
             return BadRequest(ex.Message);
         }
     }
+
+    [HttpPost]
+    public async Task<IActionResult> GetCashGroupsDt()
+    {
+        try
+        {
+            var draw = Request.Form["draw"].FirstOrDefault();
+            var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
+//            var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
+            var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
+            var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][data]"].FirstOrDefault();
+            var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
+            var searchValue = Request.Form["search[value]"].FirstOrDefault()?.ToLower().Trim();
+
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            var roles = await userManager.GetRolesAsync(user);
+
+            var baseQuery = db.CashGroups.AsQueryable();
+
+            if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر مالی") && !roles.Contains("کارشناس مالی"))
+            {
+                baseQuery = baseQuery.Where(g => g.UserCreatorID == user.Id || g.Cashes.Any(c => c.UserCreatorID == user.Id));
+            } else
+            {
+                baseQuery = baseQuery.Where(g =>
+                    g.Cashes.Any(c => c.Status != CashStatusEnum.ثبت_موقت) || g.Cashes.Any(c => c.UserCreatorID == user.Id));
+            }
+
+            var query = baseQuery.Select(g => new CashGroupVModel {
+                CashGroupId = g.Id,
+                GroupNumber = g.GroupNumber,
+                UserCreator = g.UserCreator,
+                CreateDate = g.CreateDate,
+                CreateDateTxt = g.CreateDateTxt,
+                ItemsCount = g.Cashes.Count,
+                TotalAmount = g.Cashes.Sum(c => c.Amount + c.Fee),
+                Status = g.Cashes.All(c => c.Status == CashStatusEnum.تایید_شده) ? CashStatusEnum.تایید_شده : CashStatusEnum.در_دست_تایید,
+                StatusTxt = g.Cashes.All(c => c.Status == CashStatusEnum.تایید_شده) ? "تایید شده" : "در دست تایید"
+            });
+
+
+            if (!string.IsNullOrEmpty(searchValue))
+            {
+                var searchNumber = TextService.convertToInt(searchValue);
+                query = query.Where(f =>
+                    f.GroupNumber == searchNumber ||
+                    f.UserCreator.Contains(searchValue)
+                );
+            }
+
+            var recordsTotal = await query.CountAsync();
+
+            if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortColumnDirection))
+            {
+                var isAscending = sortColumnDirection == "asc";
+                query = sortColumn switch {
+                    "groupNumber" => isAscending
+                        ? query.OrderBy(f => f.GroupNumber)
+                        : query.OrderByDescending(f => f.GroupNumber),
+                    "createDateTxt" => isAscending
+                        ? query.OrderBy(f => f.CreateDate)
+                        : query.OrderByDescending(f => f.CreateDate),
+                    "userCreator" => isAscending
+                        ? query.OrderBy(f => f.UserCreator)
+                        : query.OrderByDescending(f => f.UserCreator),
+                    "itemsCount" => isAscending
+                        ? query.OrderBy(f => f.ItemsCount)
+                        : query.OrderByDescending(f => f.ItemsCount),
+                    "totalAmount" => isAscending
+                        ? query.OrderBy(f => f.TotalAmount)
+                        : query.OrderByDescending(f => f.TotalAmount),
+                    _ => query
+                };
+            } else
+            {
+                query = query.OrderByDescending(x => x.CreateDate);
+            }
+
+            if (length != -1)
+                query = query.Skip(start).Take(length);
+
+            var data = await query.ToListAsync();
+
+            return Json(new {
+                draw,
+                recordsTotal,
+                recordsFiltered = recordsTotal,
+                data
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+
+    [HttpGet]
+    public async Task<IActionResult> ExportCashGroupToExcel(Guid groupId, int? startVoucherNumber = null)
+    {
+        try
+        {
+            var cashItems = await db.Cashes
+                .Include(c => c.CashGroup).Include(c => c.CostCenter)
+                .Include(c => c.CostTitle).Include(c => c.BankAccount)
+                .Where(c => c.CashGroupId == groupId)
+                .OrderBy(c => c.CreateDate)
+                .ToListAsync();
+
+            if (cashItems.Count == 0)
+                return NotFound("اقلامی برای این گروه یافت نشد.");
+
+            if (startVoucherNumber.HasValue)
+            {
+                if (cashItems[0]?.CashGroup?.IsExported == true) return BadRequest("این گروه قبلاً خروجی گرفته است.");
+
+                var usedNumbers = await GetUsedVoucherNumbers(startVoucherNumber.Value, cashItems.Count);
+
+                if (usedNumbers.Any())
+                    return BadRequest($"شماره اعلامیه‌های {string.Join("، ", usedNumbers)} قبلاً ثبت شده‌اند. لطفاً شماره شروع دیگری وارد کنید.");
+
+
+                await AssignPaymentVoucherNumbers(cashItems, startVoucherNumber.Value);
+            }
+
+
+            using var workbook = new XLWorkbook();
+            var ws = workbook.Worksheets.Add("تنخواه");
+
+            string[] headers = [
+                "نوع قلم",
+                "اعلاميه پرداخت نوع پرداخت",
+                "اعلاميه پرداخت طرف مقابل",
+                "اعلاميه پرداخت كد تفصيل",
+                "اعلاميه پرداخت شماره",
+                "اعلاميه پرداخت تاريخ",
+                "اعلاميه پرداخت كد معين",
+                "اعلاميه پرداخت صندوق",
+                "اعلاميه پرداخت مبلغ پرداخت",
+                "اعلاميه پرداخت مبلغ نقد",
+                "اعلاميه پرداخت شرح",
+                "اعلاميه پرداخت شرح(2)",
+                "پرداخت چك حساب بانكي1",
+                "پرداخت چك شماره",
+                "پرداخت چك پشت نمره",
+                "پرداخت چك مبلغ",
+                "پرداخت چك تاريخ سررسيد",
+                "پرداخت چك نوع مدت",
+                "پرداخت چك شرح",
+                "پرداخت چك شرح(2)",
+                "پرداخت چك وضعيت",
+                "اعلاميه برداشت شماره",
+                "اعلاميه برداشت تاريخ",
+                "اعلاميه برداشت مبلغ",
+                "اعلاميه برداشت حساب بانكي",
+                "اعلاميه برداشت شرح",
+                "اعلاميه برداشت شرح(2)",
+                "اعلاميه برداشت تفصيل حساب بانكي",
+                "اعلاميه برداشت نرخ كارمزد بانكي",
+                "اعلاميه برداشت كارمزد بانكي",
+                "اعلاميه برداشت كارمزد بانكي به ارز پايه",
+                "اعلاميه پرداخت كد معين كارمزد بانكي",
+                "اعلاميه پرداخت تخفيف",
+                "اعلاميه پرداخت استقراري"
+            ];
+
+            for (var i = 0; i < headers.Length; i++)
+            {
+                ws.Cell(1, i + 1).Value = headers[i];
+                ws.Cell(1, i + 1).Style.Font.Bold = true;
+            }
+
+            var row = 2;
+
+            foreach (var item in cashItems)
+            {
+                ws.Cell(row, 1).Value = "PaymentDraft";
+                ws.Cell(row, 2).Value = 2;
+                ws.Cell(row, 3).Value = item.CostCenter.Title;
+                ws.Cell(row, 4).Value = item.CostCenter.Code;
+                ws.Cell(row, 5).Value = item.PaymentVoucherNumber;
+                ws.Cell(row, 6).Value = item.CostDate;
+                ws.Cell(row, 7).Value = item.CostTitle.MoeinCode;
+                ws.Cell(row, 8).Value = "صندوق";
+                ws.Cell(row, 9).Value = item.Amount; //TODO
+                ws.Cell(row, 10).Value = 0;
+                ws.Cell(row, 11).Value = item.CostDescription;
+                ws.Cell(row, 12).Value = item.CostDescription;
+                ws.Cell(row, 13).Value = "";
+                ws.Cell(row, 14).Value = "";
+                ws.Cell(row, 15).Value = "";
+                ws.Cell(row, 16).Value = "";
+                ws.Cell(row, 17).Value = "";
+                ws.Cell(row, 18).Value = "";
+                ws.Cell(row, 19).Value = "";
+                ws.Cell(row, 20).Value = "";
+                ws.Cell(row, 21).Value = "";
+                ws.Cell(row, 22).Value = item.ReferenceNumber;
+                ws.Cell(row, 23).Value = item.CostDate;
+                ws.Cell(row, 24).Value = item.Amount;
+                ws.Cell(row, 25).Value = item.BankAccountTxt;
+                ws.Cell(row, 26).Value = item.CostDescription;
+                ws.Cell(row, 27).Value = "";
+                ws.Cell(row, 28).Value = item.BankAccount?.AccountCode;
+                ws.Cell(row, 29).Value = 1;
+                ws.Cell(row, 30).Value = item.Fee == 0 ? "" : item.Fee;
+                ws.Cell(row, 31).Value = item.Fee == 0 ? "" : item.Fee;
+                ws.Cell(row, 32).Value = item.Fee == 0 ? "" : 7704;
+                ws.Cell(row, 33).Value = 0;
+                ws.Cell(row, 34).Value = "False";
+
+                row++;
+            }
+
+            ws.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
+            return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "CashGroup.xlsx");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    private async Task AssignPaymentVoucherNumbers(List<Cash> cashItems, int startVoucherNumber)
+    {
+        if (cashItems?.Count == 0) return;
+
+        var voucher = startVoucherNumber;
+        var group = cashItems[0].CashGroup;
+
+        foreach (var cash in cashItems)
+            cash.PaymentVoucherNumber = voucher++;
+
+        if (group != null)
+        {
+            group.IsExported = true;
+            group.ModifyDate = DateTime.Now;
+            group.ModifyDateTxt = dtService.GetDateTimePersian();
+        }
+
+        await db.SaveChangesAsync();
+    }
+
+    private async Task<List<int>> GetUsedVoucherNumbers(int startNumber, int count)
+    {
+        var endNumber = startNumber + count - 1;
+
+        return await db.Cashes
+            .Where(x =>
+                x.PaymentVoucherNumber != null &&
+                x.PaymentVoucherNumber >= startNumber &&
+                x.PaymentVoucherNumber <= endNumber)
+            .Select(x => x.PaymentVoucherNumber!.Value)
+            .OrderBy(x => x)
+            .ToListAsync();
+    }
+
 
     public async Task<IActionResult> GetAllCashiersDt()
     {

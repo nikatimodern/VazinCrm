@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using CRM.Core.Domain.CallRecordings.Enums;
 using CRM.Core.Domain.Reports.Entities;
 using CRM.Framework.Domain;
 
@@ -18,14 +19,28 @@ public class CallRecording : BaseEntity {
     public string TranscriptionText { get; set; }
     public string SummaryText { get; set; }
     public string Product { get; set; }
+    public int DurationSeconds { get; set; }
 
-    [NotMapped] public List<CallParticipant> CallParticipant { get; set; } = [];
+    public List<CallParticipant> Participants { get; set; } = [];
     public Report Report { get; set; }
-}
 
-public class CallParticipant {
-    public string Extension { get; set; }
-    public DateTime AnswerTime { get; set; }
-    public string UserId { get; set; }
-    public string UserFullName { get; set; }
+    private AiProcessStatusEnum _AiProcessStatus;
+
+    public AiProcessStatusEnum AiStatus {
+        get => _AiProcessStatus;
+        set {
+            _AiProcessStatus = value;
+            AiStatusTxt = _AiProcessStatus.ToString();
+        }
+    }
+
+    public string AiStatusTxt { get; private set; }
+
+    public string AiError { get; set; }
+    public string AvanegarRequestId { get; set; }
+    public int AiAttempts { get; set; }
+
+    public string AgentReview { get; set; }
+    public int? AgentScore { get; set; }
+    public double? AiDurationSeconds { get; set; }
 }
