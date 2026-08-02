@@ -42,8 +42,8 @@
 .dashGridItem.gridItemLogs {
   grid-column: span 4;
   border-top: 1px solid #1f857c;
-  min-height: 298px;
-  height: calc(100dvh - 621px);
+  min-height: 280px;
+  height: calc(100dvh - 622px);
 }
 
 

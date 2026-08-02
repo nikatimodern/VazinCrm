@@ -1176,7 +1176,6 @@ animation: loading 0.9s infinite linear;
 
 
 #FLshowLoading {
-  display: none;
   position: fixed;
   height: 100dvh;
   inset: 0;
