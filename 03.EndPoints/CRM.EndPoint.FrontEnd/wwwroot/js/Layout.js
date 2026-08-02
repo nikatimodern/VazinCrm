@@ -3009,8 +3009,8 @@ const OpenMenu = () => {
     $("#desktopSidebar").removeClass("closeMenu");
     $("#desktopSidebar").addClass("openMenu");
     
-    $("#ImgUser").removeClass("personImageCloseMenu");
-    $("#ImgUser").addClass("personImageOpenMenu");
+    $("#profileImage").removeClass("personImageCloseMenu");
+    $("#profileImage").addClass("personImageOpenMenu");
     
     $(".ToggleClossMenu").css("display", "");
     $("#VContent").css("margin-right", "220px");
@@ -3020,8 +3020,8 @@ const CloseMenu = () => {
     $("#desktopSidebar").removeClass("openMenu");
     $("#desktopSidebar").addClass("closeMenu");
     
-    $("#ImgUser").removeClass("personImageOpenMenu");
-    $("#ImgUser").addClass("personImageCloseMenu");
+    $("#profileImage").removeClass("personImageOpenMenu");
+    $("#profileImage").addClass("personImageCloseMenu");
     
     $(".ToggleClossMenu").css("display", "none");
     $("#VContent").css("margin-right", "60px");
@@ -3135,11 +3135,11 @@ const GetUserLogin = async () => {
             sessionStorage.setItem("Rols", JSON.stringify(currentUser.rollNames));
             
             const imgSrc = currentUser.personImage ? `data:image/jpg;base64,${currentUser.personImage}` : "/Img/User.png";
-            document.getElementById("ImgUser").src = imgSrc;
+            document.getElementById("profileImage").src = imgSrc;
             document.getElementById("PersonImgPreview").src = imgSrc;
             document.getElementById("btnDelPersonImg").style.display = currentUser.personImage ? "" : "none";
             
-            document.getElementById("NameUser").textContent = `${currentUser.firstName || ""} ${currentUser.lastName || ""}`.trim();
+            document.getElementById("profileName").textContent = `${currentUser.firstName || ""} ${currentUser.lastName || ""}`.trim();
             document.getElementById("PFirstName").value = currentUser.firstName || "";
             document.getElementById("PLastName").value = currentUser.lastName || "";
             document.getElementById("PPhoneNumber").value = currentUser.phoneNumber || "";
@@ -3630,7 +3630,7 @@ async function getRemind() {
         }
     }).then((tasks) => {
         notificationDropdown.innerHTML = tasks.html;
-        notificationIconBadge.style.display = tasks.count ? "block" : "none";
+        notificationIconBadge.classList.toggle("d-none", !tasks.count)
     })
          .catch((err) => {
              console.log(err);

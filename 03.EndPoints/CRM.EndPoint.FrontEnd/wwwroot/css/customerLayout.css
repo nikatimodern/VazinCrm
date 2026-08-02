@@ -32,12 +32,12 @@ nav#customerMenuDesktop {
 }
 
 
-.profileImg, #customerLogo {
+.header-profile, #customerLogo {
   transition: all 0.2s ease;
 }
 
 
-.profileImg:hover, #customerLogo:hover {
+.header-profile:hover, #customerLogo:hover {
   transform: scale(1.02);
 }
 
@@ -76,7 +76,7 @@ nav#customerMenuDesktop {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   }
   
-  .imgUser {
+  .profile-image {
     outline: 1px solid rgba(255, 255, 255, 0.4);
   }
   

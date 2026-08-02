@@ -2469,17 +2469,91 @@ html.sidebar-collapsed #mainWrapper {
 }
 
 
+.header-container {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	width: 100%;
+	height: 100%;
+}
+
+
 .logoCompany-text {
 	filter: brightness(10) saturate(0)
 }
 
 
-.profileImg {
+.header-profile {
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	gap: 8px;
 	cursor: pointer;
+}
+
+
+.header-profile .profile-name {
+	font-family: IRANSansBold;
+	font-size: clamp(12px, 2vw, 13px);
+	white-space: nowrap
+}
+
+
+.header-action-btn {
+	width: 32px;
+	height: 32px;
+	border: none;
+	background: transparent;
+	color: #333;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 999px;
+	padding: 0;
+	cursor: auto !important;
+	transition: background-color .15s ease, color .15s ease;
+}
+
+
+.header-action-btn:hover {
+	background: rgba(0, 0, 0, 0.05);
+}
+
+
+.header-action-btn:active {
+	background: rgba(0, 0, 0, 0.1);
+}
+
+
+.header-action-btn svg {
+	display: block;
+}
+
+
+.header-datetime {
+	display: flex;
+	justify-content: start;
+	align-items: center;
+	font-family: IRANSansBold;
+	margin-right: .25rem;
+	font-size: 15px;
+	gap: 6px;
+}
+
+
+.header-icon-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+	cursor: pointer;
+	color: var(--DarkColorLight);
+	transition: all 0.2s;
+}
+
+
+.header-icon-btn:hover {
+	color: var(--color8);
 }
 
 
@@ -2641,7 +2715,13 @@ html.sidebar-collapsed .has-submenu ul.submenu {
 
 
 #expandMenuIcon {
+	margin-left: 8px;
 	display: none;
+}
+
+
+#expandMenuIcon svg {
+	width: 20px;
 }
 
 
@@ -5536,42 +5616,6 @@ table tr.payment-vosoled > td {
 .pwa-modal p {
 	font-size: 14px;
 	line-height: 1.6;
-}
-
-
-.header-icon-btn {
-	width: 32px;
-	height: 32px;
-	border: none;
-	background: transparent;
-	color: #333;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	border-radius: 999px;
-	padding: 0;
-	cursor: auto !important;
-	transition: background-color .15s ease, color .15s ease;
-}
-
-
-/* .back-btn {
-  display: none;
-} */
-
-
-.header-icon-btn:hover {
-	background: rgba(0, 0, 0, 0.05);
-}
-
-
-.header-icon-btn:active {
-	background: rgba(0, 0, 0, 0.1);
-}
-
-
-.header-icon-btn svg {
-	display: block;
 }
 
 

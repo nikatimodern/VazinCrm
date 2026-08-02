@@ -174,7 +174,7 @@
 }
 
 
-.infoFactors-firstItem .imgUser {
+.infoFactors-firstItem .profile-image {
   width: 40px !important;
 }
 
@@ -250,11 +250,11 @@
     gap: 10px;
   }
   
-  .user__item .imgUser {
+  .user__item .profile-image {
     width: 33px !important;
   }
   
-  .user__item .imgUser ~ span {
+  .user__item .profile-image ~ span {
     font-size: 11px !important;
   }
   
@@ -262,7 +262,7 @@
     font-size: 13px !important;
   }
   
-  .user__item .infoFactors-firstItem .imgUser {
+  .user__item .infoFactors-firstItem .profile-image {
     width: 36px !important;
   }
   
