@@ -103,7 +103,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 
-
 /*
 const RepairPf = async (pfi, passType, dealId) => {
     try {
@@ -131,15 +130,21 @@ let tooltipList = [];
 function initTooltipsIfCollapsed() {
     if (!document.documentElement.classList.contains("sidebar-collapsed")) return;
     
+    
     const triggers = document.querySelectorAll("[data-tooltip-left]");
-    tooltipList = [...triggers].map(el =>
-        new bootstrap.Tooltip(el, {
-            title: el.getAttribute("data-tooltip-left"),
-            delay: { show: 150, hide: 0 },
-            customClass: "main-font",
-            placement: "left",
-        }),
-    );
+    
+    tooltipList = [...triggers]
+        .filter(el => !el.closest(".submenu"))
+        .map(el => {
+            const isSubmenu = el.closest(".has-submenu");
+            
+            return new bootstrap.Tooltip(el, {
+                title: el.getAttribute("data-tooltip-left"),
+                delay: { show: 150, hide: 0 },
+                customClass: "main-font",
+                placement: isSubmenu ? "top" : "left"
+            });
+        });
     
 }
 
