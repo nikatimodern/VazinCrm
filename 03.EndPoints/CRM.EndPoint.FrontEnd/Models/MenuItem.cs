@@ -4,22 +4,22 @@ namespace CRM.EndPoint.FrontEnd.Models;
 
 public class MenuItem
 {
-    public string Id { get; set; }
-    public string Title { get; set; }
-    public string Url { get; set; }
-    public string IconHtml { get; set; }
+    public string Id { get; init; }
+    public string Title { get; init; }
+    public string Url { get; init; }
+    public string IconHtml { get; init; }
     public List<string> Roles  { get; set; } = [];
     public List<MenuItem> SubItems { get; set; } = [];
-    public int DisplayOrder { get; set; }
-    public bool ShowInMobileBottomMenu { get; set; }
+    public int DisplayOrder { get; init; }
+    public bool ShowInMobileBottomMenu { get; init; }
 
-    public bool ShowInDesktop { get; set; } = true;
-    public bool ShowInMobile { get; set; } = true;
+    public bool ShowInDesktop { get; init; } = true;
+    public bool ShowInMobile { get; init; } = true;
 
-    public string OnClick { get; set; }
-    public string ElementId { get; set; }
-    public string ClassName { get; set; }
-    public bool HasBadge { get; set; }
-    public bool IsStandalone { get; set; }   // بیرون از لیست اصلی (مثل هشدارها)
+    public string OnClick { get; init; }
+    public string ElementId { get; init; }
+    public string ClassName { get; init; }
+    public bool HasBadge { get; init; }
+    public bool IsStandalone { get; init; }   // بیرون از لیست اصلی (مثل هشدارها)
 
 }

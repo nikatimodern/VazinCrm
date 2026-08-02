@@ -6,7 +6,7 @@ using CRM.EndPoint.FrontEnd.Models;
 namespace CRM.EndPoint.FrontEnd.Services;
 
 public class MenuService {
-    public List<MenuItem> GetMenus(ClaimsPrincipal user)
+    public static List<MenuItem> GetMenus(ClaimsPrincipal user)
     {
         var roles = user.Claims
             .Where(x => x.Type == ClaimTypes.Role)
@@ -21,6 +21,8 @@ public class MenuService {
     private static List<MenuItem> BuildMenus()
     {
         return [
+            #region داشبورد
+
             new MenuItem {
                 Id = "dashboard",
                 Title = "داشبورد",
@@ -40,6 +42,10 @@ public class MenuService {
                 ShowInMobileBottomMenu = true
             },
 
+            #endregion
+
+            #region سفارشات
+
             new MenuItem {
                 Id = "deal",
                 Title = "سفارشات",
@@ -58,6 +64,10 @@ public class MenuService {
                 ShowInMobileBottomMenu = true
             },
 
+            #endregion
+
+            #region اشخاص
+
             new MenuItem {
                 Id = "customer",
                 Title = "اشخاص",
@@ -73,6 +83,10 @@ public class MenuService {
                 DisplayOrder = 3,
                 ShowInMobileBottomMenu = true
             },
+
+            #endregion
+
+            #region کارتابل
 
             new MenuItem {
                 Id = "cartable",
@@ -91,6 +105,10 @@ public class MenuService {
                 ShowInMobileBottomMenu = true
             },
 
+            #endregion
+
+            #region کاریزو
+
             new MenuItem {
                 Id = "carizo",
                 Title = "کاریزو",
@@ -108,6 +126,10 @@ public class MenuService {
                 DisplayOrder = 5
             },
 
+            #endregion
+
+            #region گزارش کار
+
             new MenuItem {
                 Id = "report",
                 Title = "گزارش کار",
@@ -121,6 +143,10 @@ public class MenuService {
                 DisplayOrder = 6,
                 ShowInMobileBottomMenu = true
             },
+
+            #endregion
+
+            #region حسابداری
 
             new MenuItem {
                 Id = "accountancy",
@@ -138,6 +164,10 @@ public class MenuService {
                 DisplayOrder = 7
             },
 
+            #endregion
+
+            #region حواله ها
+
             new MenuItem {
                 Id = "orders",
                 Title = "حواله ها",
@@ -153,6 +183,10 @@ public class MenuService {
                 ],
                 DisplayOrder = 8
             },
+
+            #endregion
+
+            #region گزارشات
 
             new MenuItem {
                 Id = "reports",
@@ -180,6 +214,10 @@ public class MenuService {
                 ]
             },
 
+            #endregion
+
+            #region خزانه
+
             new MenuItem {
                 Id = "treasury",
                 Title = "خزانه",
@@ -197,6 +235,8 @@ public class MenuService {
                 ],
                 DisplayOrder = 10,
                 SubItems = [
+                    #region ثبت فاکتور تامین
+
                     new MenuItem {
                         Id = "supplyFactor",
                         Title = "ثبت فاکتور تامین",
@@ -212,16 +252,25 @@ public class MenuService {
                             AppRoles.FinancialAdmin
                         ]
                     },
+
+                    #endregion
+
+                    #region ثبت درخواست وجه
+
                     new MenuItem {
                         Id = "requestAmount",
                         Title = "ثبت درخواست وجه",
                         Url = "/Amount/RequestAmount",
                         DisplayOrder = 2
                     },
+
+                    #endregion
+
+                    #region چک ها
+
                     new MenuItem {
                         Id = "check",
                         Title = "چک ها",
-                        Url = "/Check/Index",
                         DisplayOrder = 3,
                         Roles = [
                             AppRoles.Admin,
@@ -229,8 +278,26 @@ public class MenuService {
                             AppRoles.ExecutiveDirector,
                             AppRoles.FinancialExpert,
                             AppRoles.FinancialAdmin
-                        ]
+                        ],
+                        SubItems = [
+                            new MenuItem {
+                                Id = "receivedChecks",
+                                Title = "چک‌های دریافتی",
+                                Url = "/Check/Received"
+                            },
+
+                            new MenuItem {
+                                Id = "issuedChecks",
+                                Title = "صدور چک",
+                                Url = "/Check/Index"
+                            }
+                        ],
                     },
+
+                    #endregion
+
+                    #region نقل و انتقال
+
                     new MenuItem {
                         Id = "transfer",
                         Title = "نقل و انتقال",
@@ -244,6 +311,11 @@ public class MenuService {
                             AppRoles.FinancialAdmin
                         ]
                     },
+
+                    #endregion
+
+                    #region ثبت پرداختی
+
                     /*new MenuItem {
                         Id = "payment",
                         Title = "ثبت پرداختی",
@@ -257,8 +329,14 @@ public class MenuService {
                             AppRoles.FinancialAdmin
                         ]
                     }*/
+
+                    #endregion
                 ]
             },
+
+            #endregion
+
+            #region قیمت ها
 
             new MenuItem {
                 Id = "amount",
@@ -274,10 +352,15 @@ public class MenuService {
                 DisplayOrder = 11
             },
 
+            #endregion
+
+            #region تنخواه
+
             new MenuItem {
                 Id = "cash",
                 Title = "تنخواه",
-                IconHtml = """<svg class="menu-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7.5a2.25 2.25 0 1 0 0 4.5 2.25 2.25 0 0 0 0-4.5Z"/><path fill-rule="evenodd" d="M1.5 4.875C1.5 3.839 2.34 3 3.375 3h17.25c1.035 0 1.875.84 1.875 1.875v9.75c0 1.036-.84 1.875-1.875 1.875H3.375A1.875 1.875 0 0 1 1.5 14.625v-9.75ZM8.25 9.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM18.75 9a.75.75 0 0 0-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 0 0 .75-.75V9.75a.75.75 0 0 0-.75-.75h-.008ZM4.5 9.75A.75.75 0 0 1 5.25 9h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H5.25a.75.75 0 0 1-.75-.75V9.75Z" clip-rule="evenodd"/><path d="M2.25 18a.75.75 0 0 0 0 1.5c5.4 0 10.63.722 15.6 2.075 1.19.324 2.4-.558 2.4-1.82V18.75a.75.75 0 0 0-.75-.75H2.25Z"/></svg>""",
+                IconHtml =
+                    """<svg class="menu-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7.5a2.25 2.25 0 1 0 0 4.5 2.25 2.25 0 0 0 0-4.5Z"/><path fill-rule="evenodd" d="M1.5 4.875C1.5 3.839 2.34 3 3.375 3h17.25c1.035 0 1.875.84 1.875 1.875v9.75c0 1.036-.84 1.875-1.875 1.875H3.375A1.875 1.875 0 0 1 1.5 14.625v-9.75ZM8.25 9.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM18.75 9a.75.75 0 0 0-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 0 0 .75-.75V9.75a.75.75 0 0 0-.75-.75h-.008ZM4.5 9.75A.75.75 0 0 1 5.25 9h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H5.25a.75.75 0 0 1-.75-.75V9.75Z" clip-rule="evenodd"/><path d="M2.25 18a.75.75 0 0 0 0 1.5c5.4 0 10.63.722 15.6 2.075 1.19.324 2.4-.558 2.4-1.82V18.75a.75.75 0 0 0-.75-.75H2.25Z"/></svg>""",
                 Roles = [
                     AppRoles.Admin,
                     AppRoles.FinancialAdmin,
@@ -306,6 +389,10 @@ public class MenuService {
                 ]
             },
 
+            #endregion
+
+            #region تنظیمات
+
             new MenuItem {
                 Id = "settings",
                 Title = "تنظیمات",
@@ -320,6 +407,10 @@ public class MenuService {
                 ],
                 DisplayOrder = 13
             },
+
+            #endregion
+
+            #region هشدارها
 
             new MenuItem {
                 Id = "warnings",
@@ -339,40 +430,50 @@ public class MenuService {
                 ],
                 DisplayOrder = 999
             }
+
+            #endregion
         ];
     }
 
     private static List<MenuItem> Filter(List<MenuItem> menus, HashSet<string> userRoles)
     {
-        foreach (var menu in menus ?? [])
+        return FilterItems(menus, userRoles, []);
+    }
+
+    private static List<MenuItem> FilterItems(List<MenuItem> items, HashSet<string> userRoles, List<string> parentRoles)
+    {
+        var result = new List<MenuItem>();
+
+        foreach (var item in items ?? [])
         {
-            foreach (var sub in menu?.SubItems ?? [])
+            // اگر خودش Role داشته باشد، همان ملاک است
+            // اگر نداشته باشد، Role والد را به ارث می‌برد
+            var effectiveRoles = item.Roles.Count > 0 ? item.Roles : parentRoles;
+
+            var hasAccess = effectiveRoles?.Count == 0 || effectiveRoles.Any(userRoles.Contains);
+
+            if (!hasAccess) continue;
+
+            // Recursive
+            var filteredSubItems = FilterItems(item.SubItems, userRoles, effectiveRoles);
+
+            item.SubItems = filteredSubItems.OrderBy(x => x.DisplayOrder).ToList();
+
+            // اگر آیتم فقط یک parent برای submenu بوده
+            // و هیچ child قابل مشاهده‌ای ندارد، حذفش کن
+            if (string.IsNullOrEmpty(item.Url) && string.IsNullOrEmpty(item.OnClick) && item.SubItems.Count == 0)
             {
-                if (sub.Roles.Count == 0)
-                    sub.Roles = [..menu.Roles];
+                continue;
             }
+
+            result.Add(item);
         }
 
-        return menus
-            .Where(menu => HasAccess(menu, userRoles))
-            .Select(menu => {
-                menu.SubItems = menu.SubItems
-                    .Where(sub => HasAccess(sub, userRoles))
-                    .OrderBy(sub => sub.DisplayOrder)
-                    .ToList();
-
-                return menu;
-            })
-            .OrderBy(menu => menu.DisplayOrder)
-            .ToList();
+        return result.OrderBy(x => x.DisplayOrder).ToList();
     }
 
-    private static bool HasAccess(MenuItem item, HashSet<string> userRoles)
-    {
-        return userRoles != null && (item.Roles.Count == 0 || item.Roles.Any(userRoles.Contains));
-    }
 
-    public static class AppRoles {
+    private static class AppRoles {
         public const string Admin = "مدیر ارشد";
 
         public const string SalesExpert = "کارشناس فروش";

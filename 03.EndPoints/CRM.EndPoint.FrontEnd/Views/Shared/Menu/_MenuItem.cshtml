@@ -1,8 +1,8 @@
 @model MenuItem
 
-@if (Model.SubItems != null && Model.SubItems.Any()) {
+@if (Model.SubItems?.Count > 0) {
     // Menu item with submenu
-    <div class="has-submenu @($"{Model.Id}-menu")">
+    <div class="has-submenu @(Model.Id)-menu">
         <span data-tooltip-left="@Model.Title" class="menu-item">
             @Html.Raw(Model.IconHtml)
             <span class="menu-item-title">
@@ -12,11 +12,9 @@
         </span>
         <ul class="submenu">
             @foreach (var sub in Model.SubItems) {
-                <a class="menu-link" href="@sub.Url">
-                    <li>
-                        @sub.Title
-                    </li>
-                </a>
+                <li>
+                    <partial name="Menu/_MenuItem" model="sub" />
+                </li>
             }
         </ul>
     </div>
