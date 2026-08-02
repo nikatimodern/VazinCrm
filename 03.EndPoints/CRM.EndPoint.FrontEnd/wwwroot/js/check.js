@@ -5,8 +5,6 @@ let payeeCheckTomSelect;
 let checkbooksSection = document.getElementById("checkbooks-section");
 let checkSection = document.getElementById("checks-section");
 document.addEventListener("DOMContentLoaded", async () => {
-    const { cBook, cBookName } = getUrlParams();
-    if (cBook) showChecks(cBook, decodeURIComponent(cBookName || "دسته چک"));
     
     window.addEventListener("popstate", () => {
         const { cBook, cBookName } = getUrlParams();
@@ -20,6 +18,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     await initSelectTomCheck();
 });
+
 
 const GetAllCheckbooks = async () => {
     try {
@@ -242,7 +241,7 @@ function showChecks(id, checkbookName) {
 
 function backToCheckbooks() {
     checkData = {};
-    setUrlParams({ cBook: null, cBookName: null }, { replace: false });
+    setUrlParams({ cBook: null, cBookName: null });
     checkSection.classList.add("d-none");
     checkbooksSection.classList.remove("d-none");
 }

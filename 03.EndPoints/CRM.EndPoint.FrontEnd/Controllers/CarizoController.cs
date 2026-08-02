@@ -201,9 +201,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public async Task<IActionResult> DismissTask(Guid id)
         {
             var data = await db.Carizos.Where(f => f.Id == id).FirstOrDefaultAsync();
-            data.RemindDismiss = true;
-            //await db.SaveChangesAsync();
-            await crmSaveCahngeAsync.SaveChange();
+            if (data != null)
+            {
+                data.RemindDismiss = true;
+                //await db.SaveChangesAsync();
+                await crmSaveCahngeAsync.SaveChange();
+            }
+
             return Ok();
         }
 

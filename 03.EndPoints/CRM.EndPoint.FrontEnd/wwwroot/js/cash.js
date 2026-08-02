@@ -139,7 +139,7 @@ async function submitCashModal() {
 async function changeStatusCash(id, status) {
     await sendApiRequest({
         url: `/Cash/ChangeStatusCash/${id}`,
-        data: { status: status },
+        params: { status: status },
         successMsg: status === 2 ? "تایید شد" : null,
         onSuccess: () => {
             if (cashViewType === "cashes") {
@@ -178,7 +178,7 @@ async function approveCashGroup() {
     if (!currentCashGroupId) return;
     await sendApiRequest({
         url: `/Cash/ApproveCashGroup`,
-        data: { groupId: currentCashGroupId },
+        params: { groupId: currentCashGroupId },
         successMsg: "کل گروه با موفقیت تایید شد",
         onSuccess: () => {
             cashModalTbl?.ajax.reload(null, false);
@@ -197,7 +197,7 @@ async function rejectCashGroup() {
         onConfirm: async () => {
             await sendApiRequest({
                 url: `/Cash/RejectCashGroup`,
-                data: { groupId: currentCashGroupId },
+                params: { groupId: currentCashGroupId },
                 successMsg: "گروه با موفقیت برگشت داده شد",
                 onSuccess: () => {
                     ModalToggle("cashGroupDetailModal", "hide");
@@ -816,7 +816,7 @@ async function exportGroupCashToExcel() {
     
     await sendApiRequest({
         url: `/Cash/ExportCashGroupToExcel`,
-        data: { groupId: currentCashGroupId, startVoucherNumber },
+        params: { groupId: currentCashGroupId, startVoucherNumber },
         responseType: "blob",
         showLoading: false,
         successMsg: null,

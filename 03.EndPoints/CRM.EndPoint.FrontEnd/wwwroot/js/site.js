@@ -32,11 +32,13 @@ document.addEventListener("DOMContentLoaded", () => {
  * @async
  * @param {Object} options - Request configurations.
  * @param {string} options.url - Target API endpoint URL.
- * @param {"GET"|"POST"|"PUT"|"DELETE"} [options.method='GET'] - HTTP method.
- * @param {Object|Array|null} [options.data=null] - Request payload (Query params for GET, Body for POST/PUT/DELETE).
- * @param {"json"|"blob"|"arraybuffer"|"text"|"document"|"stream"} [options.responseType="json"] - Expected response type. Use `"blob"` for file downloads (Excel, PDF, Images, etc.).
- * @param {Function|null} [options.onSuccess=null] - Success callback function `(responseData) => {}`.
- * @param {string} [options.successMsg="عملیات با موفقیت انجام شد"] - Success toast message (set empty string "" to disable).
+ * @param {"GET"|"POST"|"PUT"|"DELETE"|"PATCH"} [options.method='GET'] - HTTP method.
+ * @param {Object|Array|FormData|null} [options.data=null] - Request body payload (for POST, PUT, PATCH).
+ * @param {Object|null} [options.params=null] - URL query parameters (`?key=value`) for any HTTP method.
+ * @param {Object|null} [options.headers=null] - Custom HTTP request headers.
+ * @param {"json"|"blob"|"arraybuffer"|"text"|"document"|"stream"} [options.responseType="json"] - Expected response type.
+ * @param {Function|null} [options.onSuccess=null] - Success callback function `(response) => {}`.
+ * @param {string|null} [options.successMsg="با موفقیت انجام شد"] - Success toast message (set empty string "" or null to disable).
  * @param {boolean} [options.showLoading=true] - Toggle loading indicator display.
  * @returns {Promise<Object|null>} Returns response data on success, or null on failure.
  */
@@ -45,9 +47,11 @@ async function sendApiRequest(
         url,
         method = "GET",
         data = null,
+        params = null,
+        headers = null,
         responseType = "json",
         onSuccess = null,
-        successMsg = "عملیات با موفقیت انجام شد",
+        successMsg = "با موفقیت انجام شد",
         showLoading = true,
     }) {
     try {
@@ -61,12 +65,16 @@ async function sendApiRequest(
             responseType,
         };
         
+        if (params !== null) {
+            config.params = params;
+        }
+        
         if (data !== null) {
-            if (config.method === "GET") {
-                config.params = data; // query strings: ?key=value
-            } else {
-                config.data = data;   // JSON Body
-            }
+            config.data = data;
+        }
+        
+        if (headers !== null) {
+            config.headers = headers;
         }
         
         const response = await axios(config);
@@ -77,7 +85,7 @@ async function sendApiRequest(
             }
             
             if (typeof onSuccess === "function") {
-                onSuccess(response);
+                await onSuccess(response);
             }
             
             return response.data;
@@ -2783,70 +2791,6 @@ class MyService {
         form.querySelectorAll(".currencyHint").forEach(elm => elm.innerHTML = "");
     }
     
-    
-    /*convertJsonToForm(js, formId, BlackListArray = []) {
-        
-        $.each(js, (obj, val) => {
-            //var f = obj.substring(0, 1).toUpperCase();
-            //var ot = obj.substring(1, obj.length);
-            //obj = f + ot;
-            
-            var flag = true;
-            BlackListArray.map((item) => {
-                if (obj == item)
-                    flag = false;
-            });
-            if (flag) {
-                try {
-                    var elm = document.getElementById(formId).elements[obj];
-                    console.log(elm instanceof RadioNodeList);
-                    if (elm.length > 1 && elm.type == undefined) {
-                        elm.forEach((o, v) => {
-                            if (o.type == "radio" && o.value == val) {
-                                o.checked = true;
-                            }
-                        });
-                    }
-                    
-                    switch (elm.type) {
-                        case "text":
-                            elm.value = val;
-                            break;
-                        case "textarea":
-                            elm.value = val;
-                            break;
-                        case "number":
-                            elm.value = val;
-                            break;
-                        case "select-one":
-                            if (elm.tomselect) {
-                                elm.tomselect.setValue(val, true);
-                            } else {
-                                $(elm).val(val).trigger("change");
-                            }
-                            break;
-                        case "radio":
-                            $("input[name=" + obj + "][value=" + val + "]").prop("checked", true);
-                            break;
-                        case "checkbox":
-                            $("#" + elm.id).prop("checked", val);
-                            break;
-                    }
-                } catch (e) {
-                
-                }
-            }
-            
-            
-        });
-        const allA = Array.from(document.querySelectorAll(`#${formId} .inpAmount`));
-        allA.forEach((item) => {
-            const num = Number(item.value);
-            item.value = num === 0 ? "" : num.toLocaleString();
-        });
-    }*/
-    
-    
     convertJsonToForm(js, formId, blackListArray = []) {
         const form = document.getElementById(formId);
         if (!form) return;
@@ -2952,7 +2896,7 @@ class MyService {
             }
         }
         
-        const checkboxes = formEl.querySelectorAll("input[type=\"checkbox\"]");
+        const checkboxes = formEl.querySelectorAll(`input[type="checkbox"]`);
         checkboxes.forEach(cb => {
             if (blackListArray.includes(cb.name)) return;
             jsonData[cb.name] = cb.checked;
