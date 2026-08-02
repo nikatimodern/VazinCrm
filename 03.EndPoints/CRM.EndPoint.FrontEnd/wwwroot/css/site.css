@@ -2532,9 +2532,9 @@ html.sidebar-collapsed #mainWrapper {
 
 
 .has-submenu > .submenu {
-  overflow: hidden;
   max-height: 0;
   opacity: 0;
+  visibility: hidden;
   transform: translateY(-6px);
   transition: max-height 0.3s ease, opacity 0.25s ease, transform 0.3s ease;
   margin: 0;
@@ -2547,6 +2547,7 @@ html:not(.sidebar-collapsed) .has-submenu.open > .submenu {
   margin-top: 2px;
   max-height: 800px;
   opacity: 1;
+  visibility: visible;
   transform: translateY(0);
 }
 
@@ -2563,7 +2564,7 @@ html.sidebar-collapsed .has-submenu ul.submenu {
 }
 
 
-.has-submenu.open .submenu-arrow {
+.has-submenu.open > .menu-item > .menu-item-title .submenu-arrow {
   transform: rotate(-90deg);
 }
 
@@ -2642,11 +2643,16 @@ html.sidebar-collapsed .sidebar {
 }
 
 
-html.sidebar-collapsed .sidebar .menu-item span,
-html.sidebar-collapsed .sidebar .menuFooter > div,
+html.sidebar-collapsed .sidebar .menu-item .menu-item-title,
+html.sidebar-collapsed .sidebar .menuFooter .ownerCompany-info,
 html.sidebar-collapsed .sidebar .logoCompany-text,
 html.sidebar-collapsed #collapseMenuIcon {
-  display: none !important;
+  display: none;
+}
+
+
+html.sidebar-collapsed .sidebar .submenu .menu-item .menu-item-title {
+  display: flex;
 }
 
 
@@ -2668,26 +2674,34 @@ html.sidebar-collapsed .has-submenu {
 
 html.sidebar-collapsed .has-submenu ul.submenu {
   position: absolute;
-  right: 100%;
+  right: calc(100% + 4px);
   top: 0;
-  margin-right: 6px;
+  /* margin-right: 6px; */
   
   width: 180px;
   background: #004944;
   border-radius: 6px;
   padding: 8px;
+  margin: 0;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
   
   max-height: none;
   opacity: 0;
   visibility: hidden;
   transform: translateX(10px);
+  
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
 }
 
-
-html.sidebar-collapsed .has-submenu.open ul.submenu {
-  opacity: 0;
-  visibility: hidden;
+html.sidebar-collapsed .has-submenu::before {
+  content: "";
+  position: absolute;
+  
+  right: 100%;
+  top: 0;
+  bottom: 0;
+  
+  width: 12px;
 }
 
 
@@ -2695,6 +2709,10 @@ html.sidebar-collapsed .has-submenu:hover > ul.submenu {
   opacity: 1;
   visibility: visible;
   transform: translateX(0);
+}
+
+html.sidebar-collapsed .has-submenu:hover > .menu-item > .menu-item-title .submenu-arrow {
+  transform: rotate(-90deg);
 }
 
 
