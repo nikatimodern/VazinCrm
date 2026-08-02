@@ -11,11 +11,13 @@
             </span>
         </span>
         <ul class="submenu">
-            @foreach (var sub in Model.SubItems) {
-                <li>
-                    <partial name="Menu/_MenuItem" model="sub" />
-                </li>
-            }
+            <div class="submenu-content">
+                @foreach (var sub in Model.SubItems) {
+                    <li>
+                        <partial name="Menu/_MenuItem" model="sub" />
+                    </li>
+                }
+            </div>
         </ul>
     </div>
 } else if (string.IsNullOrEmpty(Model.Url)) {

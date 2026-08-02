@@ -43,7 +43,7 @@
   grid-column: span 4;
   border-top: 1px solid #1f857c;
   min-height: 280px;
-  height: calc(100dvh - 622px);
+  height: calc(100dvh - 624px);
 }
 
 
