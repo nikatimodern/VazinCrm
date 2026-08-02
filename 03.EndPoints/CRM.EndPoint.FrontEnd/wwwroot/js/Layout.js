@@ -2579,7 +2579,7 @@ async function refreshInvoiceSuccess() {
         await getPreFactorFromDeal(invoiceDealId);
         
     } else if (currentPath.includes("check")) { //چک ها
-        await getIncomingChecks();
+        await getReceivedChecks();
         
     } else if (currentPath.includes("cartable")) { // کارتابل
         const { tab, sub } = getUrlParams();
@@ -2587,7 +2587,7 @@ async function refreshInvoiceSuccess() {
             case "TPrefactorFactorId": //2 پیش‌فاکتور و فاکتور
                 await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
                 break;
-            case "TFinancialExpertId": //5  مالی
+            case "TFinancialExpertId": //5 مالی
                 switch (sub) {
                     case "FinancialPrefactorTab":
                         await GetPreFactorFinancialExpert();

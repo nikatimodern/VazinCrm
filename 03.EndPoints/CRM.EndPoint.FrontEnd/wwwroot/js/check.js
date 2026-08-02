@@ -5,15 +5,6 @@ let payeeCheckTomSelect;
 let checkbooksSection = document.getElementById("checkbooks-section");
 let checkSection = document.getElementById("checks-section");
 document.addEventListener("DOMContentLoaded", async () => {
-    const checkedViewType = document.querySelector(`input[name="checkViewType"]:checked`);
-    if (checkedViewType) {
-        switchCheckView(checkedViewType.value);
-    }
-    
-    initChangeRadio("checkViewType", async (e) => switchCheckView(e.target.value));
-    
-    initChangeRadio("incomingChecksFilter", async () => await getIncomingChecks());
-    initSearchInput("incomingChecksSearchId", async () => await getIncomingChecks());
     
     window.addEventListener("popstate", () => {
         const { cBook, cBookName } = getUrlParams();
@@ -27,61 +18,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     await initSelectTomCheck();
 });
-
-let checkViewType;
-function switchCheckView(viewType) {
-    const outgoingContainer = document.getElementById("outgoingChecksContainer");
-    const incomingContainer = document.getElementById("incomingChecksContainer");
-    checkViewType = viewType;
-    setUrlParams({ type: checkViewType });
-    
-    if (viewType === "outgoing") {
-        outgoingContainer.classList.remove("d-none");
-        incomingContainer.classList.add("d-none");
-        
-        const { cBook, cBookName } = getUrlParams();
-        if (cBook) showChecks(cBook, decodeURIComponent(cBookName || "دسته چک"));
-        else backToCheckbooks();
-        
-    } else { // viewType === "incoming"
-        setUrlParams({ cBook: null, cBookName: null });
-        incomingContainer.classList.remove("d-none");
-        outgoingContainer.classList.add("d-none");
-        getIncomingChecks();
-    }
-}
-
-
-const getIncomingChecks = async () => {
-    const val = document.getElementById("incomingChecksSearchId")?.value.trim() ?? "";
-    const type = document.querySelector("input[type='radio'][name='incomingChecksFilter']:checked")?.value;
-    if (type === undefined) return;
-    
-    try {
-        await sendApiRequest({
-            url: `/Accountancy/GetAllPaymentCartablePartial`,
-            params: { serVal: val, type: type, cartable: 7, payType: 2 },
-            successMsg: null,
-            onSuccess: function (res) {
-                const data = res.data;
-                document.getElementById("incomingChecksContentId").innerHTML = data.html;
-                document.getElementById("incomingChecksCount").textContent = data.count;
-                updateFilterSwitchState({
-                    wrapperSelector: "#incomingChecksContainer",
-                    filterData: res.data.filterCounts,
-                    currentFilterValue: type,
-                    searchValue: val,
-                    onChange: async () => {
-                        await getIncomingChecks();
-                    },
-                });
-                initPaymentPartial(55);
-            },
-        });
-    } catch (err) {
-        console.log(err);
-    }
-};
 
 
 const GetAllCheckbooks = async () => {

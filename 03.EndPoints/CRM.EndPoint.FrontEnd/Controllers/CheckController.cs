@@ -17,10 +17,20 @@ using Microsoft.EntityFrameworkCore;
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
 [Authorize(Policy = "NotCustomerOnly")]
-public class CheckController(CRMContextDb db, UserManager<AppUser> userManager, DateTimeServices dtService, LogSystemService logSystemService)
-    : Controller {
+public class CheckController(
+    CRMContextDb db,
+    UserManager<AppUser> userManager,
+    DateTimeServices dtService,
+    LogSystemService logSystemService) : Controller {
+    
     [HttpGet]
     public async Task<IActionResult> Index()
+    {
+        var checkbooks = await GetAllCheckbooks();
+        return View(checkbooks);
+    }
+
+    public async Task<IActionResult> Received()
     {
         var checkbooks = await GetAllCheckbooks();
         return View(checkbooks);
