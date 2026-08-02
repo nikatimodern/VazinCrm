@@ -2521,11 +2521,6 @@ html.sidebar-collapsed #mainWrapper {
 }
 
 
-.menu-link {
-  color: white;
-}
-
-
 .sidebar .menu-item:hover,
 .sidebar .menu-item:focus,
 .menu-item.active-menu {
@@ -2534,14 +2529,23 @@ html.sidebar-collapsed #mainWrapper {
 }
 
 
-.has-submenu ul.submenu {
+.has-submenu > .submenu {
   overflow: hidden;
   max-height: 0;
   opacity: 0;
   transform: translateY(-6px);
-  transition: all 0.3s ease;
+  transition: max-height 0.3s ease, opacity 0.25s ease, transform 0.3s ease;
   margin: 0;
   padding-right: 10px;
+  list-style: none;
+}
+
+
+html:not(.sidebar-collapsed) .has-submenu.open > .submenu {
+  margin-top: 2px;
+  max-height: 800px;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 
@@ -2550,17 +2554,9 @@ html.sidebar-collapsed .has-submenu ul.submenu {
 }
 
 
-html:not(.sidebar-collapsed) .has-submenu.open ul.submenu {
-  margin-top: 4px;
-  max-height: 300px;
-  opacity: 1;
-  transform: translateY(0);
-}
-
-
 .has-submenu .submenu-arrow {
   cursor: pointer;
-  transition: .25s;
+  transition: transform .25s;
   width: 16px;
 }
 
@@ -2571,17 +2567,33 @@ html:not(.sidebar-collapsed) .has-submenu.open ul.submenu {
 
 
 .submenu li {
-  list-style-type: circle;
-  list-style-position: inside;
-  padding: 4px 10px 4px 6px;
-  color: #fff;
-  transition: background-color 0.25s;
-  border-radius: 4px;
+  list-style: none;
+  margin-top: 2px;
 }
 
 
-.submenu li:hover {
-  background-color: #19a19763;
+.submenu .menu-item-title {
+  font-size: 13px;
+}
+
+
+.submenu li .menu-item {
+  font-family: IRANSans;
+  position: relative;
+  padding: 4px 10px 4px 6px;
+}
+
+
+.submenu li .menu-item::before {
+  content: "○";
+  display: inline-block;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+
+.submenu li .menu-item.active-menu::before {
+  content: "●";
 }
 
 
@@ -2802,6 +2814,10 @@ html.sidebar-collapsed .has-submenu:hover > ul.submenu {
   padding: 10px;
 }
 
+#mobileDrawer .submenu li .menu-item {
+  padding: 6px 10px 6px 6px;
+}
+
 
 #mobileDrawer .menu-item:hover,
 #mobileDrawer .menu-item:focus {
@@ -2815,9 +2831,9 @@ html.sidebar-collapsed .has-submenu:hover > ul.submenu {
 }
 
 
-#mobileDrawer .submenu li {
+/* #mobileDrawer .submenu li {
   padding-block: 8px;
-}
+} */
 
 
 .menufix {

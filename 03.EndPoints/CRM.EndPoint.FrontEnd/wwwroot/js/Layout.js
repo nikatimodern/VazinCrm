@@ -84,8 +84,9 @@ let mySer = new MyService();
 let CrmSer = new CrmService();
 let myDate = new GetDate();
 document.addEventListener("DOMContentLoaded", async () => {
-    await GetUserLogin();
     setActiveMenu();
+    await GetUserLogin();
+    
     // initLightbox();
     
     setting = await GetSetting();
@@ -103,26 +104,33 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function setActiveMenu() {
-    const currentPath = window.location.pathname.toLowerCase();
+    const currentPath = window.location.pathname.toLowerCase().replace(/\/$/, "");
+    
+    // Active کردن لینک فعلی
     document.querySelectorAll(".menu-link").forEach(link => {
-        const href = link.getAttribute("href")?.toLowerCase();
-        if (!href || !href.includes(currentPath)) return;
+        const href = link.getAttribute("href");
+        if (!href || href === "#") return;
+        const linkUrl = new URL(href, window.location.origin);
+        const linkPath = linkUrl.pathname.toLowerCase().replace(/\/$/, "");
+        if (linkPath !== currentPath) return;
+        
         link.classList.add("active-menu");
         
-        const submenu = link.closest(".submenu");
-        if (submenu) {
-            const wrapper = link.closest(".has-submenu");
-            const menuItem = wrapper.querySelector(".menu-item");
-            wrapper?.classList.add("open");
-            menuItem?.classList.add("active-menu");
+        let parent = link.closest(".has-submenu");
+        while (parent) {
+            parent.classList.add("open");
+            const parentMenuItem = parent.querySelector(":scope > .menu-item");
+            parentMenuItem?.classList.add("active-menu");
+            parent = parent.parentElement?.closest(".has-submenu");
         }
     });
     
     
+    // باز و بسته کردن submenu
     document.querySelectorAll(".has-submenu > .menu-item").forEach(menu => {
-        menu.addEventListener("click", () => {
+        menu.addEventListener("click", function () {
             const wrapper = menu.closest(".has-submenu");
-            wrapper.classList.toggle("open");
+            wrapper?.classList.toggle("open");
         });
     });
 }

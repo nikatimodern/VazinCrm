@@ -16,7 +16,7 @@ namespace CRM.Core.Domain.Accountancies.Entities {
         public PayTypeEnum PayType { get; set; } //نوع واریزی 1-نقدی ، 2-چکی ، 3-اعتباری
         public string PayTypeTxt { get; set; }
 
-        public AcEnum AccType { get; set; } // بدهکاری ,واریزی ,برگشتی
+        public AcEnum AccType { get; set; } // بدهکاری، واریزی، برگشتی
         public string AccTypeTxt { get; set; }
 
         public decimal? credit { get; set; }
