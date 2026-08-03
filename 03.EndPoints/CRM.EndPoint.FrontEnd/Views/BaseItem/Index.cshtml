@@ -425,7 +425,7 @@
                         {
                             "render": function (data, type, row) {
                                 var _co = "<span class='d-flex align-items-center justify-content-center'>";
-                                _co += "<button id='BtnUpdate' type='button' title='حذف' class='Admin buttonCancel3 d-flex align-items-center justify-content-center' style='padding: 6px' onclick='DelProductItem(\"" + row.id + "\",this)' ><i class='fa fa-trash '></i></button>";
+                                _co += "<button id='BtnUpdate' type='button' title='حذف' class='buttonCancel3 d-flex align-items-center justify-content-center' style='padding: 6px' onclick='DelProductItem(\"" + row.id + "\",this)' ><i class='fa fa-trash '></i></button>";
                                 _co += "</span>";
                                 return _co;
 
@@ -491,7 +491,7 @@
                             render: function (data, type, row) {
                                 var _co = "<span class='d-flex align-items-center justify-content-center'>";
 
-                                _co += "<button id='BtnUpdate' type='button' title='حذف' class='Admin buttonCancel3 d-flex align-items-center justify-content-center' style='padding: 6px' onclick='DelSenfItem(\"" + row.id + "\",this)' ><i class='fa fa-trash '></i></button>";
+                                _co += "<button id='BtnUpdate' type='button' title='حذف' class='buttonCancel3 d-flex align-items-center justify-content-center' style='padding: 6px' onclick='DelSenfItem(\"" + row.id + "\",this)' ><i class='fa fa-trash '></i></button>";
                                 _co += "</div>";
                                 return _co;
                             },
@@ -555,7 +555,7 @@
                             render: function (data, type, row) {
                                 var _co = "<span class='d-flex align-items-center justify-content-center'>";
 
-                                _co += "<button id='BtnUpdate' type='button' title='حذف' class='Admin buttonCancel3 d-flex align-items-center justify-content-center' style='padding: 6px' onclick='DelFamilyWayItem(\"" + row.id + "\",this)' ><i class='fa fa-trash '></i></button>";
+                                _co += "<button id='BtnUpdate' type='button' title='حذف' class='buttonCancel3 d-flex align-items-center justify-content-center' style='padding: 6px' onclick='DelFamilyWayItem(\"" + row.id + "\",this)' ><i class='fa fa-trash '></i></button>";
                                 _co += "</div>";
                                 return _co;
                             },
@@ -639,7 +639,7 @@
                                 return `
                                 <div class="inline-flex-center gap-1">
                                     <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 d-flex justify-content-center align-items-center" onclick='ShowUpdateBankAccountItem("${row.id}")'><i class="fa fa-pencil"></i></button>
-                                    <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="Admin buttonCancel2 d-flex justify-content-center align-items-center" onclick='DelBankAccountItem("${row.id}")'><i class="fa fa-trash"></i></button>
+                                    <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 d-flex justify-content-center align-items-center" onclick='DelBankAccountItem("${row.id}")'><i class="fa fa-trash"></i></button>
                                 </div>
                             `;
                             },

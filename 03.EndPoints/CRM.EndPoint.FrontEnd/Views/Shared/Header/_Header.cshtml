@@ -1,4 +1,5 @@
 @using CRM.EndPoint.FrontEnd.Services
+@inject UserManager<AppUser> UserManager
 @{
     var isAdmin = User.IsInRole(AppRoles.Admin);
     var canSeeCartable =
@@ -20,6 +21,14 @@
         isAdmin ||
         User.IsInRole(AppRoles.SalesExpert) ||
         User.IsInRole(AppRoles.TaminExpert);
+
+    var currentUser = await UserManager.GetUserAsync(User);
+
+    var profileSrc = string.IsNullOrEmpty(currentUser?.PersonImageUrl)
+        ? Url.Content("~/Img/User.png")
+        : Url.Content(currentUser.PersonImageUrl);
+
+    var userFullName = currentUser?.FullName;
 }
 
 <header id="mainHeader">
@@ -28,8 +37,8 @@
             <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
         </button>
         <div class="header-profile" onclick="ShowModalUserSetting()">
-            <img id="profileImage" class="profile-image" src="~/Img/User.png" alt="">
-            <span id="profileName" class="profile-name"></span>
+            <img id="profileImage" class="profile-image" src="@profileSrc" alt="">
+            <span id="profileName" class="profile-name">@userFullName</span>
         </div>
         <div class="header-content">
             <div class="header-actions d-none">
@@ -84,3 +93,6 @@
         </div>
     </div>
 </header>
+
+
+<partial name="Header/_ProfileModal" model="currentUser"/>

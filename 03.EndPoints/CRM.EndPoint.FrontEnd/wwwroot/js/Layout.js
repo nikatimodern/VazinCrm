@@ -2862,12 +2862,6 @@ const showSubMenu = (id) => {
 var delImgPerStatus = 0;
 
 
-////PersonImgScripts
-$(document).on("click", ".AddPersonImg_Btn", function () {
-    $("#InpPersonImg").trigger("click");
-});
-
-
 const AttachDoc = async (id) => {
     pfactorID = id;
     ModalToggle("Attachments", "show");
@@ -3047,13 +3041,19 @@ const CloseMenu = () => {
 
 
 let cropper;
-$("#InpPersonImg").change(function (e) {
+let personImageFile = null;
+const profileModal = document.getElementById("UserSetting");
+const cropModal = document.getElementById("cropModal");
+const inpPersonImg = profileModal.querySelector("#InpPersonImg");
+const personImgPreview = profileModal.querySelector(".profileModal-image");
+const personImgFileName = profileModal.querySelector(".profile-file-name");
+const deletePersonImgBtn = profileModal.querySelector(".profile-delete-image");
+inpPersonImg.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
     
     document.getElementById("cropImage").src = URL.createObjectURL(file);
-    
-    document.getElementById("cropModal").style.display = "flex";
+    cropModal.style.display = "flex";
     
     if (cropper) cropper.destroy();
     cropper = new Cropper(document.getElementById("cropImage"), {
@@ -3061,70 +3061,77 @@ $("#InpPersonImg").change(function (e) {
     });
 });
 
-let blobPersonImg;
 document.getElementById("cropOkBtn").addEventListener("click", () => {
     if (!cropper) return;
     const canvas = cropper.getCroppedCanvas();
     if (!canvas) return;
     
-    canvas.toBlob(function (blob) {
-        blobPersonImg = blob;
+    canvas.toBlob((blob) => {
+        if (!blob) return;
         
-        const fileName = document.getElementById("InpPersonImg").files[0].name;
-        document.getElementById("AddPersonImgTXT").value = fileName;
-        document.getElementById("InpPersonImg").value = "";
+        personImageFile = new File([blob], "profile.jpg", { type: "image/jpeg" });
+        personImgPreview.src = URL.createObjectURL(personImageFile);
         
-        document.getElementById("btnDelPersonImg").style.display = "";
+        const originalFile = inpPersonImg.files?.[0];
+        if (originalFile) {
+            personImgFileName.value = originalFile.name;
+        }
+        
+        inpPersonImg.value = "";
+        deletePersonImgBtn.classList.remove("d-none");
         delImgPerStatus = 2;
         
-        document.getElementById("PersonImgPreview").src = canvas.toDataURL("image/jpg");
-        
         cropper.destroy();
-        $("#cropModal").hide();
-    }, "image/jpg");
+        cropper = null;
+        
+        cropModal.style.display = "none";
+    }, "image/jpeg");
 });
 
 document.getElementById("cropCloseBtn").addEventListener("click", () => {
-    $("#cropModal").hide();
-    document.getElementById("InpPersonImg").value = "";
+    cropModal.style.display = "none";
+    inpPersonImg.value = "";
 });
 
 function delPersonImage() {
-    document.getElementById("PersonImgPreview").src = "/Img/User.png";
-    document.getElementById("InpPersonImg").value = "";
-    document.getElementById("AddPersonImgTXT").value = "";
+    personImgPreview.src = "/Img/User.png";
+    
+    inpPersonImg.value = "";
+    personImgFileName.value = "";
+    
+    personImageFile = null;
+    
     delImgPerStatus = 1;
-    document.getElementById("btnDelPersonImg").style.display = "none";
+    deletePersonImgBtn.classList.add("d-none");
 }
 
-function SavePersonSetting() {
-    document.getElementById("FLshowLoading").style.display = "";
-    var formData = new FormData();
-    /*var fileUp = $("#InpPersonImg").get(0);
-    var files = fileUp.files;
-    formData.append("PersonImage", files[0]);*/
+async function SavePersonSetting() {
+    const formData = new FormData();
+    const firstName = document.getElementById("PFirstName").value;
+    const lastName = document.getElementById("PLastName").value;
+    const phoneNumber = document.getElementById("PPhoneNumber").value;
+    formData.append("FirstName", firstName);
+    formData.append("LastName", lastName);
+    formData.append("PhoneNumber", phoneNumber);
+    formData.append("ImageStatus", delImgPerStatus);
+    formData.append("PersonImage", personImageFile);
     
-    
-    formData.append("PersonImage", blobPersonImg);
-    
-    formData.append("FirstName", $("#PFirstName").val());
-    formData.append("LastName", $("#PLastName").val());
-    formData.append("PhoneNumber", document.getElementById("PPhoneNumber").value);
-    formData.append("imageStatus", delImgPerStatus);
-    $.ajax({
-        url: `${baseUrl}Account/UpPersonSetting`, type: "POST", data: formData, processData: false, contentType: false, success: function (result) {
-            toastifySuccess("تغییرات با موفقیت انجام شد.");
+    await sendApiRequest({
+        url: `/Account/UpPersonSetting`,
+        method: "POST",
+        data: formData,
+        successMsg: "تغییرات با موفقیت انجام شد.",
+        onSuccess: async () => {
+            document.getElementById("profileName").textContent = firstName + " " + lastName;
+            document.getElementById("profileImage").src = personImgPreview.src;
             delImgPerStatus = 0;
-        }, complete: async function () {
-            await GetUserLogin();
-            $("#UserSetting").modal("toggle");
-            document.getElementById("FLshowLoading").style.display = "none";
+            ModalToggle(profileModal);
         },
     });
     
 }
 function ShowModalUserSetting() {
-    $("#UserSetting").modal("show");
+    ModalToggle(profileModal);
 }
 
 
@@ -3134,15 +3141,15 @@ const GetUserLogin = async () => {
             currentUser = res.data;
             sessionStorage.setItem("Rols", JSON.stringify(currentUser.rollNames));
             
-            const imgSrc = currentUser.personImage ? `data:image/jpg;base64,${currentUser.personImage}` : "/Img/User.png";
-            document.getElementById("profileImage").src = imgSrc;
-            document.getElementById("PersonImgPreview").src = imgSrc;
-            document.getElementById("btnDelPersonImg").style.display = currentUser.personImage ? "" : "none";
+            // const imgSrc = currentUser.personImage ? `data:image/jpg;base64,${currentUser.personImage}` : "/Img/User.png";
+            // document.getElementById("profileImage").src = imgSrc;
+            // document.getElementById("PersonImgPreview").src = imgSrc;
+            // document.getElementById("btnDelPersonImg").style.display = currentUser.personImage ? "" : "none";
             
-            document.getElementById("profileName").textContent = `${currentUser.firstName || ""} ${currentUser.lastName || ""}`.trim();
-            document.getElementById("PFirstName").value = currentUser.firstName || "";
-            document.getElementById("PLastName").value = currentUser.lastName || "";
-            document.getElementById("PPhoneNumber").value = currentUser.phoneNumber || "";
+            // document.getElementById("profileName").textContent = `${currentUser.firstName || ""} ${currentUser.lastName || ""}`.trim();
+            // document.getElementById("PFirstName").value = currentUser.firstName || "";
+            // document.getElementById("PLastName").value = currentUser.lastName || "";
+            // document.getElementById("PPhoneNumber").value = currentUser.phoneNumber || "";
             
             checkRoles(currentUser.rollNames);
             

@@ -1,0 +1,34 @@
+@using CRM.EndPoint.FrontEnd.Services
+@inject UserManager<AppUser> UserManager
+@{
+    var currentUser = await UserManager.GetUserAsync(User);
+
+    var profileSrc = string.IsNullOrEmpty(currentUser?.PersonImageUrl)
+        ? Url.Content("~/Img/User.png")
+        : Url.Content(currentUser.PersonImageUrl);
+
+    var userFullName = currentUser?.FullName;
+    var isCustomer = User.IsInRole(AppRoles.Customer);
+    var urlLogo = isCustomer ? "//vazinplast.com" : Url.Action("Index", "Dashboard");
+    var targetLogo = isCustomer ? "_blank" : "_self";
+}
+
+<header id="mainHeader">
+    <div class="header-container">
+        <div class="header-profile" onclick="ShowModalUserSetting()">
+            <img id="profileImage" class="profile-image" src="@profileSrc" alt="">
+            <div>
+                <span class="d-none d-md-inline">کاربر: </span>
+                <span id="profileName" class="profile-name">@userFullName</span>
+            </div>
+        </div>
+        <div id="customerLogo">
+            <a href="@urlLogo" target="@targetLogo" class="flex-center gap-2 text-white">
+                <img class="logoCompany-icon" src="~/Img/logo-vazinplast1.png" alt="">
+                <img class="logoCompany-text" src="~/Img/logo-vazinplast2.png" alt="">
+            </a>
+        </div>
+    </div>
+</header>
+
+<partial name="Header/_ProfileModal" model="currentUser" />

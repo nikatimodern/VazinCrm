@@ -483,11 +483,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task UpPersonSetting(UpPersonSettingViewModel model)
+        public async Task<IActionResult> UpPersonSetting(UpPersonSettingViewModel model)
         {
             var Usr = await userManager.GetUserAsync(HttpContext.User);
             var data = UDb.Users.FirstOrDefault(f => f.Id == Usr.Id);
-            var ii = data.PersonImageUrl;
             switch (model.imageStatus)
             {
                 case 0:
@@ -509,6 +508,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             data.LastName = model.LastName;
             data.PhoneNumber = model.PhoneNumber;
             await UDb.SaveChangesAsync();
+
+            return Ok();
         }
 
         [Authorize]

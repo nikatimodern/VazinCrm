@@ -1,87 +1,53 @@
 
-nav#customerMenuDesktop {
-  display: flex;
-  gap: 24px;
-  align-items: center;
-  height: 100%;
-}
-
-
-#customerMenuDesktop .customerMenuLink {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #fff;
-  font-size: 15px;
-  padding: 10px 10px;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  line-height: 1;
-  font-family: IRANSansMedium;
-}
-
-
-#customerMenuDesktop .customerMenuLink:hover {
-  background-color: #19a19763;
-  transform: translateY(-2px);
-}
-
-
-#customerMenuDesktop .customerMenuIcon {
-  font-size: 16px;
-}
-
-
 .header-profile, #customerLogo {
-  transition: all 0.2s ease;
+	transition: all 0.2s ease;
 }
 
 
 .header-profile:hover, #customerLogo:hover {
-  transform: scale(1.02);
+	transform: scale(1.02);
 }
 
 
 #mainWrapper {
-  margin-right: 0 !important;
+	margin-right: 0 !important;
 }
 
 
 #mainContent {
-  padding-inline: 10px !important;
-  padding-bottom: 0 !important
+	padding-inline: 10px !important;
+	padding-bottom: 0 !important
 }
 
 
 @media (max-width: 767px) {
-  #customerMenuDesktop {
-    display: none !important;
-  }
-  
-  .logoCompany-text {
-    filter: none !important;
-  }
-  
-  #customerProfile-wrapper {
-    height: calc(100dvh - 68px) !important;
-  }
+	#customerMenuDesktop {
+		display: none !important;
+	}
+	
+	.logoCompany-text {
+		filter: none !important;
+	}
+	
+	#customerProfile-wrapper {
+		height: calc(100dvh - 68px) !important;
+	}
 }
 
 
 @media (min-width: 768px) {
-  #mainHeader {
-    background: linear-gradient(to left, #025751, #00302d);
-    color: #fff;
-    padding: 0 1rem;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  }
-  
-  .profile-image {
-    outline: 1px solid rgba(255, 255, 255, 0.4);
-  }
-  
-  #mainContent {
-    padding-inline: 20px !important;
-  }
-  
+	#mainHeader {
+		background: linear-gradient(to left, #025751, #00302d);
+		color: #fff;
+		padding: 0 1rem;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+	}
+	
+	.profile-image {
+		outline: 1px solid rgba(255, 255, 255, 0.4);
+	}
+	
+	#mainContent {
+		padding-inline: 20px !important;
+	}
 }

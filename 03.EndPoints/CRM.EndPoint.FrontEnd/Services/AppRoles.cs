@@ -17,4 +17,5 @@ public static class AppRoles {
     public const string ExecutiveDirector = "مدیر اجرایی";
 
     public const string TanKhah = "تنخواه دار";
+    public const string Customer = "مشتری";
 }

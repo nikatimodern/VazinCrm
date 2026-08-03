@@ -53,126 +53,19 @@
 </head>
 <body dir="rtl">
 
-<div id="FLshowLoading" style="z-index: 9000;position: fixed;inset: 0;height:100dvh;display:none">
+<div id="FLshowLoading" style="display:none">
     <div>
         <div class="loader"></div>
     </div>
 </div>
 
 
-
-@*<div id="mobileMenuBottom" style=" width:100%; height:53px !important;">
-    <div style=" display:flex; justify-content:space-between;align-items:center; height:100%">
-        <nav id="mobileNavbar" style="direction:ltr" class="p-0 h-100 p-md-2 navbar navbar-light flex-grow-1">
-            <div id="navMenuBar" class="w-100 h-100" style=" color:#fff;display:flex; justify-content:space-around ;align-items:center ">
-                $1$<a class="MyBtn menu-item menu-link" href="/Customer/Index">
-                        <i class="mp fas fa-users" style=" width:100%;font-size:30px " aria-hidden="true"></i>
-                        <span style="width:100%; font-size:15px" class="mp">فاکتورهای من</span>
-                    </a>#1#
-
-                $1$
-                    <a class="menu-item menu-link MyBtn" href="/Dashboard/Index">
-                        <svg style="width:17px;height:17px" viewBox="0 0 24 24" fill="currentColor"><path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" /><path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" /></svg>
-                        <span style="width:100%;font-size:15px" class="mp">داشبورد</span>
-                    </a>#1#
-            </div>
-        </nav>
-    </div>
-</div>*@
-
-
 <div id="mainWrapper">
-    <header id="mainHeader" class="d-flex align-items-center justify-content-between">
-        <div id="customerLogo">
-            <a href="https://www.vazinplast.com/" target="_blank" class="d-flex align-items-center gap-2 text-white">
-                <img class="logoCompany-icon" src="~/Img/logo-vazinplast1.png" alt="لوگو" style="height:30px;">
-                <img class="logoCompany-text" src="~/Img/logo-vazinplast2.png" alt="متن لوگو" style="height:36px;">
-            </a>
-        </div>
+    <partial name="Header/_SecondaryHeader" />
 
-        <nav id="customerMenuDesktop">
-            @*<a class="customerMenuLink menu-link" href="/Dashboard/Index">
-                    <svg class="menu-icon" style="overflow:visible" viewBox="0 0 24 24" fill="currentColor"><path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" /><path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" /></svg>
-                    <span>داشبورد</span>
-                </a>
-                *@
-
-            @*<a class="customerMenuLink menu-link" href="/Customer/Index">
-                    <svg class="menu-icon" viewBox="0 0 24 24"  fill="currentColor"><path d="M3 15V3C3 2.44772 3.44772 2 4 2H20C20.5523 2 21 2.44772 21 3V19C21 20.6569 19.6569 22 18 22H4C2.34315 22 1 20.6569 1 19V17H17V19C17 19.5523 17.4477 20 18 20C18.5523 20 19 19.5523 19 19V15H3Z"></path></svg>
-                    <span>فاکتورهای من</span>
-                </a>*@
-        </nav>
-        <div class="header-profile" onclick="ShowModalUserSetting()">
-            <span id="profileName" class="fbold" style="font-size:clamp(12px, 2vw, 13px);white-space:nowrap"></span>
-            <div class="mp">
-                <img id="profileImage" class="profile-image" src="~/Img/User.png" alt="">
-            </div>
-        </div>
-
-    </header>
-
-    <div id="mainContent">
-        <main role="main">
-            @RenderBody()
-        </main>
-    </div>
-</div>
-
-
-
-
-<!-- Modal UserSetting -->
-<div class="modal fade " dir="ltr" id="UserSetting" tabindex="-1" role="dialog" data-bs-focus="false" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-    <div class=" modal-dialog modal-dialog-centered " role="document">
-        <div class="modal-content ">
-            <div class="modal-header" style="direction:rtl;background-color:lightgray">
-                <h1 class="modal-title fs-5" id="exampleModalCenterTitle">مشخصات</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" dir="rtl">
-                <div class="ar-container">
-                    <div class="ar-content pt-0 pb-2" style="box-shadow: none">
-                        <div class=" " style=" display:flex;flex-direction:column;justify-content:center;align-items:center">
-                            <input class=" buttonCancel2 mb-2" style="padding: 4px 16px !important;height:auto !important" id="btnDelPersonImg" title="حذف عکس" type="button" value="× حذف عکس" onclick="delPersonImage()" />
-
-                            <div class="mt-2" style="margin-bottom:24px; width:40%; ">
-                                <img src="" id="PersonImgPreview" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;object-position:center;border-radius:50%;outline:2px solid rgba(0, 0, 0, 0.2)">
-                            </div>
-                        </div>
-                        <div dir="ltr">
-                            <div class="input-group align-items-center my-3 mp gap-2">
-                                <input type="text" style="height:28px !important" class="form-control" disabled placeholder="آدرس تصویر" id="AddPersonImgTXT">
-                                <div class="input-group-append mp">
-                                    <button type="button" class="AddPersonImg_Btn buttonGreen3" style="padding: 4px 16px !important;height:auto !important">درج تصویر</button>
-                                </div>
-                            </div>
-                            <input type="file" name="InpPersonImg" id="InpPersonImg" class="AddPersonImg_Inp mp" accept="image/*" style="display:none">
-                        </div>
-                        <div class="mt-3">
-                            <ul style="padding:0;">
-                                <li class="mb-2">
-                                    <label>نام</label>
-                                    <input type="text" name="PFirstName" id="PFirstName" class="form-control mp">
-                                </li>
-                                <li class="mb-2">
-                                    <label dir="rtl">نام خانوادگی</label>
-                                    <input name="PLastName" id="PLastName" class="form-control mp">
-                                </li>
-                                <li>
-                                    <label dir="rtl">تلفن همراه</label>
-                                    <input inputmode="numeric" name="PPhoneNumber" id="PPhoneNumber" type="tel" class="form-control mp digitNumber">
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="mt-4" style="text-align:end;color:#fff">
-                            <a class="d-inline-block buttonCancel2" href="~/account/Logout">خروج از سیستم</a>
-                            <button class="buttonGreen3" onclick="SavePersonSetting()">ثبت</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <main id="mainContent" role="main">
+        @RenderBody()
+    </main>
 </div>
 
 
@@ -370,56 +263,6 @@
         </span>
     </div>
 </div>
-
-
-<div class="modal fade" id="pwaInstallModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content pwa-modal">
-
-            <div class="modal-body text-center">
-                @* <div class="pwa-icon">📲</div> *@
-
-                <h5 class="mb-3">نصب اپلیکیشن سامانه وزین پلاست</h5>
-                <p class="text-muted small mt-2">
-                    با نصب اپلیکیشن، سریع‌تر وارد شوید و اعلان‌ها را دریافت کنید.
-                </p>
-
-                <div class="d-flex gap-2 mt-4">
-                    <button id="pwaInstallBtn" class="btn btn-primary w-100">
-                        نصب
-                    </button>
-                    <button class="btn btn-light w-100" data-bs-dismiss="modal">
-                        بعداً
-                    </button>
-                </div>
-            </div>
-
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="iosPwaInstallModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content pwa-modal">
-            <div class="modal-body text-center">
-                <h5 class="mb-3">نصب اپلیکیشن سامانه وزین پلاست</h5>
-                <p class="text-muted small mt-2">
-                    برای نصب اپلیکیشن روی ios:
-                    <br>
-                    دکمه <strong>Share</strong> را بزنید
-                    و گزینه <strong>Add to Home Screen</strong> را انتخاب کنید.
-                </p>
-
-                <button class="btn btn-primary w-100 mt-3" data-bs-dismiss="modal">
-                    فهمیدم
-                </button>
-            </div>
-
-        </div>
-    </div>
-</div>
-
-
 
 
 

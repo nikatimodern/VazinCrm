@@ -1,4 +1,22 @@
-﻿@using System.Configuration
+﻿@using System.Reflection
+@using System.Security.Claims
+@using CRM.EndPoint.FrontEnd.Services
+@{
+    var roleMap = typeof(AppRoles)
+        .GetFields(BindingFlags.Public | BindingFlags.Static)
+        .ToDictionary(x => x.GetValue(null)?.ToString(), x => x.Name);
+
+    var userRoles = User.Claims
+        .Where(c => c.Type == ClaimTypes.Role)
+        .Select(c => roleMap.TryGetValue(c.Value, out var roleName) ? roleName : null)
+        .Where(x => x != null)
+        .ToArray();
+    /*var userRoles = User.Claims
+        .Where(c => c.Type == ClaimTypes.Role)
+        .Select(c => c.Value)
+        .ToArray();*/
+}
+
 <!DOCTYPE html>
 <html lang="fa">
 
@@ -350,58 +368,6 @@
 
 
 
-<!-- Modal BaseSetting -->
-<div class="modal fade" id="BaseSetting" tabindex="-1" role="dialog" data-bs-focus="false">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content col-12">
-            <div class="modal-header" style="direction:rtl;background-color:lightgray">
-                <h1 class="modal-title fs-5">تنظیمات</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-
-            <div class=" modal-body gap-1" style="display:flex;flex-direction:column;align-items:center; width:100% !important;color:#fff;">
-                <span class="Admin w-100" style="display: none">
-                    <a class="buttonGreen2 d-flex align-items-center gap-2" style="line-height: 1;padding-block: 8px !important;font-size: 14px" href="/admin/Index">
-                        <i class=" fa fa-user" aria-hidden="true"></i>
-                        کاربران
-                    </a>
-                </span>
-                <span class="Admin TaminAdmin SalesAdmin FinancialAdmin w-100" style="display: none">
-                    <a class="buttonGreen2 d-flex align-items-center gap-2" style="line-height: 1;padding-block: 8px !important;font-size: 14px" href="/BaseItem/Index">
-                        <i class=" fa fa-building" aria-hidden="true"></i>
-                        اطلاعات پایه شرکت
-                    </a>
-                </span>
-                <span class="Admin FinancialAdmin FinancialExpert w-100" style="display: none">
-                    <a class="buttonGreen2 d-flex align-items-center gap-2" style="line-height: 1;padding-block: 8px !important;font-size: 14px" asp-controller="BaseItem" asp-action="Financial">
-                        <svg style="width: 16px" viewBox="0 0 24 24" fill="currentColor"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M17.997 4.17a3 3 0 0 1 2.003 2.83v12a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 2.003 -2.83a4 4 0 0 0 3.997 3.83h4a4 4 0 0 0 3.98 -3.597zm-5.997 5.83a1 1 0 0 0 -1 1v.05a2.5 2.5 0 0 0 .5 4.95h1a.5 .5 0 1 1 0 1h-2.5a1 1 0 0 0 0 2h1a1 1 0 0 0 2 0v-.05a2.5 2.5 0 0 0 -.5 -4.95h-1a.5 .5 0 1 1 0 -1h2.5a1 1 0 0 0 0 -2h-1a1 1 0 0 0 -1 -1m2 -8a2 2 0 1 1 0 4h-4a2 2 0 1 1 0 -4z" /></svg>
-                        اطلاعات پایه مالی
-                    </a>
-                </span>
-                <span class="Admin w-100" style="display: none">
-                    <a class="buttonGreen2 d-flex align-items-center gap-2" style="line-height: 1;padding-block: 8px !important;font-size: 14px" href="/Asetting/Index">
-                        <i class=" fa fa-cog" aria-hidden="true"></i>
-                        تنظیمات پایه
-                    </a>
-                </span>
-                <span class="Admin w-100" style="display: none">
-                    <a class="buttonGreen2 d-flex align-items-center gap-2" style="line-height: 1;padding: 6px !important;font-size: 14px" href="/Asetting/RecycleBin">
-                        <svg style="color: #fff" x="0px" y="0px" width="16" height="16" fill="currentColor" viewBox="0 0 48 48"><path d="M20 12.4L5.6 7.59 20 2.45zM43.1 8.99L26.49 14.56 23 13.4 23 2.41zM44.44 11.7L39.9 39.89c-.08.53-.46.98-.97 1.17l-10.94 3.93V17.22L44.44 11.7zM4.25 10.31l20.74 6.91v27.8L9.11 39.79c-.54-.18-.94-.65-1.01-1.22L4.25 10.31zM21.863 28.762l-.025-.077-1.422-2.889-2.543.725 2.007 4.145-2.331-.848-.075-1.191-1.33 2.353 1.68 3.418-.061-1.186 1.785.65c.025.012.05.022.074.031.181.066.343.042.452-.222l1.786-3.013c-.003.004-.007.008-.01.013C22.098 30.259 22.206 29.596 21.863 28.762zM8.92 22.287l.972.947L9.1 24.612c-.099.151-.135.341.08.735l1.99 4.094c.241.675.85 1.597 1.761 2.03l.063.031 2.545.926-.01-3.306-3.889-1.415 1.029-1.802.979.934-1.716-3.454L8.92 22.287zM18.706 25.264l1.325-2.332-.904.249-.992-2.02c-.093-.222-.228-.412-.51-.514-.033-.012-.067-.023-.104-.032l-3.573-1.301c-.018-.008-.036-.015-.052-.021-.037-.014-.068-.023-.09-.031l-.085-.031c-.018-.007-.036-.014-.054-.02-.568-.207-1.227-.216-1.593.269l-.031.049-1.116 1.965 2.756 2.654 1.67-2.705 1.21 2.47-.89.262L18.706 25.264z"></path></svg>
-                        سطل زباله
-                    </a>
-                </span>
-                <span class="Admin SalesAdmin w-100" style="display: none">
-                    <span class="buttonGreen2 d-flex align-items-center gap-2" style="line-height: 1;padding: 6px !important;font-size: 14px" onclick="showModalPhonebook()">
-                        <svg style="width: 16px" fill="currentColor" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
-                        دفترچه تلفن
-                    </span>
-                </span>
-            </div>
-
-        </div>
-    </div>
-</div>
-
 
 <!-- Modal phoneBook -->
 <div class="modal fade" id="phoneBookModal" tabindex="-1" data-bs-focus="false" aria-labelledby="phonebookLabel" aria-hidden="true">
@@ -426,61 +392,6 @@
 
 
 
-<!-- Modal UserSetting -->
-<div class="modal fade " dir="ltr" id="UserSetting" tabindex="-1" role="dialog" data-bs-focus="false" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-    <div class=" modal-dialog modal-dialog-centered " role="document">
-        <div class="modal-content ">
-            <div class="modal-header" style="direction:rtl;background-color:lightgray">
-                <h1 class="modal-title fs-5" id="exampleModalCenterTitle">مشخصات</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class=" modal-body" dir="rtl">
-                <div class="ar-container">
-                    <div class="ar-content pt-0 pb-2" style="box-shadow: none">
-                        <div class=" " style=" display:flex;flex-direction:column;justify-content:center;align-items:center">
-                            @*<label>بارگزاری عکس شخصی</label>*@
-
-                            <input class=" buttonCancel2 mb-2" style="padding: 4px 16px !important;height:auto !important" id="btnDelPersonImg" title="حذف عکس" type="button" value="× حذف عکس" onclick="delPersonImage()" />
-
-                            <div class="mt-2" style="margin-bottom:24px; width:40%; ">
-                                <img src="" id="PersonImgPreview" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;object-position:center;border-radius:50%;outline:2px solid rgba(0, 0, 0, 0.2)">
-                            </div>
-                        </div>
-                        <div dir="ltr">
-                            <div class="input-group align-items-center my-3 mp gap-2">
-                                <input type="text" style="height:28px !important" class="form-control" disabled placeholder="آدرس تصویر" id="AddPersonImgTXT">
-                                <div class="input-group-append mp">
-                                    <button type="button" class="AddPersonImg_Btn buttonGreen3" style="padding: 4px 16px !important;height:auto !important">درج تصویر</button>
-                                </div>
-                            </div>
-                            <input type="file" name="InpPersonImg" id="InpPersonImg" class="AddPersonImg_Inp mp" accept="image/*" style="display:none">
-                        </div>
-                        <div class="mt-3">
-                            <ul style="padding:0;">
-                                <li class="mb-2">
-                                    <label>نام</label>
-                                    <input type="text" name="PFirstName" id="PFirstName" class="form-control mp">
-                                </li>
-                                <li class="mb-2">
-                                    <label dir="rtl">نام خانوادگی</label>
-                                    <input name="PLastName" id="PLastName" class="form-control mp">
-                                </li>
-                                <li>
-                                    <label dir="rtl">تلفن همراه</label>
-                                    <input inputmode="numeric" name="PPhoneNumber" id="PPhoneNumber" type="tel" class="form-control mp digitNumber">
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="mt-4" style="text-align:end;color:#fff">
-                            <a class="d-inline-block buttonCancel2" href="~/account/Logout">خروج از سیستم</a>
-                            <button class="buttonGreen3" onclick="SavePersonSetting()">ثبت</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 
 <!-- Modal PreFactor -->
@@ -3040,6 +2951,14 @@
     })();
 </script>
 
+<script>
+    Object.defineProperty(window, "userRoles", {
+        value: Object.freeze(@Html.Raw(Json.Serialize(userRoles))),
+        writable: false,
+        configurable: false,
+        enumerable: false,
+    });
+</script>
 
 <script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js"></script>
 <script src="~/lib/jquery/jquery.min.js"></script>
@@ -3064,7 +2983,6 @@
 @* <script src="~/lib/chartjs/chartjs-plugin-annotation.min.js"></script> *@
 <script src="~/lib/Awesomplete/awesomplete.min.js"></script>
 <script src="~/lib/TomSelect/tom-select.complete.min.js"></script>
-
 <script src="~/js/TaskSignalR.js?v=5.11.1"></script>
 <script src="~/js/pwa.js?v=5.11.1"></script>
 <script src="~/js/site.js?v=5.11.1"></script>
@@ -3073,20 +2991,14 @@
 <script src="~/js/DateValidate.js?v=5.11.1"></script>
 @* <script src="~/js/dashboard.js?v=5.11.1"></script> *@
 <script src="~/js/Layout.js?v=5.11.1" defer></script>
-
 <script>
     var baseUrl;
     if ('@Url.Action("", "")' == "/") {
-
         baseUrl = '@Url.Action("", "")';
     } else {
-
         baseUrl = '@Url.Action("", "")/';
     }
 </script>
-
-
 @await RenderSectionAsync("Scripts", required: false)
-
 </body>
 </html>

@@ -1,0 +1,87 @@
+@model AppUser
+@{
+    var profileSrc = string.IsNullOrEmpty(Model?.PersonImageUrl)
+        ? Url.Content("~/Img/User.png")
+        : Url.Content(Model.PersonImageUrl);
+}
+<!-- Modal UserSetting -->
+<div class="modal fade" id="UserSetting" tabindex="-1" role="dialog" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered profile-modal-dialog" role="document">
+        <div class="modal-content profile-modal">
+            <div class="modal-header profile-modal-header">
+                <div>
+                    <span class="profile-modal-subtitle">حساب کاربری</span>
+                    <h1 class="modal-title">مشخصات</h1>
+                </div>
+
+                <button data-bs-theme="dark" class="btn-close opacity-100" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body profile-modal-body">
+                <div class="px-2">
+                    <div class="profile-image-section">
+                        <div class="profile-image-wrapper">
+                            <img src="@profileSrc" id="PersonImgPreview" class="profileModal-image" alt="profile">
+                        </div>
+
+                        <button class="buttonCancel3 profile-delete-image @(Model.PersonImage == null ? "d-none" : "")" id="btnDelPersonImg" onclick="delPersonImage()">
+                            <svg style="width: 14px" viewBox="0 0 16 16" fill="currentColor"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>
+                            حذف عکس
+                        </button>
+                    </div>
+
+                    <div class="profile-image-upload">
+                        <input type="text" class="form-control profile-file-name" disabled placeholder="آدرس تصویر" id="AddPersonImgTXT">
+
+                        <label for="InpPersonImg" type="button" class="buttonGreen3 profile-upload-btn">
+                            <svg viewBox="0 0 24 24" fill="none"><path d="M12 16V4M12 4L7 9M12 4L17 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /><path d="M5 20H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+                            درج تصویر
+                        </label>
+
+                        <input type="file" id="InpPersonImg" accept="image/*" class="d-none">
+                    </div>
+
+                    <div class="profile-information">
+                        <div class="profile-field">
+                            <label for="PFirstName">نام</label>
+
+                            <div class="profile-input-wrapper">
+                                <svg viewBox="0 0 24 24" fill="none"><path d="M20 21C20 17.6863 16.4183 15 12 15C7.58172 15 4 17.6863 4 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.8" /></svg>
+                                <input type="text" id="PFirstName" class="form-control profile-input" value="@Model.FirstName">
+                            </div>
+                        </div>
+
+                        <div class="profile-field">
+                            <label for="PLastName">نام خانوادگی</label>
+
+                            <div class="profile-input-wrapper">
+                                <svg viewBox="0 0 24 24" fill="none"><path d="M16 20C16 16.6863 13.7614 14 11 14C8.23858 14 6 16.6863 6 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /><circle cx="11" cy="7" r="3.5" stroke="currentColor" stroke-width="1.8" /><path d="M17 11C19.2091 11 21 12.7909 21 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                                <input id="PLastName" class="form-control profile-input" value="@Model.LastName">
+                            </div>
+                        </div>
+
+                        <div class="profile-field">
+                            <label for="PPhoneNumber">تلفن همراه</label>
+
+                            <div class="profile-input-wrapper">
+                                <svg viewBox="0 0 24 24" fill="none"><path d="M7 3H5C3.89543 3 3 3.89543 3 5C3 13.8366 10.1634 21 19 21C20.1046 21 21 20.1046 21 19V17L16 15L14 17C10.6863 15.3431 8.65685 13.3133 7 10L9 8L7 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
+                                <input inputmode="numeric" id="PPhoneNumber" type="tel" class="form-control digitNumber profile-input" value="@Model.PhoneNumber">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-actions">
+                        <a class="buttonCancel2 profile-logout-btn" asp-controller="Account" asp-action="Logout">
+                            خروج از سیستم
+                        </a>
+
+                        <button class="buttonGreen3 profile-save-btn" onclick="SavePersonSetting()">
+                            <svg style="width: 18px" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                            ثبت تغییرات
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
