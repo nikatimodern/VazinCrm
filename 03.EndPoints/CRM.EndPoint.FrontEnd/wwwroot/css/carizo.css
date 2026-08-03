@@ -323,7 +323,7 @@ p[contenteditable]:empty:before {
 }
 
 
-.dropdown-item.itemGray .badgeCircle {
+.dropdown-item.itemGray .badge-count {
   background-color: #ededed;
   color: #1d293d;
 }
@@ -339,7 +339,7 @@ p[contenteditable]:empty:before {
 }
 
 
-.dropdown-item.itemRed .badgeCircle {
+.dropdown-item.itemRed .badge-count {
   background-color: #fce8e8;
   color: #8b0000;
 }
@@ -355,7 +355,7 @@ p[contenteditable]:empty:before {
 }
 
 
-.dropdown-item.itemGreen .badgeCircle {
+.dropdown-item.itemGreen .badge-count {
   background-color: #dcfbdc;
   color: #006400;
 }
@@ -371,7 +371,7 @@ p[contenteditable]:empty:before {
 }
 
 
-.dropdown-item.itemGold .badgeCircle {
+.dropdown-item.itemGold .badge-count {
   background-color: #fff1d1;
   color: #7e5900;
 }
@@ -387,7 +387,7 @@ p[contenteditable]:empty:before {
 }
 
 
-.dropdown-item.itemPurple .badgeCircle {
+.dropdown-item.itemPurple .badge-count {
   background-color: #f1e9ff;
   color: #663399;
 }
@@ -403,7 +403,7 @@ p[contenteditable]:empty:before {
 }
 
 
-.dropdown-item.itemBlue .badgeCircle {
+.dropdown-item.itemBlue .badge-count {
   background-color: #f1f9ff;
   color: #00678b;
 }

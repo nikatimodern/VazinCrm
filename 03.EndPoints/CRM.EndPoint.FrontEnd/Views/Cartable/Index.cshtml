@@ -13,26 +13,26 @@
                 <p>پیش فاکتور و فاکتور</p>
             </div>
             <div class="TCar position-relative" id="TFinancialExpertId" onclick="GetCartable('TFinancialExpertId')">
-                <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
                 <p>کارشناس مالی</p>
             </div>
             <div class="TCar" id="TFinancialAdminId" onclick="GetCartable('TFinancialAdminId')">
                 <p>مدیر مالی</p>
             </div>
             <div class="TCar position-relative" id="TSalesExpertId" onclick="GetCartable('TSalesExpertId')">
-                <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
                 <p>کارشناس فروش</p>
             </div>
             <div class="TCar position-relative" id="TSalesAdminId" onclick="GetCartable('TSalesAdminId')">
-                <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
                 <p>مدیر فروش</p>
             </div>
             <div class="TCar position-relative" id="TTaminExpertId" onclick="GetCartable('TTaminExpertId')">
-                <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
                 <p>کارشناس تامین</p>
             </div>
             <div class="TCar position-relative" id="TManagingDirectorId" onclick="GetCartable('TManagingDirectorId')">
-                <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
                 <p>مدیر عامل</p>
             </div>
         </div>
@@ -266,19 +266,19 @@
                         <li class="nav-item" role="presentation">
                             <button class="nav-link position-relative" onclick="GetInvoicesFinancialExpert()" id="FinancialInvoiceTab" data-bs-target="#FinancialInvoiceTab-pane" type="button" role="tab">
                                 صورتحساب ها
-                                <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                                <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active position-relative" onclick="GetPreFactorFinancialExpert()" id="FinancialPrefactorTab" data-bs-target="#FinancialPrefactorTab-pane" type="button" role="tab">
                                 پیش‌فاکتور ها
-                                <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                                <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link position-relative" onclick="GetRequestFinancialExpert()" id="FinancialRequestTab" data-bs-target="#FinancialRequestTab-pane" type="button" role="tab">
                                 درخواست ها
-                                <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                                <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
                             </button>
                         </li>
                     </ul>
@@ -319,21 +319,21 @@
                                                 <input type="radio" name="financialExpertInvoiceFilter" id="financialExpertInvoiceFilter1" value="1" checked />
                                                 <label for="financialExpertInvoiceFilter1">
                                                     در انتظار تایید
-                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                    <span class="badge-count filter-count-badge"></span>
                                                 </label>
                                             </li>
                                             <li class="filter-switch-item">
                                                 <input type="radio" name="financialExpertInvoiceFilter" id="financialExpertInvoiceFilter2" value="2" />
                                                 <label for="financialExpertInvoiceFilter2">
                                                     تایید شده
-                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                    <span class="badge-count filter-count-badge"></span>
                                                 </label>
                                             </li>
                                             <li class="filter-switch-item">
                                                 <input type="radio" name="financialExpertInvoiceFilter" id="financialExpertInvoiceFilter3" value="3" />
                                                 <label for="financialExpertInvoiceFilter3">
                                                     رد شده
-                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                    <span class="badge-count filter-count-badge"></span>
                                                 </label>
                                             </li>
                                         </ul>
@@ -371,21 +371,21 @@
                                                 <input type="radio" name="financialExpertFilter" id="financialExpertFilter1" value="1" checked />
                                                 <label for="financialExpertFilter1">
                                                     در انتظار تایید
-                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                    <span class="badge-count filter-count-badge"></span>
                                                 </label>
                                             </li>
                                             <li class="filter-switch-item">
                                                 <input type="radio" name="financialExpertFilter" id="financialExpertFilter2" value="2" />
                                                 <label for="financialExpertFilter2">
                                                     تایید شده
-                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                    <span class="badge-count filter-count-badge"></span>
                                                 </label>
                                             </li>
                                             <li class="filter-switch-item">
                                                 <input type="radio" name="financialExpertFilter" id="financialExpertFilter3" value="3" />
                                                 <label for="financialExpertFilter3">
                                                     رد شده
-                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                    <span class="badge-count filter-count-badge"></span>
                                                 </label>
                                             </li>
                                         </ul>
@@ -426,21 +426,21 @@
                                                 <input type="radio" name="FinancialRequestFilter" id="FinancialRequestFilter1" value="1" />
                                                 <label for="FinancialRequestFilter1">
                                                     در انتظار تایید
-                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                    <span class="badge-count filter-count-badge"></span>
                                                 </label>
                                             </li>
                                             <li class="filter-switch-item">
                                                 <input type="radio" name="FinancialRequestFilter" id="FinancialRequestFilter2" value="2" checked />
                                                 <label for="FinancialRequestFilter2">
                                                     در انتظار پرداخت
-                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                    <span class="badge-count filter-count-badge"></span>
                                                 </label>
                                             </li>
                                             <li class="filter-switch-item">
                                                 <input type="radio" name="FinancialRequestFilter" id="FinancialRequestFilter3" value="3" />
                                                 <label for="FinancialRequestFilter3">
                                                     پرداخت شده
-                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                    <span class="badge-count filter-count-badge"></span>
                                                 </label>
                                             </li>
                                         </ul>
@@ -530,14 +530,14 @@
                                 <input type="radio" name="SalesAdminFilter" id="spf1" value="1" checked />
                                 <label for="spf1">
                                     در انتظار تایید
-                                    <span class="badgeCircle filter-count-badge"></span>
+                                    <span class="badge-count filter-count-badge"></span>
                                 </label>
                             </li>
                             <li class="filter-switch-item">
                                 <input type="radio" name="SalesAdminFilter" id="spf2" value="2" />
                                 <label for="spf2">
                                     تایید شده
-                                    <span class="badgeCircle filter-count-badge"></span>
+                                    <span class="badge-count filter-count-badge"></span>
                                 </label>
                             </li>
                         </ul>
@@ -559,13 +559,13 @@
                     <li class="nav-item" role="presentation">
                         <button class="nav-link position-relative" onclick="GetInvoicesTaminExpert()" id="TaminInvoiceTab" data-bs-target="#TaminInvoiceTab-pane" type="button" role="tab">
                             صورتحساب ها
-                            <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                            <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active position-relative" onclick="GetPreFactorTaminExpert()" id="TaminPrefactorTab" data-bs-target="#TaminPrefactorTab-pane" type="button" role="tab">
                             پیش‌فاکتور ها
-                            <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                            <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
                         </button>
                     </li>
                 </ul>
@@ -598,21 +598,21 @@
                                             <input type="radio" name="taminInvoiceFilter" id="taminInvoiceFilter1" value="1" checked />
                                             <label for="taminInvoiceFilter1">
                                                 در انتظار تایید
-                                                <span class="badgeCircle filter-count-badge"></span>
+                                                <span class="badge-count filter-count-badge"></span>
                                             </label>
                                         </li>
                                         <li class="filter-switch-item">
                                             <input type="radio" name="taminInvoiceFilter" id="taminInvoiceFilter2" value="2" />
                                             <label for="taminInvoiceFilter2">
                                                 تایید شده
-                                                <span class="badgeCircle filter-count-badge"></span>
+                                                <span class="badge-count filter-count-badge"></span>
                                             </label>
                                         </li>
                                         <li class="filter-switch-item">
                                             <input type="radio" name="taminInvoiceFilter" id="taminInvoiceFilter3" value="3" />
                                             <label for="taminInvoiceFilter3">
                                                 رد شده
-                                                <span class="badgeCircle filter-count-badge"></span>
+                                                <span class="badge-count filter-count-badge"></span>
                                             </label>
                                         </li>
                                     </ul>
@@ -650,14 +650,14 @@
                                             <input type="radio" name="TFilter" id="Tpf1" value="1" checked />
                                             <label class="fbold position-relative" for="Tpf1">
                                                 در انتظار تایید
-                                                <span class="badgeCircle filter-count-badge"></span>
+                                                <span class="badge-count filter-count-badge"></span>
                                             </label>
                                         </li>
                                         <li class="filter-switch-item">
                                             <input type="radio" name="TFilter" id="Tpf5" value="2" />
                                             <label class="fbold position-relative" for="Tpf5">
                                                 تایید شده
-                                                <span class="badgeCircle filter-count-badge"></span>
+                                                <span class="badge-count filter-count-badge"></span>
                                             </label>
                                         </li>
                                     </ul>
@@ -682,13 +682,13 @@
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active position-relative" onclick="GetRequestManagingDirector()" id="MDRequestAmountTab" data-bs-target="#MDRequestAmountTab-pane" type="button" role="tab">
                                 درخواست ها
-                                <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                                <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link position-relative" onclick="GetTransferManagingDirector()" id="MDTransferTab" data-bs-target="#MDTransferTab-pane" type="button" role="tab">
                                 نقل و انتقال
-                                <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                                <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
                             </button>
                         </li>
                     </ul>
@@ -720,14 +720,14 @@
                                                 <input type="radio" name="MDRequestAmountFilter" id="MDRequestAmountFilter1" value="1" checked />
                                                 <label for="MDRequestAmountFilter1">
                                                     در انتظار تایید
-                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                    <span class="badge-count filter-count-badge"></span>
                                                 </label>
                                             </li>
                                             <li class="filter-switch-item">
                                                 <input type="radio" name="MDRequestAmountFilter" id="MDRequestAmountFilter2" value="2" />
                                                 <label for="MDRequestAmountFilter2">
                                                     در انتظار پرداخت
-                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                    <span class="badge-count filter-count-badge"></span>
                                                 </label>
                                             </li>
 
@@ -735,7 +735,7 @@
                                                 <input type="radio" name="MDRequestAmountFilter" id="MDRequestAmountFilter3" value="3" />
                                                 <label for="MDRequestAmountFilter3">
                                                     پرداخت شده
-                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                    <span class="badge-count filter-count-badge"></span>
                                                 </label>
                                             </li>
 
@@ -775,14 +775,14 @@
                                                 <input type="radio" name="MDTransferFilter" id="MDTransferFilter1" value="1" checked />
                                                 <label for="MDTransferFilter1">
                                                     در انتظار تایید
-                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                    <span class="badge-count filter-count-badge"></span>
                                                 </label>
                                             </li>
                                             <li class="filter-switch-item">
                                                 <input type="radio" name="MDTransferFilter" id="MDTransferFilter2" value="2" />
                                                 <label for="MDTransferFilter2">
                                                     تایید شده
-                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                    <span class="badge-count filter-count-badge"></span>
                                                 </label>
                                             </li>
 
@@ -790,7 +790,7 @@
                                                 <input type="radio" name="MDTransferFilter" id="MDTransferFilter3" value="3" />
                                                 <label for="MDTransferFilter3">
                                                     رد شده
-                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                    <span class="badge-count filter-count-badge"></span>
                                                 </label>
                                             </li>*@
 

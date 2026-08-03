@@ -1921,7 +1921,7 @@ const initCustomerOpReport = async () => {
 };
 
 let reportModalLoaded = false;
-const ShowModalReport = async (model, passType = 0, dealId = null, dealSerialNumber = null) => {
+const ShowModalReport = async (model = null, passType = 0, dealId = null, dealSerialNumber = null) => {
     const repTelElm = document.getElementById("repTel");
     const selectElm = document.getElementById("repCustomerTxt");
     

@@ -2386,7 +2386,7 @@ input[type=checkbox], input[type=radio] {
 }
 
 
-#desktopNavbar {
+.menu-nav {
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
@@ -2397,7 +2397,7 @@ input[type=checkbox], input[type=radio] {
 }
 
 
-.sidebar-menu-list {
+.menu-list {
 	display: flex;
 	flex-direction: column;
 	gap: .25rem;
@@ -2443,6 +2443,10 @@ input[type=checkbox], input[type=radio] {
 
 
 #mainWrapper {
+	container-type: inline-size;
+	container-name: mainWrapper;
+	min-height: 100dvh;
+	position: relative;
 	width: 100%;
 	display: flex;
 	flex-direction: column;
@@ -2909,14 +2913,6 @@ html.sidebar-collapsed .has-submenu:hover > .menu-item > .menu-item-title .subme
 	font-size: 8px;
 	width: 100%;
 	white-space: nowrap;
-}
-
-
-#mobileDrawerNavbar {
-	flex-grow: 1;
-	overflow-y: auto;
-	padding: .5rem;
-	color: white;
 }
 
 
@@ -4747,22 +4743,64 @@ padding: 0 !important;
 }
 
 
-.badgeCircle {
+.badge-count {
 	font-size: 12px;
-	background-color: #EF5350;
 	border-radius: 50%;
-	color: #00302d;
 	padding: 1px;
 	min-width: 16px;
 	height: 16px;
 	line-height: 1;
-	display: flex;
+	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	
+	background-color: #EF5350;
+	color: #fff;
+	
+	--badge-top: -8px;
+	--badge-right: -6px;
+	--badge-left: -3px;
 }
 
 
-.badgeCircle.filter-count-badge {
+.badge-count-menuItem {
+	color: #00302d;
+}
+
+
+.badge-count-danger {
+	background-color: #EF5350;
+	color: #fff;
+}
+
+
+.badge-count-blue {
+	background-color: #007bff;
+	color: #fff;
+}
+
+
+.badge-top {
+	position: absolute;
+	top: var(--badge-top);
+}
+
+
+.badge-top-right {
+	position: absolute;
+	top: var(--badge-top);
+	right: var(--badge-right);
+}
+
+
+.badge-top-left {
+	position: absolute;
+	top: var(--badge-top);
+	left: var(--badge-left);
+}
+
+
+.badge-count.filter-count-badge {
 	position: absolute;
 	top: -6px;
 	left: -3px;

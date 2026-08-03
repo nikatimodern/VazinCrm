@@ -1,5 +1,4 @@
 @using CRM.EndPoint.FrontEnd.Services
-@inject MenuService MenuService
 
 @{
     var userMenus = MenuService.GetMenus(User);
@@ -9,8 +8,10 @@
     var standaloneItems = desktopMenus.Where(x => x.IsStandalone);
 
     var mobileMenus = userMenus.Where(m => m.ShowInMobile).ToList();
-    var mobileBottomMenu = mobileMenus.Where(m => m.ShowInMobileBottomMenu).ToList();
-    var mobileDrawerMenu = mobileMenus.Where(m => !m.ShowInMobileBottomMenu).ToList();
+    var mobileBottomMenus = mobileMenus.Where(m => m.ShowInMobileBottomMenu).ToList();
+    var mobileDrawerMenus = mobileMenus.Where(m => !m.ShowInMobileBottomMenu).ToList();
+    var mobileDrawerNormalItems = mobileDrawerMenus.Where(m => !m.IsStandalone).ToList();
+    var mobileDrawerStandaloneItems = mobileDrawerMenus.Where(m => m.IsStandalone).ToList();
 }
 
 @*----- Desktop Sidebar -----*@
@@ -19,16 +20,18 @@
     <partial name="Menu/_MenuHeader" model="false" />
 
     @* Desktop nav items  *@
-    <nav id="desktopNavbar">
-        <div class="sidebar-menu-list">
+    <nav id="desktopNavbar" class="menu-nav">
+        <div class="menu-list">
             @foreach (var item in normalItems) {
                 <partial name="Menu/_MenuItem" model="item" />
             }
         </div>
 
-        @foreach (var item in standaloneItems) {
-            <partial name="Menu/_MenuItem" model="item" />
-        }
+        <div class="menu-list">
+            @foreach (var item in standaloneItems) {
+                <partial name="Menu/_MenuItem" model="item" />
+            }
+        </div>
     </nav>
 
     @* Sidebar footer *@
@@ -47,7 +50,7 @@
 @*----- Mobile Bottom Bar -----*@
 <div id="mobileMenuBottom">
     <nav id="mobileNavbar">
-        @foreach (var item in mobileBottomMenu) {
+        @foreach (var item in mobileBottomMenus) {
             <a class="menu-item menu-link" href="@item.Url">
                 @Html.Raw(item.IconHtml)
                 <span>@item.Title</span>
@@ -70,9 +73,15 @@
 <div id="mobileDrawer">
     <partial name="Menu/_MenuHeader" model="true" />
 
-    <nav id="mobileDrawerNavbar">
-        <div class="sidebar-menu-list">
-            @foreach (var item in mobileDrawerMenu) {
+    <nav id="mobileDrawerNavbar" class="menu-nav">
+        <div class="menu-list">
+            @foreach (var item in mobileDrawerNormalItems) {
+                <partial name="Menu/_MenuItem" model="item" />
+            }
+        </div>
+
+        <div class="menu-list">
+            @foreach (var item in mobileDrawerStandaloneItems) {
                 <partial name="Menu/_MenuItem" model="item" />
             }
         </div>

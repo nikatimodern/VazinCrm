@@ -26,12 +26,9 @@
 #mainContent {
 	padding-inline: 14px;
 	flex-grow: 1;
-}
-
-
-#mainContent > main {
 	height: 100%;
 }
+
 
 
 #PreFactor #PreFacItem, #Factor #FacItem {

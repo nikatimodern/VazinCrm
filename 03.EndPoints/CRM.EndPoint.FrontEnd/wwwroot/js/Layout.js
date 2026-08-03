@@ -142,7 +142,7 @@ function initTooltipsIfCollapsed() {
                 title: el.getAttribute("data-tooltip-left"),
                 delay: { show: 150, hide: 0 },
                 customClass: "main-font",
-                placement: isSubmenu ? "top" : "left"
+                placement: isSubmenu ? "top" : "left",
             });
         });
     
@@ -3250,18 +3250,18 @@ const setCountEnvelope = (countObj, isAdmin) => {
     const cartableTabsElm = document.getElementById("CartableTabs");
     if (!cartableTabsElm) return;
     Object.values(countResult).forEach(({ id, count }) => {
-        const el = cartableTabsElm.querySelector(`#${id} .badgeCircle`);
+        const el = cartableTabsElm.querySelector(`#${id} .badge-count`);
         setBadge(el, count);
     });
     
     // sub tabs
-    setBadge("#MDRequestAmountTab .badgeCircle", countObj.managingDirector?.requestCount || 0);
-    setBadge("#MDTransferTab .badgeCircle", countObj.managingDirector?.transferCount || 0);
-    setBadge("#FinancialPrefactorTab .badgeCircle", countObj.financial?.preFactorCount || 0);
-    setBadge("#FinancialInvoiceTab .badgeCircle", countObj.financial?.invoiceCount || 0);
-    setBadge("#FinancialRequestTab .badgeCircle", countObj.financial?.requestCount || 0);
-    setBadge("#TaminPrefactorTab .badgeCircle", countObj.tamin?.preFactorCount || 0);
-    setBadge("#TaminInvoiceTab .badgeCircle", countObj.tamin?.invoiceCount || 0);
+    setBadge("#MDRequestAmountTab .badge-count", countObj.managingDirector?.requestCount || 0);
+    setBadge("#MDTransferTab .badge-count", countObj.managingDirector?.transferCount || 0);
+    setBadge("#FinancialPrefactorTab .badge-count", countObj.financial?.preFactorCount || 0);
+    setBadge("#FinancialInvoiceTab .badge-count", countObj.financial?.invoiceCount || 0);
+    setBadge("#FinancialRequestTab .badge-count", countObj.financial?.requestCount || 0);
+    setBadge("#TaminPrefactorTab .badge-count", countObj.tamin?.preFactorCount || 0);
+    setBadge("#TaminInvoiceTab .badge-count", countObj.tamin?.invoiceCount || 0);
 };
 
 const setBadge = (target, count) => {
@@ -3316,7 +3316,7 @@ const setCountEnvelope = (countObj, isFromSignalR = false) => {
     const cartableTabsElm = document.getElementById("CartableTabs");
     if (!cartableTabsElm) return;
     for (const c in countResult) {
-        const el = cartableTabsElm.querySelector(`#${countResult[c].id} .badgeCircle`);
+        const el = cartableTabsElm.querySelector(`#${countResult[c].id} .badge-count`);
         if (!el) continue;
         const count = countResult[c].count;
         el.textContent = count;
@@ -3342,7 +3342,7 @@ const setCountEnvelope = (countObj, isFromSignalR = false) => {
         if (!cartableTabsElm) return;
         for (const tabId in ids) {
             const type = ids[tabId];
-            const el = cartableTabsElm.querySelector(`#${tabId} .badgeCircle`);
+            const el = cartableTabsElm.querySelector(`#${tabId} .badge-count`);
             if (!el) continue;
             
             const count = countObj[type];
@@ -3630,7 +3630,7 @@ async function getRemind() {
         }
     }).then((tasks) => {
         notificationDropdown.innerHTML = tasks.html;
-        notificationIconBadge.classList.toggle("d-none", !tasks.count)
+        notificationIconBadge.classList.toggle("d-none", !tasks.count);
     })
          .catch((err) => {
              console.log(err);
@@ -4358,36 +4358,45 @@ sortableMobileMenu();
 
 let warningData = [];
 function showModalWarnings() {
-    $("#warningModal").modal("show");
+    toggleMobileDrawer(false);
+    ModalToggle("#warningModal");
 }
 
+
+const warningContainer = document.getElementById("warningContainer");
 async function getAllWarnings(isRefresh = false) {
-    const roles = JSON.parse(sessionStorage.getItem("Rols"));
-    const hasAccess = roles.some(rol => "Admin FinancialExpert FinancialAdmin".includes(rol?.name));
-    if (!hasAccess) return;
-    const container = document.getElementById("warningContainer");
-    if (!container) return;
-    container.innerHTML = "";
+    const warningElmBtns = document.querySelectorAll(".menu-item.warning");
+    if (!warningElmBtns.length) return;
+    
+    if (!warningContainer) return;
+    warningContainer.innerHTML = "";
     try {
         isRefresh && FLshowLoading();
         const url = isRefresh ? `/Home/WarningsSepidarCrmFactors` : `/Home/GetAllSystemWarnings`;
         const res = await axios(url);
         
         warningData = res.data;
-        const warningElmBtn = document.getElementById(`${window.innerWidth < 768 ? "warningIconHeader" : "warningsMenuId"}`);
-        const badgeWarningCount = warningElmBtn.querySelector(".badgeCircle");
-        if (warningData.length) {
-            warningElmBtn.style.display = "flex";
-            badgeWarningCount.innerText = warningData.length.toString();
-        } else {
-            warningElmBtn.style.display = "none";
-        }
         
-        if (warningData.length > 0) {
-            warningData.forEach(item => {
-                const div = document.createElement("div");
-                div.className = "warning-box";
-                div.innerHTML = `
+        warningElmBtns.forEach(elm => {
+            elm.classList.toggle("d-flex", warningData.length > 0);
+            const badgeWarningCount = elm.querySelector(".badge-count");
+            badgeWarningCount.innerText = warningData.length || "";
+        });
+        
+        initDomWarningsModal();
+        
+        isRefresh && FLshowLoading(false);
+    } catch (err) {
+        console.log(err);
+    }
+}
+
+function initDomWarningsModal() {
+    if (warningData.length > 0) {
+        warningData.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "warning-box";
+            div.innerHTML = `
                     <div class="d-flex align-items-center gap-2">
                         <svg style="width: 18px;flex-shrink: 0; color: #EF5350;" viewBox="0 0 16 16" fill="currentColor"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
                         <span style="color: #444;">${item.message}</span>
@@ -4401,25 +4410,20 @@ async function getAllWarnings(isRefresh = false) {
                         </span>
                     </div>
                 `;
-                div.querySelector(".deleteWarning").addEventListener("click", () => removeWarning(item.id));
-                div.querySelector(".showDetails").addEventListener("click", () => showDetailsWarning(item.entityId));
-                
-                container.appendChild(div);
-            });
-        } else {
-            container.innerHTML = `
-                <div class="d-flex flex-column align-items-center pb-4">
-                    <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
-                    <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ هشداری برای نمایش وجود ندارد!</div>
-                </div>
-            `;
-        }
-        isRefresh && FLshowLoading(false);
-    } catch (err) {
-        console.log(err);
+            div.querySelector(".deleteWarning").addEventListener("click", () => removeWarning(item.id));
+            div.querySelector(".showDetails").addEventListener("click", () => showDetailsWarning(item.entityId));
+            
+            warningContainer.appendChild(div);
+        });
+    } else {
+        warningContainer.innerHTML = `
+            <div class="d-flex flex-column align-items-center pb-4">
+                <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
+                <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ هشداری برای نمایش وجود ندارد!</div>
+            </div>
+        `;
     }
 }
-
 async function removeWarning(id) {
     try {
         const res = await axios(`/Home/DeleteSystemWarning?id=${id}`);

@@ -97,15 +97,12 @@
 <div class="d-flex">
     <partial name="Menu/_Menu" />
 
-    <div id="mainWrapper" style="container-type: inline-size;container-name: mainWrapper; min-height:100dvh;position:relative">
-        
+    <div id="mainWrapper">
         <partial name="Header/_Header" />
-        
-        <div id="mainContent">
-            <main role="main">
-                @RenderBody()
-            </main>
-        </div>
+
+        <main id="mainContent" role="main">
+            @RenderBody()
+        </main>
     </div>
 </div>
 
@@ -1600,24 +1597,24 @@
                                     <input class="sdate form-control" name="vosolDate" type="text" placeholder="تاریخ پرداخت" data-mask-date disabled />
                                 </div>
                             </div>
-                            
+
                             <div class="toBankAccountWrapperSelect my-2 w-100">
                                 <label>واریز به حساب بانکی</label>
                                 <select disabled class="form-select" name="bankAccountId"></select>
                             </div>
-                            
+
                             <div class="toBankAccountWrapperTxt mb-2 d-none">
                                 <label>واریز به حساب بانکی</label>
                                 <input disabled class="form-control" name="bankAccountTxt" type="text" placeholder="به کدام (حساب / شبا / کارت) واریز شده است." />
                             </div>
-                            
+
                             <div class="toNameWrapper d-none">
                                 <label>واریز به نام</label>
                                 <input disabled class="form-control" name="toName" type="text" placeholder="نام صاحب حساب واریز شده" />
                             </div>
                         </div>
                     </form>
-                    
+
                     <div class="sanadPayBox sectionBox-invoice mt-4">
                         <span class="sectionTitle-invoice">رسید پرداخت</span>
                         <div class="container-uploader">

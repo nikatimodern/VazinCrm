@@ -117,7 +117,7 @@
                         <img class="profile-image" style="width:36px;outline-color: #ccc" src="${item.personImageUrl || "/Img/User.png"}" alt="">
                         <span style="font-size:13px">${item.fullName}</span>
                     </div>
-                    ${type === 1 && item.countNotRead ? `<span class="badgeCircle text-white">${item.countNotRead ?? ""}</span>` : ""}
+                    ${type === 1 && item.countNotRead ? `<span class="badge-count">${item.countNotRead ?? ""}</span>` : ""}
 				`;
 
                 if (type === 1 && item.mainChatId === currentMainChatId) {
