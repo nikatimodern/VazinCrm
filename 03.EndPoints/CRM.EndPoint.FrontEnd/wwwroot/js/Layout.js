@@ -1408,40 +1408,7 @@ const ShowUpdateHeadOrder = async (id, passType, dealId) => {
     FLshowLoading(false);
     $("#CreateOrderModal").modal("show");
 };
-const ShowUpdateHeadOrder0 = async (id, passType, dealId) => {
-    try {
-        upHeadOrderPassType = passType;
-        upHeadOrderDealId = dealId;
-        //$("#DivAddOr").css("display", "flex");
-        document.getElementById("orderFormContainer")?.classList.remove("d-lg-flex");
-        $("#DivUpOr").css("display", "none");
-        FLshowLoading();
-        
-        const data = (await axios(`/Order/GetHeadOrder/${id}`)).data;
-        Ohead = data.orderHead;
-        pfItemsNotInOrders = data.pfItemsNotInOrders;
-        
-        
-        document.querySelector(".addFromPreFactorBtn").style.display = pfItemsNotInOrders.length ? "flex" : "none";
-        
-        
-        mySer.convertJsonToForm(Ohead, "headOrderForm");
-        document.getElementById("descriptionOrder").value = Ohead.description;
-        document.querySelector("#headOrderForm [name='customerTxt']").value = `${Ohead.customerTxt} - کد مشتری: ${Ohead.customerCode ?? "-"}`;
-        
-        orderItems = Ohead.orders ?? [];
-        orderItems.forEach(item => item._index = orderIndexCounter++);
-        
-        OrdersTBL.clear().rows.add(orderItems.filter(i => !i.isDeleted)).draw();
-        
-        FLshowLoading(false);
-        document.getElementById("OrderForm").reset();
-        $("#orderEditModal").modal("toggle");
-        
-    } catch (err) {
-        console.log(err);
-    }
-};
+
 
 const AddFromPreFactorModal = () => {
     document.querySelector("#AddFromPreFactorModal .modal-title").textContent = `آیتم های اضافه نشده از پیش‌فاکتور ${pfItemsGroupedData[0].prefactorSer}`;
@@ -1556,43 +1523,6 @@ const AddItemCreator = async () => {
             canselModalItemOrder();
         }
     }
-};
-
-const updateHeadOrder = async () => {
-    if (!await mySer.CheckValidForm("#headOrderForm") || UpOrderIndex !== null) {
-        if (UpOrderIndex !== null) toastifyError("لطفا ویرایش را تکمیل کنید");
-        return;
-    }
-    
-    FLshowLoading();
-    let model = { ...Ohead, ...mySer.convertFormToJSON("#headOrderForm") };
-    model.description = document.getElementById("descriptionOrder").value;
-    
-    orderItems.forEach(i => delete i._index);
-    model.Orders = orderItems;
-    
-    axios.post("/Order/UpHeadOrder", model).then(async (res) => {
-        if (res.status === 200) {
-            if (upHeadOrderPassType === 1) {
-                await refreshOrders();
-            } else if (upHeadOrderPassType === 4) {
-                await getOrdersFromDeal(upHeadOrderDealId);
-            }
-            toastifySuccess("ویرایش انجام شد");
-            $("#orderEditModal").modal("toggle");
-        } else if (res.status === 204) {
-            toastifyError("شما مجاز به انجام این کار نیستید!");
-        }
-        FLshowLoading(false);
-    }).catch((err) => {
-        console.log(err);
-        setTimeout(async () => await updateHeadOrder(), 3000);
-    });
-};
-
-const canselHeadOrder = () => {
-    UpOrderIndex = null;
-    $("#orderEditModal").modal("toggle");
 };
 
 const showModalItemOrder = () => {
@@ -4386,7 +4316,7 @@ async function getAllWarnings(isRefresh = false) {
         warningData = res.data;
         
         warningElmBtns.forEach(elm => {
-            elm.classList.toggle("d-flex", warningData.length > 0);
+            elm.classList.toggle("d-none", warningData.length === 0);
             const badgeWarningCount = elm.querySelector(".badge-count");
             badgeWarningCount.innerText = warningData.length || "";
         });

@@ -21,9 +21,10 @@ public class MenuItem {
     public string OnClick { get; init; }
     public string ElementId { get; init; }
     public string ClassName { get; init; }
-    
+
     public int? BadgeCount { get; set; }
     public Func<IServiceProvider, Task<int>> GetBadgeCountAsync { get; init; }
-    
+    public bool HideWhenBadgeEmpty { get; set; }
+
     public bool IsStandalone { get; init; } // بیرون از لیست اصلی (مثل هشدارها)
 }

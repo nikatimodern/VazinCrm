@@ -440,6 +440,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                 OnClick = "showModalWarnings()",
                 ClassName = "warning",
                 IsStandalone = true,
+                HideWhenBadgeEmpty = true,
                 GetBadgeCountAsync = async sp => {
                     var db = sp.GetRequiredService<CRMContextDb>();
                     return await db.SystemWarnings.CountAsync();
@@ -508,5 +509,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                 await SetBadgeCountsAsync(item.SubItems);
             }
         }
+
+        items?.RemoveAll(x => x.HideWhenBadgeEmpty && x.BadgeCount <= 0);
     }
 }

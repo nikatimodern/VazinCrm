@@ -1,0 +1,145 @@
+<!-- Modal updateCustomer -->
+<div class="modal fade " dir="ltr" id="updateCustomerModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class=" modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="padding:10px!important">
+            <div style="margin-bottom:10px;height:30px;align-items:center; display:flex; justify-content:center; background-color:rebeccapurple;color:white;border-radius:5px">
+                <label class="fbold">ویرایش مشتری</label>
+            </div>
+
+            <div id="loadingModalUp" class="flex-center d-none">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+            </div>
+
+
+            <div class="InfoData mx-0 mx-lg-2">
+                <form id="CuInfoUpFormId" style="direction:rtl">
+                    <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;  ">
+                        <div id="upCustomerSupplierAlertRq" style="display:flex;width:100%; justify-content:center;gap: 10px">
+                            <div class="form-group d-flex align-items-center gap-1">
+                                <input class="valueNumber" type="radio" data-alertId="upCustomerSupplierAlertRq" name="roleType" id="upCustomerSupplier1" value="1" checked required />
+                                <label class="fbold" for="upCustomerSupplier1">مشتری</label>
+                            </div>
+                            <div class="form-group d-flex align-items-center gap-1">
+                                <input class="valueNumber" type="radio" data-alertId="upCustomerSupplierAlertRq" name="roleType" id="upCustomerSupplier2" value="2" required />
+                                <label class="fbold" for="upCustomerSupplier2">تامین کننده</label>
+                            </div>
+                            <div class="form-group d-flex align-items-center gap-1">
+                                <input class="valueNumber" type="radio" data-alertId="upCustomerSupplierAlertRq" name="roleType" id="upCustomerSupplier3" value="3" required />
+                                <label class="fbold" for="upCustomerSupplier3">تامین کننده - مشتری</label>
+                            </div>
+                        </div>
+                        <div style="display:flex;width:100%; justify-content:center;direction:ltr ">
+                            <div class="form-group d-flex align-items-center gap-1" style="margin:10px" onclick="changeJur(0)">
+                                <label class="fbold" for="UpJuridicalA">حقیقی</label>
+                                <input class="valueNumber" type="radio" name="juridical" id="UpJuridicalA" value="0" required />
+                            </div>
+                            <div class="form-group d-flex align-items-center gap-1" style="margin:10px" onclick="changeJur(1)">
+                                <label class="fbold" for="UpJuridicalB">حقوقی</label>
+                                <input class="valueNumber" type="radio" name="juridical" id="UpJuridicalB" value="1" required />
+                            </div>
+                        </div>
+                        <div style="width:100%;display:flex;justify-content:center;flex-flow:wrap; ">
+
+                            <div class="form-group col-12 col-sm-6">
+                                <div style="display:flex;justify-content:space-between">
+                                    <label class="fmp" style="font-size:12px" id="nameTxt">
+                                        نام و نام خانوادگی:
+                                    </label>
+                                    <div id="sexAlertRq" class="gap-3" style="display:flex;">
+                                        <div class="d-flex align-items-center gap-1">
+                                            <label style="font-size:12px;cursor:pointer" class="mp " for="man">آقا</label>
+                                            <input style="cursor:pointer" data-alertId="sexAlertRq" class="valueNumber" type="radio" id="man" name="sex" value="1" required />
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <label style="font-size:12px;cursor:pointer" class="mp " for="woman">خانم</label>
+                                            <input style="cursor:pointer" data-alertId="sexAlertRq" class="valueNumber" type="radio" id="woman" name="sex" value="0" required />
+                                        </div>
+                                    </div>
+                                </div>
+                                <input class="form-control" type="text" id="agentNameId" name="agentName" placeholder="نام و نام خانوادگی" required />
+                            </div>
+                            <div class="form-group col-6">
+                                <label class="fmp" style="font-size:12px;" id="mobileTxt">کد ملی :</label>
+                                <input class="form-control" type="text" id="agentMeliCode" name="agentMeliCode" placeholder="کد ملی " />
+                            </div>
+
+                            <div class="form-group col-6">
+                                <label class="fmp" style="font-size:12px;" id="TelTxt">تلفن:</label>
+                                <input class="form-control" type="text" id="tel" name="tel" placeholder="تلفن تماس" />
+                            </div>
+
+                            <div class="form-group col-6">
+                                <label class="fmp" style="font-size:12px;" id="mobTxt">:تلفن همراه(موبایل)</label>
+                                <input inputmode="numeric" class="form-control mobileNumber" type="text" id="mobile" name="mobile" placeholder="موبایل" required />
+                            </div>
+
+                            <div class="form-group col-6">
+                                <label class="fmp" style="font-size:12px;" id="WorkSenfTxt">صنف کاری:</label>
+                                <div class="fmp" style="display:flex;">
+                                    <select id="workSenfID" name="workSenf" class="Lbox form-control h-100" style="width:100%">
+                                    </select>
+                                    @*                                            <div class="BtnDisEnb" style="display:flex;height:10px">
+                                        <span onclick="setDefaultWorkSenf()" style=" cursor:pointer; color:darkred ;font-size:x-large;">×</span>
+                                        </div>*@
+                                </div>
+                            </div>
+
+                            <div class="form-group col-12 col-sm-6">
+                                <label class=" fmp " style="font-size:12px;" id="َAddressTxt">توضیحات صنف کاری:</label>
+                                <input maxlength="10" class="form-control" type="text" id="workSenfDescription" name="workSenfDescription" placeholder="توضیحات صنف کاری" />
+                            </div>
+
+                        </div>
+
+                        <div style="display:none;flex-wrap:wrap" id="JuridicalUpDiv">
+                            <div class="col-6 col-lg-3 form-group">
+                                <label class=" fmp " style="font-size:12px;"> نام شرکت : </label>
+                                <input class="Uhog  form-control Jreq" type="text" id="companyNameId" name="companyName" placeholder="نام شرکت" />
+                            </div>
+                            <div class="col-6 col-lg-3 form-group">
+                                <label class=" fmp " style="font-size:12px;">شناسه ملی: </label>
+                                <input maxlength="11" class=" Uhog form-control Jreq" type="text" id="shenaseMeliId" name="shenaseMeli" placeholder="شناسه ملی" />
+                            </div>
+                            <div class="col-6 col-lg-3 form-group">
+                                <label class=" fmp " style="font-size:12px;">کداقتصادی: </label>
+                                <input maxlength="12" class="  form-control Jreq" type="text" id="eghtesadiCodeId" name="eghtesadiCode" placeholder="کد اقتصادی" />
+                            </div>
+                            <div class="col-6 col-lg-3 form-group">
+                                <label class=" fmp " style="font-size:12px;">شماره ثبت: </label>
+                                <input maxlength="6" class=" Uhog form-control Jreq" type="text" id="numberRegisterId" name="numberRegister" placeholder="شماره ثبت" />
+                            </div>
+                        </div>
+
+
+                        <div style="display:flex;flex-wrap:wrap">
+                            <div class="col-5 col-sm-4 col-lg-2 form-group">
+                                <label class=" fmp " style="font-size:12px;" id="َAddressTxt">کد پستی:</label>
+                                <input maxlength="10" class="form-control" type="text" id="postalCode" name="postalCode" placeholder="کد پستی" />
+                            </div>
+                            <div class="col-4 col-sm-4 col-lg-2 form-group">
+                                <label class=" fmp " style="font-size:12px;" id="َProvinceTxt">استان:</label>
+                                <input class="form-control" type="text" id="province" name="province" placeholder="استان" />
+                            </div>
+                            <div class="col-3 col-sm-4 col-lg-2 form-group">
+                                <label class=" fmp " style="font-size:12px;" id="CityTxt">شهر:</label>
+                                <input class="form-control" type="text" id="city" name="city" placeholder="شهر" />
+                            </div>
+                            <div class="col-12 col-sm-12 col-lg-6 form-group ">
+                                <label class=" fmp " style="font-size:12px;" id="َAddressTxt">آدرس:</label>
+                                <input class="form-control" type="text" id="address" name="address" placeholder="آدرس" />
+                            </div>
+
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+
+            <div style="margin-block:16px 8px !important; display:flex;justify-content:center;align-items:center;gap:4px">
+                <button class="buttonGreen3" onclick="SubmitUpFormCustomer()">ثبت</button>
+                <button class="buttonCancel2" onclick="closeModalUpdate()">انصراف</button>
+            </div>
+
+        </div>
+    </div>
+</div>

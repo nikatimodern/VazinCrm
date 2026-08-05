@@ -1,0 +1,92 @@
+<!-- Modal Report -->
+<div class="modal fade" id="ModalReport" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content col-12" style="padding:10px!important">
+
+            <div style="height:30px;margin-bottom:10px;  display:flex; justify-content:center; align-items:center;  background: linear-gradient(to bottom, #025751, #00302d); color:white;border-radius:5px">
+                <label class="fbold">گزارش روزانه</label>
+            </div>
+
+            <div class="modal-body InfoData mx-lg-1">
+                <form id="ReportFormId">
+                    <div class="gap-3 mt-2 flex-center flex-column">
+                        <div id="repTypeId" class="form-group flex-center flex-wrap column-gap-3 column-gap-sm-5 row-gap-2">
+                            <div class="d-flex align-items-center gap-1">
+                                <label for="telType">گزارش تماس ورودی</label>
+                                <input type="radio" data-alertid="repTypeId" id="telType" name="reportType" value="2" required />
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <label for="followTelType">گزارش پیگیری</label>
+                                <input type="radio" data-alertid="repTypeId" id="followTelType" name="reportType" value="1" required />
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <label for="satisfactionType">گزارش رضایتمندی</label>
+                                <input type="radio" data-alertid="repTypeId" id="satisfactionType" name="reportType" value="3" required />
+                            </div>
+                        </div>
+
+                        <div class="col-12" style="display:flex;flex-flow:wrap ">
+                            <div class="form-group col-12 col-sm-3">
+                                <label class="text-dark">شماره تلفن تماس:</label>
+                                <input type="text" inputmode="numeric" class="form-control mobileNumber" name="repTel" id="repTel" required />
+                                @* <select inputmode="numeric" class="mobileNumber" id="repTel" name="repTel" required></select> *@
+                            </div>
+
+                            <div class="form-group col-12 col-sm-9" id="roDivCustId">
+                                <label class="text-dark">نام مشتری:</label>
+                                <select id="repCustomerTxt" name="customerId" required>
+                                </select>
+                            </div>
+
+                            @*
+                            <div class="form-group col-4">
+                                <label>نام نماینده شرکت:</label>
+                                <input type="text" class="form-control" name="AgentName" required />
+                            </div>
+
+                            *@
+
+                            <div id="resultFollowUpContainer" class="form-group col-12 d-flex flex-wrap gap-2 d-none">
+                                <div class="resultCallWrapper flex-fill">
+                                    <label for="resultCall" class="text-dark">نتیجه تماس:</label>
+                                    <select class="form-select" name="resultCallId" id="resultCall">
+                                    </select>
+                                </div>
+                                <div class="finalResultCallWrapper d-none flex-fill">
+                                    <label for="finalResultCall" class="text-dark">نتیجه نهایی:</label>
+                                    <select class="form-select" name="finalResultCallId" id="finalResultCall">
+                                    </select>
+                                </div>
+                                <div class="reasonCancelWrapper d-none flex-fill">
+                                    <label for="reasonCancel" class="text-dark">علت انصراف:</label>
+                                    <select class="form-select" name="reasonCancelId" id="reasonCancel">
+                                    </select>
+                                </div>
+                            </div>
+
+
+                            <div class="form-group col-12">
+                                <label class="text-dark">توضیحات:</label>
+                                <textarea class="form-control" id="reportText" name="reportText" style="text-align:right; direction:rtl; min-height:200px" required></textarea>
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-column align-items-center gap-2 d-none">
+                            <div id="reportRate" class="rating"></div>
+                            <p>
+                                <span>امتیاز رضایتمندی: </span>
+                                <span id="reportRateResult"></span>
+                            </p>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+
+            <div style="margin-block:16px 8px !important; display:flex;justify-content:center;align-items:center;gap:4px">
+                <button class="buttonCancel2" onclick="closeModalReport()">انصراف</button>
+                <button class="buttonGreen3" onclick="SubmitReportForm()">ثبت</button>
+            </div>
+        </div>
+    </div>
+</div>

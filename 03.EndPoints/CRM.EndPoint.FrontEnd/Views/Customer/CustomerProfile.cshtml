@@ -121,7 +121,15 @@
 </div>
 
 
+<partial name="~/Views/Factor/Modals/PreFactor/_PreFactorModal.cshtml" />
+<partial name="~/Views/Factor/Modals/Factor/_FactorModal.cshtml" />
 
+<partial name="~/Views/Factor/Modals/PreFactor/_DeliverModal.cshtml" />
+<partial name="~/Views/Factor/Modals/PreFactor/_PreFactorAttachmentsModal.cshtml" />
+<partial name="~/Views/Factor/Modals/PreFactor/_PreFactorMobileModal.cshtml" />
+<partial name="~/Views/Factor/Modals/PreFactor/_PreFactorChangeUserModal.cshtml" />
+
+<partial name="~/Views/Factor/Modals/Factor/_FactorSepidarModal.cshtml" />
 @section scripts {
     <script>
         var KelishehItems = [];
@@ -360,7 +368,7 @@
             onHide: async () => await getAllPreFactor(false),
             showTitle: "نمایش حذف‌شده‌ها",
             hideTitle: "مخفی کردن حذف‌شده‌ها",
-            titlePosition: "left"
+            titlePosition: "left",
         });
 
     </script>
