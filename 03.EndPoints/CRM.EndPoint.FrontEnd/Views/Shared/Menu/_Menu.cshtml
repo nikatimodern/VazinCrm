@@ -1,7 +1,8 @@
 @using CRM.EndPoint.FrontEnd.Services
+@inject IMenuService MenuService
 
 @{
-    var userMenus = MenuService.GetMenus(User);
+    var userMenus = await MenuService.GetMenusAsync(User);
 
     var desktopMenus = userMenus.Where(m => m.ShowInDesktop).ToList();
     var normalItems = desktopMenus.Where(x => !x.IsStandalone);

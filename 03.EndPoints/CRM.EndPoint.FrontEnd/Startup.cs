@@ -163,7 +163,7 @@ namespace CRM.EndPoint.FrontEnd {
 
             services.AddScoped<IDocumentRenderService, DocumentRenderService>();
 
-            services.AddScoped<MenuService>();
+            services.AddScoped<IMenuService, MenuService>();
 
             services.AddSingleton<WebPushClient>(sp => {
                 var handler = new SocketsHttpHandler {

@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     getRemind();
     setDateTime();
-    getAllWarnings();
+    //getAllWarnings();
 });
 
 
@@ -4363,8 +4363,9 @@ function sortableMobileMenu() {
 
 sortableMobileMenu();
 
-let warningData = [];
-function showModalWarnings() {
+let warningData = []; 
+async function showModalWarnings() {
+    await getAllWarnings()
     toggleMobileDrawer(false);
     ModalToggle("#warningModal");
 }

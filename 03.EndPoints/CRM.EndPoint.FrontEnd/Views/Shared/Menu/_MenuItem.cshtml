@@ -26,8 +26,8 @@
         @Html.Raw(Model.IconHtml)
         <span class="menu-item-title">
             <span>@Model.Title</span>
-            @if (Model.HasBadge) {
-                <span class="badge-count badge-count-menuItem"></span>
+            @if (Model.BadgeCount > 0) {
+                <span class="badge-count badge-count-menuItem">@Model.BadgeCount</span>
             }
         </span>
     </button>
@@ -37,8 +37,8 @@
         @Html.Raw(Model.IconHtml)
         <span class="menu-item-title">
             <span>@Model.Title</span>
-            @if (Model.HasBadge) {
-                <span class="badge-count badge-count-menuItem"></span>
+            @if (Model.BadgeCount > 0) {
+                <span class="badge-count badge-count-menuItem">@Model.BadgeCount</span>
             }
         </span>
     </a>

@@ -7,7 +7,7 @@
         ? Url.Content("~/Img/User.png")
         : Url.Content(currentUser.PersonImageUrl);
 
-    var userFullName = currentUser?.FullName;
+    
     var isCustomer = User.IsInRole(AppRoles.Customer);
     var urlLogo = isCustomer ? "//vazinplast.com" : Url.Action("Index", "Dashboard");
     var targetLogo = isCustomer ? "_blank" : "_self";
@@ -19,7 +19,7 @@
             <img id="profileImage" class="profile-image" src="@profileSrc" alt="">
             <div>
                 <span class="d-none d-md-inline">کاربر: </span>
-                <span id="profileName" class="profile-name">@userFullName</span>
+                <span id="profileName" class="profile-name">@currentUser?.FullName</span>
             </div>
         </div>
         <div id="customerLogo">

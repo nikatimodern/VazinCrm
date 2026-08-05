@@ -2901,7 +2901,7 @@ html.sidebar-collapsed .has-submenu ul.submenu {
 
 
 .menu-item.warning {
-	display: none;
+	/* display: none; */
 	background-color: rgba(239, 83, 80, 0.1);
 	color: #EF5350;
 }
