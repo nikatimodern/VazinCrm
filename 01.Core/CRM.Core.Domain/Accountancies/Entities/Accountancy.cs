@@ -16,7 +16,7 @@ namespace CRM.Core.Domain.Accountancies.Entities {
         public PayTypeEnum PayType { get; set; } //نوع واریزی 1-نقدی ، 2-چکی ، 3-اعتباری
         public string PayTypeTxt { get; set; }
 
-        public AcEnum AccType { get; set; } // بدهکاری ,واریزی ,برگشتی
+        public AcEnum AccType { get; set; } // بدهکاری، واریزی، برگشتی
         public string AccTypeTxt { get; set; }
 
         public decimal? credit { get; set; }
@@ -70,9 +70,10 @@ namespace CRM.Core.Domain.Accountancies.Entities {
             get => _status;
             set {
                 _status = value;
-                StatusTxt = value?.ToString().Replace("_"," ");
+                StatusTxt = value?.ToString().Replace("_", " ");
             }
         }
+
         public string StatusTxt { get; private set; }
 
         public Guid? ParentId { get; set; }
@@ -81,12 +82,10 @@ namespace CRM.Core.Domain.Accountancies.Entities {
         public string CurrencyTypeTxt { get; set; }
         public bool Wallet { get; set; }
 
-        [NotMapped]
-        public decimal ReciveAmount { get; set; }
+        [NotMapped] public decimal ReciveAmount { get; set; }
 
         public Guid? CashId { get; set; }
         public Guid? CashierId { get; set; }
         public Guid? RequestAmountId { get; set; }
-
     }
 }

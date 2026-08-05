@@ -49,63 +49,6 @@ public class ChatController : Controller {
     }
 
 
-    [HttpGet]
-    public IActionResult ChatLogin()
-    {
-        return View();
-    }
-
-
-    [HttpPost]
-    public async Task<IActionResult> ChatLogin([FromBody] LoginOtpRequest model)
-    {
-        try
-        {
-            if (!ModelState.IsValid)
-            {
-                var error = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).FirstOrDefault();
-                return Ok(new { status = 405, error });
-            }
-
-            var mobile = model.Mobile;
-            var user = await userManager.FindByNameAsync(mobile) ?? await udb.Users.Where(f => f.PhoneNumber == mobile).FirstOrDefaultAsync();
-
-            if (user == null)
-            {
-                user = new AppUser {
-                    UserName = mobile,
-                    PhoneNumber = mobile,
-                    FirstName = mobile
-                };
-                var result = await userManager.CreateAsync(user);
-                if (result.Succeeded)
-                {
-                    await signInManager.SignOutAsync();
-                    await signInManager.SignInAsync(user, false);
-
-                    var mainChats = await db.MainChats.Where(f => f.ToUserId == mobile).ToListAsync();
-                    foreach (var item in mainChats)
-                    {
-                        item.ToUserId = user.Id;
-                    }
-                }
-
-                await db.SaveChangesAsync();
-            } else
-            {
-                await signInManager.SignOutAsync();
-                await signInManager.SignInAsync(user, false);
-            }
-
-            var url = Url.Action("Main", "Chat");
-            return Ok(new { status = 200, url });
-        }
-        catch (Exception e)
-        {
-            return BadRequest(e.Message);
-        }
-    }
-
     [Authorize]
     [HttpGet]
     public IActionResult Main()

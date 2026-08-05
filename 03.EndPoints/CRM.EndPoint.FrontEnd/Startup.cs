@@ -158,11 +158,12 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddSingleton<ISmsQueue, SmsQueue>();
             services.AddHostedService<SmsBackgroundService>();
 
-
             services.AddHostedService<ChatReminderWorker>();
             services.AddScoped<ChatReminderService>();
 
             services.AddScoped<IDocumentRenderService, DocumentRenderService>();
+
+            services.AddScoped<MenuService>();
 
             services.AddSingleton<WebPushClient>(sp => {
                 var handler = new SocketsHttpHandler {
@@ -267,9 +268,9 @@ namespace CRM.EndPoint.FrontEnd {
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            var contentRoot = env.ContentRootPath;
+            /*var contentRoot = env.ContentRootPath;
             var licenseFile = System.IO.Path.Combine(contentRoot, "wwwroot\\Reports", "license.key");
-            //Stimulsoft.Base.StiLicense.LoadFromFile(licenseFile);
+            Stimulsoft.Base.StiLicense.LoadFromFile(licenseFile);*/
 
             //app.UseSerilogRequestLogging();
 

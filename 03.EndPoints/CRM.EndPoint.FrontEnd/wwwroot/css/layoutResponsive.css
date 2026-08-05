@@ -12,6 +12,8 @@
   padding-inline: 14px;
   flex-grow: 1;
 }
+
+
 #mainContent > main {
   height: 100%;
 }
@@ -58,11 +60,11 @@
     font-size: 72px !important;
   }
   
-  #menuId, #expandMenuIcon {
+  #desktopSidebar, #expandMenuIcon {
     display: none !important;
   }
   
-  #mobileMenuId {
+  #mobileMenuBottom {
     display: block !important;
     overflow: auto !important;
   }
@@ -76,23 +78,19 @@
     padding-inline: 8px !important;
   }
   
-  #navbarNavMobile svg {
-    font-size: 17px !important
+  #mobileNavbar svg {
+    height: 17px;
   }
   
-  #navbarNavMobile span {
+  #mobileNavbar span {
     font-size: 11px !important
   }
   
-  #navbarNavMobile .menuBox {
+  #mobileNavbar .menu-item {
     width: auto;
     row-gap: 4px;
     flex-direction: column;
-    /*        min-width: 64px;*/
-    /*        height: 100% !important;*/
-    /*        padding: 0 !important;*/
-    min-width: 0;
-    padding: 4px 8px !important;
+    padding: 4px 8px;
   }
   
   #mainHeader {
@@ -109,7 +107,7 @@
     height: 36px;
   }
   
-  #navbarNavMobile #moreMenuDropdown {
+  #mobileNavbar #moreMenuDropdown {
     position: fixed;
     bottom: 60px;
     left: 0;
@@ -131,7 +129,7 @@
     transition: all 0.3s;
   }
   
-  #navbarNavMobile #moreMenuDropdown.show {
+  #mobileNavbar #moreMenuDropdown.show {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);

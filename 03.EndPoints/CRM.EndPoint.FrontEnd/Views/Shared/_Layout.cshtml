@@ -1,5 +1,4 @@
-﻿@using System.Configuration
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fa">
 
 <head>
@@ -26,7 +25,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/logo-180x180.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
-    <link rel="manifest" href="/manifest.json?v=5.10.0">
+    <link rel="manifest" href="/manifest.json?v=5.11.1">
 
     <meta name="apple-mobile-web-app-title" content="VazinCRM">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -68,25 +67,25 @@
     <link rel="stylesheet" href="~/lib/TomSelect/tom-select.min.css" />
 
 
-    <link rel="stylesheet" href="~/css/site.css?v=5.10.0" />
-    <link rel="stylesheet" href="~/css/table.css?v=5.10.0" />
-    <link rel="stylesheet" href="~/css/layoutResponsive.css?v=5.10.0" />
-    <link rel="stylesheet" href="~/css/customerIndexResponsive.css?v=5.10.0" />
-    <link rel="stylesheet" href="~/css/customerProfileResponsive.css?v=5.10.0" />
-    <link rel="stylesheet" href="~/css/listProduct.css?v=5.10.0" />
-    <link rel="stylesheet" href="~/css/carizo.css?v=5.10.0" />
-    <link rel="stylesheet" href="~/css/reports.css?v=5.10.0" />
-    <link rel="stylesheet" href="~/css/dashboard.css?v=5.10.0" />
-    <link rel="stylesheet" href="~/css/order.css?v=5.10.0" />
-    <link rel="stylesheet" href="~/css/deal.css?v=5.10.0" />
-    <link rel="stylesheet" href="~/css/cartableStyle.css?v=5.10.0" />
-    <link rel="stylesheet" href="~/css/email.css?v=5.10.0" />
+    <link rel="stylesheet" href="~/css/site.css?v=5.11.1" />
+    <link rel="stylesheet" href="~/css/table.css?v=5.11.1" />
+    <link rel="stylesheet" href="~/css/layoutResponsive.css?v=5.11.1" />
+    <link rel="stylesheet" href="~/css/customerIndexResponsive.css?v=5.11.1" />
+    <link rel="stylesheet" href="~/css/customerProfileResponsive.css?v=5.11.1" />
+    <link rel="stylesheet" href="~/css/listProduct.css?v=5.11.1" />
+    <link rel="stylesheet" href="~/css/carizo.css?v=5.11.1" />
+    <link rel="stylesheet" href="~/css/reports.css?v=5.11.1" />
+    <link rel="stylesheet" href="~/css/dashboard.css?v=5.11.1" />
+    <link rel="stylesheet" href="~/css/order.css?v=5.11.1" />
+    <link rel="stylesheet" href="~/css/deal.css?v=5.11.1" />
+    <link rel="stylesheet" href="~/css/cartableStyle.css?v=5.11.1" />
+    <link rel="stylesheet" href="~/css/email.css?v=5.11.1" />
 </head>
 
 
 <body dir="rtl">
 
-<div id="FLshowLoading" style="z-index: 9000;position: fixed;inset: 0;height:100dvh;display:none">
+<div id="FLshowLoading" style="display: none">
     <div>
         <div class="loader"></div>
     </div>
@@ -95,303 +94,7 @@
 
 
 <div class="d-flex">
-    <div id="menuId" class="MenuRight" style=" width:210px;">
-        <div style=" height:100dvh;width:100%; display:flex;flex-direction:column;">
-            <div class="d-flex flex-column justify-content-center align-items-center w-100" style="min-height:64px;height: 64px;background-color:#004944;border-bottom:1px solid rgba(255, 255, 255, 0.1);padding:8px">
-                <div class="w-100" style="display:flex; justify-content:space-between;align-items:center;">
-                    <a href="/Dashboard/Index" style="cursor:pointer; display:flex;gap:8px;align-items:center;justify-content:center;color:white">
-                        <img class="logoCompany-icon" src="~/Img/logo-vazinplast1.png" style="height:30px;" alt="">
-                        <img class="logoCompany-text" src="~/Img/logo-vazinplast2.png" style="height:36px;" alt="">
-                    </a>
-                    <div id="collapseMenuIcon" onclick="toggleMenu()" style="cursor:pointer;color:white;">
-                        <svg style="width:20px;height:20px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12H12m-8.25 5.25h16.5" /></svg>
-                    </div>
-                </div>
-            </div>
-            <nav class="d-flex flex-column justify-content-between h-100 overflow-auto text-white w-100 p-2">
-                <div class="d-flex flex-column justify-content-around align-content-center gap-1">
-                    <a data-tooltip-left="داشبورد" class="menuBox menuLink Admin SalesExpert SalesAdmin TaminExpert TaminAdmin FinancialExpert FinancialAdmin" style="display:none" href="/Dashboard/Index">
-                        <svg class="menuIcon" style="overflow:visible" viewBox="0 0 24 24" fill="currentColor"><path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" /><path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" /></svg>
-                        <span style="font-size:14px" class="flex-grow-1">داشبورد</span>
-                    </a>
-
-                    <a data-tooltip-left="سفارشات" class="menuBox menuLink Admin SalesExpert SalesAdmin TaminExpert TaminAdmin FinancialExpert FinancialAdmin" style="display:none" href="/Deal/Index">
-                        <i class="fas fa-file-contract menuIcon"></i>
-                        <span style="font-size:14px" class="flex-grow-1">سفارشات</span>
-                    </a>
-
-                    <a data-tooltip-left="اشخاص" class="menuBox menuLink Admin SalesExpert SalesAdmin TaminExpert TaminAdmin" style="display:none" href="/Customer/Index">
-                        <i class="fas fa-users menuIcon" aria-hidden="true"></i>
-                        <span style="font-size:14px" class="flex-grow-1">اشخاص</span>
-                    </a>
-
-                    <a data-tooltip-left="کارتابل" class="menuBox menuLink Admin SalesExpert SalesAdmin TaminExpert FinancialExpert FinancialAdmin" style="display:none" href="/Cartable/Index">
-                        <i class="fa fa-book menuIcon" aria-hidden="true"></i>
-                        <span style="font-size:14px" class="flex-grow-1">کارتابل</span>
-                    </a>
-
-                    <a data-tooltip-left="کاریزو" class="menuBox menuLink Admin SalesExpert SalesAdmin TaminExpert TaminAdmin FinancialExpert FinancialAdmin" style="display:none" href="/Carizo/Index">
-                        <i class="fa fa-tasks menuIcon" aria-hidden="true"></i>
-                        <span style="font-size:14px" class="flex-grow-1">کاریزو</span>
-                    </a>
-
-                    <a data-tooltip-left="گزارش کار" class="menuBox menuLink Admin SalesExpert TaminExpert" style="display:none" href="/Report/Index">
-                        <i class="fa fa-text menuIcon" aria-hidden="true"></i>
-                        <span style="font-size:14px" class="flex-grow-1">گزارش کار</span>
-                    </a>
-
-                    <a data-tooltip-left="حسابداری" class="menuBox menuLink Admin SalesExpert TaminExpert FinancialExpert FinancialAdmin" style="display:none" href="/Accountancy/Index">
-                        <svg style="width: 22px;height: 22px" viewBox="0 0 24 24" fill="#fff"><path fill-rule="evenodd" d="M3.75 3.375c0-1.036.84-1.875 1.875-1.875H9a3.75 3.75 0 0 1 3.75 3.75v1.875c0 1.036.84 1.875 1.875 1.875H16.5a3.75 3.75 0 0 1 3.75 3.75v7.875c0 1.035-.84 1.875-1.875 1.875H5.625a1.875 1.875 0 0 1-1.875-1.875V3.375Zm10.5 1.875a5.23 5.23 0 0 0-1.279-3.434 9.768 9.768 0 0 1 6.963 6.963A5.23 5.23 0 0 0 16.5 7.5h-1.875a.375.375 0 0 1-.375-.375V5.25ZM12 10.5a.75.75 0 0 1 .75.75v.028a9.727 9.727 0 0 1 1.687.28.75.75 0 1 1-.374 1.452 8.207 8.207 0 0 0-1.313-.226v1.68l.969.332c.67.23 1.281.85 1.281 1.704 0 .158-.007.314-.02.468-.083.931-.83 1.582-1.669 1.695a9.776 9.776 0 0 1-.561.059v.028a.75.75 0 0 1-1.5 0v-.029a9.724 9.724 0 0 1-1.687-.278.75.75 0 0 1 .374-1.453c.425.11.864.186 1.313.226v-1.68l-.968-.332C9.612 14.974 9 14.354 9 13.5c0-.158.007-.314.02-.468.083-.931.831-1.582 1.67-1.694.185-.025.372-.045.56-.06v-.028a.75.75 0 0 1 .75-.75Zm-1.11 2.324c.119-.016.239-.03.36-.04v1.166l-.482-.165c-.208-.072-.268-.211-.268-.285 0-.113.005-.225.015-.336.013-.146.14-.309.374-.34Zm1.86 4.392V16.05l.482.165c.208.072.268.211.268.285 0 .113-.005.225-.015.336-.012.146-.14.309-.374.34-.12.016-.24.03-.361.04Z" clip-rule="evenodd" /></svg>
-                        <span style="font-size:14px" class="flex-grow-1">حسابداری</span>
-                    </a>
-
-                    <a data-tooltip-left="حواله ها" class="menuBox menuLink Admin SalesExpert TaminExpert SalesAdmin TaminAdmin" style="display:none" href="/Order/Index">
-                        <svg style="width: 22px" fill="currentColor" viewBox="0 0 256 256"><path d="M216,40H40A16,16,0,0,0,24,56V208a8,8,0,0,0,11.58,7.15L64,200.94l28.42,14.21a8,8,0,0,0,7.16,0L128,200.94l28.42,14.21a8,8,0,0,0,7.16,0L192,200.94l28.42,14.21A8,8,0,0,0,232,208V56A16,16,0,0,0,216,40ZM176,144H80a8,8,0,0,1,0-16h96a8,8,0,0,1,0,16Zm0-32H80a8,8,0,0,1,0-16h96a8,8,0,0,1,0,16Z"></path></svg>
-                        <span style="font-size:14px" class="flex-grow-1">حواله ها</span>
-                    </a>
-
-                    <div class="w-100 has-submenu Admin ExecutiveDirector reports-menu" style="display:none">
-                        <span data-tooltip-left="گزارشات" class="menuBox">
-                            @* <i class="fas fa-industry menuIcon" aria-hidden="true"></i> *@
-                            <svg style="width: 22px" viewBox="0 0 24 24" fill="currentColor"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M17.997 4.17a3 3 0 0 1 2.003 2.83v12a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 2.003 -2.83a4 4 0 0 0 3.997 3.83h4a4 4 0 0 0 3.98 -3.597zm-8.997 7.83a1 1 0 0 0 -1 1v4a1 1 0 0 0 2 0v-4a1 1 0 0 0 -1 -1m3 3a1 1 0 0 0 -1 1v1a1 1 0 0 0 1 1l.117 -.007a1 1 0 0 0 .883 -.993v-1a1 1 0 0 0 -1 -1m3 -1a1 1 0 0 0 -1 1v2a1 1 0 0 0 2 0v-2a1 1 0 0 0 -1 -1m-1 -12a2 2 0 1 1 0 4h-4a2 2 0 1 1 0 -4z" /></svg>
-                            <span style="font-size:14px" class="flex-grow-1 d-flex justify-content-between">
-                                <span>گزارشات</span>
-                                <svg class="cursor-pointer submenu-arrow" style="width: 16px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" /></svg>
-                            </span>
-                        </span>
-
-                        <ul class="submenu text-white">
-                            <a class="menuLink text-white" asp-controller="Supply" asp-action="Profit">
-                                <li>بهای تمام شده</li>
-                            </a>
-                            <a class="menuLink text-white" asp-controller="Supply" asp-action="Demand">
-                                <li>مطالبات</li>
-                            </a>
-                        </ul>
-                    </div>
-                    <div class="w-100 has-submenu Admin ManagingDirector ExecutiveDirector TaminExpert TaminAdmin FinancialExpert FinancialAdmin TanKhah" style="display:none">
-                        <span data-tooltip-left="خزانه" class="menuBox">
-                            <svg style="width: 18px" fill="currentColor" viewBox="0 0 16 16"><path d="M9.778 9.414A2 2 0 1 1 6.95 6.586a2 2 0 0 1 2.828 2.828" /><path d="M2.5 0A1.5 1.5 0 0 0 1 1.5V3H.5a.5.5 0 0 0 0 1H1v3.5H.5a.5.5 0 0 0 0 1H1V12H.5a.5.5 0 0 0 0 1H1v1.5A1.5 1.5 0 0 0 2.5 16h12a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 14.5 0zm3.036 4.464 1.09 1.09a3 3 0 0 1 3.476 0l1.09-1.09a.5.5 0 1 1 .707.708l-1.09 1.09c.74 1.037.74 2.44 0 3.476l1.09 1.09a.5.5 0 1 1-.707.708l-1.09-1.09a3 3 0 0 1-3.476 0l-1.09 1.09a.5.5 0 1 1-.708-.708l1.09-1.09a3 3 0 0 1 0-3.476l-1.09-1.09a.5.5 0 1 1 .708-.708M14 6.5v3a.5.5 0 0 1-1 0v-3a.5.5 0 0 1 1 0" /></svg>
-                            <span style="font-size:14px" class="flex-grow-1 d-flex justify-content-between">
-                                <span>خزانه</span>
-                                <svg class="cursor-pointer submenu-arrow" style="width: 16px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" /></svg>
-                            </span>
-                        </span>
-
-                        <ul class="submenu text-white">
-                            <a class="menuLink text-white Admin ManagingDirector ExecutiveDirector TaminExpert TaminAdmin FinancialExpert FinancialAdmin" style="display: none" href="/Supply/SupplyFactor">
-                                <li>ثبت فاکتور تامین</li>
-                            </a>
-                            <a class="menuLink text-white" href="/Amount/RequestAmount">
-                                <li>ثبت درخواست وجه</li>
-                            </a>
-                            <a class="menuLink text-white Admin ManagingDirector ExecutiveDirector FinancialExpert FinancialAdmin" style="display: none" href="/Check/Index">
-                                <li>چک ها</li>
-                            </a>
-                            <a class="menuLink text-white Admin ManagingDirector ExecutiveDirector FinancialExpert FinancialAdmin" style="display: none" asp-controller="Transfer" asp-action="Index">
-                                <li>نقل و انتقال</li>
-                            </a>
-                            @* <a class="menuLink text-white" href="/Supply/Payment">
-                                <li>ثبت پرداختی</li>
-                            </a> *@
-                        </ul>
-                    </div>
-
-                    <a data-tooltip-left="قیمت ها" class="menuBox menuLink TaminAdmin TaminExpert Admin SalesAdmin" style="display:none" href="/Amount/Index">
-                        <i class="fas fa-dollar-sign menuIcon" aria-hidden="true"></i>
-                        <span style="font-size:14px" class="flex-grow-1">قیمت ها</span>
-                    </a>
-
-                    <div class="w-100 has-submenu Admin FinancialAdmin FinancialExpert TanKhah" style="display:none">
-                        <span data-tooltip-left="تنخواه" class="menuBox">
-                            <svg style="width: 22px" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7.5a2.25 2.25 0 1 0 0 4.5 2.25 2.25 0 0 0 0-4.5Z" /><path fill-rule="evenodd" d="M1.5 4.875C1.5 3.839 2.34 3 3.375 3h17.25c1.035 0 1.875.84 1.875 1.875v9.75c0 1.036-.84 1.875-1.875 1.875H3.375A1.875 1.875 0 0 1 1.5 14.625v-9.75ZM8.25 9.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM18.75 9a.75.75 0 0 0-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 0 0 .75-.75V9.75a.75.75 0 0 0-.75-.75h-.008ZM4.5 9.75A.75.75 0 0 1 5.25 9h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H5.25a.75.75 0 0 1-.75-.75V9.75Z" clip-rule="evenodd" /><path d="M2.25 18a.75.75 0 0 0 0 1.5c5.4 0 10.63.722 15.6 2.075 1.19.324 2.4-.558 2.4-1.82V18.75a.75.75 0 0 0-.75-.75H2.25Z" /></svg>
-                            <span style="font-size:14px" class="flex-grow-1 d-flex justify-content-between">
-                                <span>تنخواه</span>
-                                <svg class="cursor-pointer submenu-arrow" style="width: 16px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" /></svg>
-                            </span>
-                        </span>
-
-                        <ul class="submenu text-white">
-                            <a class="menuLink Admin FinancialAdmin FinancialExpert text-white" style="display: none" href="/Cash/Cashier">
-                                <li>ثبت تنخواه دار</li>
-                            </a>
-                            <a class="menuLink text-white" href="/Cash/Index">
-                                <li>ثبت تنخواه</li>
-                            </a>
-                        </ul>
-                    </div>
-
-                    <span data-tooltip-left="تنظیمات" class="menuBox Admin TaminAdmin SalesAdmin FinancialAdmin FinancialExpert" style="display:none;cursor:pointer" onclick="showModalSetting()">
-                        <i class="fa fa-cog menuIcon" aria-hidden="true"></i>
-                        <span style="font-size:14px" class="flex-grow-1">تنظیمات</span>
-                    </span>
-                </div>
-                <span data-tooltip-left="هشدارها" id="warningsMenuId" class="menuBox warning" style="display:none;cursor:pointer" onclick="showModalWarnings()">
-                    <svg style="width: 22px;height: 22px" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" /></svg>
-                    <span style="font-size:14px" class="flex-grow-1 d-flex align-items-center justify-content-between">
-                        <span>هشدارها</span>
-                        <span class="badgeCircle" id="badgeWarningCount"></span>
-                    </span>
-                </span>
-            </nav>
-        </div>
-
-        <div id="natixCompany" style="cursor:pointer; width:100%;height:48px;border-top:1px solid rgba(255, 255, 255, 0.1);padding:8px; display:flex;gap:12px;align-items:center;justify-content:center;color:white;padding-inline:16px" onclick="window.open('https://www.natix.ir')">
-            <img style="width:28px;" src="~/Img/ownerLogoEW.png" alt="">
-            <div class="d-flex flex-column flex-grow-1">
-                <span style="font-size:12px; width:100%">ناتیکس</span>
-                <span style="font-size:8px; width:100%;white-space:nowrap">شرکت مهندسی نرم افزاری </span>
-            </div>
-        </div>
-    </div>
-
-    <div id="mobileMenuId" style=" width:100%; height:53px !important;">
-        <div style=" display:flex; justify-content:space-between;align-items:center; height:100%">
-            <nav id="navbarNavMobile" style="direction:ltr" class="p-0 h-100 p-md-2 navbar navbar-light flex-grow-1">
-                <div id="navMenuBar" class="w-100 h-100" style=" color:#fff;display:flex; justify-content:space-around ;align-items:center ">
-                    <span id="moreMenuBtn" class="menuBox">
-                        <i class="mp fa fa-bars" style="width:100% ;font-size:30px" aria-hidden="true"></i>
-                        <span style="width:100%;font-size:15px" class="mp">بیشتر</span>
-                    </span>
-
-                    <a class="menuBox MyBtn menuLink Admin SalesExpert TaminExpert " style="display:none" href="/Report/Index">
-                        <i class="mp fa fa-text" style="width:100%;font-size:30px" aria-hidden="true"></i>
-                        <span style="width:100%;font-size:15px" class="mp">گزارش کار</span>
-                    </a>
-
-                    <a class="menuBox MyBtn menuLink Admin SalesExpert TaminExpert FinancialExpert FinancialAdmin" style="display:none" href="/Cartable/Index">
-                        <i class="mp fa fa-book" style="width:100%;font-size:30px" aria-hidden="true"></i>
-                        <span style="width:100% ;font-size:15px" class="mp">کارتابل</span>
-                    </a>
-
-                    <a class="MyBtn menuBox menuLink Admin SalesExpert SalesAdmin TaminExpert TaminAdmin " style="display:none" href="/Customer/Index">
-                        <i class="mp fas fa-users" style=" width:100%;font-size:30px " aria-hidden="true"></i>
-                        <span style="width:100%; font-size:15px" class="mp">اشخاص</span>
-                    </a>
-
-                    <a class="menuBox menuLink MyBtn Admin SalesExpert SalesAdmin TaminExpert TaminAdmin FinancialExpert FinancialAdmin" style="display:none" href="/Deal/Index">
-                        <i class="fas fa-file-contract" style=" width:100% ;font-size:30px"></i>
-                        <span style="width:100%;font-size:15px" class="mp">سفارشات</span>
-                    </a>
-                    <a class="menuBox menuLink MyBtn Admin SalesExpert SalesAdmin TaminExpert TaminAdmin FinancialExpert FinancialAdmin" style="display:none" href="/Dashboard/Index">
-                        <svg style="width:17px;height:17px" viewBox="0 0 24 24" fill="currentColor"><path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" /><path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" /></svg>
-                        <span style="width:100%;font-size:15px" class="mp">داشبورد</span>
-                    </a>
-                </div>
-            </nav>
-        </div>
-    </div>
-
-    <div id="mobileDrawerOverlay"></div>
-
-    <div id="mobileDrawer">
-        <div class="mobileDrawerHeader">
-            <a href="/Dashboard/Index" class="flex-center gap-2 text-white">
-                <img class="logoCompany-icon" src="~/Img/logo-vazinplast1.png" style="height:30px;" alt="">
-                <img class="logoCompany-text" src="~/Img/logo-vazinplast2.png" style="height:36px;" alt="">
-            </a>
-            <button id="closeMobileDrawer">
-                <svg style="width: 20px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#fff"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
-            </button>
-        </div>
-
-        <div class="mobileDrawerContent">
-            <div class="d-flex flex-column justify-content-around align-content-center gap-2">
-
-                <a data-tooltip-left="کاریزو" class="menuBox menuLink Admin SalesExpert SalesAdmin TaminExpert TaminAdmin FinancialExpert FinancialAdmin" style="display:none" href="/Carizo/Index">
-                    <i class="fa fa-tasks menuIcon" aria-hidden="true"></i>
-                    <span style="font-size:14px" class="flex-grow-1">کاریزو</span>
-                </a>
-
-                <a data-tooltip-left="حسابداری" class="menuBox menuLink Admin SalesExpert TaminExpert FinancialExpert FinancialAdmin" style="display:none" href="/Accountancy/Index">
-                    <svg style="width: 22px;height: 22px" viewBox="0 0 24 24" fill="#fff"><path fill-rule="evenodd" d="M3.75 3.375c0-1.036.84-1.875 1.875-1.875H9a3.75 3.75 0 0 1 3.75 3.75v1.875c0 1.036.84 1.875 1.875 1.875H16.5a3.75 3.75 0 0 1 3.75 3.75v7.875c0 1.035-.84 1.875-1.875 1.875H5.625a1.875 1.875 0 0 1-1.875-1.875V3.375Zm10.5 1.875a5.23 5.23 0 0 0-1.279-3.434 9.768 9.768 0 0 1 6.963 6.963A5.23 5.23 0 0 0 16.5 7.5h-1.875a.375.375 0 0 1-.375-.375V5.25ZM12 10.5a.75.75 0 0 1 .75.75v.028a9.727 9.727 0 0 1 1.687.28.75.75 0 1 1-.374 1.452 8.207 8.207 0 0 0-1.313-.226v1.68l.969.332c.67.23 1.281.85 1.281 1.704 0 .158-.007.314-.02.468-.083.931-.83 1.582-1.669 1.695a9.776 9.776 0 0 1-.561.059v.028a.75.75 0 0 1-1.5 0v-.029a9.724 9.724 0 0 1-1.687-.278.75.75 0 0 1 .374-1.453c.425.11.864.186 1.313.226v-1.68l-.968-.332C9.612 14.974 9 14.354 9 13.5c0-.158.007-.314.02-.468.083-.931.831-1.582 1.67-1.694.185-.025.372-.045.56-.06v-.028a.75.75 0 0 1 .75-.75Zm-1.11 2.324c.119-.016.239-.03.36-.04v1.166l-.482-.165c-.208-.072-.268-.211-.268-.285 0-.113.005-.225.015-.336.013-.146.14-.309.374-.34Zm1.86 4.392V16.05l.482.165c.208.072.268.211.268.285 0 .113-.005.225-.015.336-.012.146-.14.309-.374.34-.12.016-.24.03-.361.04Z" clip-rule="evenodd" /></svg>
-                    <span style="font-size:14px" class="flex-grow-1">حسابداری</span>
-                </a>
-
-                <a data-tooltip-left="حواله ها" class="menuBox menuLink Admin SalesExpert TaminExpert SalesAdmin TaminAdmin" style="display:none" href="/Order/Index">
-                    <svg style="width: 22px" fill="currentColor" viewBox="0 0 256 256"><path d="M216,40H40A16,16,0,0,0,24,56V208a8,8,0,0,0,11.58,7.15L64,200.94l28.42,14.21a8,8,0,0,0,7.16,0L128,200.94l28.42,14.21a8,8,0,0,0,7.16,0L192,200.94l28.42,14.21A8,8,0,0,0,232,208V56A16,16,0,0,0,216,40ZM176,144H80a8,8,0,0,1,0-16h96a8,8,0,0,1,0,16Zm0-32H80a8,8,0,0,1,0-16h96a8,8,0,0,1,0,16Z"></path></svg>
-                    <span style="font-size:14px" class="flex-grow-1">حواله ها</span>
-                </a>
-
-                <div class="w-100 has-submenu Admin ExecutiveDirector" style="display:none">
-                    <span data-tooltip-left="گزارشات" class="menuBox reports-menu">
-                        <svg style="width: 22px" viewBox="0 0 24 24" fill="currentColor"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M17.997 4.17a3 3 0 0 1 2.003 2.83v12a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 2.003 -2.83a4 4 0 0 0 3.997 3.83h4a4 4 0 0 0 3.98 -3.597zm-8.997 7.83a1 1 0 0 0 -1 1v4a1 1 0 0 0 2 0v-4a1 1 0 0 0 -1 -1m3 3a1 1 0 0 0 -1 1v1a1 1 0 0 0 1 1l.117 -.007a1 1 0 0 0 .883 -.993v-1a1 1 0 0 0 -1 -1m3 -1a1 1 0 0 0 -1 1v2a1 1 0 0 0 2 0v-2a1 1 0 0 0 -1 -1m-1 -12a2 2 0 1 1 0 4h-4a2 2 0 1 1 0 -4z" /></svg>
-                        <span style="font-size:14px" class="flex-grow-1 d-flex justify-content-between">
-                            <span>گزارشات</span>
-                            <svg class="cursor-pointer submenu-arrow" style="width: 16px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" /></svg>
-                        </span>
-                    </span>
-
-                    <ul class="submenu text-white">
-                        <a class="menuLink text-white" asp-controller="Supply" asp-action="Profit">
-                            <li>بهای تمام شده</li>
-                        </a>
-                        <a class="menuLink text-white" asp-controller="Supply" asp-action="Demand">
-                            <li>مطالبات</li>
-                        </a>
-                    </ul>
-                </div>
-                <div class="w-100 has-submenu Admin ManagingDirector ExecutiveDirector TaminExpert TaminAdmin FinancialExpert FinancialAdmin TanKhah" style="display:none">
-                    <span data-tooltip-left="خزانه" class="menuBox">
-                        <svg style="width: 18px" fill="currentColor" viewBox="0 0 16 16"><path d="M9.778 9.414A2 2 0 1 1 6.95 6.586a2 2 0 0 1 2.828 2.828" /><path d="M2.5 0A1.5 1.5 0 0 0 1 1.5V3H.5a.5.5 0 0 0 0 1H1v3.5H.5a.5.5 0 0 0 0 1H1V12H.5a.5.5 0 0 0 0 1H1v1.5A1.5 1.5 0 0 0 2.5 16h12a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 14.5 0zm3.036 4.464 1.09 1.09a3 3 0 0 1 3.476 0l1.09-1.09a.5.5 0 1 1 .707.708l-1.09 1.09c.74 1.037.74 2.44 0 3.476l1.09 1.09a.5.5 0 1 1-.707.708l-1.09-1.09a3 3 0 0 1-3.476 0l-1.09 1.09a.5.5 0 1 1-.708-.708l1.09-1.09a3 3 0 0 1 0-3.476l-1.09-1.09a.5.5 0 1 1 .708-.708M14 6.5v3a.5.5 0 0 1-1 0v-3a.5.5 0 0 1 1 0" /></svg>
-                        <span style="font-size:14px" class="flex-grow-1 d-flex justify-content-between">
-                            <span>خزانه</span>
-                            <svg class="cursor-pointer submenu-arrow" style="width: 16px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" /></svg>
-                        </span>
-                    </span>
-
-                    <ul class="submenu text-white">
-                        <a class="menuLink text-white Admin ManagingDirector ExecutiveDirector TaminExpert TaminAdmin FinancialExpert FinancialAdmin" style="display: none" href="/Supply/SupplyFactor">
-                            <li>ثبت فاکتور تامین</li>
-                        </a>
-                        <a class="menuLink text-white" href="/Amount/RequestAmount">
-                            <li>ثبت درخواست وجه</li>
-                        </a>
-                        <a class="menuLink text-white Admin ManagingDirector ExecutiveDirector FinancialExpert FinancialAdmin" style="display: none" href="/Check/Index">
-                            <li>چک ها</li>
-                        </a>
-
-                        <a class="menuLink text-white Admin ManagingDirector ExecutiveDirector FinancialExpert FinancialAdmin" style="display: none" asp-controller="Transfer" asp-action="Index">
-                            <li>نقل و انتقال</li>
-                        </a>
-                        @*   <a class="menuLink text-white" href="/Supply/Payment">
-                                <li>ثبت پرداختی</li>
-                            </a> *@
-                    </ul>
-                </div>
-
-                <a data-tooltip-left="قیمت ها" class="menuBox menuLink TaminAdmin TaminExpert Admin SalesAdmin" style="display:none" href="/Amount/Index">
-                    <i class="fas fa-dollar-sign menuIcon" aria-hidden="true"></i>
-                    <span style="font-size:14px" class="flex-grow-1">قیمت ها</span>
-                </a>
-
-                <div class="w-100 has-submenu Admin FinancialAdmin FinancialExpert TanKhah" style="display:none">
-                    <span data-tooltip-left="تنخواه" class="menuBox">
-                        <svg style="width: 22px" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7.5a2.25 2.25 0 1 0 0 4.5 2.25 2.25 0 0 0 0-4.5Z" /><path fill-rule="evenodd" d="M1.5 4.875C1.5 3.839 2.34 3 3.375 3h17.25c1.035 0 1.875.84 1.875 1.875v9.75c0 1.036-.84 1.875-1.875 1.875H3.375A1.875 1.875 0 0 1 1.5 14.625v-9.75ZM8.25 9.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM18.75 9a.75.75 0 0 0-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 0 0 .75-.75V9.75a.75.75 0 0 0-.75-.75h-.008ZM4.5 9.75A.75.75 0 0 1 5.25 9h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H5.25a.75.75 0 0 1-.75-.75V9.75Z" clip-rule="evenodd" /><path d="M2.25 18a.75.75 0 0 0 0 1.5c5.4 0 10.63.722 15.6 2.075 1.19.324 2.4-.558 2.4-1.82V18.75a.75.75 0 0 0-.75-.75H2.25Z" /></svg>
-                        <span style="font-size:14px" class="flex-grow-1 d-flex justify-content-between">
-                            <span>تنخواه</span>
-                            <svg class="submenu-arrow" style="width: 16px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" /></svg>
-                        </span>
-                    </span>
-
-                    <ul class="submenu text-white">
-                        <a class="menuLink Admin FinancialAdmin FinancialExpert text-white" style="display: none" href="/Cash/Cashier">
-                            <li>ثبت تنخواه دار</li>
-                        </a>
-                        <a class="menuLink text-white" href="/Cash/Index">
-                            <li>ثبت تنخواه</li>
-                        </a>
-                    </ul>
-                </div>
-
-                <span data-tooltip-left="تنظیمات" class="menuBox Admin TaminAdmin SalesAdmin FinancialAdmin FinancialExpert" style="display:none;cursor:pointer" onclick="showModalSetting()">
-                    <i class="fa fa-cog menuIcon" aria-hidden="true"></i>
-                    <span style="font-size:14px" class="flex-grow-1">تنظیمات</span>
-                </span>
-            </div>
-        </div>
-    </div>
-
+    <partial name="Menu/_Menu" />
 
     <div id="mainWrapper" style="container-type: inline-size;container-name: mainWrapper; min-height:100dvh;position:relative">
         <header id="mainHeader">
@@ -475,10 +178,6 @@
                 </div>
             </div>
 
-            @* <div class="viewBagTitleMobile d-flex d-md-none my-2" style=" padding-right:8px !important; justify-content:start; flex-direction:column;">
-                    <p style="font-size: 14px; " class="fbold">@ViewBag.SubTitle</p>
-                    <p style="font-size: 14px; " class="fbold">@ViewBag.detail</p>
-                </div> *@
         </header>
         <div id="mainContent">
             <main role="main">
@@ -534,6 +233,7 @@
                                 <label>نام نماینده شرکت:</label>
                                 <input type="text" class="form-control" name="AgentName" required />
                             </div>
+
                             *@
 
                             <div id="resultFollowUpContainer" class="form-group col-12 d-flex flex-wrap gap-2 d-none">
@@ -1688,67 +1388,6 @@
     </div>
 </div>
 
-<!-- Modal showAcc -->
-<div class="modal fade" id="showAcc" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-    <div class=" modal-dialog modal-dialog-centered modal-lg">
-
-
-        <div class="modal-content col-12" style="padding:10px!important">
-
-            <fieldset class="row g-2 justify-content-center" id="modalAccId">
-                <div class="col text-center d-flex align-items-center flex-column" style="white-space: nowrap">
-                    <label class="fbold">تاریخ</label>
-                    <input class="inpTlab w-100 " name="vosolDate" disabled />
-                </div>
-
-                <div class="col text-center d-flex align-items-center flex-column" style="white-space: nowrap">
-                    <label class="fbold">مبلغ</label>
-                    <input class="inpTlab w-100 inpAmount " name="credit" disabled />
-                </div>
-
-                <div class="col text-center d-flex align-items-center flex-column" style="white-space: nowrap">
-                    <label class="fbold">واریز به حساب</label>
-                    <input class="inpTlab w-100" name="bankAccountTxt" disabled />
-                </div>
-
-                <div class="col text-center d-flex align-items-center flex-column" style="white-space: nowrap">
-                    <label class="fbold">واریز از حساب</label>
-                    <input class="inpTlab w-100" name="fromBankAccountTxt" disabled />
-                </div>
-
-                <div class="col text-center d-flex align-items-center flex-column" style="white-space: nowrap">
-                    <label class="fbold">تامین کننده</label>
-                    <input class="inpTlab w-100" name="beneficiary" disabled />
-                </div>
-            </fieldset>
-
-
-            <div style="height:2px; margin-bottom:10px; display:flex; justify-content:center; background-color:rebeccapurple;color:white;border-radius:5px">
-            </div>
-            <div class=" modal-body" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
-                <div class="col-12">
-                    <div class="fmp ">
-                        <div>
-                            <div class="col-12">
-                                <div class="container-uploader">
-                                    <div class="image-display" id="showImageDisplayAccAt"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <div class="mt-3" style="width:100%; display:flex;justify-content:center;gap:4px">
-                    @* <button class="buttonGreen" style="border-radius:5px" onclick="SubmitAcAttach()">ثبت</button> *@
-                    <button class="buttonCancel2" style="border-radius:5px" onclick="cancelShowAccModal() ">انصراف</button>
-                </div>
-
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Modal AccepedAttachment -->
 <div class="modal fade " dir="ltr" id="Attachments" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -1801,7 +1440,7 @@
             </div>
             <div class="modal-body p-0" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
                 <div id="addInvoiceBtns" class="d-flex justify-content-center align-items-center gap-2 pb-2">
-                    <button class="buttonGreen0 deposit-btn py-1 d-flex align-items-center gap-2" onclick="ShowModalInvoice(1)">
+                    <button class="buttonGreen0 deposit-btn py-1 d-flex align-items-center gap-2" onclick="ShowModalAddInvoice(1)">
                         واریزی
                         <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                     </button>
@@ -1908,23 +1547,28 @@
                             <div class="d-flex justify-content-evenly flex-wrap" style="font-size:clamp(14px,2vw,19px)">
 
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input valueNumber" type="radio" name="PayType" id="NagdiId" value="1" checked>
+                                    <input class="form-check-input valueNumber" type="radio" name="payType" id="NagdiId" value="1" checked>
                                     <label class="form-check-label" for="NagdiId">نقدی</label>
                                 </div>
 
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input valueNumber" type="radio" name="PayType" id="ChekiId" value="2">
+                                    <input class="form-check-input valueNumber" type="radio" name="payType" id="ChekiId" value="2">
                                     <label class="form-check-label" for="ChekiId">چکی</label>
                                 </div>
 
                                 <div class="form-check form-check-inline" id="DivEtebariId">
-                                    <input class="form-check-input valueNumber" type="radio" name="PayType" id="EtebariId" value="3">
+                                    <input class="form-check-input valueNumber" type="radio" name="payType" id="EtebariId" value="3">
                                     <label class="form-check-label" for="EtebariId">اعتباری</label>
                                 </div>
 
                                 <div class="form-check form-check-inline me-0">
-                                    <input class="form-check-input valueNumber" type="radio" name="PayType" id="TahatoriId" value="4">
+                                    <input class="form-check-input valueNumber" type="radio" name="payType" id="TahatoriId" value="4">
                                     <label class="form-check-label" for="TahatoriId">تهاتری</label>
+                                </div>
+
+                                <div class="form-check form-check-inline me-0 d-none" id="TransferRadioWrapper">
+                                    <input class="form-check-input valueNumber" type="radio" name="payType" id="TransferRadioId" value="6">
+                                    <label class="form-check-label" for="TransferRadioId">انتقال</label>
                                 </div>
                             </div>
                         </div>
@@ -1932,48 +1576,49 @@
                         <div class="beneficiaryWrapper d-none sectionBox-invoice">
                             <span class="sectionTitle-invoice">بابت بدهی به</span>
                             <div>
-                                <input class="form-control" name="Beneficiary" type="text" placeholder="بابت بدهی به" />
+                                <input class="form-control" name="beneficiary" type="text" placeholder="بابت بدهی به" />
                             </div>
                         </div>
 
-                        <div class="sectionBox-invoice">
+                        <div class="transactionBankBox sectionBox-invoice">
                             <span class="sectionTitle-invoice">اطلاعات تراکنش بانکی</span>
                             <div class="d-flex flex-wrap row-gap-2 justify-content-center align-items-start w-100">
-                                <div class="col-12 col-sm-6 col-lg-4 pe-sm-2 d-none ReciveDateDiv">
+                                <div class="ReceiveDateDiv col-12 col-sm-6 col-lg-4 pe-sm-2 d-none">
                                     <label>تاریخ دریافت چک از مشتری</label>
-                                    <input class="sdate form-control" name="ReciveDate" type="text" placeholder="ثبت تاریخ" data-mask-date required />
+                                    <input class="sdate form-control" name="reciveDate" type="text" placeholder="ثبت تاریخ" data-mask-date required />
                                 </div>
 
-                                <div class="col-12 col-sm-6 col-lg-4 pe-sm-2">
+                                <div class="transactionAmountWrapper col-12 col-sm-6 col-lg-4 pe-sm-2">
                                     <label>مبلغ (ریال)</label>
-                                    <input inputmode="numeric" class="currencyNumber form-control" name="ReciveAmount" type="text" placeholder="مبلغ دریافتی به ریال" required data-currency-hint="next" />
+                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" name="reciveAmount" type="text" placeholder="مبلغ دریافتی به ریال" required data-currency-hint="next" />
                                     <span class="currencyHint"></span>
                                 </div>
 
-                                <div class="col-12 col-sm-6 col-lg-4 VosolDateDiv">
+                                <div class="VosolDateDiv col-12 col-sm-6 col-lg-4">
                                     <label>تاریخ واریزی</label>
-                                    <input class="sdate form-control" name="VosolDate" type="text" placeholder="تاریخ پرداخت" data-mask-date required />
+                                    <input class="sdate form-control" name="vosolDate" type="text" placeholder="تاریخ پرداخت" data-mask-date required />
                                 </div>
                             </div>
 
-                            <div class="ToBankAccountWrapperSelect mt-2 w-100">
+                            <div class="toBankAccountWrapperSelect my-2 w-100">
                                 <label>واریز به حساب بانکی</label>
-                                <select class="form-select" name="BankAccountId" required></select>
+                                <select class="form-select" name="bankAccountId" required></select>
                             </div>
-                            <div class="ToBankAccountWrapperTxt mt-2 w-100 d-none">
-                                <div>
-                                    <label>واریز به حساب بانکی</label>
-                                    <input class="form-control" name="BankAccountTxt" type="text" placeholder="به کدام (حساب / شبا / کارت) واریز شده است." />
-                                </div>
-                                <div class="mt-2">
-                                    <label>واریز به نام</label>
-                                    <input class="form-control" name="ToName" type="text" placeholder="نام صاحب حساب واریز شده" />
-                                </div>
+
+                            <div class="toBankAccountWrapperTxt mb-2 d-none">
+                                <label>واریز به حساب بانکی</label>
+                                <input class="form-control" name="bankAccountTxt" type="text" placeholder="به کدام (حساب / شبا / کارت) واریز شده است." />
+                            </div>
+
+                            <div class="toNameWrapper d-none">
+                                <label>واریز به نام</label>
+                                <input class="form-control" name="toName" type="text" placeholder="نام صاحب حساب واریز شده" />
                             </div>
                         </div>
+
                     </form>
 
-                    <div class="sectionBox-invoice mt-4">
+                    <div class="sanadPayBox sectionBox-invoice mt-4">
                         <span class="sectionTitle-invoice">رسید پرداخت</span>
                         <div class="container-uploader" id="SanadParId">
                             <input type="file" class="uploadBtn" data-varList="SanadPayList" data-showList="DivShowSanadPar" id="upSanadPay" accept="*/*" />
@@ -2010,62 +1655,51 @@
                         <div class="beneficiaryWrapper d-none sectionBox-invoice">
                             <span class="sectionTitle-invoice">بابت بدهی به</span>
                             <div>
-                                <input class="form-control" disabled name="Beneficiary" type="text" placeholder="بابت بدهی به" />
+                                <input class="form-control" disabled name="beneficiary" type="text" placeholder="بابت بدهی به" />
                             </div>
                         </div>
 
-                        <div class="sectionBox-invoice">
+                        <div class="transactionBankBox sectionBox-invoice">
                             <span class="sectionTitle-invoice">اطلاعات تراکنش بانکی</span>
                             <div class="d-flex flex-wrap row-gap-2 justify-content-center align-items-start" style="width:100%">
-                                <div class="col-12 col-sm-6 col-lg-4 pe-sm-2 d-none ReciveDateDiv">
+                                <div class="ReceiveDateDiv col-12 col-sm-6 col-lg-4 pe-sm-2 d-none">
                                     <label>تاریخ دریافت چک از مشتری</label>
-                                    <input class="sdate form-control" name="ReciveDate" type="text" placeholder="ثبت تاریخ" data-mask-date disabled />
+                                    <input class="sdate form-control" name="reciveDate" type="text" placeholder="ثبت تاریخ" data-mask-date disabled />
                                 </div>
 
-                                <div class="col-12 col-sm-6 col-lg-4 pe-sm-2">
+                                <div class="transactionAmountWrapper col-12 col-sm-6 col-lg-4 pe-sm-2">
                                     <label>مبلغ (ریال)</label>
-                                    <input inputmode="numeric" class="currencyNumber form-control" name="ReciveAmount" type="text" placeholder="مبلغ دریافتی به ریال" disabled data-currency-hint="next" />
+                                    <input inputmode="numeric" class="currencyNumber form-control" name="reciveAmount" type="text" placeholder="مبلغ دریافتی به ریال" disabled data-currency-hint="next" />
                                     <span class="currencyHint"></span>
                                 </div>
 
-                                <div class="col-12 col-sm-6 col-lg-4 VosolDateDiv">
+                                <div class="VosolDateDiv col-12 col-sm-6 col-lg-4">
                                     <label>تاریخ واریزی</label>
-                                    <input class="sdate form-control" name="VosolDate" type="text" placeholder="تاریخ پرداخت" data-mask-date disabled />
+                                    <input class="sdate form-control" name="vosolDate" type="text" placeholder="تاریخ پرداخت" data-mask-date disabled />
                                 </div>
                             </div>
-
-                            @*<div class="d-none FromBankAccountWrapper" style="width:100% ;">
-                                <div class="mt-2">
-                                    <label>واریز از حساب بانکی</label>
-                                    <input class="form-control" name="FromBankAccountTxt" type="text" placeholder="از کدام حساب و توسط چه کسی واریز صورت گرفته است."/>
-                                </div>
-                            </div> *@
-                            @*<div class="ToBankAccountWrapper mt-2" style="width:100% ; ">
+                            
+                            <div class="toBankAccountWrapperSelect my-2 w-100">
                                 <label>واریز به حساب بانکی</label>
-                                <select class="form-select" name="BankAccountId" disabled></select>
-                                <input disabled style="margin-top: 8px !important;" class="form-control d-none" name="BankAccountTxt" type="text" placeholder="به کدام حساب و به نام چه کسی واریز شد."/>
-                            </div>*@
-
-                            <div class="ToBankAccountWrapperSelect mt-2 w-100">
-                                <label>واریز به حساب بانکی</label>
-                                <select class="form-select" name="BankAccountId" disabled></select>
+                                <select disabled class="form-select" name="bankAccountId"></select>
                             </div>
-                            <div class="ToBankAccountWrapperTxt mt-2 w-100 d-none">
-                                <div>
-                                    <label>واریز به حساب بانکی</label>
-                                    <input disabled class="form-control" name="BankAccountTxt" type="text" placeholder="به کدام (حساب / شبا / کارت) واریز شده است." />
-                                </div>
-                                <div class="mt-2">
-                                    <label>واریز به نام</label>
-                                    <input disabled class="form-control" name="ToName" type="text" placeholder="نام صاحب حساب واریز شده" />
-                                </div>
+                            
+                            <div class="toBankAccountWrapperTxt mb-2 d-none">
+                                <label>واریز به حساب بانکی</label>
+                                <input disabled class="form-control" name="bankAccountTxt" type="text" placeholder="به کدام (حساب / شبا / کارت) واریز شده است." />
+                            </div>
+                            
+                            <div class="toNameWrapper d-none">
+                                <label>واریز به نام</label>
+                                <input disabled class="form-control" name="toName" type="text" placeholder="نام صاحب حساب واریز شده" />
                             </div>
                         </div>
                     </form>
-                    <div class="sectionBox-invoice mt-4">
+                    
+                    <div class="sanadPayBox sectionBox-invoice mt-4">
                         <span class="sectionTitle-invoice">رسید پرداخت</span>
-                        <div class="container-uploader" id="ShowPaymentSanadParId">
-                            <div class="image-display" id="ShowPaymentDivShowSanadPar"></div>
+                        <div class="container-uploader">
+                            <div class="image-display"></div>
                         </div>
                     </div>
                 </div>
@@ -3453,6 +3087,40 @@
 <div id="dropdown-portal"></div>
 <div id="layoutPortal"></div>
 
+<script>
+    (function setActiveMenu() {
+        const currentPath = window.location.pathname.toLowerCase().replace(/\/$/, "");
+
+        // Active کردن لینک فعلی
+        document.querySelectorAll(".menu-link").forEach(link => {
+            const href = link.getAttribute("href");
+            if (!href || href === "#") return;
+            const linkUrl = new URL(href, window.location.origin);
+            const linkPath = linkUrl.pathname.toLowerCase().replace(/\/$/, "");
+            if (linkPath !== currentPath) return;
+
+            link.classList.add("active-menu");
+
+            let parent = link.closest(".has-submenu");
+            while (parent) {
+                parent.classList.add("open");
+                const parentMenuItem = parent.querySelector(":scope > .menu-item");
+                parentMenuItem?.classList.add("active-menu");
+                parent = parent.parentElement?.closest(".has-submenu");
+            }
+        });
+
+
+        // باز و بسته کردن submenu
+        document.querySelectorAll(".has-submenu > .menu-item").forEach(menu => {
+            menu.addEventListener("click", function () {
+                const wrapper = menu.closest(".has-submenu");
+                wrapper?.classList.toggle("open");
+            });
+        });
+    })();
+</script>
+
 
 <script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js"></script>
 <script src="~/lib/jquery/jquery.min.js"></script>
@@ -3478,14 +3146,14 @@
 <script src="~/lib/Awesomplete/awesomplete.min.js"></script>
 <script src="~/lib/TomSelect/tom-select.complete.min.js"></script>
 
-<script src="~/js/TaskSignalR.js?v=5.10.0"></script>
-<script src="~/js/pwa.js?v=5.10.0"></script>
-<script src="~/js/site.js?v=5.10.0"></script>
-<script src="~/js/File.js?v=5.10.0"></script>
-<script src="~/js/PublicFunction.js?v=5.10.0"></script>
-<script src="~/js/DateValidate.js?v=5.10.0"></script>
-@* <script src="~/js/dashboard.js?v=5.10.0"></script> *@
-<script src="~/js/Layout.js?v=5.10.0" defer></script>
+<script src="~/js/TaskSignalR.js?v=5.11.1"></script>
+<script src="~/js/pwa.js?v=5.11.1"></script>
+<script src="~/js/site.js?v=5.11.1"></script>
+<script src="~/js/File.js?v=5.11.1"></script>
+<script src="~/js/PublicFunction.js?v=5.11.1"></script>
+<script src="~/js/DateValidate.js?v=5.11.1"></script>
+@* <script src="~/js/dashboard.js?v=5.11.1"></script> *@
+<script src="~/js/Layout.js?v=5.11.1" defer></script>
 
 <script>
     var baseUrl;
@@ -3497,6 +3165,7 @@
         baseUrl = '@Url.Action("", "")/';
     }
 </script>
+
 
 @await RenderSectionAsync("Scripts", required: false)
 

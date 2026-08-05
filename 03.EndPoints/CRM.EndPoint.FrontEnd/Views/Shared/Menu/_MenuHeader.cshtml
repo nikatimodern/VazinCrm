@@ -1,0 +1,21 @@
+@model bool
+@{
+    var isMobile = Model;
+}
+
+<div class="menuHeader">
+    <a href="/Dashboard/Index" class="flex-center gap-2 text-white">
+        <img class="logoCompany-icon" src="~/Img/logo-vazinplast1.png" style="height:30px" alt="">
+        <img class="logoCompany-text" src="~/Img/logo-vazinplast2.png" style="height:36px" alt="">
+    </a>
+
+    @if (isMobile) {
+        <button id="closeMobileDrawer" onclick="toggleMobileDrawer(false)">
+            <svg style="width:20px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#fff"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+        </button>
+    } else {
+        <button id="collapseMenuIcon" onclick="toggleMenu()">
+            <svg style="width:20px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#fff"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12H12m-8.25 5.25h16.5" /></svg>
+        </button>
+    }
+</div>

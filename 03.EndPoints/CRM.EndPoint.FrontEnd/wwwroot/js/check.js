@@ -5,8 +5,6 @@ let payeeCheckTomSelect;
 let checkbooksSection = document.getElementById("checkbooks-section");
 let checkSection = document.getElementById("checks-section");
 document.addEventListener("DOMContentLoaded", async () => {
-    const { cBook, cBookName } = getUrlParams();
-    if (cBook) showChecks(cBook, decodeURIComponent(cBookName || "دسته چک"));
     
     window.addEventListener("popstate", () => {
         const { cBook, cBookName } = getUrlParams();
@@ -20,6 +18,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     await initSelectTomCheck();
 });
+
 
 const GetAllCheckbooks = async () => {
     try {
@@ -119,7 +118,7 @@ function initCheckbookTable(id) {
             {
                 data: "id",
                 render: data => `
-                    <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                    <div class="inline-flex-center gap-1">
                         <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="editCheck('${data}')"><i class="fa fa-pencil"></i></button>
                         <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deleteCheck('${data}')"><i class="fa fa-trash"></i></button>
                     </div>
@@ -242,7 +241,7 @@ function showChecks(id, checkbookName) {
 
 function backToCheckbooks() {
     checkData = {};
-    setUrlParams({ cBook: null, cBookName: null }, { replace: false });
+    setUrlParams({ cBook: null, cBookName: null });
     checkSection.classList.add("d-none");
     checkbooksSection.classList.remove("d-none");
 }
