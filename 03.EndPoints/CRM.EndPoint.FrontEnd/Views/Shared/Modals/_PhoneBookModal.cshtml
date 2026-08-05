@@ -1,0 +1,20 @@
+<!-- Modal phoneBook -->
+<div class="modal fade" id="phoneBookModal" tabindex="-1" data-bs-focus="false" aria-labelledby="phonebookLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="phonebookLabel">دفترچه تلفن</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+
+            <div class="modal-body bg-light">
+                <div class="mb-3">
+                    <input type="text" id="PhoneBookSearchInp" class="form-control" placeholder="جستجو...">
+                </div>
+                <div id="phonebookList" class="d-flex flex-column gap-2" style="max-height: calc(100dvh - 300px);overflow: auto;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

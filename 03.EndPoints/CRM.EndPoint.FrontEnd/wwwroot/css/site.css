@@ -2489,12 +2489,13 @@ html.sidebar-collapsed #mainWrapper {
 
 
 .logoCompany-icon {
-	height:30px
+	height: 30px
 }
+
 
 .logoCompany-text {
 	filter: brightness(10) saturate(0);
-	height:36px
+	height: 36px
 }
 
 
@@ -2663,8 +2664,6 @@ html.sidebar-collapsed #mainWrapper {
 }
 
 
-
-
 .profile-file-name {
 	border: 1px solid #e1e7e6;
 	color: #777;
@@ -2759,7 +2758,6 @@ html.sidebar-collapsed #mainWrapper {
 	justify-content: center;
 	gap: 6px;
 }
-
 
 
 .personImageOpenMenu {
@@ -3249,6 +3247,19 @@ user-select: none;
 .form_newsl input[type=submit], .button:disabled {
     background: #ccc;
 }*/
+
+
+#divFrame {
+	justify-content: center;
+	align-items: center;
+	z-index: 9000;
+	height: 90dvh;
+	width: 100%;
+	top: 50%;
+	transform: translateY(-50%);
+	position: fixed;
+	background-color: hsla(1, 100%, 100%, 0.9)
+}
 
 
 .divMobileItems {

@@ -361,45 +361,6 @@ const ShowModalExpireDescription = (PfId, amount, serial, name, _formCode) => {
 };
 
 
-let notAcceptSelAdminPfId;
-const cancelModalDes = (pfId) => {
-    notAcceptSelAdminPfId = null;
-    document.getElementById("NotAcceptSelAdminDescTextId").value = "";
-    $("#NotAcceptDescModal").modal("toggle");
-};
-const ShowModalDes = (pfId) => {
-    notAcceptSelAdminPfId = pfId;
-    $("#NotAcceptDescModal").modal("toggle");
-};
-const submitNotAcceptSelAdmin = () => {
-    $("#FLshowLoading").css("display", "");
-    
-    var ss = document.getElementById("NotAcceptSelAdminDescTextId").value;
-    var model = {
-        desc: ss, pfid: notAcceptSelAdminPfId,
-    };
-    
-    $.post(baseUrl + "factor/notAcceptPfactor", model, async (res) => {
-        
-        $("#FLshowLoading").css("display", "none");
-        
-        if (res.ok) {
-            $("#NotAcceptDescModal").modal("toggle");
-            toastifySuccess("پیش فاکتور عدم تایید خورد");
-            document.getElementById("NotAcceptSelAdminDescTextId").value = "";
-            await GetPreFactorSalesAdmin();
-        } else {
-            toastifyError("خطای سرور");
-        }
-        
-        
-    }).fail(() => {
-        setTimeout(() => submitNotAcceptSelAdmin(), 1000);
-    });
-    
-};
-
-
 const changeTypePfactor = async (_PfId, _type, FormCode, des = null) => {
     
     await changeTypePfactorOk(_PfId, _type, des);
