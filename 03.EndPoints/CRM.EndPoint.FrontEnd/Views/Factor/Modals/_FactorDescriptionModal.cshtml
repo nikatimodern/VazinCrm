@@ -1,0 +1,36 @@
+<!-- Modal FactorDescription -->
+<div class="modal fade " dir="ltr" id="FactorDescriptionModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class=" modal-dialog modal-dialog-centered ">
+        <div class="modal-content col-12" style="padding:10px!important;">
+            <div style="height:26px;  display:flex; justify-content:center; align-items:center;  background-color: #00302d; color:white;border-radius:5px">
+                <label class="fbold">افزودن توضیحات</label>
+            </div>
+            <div class=" modal-body" style=" display:flex;flex-direction:column; justify-content:space-between;align-items:center; width:100% !important;">
+
+                <div class="col-12 col-lg-6 col-xl-12">
+                    <div class="h-100" style="direction:rtl; width:100%;display:flex;flex-direction:column;">
+                        <div style="width:100%; display:flex;position:relative">
+                            <textarea id="f_descriptionIdMobile" rows="6" class="form-control" style="height:54px !important; width:100%;padding:4px 4px 4px 36px !important" type="text" placeholder="توضیحات"></textarea>
+                            <button style="position: absolute;left: 1px;bottom: 1px;display: flex;justify-content: center;align-items: center;top: 1px;padding-inline: 8px;box-shadow: none" class="buttonGreen3" onclick="addFactorDescItem()">
+                                <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                            </button>
+                        </div>
+                        <div class="flex-grow-1 pe-1" style="margin-top:14px; width:100%; display:flex ;max-height:320px;overflow:auto " id="factorDescIdMobile">
+                        </div>
+                    </div>
+                </div>
+                <div style="padding-block: 16px; width:95%;margin-inline:auto  ">
+                    <div style="width:100%; height:2px; background-color: #00302d">
+                    </div>
+                </div>
+                <div>
+                    <button class="buttonCancel2" onclick="closeModalFactorDescription()" style="padding: 6px 12px !important;">
+                        بستن
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>

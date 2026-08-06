@@ -1,0 +1,19 @@
+<!-- Modal MobileModal -->
+<div class="modal fade " dir="ltr" id="MobileModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class=" modal-dialog modal-dialog-centered " style="width:100%">
+        <div class="modal-content col-12" style="padding:10px!important">
+            <div style="margin-bottom:10px; display:flex; justify-content:center; background-color:rebeccapurple;color:white;border-radius:5px">
+                <label class="fMedium">ارسال لینک تایید پیش فاکتور</label>
+            </div>
+            <div class=" modal-body" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
+                <div style=" margin-bottom:20px; width:100%;display:flex; justify-content:center">
+                    <input type="text" class="form-control" id="mobileid" disabled />
+                </div>
+                <div class="gap-1" style="width:100%; display:flex;justify-content:center">
+                    <button class="buttonGreen3" style="border-radius:5px" onclick="SendToCustomer()">ارسال</button>
+                    <button class="buttonCancel2" style="border-radius:5px" onclick="$('#MobileModal').modal('toggle') ">انصراف</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
