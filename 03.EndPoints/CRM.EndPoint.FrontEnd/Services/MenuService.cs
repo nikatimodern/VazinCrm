@@ -279,7 +279,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                     new MenuItem {
                         Id = "requestAmount",
                         Title = "ثبت درخواست وجه",
-                        Url = "/Amount/RequestAmount",
+                        Url = "/RequestAmount/Index",
                         DisplayOrder = 2
                     },
 

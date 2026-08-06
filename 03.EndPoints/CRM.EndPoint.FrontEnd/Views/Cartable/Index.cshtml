@@ -1610,7 +1610,7 @@
             ShowTab("#MDRequestAmountTab");
             try {
                 FLshowLoading();
-                const res = await axios(`/Amount/GetAllRequestAmountsPartial?search=${val}&type=${type}&passType=2`);
+                const res = await axios(`/RequestAmount/GetAllRequestAmountsPartial?search=${val}&type=${type}&passType=2`);
                 if (res.status === 200) {
                     const data = res.data;
                     document.getElementById("MDRequestAmountContentId").innerHTML = data.html;
@@ -1705,7 +1705,7 @@
 
             try {
                 FLshowLoading();
-                const res = await axios.post(`/Amount/SetAcceptedRequestAmount`, model);
+                const res = await axios.post(`/RequestAmount/SetAcceptedRequestAmount`, model);
                 if (res.status === 200) {
                     await GetRequestManagingDirector();
                 }
@@ -1787,7 +1787,7 @@
             ShowTab("#FinancialRequestTab");
             try {
                 FLshowLoading();
-                const res = await axios(`/Amount/GetAllRequestAmountsPartial?search=${val}&type=${type}&passType=3`);
+                const res = await axios(`/RequestAmount/GetAllRequestAmountsPartial?search=${val}&type=${type}&passType=3`);
                 const data = res.data;
                 document.getElementById("FinancialRequestContentId").innerHTML = data.html;
                 document.getElementById("FinancialRequestCount").textContent = data.count;
