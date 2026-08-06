@@ -55,7 +55,8 @@
     </div>
 </div>
 
-<partial name="~/Views/Factor/Modals/Factor/_FactorContainerModal.cshtml" />
+@*<partial name="~/Views/Factor/Modals/Factor/_FactorContainerModal.cshtml" />
+<partial name="~/Views/Accountancy/Modals/_InvoiceListModal.cshtml" />*@
 
 @section scripts {
     <script>
@@ -65,7 +66,7 @@
         document.addEventListener("DOMContentLoaded", async () => {
             //getAllSupplyDemand();
             //await getRpMotalebat()
-            await getAllRpMotalebat();
+            getAllRpMotalebat();
         });
 
         async function getRpMotalebat() {

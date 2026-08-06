@@ -1,0 +1,28 @@
+<!-- Modal ListAmount -->
+<div class="modal fade" id="ListAmount" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
+    <div class=" modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content col-12" style="padding:10px 10px 0">
+            <div class=" d-flex flex-column gap-3 pb-3">
+                <div style="height:30px;  display:flex; justify-content:center; align-items:center;  background: linear-gradient(to bottom, #025751, #00302d); color:white;border-radius:5px">
+                    <label class="fbold">لیست قیمت اجناس</label>
+                </div>
+                <div class="col-8 offset-2 col-md-6 offset-md-3" id="ListAmountSearchBox">
+                    <form class="search-group" onsubmit="searchProduct(event, 'amountModal')">
+                        <input class="form-control" style="font-size:1rem !important;min-height:30px" type="text" name="search" placeholder="جستجو نام محصول" />
+                        <button class="search-icon">
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="ListAmountBodyId" style="max-height:75dvh;overflow:auto"></div>
+            <div class="mx-auto mt-3" style="width:98%; height:2px; background-color:var(--DarkColor);"></div>
+            <div class="modal-body" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;padding:12px">
+                <div style="width:100%; display:flex;justify-content:center">
+                    <button class="buttonCancel2" style="border-radius:5px;height:32px;padding:0 16px" onclick="closeModalAmount()">بستن</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

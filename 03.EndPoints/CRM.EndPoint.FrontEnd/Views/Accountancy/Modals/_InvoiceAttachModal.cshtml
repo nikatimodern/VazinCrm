@@ -1,0 +1,61 @@
+<!-- Modal AttachInvoice -->
+<div class="modal fade" id="AttachInvoiceModalId" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
+    <div class=" modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content col-12" style="padding:10px">
+            <div style="margin-bottom:10px; display:flex; justify-content:center; background-color:rgb(2, 81, 76);color:white;border-radius:5px">
+                <label id="titleAttachInvoice" class="fbold" style="padding:5px; font-size:16px;">بارگذاری رسید پرداخت</label>
+            </div>
+            <div class="modal-body pb-0" style="display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
+                <div style="padding-bottom:20px; display:flex;width:100%;justify-content:space-evenly;font-size:clamp(17px,2vw,20px)">
+                    <div class="d-flex align-items-center gap-1">
+                        <input name="payTypeAttach" id="payTypeAttach1" type="radio" value="1" checked />
+                        <label for="payTypeAttach1">نقدی</label>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <input name="payTypeAttach" id="payTypeAttach2" type="radio" value="2" />
+                        <label for="payTypeAttach2">چکی</label>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <input name="payTypeAttach" id="payTypeAttach3" type="radio" value="3" />
+                        <label for="payTypeAttach3">اعتباری</label>
+                    </div>
+                </div>
+
+                <form id="PayAttachFormId" class="d-none pt-3" style="border-top:1px solid #ddd">
+                    <div class="d-flex w-100 justify-content-center align-items-center flex-wrap">
+                        <div class="col-12 col-sm-6 col-lg-4 form-group">
+                            <label for="payAttachReciveAmount">مبلغ (ریال)</label>
+                            <input inputmode="numeric" class="currencyNumber form-control" name="ReciveAmount" id="payAttachReciveAmount" type="text" placeholder="مبلغ دریافتی به ریال" required />
+                        </div>
+
+                        <div class="col-12 col-sm-6 col-lg-4 form-group">
+                            <label for="payAttachVosolDate">تاریخ وصول</label>
+                            <input class="sdate form-control" name="VosolDate" id="payAttachVosolDate" type="text" placeholder="تاریخ وصول" data-mask-date required />
+                        </div>
+                    </div>
+                </form>
+
+
+                <div class="mb-2 w-100">
+                    <div class="container-uploader">
+                        <input type="file" class="uploadBtn" data-varlist="attachInvoiceList" data-showlist="DivShowAttachInvoice" id="AttachInvoice" accept="*">
+                        <label for="AttachInvoice">
+                            <span>تصویر رسید را انتخاب کنید یا اینجا رها کنید</span>
+                            <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                        </label>
+                        <div class="image-display" id="DivShowAttachInvoice"></div>
+                    </div>
+                </div>
+
+
+                <div class="mx-auto my-3" style="width:98%; height:2px; background-color:var(--DarkColor);"></div>
+
+
+                <div class="gap-1" style="width:100%; display:flex;justify-content:center;margin-bottom:6px">
+                    <button class="buttonCancel2" onclick="closeModalAttachInvoice()">انصراف</button>
+                    <button class="buttonGreen3" onclick="submitAttachInvoice()">ثبت</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
