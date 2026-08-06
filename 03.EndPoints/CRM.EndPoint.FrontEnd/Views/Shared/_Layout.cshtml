@@ -134,369 +134,6 @@
 
 @*---------------------------------------------*@
 
-<!-- Modal CreateOrder -->
-<div class="modal fade" id="CreateOrderModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xxl">
-        <div class="modal-content col-12" style="padding:10px!important;">
-            <div class="d-flex flex-column gap-3 position-relative">
-                <div class="d-flex justify-content-center align-items-center text-white" style="height:28px;background: linear-gradient(135deg, #3f5f80, #1a2d41);border-radius:5px">
-                    <label class="fbold">حواله تولید</label>
-                </div>
-                <div data-bs-theme="dark" class="d-flex align-items-center justify-content-center top-0 bottom-0" style="position: absolute;left: 6px">
-                    <button type="button" class="btn-close opacity-100" onclick="cancelModalCreateOrder()"></button>
-                </div>
-            </div>
-            @*<div class="modal-header">
-                <h1 class="modal-title fs-5">حواله تولید</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>*@
-            <div class="modal-body px-0">
-                <ul id="CreateOrderTabs" class="nav nav-tabs bootstrap-only justify-content-center" role="tablist">
-                </ul>
-
-                <div id="CreateOrderTabPanes" class="tab-content p-2">
-                </div>
-            </div>
-
-
-            <div class="modal-footer p-0 justify-content-center border-0">
-                <div id="dividerCreateOrderModal" class="mx-auto mb-3" style="width:98%; height:2px; background-color:#1a2d41;"></div>
-                <div class="d-flex justify-content-center gap-1">
-                    <button style="padding-block:4px" type="button" id="cancelModalOrder" class="buttonCancel2" onclick="prevStepCreateOrderModal()">انصراف</button>
-                    <button style="padding-block:4px" type="button" id="submitOrder" class="buttonGreen3" onclick="nextStepCreateOrderModal()">ثبت</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal AddItemOrder -->
-<div class="modal fade" id="AddItemOrderModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-    <div class=" modal-dialog modal-dialog-centered modal-sm ">
-        <div class="modal-content col-12" style="padding:10px !important;">
-            <div style="height:28px;  display:flex; justify-content:center; align-items:center;  background: linear-gradient(to bottom, #3f5f80, #1a2d41); color:white;border-radius:5px">
-                <label class="fbold">افزودن آیتم دستور تولید</label>
-            </div>
-            <div class=" modal-body pb-2" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
-
-                <div style="width:100%; ">
-                    <form id="OrderForm" class="d-flex flex-column gap-2 w-100">
-                        <div class="d-flex flex-column align-items-center">
-                            <label>نوع جنس</label>
-                            <input class=" form-control" type="text" name="productSmallName" disabled tabindex="0" />
-                        </div>
-                        <div class="d-flex flex-column align-items-center">
-                            <label> شرح کالا </label>
-                            <input class=" form-control" type="text" name="product" tabindex="0" />
-                        </div>
-                        <div class="d-flex flex-column align-items-center">
-                            <label> ابعاد </label>
-                            <input class=" form-control" type="text" name="dimensions" tabindex="0" />
-                        </div>
-                        <div class="d-flex flex-column align-items-center">
-                            <label> نوع دسته </label>
-                            <input class=" form-control" type="text" name="categoryType" tabindex="0" />
-                        </div>
-                        <div class="d-flex flex-column align-items-center">
-                            <label>کاست</label>
-                            <input class=" form-control" type="text" name="caset" tabindex="0" />
-                        </div>
-                        <div class="d-flex flex-column align-items-center">
-                            <label>رنگ زمینه</label>
-                            <input class=" form-control" type="text" name="backgroundColor" tabindex="0" />
-                        </div>
-                        <div class="d-flex flex-column align-items-center">
-                            <label>رنگ چاپ</label>
-                            <input class=" form-control" type="text" name="printColor" tabindex="0" />
-                        </div>
-                        <div class="d-flex flex-column align-items-center">
-                            <label>تعداد رنگ</label>
-                            <input class=" form-control" type="text" name="countColor" tabindex="0" />
-                        </div>
-                        <div class="d-flex flex-column align-items-center">
-                            <label>نام طرح</label>
-                            <input class=" form-control" type="text" name="designName" tabindex="0" />
-                        </div>
-                        <div class="d-flex flex-column align-items-center">
-                            <label>مقدار</label>
-                            <div class="d-flex align-items-center" style="width: 100%">
-                                <input class="form-control" style="border-end-start-radius: 0 !important;border-start-start-radius: 0 !important;direction: ltr" type="text" name="weight" tabindex="0" />
-                                <select class="inputGroupText" style="width: auto;height: 2rem" type="text" name="unit" tabindex="0">
-                                </select>
-                            </div>
-                        </div>
-                        <div class="d-flex flex-column align-items-center">
-                            <label>ضخامت</label>
-                            <input class=" form-control" type="text" name="thickness" tabindex="0" />
-                        </div>
-
-                    </form>
-                </div>
-                <div style="padding-block: 16px; width:95%;margin-inline:auto  ">
-                    <div style="width:100%; height:2px; background-color:#1a2d41;">
-                    </div>
-                </div>
-
-                <div style="width:100%; display:flex;justify-content:center;">
-
-                    @*<div id="DivAddOr" class="align-items-center" style="gap:4px;display:flex">
-                        <button id="CancelBtnId" class="buttonCancel2" onclick="canselModalItemOrder()">انصراف</button>
-                        <button id="AddBtnId" class="buttonGreen3" onclick="AddItemCreator()">ثبت</button>
-                    </div>*@
-                    <div id="DivUpOr" class="align-items-center" style="display:none;gap:4px">
-                        <button class="buttonCancel2" onclick="CancelUpOrder()">انصراف</button>
-                        <button class="buttonGreen3" onclick="SubmitUpOrder()">ثبت</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- AddFromPreFactor Modal -->
-<div class="modal fade" id="AddFromPreFactorModal" tabindex="-1" data-bs-focus="false">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5"></h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-
-            <div class="modal-body">
-                <div id="AddFromPreFactor"></div>
-            </div>
-
-            <div class="modal-footer justify-content-center p-2">
-                <button type="button" data-bs-dismiss="modal" class="buttonCancel2">انصراف</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-@*---------------------------------------------*@
-
-<!-- Modal editTaskModal -->
-<div class="modal fade" id="editTaskModal" aria-modal="true" role="dialog" tabindex="-1" data-bs-focus="false">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-
-            <div class="m-2 mb-0" style="height:30px;display:flex; justify-content:center; align-items:center;  background: linear-gradient(to bottom, #025751, #00302d); color:white;border-radius:5px">
-                <label class="fbold" id="editTaskModalTitle">ویرایش فعالیت</label>
-            </div>
-
-            <div class="modal-body" style="padding:13px">
-                <form id="formEditTask" style="border:1px solid #8b8b8b;border-radius:6px;padding:16px">
-                    <div class="d-flex flex-column w-100">
-                        <div class="d-flex flex-column">
-                            <div class="d-flex flex-column gap-1">
-                                <label for="editTaskTitle" class="fbold">عنوان فعالیت</label>
-                                <input class="form-control text-start" id="editTaskTitle" name="title" required style="padding: 2px 8px !important;" type="text">
-                            </div>
-
-
-                            <div class="mt-3 mb-2" style="width:100%;background-color: rgba(0,0,0,0.1);height:1px"></div>
-                            <div class="d-flex flex-column gap-1">
-                                <label for="editTaskDescription" class="fbold">توضیحات</label>
-                                <textarea class="form-control h-auto text-start" id="editTaskDescription" name="description" rows="3" style="padding: 2px 8px !important;">
-                                </textarea>
-                            </div>
-                        </div>
-
-                        <div class="mt-3 mb-2" style="width:100%;background-color: rgba(0,0,0,0.1);height:1px"></div>
-
-                        <div class="row" style="row-gap: 8px">
-                            <div class="col d-flex flex-column gap-1" style="min-width: 180px">
-                                <label class="d-inline-flex align-items-center gap-1" for="editTaskDate">
-                                    <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width:21px;height:21px;" viewBox="0 0 24 24"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                                    <span class="fbold">تاریخ</span>
-                                </label>
-
-                                <div style="position:relative">
-
-                                    <input class="sdate form-control" id="editTaskDate" name="date" />
-
-                                    <div class="align-items-center justify-content-center" onclick="removeSchedulerItem('editTaskDate')" style="display:flex;position:absolute;top:50%;left:4px;transform: translateY(-50%)">
-                                        <svg fill="currentColor" style="width:14px;height:14px;color:gray" viewBox="0 0 16 16"><path clip-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm2.78-4.22a.75.75 0 0 1-1.06 0L8 9.06l-1.72 1.72a.75.75 0 1 1-1.06-1.06L6.94 8 5.22 6.28a.75.75 0 0 1 1.06-1.06L8 6.94l1.72-1.72a.75.75 0 1 1 1.06 1.06L9.06 8l1.72 1.72a.75.75 0 0 1 0 1.06Z" fill-rule="evenodd" /></svg>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col d-flex flex-column gap-1" style="min-width: 180px">
-                                <label class="d-inline-flex align-items-center gap-1" data-date="00:00" for="editTimeRemind">
-                                    <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width: 21px; height: 21px" viewBox="0 0 24 24"><path d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0M3.124 7.5A8.969 8.969 0 0 1 5.292 3m13.416 0a8.969 8.969 0 0 1 2.168 4.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                                    <span class="fbold">ساعت یادآوری</span>
-                                </label>
-
-                                <div style="position: relative">
-                                    <input class="stime form-control" id="editTimeRemind" name="remindTime" />
-
-                                    <div class="align-items-center justify-content-center" onclick="removeSchedulerItem('editTimeRemind')" style="display:flex;position:absolute;top:50%;left:4px;transform: translateY(-50%)">
-                                        <svg fill="currentColor" style="width: 14px; height: 14px; color: gray" viewBox="0 0 16 16"><path clip-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm2.78-4.22a.75.75 0 0 1-1.06 0L8 9.06l-1.72 1.72a.75.75 0 1 1-1.06-1.06L6.94 8 5.22 6.28a.75.75 0 0 1 1.06-1.06L8 6.94l1.72-1.72a.75.75 0 1 1 1.06 1.06L9.06 8l1.72 1.72a.75.75 0 0 1 0 1.06Z" fill-rule="evenodd" /></svg>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-
-
-                        <div class="mt-3 mb-2" style="width:100%;background-color: rgba(0,0,0,0.1);height:1px"></div>
-
-                        <div class="row mb-3" style="row-gap: 8px">
-                            <div class="col d-flex flex-column gap-1" style="min-width: 180px">
-                                <label class="d-inline-flex align-items-center gap-1" for="editRepeatType">
-                                    <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width: 21px; height: 21px" viewBox="0 0 24 24"><path d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3-3 3" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                                    <span class="fbold">تکرار</span>
-                                </label>
-                                <select class="form-select py-0" id="editRepeatType" name="repeatType" style="height: 2rem">
-                                    <option value="none">بدون تکرار</option>
-                                    <option value="daily">هرروز</option>
-                                    <option value="weekly">هرهفته</option>
-                                    <option value="monthly">هرماه</option>
-                                    <option value="custom">سفارشی</option>
-                                </select>
-                            </div>
-
-                            <div class="col flex-column gap-1" style="min-width: 180px;display:none" id="divEditUntilRemind">
-                                <label class="d-inline-flex align-items-center gap-1" for="editUntilRemind">
-                                    <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width:21px;height:21px;" viewBox="0 0 24 24"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                                    <span class="fbold">تا چه تاریخی</span>
-                                </label>
-
-                                <div style="position:relative">
-                                    <input class="sdate form-control" id="editUntilRemind" value="همیشه" name="repeatUntil" />
-
-                                    <div class="align-items-center justify-content-center" onclick="removeSchedulerItem('editUntilRemind')" style="display:flex;position:absolute;top:50%;left:4px;transform: translateY(-50%)">
-                                        <svg fill="currentColor" style="width:14px;height:14px;color:gray" viewBox="0 0 16 16"><path clip-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm2.78-4.22a.75.75 0 0 1-1.06 0L8 9.06l-1.72 1.72a.75.75 0 1 1-1.06-1.06L6.94 8 5.22 6.28a.75.75 0 0 1 1.06-1.06L8 6.94l1.72-1.72a.75.75 0 1 1 1.06 1.06L9.06 8l1.72 1.72a.75.75 0 0 1 0 1.06Z" fill-rule="evenodd" /></svg>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex-column gap-1 mb-2" id="customRepeatOptions" style="display: none">
-                            @* <label style="font-size:13px">انتخاب روزهای هفته:</label> *@
-                            <div class="d-flex gap-3 flex-wrap" style="font-size:12px">
-                                <div class="form-check">
-                                    <input class="form-check-input" id="eSat" type="checkbox" value="Sat">
-                                    <label class="form-check-label" for="eSat">شنبه</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" id="eSun" type="checkbox" value="Sun">
-                                    <label class="form-check-label" for="eSun">یکشنبه</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" id="eMon" type="checkbox" value="Mon">
-                                    <label class="form-check-label" for="eMon">دوشنبه</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" id="eTue" type="checkbox" value="Tue">
-                                    <label class="form-check-label" for="eTue">سه‌شنبه</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" id="eWed" type="checkbox" value="Wed">
-                                    <label class="form-check-label" for="eWed">چهارشنبه</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" id="eThu" type="checkbox" value="Thu">
-                                    <label class="form-check-label" for="eThu">پنج‌شنبه</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" id="eFri" type="checkbox" value="Fri">
-                                    <label class="form-check-label" for="eFri">جمعه</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-2 Admin SalesAdmin TaminAdmin FinancialAdmin ManagingDirector" style="display:none;width:100%;background-color: rgba(0,0,0,0.1);height:1px"></div>
-
-
-                        <div class="Admin SalesAdmin TaminAdmin FinancialAdmin ManagingDirector" style="display:none">
-                            <div class="editDropdown-assignUser__toggle d-inline-flex align-items-center gap-2">
-                                <label class=" d-inline-flex align-items-end gap-1" style="cursor:pointer;">
-                                    <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width: 21px; height: 21px" viewBox="0 0 24 24"><path d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                                    <span class="fbold">کاربران اختصاص یافته</span>
-                                </label>
-
-                                <sapn class="align-items-center justify-content-center" id="editAssignUserCount" style="cursor:pointer;display:flex;font-size: 12px; padding: 3px 8px 3px; border-radius: 100px; background-color: #8b8b8b; color: white"></sapn>
-
-                            </div>
-                            <div id="editAssignList" class="dropdown-assignUser__List"></div>
-                        </div>
-
-                    </div>
-                </form>
-            </div>
-
-            <div class="modal-footer" style="border-top:none;padding-top:0">
-                <button class="buttonCancel2 my-0" data-bs-dismiss="modal" onclick="cancelEditTaskModal()" type="button">انصراف</button>
-                <button class="buttonGreen3 my-0" id="submitEditTaskModal" onclick="updateTask()" type="button">ذخیره تغییرات</button>
-            </div>
-
-        </div>
-    </div>
-</div>
-
-<!-- UndeliveredOrderHeads Modal -->
-<div class="modal fade" id="UndeliveredOrderHeadsModal" tabindex="-1" data-bs-focus="false">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content" style="border-radius: 14px;overflow: hidden;box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25)">
-            <div class="modal-header">
-                برخی حواله تولیدهای این پیش‌فاکتور هنوز تحویل نشده‌اند. ابتدا آن‌ها را تحویل بزنید.
-            </div>
-
-            <div class="modal-body p-0">
-                <div id="UndeliveredOrderHeads"></div>
-            </div>
-
-            <div class="modal-footer justify-content-center p-2">
-                <button type="button" data-bs-dismiss="modal" class="buttonCancel2">انصراف</button>
-                <button type="button" class="buttonGreen3" id="UndeliveredOrderHeadsModalOkBtn" onclick="deliveredOk()">تحویل همه و اتمام کار</button>
-            </div>
-
-        </div>
-    </div>
-</div>
-
-
-<!-- Modal AttachmentReceipt -->
-<div class="modal fade" id="AttachmentReceiptModal" tabindex="-1" aria-labelledby="ReceiptsModalLabel" data-bs-focus="false">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">رسیدهای واریزی مشتری</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-
-            <div class="modal-body">
-                <div id="ReceiptsContainer" class="d-flex flex-wrap gap-3 justify-content-center"></div>
-            </div>
-
-            @*<div class="modal-footer justify-content-center">
-                <button class="buttonGreen3">ثبت و تایید پیش‌فاکتور</button>
-            </div>*@
-        </div>
-    </div>
-</div>
-
-<!-- Modal NotAccept -->
-<div class="modal fade" id="NotAcceptModal" tabindex="-1" data-bs-focus="false">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header p-2 pb-0" style="border:none">
-                <span id="NotAcceptHeader" class="w-100 fbold d-flex align-items-center justify-content-center" style="height:26px ;background-color:var(--DarkColor);color:white;border-radius:5px">عدم تایید مالی</span>
-            </div>
-
-            <div class="modal-body">
-                <label for="NotAcceptComment" class="fMedium">دلیل عدم تایید</label>
-                <textarea id="NotAcceptComment" class="form-control h-auto text-start" style="padding: .375rem .75rem" rows="3" required></textarea>
-            </div>
-
-            <div class="modal-footer justify-content-center p-2">
-                <button type="button" data-bs-dismiss="modal" class="buttonCancel2">انصراف</button>
-                <button class="buttonGreen3" onclick="submitNotAccept()">ثبت</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Modal ShowDetailsLog -->
 <div class="modal fade" id="ShowDetailsLogModal" tabindex="-1" data-bs-focus="false">
@@ -515,20 +152,7 @@
     </div>
 </div>
 
-<!-- showAttachmentsModal Modal -->
-<div class="modal fade" id="showAttachmentsModal" tabindex="-1" data-bs-focus="false">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content col-12" style="padding:10px!important">
-            <div class="modal-body" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
-                <div class="d-flex justify-content-around col-12">
-                    <div class="container-uploader" style="border: 1px solid lightgray;">
-                        <div class="image-display" id="DivShowSupplyFactorAttach"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <!-- addSupplyFactor Modal -->
 <div class="modal fade" id="addSupplyFactorModal" tabindex="-1" data-bs-focus="false" data-bs-backdrop="static">
@@ -615,6 +239,8 @@
 
 
 
+@*---------------------------------------------*@
+
 <!-- Modal ListInvoice -->
 <div class="modal fade" id="paymentListModalId" tabindex="-1" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-centered modal-xxl">
@@ -654,11 +280,6 @@
         </div>
     </div>
 </div>
-
-
-
-
-
 
 <!-- Modal reqAmountAttach -->
 <div class="modal fade invoice-modal payment-mode" id="reqAmountAttachModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
@@ -735,9 +356,6 @@
         </div>
     </div>
 </div>
-
-
-
 
 <!-- Modal addRequestAmount -->
 <div class="modal fade" id="addRequestAmountModal" tabindex="-1" role="dialog" data-bs-focus="false">
@@ -818,8 +436,6 @@
     </div>
 </div>
 
-
-
 <!-- Modal RequestAmounts -->
 <div class="modal fade" id="allRequestAmountsModal" role="dialog" tabindex="-1" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-centered modal-xl">
@@ -838,8 +454,6 @@
         </div>
     </div>
 </div>
-
-
 
 <!-- requestAmountPayment Modal -->
 <div class="modal fade" id="requestAmountPaymentModal" tabindex="-1" data-bs-focus="false">
@@ -865,6 +479,7 @@
     </div>
 </div>
 
+@*---------------------------------------------*@
 
 
 <!-- Modal addBankAccount -->
@@ -936,15 +551,10 @@
 
 <partial name="Modals/_PwaInstallModal" />
 <partial name="Modals/_AudioModal" />
+<partial name="Modals/_DocumentViewerModal" />
+<partial name="Modals/_AttachmentsModal" />
 
-<div id="divFrame" style="display: none">
-    <div style="position:fixed;top:30px;right:30px; display:flex;justify-content:start">
-        <span class="btn btn-dark d-flex align-items-center justify-content-center p-2" style="cursor:pointer;" onclick="hideDivFrame()">
-            <svg style="width: 24px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-        </span>
-    </div>
-    <iframe src="" id="IframeId" style="height:100%;width:100%;"></iframe>
-</div>
+
 
 <div id="overlay"></div>
 <div id="toastOverlay"></div>

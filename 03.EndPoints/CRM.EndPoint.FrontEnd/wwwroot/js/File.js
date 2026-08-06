@@ -232,7 +232,7 @@ function createFileLinkElement(fileItem, backgroundImage) {
         : `${fileItem.filetype},${fileItem.file}`;
     
     return `
-        <span onclick="showDivFrame('${srcIframe}')" class="fileAttachLink">
+        <span onclick="openDocumentViewer('${srcIframe}')" class="fileAttachLink">
             <div class="fileAttachImg" style="background-image:url(${backgroundImage})">
             </div>
         </span>
@@ -402,27 +402,22 @@ const toBase64 = file => new Promise((resolve, reject) => {
     reader.onerror = error => reject(error);
 });
 
-const divFrameElm = document.getElementById("divFrame");
+const documentViewer = document.getElementById("documentViewer");
+const documentViewerFrame = document.getElementById("documentViewerFrame");
 
-const showDivFrame = (src) => {
-    document.getElementById("IframeId").src = src;
-    divFrameElm.style.display = "flex";
-};
+function openDocumentViewer(url) {
+    documentViewerFrame.src = url;
+    documentViewer.hidden = false;
+}
 
-const hideDivFrame = () => {
-    divFrameElm.style.display = "none";
-    document.getElementById("IframeId").src = "";
-};
-
+function closeDocumentViewer() {
+    documentViewer.hidden = true;
+    documentViewerFrame.src = "";
+}
 
 document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-        const isDivOpen = getComputedStyle(divFrameElm).display !== "none";
-        if (isDivOpen) {
-            hideDivFrame();
-            e.preventDefault();
-            e.stopPropagation();
-        }
+    if (e.key === "Escape" && !documentViewer.hidden) {
+        closeDocumentViewer();
     }
 }, true);
 

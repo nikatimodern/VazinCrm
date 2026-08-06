@@ -1,0 +1,38 @@
+<!-- Modal CreateOrder -->
+<div class="modal fade" id="CreateOrderModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xxl">
+        <div class="modal-content col-12" style="padding:10px!important;">
+            <div class="d-flex flex-column gap-3 position-relative">
+                <div class="d-flex justify-content-center align-items-center text-white" style="height:28px;background: linear-gradient(135deg, #3f5f80, #1a2d41);border-radius:5px">
+                    <label class="fbold">حواله تولید</label>
+                </div>
+                <div data-bs-theme="dark" class="d-flex align-items-center justify-content-center top-0 bottom-0" style="position: absolute;left: 6px">
+                    <button type="button" class="btn-close opacity-100" onclick="cancelModalCreateOrder()"></button>
+                </div>
+            </div>
+            @*<div class="modal-header">
+                <h1 class="modal-title fs-5">حواله تولید</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>*@
+            <div class="modal-body px-0">
+                <ul id="CreateOrderTabs" class="nav nav-tabs bootstrap-only justify-content-center" role="tablist">
+                </ul>
+
+                <div id="CreateOrderTabPanes" class="tab-content p-2">
+                </div>
+            </div>
+
+
+            <div class="modal-footer p-0 justify-content-center border-0">
+                <div id="dividerCreateOrderModal" class="mx-auto mb-3" style="width:98%; height:2px; background-color:#1a2d41;"></div>
+                <div class="d-flex justify-content-center gap-1">
+                    <button style="padding-block:4px" type="button" id="cancelModalOrder" class="buttonCancel2" onclick="prevStepCreateOrderModal()">انصراف</button>
+                    <button style="padding-block:4px" type="button" id="submitOrder" class="buttonGreen3" onclick="nextStepCreateOrderModal()">ثبت</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<partial name="~/Views/Order/Modals/_AddFromPreFactorModal.cshtml" />

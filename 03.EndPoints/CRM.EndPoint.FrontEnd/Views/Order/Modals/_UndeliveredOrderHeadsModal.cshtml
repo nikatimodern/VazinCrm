@@ -1,0 +1,20 @@
+<!-- UndeliveredOrderHeads Modal -->
+<div class="modal fade" id="UndeliveredOrderHeadsModal" tabindex="-1" data-bs-focus="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: 14px;overflow: hidden;box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25)">
+            <div class="modal-header">
+                برخی حواله تولیدهای این پیش‌فاکتور هنوز تحویل نشده‌اند. ابتدا آن‌ها را تحویل بزنید.
+            </div>
+
+            <div class="modal-body p-0">
+                <div id="UndeliveredOrderHeads"></div>
+            </div>
+
+            <div class="modal-footer justify-content-center p-2">
+                <button type="button" data-bs-dismiss="modal" class="buttonCancel2">انصراف</button>
+                <button type="button" class="buttonGreen3" id="UndeliveredOrderHeadsModalOkBtn" onclick="deliveredOk()">تحویل همه و اتمام کار</button>
+            </div>
+
+        </div>
+    </div>
+</div>

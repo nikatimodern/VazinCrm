@@ -1,0 +1,20 @@
+<!-- Modal NotAccept -->
+<div class="modal fade" id="NotAcceptModal" tabindex="-1" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header p-2 pb-0" style="border:none">
+                <span id="NotAcceptHeader" class="w-100 fbold d-flex align-items-center justify-content-center" style="height:26px ;background-color:var(--DarkColor);color:white;border-radius:5px"></span>
+            </div>
+
+            <div class="modal-body">
+                <label for="NotAcceptComment" class="fMedium">دلیل عدم تایید</label>
+                <textarea id="NotAcceptComment" class="form-control h-auto text-start" style="padding: .375rem .75rem" rows="3" required></textarea>
+            </div>
+
+            <div class="modal-footer justify-content-center p-2">
+                <button type="button" data-bs-dismiss="modal" class="buttonCancel2">انصراف</button>
+                <button class="buttonGreen3" onclick="submitNotAccept()">ثبت</button>
+            </div>
+        </div>
+    </div>
+</div>

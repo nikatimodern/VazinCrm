@@ -1,0 +1,159 @@
+<!-- Modal editTaskModal -->
+<div class="modal fade" id="editTaskModal" aria-modal="true" role="dialog" tabindex="-1" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="m-2 mb-0" style="height:30px;display:flex; justify-content:center; align-items:center;  background: linear-gradient(to bottom, #025751, #00302d); color:white;border-radius:5px">
+                <label class="fbold" id="editTaskModalTitle">ویرایش فعالیت</label>
+            </div>
+
+            <div class="modal-body" style="padding:13px">
+                <form id="formEditTask" style="border:1px solid #8b8b8b;border-radius:6px;padding:16px">
+                    <div class="d-flex flex-column w-100">
+                        <div class="d-flex flex-column">
+                            <div class="d-flex flex-column gap-1">
+                                <label for="editTaskTitle" class="fbold">عنوان فعالیت</label>
+                                <input class="form-control text-start" id="editTaskTitle" name="title" required style="padding: 2px 8px !important;" type="text">
+                            </div>
+
+
+                            <div class="mt-3 mb-2" style="width:100%;background-color: rgba(0,0,0,0.1);height:1px"></div>
+                            <div class="d-flex flex-column gap-1">
+                                <label for="editTaskDescription" class="fbold">توضیحات</label>
+                                <textarea class="form-control h-auto text-start" id="editTaskDescription" name="description" rows="3" style="padding: 2px 8px !important;">
+                                </textarea>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 mb-2" style="width:100%;background-color: rgba(0,0,0,0.1);height:1px"></div>
+
+                        <div class="row" style="row-gap: 8px">
+                            <div class="col d-flex flex-column gap-1" style="min-width: 180px">
+                                <label class="d-inline-flex align-items-center gap-1" for="editTaskDate">
+                                    <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width:21px;height:21px;" viewBox="0 0 24 24"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                    <span class="fbold">تاریخ</span>
+                                </label>
+
+                                <div style="position:relative">
+
+                                    <input class="sdate form-control" id="editTaskDate" name="date" />
+
+                                    <div class="align-items-center justify-content-center" onclick="removeSchedulerItem('editTaskDate')" style="display:flex;position:absolute;top:50%;left:4px;transform: translateY(-50%)">
+                                        <svg fill="currentColor" style="width:14px;height:14px;color:gray" viewBox="0 0 16 16"><path clip-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm2.78-4.22a.75.75 0 0 1-1.06 0L8 9.06l-1.72 1.72a.75.75 0 1 1-1.06-1.06L6.94 8 5.22 6.28a.75.75 0 0 1 1.06-1.06L8 6.94l1.72-1.72a.75.75 0 1 1 1.06 1.06L9.06 8l1.72 1.72a.75.75 0 0 1 0 1.06Z" fill-rule="evenodd" /></svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col d-flex flex-column gap-1" style="min-width: 180px">
+                                <label class="d-inline-flex align-items-center gap-1" data-date="00:00" for="editTimeRemind">
+                                    <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width: 21px; height: 21px" viewBox="0 0 24 24"><path d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0M3.124 7.5A8.969 8.969 0 0 1 5.292 3m13.416 0a8.969 8.969 0 0 1 2.168 4.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                    <span class="fbold">ساعت یادآوری</span>
+                                </label>
+
+                                <div style="position: relative">
+                                    <input class="stime form-control" id="editTimeRemind" name="remindTime" />
+
+                                    <div class="align-items-center justify-content-center" onclick="removeSchedulerItem('editTimeRemind')" style="display:flex;position:absolute;top:50%;left:4px;transform: translateY(-50%)">
+                                        <svg fill="currentColor" style="width: 14px; height: 14px; color: gray" viewBox="0 0 16 16"><path clip-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm2.78-4.22a.75.75 0 0 1-1.06 0L8 9.06l-1.72 1.72a.75.75 0 1 1-1.06-1.06L6.94 8 5.22 6.28a.75.75 0 0 1 1.06-1.06L8 6.94l1.72-1.72a.75.75 0 1 1 1.06 1.06L9.06 8l1.72 1.72a.75.75 0 0 1 0 1.06Z" fill-rule="evenodd" /></svg>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+
+                        <div class="mt-3 mb-2" style="width:100%;background-color: rgba(0,0,0,0.1);height:1px"></div>
+
+                        <div class="row mb-3" style="row-gap: 8px">
+                            <div class="col d-flex flex-column gap-1" style="min-width: 180px">
+                                <label class="d-inline-flex align-items-center gap-1" for="editRepeatType">
+                                    <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width: 21px; height: 21px" viewBox="0 0 24 24"><path d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3-3 3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                    <span class="fbold">تکرار</span>
+                                </label>
+                                <select class="form-select py-0" id="editRepeatType" name="repeatType" style="height: 2rem">
+                                    <option value="none">بدون تکرار</option>
+                                    <option value="daily">هرروز</option>
+                                    <option value="weekly">هرهفته</option>
+                                    <option value="monthly">هرماه</option>
+                                    <option value="custom">سفارشی</option>
+                                </select>
+                            </div>
+
+                            <div class="col flex-column gap-1" style="min-width: 180px;display:none" id="divEditUntilRemind">
+                                <label class="d-inline-flex align-items-center gap-1" for="editUntilRemind">
+                                    <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width:21px;height:21px;" viewBox="0 0 24 24"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                    <span class="fbold">تا چه تاریخی</span>
+                                </label>
+
+                                <div style="position:relative">
+                                    <input class="sdate form-control" id="editUntilRemind" value="همیشه" name="repeatUntil" />
+
+                                    <div class="align-items-center justify-content-center" onclick="removeSchedulerItem('editUntilRemind')" style="display:flex;position:absolute;top:50%;left:4px;transform: translateY(-50%)">
+                                        <svg fill="currentColor" style="width:14px;height:14px;color:gray" viewBox="0 0 16 16"><path clip-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm2.78-4.22a.75.75 0 0 1-1.06 0L8 9.06l-1.72 1.72a.75.75 0 1 1-1.06-1.06L6.94 8 5.22 6.28a.75.75 0 0 1 1.06-1.06L8 6.94l1.72-1.72a.75.75 0 1 1 1.06 1.06L9.06 8l1.72 1.72a.75.75 0 0 1 0 1.06Z" fill-rule="evenodd" /></svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex-column gap-1 mb-2" id="customRepeatOptions" style="display: none">
+                            @* <label style="font-size:13px">انتخاب روزهای هفته:</label> *@
+                            <div class="d-flex gap-3 flex-wrap" style="font-size:12px">
+                                <div class="form-check">
+                                    <input class="form-check-input" id="eSat" type="checkbox" value="Sat">
+                                    <label class="form-check-label" for="eSat">شنبه</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" id="eSun" type="checkbox" value="Sun">
+                                    <label class="form-check-label" for="eSun">یکشنبه</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" id="eMon" type="checkbox" value="Mon">
+                                    <label class="form-check-label" for="eMon">دوشنبه</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" id="eTue" type="checkbox" value="Tue">
+                                    <label class="form-check-label" for="eTue">سه‌شنبه</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" id="eWed" type="checkbox" value="Wed">
+                                    <label class="form-check-label" for="eWed">چهارشنبه</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" id="eThu" type="checkbox" value="Thu">
+                                    <label class="form-check-label" for="eThu">پنج‌شنبه</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" id="eFri" type="checkbox" value="Fri">
+                                    <label class="form-check-label" for="eFri">جمعه</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-2 Admin SalesAdmin TaminAdmin FinancialAdmin ManagingDirector" style="display:none;width:100%;background-color: rgba(0,0,0,0.1);height:1px"></div>
+
+
+                        <div class="Admin SalesAdmin TaminAdmin FinancialAdmin ManagingDirector" style="display:none">
+                            <div class="editDropdown-assignUser__toggle d-inline-flex align-items-center gap-2">
+                                <label class=" d-inline-flex align-items-end gap-1" style="cursor:pointer;">
+                                    <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width: 21px; height: 21px" viewBox="0 0 24 24"><path d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                    <span class="fbold">کاربران اختصاص یافته</span>
+                                </label>
+
+                                <sapn class="align-items-center justify-content-center" id="editAssignUserCount" style="cursor:pointer;display:flex;font-size: 12px; padding: 3px 8px 3px; border-radius: 100px; background-color: #8b8b8b; color: white"></sapn>
+
+                            </div>
+                            <div id="editAssignList" class="dropdown-assignUser__List"></div>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer" style="border-top:none;padding-top:0">
+                <button class="buttonCancel2 my-0" data-bs-dismiss="modal" onclick="cancelEditTaskModal()" type="button">انصراف</button>
+                <button class="buttonGreen3 my-0" id="submitEditTaskModal" onclick="updateTask()" type="button">ذخیره تغییرات</button>
+            </div>
+
+        </div>
+    </div>
+</div>
