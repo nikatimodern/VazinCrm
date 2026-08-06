@@ -6792,6 +6792,83 @@ table tr.payment-vosoled > td {
 }
 
 
+.logSystem-container ul, .logSystem-container li {
+  list-style: none;
+  padding: 0;
+}
+
+
+.logSystem-container li {
+  &.logAction-1 {
+    --log-color: #1f857c;
+  }
+  
+  &.logAction-2 {
+    --log-color: #d99313;
+  }
+  
+  &.logAction-3,
+  &.logAction-9 {
+    --log-color: #cf2210;
+  }
+  
+  &.logAction-4 {
+    --log-color: #2980b9;
+  }
+  
+  &.logAction-5,
+  &.logAction-6 {
+    --log-color: #7f8c8d;
+  }
+  
+  &.logAction-7,
+  &.logAction-8 {
+    --log-color: #8e44ad;
+  }
+  
+  
+  & {
+    padding-bottom: 20px;
+    padding-right: 20px;
+    border-right: 1px dashed var(--log-color, #1f857c);
+    position: relative;
+    margin-right: 10px;
+  }
+  
+  &:last-child {
+    padding-bottom: 0;
+  }
+  
+  &:before {
+    content: "";
+    width: 15px;
+    height: 15px;
+    background: white;
+    border: 1px solid var(--log-color, #1f857c);
+    box-shadow: -3px 3px 0 color-mix(in srgb, var(--log-color, #1f857c) 50%, transparent);
+    border-radius: 50%;
+    position: absolute;
+    right: -8px;
+    top: 0;
+  }
+  
+}
+
+
+.logSystem-time {
+  color: #2a2839;
+  font-family: IRANSansMedium;
+  direction: ltr;
+  display: inline-block;
+}
+
+
+.logSystem-desc {
+  color: #4f4f4f;
+  line-height: 1.5;
+  margin-top: 0.4rem;
+}
+
 #viewSwitchGroup .active-tab {
 	background-color: #fff !important;
 	color: #000 !important;

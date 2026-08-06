@@ -535,31 +535,15 @@
                 const data = (await axios.post("/dashboard/GetLogSystem", modelDash)).data;
 
                 container.innerHTML = "";
-                const ul = document.createElement("ul");
-                data.forEach(item => {
-                    const li = document.createElement("li");
-                    li.classList.add(`logAction-${item.actionType}`);
-                    li.innerHTML = `
-                        <span class="logSystem-time">${item.changeTimeTxt.split(" ").join(" | ")}</span>
-                        <p class="logSystem-desc">
-                            <span>${item.description || ""}</span>
-                            ${(item.changeDetails || item.commentTxt) ? `
-                                <span class="showDetailLog-icon">
-                                    <svg style="width: 14px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM9 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.75 8a.75.75 0 0 0 0 1.5h.75v1.75a.75.75 0 0 0 1.5 0v-2.5A.75.75 0 0 0 8.25 8h-1.5Z" clip-rule="evenodd" /></svg>
-                                </span>
-                            ` : ""}
-                        </p>
-                    `;
-                    li.querySelector(".showDetailLog-icon")?.addEventListener("click", () => showDetailsLog(item.changeDetails, item.commentTxt));
-                    ul.appendChild(li);
-                });
+                const dom = createDomLogSystem(data);
+                container.appendChild(dom);
 
-                container.appendChild(ul);
                 isRefresh && FLshowLoading(false);
             } catch (err) {
                 console.log(err);
             }
         }
+
 
         async function getFinancialReport() {
             try {
@@ -600,11 +584,6 @@
             }
         }
 
-
-        async function showDetailsLog(changeDetails, commentTxt) {
-            document.getElementById("ShowDetailsLog").innerHTML = changeDetails || commentTxt;
-            $("#ShowDetailsLogModal").modal("show");
-        }
 
         const callbackFilterDashboard = async () => {
             modelDash.filt = window[filterVarConfig].filterVar;

@@ -26,6 +26,7 @@ using CRM.Core.Domain.Transfers.Entities;
 using CRM.Core.Domain.Transfers.Enums;
 using CRM.EndPoint.FrontEnd.Models.LogSystem;
 using Generics.Infrastructures.Sql;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Services;
@@ -802,5 +803,15 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
         }
 
         return (parentNameValue, parentIdValue);
+    }
+
+    public async Task<List<LogSystem>> GetEntityLogSystemAsync(string entityName, string entityId, bool isAdmin)
+    {
+        var includeChangeDetails = isAdmin;
+        var includeCommentTxt = isAdmin;
+        return await db.logSystems
+            .FromSqlInterpolated($"EXEC dbo.GetEntityLogSystem {entityName}, {entityId}, {includeChangeDetails}, {includeCommentTxt}")
+            .AsNoTracking()
+            .ToListAsync();
     }
 }

@@ -141,7 +141,7 @@
                                         <div class="fbold" style="color:darkred">
                                             ابطال شده
                                         </div>
-                                        @if ((Model.Rols.Contains("کارشناس مالی") || Model.Rols.Contains("مدیر مالی") || Model.Rols.Contains("مدیر ارشد"))) {
+                                        @if (Model.Rols.Contains("کارشناس مالی") || Model.Rols.Contains("مدیر مالی") || Model.Rols.Contains("مدیر ارشد")) {
                                             <div style="cursor:pointer;color:#333" onclick="acceptFactor('@item.Id', 1, @ViewBag.PassType, '@item.PfactorSerialNumber', '@item.DealId')" data-title="بازگشت">
                                                 <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>
                                             </div>
@@ -192,6 +192,9 @@
                             </button>
                         }
                     }
+                    <button class="flex-center" data-title-right="تاریخچه" style="color:var(--DarkColor)" onclick="showLogEntity('@nameof(Factor)', '@item.Id')">
+                        <svg style="width: 18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+                    </button>
                     @*<button class="mp" style="color:var(--DarkColor);" onclick="AttachDoc('@item.Id')"><i style="font-size:20px" class="mp fa fa-paperclip"></i></button>*@
                 </div>
             </div>
