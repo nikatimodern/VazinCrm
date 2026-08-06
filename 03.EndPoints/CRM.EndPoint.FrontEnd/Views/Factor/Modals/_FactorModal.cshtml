@@ -1,0 +1,230 @@
+<!-- Modal Factor -->
+<div class="modal fade" dir="ltr" id="Factor" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content col-12">
+            <div class="modal-header pb-0" style="border:none">
+                <div id="factorModalTitle" class="w-100 flex-center fbold" style="background-color:#00302d;color:white;border-radius:5px">
+                    صدور فاکتور
+                </div>
+            </div>
+
+            <div class="modal-body flex-column" style=" display:flex;justify-content:space-between; width:100% !important;">
+                <div>
+                    <div class="flex-column flex-lg-row gap-3 px-2 align-items-center" style="width:100%;display:flex;justify-content:space-between ">
+                        <div class="col-12 col-lg-4 " style="display:flex;flex-direction:column;gap:4px">
+                            <form id="snFinancialFormId" style="width:100%; display:flex;flex-direction:row-reverse; align-items:center;gap:4px">
+                                <label style="display:flex;width:30%;justify-content:center;gap:2px "><span>:مالی</span><span>فاکتور</span><span>شماره</span></label>
+                                <input class="form-control" style="width:70%" type="text" name="snFinancial" id="snFinancial" disabled placeholder="شماره فاکتور مالی" />
+                            </form>
+                            <form id="f_SerialFormId" style="width:100%; display:flex;flex-direction:row-reverse;align-items:center;gap:4px ">
+                                <label style="display:flex;width:30%;justify-content:center;gap:2px "><span>:فاکتور</span><span>شماره</span></label>
+                                <input class="sdate form-control" style="width:70%" type="text" name="f_serialNumber" id="f_serialNumber" placeholder="شماره فاکتور" disabled />
+                            </form>
+                            <form id="f_dateFormId" style="width:100%; display:flex;flex-direction:row-reverse;align-items:center;gap:4px ">
+                                <label style="display:flex;width:30%;justify-content:center;">:تاریخ</label>
+                                <input class="sdate form-control" style="width:70%" type="text" name="f_date" id="f_date" placeholder="تاریخ" required />
+                            </form>
+                        </div>
+                        <div class="col-12 col-lg-3 d-flex align-items-end justify-content-between flex-grow-1 flex-row-reverse">
+                            <form class="d-flex flex-column justify-content-between row-gap-3" id="FHeadFormId" style="direction: rtl;flex-grow:0.6">
+                                <div class="d-flex justify-content-evenly">
+                                    <div class="justify-content-around flex-column gap-1 gap-lg-2" style="direction: rtl; display:flex;width:100%; ">
+                                        <div class="d-flex align-items-center gap-1">
+                                            <label class="fbold" for="f_official">رسمی</label>
+                                            <input type="radio" name="f_official" id="f_official" value="1" checked />
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <label class="fbold" for="f_unofficial">غیر رسمی</label>
+                                            <input type="radio" name="f_official" id="f_unofficial" value="0" />
+                                        </div>
+                                    </div>
+                                    <div class="justify-content-around flex-column gap-1 gap-lg-2" id="F_exportAlert" style="direction: rtl; display:flex;width:100%; ">
+                                        <div class="d-flex align-items-center gap-1">
+                                            <label class="fbold" for="f_export">صادراتی</label>
+                                            <input type="radio" name="f_export" id="f_export" value="1" data-alertid="F_exportAlert" required />
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <label class="fbold" for="f_unexport">غیر صادراتی</label>
+                                            <input type="radio" name="f_export" id="f_unexport" value="0" data-alertid="F_exportAlert" required />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <label for="F_currencyTypeSelect">نوع ارز</label>
+                                    <select class="form-select form-select-sm w-auto" name="currencyType" id="F_currencyTypeSelect">
+                                        <option value="0" selected>ریال</option>
+                                        @*<option value="1">دلار</option>
+                                        <option value="2">یورو</option>*@
+                                    </select>
+                                </div>
+                            </form>
+                            <div class="d-lg-none">
+                                <button class="btn btn-sm btn-secondary" onclick="showModalItemFactor()">افزودن</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="d-none d-lg-block p-3 pb-1 pb-lg-3" style="width:100%;">
+                    <div style="width:100%; height:2px; background-color:#00302d;">
+                    </div>
+                </div>
+                <div class="flex-column-reverse flex-xl-row" style="display:flex;justify-content:space-between; width:100% !important;">
+
+                    <div class="d-none d-xl-block col-12 col-xl-3 ps-3 pt-3 pt-xl-0">
+                        <div class="h-100" style="direction:rtl; width:100%;display:flex;flex-direction:column;">
+                            <div style="width:100%; display:flex;position:relative">
+                                <textarea id="f_descriptionId" rows="6" class="form-control" style="height:100px !important; width:100%;padding:4px 4px 4px 36px !important" type="text" placeholder="توضیحات"></textarea>
+
+                                <button style="position: absolute;left: 1px;bottom: 1px;display: flex;justify-content: center;align-items: center;top: 1px;padding-inline: 8px;box-shadow: none" class="buttonGreen3" onclick="addFactorDescItem()">
+                                    <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                                </button>
+                            </div>
+                            <div class="flex-grow-1 pe-1 " style="margin-top:14px; width:100%; display:flex ;max-height:310px;overflow:auto " id="factorDescId">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-xl-9" style=" display:flex;flex-direction:column; justify-content:space-between; ">
+
+                        <div id="FacItemContainer" class="d-none d-lg-flex" style="width:100%; flex-direction:row-reverse; justify-content:space-between;">
+                            <form id="FacItem" style="width:100%;direction:rtl">
+
+                                @*<div style="width:5%; display:flex;flex-direction:column;align-items:center; ">
+                            <label>ردیف</label>
+                            <input class="form-control" type="text" name="Row" id="Row" placeholder="ردیف" />
+                            </div>*@
+
+
+                                <div style="display:flex;flex-direction:column;align-items:center; ">
+                                    <div style="width:100%;display:flex;justify-content:space-between ">
+                                        <label>محصول</label>
+                                        <div id="FprintableAlertId" class="mp" style="display:flex;flex-direction:row-reverse; font-size:10px;gap:8px ">
+                                            <div class="d-flex align-items-center gap-1">
+                                                <label for="f_printableT">چاپدار</label>
+                                                <input type="radio" name="printable" id="f_printableT" data-alertId="FprintableAlertId" data-def="true" value="1" required />
+                                            </div>
+                                            <div class="d-flex align-items-center gap-1">
+                                                <label for="f_printableF">غیر چاپدار</label>
+                                                <input type="radio" name="printable" id="f_printableF" data-alertId="FprintableAlertId" data-def="true" value="0" required />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <select class="form-control" style="width:100%;" name="productCode" id="productCode">
+                                    </select>
+                                </div>
+                                <div style=" display:flex;flex-direction:column;align-items:center; ">
+                                    <label>شرح کالا</label>
+                                    <input class="form-control" type="text" name="product" id="product" style="direction:rtl" />
+                                </div>
+                                <div style=" display:flex;flex-direction:column;align-items:center; ">
+                                    <label>تعداد/مقدار </label>
+                                    <input class="form-control" type="number" name="weightCount" id="weightCount" required />
+                                </div>
+                                <div style="display:flex;flex-direction:column;align-items:center; ">
+                                    <label>واحد</label>
+                                    <select class="form-control" style="width:100%;" name="unit" id="unit" disabled required>
+                                    </select>
+                                </div>
+                                <div style="display:flex;flex-direction:column;align-items:center; ">
+                                    <label>مبلغ واحد</label>
+                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="unitAmount" required data-currency-hint="next" />
+                                    <span class="currencyHint"></span>
+                                </div>
+                                <div style="display:flex;flex-direction:column;align-items:center; ">
+                                    <label>مبلغ کل</label>
+                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="totalAmount" id="totalAmount" disabled />
+                                </div>
+
+                                <div>
+                                    <label>&nbsp;</label>
+                                    <button id="f_AddBtnId" type="button" class="buttonGreen3 align-items-center justify-content-center" style="display: flex;height: 2rem;padding-inline: 10px" onclick="AddfItem()">
+                                        <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                        </svg>
+
+                                    </button>
+                                    <div id="f_UpBtnId" style="display:none;flex-direction:column">
+                                        <button class="buttonGreen3" type="button" onclick="UpfItem()" style="display:flex;justify-content:center; align-items:center;height: 26px;padding-inline: 10px">
+                                            <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                                        </button>
+                                        <button class="buttonCancel2" type="button" onclick="UpfItemCancel()" style="display:flex;justify-content:center; align-items:center;height: 26px;padding-inline: 10px">
+                                            <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="InfoData flex-grow-1 mt-2" style="width:100%;height:auto;min-height:60px;max-height:200px;overflow:auto;border-color:#00302d;direction:rtl;" id="FactorItemId">
+                        </div>
+                        <div class="flex-column flex-lg-row mt-3" style="width:100%;display:flex;align-items:center;">
+                            <div class="col-12 col-lg-6 col-xl-12 pe-1" style="display:flex;flex-direction:column;gap:4px">
+                                <div class="col-12 justify-content-around" style="display:flex; flex-direction:row-reverse;">
+                                    <label class="col-4 col-xl-2 justify-content-center" style="display:flex;gap:3px">
+                                        <span>: کل</span>
+                                        <span>مبلغ</span><span>جمع</span>
+                                    </label>
+                                    <label class="col-8 col-xl-10 form-controlLable" name="f_sumTotalAmount" id="f_sumTotalAmount" value="0" disabled></label>
+                                </div>
+                                <div class="col-12 justify-content-around" style="display:flex; flex-direction:row-reverse;">
+                                    <label class="col-4 col-xl-2 justify-content-center" style="display:flex;"><span>: تخفیف</span></label>
+                                    <div class="col-8 col-xl-10">
+                                        <input inputmode="numeric" class="form-control currencyNumber" name="f_discount" id="f_discount" type="text" value="0" onkeyup="calculateTotalFactor()" />
+                                    </div>
+                                </div>
+                                <div class="col-12 justify-content-around" style="display:flex;flex-direction:row-reverse;">
+                                    <label class="col-4 col-xl-2 justify-content-center" style="display:flex;gap:3px">
+                                        <span>: عوارض</span><span>و</span><span>مالیات</span>
+                                    </label>
+                                    <label class="col-8 col-xl-10 form-controlLable" name="f_totalTax" id="f_totalTax" type="text" value="0"></label>
+                                </div>
+
+                                @*                            <div style="display:none;flex-direction:row-reverse;" id="divReciveAmountId">
+                            <label style="display:flex;width:30%"><span> :پرداختی </span><span> مبلغ </span></label>
+                            <input class="form-control" name="f_reciveAmount" id="f_reciveAmount" type="text" style="width:70%" value="0" onkeyup="calculateTotalFactor()" />
+                            </div>*@
+                                <div class="col-12 justify-content-around" style="display:flex;flex-direction:row-reverse;">
+                                    <label class="col-4 col-xl-2 justify-content-center" style="display:flex;"><span>: مبلغ نهایی</span></label>
+                                    @*<input class="form-control" name="paymentAmount" id="paymentAmount" type="text" style="width:70%" value="0" disabled />*@
+                                    <label class="col-8 col-xl-10 form-controlLable" name="f_paymentAmount" id="f_paymentAmount" type="text" value="0"></label>
+                                </div>
+
+                            </div>
+
+
+                            <div class="d-none d-lg-block d-xl-none col-12 col-lg-6 col-xl-12">
+                                <div class="h-100" style="direction:rtl; width:100%;display:flex;flex-direction:column;">
+                                    <div style="width:100%; display:flex;position:relative">
+                                        <textarea id="f_descriptionIdTablet" rows="6" class="form-control" style="height:54px !important; width:100%;padding:4px 4px 4px 36px !important" type="text" placeholder="توضیحات"></textarea>
+                                        <button style="position: absolute;left: 1px;bottom: 1px;display: flex;justify-content: center;align-items: center;top: 1px;padding-inline: 8px;box-shadow: none" class="buttonGreen3" onclick="addFactorDescItem()">
+                                            <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                                        </button>
+                                    </div>
+                                    <div class="flex-grow-1 pe-1" style="margin-top:14px; width:100%; display:flex ;max-height:120px;overflow:auto " id="factorDescIdTablet">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-lg-none mt-3">
+                                <button class="btn btn-sm btn-secondary" onclick="showModalFactorDescription()">افزودن توضیحات</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="mx-auto" style="width: 97%;height:2px;background-color:#00302d"></div>
+                <div class="d-flex justify-content-center w-100 gap-1 my-3">
+                    <button class="buttonGreen3" onclick="submitFactor()">ثبت</button>
+                    <button class="buttonCancel2" onclick="cancelFactor() ">انصراف</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<partial name="~/Views/Factor/Modals/_FactorDescriptionModal.cshtml" />
+<partial name="~/Views/Factor/Modals/_FactorItemModal.cshtml" />
