@@ -4625,7 +4625,7 @@ let isFinancialPaymentTable;
 async function changeStatusReqAmount(id, status) {
     try {
         FLshowLoading();
-        const res = await axios(`/Amount/ChangeStatusRequestAmount?id=${id}&status=${status}`);
+        const res = await axios(`/RequestAmount/ChangeStatusRequestAmount?id=${id}&status=${status}`);
         if (res.status === 200) {
             const currentPath = window.location.pathname.toLowerCase();
             if (currentPath.includes("cartable")) {
@@ -4734,7 +4734,7 @@ const getAllPaymentsList = (id) => {
         initPaymentTable();
     }
     paymentTable.clear().draw(); // TODO
-    paymentTable.ajax.url(`/Amount/GetAllPaymentsByRequestAmount?id=${id}`).load();
+    paymentTable.ajax.url(`/RequestAmount/GetAllPaymentsByRequestAmount?id=${id}`).load();
 };
 
 
@@ -4751,7 +4751,7 @@ const deletePayment = async (id) => {
     }).then(async (willDelete) => {
         if (willDelete.isConfirmed) {
             FLshowLoading();
-            const res = await axios(`/Amount/DeletePayment/${id}`);
+            const res = await axios(`/RequestAmount/DeletePayment/${id}`);
             if (res.status === 200) {
                 toastifySuccess("با موفقیت حذف شد");
                 paymentTable.ajax.reload();
@@ -4820,7 +4820,7 @@ async function showSetAmountPaymentItemModal(filterIds) {
     isGroupPayment = true;
     FLshowLoading();
     try {
-        const res = await axios.post("/Amount/GetRequestsAmountByFilteredIds", { filterIds });
+        const res = await axios.post("/RequestAmount/GetRequestsAmountByFilteredIds", { filterIds });
         if (res.status === 200) {
             requestAmountListData = res.data;
             
@@ -4839,7 +4839,7 @@ async function showEditAmountPaymentItemModal() {
     isGroupPayment = true;
     FLshowLoading();
     try {
-        const res = await axios(`/Amount/GetRequestAmountsWithPaidAmountByPayment?paymentId=${paymentData.id}`);
+        const res = await axios(`/RequestAmount/GetRequestAmountsWithPaidAmountByPayment?paymentId=${paymentData.id}`);
         if (res.status === 200) {
             requestAmountListData = res.data;
             
@@ -4992,7 +4992,7 @@ const submitReqAmountAttach = async () => {
     
     FLshowLoading();
     try {
-        const res = await axios.post("/Amount/AddPaymentByRequestAmount", model);
+        const res = await axios.post("/RequestAmount/AddPaymentByRequestAmount", model);
         if (res.status === 200) {
             toastifySuccess("ثبت با موفقیت انجام شد");
             cancelReqAmountAttach();
@@ -5111,7 +5111,7 @@ async function showAllRequestAmountModal(ohId, ohNumber) {
 async function getAllRequestAmountByOrderHead(ohId) {
     try {
         FLshowLoading();
-        const res = await axios(`/Amount/GetAllRequestAmountsPartial?orderHeadId=${ohId}&passType=1`);
+        const res = await axios(`/RequestAmount/GetAllRequestAmountsPartial?orderHeadId=${ohId}&passType=1`);
         if (res.status === 200) {
             document.querySelector("#allRequestAmountsModal #requestAmountsBodyModal").innerHTML = res.data.html;
         }
@@ -5200,7 +5200,7 @@ async function submitRequestAmountModal() {
     };
     try {
         FLshowLoading();
-        const apiUrl = model.id ? "/Amount/UpdateRequestAmount" : "/Amount/AddRequestAmount";
+        const apiUrl = model.id ? "/RequestAmount/UpdateRequestAmount" : "/RequestAmount/AddRequestAmount";
         const res = await axios.post(apiUrl, model);
         if (res.status === 200) {
             const currentPath = window.location.pathname.toLowerCase();
@@ -5252,7 +5252,7 @@ async function showEditRequestAmountModal(id) {
     await showAddRequestAmountModal();
     
     try {
-        const res = await axios(`/Amount/GetRequestAmount/${id}`);
+        const res = await axios(`/RequestAmount/GetRequestAmount/${id}`);
         if (res.status === 200) {
             requestAmountData = res.data.requestAmount;
             const supplyFactorSerials = res.data.supplyFactorSerials;
@@ -5293,7 +5293,7 @@ const deleteRequestAmount = async (id) => {
     }).then(async (willDelete) => {
         if (willDelete.isConfirmed) {
             FLshowLoading();
-            const res = await axios(`/Amount/DeleteRequestAmount/${id}`);
+            const res = await axios(`/RequestAmount/DeleteRequestAmount/${id}`);
             if (res.status === 200) {
                 toastifySuccess("با موفقیت حذف شد");
                 const currentPath = window.location.pathname.toLowerCase();
@@ -5345,7 +5345,7 @@ addReqAmountModal?.querySelector("select#requestAmountTypeId")?.addEventListener
     };
     
     toggleField(ohWrapper, type === 1);
-    toggleField(supplierWrapper, type === 1 || type === 2);
+    toggleField(supplierWrapper, type === 1 || type === 2 || type === 4 || type === 5);
     toggleField(cashierWrapper, type === 3);
 });
 
@@ -5390,7 +5390,7 @@ document.addEventListener("change", async (e) => {
     select.disabled = true;
     
     try {
-        const res = await axios.post("/Amount/ChangeDocTypeRequestAmount", { id, docType });
+        const res = await axios.post("/RequestAmount/ChangeDocTypeRequestAmount", { id, docType });
         if (res.status === 200) {
             const selectedText = select.options[select.selectedIndex].text;
             const docTypeText = card.querySelector(".doc-type-text");

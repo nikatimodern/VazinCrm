@@ -268,9 +268,9 @@ namespace CRM.EndPoint.FrontEnd {
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            var contentRoot = env.ContentRootPath;
+            /*var contentRoot = env.ContentRootPath;
             var licenseFile = System.IO.Path.Combine(contentRoot, "wwwroot\\Reports", "license.key");
-            //Stimulsoft.Base.StiLicense.LoadFromFile(licenseFile);
+            Stimulsoft.Base.StiLicense.LoadFromFile(licenseFile);*/
 
             //app.UseSerilogRequestLogging();
 

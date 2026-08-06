@@ -141,7 +141,7 @@
             const type = document.querySelector("input[type='radio'][name='requestAmountFilter']:checked")?.value;
             if (type === undefined) return;
             FLshowLoading();
-            const res = await axios(`/Amount/GetAllRequestAmountsPartial?search=${val}&type=${type}&passType=1`);
+            const res = await axios(`/RequestAmount/GetAllRequestAmountsPartial?search=${val}&type=${type}&passType=1`);
             requestContainer.innerHTML = res.data.html;
             updateFilterSwitchState({
                 wrapperSelector: ".filter-switch",
