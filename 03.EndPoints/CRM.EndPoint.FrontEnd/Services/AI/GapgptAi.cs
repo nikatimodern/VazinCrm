@@ -60,8 +60,7 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
             var rawError = await response.Content.ReadAsStringAsync(ct);
             var clean = StripHtml(rawError);
             logger.LogError("Gemini API Error ({StatusCode}) in {Elapsed}s: {Error}", response.StatusCode, aiDuration, clean);
-            return new SummaryResult
-                { Success = false, Error = $"API Error ({response.StatusCode}): {clean}", ElapsedSeconds = aiDuration };
+            return new SummaryResult { Success = false, Error = $"API Error ({response.StatusCode}): {clean}", ElapsedSeconds = aiDuration };
         }
         catch (Exception ex)
         {
