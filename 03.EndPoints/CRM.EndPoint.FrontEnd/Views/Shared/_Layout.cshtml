@@ -128,101 +128,11 @@
 <partial name="Modals/_PhoneBookModal" />
 <partial name="Modals/_ErrorModal" />
 <partial name="Modals/_FilterModal" />
+<partial name="Modals/_LogModal" />
 
 <partial name="~/Views/Report/Modals/_ReportModal.cshtml" />
 <partial name="~/Views/Accountancy/Modals/_ShowPaymentModal.cshtml" />
 
-@*---------------------------------------------*@
-
-
-<!-- Modal ShowDetailsLog -->
-<div class="modal fade" id="ShowDetailsLogModal" tabindex="-1" data-bs-focus="false">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">جزئیات تغییرات</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-
-            <div class="modal-body">
-                <div id="ShowDetailsLog" style="white-space: break-spaces;direction: ltr;overflow-x: auto;overflow-y: hidden">
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-<!-- Modal Log -->
-<div class="modal fade" id="logModal" tabindex="-1" data-bs-focus="false">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">تاریخچه تغییرات</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-
-            <div class="modal-body">
-                <div id="logContainer" class="overflow-auto" style="max-height: 400px">
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- addSupplyFactor Modal -->
-<div class="modal fade" id="addSupplyFactorModal" tabindex="-1" data-bs-focus="false" data-bs-backdrop="static">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content" style="border-radius: 12px;overflow: hidden;box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25)">
-            <div class="modal-header">
-                <div class="d-flex align-items-center justify-content-between w-100">
-                    <span class="fbold">انتخاب فاکتور تامین</span>
-                    <div>
-                        <input id="addSupplyFactorSearch" type="text" class="form-control" placeholder="جستجو..">
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-body p-0">
-                <div id="addSupplyFactorContainer"></div>
-            </div>
-
-            <div class="modal-footer justify-content-center p-2">
-                <button style="padding-block:4px" type="button" class="buttonCancel2" onclick="toggleAddSupplyFactorModal()">انصراف</button>
-                <button id="submitSelectedSupplyFactor" style="padding-block:4px" type="button" class="buttonGreen3 d-none" onclick="submitSelectedSupplyFactor()">ثبت</button>
-            </div>
-
-        </div>
-    </div>
-</div>
-
-
-
-<!-- addOrderHead Modal -->
-<div class="modal fade" id="addOrderHeadModal" tabindex="-1" data-bs-focus="false" data-bs-backdrop="static">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content" style="border-radius: 12px;overflow: hidden;box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25)">
-            <div class="modal-header">
-                <div class="d-flex align-items-center justify-content-between w-100">
-                    <span class="fbold">انتخاب حواله تولید</span>
-                    <div>
-                        <input id="addOrderHeadSearch" type="text" class="form-control" placeholder="جستجو..">
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-body p-0">
-                <div id="addOrderHeadContainer"></div>
-            </div>
-
-            <div class="modal-footer justify-content-center p-2">
-                <button style="padding-block:4px" type="button" class="buttonCancel2" onclick="toggleAddOrderHeadModal()">انصراف</button>
-                <button id="submitSelectedOrderHeads" style="padding-block:4px" type="button" class="buttonGreen3 d-none" onclick="submitSelectedOrderHeads()">ثبت</button>
-            </div>
-
-        </div>
-    </div>
-</div>
 
 <!-- preFactorList Modal -->
 <div class="modal fade" id="preFactorListModal" tabindex="-1" data-bs-focus="false">
@@ -253,7 +163,59 @@
     </div>
 </div>
 
+@*---------------------------------------------*@
 
+<!-- addSupplyFactor Modal -->
+<div class="modal fade" id="addSupplyFactorModal" tabindex="-1" data-bs-focus="false" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: 12px;overflow: hidden;box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25)">
+            <div class="modal-header">
+                <div class="d-flex align-items-center justify-content-between w-100">
+                    <span class="fbold">انتخاب فاکتور تامین</span>
+                    <div>
+                        <input id="addSupplyFactorSearch" type="text" class="form-control" placeholder="جستجو..">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-body p-0">
+                <div id="addSupplyFactorContainer"></div>
+            </div>
+
+            <div class="modal-footer justify-content-center p-2">
+                <button style="padding-block:4px" type="button" class="buttonCancel2" onclick="toggleAddSupplyFactorModal()">انصراف</button>
+                <button id="submitSelectedSupplyFactor" style="padding-block:4px" type="button" class="buttonGreen3 d-none" onclick="submitSelectedSupplyFactor()">ثبت</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- addOrderHead Modal -->
+<div class="modal fade" id="addOrderHeadModal" tabindex="-1" data-bs-focus="false" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: 12px;overflow: hidden;box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25)">
+            <div class="modal-header">
+                <div class="d-flex align-items-center justify-content-between w-100">
+                    <span class="fbold">انتخاب حواله تولید</span>
+                    <div>
+                        <input id="addOrderHeadSearch" type="text" class="form-control" placeholder="جستجو..">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-body p-0">
+                <div id="addOrderHeadContainer"></div>
+            </div>
+
+            <div class="modal-footer justify-content-center p-2">
+                <button style="padding-block:4px" type="button" class="buttonCancel2" onclick="toggleAddOrderHeadModal()">انصراف</button>
+                <button id="submitSelectedOrderHeads" style="padding-block:4px" type="button" class="buttonGreen3 d-none" onclick="submitSelectedOrderHeads()">ثبت</button>
+            </div>
+
+        </div>
+    </div>
+</div>
 
 @*---------------------------------------------*@
 
@@ -496,7 +458,6 @@
 </div>
 
 @*---------------------------------------------*@
-
 
 <!-- Modal addBankAccount -->
 <div class="modal fade" id="addBankAccountModal" tabindex="-1" role="dialog" data-bs-focus="false">
