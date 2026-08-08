@@ -1,0 +1,80 @@
+@using CRM.EndPoint.FrontEnd.Services
+@inject MenuService MenuService
+
+@{
+    var userMenus = MenuService.GetMenus(User);
+
+    var desktopMenus = userMenus.Where(m => m.ShowInDesktop).ToList();
+    var normalItems = desktopMenus.Where(x => !x.IsStandalone);
+    var standaloneItems = desktopMenus.Where(x => x.IsStandalone);
+
+    var mobileMenus = userMenus.Where(m => m.ShowInMobile).ToList();
+    var mobileBottomMenu = mobileMenus.Where(m => m.ShowInMobileBottomMenu).ToList();
+    var mobileDrawerMenu = mobileMenus.Where(m => !m.ShowInMobileBottomMenu).ToList();
+}
+
+@*----- Desktop Sidebar -----*@
+<div id="desktopSidebar" class="sidebar">
+    @* Header & logo *@
+    <partial name="Menu/_MenuHeader" model="false" />
+
+    @* Desktop nav items  *@
+    <nav id="desktopNavbar">
+        <div class="sidebar-menu-list">
+            @foreach (var item in normalItems) {
+                <partial name="Menu/_MenuItem" model="item" />
+            }
+        </div>
+
+        @foreach (var item in standaloneItems) {
+            <partial name="Menu/_MenuItem" model="item" />
+        }
+    </nav>
+
+    @* Sidebar footer *@
+    <div class="menuFooter">
+        <a class="ownerCompany-link" href="https://www.natix.ir" target="_blank">
+            <img class="ownerCompany-logo" src="~/Img/ownerLogoEW.png" alt="Natix">
+            <div class="ownerCompany-info">
+                <span class="ownerCompany-name">ناتیکس</span>
+                <span class="ownerCompany-subtitle">شرکت مهندسی نرم افزاری</span>
+            </div>
+        </a>
+    </div>
+</div>
+
+
+@*----- Mobile Bottom Bar -----*@
+<div id="mobileMenuBottom">
+    <nav id="mobileNavbar">
+        @foreach (var item in mobileBottomMenu) {
+            <a class="menu-item menu-link" href="@item.Url">
+                @Html.Raw(item.IconHtml)
+                <span>@item.Title</span>
+            </a>
+        }
+
+        @* More menu button *@
+        <span id="mobileMoreMenuBtn" class="menu-item">
+            <i class="fa fa-bars menu-icon"></i>
+            <span>بیشتر</span>
+        </span>
+
+    </nav>
+</div>
+
+
+@*----- Mobile Drawer -----*@
+<div id="mobileDrawerOverlay"></div>
+
+<div id="mobileDrawer">
+    <partial name="Menu/_MenuHeader" model="true" />
+
+    <nav id="mobileDrawerNavbar">
+        <div class="sidebar-menu-list">
+            @foreach (var item in mobileDrawerMenu) {
+                <partial name="Menu/_MenuItem" model="item" />
+            }
+        </div>
+    </nav>
+</div>

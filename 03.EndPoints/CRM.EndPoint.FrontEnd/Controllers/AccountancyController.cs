@@ -298,7 +298,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return null;
         }
 
-        public async Task<IActionResult> GetAllPaymentCartablePartial(string serVal, CartableEnum cartable, int type = 1)
+        public async Task<IActionResult> GetAllPaymentCartablePartial(string serVal, CartableEnum cartable, int type = 1, PayTypeEnum? payType = null)
         {
             try
             {
@@ -309,6 +309,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (cartable == CartableEnum.کارشناس_تامین)
                 {
                     baseQuery = baseQuery.OnlyTamin();
+                }
+
+                if (payType.HasValue)
+                {
+/*                    baseQuery = payType is PayTypeEnum.اعتباری or PayTypeEnum.چکی
+                        ? baseQuery.Where(f => f.PayType == payType.Value || f.ParentId.HasValue)
+                        : baseQuery.Where(f => f.PayType == payType.Value);*/
+                    baseQuery = baseQuery.Where(f => f.PayType == payType.Value);
                 }
 
 
@@ -883,6 +891,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var oldAcc = await db.Accountancies.AsNoTracking().Where(f => f.Id == model.Id).FirstOrDefaultAsync();
             var acc = await db.Accountancies.Where(f => f.Id == model.Id).FirstOrDefaultAsync();
 
+            if (acc == null) return NotFound();
+
             acc.CommentText = model.Description;
             if (acc.PayType == PayTypeEnum.نقدی || acc.PayType == PayTypeEnum.تهاتری)
             {
@@ -935,8 +945,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 if (status == AccStatusEnum.تایید_شده)
                 {
-                    var tasks = await _ts.TaskReciveAmountPrefctor(acc, acc.InvoiceType);
-                    await db.Carizos.AddRangeAsync(tasks);
+                    var pf = await db.PreFactors.FindAsync(acc.pfid);
+                    if (pf != null)
+                    {
+                        var tasks = await _ts.TaskReciveAmountPrefctor(acc, acc.InvoiceType);
+                        await db.Carizos.AddRangeAsync(tasks);
+                    }
                 } else
                 {
                     var oldCarizos = await db.Carizos.Where(f => f.EntityId == acc.Id).ToListAsync();

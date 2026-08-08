@@ -174,7 +174,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var ss = new OrederPrintViewModel() {
                 Company = com,
                 OrderHead = order,
-                OfficialType = pf.OfficialType
+                OfficialType = pf.OfficialType,
+                SalesExpert = pf.UserCreator
             };
 
             if (com.CompanyFiles.Where(f => f.Filename == "logo").ToList().Any())

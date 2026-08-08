@@ -143,37 +143,25 @@
 
 @section scripts{
     <script defer>
-        $("#usersTable").DataTable({
-            pageLength: 10,
-            lengthMenu: [5, 10, 20, 50, { label: "همه", value: -1 }],
-            scrollCollapse: true,
-            scrollY: "70dvh",
-            responsive: true,
-            order: [[1, "asc"]],
-            language: languageDatatable,
-            columnDefs: [
-                {
-                    targets: [4, 5, 3],
-                    orderable: false,
-                },
-            ],
-            layout: {
-                bottomEnd: "info",
-                bottomStart: {
-                    paging: {
-                        type: "simple_numbers",
+        document.addEventListener("DOMContentLoaded", function () {
+            $("#usersTable").DataTable({
+                pageLength: 10,
+                lengthMenu: [5, 10, 20, 50, { label: "همه", value: -1 }],
+                scrollCollapse: true,
+                scrollY: "70dvh",
+                responsive: true,
+                order: [[1, "asc"]],
+                language: languageDatatable,
+                layout: layoutDatatable,
+                columnDefs: [
+                    {
+                        targets: [4, 5, 3],
+                        orderable: false,
                     },
-                },
-                topEnd: {
-                    pageLength: true,
-                },
-                topStart: {
-                    search: {
-                        placeholder: "جستجو",
-                    },
-                },
-            },
+                ],
+            });
         });
+
         function DelUserRole(id, role) {
             const txt = `<form action="DelUserRol" method="post">
                             <input type="hidden" name="id" value="${id}"/>
@@ -191,7 +179,7 @@
                 confirmButtonColor: "#e64942",
                 cancelButtonText: "انصراف",
                 confirmButtonText: "بله، حذف شود",
-                theme: "dark"
+                theme: "dark",
             }).then((willDelete) => {
                 if (willDelete.isConfirmed) {
                     window.location.href = `/Admin/Delete?id=${id}`;

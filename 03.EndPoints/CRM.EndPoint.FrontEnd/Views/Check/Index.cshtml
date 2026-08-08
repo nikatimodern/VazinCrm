@@ -7,15 +7,23 @@
 
 <div>
     <div id="checkbooks-section" class="@(hasCheckbookId ? "d-none" : "")">
-        <h4 class="fbold text-dark">دسته چک‌ها</h4>
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="section-title-dot"></span>
+            <h5 class="fbold text-dark m-0">دسته چک‌ها</h5>
+        </div>
 
         <div id="checkbooksContainer">
             <partial name="GetAllCheckbooksPartial" model="Model" />
         </div>
     </div>
+
     <div id="checks-section" class="@(hasCheckbookId ? "" : "d-none")">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 id="selected-checkbook-title" class="fbold text-dark">لیست چک‌ها</h4>
+            <div class="d-flex align-items-center gap-2">
+                <span class="section-title-dot"></span>
+                <h5 id="selected-checkbook-title" class="fbold text-dark m-0">لیست چک‌ها</h5>
+            </div>
+
             <div class="d-flex gap-2">
                 <button class="buttonGreen0" onclick="openNewCheckModal()">
                     ثبت چک جدید

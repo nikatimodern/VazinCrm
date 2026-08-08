@@ -27,8 +27,8 @@ var pfAbort = null;
 
 
 const addDes = (e) => {
-
-
+    
+    
 };
 
 
@@ -189,7 +189,7 @@ el_f_weightCount?.addEventListener("input", () => calculateItem("FacItem"));
 el_f_unitAmount?.addEventListener("input", () => calculateItem("FacItem"));
 
 
-document.querySelectorAll("#InvoiceModalId input[type='radio'][name='PayType']").forEach(radio => {
+document.querySelectorAll("#InvoiceModalId input[type='radio'][name='payType']")?.forEach(radio => {
     radio.addEventListener("change", (e) => {
         const type = Number(e.target?.value);
         if (type === 3) {
@@ -198,7 +198,7 @@ document.querySelectorAll("#InvoiceModalId input[type='radio'][name='PayType']")
         PayFormChange("InvoiceModalId", type);
     });
 });
-document.querySelectorAll("#AttachInvoiceModalId input[type='radio'][name='payTypeAttach']").forEach(radio => {
+document.querySelectorAll("#AttachInvoiceModalId input[type='radio'][name='payTypeAttach']")?.forEach(radio => {
     radio.addEventListener("change", (e) => {
         const type = Number(e.target.value);
         PayAttachFormChange(type);
@@ -1607,7 +1607,7 @@ const updateFactorFinancial = async (sepidarId) => {
         toastifyError(err.response.data || "خطای سرور");
         console.log(err);
     } finally {
-        FLshowLoading(false)
+        FLshowLoading(false);
     }
 };
 
@@ -2118,25 +2118,14 @@ async function acceptAcc(id, accepted, pfId) {
 
 
 async function acceptAccountancy(id, status, description = null) {
-    try {
-        FLshowLoading();
-        const model = { id, description };
-        const res = await axios.post(`/Accountancy/AcceptAccountancy?status=${status}`, model);
-        if (res.status === 200) {
-            await refreshInvoiceSuccess();
-            if (status === 2 || status === 3) {
-                toastifySuccess(`${status === 2 ? "تایید شد" : "رد شد"}`);
-            }
-            FLshowLoading(false);
-            return true;
-        }
-    } catch (err) {
-        console.log(err);
-        return false;
-    }
+    const result = await sendApiRequest({
+        url: `/Accountancy/AcceptAccountancy`,
+        method: "POST",
+        data: { id, description },
+        params: { status },
+        successMsg: status === 2 ? "تایید شد" : status === 3 ? "رد شد" : null,
+        onSuccess: async () => await refreshInvoiceSuccess(),
+    });
+    
+    return result !== null;
 }
-
-
-
-
-
