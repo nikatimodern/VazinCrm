@@ -1,3 +1,13 @@
+@using CRM.EndPoint.FrontEnd.Services
+@{
+    var isAdmin = User.IsInRole(AppRoles.Admin);
+    var isSalesAdmin = User.IsInRole(AppRoles.SalesAdmin);
+    var isTaminAdmin = User.IsInRole(AppRoles.TaminAdmin);
+    var isFinancialAdmin = User.IsInRole(AppRoles.FinancialAdmin);
+    var isFinancialExpert = User.IsInRole(AppRoles.FinancialExpert);
+    var isManagingDirector = User.IsInRole(AppRoles.ManagingDirector);
+}
+
 <!-- Modal Filter -->
 <div class="modal fade " dir="ltr" id="FilterModal" tabindex="-1" role="dialog" data-bs-focus="false" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
     <div class=" modal-dialog modal-dialog-centered " role="document">
@@ -18,7 +28,7 @@
                             </select>
                         </div>
                     </div>
-                    <div id="selFilterItem" class="Admin SalesAdmin TaminAdmin FinancialExpert FinancialAdmin ManagingDirector" style="display:none">
+                    @if (isAdmin || isSalesAdmin || isTaminAdmin || isFinancialAdmin || isFinancialExpert || isManagingDirector) {
                         <div class="d-flex flex-column">
                             <div class="checkbox-wrapper-20">
                                 <div class="switch">
@@ -33,7 +43,7 @@
                                 </select>
                             </div>
                         </div>
-                    </div>
+                    }
                     <div id="dateFilterItem" style=" display:flex;flex-direction:column;align-items:start ">
                         <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 w-100">
                             <div class="checkbox-wrapper-20">

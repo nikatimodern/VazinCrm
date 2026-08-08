@@ -120,7 +120,7 @@
             </div>
             @if (passType == 1 || passType == 3) {
                 <div class="layered-card__layer col-12 col-xl d-flex flex-column justify-content-xl-evenly align-items-center gap-2 px-3 px-xl-2 py-2">
-                    <div class="w-100 d-flex flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
+                    <div class="w-100 d-flex column-gap-1 flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
                         <span style="font-size: 13px; color: #777">مبلغ تایید شده:</span>
                         <div class="fbold column-gap-1 @(status is RequestStatusEnum.در_انتظار_پرداخت or RequestStatusEnum.پرداخت_شده ? "badge badge-outline-green" : "")">
                             <span style="font-size: 16px;">@($"{reqAmount.AcceptedAmount:n0}")</span>
@@ -131,7 +131,7 @@
                         </div>
                     </div>
                     @if (item.TotalPaymentAmount > 0) {
-                        <div class="w-100 d-flex flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
+                        <div class="w-100 d-flex column-gap-1 flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
                             <span style="font-size: 13px; color: #777">مبلغ پرداخت شده:</span>
                             <button class="fbold flex-center badge badge-green" onclick="ShowModalListPayment('@reqAmount.Id')">
                                 <span class="d-flex align-items-baseline column-gap-1">
@@ -220,7 +220,7 @@
                 var pendingMd = status == RequestStatusEnum.در_انتظار_تایید_مدیرعامل;
 
                 <div class="layered-card__layer col-12 col-xl d-flex flex-column justify-content-xl-evenly align-items-center gap-2 px-3 px-xl-2 py-2">
-                    <div class="w-100 d-flex flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
+                    <div class="w-100 d-flex column-gap-1 flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
                         <span style="font-size: 13px; color: #777" class="flex-shrink-0">مبلغ تایید شده:</span>
                         @if (pendingMd) {
                             <div class="input-group">
@@ -244,7 +244,7 @@
                         }
                     </div>
                     @if (item.TotalPaymentAmount > 0) {
-                        <div class="w-100 d-flex flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
+                        <div class="w-100 d-flex column-gap-1 flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
                             <span style="font-size: 13px; color: #777">مبلغ پرداخت شده:</span>
                             <button class="fbold flex-center badge badge-green" onclick="ShowModalListPayment('@reqAmount.Id')">
                                 <span class="d-flex align-items-baseline column-gap-1">

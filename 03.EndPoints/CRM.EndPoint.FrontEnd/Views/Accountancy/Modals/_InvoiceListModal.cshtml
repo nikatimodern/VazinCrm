@@ -1,6 +1,9 @@
 @using CRM.EndPoint.FrontEnd.Services
 @{
     var isCustomer = User.IsInRole(AppRoles.Customer);
+    var isAdmin = User.IsInRole(AppRoles.Admin);
+    var isFinancialAdmin = User.IsInRole(AppRoles.FinancialAdmin);
+    var isFinancialExpert = User.IsInRole(AppRoles.FinancialExpert);
 }
 
 <!-- Modal ListInvoice -->
@@ -20,10 +23,12 @@
                             واریزی
                             <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                         </button>
-                        <button class="buttonCancel2 Admin FinancialExpert FinancialAdmin backward-btn py-1 align-items-center gap-2" style="background-color: #750002;display: none" onclick="ShowModalInvoice(2)">
-                            برگشتی
-                            <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" /></svg>
-                        </button>
+                        @if (isAdmin || isFinancialAdmin || isFinancialExpert) {
+                            <button class="buttonCancel2 backward-btn py-1 align-items-center gap-2" style="background-color: #750002" onclick="ShowModalInvoice(2)">
+                                برگشتی
+                                <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" /></svg>
+                            </button>
+                        }
                     </div>
                 }
                 <div class="p-2 pt-0 w-100" id="PayContentId"></div>
@@ -47,5 +52,7 @@
     </div>
 </div>
 
-<partial name="~/Views/Accountancy/Modals/_InvoiceModal.cshtml" />
-<partial name="Modals/_NotAcceptModal" />
+@if (!isCustomer) {
+    <partial name="~/Views/Accountancy/Modals/_InvoiceModal.cshtml" />
+    <partial name="Modals/_NotAcceptModal" />
+}

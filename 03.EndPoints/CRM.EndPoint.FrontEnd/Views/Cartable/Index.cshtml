@@ -1,120 +1,138 @@
 ﻿@using CRM.Core.Domain.Cartables.Enums
+@using CRM.EndPoint.FrontEnd.Services
 @{
     ViewData["Title"] = "Index";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var isAdmin = User.IsInRole(AppRoles.Admin);
+    var isSalesAdmin = User.IsInRole(AppRoles.SalesAdmin);
+    var isSalesExpert = User.IsInRole(AppRoles.SalesExpert);
+    var isTaminAdmin = User.IsInRole(AppRoles.TaminAdmin);
+    var isTaminExpert = User.IsInRole(AppRoles.TaminExpert);
+    var isFinancialAdmin = User.IsInRole(AppRoles.FinancialAdmin);
+    var isFinancialExpert = User.IsInRole(AppRoles.FinancialExpert);
+    var isManagingDirector = User.IsInRole(AppRoles.ManagingDirector);
+
+    var canAccessFinancialExpert = isAdmin || isFinancialExpert;
+    var canAccessFinancialAdmin = false; //isAdmin || isFinancialAdmin;
+    var canAccessSalesExpert = isAdmin || isSalesExpert;
+    var canAccessSalesAdmin = isAdmin || isSalesAdmin;
+    var canAccessTaminExpert = isAdmin || isTaminAdmin || isTaminExpert || isManagingDirector;
+    var canAccessManagingDirector = isAdmin || isManagingDirector;
 }
 
 
-<div style="display:flex; width:100%; justify-content:center ">
-    <div class="col-12" style="display:flex;flex-direction:column;">
-
-        <div id="CartableTabs" style="display:flex;justify-content:center;flex-wrap:wrap-reverse">
-            <div class="TCar" id="TPrefactorFactorId" onclick="GetCartable('TPrefactorFactorId')">
-                <p>پیش فاکتور و فاکتور</p>
-            </div>
-            <div class="TCar position-relative" id="TFinancialExpertId" onclick="GetCartable('TFinancialExpertId')">
+<div>
+    <div id="CartableTabs" class="d-flex justify-content-center flex-wrap-reverse">
+        <div class="TCar" id="TPrefactorFactorId" onclick="GetCartable('TPrefactorFactorId')">
+            <p>پیش فاکتور و فاکتور</p>
+        </div>
+        @if (canAccessFinancialExpert) {
+            <div class="TCar" id="TFinancialExpertId" onclick="GetCartable('TFinancialExpertId')">
                 <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
                 <p>کارشناس مالی</p>
             </div>
-            <div class="TCar" id="TFinancialAdminId" onclick="GetCartable('TFinancialAdminId')">
+        }
+        @if (canAccessFinancialAdmin) {
+            <div class="TCar d-none" id="TFinancialAdminId" onclick="GetCartable('TFinancialAdminId')">
                 <p>مدیر مالی</p>
             </div>
-            <div class="TCar position-relative" id="TSalesExpertId" onclick="GetCartable('TSalesExpertId')">
+        }
+        @if (canAccessSalesExpert) {
+            <div class="TCar" id="TSalesExpertId" onclick="GetCartable('TSalesExpertId')">
                 <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
                 <p>کارشناس فروش</p>
             </div>
-            <div class="TCar position-relative" id="TSalesAdminId" onclick="GetCartable('TSalesAdminId')">
+        }
+        @if (canAccessSalesAdmin) {
+            <div class="TCar" id="TSalesAdminId" onclick="GetCartable('TSalesAdminId')">
                 <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
                 <p>مدیر فروش</p>
             </div>
-            <div class="TCar position-relative" id="TTaminExpertId" onclick="GetCartable('TTaminExpertId')">
+        }
+        @if (canAccessTaminExpert) {
+            <div class="TCar" id="TTaminExpertId" onclick="GetCartable('TTaminExpertId')">
                 <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
                 <p>کارشناس تامین</p>
             </div>
-            <div class="TCar position-relative" id="TManagingDirectorId" onclick="GetCartable('TManagingDirectorId')">
+        }
+        @if (canAccessManagingDirector) {
+            <div class="TCar" id="TManagingDirectorId" onclick="GetCartable('TManagingDirectorId')">
                 <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
                 <p>مدیر عامل</p>
             </div>
-        </div>
+        }
+    </div>
+    <div class="CartableContent mx-auto" id="ContentCartabl">
+        @*کارتابل پیش فاکتوروفاکتور*@
+        <div class="w-100 d-flex justify-content-start align-items-center flex-column d-none" id="CPrefactorFactorId">
+            <ul class="nav nav-tabs w-100" id="allTabFactors" role="tablist" style="display: none;">
+                <li class="nav-item col-6" role="presentation">
+                    <button class="nav-link active text-dark w-100" style="margin-bottom:-2px;isolation:auto" id="allPreFactorTab" data-bs-toggle="tab" data-bs-target="#allPreFactorTab-pane" type="button" role="tab" aria-controls="allPreFactorTab-pane" aria-selected="true">پیش فاکتورها</button>
+                </li>
+                <li class="nav-item col-6" role="presentation">
+                    <button class="nav-link text-dark w-100" style="margin-bottom:-2px;isolation:auto" id="allFactorTab" data-bs-toggle="tab" data-bs-target="#allFactorTab-pane" type="button" role="tab" aria-controls="allFactorTab-pane" aria-selected="false">فاکتورها</button>
+                </li>
+            </ul>
 
-        @*<div class="CartableContent" id="CartaIdContent">
-        </div>*@
+            <div class="parent-all-factors tab-content d-xxl-grid p-2 col-12" style="grid-template-columns:1fr 1fr;gap:8px;" id="tabContentAllFactors">
 
-        <div class="CartableContent mx-auto" id="ContentCartabl" style=" ">
+                @*پیش فاکتور*@
+                <div class="tab-pane fade show active border-0" id="allPreFactorTab-pane" role="tabpanel" aria-labelledby="allPreFactorTab" tabindex="0" style="flex-direction:column;width:100%">
 
-
-            @*کارتابل پیش فاکتوروفاکتور*@
-            <div class="mp " id="CPrefactorFactorId" style=" width:100%; display:none;justify-content:start;flex-direction:column; align-items:center;">
-
-
-                <ul class="nav nav-tabs w-100" id="allTabFactors" role="tablist" style="display: none;">
-                    <li class="nav-item col-6" role="presentation">
-                        <button class="nav-link active text-dark w-100" style="margin-bottom:-2px;isolation:auto" id="allPreFactorTab" data-bs-toggle="tab" data-bs-target="#allPreFactorTab-pane" type="button" role="tab" aria-controls="allPreFactorTab-pane" aria-selected="true">پیش فاکتورها</button>
-                    </li>
-                    <li class="nav-item col-6" role="presentation">
-                        <button class="nav-link text-dark w-100" style="margin-bottom:-2px;isolation:auto" id="allFactorTab" data-bs-toggle="tab" data-bs-target="#allFactorTab-pane" type="button" role="tab" aria-controls="allFactorTab-pane" aria-selected="false">فاکتورها</button>
-                    </li>
-                </ul>
-
-                <div class="parent-all-factors tab-content d-xxl-grid p-2 col-12" style="grid-template-columns:1fr 1fr;gap:8px;" id="tabContentAllFactors">
-
-                    @*پیش فاکتور*@
-                    <div class="tab-pane fade show active border-0" id="allPreFactorTab-pane" role="tabpanel" aria-labelledby="allPreFactorTab" tabindex="0" style="flex-direction:column;width:100%">
-
-                        <div class="px-2 justify-content-center justify-content-xxl-between" style=" display:flex; font-size:20px; font-family:'IranSansBold'">
-                            <label class="d-none d-xxl-block">پیش فاکتورها</label>
-                            <div class="justify-content-center justify-content-xxl-end col-12 col-xxl-3 me-xxl-3" style="display:flex;align-items:center;">
-                                <p class="mp d-none d-xxl-flex align-items-center gap-2" style="font-family:'IRANSansBold'; font-size:large;color:rgb(84 57 213)">
-                                    تعداد:
-                                    <span id="CountId"></span>
-                                </p>
-                            </div>
-
+                    <div class="px-2 justify-content-center justify-content-xxl-between" style=" display:flex; font-size:20px; font-family:'IranSansBold'">
+                        <label class="d-none d-xxl-block">پیش فاکتورها</label>
+                        <div class="justify-content-center justify-content-xxl-end col-12 col-xxl-3 me-xxl-3" style="display:flex;align-items:center;">
+                            <p class="mp d-none d-xxl-flex align-items-center gap-2" style="font-family:'IRANSansBold'; font-size:large;color:rgb(84 57 213)">
+                                تعداد:
+                                <span id="CountId"></span>
+                            </p>
                         </div>
 
-                        <div class="InfoData" style="width:100%;display:flex; flex-direction:column;  justify-content:center;align-items:center">
-                            <div class="gap-2 px-1 mt-xxl-2 align-items-center justify-content-between justify-content-xxl-center" style="width:100%; display:flex;padding-bottom:8px">
+                    </div>
 
-                                <p class="mp d-flex d-xxl-none align-items-center gap-1" style="font-family:'IRANSansBold'; font-size:clamp(15px,2vw,16px);color:rgb(84 57 213)">
-                                    تعداد:<span id="CountMobileId"></span>
-                                </p>
+                    <div class="InfoData" style="width:100%;display:flex; flex-direction:column;  justify-content:center;align-items:center">
+                        <div class="gap-2 px-1 mt-xxl-2 align-items-center justify-content-between justify-content-xxl-center" style="width:100%; display:flex;padding-bottom:8px">
 
-                                <div class="search-group flex-grow-1 flex-md-grow-0 col-md-7 gap-1">
-                                    <input class="form-control" type="text" id="searchId" placeholder="جستجو..." />
-                                    <div class="search-icon">
-                                        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
-                                    </div>
-                                </div>
+                            <p class="mp d-flex d-xxl-none align-items-center gap-1" style="font-family:'IRANSansBold'; font-size:clamp(15px,2vw,16px);color:rgb(84 57 213)">
+                                تعداد:<span id="CountMobileId"></span>
+                            </p>
 
-                                <div class="gap-2" style="display:flex;justify-content:space-between;align-items:center ">
-                                    <div data-filterVarConfig="varList" data-filterCallBack="CbPfFilter" data-filterContentId="ContentFilterId" data-filterInpSearchId="searchId" data-filterVarSearch="CartablePfSearchVal" onclick="ShowFilterPopup(this)" class="btnFilter">
-                                        <svg style="width:24px;height:24px;color:#333" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd" /></svg>
-                                    </div>
-                                    <button class="buttonExcel" onclick="CarPfExportExcel()">
-                                        <svg fill="currentColor" viewBox="0 0 256 256"><path d="M156,208a8,8,0,0,1-8,8H120a8,8,0,0,1-8-8V152a8,8,0,0,1,16,0v48h20A8,8,0,0,1,156,208ZM92.65,145.49a8,8,0,0,0-11.16,1.86L68,166.24,54.51,147.35a8,8,0,1,0-13,9.3L58.17,180,41.49,203.35a8,8,0,0,0,13,9.3L68,193.76l13.49,18.89a8,8,0,0,0,13-9.3L77.83,180l16.68-23.35A8,8,0,0,0,92.65,145.49Zm98.94,25.82c-4-1.16-8.14-2.35-10.45-3.84-1.25-.82-1.23-1-1.12-1.9a4.54,4.54,0,0,1,2-3.67c4.6-3.12,15.34-1.72,19.82-.56a8,8,0,0,0,4.07-15.48c-2.11-.55-21-5.22-32.83,2.76a20.58,20.58,0,0,0-8.95,14.95c-2,15.88,13.65,20.41,23,23.11,12.06,3.49,13.12,4.92,12.78,7.59-.31,2.41-1.26,3.33-2.15,3.93-4.6,3.06-15.16,1.55-19.54.35A8,8,0,0,0,173.93,214a60.63,60.63,0,0,0,15.19,2c5.82,0,12.3-1,17.49-4.46a20.81,20.81,0,0,0,9.18-15.23C218,179,201.48,174.17,191.59,171.31ZM40,112V40A16,16,0,0,1,56,24h96a8,8,0,0,1,5.66,2.34l56,56A8,8,0,0,1,216,88v24a8,8,0,1,1-16,0V96H152a8,8,0,0,1-8-8V40H56v72a8,8,0,0,1-16,0ZM160,80h28.68L160,51.31Z"></path></svg>
-                                    </button>
+                            <div class="search-group flex-grow-1 flex-md-grow-0 col-md-7 gap-1">
+                                <input class="form-control" type="text" id="searchId" placeholder="جستجو..." />
+                                <div class="search-icon">
+                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
                                 </div>
                             </div>
 
-                            <div class="d-flex align-items-center justify-content-between align-self-start flex-wrap-reverse w-100 gap-1 mb-1 ps-1">
-                                <ul class="filter-switch filter-switch-sm filter-switch-light">
-                                    <li class="filter-switch-item">
-                                        <input type="radio" name="financeFilter" id="f0" value="0" checked />
-                                        <label for="f0">همه</label>
-                                    </li>
-                                    <li class="filter-switch-item">
-                                        <input type="radio" name="financeFilter" id="f6" value="6" />
-                                        <label for="f6">فاکتور شده</label>
-                                    </li>
-                                    <li class="filter-switch-item">
-                                        <input type="radio" name="financeFilter" id="f5" value="5" />
-                                        <label for="f5">فاکتور نشده</label>
-                                    </li>
-                                </ul>
-                                <div id="ContentFilterId" class="ContentFilter"></div>
+                            <div class="gap-2" style="display:flex;justify-content:space-between;align-items:center ">
+                                <div data-filterVarConfig="varList" data-filterCallBack="CbPfFilter" data-filterContentId="ContentFilterId" data-filterInpSearchId="searchId" data-filterVarSearch="CartablePfSearchVal" onclick="ShowFilterPopup(this)" class="btnFilter">
+                                    <svg style="width:24px;height:24px;color:#333" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd" /></svg>
+                                </div>
+                                <button class="buttonExcel" onclick="CarPfExportExcel()">
+                                    <svg fill="currentColor" viewBox="0 0 256 256"><path d="M156,208a8,8,0,0,1-8,8H120a8,8,0,0,1-8-8V152a8,8,0,0,1,16,0v48h20A8,8,0,0,1,156,208ZM92.65,145.49a8,8,0,0,0-11.16,1.86L68,166.24,54.51,147.35a8,8,0,1,0-13,9.3L58.17,180,41.49,203.35a8,8,0,0,0,13,9.3L68,193.76l13.49,18.89a8,8,0,0,0,13-9.3L77.83,180l16.68-23.35A8,8,0,0,0,92.65,145.49Zm98.94,25.82c-4-1.16-8.14-2.35-10.45-3.84-1.25-.82-1.23-1-1.12-1.9a4.54,4.54,0,0,1,2-3.67c4.6-3.12,15.34-1.72,19.82-.56a8,8,0,0,0,4.07-15.48c-2.11-.55-21-5.22-32.83,2.76a20.58,20.58,0,0,0-8.95,14.95c-2,15.88,13.65,20.41,23,23.11,12.06,3.49,13.12,4.92,12.78,7.59-.31,2.41-1.26,3.33-2.15,3.93-4.6,3.06-15.16,1.55-19.54.35A8,8,0,0,0,173.93,214a60.63,60.63,0,0,0,15.19,2c5.82,0,12.3-1,17.49-4.46a20.81,20.81,0,0,0,9.18-15.23C218,179,201.48,174.17,191.59,171.31ZM40,112V40A16,16,0,0,1,56,24h96a8,8,0,0,1,5.66,2.34l56,56A8,8,0,0,1,216,88v24a8,8,0,1,1-16,0V96H152a8,8,0,0,1-8-8V40H56v72a8,8,0,0,1-16,0ZM160,80h28.68L160,51.31Z"></path></svg>
+                                </button>
                             </div>
+                        </div>
 
-                            @*                <div class="d-flex ps-1 gap-2 gap-md-3 align-self-start mb-1" style="user-select:none">
+                        <div class="d-flex align-items-center justify-content-between align-self-start flex-wrap-reverse w-100 gap-1 mb-1 ps-1">
+                            <ul class="filter-switch filter-switch-sm filter-switch-light">
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="financeFilter" id="f0" value="0" checked />
+                                    <label for="f0">همه</label>
+                                </li>
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="financeFilter" id="f6" value="6" />
+                                    <label for="f6">فاکتور شده</label>
+                                </li>
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="financeFilter" id="f5" value="5" />
+                                    <label for="f5">فاکتور نشده</label>
+                                </li>
+                            </ul>
+                            <div id="ContentFilterId" class="ContentFilter"></div>
+                        </div>
+
+                        @*                <div class="d-flex ps-1 gap-2 gap-md-3 align-self-start mb-1" style="user-select:none">
                                 <div class="d-flex gap-2 gap-md-3 flex-wrap">
                                     <div class="d-flex align-items-center gap-1">
                                         <input type="checkbox" name="6" id="pfFilter6" />
@@ -176,70 +194,72 @@
 
                             </div> *@
 
-                            <div style=" max-height:70dvh;overflow:auto; width:100%; display:flex;  justify-content:center" id="PfAcceptedList"></div>
+                        <div style=" max-height:70dvh;overflow:auto; width:100%; display:flex;  justify-content:center" id="PfAcceptedList"></div>
 
-                        </div>
                     </div>
+                </div>
 
 
-                    @*فاکتور*@
-                    <div class="tab-pane fade border-0" id="allFactorTab-pane" role="tabpanel" aria-labelledby="allFactorTab" tabindex="0" style="flex-direction:column;width:100%">
-                        <div class="px-2" style="justify-content:space-between; display:flex; font-size:20px; font-family:'IranSansBold'">
-                            <label class="mp d-none d-xxl-block">فاکتورها</label>
-                            <div class="justify-content-center justify-content-xxl-end col-12 col-xxl-3 me-xxl-3" style="display:flex;align-items:center;">
-                                <p class="mp d-none d-xxl-flex align-items-center gap-2" style="font-family:'IRANSansBold'; font-size:large;color:rgb(84 57 213)">تعداد:
-                                    <span id="fCountId"></span></p>
-                            </div>
-                            @*<span class="mp parentPlusAdd" onclick="NewFactor()"><svg class="svg-inline--fa fa-plus fa-w-14 plusAdd mp" aria-hidden="true" focusable="false" data-prefix="fa" data-icon="plus" role="img"  viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M416 208H272V64c0-17.67-14.33-32-32-32h-32c-17.67 0-32 14.33-32 32v144H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h144v144c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32V304h144c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32z"></path></svg><!-- <i class="plusAdd mp fa fa-plus"></i> Font Awesome fontawesome.com --> </span>*@
+                @*فاکتور*@
+                <div class="tab-pane fade border-0" id="allFactorTab-pane" role="tabpanel" aria-labelledby="allFactorTab" tabindex="0" style="flex-direction:column;width:100%">
+                    <div class="px-2" style="justify-content:space-between; display:flex; font-size:20px; font-family:'IranSansBold'">
+                        <label class="mp d-none d-xxl-block">فاکتورها</label>
+                        <div class="justify-content-center justify-content-xxl-end col-12 col-xxl-3 me-xxl-3" style="display:flex;align-items:center;">
+                            <p class="mp d-none d-xxl-flex align-items-center gap-2" style="font-family:'IRANSansBold'; font-size:large;color:rgb(84 57 213)">تعداد:
+                                <span id="fCountId"></span></p>
                         </div>
-                        <div class="InfoData" style="width:100%;display:flex; flex-direction:column;  justify-content:center;align-items:center">
-                            <div class="gap-2 mt-xxl-2 d-flex align-items-center justify-content-between justify-content-xxl-center px-1" style="width:100%;padding-bottom:8px">
-                                <p class="fbold d-flex d-xxl-none align-items-center gap-1" style="font-size:clamp(15px,2vw,16px);color:rgb(84 57 213)">
-                                    تعداد:<span id="fCountMobileId"></span>
-                                </p>
+                        @*<span class="mp parentPlusAdd" onclick="NewFactor()"><svg class="svg-inline--fa fa-plus fa-w-14 plusAdd mp" aria-hidden="true" focusable="false" data-prefix="fa" data-icon="plus" role="img"  viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M416 208H272V64c0-17.67-14.33-32-32-32h-32c-17.67 0-32 14.33-32 32v144H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h144v144c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32V304h144c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32z"></path></svg><!-- <i class="plusAdd mp fa fa-plus"></i> Font Awesome fontawesome.com --> </span>*@
+                    </div>
+                    <div class="InfoData" style="width:100%;display:flex; flex-direction:column;  justify-content:center;align-items:center">
+                        <div class="gap-2 mt-xxl-2 d-flex align-items-center justify-content-between justify-content-xxl-center px-1" style="width:100%;padding-bottom:8px">
+                            <p class="fbold d-flex d-xxl-none align-items-center gap-1" style="font-size:clamp(15px,2vw,16px);color:rgb(84 57 213)">
+                                تعداد:<span id="fCountMobileId"></span>
+                            </p>
 
-                                <div class="search-group col-md-7 flex-grow-1 flex-md-grow-0">
-                                    <input class="form-control" type="text" id="f_searchId" placeholder="جستجو..." />
-                                    <div class="search-icon">
-                                        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
-                                    </div>
+                            <div class="search-group col-md-7 flex-grow-1 flex-md-grow-0">
+                                <input class="form-control" type="text" id="f_searchId" placeholder="جستجو..." />
+                                <div class="search-icon">
+                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
                                 </div>
+                            </div>
 
-                                <div class="gap-2" style="display:flex;justify-content:space-between;align-items:center ">
-                                    <div data-filterVarConfig="varList2" data-filterCallBack="CbFFilter" data-filterContentId="f_ContentFilterId" data-filterInpSearchId="f_searchId" data-filterVarSearch="CartableFSearchVal" onclick="ShowFilterPopup(this)" class="btnFilter">
-                                        <svg style="width:24px;height:24px;color:#333" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd" /></svg>
-                                    </div>
-                                    <button class="buttonExcel Admin SalesAdmin TaminAdmin FinancialAdmin" style="display: none" onclick="CarFExportExcel()">
+                            <div class="gap-2" style="display:flex;justify-content:space-between;align-items:center ">
+                                <div data-filterVarConfig="varList2" data-filterCallBack="CbFFilter" data-filterContentId="f_ContentFilterId" data-filterInpSearchId="f_searchId" data-filterVarSearch="CartableFSearchVal" onclick="ShowFilterPopup(this)" class="btnFilter">
+                                    <svg style="width:24px;height:24px;color:#333" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd" /></svg>
+                                </div>
+                                @if (isAdmin || isSalesAdmin || isFinancialAdmin || isTaminAdmin) {
+                                    <button class="buttonExcel" onclick="CarFExportExcel()">
                                         <svg fill="currentColor" viewBox="0 0 256 256"><path d="M156,208a8,8,0,0,1-8,8H120a8,8,0,0,1-8-8V152a8,8,0,0,1,16,0v48h20A8,8,0,0,1,156,208ZM92.65,145.49a8,8,0,0,0-11.16,1.86L68,166.24,54.51,147.35a8,8,0,1,0-13,9.3L58.17,180,41.49,203.35a8,8,0,0,0,13,9.3L68,193.76l13.49,18.89a8,8,0,0,0,13-9.3L77.83,180l16.68-23.35A8,8,0,0,0,92.65,145.49Zm98.94,25.82c-4-1.16-8.14-2.35-10.45-3.84-1.25-.82-1.23-1-1.12-1.9a4.54,4.54,0,0,1,2-3.67c4.6-3.12,15.34-1.72,19.82-.56a8,8,0,0,0,4.07-15.48c-2.11-.55-21-5.22-32.83,2.76a20.58,20.58,0,0,0-8.95,14.95c-2,15.88,13.65,20.41,23,23.11,12.06,3.49,13.12,4.92,12.78,7.59-.31,2.41-1.26,3.33-2.15,3.93-4.6,3.06-15.16,1.55-19.54.35A8,8,0,0,0,173.93,214a60.63,60.63,0,0,0,15.19,2c5.82,0,12.3-1,17.49-4.46a20.81,20.81,0,0,0,9.18-15.23C218,179,201.48,174.17,191.59,171.31ZM40,112V40A16,16,0,0,1,56,24h96a8,8,0,0,1,5.66,2.34l56,56A8,8,0,0,1,216,88v24a8,8,0,1,1-16,0V96H152a8,8,0,0,1-8-8V40H56v72a8,8,0,0,1-16,0ZM160,80h28.68L160,51.31Z"></path></svg>
                                     </button>
-                                </div>
-
-                                <div onclick="GetFactorPartial('');" id="HideFactorPartialId" style="align-items:center;justify-content:center;display:none">
-                                    <i class="fas fa-times" style="font-size:22px"></i>
-                                </div>
+                                }
                             </div>
-                            <div class="d-flex align-items-center justify-content-between align-self-start flex-wrap-reverse w-100 gap-1 mb-1 ps-1">
-                                <ul class="filter-switch filter-switch-sm filter-switch-light">
-                                    <li class="filter-switch-item">
-                                        <input type="radio" name="f_type" id="f_all" value="0" checked />
-                                        <label for="f_all">همه</label>
-                                    </li>
-                                    <li class="filter-switch-item">
-                                        <input type="radio" name="f_type" id="f_type1" value="1" />
-                                        <label for="f_type1">رسمی</label>
-                                    </li>
-                                    <li class="filter-switch-item">
-                                        <input type="radio" name="f_type" id="f_type2" value="2" />
-                                        <label for="f_type2">غیررسمی</label>
-                                    </li>
-                                    <li class="filter-switch-item">
-                                        <input type="radio" name="f_type" id="f_type3" value="3" />
-                                        <label for="f_type3">برگشتی</label>
-                                    </li>
-                                </ul>
+
+                            <div onclick="GetFactorPartial('');" id="HideFactorPartialId" style="align-items:center;justify-content:center;display:none">
+                                <i class="fas fa-times" style="font-size:22px"></i>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between align-self-start flex-wrap-reverse w-100 gap-1 mb-1 ps-1">
+                            <ul class="filter-switch filter-switch-sm filter-switch-light">
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="f_type" id="f_all" value="0" checked />
+                                    <label for="f_all">همه</label>
+                                </li>
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="f_type" id="f_type1" value="1" />
+                                    <label for="f_type1">رسمی</label>
+                                </li>
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="f_type" id="f_type2" value="2" />
+                                    <label for="f_type2">غیررسمی</label>
+                                </li>
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="f_type" id="f_type3" value="3" />
+                                    <label for="f_type3">برگشتی</label>
+                                </li>
+                            </ul>
 
 
-                                @*<div class="chips-group" id="filterType">
+                            @*<div class="chips-group" id="filterType">
                                     <button class="chip" data-value="1" data-group="f_type">رسمی</button>
                                     <button class="chip" data-value="2" data-group="f_type">غیررسمی</button>
                                 </div>
@@ -249,18 +269,18 @@
                                     <button class="chip" data-value="3" data-group="f_status">در دست تایید</button>
                                 </div>*@
 
-                                <div id="f_ContentFilterId" class="ContentFilter"></div>
-                            </div>
+                            <div id="f_ContentFilterId" class="ContentFilter"></div>
+                        </div>
 
-                            <div style="max-height:70dvh;overflow:auto; width:100%; display:flex;  justify-content:center" id="fAcceptedList">
-                            </div>
+                        <div style="max-height:70dvh;overflow:auto; width:100%; display:flex;  justify-content:center" id="fAcceptedList">
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            @*کارتابل کارشناس مالی*@
-            <div class="col-12 col-xxl-11" style="display:none;padding:8px" id="CFinancialExpertId">
+        @if (canAccessFinancialExpert) { @*کارتابل کارشناس مالی*@
+            <div class="col-12 col-xxl-11 p-2 d-none" id="CFinancialExpertId">
                 <div class="d-flex flex-column w-100">
                     <ul class="nav nav-pills" id="financialExpertsTabs" role="tablist">
                         <li class="nav-item" role="presentation">
@@ -493,17 +513,18 @@
                 </div>
 
             </div>
-            @*کارتابل مدیر مالی*@
-            <div style="width:100%;display:none; justify-content:center" id="CFinancialAdminId">
+        }
+        @if (canAccessFinancialAdmin) { @*کارتابل مدیر مالی*@
+            <div class="w-100 flex-center d-none" id="CFinancialAdminId">
                 <img src="~/Img/InWait.png" style="aspect-ratio: 600 / 268;width: 100%;max-width:600px" alt="" />
             </div>
-
-            @*کارتابل کارشناس فروش*@
-            <div class="mp CSalesExpert" id="CSalesExpertId">
+        }
+        @if (canAccessSalesExpert) { @*کارتابل کارشناس فروش*@
+            <div class="w-100 d-none" id="CSalesExpertId">
             </div>
-
-            @*کارتابل مدیر فروش*@
-            <div class="col-12 col-xl-10 col-xxl-9" style="display:none;padding:8px" id="CSalesAdminId">
+        }
+        @if (canAccessSalesAdmin) { @*کارتابل مدیر فروش*@
+            <div class="col-12 col-xl-10 col-xxl-9 p-2 d-none" id="CSalesAdminId">
 
                 <div class="gap-3" style="display:flex;flex-direction:column;align-items:center; width:100%" id="PfDivId">
 
@@ -551,10 +572,9 @@
 
 
             </div>
-
-            @*کارتابل کارشناس تامین*@
-            <div class="CTaminExpert col-12 col-xl-10 col-xxl-9 gap-3" id="CTaminExpertId">
-
+        }
+        @if (canAccessTaminExpert) { @*کارتابل کارشناس تامین*@
+            <div class="flex-center flex-column col-12 col-xl-10 col-xxl-9 gap-3 p-2 d-none" id="CTaminExpertId">
                 <ul class="nav nav-pills" id="taminExpertsTabs" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link position-relative" onclick="GetInvoicesTaminExpert()" id="TaminInvoiceTab" data-bs-target="#TaminInvoiceTab-pane" type="button" role="tab">
@@ -674,9 +694,9 @@
 
                 </div>
             </div>
-
-            @*کارتابل مدیر عامل*@
-            <div class="col-12 col-xxl-11" style="display:none;padding:8px" id="CManagingDirectorId">
+        }
+        @if (canAccessManagingDirector) { @*کارتابل مدیر عامل*@
+            <div class="col-12 col-xxl-11 p-2 d-none" id="CManagingDirectorId">
                 <div class="d-flex flex-column w-100">
                     <ul class="nav nav-pills" id="ManagingDirectorTabs" role="tablist">
                         <li class="nav-item" role="presentation">
@@ -808,15 +828,14 @@
                 </div>
 
             </div>
-
-        </div>
+        }
     </div>
 </div>
 
 
 
 <!-- Modal Mobile -->
-<div class="modal fade " dir="ltr" id="CA_MobileModal" tabindex="-1" data-bs-focus="false" role="dialog" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+<div class="modal fade " dir="ltr" id="CA_MobileModal" tabindex="-1" data-bs-focus="false" role="dialog" data-bs-backdrop="static">
     <div class=" modal-dialog modal-dialog-centered " style="width:100%">
         <div class="modal-content col-12" style="padding:10px!important">
             <div style="margin-bottom:10px; display:flex; justify-content:center; background-color:rebeccapurple;color:white;border-radius:5px">
@@ -1121,10 +1140,27 @@
         let fType = 0;//ریدیو باتن فاکتور
 
         let fromWarning = false;
-        document.addEventListener("UserLoginReady", () => {
+
+        const CPrefactorFactorElm = document.getElementById("CPrefactorFactorId");
+        const CFinancialAdminElm = document.getElementById("CFinancialAdminId");
+        const CFinancialExpertElm = document.getElementById("CFinancialExpertId");
+        const CSalesExpertElm = document.getElementById("CSalesExpertId");
+        const CSalesAdminElm = document.getElementById("CSalesAdminId");
+        const CTaminExpertElm = document.getElementById("CTaminExpertId");
+        const CManagingDirectorElm = document.getElementById("CManagingDirectorId");
+
+        const TPrefactorFactorElm = document.getElementById("TPrefactorFactorId");
+        const TFinancialAdminElm = document.getElementById("TFinancialAdminId");
+        const TFinancialExpertElm = document.getElementById("TFinancialExpertId");
+        const TSalesExpertElm = document.getElementById("TSalesExpertId");
+        const TSalesAdminElm = document.getElementById("TSalesAdminId");
+        const TTaminExpertElm = document.getElementById("TTaminExpertId");
+        const TManagingDirectorElm = document.getElementById("TManagingDirectorId");
+
+        @*document.addEventListener("UserLoginReady", () => {
             const rols = JSON.parse(sessionStorage.getItem("Rols")) || [];
             rols.forEach(item => ShowActiveCartable(item.name));
-        });
+        });*@;
 
         document.addEventListener("DOMContentLoaded", async () => {
             showTaminDropdown();
@@ -1205,7 +1241,7 @@
         });
 
         const CarPfExportExcel = () => {
-            $("#FLshowLoading").css("display", "");
+            FLshowLoading();
 
             const model = {};
             model.serVal = CartablePfSearchVal;
@@ -1222,16 +1258,13 @@
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify(model),
-
-
             })
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP error! Status: ${response.status}`);
                     } else {
-                        $("#FLshowLoading").css("display", "none");
+                        FLshowLoading(false);
                         return response.blob(); // تبدیل پاسخ به Blob
-
                     }
                 })
                 .then(blob => {
@@ -1351,58 +1384,58 @@
 
 
         const HideAllCartable = () => {
-            document.getElementById("CPrefactorFactorId").style.display = "none";
-            document.getElementById("CFinancialAdminId").style.display = "none";
-            document.getElementById("CFinancialExpertId").style.display = "none";
-            document.getElementById("CSalesExpertId").style.display = "none";
-            document.getElementById("CSalesAdminId").style.display = "none";
-            document.getElementById("CTaminExpertId").style.display = "none";
-            document.getElementById("CManagingDirectorId").style.display = "none";
+            CPrefactorFactorElm?.classList.add("d-none");
+            CFinancialAdminElm?.classList.add("d-none");
+            CFinancialExpertElm?.classList.add("d-none");
+            CSalesExpertElm?.classList.add("d-none");
+            CSalesAdminElm?.classList.add("d-none");
+            CTaminExpertElm?.classList.add("d-none");
+            CManagingDirectorElm?.classList.add("d-none");
         };
 
 
         const ShowActiveCartable = (name) => {
             switch (name) {
                 case "Admin":
-                    document.getElementById("TPrefactorFactorId").style.display = "flex";
-                    //document.getElementById('TFinancialAdminId').style.display = "flex";
-                    document.getElementById("TFinancialExpertId").style.display = "flex";
-                    document.getElementById("TSalesExpertId").style.display = "flex";
-                    document.getElementById("TSalesAdminId").style.display = "flex";
-                    document.getElementById("TTaminExpertId").style.display = "flex";
-                    document.getElementById("TManagingDirectorId").style.display = "flex";
+                    TPrefactorFactorElm?.classList.remove("d-none");
+                    TFinancialAdminElm?.classList.remove("d-none");
+                    TFinancialExpertElm?.classList.remove("d-none");
+                    TSalesExpertElm?.classList.remove("d-none");
+                    TSalesAdminElm?.classList.remove("d-none");
+                    TTaminExpertElm?.classList.remove("d-none");
+                    TManagingDirectorElm?.classList.remove("d-none");
 
                     break;
                 case "FinancialExpert":
-                    document.getElementById("TPrefactorFactorId").style.display = "flex";
-                    document.getElementById("TFinancialExpertId").style.display = "flex";
+                    TPrefactorFactorElm?.classList.remove("d-none");
+                    TFinancialExpertElm?.classList.remove("d-none");
                     break;
 
                 case "FinancialAdmin":
-                    //document.getElementById('TFinancialAdminId').style.display = "flex";
+                    TFinancialAdminElm?.classList.remove("d-none");
                     break;
 
                 case "SalesExpert":
-                    document.getElementById("TPrefactorFactorId").style.display = "flex";
-                    document.getElementById("TSalesExpertId").style.display = "flex";
+                    TPrefactorFactorElm?.classList.remove("d-none");
+                    TSalesExpertElm?.classList.remove("d-none");
                     break;
 
                 case "SalesAdmin":
-                    document.getElementById("TPrefactorFactorId").style.display = "flex";
-                    document.getElementById("TSalesAdminId").style.display = "flex";
+                    TPrefactorFactorElm?.classList.remove("d-none");
+                    TSalesAdminElm?.classList.remove("d-none");
                     break;
 
                 case "TaminExpert":
                 case "TaminAdmin":
-                    document.getElementById("TPrefactorFactorId").style.display = "flex";
-                    document.getElementById("TTaminExpertId").style.display = "flex";
+                    TPrefactorFactorElm?.classList.remove("d-none");
+                    TTaminExpertElm?.classList.remove("d-none");
                     break;
 
 
                 case "ManagingDirector":
-                    document.getElementById("TPrefactorFactorId").style.display = "flex";
-                    document.getElementById("TTaminExpertId").style.display = "flex";
-                    document.getElementById("TManagingDirectorId").style.display = "flex";
+                    TPrefactorFactorElm?.classList.remove("d-none");
+                    TTaminExpertElm?.classList.remove("d-none");
+                    TManagingDirectorElm?.classList.remove("d-none");
                     break;
 
             }
@@ -1433,13 +1466,12 @@
                             FLshowLoading();
                             await Promise.all(promises);
                             FLshowLoading(false);
-
-                            document.getElementById("CPrefactorFactorId").style.display = "flex";
+                            CPrefactorFactorElm?.classList.remove("d-none");
                             removeTabAllFactorsDesktop();
                             break;
 
                         case "TFinancialExpertId":
-                            document.getElementById("CFinancialExpertId").style.display = "flex";
+                            CFinancialExpertElm?.classList.remove("d-none");
                             if (subId === "FinancialInvoiceTab") {
                                 await GetInvoicesFinancialExpert();
                             } else if (subId === "FinancialRequestTab") {
@@ -1451,21 +1483,21 @@
 
 
                         case "TFinancialAdminId":
-                            document.getElementById("CFinancialAdminId").style.display = "flex";
+                            CFinancialAdminElm?.classList.remove("d-none");
                             break;
 
                         case "TSalesExpertId":
-                            document.getElementById("CSalesExpertId").style.display = "flex";
+                            CSalesExpertElm?.classList.remove("d-none");
                             await GetSelesExpertPartial();
                             break;
 
                         case "TSalesAdminId":
-                            document.getElementById("CSalesAdminId").style.display = "flex";
+                            CSalesAdminElm?.classList.remove("d-none");
                             await GetPreFactorSalesAdmin();
                             break;
 
                         case "TTaminExpertId":
-                            document.getElementById("CTaminExpertId").style.display = "flex";
+                            CTaminExpertElm?.classList.remove("d-none");
                             if (subId === "TaminInvoiceTab") {
                                 await GetInvoicesTaminExpert();
                             } else {
@@ -1474,7 +1506,7 @@
                             break;
 
                         case "TManagingDirectorId":
-                            document.getElementById("CManagingDirectorId").style.display = "flex";
+                            CManagingDirectorElm?.classList.remove("d-none");
                             if (subId === "MDTransferTab") {
                                 await GetTransferManagingDirector();
                             } else {
@@ -1793,7 +1825,8 @@
             }
         };
 
-
+        const financialRequestContentElm = document.getElementById("FinancialRequestContentId");
+        let requestSelection;
         const GetRequestFinancialExpert = async () => {
             const val = document.getElementById("FinancialRequestSearchId")?.value.trim() ?? "";
             const type = document.querySelector("input[type='radio'][name='FinancialRequestFilter']:checked")?.value;
@@ -1805,7 +1838,7 @@
                 FLshowLoading();
                 const res = await axios(`/RequestAmount/GetAllRequestAmountsPartial?search=${val}&type=${type}&passType=3`);
                 const data = res.data;
-                document.getElementById("FinancialRequestContentId").innerHTML = data.html;
+                financialRequestContentElm.innerHTML = data.html;
                 document.getElementById("FinancialRequestCount").textContent = data.count;
                 updateFilterSwitchState({
                     wrapperSelector: "#FinancialRequestTab-pane",
@@ -1816,7 +1849,7 @@
                         await GetRequestFinancialExpert();
                     },
                 });
-                requestSelection.restoreSelection();
+                requestSelection?.restoreSelection();
                 FLshowLoading(false);
             } catch (err) {
                 console.log(err);
@@ -1824,20 +1857,24 @@
         };
 
         ////////////////////////////////////////////////////////
-        const requestSelection = new SelectionManager({
-            container: "#FinancialRequestContentId",
-            selectionBar: "#requestSelectionBar",
-            toggleBtn: "#requestSelectionModeBtn",
-            itemSelector: ".layered-card",
-            checkboxSelector: ".card-checkbox",
-            onAction: async (selectedIds) => {
-                if (selectedIds.length === 0) {
-                    toastifyError("لطفاً ابتدا درخواست‌های مورد نظر را انتخاب کنید.");
-                    return;
-                }
-                await showSetAmountPaymentItemModal(selectedIds);
-            },
-        });
+
+        if (financialRequestContentElm) {
+            requestSelection = new SelectionManager({
+                container: financialRequestContentElm,
+                selectionBar: "#requestSelectionBar",
+                toggleBtn: "#requestSelectionModeBtn",
+                itemSelector: ".layered-card",
+                checkboxSelector: ".card-checkbox",
+                onAction: async (selectedIds) => {
+                    if (selectedIds.length === 0) {
+                        toastifyError("لطفاً ابتدا درخواست‌های مورد نظر را انتخاب کنید.");
+                        return;
+                    }
+
+                    await showSetAmountPaymentItemModal(selectedIds);
+                },
+            });
+        }
 
         ////////////////////////////////////////////////////////
 

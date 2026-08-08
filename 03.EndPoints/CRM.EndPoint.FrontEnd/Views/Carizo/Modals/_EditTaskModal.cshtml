@@ -1,3 +1,12 @@
+@using CRM.EndPoint.FrontEnd.Services
+@{
+    var isAdmin = User.IsInRole(AppRoles.Admin);
+    var isTaminAdmin = User.IsInRole(AppRoles.TaminAdmin);
+    var isSalesAdmin = User.IsInRole(AppRoles.SalesAdmin);
+    var isFinancialAdmin = User.IsInRole(AppRoles.FinancialAdmin);
+    var isManagingDirector = User.IsInRole(AppRoles.ManagingDirector);
+}
+
 <!-- Modal editTaskModal -->
 <div class="modal fade" id="editTaskModal" aria-modal="true" role="dialog" tabindex="-1" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -128,22 +137,23 @@
                                 </div>
                             </div>
                         </div>
+                        @if (isAdmin || isSalesAdmin || isTaminAdmin || isFinancialAdmin || isManagingDirector) {
+                            <div id="editTaskAssignWrapper">
+                                <div class="mb-2" style="width:100%;background-color: rgba(0,0,0,0.1);height:1px"></div>
+                                <div>
+                                    <div class="editDropdown-assignUser__toggle d-inline-flex align-items-center gap-2">
+                                        <label class="d-inline-flex align-items-end gap-1" style="cursor:pointer;">
+                                            <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width: 21px; height: 21px" viewBox="0 0 24 24"><path d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                            <span class="fbold">کاربران اختصاص یافته</span>
+                                        </label>
 
-                        <div class="mb-2 Admin SalesAdmin TaminAdmin FinancialAdmin ManagingDirector" style="display:none;width:100%;background-color: rgba(0,0,0,0.1);height:1px"></div>
+                                        <sapn class="align-items-center justify-content-center" id="editAssignUserCount" style="cursor:pointer;display:flex;font-size: 12px; padding: 3px 8px 3px; border-radius: 100px; background-color: #8b8b8b; color: white"></sapn>
 
-
-                        <div class="Admin SalesAdmin TaminAdmin FinancialAdmin ManagingDirector" style="display:none">
-                            <div class="editDropdown-assignUser__toggle d-inline-flex align-items-center gap-2">
-                                <label class=" d-inline-flex align-items-end gap-1" style="cursor:pointer;">
-                                    <svg fill="none" stroke="currentColor" stroke-width="1.5" style="width: 21px; height: 21px" viewBox="0 0 24 24"><path d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                                    <span class="fbold">کاربران اختصاص یافته</span>
-                                </label>
-
-                                <sapn class="align-items-center justify-content-center" id="editAssignUserCount" style="cursor:pointer;display:flex;font-size: 12px; padding: 3px 8px 3px; border-radius: 100px; background-color: #8b8b8b; color: white"></sapn>
-
+                                    </div>
+                                    <div id="editAssignList" class="dropdown-assignUser__List"></div>
+                                </div>
                             </div>
-                            <div id="editAssignList" class="dropdown-assignUser__List"></div>
-                        </div>
+                        }
 
                     </div>
                 </form>

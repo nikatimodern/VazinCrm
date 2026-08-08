@@ -1381,12 +1381,6 @@ const submitOrder = async () => {
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-let Ohead = null;
-let UpOrderIndex = null;
-let orderItems = [];
-let orderIndexCounter = 0;
-let upHeadOrderPassType;
-let upHeadOrderDealId;
 let pfItemsNotInOrders;
 const ShowUpdateHeadOrder = async (id, passType, dealId) => {
     submitOrderDealId = dealId;
@@ -1445,138 +1439,6 @@ const selectPfactorItem = (id) => {
     $("#AddFromPreFactorModal").modal("toggle");
 };
 
-
-/*const SubmitUpOrder = async () => {
-    if (!await mySer.CheckValidForm("#OrderForm")) return;
-    
-    const data = mySer.convertFormToJSON("#OrderForm");
-    const selectUnitElement = document.querySelector(`#OrderForm [name='unit']`);
-    data.unitTxt = selectUnitElement.options[selectUnitElement.selectedIndex].text;
-    data.OrderHeadId = Ohead.id;
-    
-    const idx = orderItems.findIndex(f => f._index === UpOrderIndex);
-    if (idx !== -1) {
-        orderItems[idx] = { ...orderItems[idx], ...data };
-    }
-    
-    OrdersTBL.clear().rows.add(orderItems.filter(i => !i.isDeleted)).draw();
-    CancelUpOrder();
-    
-};
-
-const CancelUpOrder = () => {
-    UpOrderIndex = null;
-    //$("#DivAddOr").css("display", "flex");
-    document.getElementById("orderFormContainer")?.classList.remove("d-lg-flex");
-    $("#DivUpOr").css("display", "none");
-    document.getElementById("OrderForm").reset();
-    if (window.innerWidth < 992) {
-        canselModalItemOrder();
-    }
-};
-
-const ShowUpdateOrder = (index) => {
-    UpOrderIndex = Number(index);
-    const item = orderItems.find(i => i._index === UpOrderIndex);
-    
-    mySer.convertJsonToForm(item, "OrderForm");
-    
-    //$("#DivAddOr").css("display", "none");
-    document.getElementById("orderFormContainer")?.classList.add("d-lg-flex");
-    $("#DivUpOr").css("display", "flex");
-    
-    if (window.innerWidth < 992) {
-        showModalItemOrder();
-    }
-};
-
-const DelOrderItem = async (index) => {
-    const item = orderItems.find(i => i._index === Number(index));
-    if (item.id) {
-        item.isDeleted = true;
-    } else {
-        orderItems = orderItems.filter(i => i._index !== item._index);
-        const idx = tempPfItemsNotInOrders.findIndex(t => t.id === item.preFactorItemId);
-        if (idx !== -1) {
-            pfItemsNotInOrders.push(tempPfItemsNotInOrders.splice(idx, 1)[0]);
-            document.querySelector(".addFromPreFactorBtn").style.display = pfItemsNotInOrders.length ? "flex" : "none";
-        }
-    }
-    OrdersTBL.clear().rows.add(orderItems.filter(i => !i.isDeleted)).draw();
-};
-
-
-const AddItemCreator = async () => {
-    if (await mySer.CheckValidForm("#OrderForm")) {
-        const data = mySer.convertFormToJSON("#OrderForm");
-        const selectUnitElement = document.querySelector(`#OrderForm [name='unit']`);
-        data.unitTxt = selectUnitElement.options[selectUnitElement.selectedIndex].text;
-        data.OrderHeadId = Ohead.id;
-        
-        data._index = orderIndexCounter++;
-        orderItems.push(data);
-        
-        document.getElementById("OrderForm").reset();
-        OrdersTBL.clear().rows.add(orderItems.filter(i => !i.isDeleted)).draw();
-        
-        if (window.innerWidth < 992) {
-            canselModalItemOrder();
-        }
-    }
-};
-
-const showModalItemOrder = () => {
-    $("#AddItemOrderModal").modal("toggle");
-};
-
-const canselModalItemOrder = () => {
-    document.getElementById("OrderForm").reset();
-    $("#AddItemOrderModal").modal("toggle");
-};
-
-let OrdersTBL = null;
-const getAllOrders = () => {
-    Unit(3, "OrderForm", 2);
-    OrdersTBL = $("#OrdersTable").DataTable({
-        paging: false,
-        searching: false,
-        ordering: false,
-        scrollCollapse: true,
-        scrollY: "clamp(120px, calc(100dvh - 640px), 100dvh)",
-        responsive: true,
-        language: languageDatatable,
-        columns: [
-            { data: null, render: (data, type, row, meta) => meta.row + 1 },
-            { data: "productSmallName", name: "ProductSmallName", autoWidth: true, defaultContent: "-" },
-            { data: "product", name: "Product", autoWidth: true, defaultContent: "-" },
-            { data: "dimensions", name: "Dimensions", autoWidth: true, defaultContent: "-" },
-            { data: "categoryType", name: "CategoryType", autoWidth: true, defaultContent: "-" },
-            { data: "caset", name: "Caset", autoWidth: true, defaultContent: "-" },
-            { data: "backgroundColor", name: "BackgroundColor", autoWidth: true, defaultContent: "-" },
-            { data: "printColor", name: "PrintColor", autoWidth: true, defaultContent: "-" },
-            { data: "countColor", name: "CountColor", autoWidth: true, defaultContent: "-" },
-            { data: "designName", name: "DesignName", autoWidth: true, defaultContent: "-" },
-            {
-                data: "weight", name: "Weight", autoWidth: true,
-                render: (data, type, row) => (data !== null && data !== "") && row.unitTxt ? `${data} ${row.unitTxt}` : "-",
-            },
-            { data: "thickness", name: "Thickness", autoWidth: true, defaultContent: "-" },
-            {
-                data: null,
-                render: function (data, type, row) {
-                    return `
-                        <div class="inline-flex-center gap-1">
-                            <button type="button" data-title-right="ویرایش" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 d-flex justify-content-center align-items-center" onclick='ShowUpdateOrder("${row._index}")'><i class="fa fa-pencil"></i></button>
-                            <button type="button" data-title-right="حذف" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="Admin buttonCancel2 d-flex justify-content-center align-items-center" onclick='DelOrderItem("${row._index}")'><i class="fa fa-trash"></i></button>
-                        </div>
-                    `;
-                },
-            },
-        
-        ],
-        layout: null,
-    });
-};*/
 
 async function isSMSNotificationConfirmed() {
     const result = await Swal.fire({
@@ -2272,9 +2134,9 @@ const ShowModalListInvoice = async (id, type, ser, passType, dealId, hideAddInvo
     }
     
     document.getElementById("addInvoiceBtns")?.classList.toggle("d-none", hideAddInvoiceBtns); // نمایش یا عدم نمایش دکمه های واریزی و برگشتی
-    if (!hideAddInvoiceBtns) {
+    /*if (!hideAddInvoiceBtns) {
         document.querySelector("#addInvoiceBtns .deposit-btn")?.classList.toggle("d-none", passType === 5); // کارتابل مالی دکمه واریزی نمایش داده نشود فقط برگشتی نمایش داده شود
-    }
+    }*/
     
     ModalToggle("#InvoiceListModalId", "show");
 };
@@ -3122,32 +2984,29 @@ const checkRoles = (roles) => {
 
 
 function refreshCounterCartable() {
-    const roleNames = currentUser.rollNames.map(r => r.name);
-    const isAdmin = roleNames.includes("Admin");
     axios("/Cartable/GetCountEnvelope").then(res => {
-        setCountEnvelope(res.data.countObj, isAdmin);
-        setCountEmail(res.data.emailsCount, isAdmin);
-        setCountChat(res.data.chatsCount, isAdmin);
+        setCountEnvelope(res.data.countObj);
+        setCountEmail(res.data.emailsCount);
+        setCountChat(res.data.chatsCount);
     });
 }
 
 
-const setCountChat = (chatsCount, isAdmin) => {
+const setCountChat = (chatsCount) => {
     const countChatElm = document.getElementById("CountChatId");
     if (!countChatElm) return;
     
     countChatElm?.classList.toggle("d-none", !Boolean(chatsCount));
     countChatElm.textContent = chatsCount || "";
 };
-const setCountEmail = (emailsCount, isAdmin) => {
+const setCountEmail = (emailsCount) => {
     const countEmailElm = document.getElementById("CountEmailId");
     if (!countEmailElm) return;
-    
     
     countEmailElm?.classList.toggle("d-none", !Boolean(emailsCount));
     countEmailElm.textContent = emailsCount || "";
     
-    if (emailsCount && !isAdmin) {
+    if (emailsCount) {
         const text = `شما <b>${emailsCount}</b> پیام دریافتی مشاهده نشده دارید.`;
         setTimeout(() => notificationChange(text, { link: "/Email/Index", isBlank: false }, "default"), 3000);
     }
@@ -3155,7 +3014,7 @@ const setCountEmail = (emailsCount, isAdmin) => {
 
 
 let oldSumCount = null;
-const setCountEnvelope = (countObj, isAdmin) => {
+const setCountEnvelope = (countObj) => {
     const countResult = {
         salesAdmin: {
             count: countObj.salesAdmin || 0,
@@ -3178,7 +3037,7 @@ const setCountEnvelope = (countObj, isAdmin) => {
     const countEnvelopeElm = document.getElementById("CountEnvelopeId");
     setBadge(countEnvelopeElm, sumCount);
     
-    if (sumCount && sumCount > oldSumCount && !isAdmin) {
+    if (sumCount && sumCount > oldSumCount) {
         const text = `شما در کارتابل خود <b>${sumCount}</b> مورد بررسی نشده دارید`;
         setTimeout(() => notificationChange(text, { link: `/cartable/Index?tab=${locationTabIdEnvelope}`, isBlank: false }, "default"), 3000);
     }
@@ -3208,85 +3067,6 @@ const setBadge = (target, count) => {
     el.textContent = count || "";
     el.classList.toggle("d-none", !count);
 };
-/*
-let oldSumCount = null;
-const setCountEnvelope = (countObj, isFromSignalR = false) => {
-    const roleNames = currentUser.rollNames.map(r => r.name);
-    const countResult = {
-        salesAdmin: { count: 0, id: "TSalesAdminId" },
-        tamin: { count: 0, id: "TTaminExpertId" },
-        financial: { count: 0, id: "TFinancialExpertId" },
-        managingDirector: { count: 0, id: "TManagingDirectorId" },
-        salesExperts: { count: 0, id: "TSalesExpertId" },
-    };
-    
-    if (roleNames.includes("Admin") || roleNames.includes("SalesAdmin")) {
-        countResult.salesAdmin.count = countObj.salesAdmin;
-    }
-    if (roleNames.includes("Admin") || roleNames.includes("TaminAdmin")) {
-        countResult.tamin.count = countObj.tamin.reduce((sum, i) => sum + i.count, 0);
-    } else if (roleNames.includes("TaminExpert")) {
-        countResult.tamin.count = countObj.tamin.find(i => i.userTaminId === currentUser.id)?.count ?? 0;
-    }
-    if (roleNames.includes("Admin") || roleNames.includes("FinancialAdmin") || roleNames.includes("FinancialExpert")) {
-        countResult.financial.count = countObj.financial;
-    }
-    if (roleNames.includes("Admin") || roleNames.includes("ManagingDirector") || roleNames.includes("TaminAdmin") || roleNames.includes("TaminExpert")) {
-        countResult.managingDirector.count = countObj.managingDirector;
-    }
-    if (roleNames.includes("Admin") || roleNames.includes("SalesExpert")) {
-        countResult.salesExperts.count = countObj.salesExperts?.find(i => i.userSaleExpertId === currentUser.id)?.count ?? 0;
-    }
-    
-    let sumCount = Object.values(countResult).reduce((sum, c) => sum + c.count, 0);
-    document.getElementById("CountEnvelopeId").classList.toggle("d-none", !Boolean(sumCount));
-    document.getElementById("CountEnvelopeId").textContent = sumCount || "";
-    
-    if (oldSumCount === null) oldSumCount = sumCount;
-    if (sumCount && (sumCount > oldSumCount || (sumCount === oldSumCount && !isFromSignalR)) && !roleNames.includes("Admin")) {
-        const text = `شما در کارتابل خود <b>${sumCount}</b> مورد بررسی نشده دارید`;
-        setTimeout(() => notificationChange(text, { link: `/cartable/Index?tab=${locationTabIdEnvelope}`, isBlank: false }, "default"), 3000);
-    }
-    oldSumCount = sumCount;
-    
-    
-    const cartableTabsElm = document.getElementById("CartableTabs");
-    if (!cartableTabsElm) return;
-    for (const c in countResult) {
-        const el = cartableTabsElm.querySelector(`#${countResult[c].id} .badge-count`);
-        if (!el) continue;
-        const count = countResult[c].count;
-        el.textContent = count;
-        el.classList.toggle("d-none", !count);
-    }
-    
-    /!*    const ids = {
-            TFinancialExpertId: "financial",
-            TSalesAdminId: "salesAdmin",
-            TTaminExpertId: "tamin",
-        };
-        
-        const countTabId = countObj[ids[locationTabIdEnvelope]];
-        if (oldSumCount === null) oldSumCount = countTabId;
-        if (countTabId && countTabId >= oldSumCount) {
-            const text = `شما ${countTabId} موارد در دست تایید دارید`;
-            setTimeout(() => notificationChange(text, `/cartable/Index?tab=${locationTabIdEnvelope}`, "default"), 2000);
-        }
-        oldSumCount = countTabId;
-        
-        
-        const cartableTabsElm = document.getElementById("CartableTabs");
-        if (!cartableTabsElm) return;
-        for (const tabId in ids) {
-            const type = ids[tabId];
-            const el = cartableTabsElm.querySelector(`#${tabId} .badge-count`);
-            if (!el) continue;
-            
-            const count = countObj[type];
-            el.textContent = count;
-            el.classList.toggle("d-none", !count);
-        }*!/
-};*/
 
 const GoToCarEnvelope = () => {
     window.location.href = `/cartable/Index?tab=${locationTabIdEnvelope}`;
@@ -3696,7 +3476,7 @@ const showTaskModal = async (entityId, entityType) => {
     targetEntityTaskId = entityId;
     let descText;
     if (entityType === "Report") {
-        descText = `بابت مشتری: "${data.customerTxt} - ${data.repTel}"\nگزارش: "${data.reportText}"`;
+        descText = `بابت مشتری: "${data.customerTxt || ""} - ${data.repTel || ""}"\nگزارش: "${data.reportText}"`;
     } else if (entityType === "Deal") {
         descText = `بابت سفارش ${data.serialNumber}: "${data.title}"\nمشتری: "${data.customerName} - ${data.mobileNumber ?? ""}"`;
         if (data.commentText) descText += `\nتوضیحات: "${data.commentText}"`;
@@ -3704,7 +3484,8 @@ const showTaskModal = async (entityId, entityType) => {
     document.getElementById("editTaskDescription").value = descText;
     
     document.getElementById("editTimeRemind").value = "";
-    document.querySelectorAll("#editTaskModal .Admin").forEach(elm => elm.style.display = "none");
+    const assignWrapper = document.getElementById("editTaskAssignWrapper");
+    if (assignWrapper) assignWrapper.style.display = "none";
     document.getElementById("submitEditTaskModal").innerText = "ثبت فعالیت";
     document.getElementById("editTaskModalTitle").innerText = "فعالیت";
     
@@ -3854,8 +3635,7 @@ function removeSchedulerItem(from) {
             op.classList.remove("selected");
             op.querySelector(".checkIcon").classList.remove("selected");
         });
-        document.querySelectorAll(".subDropdown-customRepeat__container input")
-                .forEach((cb) => (cb.checked = false));
+        document.querySelectorAll(".subDropdown-customRepeat__container input").forEach((cb) => (cb.checked = false));
         
         document.getElementById("untilRemind").value = "همیشه";
         document.getElementById("untilRemindSpan").innerText = "همیشه";
@@ -3894,10 +3674,10 @@ function removeSchedulerItem(from) {
             op.classList.remove("selected");
             op.querySelector(".checkIcon").classList.remove("selected");
         });
-        document.querySelectorAll(".subDropdown-customRepeat__container input")
-                .forEach((cb) => (cb.checked = false));
+        document.querySelectorAll(".subDropdown-customRepeat__container input").forEach((cb) => (cb.checked = false));
         document.querySelectorAll(".assign-users-container input").forEach((cb) => (cb.checked = false));
-        document.querySelector("#assignList input[name='taskType'][value='2']").checked = true;
+        const taskTypeRadio = document.querySelector("#assignList input[name='taskType'][value='2']");
+        if (taskTypeRadio) taskTypeRadio.checked = true;
         
         document.getElementById("untilRemind").value = "همیشه";
         document.getElementById("untilRemindSpan").innerText = "همیشه";
@@ -4293,9 +4073,9 @@ function sortableMobileMenu() {
 
 sortableMobileMenu();
 
-let warningData = []; 
+let warningData = [];
 async function showModalWarnings() {
-    await getAllWarnings()
+    await getAllWarnings();
     toggleMobileDrawer(false);
     ModalToggle("#warningModal");
 }
@@ -5536,7 +5316,7 @@ function initSearchInput(inputId, callback) {
     const input = document.getElementById(inputId);
     
     if (!input) {
-        console.warn(`Search input not found: ${inputId}`);
+        //console.warn(`Search input not found: ${inputId}`);
         return;
     }
     
@@ -5564,7 +5344,7 @@ function initChangeRadio(name, callback) {
     const radios = document.querySelectorAll(`input[name="${name}"]`);
     
     if (!radios.length) {
-        console.warn(`Radio group not found: ${name}`);
+        //console.warn(`Radio group not found: ${name}`);
         return;
     }
     

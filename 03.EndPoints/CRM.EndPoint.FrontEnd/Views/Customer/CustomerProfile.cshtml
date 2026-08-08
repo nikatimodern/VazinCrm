@@ -1,6 +1,9 @@
-﻿@{
+﻿@using CRM.EndPoint.FrontEnd.Services
+@{
     ViewData["Title"] = "CustomerProfile";
     Layout = "_Layout";
+    var isAdmin = User.IsInRole(AppRoles.Admin);
+    var isSalesAdmin = User.IsInRole(AppRoles.SalesAdmin);
 }
 
 <div id="customerProfile-wrapper" class="d-flex flex-column" style="height: calc(100dvh - 88px);">
@@ -9,10 +12,12 @@
             <p>@ViewBag.SubTitle</p>
             <p>@ViewBag.detail</p>
         </div>
-        <div class="Admin SalesAdmin align-items-center justify-content-end justify-content-xxl-start gap-1 flex-grow-1 flex-xxl-grow-0" data-class="d-flex" style="display:none;font-size:clamp(11px,2vw,13px)">
-            <span>در اختیار: </span>
-            <span>@ViewBag.SelExpertRel</span>
-        </div>
+        @if (isAdmin || isSalesAdmin) {
+            <div class="d-flex align-items-center justify-content-end justify-content-xxl-start gap-1 flex-grow-1 flex-xxl-grow-0" style="font-size:clamp(11px,2vw,13px)">
+                <span>در اختیار: </span>
+                <span>@ViewBag.SelExpertRel</span>
+            </div>
+        }
     </div>
 
     <div class="flex-grow-1" style="width:100%; display:flex; flex-direction:column; align-items:center;overflow: hidden;">
@@ -135,6 +140,7 @@
 <partial name="~/Views/Accountancy/Modals/_InvoiceListModal.cshtml" />
 
 <partial name="~/Views/Order/Modals/_CreateOrderModal.cshtml" />
+
 @section scripts {
     <script>
         var KelishehItems = [];

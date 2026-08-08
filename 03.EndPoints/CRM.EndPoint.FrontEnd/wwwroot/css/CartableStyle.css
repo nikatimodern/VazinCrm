@@ -17,7 +17,7 @@
   border-bottom: none;
   border-start-end-radius: 10px;
   border-start-start-radius: 10px;
-  display: none;
+  display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
@@ -27,6 +27,7 @@
   transition: all 0.2s;
   color: #002f2b !important;
   background-color: #02a3831c;
+	position: relative;
 }
 
 
@@ -52,45 +53,12 @@
 }
 
 
-.TCarDeActive {
-}
-
-
-.CSalesExpert {
-  /*    padding: 8px !important;*/
-  width: 100%;
-  display: none;
-  justify-content: space-between
-}
-
-
-.CSalesExpert-Part {
-  /*    width:29%;*/
-}
-
-
-.CSalesExpert-Part > label {
-  font-family: "IRANSansBold";
-}
-
-
 .M_ex_Detail {
   font-family: "IRANSansBold";
   font-size: large;
   color: mediumvioletred;
 }
 
-
-/*کارتابل مسئول تامین*/
-.CTaminExpert {
-  padding: 8px !important;
-  /*    width: 70%;*/
-  display: none;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  
-}
 
 
 #dropdown-pFactor-filterList-toggle {

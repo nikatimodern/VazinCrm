@@ -1,7 +1,15 @@
-﻿@model AppUser
+﻿@using CRM.EndPoint.FrontEnd.Services
+@model AppUser
 @{
     ViewData["Title"] = "Index";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var isAdmin = User.IsInRole(AppRoles.Admin);
+    var isTaminAdmin = User.IsInRole(AppRoles.TaminAdmin);
+    var isSalesAdmin = User.IsInRole(AppRoles.SalesAdmin);
+    var isFinancialAdmin = User.IsInRole(AppRoles.FinancialAdmin);
+    var isFinancialExpert = User.IsInRole(AppRoles.FinancialExpert);
+    var isManagingDirector = User.IsInRole(AppRoles.ManagingDirector);
+    var isTaminExpert = User.IsInRole(AppRoles.TaminExpert);
 }
 
 <div class="mp" style="align-items:center; flex-direction:column; width:100% ; display:flex;margin-top:0 !important">
@@ -25,20 +33,22 @@
                 </div>
             </div>
             <div id="roleTypeRadios" class="flex-center flex-wrap gap-2">
-                <ul class="filter-switch filter-switch-sm Admin SalesAdmin TaminAdmin TaminExpert FinancialAdmin FinancialExpert" style="display: none">
-                    <li class="filter-switch-item">
-                        <input type="radio" name="roleTypeChange" value="-1" id="roleType-all">
-                        <label for="roleType-all">همه</label>
-                    </li>
-                    <li class="filter-switch-item">
-                        <input type="radio" name="roleTypeChange" value="1" id="roleType-customer">
-                        <label for="roleType-customer">مشتری</label>
-                    </li>
-                    <li class="filter-switch-item">
-                        <input type="radio" name="roleTypeChange" value="2" id="roleType-supplier">
-                        <label for="roleType-supplier">تامین کننده</label>
-                    </li>
-                </ul>
+                @if (isAdmin || isSalesAdmin || isTaminAdmin || isTaminExpert || isFinancialAdmin || isFinancialExpert) {
+                    <ul class="filter-switch filter-switch-sm">
+                        <li class="filter-switch-item">
+                            <input type="radio" name="roleTypeChange" value="-1" id="roleType-all">
+                            <label for="roleType-all">همه</label>
+                        </li>
+                        <li class="filter-switch-item">
+                            <input type="radio" name="roleTypeChange" value="1" id="roleType-customer">
+                            <label for="roleType-customer">مشتری</label>
+                        </li>
+                        <li class="filter-switch-item">
+                            <input type="radio" name="roleTypeChange" value="2" id="roleType-supplier">
+                            <label for="roleType-supplier">تامین کننده</label>
+                        </li>
+                    </ul>
+                }
                 <ul class="filter-switch filter-switch-sm">
                     <li class="filter-switch-item">
                         <input type="radio" name="juridicalChange" value="-1" id="juridical-all">
@@ -338,7 +348,8 @@
 
         (function initFiltersFromUrl() {
             const { juridicalType = -1, roleType = -1, search = "" } = getUrlParams();
-            document.querySelector(`input[name='roleTypeChange'][value='${roleType}']`).checked = true;
+            const roleTypeRadio = document.querySelector(`input[name='roleTypeChange'][value='${roleType}']`);
+            if (roleTypeRadio) roleTypeRadio.checked = true;
             document.querySelector(`input[name='juridicalChange'][value='${juridicalType}']`).checked = true;
             SearchInp.value = search;
         })();
