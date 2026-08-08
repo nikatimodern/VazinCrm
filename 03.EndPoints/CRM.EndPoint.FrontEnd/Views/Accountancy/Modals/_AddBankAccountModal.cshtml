@@ -1,0 +1,62 @@
+<!-- Modal addBankAccount -->
+<div class="modal fade" id="addBankAccountModal" tabindex="-1" role="dialog" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content col-12 p-2">
+            <div class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">افزودن حساب بانکی</div>
+            <div class="modal-body pb-2">
+                <form id="addBankAccountForm" class="d-flex flex-column gap-2">
+                    <div>
+                        <label for="bankAccountTypeModalId">مالک حساب: </label>
+                        <select class="form-select form-select-sm valueNumber" name="bankAccountType" id="bankAccountTypeModalId" required>
+                            <option value="">انتخاب کنید</option>
+                            <option value="1">حساب‌های داخلی شرکت</option>
+                            <option value="2">تامین کننده</option>
+                            <option value="3">تنخواه دار</option>
+                        </select>
+                    </div>
+
+                    <div class="mt-2">
+                        <div class="d-flex align-items-center justify-content-between gap-2">
+
+                            <label for="accountNameId">نام حساب:</label>
+                            <div id="officialTypeBankModalAlert" class="d-flex align-items-center gap-3">
+                                <div class="d-flex align-items-center gap-1">
+                                    <label for="officialTypeBankId1">رسمی</label>
+                                    <input class="valueNumber" type="radio" name="officialType" id="officialTypeBankId1" value="1" data-alertId="officialTypeBankModalAlert" required>
+                                </div>
+                                <div class="d-flex align-items-center gap-1">
+                                    <label for="officialTypeBankId0">غیر رسمی</label>
+                                    <input class="valueNumber" type="radio" name="officialType" id="officialTypeBankId0" value="0" data-alertId="officialTypeBankModalAlert" required>
+                                </div>
+                            </div>
+                        </div>
+                        <input id="accountNameId" class="form-control" name="accountName" type="text" required>
+                    </div>
+                    <div>
+                        <label for="bankNameId">نام بانک:</label>
+                        <input id="bankNameId" class="form-control" name="bankName" type="text" />
+                    </div>
+                    <div>
+                        <label for="cartNumberId">شماره کارت: </label>
+                        <input id="cartNumberId" class="form-control digitNumberString" name="cartNumber" type="text">
+                    </div>
+                    <div>
+                        <label for="accountNumberId">شماره حساب: </label>
+                        <input id="accountNumberId" class="form-control digitNumberString" name="accountNumber" type="text">
+                    </div>
+                    <div>
+                        <label for="shebaNumberId">شماره شبا: </label>
+                        <div class="input-group input-group-sm">
+                            <input id="shebaNumberId" class="form-control digitNumberString" name="shebaNumber" type="text">
+                            <span class="input-group-text fbold">IR</span>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-center gap-1 mt-3">
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="toggleAddBankAccountModal()">انصراف</button>
+                        <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitAddBankAccount()">ثبت</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
