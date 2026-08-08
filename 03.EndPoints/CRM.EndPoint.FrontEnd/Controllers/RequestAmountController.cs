@@ -594,6 +594,7 @@ public class RequestAmountController : Controller {
             var isFinancial = roles.Contains("کارشناس مالی");
             var isAdmin = roles.Contains("مدیر ارشد");
             var isManager = roles.Contains("مدیر عامل");
+            var isTaminAdmin = roles.Contains("مدیر تامین");
 
             if (passType == 2 && !isManager && !isAdmin)
             {
@@ -602,7 +603,7 @@ public class RequestAmountController : Controller {
 
             var baseQuery = db.RequestAmounts.OrderByDescending(f => f.CreateDate).AsNoTracking();
 
-            if (!isAdmin && !isFinancial && !isManager)
+            if (!isAdmin && !isFinancial && !isManager && !isTaminAdmin)
             {
                 baseQuery = baseQuery.Where(f => f.UserCreatorID == user.Id);
             }
