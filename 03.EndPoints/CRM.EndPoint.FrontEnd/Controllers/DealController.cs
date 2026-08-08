@@ -213,7 +213,6 @@ public class DealController : Controller {
             }
 
 
-
             var oldDeal = await db.Deals.AsNoTracking().Where(f => f.Id == model.Id).FirstOrDefaultAsync();
             var customer = await db.Customers.Where(f => f.Id == model.CustomerId).FirstOrDefaultAsync();
             if (customer != null)
@@ -244,7 +243,6 @@ public class DealController : Controller {
 
             if (model.Id == Guid.Empty)
             {
-
                 model.UserCreator = user.FullName;
                 model.UserCreatorID = user.Id;
 
@@ -343,10 +341,17 @@ public class DealController : Controller {
 
             if (Guid.Parse(deal.UserCreatorID) == userId)
             {
-                await db.UserCustomers.AddAsync(new UserCustomer {
-                    UserId = userId,
-                    CustomerId = (Guid)deal.CustomerId
-                });
+                var customerId = (Guid)deal.CustomerId;
+                var exists = await db.UserCustomers
+                    .AnyAsync(x => x.UserId == userId && x.CustomerId == customerId);
+
+                if (!exists)
+                {
+                    db.UserCustomers.Add(new UserCustomer {
+                        UserId = userId,
+                        CustomerId = customerId
+                    });
+                }
             } else
             {
                 deal.UserCreatorID = userId.ToString();

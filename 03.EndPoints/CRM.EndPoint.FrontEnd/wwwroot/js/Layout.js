@@ -1446,7 +1446,7 @@ const selectPfactorItem = (id) => {
 };
 
 
-const SubmitUpOrder = async () => {
+/*const SubmitUpOrder = async () => {
     if (!await mySer.CheckValidForm("#OrderForm")) return;
     
     const data = mySer.convertFormToJSON("#OrderForm");
@@ -1576,7 +1576,7 @@ const getAllOrders = () => {
         ],
         layout: null,
     });
-};
+};*/
 
 async function isSMSNotificationConfirmed() {
     const result = await Swal.fire({

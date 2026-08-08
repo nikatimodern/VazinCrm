@@ -1,0 +1,28 @@
+<!-- preFactorList Modal -->
+<div class="modal fade" id="preFactorListModal" tabindex="-1" data-bs-focus="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: 12px;overflow: hidden;box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25)">
+            <div class="modal-header">
+                <div class="d-flex align-items-center justify-content-between w-100">
+                    <div>
+                        <p class="fbold mb-1">انتخاب پیش‌فاکتور</p>
+                        <p style="font-size: 11px">پیش‌فاکتوری که میخواهید روی آن صورتحساب ثبت کنید را انتخاب نمایید</p>
+                    </div>
+                    <div>
+                        <input id="preFactorListSearch" type="text" class="form-control" placeholder="جستجو..">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-body p-0">
+                <div id="preFactorListContainer"></div>
+            </div>
+
+            <div class="modal-footer justify-content-center p-2">
+                <button style="padding-block:4px" type="button" class="buttonCancel2" data-bs-dismiss="modal">انصراف</button>
+                @* <button id="submitSelectedPreFactor" style="padding-block:4px" type="button" class="buttonGreen3 d-none" onclick="submitSelectedPreFactor()">ثبت</button> *@
+            </div>
+
+        </div>
+    </div>
+</div>
