@@ -224,8 +224,8 @@
                         <span style="font-size: 13px; color: #777" class="flex-shrink-0">مبلغ تایید شده:</span>
                         @if (pendingMd) {
                             <div class="input-group">
-                                <input @(pendingMd ? "" : "disabled") type="text" class="acceptedAmount form-control currencyNumber" min="@item.TotalPaymentAmount" oninput="changeAcceptedRequestAmount(this, @reqAmount.Amount, @reqAmount.AcceptedAmount)" value="@(reqAmount.AcceptedAmount > 0 ? $"{reqAmount.AcceptedAmount:n0}" : "")" required data-currency-hint="#reqAmountCurrencyHint@(index)">
-                                <select class="acceptedAmountPercent form-select form-select-xs" @(pendingMd ? "" : "disabled") style="@(acceptedAmountPercentList.Contains(percent) ? "background-color: #cef5ce" : "border-color: #b5b5b5");color: #333" onchange="changePercentAcceptedRequestAmount(this, @reqAmount.Amount, @reqAmount.AcceptedAmount)">
+                                <input @(pendingMd ? "" : "disabled") type="text" class="acceptedAmount form-control currencyNumber" min="@item.TotalPaymentAmount" oninput="changeAcceptedRequestAmount(this, @reqAmount.Amount)" value="@(reqAmount.AcceptedAmount > 0 ? $"{reqAmount.AcceptedAmount:n0}" : "")" required data-currency-hint="#reqAmountCurrencyHint@(index)">
+                                <select class="acceptedAmountPercent form-select form-select-xs" @(pendingMd ? "" : "disabled") style="@(acceptedAmountPercentList.Contains(percent) ? "background-color: #cef5ce" : "border-color: #b5b5b5");color: #333" onchange="changePercentAcceptedRequestAmount(this, @reqAmount.Amount)">
                                     <option value="" selected="@(percent == 0 ? "selected" : null)">درصد</option>
                                     @foreach (var p in acceptedAmountPercentList) {
                                         <option value="@p" selected="@(percent == p ? "selected" : null)">@p%</option>

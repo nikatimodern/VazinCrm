@@ -16,9 +16,8 @@ var setting = null;
 var PfSelForFactor = null;
 var pFactorSerialNumber = null;
 var PfSelForFactorThis = null; //پیش فاکتور انتخاب شده
-var smsSendedPfId;
-let typeSubmitSmsSendPf;
-let dealIdSubmitSmsSendPf;
+
+
 
 var Invo_id = null;
 var Invo_type = null;
@@ -1706,6 +1705,9 @@ const resendRegUtamin = async (pfId, userTaminId, type, dealId) => {
     }
 };
 
+let smsSendedPfId;
+let typeSubmitSmsSendPf;
+let dealIdSubmitSmsSendPf;
 const showMobileModal = async (id, type, dealId) => {
     typeSubmitSmsSendPf = type;
     dealIdSubmitSmsSendPf = dealId;
@@ -1731,6 +1733,8 @@ const SendToCustomer = async () => {
         if (res.status === 200) {
             if (typeSubmitSmsSendPf === 1) {
                 await getAllPreFactor();
+            } else if (typeSubmitSmsSendPf === 3) {
+                await GetSelesExpertPartial();
             } else if (typeSubmitSmsSendPf === 4) {
                 await getPreFactorFromDeal(dealIdSubmitSmsSendPf);
             }
@@ -2694,11 +2698,14 @@ const CheckAcPfAtach = async (id) => {
          });
     });
 };
+
 const AcceptPfactor = async (id, type, dealId) => {
     document.getElementById("FLshowLoading").style.display = "";
     $.get("/Factor/AcceptPreFactorManual/" + id, async (res) => {
         if (type === 1) {
             await getAllPreFactor();
+        } else if (type === 3) {
+            GetSelesExpertPartial();
         } else if (type === 4) {
             await getPreFactorFromDeal(dealId);
             await getAllDeals();
@@ -2710,13 +2717,17 @@ const AcceptPfactor = async (id, type, dealId) => {
          setTimeout(async () => await AcceptPfactor(id), 3000);
      });
 };
+
 const HandAccepting = async (id, type, dealId) => {
     if (setting.attAcceptHanding === true) {
         if (await CheckAcPfAtach(id)) {
             await AcceptPfactor(id, type, dealId);
         } else {
             Swal.fire({
-                title: "خطا در تایید", text: "تایید انجام نشد فایل تایید باید ضمیمه شود", icon: "error", confirmButtonText: "باشه",
+                icon: "error",
+                title: "خطا در تایید",
+                text: "تایید انجام نشد فایل تایید باید ضمیمه شود",
+                confirmButtonText: "باشه",
             });
         }
     } else {
@@ -2956,6 +2967,7 @@ const checkRoles = (roles) => {
     if (!roles) return;
     roles.forEach(role => {
         const elements = document.querySelectorAll(`.${role.name}`);
+        console.log(elements);
         elements.forEach(el => {
             const dataAttr = el.getAttribute("data-class");
             if (dataAttr) {
@@ -3314,7 +3326,7 @@ const hideFact = () => {
 
 
 let openDropdownToggle = null;
-async function showTaminDropdown() {
+function showTaminDropdown() {
     Dropdown.setupDelegate({
         container: document,
         toggleSelector: ".taminDropdownToggle",
