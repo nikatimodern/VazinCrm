@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using CRM.Core.Domain.Cashes.Enums;
 
 namespace CRM.EndPoint.FrontEnd.Models.ViewModel.BaseItem;
 

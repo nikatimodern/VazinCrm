@@ -1,4 +1,3 @@
-using System;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.SaveChangeCustom;
@@ -10,11 +9,7 @@ using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
-using CRM.Core.Domain.PreFactors.Entities;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Tamin;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using Microsoft.AspNetCore.Authorization;
 

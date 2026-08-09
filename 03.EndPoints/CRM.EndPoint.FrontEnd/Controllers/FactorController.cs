@@ -14,10 +14,8 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
-using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Factor;
-using CRM.EndPoint.FrontEnd.Models.Payment;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.RemainedPf;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Sepidar;
 using CRM.EndPoint.FrontEnd.Services;
@@ -35,12 +33,9 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.BaseItems.Enums;
-using CRM.Core.Domain.Supplies.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.Core.Domain.Supplies.Enums;
 using CRM.EndPoint.FrontEnd.Models.DocumentRenderOptions;
@@ -1909,8 +1904,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                     if (setting?.FinancialConfirm != true)
                     {
-                        var tasks = await ts.TaskReciveAmountPrefctor(acc, model.InvoiceType); //TODO: pf null reference
-                        await db.Carizos.AddRangeAsync(tasks);
+                        await ts.CreatePreFactorAccountancyTasks(acc);
                     }
 
                     return acc.Id;
@@ -1942,8 +1936,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (setting?.FinancialConfirm != true)
                 {
-                    var tasks = await ts.TaskReciveAmountPrefctor(model, model.InvoiceType); 
-                    await db.Carizos.AddRangeAsync(tasks);
+                    await ts.CreatePreFactorAccountancyTasks(model);
                 }
 
                 return model.Id;

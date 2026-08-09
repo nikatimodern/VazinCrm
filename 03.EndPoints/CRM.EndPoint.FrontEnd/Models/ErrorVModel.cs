@@ -1,5 +1,3 @@
-using System;
-
 namespace CRM.EndPoint.FrontEnd.Models;
 
 public class ErrorVModel {

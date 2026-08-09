@@ -1,12 +1,7 @@
 ﻿using CRM.Core.Domain.AppUsers.Entities;
-using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Products.Entities;
-using CRM.Core.Domain.RequestAmounts.Entities;
-using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.EndPoint.FrontEnd.ISerives;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Amount;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Generics.Infrastructures.Sql;
@@ -15,16 +10,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CRM.Core.Domain.Accountancies.Entities;
-using CRM.Core.Domain.Accountancies.Enum;
-using CRM.Core.Domain.Payments.Entities;
-using CRM.Core.Domain.Payments.Enums;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize(Policy = "NotCustomerOnly")]
