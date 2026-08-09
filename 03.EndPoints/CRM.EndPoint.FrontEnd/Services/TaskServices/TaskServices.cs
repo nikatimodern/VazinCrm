@@ -101,19 +101,16 @@ namespace CRM.EndPoint.FrontEnd.Services.TaskServices {
 
         private static string CreateDescription(Accountancy ac, PreFactor pf, bool hasVosolDate)
         {
-            var deletedText = pf.IsDeleted ? " <b>(این پیش‌فاکتور حذف شده است)</b>" : "";
-
             var description =
-                $"این مورد بابت پیش‌فاکتور شماره " +
+                $"یک {ac.AccTypeTxt} بابت پیش‌فاکتور شماره " +
                 $"<span class='hoverLink' onclick='ShowPreviewPfactor(\"{pf.Id}\")'>" +
-                //  $"{pf.SerialNumber}{deletedText} مشتری " +
-                $"{pf.SerialNumber}</span>{deletedText} مشتری " +
+                $"{pf.SerialNumber}</span> مشتری " +
                 $"<span class='hoverLink' onclick='openCustomerProfile(\"{pf.CustomerId}\")'>" +
                 $"{pf.AgentName} {pf.Customer}</span> توسط کارشناس " +
                 $"<b>{ac.UserCreator}</b>";
 
             description += hasVosolDate
-                ? $" با تاریخ    وصول <b>{ac.VosolDate}</b> ثبت شده است."
+                ? $" با تاریخ وصول <b>{ac.VosolDate}</b> ثبت شده است."
                 : " ثبت شده است.";
 
             return description;
