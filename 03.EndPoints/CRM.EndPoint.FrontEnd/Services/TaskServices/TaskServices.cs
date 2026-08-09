@@ -104,16 +104,16 @@ namespace CRM.EndPoint.FrontEnd.Services.TaskServices {
             var deletedText = pf.IsDeleted ? " <b>(این پیش‌فاکتور حذف شده است)</b>" : "";
 
             var description =
-                $"{ac.AccTypeTxt} {ac.PayTypeTxt} بابت پیش فاکتور شماره " +
+                $"این مورد بابت پیش‌فاکتور شماره " +
                 $"<span class='hoverLink' onclick='ShowPreviewPfactor(\"{pf.Id}\")'>" +
-//                $"{pf.SerialNumber}</span>{deletedText} مشتری " +
-                $"{pf.SerialNumber}</span> مشتری " +
+                //  $"{pf.SerialNumber}{deletedText} مشتری " +
+                $"{pf.SerialNumber}</span>{deletedText} مشتری " +
                 $"<span class='hoverLink' onclick='openCustomerProfile(\"{pf.CustomerId}\")'>" +
                 $"{pf.AgentName} {pf.Customer}</span> توسط کارشناس " +
                 $"<b>{ac.UserCreator}</b>";
 
             description += hasVosolDate
-                ? $" تاریخ وصول <b>{ac.VosolDate}</b> ثبت شده است."
+                ? $" با تاریخ    وصول <b>{ac.VosolDate}</b> ثبت شده است."
                 : " ثبت شده است.";
 
             return description;

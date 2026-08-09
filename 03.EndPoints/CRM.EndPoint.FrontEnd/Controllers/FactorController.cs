@@ -1955,7 +1955,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     ac.pfSerialNumber = model.pfSerialNumber ?? ac.pfSerialNumber;
                     ac.fSerialNumber = model.fSerialNumber;
 
-                    ac.InvoiceType = model.InvoiceType; //پیش فاکتور -  فاکتور
+                    ac.InvoiceType = model.InvoiceType; //پیش فاکتور - فاکتور
                     ac.InvoiceTypeTxt = Service.getTypetxtInvoiceType((int)model.InvoiceType);
 
                     ac.PayType = model.PayType; //نقدی - چکی -اعتباری
