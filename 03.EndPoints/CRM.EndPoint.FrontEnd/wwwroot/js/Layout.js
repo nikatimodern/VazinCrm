@@ -2967,7 +2967,6 @@ const checkRoles = (roles) => {
     if (!roles) return;
     roles.forEach(role => {
         const elements = document.querySelectorAll(`.${role.name}`);
-        console.log(elements);
         elements.forEach(el => {
             const dataAttr = el.getAttribute("data-class");
             if (dataAttr) {
