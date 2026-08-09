@@ -33,20 +33,19 @@ namespace CRM.EndPoint.FrontEnd.Services.TaskServices {
 
             var isUpdatedAcc = await RemoveAccountancyTasks(acc.Id);
 
-            var allMali = await userManager.GetUsersInRoleAsync("کارشناس مالی");
-            var selAdmin = await udb.Users.FirstOrDefaultAsync(x => x.PositionId == Guid.Parse("36938255-50af-491f-b0df-a5c4079fefd8"));
+            var financialExperts = await userManager.GetUsersInRoleAsync("کارشناس مالی");
+            var taskCreator = await GetTaskCreator();
 
             var pf = await db.PreFactors.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == acc.pfid);
             if (pf == null) return;
 
-            var task = CreateTask(acc, selAdmin, pf, isUpdatedAcc);
+            var task = CreateTask(acc, taskCreator, pf, isUpdatedAcc);
 
             var carizos = new List<Carizo>();
             var taskUsers = new List<TaskUser>();
 
-            AddFinancialUsers(task, allMali, carizos, taskUsers);
-
-            AddPrefactorCreator(task, acc, pf, allMali, carizos, taskUsers);
+            AddFinancialUsers(task, financialExperts, carizos, taskUsers);
+            AddPrefactorCreator(task, acc, pf, financialExperts, carizos, taskUsers);
 
             task.TaskUsers = taskUsers;
             carizos.Add(task);
@@ -54,6 +53,13 @@ namespace CRM.EndPoint.FrontEnd.Services.TaskServices {
             await db.Carizos.AddRangeAsync(carizos);
         }
 
+        private async Task<AppUser> GetTaskCreator()
+        {
+            const string SaleAdminPositionId = "36938255-50af-491f-b0df-a5c4079fefd8";
+            var creator = await udb.Users.FirstOrDefaultAsync(x => x.PositionId == Guid.Parse(SaleAdminPositionId));
+
+            return creator;
+        }
 
         private Carizo CreateTask(Accountancy ac, AppUser taskCreator, PreFactor pf, bool isUpdatedAcc)
         {
@@ -101,28 +107,25 @@ namespace CRM.EndPoint.FrontEnd.Services.TaskServices {
 
         private static string CreateDescription(Accountancy ac, PreFactor pf, bool hasVosolDate)
         {
-            var deletedText = pf.IsDeleted ? " <b>(این پیش‌فاکتور حذف شده است)</b>" : "";
-
             var description =
-                $"این مورد بابت پیش‌فاکتور شماره " +
+                $"یک {ac.AccTypeTxt} بابت پیش‌فاکتور شماره " +
                 $"<span class='hoverLink' onclick='ShowPreviewPfactor(\"{pf.Id}\")'>" +
-                //  $"{pf.SerialNumber}{deletedText} مشتری " +
-                $"{pf.SerialNumber}</span>{deletedText} مشتری " +
+                $"{pf.SerialNumber}</span> مشتری " +
                 $"<span class='hoverLink' onclick='openCustomerProfile(\"{pf.CustomerId}\")'>" +
                 $"{pf.AgentName} {pf.Customer}</span> توسط کارشناس " +
                 $"<b>{ac.UserCreator}</b>";
 
             description += hasVosolDate
-                ? $" با تاریخ    وصول <b>{ac.VosolDate}</b> ثبت شده است."
+                ? $" با تاریخ وصول <b>{ac.VosolDate}</b> ثبت شده است."
                 : " ثبت شده است.";
 
             return description;
         }
 
 
-        private static void AddFinancialUsers(Carizo task, IList<AppUser> allMali, List<Carizo> carizos, List<TaskUser> taskUsers)
+        private static void AddFinancialUsers(Carizo task, IList<AppUser> financialExperts, List<Carizo> carizos, List<TaskUser> taskUsers)
         {
-            foreach (var user in allMali ?? [])
+            foreach (var user in financialExperts ?? [])
             {
                 var userId = Guid.Parse(user.Id);
 
@@ -144,12 +147,12 @@ namespace CRM.EndPoint.FrontEnd.Services.TaskServices {
         }
 
 
-        private static void AddPrefactorCreator(Carizo task, Accountancy ac, PreFactor pf, IList<AppUser> allMali, List<Carizo> carizos,
+        private static void AddPrefactorCreator(Carizo task, Accountancy ac, PreFactor pf, IList<AppUser> financialExperts, List<Carizo> carizos,
             List<TaskUser> taskUsers)
         {
             if (ac.PayType != PayTypeEnum.اعتباری && ac.PayType != PayTypeEnum.چکی) return;
 
-            var financialUserIds = allMali.Select(x => x.Id).ToHashSet();
+            var financialUserIds = financialExperts.Select(x => x.Id).ToHashSet();
 
             if (financialUserIds.Contains(pf.UserCreatorID)) return;
 
