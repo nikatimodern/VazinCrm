@@ -1980,6 +1980,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("UserModifyID")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("financialStatus")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
@@ -2432,7 +2435,7 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasIndex("ParentEntityName", "ParentEntityId");
 
-                    b.ToTable("logSystems", (string)null);
+                    b.ToTable("logSystems");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Orders.Entities.Order", b =>

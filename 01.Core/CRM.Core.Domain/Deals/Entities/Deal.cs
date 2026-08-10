@@ -37,12 +37,11 @@ public class Deal : BaseEntity {
     public string CusAcquaintanceWayTxt { get; set; }
 
     public bool Suspend { get; set; }
+    public DealFinancialStausEnum financialStatus { get; set; }
 
 
-    [NotMapped]
-    public Counts Counts { get; set; } = new Counts();
-    [NotMapped]
-    public List<AppUser> UserIdsForSuspend { get; set; }
+    [NotMapped] public Counts Counts { get; set; } = new Counts();
+    [NotMapped] public List<AppUser> UserIdsForSuspend { get; set; }
 }
 
 public class Counts {

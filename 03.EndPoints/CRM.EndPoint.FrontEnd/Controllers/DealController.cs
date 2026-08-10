@@ -8,6 +8,7 @@ using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.Deals.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
+using CRM.Core.Domain.Transfers.Entities;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
@@ -16,6 +17,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
@@ -44,6 +46,113 @@ public class DealController : Controller {
         return View();
     }
 
+    
+    [HttpPost]
+    public async Task<IActionResult> GetAllDealsDt()
+    {
+        var draw = Request.Form["draw"].FirstOrDefault();
+        var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
+        var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
+        var searchValue = Request.Form["search[value]"].FirstOrDefault();
+        var sortColumnIndex = Request.Form["order[0][column]"].FirstOrDefault();
+        var sortDirection = Request.Form["order[0][dir]"].FirstOrDefault();
+        var sortColumn = Request.Form[$"columns[{sortColumnIndex}][data]"].FirstOrDefault();
+        var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
+
+        if (string.IsNullOrEmpty(searchValue)) searchValue = model?.serVal;
+
+        var query = db.Deals.AsNoTracking();
+
+        var recordsTotal = await query.CountAsync();
+
+        if (!string.IsNullOrEmpty(searchValue))
+        {
+            var serVal = model.serVal.Trim();
+            query = query.Where(f =>
+                f.SerialNumber.ToString() == serVal ||
+                f.CustomerCode.ToString() == serVal ||
+                f.CommentText.Contains(serVal) ||
+                f.CustomerName.Contains(serVal) ||
+                f.CusCompanyName.Contains(serVal) ||
+                f.Title.Contains(serVal)
+            );
+        }
+        
+        if (model?.filt != null)
+        {
+            query = query.ApplyFilter(model, f => f.CustomerId, f => f.CreateDate, f => f.UserCreatorID);
+        }
+        
+
+        var recordsFiltered = await query.CountAsync();
+
+        if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortDirection))
+        {
+            var isAsc = sortDirection == "asc";
+
+        }
+        
+        if (length != -1)
+            query = query.Skip(start).Take(length);
+        
+        
+        var data = await query.ToListAsync();
+        
+        var dealIds = data.Select(d => d.Id).ToList();
+
+        var preFactorCounts = await db.PreFactors
+            .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
+            .GroupBy(f => f.DealId)
+            .Select(g => new { g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Key, x => x.Count);
+
+        var factorCounts = await db.Factors
+            .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
+            .GroupBy(f => f.DealId)
+            .Select(g => new { g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Key, x => x.Count);
+
+        var reportCounts = await db.Reports
+            .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
+            .GroupBy(f => f.DealId)
+            .Select(g => new { g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Key, x => x.Count);
+
+        var orderHeadCounts = await db.OrderHeads
+            .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
+            .GroupBy(f => f.DealId)
+            .Select(g => new { g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Key, x => x.Count);
+
+        var accCounts = await db.Accountancies
+            .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value) &&
+                        f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور && f.AccType != AcEnum.بدهکاری)
+            .GroupBy(f => f.DealId)
+            .Select(g => new { g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Key, x => x.Count);
+
+        foreach (var item in data)
+        {
+            item.Counts.PreFactor = preFactorCounts.GetValueOrDefault(item.Id);
+            item.Counts.Factor = factorCounts.GetValueOrDefault(item.Id);
+            item.Counts.Report = reportCounts.GetValueOrDefault(item.Id);
+            item.Counts.OrderHead = orderHeadCounts.GetValueOrDefault(item.Id);
+            item.Counts.Accountancy = accCounts.GetValueOrDefault(item.Id);
+        }
+
+
+
+        return Json(new {
+            draw,
+            recordsTotal,
+            recordsFiltered,
+            data,
+//            filterCounts
+        });
+    }
+
+    
+    
     [HttpPost]
     public async Task<IActionResult> GetAllDeals([FromBody] filterVModel model)
     {
