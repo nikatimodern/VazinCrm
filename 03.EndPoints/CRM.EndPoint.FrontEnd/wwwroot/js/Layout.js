@@ -5522,6 +5522,69 @@ function showModalSetting() {
     ModalToggle("BaseSetting");
 }
 
+function showDetailsLog(changeDetails, commentTxt) {
+    document.getElementById("ShowDetailsLog").innerHTML = changeDetails || commentTxt;
+    ModalToggle("#ShowDetailsLogModal");
+}
+
+async function showLogEntity(entityName, entityId) {
+    const data = await getLogEntity(entityName, entityId);
+    if (!data) return;
+    
+    const container = document.getElementById("logContainer");
+    container.innerHTML = "";
+    const dom = createDomLogSystem(data);
+    container.appendChild(dom);
+    
+    ModalToggle("logModal");
+}
+
+async function getLogEntity(entityName, entityId) {
+    try {
+        FLshowLoading();
+        const res = await axios(`/Home/GetEntityLogSystem?entityName=${entityName}&entityId=${entityId}`);
+        console.log(res.data);
+        if (res.status === 200) {
+            return res.data;
+        }
+        return false;
+    } catch (err) {
+        console.log(err);
+        toastifyError("خطای سرور");
+        return false;
+    } finally {
+        FLshowLoading(false);
+    }
+}
+
+function createDomLogSystem(data) {
+    if (!data) return;
+    
+    const container = document.createElement("div");
+    container.className = "logSystem-container";
+    
+    const ul = document.createElement("ul");
+    data.forEach(item => {
+        const li = document.createElement("li");
+        li.classList.add(`logAction-${item.actionType}`);
+        li.innerHTML = `
+            <span class="logSystem-time">${item.changeTimeTxt.split(" ").join(" | ")}</span>
+            <p class="logSystem-desc">
+                <span>${item.description || ""}</span>
+                ${(item.changeDetails || item.commentTxt) ? `
+                    <span class="showDetailLog-icon">
+                        <svg style="width: 14px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM9 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.75 8a.75.75 0 0 0 0 1.5h.75v1.75a.75.75 0 0 0 1.5 0v-2.5A.75.75 0 0 0 8.25 8h-1.5Z" clip-rule="evenodd" /></svg>
+                    </span>
+                ` : ""}
+            </p>
+        `;
+        li.querySelector(".showDetailLog-icon")?.addEventListener("click", () => showDetailsLog(item.changeDetails, item.commentTxt));
+        ul.appendChild(li);
+    });
+    
+    container.appendChild(ul);
+    return container;
+}
 
 function showAgentReviewText(btn) {
     btn.closest(".agent-review-box")?.classList.toggle("open");

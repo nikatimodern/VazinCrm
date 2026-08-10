@@ -36,11 +36,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly AiPrompts aiPrompts;
         private readonly ViraAi viraAi;
         private readonly GapgptAi gapgptAi;
+        private readonly LogSystemService logSystemService;
 
         public HomeController(IWebHostEnvironment appEnvironment, TimedHostedService hostService, IConfiguration conf,
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
             Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue, IssabelService issabelService,
-            AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi)
+            AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi, LogSystemService logSystemService)
         {
             this.appEnvironment = appEnvironment;
             this.hostService = hostService;
@@ -53,6 +54,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.udb = udb;
             this.S1db = S1db;
             this.smsQueue = smsQueue;
+            this.logSystemService = logSystemService;
             this.issabelService = issabelService;
             this.aiPrompts = aiPrompts;
             this.viraAi = viraAi;
@@ -143,6 +145,25 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var warnings = await db.SystemWarnings.ToListAsync();
             return Ok(warnings);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetEntityLogSystem(string entityName, string entityId)
+        {
+            try
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var roles = await userManager.GetRolesAsync(user);
+                var isAdmin = roles.Contains("مدیر ارشد");
+
+                var logs = await logSystemService.GetEntityLogSystemAsync(entityName, entityId, isAdmin);
+                return Ok(logs);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
+                throw;
+            }
         }
 
 
