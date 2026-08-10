@@ -20,8 +20,10 @@
                 _ => ""
             };
             var hasTimeline = item.AI && item.CallRecording?.Participants != null && item.CallRecording?.Participants.Count > 1;
-            var review = item.CallRecording?.AgentReview;
-            var score = item.CallRecording?.AgentScore;
+            var agentReview = item.CallRecording?.AgentReview;
+            var customerReview = item.CallRecording?.CustomerReview;
+            var customerScore = item.CallRecording?.CustomerScore;
+            var agentScore = item.CallRecording?.AgentScore;
 
             <div class="report-wrapper">
                 <div class="report-sidebar-timeline @(hasTimeline ? "has-timeline" : "")">
@@ -73,47 +75,106 @@
                                 </p>
                             }
                         </div>
-                        @if (item.AI && (!string.IsNullOrWhiteSpace(review) || score != null)) {
+                        @if (item.AI && (!string.IsNullOrWhiteSpace(agentReview) || agentScore != null || !string.IsNullOrWhiteSpace(customerReview) || customerScore != null)) {
                             <div class="agent-review-box">
 
                                 <div class="agent-review-header" onclick="showAgentReviewText(this)">
-                                    <div class="agent-review-content">
-                                        <span class="agent-review-title">ارزیابی پاسخگویی کارشناس</span>
 
-                                        @if (score != null) {
-                                            <div class="agent-rating-wrapper">
-                                                <div class="agent-stars">
-                                                    @for (var i = 1; i <= 5; i++) {
-                                                        <i class="fas fa-star @(i <= score ? "filled" : "")"></i>
-                                                    }
-                                                </div>
-                                                <span class="agent-score-text">
-                                                @(score switch {
-                                                        5 => "عالی",
-                                                        4 => "خوب",
-                                                        3 => "متوسط",
-                                                        2 => "ضعیف",
-                                                        1 => "بسیار ضعیف",
-                                                        _ => ""
-                                                    })
-                                            </span>
+                                    <div class="agent-review-content">
+
+                                        @if (!string.IsNullOrWhiteSpace(agentReview) || agentScore != null) {
+                                            <div class="evaluation-item">
+                                                <span class="evaluation-title">
+                                                    پاسخگویی کارشناس
+                                                </span>
+
+                                                @if (agentScore != null) {
+                                                    <div class="agent-rating-wrapper">
+                                                        <div class="agent-stars">
+                                                            @for (var i = 1; i <= 5; i++) {
+                                                                <i class="fas fa-star @(i <= agentScore ? "filled" : "")"></i>
+                                                            }
+                                                        </div>
+
+                                                        <span class="agent-score-text">
+                                                            @(agentScore switch {
+                                                                5 => "عالی",
+                                                                4 => "خوب",
+                                                                3 => "متوسط",
+                                                                2 => "ضعیف",
+                                                                1 => "بسیار ضعیف",
+                                                                _ => ""
+                                                            })
+                                                        </span>
+                                                    </div>
+                                                }
                                             </div>
                                         }
+
+                                        @if (!string.IsNullOrWhiteSpace(customerReview) || customerScore != null) {
+                                            <div class="evaluation-item customer-evaluation">
+                                                <span class="evaluation-title">
+                                                    رضایت مشتری
+                                                </span>
+
+                                                @if (customerScore != null) {
+                                                    <div class="agent-rating-wrapper">
+                                                        <div class="agent-stars">
+                                                            @for (var i = 1; i <= 5; i++) {
+                                                                <i class="fas fa-star @(i <= customerScore ? "filled" : "")"></i>
+                                                            }
+                                                        </div>
+
+                                                        <span class="agent-score-text">
+                                                            @(customerScore switch {
+                                                                5 => "بسیار راضی",
+                                                                4 => "راضی",
+                                                                3 => "خنثی",
+                                                                2 => "ناراضی",
+                                                                1 => "بسیار ناراضی",
+                                                                _ => ""
+                                                            })
+                                                        </span>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+
                                     </div>
 
-                                    @if (!string.IsNullOrWhiteSpace(review)) {
+                                    @if (!string.IsNullOrWhiteSpace(agentReview) || !string.IsNullOrWhiteSpace(customerReview)) {
                                         <button class="agent-review-toggle">
-                                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg>
+                                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 1.06L5.22 9.28a.75.75 0 0 1 0-1.06Z" lip-rule="evenodd" /></svg>
                                         </button>
                                     }
+
                                 </div>
 
-
-                                @if (!string.IsNullOrWhiteSpace(review)) {
+                                @if (!string.IsNullOrWhiteSpace(agentReview) || !string.IsNullOrWhiteSpace(customerReview)) {
                                     <div class="agent-review-collapse">
+
                                         <div class="agent-review-text">
-                                            @review
+
+                                            @if (!string.IsNullOrWhiteSpace(agentReview)) {
+                                                <div class="review-detail">
+                                                    <span class="review-detail-title">
+                                                        پاسخگویی کارشناس:
+                                                    </span>
+                                                    <span>@agentReview</span>
+                                                </div>
+                                            }
+
+                                            @if (!string.IsNullOrWhiteSpace(customerReview)) {
+                                                <div class="review-detail">
+                                                    <span class="review-detail-title">
+                                                        رضایت مشتری:
+                                                    </span>
+                                                    <span>@customerReview</span>
+                                                </div>
+                                            }
+
                                         </div>
+
                                     </div>
                                 }
 

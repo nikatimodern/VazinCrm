@@ -30,7 +30,7 @@ public class SummaryModel {
 
     [JsonPropertyName("product")] public string Product { get; init; }
 
-    [JsonPropertyName("salesAgent")] public CallEvaluationModel CallEvaluation { get; init; }
+    [JsonPropertyName("callEvaluation")] public CallEvaluationModel CallEvaluation { get; init; }
 }
 
 public class CallEvaluationModel {
