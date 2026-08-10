@@ -1,5 +1,4 @@
-﻿using CRM.Core.Domain.Customers.Entities;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace CRM.EndPoint.FrontEnd.Models.ViewModel
 {

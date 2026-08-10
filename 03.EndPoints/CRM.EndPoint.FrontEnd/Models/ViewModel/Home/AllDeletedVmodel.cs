@@ -1,5 +1,4 @@
-﻿using CRM.Core.Domain.PreFactors.Entities;
-using System;
+﻿using System;
 using CRM.Core.Domain;
 
 namespace CRM.EndPoint.FrontEnd.Models.ViewModel.Home

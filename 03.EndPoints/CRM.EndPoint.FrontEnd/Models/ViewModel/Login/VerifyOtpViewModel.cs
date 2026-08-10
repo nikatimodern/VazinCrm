@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace CRM.EndPoint.FrontEnd.Models.ViewModel.Login;
 
 public class VerifyOtpViewModel

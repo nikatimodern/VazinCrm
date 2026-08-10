@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Customers.Enum;
@@ -21,12 +20,9 @@ using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.EndPoint.FrontEnd.Models.DocumentRenderOptions;
 using CRM.EndPoint.FrontEnd.Models.Sms;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Order;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
-using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
-using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.Playwright;
 
 

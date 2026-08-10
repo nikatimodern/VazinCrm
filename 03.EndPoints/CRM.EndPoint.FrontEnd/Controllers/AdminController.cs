@@ -1,5 +1,4 @@
-﻿using System;
-using CRM.Core.Domain.AppUsers.Entities;
+﻿using CRM.Core.Domain.AppUsers.Entities;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Admin;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Login;
 using Microsoft.AspNetCore.Authorization;

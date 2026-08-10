@@ -1,4 +1,3 @@
-@using CRM.Core.Domain.RequestAmounts.Entities
 @using CRM.Core.Domain.RequestAmounts.Enums
 @model List<CRM.EndPoint.FrontEnd.Models.ViewModel.Amount.RequestAmountVModel>
 
@@ -12,7 +11,7 @@
 }
 
 <div class="col-12 mx-auto d-flex flex-column" style="gap:12px">
-    @foreach (var item in Model) {
+    @foreach (var item in Model ?? []) {
         index += 1;
         var reqAmount = item.RequestAmount;
         var isCreator = reqAmount.UserCreatorID == userId;

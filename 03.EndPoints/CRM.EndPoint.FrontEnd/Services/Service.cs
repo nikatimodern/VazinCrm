@@ -19,12 +19,10 @@ using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Generics.Infrastructures.Sql;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Playwright;
 
 
 namespace CRM.EndPoint.FrontEnd.Services {

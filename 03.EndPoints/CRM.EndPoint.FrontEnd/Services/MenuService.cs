@@ -260,7 +260,7 @@ public class MenuService {
                     new MenuItem {
                         Id = "requestAmount",
                         Title = "ثبت درخواست وجه",
-                        Url = "/Amount/RequestAmount",
+                        Url = "/RequestAmount/Index",
                         DisplayOrder = 2
                     },
 

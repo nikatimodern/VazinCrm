@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using CRM.Core.Domain.ASettings.Entities;
 using CRM.Core.Domain.Company.Entities;
-using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.EndPoint.FrontEnd.Models.Factor;
 

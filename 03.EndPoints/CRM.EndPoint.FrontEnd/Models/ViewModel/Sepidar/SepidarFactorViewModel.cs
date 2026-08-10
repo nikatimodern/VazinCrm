@@ -1,6 +1,4 @@
 ﻿using CRM.Core.Domain.Company.Entities;
-using CRM.Core.Domain.Customers.Entities;
-using CRM.Core.Domain.Factors.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
 
 namespace CRM.EndPoint.FrontEnd.Models.ViewModel.Sepidar
