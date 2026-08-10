@@ -310,6 +310,11 @@
 	border-radius: 8px;
 	background: #fafbfe;
 	border-right: 3px solid #6d28d9;
+	transition: background-color 0.2s;
+}
+
+.agent-review-box:not(.open):hover {
+	background-color: #f7f3ff;
 }
 
 
