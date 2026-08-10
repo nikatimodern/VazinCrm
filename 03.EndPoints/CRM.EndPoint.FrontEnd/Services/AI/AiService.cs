@@ -77,9 +77,10 @@ public class AiService(
                 trackedCall.CallerCustomerTxt = aiResult.Data.Customer.Trim();
             }
 
-            trackedCall.AgentReview = aiResult.Data.SalesAgent?.Review;
-            trackedCall.AgentScore = aiResult.Data.SalesAgent?.Score;
-            trackedCall.CustomerScore = aiResult.Data.SalesAgent?.CustomerScore;
+            trackedCall.AgentReview = aiResult.Data.CallEvaluation?.AgentReview;
+            trackedCall.CustomerReview = aiResult.Data.CallEvaluation?.CustomerReview;
+            trackedCall.AgentScore = aiResult.Data.CallEvaluation?.AgentScore;
+            trackedCall.CustomerScore = aiResult.Data.CallEvaluation?.CustomerScore;
 
             await UpdateStatus(trackedCall, AiProcessStatusEnum.SummaryCompleted, ct: ct);
 
