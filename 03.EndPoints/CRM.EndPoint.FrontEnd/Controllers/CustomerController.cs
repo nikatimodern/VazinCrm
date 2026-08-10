@@ -24,9 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CRM.Core.Domain.BaseItems.Enums;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
-using CRM.EndPoint.FrontEnd.Services.PushServices;
 
 
 namespace CRM.EndPoint.FrontEnd.Controllers {

@@ -1,7 +1,6 @@
 ﻿using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.Contracts.Entities;
-using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Services;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Identity;

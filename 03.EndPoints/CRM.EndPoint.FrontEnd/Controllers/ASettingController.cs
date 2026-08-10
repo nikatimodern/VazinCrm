@@ -12,15 +12,12 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using CRM.Core.Domain;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
-using CRM.Core.Domain.PreFactors.Entities;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
-using Microsoft.EntityFrameworkCore.Query.Internal;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]

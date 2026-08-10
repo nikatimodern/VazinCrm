@@ -1,6 +1,5 @@
 ﻿using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Customers.Entities;
-using CRM.Core.Domain.Factors.Entities;
 using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.Orders.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
@@ -8,27 +7,18 @@ using CRM.EndPoint.FrontEnd.Models.Dashboard;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.Infrastructures.Sql;
-using DocumentFormat.OpenXml.Office2010.Excel;
-using DocumentFormat.OpenXml.Spreadsheet;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Net;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Enum;
-using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Enums;
-using CRM.Core.Domain.PreFactors.Enum;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
-using CRM.Infrastructures.Sql.Factors.QueryExtensions;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize(Policy = "NotCustomerOnly")]

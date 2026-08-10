@@ -3,7 +3,6 @@ using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Carizos.Entities;
 using CRM.Core.Domain.Carizos.Enum;
 using Generics.Infrastructures.Sql;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -11,26 +10,186 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Enum;
+using CRM.Core.Domain.PreFactors.Entities;
 
 namespace CRM.EndPoint.FrontEnd.Services.TaskServices {
     public class TaskServices {
         private readonly UserManager<AppUser> userManager;
-        private readonly IHttpContextAccessor httpContextAccessor;
         private readonly DateTimeServices dts;
         private readonly CRMContextDb db;
         private readonly UserContextDb udb;
 
-        public TaskServices(UserManager<AppUser> userManager, IHttpContextAccessor httpContextAccessor, DateTimeServices dts, CRMContextDb db,
-            UserContextDb udb)
+        public TaskServices(UserManager<AppUser> userManager, DateTimeServices dts, CRMContextDb db, UserContextDb udb)
         {
             this.userManager = userManager;
-            this.httpContextAccessor = httpContextAccessor;
             this.dts = dts;
             this.db = db;
             this.udb = udb;
         }
 
-        public async Task<List<Carizo>> TaskReciveAmountPrefctor(Accountancy ac, InvoiceTypeEnum type) //1-prefactor 2-factor
+        public async Task CreatePreFactorAccountancyTasks(Accountancy acc)
+        {
+            if (acc.InvoiceType != InvoiceTypeEnum.پیش_فاکتور) return;
+
+            var isUpdatedAcc = await RemoveAccountancyTasks(acc.Id);
+
+            var financialExperts = await userManager.GetUsersInRoleAsync("کارشناس مالی");
+            var taskCreator = await GetTaskCreator();
+
+            var pf = await db.PreFactors.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == acc.pfid);
+            if (pf == null) return;
+
+            var task = CreateTask(acc, taskCreator, pf, isUpdatedAcc);
+
+            var carizos = new List<Carizo>();
+            var taskUsers = new List<TaskUser>();
+
+            AddFinancialUsers(task, financialExperts, carizos, taskUsers);
+            AddPrefactorCreator(task, acc, pf, financialExperts, carizos, taskUsers);
+
+            task.TaskUsers = taskUsers;
+            carizos.Add(task);
+
+            await db.Carizos.AddRangeAsync(carizos);
+        }
+
+        private async Task<AppUser> GetTaskCreator()
+        {
+            const string SaleAdminPositionId = "36938255-50af-491f-b0df-a5c4079fefd8";
+            var creator = await udb.Users.FirstOrDefaultAsync(x => x.PositionId == Guid.Parse(SaleAdminPositionId));
+
+            return creator;
+        }
+
+        private Carizo CreateTask(Accountancy ac, AppUser taskCreator, PreFactor pf, bool isUpdatedAcc)
+        {
+            var hasVosolDate = ac.PayType is PayTypeEnum.چکی or PayTypeEnum.اعتباری;
+
+            var task = new Carizo {
+                Id = Guid.NewGuid(),
+
+                TaskType = TaskTypeEnum.اشتراکی,
+                TaskTypeTxt = nameof(TaskTypeEnum.اشتراکی),
+
+                Remind = true,
+                RemindTime = hasVosolDate ? "08:00" : DateTime.Now.ToString("HH:mm"),
+                RemindDismiss = !hasVosolDate,
+
+                Date = hasVosolDate ? ac.VosolDate : dts.GetDatePersian(),
+                DateMiladi = hasVosolDate ? dts.GetDateMiladi(ac.VosolDate) : DateTime.Now,
+
+                Repeat = true,
+                RepeatType = "daily",
+                RepeatTypeTxt = "هرروز",
+                RepeatUntil = "همیشه",
+
+                TaskStatus = false,
+
+                AssignUser = taskCreator?.FullName ?? "سیستم",
+                AssignUserId = taskCreator?.Id,
+
+                UserCreator = taskCreator?.FullName ?? "سیستم",
+                UserCreatorID = taskCreator?.Id,
+
+                EntityType = "Acc",
+                EntityId = ac.Id,
+
+                Systematic = true,
+
+                Title = (isUpdatedAcc ? "اصلاحیه " : "") + $"{ac.AccTypeTxt} {ac.PayTypeTxt}",
+                Description = CreateDescription(ac, pf, hasVosolDate),
+            };
+
+            task.ShareTaskId = task.Id;
+
+            return task;
+        }
+
+        private static string CreateDescription(Accountancy ac, PreFactor pf, bool hasVosolDate)
+        {
+            var description =
+                $"یک {ac.AccTypeTxt} بابت پیش‌فاکتور شماره " +
+                $"<span class='hoverLink' onclick='ShowPreviewPfactor(\"{pf.Id}\")'>" +
+                $"{pf.SerialNumber}</span> مشتری " +
+                $"<span class='hoverLink' onclick='openCustomerProfile(\"{pf.CustomerId}\")'>" +
+                $"{pf.AgentName} {pf.Customer}</span> توسط کارشناس " +
+                $"<b>{ac.UserCreator}</b>";
+
+            description += hasVosolDate
+                ? $" با تاریخ وصول <b>{ac.VosolDate}</b> ثبت شده است."
+                : " ثبت شده است.";
+
+            return description;
+        }
+
+
+        private static void AddFinancialUsers(Carizo task, IList<AppUser> financialExperts, List<Carizo> carizos, List<TaskUser> taskUsers)
+        {
+            foreach (var user in financialExperts ?? [])
+            {
+                var userId = Guid.Parse(user.Id);
+
+                taskUsers.Add(new TaskUser {
+                    TaskId = task.Id,
+                    UserId = userId,
+                    FullName = user.FullName
+                });
+
+                var clone = task.Clone();
+
+                clone.Systematic = true;
+                clone.ShareTaskId = task.Id;
+                clone.AssignUser = user.FullName;
+                clone.AssignUserId = user.Id;
+
+                carizos.Add(clone);
+            }
+        }
+
+
+        private static void AddPrefactorCreator(Carizo task, Accountancy ac, PreFactor pf, IList<AppUser> financialExperts, List<Carizo> carizos,
+            List<TaskUser> taskUsers)
+        {
+            if (ac.PayType != PayTypeEnum.اعتباری && ac.PayType != PayTypeEnum.چکی) return;
+
+            var financialUserIds = financialExperts.Select(x => x.Id).ToHashSet();
+
+            if (financialUserIds.Contains(pf.UserCreatorID)) return;
+
+            taskUsers.Add(new TaskUser {
+                TaskId = task.Id,
+                UserId = Guid.Parse(pf.UserCreatorID),
+                FullName = pf.UserCreator
+            });
+
+            var clone = task.Clone();
+
+            clone.Systematic = true;
+            clone.ShareTaskId = task.Id;
+            clone.AssignUser = pf.UserCreator;
+            clone.AssignUserId = pf.UserCreatorID;
+
+            carizos.Add(clone);
+        }
+
+
+        public async Task<bool> RemoveAccountancyTasks(Guid accId)
+        {
+            var oldCarizos = await db.Carizos
+                .Where(x => x.EntityId == accId)
+                .ToListAsync();
+
+            if (oldCarizos.Count == 0)
+                return false;
+
+            db.Carizos.RemoveRange(oldCarizos);
+
+            return true;
+        }
+
+
+/*
+        public async Task<List<Carizo>> TaskReciveAmountPrefctor0(Accountancy ac, InvoiceTypeEnum type) //1-prefactor 2-factor
         {
             var oldCarizos = await db.Carizos.Where(f => f.EntityId == ac.Id).ToListAsync();
             var isUpdatedAcc = false;
@@ -48,14 +207,14 @@ namespace CRM.EndPoint.FrontEnd.Services.TaskServices {
 
             if (type == InvoiceTypeEnum.پیش_فاکتور) //preFactor
             {
-                var pf = await db.PreFactors.Where(f => f.Id == ac.pfid).FirstOrDefaultAsync();
+                var pf = await db.PreFactors.FirstOrDefaultAsync(f => f.Id == ac.pfid);
 
                 List<Carizo> carizos = [];
 
                 var _Task = new Carizo {
                     Id = Guid.NewGuid(),
                     TaskType = TaskTypeEnum.اشتراکی,
-                    TaskTypeTxt = TaskTypeEnum.اشتراکی.ToString(),
+                    TaskTypeTxt = nameof(TaskTypeEnum.اشتراکی),
                     Remind = true,
                     RemindDismiss = true,
                     Repeat = true,
@@ -237,5 +396,6 @@ namespace CRM.EndPoint.FrontEnd.Services.TaskServices {
 
             return null;
         }
+*/
     }
 }
