@@ -36,6 +36,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.BaseItems.Enums;
+using CRM.Core.Domain.Deals.Enums;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.Core.Domain.Supplies.Enums;
 using CRM.EndPoint.FrontEnd.Models.DocumentRenderOptions;
@@ -1686,6 +1687,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     if (pf != null)
                     {
                         deal = await db.Deals.Where(f => f.Id == pf.DealId).FirstOrDefaultAsync();
+                        if (deal?.financialStatus == DealFinancialStausEnum.closed)
+                        {
+                            return Conflict("سفارش مربوط به این پیش‌فاکتور توسط مالی شده است");
+                        }
 
                         acc.CustomerId = pf.CustomerId;
                         acc.pfSerialNumber = pf.SerialNumber;
@@ -2320,9 +2325,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var transAction = await db.Database.BeginTransactionAsync();
             try
             {
+                var user = await userManager.GetUserAsync(HttpContext.User);
                 var cus = await db.Customers.Where(f => f.Id == model.CustomerId).FirstOrDefaultAsync();
                 var deal = await db.Deals.Where(f => f.Id == model.DealId).FirstOrDefaultAsync();
-                var user = await userManager.GetUserAsync(HttpContext.User);
+
+                if (deal?.financialStatus == DealFinancialStausEnum.closed)
+                {
+                    return Conflict("سفارش مربوط به این پیش‌فاکتور توسط مالی شده است");
+                }
 
                 bool isNewPrefactor = false;
                 PreFactor oldModel = null;
@@ -2373,7 +2383,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         model.Cus_Tel = cus.Tel;
                         model.Cus_Address = cus.Address;
                         model.Cus_Juridical = cus.Juridical;
-                    } else
+                    } else if (deal != null)
                     {
                         model.AgentName = deal.CustomerName?.Trim();
                         model.AgentMeliCode = deal.CusMelliCode;

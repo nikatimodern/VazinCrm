@@ -462,7 +462,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                var accList = await db.Accountancies.AsNoTracking().ForCustomer(cusId).Where(f => f.Wallet).ToListAsync();
+                var accList = await db.Accountancies.AsNoTracking()
+                    .ForCustomer(cusId)
+                    .NotVosoled()
+                    .Where(f => f.Wallet)
+                    .ToListAsync();
 
                 if (accList.Count == 0)
                     return Ok(false);

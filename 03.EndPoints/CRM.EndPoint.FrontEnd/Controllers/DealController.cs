@@ -41,12 +41,31 @@ public class DealController : Controller {
         this.udb = udb;
     }
 
+    [Authorize(Roles = "کارشناس فروش ,مدیر ارشد ,مدیر تامین ,مدیر فروش ,کارشناس تامین, مدیر عامل")]
     public IActionResult Index()
     {
         return View();
     }
 
-    
+
+    public async Task<IActionResult> ToggleFinancialStatusDeal(Guid id, DealFinancialStausEnum status)
+    {
+        try
+        {
+            var deal = await db.Deals.FindAsync(id);
+            if (deal == null) return NotFound();
+
+            deal.financialStatus = status;
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }
+
     [HttpPost]
     public async Task<IActionResult> GetAllDealsDt()
     {
@@ -61,14 +80,14 @@ public class DealController : Controller {
 
         if (string.IsNullOrEmpty(searchValue)) searchValue = model?.serVal;
 
-        var query = db.Deals.AsNoTracking();
+        var baseQuery = db.Deals.AsNoTracking();
 
-        var recordsTotal = await query.CountAsync();
+        var recordsTotal = await baseQuery.CountAsync();
 
         if (!string.IsNullOrEmpty(searchValue))
         {
             var serVal = model.serVal.Trim();
-            query = query.Where(f =>
+            baseQuery = baseQuery.Where(f =>
                 f.SerialNumber.ToString() == serVal ||
                 f.CustomerCode.ToString() == serVal ||
                 f.CommentText.Contains(serVal) ||
@@ -77,12 +96,25 @@ public class DealController : Controller {
                 f.Title.Contains(serVal)
             );
         }
-        
+
+
         if (model?.filt != null)
         {
-            query = query.ApplyFilter(model, f => f.CustomerId, f => f.CreateDate, f => f.UserCreatorID);
+            baseQuery = baseQuery.ApplyFilter(model, f => f.CustomerId, f => f.CreateDate, f => f.UserCreatorID);
         }
+
+        var filterCounts = new Dictionary<int, int> {
+            [-1] = await baseQuery.CountAsync(),
+            [0] = await baseQuery.CountAsync(s => s.financialStatus == DealFinancialStausEnum.active),
+            [1] = await baseQuery.CountAsync(s => s.financialStatus == DealFinancialStausEnum.closed),
+        };
         
+        
+        var query = model?._type switch {
+            0 => baseQuery.Where(s => s.financialStatus >= DealFinancialStausEnum.active),
+            1 => baseQuery.Where(s => s.financialStatus >= DealFinancialStausEnum.closed),
+            _ => baseQuery
+        };
 
         var recordsFiltered = await query.CountAsync();
 
@@ -90,69 +122,34 @@ public class DealController : Controller {
         {
             var isAsc = sortDirection == "asc";
 
+            query = sortColumn switch {
+                "serialNumber" => isAsc ? query.OrderBy(c => c.SerialNumber) : query.OrderByDescending(c => c.SerialNumber),
+                "customerName" => isAsc ? query.OrderBy(c => c.CustomerName) : query.OrderByDescending(c => c.CustomerName),
+                "title" => isAsc ? query.OrderBy(c => c.Title) : query.OrderByDescending(c => c.Title),
+                "commentText" => isAsc ? query.OrderBy(c => c.CommentText) : query.OrderByDescending(c => c.CommentText),
+                "userCreator" => isAsc ? query.OrderBy(c => c.UserCreator) : query.OrderByDescending(c => c.UserCreator),
+                _ => isAsc ? query.OrderBy(c => c.CreateDate) : query.OrderByDescending(c => c.CreateDate),
+            };
         }
-        
+
         if (length != -1)
             query = query.Skip(start).Take(length);
-        
-        
+
+
         var data = await query.ToListAsync();
-        
-        var dealIds = data.Select(d => d.Id).ToList();
 
-        var preFactorCounts = await db.PreFactors
-            .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
-            .GroupBy(f => f.DealId)
-            .Select(g => new { g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.Key, x => x.Count);
-
-        var factorCounts = await db.Factors
-            .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
-            .GroupBy(f => f.DealId)
-            .Select(g => new { g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.Key, x => x.Count);
-
-        var reportCounts = await db.Reports
-            .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
-            .GroupBy(f => f.DealId)
-            .Select(g => new { g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.Key, x => x.Count);
-
-        var orderHeadCounts = await db.OrderHeads
-            .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
-            .GroupBy(f => f.DealId)
-            .Select(g => new { g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.Key, x => x.Count);
-
-        var accCounts = await db.Accountancies
-            .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value) &&
-                        f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور && f.AccType != AcEnum.بدهکاری)
-            .GroupBy(f => f.DealId)
-            .Select(g => new { g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.Key, x => x.Count);
-
-        foreach (var item in data)
-        {
-            item.Counts.PreFactor = preFactorCounts.GetValueOrDefault(item.Id);
-            item.Counts.Factor = factorCounts.GetValueOrDefault(item.Id);
-            item.Counts.Report = reportCounts.GetValueOrDefault(item.Id);
-            item.Counts.OrderHead = orderHeadCounts.GetValueOrDefault(item.Id);
-            item.Counts.Accountancy = accCounts.GetValueOrDefault(item.Id);
-        }
-
-
+        await SetDealCountsAsync(data);
 
         return Json(new {
             draw,
             recordsTotal,
             recordsFiltered,
             data,
-//            filterCounts
+            filterCounts
         });
     }
 
-    
-    
+
     [HttpPost]
     public async Task<IActionResult> GetAllDeals([FromBody] filterVModel model)
     {
@@ -204,72 +201,30 @@ public class DealController : Controller {
             var open = await openQ.ToListAsync();
             var success = await successQ.ToListAsync();
             var failed = await failedQ.ToListAsync();
-//            var dealIds = query.Select(f => f.Id).ToArray();
 
-            var dealIds = open.Concat(success).Concat(failed)
-                .Select(d => d.Id)
-                .ToList();
-
-            var preFactorCounts = await db.PreFactors
-                .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
-                .GroupBy(f => f.DealId)
-                .Select(g => new { g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.Key, x => x.Count);
-
-            var factorCounts = await db.Factors
-                .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
-                .GroupBy(f => f.DealId)
-                .Select(g => new { g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.Key, x => x.Count);
-
-            var reportCounts = await db.Reports
-                .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
-                .GroupBy(f => f.DealId)
-                .Select(g => new { g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.Key, x => x.Count);
-
-            var orderHeadCounts = await db.OrderHeads
-                .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
-                .GroupBy(f => f.DealId)
-                .Select(g => new { g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.Key, x => x.Count);
-
-            var accCounts = await db.Accountancies
-                .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value) &&
-                            f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور && f.AccType != AcEnum.بدهکاری)
-                .GroupBy(f => f.DealId)
-                .Select(g => new { g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.Key, x => x.Count);
+            var deals = open.Concat(success).Concat(failed).ToList();
+            await SetDealCountsAsync(deals);
 
 
             var users = await udb.Users.Where(f => f.IsEmployee).Select(f => new { f.Id, f.FirstName, f.LastName })
                 .ToDictionaryAsync(x => Guid.Parse(x.Id), x => x.FirstName + " " + x.LastName);
 
-            foreach (var item in open.Concat(success).Concat(failed))
+            foreach (var item in deals.Where(item => item.Suspend))
             {
-                item.Counts.PreFactor = preFactorCounts.GetValueOrDefault(item.Id);
-                item.Counts.Factor = factorCounts.GetValueOrDefault(item.Id);
-                item.Counts.Report = reportCounts.GetValueOrDefault(item.Id);
-                item.Counts.OrderHead = orderHeadCounts.GetValueOrDefault(item.Id);
-                item.Counts.Accountancy = accCounts.GetValueOrDefault(item.Id);
+                var userList = await db.UserCustomers
+                    .Where(f => f.CustomerId == item.CustomerId)
+                    .Select(f => new AppUser {
+                        Id = f.UserId.ToString(),
+                        FirstName = users.GetValueOrDefault(f.UserId)
+                    })
+                    .ToListAsync();
 
-                if (item.Suspend)
-                {
-                    var userList = await db.UserCustomers
-                        .Where(f => f.CustomerId == item.CustomerId)
-                        .Select(f => new AppUser {
-                            Id = f.UserId.ToString(),
-                            FirstName = users.GetValueOrDefault(f.UserId)
-                        })
-                        .ToListAsync();
+                userList.Add(new AppUser {
+                    Id = item.UserCreatorID,
+                    FirstName = item.UserCreator
+                });
 
-                    userList.Add(new AppUser {
-                        Id = item.UserCreatorID,
-                        FirstName = item.UserCreator
-                    });
-
-                    item.UserIdsForSuspend = userList.DistinctBy(u => Guid.Parse(u.Id)).Reverse().ToList();
-                }
+                item.UserIdsForSuspend = userList.DistinctBy(u => Guid.Parse(u.Id)).Reverse().ToList();
             }
 
             return Ok(new {
@@ -280,6 +235,57 @@ public class DealController : Controller {
         catch (Exception ex)
         {
             return BadRequest(ex.Message);
+        }
+    }
+
+    private async Task SetDealCountsAsync(IList<Deal> deals)
+    {
+        var dealIds = deals.Select(d => d.Id).ToList();
+
+        if (dealIds.Count == 0)
+            return;
+
+        var preFactorCounts = await db.PreFactors
+            .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
+            .GroupBy(f => f.DealId)
+            .Select(g => new { g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Key, x => x.Count);
+
+        var factorCounts = await db.Factors
+            .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
+            .GroupBy(f => f.DealId)
+            .Select(g => new { g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Key, x => x.Count);
+
+        var reportCounts = await db.Reports
+            .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
+            .GroupBy(f => f.DealId)
+            .Select(g => new { g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Key, x => x.Count);
+
+        var orderHeadCounts = await db.OrderHeads
+            .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
+            .GroupBy(f => f.DealId)
+            .Select(g => new { g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Key, x => x.Count);
+
+        var accCounts = await db.Accountancies
+            .Where(f =>
+                f.DealId.HasValue &&
+                dealIds.Contains(f.DealId.Value) &&
+                f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور &&
+                f.AccType != AcEnum.بدهکاری)
+            .GroupBy(f => f.DealId)
+            .Select(g => new { g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Key, x => x.Count);
+
+        foreach (var deal in deals ?? [])
+        {
+            deal.Counts.PreFactor = preFactorCounts.GetValueOrDefault(deal.Id);
+            deal.Counts.Factor = factorCounts.GetValueOrDefault(deal.Id);
+            deal.Counts.Report = reportCounts.GetValueOrDefault(deal.Id);
+            deal.Counts.OrderHead = orderHeadCounts.GetValueOrDefault(deal.Id);
+            deal.Counts.Accountancy = accCounts.GetValueOrDefault(deal.Id);
         }
     }
 
@@ -322,7 +328,6 @@ public class DealController : Controller {
             }
 
 
-
             var oldDeal = await db.Deals.AsNoTracking().Where(f => f.Id == model.Id).FirstOrDefaultAsync();
             var customer = await db.Customers.Where(f => f.Id == model.CustomerId).FirstOrDefaultAsync();
             if (customer != null)
@@ -353,7 +358,6 @@ public class DealController : Controller {
 
             if (model.Id == Guid.Empty)
             {
-
                 model.UserCreator = user.FullName;
                 model.UserCreatorID = user.Id;
 

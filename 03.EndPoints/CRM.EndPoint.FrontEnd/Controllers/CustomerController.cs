@@ -1044,9 +1044,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var rols = await userManager.GetRolesAsync(user);
 
-                ViewBag.EditAccess = false;
-                ViewBag.AdminForosh = false;
-                ViewBag.SmallOffice = setting.SmallOffice;
                 ViewBag.PassType = dealId == null ? 1 : 4;
 
                 IQueryable<PreFactor> qData = null;
@@ -1054,9 +1051,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش"))
                 {
-                    ViewBag.EditAccess = true;
-                    ViewBag.AdminForosh = true;
-
                     if (dealId != null)
                     {
                         qData = db.PreFactors.Where(s => s.DealId == dealId).OrderByDescending(s => s.CreateDate);
@@ -1077,7 +1071,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     if (dealId != null)
                     {
-                        qData = db.PreFactors.Where(s => s.DealId == dealId && s.UserCreatorID == user.Id).OrderByDescending(s => s.CreateDate);
+                        qData = db.PreFactors.Where(s => s.DealId == dealId).OrderByDescending(s => s.CreateDate);
                     } else if (customerId != null)
                     {
                         qData = db.PreFactors.Where(s => s.CustomerId == customerId && s.UserCreatorID == user.Id)
@@ -1134,15 +1128,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var model = new PrefactorViewModel() {
                     data = data,
                     UserTamin = taminUsers,
-                    rols = rols,
                     _Setting = setting
                 };
 
                 var html = await vrs.RenderToStringAsync("GetAllPreFactorPartial", model,
                     new Dictionary<string, object> {
-                        { "EditAccess", ViewBag.EditAccess },
-                        { "AdminForosh", ViewBag.AdminForosh },
-                        { "SmallOffice", ViewBag.SmallOffice },
                         { "PassType", ViewBag.PassType },
                     });
 

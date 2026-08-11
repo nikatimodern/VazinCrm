@@ -57,8 +57,6 @@ public class MenuService {
                     AppRoles.SalesAdmin,
                     AppRoles.TaminExpert,
                     AppRoles.TaminAdmin,
-                    AppRoles.FinancialExpert,
-                    AppRoles.FinancialAdmin
                 ],
                 DisplayOrder = 2,
                 ShowInMobileBottomMenu = true

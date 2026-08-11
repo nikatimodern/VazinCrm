@@ -2534,7 +2534,7 @@ const submitInvoice = async () => {
                 closeModalInvoice();
                 
                 const pfListModal = document.getElementById("preFactorListModal");
-                if (pfListModal.classList.contains("show")) {
+                if (isModalOpen(pfListModal)) {
                     ModalToggle(pfListModal, "hide");
                 }
             } else {
@@ -2543,6 +2543,12 @@ const submitInvoice = async () => {
             FLshowLoading(false);
         } catch (err) {
             console.log(err);
+            const message = err.response.data;
+            if (err.status === 409) {
+                toastifyError(message);
+                FLshowLoading(false);
+                return;
+            }
             setTimeout(async () => await submitInvoice(), 3000);
         }
     }
@@ -2915,7 +2921,9 @@ const AcceptPfactor = async (id, type, dealId) => {
             await getAllPreFactor();
         } else if (type === 4) {
             await getPreFactorFromDeal(dealId);
-            await getAllDeals();
+            if (typeof getAllDeals === "function") {
+                await getAllDeals();
+            }
         }
         toastifySuccess("پیش فاکتور تایید شد.");
         document.getElementById("FLshowLoading").style.display = "none";

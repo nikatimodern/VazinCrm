@@ -229,11 +229,12 @@
                                 <i class="mp fa fa-eye"></i>
                             </button>
                         }
+                        
                         <button class="mp d-flex justify-content-center align-items-center" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="AttachDoc('@item.Id')">
                             <i style="font-size:15px" class="mp fa fa-paperclip"></i>
                         </button>
 
-                        @if (item.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش) {
+                        @if (item.Pftype >= (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش) {
                             <button class="mp d-flex justify-content-center align-items-center taminDropdownToggle" data-title-right="دستور تولیدها" style="color:var(--DarkColor); border:none;background-color:transparent" data-pfId="@item.Id">
                                 <i class="mp fas fa-industry"></i>
                             </button>
