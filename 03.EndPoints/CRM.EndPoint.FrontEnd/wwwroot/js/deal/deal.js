@@ -175,9 +175,7 @@ const getAllDeals = async () => {
     }
 };
 
-const createDomAllDeals = (items, containersId, isAdmin) => {
-    const baseColors = { 1: "63,134,214", 2: "177,0,1", 3: "70,164,73" };
-    
+const createDomAllDeals = (items, containersId, isAdmin) => {    
     const countElm = document.querySelector(`${containersId} .countDeal`);
     const containerElm = document.querySelector(`${containersId} .deal-column-list`);
     if (!containerElm) return;
@@ -187,17 +185,17 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
     
     items.forEach((item, index) => {
         const isFinancialClosed = item.financialStatus === 1;
-        const opacityColor = item.counts.preFactor || item.counts.report ? 1 : 0.6;
-        const colorStatus = `rgba(${baseColors[item.status]}, ${opacityColor})`;
         
         const card = document.createElement("div");
-        card.className = "deal-card";
         card.dataset.id = item.id;
-        card.style.borderRightColor = colorStatus;
+        card.className = "deal-card";
+        
+        if (!item.counts.preFactor && !item.counts.report) {
+            card.classList.add("deal-card--inactive");
+        }
         
         if (isFinancialClosed) {
             card.classList.add("deal-card--locked");
-            card.style.setProperty("--deal-status-color", `rgb(${baseColors[item.status]})`);
         }
         
         card.innerHTML = `
@@ -241,8 +239,7 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
                     <div class="d-flex gap-2 gap-lg-3 align-items-end justify-content-between flex-grow-1" style="font-size:clamp(10px, 2vw, 11px)">
                         <div class="d-flex gap-2 gap-lg-3 align-items-center flex-grow-1 flex-wrap" style="row-gap:.5rem !important">
                             <span class="d-flex align-items-center gap-1 ">
-                                <svg class="${item.customerId ? "icon-hover" : ""}" 
-                                      style="width: 16px;flex-shrink: 0;${item.customerId ? `color:${colorStatus};cursor:pointer` : ""}" 
+                                <svg class="flex-shrink-0 ${item.customerId ? "icon-hover cursor-pointer" : ""}" style="width: 16px" 
                                       ${item.customerId ? `onclick="openCustomerProfile('${item.customerId}')"` : ""} viewBox="0 0 16 16" fill="currentColor">
                                   <path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0Zm-5-2a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM8 9c-1.825 0-3.422.977-4.295 2.437A5.49 5.49 0 0 0 8 13.5a5.49 5.49 0 0 0 4.294-2.063A4.997 4.997 0 0 0 8 9Z" clip-rule="evenodd"/></svg>
                                 <span>${item.customerName ?? ""}${item.customerCode ? " (کد مشتری: " + item.customerCode + ")" : ""}</span>
@@ -266,9 +263,9 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <div class="deal-dropdown__toggle d-flex align-items-center justify-content-center" style="cursor:pointer;color:${colorStatus}" tabindex="0">
+                        <button class="deal-dropdown__toggle d-flex align-items-center justify-content-center" tabindex="0">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-8 4.66a1 1 0 0 0 -1 1v6l.007 .117l.029 .149l.035 .105l.054 .113l.071 .111c.03 .04 .061 .077 .097 .112l.09 .08l.096 .067l.098 .052l.11 .044l.112 .03l.126 .017l6.075 .003l.117 -.007a1 1 0 0 0 .883 -.993l-.007 -.117a1 1 0 0 0 -.993 -.883h-3.586l4.293 -4.293l.083 -.094a1 1 0 0 0 -1.497 -1.32l-4.293 4.291v-3.584l-.007 -.117a1 1 0 0 0 -.993 -.883z"/></svg>
-                        </div>
+                        </button>
                         <div class="task-dropdown deal-dropdown__list" style="border: 1px solid #e5e5e5;">
                             <div class="dropdown-item justify-content-between itemGreen showPreFactors">
                                 <div class="d-flex align-items-center" style="gap: 12px">
