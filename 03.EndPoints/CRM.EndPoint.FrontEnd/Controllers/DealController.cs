@@ -108,15 +108,14 @@ public class DealController : Controller {
             [0] = await baseQuery.CountAsync(s => s.financialStatus == DealFinancialStausEnum.active),
             [1] = await baseQuery.CountAsync(s => s.financialStatus == DealFinancialStausEnum.closed),
         };
-        
-        
+
+
         var query = model?._type switch {
             0 => baseQuery.Where(s => s.financialStatus >= DealFinancialStausEnum.active),
             1 => baseQuery.Where(s => s.financialStatus >= DealFinancialStausEnum.closed),
             _ => baseQuery
         };
-
-        var recordsFiltered = await query.CountAsync();
+        
 
         if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortDirection))
         {
@@ -132,11 +131,12 @@ public class DealController : Controller {
             };
         }
 
-        if (length != -1)
-            query = query.Skip(start).Take(length);
-
-
+        query = length != -1
+            ? query.Skip(start).Take(length)
+            : query.Take(100);
+        
         var data = await query.ToListAsync();
+        var recordsFiltered = data.Count;
 
         await SetDealCountsAsync(data);
 

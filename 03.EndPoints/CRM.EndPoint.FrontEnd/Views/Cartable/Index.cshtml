@@ -1953,7 +1953,7 @@
                 ],
                 columns: [
                     { data: "serialNumber" },
-                    { data: "title" },
+                    { data: "title", className: "wrap-text"},
                     { data: "commentText", className: "wrap-text", render: data => data || "-" },
                     { data: "createDateTxt", render: data => renderDateTimeHtml(data) },
                     { data: "userCreator" },
