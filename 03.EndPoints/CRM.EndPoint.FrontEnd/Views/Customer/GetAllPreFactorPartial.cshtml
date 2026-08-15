@@ -1,6 +1,7 @@
 ﻿@using System.Security.Claims
+@using CRM.Core.Domain.Deals.Enums
 @using CRM.Core.Domain.PreFactors.Enum
-@model PrefactorViewModel ;
+@model PrefactorViewModel;
 
 @{
     Layout = null;
@@ -18,7 +19,8 @@
     @foreach (var item in Model.data) {
         var isInvalid = item.Pftype is (int)PreFactorEnum.فاقد_اعتبار or (int)PreFactorEnum.بسته_شده
             or (int)PreFactorEnum.حذف_شده or (int)PreFactorEnum.برگشت_خورده_از_طرف_مدیر_فروش;
-        var hasAccess = isAdmin || isSalesAdmin || item.UserCreatorID == userId;
+        var hasAccess = item.Deal.financialStatus != DealFinancialStausEnum.closed && (isAdmin || isSalesAdmin || item.UserCreatorID == userId);
+        var hideAddInvoiceBtns = isInvalid || !hasAccess;
 
 
         <div class="d-flex w-100 position-relative">
@@ -73,7 +75,7 @@
                         <div class="col-12 col-md flex-wrap column-gap-3 row-gap-2 px-2 ps-0 flex-md-column" style="flex-grow: 1.2;text-align:center; display:flex;align-items:center;justify-content:space-around;column-gap:24px !important">
                             <div style=" display:flex;align-items:center; justify-content:center;gap:6px">
                                 <label style="color:gray">مبلغ:</label>
-                                <label title="" style="font-family:'IRANSansBold'">@string.Format("{0:n0}", item.SumTotalAmountTax) <span style="font-size: 12px"> @(item.CurrencyTypeTxt ?? "ريال")</span></label>
+                                <label style="font-family:'IRANSansBold'">@string.Format("{0:n0}", item.SumTotalAmountTax) <span style="font-size: 12px"> @(item.CurrencyTypeTxt ?? "ريال")</span></label>
 
                             </div>
 
@@ -81,60 +83,31 @@
                                 <label style=" color:gray">پیش پرداخت:</label>
                                 <label style="font-family:'IRANSansBold'">@string.Format("{0:n0}", item.ReciveAmount) <span style="font-size: 12px"> @(item.CurrencyTypeTxt ?? "ريال")</span></label>
                             </div>
-                            <div class="d-flex d-md-none flex-row flex-md-column align-items-center justify-content-center gap-2 gap-md-0">
+                            <div class="flex-center d-md-none flex-row flex-md-column gap-2 gap-md-0">
                                 <label style="color:gray">وضعیت:</label>
                                 <label class="text-center" style="font-family:'IRANSansBold'">@item.PftypeTxt</label>
                             </div>
 
                             <div class="d-none d-md-flex" style=" align-items:center; justify-content:center;gap:4px;max-width: 180px;width: 100%">
-                                <button class="buttonPurple p-0 flex-grow-1 fMedium" style="height:auto !important; border-radius:5px;font-size: 13px;max-width: 140px " onclick="ShowModalListInvoice('@item.Id', 1,'@item.SerialNumber', @passType, '@item.DealId', @isInvalid.ToString().ToLower())">صورت حساب</button>
-                                @*@if (!isCustomer && !isInvalid) {
-                                    if (Model._Setting.FinancialConfirm == true) {
-                                        <button data-title="بارگذاری رسید پرداخت" class="buttonPurple p-0" style="height:20px;width:20px; border-radius:5px;" onclick="ShowModalAttachInvoice('@item.Id', 1, 1, @passType, '@item.DealId')">
-                                            <svg style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                                        </button>
-                                    } else {
-                                        <button data-title="واریز پرداختی" class="buttonPurple p-0" style="height:20px;width:20px; border-radius:5px" onclick="ShowModalInvoice('@item.Id', 1, 1, @passType, '@item.DealId')">
-                                            <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                                        </button>
-                                        <button data-title="برگشت مبلغ" class="buttonPurple p-0" style="height:20px;width:20px; border-radius:5px" onclick="ShowModalInvoice('@item.Id', 1, 2,  @passType, '@item.DealId')">
-                                            <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" /></svg>
-                                        </button>
-                                    }
-                                }*@
+                                <button class="buttonPurple p-0 flex-grow-1 fMedium" style="height:auto !important; border-radius:5px;font-size: 13px;max-width: 140px " onclick="ShowModalListInvoice('@item.Id', 1,'@item.SerialNumber', @passType, '@item.DealId', @hideAddInvoiceBtns.ToString().ToLower())">صورت حساب</button>
                             </div>
                         </div>
                         <div class="d-md-none my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
 
                         <div class="col-12 col-md flex-row flex-md-column flex-wrap gap-2 pe-2" style=" display:flex;align-items:center;justify-content:space-around">
-                            <div class="d-none d-md-flex flex-row flex-md-column align-items-center justify-content-center gap-2 gap-md-0">
+                            <div class="flex-center d-none d-md-flex flex-row flex-md-column gap-2 gap-md-0">
                                 <label style="color:gray">وضعیت:</label>
                                 <label class="text-center fbold" style="font-size: 13px">@item.PftypeTxt </label>
                             </div>
 
                             <div class="d-flex d-md-none" style=" align-items:center; justify-content:center;gap:4px">
-                                <button class="buttonPurple px-4" style="height:auto !important;border-radius:5px;cursor:pointer; font-family:'IRANSansBold'" onclick="ShowModalListInvoice('@item.Id', 1, '@item.SerialNumber', @passType, '@item.DealId', @isInvalid.ToString().ToLower())">صورت حساب</button>
-                                @*@if (!isCustomer && !isInvalid) {
-                                    if (Model._Setting.FinancialConfirm == true) {
-                                        <button class="buttonPurple p-0" style="height:20px !important;width:20px !important; border-radius:5px; cursor:pointer;" onclick="ShowModalAttachInvoice('@item.Id', 1, 1, @passType, '@item.DealId')">
-                                            <svg style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                                        </button>
-                                    } else {
-                                        <button class="buttonPurple p-0" style="height:20px !important;width:20px !important; border-radius:5px; cursor:pointer;" onclick="ShowModalInvoice('@item.Id', 1, 1, @passType, '@item.DealId')">
-                                            <svg style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                                        </button>
-
-                                        <button class="buttonPurple p-0" style="height:20px !important;width:20px !important; border-radius:5px; cursor:pointer;" onclick="ShowModalInvoice('@item.Id', 1, 2, @passType, '@item.DealId')">
-                                            <svg style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" /></svg>
-                                        </button>
-                                    }
-                                }*@
+                                <button class="buttonPurple px-4" style="height:auto !important;border-radius:5px;cursor:pointer; font-family:'IRANSansBold'" onclick="ShowModalListInvoice('@item.Id', 1, '@item.SerialNumber', @passType, '@item.DealId', @hideAddInvoiceBtns.ToString().ToLower())">صورت حساب</button>
                             </div>
 
                             @switch (item.Pftype) {
                                 case (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین:
                                     if (hasAccess) {
-                                        <div class="d-flex flex-row flex-md-column align-items-center justify-content-center gap-2">
+                                        <div class="flex-center flex-row flex-md-column gap-2">
                                             <form id="@item.Id">
                                                 <select style="width:100%;" id="S_@item.Id" name="S_@item.Id" class="test form-select form-select-sm" required>
                                                     @foreach (var i in Model.UserTamin) {
@@ -149,7 +122,7 @@
                                     break;
                                 case (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین:
                                     if (hasAccess) {
-                                        <button style="font-size: 13px;transition: all 0.3s;" class="ToSend w-auto h-auto d-flex align-items-center justify-content-center gap-1 px-2 py-1" onclick="resendRegUtamin('@item.Id', '@item.UserTaminId', @passType, '@item.DealId')">
+                                        <button style="font-size: 13px;transition: all 0.3s;" class="ToSend w-auto h-auto flex-center gap-1 px-2 py-1" onclick="resendRegUtamin('@item.Id', '@item.UserTaminId', @passType, '@item.DealId')">
                                             <i class="mp fa fa-paper-plane" aria-hidden="true"></i>
                                             <span>ارسال مجدد به تامین</span>
                                         </button>
@@ -166,15 +139,13 @@
                                     break;
                                 case (int)PreFactorEnum.در_انتظار_تایید_مشتری:
                                     if (hasAccess) {
-                                        <div class="d-flex flex-wrap flex-row flex-md-column align-items-center justify-content-center gap-2">
-                                            <button style="font-size: 13px;transition: all 0.3s;" id="BtnSendToId" class="ToSend w-auto h-auto d-flex align-items-center justify-content-center gap-1 px-2 py-1" onclick="showMobileModal('@item.Id')">
+                                        <div class="flex-center flex-wrap flex-row flex-md-column gap-2">
+                                            <button style="font-size: 13px;transition: all 0.3s;" id="BtnSendToId" class="ToSend w-auto h-auto flex-center gap-1 px-2 py-1" onclick="showMobileModal('@item.Id')">
                                                 <i class="mp fa fa-paper-plane" aria-hidden="true"></i>
                                                 <span>ارسال مجدد به مشتری</span>
                                             </button>
                                             <button style="font-size: 13px;transition: all 0.3s;" id="BtnSendToId" class="ToSend w-auto h-auto px-2 py-1" onclick="HandAccepting('@item.Id', @passType, '@item.DealId')"> تایید به صورت دستی</button>
                                         </div>
-
-                                        //<button class="mp btn btn-outline-secondary" id="BackCustomerId" style="width:100px" onclick="backStepPf('@item.Id', 2,5)">برگشت</button>
                                     }
 
                                     break;
@@ -182,7 +153,7 @@
                                     break;
                                 case (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش:
                                     if (hasAccess) {
-                                        <div class="d-flex flex-wrap flex-row flex-md-column align-items-center justify-content-center gap-2" style="font-size: 13px">
+                                        <div class="flex-center flex-wrap flex-row flex-md-column gap-2" style="font-size: 13px">
                                             <div style="display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
                                                 <button style="border-radius:4px;height:auto;width:90px;" class="buttonGreen px-2" onclick="showModalCreateOrder(@((int)Model._Setting.SetAmountByRoleType), '@item.Id','@item.CustomerId', '@item.DealId', @item.DealSerialNumber)">حواله تولید</button>
                                             </div>
@@ -192,7 +163,7 @@
                                     break;
                                 case (int)PreFactorEnum.در_انتظار_تایید_مالی:
                                     if (hasAccess) {
-                                        <div class="d-flex flex-wrap flex-row flex-md-column align-items-center justify-content-center gap-2" style="font-size: 13px">
+                                        <div class="flex-center flex-wrap flex-row flex-md-column gap-2" style="font-size: 13px">
                                             <div style="display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
                                                 <button style="border-radius:4px;height:auto;width:90px;" class="buttonGreen px-2" onclick="showModalCreateOrder(@((int)Model._Setting.SetAmountByRoleType), '@item.Id','@item.CustomerId', '@item.DealId', @item.DealSerialNumber)">حواله تولید</button>
                                             </div>
@@ -201,22 +172,25 @@
 
                                     break;
                                 case (int)PreFactorEnum.در_انتظار_تولید:
-                                    <div class="d-flex flex-wrap flex-row flex-md-column align-items-center justify-content-center gap-2" style="font-size: 13px">
+                                    <div class="flex-center flex-wrap flex-row flex-md-column gap-2" style="font-size: 13px">
                                         @if (hasAccess) {
                                             <div style="display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
                                                 <button style="border-radius:4px;height:auto;width:90px;" class="buttonGreen px-2" onclick="showModalCreateOrder(@((int)Model._Setting.SetAmountByRoleType), '@item.Id','@item.CustomerId', '@item.DealId', @item.DealSerialNumber)">حواله تولید</button>
                                             </div>
                                         }
-                                        <div class="mp d-flex flex-wrap align-items-center justify-content-center gap-2">
+                                        <div class="flex-center flex-wrap gap-2">
                                             <button style="border-radius:4px;height:auto;width:80px " class="buttonGreen px-2" onclick="showModalDeliver('@item.Id',1 )">مانده تولید</button>
-                                            @if (hasAccess || isFinancial) {
+                                            @if (hasAccess) {
                                                 <button style="border-radius:4px;height:auto;width:80px" class="buttonGreen px-2" onclick="delivered('@item.Id', @passType, '@item.DealId')">اتمام کار</button>
                                             }
                                         </div>
                                     </div>
                                     break;
                                 case (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد:
-                                    <button style="border-radius:4px;height:auto;width:90px;" class="buttonGreen px-2" onclick="backDelivered('@item.Id', @passType, '@item.DealId')">لغو اتمام کار</button>
+                                    if (hasAccess) {
+                                        <button style="border-radius:4px;height:auto;width:90px;" class="buttonGreen px-2" onclick="backDelivered('@item.Id', @passType, '@item.DealId')">لغو اتمام کار</button>
+                                    }
+
                                     break;
                             }
                         </div>
@@ -367,9 +341,15 @@
                     }
 
                     @if (!isCustomer) {
-                        <button class="flex-center" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="AttachDoc('@item.Id')">
-                            <i style="font-size:15px" class="mp fa fa-paperclip"></i>
-                        </button>
+                        if (hasAccess) {
+                            <button class="flex-center" data-title-right="پیوست ها" style="color:var(--DarkColor)" onclick="AttachDoc('@item.Id')">
+                                <i style="font-size:15px" class="mp fa fa-paperclip"></i>
+                            </button>
+                        } else {
+                            <button class="flex-center" data-title-right="پیوست ها" style="color:var(--DarkColor)" onclick="showAttachments('@item.Id', 2)">
+                                <i style="font-size:15px" class="mp fa fa-paperclip"></i>
+                            </button>
+                        }
 
                         if (item.Pftype >= (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش) {
                             <button class="flex-center taminDropdownToggle" data-title-right="دستور تولیدها" style="color:var(--DarkColor); border:none;background-color:transparent" data-pfId="@item.Id">
@@ -384,7 +364,7 @@
                             </button>
                         }
 
-                        if (item.Pftype == (int)PreFactorEnum.فاقد_اعتبار) {
+                        if (hasAccess && item.Pftype == (int)PreFactorEnum.فاقد_اعتبار) {
                             <button class="flex-center" data-title-right="بازگشت" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="Backward('@item.Id', @passType, '@item.DealId')">
                                 <i style="font-size:15px" class="mp fa fa-forward"></i>
                             </button>

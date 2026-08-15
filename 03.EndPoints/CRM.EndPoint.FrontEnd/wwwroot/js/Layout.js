@@ -2248,7 +2248,6 @@ const RefreshDataInvoice = async (id = Invo_id, type = Invo_type) => {
     customerId = paymentData.data.customerId;
     document.getElementById("changeStatusAllAccBtn")?.classList.toggle("d-none", !paymentData.data.showChangeStatusAllBtn);
     document.getElementById("acceptFinancialBtn")?.classList.toggle("d-none", !paymentData.data.showAcceptPfBtn);
-    document.getElementById("notAcceptFinancialBtn")?.classList.toggle("d-none", !paymentData.data.showNotAcceptedPfBtn);
     FLshowLoading(false);
 };
 
@@ -2326,7 +2325,7 @@ const ShowModalListInvoice = async (id, type, ser, passType, dealId, hideAddInvo
     Invo_type = type;
     
     await RefreshDataInvoice(id, type);
-    if (type === 1 || type === 11 || type === 12) { //PreFactor
+    if (type === 1) { //PreFactor
         pfactorID = id;
         InvoiceType = 1;
         document.getElementById("TitleListInvoiceId").innerText = "صورت‌حساب های پیش‌فاکتور " + ser;
@@ -2630,9 +2629,6 @@ document.getElementById("acceptFinancialBtn")?.addEventListener("click", async (
     $("#InvoiceListModalId").modal("toggle");
 });
 
-document.getElementById("notAcceptFinancialBtn")?.addEventListener("click", async () => {
-    await showModalNotAccept(pfactorID, Invo_type);
-});
 
 async function acceptFinancial(pfId) {
     try {

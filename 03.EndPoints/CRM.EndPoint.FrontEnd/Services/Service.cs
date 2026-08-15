@@ -125,7 +125,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
                 var accS = await db.Accountancies.ForPreFactor(pf.Id).ToListAsync();
 
-                foreach (var acc in accS.Where(f => f.PayType != PayTypeEnum.اعتباری))
+                foreach (var acc in accS.Where(f => f.CustomerId != null && f.PayType != PayTypeEnum.اعتباری))
                     acc?.Wallet = true;
 
                 foreach (var acc in accS.Where(f => f.PayType == PayTypeEnum.اعتباری))

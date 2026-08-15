@@ -69,7 +69,7 @@
                             </div>
                             @if (totalAccCount > 0) {
                                 <div class="d-flex w-100 position-relative" style="min-width: 120px;max-width: 160px;width: 90%;">
-                                    <button class="p-0 btn btn-outline-secondary" style="height: 24px;flex-grow: 1" onclick="ShowModalListInvoice('@preFactor.Id', 11,'@preFactor.SerialNumber', 5, '@preFactor.DealId', false)">صورتحساب</button>
+                                    <button class="p-0 btn btn-outline-secondary" style="height: 24px;flex-grow: 1" onclick="ShowModalListInvoice('@preFactor.Id', 1,'@preFactor.SerialNumber', 5, '@preFactor.DealId', false)">صورتحساب</button>
                                     @if (notAcceptedAccCount > 0) {
                                         <span class="badgeCircle" style="position: absolute;top: 3px;left: 4px;color: #fff">@(notAcceptedAccCount)</span>
                                     } else if (preFactor.AcceptedManagingDirector != true) {

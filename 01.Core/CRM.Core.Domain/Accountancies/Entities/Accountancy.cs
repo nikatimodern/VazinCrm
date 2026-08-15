@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Security.AccessControl;
 using System.Text;
 using CRM.Core.Domain.Accountancies.Enum;
+using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
 
 namespace CRM.Core.Domain.Accountancies.Entities {
@@ -49,6 +50,7 @@ namespace CRM.Core.Domain.Accountancies.Entities {
         public int? CustomerCode { get; set; }
         public Guid? DealId { get; set; }
         public int? DealSerialNumber { get; set; }
+        public Deal Deal { get; set; }
         [NotMapped] public int SerialNum { get; set; }
 
         [NotMapped] public int Row { get; set; }

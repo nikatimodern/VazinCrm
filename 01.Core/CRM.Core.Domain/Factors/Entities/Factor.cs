@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Framework.Domain;
@@ -27,6 +28,8 @@ namespace CRM.Core.Domain.Factors.Entities {
 
         public Guid? DealId { get; set; }
         public int? DealSerialNumber { get; set; }
+        public Deal Deal { get; set; }
+
         public Guid? CustomerId { get; set; }
         public string Customer { get; set; }
         public int? CustomerCode { get; set; }

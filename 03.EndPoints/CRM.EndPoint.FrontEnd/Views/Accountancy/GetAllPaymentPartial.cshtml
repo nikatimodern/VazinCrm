@@ -1,5 +1,6 @@
 ﻿@using CRM.EndPoint.FrontEnd.Models.Payment;
 @using CRM.Core.Domain.Accountancies.Enum
+@using CRM.Core.Domain.Deals.Enums
 
 @model PaymentPartialVModel
 
@@ -25,20 +26,22 @@
         <tbody>
         @foreach (var item in Model.Items.OrderByDescending(f => f.CreateDate)) {
             var isCreator = item.UserCreatorID == Model.UserId;
+            var isDealClosed = item.Deal.financialStatus == DealFinancialStausEnum.closed;
 
-            var canManage = isCreator || Model.IsCreatorParent || Model.IsAdmin || Model.IsSalesAdmin;
+            var canManage = !isDealClosed && (isCreator || Model.IsCreatorParent || Model.IsAdmin || Model.IsSalesAdmin);
             var canViewActions = canManage || Model.IsFinancial;
-            var canEdit = ((Model.IsAdmin || Model.IsFinancial) && isCreator) 
+            var canEdit = ((Model.IsAdmin || Model.IsFinancial) && isCreator)
                           || (canManage && item.Status is AccStatusEnum.ثبت_اولیه or AccStatusEnum.رد_شده);
             var canVosol = item.Status == AccStatusEnum.تایید_شده &&
                            (item.PayType == PayTypeEnum.اعتباری || item.PayType == PayTypeEnum.چکی) &&
                            !item.Vosoled;
 
             var canApproveOrReject =
-                Model.IsAdmin ||
-                (Model.IsFinancial && (item.PayType == PayTypeEnum.نقدی || item.PayType == PayTypeEnum.چکی)) ||
-                ((Model.IsManagingDirector || Model.IsTamin) && item.PayType == PayTypeEnum.تهاتری) ||
-                (Model.IsManagingDirector && item.PayType == PayTypeEnum.اعتباری);
+                !isDealClosed &&
+                (Model.IsAdmin ||
+                 (Model.IsFinancial && (item.PayType == PayTypeEnum.نقدی || item.PayType == PayTypeEnum.چکی)) ||
+                 ((Model.IsManagingDirector || Model.IsTamin) && item.PayType == PayTypeEnum.تهاتری) ||
+                 (Model.IsManagingDirector && item.PayType == PayTypeEnum.اعتباری));
 
             var statusColor = item.Status switch {
                 AccStatusEnum.ثبت_اولیه => "#777",

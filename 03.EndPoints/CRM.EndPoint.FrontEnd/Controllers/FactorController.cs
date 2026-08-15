@@ -1687,10 +1687,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     if (pf != null)
                     {
                         deal = await db.Deals.Where(f => f.Id == pf.DealId).FirstOrDefaultAsync();
-                        /*if (deal?.financialStatus == DealFinancialStausEnum.closed)
+                        if (deal?.financialStatus == DealFinancialStausEnum.closed)
                         {
                             return Conflict("سفارش مربوط به این پیش‌فاکتور توسط مالی شده است");
-                        }*/
+                        }
 
                         acc.CustomerId = pf.CustomerId;
                         acc.pfSerialNumber = pf.SerialNumber;
@@ -2329,10 +2329,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var cus = await db.Customers.Where(f => f.Id == model.CustomerId).FirstOrDefaultAsync();
                 var deal = await db.Deals.Where(f => f.Id == model.DealId).FirstOrDefaultAsync();
 
-                /*if (deal?.financialStatus == DealFinancialStausEnum.closed)
+                if (deal?.financialStatus == DealFinancialStausEnum.closed)
                 {
                     return Conflict("سفارش مربوط به این پیش‌فاکتور توسط مالی شده است");
-                }*/
+                }
 
                 bool isNewPrefactor = false;
                 PreFactor oldModel = null;

@@ -291,7 +291,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var roles = await userManager.GetRolesAsync(user);
 
-                var baseQuery = db.Accountancies.OrderByDescending(f => f.CreateDate).ForPreFactor().AsQueryable();
+                var baseQuery = db.Accountancies
+                    .AsNoTracking()
+                    .Include(x => x.Deal)
+                    .ForPreFactor()
+                    .OrderByDescending(x => x.CreateDate)
+                    .AsQueryable();
+
                 if (cartable == CartableEnum.کارشناس_تامین)
                 {
                     baseQuery = baseQuery.OnlyTamin();
@@ -331,27 +337,25 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     _ => baseQuery
                 };
 
-                query = string.IsNullOrWhiteSpace(serVal) ? query.Take(100) : query;
+                if (string.IsNullOrWhiteSpace(serVal))
+                {
+                    query = query.Take(100);
+                }
 
                 var accS = await query.ToListAsync();
-                var count = accS.Count;
 
-                var model = new PaymentPartialVModel {
+                var model = new PaymentPartialVModel
+                {
                     Items = accS,
                     PassType = cartable == CartableEnum.کارشناس_تامین ? 56 : 55,
-                    UserId = user.Id,
-                    IsAdmin = roles.Contains("مدیر ارشد"),
-                    IsSalesAdmin = roles.Contains("مدیر فروش"),
-                    IsManagingDirector = roles.Contains("مدیر عامل") || user.NormalizedUserName == "A.NIROMAND",
-                    IsTamin = roles.Contains("مدیر تامین") || roles.Contains("کارشناس تامین"),
-                    IsFinancial = roles.Contains("کارشناس مالی") || roles.Contains("مدیر مالی"),
-                    IsCustomer = roles.Contains("مشتری"),
+                    UserId = user.Id
                 };
 
+                SetPaymentPermissions(model, roles, user);
 
                 var html = await _vrs.RenderToStringAsync("GetAllPaymentPartial", model);
 
-                return Ok(new { html, count, filterCounts });
+                return Ok(new { html, count = accS.Count, filterCounts });
             }
             catch (Exception e)
             {
@@ -374,7 +378,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 Deal deal = null;
 
                 var showAcceptPfBtn = false;
-                var showNotAcceptedPfBtn = false;
                 var showChangeStatusAllBtn = false;
 
                 var model = new PaymentPartialVModel {
@@ -382,11 +385,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     UserId = user.Id
                 };
 
-                var accQuery = db.Accountancies.AsNoTracking();
+                var accQuery = db.Accountancies
+                    .AsNoTracking()
+                    .Include(x => x.Deal)
+                    .AsQueryable();
+                
                 switch (type)
                 {
                     case 1: // تمام صورتحساب های پیش فاکتور
-                    case 12: // کارتابل مالی
                         accQuery = accQuery.ForPreFactor(id);
                         pf = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
                         customerId = pf?.CustomerId;
@@ -404,57 +410,59 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         break;
                 }
 
-                if (accQuery.Any())
+                var acc = await accQuery.ToListAsync();
+                model.Items = acc;
+
+                if (acc.Count > 0)
                 {
-                    model.IsAdmin = roles.Contains("مدیر ارشد");
-                    model.IsSalesAdmin = roles.Contains("مدیر فروش");
-                    model.IsManagingDirector = roles.Contains("مدیر عامل") || user.NormalizedUserName == "A.NIROMAND";
-                    model.IsTamin = roles.Contains("مدیر تامین") || roles.Contains("کارشناس تامین");
-                    model.IsFinancial = roles.Contains("کارشناس مالی") || roles.Contains("مدیر مالی");
-                    model.IsCustomer = roles.Contains("مشتری");
+                    SetPaymentPermissions(model, roles, user);
 
                     if (type == 3) // deal
                     {
                         model.IsCreatorParent = deal?.UserCreatorID == user.Id;
-                    } else if (type == 1 || type == 12) // pf
+                    } else if (type == 1) // pf
                     {
                         model.IsCreatorParent = pf?.UserCreatorID == user.Id;
 
-                        if (type == 12)
-                        {
-                            var allAcceptedAcc = accQuery.All(f => f.Status == AccStatusEnum.تایید_شده);
-                            var hasRejectedAcc = accQuery.Any(f => f.Status == AccStatusEnum.رد_شده);
+                        showAcceptPfBtn =
+                            roles.Contains("مدیر ارشد") || roles.Contains("کارشناس مالی") || roles.Contains("مدیر مالی") // TODO
+                            && pf?.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی
+                            && pf.AcceptedFinancial != true
+                            && acc.All(f => f.Status == AccStatusEnum.تایید_شده);
 
-                            showAcceptPfBtn =
-                                pf?.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی
-                                && allAcceptedAcc
-                                && pf.AcceptedFinancial != true;
-
-                            //showNotAcceptedPfBtn = hasRejectedAcc && pf?.AcceptedFinancial != false;
-                        }
 
                         var isInvalid = pf?.Pftype is (int)PreFactorEnum.فاقد_اعتبار or (int)PreFactorEnum.بسته_شده
                             or (int)PreFactorEnum.حذف_شده or (int)PreFactorEnum.برگشت_خورده_از_طرف_مدیر_فروش;
 
+                        var hasPendingOrRejected = acc.Any(f => f.Status is AccStatusEnum.ثبت_اولیه or AccStatusEnum.رد_شده);
+
                         showChangeStatusAllBtn =
                             passType != 5
                             && (model.IsCreatorParent || model.IsAdmin || model.IsSalesAdmin)
-                            && accQuery.Any(f => f.Status == AccStatusEnum.ثبت_اولیه || f.Status == AccStatusEnum.رد_شده)
+                            && hasPendingOrRejected
                             && !isInvalid;
                     }
                 }
 
-                var acc = await accQuery.ToListAsync();
-                model.Items = acc;
 
                 var html = await _vrs.RenderToStringAsync("GetAllPaymentPartial", model);
-                var data = new { showAcceptPfBtn, showNotAcceptedPfBtn, showChangeStatusAllBtn, customerId };
+                var data = new { showAcceptPfBtn, showChangeStatusAllBtn, customerId };
                 return Ok(new { data, html });
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+        private static void SetPaymentPermissions(PaymentPartialVModel model, IList<string> roles, AppUser user)
+        {
+            model.IsAdmin = roles.Contains("مدیر ارشد");
+            model.IsSalesAdmin = roles.Contains("مدیر فروش");
+            model.IsManagingDirector = roles.Contains("مدیر عامل") || user.NormalizedUserName == "A.NIROMAND";
+            model.IsTamin = roles.Contains("مدیر تامین") || roles.Contains("کارشناس تامین");
+            model.IsFinancial = roles.Contains("کارشناس مالی") || roles.Contains("مدیر مالی");
+            model.IsCustomer = roles.Contains("مشتری");
         }
 
         [HttpGet]

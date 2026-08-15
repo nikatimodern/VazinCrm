@@ -15,6 +15,11 @@ namespace CRM.Infrastructures.Sql.Reports.Configs {
                 .WithOne(c => c.Report)
                 .HasForeignKey<Report>(f => f.CallRecordingId)
                 .OnDelete(DeleteBehavior.NoAction);
+            
+            builder.HasOne(x => x.Deal)
+                .WithMany(x => x.Reports)
+                .HasForeignKey(x => x.DealId)
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 }
