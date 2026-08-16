@@ -260,7 +260,7 @@
             </div>
 
             @*کارتابل کارشناس مالی*@
-            <div class="col-12 col-xxl-11" style="display:none;padding:8px" id="CFinancialExpertId">
+            <div class="col-12" style="display:none;padding:8px" id="CFinancialExpertId">
                 <div class="d-flex flex-column w-100">
                     <ul class="nav nav-pills" id="financialExpertsTabs" role="tablist">
                         <li class="nav-item" role="presentation">
@@ -538,12 +538,12 @@
                                         <thead>
                                         <tr>
                                             <th>شماره سفارش</th>
-                                            <th>وضعیت</th>
                                             <th>عنوان سفارش</th>
                                             <th>توضیحات</th>
                                             <th>تاریخ ثبت</th>
                                             <th>در اختیار</th>
                                             <th>مشتری</th>
+                                            <th>وضعیت</th>
                                             <th>پیش‌فاکتور</th>
                                             <th>فاکتور</th>
                                             <th>واریزی</th>
@@ -1954,15 +1954,7 @@
                 ],
                 columns: [
                     { data: "serialNumber" },
-                    {
-                        data: "status",
-                        render: data => {
-                            if (data === 1) return "باز";
-                            if (data === 2) return "ناموفق";
-                            if (data === 3) return "موفق";
-                            return "-";
-                        },
-                    },
+                    
                     { data: "title", className: "wrap-text" },
                     { data: "commentText", className: "wrap-text", render: data => data || "-" },
                     { data: "createDateTxt", render: data => renderDateTimeHtml(data) },
@@ -1972,6 +1964,14 @@
                         className: "wrap-text",
                         render: function (data, type, row) {
                             return `${data ?? ""}${row.customerCode ? " (کد مشتری: " + row.customerCode + ")" : ""}`;
+                        },
+                    },{
+                        data: "status",
+                        render: data => {
+                            if (data === 1) return `<span class="fMedium" style="color: #3b82f6">باز</span>`;
+                            if (data === 2) return `<span class="fMedium" style="color: #b91c1c">ناموفق</span>`;
+                            if (data === 3) return `<span class="fMedium" style="color: #16a34a">موفق</span>`;
+                            return "-";
                         },
                     },
                     {
