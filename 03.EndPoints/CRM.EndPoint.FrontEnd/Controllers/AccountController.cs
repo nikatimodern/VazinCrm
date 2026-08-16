@@ -14,16 +14,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Microsoft.AspNetCore.SignalR;
-using System.Text.Json;
-using CRM.Core.Domain.Customers.Enum;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Customer;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
-using DocumentFormat.OpenXml.Office2010.Excel;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     public class AccountController : Controller {

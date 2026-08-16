@@ -1,13 +1,21 @@
-﻿@using CRM.Core.Domain.Orders.Enums
+﻿@using CRM.Core.Domain.Deals.Enums
+@using CRM.Core.Domain.Orders.Enums
 @model List<OrderHead>
 @{
     Layout = null;
-    var isTamin = ViewBag.IsTamin ?? false;
     var passType = ViewBag.PassType;
+
+    //    var isFinancial = User.IsInRole(AppRoles.FinancialExpert); // TODO
+    var isFinancial = User.IsInRole("کارشناس مالی") || User.IsInRole("مدیر مالی");
+    var isAdmin = User.IsInRole("مدیر ارشد");
+    var isTamin = User.IsInRole("کارشناس تامین") || User.IsInRole("مدیر تامین");
+
+    var showAddRequestAmountBtn = passType != 4 && (isAdmin || isTamin || isFinancial);
 }
 
-@foreach (var item in Model) {
+@foreach (var item in Model ?? []) {
     var requestCount = item.RequestAmountOrderHeads?.Count;
+    var isDealClosed = item.Deal?.FinancialStatus == DealFinancialStausEnum.تایید_شده;
     <div class="orderBox @($"orderBox_col{(int)item.Status}")" data-id="@item.Id">
         <div class="d-flex flex-column justify-content-between p-2 w-100" style="column-gap:14px">
             <div class="mp flex-column" style=" display:flex;justify-content:space-between; width:100%;">
@@ -59,17 +67,18 @@
                     <button class="flex-center px-2" data-title="مشاهده" style="color:var(--DarkColor)" onclick="PreviewOrderPrint('@item.Id')">
                         <i class="mp fa fa-eye"></i>
                     </button>
-                    <button class="flex-center px-2" data-title="ویرایش" style="color:var(--DarkColor)" onclick="ShowUpdateHeadOrder('@item.Id', @passType, '@item.DealId')">
-                        <i class="mp fa fa-pencil"></i>
-                    </button>
-                    <button class="flex-center px-2" data-title="حذف" style="color:var(--DarkColor)" onclick="DelHeadOrderItem('@item.Id', @passType, '@item.DealId')">
-                        <i class="mp fa fa-trash"></i>
-                    </button>
+                    @if (!isDealClosed) {
+                        <button class="flex-center px-2" data-title="ویرایش" style="color:var(--DarkColor)" onclick="ShowUpdateHeadOrder('@item.Id', @passType, '@item.DealId')">
+                            <i class="mp fa fa-pencil"></i>
+                        </button>
+                        <button class="flex-center px-2" data-title="حذف" style="color:var(--DarkColor)" onclick="DelHeadOrderItem('@item.Id', @passType, '@item.DealId')">
+                            <i class="mp fa fa-trash"></i>
+                        </button>
+                    }
                 </div>
 
                 <div class="d-flex align-items-center justify-content-between flex-grow-1 gap-2 flex-wrap pe-2 mt-1 mt-xxl-0">
-                    @if (passType != 4 && isTamin)
-                    {
+                    @if (showAddRequestAmountBtn) {
                         <div class="@(requestCount > 0 ? "buttonGroup" : "")">
                             <button class="buttonGray" onclick="showAddRequestAmountModal('@item.Id', '@item.OrderNumber')">درخواست پیش‌پرداخت</button>
                             @if (requestCount > 0) {

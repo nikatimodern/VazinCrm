@@ -208,6 +208,12 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
 
                     case LogActionEnum.بازیابی:
                         return $"سفارش شماره {serialNumber} با عنوان <i>{deal.Title}</i> توسط <b>{fullName}</b> بازیابی شد.";
+                    
+                    case LogActionEnum.تایید_و_تغییر_وضعیت:
+                        return $"سفارش شماره {serialNumber} با عنوان <i>{deal.Title}</i> توسط <b>{fullName}</b> تایید مالی شد.";
+
+                    case LogActionEnum.رد_و_تغییر_وضعیت:
+                        return $"سفارش شماره {serialNumber} با عنوان <i>{deal.Title}</i> توسط <b>{fullName}</b> از تایید مالی خارج شد.";
 
                     case LogActionEnum.تغییر_وضعیت:
                         return

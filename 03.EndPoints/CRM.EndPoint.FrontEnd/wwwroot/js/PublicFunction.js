@@ -1101,6 +1101,9 @@ const AddFactor = async (pfId = null, type = 1) => {
     baseDesFactor = await getBaseDescription(1);
     const pfData = (await axios(`/Factor/GetPFactor/${pfId}`)).data;
     supplyData = (await axios(`/Supply/GetSupplies?pfId=${pfId}`)).data;
+    
+    dealData.id = pfData.dealId;
+    
     if (!supplyData?.length) {
         toastifyError("بهای تامینی ثبت نشده است!");
         FLshowLoading(false);
@@ -1247,7 +1250,7 @@ const submitPrefactorOK = async (type) => {
             pfactor.currencyType = currencyTypeElm.value;
             pfactor.currencyTypeTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
             
-            $.post(baseUrl + "Factor/AddPrefactor", pfactor, async (res) => {
+            $.post(baseUrl + "Factor/AddPrefactor", pfactor, async () => {
                 if (type === 1) { // CustomerProfile
                     await getAllPreFactor();
                 } else if (type === 2) { // SalesAdmin
@@ -1256,8 +1259,10 @@ const submitPrefactorOK = async (type) => {
                     await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
                 } else if (type === 4) { //Deal
                     await getPreFactorFromDeal(dealData.id);
-                    await getAllDeals();
-                    if (!document.getElementById("dealPreFactorsModal").classList.contains("show")) {
+                    if (typeof getAllDeals === "function") {
+                        await getAllDeals();
+                    }
+                    if (!isModalOpen("dealPreFactorsModal")) {
                         await showModalDealPreFactors(dealData);
                     }
                 }
@@ -1267,7 +1272,13 @@ const submitPrefactorOK = async (type) => {
                 $("#PreFactor").modal("toggle");
                 FLshowLoading(false);
             })
-             .fail(() => {
+             .fail((err) => {
+                 const message = err.responseText;
+                 if (err.status === 409) {
+                     toastifyError(message);
+                     FLshowLoading(false);
+                     return;
+                 }
                  setTimeout(async () => {
                      await submitPrefactorOK(type);
                  }, 2000);
@@ -1337,9 +1348,10 @@ const submitFactorOK = async (type, unlinkSepidar = false) => {
                     getAllDetailAmount();
                     //getAllFactor();
                 } else if (type === 4) {
-                    if (!factor.id) {
+                    if (isModalOpen("dealPreFactorsModal")) {
                         await getPreFactorFromDeal(dealData.id);
-                    } else {
+                    }
+                    if (isModalOpen("FactorsModal")) {
                         await getAllFactorsModal(dealData.id, 4);
                     }
                 } else if (type === 5) {
@@ -1688,6 +1700,7 @@ const GetFactorPartial = async (val = null, id = null, _this = null, filt = null
 
 const getAllFactorsModal = async (id, type, sNumber) => {
     FLshowLoading();
+    if (type === 4) dealData.id = id;
     const factorsWrapper = document.getElementById("factorsBodyModal");
     const apiUrl = sNumber
         ? `/Customer/GetFactorsSepidar?sNumber=${sNumber}`

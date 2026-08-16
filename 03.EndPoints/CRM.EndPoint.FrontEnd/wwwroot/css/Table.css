@@ -265,6 +265,7 @@ div.dt-container div.dt-buttons {
     max-height: clamp(150px, calc(100dvh - 560px), 100dvh) !important;
   }
   
+  #DealTable_wrapper div.dt-scroll-body,
   #allPaymentTable55_wrapper div.dt-scroll-body,
   #allPaymentTable56_wrapper div.dt-scroll-body {
     max-height: calc(100dvh - 337px) !important;
@@ -282,7 +283,7 @@ div.dt-container div.dt-buttons {
     min-width: 100px;
   }
   
-  .paymentTable.table .btn-accept {
+  .table .btn-accept {
     min-width: 34px;
     padding: 4px 15px !important;
   }

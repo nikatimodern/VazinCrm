@@ -18,6 +18,11 @@ namespace CRM.Infrastructures.Sql.Accountancies.Configs
             builder.Property(f => f.debit).HasPrecision(20, 0);
             builder.Property(f => f.discount).HasPrecision(20, 0);
             builder.Property(f => f.tax).HasPrecision(20, 0);
+            
+            builder.HasOne(x => x.Deal)
+                .WithMany(x => x.Accountancies)
+                .HasForeignKey(x => x.DealId)
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 }

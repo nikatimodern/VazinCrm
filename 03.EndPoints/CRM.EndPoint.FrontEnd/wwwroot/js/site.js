@@ -93,8 +93,7 @@ async function sendApiRequest(
     } catch (err) {
         console.error("API Error:", err);
         
-        let errorMessage = "خطایی در ارتباط با سرور رخ داده است.";
-        
+        let errorMessage;
         if (err.response?.data instanceof Blob) {
             errorMessage = await err.response.data.text();
         } else if (typeof err.response?.data === "string") {
@@ -102,6 +101,9 @@ async function sendApiRequest(
         } else if (err.response?.data?.message) {
             errorMessage = err.response.data.message;
         }
+        
+        const status = err.status || "";
+        errorMessage = errorMessage || `خطایی در ارتباط با سرور رخ داده است ${status ? `(${status})` : ""}`;
         
         if (typeof toastifyError === "function") {
             toastifyError(errorMessage);
@@ -1730,7 +1732,9 @@ const SubmitReportForm = async () => {
                     }
                 } else if (typeReportSubmit === 4) {
                     await getReportFromDeal(dealIdReport);
-                    await getAllDeals();
+                    if (typeof getAllDeals === "function") {
+                        await getAllDeals();
+                    }
                 }
                 
                 toastifySuccess(res.message);
@@ -3535,6 +3539,10 @@ function ModalToggle(target, action = "toggle") {
     }
 }
 
+const isModalOpen = (modal) => {
+    const element = typeof modal === "string" ? document.getElementById(modal) : modal;
+    return element?.classList.contains("show") === true;
+};
 
 /**
  * Bootstrap Tab.
@@ -3674,7 +3682,7 @@ const updateFilterSwitchState = ({ wrapperSelector, filterData, currentFilterVal
     const wrapper = document.querySelector(wrapperSelector);
     if (!wrapper) return;
     
-    const hasSearch = !!searchValue.trim();
+    const hasSearch = !!searchValue?.trim();
     if (!hasSearch) {
         wrapper.dataset.userInteracted = "false";
         
@@ -3977,6 +3985,8 @@ function renderDateTimeHtml(value, { empty = "-", className = "" } = {}) {
     
     return `<span dir="ltr" class="${className}">${value.slice(0, -3).split(" ").join(" | ")}</span>`;
 }
+
+
 
 class DynamicSkeleton {
     /**

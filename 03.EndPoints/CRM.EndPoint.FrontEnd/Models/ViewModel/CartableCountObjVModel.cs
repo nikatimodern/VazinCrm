@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace CRM.EndPoint.FrontEnd.Models.ViewModel;
 
 public class CartableCountObjVModel {

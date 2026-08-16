@@ -272,6 +272,8 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasIndex("CustomerId");
 
+                    b.HasIndex("DealId");
+
                     b.HasIndex("RequestAmountId")
                         .IsUnique()
                         .HasFilter("[RequestAmountId] IS NOT NULL");
@@ -1944,6 +1946,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("CustomerName")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("FinancialStatus")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -2246,6 +2251,8 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DealId");
+
                     b.HasIndex("PfactorID");
 
                     b.ToTable("Factors");
@@ -2432,7 +2439,7 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasIndex("ParentEntityName", "ParentEntityId");
 
-                    b.ToTable("logSystems", (string)null);
+                    b.ToTable("logSystems");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Orders.Entities.Order", b =>
@@ -2649,6 +2656,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Customer");
+
+                    b.HasIndex("DealId");
 
                     b.ToTable("OrderHeads");
                 });
@@ -2993,6 +3002,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
+
+                    b.HasIndex("DealId");
 
                     b.ToTable("PreFactors");
                 });
@@ -3361,6 +3372,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.HasIndex("CallRecordingId")
                         .IsUnique()
                         .HasFilter("[CallRecordingId] IS NOT NULL");
+
+                    b.HasIndex("DealId");
 
                     b.ToTable("Reports");
                 });
@@ -4115,10 +4128,17 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade);
 
+                    b.HasOne("CRM.Core.Domain.Deals.Entities.Deal", "Deal")
+                        .WithMany("Accountancies")
+                        .HasForeignKey("DealId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("CRM.Core.Domain.RequestAmounts.Entities.RequestAmount", null)
                         .WithOne("Accountancy")
                         .HasForeignKey("CRM.Core.Domain.Accountancies.Entities.Accountancy", "RequestAmountId")
                         .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Deal");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.CallRecordings.Entities.CallParticipant", b =>
@@ -4281,11 +4301,18 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.Factors.Entities.Factor", b =>
                 {
+                    b.HasOne("CRM.Core.Domain.Deals.Entities.Deal", "Deal")
+                        .WithMany("Factors")
+                        .HasForeignKey("DealId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("CRM.Core.Domain.PreFactors.Entities.PreFactor", null)
                         .WithMany("Factors")
                         .HasForeignKey("PfactorID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Deal");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Factors.Entities.FactorDescription", b =>
@@ -4321,6 +4348,13 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .WithMany("orderHeads")
                         .HasForeignKey("Customer")
                         .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("CRM.Core.Domain.Deals.Entities.Deal", "Deal")
+                        .WithMany("OrderHeads")
+                        .HasForeignKey("DealId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Deal");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Payments.Entities.PaymentSupplyFactor", b =>
@@ -4345,7 +4379,14 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade);
 
+                    b.HasOne("CRM.Core.Domain.Deals.Entities.Deal", "Deal")
+                        .WithMany("PreFactors")
+                        .HasForeignKey("DealId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.Navigation("CustomerEntity");
+
+                    b.Navigation("Deal");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.PreFactors.Entities.PreFactorDescription", b =>
@@ -4388,7 +4429,14 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasForeignKey("CRM.Core.Domain.Reports.Entities.Report", "CallRecordingId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("CRM.Core.Domain.Deals.Entities.Deal", "Deal")
+                        .WithMany("Reports")
+                        .HasForeignKey("DealId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.Navigation("CallRecording");
+
+                    b.Navigation("Deal");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.RequestAmounts.Entities.RequestAmountOrderHead", b =>
@@ -4556,6 +4604,19 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Navigation("UserCustomers");
 
                     b.Navigation("orderHeads");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Deals.Entities.Deal", b =>
+                {
+                    b.Navigation("Accountancies");
+
+                    b.Navigation("Factors");
+
+                    b.Navigation("OrderHeads");
+
+                    b.Navigation("PreFactors");
+
+                    b.Navigation("Reports");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Factors.Entities.Factor", b =>

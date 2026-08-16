@@ -2248,7 +2248,6 @@ const RefreshDataInvoice = async (id = Invo_id, type = Invo_type) => {
     customerId = paymentData.data.customerId;
     document.getElementById("changeStatusAllAccBtn")?.classList.toggle("d-none", !paymentData.data.showChangeStatusAllBtn);
     document.getElementById("acceptFinancialBtn")?.classList.toggle("d-none", !paymentData.data.showAcceptPfBtn);
-    document.getElementById("notAcceptFinancialBtn")?.classList.toggle("d-none", !paymentData.data.showNotAcceptedPfBtn);
     FLshowLoading(false);
 };
 
@@ -2326,7 +2325,7 @@ const ShowModalListInvoice = async (id, type, ser, passType, dealId, hideAddInvo
     Invo_type = type;
     
     await RefreshDataInvoice(id, type);
-    if (type === 1 || type === 11 || type === 12) { //PreFactor
+    if (type === 1) { //PreFactor
         pfactorID = id;
         InvoiceType = 1;
         document.getElementById("TitleListInvoiceId").innerText = "صورت‌حساب های پیش‌فاکتور " + ser;
@@ -2534,7 +2533,7 @@ const submitInvoice = async () => {
                 closeModalInvoice();
                 
                 const pfListModal = document.getElementById("preFactorListModal");
-                if (pfListModal.classList.contains("show")) {
+                if (isModalOpen(pfListModal)) {
                     ModalToggle(pfListModal, "hide");
                 }
             } else {
@@ -2543,6 +2542,12 @@ const submitInvoice = async () => {
             FLshowLoading(false);
         } catch (err) {
             console.log(err);
+            const message = err.response.data;
+            if (err.status === 409) {
+                toastifyError(message);
+                FLshowLoading(false);
+                return;
+            }
             setTimeout(async () => await submitInvoice(), 3000);
         }
     }
@@ -2624,9 +2629,6 @@ document.getElementById("acceptFinancialBtn")?.addEventListener("click", async (
     $("#InvoiceListModalId").modal("toggle");
 });
 
-document.getElementById("notAcceptFinancialBtn")?.addEventListener("click", async () => {
-    await showModalNotAccept(pfactorID, Invo_type);
-});
 
 async function acceptFinancial(pfId) {
     try {
@@ -2909,7 +2911,9 @@ const AcceptPfactor = async (id, type, dealId) => {
             await getAllPreFactor();
         } else if (type === 4) {
             await getPreFactorFromDeal(dealId);
-            await getAllDeals();
+            if (typeof getAllDeals === "function") {
+                await getAllDeals();
+            }
         }
         toastifySuccess("پیش فاکتور تایید شد.");
         document.getElementById("FLshowLoading").style.display = "none";

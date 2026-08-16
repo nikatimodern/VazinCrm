@@ -3,11 +3,17 @@
 
 @{
     Layout = null;
+
+    //    var isFinancial = User.IsInRole(AppRoles.FinancialExpert); // TODO
+    var isFinancial = User.IsInRole("کارشناس مالی") || User.IsInRole("مدیر مالی");
+    var isAdmin = User.IsInRole("مدیر ارشد");
+    var isCustomer = User.IsInRole("مشتری");
 }
 <div style="width:100%;display:flex;flex-direction:column;gap:5px;">
     @foreach (var item in Model.factors.OrderByDescending(f => f.ModifyDate)) {
         var isReturnFactor = item.ParentReturnedId != null;
-        <div class="mp" style=" width:100%;display:flex;">
+
+        <div class="w-100 d-flex">
             @if (item.OfficialType == 1) {
                 <div class="mp InfoDataHead_PrefactorRasmi" style="display:flex;width:24px !important">
                     <label style="transform: rotate(90deg)">رسمی</label>
@@ -41,7 +47,7 @@
                                 <label style="font-family:'IRANSansBold';">@item.PfactorSerialNumber</label>
                             }
                         </div>
-                        @if (Model._Setting.Sepidar == true) {
+                        @if (Model._Setting?.Sepidar == true) {
                             <div class="justify-content-between flex-wrap" style="display:flex;align-items:center;gap:6px">
                                 <label style="color:gray">فاکتور مالی :</label>
 
@@ -49,7 +55,7 @@
                                     if (item.status == FactorStatus.ابطال_شده) {
                                         <label class="fbold">ابطال شده</label>
                                     } else {
-                                        if (Model.Rols.Contains("کارشناس مالی") || Model.Rols.Contains("مدیر مالی") || Model.Rols.Contains("مدیر ارشد")) {
+                                        if (isAdmin || isFinancial) {
                                             <button class="fMedium buttonBlue" style="padding: 2px 6px;font-size: 11px;" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @ViewBag.PassType,'@item.DealId')">
                                                 انتخاب از سپیدار
                                             </button>
@@ -58,7 +64,7 @@
                                         }
                                     }
                                 } else {
-                                    if (Model.Rols.Contains("کارشناس مالی") || Model.Rols.Contains("مدیر مالی") || Model.Rols.Contains("مدیر ارشد")) {
+                                    if (isAdmin || isFinancial) {
                                         <label class="fbold hoverLink" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @ViewBag.PassType,'@item.DealId')">@item.SnFinancial</label>
                                     } else {
                                         <label class="fbold">@item.SnFinancial</label>
@@ -111,9 +117,9 @@
                             </label>
                         </div>
                         <div class="d-flex align-items-center gap-1 gap-md-2">
-                            @if (Model._Setting.FactorTowStep == true && !isReturnFactor && !item.Returned) {
+                            @if (Model._Setting?.FactorTowStep == true && !isReturnFactor && !item.Returned) {
                                 if (item.status == FactorStatus.در_دست_تایید) {
-                                    if (Model.Rols.Contains("کارشناس مالی") || Model.Rols.Contains("مدیر مالی") || Model.Rols.Contains("مدیر ارشد")) {
+                                    if (isAdmin || isFinancial) {
                                         <button class="buttonCancel3" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 3, @ViewBag.PassType, '@item.PfactorSerialNumber', '@item.DealId')">
                                             ابطال
                                         </button>
@@ -130,7 +136,7 @@
                                         <div class="fbold" style="color:darkgreen">
                                             تایید شده
                                         </div>
-                                        @if (Model.Rols.Contains("کارشناس مالی") || Model.Rols.Contains("مدیر مالی") || Model.Rols.Contains("مدیر ارشد")) {
+                                        @if (isAdmin || isFinancial) {
                                             <div style="cursor:pointer;color:#333" onclick="acceptFactor('@item.Id', 1, @ViewBag.PassType, '@item.PfactorSerialNumber', '@item.DealId')" data-title="بازگشت">
                                                 <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>
                                             </div>
@@ -141,7 +147,7 @@
                                         <div class="fbold" style="color:darkred">
                                             ابطال شده
                                         </div>
-                                        @if (Model.Rols.Contains("کارشناس مالی") || Model.Rols.Contains("مدیر مالی") || Model.Rols.Contains("مدیر ارشد")) {
+                                        @if (isAdmin || isFinancial) {
                                             <div style="cursor:pointer;color:#333" onclick="acceptFactor('@item.Id', 1, @ViewBag.PassType, '@item.PfactorSerialNumber', '@item.DealId')" data-title="بازگشت">
                                                 <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>
                                             </div>
@@ -170,16 +176,16 @@
                     <button class="flex-center" data-title-right="نمایش فاکتور" style="color:var(--DarkColor);" onclick="ShowPreviewFactor('@item.Id')">
                         <i class="mp fa fa-eye"></i>
                     </button>
-                    @if (item.CustomerId != null && !Model.Rols.Contains("مشتری")) {
+                    @if (item.CustomerId != null && !isCustomer) {
                         <button class="flex-center" data-title-right="پروفایل" style="color:var(--DarkColor);" onclick="openCustomerProfile('@item.CustomerId', '@item.PfactorSerialNumber')">
                             <i class="mp fa fa-user"></i>
                         </button>
                     }
-                    @if (Model.Rols.Contains("کارشناس مالی") || Model.Rols.Contains("مدیر مالی") || Model.Rols.Contains("مدیر ارشد")) {
+                    @if (isAdmin || isFinancial) {
                         <button class="flex-center" data-title-right="ویرایش" style="color:var(--DarkColor);" onclick="upfactor('@item.Id','@item.CustomerId',@ViewBag.PassType)">
                             <i class="mp fa fa-pencil"></i>
                         </button>
-                        if (Model.Rols.Contains("مدیر ارشد")) {
+                        if (isAdmin) {
                             <button class="flex-center" data-title-right="حذف" style="color:var(--DarkColor);" onclick="delFactor('@item.Id',@ViewBag.PassType,'@item.DealId')">
                                 <i class="mp fa fa-trash"></i>
                             </button>
@@ -192,7 +198,7 @@
                             </button>
                         }
                     }
-                    @if (!Model.Rols.Contains("مشتری")) {
+                    @if (!isCustomer) {
                         <button class="flex-center" data-title-right="تاریخچه" style="color:var(--DarkColor)" onclick="showLogEntity('@nameof(Factor)', '@item.Id')">
                             <svg style="width: 18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l4 2" /></svg>
                         </button>

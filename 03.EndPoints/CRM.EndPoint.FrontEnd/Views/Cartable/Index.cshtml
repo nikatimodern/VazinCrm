@@ -260,7 +260,7 @@
             </div>
 
             @*کارتابل کارشناس مالی*@
-            <div class="col-12 col-xxl-11" style="display:none;padding:8px" id="CFinancialExpertId">
+            <div class="col-12" style="display:none;padding:8px" id="CFinancialExpertId">
                 <div class="d-flex flex-column w-100">
                     <ul class="nav nav-pills" id="financialExpertsTabs" role="tablist">
                         <li class="nav-item" role="presentation">
@@ -279,6 +279,12 @@
                             <button class="nav-link position-relative" onclick="GetRequestFinancialExpert()" id="FinancialRequestTab" data-bs-target="#FinancialRequestTab-pane" type="button" role="tab">
                                 درخواست ها
                                 <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link position-relative" onclick="GetDealFinancialExpert()" id="FinancialDealTab" data-bs-target="#FinancialDealTab-pane" type="button" role="tab">
+                                سفارشات
+                                <span class="badgeCircle d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
                             </button>
                         </li>
                     </ul>
@@ -483,6 +489,71 @@
 
 
                                 <div id="FinancialRequestContentId" class="pt-2" style="max-height:72dvh; overflow:auto;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade border-0" id="FinancialDealTab-pane" role="tabpanel" tabindex="0">
+                            <div class="w-100">
+                                <div class="d-flex justify-content-between flex-wrap gap-2 align-items-center">
+
+                                    <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
+                                        تعداد: <span id="FinancialDealCount" class="countDeal"></span>
+                                    </div>
+
+
+                                    <div class="search-group col-12 order-5 order-md-0 col-md-5">
+                                        <input class="form-control" type="text" id="FinancialDealSearchId" placeholder="جستجو..." />
+                                        <div class="search-icon">
+                                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        <ul class="filter-switch">
+                                            <li class="filter-switch-item">
+                                                <input type="radio" name="FinancialDealFilter" id="FinancialDealFilterAll" value="-1" />
+                                                <label for="FinancialDealFilterAll">همه</label>
+                                            </li>
+                                            <li class="filter-switch-item">
+                                                <input type="radio" name="FinancialDealFilter" id="FinancialDealFilter1" value="0" checked />
+                                                <label for="FinancialDealFilter1">
+                                                    تایید نشده
+                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                </label>
+                                            </li>
+                                            <li class="filter-switch-item">
+                                                <input type="radio" name="FinancialDealFilter" id="FinancialDealFilter2" value="1" />
+                                                <label for="FinancialDealFilter2">
+                                                    تایید شده
+                                                    <span class="badgeCircle filter-count-badge"></span>
+                                                </label>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div id="FinancialDealContentId" class="mt-3">
+                                    <table class="table table-bordered table-hover table-striped nowrap w-100" id="DealTable">
+                                        <thead>
+                                        <tr>
+                                            <th>شماره سفارش</th>
+                                            <th>عنوان سفارش</th>
+                                            <th>توضیحات</th>
+                                            <th>تاریخ ثبت</th>
+                                            <th>در اختیار</th>
+                                            <th>مشتری</th>
+                                            <th>وضعیت</th>
+                                            <th>پیش‌فاکتور</th>
+                                            <th>فاکتور</th>
+                                            <th>واریزی</th>
+                                            <th>حواله</th>
+                                            <th>گزارش</th>
+                                            <th>عملیات</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -1091,6 +1162,9 @@
     </div>
 </div>
 
+<partial name="~/Views/Factor/Modals/PreFactor/_PrefactorContainerModal.cshtml" />
+<partial name="~/Views/Report/Modals/_ReportContainerModal.cshtml" />
+<partial name="~/Views/Order/Modals/_OrderHeadsContainerModal.cshtml" />
 
 @section scripts {
     <script src="~/js/Transfer.js" asp-append-version="true"></script>
@@ -1144,6 +1218,10 @@
             //////////////////////financial req//////////////////////
             initSearchInput("FinancialRequestSearchId", GetRequestFinancialExpert);
             initChangeRadio("FinancialRequestFilter", GetRequestFinancialExpert);
+
+            //////////////////////financial deal//////////////////////
+            initSearchInput("FinancialDealSearchId", GetDealFinancialExpert);
+            initChangeRadio("FinancialDealFilter", GetDealFinancialExpert);
 
             //////////////////////MD req//////////////////////
             initSearchInput("MDRequestAmountSearchId", GetRequestManagingDirector);
@@ -1428,6 +1506,8 @@
                                 await GetInvoicesFinancialExpert();
                             } else if (subId === "FinancialRequestTab") {
                                 await GetRequestFinancialExpert();
+                            } else if (subId === "FinancialDealTab") {
+                                await GetDealFinancialExpert();
                             } else {
                                 await GetPreFactorFinancialExpert();
                             }
@@ -1807,6 +1887,249 @@
             }
         };
 
+        let dealTbl;
+        let dealModel = { filt: null, serVal: null };
+        const GetDealFinancialExpert = async () => {
+            const val = document.getElementById("FinancialDealSearchId")?.value.trim() ?? "";
+            const type = document.querySelector("input[type='radio'][name='FinancialDealFilter']:checked")?.value;
+            if (type === undefined) return;
+
+            setUrlParams({ sub: "FinancialDealTab" });
+            ShowTab("#FinancialDealTab");
+
+            dealModel._type = Number(type);
+            dealModel.serVal = val;
+
+            if (dealTbl) {
+                dealTbl.ajax.reload();
+            } else {
+                getAllDealsDt();
+            }
+        };
+
+        function getAllDealsDt() {
+            const dealTableElm = document.getElementById("DealTable");
+
+            dealTbl = $(dealTableElm).DataTable({
+                paging: false,
+                lengthMenu: [10, 25, 50, 100, { label: "همه", value: -1 }],
+                pageLength: 10,
+                processing: true,
+                serverSide: true,
+                search: {
+                    return: true,
+                },
+                ordering: true,
+                order: [[3, "desc"]],
+                filter: true,
+                stateSave: false,
+                scrollCollapse: true,
+                scrollY: "clamp(150px, calc(100dvh - 280px), 100dvh)",
+                responsive: true,
+                ajax: {
+                    url: `/Deal/GetAllDealsDt`,
+                    type: "POST",
+                    data: (d) => {
+                        d.model = JSON.stringify(dealModel);
+                    },
+                    dataSrc: function (json) {
+                        document.getElementById("FinancialDealCount").textContent = json.recordsFiltered;
+
+                        updateFilterSwitchState({
+                            wrapperSelector: "#FinancialDealTab-pane",
+                            filterData: json.filterCounts,
+                            currentFilterValue: dealModel._type,
+                            searchValue: dealModel.serVal,
+                            onChange: (type) => {
+                                dealModel._type = Number(type);
+                                dealTbl.ajax.reload();
+                            },
+                        });
+
+                        return json.data;
+                    },
+                },
+                columnDefs: [
+                    { targets: "_all", defaultContent: "-" },
+                ],
+                columns: [
+                    { data: "serialNumber" },
+                    
+                    { data: "title", className: "wrap-text" },
+                    { data: "commentText", className: "wrap-text", render: data => data || "-" },
+                    { data: "createDateTxt", render: data => renderDateTimeHtml(data) },
+                    { data: "userCreator" },
+                    {
+                        data: "customerName",
+                        className: "wrap-text",
+                        render: function (data, type, row) {
+                            return `${data ?? ""}${row.customerCode ? " (کد مشتری: " + row.customerCode + ")" : ""}`;
+                        },
+                    },{
+                        data: "status",
+                        render: data => {
+                            if (data === 1) return `<span class="fMedium" style="color: #3b82f6">باز</span>`;
+                            if (data === 2) return `<span class="fMedium" style="color: #b91c1c">ناموفق</span>`;
+                            if (data === 3) return `<span class="fMedium" style="color: #16a34a">موفق</span>`;
+                            return "-";
+                        },
+                    },
+                    {
+                        data: "counts.preFactor",
+                        orderable: false,
+                        render: function (data) {
+                            if (!data) return "-";
+
+                            return `
+                                <span class="deal-document-link" data-action="pre-factors" data-title-right="مشاهده">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg>
+                                    <span>${data}</span>
+                                </span>
+                            `;
+                        },
+                    },
+                    {
+                        data: "counts.factor",
+                        orderable: false,
+                        render: function (data) {
+                            if (!data) return "-";
+
+                            return `
+                                <span class="deal-document-link" data-action="factors" data-title-right="مشاهده">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12h-5"/><path d="M15 8h-5"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg>
+                                    <span>${data}</span>
+                                </span>
+                            `;
+                        },
+                    },
+                    {
+                        data: "counts.accountancy",
+                        orderable: false,
+                        render: function (data) {
+                            if (!data) return "-";
+
+                            return `
+                                <span class="deal-document-link" data-action="invoices" data-title-right="مشاهده">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5"/><path d="M18 12h.01"/><path d="M19 22v-6"/><path d="m22 19-3-3-3 3"/><path d="M6 12h.01"/><circle cx="12" cy="12" r="2"/></svg>
+                                    <span>${data}</span>
+                                </span>
+                            `;
+                        },
+                    },
+                    {
+                        data: "counts.orderHead",
+                        orderable: false,
+                        render: function (data) {
+                            if (!data) return "-";
+
+                            return `
+                                <span class="deal-document-link" data-action="orders" data-title-right="مشاهده">
+                                    <svg fill="currentColor" viewBox="0 0 256 256"><path d="M72,104a8,8,0,0,1,8-8h96a8,8,0,0,1,0,16H80A8,8,0,0,1,72,104Zm8,40h96a8,8,0,0,0,0-16H80a8,8,0,0,0,0,16ZM232,56V208a8,8,0,0,1-11.58,7.15L192,200.94l-28.42,14.21a8,8,0,0,1-7.16,0L128,200.94,99.58,215.15a8,8,0,0,1-7.16,0L64,200.94,35.58,215.15A8,8,0,0,1,24,208V56A16,16,0,0,1,40,40H216A16,16,0,0,1,232,56Zm-16,0H40V195.06l20.42-10.22a8,8,0,0,1,7.16,0L96,199.06l28.42-14.22a8,8,0,0,1,7.16,0L160,199.06l28.42-14.22a8,8,0,0,1,7.16,0L216,195.06Z"></path></svg>
+                                    <span>${data}</span>
+                                </span>
+                            `;
+                        },
+                    },
+                    {
+                        data: "counts.report",
+                        orderable: false,
+                        render: function (data) {
+                            if (!data) return "-";
+
+                            return `
+                                <span class="deal-document-link" data-action="reports" data-title-right="مشاهده">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M12 2v4"/><path d="M16 2v4"/><rect width="16" height="18" x="4" y="4" rx="2"/><path d="M8 10h6"/><path d="M8 14h8"/><path d="M8 18h5"/></svg>
+                                    <span>${data}</span>
+                                </span>
+                            `;
+                        },
+                    },
+                    {
+                        data: "id",
+                        orderable: false,
+                        render: function (data, type, row) {
+                            if (row.financialStatus === 0) {
+                                return `<button class="buttonCancel3 btn-accept" onclick="closeDeal('${data}')">تایید سفارش</button>`;
+                            } else if (row.financialStatus === 1) {
+                                return `<button class="buttonGreen2 btn-accept" onclick="activeDeal('${data}')">بازگشت</button>`;
+                            }
+
+                            return "-";
+                        },
+                    },
+                ],
+                createdRow: (row, data) => {
+                    if (data.financialStatus === 1) {
+                        row.classList.add("tableRow-bgGreen");
+                    }
+                },
+                language: languageDatatable,
+                layout: null,
+                initComplete: () => {
+                    document.querySelectorAll("#DealTable_wrapper > div.row").forEach((row) => {
+                        row.classList.add("d-flex", "flex-wrap");
+                        row.classList.remove("row");
+                    });
+                },
+            });
+
+
+            dealTableElm.addEventListener("click", (e) => {
+                const documentLink = e.target.closest(".deal-document-link");
+                if (!documentLink) return;
+
+                const rowElement = documentLink.closest("tr");
+                const deal = dealTbl.row(rowElement).data();
+
+                if (!deal) return;
+
+                switch (documentLink.dataset.action) {
+                    case "pre-factors":
+                        showModalDealPreFactors(deal);
+                        break;
+                    case "factors":
+                        showModalDealFactors(deal);
+                        break;
+                    case "reports":
+                        showModalDealReports(deal);
+                        break;
+                    case "orders":
+                        showModalDealOrders(deal);
+                        break;
+                    case "invoices":
+                        showModalDealInvoices(deal);
+                        break;
+                }
+            });
+        }
+
+
+        const closeDeal = async (id) => {
+            await confirmAlert({
+                icon: "warning",
+                text: "با تایید این سفارش، کارشناسان قادر به انجام هیچ اقدامی روی آن نخواهند بود.",
+                confirmText: "بله، تایید شود",
+                onConfirm: async () => await toggleFinancialStatusDeal(id, 1),
+            });
+        };
+
+        const activeDeal = async (id) => {
+            await toggleFinancialStatusDeal(id, 0);
+        };
+
+
+        const toggleFinancialStatusDeal = async (id, status) => {
+            await sendApiRequest({
+                url: `/Deal/ToggleFinancialStatusDeal`,
+                params: { id, status },
+                successMsg: status === 1 ? "سفارش با موفقیت تایید شد" : "سفارش به حالت فعال بازگشت",
+                onSuccess: () => {
+                    dealTbl.ajax.reload();
+                },
+            });
+        };
+
+
         ////////////////////////////////////////////////////////
         const requestSelection = new SelectionManager({
             container: "#FinancialRequestContentId",
@@ -1832,10 +2155,10 @@
                 { type: 2, label: "تعیین تامین کننده" },
                 { type: 3, label: "تایید" },
             ];
-
+    
             const stepOrder = steps.findIndex(s => s.type === taminPreFac.taminStep);
             const progressValue = (stepOrder - 0.3) / (steps.length - 1);
-
+    
             const container = setAmountTaminModal.querySelector("#progressiveTrackerTaminModal");
             container.innerHTML = `
                 <div class="progressTracker" style="font-size:12px;margin-top: 10px;width: 88%">
@@ -2130,12 +2453,12 @@
 
             /*   const supplyItems = suppliesData[supplyIndex] || [];
                const total = supplyItems.filter((i, idx) => !i.isDeleted && idx !== excludeIdx).reduce((sum, x) => sum + (parseFloat(x.weight) || 0), 0);
-
+    
                const remain = pfItem.weightCount - total;
                weightInputSupplyItemModal.max = remain > 0 ? remain : 0;
                weightInputSupplyItemModal.placeholder = `حداکثر ${remain}`;
                //weightInputSupplyItemModal.value = remain;
-
+    
                if (parseFloat(weightInputSupplyItemModal.value) > remain) {
                    weightInputSupplyItemModal.value = remain;
                }*/
@@ -2687,9 +3010,6 @@
         //     if (!dropdownPFactorFilterList.contains(e.target)) {
         //         dropdownPFactorFilterList.classList.remove("show");
         //     }
-        // });
-        // if(document.querySelector('.dropdown-pFactor-filterList #pfFilterAll').checked)
-
-    </script>
+        // });</script>
+    <script src="~/js/deal/deal-documents.js" asp-append-version="true"></script>
 }
-

@@ -1,9 +1,4 @@
-﻿using CRM.Core.Domain.Factors.Entities;
-using CRM.Core.Domain.PreFactors.Entities;
-using System.Collections.Generic;
-using System;
-
-namespace CRM.EndPoint.FrontEnd.Models.ViewModel.AccountanciesVm
+﻿namespace CRM.EndPoint.FrontEnd.Models.ViewModel.AccountanciesVm
 {
     public class PaymentListViewModel
     {

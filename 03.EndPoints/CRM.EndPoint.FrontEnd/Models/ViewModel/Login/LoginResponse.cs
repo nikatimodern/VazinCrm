@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace CRM.EndPoint.FrontEnd.Models.ViewModel.Login
+﻿namespace CRM.EndPoint.FrontEnd.Models.ViewModel.Login
 {
     public class LoginResponse
     {

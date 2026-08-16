@@ -1,0 +1,146 @@
+<!-- Modal deal -->
+<div class="modal fade" id="dealModal" aria-modal="true" role="dialog" tabindex="-1" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content">
+            <div class="m-2 mb-0" style="height:30px;display:flex; justify-content:center; align-items:center;  background: linear-gradient(to bottom, #025751, #00302d); color:white;border-radius:5px">
+                <label class="fbold" id="dealModalTitle">ثبت سفارش</label>
+            </div>
+            <div class="modal-body" style="padding:12px">
+                <form id="formDeal" class="d-flex flex-wrap" style="border:1px solid #8b8b8b;border-radius:4px" autocomplete="off">
+                    <fieldset id="mainFormDeal" class="d-flex flex-column col-12 col-xl" style="padding:12px" autocomplete="off">
+                        <div class="d-flex flex-column gap-1">
+                            <label for="dealTitle" class="fbold">عنوان سفارش</label>
+                            <input class="form-control text-start" id="dealTitle" name="title" required style="padding: 2px 8px !important;" type="text">
+                        </div>
+                        <div class="mt-3 mb-2" style="width:100%;background-color: rgba(0,0,0,0.1);height:1px"></div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <div class="d-flex flex-column gap-1 col-12 col-sm">
+                                <div class="d-flex justify-content-between gap-1">
+                                    <label for="dealCustomersTomSelect" class="fbold">سفارش دهنده</label>
+                                    <div id="dealSexAlertRq" class="d-flex gap-3" style="line-height: 1">
+                                        <div class="d-flex align-items-center gap-1">
+                                            <label style="font-size:12px" for="cusSexMan">آقا</label>
+                                            <input class="valueNumber" type="radio" id="cusSexMan" name="cusSex" value="1" data-alertId="dealSexAlertRq" required />
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <label style="font-size:12px" for="cusSexWoman">خانم</label>
+                                            <input class="valueNumber" type="radio" id="cusSexWoman" name="cusSex" value="0" data-alertId="dealSexAlertRq" required />
+                                        </div>
+                                    </div>
+                                </div>
+                                <select id="dealCustomersTomSelect" name="customerId" required></select>
+
+                            </div>
+                            <div class="d-flex flex-column gap-1 col-12 col-sm" style="min-width: 140px">
+                                <label for="dealMobile" class="fbold">شماره موبایل</label>
+                                <select inputmode="numeric" class="mobileNumber" id="dealMobile" name="mobileNumber" required></select>
+                                @* <input inputmode="numeric" class="h-100 form-control mobileNumber " id="dealMobile" name="mobileNumber" required> *@
+                                @* <textarea inputmode="numeric" id="dealMobile" class="form-control text-end mobileNumber" style="direction: ltr;padding: 2px 8px !important;height: auto" name="mobileNumber" placeholder="09123456789&#10;09000000000&#10;..." rows="3" required></textarea> *@
+                            </div>
+                        </div>
+                        <div class="mt-3 mb-2" style="width:100%;background-color: rgba(0,0,0,0.1);height:1px"></div>
+                        <div class="d-flex flex-column gap-1 flex-grow-1">
+                            <label for="dealDescription" class="fbold">توضیحات</label>
+                            <textarea class="form-control h-auto text-start flex-grow-1" id="dealDescription" name="commentText" rows="3" style="padding: 2px 8px !important;"></textarea>
+                        </div>
+
+
+                        <button type="button" id="toggleExtraInfo" class="btn btn-sm btn-outline-secondary mt-3">
+                            مشخصات بیشتر ...
+                        </button>
+                    </fieldset>
+                    <fieldset id="extraCustomerPanel" class="d-none col-12 col-xl border-start bg-light" style="padding:12px;border-radius: 4px 0 0 4px" autocomplete="off">
+                        <h6 class="fbold mb-2 text-center">مشخصات تکمیلی</h6>
+                        <div class="d-flex flex-column">
+                            <div class="row g-1 w-100">
+                                <div class="col-12">
+                                    <div class="d-flex gap-3">
+                                        <label for="juridicalDeal0" class="d-flex align-items-center gap-1">
+                                            <input class="valueNumber" type="radio" id="juridicalDeal0" name="cusJuridical" value="0" checked>
+                                            حقیقی
+                                        </label>
+                                        <label for="juridicalDeal1" class="d-flex align-items-center gap-1">
+                                            <input class="valueNumber" type="radio" id="juridicalDeal1" name="cusJuridical" value="1">
+                                            حقوقی
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="col-6">
+                                    <label for="meliCodeDeal" style="font-size:12px;">کد ملی:</label>
+                                    <input class="form-control digitNumberString" type="text" id="meliCodeDeal" name="cusMelliCode" />
+                                </div>
+
+                                <div class="col-6">
+                                    <label for="telDeal" style="font-size:12px;">تلفن:</label>
+                                    <input class="form-control mobileNumber" type="text" id="telDeal" name="cusTel" />
+                                </div>
+                            </div>
+
+                            <div class="row g-1 w-100 mt-2 border-top">
+                                <div class="col-6 col-lg-4">
+                                    <label for="acquaintanceWayDeal" style="font-size:12px;">طریقه آشنایی:</label>
+                                    <select id="acquaintanceWayDeal" name="cusAcquaintanceWay" class="w-100 show-dropdown-arrow"></select>
+                                </div>
+
+                                <div class="col-6 col-lg-4">
+                                    <label for="workSenfIDDeal" style="font-size:12px;">صنف کاری:</label>
+                                    <select id="workSenfIDDeal" name="cusWorkSenf" class="w-100 show-dropdown-arrow"></select>
+                                </div>
+
+                                <div class="col-12 col-lg-4">
+                                    <label for="workSenfDescriptionDeal" style="font-size:12px;">توضیحات صنف کاری:</label>
+                                    <input class="form-control" type="text" id="workSenfDescriptionDeal" name="cusWorkSenfDescription" />
+                                </div>
+                            </div>
+
+                            <div class="row g-1 w-100 mt-2 border-top d-none" id="juridicalInfoDeal">
+                                <div class="col-6 col-lg-3">
+                                    <label for="companyNameIdDeal" style="font-size:12px;">نام شرکت:</label>
+                                    <input class="form-control" type="text" id="companyNameIdDeal" name="cusCompanyName" />
+                                </div>
+                                <div class="col-6 col-lg-3">
+                                    <label for="shenaseMeliIdDeal" style="font-size:12px;">شناسه ملی:</label>
+                                    <input maxlength="11" class="form-control" type="text" id="shenaseMeliIdDeal" name="cusShenaseMeli" />
+                                </div>
+                                <div class="col-6 col-lg-3">
+                                    <label for="eghtesadiCodeIdDeal" style="font-size:12px;">کداقتصادی:</label>
+                                    <input maxlength="12" class="form-control" type="text" id="eghtesadiCodeIdDeal" name="cusEghtesadiCode" />
+                                </div>
+                                <div class="col-6 col-lg-3">
+                                    <label for="numberRegisterIdDeal" style="font-size:12px;">شماره ثبت:</label>
+                                    <input maxlength="6" class="form-control" type="text" id="numberRegisterIdDeal" name="cusNumberRegister" />
+                                </div>
+                            </div>
+
+
+                            <div class="row g-1 mt-2 border-top w-100">
+                                <div class="col-5 col-sm-4">
+                                    <label for="postalCodeDeal" style="font-size:12px">کد پستی:</label>
+                                    <input maxlength="10" class="form-control" type="text" id="postalCodeDeal" name="cusPostalCode" />
+                                </div>
+                                <div class="col-4 col-sm-4">
+                                    <label for="provinceDeal" style="font-size:12px">استان:</label>
+                                    <input class="form-control" type="text" id="provinceDeal" name="cusProvince" />
+                                </div>
+                                <div class="col-3 col-sm-4">
+                                    <label for="cityDeal" style="font-size:12px">شهر:</label>
+                                    <input class="form-control" type="text" id="cityDeal" name="cusCity" />
+                                </div>
+                                <div class="col-12 col-sm-12">
+                                    <label for="addressDeal" style="font-size:12px">آدرس:</label>
+                                    <input class="form-control" type="text" id="addressDeal" name="cusAddress" />
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                </form>
+            </div>
+            <div class="modal-footer" style="border-top:none;padding-top:0">
+                <button class="buttonCancel2 my-0" data-bs-dismiss="modal" onclick="toggleDealModal()" type="button">انصراف</button>
+                <button class="buttonGreen3 my-0" onclick="submitDeal()" type="button">ثبت</button>
+            </div>
+        </div>
+    </div>
+</div>

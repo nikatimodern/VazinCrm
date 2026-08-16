@@ -1,6 +1,4 @@
-﻿using CRM.Core.Domain.AppUsers.Entities;
-using CRM.Core.Domain.PreFactors.Entities;
-using System.Collections.Generic;
+﻿using CRM.Core.Domain.PreFactors.Entities;
 
 namespace CRM.EndPoint.FrontEnd.Models.ViewModel.PreFactorVm
 {

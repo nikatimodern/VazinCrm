@@ -32,7 +32,11 @@ namespace CRM.Infrastructures.Sql.Factors.Configs
             builder.Property(f => f.SumTotalAmount).HasPrecision(20, 0);
             builder.Property(f => f.SumTotalAmountTax).HasPrecision(20, 0);
             builder.Property(f => f.ReciveAmount).HasPrecision(20, 0);
-
+            
+            builder.HasOne(x => x.Deal)
+                .WithMany(x => x.Factors)
+                .HasForeignKey(x => x.DealId)
+                .OnDelete(DeleteBehavior.NoAction);
             //builder.Property(f => f.SerialNumber).ValueGeneratedOnAdd();
 
         }

@@ -20,10 +20,8 @@ using CRM.Core.Domain.Reports.Enum;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Services.Asterisk;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
-using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.AspNetCore.SignalR;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
-using DocumentFormat.OpenXml.InkML;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize(Policy = "NotCustomerOnly")]
