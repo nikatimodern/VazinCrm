@@ -139,8 +139,12 @@ public class DealController : Controller {
                 "title" => isAsc ? query.OrderBy(c => c.Title) : query.OrderByDescending(c => c.Title),
                 "commentText" => isAsc ? query.OrderBy(c => c.CommentText) : query.OrderByDescending(c => c.CommentText),
                 "userCreator" => isAsc ? query.OrderBy(c => c.UserCreator) : query.OrderByDescending(c => c.UserCreator),
+                "status" => isAsc ? query.OrderBy(c => c.Status) : query.OrderByDescending(c => c.Status),
                 _ => isAsc ? query.OrderBy(c => c.CreateDate) : query.OrderByDescending(c => c.CreateDate),
             };
+        } else
+        {
+            query = query.OrderByDescending(c => c.CreateDate);
         }
 
         query = length != -1
@@ -444,6 +448,8 @@ public class DealController : Controller {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var oldDeal = await db.Deals.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
             var deal = await db.Deals.Where(f => f.Id == id).FirstOrDefaultAsync();
+            if (deal == null) return NotFound();
+
             deal.Status = status;
             deal.UserModify = user.FullName;
             deal.UserModifyID = user.Id;
