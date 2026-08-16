@@ -1687,9 +1687,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     if (pf != null)
                     {
                         deal = await db.Deals.Where(f => f.Id == pf.DealId).FirstOrDefaultAsync();
-                        if (deal?.financialStatus == DealFinancialStausEnum.closed)
+                        if (deal?.FinancialStatus == DealFinancialStausEnum.تایید_شده)
                         {
-                            return Conflict("سفارش مربوط به این پیش‌فاکتور توسط مالی شده است");
+                            return Conflict("سفارش مربوط به این پیش‌فاکتور تایید مالی شده است");
                         }
 
                         acc.CustomerId = pf.CustomerId;
@@ -2329,9 +2329,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var cus = await db.Customers.Where(f => f.Id == model.CustomerId).FirstOrDefaultAsync();
                 var deal = await db.Deals.Where(f => f.Id == model.DealId).FirstOrDefaultAsync();
 
-                if (deal?.financialStatus == DealFinancialStausEnum.closed)
+                if (deal?.FinancialStatus == DealFinancialStausEnum.تایید_شده)
                 {
-                    return Conflict("سفارش مربوط به این پیش‌فاکتور توسط مالی شده است");
+                    return Conflict("سفارش مربوط به این پیش‌فاکتور تایید مالی شده است");
                 }
 
                 bool isNewPrefactor = false;

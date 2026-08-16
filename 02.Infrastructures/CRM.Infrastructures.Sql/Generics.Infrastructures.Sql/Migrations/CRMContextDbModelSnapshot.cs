@@ -1946,6 +1946,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("CustomerName")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("FinancialStatus")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -1981,9 +1984,6 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.Property<string>("UserModifyID")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("financialStatus")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

@@ -175,7 +175,7 @@ const getAllDeals = async () => {
     }
 };
 
-const createDomAllDeals = (items, containersId, isAdmin) => {    
+const createDomAllDeals = (items, containersId, isAdmin) => {
     const countElm = document.querySelector(`${containersId} .countDeal`);
     const containerElm = document.querySelector(`${containersId} .deal-column-list`);
     if (!containerElm) return;
@@ -219,8 +219,8 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
                                       <svg style="width: 18px;cursor: pointer" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
                                     </button>
                             </div>` : `<span class="deal-card-locked--badge">
-                                <svg style="width: 14px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 1a3.5 3.5 0 0 0-3.5 3.5V7A1.5 1.5 0 0 0 3 8.5v5A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 11.5 7V4.5A3.5 3.5 0 0 0 8 1Zm2 6V4.5a2 2 0 1 0-4 0V7h4Z" clip-rule="evenodd" /></svg>
-                                بسته شده
+                                <svg style="width: 14px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8c0 .982-.472 1.854-1.202 2.402a2.995 2.995 0 0 1-.848 2.547 2.995 2.995 0 0 1-2.548.849A2.996 2.996 0 0 1 8 15a2.996 2.996 0 0 1-2.402-1.202 2.995 2.995 0 0 1-2.547-.848 2.995 2.995 0 0 1-.849-2.548A2.996 2.996 0 0 1 1 8c0-.982.472-1.854 1.202-2.402a2.995 2.995 0 0 1 .848-2.547 2.995 2.995 0 0 1 2.548-.849A2.995 2.995 0 0 1 8 1c.982 0 1.854.472 2.402 1.202a2.995 2.995 0 0 1 2.547.848c.695.695.978 1.645.849 2.548A2.996 2.996 0 0 1 15 8Zm-3.291-2.843a.75.75 0 0 1 .135 1.052l-4.25 5.5a.75.75 0 0 1-1.151.043l-2.25-2.5a.75.75 0 1 1 1.114-1.004l1.65 1.832 3.7-4.789a.75.75 0 0 1 1.052-.134Z" clip-rule="evenodd" /></svg>
+                                تایید مالی
                             </span>`}
                 </div>
                 <div class="d-flex align-items-center gap-2 mb-2 mt-1" style="font-size:clamp(10px, 2vw, 11px);color: #555">

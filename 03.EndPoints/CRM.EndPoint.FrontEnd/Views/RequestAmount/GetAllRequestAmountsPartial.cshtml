@@ -264,7 +264,7 @@
                             <span class="fbold" style="color:#777">@reqAmount.RequestStatusTxt</span>
                             break;
                         case RequestStatusEnum.در_انتظار_تایید_مدیرعامل:
-                            <div class="d-inline-flex flex-xl-column align-items-center justify-content-center gap-2">
+                            <div class="inline-flex-center flex-xl-column gap-2">
                                 <button class="buttonGreen2" onclick="submitAcceptedRequestAmount(this, '@reqAmount.Id')" @(reqAmount.AcceptedAmount == 0 ? "disabled" : "")>
                                     تایید
                                 </button>
@@ -273,7 +273,7 @@
                             break;
                         case RequestStatusEnum.در_انتظار_ارسال_به_مالی:
                             var targetStatus = item.TotalPaymentAmount > 0 ? (int)RequestStatusEnum.پرداخت_شده : (int)RequestStatusEnum.در_انتظار_پرداخت;
-                            <div class="d-inline-flex flex-xl-column align-items-center justify-content-center gap-2">
+                            <div class="inline-flex-center flex-xl-column gap-2">
                                 <button class="buttonGreen2" onclick="changeStatusReqAmount('@reqAmount.Id', @targetStatus)" @(reqAmount.AcceptedAmount == 0 ? "disabled" : "")>
                                     ارسال به مالی
                                 </button>

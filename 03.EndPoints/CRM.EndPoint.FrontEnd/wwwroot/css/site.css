@@ -36,11 +36,6 @@ button {
 }
 
 
-u, .text-decoration-underline {
-	text-underline-offset: 5px;
-}
-
-
 .filter-switch {
 	display: inline-flex;
 	align-items: stretch;
@@ -347,7 +342,7 @@ u, .text-decoration-underline {
 
 .hoverLink:hover, .hoverLink:focus {
 	text-decoration: underline;
-	color: blue;
+	color: blue !important;
 }
 
 
@@ -6601,7 +6596,7 @@ table tr.payment-vosoled > td {
 
 .deal-document-link span {
 	/* font-size: 13px; */
-	font-family: IRANSansMedium;	
+	font-family: IRANSansMedium;
 	line-height: 1;
 }
 

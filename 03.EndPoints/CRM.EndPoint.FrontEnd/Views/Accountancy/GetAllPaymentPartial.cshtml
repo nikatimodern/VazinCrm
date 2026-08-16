@@ -26,7 +26,7 @@
         <tbody>
         @foreach (var item in Model.Items.OrderByDescending(f => f.CreateDate)) {
             var isCreator = item.UserCreatorID == Model.UserId;
-            var isDealClosed = item.Deal.financialStatus == DealFinancialStausEnum.closed;
+            var isDealClosed = item.Deal?.FinancialStatus == DealFinancialStausEnum.تایید_شده;
 
             var canManage = !isDealClosed && (isCreator || Model.IsCreatorParent || Model.IsAdmin || Model.IsSalesAdmin);
             var canViewActions = canManage || Model.IsFinancial;
@@ -144,7 +144,7 @@
                                     }
 
                                     if ((item.PayType == PayTypeEnum.اعتباری || item.PayType == PayTypeEnum.چکی) && item.Vosoled) {
-                                        <span class="fbold hoverLink" style="color: #0074bb" onclick="showPayment('@item.Id', true)">وصول شده</span>
+                                        <span class="fbold hoverLink text-decoration-underline" style="color: #0074bb" onclick="showPayment('@item.Id', true)">وصول شده</span>
                                     } else {
                                         <span class="fbold" style="color: @statusColor">@item.StatusTxt</span>
                                         if (canApproveOrReject) {

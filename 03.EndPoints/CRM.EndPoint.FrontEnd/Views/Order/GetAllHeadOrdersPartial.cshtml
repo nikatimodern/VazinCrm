@@ -15,7 +15,7 @@
 
 @foreach (var item in Model ?? []) {
     var requestCount = item.RequestAmountOrderHeads?.Count;
-    var isDealClosed = item.Deal.financialStatus == DealFinancialStausEnum.closed;
+    var isDealClosed = item.Deal?.FinancialStatus == DealFinancialStausEnum.تایید_شده;
     <div class="orderBox @($"orderBox_col{(int)item.Status}")" data-id="@item.Id">
         <div class="d-flex flex-column justify-content-between p-2 w-100" style="column-gap:14px">
             <div class="mp flex-column" style=" display:flex;justify-content:space-between; width:100%;">

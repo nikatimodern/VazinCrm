@@ -19,7 +19,7 @@
         foreach (var item in Model.data ?? Enumerable.Empty<PreFactor>()) {
             bool isInvalid = item.Pftype is (int)PreFactorEnum.فاقد_اعتبار or (int)PreFactorEnum.بسته_شده
                 or (int)PreFactorEnum.حذف_شده or (int)PreFactorEnum.برگشت_خورده_از_طرف_مدیر_فروش;
-            var hasAccess = item.Deal.financialStatus != DealFinancialStausEnum.closed && (isAdmin || isSalesAdmin || item.UserCreatorID == userId);
+            var hasAccess = item.Deal?.FinancialStatus != DealFinancialStausEnum.تایید_شده && (isAdmin || isSalesAdmin || item.UserCreatorID == userId);
             var hideAddInvoiceBtns = isInvalid || !hasAccess;
 
             <div class="mp" style=" width:100%;display:flex;">

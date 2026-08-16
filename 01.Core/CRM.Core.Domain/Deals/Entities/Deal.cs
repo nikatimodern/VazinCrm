@@ -42,7 +42,7 @@ public class Deal : BaseEntity {
     public string CusAcquaintanceWayTxt { get; set; }
 
     public bool Suspend { get; set; }
-    public DealFinancialStausEnum financialStatus { get; set; }
+    public DealFinancialStausEnum FinancialStatus { get; set; }
 
     
     public ICollection<Factor> Factors { get; set; }

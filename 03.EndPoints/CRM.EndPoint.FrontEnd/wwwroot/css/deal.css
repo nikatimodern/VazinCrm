@@ -186,7 +186,7 @@ body.drag-active #overlay {
 	border: 1px solid var(--deal-status-border);
 	color: var(--deal-status-color);
 	font-size: 12px;
-	font-family: inherit;
+	font-family: IRANSansMedium;
 	white-space: nowrap;
 }
 

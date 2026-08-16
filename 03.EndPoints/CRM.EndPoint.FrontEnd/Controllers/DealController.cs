@@ -56,8 +56,8 @@ public class DealController : Controller {
             var deal = await db.Deals.FindAsync(id);
             if (deal == null) return NotFound();
 
-            deal.financialStatus = status;
-            
+            deal.FinancialStatus = status;
+
             deal.UserModify = user.FullName;
             deal.UserModifyID = user.Id;
             deal.ModifyDate = DateTime.Now;
@@ -65,8 +65,9 @@ public class DealController : Controller {
 
 
             var oldDeal = (Deal)db.Entry(deal).OriginalValues.ToObject();
-            await _logSystemService.LogChange(oldDeal, deal, LogActionEnum.تغییر_وضعیت, user);
-            
+            var logAction = status == DealFinancialStausEnum.تایید_شده ? LogActionEnum.تایید_و_تغییر_وضعیت : LogActionEnum.رد_و_تغییر_وضعیت;
+            await _logSystemService.LogChange(oldDeal, deal, logAction, user);
+
             await db.SaveChangesAsync();
             return Ok();
         }
@@ -116,14 +117,14 @@ public class DealController : Controller {
 
         var filterCounts = new Dictionary<int, int> {
             [-1] = await baseQuery.CountAsync(),
-            [0] = await baseQuery.CountAsync(s => s.financialStatus == DealFinancialStausEnum.active),
-            [1] = await baseQuery.CountAsync(s => s.financialStatus == DealFinancialStausEnum.closed),
+            [0] = await baseQuery.CountAsync(s => s.FinancialStatus == DealFinancialStausEnum.تایید_نشده),
+            [1] = await baseQuery.CountAsync(s => s.FinancialStatus == DealFinancialStausEnum.تایید_شده),
         };
 
 
         var query = model?._type switch {
-            0 => baseQuery.Where(s => s.financialStatus == DealFinancialStausEnum.active),
-            1 => baseQuery.Where(s => s.financialStatus == DealFinancialStausEnum.closed),
+            0 => baseQuery.Where(s => s.FinancialStatus == DealFinancialStausEnum.تایید_نشده),
+            1 => baseQuery.Where(s => s.FinancialStatus == DealFinancialStausEnum.تایید_شده),
             _ => baseQuery
         };
 
@@ -306,7 +307,7 @@ public class DealController : Controller {
         {
             var deal = await db.Deals.FindAsync(id);
             if (deal == null) return NotFound();
-            
+
             return Ok(deal);
         }
         catch
@@ -464,7 +465,7 @@ public class DealController : Controller {
         try
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
-            
+
             var deal = await db.Deals.FirstOrDefaultAsync(f => f.Id == dealId);
             if (deal == null) return NotFound();
             if (deal.CustomerId == null) return BadRequest();
@@ -482,10 +483,10 @@ public class DealController : Controller {
             }
 
             deal.Suspend = false;
-            
+
             var oldDeal = (Deal)db.Entry(deal).OriginalValues.ToObject();
             await _logSystemService.LogChange(oldDeal, deal, LogActionEnum.تغییر_وضعیت, user);
-            
+
             await db.SaveChangesAsync();
             return Ok();
         }

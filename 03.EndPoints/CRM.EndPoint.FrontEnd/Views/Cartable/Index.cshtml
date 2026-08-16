@@ -518,14 +518,14 @@
                                             <li class="filter-switch-item">
                                                 <input type="radio" name="FinancialDealFilter" id="FinancialDealFilter1" value="0" checked />
                                                 <label for="FinancialDealFilter1">
-                                                    فعال
+                                                    تایید نشده
                                                     <span class="badgeCircle filter-count-badge"></span>
                                                 </label>
                                             </li>
                                             <li class="filter-switch-item">
                                                 <input type="radio" name="FinancialDealFilter" id="FinancialDealFilter2" value="1" />
                                                 <label for="FinancialDealFilter2">
-                                                    بسته شده
+                                                    تایید شده
                                                     <span class="badgeCircle filter-count-badge"></span>
                                                 </label>
                                             </li>
@@ -538,6 +538,7 @@
                                         <thead>
                                         <tr>
                                             <th>شماره سفارش</th>
+                                            <th>وضعیت</th>
                                             <th>عنوان سفارش</th>
                                             <th>توضیحات</th>
                                             <th>تاریخ ثبت</th>
@@ -1953,7 +1954,16 @@
                 ],
                 columns: [
                     { data: "serialNumber" },
-                    { data: "title", className: "wrap-text"},
+                    {
+                        data: "status",
+                        render: data => {
+                            if (data === 1) return "باز";
+                            if (data === 2) return "ناموفق";
+                            if (data === 3) return "موفق";
+                            return "-";
+                        },
+                    },
+                    { data: "title", className: "wrap-text" },
                     { data: "commentText", className: "wrap-text", render: data => data || "-" },
                     { data: "createDateTxt", render: data => renderDateTimeHtml(data) },
                     { data: "userCreator" },
@@ -2039,7 +2049,7 @@
                         orderable: false,
                         render: function (data, type, row) {
                             if (row.financialStatus === 0) {
-                                return `<button class="buttonCancel3 btn-accept" onclick="closeDeal('${data}')">بستن سفارش</button>`;
+                                return `<button class="buttonCancel3 btn-accept" onclick="closeDeal('${data}')">تایید سفارش</button>`;
                             } else if (row.financialStatus === 1) {
                                 return `<button class="buttonGreen2 btn-accept" onclick="activeDeal('${data}')">بازگشت</button>`;
                             }
@@ -2097,8 +2107,8 @@
         const closeDeal = async (id) => {
             await confirmAlert({
                 icon: "warning",
-                text: "با بستن این سفارش، کارشناسان قادر به انجام هیچ اقدامی روی آن نخواهند بود.",
-                confirmText: "بله، بسته شود",
+                text: "با تایید این سفارش، کارشناسان قادر به انجام هیچ اقدامی روی آن نخواهند بود.",
+                confirmText: "بله، تایید شود",
                 onConfirm: async () => await toggleFinancialStatusDeal(id, 1),
             });
         };
@@ -2112,7 +2122,7 @@
             await sendApiRequest({
                 url: `/Deal/ToggleFinancialStatusDeal`,
                 params: { id, status },
-                successMsg: status === 1 ? "سفارش با موفقیت بسته شد" : "سفارش به حالت فعال بازگشت",
+                successMsg: status === 1 ? "سفارش با موفقیت تایید شد" : "سفارش به حالت فعال بازگشت",
                 onSuccess: () => {
                     dealTbl.ajax.reload();
                 },
