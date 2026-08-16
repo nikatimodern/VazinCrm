@@ -12,7 +12,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     removeDealsTabsDesktop();
     initSortableDeal();
-    getAllOrders();
     
     showTaminDropdown();
     await getAllDeals();

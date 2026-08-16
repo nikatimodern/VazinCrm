@@ -18,7 +18,6 @@ var pFactorSerialNumber = null;
 var PfSelForFactorThis = null; //پیش فاکتور انتخاب شده
 
 
-
 var Invo_id = null;
 var Invo_type = null;
 var InvoiceType = null;
@@ -3328,7 +3327,6 @@ const hideFact = () => {
 };
 
 
-let openDropdownToggle = null;
 function showTaminDropdown() {
     Dropdown.setupDelegate({
         container: document,
@@ -3360,13 +3358,14 @@ async function getRemind() {
         } else {
             throw new Error();
         }
+        
     }).then((tasks) => {
         notificationDropdown.innerHTML = tasks.html;
         notificationIconBadge.classList.toggle("d-none", !tasks.count);
-    })
-         .catch((err) => {
-             console.log(err);
-         });
+        
+    }).catch((err) => {
+        console.log(err);
+    });
 }
 
 async function getTask(id) {
