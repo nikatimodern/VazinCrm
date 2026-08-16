@@ -358,7 +358,7 @@
                             <div class="taminDropdown"></div>
                         }
 
-                        if (isAdmin || isFinancial && (item.Pftype is (int)PreFactorEnum.در_انتظار_تولید or (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد)) {
+                        if ((isAdmin || isFinancial) && (item.Pftype is (int)PreFactorEnum.در_انتظار_تولید or (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد)) {
                             <button class="flex-center" data-title-right="ثبت فاکتور جدید" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="AddFactor('@item.Id', @passType)">
                                 <i style="font-size:15px" class="mp fa fa-arrow-left"></i>
                             </button>

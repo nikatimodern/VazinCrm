@@ -52,10 +52,21 @@ public class DealController : Controller {
     {
         try
         {
+            var user = await userManager.GetUserAsync(HttpContext.User);
             var deal = await db.Deals.FindAsync(id);
             if (deal == null) return NotFound();
 
             deal.financialStatus = status;
+            
+            deal.UserModify = user.FullName;
+            deal.UserModifyID = user.Id;
+            deal.ModifyDate = DateTime.Now;
+            deal.ModifyDateTxt = dtService.GetDateTimePersian();
+
+
+            var oldDeal = (Deal)db.Entry(deal).OriginalValues.ToObject();
+            await _logSystemService.LogChange(oldDeal, deal, LogActionEnum.تغییر_وضعیت, user);
+            
             await db.SaveChangesAsync();
             return Ok();
         }
@@ -111,11 +122,11 @@ public class DealController : Controller {
 
 
         var query = model?._type switch {
-            0 => baseQuery.Where(s => s.financialStatus >= DealFinancialStausEnum.active),
-            1 => baseQuery.Where(s => s.financialStatus >= DealFinancialStausEnum.closed),
+            0 => baseQuery.Where(s => s.financialStatus == DealFinancialStausEnum.active),
+            1 => baseQuery.Where(s => s.financialStatus == DealFinancialStausEnum.closed),
             _ => baseQuery
         };
-        
+
 
         if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortDirection))
         {
@@ -134,7 +145,7 @@ public class DealController : Controller {
         query = length != -1
             ? query.Skip(start).Take(length)
             : query.Take(100);
-        
+
         var data = await query.ToListAsync();
         var recordsFiltered = data.Count;
 
@@ -279,7 +290,7 @@ public class DealController : Controller {
             .Select(g => new { g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Key, x => x.Count);
 
-        foreach (var deal in deals ?? [])
+        foreach (var deal in deals)
         {
             deal.Counts.PreFactor = preFactorCounts.GetValueOrDefault(deal.Id);
             deal.Counts.Factor = factorCounts.GetValueOrDefault(deal.Id);
@@ -293,7 +304,9 @@ public class DealController : Controller {
     {
         try
         {
-            var deal = await db.Deals.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
+            var deal = await db.Deals.FindAsync(id);
+            if (deal == null) return NotFound();
+            
             return Ok(deal);
         }
         catch
@@ -450,6 +463,8 @@ public class DealController : Controller {
     {
         try
         {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            
             var deal = await db.Deals.FirstOrDefaultAsync(f => f.Id == dealId);
             if (deal == null) return NotFound();
             if (deal.CustomerId == null) return BadRequest();
@@ -467,6 +482,10 @@ public class DealController : Controller {
             }
 
             deal.Suspend = false;
+            
+            var oldDeal = (Deal)db.Entry(deal).OriginalValues.ToObject();
+            await _logSystemService.LogChange(oldDeal, deal, LogActionEnum.تغییر_وضعیت, user);
+            
             await db.SaveChangesAsync();
             return Ok();
         }

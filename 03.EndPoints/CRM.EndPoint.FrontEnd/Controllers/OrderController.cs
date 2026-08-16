@@ -30,29 +30,21 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize(Policy = "NotCustomerOnly")]
     public class OrderController : Controller {
         private readonly IVeiwRenderService vrs;
-        private readonly Service genService;
-        private readonly FileSaver fileSaver;
         private readonly DateTimeServices dtService;
         private readonly CRMContextDb db;
-        private readonly UserContextDb udb;
         private readonly UserManager<AppUser> userManager;
-        private readonly SmsService smsServ;
         private readonly LogSystemService _logSystemService;
         private readonly ISmsQueue smsQueue;
         private readonly IDocumentRenderService documentRender;
 
-        public OrderController(IVeiwRenderService vrs, Service GenService, FileSaver fileSaver, DateTimeServices dtService,
-            CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, SmsService SmsServ, LogSystemService logSystemService,
+        public OrderController(IVeiwRenderService vrs, DateTimeServices dtService,
+            CRMContextDb db, UserManager<AppUser> userManager, LogSystemService logSystemService,
             ISmsQueue smsQueue, IDocumentRenderService documentRender)
         {
             this.vrs = vrs;
-            genService = GenService;
-            this.fileSaver = fileSaver;
             this.dtService = dtService;
             this.db = db;
-            this.udb = udb;
             this.userManager = userManager;
-            smsServ = SmsServ;
             _logSystemService = logSystemService;
             this.smsQueue = smsQueue;
             this.documentRender = documentRender;
@@ -287,7 +279,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 bool hasSearch = !string.IsNullOrEmpty(model.serVal);
 
 
-                var query = db.OrderHeads.AsNoTracking().OrderByDescending(f => f.CreateDate).AsQueryable();
+                var query = db.OrderHeads.AsNoTracking()
+                    .Include(f => f.RequestAmountOrderHeads)
+                    .OrderByDescending(f => f.CreateDate)
+                    .AsQueryable();
 
                 if (hasSearch)
                 {
@@ -313,19 +308,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     query = query.ApplyFilter(model, f => f.Customer, f => f.OrderDateMildi, f => f.UserCreatorID);
                 }
 
-
-                var isTamin = false;
-                if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش") || rols.Contains("کارشناس مالی") || rols.Contains("مدیر مالی"))
+                if (!rols.Contains("مدیر ارشد") && !rols.Contains("مدیر فروش") && !rols.Contains("کارشناس مالی") && !rols.Contains("مدیر مالی"))
                 {
-                    isTamin = true;
-                } else if (rols.Contains("کارشناس تامین"))
-                {
-                    isTamin = true;
-                    query = query.Where(f => f.UserCreatorID == user.Id || f.UserTaminId.ToString() == user.Id);
-                } else
-                {
-                    query = query.Where(f => f.UserCreatorID == user.Id);
+                    query = rols.Contains("کارشناس تامین")
+                        ? query.Where(f => f.UserCreatorID == user.Id || f.UserTaminId == Guid.Parse(user.Id))
+                        : query.Where(f => f.UserCreatorID == user.Id);
                 }
+
 
                 if (!hasFilter && !hasSearch) //اگر فیلتر نداشت پیش فرض سفارش هایی که از این تاریخ به بعد هستند رو نمایش میده
                 {
@@ -336,14 +325,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 // single mode
                 if (model._type > 0)
                 {
-                    var result = await BuildColumn((OrderHeadStatusEnum)model._type)!;
+                    var result = await BuildOrderColumn(query, (OrderHeadStatusEnum)model._type);
                     return Ok(result);
                 }
 
                 // multi mode
-                var registered = await BuildColumn(OrderHeadStatusEnum.ثبت_اولیه)!;
-                var producing = await BuildColumn(OrderHeadStatusEnum.تولید)!;
-                var finished = await BuildColumn(OrderHeadStatusEnum.آماده_تحویل)!;
+                var registered = await BuildOrderColumn(query, OrderHeadStatusEnum.ثبت_اولیه);
+                var producing = await BuildOrderColumn(query, OrderHeadStatusEnum.تولید);
+                var finished = await BuildOrderColumn(query, OrderHeadStatusEnum.آماده_تحویل);
                 var deliveredCount = 0;
 
                 if (hasSearch || hasFilter)
@@ -352,26 +341,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
 
                 return Ok(new { registered, producing, finished, deliveredCount });
-
-                async Task<object> BuildColumn(OrderHeadStatusEnum status)
-                {
-                    /*var data = await query.Select(oh => new OrderHeadVModel {
-                        OrderHead = oh,
-                        RequestAmountCounts = oh.RequestAmountOrderHeads.Count
-                    }).ToListAsync();*/
-                    var data = await query.Where(f => f.Status == status)
-                        .Include(f => f.RequestAmountOrderHeads)
-                        .ToListAsync();
-
-                    var html = await vrs.RenderToStringAsync("GetAllHeadOrdersPartial", data,
-                        new Dictionary<string, object> {
-                            { "PassType", 1 },
-                            { "IsTamin", isTamin }
-                        }
-                    );
-
-                    return new { count = data.Count, html };
-                }
             }
             catch (Exception ex)
             {
@@ -379,6 +348,41 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+
+        public async Task<IActionResult> GetAllDealOrdersPartial(Guid dealId)
+        {
+            var orders = db.OrderHeads.AsNoTracking().Where(f => f.DealId == dealId);
+
+            var registered = await BuildOrderColumn(orders, OrderHeadStatusEnum.ثبت_اولیه, 4);
+            var producing = await BuildOrderColumn(orders, OrderHeadStatusEnum.تولید, 4);
+            var finished = await BuildOrderColumn(orders, OrderHeadStatusEnum.آماده_تحویل, 4);
+            var delivered = await BuildOrderColumn(orders, OrderHeadStatusEnum.تحویل_شده, 4);
+
+            var model = new {
+                dealOrderRegistered = registered,
+                dealOrderProducing = producing,
+                dealOrderFinished = finished,
+                dealOrderDelivered = delivered
+            };
+
+            return Ok(model);
+        }
+
+        private async Task<object> BuildOrderColumn(IQueryable<OrderHead> query, OrderHeadStatusEnum status, int passType = 1)
+        {
+            var data = await query
+                .Where(f => f.Status == status)
+                .Include(f => f.Deal)
+                .ToListAsync();
+
+            var html = await vrs.RenderToStringAsync("GetAllHeadOrdersPartial", data,
+                new Dictionary<string, object> {
+                    { "PassType", passType }
+                }
+            );
+
+            return new { count = data.Count, html };
+        }
 
         [HttpPost]
         public async Task<IActionResult> getAllOrders(Guid id)
@@ -910,43 +914,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 return BadRequest(ex.Message);
             }
-        }
-
-        public async Task<IActionResult> GetAllDealOrdersPartial(Guid dealId)
-        {
-            ViewBag.PassType = 4;
-
-            var orders = db.OrderHeads.Where(f => f.DealId == dealId).AsQueryable();
-
-            var orderRegistered = orders.Where(f => f.Status == OrderHeadStatusEnum.ثبت_اولیه).ToList();
-            var orderProducing = orders.Where(f => f.Status == OrderHeadStatusEnum.تولید).ToList();
-            var orderFinished = orders.Where(f => f.Status == OrderHeadStatusEnum.آماده_تحویل).ToList();
-            var orderDelivered = orders.Where(f => f.Status == OrderHeadStatusEnum.تحویل_شده).ToList();
-
-
-            var registeredHtml = await vrs.RenderToStringAsync("GetAllHeadOrdersPartial", orderRegistered,
-                new Dictionary<string, object> { { "PassType", ViewBag.PassType } }
-            )!;
-
-            var producingHtml = await vrs.RenderToStringAsync("GetAllHeadOrdersPartial", orderProducing,
-                new Dictionary<string, object> { { "PassType", ViewBag.PassType } }
-            )!;
-
-            var finishedHtml = await vrs.RenderToStringAsync("GetAllHeadOrdersPartial", orderFinished,
-                new Dictionary<string, object> { { "PassType", ViewBag.PassType } }
-            )!;
-
-            var deliveredHtml = await vrs.RenderToStringAsync("GetAllHeadOrdersPartial", orderDelivered,
-                new Dictionary<string, object> { { "PassType", ViewBag.PassType } }
-            )!;
-
-
-            return Ok(new {
-                dealOrderRegistered = new { count = orderRegistered.Count, html = registeredHtml },
-                dealOrderProducing = new { count = orderProducing.Count, html = producingHtml },
-                dealOrderFinished = new { count = orderFinished.Count, html = finishedHtml },
-                dealOrderDelivered = new { count = orderDelivered.Count, html = deliveredHtml }
-            });
         }
     }
 }
