@@ -50,6 +50,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     initSearchInput("FinancialRequestSearchId", GetRequestFinancialExpert);
     initChangeRadio("FinancialRequestFilter", GetRequestFinancialExpert);
     
+    //////////////////////financial deal//////////////////////
+    initSearchInput("FinancialDealSearchId", GetDealFinancialExpert);
+    initChangeRadio("FinancialDealFilter", GetDealFinancialExpert);
+    
     //////////////////////MD req//////////////////////
     initSearchInput("MDRequestAmountSearchId", GetRequestManagingDirector);
     initChangeRadio("MDRequestAmountFilter", GetRequestManagingDirector);
@@ -226,6 +230,8 @@ const GetCartable = (tabId, subId) => {
                         await GetInvoicesFinancialExpert();
                     } else if (subId === "FinancialRequestTab") {
                         await GetRequestFinancialExpert();
+                    } else if (subId === "FinancialDealTab") {
+                        await GetDealFinancialExpert();
                     } else {
                         await GetPreFactorFinancialExpert();
                     }
@@ -599,6 +605,249 @@ const GetRequestFinancialExpert = async () => {
         console.log(err);
     }
 };
+
+let dealTbl;
+let dealModel = { filt: null, serVal: null };
+const GetDealFinancialExpert = async () => {
+    const val = document.getElementById("FinancialDealSearchId")?.value.trim() ?? "";
+    const type = document.querySelector("input[type='radio'][name='FinancialDealFilter']:checked")?.value;
+    if (type === undefined) return;
+    
+    setUrlParams({ sub: "FinancialDealTab" });
+    ShowTab("#FinancialDealTab");
+    
+    dealModel._type = Number(type);
+    dealModel.serVal = val;
+    
+    if (dealTbl) {
+        dealTbl.ajax.reload();
+    } else {
+        getAllDealsDt();
+    }
+};
+
+function getAllDealsDt() {
+    const dealTableElm = document.getElementById("DealTable");
+    
+    dealTbl = $(dealTableElm).DataTable({
+        paging: false,
+        lengthMenu: [10, 25, 50, 100, { label: "همه", value: -1 }],
+        pageLength: 10,
+        processing: true,
+        serverSide: true,
+        search: {
+            return: true,
+        },
+        ordering: true,
+        order: [[3, "desc"]],
+        filter: true,
+        stateSave: false,
+        scrollCollapse: true,
+        scrollY: "clamp(150px, calc(100dvh - 280px), 100dvh)",
+        responsive: true,
+        ajax: {
+            url: `/Deal/GetAllDealsDt`,
+            type: "POST",
+            data: (d) => {
+                d.model = JSON.stringify(dealModel);
+            },
+            dataSrc: function (json) {
+                document.getElementById("FinancialDealCount").textContent = json.recordsFiltered;
+                
+                updateFilterSwitchState({
+                    wrapperSelector: "#FinancialDealTab-pane",
+                    filterData: json.filterCounts,
+                    currentFilterValue: dealModel._type,
+                    searchValue: dealModel.serVal,
+                    onChange: (type) => {
+                        dealModel._type = Number(type);
+                        dealTbl.ajax.reload();
+                    },
+                });
+                
+                return json.data;
+            },
+        },
+        columnDefs: [
+            { targets: "_all", defaultContent: "-" },
+        ],
+        columns: [
+            { data: "serialNumber" },
+            
+            { data: "title", className: "wrap-text" },
+            { data: "commentText", className: "wrap-text", render: data => data || "-" },
+            { data: "createDateTxt", render: data => renderDateTimeHtml(data) },
+            { data: "userCreator" },
+            {
+                data: "customerName",
+                className: "wrap-text",
+                render: function (data, type, row) {
+                    return `${data ?? ""}${row.customerCode ? " (کد مشتری: " + row.customerCode + ")" : ""}`;
+                },
+            }, {
+                data: "status",
+                render: data => {
+                    if (data === 1) return `<span class="fMedium" style="color: #3b82f6">باز</span>`;
+                    if (data === 2) return `<span class="fMedium" style="color: #b91c1c">ناموفق</span>`;
+                    if (data === 3) return `<span class="fMedium" style="color: #16a34a">موفق</span>`;
+                    return "-";
+                },
+            },
+            {
+                data: "counts.preFactor",
+                orderable: false,
+                render: function (data) {
+                    if (!data) return "-";
+                    
+                    return `
+                        <span class="deal-document-link" data-action="pre-factors" data-title-right="مشاهده">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg>
+                            <span>${data}</span>
+                        </span>
+                    `;
+                },
+            },
+            {
+                data: "counts.factor",
+                orderable: false,
+                render: function (data) {
+                    if (!data) return "-";
+                    
+                    return `
+                        <span class="deal-document-link" data-action="factors" data-title-right="مشاهده">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12h-5"/><path d="M15 8h-5"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg>
+                            <span>${data}</span>
+                        </span>
+                    `;
+                },
+            },
+            {
+                data: "counts.accountancy",
+                orderable: false,
+                render: function (data) {
+                    if (!data) return "-";
+                    
+                    return `
+                        <span class="deal-document-link" data-action="invoices" data-title-right="مشاهده">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5"/><path d="M18 12h.01"/><path d="M19 22v-6"/><path d="m22 19-3-3-3 3"/><path d="M6 12h.01"/><circle cx="12" cy="12" r="2"/></svg>
+                            <span>${data}</span>
+                        </span>
+                    `;
+                },
+            },
+            {
+                data: "counts.orderHead",
+                orderable: false,
+                render: function (data) {
+                    if (!data) return "-";
+                    
+                    return `
+                        <span class="deal-document-link" data-action="orders" data-title-right="مشاهده">
+                            <svg fill="currentColor" viewBox="0 0 256 256"><path d="M72,104a8,8,0,0,1,8-8h96a8,8,0,0,1,0,16H80A8,8,0,0,1,72,104Zm8,40h96a8,8,0,0,0,0-16H80a8,8,0,0,0,0,16ZM232,56V208a8,8,0,0,1-11.58,7.15L192,200.94l-28.42,14.21a8,8,0,0,1-7.16,0L128,200.94,99.58,215.15a8,8,0,0,1-7.16,0L64,200.94,35.58,215.15A8,8,0,0,1,24,208V56A16,16,0,0,1,40,40H216A16,16,0,0,1,232,56Zm-16,0H40V195.06l20.42-10.22a8,8,0,0,1,7.16,0L96,199.06l28.42-14.22a8,8,0,0,1,7.16,0L160,199.06l28.42-14.22a8,8,0,0,1,7.16,0L216,195.06Z"></path></svg>
+                            <span>${data}</span>
+                        </span>
+                    `;
+                },
+            },
+            {
+                data: "counts.report",
+                orderable: false,
+                render: function (data) {
+                    if (!data) return "-";
+                    
+                    return `
+                        <span class="deal-document-link" data-action="reports" data-title-right="مشاهده">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M12 2v4"/><path d="M16 2v4"/><rect width="16" height="18" x="4" y="4" rx="2"/><path d="M8 10h6"/><path d="M8 14h8"/><path d="M8 18h5"/></svg>
+                            <span>${data}</span>
+                        </span>
+                    `;
+                },
+            },
+            {
+                data: "id",
+                orderable: false,
+                render: function (data, type, row) {
+                    if (row.financialStatus === 0) {
+                        return `<button class="buttonCancel3 btn-accept" onclick="closeDeal('${data}')">تایید سفارش</button>`;
+                    } else if (row.financialStatus === 1) {
+                        return `<button class="buttonGreen2 btn-accept" onclick="activeDeal('${data}')">بازگشت</button>`;
+                    }
+                    
+                    return "-";
+                },
+            },
+        ],
+        createdRow: (row, data) => {
+            if (data.financialStatus === 1) {
+                row.classList.add("tableRow-bgGreen");
+            }
+        },
+        language: languageDatatable,
+        layout: null,
+        initComplete: () => {
+            document.querySelectorAll("#DealTable_wrapper > div.row").forEach((row) => {
+                row.classList.add("d-flex", "flex-wrap");
+                row.classList.remove("row");
+            });
+        },
+    });
+    
+    
+    dealTableElm.addEventListener("click", async (e) => {
+        const documentLink = e.target.closest(".deal-document-link");
+        if (!documentLink) return;
+        
+        const rowElement = documentLink.closest("tr");
+        const deal = dealTbl.row(rowElement).data();
+        
+        if (!deal) return;
+        
+        switch (documentLink.dataset.action) {
+            case "pre-factors":
+                await showModalDealPreFactors(deal);
+                break;
+            case "factors":
+                await showModalDealFactors(deal);
+                break;
+            case "reports":
+                await showModalDealReports(deal);
+                break;
+            case "orders":
+                await showModalDealOrders(deal);
+                break;
+            case "invoices":
+                await showModalDealInvoices(deal);
+                break;
+        }
+    });
+}
+
+
+const closeDeal = async (id) => {
+    await confirmAlert({
+        icon: "warning",
+        text: "با تایید این سفارش، کارشناسان قادر به انجام هیچ اقدامی روی آن نخواهند بود.",
+        confirmText: "بله، تایید شود",
+        onConfirm: async () => await toggleFinancialStatusDeal(id, 1),
+    });
+};
+
+const activeDeal = async (id) => {
+    await toggleFinancialStatusDeal(id, 0);
+};
+
+
+const toggleFinancialStatusDeal = async (id, status) => {
+    await sendApiRequest({
+        url: `/Deal/ToggleFinancialStatusDeal`,
+        params: { id, status },
+        successMsg: status === 1 ? "سفارش با موفقیت تایید شد" : "سفارش به حالت فعال بازگشت",
+        onSuccess: () => {
+            dealTbl.ajax.reload();
+        },
+    });
+};
+
 
 ////////////////////////////////////////////////////////
 

@@ -1,3 +1,4 @@
+
 let modelDeal = { filt: null, serVal: null };
 var filterDealConfig = {};
 var dealSearchVal = null;
@@ -13,7 +14,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     initSortableDeal();
     getAllOrders();
     
-    await showTaminDropdown();
+    showTaminDropdown();
     await getAllDeals();
     
     /* FLshowLoading(false); */

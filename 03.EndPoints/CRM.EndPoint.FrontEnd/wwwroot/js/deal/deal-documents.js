@@ -114,12 +114,12 @@ const getInvoicesFromDeal = async (dealId) => {
 document.getElementById("dealPreFactorsRefresh")?.addEventListener("click", () => getPreFactorFromDeal(currentDealDocumentData.id, true));
 document.getElementById("dealPreFactorsAdd")?.addEventListener("click", () =>
     showModalAddPfactor(4, currentDealDocumentData.customerId, currentDealDocumentData));
-document.getElementById("dealReportsAdd")?.addEventListener("click", () => {
+document.getElementById("dealReportsAdd")?.addEventListener("click", async () => {
     const model = currentDealDocumentData.customer ?? {
         agentName: currentDealDocumentData.customerName,
         mobile: currentDealDocumentData.mobileNumber,
     };
-    ShowModalReport(model, 4, currentDealDocumentData.id, currentDealDocumentData.serialNumber);
+    await ShowModalReport(model, 4, currentDealDocumentData.id, currentDealDocumentData.serialNumber);
 });
 
 const deletedPrefactorToggle = initEyeToggle({
