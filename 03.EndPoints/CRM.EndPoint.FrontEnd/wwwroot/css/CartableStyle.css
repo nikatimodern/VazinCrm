@@ -1,14 +1,14 @@
 ﻿.CartableContent {
-  border: 2px solid #02514b;
-  border-end-end-radius: 0;
-  border-end-start-radius: 20px;
-  border-start-end-radius: 20px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
+	border: 2px solid #02514b;
+	border-end-end-radius: 0;
+	border-end-start-radius: 20px;
+	border-start-end-radius: 20px;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	overflow: hidden;
 }
 
 
@@ -32,311 +32,320 @@
 
 
 .TCar:hover {
-  color: #fff !important;
-  background-color: #02514b;
-  border: 1px solid #02514b;
-  border-bottom: none;
+	color: #fff !important;
+	background-color: #02514b;
+	border: 1px solid #02514b;
+	border-bottom: none;
 }
 
 
 .TCar > p {
-  font-family: "IRANSansBold";
-  margin: 0;
+	font-family: "IRANSansBold";
+	margin: 0;
 }
 
 
 .TCarActive {
-  color: #fff !important;
-  background-color: #02514b;
-  border: 1px solid #02514b;
-  border-bottom: none;
+	color: #fff !important;
+	background-color: #02514b;
+	border: 1px solid #02514b;
+	border-bottom: none;
 }
 
 
 .M_ex_Detail {
-  font-family: "IRANSansBold";
-  font-size: large;
-  color: mediumvioletred;
+	font-family: "IRANSansBold";
+	font-size: large;
+	color: mediumvioletred;
 }
 
 
 
 #dropdown-pFactor-filterList-toggle {
-  margin-inline: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+	margin-inline: 4px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 6px;
 }
 
 
 .dropdown-pFactor-filterList {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
-  display: flex;
-  flex-direction: column;
-  z-index: 10;
-  transform: scale(0.8);
-  transition: all 0.2s;
-  min-width: 240px;
-  visibility: hidden;
-  opacity: 0;
+	position: absolute;
+	top: 100%;
+	right: 0;
+	background-color: white;
+	border-radius: 8px;
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+	display: flex;
+	flex-direction: column;
+	z-index: 10;
+	transform: scale(0.8);
+	transition: all 0.2s;
+	min-width: 240px;
+	visibility: hidden;
+	opacity: 0;
 }
 
 
 .dropdown-pFactor-filterList.show {
-  visibility: visible;
-  opacity: 1;
-  transform: scale(1);
+	visibility: visible;
+	opacity: 1;
+	transform: scale(1);
 }
 
 
 .dropdown-pFactor-filter {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px;
-  transition: all 0.2s;
-  user-select: none;
-  /*    border-bottom:1px solid rgba(0,0,0,0.15)*/
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px;
+	transition: all 0.2s;
+	user-select: none;
+	/*    border-bottom:1px solid rgba(0,0,0,0.15)*/
 }
 
 
 .dropdown-pFactor-filter:hover {
-  background-color: #ededed;
+	background-color: #ededed;
 }
 
 
 .progressTracker {
-  position: relative;
-  height: 2px;
-  width: 91%;
-  margin: 24px 30px 26px 10px;
-  background-color: gray;
-  font-size: 11px;
+	position: relative;
+	height: 2px;
+	width: 91%;
+	margin: 24px 30px 26px 10px;
+	background-color: gray;
+	font-size: 11px;
 }
 
 
 .progressTrackerDots {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background-color: #888;
-  border: 2px solid #fff;
-  outline: 2px solid #888;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background-color: #888;
+	border: 2px solid #fff;
+	outline: 2px solid #888;
 }
 
 
 .progressTrackerDots.completedTrack {
-  margin-top: -3px;
-  width: 22px;
-  height: 22px;
-  background-color: #fff;
-  border: none;
-  color: #29ab00;
-  outline: none;
+	margin-top: -3px;
+	width: 22px;
+	height: 22px;
+	background-color: #fff;
+	border: none;
+	color: #29ab00;
+	outline: none;
 }
 
 
 .progressTrackerDots.completedTrackYellow {
-  margin-top: -3px;
-  width: 22px;
-  height: 22px;
-  background-color: #fff;
-  border: none;
-  color: #a7ab00;
-  outline: none;
+	margin-top: -3px;
+	width: 22px;
+	height: 22px;
+	background-color: #fff;
+	border: none;
+	color: #a7ab00;
+	outline: none;
 }
 
 
 .progressTrackerDots.rejectedTrack {
-  margin-top: -3px;
-  width: 22px;
-  height: 22px;
-  background-color: #fff;
-  border: none;
-  color: darkred;
-  outline: none;
+	margin-top: -3px;
+	width: 22px;
+	height: 22px;
+	background-color: #fff;
+	border: none;
+	color: darkred;
+	outline: none;
 }
 
 
 .progressTrackerDots.completedTrack svg.completed-svg,
 .progressTrackerDots.completedTrackYellow svg.completed-svg {
-  display: block !important;
+	display: block !important;
 }
 
 
 .progressTrackerDots.rejectedTrack svg.rejected-svg {
-  display: block !important;
+	display: block !important;
 }
 
 
 .progressTrackerDots.activeTrack:not(.rejectedTrack) {
-  background-color: #0672cb;
-  outline: 2px solid #0672cb;
+	background-color: #0672cb;
+	outline: 2px solid #0672cb;
 }
 
 
 .progressTrackerDots.activeTrack ~ span {
-  font-family: "IRANSansBold";
-  font-size: 12px;
-  margin-top: -2px;
+	font-family: "IRANSansBold";
+	font-size: 12px;
+	margin-top: -2px;
 }
 
 
 .progressTrackerFilled {
-  position: absolute;
-  height: 100%;
-  top: 0;
-  right: 0;
-  background-color: #29ab00;
-  z-index: 1;
-  border-radius: 4px;
+	position: absolute;
+	height: 100%;
+	top: 0;
+	right: 0;
+	background-color: #29ab00;
+	z-index: 1;
+	border-radius: 4px;
 }
 
 
 .progressTrackerFilledYellow {
-  position: absolute;
-  height: 100%;
-  top: 0;
-  right: 0;
-  background-color: #a7ab00;
-  z-index: 1;
-  border-radius: 4px;
+	position: absolute;
+	height: 100%;
+	top: 0;
+	right: 0;
+	background-color: #a7ab00;
+	z-index: 1;
+	border-radius: 4px;
 }
 
 
 .progressTracker > .d-flex {
-  position: relative;
-  z-index: 2;
+	position: relative;
+	z-index: 2;
 }
 
 
 @media (max-width: 991px) {
-  .TCar {
-    width: 114px;
-    font-size: 13px;
-  }
-  
-  .dropdown-pFactor-filterList {
-    left: 0;
-    right: auto;
-  }
+	.TCar {
+		width: 114px;
+		font-size: 13px;
+	}
+	
+	.dropdown-pFactor-filterList {
+		left: 0;
+		right: auto;
+	}
 }
 
 
 @media (max-width: 767px) {
-  .TCar {
-    width: 103px;
-    height: 26px;
-    font-size: 12px;
-  }
-  
-  #TContentId, #SalesAdminPfactorContentId {
-    max-height: calc(100dvh - 236px) !important;
-  }
-  
-  #PfAcceptedList, #fAcceptedList {
-    max-height: calc(100dvh - 249px) !important;
-  }
-  
-  #FinancialExpertPfContentId, #MDRequestAmountContentId {
-    max-height: calc(100dvh - 293px) !important;
-  }
-  
-  #FinancialRequestContentId {
-    max-height: calc(100dvh - 347px) !important;
-  }
-  
-  #FinancialRequestContentId.selection-mode {
-    max-height: calc(100dvh - 396px) !important;
-  }
-  
-  .salesExperts-list {
-    height: auto !important;
-    max-height: calc(100dvh - 212px) !important;
-  }
-  
-  .progressTracker {
-    margin: 14px auto 26px !important;
-  }
-  
-  #progressiveTrackerTaminModal .progressTracker {
-    width: 97% !important;
-    margin: 10px auto 26px !important;
-  }
+	.TCar {
+		width: 103px;
+		height: 26px;
+		font-size: 12px;
+	}
+	
+	#TContentId, #SalesAdminPfactorContentId {
+		max-height: calc(100dvh - 236px) !important;
+	}
+	
+	#PfAcceptedList, #fAcceptedList {
+		max-height: calc(100dvh - 249px) !important;
+	}
+	
+	#FinancialExpertPfContentId, #MDRequestAmountContentId {
+		max-height: calc(100dvh - 293px) !important;
+	}
+	
+	#FinancialRequestContentId {
+		max-height: calc(100dvh - 347px) !important;
+	}
+	
+	#FinancialRequestContentId.selection-mode {
+		max-height: calc(100dvh - 396px) !important;
+	}
+	
+	.salesExperts-list {
+		height: auto !important;
+		max-height: calc(100dvh - 212px) !important;
+	}
+	
+	.progressTracker {
+		margin: 14px auto 26px !important;
+	}
+	
+	#progressiveTrackerTaminModal .progressTracker {
+		width: 97% !important;
+		margin: 10px auto 26px !important;
+	}
+	
+	.nav-pills .nav-link {
+		padding: .25rem .5rem;
+		font-size: 12px;
+	}
 }
 
 
 @media all and (max-width: 1399px) {
-  #allTabFactors,
-  #salesExpertsTabs {
-    display: flex !important;
-    border-bottom: 2px solid var(--DarkColor) !important;
-    font-size: inherit !important;
-  }
-  
-  #allTabFactors .nav-link,
-  #salesExpertsTabs .nav-link {
-    border-radius: 0 !important;
-    border-right: none !important;
-  }
-  
-  #allTabFactors .nav-link.active,
-  #salesExpertsTabs .nav-link.active {
-    background-color: var(--DarkColor) !important;
-    color: #fff !important;
-  }
-  
-  #salesExpertsTabs .nav-link {
-    border-radius: unset !important;
-    color: var(--DarkColor) !important;
-    background-color: #1626361f !important;
-    border: none !important;
-  }
-  
-  .parent-all-factors .InfoData,
-  .parent-all-salesExperts .InfoData {
-    padding: 0 !important;
-    border: none;
-    background-color: transparent;
-    border-radius: unset;
-  }
-  
-  #HideFactorPartialId {
-    display: none
-  }
+	#allTabFactors,
+	#salesExpertsTabs {
+		display: flex !important;
+		border-bottom: 2px solid var(--DarkColor) !important;
+		font-size: inherit !important;
+	}
+	
+	#allTabFactors .nav-link,
+	#salesExpertsTabs .nav-link {
+		border-radius: 0 !important;
+		border-right: none !important;
+	}
+	
+	#allTabFactors .nav-link.active,
+	#salesExpertsTabs .nav-link.active {
+		background-color: var(--DarkColor) !important;
+		color: #fff !important;
+	}
+	
+	#salesExpertsTabs .nav-link {
+		border-radius: unset !important;
+		color: var(--DarkColor) !important;
+		background-color: #1626361f !important;
+		border: none !important;
+	}
+	
+	.parent-all-factors .InfoData,
+	.parent-all-salesExperts .InfoData {
+		padding: 0 !important;
+		border: none;
+		background-color: transparent;
+		border-radius: unset;
+	}
+	
+	#HideFactorPartialId {
+		display: none
+	}
 }
 
 
 @media all and (max-width: 575px) {
-  #salesExpertsTabs #acceptingTab {
-    border-left: none !important;
-  }
+	#salesExpertsTabs #acceptingTab {
+		border-left: none !important;
+	}
 }
 
 
 .nav.nav-pills {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  padding-bottom: .5rem;
-  gap: .25rem;
-  border-bottom: 2px solid var(--DarkColor);
+	display: flex;
+	justify-content: center;
+	width: 100%;
+	padding-bottom: .5rem;
+	gap: .25rem;
+	border-bottom: 2px solid var(--DarkColor);
 }
 
 
 .nav-pills .nav-link {
-  color: var(--DarkColor);
-  background-color: #1626361f;
+	color: var(--DarkColor);
+	background-color: #1626361f;
 }
+
+
+
+
 
 
 

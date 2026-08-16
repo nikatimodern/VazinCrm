@@ -16,7 +16,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,11 +23,8 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Enum;
-using CRM.Core.Domain.Attachments.Enum;
-using CRM.Core.Domain.Supplies.Entities;
 using CRM.Core.Domain.Supplies.Enums;
 using CRM.EndPoint.FrontEnd.Models.PreFactorVm;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 
@@ -129,18 +125,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     throw new Exception();
 
 
-                ViewBag.UserId = user.Id;
                 var vModel = new PrefactorViewModel {
                     data = pList,
-                    UserTamin = null,
                     _Setting = _setting,
-                    rols = roles,
                 };
 
-                var html = await vrs.RenderToStringAsync("PreFactorAcceptedPartial", vModel,
-                    new Dictionary<string, object> {
-                        { "UserId", ViewBag.UserId }
-                    });
+                var html = await vrs.RenderToStringAsync("PreFactorAcceptedPartial", vModel);
 
                 return Ok(new { count = vModel.data?.Count ?? 0, html });
             }
@@ -317,7 +307,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                var pListQ = db.PreFactors.AsQueryable();
+                var pListQ = db.PreFactors
+                    .Include(x => x.Deal)
+                    .Include(f => f.CustomerEntity)
+                    .AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(model.serVal))
                 {
@@ -348,69 +341,88 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     _ => pListQ
                 };
 
-                pListQ = pListQ
-                    .OrderByDescending(f => f.DateMiladi)
-                    .ThenByDescending(f => f.CreateDate)
-                    .Include(f => f.CustomerEntity);
-
                 if (model.filt == null)
                 {
                     pListQ = pListQ.Take(50);
                 }
 
-                var pList = await pListQ.AsNoTracking().ToListAsync();
-
-
-                var pfIds = pList.Select(f => f.Id).ToList();
-                var accS = await db.Accountancies
-                    .AsNoTracking()
-                    .Where(f =>
-                        f.pfid.HasValue
-                        && pfIds.Contains(f.pfid.Value)
-                        && (f.AccType == AcEnum.واریزی || f.AccType == AcEnum.برگشتی)
-                        && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
-                        && (
-                            (f.PayType != PayTypeEnum.اعتباری && f.PayType != PayTypeEnum.چکی) ||
-                            ((f.PayType == PayTypeEnum.اعتباری || f.PayType == PayTypeEnum.چکی) && f.Vosoled == false)
-                        )
-                    )
+                var pList = await pListQ.AsNoTracking()
+                    .OrderByDescending(f => f.DateMiladi)
+                    .ThenByDescending(f => f.CreateDate)
                     .ToListAsync();
 
-                var accDict = accS
-                    .GroupBy(a => a.pfid)
-                    .ToDictionary(g => g.Key, g => g.Sum(f => f.AccType == AcEnum.واریزی ? f.credit : -f.BackWard) ?? 0);
+                var preFactorIds = pList.Select(x => x.Id).ToArray();
+
+                // Accountancy
+                var accountancyData = await db.Accountancies
+                    .AsNoTracking()
+                    .ForPreFactor()
+                    .NotVosoled()
+                    .Where(x => x.pfid.HasValue && preFactorIds.Contains(x.pfid.Value))
+                    .GroupBy(x => x.pfid)
+                    .Select(g => new {
+                        PreFactorId = g.Key,
+                        ReciveAmount = g.Sum(x => x.AccType == AcEnum.واریزی ? x.credit : -x.BackWard)
+                    })
+                    .ToDictionaryAsync(x => x.PreFactorId.Value, x => x.ReciveAmount ?? 0);
+
+
+                // Factor Counts
+                Dictionary<Guid, int> factorCounts = new();
+                if (_setting?.CrmFactors == true)
+                {
+                    factorCounts = await db.Factors
+                        .AsNoTracking()
+                        .Where(x => preFactorIds.Contains(x.PfactorID))
+                        .GroupBy(x => x.PfactorID)
+                        .Select(g => new {
+                            PreFactorId = g.Key,
+                            Count = g.Count()
+                        })
+                        .ToDictionaryAsync(x => x.PreFactorId, x => x.Count);
+                }
+
+                // Sepidar
+                Dictionary<Guid, int> sepidarCounts = new();
+                if (_setting?.Sepidar == true)
+                {
+                    var serialNumbers = pList.Select(x => x.SerialNumber).ToArray();
+
+                    var invoices = await s1Db.vwInvoice.AsNoTracking()
+                        .Where(x => x.QuotationNumber.HasValue && serialNumbers.Contains(x.QuotationNumber.Value))
+                        .Select(x => new {
+                            SerialNumber = x.QuotationNumber.Value,
+                            x.CreationDate
+                        })
+                        .ToListAsync();
+
+                    sepidarCounts = pList.ToDictionary(
+                        pf => pf.Id,
+                        pf => invoices.Count(x => x.SerialNumber == pf.SerialNumber && x.CreationDate >= pf.CreateDate)
+                    );
+                }
 
                 foreach (var item in pList)
                 {
-                    var rec = accDict.TryGetValue(item.Id, out var value) ? value : 0;
+                    accountancyData.TryGetValue(item.Id, out var receiveAmount);
 
-                    item.ReciveAmount = rec;
-                    item.PaymentAmount = item.SumTotalAmount + item.TotalTax - item.Discount - rec;
+                    item.ReciveAmount = receiveAmount;
+
+                    item.PaymentAmount = item.SumTotalAmount + item.TotalTax - item.Discount - item.ReciveAmount;
                     item.SumTotalAmountTax = item.SumTotalAmount + item.TotalTax - item.Discount;
-                }
 
-                //اگر سپیدار در تنظیمات فعال بود
-                if (_setting.Sepidar == true)
-                {
-                    var serNums = pList.Select(f => (int?)f.SerialNumber).ToList();
-
-                    var invoices = await s1Db.vwInvoice.Where(q => serNums.Contains(q.QuotationNumber)).ToListAsync();
-
-                    var pfFactors = await db.Factors
-                        .Where(f => pfIds.Contains(f.PfactorID))
-                        .GroupBy(f => f.PfactorID)
-                        .ToDictionaryAsync(g => g.Key, g => g.Count());
-
-                    foreach (var item in pList)
+                    if (_setting?.Sepidar == true)
                     {
-                        var inv = invoices.Where(f => f.QuotationNumber == item.SerialNumber && f.CreationDate >= item.CreateDate);
+                        sepidarCounts.TryGetValue(item.Id, out var count);
+                        item.CountFactorSepidar = count;
+                    }
 
-                        item.CountFactorSepidar = inv.Count();
-
-                        item.CountFactor = pfFactors.TryGetValue(item.Id, out var countF) ? countF : 0;
+                    if (_setting?.CrmFactors == true)
+                    {
+                        factorCounts.TryGetValue(item.Id, out var count);
+                        item.CountFactor = count;
                     }
                 }
-                // پایان سپیدار
 
                 return pList;
             }
@@ -792,9 +804,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             var vModel = new FactorsViewModel {
                 factors = fList,
-                Rols = rols,
                 _Setting = _setting,
-                Financial = rols.Contains("مدیر فروش") || rols.Contains("کارشناس مالی")
             };
 
             var html = await vrs.RenderToStringAsync("FactorPartial", vModel,
@@ -802,7 +812,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     { "PassType", model.PassType } //passType: (0:PreFactor,Factor | 1:CustomerProfile | 5:Supply | 4:Deal | 6:Email)
                 });
 
-            return Ok(new { count = vModel.factors?.Count ?? 0, html });
+            return Ok(new { count = fList?.Count ?? 0, html });
         }
 
         [HttpGet]
@@ -811,7 +821,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
-                var rols = await userManager.GetRolesAsync(user);
                 ViewBag.PassType = type; //passType: (0:PreFactor,Factor | 1:CustomerProfile | 5:Supply | 4:Deal | 6:Email)
 
                 var fList = type switch {
@@ -823,7 +832,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var model = new FactorsViewModel {
                     factors = fList,
-                    Rols = rols,
                     _Setting = _setting
                 };
 

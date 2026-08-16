@@ -1,8 +1,16 @@
-﻿@using CRM.Core.Domain.PreFactors.Enum
+﻿@using System.Security.Claims
+@using CRM.Core.Domain.Deals.Enums
+@using CRM.Core.Domain.PreFactors.Enum
 @model PrefactorViewModel ;
 
 @{
     Layout = null;
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    //    var isFinancial = User.IsInRole(AppRoles.FinancialExpert); // TODO
+    var isFinancial = User.IsInRole("کارشناس مالی") || User.IsInRole("مدیر مالی");
+    var isSalesAdmin = User.IsInRole("مدیر فروش");
+    var isAdmin = User.IsInRole("مدیر ارشد");
+    var isCustomer = User.IsInRole("مشتری");
 }
 
 <div style="width:100%;display:flex;flex-direction:column;gap:5px ">
@@ -11,6 +19,8 @@
         foreach (var item in Model.data ?? Enumerable.Empty<PreFactor>()) {
             bool isInvalid = item.Pftype is (int)PreFactorEnum.فاقد_اعتبار or (int)PreFactorEnum.بسته_شده
                 or (int)PreFactorEnum.حذف_شده or (int)PreFactorEnum.برگشت_خورده_از_طرف_مدیر_فروش;
+            var hasAccess = item.Deal?.FinancialStatus != DealFinancialStausEnum.تایید_شده && (isAdmin || isSalesAdmin || item.UserCreatorID == userId);
+            var hideAddInvoiceBtns = isInvalid || !hasAccess;
 
             <div class="mp" style=" width:100%;display:flex;">
                 @if (item.OfficialType == 1) {
@@ -60,10 +70,8 @@
                                 </div>
                                 <div class="flex-row flex-md-column" style=" display:flex;align-items:center; justify-content:center;width:180px;gap:6px">
                                     <label style="color:gray">پرداخت شده:</label>
-                                    @{
-                                        bool isHideAddInvoiceBtns = isInvalid || (!Model.rols.Contains("مدیر ارشد") && !Model.rols.Contains("مدیر فروش") && ViewBag.UserId != item.UserCreatorID);
-                                    }
-                                    <span class="fbold hoverLink" onclick="ShowModalListInvoice('@item.Id', 1,'@item.SerialNumber', 2, '@item.DealId', @isHideAddInvoiceBtns.ToString().ToLower())">
+
+                                    <span class="fbold hoverLink" onclick="ShowModalListInvoice('@item.Id', 1,'@item.SerialNumber', 2, '@item.DealId', @hideAddInvoiceBtns.ToString().ToLower())">
                                         @($"{item.ReciveAmount:n0}")<span style="font-size: 12px"> @(item.CurrencyTypeTxt ?? "ريال")</span>
                                     </span>
 
@@ -142,7 +150,6 @@
                                 ((int)PreFactorEnum.در_انتظار_تایید_مشتری, "تایید مشتری"),
                                 ((int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش, "تایید مدیرفروش"),
                                 ((int)PreFactorEnum.در_انتظار_تایید_مالی, "تایید مالی"),
-//                            ((int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش, "تایید مدیرفروش"),
                                 ((int)PreFactorEnum.در_انتظار_تولید, "تولید"),
                                 ((int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد, "تحویل مشتری")
                             };
@@ -177,7 +184,7 @@
                                         </div>
                                         <span style="position:absolute;width: max-content;top: 100%;">
                                             <span class="d-none @(!isInvalid ? "d-md-inline-block" : "")">@label</span>
-                                            @if (!Model.rols.Contains("مشتری") && type == (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین && item.UserTaminId != null) {
+                                            @if (!isCustomer && type == (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین && item.UserTaminId != null) {
                                                 var text = "کارشناس تامین: " + item.UserTaminTxt;
                                                 <span data-bs-toggle="popover" data-bs-content="@Html.Raw(text)">
                                                     <svg style="width: 12px;color: #666" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM9 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.75 8a.75.75 0 0 0 0 1.5h.75v1.75a.75.75 0 0 0 1.5 0v-2.5A.75.75 0 0 0 8.25 8h-1.5Z" clip-rule="evenodd" /></svg>
@@ -208,52 +215,59 @@
 
 
                     <div class="flex-row flex-sm-column mt-2 mt-sm-0 mx-0 mx-sm-2 align-items-center" style=" display:flex; justify-content:space-evenly !important;row-gap:8px;font-size:15px">
-                        @if (Model.rols.Contains("مدیر ارشد") || Model.rols.Contains("مدیر فروش") || (item.UserCreatorID == ViewBag.UserId && item.Pftype != (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد)) {
-                            if (item.Pftype <= (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین || Model.rols.Contains("مدیر ارشد")) {
-                                <button class="mp d-flex justify-content-center align-items-center" data-title-right="حذف" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="delPfactor('@item.Id', 3)">
+                        @if (hasAccess && item.Pftype != (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد) {
+                            if (item.Pftype <= (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین || isAdmin) {
+                                <button class="flex-center" data-title-right="حذف" style="color:var(--DarkColor)" onclick="delPfactor('@item.Id', 3)">
                                     <i class="mp fa fa-trash"></i>
                                 </button>
-                                <button class="mp d-flex justify-content-center align-items-center" data-title-right="ویرایش" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="upPfactor('@item.Id', 3)">
+                                <button class="flex-center" data-title-right="ویرایش" style="color:var(--DarkColor)" onclick="upPfactor('@item.Id', 3)">
                                     <i class="mp fa fa-pencil"></i>
                                 </button>
                             }
                         }
 
                         @if (item.CustomerId != null) {
-                            <button class="mp d-flex justify-content-center align-items-center" data-title-right="پروفایل" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="openCustomerProfile('@item.CustomerId', '@item.SerialNumber')">
+                            <button class="flex-center" data-title-right="پروفایل" style="color:var(--DarkColor)" onclick="openCustomerProfile('@item.CustomerId', '@item.SerialNumber')">
                                 <i class="mp fa fa-user"></i>
                             </button>
                         }
+
                         @if (item.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین) {
-                            <button class="mp d-flex justify-content-center align-items-center" data-title-right="نمایش پیش فاکتور" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="ShowPreviewPfactor('@item.Id')">
+                            <button class="flex-center" data-title-right="نمایش پیش فاکتور" style="color:var(--DarkColor)" onclick="ShowPreviewPfactor('@item.Id')">
                                 <i class="mp fa fa-eye"></i>
                             </button>
                         }
-                        <button class="mp d-flex justify-content-center align-items-center" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="AttachDoc('@item.Id')">
-                            <i style="font-size:15px" class="mp fa fa-paperclip"></i>
-                        </button>
 
-                        @if (item.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش) {
-                            <button class="mp d-flex justify-content-center align-items-center taminDropdownToggle" data-title-right="دستور تولیدها" style="color:var(--DarkColor); border:none;background-color:transparent" data-pfId="@item.Id">
+                        @if (hasAccess) {
+                            <button class="flex-center" data-title-right="پیوست ها" style="color:var(--DarkColor)" onclick="AttachDoc('@item.Id')">
+                                <i style="font-size:15px" class="mp fa fa-paperclip"></i>
+                            </button>
+                        } else {
+                            <button class="flex-center" data-title-right="پیوست ها" style="color:var(--DarkColor)" onclick="showAttachments('@item.Id', 2)">
+                                <i style="font-size:15px" class="mp fa fa-paperclip"></i>
+                            </button>
+                        }
+
+                        @if (item.Pftype >= (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش) {
+                            <button class="flex-center taminDropdownToggle" data-title-right="دستور تولیدها" style="color:var(--DarkColor)" data-pfId="@item.Id">
                                 <i class="mp fas fa-industry"></i>
                             </button>
                             <div class="taminDropdown"></div>
                         }
 
-                        @if ((Model.rols.Contains("کارشناس مالی") || Model.rols.Contains("مدیر مالی") || Model.rols.Contains("مدیر ارشد"))
-                             && (item.Pftype is (int)PreFactorEnum.در_انتظار_تولید or (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد)) {
-                            <button class="mp d-flex justify-content-center align-items-center" data-title-right="ثبت فاکتور جدید" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="AddFactor('@item.Id',0)">
+                        @if ((isAdmin || isFinancial) && (item.Pftype is (int)PreFactorEnum.در_انتظار_تولید or (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد)) {
+                            <button class="flex-center" data-title-right="ثبت فاکتور جدید" style="color:var(--DarkColor)" onclick="AddFactor('@item.Id',0)">
                                 <i class="fa fa-arrow-left"></i>
                             </button>
                         }
 
-                        @if (item.Pftype == (int)PreFactorEnum.فاقد_اعتبار) {
-                            <button class="mp d-flex justify-content-center align-items-center" data-title-right="بازگشت" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="Backward('@item.Id', 2, '@item.DealId')">
+                        @if (hasAccess && item.Pftype == (int)PreFactorEnum.فاقد_اعتبار) {
+                            <button class="flex-center" data-title-right="بازگشت" style="color:var(--DarkColor)" onclick="Backward('@item.Id', 2, '@item.DealId')">
                                 <i style="font-size:15px" class="mp fa fa-forward"></i>
                             </button>
                         }
                         <button class="flex-center" data-title-right="تاریخچه" style="color:var(--DarkColor)" onclick="showLogEntity('@nameof(PreFactor)', '@item.Id')">
-                            <svg style="width: 18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+                            <svg style="width: 18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l4 2" /></svg>
                         </button>
                     </div>
                 </div>

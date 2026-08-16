@@ -1,0 +1,51 @@
+<!-- Modal dealOrders -->
+<div class="modal fade" id="dealOrdersModal" aria-modal="true" role="dialog" tabindex="-1" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: 14px; overflow: hidden; box-shadow: 0 6px 20px rgba(0,0,0,0.25); background:#f9fafb;">
+            <div class="m-2 fbold d-flex align-items-center justify-content-center" style="height:28px;background: linear-gradient(135deg,#0f9d8d,#04776d);color:#fff;border-radius:6px;font-size:16px;">
+                حواله ها
+            </div>
+            <div class="modal-body" style="padding: 8px 14px">
+                <div class="d-flex align-items-center justify-content-between w-100 mb-3">
+                    <span id="dealOrdersTitle" class="fbold" style="font-size: 16px; color:#333;"></span>
+                </div>
+                <ul class="nav nav-tabs" id="ordersTabs" role="tablist">
+                    <li class="nav-item position-relative" role="presentation">
+                        <span id="dealOrderRegisteredCount" class="badgeCircle" style="left: 0;position: absolute;top: -8px;z-index: 10;color: #fff;display:none;"></span>
+                        <button class="nav-link active" style="margin-bottom:-2px;isolation:auto" id="dealOrderRegisteredTab" data-bs-toggle="tab" data-bs-target="#dealOrderRegisteredTab-pane" type="button" role="tab">
+                            ثبت اولیه دستور تولید
+                        </button>
+                    </li>
+                    <li class="nav-item position-relative" role="presentation">
+                        <span id="dealOrderProducingCount" class="badgeCircle" style="left: 0;position: absolute;top: -8px;z-index: 10;color: #fff;display:none;"></span>
+                        <button class="nav-link" style="margin-bottom:-2px;isolation:auto" id="dealOrderProducingTab" data-bs-toggle="tab" data-bs-target="#dealOrderProducingTab-pane" type="button" role="tab">
+                            مرحله تولید
+                        </button>
+                    </li>
+                    <li class="nav-item position-relative" role="presentation">
+                        <span id="dealOrderFinishedCount" class="badgeCircle" style="left: 0;position: absolute;top: -8px;z-index: 10;color: #fff;display:none;"></span>
+                        <button class="nav-link" style="margin-bottom:-2px;isolation:auto" id="dealOrderFinishedTab" data-bs-toggle="tab" data-bs-target="#dealOrderFinishedTab-pane" type="button" role="tab">
+                            آماده تحویل
+                        </button>
+                    </li>
+                    <li class="nav-item position-relative" role="presentation">
+                        <span id="dealOrderDeliveredCount" class="badgeCircle" style="left: 0;position: absolute;top: -8px;z-index: 10;color: #fff;display:none;"></span>
+                        <button class="nav-link" style="margin-bottom:-2px;isolation:auto" id="dealOrderDeliveredTab" data-bs-toggle="tab" data-bs-target="#dealOrderDeliveredTab-pane" type="button" role="tab">
+                            تحویل شده
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="dealOrderRegisteredTab-pane" role="tabpanel" tabindex="0"></div>
+                    <div class="tab-pane fade" id="dealOrderProducingTab-pane" role="tabpanel" tabindex="0"></div>
+                    <div class="tab-pane fade" id="dealOrderFinishedTab-pane" role="tabpanel" tabindex="0"></div>
+                    <div class="tab-pane fade" id="dealOrderDeliveredTab-pane" role="tabpanel" tabindex="0"></div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center" style="padding:12px;">
+                <button class="buttonCancel2 my-0" data-bs-dismiss="modal" type="button">انصراف</button>
+            </div>
+        </div>
+    </div>
+</div>

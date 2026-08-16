@@ -29,6 +29,10 @@ namespace CRM.Infrastructures.Sql.PreFactors.Configs
                 .HasForeignKey(f => f.PfactorID)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.HasOne(x => x.Deal)
+                .WithMany(x => x.PreFactors)
+                .HasForeignKey(x => x.DealId)
+                .OnDelete(DeleteBehavior.NoAction);
 
             builder.Property(f => f.PaymentAmount).HasPrecision(20, 0);
             builder.Property(f => f.Discount).HasPrecision(20, 0);

@@ -1,4 +1,3 @@
-using System;
 using CRM.Core.Domain.Cashes.Entities;
 
 namespace CRM.EndPoint.FrontEnd.Models.ViewModel.Cash;

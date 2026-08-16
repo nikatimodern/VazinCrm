@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
+using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Supplies.Entities;
 
@@ -81,6 +82,7 @@ namespace CRM.Core.Domain.PreFactors.Entities {
 
         public Guid? DealId { get; set; }
         public int? DealSerialNumber { get; set; }
+        public Deal Deal { get; set; }
 
         public bool? AcceptedFinancial { get; set; } = null;
         public bool? AcceptedManagingDirector { get; set; } = null;

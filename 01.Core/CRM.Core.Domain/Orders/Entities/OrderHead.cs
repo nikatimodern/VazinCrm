@@ -5,6 +5,7 @@ using CRM.Framework.Domain;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.RequestAmounts.Entities;
 
 namespace CRM.Core.Domain.Orders.Entities {
@@ -35,6 +36,7 @@ namespace CRM.Core.Domain.Orders.Entities {
 
         public Guid? DealId { get; set; }
         public int? DealSerialNumber { get; set; }
+        public Deal Deal { get; set; }
         public Guid? SupplierId { get; set; }
         public string SupplierTxt { get; set; }
 

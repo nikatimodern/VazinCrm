@@ -63,302 +63,44 @@
         </li>
     </ul>
     <div id="allDealsContainer" class="d-xl-grid allTasksContainer">
-        <div class="show active border-0" id="openDealTab-pane" role="tabpanel" aria-labelledby="openDealTab" tabindex="0" style="flex-direction:column;width:100%">
-            <div class="tasks-container p-0" id="openDealsContainerId" style="border: none;background: none">
-                <div class="w-100 h-100 d-flex flex-column">
-                    <div class="deal-column-header open">
+        <div class="show active border-0" id="openDealTab-pane" role="tabpanel" tabindex="0">
+            <div class="tasks-container" id="openDealsContainerId">
+                <div class="deal-column open">
+                    <div class="deal-column-header">
                         سفارشات باز
                         <span class="countDeal"></span>
                     </div>
-                    <div class="deal-column-list d-flex flex-column gap-2 flex-grow-1 w-100" style="overflow-y:auto" data-status="1"></div>
+                    <div class="deal-column-list" data-status="1"></div>
                 </div>
             </div>
         </div>
 
-        <div class="border-0" id="successDealTab-pane" role="tabpanel" aria-labelledby="successDealTab" tabindex="0" style="flex-direction:column;width:100%">
-            <div class="tasks-container p-0" id="successDealsContainerId" style="border: none;background: none">
-                <div class="w-100 h-100 d-flex flex-column">
-                    <div class="deal-column-header success">
+        <div class="border-0" id="successDealTab-pane" role="tabpanel" tabindex="0">
+            <div class="tasks-container" id="successDealsContainerId">
+                <div class="deal-column success">
+                    <div class="deal-column-header">
                         سفارشات موفق
                         <span class="countDeal"></span>
                     </div>
-                    <div class="deal-column-list d-flex flex-column gap-2 flex-grow-1 w-100" style="overflow-y:auto" data-status="3"></div>
+                    <div class="deal-column-list" data-status="3"></div>
                 </div>
             </div>
         </div>
 
-        <div class="border-0" id="failedDealTab-pane" role="tabpanel" aria-labelledby="failedDealTab" tabindex="0" style="flex-direction:column;width:100%">
-            <div class="tasks-container p-0" id="failedDealsContainerId" style="border: none;background: none">
-                <div class="w-100 h-100 d-flex flex-column">
-                    <div class="deal-column-header failed">
+        <div class="border-0" id="failedDealTab-pane" role="tabpanel" tabindex="0">
+            <div class="tasks-container" id="failedDealsContainerId">
+                <div class="deal-column failed">
+                    <div class="deal-column-header">
                         سفارشات ناموفق
                         <span class="countDeal"></span>
                     </div>
-                    <div class="deal-column-list d-flex flex-column gap-2 flex-grow-1 w-100" style="overflow-y:auto" data-status="2"></div>
+                    <div class="deal-column-list" data-status="2"></div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-
-<!-- Modal deal -->
-<div class="modal fade" id="dealModal" aria-modal="true" role="dialog" tabindex="-1" data-bs-focus="false">
-    <div class="modal-dialog modal-dialog-centered modal-md">
-        <div class="modal-content">
-            <div class="m-2 mb-0" style="height:30px;display:flex; justify-content:center; align-items:center;  background: linear-gradient(to bottom, #025751, #00302d); color:white;border-radius:5px">
-                <label class="fbold" id="dealModalTitle">ثبت سفارش</label>
-            </div>
-            <div class="modal-body" style="padding:12px">
-                <form id="formDeal" class="d-flex flex-wrap" style="border:1px solid #8b8b8b;border-radius:4px" autocomplete="off">
-                    <fieldset id="mainFormDeal" class="d-flex flex-column col-12 col-xl" style="padding:12px" autocomplete="off">
-                        <div class="d-flex flex-column gap-1">
-                            <label for="dealTitle" class="fbold">عنوان سفارش</label>
-                            <input class="form-control text-start" id="dealTitle" name="title" required style="padding: 2px 8px !important;" type="text">
-                        </div>
-                        <div class="mt-3 mb-2" style="width:100%;background-color: rgba(0,0,0,0.1);height:1px"></div>
-                        <div class="d-flex gap-2 flex-wrap">
-                            <div class="d-flex flex-column gap-1 col-12 col-sm">
-                                <div class="d-flex justify-content-between gap-1">
-                                    <label for="dealCustomersTomSelect" class="fbold">سفارش دهنده</label>
-                                    <div id="dealSexAlertRq" class="d-flex gap-3" style="line-height: 1">
-                                        <div class="d-flex align-items-center gap-1">
-                                            <label style="font-size:12px" for="cusSexMan">آقا</label>
-                                            <input class="valueNumber" type="radio" id="cusSexMan" name="cusSex" value="1" data-alertId="dealSexAlertRq" required />
-                                        </div>
-                                        <div class="d-flex align-items-center gap-1">
-                                            <label style="font-size:12px" for="cusSexWoman">خانم</label>
-                                            <input class="valueNumber" type="radio" id="cusSexWoman" name="cusSex" value="0" data-alertId="dealSexAlertRq" required />
-                                        </div>
-                                    </div>
-                                </div>
-                                <select id="dealCustomersTomSelect" name="customerId" required></select>
-
-                            </div>
-                            <div class="d-flex flex-column gap-1 col-12 col-sm" style="min-width: 140px">
-                                <label for="dealMobile" class="fbold">شماره موبایل</label>
-                                <select inputmode="numeric" class="mobileNumber" id="dealMobile" name="mobileNumber" required></select>
-                                @* <input inputmode="numeric" class="h-100 form-control mobileNumber " id="dealMobile" name="mobileNumber" required> *@
-                                @* <textarea inputmode="numeric" id="dealMobile" class="form-control text-end mobileNumber" style="direction: ltr;padding: 2px 8px !important;height: auto" name="mobileNumber" placeholder="09123456789&#10;09000000000&#10;..." rows="3" required></textarea> *@
-                            </div>
-                        </div>
-                        <div class="mt-3 mb-2" style="width:100%;background-color: rgba(0,0,0,0.1);height:1px"></div>
-                        <div class="d-flex flex-column gap-1 flex-grow-1">
-                            <label for="dealDescription" class="fbold">توضیحات</label>
-                            <textarea class="form-control h-auto text-start flex-grow-1" id="dealDescription" name="commentText" rows="3" style="padding: 2px 8px !important;"></textarea>
-                        </div>
-
-
-                        <button type="button" id="toggleExtraInfo" class="btn btn-sm btn-outline-secondary mt-3">
-                            مشخصات بیشتر ...
-                        </button>
-                    </fieldset>
-                    <fieldset id="extraCustomerPanel" class="d-none col-12 col-xl border-start bg-light" style="padding:12px;border-radius: 4px 0 0 4px" autocomplete="off">
-                        <h6 class="fbold mb-2 text-center">مشخصات تکمیلی</h6>
-                        <div class="d-flex flex-column">
-                            <div class="row g-1 w-100">
-                                <div class="col-12">
-                                    <div class="d-flex gap-3">
-                                        <label for="juridicalDeal0" class="d-flex align-items-center gap-1">
-                                            <input class="valueNumber" type="radio" id="juridicalDeal0" name="cusJuridical" value="0" checked>
-                                            حقیقی
-                                        </label>
-                                        <label for="juridicalDeal1" class="d-flex align-items-center gap-1">
-                                            <input class="valueNumber" type="radio" id="juridicalDeal1" name="cusJuridical" value="1">
-                                            حقوقی
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div class="col-6">
-                                    <label for="meliCodeDeal" style="font-size:12px;">کد ملی:</label>
-                                    <input class="form-control digitNumberString" type="text" id="meliCodeDeal" name="cusMelliCode" />
-                                </div>
-
-                                <div class="col-6">
-                                    <label for="telDeal" style="font-size:12px;">تلفن:</label>
-                                    <input class="form-control mobileNumber" type="text" id="telDeal" name="cusTel" />
-                                </div>
-                            </div>
-
-                            <div class="row g-1 w-100 mt-2 border-top">
-                                <div class="col-6 col-lg-4">
-                                    <label for="acquaintanceWayDeal" style="font-size:12px;">طریقه آشنایی:</label>
-                                    <select id="acquaintanceWayDeal" name="cusAcquaintanceWay" class="w-100 show-dropdown-arrow"></select>
-                                </div>
-
-                                <div class="col-6 col-lg-4">
-                                    <label for="workSenfIDDeal" style="font-size:12px;">صنف کاری:</label>
-                                    <select id="workSenfIDDeal" name="cusWorkSenf" class="w-100 show-dropdown-arrow"></select>
-                                </div>
-
-                                <div class="col-12 col-lg-4">
-                                    <label for="workSenfDescriptionDeal" style="font-size:12px;">توضیحات صنف کاری:</label>
-                                    <input class="form-control" type="text" id="workSenfDescriptionDeal" name="cusWorkSenfDescription" />
-                                </div>
-                            </div>
-
-                            <div class="row g-1 w-100 mt-2 border-top d-none" id="juridicalInfoDeal">
-                                <div class="col-6 col-lg-3">
-                                    <label for="companyNameIdDeal" style="font-size:12px;">نام شرکت:</label>
-                                    <input class="form-control" type="text" id="companyNameIdDeal" name="cusCompanyName" />
-                                </div>
-                                <div class="col-6 col-lg-3">
-                                    <label for="shenaseMeliIdDeal" style="font-size:12px;">شناسه ملی:</label>
-                                    <input maxlength="11" class="form-control" type="text" id="shenaseMeliIdDeal" name="cusShenaseMeli" />
-                                </div>
-                                <div class="col-6 col-lg-3">
-                                    <label for="eghtesadiCodeIdDeal" style="font-size:12px;">کداقتصادی:</label>
-                                    <input maxlength="12" class="form-control" type="text" id="eghtesadiCodeIdDeal" name="cusEghtesadiCode" />
-                                </div>
-                                <div class="col-6 col-lg-3">
-                                    <label for="numberRegisterIdDeal" style="font-size:12px;">شماره ثبت:</label>
-                                    <input maxlength="6" class="form-control" type="text" id="numberRegisterIdDeal" name="cusNumberRegister" />
-                                </div>
-                            </div>
-
-
-                            <div class="row g-1 mt-2 border-top w-100">
-                                <div class="col-5 col-sm-4">
-                                    <label for="postalCodeDeal" style="font-size:12px">کد پستی:</label>
-                                    <input maxlength="10" class="form-control" type="text" id="postalCodeDeal" name="cusPostalCode" />
-                                </div>
-                                <div class="col-4 col-sm-4">
-                                    <label for="provinceDeal" style="font-size:12px">استان:</label>
-                                    <input class="form-control" type="text" id="provinceDeal" name="cusProvince" />
-                                </div>
-                                <div class="col-3 col-sm-4">
-                                    <label for="cityDeal" style="font-size:12px">شهر:</label>
-                                    <input class="form-control" type="text" id="cityDeal" name="cusCity" />
-                                </div>
-                                <div class="col-12 col-sm-12">
-                                    <label for="addressDeal" style="font-size:12px">آدرس:</label>
-                                    <input class="form-control" type="text" id="addressDeal" name="cusAddress" />
-                                </div>
-                            </div>
-                        </div>
-                    </fieldset>
-
-                </form>
-            </div>
-            <div class="modal-footer" style="border-top:none;padding-top:0">
-                <button class="buttonCancel2 my-0" data-bs-dismiss="modal" onclick="toggleDealModal()" type="button">انصراف</button>
-                <button class="buttonGreen3 my-0" onclick="submitDeal()" type="button">ثبت</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal dealPreFactors -->
-<div class="modal fade" id="dealPreFactorsModal" aria-modal="true" role="dialog" tabindex="-1" data-bs-focus="false">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content" style="border-radius: 14px; overflow: hidden; box-shadow: 0 6px 20px rgba(0,0,0,0.25);">
-            <div class="m-2 d-flex align-items-center justify-content-center position-relative" style="height:28px;background: rebeccapurple; color:white;border-radius:6px;font-size:16px;">
-                <span class="fbold">پیش فاکتور ها</span>
-                <span id="dealPreFactorsRefresh" class="inline-flex-center" style="position: absolute;left: 8px">
-                    <svg style="width: 18px;color: #f9fafb" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.433a.75.75 0 0 0 0-1.5H3.989a.75.75 0 0 0-.75.75v4.242a.75.75 0 0 0 1.5 0v-2.43l.31.31a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.449-.39Zm1.23-3.723a.75.75 0 0 0 .219-.53V2.929a.75.75 0 0 0-1.5 0V5.36l-.31-.31A7 7 0 0 0 3.239 8.188a.75.75 0 1 0 1.448.389A5.5 5.5 0 0 1 13.89 6.11l.311.31h-2.432a.75.75 0 0 0 0 1.5h4.243a.75.75 0 0 0 .53-.219Z" clip-rule="evenodd" /></svg>
-                </span>
-            </div>
-            <div class="modal-body" style="padding: 8px 14px">
-                <div class="d-flex align-items-center justify-content-between w-100 mb-3">
-                    <div>
-                        <span id="dealPreFactorsTitle" class="fbold" style="font-size: 16px; color:#333"></span>
-                        <button class="showDeletedPrefactor-icon ms-1">
-                            <svg class="closedEye-icon" style="width:16px" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l14.5 14.5a.75.75 0 1 0 1.06-1.06l-1.745-1.745a10.029 10.029 0 0 0 3.3-4.38 1.651 1.651 0 0 0 0-1.185A10.004 10.004 0 0 0 9.999 3a9.956 9.956 0 0 0-4.744 1.194L3.28 2.22ZM7.752 6.69l1.092 1.092a2.5 2.5 0 0 1 3.374 3.373l1.091 1.092a4 4 0 0 0-5.557-5.557Z" clip-rule="evenodd" /><path d="m10.748 13.93 2.523 2.523a9.987 9.987 0 0 1-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 0 1 0-1.186A10.007 10.007 0 0 1 2.839 6.02L6.07 9.252a4 4 0 0 0 4.678 4.678Z" /></svg>
-                            <svg class="openEye-icon d-none" style="width:16px" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" /><path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" clip-rule="evenodd" /></svg>
-                        </button>
-                    </div>
-                    <svg id="dealPreFactorsAdd" style="width: 20px;cursor: pointer" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                </div>
-                <div id="dealPreFactors" style="max-height: calc(100dvh - 220px);overflow: auto;padding: 20px 8px; background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb; box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);">
-                </div>
-            </div>
-
-            <div class="modal-footer justify-content-center" style="padding:12px;">
-                <button class="buttonCancel2 my-0" data-bs-dismiss="modal" type="button">انصراف</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal dealReports -->
-<div class="modal fade" id="dealReportsModal" aria-modal="true" role="dialog" tabindex="-1" data-bs-focus="false">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content" style="border-radius: 14px; overflow: hidden; box-shadow: 0 6px 20px rgba(0,0,0,0.25); background:#f9fafb;">
-            <div class="m-2 fbold d-flex align-items-center justify-content-center" style="height:28px;background: linear-gradient(135deg,#0f9d8d,#04776d);color:#fff;border-radius:6px;font-size:16px;">
-                گزارش ها
-            </div>
-            <div class="modal-body" style="padding: 8px 14px">
-                <div class="d-flex align-items-start justify-content-between w-100 mb-3">
-                    <span id="dealReportsTitle" class="fbold" style="font-size: 16px; color:#333;"></span>
-                    <button id="dealReportsAdd" class="buttonGreen0 d-flex align-items-center gap-1 flex-shrink-0" style="padding: 4px 10px;">
-                        <span>ثبت جدید</span>
-                        <svg style="width: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                    </button>
-                </div>
-
-                <div id="dealReports" style="max-height: calc(100dvh - 260px); overflow:auto; padding: 20px 8px; background:#fff; border-radius:8px; border:1px solid #e5e7eb; box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);">
-                </div>
-            </div>
-            <div class="modal-footer justify-content-center" style="padding:12px;">
-                <button class="buttonCancel2 my-0" data-bs-dismiss="modal" type="button">انصراف</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-<!-- Modal dealOrders -->
-<div class="modal fade" id="dealOrdersModal" aria-modal="true" role="dialog" tabindex="-1" data-bs-focus="false">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content" style="border-radius: 14px; overflow: hidden; box-shadow: 0 6px 20px rgba(0,0,0,0.25); background:#f9fafb;">
-            <div class="m-2 fbold d-flex align-items-center justify-content-center" style="height:28px;background: linear-gradient(135deg,#0f9d8d,#04776d);color:#fff;border-radius:6px;font-size:16px;">
-                حواله ها
-            </div>
-            <div class="modal-body" style="padding: 8px 14px">
-                <div class="d-flex align-items-center justify-content-between w-100 mb-3">
-                    <span id="dealOrdersTitle" class="fbold" style="font-size: 16px; color:#333;"></span>
-                </div>
-                <ul class="nav nav-tabs" id="ordersTabs" role="tablist">
-                    <li class="nav-item position-relative" role="presentation">
-                        <span id="dealOrderRegisteredCount" class="badge-count" style="left: 0;position: absolute;top: -8px;z-index: 10;display:none;"></span>
-                        <button class="nav-link active" style="margin-bottom:-2px;isolation:auto" id="dealOrderRegisteredTab" data-bs-toggle="tab" data-bs-target="#dealOrderRegisteredTab-pane" type="button" role="tab">
-                            ثبت اولیه دستور تولید
-                        </button>
-                    </li>
-                    <li class="nav-item position-relative" role="presentation">
-                        <span id="dealOrderProducingCount" class="badge-count" style="left: 0;position: absolute;top: -8px;z-index: 10;display:none;"></span>
-                        <button class="nav-link" style="margin-bottom:-2px;isolation:auto" id="dealOrderProducingTab" data-bs-toggle="tab" data-bs-target="#dealOrderProducingTab-pane" type="button" role="tab">
-                            مرحله تولید
-                        </button>
-                    </li>
-                    <li class="nav-item position-relative" role="presentation">
-                        <span id="dealOrderFinishedCount" class="badge-count" style="left: 0;position: absolute;top: -8px;z-index: 10;display:none;"></span>
-                        <button class="nav-link" style="margin-bottom:-2px;isolation:auto" id="dealOrderFinishedTab" data-bs-toggle="tab" data-bs-target="#dealOrderFinishedTab-pane" type="button" role="tab">
-                            آماده تحویل
-                        </button>
-                    </li>
-                    <li class="nav-item position-relative" role="presentation">
-                        <span id="dealOrderDeliveredCount" class="badge-count" style="left: 0;position: absolute;top: -8px;z-index: 10;display:none;"></span>
-                        <button class="nav-link" style="margin-bottom:-2px;isolation:auto" id="dealOrderDeliveredTab" data-bs-toggle="tab" data-bs-target="#dealOrderDeliveredTab-pane" type="button" role="tab">
-                            تحویل شده
-                        </button>
-                    </li>
-                </ul>
-
-                <div class="tab-content">
-                    <div class="tab-pane fade show active" id="dealOrderRegisteredTab-pane" role="tabpanel" tabindex="0"></div>
-                    <div class="tab-pane fade" id="dealOrderProducingTab-pane" role="tabpanel" tabindex="0"></div>
-                    <div class="tab-pane fade" id="dealOrderFinishedTab-pane" role="tabpanel" tabindex="0"></div>
-                    <div class="tab-pane fade" id="dealOrderDeliveredTab-pane" role="tabpanel" tabindex="0"></div>
-                </div>
-            </div>
-            <div class="modal-footer justify-content-center" style="padding:12px;">
-                <button class="buttonCancel2 my-0" data-bs-dismiss="modal" type="button">انصراف</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <partial name="~/Views/Factor/Modals/PreFactor/_PreFactorModal.cshtml" />
 <partial name="~/Views/Factor/Modals/PreFactor/_DeliverModal.cshtml" />
@@ -376,7 +118,15 @@
 
 <partial name="~/Views/Carizo/Modals/_EditTaskModal.cshtml" />
 
+<partial name="~/Views/Deal/Modals/_DealModal.cshtml" />
+
+<partial name="~/Views/Factor/Modals/PreFactor/_PrefactorContainerModal.cshtml" />
+<partial name="~/Views/Report/Modals/_ReportContainerModal.cshtml" />
+<partial name="~/Views/Order/Modals/_OrderHeadsContainerModal.cshtml" />
+
 @section Scripts {
+    <script src="~/js/deal/deal.js" asp-append-version="true"></script>
+    <script src="~/js/deal/deal-documents.js" asp-append-version="true"></script>
     <script>
         let modelDeal = { filt: null, serVal: null };
         var filterDealConfig = {};

@@ -19,12 +19,10 @@ using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Generics.Infrastructures.Sql;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Playwright;
 
 
 namespace CRM.EndPoint.FrontEnd.Services {
@@ -127,7 +125,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
                 var accS = await db.Accountancies.ForPreFactor(pf.Id).ToListAsync();
 
-                foreach (var acc in accS.Where(f => f.PayType != PayTypeEnum.اعتباری))
+                foreach (var acc in accS.Where(f => f.CustomerId != null && f.PayType != PayTypeEnum.اعتباری))
                     acc?.Wallet = true;
 
                 foreach (var acc in accS.Where(f => f.PayType == PayTypeEnum.اعتباری))

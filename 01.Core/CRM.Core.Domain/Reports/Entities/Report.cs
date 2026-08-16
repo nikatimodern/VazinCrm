@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using CRM.Core.Domain.CallRecordings.Entities;
+using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.Reports.Enum;
 
 namespace CRM.Core.Domain.Reports.Entities {
@@ -19,7 +20,8 @@ namespace CRM.Core.Domain.Reports.Entities {
 
         public Guid? DealId { get; set; }
         public int? DealSerialNumber { get; set; }
-
+        public Deal Deal { get; set; }
+        
         public Guid? ResultCallId { get; set; }
         public string ResultCallTxt { get; set; }
         public Guid? FinalResultCallId { get; set; }

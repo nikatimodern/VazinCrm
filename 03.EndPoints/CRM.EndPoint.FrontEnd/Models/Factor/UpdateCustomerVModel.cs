@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.ASettings.Entities;
-using CRM.Core.Domain.Attachments.Entities;
 using CRM.Core.Domain.BaseItems.Entities;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.PreFactors.Entities;

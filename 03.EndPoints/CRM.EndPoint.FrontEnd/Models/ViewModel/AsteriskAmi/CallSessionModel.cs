@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using CRM.Core.Domain.CallRecordings.Entities;
-using CRM.Core.Domain.Reports.Entities;
 
 namespace CRM.EndPoint.FrontEnd.Models.ViewModel.AsteriskAmi;
 

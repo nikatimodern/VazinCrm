@@ -1,6 +1,4 @@
-﻿using System.Runtime;
-
-namespace CRM.EndPoint.FrontEnd.Models.Dashboard
+﻿namespace CRM.EndPoint.FrontEnd.Models.Dashboard
 {
     public class OrderVModelDash
     {

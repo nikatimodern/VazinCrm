@@ -24,9 +24,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CRM.Core.Domain.BaseItems.Enums;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
-using CRM.EndPoint.FrontEnd.Services.PushServices;
+using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
@@ -1041,119 +1040,135 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                var setting = await db.ASettings.FirstOrDefaultAsync();
+                var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
                 var taminUsers = await userManager.GetUsersInRoleAsync("کارشناس تامین");
-                var user = await userManager.GetUserAsync(HttpContext.User);
-                var rols = await userManager.GetRolesAsync(user);
-
-                ViewBag.EditAccess = false;
-                ViewBag.AdminForosh = false;
-                ViewBag.SmallOffice = setting.SmallOffice;
                 ViewBag.PassType = dealId == null ? 1 : 4;
 
-                IQueryable<PreFactor> qData = null;
-                IList<PreFactor> data;
-
-                if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش"))
-                {
-                    ViewBag.EditAccess = true;
-                    ViewBag.AdminForosh = true;
-
-                    if (dealId != null)
-                    {
-                        qData = db.PreFactors.Where(s => s.DealId == dealId).OrderByDescending(s => s.CreateDate);
-                    } else if (customerId != null)
-                    {
-                        qData = db.PreFactors.Where(s => s.CustomerId == customerId).OrderByDescending(s => s.CreateDate);
-                    }
-                } else if (rols.Contains("مشتری"))
-                {
-                    if (dealId != null)
-                    {
-                        qData = db.PreFactors.Where(s => s.DealId == dealId).OrderByDescending(s => s.CreateDate);
-                    } else if (customerId != null)
-                    {
-                        qData = db.PreFactors.Where(s => s.CustomerId == customerId).OrderByDescending(s => s.CreateDate);
-                    }
-                } else
-                {
-                    if (dealId != null)
-                    {
-                        qData = db.PreFactors.Where(s => s.DealId == dealId && s.UserCreatorID == user.Id).OrderByDescending(s => s.CreateDate);
-                    } else if (customerId != null)
-                    {
-                        qData = db.PreFactors.Where(s => s.CustomerId == customerId && s.UserCreatorID == user.Id)
-                            .OrderByDescending(s => s.CreateDate);
-                    }
-                }
+                var query = db.PreFactors
+                    .AsNoTracking()
+                    .Include(x => x.Deal)
+                    .AsQueryable();
 
                 if (showDeleted)
+                    query = query.IgnoreQueryFilters();
+
+                if (dealId.HasValue)
                 {
-                    data = await qData.IgnoreQueryFilters().ToListAsync();
+                    query = query.Where(x => x.DealId == dealId);
+                } else if (customerId.HasValue)
+                {
+                    query = query.Where(x => x.CustomerId == customerId);
                 } else
                 {
-                    data = await qData.ToListAsync();
+                    return Ok(new { count = 0, html = string.Empty });
                 }
 
 
-                List<Invoice> invoices = null;
-                if (setting.Sepidar == true && data.Any())
+                var data = await query
+                    .OrderByDescending(x => x.CreateDate)
+                    .ToListAsync();
+
+                if (data.Count == 0)
                 {
-                    var ser = data.Select(f => f.SerialNumber).Cast<int?>().ToArray();
-                    invoices = S1db.vwInvoice.AsEnumerable().Where(f => ser.Contains(f.QuotationNumber)).ToList();
+                    var emptyModel = new PrefactorViewModel {
+                        data = data,
+                        UserTamin = taminUsers,
+                        _Setting = setting
+                    };
+
+                    var emptyHtml = await vrs.RenderToStringAsync("GetAllPreFactorPartial", emptyModel,
+                        new Dictionary<string, object> {
+                            { "PassType", ViewBag.PassType }
+                        });
+
+                    return Ok(new { count = 0, html = emptyHtml });
                 }
+
+                var preFactorIds = data.Select(x => x.Id).ToArray();
+
+                // Accountancy
+                var accountancyData = await db.Accountancies
+                    .AsNoTracking()
+                    .ForPreFactor()
+                    .Where(x => x.pfid.HasValue && preFactorIds.Contains(x.pfid.Value))
+                    .NotVosoled()
+                    .GroupBy(x => x.pfid)
+                    .Select(g => new {
+                        PreFactorId = g.Key,
+                        ReciveAmount = g.Sum(x => x.AccType == AcEnum.واریزی ? x.credit : -x.BackWard)
+                    })
+                    .ToDictionaryAsync(x => x.PreFactorId.Value, x => x.ReciveAmount ?? 0);
+
+                // Factor Counts
+                Dictionary<Guid, int> factorCounts = new();
+                if (setting?.CrmFactors == true)
+                {
+                    factorCounts = await db.Factors
+                        .AsNoTracking()
+                        .Where(x => preFactorIds.Contains(x.PfactorID))
+                        .GroupBy(x => x.PfactorID)
+                        .Select(g => new {
+                            PreFactorId = g.Key,
+                            Count = g.Count()
+                        })
+                        .ToDictionaryAsync(x => x.PreFactorId, x => x.Count);
+                }
+
+                // Sepidar
+                Dictionary<int, int> sepidarCounts = new();
+                if (setting?.Sepidar == true)
+                {
+                    var serialNumbers = data.Select(x => x.SerialNumber).ToArray();
+
+                    sepidarCounts = await S1db.vwInvoice.AsNoTracking()
+                        .Where(x => x.QuotationNumber.HasValue && serialNumbers.Contains(x.QuotationNumber.Value))
+                        .GroupBy(x => x.QuotationNumber.Value)
+                        .Select(g => new {
+                            SerialNumber = g.Key,
+                            Count = g.Count()
+                        })
+                        .ToDictionaryAsync(x => x.SerialNumber, x => x.Count);
+                }
+
 
                 foreach (var item in data)
                 {
-                    /*decimal ac = db.Accountancies.AsNoTracking()
-                        .Where(f => f.pfid == item.Id && f.AccType == AcEnum.واریزی && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور)
-                        .Sum(f => f.credit) ?? 0;
-                    decimal acReturn = db.Accountancies.AsNoTracking()
-                        .Where(f => f.pfid == item.Id && f.AccType == AcEnum.برگشتی && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور)
-                        .Sum(f => f.BackWard) ?? 0;
+                    accountancyData.TryGetValue(item.Id, out var receiveAmount);
 
-                    item.ReciveAmount = ac - acReturn;*/
-                    item.ReciveAmount = await db.Accountancies.AsNoTracking()
-                        .Where(f =>
-                            f.pfid == item.Id
-                            && (f.AccType == AcEnum.واریزی || f.AccType == AcEnum.برگشتی)
-                            && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
-                            && (
-                                (f.PayType != PayTypeEnum.اعتباری && f.PayType != PayTypeEnum.چکی) ||
-                                ((f.PayType == PayTypeEnum.اعتباری || f.PayType == PayTypeEnum.چکی) && f.Vosoled == false)
-                            )
-                        ).SumAsync(f => f.AccType == AcEnum.واریزی ? f.credit : -f.BackWard) ?? 0;
+                    item.ReciveAmount = receiveAmount;
 
+                    item.PaymentAmount = item.SumTotalAmount + item.TotalTax - item.Discount - item.ReciveAmount;
+                    item.SumTotalAmountTax = item.SumTotalAmount + item.TotalTax - item.Discount;
 
-                    item.PaymentAmount = (item.SumTotalAmount + item.TotalTax - item.Discount - item.ReciveAmount);
-                    item.SumTotalAmountTax = (item.SumTotalAmount + item.TotalTax - item.Discount);
-                    if (setting.Sepidar == true)
-                        item.CountFactorSepidar = invoices.Count(f => f.QuotationNumber == item.SerialNumber);
-                    if (setting.CrmFactors == true)
-                        item.CountFactor = db.Factors.Count(f => f.PfactorID == item.Id);
+                    if (setting?.Sepidar == true)
+                    {
+                        sepidarCounts.TryGetValue(item.SerialNumber, out var count); 
+                        item.CountFactorSepidar = count;
+                    }
+
+                    if (setting?.CrmFactors == true)
+                    {
+                        factorCounts.TryGetValue(item.Id, out var count);
+                        item.CountFactor = count;
+                    }
                 }
 
-                var model = new PrefactorViewModel() {
+                var model = new PrefactorViewModel {
                     data = data,
                     UserTamin = taminUsers,
-                    rols = rols,
                     _Setting = setting
                 };
 
                 var html = await vrs.RenderToStringAsync("GetAllPreFactorPartial", model,
                     new Dictionary<string, object> {
-                        { "EditAccess", ViewBag.EditAccess },
-                        { "AdminForosh", ViewBag.AdminForosh },
-                        { "SmallOffice", ViewBag.SmallOffice },
-                        { "PassType", ViewBag.PassType },
+                        { "PassType", ViewBag.PassType }
                     });
 
-                return Ok(new { count = model.data.Count, html });
-                //return PartialView(model);
+                return Ok(new { count = data.Count, html });
             }
-            catch
+            catch(Exception ex)
             {
-                return null;
+                return BadRequest(ex.Message);
             }
         }
 
