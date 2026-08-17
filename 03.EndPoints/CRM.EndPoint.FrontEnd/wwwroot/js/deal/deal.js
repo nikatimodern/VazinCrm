@@ -272,35 +272,35 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
                                   <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg>
                                   <span>پیش‌فاکتور ها</span>
                                 </div>
-                                ${item.counts.preFactor ? `<span class="badgeCircle">${item.counts.preFactor}</span>` : ""}
+                                ${item.counts.preFactor ? `<span class="badge-count">${item.counts.preFactor}</span>` : ""}
                             </div>
                             <div class="dropdown-item justify-content-between itemGreen showFactors">
                                 <div class="d-flex align-items-center" style="gap: 12px">
                                     <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12h-5"/><path d="M15 8h-5"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg>
                                     <span>فاکتور ها</span>
                                 </div>
-                                ${item.counts.factor ? `<span class="badgeCircle">${item.counts.factor}</span>` : ""}
+                                ${item.counts.factor ? `<span class="badge-count">${item.counts.factor}</span>` : ""}
                             </div>
                             <div class="dropdown-item justify-content-between itemGray showReports">
                                 <div class="d-flex align-items-center" style="gap: 12px">
                                     <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M12 2v4"/><path d="M16 2v4"/><rect width="16" height="18" x="4" y="4" rx="2"/><path d="M8 10h6"/><path d="M8 14h8"/><path d="M8 18h5"/></svg>
                                     <span>گزارش ها</span>
                                 </div>
-                                ${item.counts.report ? `<span class="badgeCircle">${item.counts.report}</span>` : ""}
+                                ${item.counts.report ? `<span class="badge-count">${item.counts.report}</span>` : ""}
                             </div>
                             <div class="dropdown-item justify-content-between itemBlue showOrders">
                                 <div class="d-flex align-items-center" style="gap: 12px">
                                     <svg style="width: 16px" fill="currentColor" viewBox="0 0 256 256"><path d="M72,104a8,8,0,0,1,8-8h96a8,8,0,0,1,0,16H80A8,8,0,0,1,72,104Zm8,40h96a8,8,0,0,0,0-16H80a8,8,0,0,0,0,16ZM232,56V208a8,8,0,0,1-11.58,7.15L192,200.94l-28.42,14.21a8,8,0,0,1-7.16,0L128,200.94,99.58,215.15a8,8,0,0,1-7.16,0L64,200.94,35.58,215.15A8,8,0,0,1,24,208V56A16,16,0,0,1,40,40H216A16,16,0,0,1,232,56Zm-16,0H40V195.06l20.42-10.22a8,8,0,0,1,7.16,0L96,199.06l28.42-14.22a8,8,0,0,1,7.16,0L160,199.06l28.42-14.22a8,8,0,0,1,7.16,0L216,195.06Z"></path></svg>
                                     <span>حواله ها</span>
                                 </div>
-                                ${item.counts.orderHead ? `<span class="badgeCircle">${item.counts.orderHead}</span>` : ""}
+                                ${item.counts.orderHead ? `<span class="badge-count">${item.counts.orderHead}</span>` : ""}
                             </div>
                             <div class="dropdown-item justify-content-between itemPurple showInvoices">
                                 <div class="d-flex align-items-center" style="gap: 12px">
                                     <svg style="width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5"/><path d="M18 12h.01"/><path d="M19 22v-6"/><path d="m22 19-3-3-3 3"/><path d="M6 12h.01"/><circle cx="12" cy="12" r="2"/></svg>
                                     <span>واریزی ها</span>
                                 </div>
-                                ${item.counts.accountancy ? `<span class="badgeCircle">${item.counts.accountancy}</span>` : ""}
+                                ${item.counts.accountancy ? `<span class="badge-count">${item.counts.accountancy}</span>` : ""}
                             </div>
                             <div class="dropdown-item itemGold" onclick="showTaskModal('${item.id}', 'Deal')">
                                 <svg style="width:16px;" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"></path></svg>

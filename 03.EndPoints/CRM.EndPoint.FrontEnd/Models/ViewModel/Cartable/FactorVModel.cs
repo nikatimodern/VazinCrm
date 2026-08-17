@@ -1,8 +1,8 @@
 ﻿namespace CRM.EndPoint.FrontEnd.Models.ViewModel.Cartable
 {
-    public class FactorVmodel
+    public class FactorVModel
     {
-        public filterVModel fmodel { get; set; }
+        public filterVModel FModel { get; set; }
         public int PassType { get; set; }
 
     }

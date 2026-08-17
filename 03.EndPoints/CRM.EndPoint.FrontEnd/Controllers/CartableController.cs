@@ -795,12 +795,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [HttpPost]
-        public async Task<IActionResult> FactorPartial([FromBody] FactorVmodel model)
+        public async Task<IActionResult> FactorPartial([FromBody] FactorVModel model)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var rols = await userManager.GetRolesAsync(user);
 
-            var fList = await GetFactors(model.fmodel, user, rols);
+            var fList = await GetFactors(model.FModel, user, rols);
 
             var vModel = new FactorsViewModel {
                 factors = fList,

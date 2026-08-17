@@ -15,6 +15,7 @@ const showModalDealPreFactors = async (deal) => {
 };
 
 const showModalDealFactors = async (deal, sNumber) => {
+    currentDealDocumentData = deal;
     const factorsModalTitle = document.querySelector("#FactorsModal .modal-title");
     factorsModalTitle.textContent = sNumber ? "فاکتورهای سپیداری" : "فاکتورها";
     factorsModalTitle.style.backgroundColor = sNumber ? "#451377" : "#00302d";
@@ -37,6 +38,7 @@ const showModalDealReports = async (deal) => {
 };
 
 const showModalDealOrders = async (deal) => {
+    currentDealDocumentData = deal;
     document.getElementById("dealOrdersTitle").textContent = `${deal.customerName}${deal.customerCode ? ` (کد مشتری: ${deal.customerCode})` : ""}`;
     
     await getOrdersFromDeal(deal.id);

@@ -211,7 +211,7 @@ const GetCartable = (tabId, subId) => {
                             ShowTab("allFactorTab");
                         }
                     } else if (!fromWarning) {
-                        promises.push(GetFactorPartial());
+                        promises.push(GetFactorPartial({ showLoading: false }));
                     }
                     
                     if (!fromWarning) {

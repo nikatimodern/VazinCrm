@@ -3,7 +3,7 @@
 
 // Write your JavaScript code.
 
-let modelFactor = {};
+
 let modelPreFactor = {};
 var report = {};
 var oldReport = null;
