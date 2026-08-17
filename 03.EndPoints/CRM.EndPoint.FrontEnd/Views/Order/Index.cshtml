@@ -295,7 +295,7 @@
                         const sourceStatus = Number(sourceColumn.dataset.statuscolumn);
                         const status = Number(targetColumn.dataset.statuscolumn);
 
-                        await changeStatusHd(itemId, status, sourceStatus, 1, null, true, draggedItem, sourceColumn);
+                        await changeStatusHd(itemId, status, sourceStatus, 1, true, draggedItem, sourceColumn);
                     },
                     onChange: (evt) => evt.item.classList.add("drop-item"),
                     onEnd: (evt) => evt.item.classList.remove("drop-item"),

@@ -1,0 +1,11 @@
+@model PreFactor
+
+@if (!string.IsNullOrEmpty(Model.CommentText)) {
+    <div class="my-2 mt-md-3 mx-auto" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px"></div>
+    <div class="d-flex flex-wrap">
+        <div class="px-2 d-flex justify-content-around gap-1">
+            <label style="color:gray">توضیحات:</label>
+            <span class="flex-grow-1" style="white-space: pre-line">@Html.Raw(Model.CommentText)</span>
+        </div>
+    </div>
+}

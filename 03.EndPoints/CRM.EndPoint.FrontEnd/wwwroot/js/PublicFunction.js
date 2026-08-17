@@ -382,7 +382,7 @@ const changeTypePfactor = async (_PfId, _type, FormCode, des = null) => {
             break;
         case 5: //سفارشات
             toastifySuccess("تغییر انجام شد");
-            getPreFactorFromDeal(currentDealData.id, true);
+            await refreshDealPreFactors();
             break;
         case 6: //کارتابل مالی
             toastifySuccess("تغییر انجام شد");
@@ -1035,7 +1035,7 @@ const isAllowedToAddFactor = async (pfId) => {
             wrapper.querySelector("button")?.addEventListener("click", async () => {
                 if (err.code === 32) {
                     ModalToggle(errorModalElm, "hide");
-                    await ShowModalListInvoice(pfId, 1, "", 5, null, true);
+                    await ShowModalListInvoice(pfId, 1, "", 5, true);
                 }
             });
             
@@ -1212,14 +1212,14 @@ const submitPrefactorOK = async (type) => {
             pfactor.currencyTypeTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
             
             $.post(baseUrl + "Factor/AddPrefactor", pfactor, async () => {
-                if (type === 1) { // CustomerProfile
+                if (type === 0) { // PreFactor/Factor
+                    await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
+                } else if (type === 1) { // CustomerProfile
                     await getAllPreFactor();
                 } else if (type === 2) { // SalesAdmin
                     await GetPreFactorSalesAdmin();
-                } else if (type === 3) { // PreFactor/Factor
-                    await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
                 } else if (type === 4) { //Deal
-                    await getPreFactorFromDeal(dealData.id);
+                    await refreshDealPreFactors();
                     if (typeof getAllDeals === "function") {
                         await getAllDeals();
                     }
@@ -1299,21 +1299,19 @@ const submitFactorOK = async (type, unlinkSepidar = false) => {
             FLshowLoading(false);
             if (res.status === 200) {
                 if (type === 0) {
-                    await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, modelFactor._type, factor.pfactorSerialNumber, type);
-                    await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
+                    await refreshFactorPartial()
                 } else if (type === 1) {
                     await getAllPreFactor();
-                    
-                    await GetFactorPartial(null, factor.pfactorID, null, null, factor.officialType, factor.pfactorSerialNumber, type);
+                    await refreshFactorPartial()
                     getFacAmount(factor.pfactorID, factor.pfactorSerialNumber, null);
                     getAllDetailAmount();
                     //getAllFactor();
                 } else if (type === 4) {
                     if (isModalOpen("dealPreFactorsModal")) {
-                        await getPreFactorFromDeal(dealData.id);
+                        await refreshDealPreFactors();
                     }
                     if (isModalOpen("FactorsModal")) {
-                        await getAllFactorsModal(dealData.id, 4);
+                        await refreshDealFactors();
                     }
                 } else if (type === 5) {
                     await getAllFactorsModal(factor.pfactorID, 5);
@@ -1407,7 +1405,7 @@ const cancelFactor = () => {
         el.classList.replace("buttonCancel3", "buttonGreen3");
     });
 };
-const delPfactor = (id, type, dealId) => {
+const delPfactor = (id, type) => {
     Swal.fire({
         title: "حذف!",
         text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
@@ -1419,23 +1417,23 @@ const delPfactor = (id, type, dealId) => {
         confirmButtonText: "بله، حذف شود",
     }).then((willDelete) => {
         if (willDelete.isConfirmed)
-            delPfactorOk(id, type, dealId);
+            delPfactorOk(id, type);
     });
 };
-const delPfactorOk = (id, type, dealId) => {
+const delPfactorOk = (id, type) => {
     if (!id) return;
     FLshowLoading();
     
     axios(`/Factor/DelPreFactor/${id}`).then(async () => {
-        if (type === 1) { // CustomerProfile
+        if (type === 0) { // PreFactor/Factor
+            await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
+        } else if (type === 1) { // CustomerProfile
             await getAllPreFactor();
             getAllDetailAmount();
         } else if (type === 2) { // SalesAdmin
             await GetPreFactorSalesAdmin();
-        } else if (type === 3) { // PreFactor/Factor
-            await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
         } else if (type === 4) { //deal
-            await getPreFactorFromDeal(dealId);
+            await refreshDealPreFactors();
         }
         
         FLshowLoading(false);
@@ -1448,7 +1446,7 @@ const delPfactorOk = (id, type, dealId) => {
 };
 
 
-const delFactor = (id, type, dealId) => {
+const delFactor = (id, type) => {
     Swal.fire({
         title: "حذف!",
         text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
@@ -1461,25 +1459,25 @@ const delFactor = (id, type, dealId) => {
     })
         .then((willDelete) => {
             
-            if (willDelete.isConfirmed) delFactorOk(id, type, dealId);
+            if (willDelete.isConfirmed) delFactorOk(id, type);
         });
 };
-const delFactorOk = (id, type, dealId) => {
+const delFactorOk = (id, type) => {
     if (!id) return;
     
     FLshowLoading();
     $.get(baseUrl + "Factor/DelFactor/" + id, async () => {
         if (type === 0) {
-            await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, modelFactor._type, pFactorSerialNumber, type);
+            await refreshFactorPartial()
             //await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
             
         } else if (type === 1) {
             await getAllPreFactor();
-            await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, modelFactor._type, pFactorSerialNumber, type);
+            await refreshFactorPartial()
             
             getAllDetailAmount();
         } else if (type === 4) {
-            await getAllFactorsModal(dealId, 4);
+            await refreshDealFactors();
         } else if (type === 5 || type === 6) {
             await getAllFactorsModal(id, type);
         }
@@ -1495,7 +1493,7 @@ const delFactorOk = (id, type, dealId) => {
 
 
 //PasType==1 => customerFactorList , PasType==0 => CartableFactorList
-const getFacSepidar = async (pfId, serialNumber = null, _this, PassType, dealId) => {
+const getFacSepidar = async (pfId, serialNumber = null, _this, PassType, dealId) => { // TODO
     if (PassType === 4) {
         const dealRes = await axios(`/Deal/GetDeal/${dealId}`);
         await showModalDealFactors(dealRes.data, serialNumber);
@@ -1505,14 +1503,17 @@ const getFacSepidar = async (pfId, serialNumber = null, _this, PassType, dealId)
     document.querySelector(".SelectedPf")?.classList.remove("SelectedPf");
     _this.closest(".InfoDataItem_Prefactor").classList.add("SelectedPf");
     
-    // PfSelForFactor = pfId;
     const res = await getAllFactorSepidar(pfId, serialNumber);
     
     if (PassType === 1) {
         document.getElementById("DetailDivList").innerHTML = res;
         document.getElementById("DivFacListId").style.display = "flex";
         document.getElementById("FactorDivTitleId").innerHTML = pfId
-            ? `<span class="mp buttonGreen hide-factor__btn" style="border-radius:5px; font-size:20px; height:20px;width:20px !important; cursor:pointer" onclick="hideFact()"><i class="fas fa-times" style="font-size: 14px;"></i></span><span>تمام فاکتورهای مربوط به پیش فاکتور  ${serialNumber} </span>`
+            ? `
+                <button class="buttonGreen hide-factor__btn" onclick="hideFact()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <span style="font-size: 20px">تمام فاکتورهای مربوط به پیش فاکتور  ${serialNumber} </span>`
             : "تمام فاکتور ها";
         
     } else if (PassType === 0) {
@@ -1541,8 +1542,7 @@ const getAllFactorSepidar = async (pfId = null, ser = null) => {
 };
 
 let crmFactorId;
-const showSepidarFactorsModal = async (pfSerialNumber, fId, type, dealId) => {
-    dealData.id = dealId;
+const showSepidarFactorsModal = async (pfSerialNumber, fId, type) => {
     typeSubmitfactor = type;
     crmFactorId = fId;
     try {
@@ -1564,12 +1564,12 @@ const updateFactorFinancial = async (sepidarId) => {
         const res = await axios.post(`/Factor/UpdateFactorFinancial`, model);
         if (res.status === 200) {
             if (typeSubmitfactor === 0) {
-                await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, modelFactor._type, pFactorSerialNumber, typeSubmitfactor);
+                await refreshFactorPartial()
             } else if (typeSubmitfactor === 1) {
                 getAllDetailAmount();
-                await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, modelFactor._type, pFactorSerialNumber, typeSubmitfactor);
+                await refreshFactorPartial()
             } else if (typeSubmitfactor === 4) {
-                await getAllFactorsModal(dealData.id, 4);
+                await refreshDealFactors();
             } else if (typeSubmitfactor === 6) {
                 await getAllFactorsModal(model.crmFactorId, 6);
             }
@@ -1585,52 +1585,43 @@ const updateFactorFinancial = async (sepidarId) => {
 };
 
 
-const GetFactorPartial = async (val = null, id = null, _this = null, filt = null, officialType = 0, serialNumber, PassType = 0, dealId, showLoading = true) => {
+const GetFactorPartial0 = async (val = null, id = null, _this = null, filt = null, officialType = 0, serialNumber, PassType = 0, dealId, showLoading = true) => {
     if (PassType === 4) {
         const dealRes = await axios(`/Deal/GetDeal/${dealId}`);
         await showModalDealFactors(dealRes.data);
         return;
     }
     
-    if (PassType === 0 && _this) document.getElementById("f_all").checked = true;
-    modelFactor.serVal = val;
-    modelFactor._type = officialType;
-    modelFactor.filt = filt;
-    modelFactor.EntityId = id;
-    
-    
-    CartableFSearchVal = val;
-    PfSelForFactorThis = _this;
     pFactorSerialNumber = serialNumber;
+    const isFactorChanged = currentFactorContext.id !== id;
     
-    document.querySelector(".SelectedPf")?.classList.remove("SelectedPf");
+    currentFactorContext = { id, serialNumber, passType: PassType };
+    console.log(currentFactorContext);
     
-    if (_this != null) {
+    
+    if (_this) {
+        document.querySelector(".SelectedPf")?.classList.remove("SelectedPf");
         _this.closest(".InfoDataItem_Prefactor").classList.add("SelectedPf");
         if (PassType === 0) {
+            document.getElementById("f_all").checked = true;
             document.getElementById("HideFactorPartialId").style.display = "flex";
             document.getElementById("f_searchId").value = "";
         }
         
         if (window.innerWidth < 1400) {
-            const allFactorTab = new bootstrap.Tab(document.getElementById(PassType === 0 ? "allFactorTab" : "factorTab"));
-            allFactorTab.show();
+            ShowTab(PassType === 0 ? "allFactorTab" : "factorTab");
         }
-    } else if (PassType === 0) {
-        document.getElementById("HideFactorPartialId").style.display = "none";
-    }
-    
-    if (val === "") {
-        document.getElementById("f_searchId").value = "";
-        $("#f_searchId").val("");
-        document.getElementById("HideFactorPartialId").style.display = "none";
     }
     
     
-    showLoading && FLshowLoading();
-    PfSelForFactor = id;
+    modelFactor.serVal = document.getElementById("f_searchId")?.value.trim() ?? "";
+    modelFactor._type = document.querySelector("input[type='radio'][name='f_type']:checked")?.value ?? 0;
+    modelFactor.filt = window[filterVarConfig]?.filterVar || null;
+    modelFactor.EntityId = id;
+    
     const _model = { fmodel: modelFactor, PassType };
     try {
+        showLoading && FLshowLoading();
         const res = await axios.post(baseUrl + `Cartable/FactorPartial`, _model);
         if (res.status === 200) {
             if (PassType === 0) {
@@ -1640,7 +1631,12 @@ const GetFactorPartial = async (val = null, id = null, _this = null, filt = null
             } else {
                 
                 if (id != null) {
-                    document.getElementById("FactorDivTitleId").innerHTML = `<span class="mp buttonGreen hide-factor__btn" style="border-radius:5px; font-size:20px; height:20px;width:20px !important; cursor:pointer" onclick="hideFact()"> <i class="fas fa-times" style="font-size: 14px;"></i></span> <span>تمام فاکتورهای مربوط به پیش فاکتور ${serialNumber}</span> `;
+                    document.getElementById("FactorDivTitleId").innerHTML = `
+                        <button class="buttonGreen hide-factor__btn" onclick="hideFact()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <span style="font-size:20px">تمام فاکتورهای مربوط به پیش فاکتور ${serialNumber}</span>
+                    `;
                 } else {
                     document.getElementById("FactorDivTitleId").innerHTML = "تمام فاکتور ها";
                 }
@@ -1659,7 +1655,102 @@ const GetFactorPartial = async (val = null, id = null, _this = null, filt = null
 };
 
 
+let currentFactorContext = {
+    id: null,
+    serialNumber: null,
+    passType: 0,
+};
+
+const GetFactorPartial = async ({ id = null, element = null, serialNumber = null, passType = 0, dealId = null, showLoading = true } = {}) => {
+    if (passType === 4) {
+        if (!dealId) return;
+        
+        const dealRes = await axios(`/Deal/GetDeal/${dealId}`);
+        await showModalDealFactors(dealRes.data);
+        return;
+    }
+    
+    
+    currentFactorContext = { id, serialNumber, passType };
+    console.log(currentFactorContext);
+    
+    
+    if (element) {
+        document.querySelector(".SelectedPf")?.classList.remove("SelectedPf");
+        element.closest(".InfoDataItem_Prefactor")?.classList.add("SelectedPf");
+        
+        if (passType === 0) {
+            document.getElementById("f_all").checked = true;
+            document.getElementById("HideFactorPartialId").style.display = "flex";
+            document.getElementById("f_searchId").value = "";
+        }
+        
+        if (window.innerWidth < 1400) {
+            ShowTab(passType === 0 ? "allFactorTab" : "factorTab");
+        }
+    }
+    
+    const model = {
+        fmodel: {
+            ...modelFactor,
+            serVal: document.getElementById("f_searchId")?.value.trim() ?? "",
+            _type: document.querySelector("input[type='radio'][name='f_type']:checked")?.value ?? 0,
+            filt: window[filterVarConfig]?.filterVar || null,
+            EntityId: id,
+        },
+        PassType: passType,
+    };
+    
+    try {
+        if (showLoading) FLshowLoading();
+        const res = await axios.post(baseUrl + "Cartable/FactorPartial", model);
+        if (res.status === 200) {
+            if (passType === 0) {
+                document.getElementById("fAcceptedList").innerHTML = res.data.html;
+                document.getElementById("fCountId").innerHTML = res.data.count;
+                document.getElementById("fCountMobileId").innerText = res.data.count;
+                return;
+            }
+            
+            document.getElementById("FactorDivTitleId").innerHTML = id != null ? `
+                <button class="buttonGreen hide-factor__btn" onclick="hideFact()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <span style="font-size:20px">تمام فاکتورهای مربوط به پیش فاکتور ${serialNumber}</span>`
+                : "تمام فاکتور ها";
+            document.getElementById("DivFacListId").style.display = "flex";
+            document.getElementById("DetailDivList").innerHTML = res.data.html;
+        }
+    } catch (e) {
+        console.error("GetFactorPartial:", e);
+    } finally {
+        if (showLoading) FLshowLoading(false);
+    }
+};
+const refreshFactorPartial = async (showLoading = true) => {
+    const { id, serialNumber, passType } = currentFactorContext;
+    
+    await GetFactorPartial0({ id, serialNumber, passType, showLoading });
+};
+
+const updateFactorUI = ({ val, element, passType }) => {
+    
+};
+
+const renderFactorPartial = (data, { id, serialNumber, passType }) => {
+    
+};
+
+const hideSelectedFactor = async () => {
+    document.getElementById("HideFactorPartialId").style.display = "none";
+    document.querySelector(".SelectedPf")?.classList.remove("SelectedPf");
+    
+    await GetFactorPartial();
+};
+
 const getAllFactorsModal = async (id, type, sNumber) => {
+    if (!id) return;
+    
     FLshowLoading();
     if (type === 4) dealData.id = id;
     const factorsWrapper = document.getElementById("factorsBodyModal");
@@ -1685,7 +1776,7 @@ const getAllFactorsModal = async (id, type, sNumber) => {
 };
 
 
-const acceptFactor = async (id, type, passType, PfactorSerialNumber, dealId) => {
+const acceptFactor = async (id, type, passType, PfactorSerialNumber) => {
     try {
         FLshowLoading();
         const res = await axios(`${baseUrl}Factor/AcceptFactor?id=${id}&type=${type}`);
@@ -1700,12 +1791,12 @@ const acceptFactor = async (id, type, passType, PfactorSerialNumber, dealId) => 
             }
             
             if (passType === 0) {
-                await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, modelFactor._type, PfactorSerialNumber, passType);
+                await refreshFactorPartial()
             } else if (passType === 1) {
                 getAllDetailAmount();
-                await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, modelFactor._type, PfactorSerialNumber, passType);
+                await refreshFactorPartial()
             } else if (passType === 4) {
-                await getAllFactorsModal(dealId, 4);
+                await refreshDealFactors();
             } else if (passType === 6) {
                 await getAllFactorsModal(id, 6);
             }
@@ -1718,7 +1809,7 @@ const acceptFactor = async (id, type, passType, PfactorSerialNumber, dealId) => 
         FLshowLoading(false);
     } catch (err) {
         console.log(err);
-        setTimeout(async () => await acceptFactor(id, type, passType, PfactorSerialNumber, dealId), 3000);
+        setTimeout(async () => await acceptFactor(id, type, passType, PfactorSerialNumber), 3000);
     }
 };
 
@@ -1789,7 +1880,7 @@ const upPfactorItem = (index) => {
         showModalItemPreFactor();
     }
     PfItemUpIndex = index;
-    console.log(index, _pfactorItems);
+    
     mySer.convertJsonToForm(_pfactorItems[index], "PreFacItem");
     document.getElementById("AddBtnId").style.display = "none";
     document.getElementById("CancelBtnId").style.display = "none";
@@ -1952,7 +2043,6 @@ const delPfactorItem = (index) => {
         calculateTotal();
         calculateText();
     }
-    console.log(index, _pfactorItems);
     
 };
 

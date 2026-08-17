@@ -1,6 +1,7 @@
 ﻿@using System.Security.Claims
 @using CRM.Core.Domain.Deals.Enums
 @using CRM.Core.Domain.PreFactors.Enum
+@using CRM.EndPoint.FrontEnd.Services
 @model PrefactorViewModel;
 
 @{
@@ -8,11 +9,9 @@
     var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
     var passType = ViewBag.PassType; // 1: CustomerProfile | 4: Deal
 
-    //    var isFinancial = User.IsInRole(AppRoles.FinancialExpert); // TODO
-    var isFinancial = User.IsInRole("کارشناس مالی") || User.IsInRole("مدیر مالی");
-    var isSalesAdmin = User.IsInRole("مدیر فروش");
-    var isAdmin = User.IsInRole("مدیر ارشد");
-    var isCustomer = User.IsInRole("مشتری");
+    var isSalesAdmin = User.IsInRole(AppRoles.SalesAdmin);
+    var isAdmin = User.IsInRole(AppRoles.Admin);
+    var isCustomer = User.IsInRole(AppRoles.Customer);
 }
 
 <div class="d-flex flex-column w-100" style="gap: 5px">
@@ -31,21 +30,8 @@
                 </div>
             }
 
-            @if (item.OfficialType == 1) {
-                <div class="mp InfoDataHead_PrefactorRasmi" style="display:flex;width:24px !important">
-                    <label style="writing-mode: vertical-lr">رسمی</label>
-                </div>
-            } else {
-                <div class="mp InfoDataHead_PrefactorNonRasmi" style="display:flex;width:24px !important">
-                    <label style="writing-mode: vertical-lr">غیررسمی</label>
-                </div>
-            }
+            <partial name="~/Views/PreFactor/_PreFactorSideLabels.cshtml" model="item" />
 
-            @if (item.Export == true) {
-                <div style="background-color:lightgreen;border-block: 2px solid darkgreen; width:24px; display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
-                    <label style="font-family:'IRANSansBold'; writing-mode: vertical-lr">صـادراتی</label>
-                </div>
-            }
             <div data-serialnumber="@item.SerialNumber" class="d-flex flex-column flex-sm-row justify-content-between InfoDataItem_Prefactor w-100 py-2">
                 <div class="d-flex flex-column w-100 justify-content-between">
                     <div class="mp flex-column flex-md-row px-2" style=" display:flex;justify-content:space-between; width:100%;direction:rtl; height:100%">
@@ -89,7 +75,7 @@
                             </div>
 
                             <div class="d-none d-md-flex" style=" align-items:center; justify-content:center;gap:4px;max-width: 180px;width: 100%">
-                                <button class="buttonPurple p-0 flex-grow-1 fMedium" style="height:auto !important; border-radius:5px;font-size: 13px;max-width: 140px " onclick="ShowModalListInvoice('@item.Id', 1,'@item.SerialNumber', @passType, '@item.DealId', @hideAddInvoiceBtns.ToString().ToLower())">صورت حساب</button>
+                                <button class="buttonPurple p-0 flex-grow-1 fMedium" style="height:auto !important; border-radius:5px;font-size: 13px;max-width: 140px " onclick="ShowModalListInvoice('@item.Id', 1,'@item.SerialNumber', @passType, @hideAddInvoiceBtns.ToString().ToLower())">صورت حساب</button>
                             </div>
                         </div>
                         <div class="d-md-none my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
@@ -101,7 +87,7 @@
                             </div>
 
                             <div class="d-flex d-md-none" style=" align-items:center; justify-content:center;gap:4px">
-                                <button class="buttonPurple px-4" style="height:auto !important;border-radius:5px;cursor:pointer; font-family:'IRANSansBold'" onclick="ShowModalListInvoice('@item.Id', 1, '@item.SerialNumber', @passType, '@item.DealId', @hideAddInvoiceBtns.ToString().ToLower())">صورت حساب</button>
+                                <button class="buttonPurple px-4" style="height:auto !important;border-radius:5px;cursor:pointer; font-family:'IRANSansBold'" onclick="ShowModalListInvoice('@item.Id', 1, '@item.SerialNumber', @passType, @hideAddInvoiceBtns.ToString().ToLower())">صورت حساب</button>
                             </div>
 
                             @switch (item.Pftype) {
@@ -115,14 +101,14 @@
                                                     }
                                                 </select>
                                             </form>
-                                            <button style="border-radius:4px;height:auto;width:80px " class="buttonGreen px-2" onclick="regUtamin('@item.Id', @passType, '@item.DealId')">ثبت</button>
+                                            <button style="border-radius:4px;height:auto;width:80px " class="buttonGreen px-2" onclick="regUtamin('@item.Id', @passType)">ثبت</button>
                                         </div>
                                     }
 
                                     break;
                                 case (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین:
                                     if (hasAccess) {
-                                        <button style="font-size: 13px;transition: all 0.3s;" class="ToSend w-auto h-auto flex-center gap-1 px-2 py-1" onclick="resendRegUtamin('@item.Id', '@item.UserTaminId', @passType, '@item.DealId')">
+                                        <button style="font-size: 13px;transition: all 0.3s;" class="ToSend w-auto h-auto flex-center gap-1 px-2 py-1" onclick="resendRegUtamin('@item.Id', '@item.UserTaminId', @passType)">
                                             <i class="mp fa fa-paper-plane" aria-hidden="true"></i>
                                             <span>ارسال مجدد به تامین</span>
                                         </button>
@@ -131,7 +117,7 @@
                                     break;
                                 case (int)PreFactorEnum.در_انتظار_ارسال_به_مشتری:
                                     if (hasAccess) {
-                                        <button style="font-size: 13px;transition: all 0.3s" id="BtnSendToId" class="ToSend w-auto h-auto d-flex align-items-center gap-1 px-2 py-1" onclick="showMobileModal('@item.Id', @passType, '@item.DealId')">
+                                        <button style="font-size: 13px;transition: all 0.3s" id="BtnSendToId" class="ToSend w-auto h-auto d-flex align-items-center gap-1 px-2 py-1" onclick="showMobileModal('@item.Id', @passType)">
                                             <i class="mp fa fa-paper-plane" aria-hidden="true"></i> ارسال شود
                                         </button>
                                     }
@@ -144,7 +130,7 @@
                                                 <i class="mp fa fa-paper-plane" aria-hidden="true"></i>
                                                 <span>ارسال مجدد به مشتری</span>
                                             </button>
-                                            <button style="font-size: 13px;transition: all 0.3s;" id="BtnSendToId" class="ToSend w-auto h-auto px-2 py-1" onclick="HandAccepting('@item.Id', @passType, '@item.DealId')"> تایید به صورت دستی</button>
+                                            <button style="font-size: 13px;transition: all 0.3s;" id="BtnSendToId" class="ToSend w-auto h-auto px-2 py-1" onclick="HandAccepting('@item.Id', @passType)"> تایید به صورت دستی</button>
                                         </div>
                                     }
 
@@ -181,14 +167,14 @@
                                         <div class="flex-center flex-wrap gap-2">
                                             <button style="border-radius:4px;height:auto;width:80px " class="buttonGreen px-2" onclick="showModalDeliver('@item.Id',1 )">مانده تولید</button>
                                             @if (hasAccess) {
-                                                <button style="border-radius:4px;height:auto;width:80px" class="buttonGreen px-2" onclick="delivered('@item.Id', @passType, '@item.DealId')">اتمام کار</button>
+                                                <button style="border-radius:4px;height:auto;width:80px" class="buttonGreen px-2" onclick="delivered('@item.Id', @passType)">اتمام کار</button>
                                             }
                                         </div>
                                     </div>
                                     break;
                                 case (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد:
                                     if (hasAccess) {
-                                        <button style="border-radius:4px;height:auto;width:90px;" class="buttonGreen px-2" onclick="backDelivered('@item.Id', @passType, '@item.DealId')">لغو اتمام کار</button>
+                                        <button style="border-radius:4px;height:auto;width:90px;" class="buttonGreen px-2" onclick="backDelivered('@item.Id', @passType)">لغو اتمام کار</button>
                                     }
 
                                     break;
@@ -207,7 +193,7 @@
                                         </span>
                                     </button>
                                 } else {
-                                    <button class="buttonGreen" style="display:flex;flex-direction:column;justify-content:center;align-items:center; border-radius:4px;height:auto;padding: 0 6px;width: 80px" onclick="GetFactorPartial(null, '@item.Id',this,null,0,'@item.SerialNumber',@passType,'@item.DealId')">
+                                    <button class="buttonGreen" style="display:flex;flex-direction:column;justify-content:center;align-items:center; border-radius:4px;height:auto;padding: 0 6px;width: 80px" onclick="GetFactorPartial({id: '@item.Id', element: this, serialNumber: '@item.SerialNumber', passType: @passType, dealId: '@item.DealId'})">
                                         <span>فاکتور ها </span>
                                         <span style="display:flex;justify-content:center;gap: 2px">
                                             <span> @item.CountFactor</span>
@@ -240,148 +226,21 @@
                         <div class="d-sm-none mt-2 " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
                     </div>
 
-                    @{
-                        var steps = new List<(int type, string label)> {
-                            ((int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین, "واگذاری تامین"),
-                            ((int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین, "تایید تامین"),
-                            ((int)PreFactorEnum.در_انتظار_ارسال_به_مشتری, "ارسال به مشتری"),
-                            ((int)PreFactorEnum.در_انتظار_تایید_مشتری, "تایید مشتری"),
-                            ((int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش, "تایید مدیرفروش"),
-                            ((int)PreFactorEnum.در_انتظار_تایید_مالی, "تایید مالی"),
-                            ((int)PreFactorEnum.در_انتظار_تولید, "تولید"),
-                            ((int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد, "تحویل مشتری")
-                        };
+                    <partial name="~/Views/PreFactor/_PreFactorProgressTracker.cshtml"
+                             model="item"
+                             view-data='new ViewDataDictionary(ViewData) { ["IsInvalid"] = isInvalid }' />
 
-                        int stepOrder = steps.FindIndex(s => s.type == item.Pftype);
-                        double progressValue = (stepOrder - 0.3) / (steps.Count - 1.0);
+                    @if (!isCustomer) {
+                        <partial name="~/Views/PreFactor/_PreFactorDescription.cshtml" model="item" />
                     }
 
-                    <div class="progressTracker">
-                        <div class="@(stepOrder <= 3 ? "progressTrackerFilledYellow" : "progressTrackerFilled")" style="width: @(stepOrder == steps.Count - 1 ? "100%" : $"calc(100% * {progressValue})")"></div>
-
-                        <div class="d-flex justify-content-between w-100" style="height: 18px;top:-6px">
-                            @for (int i = 0; i < steps.Count; i++) {
-                                var (type, label) = steps[i];
-                                bool isCompleted = stepOrder > i || item.Pftype == (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد;
-                                bool isActive = stepOrder == i && item.Pftype != (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد;
-                                bool isRejected = type == (int)PreFactorEnum.در_انتظار_تایید_مالی && item.AcceptedFinancial == false;
-                                bool isYellow = stepOrder <= 3;
-
-
-                                var dotClass = "progressTrackerDots";
-                                dotClass += isRejected
-                                    ? " rejectedTrack"
-                                    : isCompleted
-                                        ? isYellow ? " completedTrackYellow" : " completedTrack"
-                                        : "";
-                                dotClass += isActive ? " activeTrack" : "";
-
-                                <div class="d-flex align-items-center justify-content-between flex-column position-relative">
-                                    <div class="@dotClass">
-                                        <svg class="completed-svg" style="width:100%;height:100%;display:none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" /></svg>
-                                        <svg class="rejected-svg" style="width:100%;height:100%;display:none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clip-rule="evenodd" /></svg>
-                                    </div>
-
-
-                                    <span style="position:absolute;width: max-content;top: 100%;">
-                                        <span class="d-none @(!isInvalid ? "d-md-inline-block" : "")">@label</span>
-                                        @if (!isCustomer && type == (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین && item.UserTaminId != null) {
-                                            var text = "کارشناس تامین: " + item.UserTaminTxt;
-                                            <span data-bs-toggle="popover" data-bs-content="@Html.Raw(text)">
-                                                <svg style="width: 12px;color: #666" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM9 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.75 8a.75.75 0 0 0 0 1.5h.75v1.75a.75.75 0 0 0 1.5 0v-2.5A.75.75 0 0 0 8.25 8h-1.5Z" clip-rule="evenodd" /></svg>
-                                            </span>
-                                        }
-                                    </span>
-                                </div>
-                            }
-                        </div>
-
-                        <div class="mt-3 @(isInvalid ? "d-md-inline-flex" : "d-md-none") flex-center position-absolute" style="top: 0; left: 0; right: 0">
-                            <label class="fbold" style="font-size: 13px">
-                                @item.PftypeTxt @(item.Pftype == (int)PreFactorEnum.بسته_شده ? $"({item.ExpireValidateDesc})" : "")
-                            </label>
-                        </div>
-                    </div>
-                    @if (!string.IsNullOrEmpty(item.CommentText) && !isCustomer) {
-                        <div class="my-2 mt-md-3 mx-auto" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px"></div>
-                        <div class="d-flex" style="flex-wrap:wrap">
-                            <div class="px-2 d-flex justify-content-around gap-1">
-                                <label style="color:gray">توضیحات:</label>
-                                <span class="flex-grow-1" style="white-space: pre-line">@Html.Raw(item.CommentText)</span>
-                            </div>
-                        </div>
-                    }
                     <div class="d-sm-none mt-3" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
 
                 </div>
 
-                <div class="flex-row flex-sm-column mt-2 mt-sm-0 mx-0 mx-sm-2 align-items-center" style=" display:flex; justify-content:space-evenly !important;row-gap:8px;font-size:15px">
-
-                    @if (hasAccess && item.Pftype != (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد) {
-                        if (item.Pftype <= (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین || isAdmin) {
-                            <button class="flex-center" data-title-right="حذف" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="delPfactor('@item.Id', @passType, '@item.DealId')">
-                                <i class="mp fa fa-trash"></i>
-                            </button>
-                            <button class="flex-center" data-title-right="ویرایش" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="upPfactor('@item.Id',@passType)">
-                                <i class="mp fa fa-pencil"></i>
-                            </button>
-                        }
-                    }
-
-                    @if (item.CustomerId != null && passType == 4) {
-                        <button class="flex-center" data-title-right="پروفایل" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="openCustomerProfile('@item.CustomerId', '@item.SerialNumber')">
-                            <i class="mp fa fa-user"></i>
-                        </button>
-                    }
-
-                    @if (item.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین) {
-                        <button class="flex-center" data-title-right="نمایش پیش‌فاکتور" style="z-index:15;color:var(--DarkColor); border:none;background-color:transparent" onclick="ShowPreviewPfactor('@item.Id')">
-                            <i class="mp fa fa-eye"></i>
-                        </button>
-                    }
-
-                    @if (!isCustomer) {
-                        if (hasAccess) {
-                            <button class="flex-center" data-title-right="پیوست ها" style="color:var(--DarkColor)" onclick="AttachDoc('@item.Id')">
-                                <i style="font-size:15px" class="mp fa fa-paperclip"></i>
-                            </button>
-                        } else {
-                            <button class="flex-center" data-title-right="پیوست ها" style="color:var(--DarkColor)" onclick="showAttachments('@item.Id', 2)">
-                                <i style="font-size:15px" class="mp fa fa-paperclip"></i>
-                            </button>
-                        }
-
-                        if (item.Pftype >= (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش) {
-                            <button class="flex-center taminDropdownToggle" data-title-right="دستور تولیدها" style="color:var(--DarkColor); border:none;background-color:transparent" data-pfId="@item.Id">
-                                <i class="mp fas fa-industry"></i>
-                            </button>
-                            <div class="taminDropdown"></div>
-                        }
-
-                        if ((isAdmin || isFinancial) && (item.Pftype is (int)PreFactorEnum.در_انتظار_تولید or (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد)) {
-                            <button class="flex-center" data-title-right="ثبت فاکتور جدید" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="AddFactor('@item.Id', @passType)">
-                                <i style="font-size:15px" class="mp fa fa-arrow-left"></i>
-                            </button>
-                        }
-
-                        if (hasAccess && item.Pftype == (int)PreFactorEnum.فاقد_اعتبار) {
-                            <button class="flex-center" data-title-right="بازگشت" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="Backward('@item.Id', @passType, '@item.DealId')">
-                                <i style="font-size:15px" class="mp fa fa-forward"></i>
-                            </button>
-                        }
-
-                        if (isAdmin && item.CustomerId != null) {
-                            <button class="flex-center" data-title-right="تغییر کارشناس" style="color:var(--DarkColor); border:none;background-color:transparent" onclick="showModalChangeUserPf('@item.Id', '@item.CustomerId')">
-                                <svg style="width: 16px" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 4.889c-.02.12-.115.26-.297.348a7.493 7.493 0 0 0-.986.57c-.166.115-.334.126-.45.083L6.3 5.508a1.875 1.875 0 0 0-2.282.819l-.922 1.597a1.875 1.875 0 0 0 .432 2.385l.84.692c.095.078.17.229.154.43a7.598 7.598 0 0 0 0 1.139c.015.2-.059.352-.153.43l-.841.692a1.875 1.875 0 0 0-.432 2.385l.922 1.597a1.875 1.875 0 0 0 2.282.818l1.019-.382c.115-.043.283-.031.45.082.312.214.641.405.985.57.182.088.277.228.297.35l.178 1.071c.151.904.933 1.567 1.85 1.567h1.844c.916 0 1.699-.663 1.85-1.567l.178-1.072c.02-.12.114-.26.297-.349.344-.165.673-.356.985-.57.167-.114.335-.125.45-.082l1.02.382a1.875 1.875 0 0 0 2.28-.819l.923-1.597a1.875 1.875 0 0 0-.432-2.385l-.84-.692c-.095-.078-.17-.229-.154-.43a7.614 7.614 0 0 0 0-1.139c-.016-.2.059-.352.153-.43l.84-.692c.708-.582.891-1.59.433-2.385l-.922-1.597a1.875 1.875 0 0 0-2.282-.818l-1.02.382c-.114.043-.282.031-.449-.083a7.49 7.49 0 0 0-.985-.57c-.183-.087-.277-.227-.297-.348l-.179-1.072a1.875 1.875 0 0 0-1.85-1.567h-1.843ZM12 15.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z" clip-rule="evenodd" /></svg>
-                            </button>
-                        }
-
-                        <button class="flex-center" data-title-right="تاریخچه" style="color:var(--DarkColor)" onclick="showLogEntity('@nameof(PreFactor)', '@item.Id')">
-                            <svg style="width: 18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l4 2" /></svg>
-                        </button>
-                    }
-
-                </div>
+                <partial name="~/Views/PreFactor/_PreFactorActions.cshtml"
+                         model="item"
+                         view-data='new ViewDataDictionary(ViewData) { ["PassType"] = passType, ["HasAccess"] = hasAccess }' />
             </div>
         </div>
     }

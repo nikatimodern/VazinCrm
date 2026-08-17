@@ -3,8 +3,8 @@ let currentDealDocumentData = {};
 //Show modals
 const showModalDealPreFactors = async (deal) => {
     currentDealDocumentData = deal;
-    const canAdd =  // TODO
-        (deal.userCreatorID === currentUser.id || currentUser.rollNames.some(i => ["Admin", "SalseAdmin"].includes(i.name)))
+    const canAdd =
+        (deal.userCreatorID === window.userId || window.userRoles.some(i => ["Admin", "SalseAdmin"].includes(i)))
         && deal.financialStatus !== 1;
     
     document.getElementById("dealPreFactorsAdd").classList.toggle("d-none", !canAdd);
@@ -22,25 +22,25 @@ const showModalDealFactors = async (deal, sNumber) => {
     document.getElementById("factorsTitleModal").textContent = `${deal.customerName}${deal.customerCode ? ` (کد مشتری: ${deal.customerCode})` : ""}`;
     
     await getAllFactorsModal(deal.id, 4, sNumber);
-    $("#FactorsModal").modal("toggle");
+    ModalToggle("FactorsModal");
 };
 
 const showModalDealReports = async (deal) => {
     currentDealDocumentData = deal;
-    const canAdd =   // TODO
-        deal.userCreatorID === currentUser.id || currentUser.rollNames.some(i => ["Admin", "SalseAdmin"].includes(i.name));
-    document.getElementById("dealReportsAdd").classList.toggle("d-none", !canAdd);
+    const canAdd = deal.userCreatorID === window.userId || window.userRoles.some(i => ["Admin", "SalseAdmin"].includes(i));
     
+    document.getElementById("dealReportsAdd").classList.toggle("d-none", !canAdd);
     document.getElementById("dealReportsTitle").textContent = `${deal.customerName}${deal.customerCode ? ` (کد مشتری: ${deal.customerCode})` : ""}`;
+    
     await getReportFromDeal(deal.id);
-    $("#dealReportsModal").modal("toggle");
+    ModalToggle("dealReportsModal");
 };
 
 const showModalDealOrders = async (deal) => {
     document.getElementById("dealOrdersTitle").textContent = `${deal.customerName}${deal.customerCode ? ` (کد مشتری: ${deal.customerCode})` : ""}`;
     
     await getOrdersFromDeal(deal.id);
-    $("#dealOrdersModal").modal("toggle");
+    ModalToggle("dealOrdersModal");
 };
 
 const showModalDealInvoices = async (deal) => {
@@ -73,6 +73,7 @@ const getPreFactorFromDeal = async (dealId, isRefresh = false, showDeleted = fal
 
 
 const getReportFromDeal = async (dealId) => {
+    if (!dealId) return;
     FLshowLoading();
     const res = await axios.post(`/Report/GetAllReportPartial?dealId=${dealId}`, {});
     if (res.status === 200) {
@@ -82,6 +83,7 @@ const getReportFromDeal = async (dealId) => {
 };
 
 const getOrdersFromDeal = async (dealId) => {
+    if (!dealId) return;
     FLshowLoading();
     const res = await axios(`/Order/GetAllDealOrdersPartial?dealId=${dealId}`);
     if (res.status === 200) {
@@ -108,8 +110,17 @@ const getOrdersFromDeal = async (dealId) => {
 };
 
 const getInvoicesFromDeal = async (dealId) => {
-    await ShowModalListInvoice(dealId, 3, null, 4, dealId, true);
+    if (!dealId) return;
+    await ShowModalListInvoice(dealId, 3, null, 4, true);
 };
+
+
+// refresh
+const refreshDealPreFactors = async () => await getPreFactorFromDeal(currentDealDocumentData?.id);
+const refreshDealFactors = async () => await getAllFactorsModal(currentDealDocumentData?.id, 4);
+const refreshDealReports = async () => await getReportFromDeal(currentDealDocumentData?.id);
+const refreshDealOrders = async () => await getOrdersFromDeal(currentDealDocumentData?.id);
+
 
 document.getElementById("dealPreFactorsRefresh")?.addEventListener("click", () => getPreFactorFromDeal(currentDealDocumentData.id, true));
 document.getElementById("dealPreFactorsAdd")?.addEventListener("click", () =>

@@ -1,14 +1,14 @@
 ﻿@using CRM.Core.Domain.Deals.Enums
 @using CRM.Core.Domain.Orders.Enums
+@using CRM.EndPoint.FrontEnd.Services
 @model List<OrderHead>
 @{
     Layout = null;
     var passType = ViewBag.PassType;
-
-    //    var isFinancial = User.IsInRole(AppRoles.FinancialExpert); // TODO
-    var isFinancial = User.IsInRole("کارشناس مالی") || User.IsInRole("مدیر مالی");
-    var isAdmin = User.IsInRole("مدیر ارشد");
-    var isTamin = User.IsInRole("کارشناس تامین") || User.IsInRole("مدیر تامین");
+    
+    var isFinancial = User.IsInRole(AppRoles.FinancialExpert) || User.IsInRole(AppRoles.FinancialAdmin);
+    var isAdmin = User.IsInRole(AppRoles.Admin);
+    var isTamin = User.IsInRole(AppRoles.TaminAdmin) || User.IsInRole(AppRoles.TaminExpert);
 
     var showAddRequestAmountBtn = passType != 4 && (isAdmin || isTamin || isFinancial);
 }
@@ -71,7 +71,7 @@
                         <button class="flex-center px-2" data-title="ویرایش" style="color:var(--DarkColor)" onclick="ShowUpdateHeadOrder('@item.Id', @passType, '@item.DealId')">
                             <i class="mp fa fa-pencil"></i>
                         </button>
-                        <button class="flex-center px-2" data-title="حذف" style="color:var(--DarkColor)" onclick="DelHeadOrderItem('@item.Id', @passType, '@item.DealId')">
+                        <button class="flex-center px-2" data-title="حذف" style="color:var(--DarkColor)" onclick="DelHeadOrderItem('@item.Id', @passType)">
                             <i class="mp fa fa-trash"></i>
                         </button>
                     }
@@ -91,16 +91,16 @@
                     }
                     <div class="d-flex align-items-center justify-content-end flex-grow-1 gap-2">
                         @if (item.Status == OrderHeadStatusEnum.تولید || item.Status == OrderHeadStatusEnum.آماده_تحویل) {
-                            <button class="buttonGray @(passType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', @(item.Status == OrderHeadStatusEnum.تولید ? 1 : 2), @((int)item.Status), @passType, '@item.DealId')">مرحله قبل</button>
+                            <button class="buttonGray @(passType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', @(item.Status == OrderHeadStatusEnum.تولید ? 1 : 2), @((int)item.Status), @passType)">مرحله قبل</button>
                         }
                         @if (item.Status == OrderHeadStatusEnum.ثبت_اولیه) {
-                            <button class="buttonGreen2 @(passType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', 2, @((int)item.Status), @passType, '@item.DealId')">طراحی و تولید</button>
+                            <button class="buttonGreen2 @(passType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', 2, @((int)item.Status), @passType)">طراحی و تولید</button>
                         } else if (item.Status == OrderHeadStatusEnum.تولید) {
-                            <button class="buttonGreen2 @(passType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', 3, @((int)item.Status), @passType, '@item.DealId')">آماده تحویل</button>
+                            <button class="buttonGreen2 @(passType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', 3, @((int)item.Status), @passType)">آماده تحویل</button>
                         } else if (item.Status == OrderHeadStatusEnum.آماده_تحویل) {
-                            <button class="buttonGreen2" onclick="changeStatusHd('@item.Id', 4, @((int)item.Status), @passType, '@item.DealId')">تحویل شد</button>
+                            <button class="buttonGreen2" onclick="changeStatusHd('@item.Id', 4, @((int)item.Status), @passType)">تحویل شد</button>
                         } else if (item.Status == OrderHeadStatusEnum.تحویل_شده) {
-                            <button class="buttonGray" onclick="changeStatusHd('@item.Id', 3, @((int)item.Status), @passType, '@item.DealId')">مرحله قبل</button>
+                            <button class="buttonGray" onclick="changeStatusHd('@item.Id', 3, @((int)item.Status), @passType)">مرحله قبل</button>
                         }
                     </div>
                 </div>

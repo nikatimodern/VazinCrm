@@ -1713,13 +1713,13 @@ const SubmitReportForm = async () => {
             oldReport = null;
         }
         
-        
         const resultCall = document.getElementById("resultCall");
         const finalResultCall = document.getElementById("finalResultCall");
         const reasonCancel = document.getElementById("reasonCancel");
         data.resultCallTxt = resultCall.value ? resultCall.options[resultCall.selectedIndex].text : "";
         data.finalResultCallTxt = finalResultCall.value ? finalResultCall.options[finalResultCall.selectedIndex].text : "";
         data.reasonCancelTxt = reasonCancel.value ? reasonCancel.options[reasonCancel.selectedIndex].text : "";
+        
         FLshowLoading();
         $.post(`/Report/AddReport`, data, async (res) => {
             if (res.status === 200) {
@@ -1731,7 +1731,7 @@ const SubmitReportForm = async () => {
                         await getDashReports();
                     }
                 } else if (typeReportSubmit === 4) {
-                    await getReportFromDeal(dealIdReport);
+                    await refreshDealReports();
                     if (typeof getAllDeals === "function") {
                         await getAllDeals();
                     }
@@ -2063,7 +2063,7 @@ const ShowUpdateReport = async (id, passType = 0) => {
 };
 
 
-const DelReport = (item, passType = 0, dealId = null) => {
+const DelReport = (item, passType = 0) => {
     Swal.fire({
         title: "حذف!",
         text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
@@ -2075,13 +2075,13 @@ const DelReport = (item, passType = 0, dealId = null) => {
         confirmButtonText: "بله، حذف شود",
     }).then((willDelete) => {
         if (willDelete.isConfirmed) {
-            delReportOk(item, passType, dealId);
+            delReportOk(item, passType);
         }
     });
 };
 
 
-const delReportOk = (item, passType, dealId) => {
+const delReportOk = (item, passType) => {
     FLshowLoading();
     $.get(baseUrl + "Report/DelReport/" + item, async function (res) {
         if (res.status === 200) {
@@ -2093,7 +2093,7 @@ const delReportOk = (item, passType, dealId) => {
                     await getDashReports();
                 }
             } else if (passType === 4) {
-                await getReportFromDeal(dealId);
+                await refreshDealReports();
             }
             
             toastifySuccess(res.message);
@@ -2102,7 +2102,7 @@ const delReportOk = (item, passType, dealId) => {
         }
         FLshowLoading(false);
     }).fail(() => {
-        setTimeout(() => delReportOk(item, passType, dealId), 3000);
+        setTimeout(() => delReportOk(item, passType), 3000);
     });
 };
 
@@ -3985,7 +3985,6 @@ function renderDateTimeHtml(value, { empty = "-", className = "" } = {}) {
     
     return `<span dir="ltr" class="${className}">${value.slice(0, -3).split(" ").join(" | ")}</span>`;
 }
-
 
 
 class DynamicSkeleton {

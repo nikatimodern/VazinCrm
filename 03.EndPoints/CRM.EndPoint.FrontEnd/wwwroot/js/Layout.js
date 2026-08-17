@@ -13,15 +13,12 @@ var AccepedAttachment = [];
 var SanadPayList = [];
 var attachInvoiceList = [];
 var setting = null;
-var PfSelForFactor = null;
 var pFactorSerialNumber = null;
-var PfSelForFactorThis = null; //پیش فاکتور انتخاب شده
 
 
 var Invo_id = null;
 var Invo_type = null;
 var InvoiceType = null;
-var invoiceDealId = null;
 var invoicePassType = null;
 var AccType = null;
 var accConfigFilter = {};//موارد فیلترینگ accontancy
@@ -99,29 +96,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     setDateTime();
     //getAllWarnings();
 });
-
-
-/*
-const RepairPf = async (pfi, passType, dealId) => {
-    try {
-        FLshowLoading();
-        const res = await axios(`${baseUrl}Factor/RepairPf?id=${pfi}`);
-        if (res.status === 200) {
-            if (passType === 1) {
-                await getAllPreFactor();
-            } else if (passType === 2) {
-                await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
-            } else if (passType === 4) {
-                await getPreFactorFromDeal(dealId);
-            }
-            FLshowLoading(false);
-        }
-    } catch (err) {
-        toastifyError("عملیات با خطا مواجه شد.");
-        FLshowLoading(false);
-    }
-};
-*/
 
 
 let tooltipList = [];
@@ -1352,7 +1326,7 @@ const submitOrder = async () => {
         return {
             orders: orders,
             prefactor: submitOrderPfId,
-            dealId: submitOrderDealId || null,
+            dealId: submitOrderDealId || null, // TODO
             dealSerialNumber: submitOrderDealSerialNumber || null,
             customer: submitOrderCusId || null,
             description: document.querySelector(`${paneSelector} textarea`)?.value || "",
@@ -1453,7 +1427,7 @@ async function isSMSNotificationConfirmed() {
     return result.isConfirmed;
 }
 
-async function changeStatusHd(id, status, sourceStatus, passType, dealId = null, fromDrop = false, draggedItem = null, sourceColumn = null) {
+async function changeStatusHd(id, status, sourceStatus, passType, fromDrop = false, draggedItem = null, sourceColumn = null) {
     let sendSms = false;
     if (status === 3 && sourceStatus !== 4) {
         sendSms = await isSMSNotificationConfirmed();
@@ -1479,7 +1453,7 @@ async function changeStatusHd(id, status, sourceStatus, passType, dealId = null,
             if (passType === 1) {
                 await refreshOrders();
             } else if (passType === 4) {
-                await getOrdersFromDeal(dealId);
+                await refreshDealOrders();
             } else if (passType === 2) {
                 await getUndeliveredOrderHeads();
             }
@@ -1500,7 +1474,7 @@ async function changeStatusHd(id, status, sourceStatus, passType, dealId = null,
 }
 
 
-const DelHeadOrderItem = (id, passType, dealId) => {
+const DelHeadOrderItem = (id, passType) => {
     Swal.fire({
         title: "حذف!",
         text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
@@ -1513,19 +1487,19 @@ const DelHeadOrderItem = (id, passType, dealId) => {
     })
         .then(async (willDelete) => {
             if (willDelete.isConfirmed) {
-                await DelHeadOrderItemOk(id, passType, dealId);
+                await DelHeadOrderItemOk(id, passType);
             }
         });
 };
 
-const DelHeadOrderItemOk = async (id, passType, dealId) => {
+const DelHeadOrderItemOk = async (id, passType) => {
     $("#FLshowLoading").css("display", "");
     axios(`/Order/DelOrderHead/${id}`).then(async (res) => {
         if (res.status === 200) {
             if (passType === 1) {
                 await refreshOrders();
             } else if (passType === 4) {
-                await getOrdersFromDeal(dealId);
+                await refreshDealOrders();
             }
             
             toastifySuccess("با موفقیت حذف شد!");
@@ -1535,7 +1509,7 @@ const DelHeadOrderItemOk = async (id, passType, dealId) => {
         $("#FLshowLoading").css("display", "none");
         
     }).catch(() => {
-        setTimeout(async () => await DelHeadOrderItemOk(id), 3000);
+        setTimeout(async () => await DelHeadOrderItemOk(id, passType), 3000);
     });
 };
 
@@ -1589,7 +1563,6 @@ const f_showDescItem = () => {
 
 let deliveredPfId;
 let deliveredType;
-let deliveredDealId;
 const getUndeliveredOrderHeads = async () => {
     const res = await axios(`/Order/GetUndeliveredOrderHeads?pfId=${deliveredPfId}`);
     const data = res.data.trim();
@@ -1604,10 +1577,9 @@ const getUndeliveredOrderHeads = async () => {
     }
 };
 let UndeliveredModalIsShow;
-const delivered = async (id, type, dealId) => {
+const delivered = async (id, type) => {
     deliveredPfId = id;
     deliveredType = type;
-    deliveredDealId = dealId;
     FLshowLoading();
     const hasUndelivered = await getUndeliveredOrderHeads();
     FLshowLoading(false);
@@ -1615,7 +1587,7 @@ const delivered = async (id, type, dealId) => {
         UndeliveredModalIsShow = true;
         $("#UndeliveredOrderHeadsModal").modal("show");
     } else {
-        deliveredOk(id, type, dealId);
+        deliveredOk();
     }
 };
 
@@ -1635,7 +1607,7 @@ const deliveredOk = () => {
                 if (deliveredType === 1) {
                     await getAllPreFactor();
                 } else if (deliveredType === 4) {
-                    await getPreFactorFromDeal(deliveredDealId);
+                    await refreshDealPreFactors();
                 }
                 toastifySuccess("پیش فاکتور اتمام کار خورد");
                 if (UndeliveredModalIsShow) $("#UndeliveredOrderHeadsModal").modal("hide");
@@ -1644,18 +1616,18 @@ const deliveredOk = () => {
     });
 };
 
-const backDelivered = async (pfId, passType, dealId) => {
+const backDelivered = async (pfId, passType) => {
     if (await ChangePf(pfId, 6)) {
         if (passType === 1) {
             await getAllPreFactor();
         } else if (passType === 4) {
-            await getPreFactorFromDeal(dealId);
+            await refreshDealPreFactors();
         }
     }
 };
 
 
-const regUtamin = async (pfId, type, dealId) => {
+const regUtamin = async (pfId, type) => {
     if (!await mySer.CheckValidForm(pfId)) return;
     
     try {
@@ -1666,7 +1638,7 @@ const regUtamin = async (pfId, type, dealId) => {
             if (type === 1) {
                 await getAllPreFactor();
             } else if (type === 4) {
-                await getPreFactorFromDeal(dealId);
+                await refreshDealPreFactors();
             }
             
             FLshowLoading(false);
@@ -1682,7 +1654,7 @@ const regUtamin = async (pfId, type, dealId) => {
     }
 };
 
-const resendRegUtamin = async (pfId, userTaminId, type, dealId) => {
+const resendRegUtamin = async (pfId, userTaminId, type) => {
     try {
         FLshowLoading();
         const res = await axios(`/Factor/ResendRegUtamin?pfId=${pfId}&usId=${userTaminId}`);
@@ -1690,7 +1662,7 @@ const resendRegUtamin = async (pfId, userTaminId, type, dealId) => {
             if (type === 1) {
                 await getAllPreFactor();
             } else if (type === 4) {
-                await getPreFactorFromDeal(dealId);
+                await refreshDealPreFactors();
             }
             //showSmsSendingToast();
             // toastifyInfo("پیامک در صف ارسال قرار گرفت");
@@ -1706,10 +1678,8 @@ const resendRegUtamin = async (pfId, userTaminId, type, dealId) => {
 
 let smsSendedPfId;
 let typeSubmitSmsSendPf;
-let dealIdSubmitSmsSendPf;
-const showMobileModal = async (id, type, dealId) => {
+const showMobileModal = async (id, type) => {
     typeSubmitSmsSendPf = type;
-    dealIdSubmitSmsSendPf = dealId;
     try {
         ModalToggle("MobileModal");
         smsSendedPfId = id;
@@ -1720,7 +1690,7 @@ const showMobileModal = async (id, type, dealId) => {
         
     } catch (err) {
         console.log(err);
-        setTimeout(async () => await showMobileModal(id), 3000);
+        setTimeout(async () => await showMobileModal(id, type), 3000);
     }
 };
 
@@ -1735,7 +1705,7 @@ const SendToCustomer = async () => {
             } else if (typeSubmitSmsSendPf === 3) {
                 await GetSelesExpertPartial();
             } else if (typeSubmitSmsSendPf === 4) {
-                await getPreFactorFromDeal(dealIdSubmitSmsSendPf);
+                await refreshDealPreFactors();
             }
             
             // showSmsSendingToast();
@@ -1756,7 +1726,7 @@ const SendToCustomer = async () => {
             if (typeSubmitSmsSendPf === 1) {
                 await getAllPreFactor();
             } else if (typeSubmitSmsSendPf === 4) {
-                await getPreFactorFromDeal(dealIdSubmitSmsSendPf);
+                await refreshDealPreFactors();
             }
             Swal.fire({
                 title: "خطا!", text: "لینک تایید ارسال نشد", icon: "error", confirmButtonText: "بستن",
@@ -1800,7 +1770,7 @@ const ChangePf = async (id, code) => {
     });
 };
 
-const Backward = (id, type, dealId) => {
+const Backward = (id, type) => {
     Swal.fire({
         title: "بازگشت!",
         text: "با این اقدام پیش فاکتور به مرحله اول فرایند منتقل می شود. آیا مطمئن هستید؟",
@@ -1814,12 +1784,12 @@ const Backward = (id, type, dealId) => {
         .then((result) => {
             if (result.isConfirmed) {
                 $.get(baseUrl + "Factor/Backward/" + id, async () => {
-                    if (type === 1) {
-                        await getAllPreFactor();
-                    } else if (type === 2) {
+                    if (type === 0) {
                         await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
+                    } else if (type === 1) {
+                        await getAllPreFactor();
                     } else if (type === 4) {
-                        await getPreFactorFromDeal(dealId);
+                        await refreshDealPreFactors();
                     } else if (type === 5) {
                         await GetPreFactorTaminExpert();
                     }
@@ -1900,32 +1870,7 @@ const AddfItem = async () => {
 };
 
 
-//22222222
-
-
-/*const getAllPayment = (type, id) => {
-    
-    $.post(baseUrl + `factor/AddPayAttachment`, model, async (res) => {
-        if (res.status == 200) {
-            toastifySuccess("ثبت انجام شد");
-            
-            if (InvoiceType == 1) {
-                await getAllPreFactor();
-            } else if (InvoiceType == 2) {
-                getFacAmount(PfSelForFactor);
-            }
-            
-            closeModalInvoice();
-        } else {
-            toastifyError(res.error);
-            
-        }
-    });
-};*/
-
-
-const delPayment = (id, dealId) => {
-    invoiceDealId = dealId;
+const delPayment = (id) => {
     Swal.fire({
         title: "حذف!",
         text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
@@ -2058,7 +2003,7 @@ const getAllPaymentPartial = async (id, type, invoicePassType) => {
 
 
 const ShowModalInvoiceWallet = async () => {
-    await ShowModalListInvoice(customerId, 4, null, 1, null, true);
+    await ShowModalListInvoice(customerId, 4, null, 1, true);
 };
 
 
@@ -2112,8 +2057,7 @@ const ShowVosolInvoiceModal = async (parentId, pfId, invoiceType) => {
     await ShowModalInvoice(1);
 };
 
-const ShowModalListInvoice = async (id, type, ser, passType, dealId, hideAddInvoiceBtns = false) => {
-    invoiceDealId = dealId;
+const ShowModalListInvoice = async (id, type, ser, passType, hideAddInvoiceBtns = false) => {
     invoicePassType = passType;
     
     Invo_id = id;
@@ -2358,7 +2302,7 @@ async function refreshInvoiceSuccess() {
         getAllDetailAmount();
         
     } else if (currentPath.includes("deal")) { //4 سفارشات
-        await getPreFactorFromDeal(invoiceDealId);
+        await refreshDealPreFactors();
         
     } else if (currentPath.includes("check")) { //چک ها
         await getReceivedChecks();
@@ -2375,7 +2319,7 @@ async function refreshInvoiceSuccess() {
                         await GetPreFactorFinancialExpert();
                         break;
                     case "FinancialInvoiceTab":
-                        GetInvoicesFinancialExpert();
+                        await GetInvoicesFinancialExpert();
                         break;
                 }
                 break;
@@ -2451,7 +2395,6 @@ const backStepPf = async (id, _type, formId) => {
     
     //await changeTypePfactorOk(id, _type, "برگشت خورده");
     //toastifySuccess("تغییر انجام شد");
-    //getPreFactorFromDeal(parentId, true)
     
     
 };
@@ -2476,18 +2419,16 @@ async function submitNotAccept() { // رد تایید و بازگشت | عدم �
             return;
         }
         
-        const userFullName = `${currentUser?.firstName || ""} ${currentUser?.lastName || ""}`.trim();
+        const userFullName = document.getElementById("profileName")?.textContent || "";
         const model = {
             id: idNotAccept,
             description: `${notAcceptCommentElm.value.trim()} (${userFullName})`,
         };
         
         if (typeNotAccept === 0) { // acc
-            const a = await acceptAccountancy(model.id, 3, model.description);
-            console.log(a);
-            if (!a) {
-                return;
-            }
+            const result = await acceptAccountancy(model.id, 3, model.description);
+            if (!result) return;
+            
         } else { // pf
             FLshowLoading();
             const urlMap = {
@@ -2577,7 +2518,7 @@ async function rejectPreFactor(id, type) { // رد تایید
                 await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
                 
             } else if (invoicePassType === 4) {
-                await getPreFactorFromDeal(invoiceDealId);
+                await refreshDealPreFactors();
             }
             
             toastifySuccess("ثبت با موفقیت انجام شد");
@@ -2607,7 +2548,7 @@ async function rejectPreFactor(id, type) { // رد تایید
                     await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
                     
                 } else if (invoicePassType === 4) {
-                    await getPreFactorFromDeal(invoiceDealId);
+                    await refreshDealPreFactors();
                 } else if (invoicePassType === 5) {
                     await getAllReceiptsPreFactor(pfactorID);
                     await GetPreFactorFinancialExpert();
@@ -2700,15 +2641,15 @@ const CheckAcPfAtach = async (id) => {
     });
 };
 
-const AcceptPfactor = async (id, type, dealId) => {
+const AcceptPfactor = async (id, type) => {
     document.getElementById("FLshowLoading").style.display = "";
     $.get("/Factor/AcceptPreFactorManual/" + id, async (res) => {
         if (type === 1) {
             await getAllPreFactor();
         } else if (type === 3) {
-            GetSelesExpertPartial();
+            await GetSelesExpertPartial();
         } else if (type === 4) {
-            await getPreFactorFromDeal(dealId);
+            await refreshDealPreFactors();
             if (typeof getAllDeals === "function") {
                 await getAllDeals();
             }
@@ -2717,14 +2658,14 @@ const AcceptPfactor = async (id, type, dealId) => {
         document.getElementById("FLshowLoading").style.display = "none";
     })
      .fail(() => {
-         setTimeout(async () => await AcceptPfactor(id), 3000);
+         setTimeout(async () => await AcceptPfactor(id, type), 3000);
      });
 };
 
-const HandAccepting = async (id, type, dealId) => {
+const HandAccepting = async (id, type) => {
     if (setting.attAcceptHanding === true) {
         if (await CheckAcPfAtach(id)) {
-            await AcceptPfactor(id, type, dealId);
+            await AcceptPfactor(id, type);
         } else {
             Swal.fire({
                 icon: "error",
@@ -3318,8 +3259,7 @@ const hideFact = () => {
     document.getElementById("DivFacListId").style.display = "none";
     
     if (window.innerWidth < 1400) {
-        const factorTab = new bootstrap.Tab(document.getElementById("preFactorTab"));
-        factorTab.show();
+        ShowTab("preFactorTab");
     }
     
     let pd = document.getElementsByClassName("SelectedPf");

@@ -876,7 +876,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var user = userManager.GetUserAsync(HttpContext.User).Result;
                 var deal = await db.Deals.Where(f => f.Id == models.First().DealId).FirstOrDefaultAsync();
 
-                foreach (var model in models)
+                foreach (var model in models ?? [])
                 {
                     model.OrderDateMildi = dtService.GetDateMiladi(model.OrderDate);
                     model.UserCreator = user.FullName;

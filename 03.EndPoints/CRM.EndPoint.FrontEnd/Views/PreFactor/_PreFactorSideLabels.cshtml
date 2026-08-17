@@ -1,0 +1,17 @@
+@model PreFactor
+
+@if (Model.OfficialType == 1) {
+    <div class="InfoDataHead_PrefactorRasmi">
+        <label style="writing-mode: vertical-lr">رسمی</label>
+    </div>
+} else {
+    <div class="InfoDataHead_PrefactorNonRasmi">
+        <label style="writing-mode: vertical-lr">غیررسمی</label>
+    </div>
+}
+
+@if (Model.Export == true) {
+    <div class="InfoDataHead_PrefactorExport">
+        <label style="writing-mode: vertical-lr">صـادراتی</label>
+    </div>
+}

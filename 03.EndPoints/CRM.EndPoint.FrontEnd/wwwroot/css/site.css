@@ -4585,9 +4585,8 @@ p {
 
 
 .InfoDataHead_PrefactorRasmi {
-	color: aliceblue;
 	background-color: var(--DarkColor);
-	width: 3%;
+	width: 24px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -4599,9 +4598,8 @@ p {
 
 
 .InfoDataHead_PrefactorNonRasmi {
-	color: aliceblue;
 	background-color: var(--DarkColorLight);
-	width: 3%;
+	width: 24px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -4609,6 +4607,18 @@ p {
 	border-bottom-right-radius: 10px;
 	border-top-right-radius: 10px;
 	color: white;
+}
+
+
+.InfoDataHead_PrefactorExport {
+	background-color: lightgreen;
+	border-block: 2px solid darkgreen;
+	width: 24px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	font-family: IRANSansBold;
 }
 
 
@@ -4702,6 +4712,14 @@ border-end-end-radius: 10px;*/
 	/*border: solid 2px #0065f2;*/
 	background-color: #ffffff;
 	border-radius: 5px;
+}
+
+
+.hide-factor__btn {
+	border-radius: 5px;
+	height: 20px;
+	width: 20px;
+	padding: 0;
 }
 
 

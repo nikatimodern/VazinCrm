@@ -19,7 +19,7 @@
             <img id="profileImage" class="profile-image" src="@profileSrc" alt="">
             <div>
                 <span class="d-none d-md-inline">کاربر: </span>
-                <span id="profileName" class="profile-name">@currentUser?.FullName</span>
+                <span id="profileName" class="profile-name">@currentUser?.FullName?.Trim()</span>
             </div>
         </div>
         <div id="customerLogo">

@@ -19,12 +19,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     showTaminDropdown();
     
     //////////////////////preFactor//////////////////////
-    initSearchInput("searchId", async (e, inp) => await GetPreFactorPartial(inp.value, modelPreFactor._type, modelPreFactor.filt));
+    initSearchInput("searchId", async (e, inp) => await GetPreFactorPartial(inp.value, modelPreFactor._type, modelPreFactor.filt)); // TODO
     initChangeRadio("financeFilter", async (e) => await GetPreFactorPartial(modelPreFactor.serVal, Number(e.target.value), modelPreFactor.filt));
     
     //////////////////////factor//////////////////////
-    initSearchInput("f_searchId", async (e, inp) => await GetFactorPartial(inp.value, null, null, modelFactor.filt, modelFactor._type));
-    initChangeRadio("f_type", async (e) => await GetFactorPartial(modelFactor.serVal, modelFactor.EntityId, null, modelFactor.filt, Number(e.target.value)));
+    initSearchInput("f_searchId", async () => await refreshFactorPartial());
+    initChangeRadio("f_type", async () => await refreshFactorPartial());
     
     //////////////////////saleAdmin//////////////////////
     initSearchInput("SalesAdminSearchId", GetPreFactorSalesAdmin);
@@ -117,8 +117,8 @@ const exportExcelPreFactors = async () => {
 
 const exportExcelFactors = async () => {
     const model = {
-        serVal: CartableFSearchVal,
-        _type: Number(document.querySelector("input[type='radio'][name='f_type']:checked").value),
+        serVal: document.getElementById("f_searchId")?.value.trim() ?? "",
+        _type: Number(document.querySelector("input[type='radio'][name='f_type']:checked")?.value ?? 0),
         filt: window[filterVarConfig] != null ? window[filterVarConfig].filterVar : null,
     };
     
@@ -136,6 +136,7 @@ const exportExcelFactors = async () => {
         },
     });
 };
+
 
 const HideAllCartable = () => {
     CPrefactorFactorElm?.classList.add("d-none");
@@ -210,7 +211,7 @@ const GetCartable = (tabId, subId) => {
                             ShowTab("allFactorTab");
                         }
                     } else if (!fromWarning) {
-                        promises.push(GetFactorPartial(modelFactor.serVal, null, null, modelFactor.filt, modelFactor._type, null, 0, null, false));
+                        promises.push(GetFactorPartial());
                     }
                     
                     if (!fromWarning) {
@@ -1666,9 +1667,7 @@ const CbPfFilter = async () => {
     await GetPreFactorPartial(varSearch, modelPreFactor._type, filterVar);
 };
 const CbFFilter = async () => {
-    const varSearch = window[filterVarConfig].varSearch;
-    const filterVar = window[filterVarConfig].filterVar;
-    await GetFactorPartial(varSearch, null, null, filterVar, modelFactor._type);
+    await refreshFactorPartial();
 };
 
 const showPrefac = async (pfNumber) => {
@@ -1684,10 +1683,9 @@ const showPrefac = async (pfNumber) => {
 const showFac = async (pfNumber) => {
     document.getElementById("f_all").checked = true;
     document.getElementById("f_searchId").value = pfNumber;
-    await GetFactorPartial(pfNumber);
+    await refreshFactorPartial();
     if (window.innerWidth < 1400) {
-        const allFactorTab = new bootstrap.Tab(document.getElementById("allFactorTab"));
-        allFactorTab.show();
+        ShowTab("allFactorTab");
     }
 };
 

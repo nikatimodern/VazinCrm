@@ -1,14 +1,15 @@
 ﻿@using CRM.Core.Domain.Factors.Enum
+@using CRM.EndPoint.FrontEnd.Services
 @model CRM.EndPoint.FrontEnd.Models.Factor.FactorsViewModel ;
 
 @{
     Layout = null;
 
-    //    var isFinancial = User.IsInRole(AppRoles.FinancialExpert); // TODO
-    var isFinancial = User.IsInRole("کارشناس مالی") || User.IsInRole("مدیر مالی");
-    var isAdmin = User.IsInRole("مدیر ارشد");
-    var isCustomer = User.IsInRole("مشتری");
+    var isFinancial = User.IsInRole(AppRoles.FinancialExpert) || User.IsInRole(AppRoles.FinancialAdmin);
+    var isAdmin = User.IsInRole(AppRoles.Admin);
+    var isCustomer = User.IsInRole(AppRoles.Customer);
 }
+
 <div style="width:100%;display:flex;flex-direction:column;gap:5px;">
     @foreach (var item in Model.factors.OrderByDescending(f => f.ModifyDate)) {
         var isReturnFactor = item.ParentReturnedId != null;
@@ -56,7 +57,7 @@
                                         <label class="fbold">ابطال شده</label>
                                     } else {
                                         if (isAdmin || isFinancial) {
-                                            <button class="fMedium buttonBlue" style="padding: 2px 6px;font-size: 11px;" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @ViewBag.PassType,'@item.DealId')">
+                                            <button class="fMedium buttonBlue" style="padding: 2px 6px;font-size: 11px;" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @ViewBag.PassType)">
                                                 انتخاب از سپیدار
                                             </button>
                                         } else {
@@ -65,7 +66,7 @@
                                     }
                                 } else {
                                     if (isAdmin || isFinancial) {
-                                        <label class="fbold hoverLink" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @ViewBag.PassType,'@item.DealId')">@item.SnFinancial</label>
+                                        <label class="fbold hoverLink" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @ViewBag.PassType)">@item.SnFinancial</label>
                                     } else {
                                         <label class="fbold">@item.SnFinancial</label>
                                     }
@@ -120,10 +121,10 @@
                             @if (Model._Setting?.FactorTowStep == true && !isReturnFactor && !item.Returned) {
                                 if (item.status == FactorStatus.در_دست_تایید) {
                                     if (isAdmin || isFinancial) {
-                                        <button class="buttonCancel3" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 3, @ViewBag.PassType, '@item.PfactorSerialNumber', '@item.DealId')">
+                                        <button class="buttonCancel3" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 3, @ViewBag.PassType, '@item.PfactorSerialNumber')">
                                             ابطال
                                         </button>
-                                        <button class="buttonGray" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 2, @ViewBag.PassType, '@item.PfactorSerialNumber', '@item.DealId')">
+                                        <button class="buttonGray" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 2, @ViewBag.PassType, '@item.PfactorSerialNumber')">
                                             تایید
                                         </button>
                                     } else {
@@ -137,7 +138,7 @@
                                             تایید شده
                                         </div>
                                         @if (isAdmin || isFinancial) {
-                                            <div style="cursor:pointer;color:#333" onclick="acceptFactor('@item.Id', 1, @ViewBag.PassType, '@item.PfactorSerialNumber', '@item.DealId')" data-title="بازگشت">
+                                            <div style="cursor:pointer;color:#333" onclick="acceptFactor('@item.Id', 1, @ViewBag.PassType, '@item.PfactorSerialNumber')" data-title="بازگشت">
                                                 <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>
                                             </div>
                                         }
@@ -148,7 +149,7 @@
                                             ابطال شده
                                         </div>
                                         @if (isAdmin || isFinancial) {
-                                            <div style="cursor:pointer;color:#333" onclick="acceptFactor('@item.Id', 1, @ViewBag.PassType, '@item.PfactorSerialNumber', '@item.DealId')" data-title="بازگشت">
+                                            <div style="cursor:pointer;color:#333" onclick="acceptFactor('@item.Id', 1, @ViewBag.PassType, '@item.PfactorSerialNumber')" data-title="بازگشت">
                                                 <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>
                                             </div>
                                         }
@@ -186,7 +187,7 @@
                             <i class="mp fa fa-pencil"></i>
                         </button>
                         if (isAdmin) {
-                            <button class="flex-center" data-title-right="حذف" style="color:var(--DarkColor);" onclick="delFactor('@item.Id',@ViewBag.PassType,'@item.DealId')">
+                            <button class="flex-center" data-title-right="حذف" style="color:var(--DarkColor);" onclick="delFactor('@item.Id', @ViewBag.PassType)">
                                 <i class="mp fa fa-trash"></i>
                             </button>
                         }

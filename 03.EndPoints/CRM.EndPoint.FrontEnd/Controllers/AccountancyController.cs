@@ -425,7 +425,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         model.IsCreatorParent = pf?.UserCreatorID == user.Id;
 
                         showAcceptPfBtn =
-                            (roles.Contains("مدیر ارشد") || roles.Contains("کارشناس مالی") || roles.Contains("مدیر مالی")) // TODO
+                            (roles.Contains("مدیر ارشد") || roles.Contains("کارشناس مالی") || roles.Contains("مدیر مالی"))
                             && pf?.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی
                             && pf.AcceptedFinancial != true
                             && acc.All(f => f.Status == AccStatusEnum.تایید_شده);

@@ -40,7 +40,7 @@
     </div>
 </div>
 
-<partial name="~/Views/Factor/Modals/Factor/_FactorContainerModal.cshtml" />
+<partial name="~/Views/Factor/Modals/_FactorContainerModal.cshtml" />
 
 <partial name="~/Views/Accountancy/Modals/_InvoiceListModal.cshtml" />
 @section Scripts {
@@ -196,7 +196,7 @@
                 try {
                     const res = (await axios(`/Accountancy/getAccountancy/${entityId}`)).data;
                     const data = res.accData;
-                    await ShowModalListInvoice(data.pfid, 1, data.pfSerialNumber, 6, data.dealId);
+                    await ShowModalListInvoice(data.pfid, 1, data.pfSerialNumber, 6);
                 } catch (err) {
                     if (err.status === 404) {
                         toastifyError(`خطا: ${err.response.data}`);

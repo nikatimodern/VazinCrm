@@ -24,7 +24,7 @@
         </button>
         <div class="header-profile" onclick="ShowModalUserSetting()">
             <img id="profileImage" class="profile-image" src="@profileSrc" alt="">
-            <span id="profileName" class="profile-name">@currentUser?.FullName</span>
+            <span id="profileName" class="profile-name">@currentUser?.FullName?.Trim()</span>
         </div>
         <div class="header-content">
             <div class="header-actions d-none">

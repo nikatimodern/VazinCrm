@@ -134,7 +134,7 @@
                 filterReportConfig.filterVar = {
                     ...filterReportConfig.filterVar,
                     SelFilterChd: e.target.checked,
-                    selFilter: e.target.checked ? currentUser.id : null,
+                    selFilter: e.target.checked ? window.userId : null,
                 };
                 await getAllReports();
             });
