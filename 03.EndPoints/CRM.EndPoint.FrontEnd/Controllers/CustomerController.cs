@@ -4,7 +4,6 @@ using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Customers.Enum;
 using CRM.Core.Domain.Factors.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
-using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;

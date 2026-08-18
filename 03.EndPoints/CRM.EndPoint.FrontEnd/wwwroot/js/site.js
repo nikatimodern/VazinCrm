@@ -4,7 +4,6 @@
 // Write your JavaScript code.
 
 
-let modelPreFactor = {};
 var report = {};
 var oldReport = null;
 let dealIdReport = null;

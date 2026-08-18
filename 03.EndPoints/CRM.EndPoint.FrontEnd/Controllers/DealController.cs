@@ -8,7 +8,6 @@ using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.Deals.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
-using CRM.Core.Domain.Transfers.Entities;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;

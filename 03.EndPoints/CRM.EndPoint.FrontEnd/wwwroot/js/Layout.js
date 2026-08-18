@@ -25,8 +25,6 @@ var accConfigFilter = {};//موارد فیلترینگ accontancy
 //متغییر های فیلترینگ و سرچ کارتابل پیش فاکتور و فاکتور
 var varList = {};//موارد فیلترینگ
 var varList2 = {};//موارد فیلترینگ
-var CartablePfSearchVal = null;//متن جستجو
-var CartableFSearchVal = null;//متن جستجو
 
 var filterReportConfig = {};
 
@@ -1785,7 +1783,7 @@ const Backward = (id, type) => {
             if (result.isConfirmed) {
                 $.get(baseUrl + "Factor/Backward/" + id, async () => {
                     if (type === 0) {
-                        await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
+                        await GetPreFactorPartial();
                     } else if (type === 1) {
                         await getAllPreFactor();
                     } else if (type === 4) {
@@ -2311,7 +2309,7 @@ async function refreshInvoiceSuccess() {
         const { tab, sub } = getUrlParams();
         switch (tab) {
             case "TPrefactorFactorId": //2 پیش‌فاکتور و فاکتور
-                await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
+                await GetPreFactorPartial();
                 break;
             case "TFinancialExpertId": //5 مالی
                 switch (sub) {
@@ -2515,7 +2513,7 @@ async function rejectPreFactor(id, type) { // رد تایید
                 await getAllPreFactor();
                 
             } else if (invoicePassType === 2) {
-                await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
+                await GetPreFactorPartial();
                 
             } else if (invoicePassType === 4) {
                 await refreshDealPreFactors();
@@ -2545,7 +2543,7 @@ async function rejectPreFactor(id, type) { // رد تایید
                     await getAllPreFactor();
                     
                 } else if (invoicePassType === 2) {
-                    await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
+                    await GetPreFactorPartial();
                     
                 } else if (invoicePassType === 4) {
                     await refreshDealPreFactors();

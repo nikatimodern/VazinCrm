@@ -367,7 +367,7 @@ const changeTypePfactor = async (_PfId, _type, FormCode, des = null) => {
     switch (FormCode) {
         case 1: // کارتابل کارشناس مالی
             toastifySuccess("تکمیل وجه در سیستم ثبت شد.");
-            GetPreFactorPartial($("#searchId").val());
+            await GetPreFactorPartial();
             break;
         case 2: //customerProfile
             await getAllPreFactor();
@@ -1213,7 +1213,7 @@ const submitPrefactorOK = async (type) => {
             
             $.post(baseUrl + "Factor/AddPrefactor", pfactor, async () => {
                 if (type === 0) { // PreFactor/Factor
-                    await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
+                    await GetPreFactorPartial();
                 } else if (type === 1) { // CustomerProfile
                     await getAllPreFactor();
                 } else if (type === 2) { // SalesAdmin
@@ -1300,7 +1300,7 @@ const submitFactorOK = async (type, unlinkSepidar = false) => {
             if (res.status === 200) {
                 if (type === 0) {
                     await refreshFactorPartial();
-                    await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
+                    await GetPreFactorPartial();
                 } else if (type === 1) {
                     await getAllPreFactor();
                     await refreshFactorPartial();
@@ -1427,7 +1427,7 @@ const delPfactorOk = (id, type) => {
     
     axios(`/Factor/DelPreFactor/${id}`).then(async () => {
         if (type === 0) { // PreFactor/Factor
-            await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
+            await GetPreFactorPartial();
         } else if (type === 1) { // CustomerProfile
             await getAllPreFactor();
             getAllDetailAmount();
@@ -1470,7 +1470,7 @@ const delFactorOk = (id, type) => {
     $.get(baseUrl + "Factor/DelFactor/" + id, async () => {
         if (type === 0) {
             await refreshFactorPartial();
-            //await GetPreFactorPartial(modelPreFactor.serVal, modelPreFactor._type, modelPreFactor.filt);
+            //await GetPreFactorPartial();
             
         } else if (type === 1) {
             await getAllPreFactor();
@@ -1607,8 +1607,8 @@ const GetFactorPartial = async ({ id, element, serialNumber, passType = 0, dealI
         passType,
         fModel: {
             serVal: document.getElementById("f_searchId")?.value.trim() ?? "",
-            _type: document.querySelector("input[type='radio'][name='f_type']:checked")?.value ?? 0,
-            filt: window[filterVarConfig]?.filterVar || null,
+            _type: Number(document.querySelector("input[type='radio'][name='f_type']:checked")?.value ?? 0),
+            filt: varList2?.filterVar || null,
             EntityId: id,
         },
     };
@@ -1625,20 +1625,21 @@ const GetFactorPartial = async ({ id, element, serialNumber, passType = 0, dealI
 
 
 const updateFactorUI = (element, passType) => {
-    if (element) {
-        document.querySelector(".SelectedPf")?.classList.remove("SelectedPf");
-        element.closest(".InfoDataItem_Prefactor")?.classList.add("SelectedPf");
-        
-        if (passType === 0) {
-            document.getElementById("f_all").checked = true;
-            document.getElementById("HideFactorPartialId").style.display = "flex";
-            document.getElementById("f_searchId").value = "";
-        }
-        
-        if (window.innerWidth < 1400) {
-            ShowTab(passType === 0 ? "allFactorTab" : "factorTab");
-        }
+    if (!element) return;
+    
+    document.querySelector(".SelectedPf")?.classList.remove("SelectedPf");
+    element.closest(".InfoDataItem_Prefactor")?.classList.add("SelectedPf");
+    
+    if (passType === 0) {
+        document.getElementById("f_all").checked = true;
+        document.getElementById("HideFactorPartialId").style.display = "flex";
+        document.getElementById("f_searchId").value = "";
     }
+    
+    if (window.innerWidth < 1400) {
+        ShowTab(passType === 0 ? "allFactorTab" : "factorTab");
+    }
+    
 };
 
 const renderFactorPartial = (data, { id, serialNumber, passType }) => {
