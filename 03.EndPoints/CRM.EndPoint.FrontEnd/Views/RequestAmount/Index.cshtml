@@ -158,13 +158,13 @@
 
 
         ////////////////////////////////////////////////////
-        let orderHeadsSelectedIds = [];
-        const modalSelector = new ModalSelector();
+        @* let orderHeadsSelectedIds = []; *@
+        const modalSelector1 = new ModalSelector();
 
         async function showAddOrderHeadModal() {
             if (!selectOrderHeadType) return;
 
-            await modalSelector.open({
+            await modalSelector1.open({
                 title: "انتخاب حواله تولید",
                 selectedIds: orderHeadsSelectedIds,
 
