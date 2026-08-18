@@ -3904,6 +3904,7 @@ async function deleteItem(options) {
  * @param {string} [options.title="آیا مطمئن هستید؟"] Dialog title.
  * @param {string} [options.text=""] Dialog message.
  * @param {"warning"|"error"|"success"|"info"|"question"} [options.icon="warning"] Alert icon.
+ * @param {"light"|"dark"} [options.theme="light"] Theme of the popup.
  * @param {string} [options.confirmText] Confirm button text. If omitted, a default text is used based on the icon.
  * @param {string} [options.cancelText="انصراف"] Cancel button text.
  * @param {string} [options.confirmButtonColor] Overrides the default confirm button color.
@@ -3917,6 +3918,7 @@ async function confirmAlert(
         title = "آیا مطمئن هستید؟",
         text = "",
         icon = "warning",
+        theme = "light",
         confirmText,
         cancelText = "انصراف",
         confirmButtonColor,
@@ -3925,34 +3927,35 @@ async function confirmAlert(
         onCancel,
     } = {}) {
     
-    const primaryTheme = {
+    const primaryButtonTheme = {
         color: "#0d6efd",
         confirmText: "تایید",
     };
     
-    const dangerTheme = {
+    const dangerButtonTheme = {
         color: "#e64942",
         confirmText: "بله، انجام شود",
     };
     
-    const themes = {
-        success: primaryTheme,
-        info: primaryTheme,
-        question: primaryTheme,
-        warning: dangerTheme,
-        error: dangerTheme,
+    const buttonThemes = {
+        success: primaryButtonTheme,
+        info: primaryButtonTheme,
+        question: primaryButtonTheme,
+        warning: dangerButtonTheme,
+        error: dangerButtonTheme,
     };
     
-    const theme = themes[icon] ?? dangerTheme;
+    const buttonTheme = buttonThemes[icon] ?? dangerButtonTheme;
     
     const result = await Swal.fire({
         title,
         text,
         icon,
+        theme,
         showCancelButton: true,
-        confirmButtonColor: confirmButtonColor ?? theme.color,
+        confirmButtonColor: confirmButtonColor ?? buttonTheme.color,
         cancelButtonColor,
-        confirmButtonText: confirmText ?? theme.confirmText,
+        confirmButtonText: confirmText ?? buttonTheme.confirmText,
         cancelButtonText: cancelText,
     });
     
@@ -3968,6 +3971,74 @@ async function confirmAlert(
     
     return false;
 }
+
+async function confirmDangerousDelete(
+    {
+        title = "حذف دائمی اطلاعات",
+        text = "این عملیات قابل بازگشت نیست. آیا از حذف این اطلاعات اطمینان دارید؟",
+        confirmText = "بله، حذف دائمی شود",
+        cancelText = "انصراف",
+    } = {}) {
+    
+    const result = await Swal.fire({
+        title,
+        html: `
+            <div style="font-size:15px; line-height:2;">
+                <div style="color:#dc3545; font-weight:bold; margin-bottom:8px;">
+                    ⚠️ هشدار مهم
+                </div>
+
+                <div>${text}</div>
+
+                <div style="
+                    margin-top:15px;
+                    padding:10px;
+                    background:#fff3cd;
+                    border:1px solid #ffe69c;
+                    border-radius:6px;
+                    color:#664d03;
+                ">
+                    این عملیات <strong>قابل بازگشت نیست</strong>.
+                </div>
+
+                <div style="margin-top:18px;">
+                    برای تأیید، عبارت
+                    <strong>حذف</strong>
+                    را وارد کنید:
+                </div>
+            </div>
+        `,
+        input: "text",
+        inputPlaceholder: "حذف",
+        inputAttributes: {
+            autocomplete: "off",
+        },
+        showCancelButton: true,
+        
+        confirmButtonColor: "#dc3545",
+        cancelButtonColor: "#adadad",
+        
+        confirmButtonText: "بله، حذف دائمی شود",
+        cancelButtonText: "انصراف",
+        
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        
+        preConfirm: (value) => {
+            if (value?.trim() !== "حذف") {
+                Swal.showValidationMessage(
+                    "برای تأیید باید عبارت «حذف» را وارد کنید.",
+                );
+                return false;
+            }
+            
+            return true;
+        },
+    });
+    
+    return result.isConfirmed;
+}
+
 
 function renderMoneyHtml(value, { currency = "ريال", empty = "-", className = "" } = {}) {
     if (value == null || Number.isNaN(Number(value)))
@@ -3985,7 +4056,6 @@ function renderDateTimeHtml(value, { empty = "-", className = "" } = {}) {
     
     return `<span dir="ltr" class="${className}">${value.slice(0, -3).split(" ").join(" | ")}</span>`;
 }
-
 
 
 class DynamicSkeleton {

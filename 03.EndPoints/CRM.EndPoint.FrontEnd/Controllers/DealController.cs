@@ -415,6 +415,8 @@ public class DealController : Controller {
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var deal = await db.Deals.Where(f => f.Id == id).FirstOrDefaultAsync();
+            if (deal == null) return NotFound();
+
             deal.IsDeleted = true;
             deal.UserModify = user.FullName;
             deal.UserModifyID = user.Id;
