@@ -18,6 +18,7 @@ using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
+using CRM.Infrastructures.Sql;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]

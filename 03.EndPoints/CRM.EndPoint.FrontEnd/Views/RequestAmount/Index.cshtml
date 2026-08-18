@@ -157,7 +157,73 @@
         };
 
 
-        let orderHeadsFilterIds = null;
+        ////////////////////////////////////////////////////
+        let orderHeadsSelectedIds = [];
+        const modalSelector = new ModalSelector();
+
+        async function showAddOrderHeadModal() {
+            if (!selectOrderHeadType) return;
+
+            await modalSelector.open({
+                title: "انتخاب حواله تولید",
+                selectedIds: orderHeadsSelectedIds,
+
+                load: async ({ search, selectedIds }) => {
+                    const filterIds = (await axios("/Order/GetAllOrderHeadsByCurrentTamin")).data;
+
+                    const res = await axios.post("/Order/GetAllOrderHeads", { search, passType: selectOrderHeadType, selectedIds, filterIds });
+                    return res.data;
+                },
+
+                onSubmit: ({ ids, numbers }) => {
+                    orderHeadsSelectedIds = ids;
+                    const input = document.getElementById("reqAmountOrderHead");
+                    input.value = numbers.join(", ");
+
+                    input.classList.remove("AlertReq");
+                },
+            });
+        }
+        ////////////////////////////////////////////////////
+        @*let orderHeadsSelectedIds = [];
+
+        const addOrderHeadModal = document.getElementById("addOrderHeadModal");
+
+        const orderHeadSelector = new ModalSelector({
+            modal: addOrderHeadModal,
+            container: "#addOrderHeadContainer",
+            searchInput: "#addOrderHeadSearch",
+            submitButton: "#submitSelectedOrderHeads",
+            getSelectedIds: () => orderHeadsSelectedIds,
+            setSelectedIds: ids => orderHeadsSelectedIds = ids,
+            getData: async ({ search, selectedIds }) => {
+
+                const filterIds = (await axios("/Order/GetAllOrderHeadsByCurrentTamin")).data;
+
+                const model = {
+                    search,
+                    passType: selectOrderHeadType,
+                    selectedIds,
+                    filterIds,
+                };
+
+                const res = await axios.post("/Order/GetAllOrderHeads", model);
+
+                return res.data;
+            },
+        });
+
+        async function showAddOrderHeadModal() {
+
+            if (!selectOrderHeadType)
+                return;
+
+            await orderHeadSelector.show();
+        }*@;
+
+
+        ////////////////////////////////////////////////////
+        @*let orderHeadsFilterIds = null;
         let tempSelectedIds = [];
         let tempSelectedMap = new Map(); // id -> number
         const addOrderHeadModal = document.getElementById("addOrderHeadModal");
@@ -260,6 +326,7 @@
             const anySelected = tempSelectedIds.length > 0;
             addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !anySelected);
         }
+        *@;
 
 
         ////////////////////////////////////////////////////

@@ -4,6 +4,7 @@ using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.SignalR;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Infrastructures.Sql;
 
 namespace CRM.EndPoint.FrontEnd.Services.SaveChangeCustom
 {

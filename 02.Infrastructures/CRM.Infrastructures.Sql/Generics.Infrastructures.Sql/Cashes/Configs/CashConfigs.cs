@@ -3,10 +3,8 @@ using CRM.Core.Domain.Cashes.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace CRM.Infrastructures.Sql.Cashes.Configs
-{
-    public class CashConfigs : IEntityTypeConfiguration<Cash>
-    {
+namespace CRM.Infrastructures.Sql.Cashes.Configs {
+    public class CashConfigs : IEntityTypeConfiguration<Cash> {
         public void Configure(EntityTypeBuilder<Cash> builder)
         {
             builder.HasKey(f => f.Id);
@@ -34,10 +32,14 @@ namespace CRM.Infrastructures.Sql.Cashes.Configs
                 .HasForeignKey(f => f.BankAccountId)
                 .OnDelete(DeleteBehavior.NoAction);
 
+            builder.HasMany(f => f.CashOrderHeads)
+                .WithOne(f => f.Cash)
+                .HasForeignKey(f => f.CashId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             builder.HasIndex(x => x.PaymentVoucherNumber)
                 .IsUnique()
                 .HasFilter("[PaymentVoucherNumber] IS NOT NULL");
         }
     }
-
 }

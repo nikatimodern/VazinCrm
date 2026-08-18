@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.CallRecordings.Enums;
 using CRM.EndPoint.FrontEnd.ISerives;
+using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

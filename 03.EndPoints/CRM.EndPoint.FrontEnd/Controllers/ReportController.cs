@@ -22,6 +22,7 @@ using CRM.EndPoint.FrontEnd.Services.Asterisk;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using Microsoft.AspNetCore.SignalR;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
+using CRM.Infrastructures.Sql;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize(Policy = "NotCustomerOnly")]

@@ -5,6 +5,7 @@ using CRM.Framework.Domain;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.RequestAmounts.Entities;
 
@@ -42,5 +43,6 @@ namespace CRM.Core.Domain.Orders.Entities {
 
         public IList<SupplyFactorOrderHead> SupplyFactorOrderHeads { get; set; }
         public IList<RequestAmountOrderHead> RequestAmountOrderHeads { get; set; }
+        public ICollection<CashOrderHead> CashOrderHeads { get; set; }
     }
 }

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using System.Threading.Tasks;
+using CRM.Infrastructures.Sql;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     public class ProductController : Controller {

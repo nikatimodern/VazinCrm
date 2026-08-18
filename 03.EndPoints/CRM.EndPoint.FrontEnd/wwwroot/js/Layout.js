@@ -4548,6 +4548,52 @@ const showAttachments = async (id, typeAtt) => {
 };
 
 /*--------------------------------------------------------------------------------*/
+let supplyFactorsSelectedIds = [];
+
+const modalSelector = new ModalSelector();
+
+async function showAddSupplyFactorModal(elm) {
+    const targetInput = elm.parentElement.querySelector("input");
+    
+    await modalSelector.open({
+        title: "انتخاب فاکتور تامین",
+        selectedIds: supplyFactorsSelectedIds,
+        load: async ({ search, selectedIds }) => {
+            const res = await axios.post("/Supply/GetAllSupplyFactorsTablePartial", { search, selectedIds });
+            return res.data;
+        },
+        onSubmit: ({ ids, numbers }) => {
+            supplyFactorsSelectedIds = ids;
+            targetInput.value = numbers.join(", ");
+            targetInput.classList.remove("AlertReq");
+        },
+    });
+}
+/*--------------------------------------------------------------------------------*/
+/*let supplyFactorsSelectedIds = [];
+
+const addSupplyFactorModal = document.getElementById("addSupplyFactorModal");
+
+const supplyFactorSelector = new ModalSelector({
+    modal: addSupplyFactorModal,
+    container: "#addSupplyFactorContainer",
+    searchInput: "#addSupplyFactorSearch",
+    submitButton: "#submitSelectedSupplyFactor",
+    getSelectedIds: () => supplyFactorsSelectedIds,
+    setSelectedIds: ids => supplyFactorsSelectedIds = ids,
+    getData: async ({ search, selectedIds }) => {
+        const res = await axios.post("/Supply/GetAllSupplyFactorsTablePartial", { search, selectedIds });
+        return res.data;
+    },
+});
+async function showAddSupplyFactorModal(elm) {
+    const targetInput = elm.parentElement.querySelector("input");
+    
+    await supplyFactorSelector.show(targetInput);
+}*/
+
+/*--------------------------------------------------------------------------------*/
+/*
 const addSupplyFactorModal = document.getElementById("addSupplyFactorModal");
 let supplyFactorsSelectedIds = [];
 let tempSupFacSelectedIds = [];
@@ -4627,6 +4673,7 @@ function restoreSelectedSupplyFactor() {
     const anySelected = tempSupFacSelectedIds.length > 0;
     addSupplyFactorModal.querySelector("#submitSelectedSupplyFactor").classList.toggle("d-none", !anySelected);
 }
+*/
 
 /*--------------------------------------------------------------------------------*/
 

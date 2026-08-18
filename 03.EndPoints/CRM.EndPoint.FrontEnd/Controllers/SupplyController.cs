@@ -25,6 +25,7 @@ using CRM.EndPoint.FrontEnd.Models.ViewModel.Reports;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
+using CRM.Infrastructures.Sql;
 using Dapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.SqlClient;

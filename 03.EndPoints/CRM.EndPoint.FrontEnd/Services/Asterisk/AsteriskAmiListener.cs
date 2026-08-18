@@ -12,6 +12,7 @@ using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.AsteriskAmi;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
+using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;

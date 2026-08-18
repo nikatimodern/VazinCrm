@@ -2,39 +2,35 @@
 using CRM.Core.Domain.ASettings.Entities;
 using CRM.Core.Domain.Attachments.Entities;
 using CRM.Core.Domain.BaseItems.Entities;
+using CRM.Core.Domain.CallRecordings.Entities;
 using CRM.Core.Domain.Carizos.Entities;
+using CRM.Core.Domain.Cartables.Entities;
+using CRM.Core.Domain.Cashes.Entities;
+using CRM.Core.Domain.Chats.Entities;
+using CRM.Core.Domain.Checks.Entities;
 using CRM.Core.Domain.Cities.Entities;
 using CRM.Core.Domain.Company.Entities;
 using CRM.Core.Domain.Contacts.Entities;
 using CRM.Core.Domain.Contracts.Entities;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Deals.Entities;
+using CRM.Core.Domain.Emails.Entities;
 using CRM.Core.Domain.Factors.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Entities;
+using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Products.Entities;
 using CRM.Core.Domain.Reports.Entities;
+using CRM.Core.Domain.RequestAmounts.Entities;
 using CRM.Core.Domain.States.Entities;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.Core.Domain.SystemWarnings.Entities;
-using Microsoft.EntityFrameworkCore;
-using System.Linq;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
-using CRM.Core.Domain.CallRecordings.Entities;
-using CRM.Core.Domain.Cartables.Entities;
-using CRM.Core.Domain.Chats.Entities;
-using CRM.Core.Domain.Emails.Entities;
-using CRM.Core.Domain.WebPushSubscriptions.Entities;
-using CRM.Core.Domain.Payments.Entities;
-using CRM.Core.Domain.RequestAmounts.Entities;
-using CRM.Core.Domain.Cashes.Entities;
-using CRM.Core.Domain.Checks.Entities;
 using CRM.Core.Domain.Transfers.Entities;
+using CRM.Core.Domain.WebPushSubscriptions.Entities;
+using Microsoft.EntityFrameworkCore;
 
-namespace Generics.Infrastructures.Sql {
+namespace CRM.Infrastructures.Sql {
     public class CRMContextDb : DbContext {
         public CRMContextDb(DbContextOptions<CRMContextDb> op) : base(op) { }
 
@@ -98,6 +94,7 @@ namespace Generics.Infrastructures.Sql {
         public DbSet<Check> Checks { get; set; }
         public DbSet<Transfer> Transfers { get; set; }
         public DbSet<CashGroup> CashGroups { get; set; }
+        public DbSet<CashOrderHead> CashOrderHeads { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -157,6 +154,7 @@ namespace Generics.Infrastructures.Sql {
             modelBuilder.Entity<BaseCash>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<BaseCenterCash>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<CashGroup>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<CashOrderHead>().HasQueryFilter(f => f.IsDeleted == false);
 
 
             modelBuilder.Entity<Order>().Ignore(f => f.Row);
