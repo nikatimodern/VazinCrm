@@ -310,6 +310,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var pListQ = db.PreFactors
                     .Include(x => x.Deal)
                     .Include(f => f.CustomerEntity)
+                    .OrderByDescending(f => f.DateMiladi)
+                    .ThenByDescending(f => f.CreateDate)
                     .AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(model.serVal))
@@ -336,8 +338,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
 
                 pListQ = model._type switch {
-                    5 => pListQ.Include(f => f.Factors).Where(f => !f.Factors.Any()), // بدون فاکتور
-                    6 => pListQ.Include(f => f.Factors).Where(f => f.Factors.Any()), // دارای فاکتور
+                    5 => pListQ.Where(f => !f.Factors.Any()), // بدون فاکتور
+                    6 => pListQ.Where(f => f.Factors.Any()), // دارای فاکتور
                     _ => pListQ
                 };
 
@@ -346,10 +348,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     pListQ = pListQ.Take(50);
                 }
 
-                var pList = await pListQ.AsNoTracking()
-                    .OrderByDescending(f => f.DateMiladi)
-                    .ThenByDescending(f => f.CreateDate)
-                    .ToListAsync();
+                var pList = await pListQ.AsNoTracking().ToListAsync();
 
                 var preFactorIds = pList.Select(x => x.Id).ToArray();
 
