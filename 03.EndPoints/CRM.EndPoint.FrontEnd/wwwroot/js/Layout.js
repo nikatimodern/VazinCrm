@@ -4354,7 +4354,6 @@ async function getLogEntity(entityName, entityId) {
     try {
         FLshowLoading();
         const res = await axios(`/Home/GetEntityLogSystem?entityName=${entityName}&entityId=${entityId}`);
-        console.log(res.data);
         if (res.status === 200) {
             return res.data;
         }

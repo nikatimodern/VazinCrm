@@ -1,0 +1,36 @@
+<!-- Modal addExtraItemSupply -->
+<div class="modal fade" id="addExtraItemSupplyModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content col-12 p-2">
+            <div id="addExtraSupplyHeader" class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">
+                افزودن هزینه اضافی
+            </div>
+            <div class="modal-body pb-2">
+                <form id="addExtraItemSupplyForm" class="d-flex flex-column gap-2">
+                    <div>
+                        <label for="addExtraItemSupplyTitle">عنوان</label>
+                        <select id="addExtraItemSupplyTitle" name="pfItemId" class="form-select form-select-sm" required>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="addExtraItemSupplierId">تامین‌ کننده</label>
+                        <select class="show-dropdown-arrow" name="supplierId" id="addExtraItemSupplierId">
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="addExtraItemSupplyAmount">بهای کل (ریال)</label>
+                        <input type="text" id="addExtraItemSupplyAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="totalAmount" required data-currency-hint="next">
+                        <span class="currencyHint"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-1 mt-2">
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="toggleSupplyExtraItemModal()">انصراف</button>
+                        <button type="button" class="buttonGreen3 addExtraItemSupplySubmitBtn" style="padding-block: 4px">ثبت</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

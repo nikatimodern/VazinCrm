@@ -1,0 +1,32 @@
+<!-- Modal addWasteItemSupply -->
+<div class="modal fade" id="addWasteItemSupplyModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content col-12 p-2">
+            <div id="addWasteSupplyHeader" class="text-center text-white rounded py-1 fbold" style="background-color: #851b1d">
+                افزودن ضایعات
+            </div>
+            <div class="modal-body pb-2">
+                <form id="addWasteItemSupplyForm" class="d-flex flex-column gap-2">
+                    <div>
+                        <label for="addWasteItemSupplyTitle">عنوان</label>
+                        <input type="text" id="addWasteItemSupplyTitle" class="form-control" name="itemTitle" required>
+                    </div>
+                    <div>
+                        <label for="weightWasteMobile">مقدار</label>
+                        <input inputmode="numeric" type="number" name="weight" id="weightWasteMobile" class="form-control" required>
+                    </div>
+
+                    <div>
+                        <label for="addWasteItemSupplyAmount">بهای کل (ریال)</label>
+                        <input type="text" id="addWasteItemSupplyAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="totalAmount" required data-currency-hint="next">
+                        <span class="currencyHint"></span>
+                    </div>
+                    <div class="d-flex justify-content-center gap-1 mt-2">
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="toggleSupplyWasteItemModal()">انصراف</button>
+                        <button type="button" class="buttonGreen3 addWasteItemSupplySubmitBtn" style="padding-block: 4px">ثبت</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,58 @@
+<!-- Modal AddTaminItem -->
+<div class="modal fade" id="addItemSupplyModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content col-12 p-2">
+            <div class="text-center bg-secondary text-white rounded py-1">
+                <label class="fbold">افزودن آیتم تامین</label>
+            </div>
+            <div class="item-preview-box">
+                <div class="item-preview-row">
+                    <span class="item-preview-label">شرح کالا:</span>
+                    <span class="item-preview-value" id="previewItemTitle"></span>
+                </div>
+
+                <div class="item-preview-row">
+                    <span class="item-preview-label">مقدار پیش‌فاکتور:</span>
+                    <span class="item-preview-value" id="previewItemWeight"></span>
+                </div>
+                <div class="item-preview-row">
+                    <span class="item-preview-label">قیمت واحد پیش‌فاکتور:</span>
+                    <span class="item-preview-value" id="previewItemUnitAmount"></span>
+                </div>
+            </div>
+            <div class="modal-body py-2">
+                <form id="addItemSupplyForm" class="d-flex flex-column gap-2">
+                    <div>
+                        <label for="supplierIdMobile">تامین‌ کننده</label>
+                        <select class="show-dropdown-arrow" name="supplierId" id="supplierIdMobile" required>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="weightMobile">مقدار</label>
+                        <div class="input-group input-group-sm">
+                            <input inputmode="numeric" type="number" name="weight" id="weightMobile" class="form-control" required>
+                            <span class="input-group-text text-dark" id="weightTxtMobile"></span>
+                        </div>
+                    </div>
+
+                    <div id="supplierAmountInputsWrapper" class="d-flex flex-column gap-2">
+                        <div>
+                            <label for="unitAmountMobile">بهای واحد (ریال)</label>
+                            <input type="text" inputmode="numeric" name="unitAmount" id="unitAmountMobile" class="form-control currencyNumber inpAmount" required data-currency-hint="next" />
+                            <span class="currencyHint"></span>
+                        </div>
+                        <div>
+                            <label for="totalAmountMobile">بهای کل (ریال)</label>
+                            <input type="text" inputmode="numeric" name="totalAmount" id="totalAmountMobile" class="form-control currencyNumber inpAmount" disabled data-currency-hint="next" />
+                            <span class="currencyHint"></span>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-center gap-1 mt-2">
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="toggleSupplyItemModal()">انصراف</button>
+                        <button type="button" class="buttonGreen3" id="addItemSupplyBtnMobile" style="padding-block: 4px" onclick="submitTaminItemFromModal()">ثبت</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

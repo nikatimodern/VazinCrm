@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         sessionStorage.removeItem("fFilterFromDash");
         filConfigSession = {
             ContentFilterDiv: "f_ContentFilterId",
-            filterCallBack: "CbFFilter",
+            filterCallBack: "refreshFactorPartial",
             txtSercheId: "f_searchId",
             varSearch: "",
             filterVar: { ...fFilterFromDash.filt },
