@@ -13,12 +13,13 @@ let cashViewType;
 let cashData = {};
 let modelCash = {};
 
+let cashOrderHeadsSelectedIds = [];
 
 const cashModal = document.getElementById("cashModal");
 const costCenterElm = cashModal.querySelector("#cashCostCenter");
 document.addEventListener("DOMContentLoaded", async () => {
     
-    await initCashierSelectOpt();
+    //await initCashierSelectOpt();
     
     const checkedRadio = document.querySelector(`input[name="cashViewType"]:checked`);
     if (checkedRadio) {
@@ -40,6 +41,7 @@ cashModal.addEventListener("hidden.bs.modal", () => {
     mySer.emptyForm("cashForm");
     cashData = [];
     cashAttachments = [];
+    cashOrderHeadsSelectedIds = [];
 });
 
 async function initCashierSelectOpt() {
@@ -60,9 +62,16 @@ async function showEditCashModal(id) {
         const res = await axios(`/Cash/GetCash/${id}`);
         if (res.status === 200) {
             cashData = res.data.cash;
+            const orderHeadSerials = res.data.orderHeadSerials;
+            cashOrderHeadsSelectedIds = cashData.cashOrderHeads?.map(r => r.orderHeadId) ?? [];
             mySer.convertJsonToForm(cashData, "cashForm");
             cashAttachments = res.data.attachments;
             FileUpReload("cashAtt");
+            
+            const inpElmOrderHead = cashModal.querySelector("#cashOrderHeadInp");
+            if (inpElmOrderHead) {
+                inpElmOrderHead.value = orderHeadSerials.join(", ");
+            }
         }
         
     } catch (err) {
@@ -113,6 +122,7 @@ async function submitCashModal() {
         costCenterTxt: costCenterElm.options[costCenterElm.selectedIndex].text,
         costTitleTxt: costTitleElm.options[costTitleElm.selectedIndex].text,
         attachments: cashAttachments,
+        cashOrderHeads: cashOrderHeadsSelectedIds.map(id => ({ orderHeadId: id, cashId: cashData.id })),
     };
     
     
@@ -231,8 +241,8 @@ const getAllCashesDt = () => {
                 d.model = JSON.stringify(modelCash);
             },
             dataSrc: function (json) {
-                cashTbl.column(1).visible(window.isFinancial);
-                cashTbl.settings()[0].aoColumns[1].bSearchable = window.isFinancial;
+                cashTbl.column(1).visible(window.isAdminOrFinancial);
+                cashTbl.settings()[0].aoColumns[1].bSearchable = window.isAdminOrFinancial;
                 initCashierBalanceUI(json.cashierBalance);
                 return json.data;
             },
@@ -259,7 +269,7 @@ const getAllCashesDt = () => {
         ],
         columns: [
             { data: "serial", responsivePriority: 1 },
-            { data: "paymentVoucherNumber", visible: window.isFinancial, searchable: window.isFinancial },
+            { data: "paymentVoucherNumber", visible: window.isAdminOrFinancial, searchable: window.isAdminOrFinancial },
             { data: "cashGroup.groupNumber" },
             { data: "createDateTxt" },
             { data: "costTitleTxt", responsivePriority: 2 },
@@ -268,7 +278,7 @@ const getAllCashesDt = () => {
             { data: "amount" },
             { data: "fee" },
             { data: "totalAmount" },
-            { data: "costDescription" },
+            { data: "costDescription", className: "wrap-text" },
             { data: "userCreator" },
             {
                 data: "status",
@@ -278,7 +288,7 @@ const getAllCashesDt = () => {
                         
                         return `<button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>`;
                     } else if (data === 1) { // در دست تایید
-                        if (window.isFinancial) return `
+                        if (window.isAdminOrFinancial) return `
                             <div class="inline-flex-center gap-1">
                                 <button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 2)">تایید</button>
                                 <button class="buttonCancel3" onclick="changeStatusCash('${row.id}', 0)">برگشت</button>
@@ -291,7 +301,7 @@ const getAllCashesDt = () => {
                             </div>
                         `;
                     } else { // تایید شده
-                        if (window.isFinancial) return `
+                        if (window.isAdminOrFinancial) return `
                             <div class="inline-flex-center gap-1">
                                 <span class="fMedium" style="color: darkgreen">${row.statusTxt}</span>
                                 <button style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
@@ -532,7 +542,7 @@ function switchCashView(viewType) {
         } else {
             cashTbl?.ajax.reload(null, false);
         }
-    
+        
     } else { // viewType === "groups"
         groupsContainer.classList.remove("d-none");
         itemsContainer.classList.add("d-none");
@@ -549,7 +559,7 @@ function updateCashModalActionButtons(items) {
     const btnApprove = document.getElementById("btnApproveGroup");
     const btnReject = document.getElementById("btnRejectGroup");
     
-    if (!window.isFinancial) {
+    if (!window.isAdminOrFinancial) {
         btnApprove?.remove();
         btnReject?.remove();
         return;
@@ -709,7 +719,7 @@ function getAllCashesModalDt() {
             { data: "amount" },
             { data: "fee" },
             { data: "totalAmount" },
-            { data: "costDescription" },
+            { data: "costDescription", className: "wrap-text"  },
             { data: "userCreator", visible: false, searchable: false },
             {
                 data: "status",
@@ -719,7 +729,7 @@ function getAllCashesModalDt() {
                         
                         return `<button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>`;
                     } else if (data === 1) { // در دست تایید
-                        if (window.isFinancial) return `
+                        if (window.isAdminOrFinancial) return `
                             <div class="inline-flex-center gap-1">
                                 <button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 2)">تایید</button>
                                 <button class="buttonCancel3" onclick="changeStatusCash('${row.id}', 0)">برگشت</button>
@@ -732,7 +742,7 @@ function getAllCashesModalDt() {
                             </div>
                         `;
                     } else { // تایید شده
-                        if (window.isFinancial) return `
+                        if (window.isAdminOrFinancial) return `
                             <div class="inline-flex-center gap-1">
                                 <span class="fMedium" style="color: darkgreen">${row.statusTxt}</span>
                                 <button style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
@@ -764,7 +774,7 @@ function getAllCashesModalDt() {
             ...layoutDatatable,
             topEnd: {
                 pageLength: true,
-                buttons: window.isFinancial ? [
+                buttons: window.isAdminOrFinancial ? [
                     {
                         extend: "excel",
                         className: "buttonExcel px-2",
@@ -827,6 +837,34 @@ async function exportGroupCashToExcel() {
             triggerDownload(url, "تنخواه.xlsx");
             URL.revokeObjectURL(url);
             cashModalTbl.ajax.reload(null, false);
+        },
+    });
+}
+
+async function showAddCashOrderHeadModal() {
+    await modalSelector.open({
+        title: "انتخاب حواله تولید",
+        selectedIds: cashOrderHeadsSelectedIds,
+        
+        load: async ({ search, selectedIds }) => {
+            FLshowLoading();
+            let filterIds = (await axios("/Order/GetAllOrderHeadsByCurrentTamin")).data;
+            
+            if (filterIds) {
+                filterIds = [...new Set([...filterIds, ...selectedIds])];
+            }
+            
+            const res = await axios.post("/Order/GetAllOrderHeads", { search, passType: 4, selectedIds, filterIds });
+            FLshowLoading(false);
+            return res.data;
+        },
+        
+        onSubmit: ({ ids, numbers }) => {
+            cashOrderHeadsSelectedIds = ids;
+            const input = document.getElementById("cashOrderHeadInp");
+            input.value = numbers.join(", ");
+            
+            input.classList.remove("AlertReq");
         },
     });
 }

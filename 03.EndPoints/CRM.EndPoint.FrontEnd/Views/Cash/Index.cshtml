@@ -1,6 +1,8 @@
-@model bool
+@model CRM.EndPoint.FrontEnd.Models.ViewModel.Cash.CashIndexVModel
+
 @{
-    var isFinancial = Model;
+    var isFinancial = User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی");
+    var isAdmin = User.IsInRole("مدیر ارشد");
     Layout = "_Layout";
 }
 
@@ -147,70 +149,11 @@
 </div>
 
 
-
-<!-- Modal cash -->
-<div class="modal fade" id="cashModal" tabindex="-1" role="dialog" data-bs-focus="false">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-md">
-        <div class="modal-content col-12 p-2">
-            <div class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">ثبت تنخواه</div>
-            <div class="modal-body pb-2">
-                <form id="cashForm" class="d-flex flex-column gap-2">
-                    <div>
-                        <label for="cashCostTitle">عنوان هزینه:</label>
-                        <select id="cashCostTitle" class="form-select form-select-sm" name="costTitleId" required></select>
-                    </div>
-
-                    <div>
-                        <label for="cashCostCenter">مرکز هزینه:</label>
-                        <select id="cashCostCenter" class="form-select form-select-sm" name="costCenterId" required></select>
-                    </div>
-
-                    <div>
-                        <label for="cashCostDate">تاریخ هزینه:</label>
-                        <input id="cashCostDate" class="sdate form-control" name="costDate" data-mask-date required />
-                    </div>
-
-                    <div>
-                        <label for="cashAmount">مبلغ:</label>
-                        <input id="cashAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="amount" required data-currency-hint="next">
-                        <span class="currencyHint"></span>
-                    </div>
-                    <div>
-                        <label for="cashFee">کارمزد بانکی:</label>
-                        <input id="cashFee" inputmode="numeric" class="form-control currencyNumber inpAmount" placeholder="0" name="fee" data-currency-hint="next">
-                        <span class="currencyHint"></span>
-                    </div>
-
-                    <div>
-                        <label for="cashDescription">شرح هزینه:</label>
-                        <textarea id="cashDescription" class="form-control h-auto" name="costDescription" rows="3" required></textarea>
-                    </div>
-
-                    <div>
-                        <label for="cashAtt">تصویر رسید:</label>
-                        <div class="container-uploader">
-                            <input type="file" class="uploadBtn" data-varList="cashAttachments" data-showList="DivShowCashAtt" id="cashAtt" accept="*/*" multiple required />
-                            <label for="cashAtt">
-                                <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-                                <span>تصویر رسید را انتخاب یا اینجا رها کنید</span>
-                            </label>
-                            <div class="image-display" id="DivShowCashAtt"></div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-center gap-1 mt-2">
-                        <button type="button" class="buttonCancel2" style="padding-block: 4px" data-bs-dismiss="modal">انصراف</button>
-                        <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitCashModal()">ثبت</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+<partial name="~/Views/Cash/Modals/_CashModal.cshtml" model="Model" />
 
 @section Scripts {
     <script>
-        window.isFinancial = @(isFinancial ? "true" : "false");
+        window.isAdminOrFinancial = @(isFinancial || isAdmin ? "true" : "false");
     </script>
     <script src="~/js/cash.js" asp-append-version="true"></script>
 }

@@ -8,6 +8,7 @@ using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.WebPushSubscriptions.Entities;
 using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
+using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

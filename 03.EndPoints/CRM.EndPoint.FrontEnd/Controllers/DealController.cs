@@ -11,6 +11,7 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
+using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -414,6 +415,8 @@ public class DealController : Controller {
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var deal = await db.Deals.Where(f => f.Id == id).FirstOrDefaultAsync();
+            if (deal == null) return NotFound();
+
             deal.IsDeleted = true;
             deal.UserModify = user.FullName;
             deal.UserModifyID = user.Id;

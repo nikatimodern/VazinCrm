@@ -107,8 +107,6 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
             return list;
         }
-
-
         /*private string SaveFile(byte[] StrImage, string FileName, string Filetype, string folder)
         {
             string fileName = FileName + "." + Filetype;

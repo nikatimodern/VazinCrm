@@ -4,9 +4,12 @@ var filterDealConfig = {};
 var dealSearchVal = null;
 let currentDealData = {};
 let isEditMode = false;
+let canCreateCustomerTomSelect = true;
 let selectTomCustomers;
 
-
+const dealModalElm = document.getElementById("dealModal");
+const toggleExtraPanelBtn = dealModalElm.querySelector("#toggleExtraInfo");
+const extraCustomerPanel = document.getElementById("extraCustomerPanel");
 document.addEventListener("DOMContentLoaded", async () => {
     /* FLshowLoading(); */
     
@@ -43,38 +46,25 @@ const dealDropdown = Dropdown.setupDelegate({
 });
 
 
-const deleteDeal = (id) => {
+const deleteDeal = async (id) => {
     dealDropdown.close();
-    Swal.fire({
+    await confirmAlert({
         title: "حذف!",
         text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
-        icon: "warning",
-        showCancelButton: true,
-        cancelButtonColor: "#adadad",
-        confirmButtonColor: "#e64942",
-        cancelButtonText: "انصراف",
-        confirmButtonText: "بله، حذف شود",
-    }).then((willDelete) => {
-        if (willDelete.isConfirmed)
-            deleteDealOk(id);
+        confirmText: "بله، حذف شود",
+        // theme: "dark",
+        onConfirm: async () => {
+            await sendApiRequest({
+                url: "/Deal/DeleteDeal",
+                method: "DELETE",
+                params: { id },
+                successMsg: "سفارش با موفقیت حذف شد.",
+                onSuccess: getAllDeals,
+            });
+        },
     });
 };
 
-async function deleteDealOk(id) {
-    try {
-        FLshowLoading();
-        const res = await axios(`/Deal/DeleteDeal?id=${id}`);
-        
-        if (res.status === 200) {
-            await getAllDeals();
-            toastifySuccess("سفارش با موفقیت حذف شد.");
-            FLshowLoading(false);
-        }
-    } catch {
-        setTimeout(async () => await deleteDealOk(id), 3000);
-        toastifyError("خطای سرور!");
-    }
-}
 
 async function callbackFilterDeal() {
     modelDeal.filt = window[filterVarConfig].filterVar;
@@ -311,12 +301,12 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
                                 <span>تاریخچه تغییرات</span>
                             </div>
                             ${!isFinancialClosed ? `
-                                <div class="dropdown-item itemGray" style="border-top: 1px solid #e3e3e3;" onclick="editDealModal('${item.id}')">
+                                <div class="dropdown-item itemGray editDeal" style="border-top: 1px solid #e3e3e3"">
                                     <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"></path></svg>
                                     <span>ویرایش</span>
                                 </div>` : ""}
                             ${!isFinancialClosed && isAdmin ? `
-                                <div class="dropdown-item itemRed" onclick="deleteDeal('${item.id}')">
+                                <div class="dropdown-item itemRed deleteDeal">
                                     <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"></path></svg>
                                     <span>حذف</span>
                                 </div>` : ""}
@@ -329,23 +319,22 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
         
         if (item.suspend) {
             card.classList.add("suspend-deal");
-            //isAdmin = false;
             const text = isAdmin ? "مشتری این سفارش متعلق به کارشناس دیگری است، لطفاً مشخص کنید این سفارش باید به کدام کارشناس اختصاص یابد."
                 : "مشتری این سفارش متعلق به کارشناس دیگری است.";
             
             const suspendElm = `
-                        <div class="mt-3 p-2 text-center" style="background-color:rgb(216 219 231 / 78%);border-radius: 10px;">
-                            <p class="fMedium" style="font-size: 12px; color: #333;">${text}</p>
-                            ${isAdmin ? `<div class="d-flex align-items-center gap-1 mt-3 position-relative">
-                                <label for="assignUserSuspendSelect${index}" class="flex-shrink-0" style="font-size: 11px">اختصاص به کارشناس</label>
-                                <select class="w-100 assignUser-suspendSelect show-dropdown-arrow" id="assignUserSuspendSelect${index}" >
-                                </select>
-                                <button id="assignUserSuspendBtn" class="flex-center">
-                                    <svg style="width: 24px;color: #198754" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-                                </button>
-                            </div>` : ""}
-                        </div>
-                    `;
+                <div class="mt-3 p-2 text-center" style="background-color:rgb(216 219 231 / 78%);border-radius: 10px;">
+                    <p class="fMedium" style="font-size: 12px; color: #333;">${text}</p>
+                    ${isAdmin ? `<div class="d-flex align-items-center gap-1 mt-3 position-relative">
+                        <label for="assignUserSuspendSelect${index}" class="flex-shrink-0" style="font-size: 11px">اختصاص به کارشناس</label>
+                        <select class="w-100 assignUser-suspendSelect show-dropdown-arrow" id="assignUserSuspendSelect${index}" >
+                        </select>
+                        <button id="assignUserSuspendBtn" class="flex-center">
+                            <svg style="width: 24px;color: #198754" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                        </button>
+                    </div>` : ""}
+                </div>
+            `;
             
             card.insertAdjacentHTML("beforeend", suspendElm);
             
@@ -380,6 +369,9 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
         card.querySelector(".showOrders")?.addEventListener("click", () => showModalDealOrders(item));
         card.querySelector(".showInvoices")?.addEventListener("click", () => showModalDealInvoices(item));
         
+        card.querySelector(".editDeal")?.addEventListener("click", () => editDealModal(item.id, item.counts.preFactor));
+        card.querySelector(".deleteDeal")?.addEventListener("click", () => deleteDeal(item.id));
+        
         containerElm.append(card);
     });
 };
@@ -402,14 +394,16 @@ const assignUserSuspendDeal = async (dealId, userId, userFullName) => {
 };
 
 
-const editDealModal = async (id) => {
+const editDealModal = async (id, preFactorCount) => {
     FLshowLoading();
-    await toggleDealModal();
+    await openDealModal();
     try {
         const res = await axios(`/Deal/GetDeal/${id}`);
         currentDealData = res.data;
         isEditMode = true;
         mySer.convertJsonToForm(currentDealData, "formDeal");
+        
+        canCreateCustomerTomSelect = currentDealData.customerId === null || preFactorCount === 0;
         
         if (currentDealData.customerId === null) {
             const customId = `custom-${currentDealData.customerName}`;
@@ -427,34 +421,33 @@ const editDealModal = async (id) => {
     FLshowLoading(false);
 };
 
-const extraCustomerPanel = document.getElementById("extraCustomerPanel");
 let selectTomLoaded = false;
-const toggleDealModal = async () => {
+const openDealModal = async () => {
     if (!selectTomLoaded) {
         await initSelectTom();
         selectTomLoaded = true;
     }
     
-    ModalToggle("#dealModal");
+    ModalToggle(dealModalElm, "show");
+};
+
+const closeDealModal = () => {
+    ModalToggle(dealModalElm, "hide");
     isEditMode = false;
+    canCreateCustomerTomSelect = true;
     currentDealData = {};
     mySer.emptyForm("formDeal");
-    
-    if (!extraCustomerPanel.classList.contains("d-none")) {
-        extraCustomerPanel.classList.add("d-none");
-        document.querySelector("#dealModal .modal-dialog").classList.remove("modal-xl");
-    }
+    toggleExtraPanel(false);
 };
+
+dealModalElm?.addEventListener("hidden.bs.modal", closeDealModal);
 
 const submitDeal = async () => {
     if (!await mySer.CheckValidForm("mainFormDeal")) return;
     
     if (!await mySer.CheckValidForm("extraCustomerPanel")) {
         toastifyError("مشخصات حقوقی شرکت را کامل وارد کنید");
-        if (extraCustomerPanel.classList.contains("d-none")) {
-            extraCustomerPanel.classList.remove("d-none");
-            document.querySelector("#dealModal .modal-dialog").classList.add("modal-xl");
-        }
+        toggleExtraPanel(true);
         return;
     }
     try {
@@ -472,7 +465,7 @@ const submitDeal = async () => {
             toastifySuccess(isEditMode ? "با موفقیت ویرایش شد" : "سفارش جدید ثبت شد");
             FLshowLoading(false);
             
-            toggleDealModal();
+            closeDealModal();
         } else if (res.status === 201) {
             toastifyError(res.data);
             FLshowLoading(false);
@@ -498,6 +491,7 @@ const initSelectTom = async () => {
         selectOnTab: true,
         placeholder: "نام سفارش دهنده ...",
         
+        createFilter: () => canCreateCustomerTomSelect,
         create: (input, callback) => callback({ value: `custom-${input}`, text: input }),
         
         async onChange(value) {
@@ -536,8 +530,8 @@ const initSelectTom = async () => {
             currentDealData.cusAcquaintanceWayTxt = "";
             
             currentDealData.customerCode = null;
+            currentDealData.customerId = null;
             currentDealData.customerName = "";
-            // dealMobileElm.value = "";
             dealMobileElm.tomselect.clear(true);
             return true;
         },
@@ -788,22 +782,19 @@ function removeDealsTabsDesktop() {
     window.addEventListener("resize", removeDealsTabsDesktop);
 }
 
-document.getElementById("toggleExtraInfo")?.addEventListener("click", () => {
-    
-    const modalDialog = document.querySelector("#dealModal .modal-dialog");
-    const panel = document.getElementById("extraCustomerPanel");
-    
-    if (panel.classList.contains("d-none")) {
-        panel.classList.remove("d-none");
-        modalDialog.classList.add("modal-xl");
-    } else {
-        panel.classList.add("d-none");
-        modalDialog.classList.remove("modal-xl");
-    }
-    
+
+toggleExtraPanelBtn?.addEventListener("click", () => {
+    toggleExtraPanel(extraCustomerPanel.classList.contains("d-none"));
 });
 
-document.querySelectorAll("#dealModal input[name='cusJuridical']").forEach((elm) => {
+function toggleExtraPanel(show) {
+    const modalDialog = dealModalElm.querySelector(".modal-dialog");
+    
+    extraCustomerPanel.classList.toggle("d-none", !show);
+    modalDialog.classList.toggle("modal-xl", show);
+}
+
+dealModalElm.querySelectorAll("input[name='cusJuridical']").forEach((elm) => {
     elm.addEventListener("change", (e) => {
         const juridicalInfoElm = document.getElementById("juridicalInfoDeal");
         const showJuridicalInfo = Number(e.target.value) === 1;

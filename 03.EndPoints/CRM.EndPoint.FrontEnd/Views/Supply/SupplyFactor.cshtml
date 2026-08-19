@@ -137,8 +137,7 @@
             supplyFactorData = {};
 
             orderHeadsSupFactorSelectedIds = [];
-            tempSelectedIds = [];
-            tempSelectedMap.clear();
+            modalSelector.reset();
 
             mySer.emptyForm("supplyFactorForm");
 
@@ -148,6 +147,76 @@
 
         ///////////////////
         let orderHeadsSupFactorSelectedIds = [];
+
+        async function showAddOrderHeadModal() {
+            await modalSelector.open({
+                title: "انتخاب حواله تولید",
+                selectedIds: orderHeadsSupFactorSelectedIds,
+                load: async ({ search, selectedIds }) => {
+                    FLshowLoading()
+                    const supplierId = document.getElementById("supplyFactorSupplierId").value;
+
+                    let filterIds = supplierId
+                        ? await getOrderHeadIdsBySupplier(supplierId)
+                        : null;
+                    
+                    if (filterIds) {
+                        filterIds = [...new Set([...filterIds, ...selectedIds])];
+                    }
+                    
+                    const res = await axios.post("/Order/GetAllOrderHeads", { search, passType: 3, selectedIds, filterIds });
+                    FLshowLoading(false)
+                    return res.data;
+                },
+
+                onSubmit: ({ ids, numbers }) => {
+                    orderHeadsSupFactorSelectedIds = ids;
+                    const input = document.getElementById("supplyFactorOrderHead");
+
+                    input.value = numbers.join(", ");
+                    input.classList.remove("AlertReq");
+                },
+            });
+        }
+        
+        ///////////////////
+        @*let orderHeadsSupFactorSelectedIds = [];
+
+        const orderHeadSelector = new ModalSelector({
+            modal: addOrderHeadModal,
+            container: "#addOrderHeadContainer",
+            searchInput: "#addOrderHeadSearch",
+            submitButton: "#submitSelectedOrderHeads",
+            getSelectedIds: () => orderHeadsSupFactorSelectedIds,
+            setSelectedIds: ids => orderHeadsSupFactorSelectedIds = ids,
+            getData: async ({ search, selectedIds }) => {
+                const supplierId = document.getElementById("supplyFactorSupplierId").value;
+
+                let filterIds = null;
+                if (supplierId) {
+                    filterIds = await getOrderHeadIdsBySupplier(supplierId);
+                }
+
+                const model = {
+                    search,
+                    passType: 3,
+                    selectedIds,
+                    filterIds,
+                };
+
+                const res = await axios.post("/Order/GetAllOrderHeads", model);
+                return res.data;
+            },
+        });
+        async function showAddOrderHeadModal() {
+
+            await orderHeadSelector.show();
+
+            // اگر لازم داری loading را هم اینجا می‌شود اضافه کرد
+        }*@;
+
+        ///////////////////
+        @*let orderHeadsSupFactorSelectedIds = [];
         let orderHeadsFilterIds = null;
         let tempSelectedIds = [];
         let tempSelectedMap = new Map(); // id -> number
@@ -236,6 +305,7 @@
             const anySelected = tempSelectedIds.length > 0;
             addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !anySelected);
         }
+        *@;
 
         /////////////////////
 
@@ -306,28 +376,23 @@
 
 
         async function showEditSupplyFactorModal(id) {
-            FLshowLoading();
-            await showSupplyFactorModal();
-
-            try {
-                const res = await axios(`/Supply/GetSupplyFactor/${id}`);
-                if (res.status === 200) {
+            await sendApiRequest({
+                url: "/Supply/GetSupplyFactor",
+                params: { id },
+                successMsg: null,
+                onSuccess: async (res) => {
                     supplyFactorData = res.data.supplyFactor;
-                    const orderSerials = res.data.orderSerials;
-                    mySer.convertJsonToForm(supplyFactorData, "supplyFactorForm");
-                    orderHeadsSupFactorSelectedIds = supplyFactorData.supplyFactorOrderHeads.map(o => o.orderHeadId);
+                    await showSupplyFactorModal();
 
-                    const inpElm = document.getElementById("supplyFactorOrderHead");
-                    inpElm.value = orderSerials.join(", ");
+                    mySer.convertJsonToForm(supplyFactorData, "supplyFactorForm");
+
+                    orderHeadsSupFactorSelectedIds = supplyFactorData.supplyFactorOrderHeads.map(o => o.orderHeadId);
+                    document.getElementById("supplyFactorOrderHead").value = res.data.orderSerials.join(", ");
+
                     supplyFactorAttachments = res.data.attachments;
                     FileUpReload("supplyFactorAtt");
-                }
-
-            } catch (err) {
-                console.log(err);
-            } finally {
-                FLshowLoading(false);
-            }
+                },
+            });
         }
 
 

@@ -17,6 +17,7 @@ using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.Core.Domain.Transfers.Entities;
 using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
+using CRM.Infrastructures.Sql;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Identity;

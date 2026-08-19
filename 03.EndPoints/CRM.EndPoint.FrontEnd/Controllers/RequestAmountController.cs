@@ -17,6 +17,7 @@ using CRM.EndPoint.FrontEnd.Models.ViewModel.Amount;
 using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
+using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -108,7 +109,7 @@ public class RequestAmountController : Controller {
                 .FirstOrDefaultAsync(x => x.Id == model.Id);
             if (entity == null) return NotFound();
 
-            await _logSystemService.LogChange(entity, model, LogActionEnum.ویرایش, user, ["RequestAmountSupplyFactor"]);
+            await _logSystemService.LogChange(entity, model, LogActionEnum.ویرایش, user, ["RequestAmountOrderHeads"]);
 
             db.Entry(entity).CurrentValues.SetValues(model);
             entity.RequestAmountSupplyFactor = model.RequestAmountSupplyFactor;

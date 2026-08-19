@@ -34,6 +34,11 @@ namespace CRM.Infrastructures.Sql.Orders.Configs {
                 .WithMany(x => x.OrderHeads)
                 .HasForeignKey(x => x.DealId)
                 .OnDelete(DeleteBehavior.NoAction);
+            
+            builder.HasMany(f => f.CashOrderHeads)
+                .WithOne(f => f.OrderHead)
+                .HasForeignKey(f => f.OrderHeadId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

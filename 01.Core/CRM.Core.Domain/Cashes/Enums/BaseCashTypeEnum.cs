@@ -2,6 +2,5 @@ namespace CRM.Core.Domain.Cashes.Enums;
 
 public enum BaseCashTypeEnum {
     عمومی = 0,
-    تامین = 1,
-    هردو = 2
+    تامین = 1
 }

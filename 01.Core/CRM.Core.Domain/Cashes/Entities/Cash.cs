@@ -41,5 +41,7 @@ namespace CRM.Core.Domain.Cashes.Entities {
         public Guid? BankAccountId { get; set; }
         public string BankAccountTxt { get; set; }
 
+        public ICollection<CashOrderHead> CashOrderHeads { get; set; }
+
     }
 }

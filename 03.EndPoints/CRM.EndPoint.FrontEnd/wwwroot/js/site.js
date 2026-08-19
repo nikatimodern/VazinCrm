@@ -116,6 +116,301 @@ async function sendApiRequest(
     }
 }
 
+
+/**
+ * Provides a reusable modal-based selector component for loading,
+ * searching, selecting, restoring, and submitting items.
+ *
+ * Supports both checkbox and radio inputs and allows the caller
+ * to define custom behavior through callbacks.
+ */
+class ModalSelector {
+    
+    /**
+     * Creates a new ModalSelector instance.
+     *
+     * @param {Object} options
+     * @param {string} [options.modal="#modalSelector"] Modal element selector.
+     * @param {string} [options.title="#modalSelectorTitle"] Title element selector.
+     * @param {string} [options.search="#modalSelectorSearch"] Search input selector.
+     * @param {string} [options.container="#modalSelectorContainer"] Container selector.
+     * @param {string} [options.submit="#modalSelectorSubmit"] Submit button selector.
+     * @param {string} [options.cancel="#modalSelectorCancel"] Cancel button selector.
+     */
+    constructor(options = {}) {
+        this.modal = document.querySelector(options.modal ?? "#modalSelector");
+        
+        if (!this.modal)
+            throw new Error("ModalSelector: modal element was not found.");
+        
+        this.titleElement = this.modal.querySelector(options.title ?? "#modalSelectorTitle");
+        this.searchInput = this.modal.querySelector(options.search ?? "#modalSelectorSearch");
+        this.container = this.modal.querySelector(options.container ?? "#modalSelectorContainer");
+        this.submitButton = this.modal.querySelector(options.submit ?? "#modalSelectorSubmit");
+        this.cancelButton = this.modal.querySelector(options.cancel ?? "#modalSelectorCancel");
+        
+        this.tempSelectedIds = [];
+        this.tempSelectedMap = new Map();
+        
+        this.config = null;
+        
+        this.bindEvents();
+    }
+    
+    
+    /**
+     * Opens the selector modal using the provided configuration.
+     *
+     * @param {Object} config Selector configuration.
+     * @param {string} [config.title] Modal title.
+     * @param {Array<string|number>} [config.selectedIds=[]] Initially selected IDs.
+     * @param {Function} config.load Function responsible for loading the modal content.
+     * @param {Function} [config.onSubmit] Callback executed after successful submission.
+     * @param {Function} [config.onCancel] Callback executed when the modal is canceled.
+     * @param {Function} [config.onSelectionChange] Callback executed whenever selection changes.
+     * @param {boolean} [config.clearSearch=true] Whether to clear the search input when opening.
+     */
+    async open(config) {
+        
+        if (!config || typeof config.load !== "function") {
+            throw new Error(
+                "ModalSelector: 'load' callback is required.",
+            );
+        }
+        
+        this.config = config;
+        
+        this.tempSelectedIds = [...(config.selectedIds ?? [])].map(String);
+        
+        this.tempSelectedMap.clear();
+        if (this.titleElement)
+            this.titleElement.textContent = config.title ?? "";
+        
+        if (config.clearSearch !== false)
+            this.searchInput.value = "";
+        
+        this.updateSubmitButton();
+        
+        await this.load();
+        
+        ModalToggle(this.modal);
+    }
+    
+    
+    /**
+     * Loads selector content using the configured load callback.
+     *
+     * @param {string} [search=""] Search value.
+     * @returns {Promise<void>}
+     */
+    async load(search = "") {
+        if (!this.config?.load) {
+            throw new Error("ModalSelector: no active configuration. Call open() before loading.");
+        }
+        
+        const result = await this.config.load({
+            search,
+            selectedIds: [...this.tempSelectedIds],
+        });
+        
+        this.container.innerHTML = typeof result === "string" ? result : result?.data ?? "";
+        
+        this.restoreSelected();
+    }
+    
+    
+    /**
+     * Binds all modal events.
+     *
+     * @returns {void}
+     */
+    bindEvents() {
+        
+        this.container.addEventListener("change", event => {
+            
+            const input = event.target.closest("input[type='checkbox'], input[type='radio']");
+            
+            if (!input) return;
+            
+            if (input.type === "radio")
+                this.handleRadio(input);
+            else
+                this.handleCheckbox(input);
+            
+            this.updateSubmitButton();
+            
+            this.config?.onSelectionChange?.(this.getSelection());
+        });
+        
+        
+        this.searchInput.addEventListener("keyup", async event => {
+            if (event.key !== "Enter") return;
+            
+            toggleElementsDisabled(event.target);
+            
+            try {
+                await this.load(event.target.value.trim());
+            } finally {
+                toggleElementsDisabled(event.target, false);
+                
+                event.target.focus();
+            }
+        });
+        
+        
+        this.submitButton.addEventListener("click", () => this.submit());
+        this.cancelButton.addEventListener("click", () => this.cancel());
+    }
+    
+    
+    /**
+     * Handles selection of a radio input.
+     *
+     * @param {HTMLInputElement} input Selected radio input.
+     * @returns {void}
+     */
+    handleRadio(input) {
+        this.tempSelectedIds = [String(input.value)];
+        
+        this.tempSelectedMap.clear();
+        
+        this.setSelectedItem(input);
+    }
+    
+    
+    /**
+     * Handles selection or deselection of a checkbox.
+     *
+     * @param {HTMLInputElement} input Changed checkbox input.
+     * @returns {void}
+     */
+    handleCheckbox(input) {
+        const id = String(input.value);
+        
+        if (input.checked) {
+            
+            if (!this.tempSelectedIds.includes(id)) {
+                this.tempSelectedIds.push(id);
+                this.setSelectedItem(input);
+            }
+            
+            return;
+        }
+        
+        const index = this.tempSelectedIds.indexOf(id);
+        
+        if (index !== -1)
+            this.tempSelectedIds.splice(index, 1);
+        
+        this.tempSelectedMap.delete(id);
+    }
+    
+    
+    /**
+     * Stores metadata for a selected input.
+     *
+     * @param {HTMLInputElement} input Selected input.
+     * @returns {void}
+     */
+    setSelectedItem(input) {
+        
+        this.tempSelectedMap.set(
+            String(input.value),
+            input.dataset.number ?? input.value,
+        );
+    }
+    
+    
+    /**
+     * Restores selected items after the content has been reloaded.
+     *
+     * @returns {void}
+     */
+    restoreSelected() {
+        
+        this.container.querySelectorAll("input[type='checkbox'], input[type='radio']").forEach(input => {
+            const id = String(input.value);
+            
+            if (!this.tempSelectedIds.includes(id)) return;
+            
+            input.checked = true;
+            this.setSelectedItem(input);
+        });
+        
+        this.updateSubmitButton();
+    }
+    
+    
+    /**
+     * Updates the visibility of the submit button based on the current selection.
+     *
+     * @returns {void}
+     */
+    updateSubmitButton() {
+        this.submitButton.classList.toggle("d-none", this.tempSelectedIds.length === 0);
+    }
+    
+    
+    /**
+     * Returns the current temporary selection.
+     *
+     * @returns {{ids: string[], map: Map<string, string>, numbers: string[]}}
+     */
+    getSelection() {
+        
+        return {
+            ids: [...this.tempSelectedIds],
+            map: new Map(this.tempSelectedMap),
+            numbers: [...this.tempSelectedMap.values()],
+        };
+    }
+    
+    
+    /**
+     * Submits the current selection and executes the configured submit callback.
+     *
+     * @returns {void}
+     */
+    submit() {
+        if (this.tempSelectedIds.length === 0) return;
+        
+        const selection = this.getSelection();
+        this.config?.onSubmit?.(selection);
+        
+        ModalToggle(this.modal);
+    }
+    
+    
+    /**
+     * Cancels the current selection and closes the modal.
+     *
+     * @returns {void}
+     */
+    cancel() {
+        const selection = this.getSelection();
+        this.config?.onCancel?.(selection);
+        
+        ModalToggle(this.modal);
+    }
+    
+    /**
+     * Resets the temporary selection state and clears the current selection.
+     *
+     * @returns {void}
+     */
+    reset() {
+        this.tempSelectedIds = [];
+        this.tempSelectedMap.clear();
+        this.config = null;
+        
+        if (this.searchInput)
+            this.searchInput.value = "";
+        
+        this.updateSubmitButton();
+    }
+}
+
+
 class SelectionManager {
     /**
      * @param {Object} options
@@ -3903,6 +4198,7 @@ async function deleteItem(options) {
  * @param {string} [options.title="آیا مطمئن هستید؟"] Dialog title.
  * @param {string} [options.text=""] Dialog message.
  * @param {"warning"|"error"|"success"|"info"|"question"} [options.icon="warning"] Alert icon.
+ * @param {"light"|"dark"} [options.theme="light"] Theme of the popup.
  * @param {string} [options.confirmText] Confirm button text. If omitted, a default text is used based on the icon.
  * @param {string} [options.cancelText="انصراف"] Cancel button text.
  * @param {string} [options.confirmButtonColor] Overrides the default confirm button color.
@@ -3916,6 +4212,7 @@ async function confirmAlert(
         title = "آیا مطمئن هستید؟",
         text = "",
         icon = "warning",
+        theme = "light",
         confirmText,
         cancelText = "انصراف",
         confirmButtonColor,
@@ -3924,34 +4221,35 @@ async function confirmAlert(
         onCancel,
     } = {}) {
     
-    const primaryTheme = {
+    const primaryButtonTheme = {
         color: "#0d6efd",
         confirmText: "تایید",
     };
     
-    const dangerTheme = {
+    const dangerButtonTheme = {
         color: "#e64942",
         confirmText: "بله، انجام شود",
     };
     
-    const themes = {
-        success: primaryTheme,
-        info: primaryTheme,
-        question: primaryTheme,
-        warning: dangerTheme,
-        error: dangerTheme,
+    const buttonThemes = {
+        success: primaryButtonTheme,
+        info: primaryButtonTheme,
+        question: primaryButtonTheme,
+        warning: dangerButtonTheme,
+        error: dangerButtonTheme,
     };
     
-    const theme = themes[icon] ?? dangerTheme;
+    const buttonTheme = buttonThemes[icon] ?? dangerButtonTheme;
     
     const result = await Swal.fire({
         title,
         text,
         icon,
+        theme,
         showCancelButton: true,
-        confirmButtonColor: confirmButtonColor ?? theme.color,
+        confirmButtonColor: confirmButtonColor ?? buttonTheme.color,
         cancelButtonColor,
-        confirmButtonText: confirmText ?? theme.confirmText,
+        confirmButtonText: confirmText ?? buttonTheme.confirmText,
         cancelButtonText: cancelText,
     });
     
@@ -3967,6 +4265,74 @@ async function confirmAlert(
     
     return false;
 }
+
+async function confirmDangerousDelete(
+    {
+        title = "حذف دائمی اطلاعات",
+        text = "این عملیات قابل بازگشت نیست. آیا از حذف این اطلاعات اطمینان دارید؟",
+        confirmText = "بله، حذف دائمی شود",
+        cancelText = "انصراف",
+    } = {}) {
+    
+    const result = await Swal.fire({
+        title,
+        html: `
+            <div style="font-size:15px; line-height:2;">
+                <div style="color:#dc3545; font-weight:bold; margin-bottom:8px;">
+                    ⚠️ هشدار مهم
+                </div>
+
+                <div>${text}</div>
+
+                <div style="
+                    margin-top:15px;
+                    padding:10px;
+                    background:#fff3cd;
+                    border:1px solid #ffe69c;
+                    border-radius:6px;
+                    color:#664d03;
+                ">
+                    این عملیات <strong>قابل بازگشت نیست</strong>.
+                </div>
+
+                <div style="margin-top:18px;">
+                    برای تأیید، عبارت
+                    <strong>حذف</strong>
+                    را وارد کنید:
+                </div>
+            </div>
+        `,
+        input: "text",
+        inputPlaceholder: "حذف",
+        inputAttributes: {
+            autocomplete: "off",
+        },
+        showCancelButton: true,
+        
+        confirmButtonColor: "#dc3545",
+        cancelButtonColor: "#adadad",
+        
+        confirmButtonText: "بله، حذف دائمی شود",
+        cancelButtonText: "انصراف",
+        
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        
+        preConfirm: (value) => {
+            if (value?.trim() !== "حذف") {
+                Swal.showValidationMessage(
+                    "برای تأیید باید عبارت «حذف» را وارد کنید.",
+                );
+                return false;
+            }
+            
+            return true;
+        },
+    });
+    
+    return result.isConfirmed;
+}
+
 
 function renderMoneyHtml(value, { currency = "ريال", empty = "-", className = "" } = {}) {
     if (value == null || Number.isNaN(Number(value)))
