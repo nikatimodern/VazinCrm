@@ -205,6 +205,9 @@ class ModalSelector {
      * @returns {Promise<void>}
      */
     async load(search = "") {
+        if (!this.config?.load) {
+            throw new Error("ModalSelector: no active configuration. Call open() before loading.");
+        }
         
         const result = await this.config.load({
             search,
@@ -390,7 +393,24 @@ class ModalSelector {
         
         ModalToggle(this.modal);
     }
+    
+    /**
+     * Resets the temporary selection state and clears the current selection.
+     *
+     * @returns {void}
+     */
+    reset() {
+        this.tempSelectedIds = [];
+        this.tempSelectedMap.clear();
+        this.config = null;
+        
+        if (this.searchInput)
+            this.searchInput.value = "";
+        
+        this.updateSubmitButton();
+    }
 }
+
 
 class SelectionManager {
     /**

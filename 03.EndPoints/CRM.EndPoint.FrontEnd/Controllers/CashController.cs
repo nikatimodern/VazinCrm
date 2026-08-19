@@ -20,6 +20,7 @@ using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
@@ -47,11 +48,17 @@ public class CashController : Controller {
     }
 
     [Authorize(Roles = "مدیر ارشد,تنخواه دار,مدیر مالی,کارشناس مالی")]
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
-        var isFinancial = User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی") || User.IsInRole("مدیر ارشد");
-        return View(isFinancial);
+        var isTaminUser = User.IsInRole("مدیر تامین") || User.IsInRole("کارشناس تامین");
+        var model = new CashIndexVModel {
+            IsTaminUser = isTaminUser,
+            CashCenters = await GetAllCashCenters(),
+            CashTitles = await GetAllCashTitles(isTaminUser)
+        };
+        return View(model);
     }
+
 
     [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
     public IActionResult Cashier()
@@ -69,47 +76,40 @@ public class CashController : Controller {
         try
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
-            var isNewCash = model.Id == Guid.Empty;
-            Cash oldCash = null;
-
-            if (isNewCash)
-            {
-                model.UserCreator = user.FullName;
-                model.UserCreatorID = user.Id;
-            } else
-            {
-                oldCash = await db.Cashes.Where(f => f.Id == model.Id).AsNoTracking().FirstOrDefaultAsync();
-                model.ModifyDate = DateTime.Now;
-                model.ModifyDateTxt = dtService.GetDateTimePersian();
-                model.UserModify = user.FullName;
-                model.UserModifyID = user.Id;
-            }
 
             model.CostDateMiladi = dtService.GetDateMiladi(model.CostDate) ?? DateTime.Now;
             model.StatusTxt = model.Status.ToString().Replace("_", " ");
 
-            db.Cashes.Update(model);
-            if (!isNewCash)
-                db.Entry(model).Property(f => f.Serial).IsModified = false;
-
-            await db.SaveChangesAsync();
-
-            if (isNewCash)
+            if (model.Id == Guid.Empty)
             {
+                model.UserCreator = user.FullName;
+                model.UserCreatorID = user.Id;
+                db.Cashes.Add(model);
+
+                await db.SaveChangesAsync();
                 await logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
             } else
             {
-                await logSystemService.LogChange(oldCash, model, LogActionEnum.ویرایش, user);
+                var oldCash = await db.Cashes.Include(f => f.CashOrderHeads).FirstOrDefaultAsync(f => f.Id == model.Id);
+                model.ModifyDate = DateTime.Now;
+                model.ModifyDateTxt = dtService.GetDateTimePersian();
+                model.UserModify = user.FullName;
+                model.UserModifyID = user.Id;
+
+                await logSystemService.LogChange(oldCash, model, LogActionEnum.ویرایش, user, ["CashOrderHeads"]);
+
+                db.Entry(model).Property(f => f.Serial).IsModified = false;
+                db.Entry(oldCash).CurrentValues.SetValues(model);
+                oldCash.CashOrderHeads = model.CashOrderHeads;
             }
 
             var attach = fileSaver.SaveAttachments(model.Attachments, _AttachType.Cash);
-            foreach (var att in attach)
+            foreach (var att in attach ?? [])
             {
                 att.EntityId = model.Id;
             }
 
             db.Attachments.UpdateRange(attach);
-
 
             await SyncCashAccountancyDebit(model, user);
 
@@ -170,9 +170,12 @@ public class CashController : Controller {
     {
         try
         {
-            var data = await db.Cashes.Where(f => f.Id == id).AsNoTracking()
+            var data = await db.Cashes.Where(f => f.Id == id)
+                .AsNoTracking()
+                .Include(f => f.CashOrderHeads)
                 .Select(c => new {
                     Cash = c,
+                    OrderHeadSerials = c.CashOrderHeads.Select(f => f.OrderHead.OrderNumber).ToList(),
                     Attachments = db.Attachments
                         .Where(a => a.EntityId == c.Id && a._AttachType == _AttachType.Cash)
                         .ToList()
@@ -636,6 +639,8 @@ public class CashController : Controller {
 
             var data = await query.ToListAsync();
 
+            await AppendOrderHeadNumbersToCashDescriptions(data);
+
             return Json(new {
                 draw,
                 recordsTotal,
@@ -648,6 +653,31 @@ public class CashController : Controller {
         catch (Exception ex)
         {
             return BadRequest(ex.Message);
+        }
+    }
+
+    private async Task AppendOrderHeadNumbersToCashDescriptions(List<Cash> cashes)
+    {
+        var cashIds = cashes.Select(x => x.Id).ToList();
+
+        var orderNumbers = await db.CashOrderHeads.AsNoTracking()
+            .Where(x => cashIds.Contains(x.CashId))
+            .Select(x => new {
+                x.CashId,
+                x.OrderHead.OrderNumber
+            })
+            .ToListAsync();
+
+        var orderNumbersLookup = orderNumbers.ToLookup(x => x.CashId, x => x.OrderNumber);
+
+        foreach (var cash in cashes)
+        {
+            var numbers = orderNumbersLookup[cash.Id].ToList();
+
+            if (numbers.Count > 0)
+            {
+                cash.CostDescription += Environment.NewLine + $"(حواله تولید: {string.Join("، ", numbers)})";
+            }
         }
     }
 
@@ -1002,19 +1032,43 @@ public class CashController : Controller {
         }
     }
 
+
+    //    BaseCashCenter
+    private async Task<List<SelectOptionDto<Guid>>> GetAllCashCenters()
+    {
+        var query = db.BaseCenterCashes.AsNoTracking();
+
+        var data = await query.Select(f => new SelectOptionDto<Guid> {
+            Value = f.Id,
+            Text = f.Title
+        }).ToListAsync();
+
+        return data;
+    }
+
+    //    BaseCash
+    private async Task<List<SelectOptionDto<Guid>>> GetAllCashTitles(bool isTaminUser)
+    {
+        var query = db.BaseCashes
+            .Where(f => isTaminUser
+                ? f.BaseCashType == BaseCashTypeEnum.تامین || f.BaseCashType == BaseCashTypeEnum.عمومی
+                : f.BaseCashType == BaseCashTypeEnum.عمومی
+            ).AsNoTracking();
+
+        var data = await query.Select(f => new SelectOptionDto<Guid> {
+            Value = f.Id,
+            Text = f.CostTitle
+        }).ToListAsync();
+
+        return data;
+    }
+
     //    BaseCashCenter
     public async Task<IActionResult> GetAllBaseCashCenter()
     {
         try
         {
-            var query = db.BaseCenterCashes.AsNoTracking();
-
-
-            var data = await query.Select(f => new SelectOptionDto<Guid> {
-                Value = f.Id,
-                Text = f.Title
-            }).ToListAsync();
-
+            var data = await GetAllCashCenters();
             return Ok(data);
         }
         catch (Exception e)
@@ -1028,22 +1082,8 @@ public class CashController : Controller {
     {
         try
         {
-            var user = await userManager.GetUserAsync(HttpContext.User);
-            var roles = await userManager.GetRolesAsync(user);
-
-            var targetType = roles.Contains("مدیر تامین") || roles.Contains("کارشناس تامین")
-                ? BaseCashTypeEnum.تامین
-                : BaseCashTypeEnum.عمومی;
-
-            var query = db.BaseCashes
-                .Where(f => f.BaseCashType == targetType || f.BaseCashType == BaseCashTypeEnum.هردو)
-                .AsNoTracking();
-
-            var data = await query.Select(f => new SelectOptionDto<Guid> {
-                Value = f.Id,
-                Text = f.CostTitle
-            }).ToListAsync();
-
+            var isTaminUser = User.IsInRole("مدیر تامین") || User.IsInRole("کارشناس تامین");
+            var data = await GetAllCashTitles(isTaminUser);
             return Ok(data);
         }
         catch (Exception e)

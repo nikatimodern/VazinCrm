@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Cashes.Enums;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using CRM.EndPoint.FrontEnd.Services.AI;
 using CRM.EndPoint.FrontEnd.Services.Asterisk;
@@ -68,12 +69,21 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
+                var baseCashes = await db.BaseCashes.IgnoreQueryFilters().ToListAsync();
+                foreach (var baseCash in baseCashes)
+                {
+                    if ((int)baseCash.BaseCashType == 2)
+                    {
+                        baseCash.BaseCashType = BaseCashTypeEnum.تامین;
+                    }
+                    baseCash.BaseCashTypeTxt = Enum.IsDefined(baseCash.BaseCashType) ? baseCash.BaseCashType.ToString() : "-";
+                }
 
 
                 /*const string path = "/var/spool/asterisk/monitor/2026/07/18/q-0006-9124606687-20260718-145823-1784370449.414873.wav";
                 var stream = await issabelService.GetAudioWithRetry(path);
                 stream = await issabelService.ConvertToFlac(stream);*/
-                //await db.SaveChangesAsync();
+                await db.SaveChangesAsync();
                 await trans.CommitAsync();
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();

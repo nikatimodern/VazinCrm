@@ -109,7 +109,7 @@ public class RequestAmountController : Controller {
                 .FirstOrDefaultAsync(x => x.Id == model.Id);
             if (entity == null) return NotFound();
 
-            await _logSystemService.LogChange(entity, model, LogActionEnum.ویرایش, user, ["RequestAmountSupplyFactor"]);
+            await _logSystemService.LogChange(entity, model, LogActionEnum.ویرایش, user, ["RequestAmountOrderHeads"]);
 
             db.Entry(entity).CurrentValues.SetValues(model);
             entity.RequestAmountSupplyFactor = model.RequestAmountSupplyFactor;

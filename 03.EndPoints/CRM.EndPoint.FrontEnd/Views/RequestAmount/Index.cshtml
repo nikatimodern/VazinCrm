@@ -97,8 +97,6 @@
 
 @section Scripts {
     <script>
-        let selectOrderHeadType;  // 3: checkBox  4: radio
-
         let modelRequestAmount = { filt: null, serVal: null };
         var filterRequestAmountConfig = {};
         var requestAmountSearchVal = null;
@@ -120,11 +118,6 @@
 
             const requestAmountRadios = document.querySelectorAll("input[type='radio'][name='requestAmountFilter']");
             requestAmountRadios.forEach(elm => elm.addEventListener("change", async () => await getAllRequestAmount()));
-        });
-
-
-        document.addEventListener("settingReady", () => {
-            selectOrderHeadType = setting.multiSelectOrderHeadsInRequestAmount ? 3 : 4;
         });
 
 
@@ -157,179 +150,6 @@
         };
 
 
-        ////////////////////////////////////////////////////
-        @* let orderHeadsSelectedIds = []; *@
-        const modalSelector1 = new ModalSelector();
-
-        async function showAddOrderHeadModal() {
-            if (!selectOrderHeadType) return;
-
-            await modalSelector1.open({
-                title: "انتخاب حواله تولید",
-                selectedIds: orderHeadsSelectedIds,
-
-                load: async ({ search, selectedIds }) => {
-                    const filterIds = (await axios("/Order/GetAllOrderHeadsByCurrentTamin")).data;
-
-                    const res = await axios.post("/Order/GetAllOrderHeads", { search, passType: selectOrderHeadType, selectedIds, filterIds });
-                    return res.data;
-                },
-
-                onSubmit: ({ ids, numbers }) => {
-                    orderHeadsSelectedIds = ids;
-                    const input = document.getElementById("reqAmountOrderHead");
-                    input.value = numbers.join(", ");
-
-                    input.classList.remove("AlertReq");
-                },
-            });
-        }
-        ////////////////////////////////////////////////////
-        @*let orderHeadsSelectedIds = [];
-
-        const addOrderHeadModal = document.getElementById("addOrderHeadModal");
-
-        const orderHeadSelector = new ModalSelector({
-            modal: addOrderHeadModal,
-            container: "#addOrderHeadContainer",
-            searchInput: "#addOrderHeadSearch",
-            submitButton: "#submitSelectedOrderHeads",
-            getSelectedIds: () => orderHeadsSelectedIds,
-            setSelectedIds: ids => orderHeadsSelectedIds = ids,
-            getData: async ({ search, selectedIds }) => {
-
-                const filterIds = (await axios("/Order/GetAllOrderHeadsByCurrentTamin")).data;
-
-                const model = {
-                    search,
-                    passType: selectOrderHeadType,
-                    selectedIds,
-                    filterIds,
-                };
-
-                const res = await axios.post("/Order/GetAllOrderHeads", model);
-
-                return res.data;
-            },
-        });
-
-        async function showAddOrderHeadModal() {
-
-            if (!selectOrderHeadType)
-                return;
-
-            await orderHeadSelector.show();
-        }*@;
-
-
-        ////////////////////////////////////////////////////
-        @*let orderHeadsFilterIds = null;
-        let tempSelectedIds = [];
-        let tempSelectedMap = new Map(); // id -> number
-        const addOrderHeadModal = document.getElementById("addOrderHeadModal");
-        async function showAddOrderHeadModal() {
-            if (!selectOrderHeadType) return;
-            tempSelectedMap.clear();
-            tempSelectedIds = [...orderHeadsSelectedIds];
-
-            FLshowLoading();
-            orderHeadsFilterIds = (await axios(`/Order/GetAllOrderHeadsByCurrentTamin`)).data;
-            await getAllOrderHeads();
-            FLshowLoading(false);
-
-            // const supplierId = addReqAmountModal.querySelector("#reqAmountSupplierId").value;
-            // if (supplierId) {
-            //     FLshowLoading();
-            //     orderHeadsFilterIds = await getOrderHeadIdsBySupplier(supplierId);
-            //     await getAllOrderHeads();
-            //     FLshowLoading(false);
-            // } else {
-            //     FLshowLoading();
-            //     await getAllOrderHeads();
-            //     FLshowLoading(false);
-            // }
-
-            // await getAllOrderHeads();
-            toggleAddOrderHeadModal();
-        }
-
-        function toggleAddOrderHeadModal() {
-            addOrderHeadModal.querySelector("#addOrderHeadSearch").value = "";
-            ModalToggle(addOrderHeadModal);
-        }
-
-        const getAllOrderHeads = async (search = "") => {
-            const model = { search, passType: selectOrderHeadType, selectedIds: tempSelectedIds, filterIds: orderHeadsFilterIds };
-            const res = await axios.post(`/Order/GetAllOrderHeads`, model);
-            addOrderHeadModal.querySelector("#addOrderHeadContainer").innerHTML = res.data;
-            restoreSelectedOrderHeads();
-        };
-
-        addOrderHeadModal.querySelector("#addOrderHeadContainer").addEventListener("change", (e) => {
-            const inp = e.target.closest("input");
-            if (!inp) return;
-
-            inp.type === "radio" ? handleRadio(inp) : handleCheckbox(inp);
-
-            const anySelected = tempSelectedIds.length > 0;
-            addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !anySelected);
-        });
-
-        function handleRadio(inp) {
-            tempSelectedIds = [inp.value];
-            tempSelectedMap.clear();
-            tempSelectedMap.set(inp.value, inp.dataset.number);
-        }
-
-        function handleCheckbox(inp) {
-            if (inp.checked) {
-                if (!tempSelectedIds.includes(inp.value)) {
-                    tempSelectedIds.push(inp.value);
-                    tempSelectedMap.set(inp.value, inp.dataset.number);
-                }
-            } else {
-                const i = tempSelectedIds.indexOf(inp.value);
-                if (i !== -1) tempSelectedIds.splice(i, 1);
-                tempSelectedMap.delete(inp.value);
-            }
-        }
-
-        const submitSelectedOrderHeads = () => {
-            orderHeadsSelectedIds = [...tempSelectedIds];
-
-            const inpElm = document.getElementById("reqAmountOrderHead");
-            inpElm.value = [...tempSelectedMap.values()].join(", ");
-            inpElm.classList.remove("AlertReq");
-
-            ModalToggle(addOrderHeadModal);
-        };
-
-
-        addOrderHeadModal.querySelector("#addOrderHeadSearch").addEventListener("keyup", async (e) => {
-            if (e.key === "Enter") {
-                toggleElementsDisabled(e.target);
-                await getAllOrderHeads(e.target.value.trim());
-                toggleElementsDisabled(e.target, false);
-                e.target.focus();
-            }
-        });
-
-
-        function restoreSelectedOrderHeads() {
-            addOrderHeadModal.querySelectorAll("#addOrderHeadContainer input").forEach(inp => {
-                if (tempSelectedIds.includes(inp.value)) {
-                    inp.checked = true;
-                    tempSelectedMap.set(inp.value, inp.dataset.number);
-                }
-            });
-
-            const anySelected = tempSelectedIds.length > 0;
-            addOrderHeadModal.querySelector("#submitSelectedOrderHeads").classList.toggle("d-none", !anySelected);
-        }
-        *@;
-
-
-        ////////////////////////////////////////////////////
         const requestSelection = new SelectionManager({
             container: "#requestAmountContainer",
             itemSelector: ".layered-card",
@@ -343,4 +163,6 @@
             },
         });
     </script>
+
+    <script src="~/js/requestAmount.js" asp-append-version="true"></script>
 }

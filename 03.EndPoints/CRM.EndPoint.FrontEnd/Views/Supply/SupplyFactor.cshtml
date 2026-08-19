@@ -137,9 +137,8 @@
             supplyFactorData = {};
 
             orderHeadsSupFactorSelectedIds = [];
-            tempSelectedIds = [];
-            tempSelectedMap.clear();
-            
+            modalSelector.reset();
+
             mySer.emptyForm("supplyFactorForm");
 
             toggleElementsDisabled(document.getElementById("showAddOrderHeadBtn"), true);
@@ -148,21 +147,25 @@
 
         ///////////////////
         let orderHeadsSupFactorSelectedIds = [];
-        const modalSelector = new ModalSelector();
 
         async function showAddOrderHeadModal() {
             await modalSelector.open({
                 title: "انتخاب حواله تولید",
                 selectedIds: orderHeadsSupFactorSelectedIds,
                 load: async ({ search, selectedIds }) => {
+                    FLshowLoading()
                     const supplierId = document.getElementById("supplyFactorSupplierId").value;
 
-                    const filterIds = supplierId
+                    let filterIds = supplierId
                         ? await getOrderHeadIdsBySupplier(supplierId)
                         : null;
-
+                    
+                    if (filterIds) {
+                        filterIds = [...new Set([...filterIds, ...selectedIds])];
+                    }
+                    
                     const res = await axios.post("/Order/GetAllOrderHeads", { search, passType: 3, selectedIds, filterIds });
-
+                    FLshowLoading(false)
                     return res.data;
                 },
 
@@ -175,6 +178,7 @@
                 },
             });
         }
+        
         ///////////////////
         @*let orderHeadsSupFactorSelectedIds = [];
 
@@ -372,28 +376,23 @@
 
 
         async function showEditSupplyFactorModal(id) {
-            FLshowLoading();
-            await showSupplyFactorModal();
-
-            try {
-                const res = await axios(`/Supply/GetSupplyFactor/${id}`);
-                if (res.status === 200) {
+            await sendApiRequest({
+                url: "/Supply/GetSupplyFactor",
+                params: { id },
+                successMsg: null,
+                onSuccess: async (res) => {
                     supplyFactorData = res.data.supplyFactor;
-                    const orderSerials = res.data.orderSerials;
-                    mySer.convertJsonToForm(supplyFactorData, "supplyFactorForm");
-                    orderHeadsSupFactorSelectedIds = supplyFactorData.supplyFactorOrderHeads.map(o => o.orderHeadId);
+                    await showSupplyFactorModal();
 
-                    const inpElm = document.getElementById("supplyFactorOrderHead");
-                    inpElm.value = orderSerials.join(", ");
+                    mySer.convertJsonToForm(supplyFactorData, "supplyFactorForm");
+
+                    orderHeadsSupFactorSelectedIds = supplyFactorData.supplyFactorOrderHeads.map(o => o.orderHeadId);
+                    document.getElementById("supplyFactorOrderHead").value = res.data.orderSerials.join(", ");
+
                     supplyFactorAttachments = res.data.attachments;
                     FileUpReload("supplyFactorAtt");
-                }
-
-            } catch (err) {
-                console.log(err);
-            } finally {
-                FLshowLoading(false);
-            }
+                },
+            });
         }
 
 

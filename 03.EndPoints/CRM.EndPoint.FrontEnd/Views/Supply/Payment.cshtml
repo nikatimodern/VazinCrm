@@ -139,9 +139,8 @@
             paymentAttachments = [];
             paymentData = {};
 
-            supplyFactorsSelectedIds = [];
-            tempSupFacSelectedIds = [];
-            tempSupFacSelectedMap.clear();
+            suppFactorsSelectedIds = [];
+            modalSelector.reset();
 
             document.getElementById("DivShowPayment").innerHTML = "";
             document.getElementById("paymentAtt").value = "";
@@ -159,7 +158,7 @@
             const model = {
                 ...paymentData,
                 ...mySer.convertFormToJSON("paymentFormId"),
-                paymentSupplyFactors: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id, paymentId: paymentData.id  })),
+                paymentSupplyFactors: suppFactorsSelectedIds.map(id => ({ supplyFactorId: id, paymentId: paymentData.id })),
                 attachments: paymentAttachments,
             };
 
@@ -187,7 +186,28 @@
         };
 
 
+        /*--------------------------------------------------------------------------------*/
+        let suppFactorsSelectedIds = [];
+        async function showAddSupplyFactorModal(elm) {
+            const targetInput = elm.parentElement.querySelector("input");
 
+            await modalSelector.open({
+                title: "انتخاب فاکتور تامین",
+                selectedIds: suppFactorsSelectedIds,
+                load: async ({ search, selectedIds }) => {
+                    FLshowLoading()
+                    const res = await axios.post("/Supply/GetAllSupplyFactorsTablePartial", { search, selectedIds });
+                    FLshowLoading(false)
+                    return res.data;
+                },
+                onSubmit: ({ ids, numbers }) => {
+                    suppFactorsSelectedIds = ids;
+                    targetInput.value = numbers.join(", ");
+                    targetInput.classList.remove("AlertReq");
+                },
+            });
+        }
+        /*--------------------------------------------------------------------------------*/
         @*
         async function showEditPaymentModal(id) {
             FLshowLoading();
@@ -199,7 +219,7 @@
                     paymentData = res.data.payment;
                     const factorSerials = res.data.supplyFactorSerials;
                     mySer.convertJsonToForm(paymentData, "paymentFormId");
-                    supplyFactorsSelectedIds = paymentData.paymentSupplyFactors.map(p => p.supplyFactorId);
+                    suppFactorsSelectedIds = paymentData.paymentSupplyFactors.map(p => p.supplyFactorId);
 
                     const inpElm = document.getElementById("paymentSupplyFactor");
                     inpElm.value = factorSerials.join(", ");
@@ -212,7 +232,7 @@
             } finally {
                 FLshowLoading(false);
             }
-        }*@
+        }*@;
 
 
         let paymentTbl;

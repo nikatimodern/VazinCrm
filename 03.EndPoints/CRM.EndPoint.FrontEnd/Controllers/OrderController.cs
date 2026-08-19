@@ -560,17 +560,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var data = await orderHeadQ.Select(f => f.Id).ToListAsync();
 
-                /*
-                var pfs = db.PreFactors
-                    .Where(f => f.UserTaminId == Guid.Parse(CUser.Id))
-                    .Select(f => f.Id)
-                    .ToArray();
-
-                var orderHead = await db.OrderHeads
-                    .Where(f => pfs.Contains(f.Prefactor.Value))
-                    .Select(f => f.Id).ToListAsync();*/
-
-
                 return Ok(data);
             }
             catch (Exception ex)
@@ -586,7 +575,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                ViewBag.passType = model.PassType;
+                var setting = await db.ASettings.FirstOrDefaultAsync();
+
+                ViewBag.MultiSelect = true;
+                ViewBag.PassType = model.PassType;
+                if (model.PassType == 4)
+                {
+                    ViewBag.MultiSelect = setting.MultiSelectOrderHeadsInRequestAmount;
+                }
+
                 var search = model.Search;
 
                 var query = db.OrderHeads.AsNoTracking().AsQueryable();
