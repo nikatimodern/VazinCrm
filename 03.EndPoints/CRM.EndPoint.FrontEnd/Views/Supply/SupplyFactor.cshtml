@@ -106,8 +106,6 @@
     </div>
 </div>
 
-<partial name="~/Views/Order/Modals/_AddOrderHeadContainerModal.cshtml" />
-
 
 @section Scripts {
     <script>
@@ -153,19 +151,19 @@
                 title: "انتخاب حواله تولید",
                 selectedIds: orderHeadsSupFactorSelectedIds,
                 load: async ({ search, selectedIds }) => {
-                    FLshowLoading()
+                    FLshowLoading();
                     const supplierId = document.getElementById("supplyFactorSupplierId").value;
 
                     let filterIds = supplierId
                         ? await getOrderHeadIdsBySupplier(supplierId)
                         : null;
-                    
+
                     if (filterIds) {
                         filterIds = [...new Set([...filterIds, ...selectedIds])];
                     }
-                    
+
                     const res = await axios.post("/Order/GetAllOrderHeads", { search, passType: 3, selectedIds, filterIds });
-                    FLshowLoading(false)
+                    FLshowLoading(false);
                     return res.data;
                 },
 
@@ -178,7 +176,7 @@
                 },
             });
         }
-        
+
         ///////////////////
         @*let orderHeadsSupFactorSelectedIds = [];
 
