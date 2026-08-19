@@ -447,7 +447,7 @@ const getAllProductOp = () => {
 
 const upfactor = (fid, cid, type = 1) => {
     typeSubmitfactor = type;
-    
+    currentFactorContext.passType = type;
     
     customerId = cid;
     
@@ -505,6 +505,8 @@ const upfactor = (fid, cid, type = 1) => {
 
 const returnFactor = async (fid, cid, type = 1) => {
     typeSubmitfactor = type;
+    currentFactorContext.passType = type;
+    
     customerId = cid;
     const modalFactor = document.getElementById("Factor");
     modalFactor.classList.add("returned-factor");
@@ -1054,6 +1056,7 @@ const AddFactor = async (pfId = null, type = 1) => {
     
     if (!await isAllowedToAddFactor(pfId)) return;
     typeSubmitfactor = type;
+    currentFactorContext = { passType: type };
     
     FLshowLoading();
     await f_getAllProductOp();
@@ -1303,8 +1306,7 @@ const submitFactorOK = async (type, unlinkSepidar = false) => {
                     await GetPreFactorPartial();
                 } else if (type === 1) {
                     await getAllPreFactor();
-                    await refreshFactorPartial();
-                    getFacAmount(factor.pfactorID, factor.pfactorSerialNumber, null);
+                    if (factor.id) await refreshFactorPartial();
                     getAllDetailAmount();
                     //getAllFactor();
                 } else if (type === 4) {
@@ -1515,7 +1517,7 @@ const getFacSepidar = async (pfId, serialNumber = null, _this, PassType, dealId)
                     <i class="fas fa-times"></i>
                 </button>
                 <span style="font-size: 20px">تمام فاکتورهای مربوط به پیش فاکتور  ${serialNumber} </span>`
-            : "تمام فاکتور ها";
+            : `<span style="font-size:20px">تمام فاکتور ها</span>`;
         
     } else if (PassType === 0) {
         document.getElementById("fAcceptedList").innerHTML = res;
@@ -1655,7 +1657,7 @@ const renderFactorPartial = (data, { id, serialNumber, passType }) => {
             <i class="fas fa-times"></i>
         </button>
         <span style="font-size:20px">تمام فاکتورهای مربوط به پیش فاکتور ${serialNumber || ""}</span>`
-        : "تمام فاکتور ها";
+        : `<span style="font-size:20px">تمام فاکتور ها</span>`;
     document.getElementById("DivFacListId").style.display = "flex";
     document.getElementById("DetailDivList").innerHTML = data.html;
 };
