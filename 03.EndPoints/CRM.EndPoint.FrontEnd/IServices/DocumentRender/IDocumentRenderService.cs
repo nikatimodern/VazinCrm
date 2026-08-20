@@ -5,7 +5,7 @@ using CRM.EndPoint.FrontEnd.Models.DocumentRender;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Playwright;
 
-namespace CRM.EndPoint.FrontEnd.IServices;
+namespace CRM.EndPoint.FrontEnd.IServices.DocumentRender;
 
 public interface IDocumentRenderService {
     Task<byte[]> GeneratePdfAsync(HttpRequest request, string url, PagePdfOptions options = null);

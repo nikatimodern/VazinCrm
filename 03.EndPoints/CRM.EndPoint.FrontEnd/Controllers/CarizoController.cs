@@ -4,7 +4,6 @@ using CRM.Core.Domain.Carizos.Enum;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.SaveChangeCustom;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
-using CRM.EndPoint.FrontEnd.Services.TaskServices;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -16,9 +15,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.LogSystems.Entities;
-using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.IServices.PushNotification;
+using CRM.EndPoint.FrontEnd.IServices.ViewRender;
 using CRM.EndPoint.FrontEnd.Models.Carizo;
 using CRM.EndPoint.FrontEnd.Models.PushNotification;
+using CRM.EndPoint.FrontEnd.Services.Carizo;
+using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.Infrastructures.Sql;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {

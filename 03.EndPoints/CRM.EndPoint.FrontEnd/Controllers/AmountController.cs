@@ -12,7 +12,8 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.IServices.ViewRender;
+using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.Infrastructures.Sql;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {

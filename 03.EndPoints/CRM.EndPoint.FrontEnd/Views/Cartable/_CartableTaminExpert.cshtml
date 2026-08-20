@@ -1,0 +1,120 @@
+<div class="cartable-pane flex-center flex-column col-12 col-xl-10 col-xxl-9 gap-3 p-2 d-none" id="CTaminExpertId">
+    <ul class="nav nav-pills" id="taminExpertsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link position-relative" onclick="GetInvoicesTaminExpert()" id="TaminInvoiceTab" data-bs-target="#TaminInvoiceTab-pane" type="button" role="tab">
+                صورتحساب ها
+                <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active position-relative" onclick="GetPreFactorTaminExpert()" id="TaminPrefactorTab" data-bs-target="#TaminPrefactorTab-pane" type="button" role="tab">
+                پیش‌فاکتور ها
+                <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
+            </button>
+        </li>
+    </ul>
+    <div class="tab-content p-2 px-1 px-sm-2 col-12" id="tabContentTaminExperts">
+
+
+        <div class="tab-pane fade border-0" id="TaminInvoiceTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
+            <div class="w-100">
+                <div class="px-2 w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center align-items-md-center">
+
+                    <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
+                        تعداد: <span id="taminInvoiceCount"></span>
+                    </div>
+
+                    <div class="search-group col-12 order-5 order-md-0 col-md-5">
+                        <input class="form-control" type="text" id="taminInvoiceSearchId" placeholder="جستجو..." />
+                        <div class="search-icon">
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                        </div>
+                    </div>
+
+
+                    <div class="d-flex gap-2">
+                        <ul class="filter-switch filter-switch-sm">
+                            <li class="filter-switch-item">
+                                <input type="radio" name="taminInvoiceFilter" id="taminInvoiceFilterAll" value="-1" />
+                                <label for="taminInvoiceFilterAll">همه</label>
+                            </li>
+                            <li class="filter-switch-item">
+                                <input type="radio" name="taminInvoiceFilter" id="taminInvoiceFilter1" value="1" checked />
+                                <label for="taminInvoiceFilter1">
+                                    در انتظار تایید
+                                    <span class="badge-count filter-count-badge"></span>
+                                </label>
+                            </li>
+                            <li class="filter-switch-item">
+                                <input type="radio" name="taminInvoiceFilter" id="taminInvoiceFilter2" value="2" />
+                                <label for="taminInvoiceFilter2">
+                                    تایید شده
+                                    <span class="badge-count filter-count-badge"></span>
+                                </label>
+                            </li>
+                            <li class="filter-switch-item">
+                                <input type="radio" name="taminInvoiceFilter" id="taminInvoiceFilter3" value="3" />
+                                <label for="taminInvoiceFilter3">
+                                    رد شده
+                                    <span class="badge-count filter-count-badge"></span>
+                                </label>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="w-100 mt-3" id="taminInvoiceContentId">
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade show active border-0w w-100 flex-column" id="TaminPrefactorTab-pane" role="tabpanel" tabindex="0">
+
+            <div class="d-flex flex-column align-items-center w-100 gap-3">
+                <div class="w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center align-items-md-center">
+
+                    <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
+                        تعداد: <span id="T_CountId"></span>
+                    </div>
+
+                    <div class="search-group col-12 order-5 order-md-0 col-md-5">
+                        <input class="form-control" type="text" id="TSearchId" placeholder="جستجو..." />
+                        <div class="search-icon">
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <ul class="filter-switch">
+                            <li class="filter-switch-item">
+                                <input type="radio" name="TFilter" id="TpfAll" value="-1" />
+                                <label class="fbold" for="TpfAll">همه</label>
+                            </li>
+                            <li class="filter-switch-item">
+                                <input type="radio" name="TFilter" id="Tpf1" value="1" checked />
+                                <label class="fbold position-relative" for="Tpf1">
+                                    در انتظار تایید
+                                    <span class="badge-count filter-count-badge"></span>
+                                </label>
+                            </li>
+                            <li class="filter-switch-item">
+                                <input type="radio" name="TFilter" id="Tpf5" value="2" />
+                                <label class="fbold position-relative" for="Tpf5">
+                                    تایید شده
+                                    <span class="badge-count filter-count-badge"></span>
+                                </label>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="w-100 overflow-auto" id="TContentId" style="max-height:72dvh">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<partial name="~/Views/Cartable/Modals/_SetAmountTaminModal.cshtml" />
+<partial name="~/Views/Cartable/Modals/_SetAmountSalesModal.cshtml" />

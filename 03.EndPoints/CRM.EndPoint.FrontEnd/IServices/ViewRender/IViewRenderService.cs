@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace CRM.EndPoint.FrontEnd.IServices
+namespace CRM.EndPoint.FrontEnd.IServices.ViewRender
 {
     public interface IViewRenderService
     {

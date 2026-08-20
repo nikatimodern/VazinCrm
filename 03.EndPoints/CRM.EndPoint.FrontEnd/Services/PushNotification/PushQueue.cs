@@ -1,11 +1,10 @@
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
-using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.IServices.PushNotification;
 using CRM.EndPoint.FrontEnd.Models.PushNotification;
 
-namespace CRM.EndPoint.FrontEnd.Services.PushServices;
-
-using System.Threading.Channels;
+namespace CRM.EndPoint.FrontEnd.Services.PushNotification;
 
 public class PushQueue : IPushQueue
 {

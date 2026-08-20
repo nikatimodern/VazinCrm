@@ -17,6 +17,7 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.Extensions;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Setting;
+using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.Infrastructures.Sql;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {

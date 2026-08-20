@@ -23,6 +23,7 @@ using CRM.EndPoint.FrontEnd.Extensions;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Supply;
 using CRM.EndPoint.FrontEnd.Services;
+using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.Infrastructures.Sql;
 using Dapper;
 using Microsoft.AspNetCore.Identity;

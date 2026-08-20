@@ -1,11 +1,11 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.IServices.PushNotification;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace CRM.EndPoint.FrontEnd.Services.PushServices;
+namespace CRM.EndPoint.FrontEnd.Services.PushNotification;
 
 public class PushBackgroundService : BackgroundService {
     private readonly IPushQueue _queue;

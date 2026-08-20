@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Configuration;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 
-namespace CRM.EndPoint.FrontEnd.Services.SmsServices {
+namespace CRM.EndPoint.FrontEnd.Services.Sms {
     public class SmsService {
         private readonly RequestServices request;
         private readonly HttpClient httpClient;

@@ -1,18 +1,18 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
+using CRM.EndPoint.FrontEnd.IServices.ViewRender;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using Microsoft.AspNetCore.Mvc;
-using System.IO;
-using System;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.Mvc.Abstractions;
-using System.Collections.Generic;
-using CRM.EndPoint.FrontEnd.IServices;
 
-namespace CRM.EndPoint.FrontEnd.Services
+namespace CRM.EndPoint.FrontEnd.Services.ViewRender
 {
     public class ViewRenderService : IViewRenderService
     {

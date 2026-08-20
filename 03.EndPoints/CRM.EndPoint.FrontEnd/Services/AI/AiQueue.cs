@@ -2,7 +2,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using CRM.Core.Domain.CallRecordings.Entities;
-using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.IServices.Ai;
 
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 

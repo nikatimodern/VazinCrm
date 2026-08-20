@@ -1,0 +1,305 @@
+<div class="cartable-pane col-12 p-2 d-none" id="CFinancialExpertId">
+    <div class="d-flex flex-column w-100">
+        <ul class="nav nav-pills" id="financialExpertsTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link position-relative" onclick="GetInvoicesFinancialExpert()" id="FinancialInvoiceTab" data-bs-target="#FinancialInvoiceTab-pane" type="button" role="tab">
+                    صورتحساب ها
+                    <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active position-relative" onclick="GetPreFactorFinancialExpert()" id="FinancialPrefactorTab" data-bs-target="#FinancialPrefactorTab-pane" type="button" role="tab">
+                    پیش‌فاکتور ها
+                    <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link position-relative" onclick="GetRequestFinancialExpert()" id="FinancialRequestTab" data-bs-target="#FinancialRequestTab-pane" type="button" role="tab">
+                    درخواست ها
+                    <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link position-relative" onclick="GetDealFinancialExpert()" id="FinancialDealTab" data-bs-target="#FinancialDealTab-pane" type="button" role="tab">
+                    سفارشات
+                    <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                </button>
+            </li>
+        </ul>
+        <div class="parent-all-financialExperts tab-content p-2 px-1 px-sm-2 col-12" id="tabContentFinancialExperts">
+
+            <div class="tab-pane fade border-0" id="FinancialInvoiceTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
+                <div class="w-100">
+                    <div class="px-2 w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center align-items-md-center">
+
+                        <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
+                            تعداد: <span id="FinancialExpertInvoiceCount"></span>
+                        </div>
+
+
+                        <div class="d-flex align-items-center gap-1 justify-content-end">
+                            <button class="buttonGreen0 deposit-btn py-1 px-2" style="font-size: 12px" onclick="showModalPreFactorList(1)">
+                                ثبت واریزی
+                            </button>
+                            <button class="buttonCancel2 backward-btn py-1 px-2" style="background-color: #750002;font-size: 12px" onclick="showModalPreFactorList(2)">
+                                ثبت برگشتی
+                            </button>
+                        </div>
+
+                        <div class="search-group col-12 order-5 order-md-0 col-md-5">
+                            <input class="form-control" type="text" id="FinancialExpertInvoiceSearchId" placeholder="جستجو..." />
+                            <div class="search-icon">
+                                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                            </div>
+                        </div>
+
+
+                        <div class="d-flex gap-2">
+                            <ul class="filter-switch filter-switch-sm">
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="financialExpertInvoiceFilter" id="financialExpertInvoiceFilterAll" value="-1" />
+                                    <label for="financialExpertInvoiceFilterAll">همه</label>
+                                </li>
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="financialExpertInvoiceFilter" id="financialExpertInvoiceFilter1" value="1" checked />
+                                    <label for="financialExpertInvoiceFilter1">
+                                        در انتظار تایید
+                                        <span class="badge-count filter-count-badge"></span>
+                                    </label>
+                                </li>
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="financialExpertInvoiceFilter" id="financialExpertInvoiceFilter2" value="2" />
+                                    <label for="financialExpertInvoiceFilter2">
+                                        تایید شده
+                                        <span class="badge-count filter-count-badge"></span>
+                                    </label>
+                                </li>
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="financialExpertInvoiceFilter" id="financialExpertInvoiceFilter3" value="3" />
+                                    <label for="financialExpertInvoiceFilter3">
+                                        رد شده
+                                        <span class="badge-count filter-count-badge"></span>
+                                    </label>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="w-100 mt-3" id="FinancialExpertInvoiceContentId">
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade show active border-0" id="FinancialPrefactorTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
+
+                <div class="d-flex flex-column align-items-center w-100 gap-3">
+                    <div class="w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center align-items-md-center">
+
+                        <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
+                            تعداد: <span id="FinancialExpertCount"></span>
+                        </div>
+
+                        <div class="search-group col-12 order-5 order-md-0 col-md-5">
+                            <input class="form-control" type="text" id="FinancialExpertSearchId" placeholder="جستجو..." />
+                            <div class="search-icon">
+                                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <ul class="filter-switch filter-switch-sm">
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="financialExpertFilter" id="financialExpertFilterAll" value="-1" />
+                                    <label for="financialExpertFilterAll">همه</label>
+                                </li>
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="financialExpertFilter" id="financialExpertFilter1" value="1" checked />
+                                    <label for="financialExpertFilter1">
+                                        در انتظار تایید
+                                        <span class="badge-count filter-count-badge"></span>
+                                    </label>
+                                </li>
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="financialExpertFilter" id="financialExpertFilter2" value="2" />
+                                    <label for="financialExpertFilter2">
+                                        تایید شده
+                                        <span class="badge-count filter-count-badge"></span>
+                                    </label>
+                                </li>
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="financialExpertFilter" id="financialExpertFilter3" value="3" />
+                                    <label for="financialExpertFilter3">
+                                        رد شده
+                                        <span class="badge-count filter-count-badge"></span>
+                                    </label>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+
+                    <div class="w-100" id="FinancialExpertPfContentId" style="max-height:72dvh; overflow:auto;">
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="tab-pane fade border-0" id="FinancialRequestTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
+
+                <div class="w-100">
+                    <div class="d-flex justify-content-between flex-wrap gap-2 align-items-center">
+
+                        <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
+                            تعداد: <span id="FinancialRequestCount"></span>
+                        </div>
+
+
+                        <div class="search-group col-12 order-5 order-md-0 col-md-5">
+                            <input class="form-control" type="text" id="FinancialRequestSearchId" placeholder="جستجو..." />
+                            <div class="search-icon">
+                                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <ul class="filter-switch">
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="FinancialRequestFilter" id="FinancialRequestFilterAll" value="-1" />
+                                    <label for="FinancialRequestFilterAll">همه</label>
+                                </li>
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="FinancialRequestFilter" id="FinancialRequestFilter1" value="1" />
+                                    <label for="FinancialRequestFilter1">
+                                        در انتظار تایید
+                                        <span class="badge-count filter-count-badge"></span>
+                                    </label>
+                                </li>
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="FinancialRequestFilter" id="FinancialRequestFilter2" value="2" checked />
+                                    <label for="FinancialRequestFilter2">
+                                        در انتظار پرداخت
+                                        <span class="badge-count filter-count-badge"></span>
+                                    </label>
+                                </li>
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="FinancialRequestFilter" id="FinancialRequestFilter3" value="3" />
+                                    <label for="FinancialRequestFilter3">
+                                        پرداخت شده
+                                        <span class="badge-count filter-count-badge"></span>
+                                    </label>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <button id="requestSelectionModeBtn" class="buttonGreen2 d-flex align-items-center gap-2 mt-2 mb-1" style="padding: 4px 8px !important">
+                        <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM1.49 15.326a.78.78 0 0 1-.358-.442 3 3 0 0 1 4.308-3.516 6.484 6.484 0 0 0-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 0 1-2.07-.655ZM16.44 15.98a4.97 4.97 0 0 0 2.07-.654.78.78 0 0 0 .357-.442 3 3 0 0 0-4.308-3.517 6.484 6.484 0 0 1 1.907 3.96 2.32 2.32 0 0 1-.026.654ZM18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5.304 16.19a.844.844 0 0 1-.277-.71 5 5 0 0 1 9.947 0 .843.843 0 0 1-.277.71A6.975 6.975 0 0 1 10 18a6.974 6.974 0 0 1-4.696-1.81Z" /></svg>
+                        <span style="line-height: 1">پرداخت گروهی</span>
+                    </button>
+
+                    <div id="requestSelectionBar" class="selection-bar d-none mt-2">
+                        <div class="d-none d-lg-flex align-items-center gap-3">
+                            <label class="d-flex align-items-center gap-3">
+                                <input type="checkbox" class="select-all" />
+                                <span>انتخاب همه</span>
+                            </label>
+                        </div>
+
+                        <div class="col-12 col-lg-auto flex-center flex-wrap gap-3" style="color: #444;">
+                            <span class="selected-count fbold" style="color: var(--color8);">0</span>
+                            <span>مورد انتخاب شده</span>
+
+                            <button class="clear-selection link-green" style="font-size: 13px">
+                                حذف انتخاب
+                            </button>
+                        </div>
+
+                        <div class="col-12 col-lg-auto d-flex align-items-center justify-content-between justify-content-lg-end gap-3">
+                            <button class="cancel-selection buttonCancel-white">
+                                <svg style="width: 16px" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
+                                انصراف
+                            </button>
+
+                            <button class="selection-action-btn buttonGreen0" disabled>
+                                پرداخت همه (<span class="selected-count">0</span>)
+                            </button>
+                        </div>
+                    </div>
+
+
+                    <div id="FinancialRequestContentId" class="pt-2" style="max-height:72dvh; overflow:auto;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade border-0" id="FinancialDealTab-pane" role="tabpanel" tabindex="0">
+                <div class="w-100">
+                    <div class="d-flex justify-content-between flex-wrap gap-2 align-items-center">
+
+                        <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
+                            تعداد: <span id="FinancialDealCount" class="countDeal"></span>
+                        </div>
+
+
+                        <div class="search-group col-12 order-5 order-md-0 col-md-5">
+                            <input class="form-control" type="text" id="FinancialDealSearchId" placeholder="جستجو..." />
+                            <div class="search-icon">
+                                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <ul class="filter-switch">
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="FinancialDealFilter" id="FinancialDealFilterAll" value="-1" />
+                                    <label for="FinancialDealFilterAll">همه</label>
+                                </li>
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="FinancialDealFilter" id="FinancialDealFilter1" value="0" checked />
+                                    <label for="FinancialDealFilter1">
+                                        تایید نشده
+                                        <span class="badge-count filter-count-badge"></span>
+                                    </label>
+                                </li>
+                                <li class="filter-switch-item">
+                                    <input type="radio" name="FinancialDealFilter" id="FinancialDealFilter2" value="1" />
+                                    <label for="FinancialDealFilter2">
+                                        تایید شده
+                                        <span class="badge-count filter-count-badge"></span>
+                                    </label>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div id="FinancialDealContentId" class="mt-3">
+                        <table class="table table-bordered table-hover table-striped nowrap w-100" id="DealTable">
+                            <thead>
+                            <tr>
+                                <th>شماره سفارش</th>
+                                <th>عنوان سفارش</th>
+                                <th>توضیحات</th>
+                                <th>تاریخ ثبت</th>
+                                <th>در اختیار</th>
+                                <th>مشتری</th>
+                                <th>وضعیت</th>
+                                <th>پیش‌فاکتور</th>
+                                <th>فاکتور</th>
+                                <th>واریزی</th>
+                                <th>حواله</th>
+                                <th>گزارش</th>
+                                <th>عملیات</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+    </div>
+
+</div>

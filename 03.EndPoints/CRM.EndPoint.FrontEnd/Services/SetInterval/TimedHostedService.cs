@@ -15,7 +15,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.LogSystems.Entities;
-using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.IServices.PushNotification;
+using CRM.EndPoint.FrontEnd.Services.LogSystem;
 
 namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
     public class TimedHostedService : IHostedService, IDisposable {

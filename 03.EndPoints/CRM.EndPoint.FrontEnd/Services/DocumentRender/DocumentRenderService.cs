@@ -4,12 +4,12 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
-using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.IServices.DocumentRender;
 using CRM.EndPoint.FrontEnd.Models.DocumentRender;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Playwright;
 
-namespace CRM.EndPoint.FrontEnd.Services;
+namespace CRM.EndPoint.FrontEnd.Services.DocumentRender;
 
 public class DocumentRenderService : IDocumentRenderService {
     public async Task<byte[]> GeneratePdfAsync(HttpRequest request, string url, PagePdfOptions options = null)

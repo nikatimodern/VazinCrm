@@ -1,19 +1,19 @@
-﻿using CRM.Core.Domain.Accountancies.Entities;
-using CRM.Core.Domain.AppUsers.Entities;
-using CRM.Core.Domain.Carizos.Entities;
-using CRM.Core.Domain.Carizos.Enum;
-using Generics.Infrastructures.Sql;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Enum;
+using CRM.Core.Domain.AppUsers.Entities;
+using CRM.Core.Domain.Carizos.Entities;
+using CRM.Core.Domain.Carizos.Enum;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Infrastructures.Sql;
+using Generics.Infrastructures.Sql;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
-namespace CRM.EndPoint.FrontEnd.Services.TaskServices {
+namespace CRM.EndPoint.FrontEnd.Services.Carizo {
     public class TaskServices {
         private readonly UserManager<AppUser> userManager;
         private readonly DateTimeServices dts;
@@ -42,7 +42,7 @@ namespace CRM.EndPoint.FrontEnd.Services.TaskServices {
 
             var task = CreateTask(acc, taskCreator, pf, isUpdatedAcc);
 
-            var carizos = new List<Carizo>();
+            var carizos = new List<Core.Domain.Carizos.Entities.Carizo>();
             var taskUsers = new List<TaskUser>();
 
             AddFinancialUsers(task, financialExperts, carizos, taskUsers);
@@ -62,11 +62,11 @@ namespace CRM.EndPoint.FrontEnd.Services.TaskServices {
             return creator;
         }
 
-        private Carizo CreateTask(Accountancy ac, AppUser taskCreator, PreFactor pf, bool isUpdatedAcc)
+        private Core.Domain.Carizos.Entities.Carizo CreateTask(Accountancy ac, AppUser taskCreator, PreFactor pf, bool isUpdatedAcc)
         {
             var hasVosolDate = ac.PayType is PayTypeEnum.چکی or PayTypeEnum.اعتباری;
 
-            var task = new Carizo {
+            var task = new Core.Domain.Carizos.Entities.Carizo {
                 Id = Guid.NewGuid(),
 
                 TaskType = TaskTypeEnum.اشتراکی,
@@ -124,7 +124,7 @@ namespace CRM.EndPoint.FrontEnd.Services.TaskServices {
         }
 
 
-        private static void AddFinancialUsers(Carizo task, IList<AppUser> financialExperts, List<Carizo> carizos, List<TaskUser> taskUsers)
+        private static void AddFinancialUsers(Core.Domain.Carizos.Entities.Carizo task, IList<AppUser> financialExperts, List<Core.Domain.Carizos.Entities.Carizo> carizos, List<TaskUser> taskUsers)
         {
             foreach (var user in financialExperts ?? [])
             {
@@ -148,7 +148,7 @@ namespace CRM.EndPoint.FrontEnd.Services.TaskServices {
         }
 
 
-        private static void AddPrefactorCreator(Carizo task, Accountancy ac, PreFactor pf, IList<AppUser> financialExperts, List<Carizo> carizos,
+        private static void AddPrefactorCreator(Core.Domain.Carizos.Entities.Carizo task, Accountancy ac, PreFactor pf, IList<AppUser> financialExperts, List<Core.Domain.Carizos.Entities.Carizo> carizos,
             List<TaskUser> taskUsers)
         {
             if (ac.PayType != PayTypeEnum.اعتباری && ac.PayType != PayTypeEnum.چکی) return;

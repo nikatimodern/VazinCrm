@@ -18,12 +18,14 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.EndPoint.FrontEnd.Extensions;
-using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.IServices.PushNotification;
+using CRM.EndPoint.FrontEnd.IServices.ViewRender;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Accountancy;
 using CRM.EndPoint.FrontEnd.Models.PushNotification;
+using CRM.EndPoint.FrontEnd.Services.Carizo;
+using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
-using CRM.EndPoint.FrontEnd.Services.TaskServices;
 using CRM.Infrastructures.Sql;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Microsoft.AspNetCore.Authorization;
@@ -847,7 +849,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [HttpPost]
-        public async Task<IActionResult> AcceptAccountancy([FromQuery] AccStatusEnum status, [FromBody] IdDescriptionVModel model)
+        public async Task<IActionResult> AcceptAccountancy([FromQuery] AccStatusEnum status, [FromBody] DescriptionIdVModel model)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var oldAcc = await db.Accountancies.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);

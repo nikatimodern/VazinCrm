@@ -15,11 +15,13 @@ using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Microsoft.AspNetCore.SignalR;
 using CRM.Core.Domain.LogSystems.Entities;
+using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Customer;
 using CRM.EndPoint.FrontEnd.Models.Login;
 using CRM.EndPoint.FrontEnd.Models.Sms;
-using CRM.EndPoint.FrontEnd.Services.SmsServices;
+using CRM.EndPoint.FrontEnd.Services.LogSystem;
+using CRM.EndPoint.FrontEnd.Services.Sms;
 using CRM.Infrastructures.Sql;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {

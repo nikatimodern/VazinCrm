@@ -3,16 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using CRM.EndPoint.FrontEnd.IServices.Menu;
 using CRM.EndPoint.FrontEnd.Models.Menu;
 using CRM.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace CRM.EndPoint.FrontEnd.Services;
+namespace CRM.EndPoint.FrontEnd.Services.Menu;
 
-public interface IMenuService {
-    Task<List<MenuItem>> GetMenusAsync(ClaimsPrincipal user);
-}
 
 public class MenuService(IServiceProvider serviceProvider) : IMenuService {
     public async Task<List<MenuItem>> GetMenusAsync(ClaimsPrincipal user)

@@ -20,7 +20,6 @@ using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.SaveChangeCustom;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
-using CRM.EndPoint.FrontEnd.Services.TaskServices;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
@@ -37,13 +36,17 @@ using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Deals.Enums;
 using CRM.Core.Domain.Supplies.Enums;
 using CRM.EndPoint.FrontEnd.Extensions;
-using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.IServices.DocumentRender;
+using CRM.EndPoint.FrontEnd.IServices.PushNotification;
+using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models.Accountancy;
 using CRM.EndPoint.FrontEnd.Models.DocumentRender;
 using CRM.EndPoint.FrontEnd.Models.PreFactor;
 using CRM.EndPoint.FrontEnd.Models.PushNotification;
 using CRM.EndPoint.FrontEnd.Models.Sms;
-using CRM.EndPoint.FrontEnd.Services.SmsServices;
+using CRM.EndPoint.FrontEnd.Services.Carizo;
+using CRM.EndPoint.FrontEnd.Services.LogSystem;
+using CRM.EndPoint.FrontEnd.Services.Sms;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Microsoft.Playwright;
 
@@ -296,7 +299,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> NotAcceptSalesAdmin([FromBody] IdDescriptionVModel model)
+        public async Task<IActionResult> NotAcceptSalesAdmin([FromBody] DescriptionIdVModel model)
         {
             if (model == null) return BadRequest();
             try
@@ -592,7 +595,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> NotAcceptTaminExpert([FromBody] IdDescriptionVModel model)
+        public async Task<IActionResult> NotAcceptTaminExpert([FromBody] DescriptionIdVModel model)
         {
             if (model == null) return BadRequest();
             try
@@ -751,7 +754,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> NotAcceptFinancial([FromBody] IdDescriptionVModel model)
+        public async Task<IActionResult> NotAcceptFinancial([FromBody] DescriptionIdVModel model)
         {
             try
             {

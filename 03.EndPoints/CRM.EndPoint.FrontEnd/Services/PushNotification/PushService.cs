@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.WebPushSubscriptions.Entities;
-using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.IServices.PushNotification;
 using CRM.EndPoint.FrontEnd.Models.PushNotification;
 using CRM.Infrastructures.Sql;
 using Microsoft.AspNetCore.Identity;
@@ -15,7 +15,7 @@ using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using WebPush;
 
-namespace CRM.EndPoint.FrontEnd.Services.PushServices;
+namespace CRM.EndPoint.FrontEnd.Services.PushNotification;
 
 public class PushService : IPushService {
     private readonly IConfiguration _config;

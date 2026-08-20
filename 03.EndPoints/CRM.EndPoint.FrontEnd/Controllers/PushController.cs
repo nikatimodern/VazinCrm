@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using System.Threading.Tasks;
-using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.IServices.PushNotification;
 using CRM.EndPoint.FrontEnd.Models.PushNotification;
 using Microsoft.AspNetCore.Mvc;
 

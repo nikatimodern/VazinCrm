@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.Chats.Entities;
-using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.IServices.PushNotification;
 using CRM.EndPoint.FrontEnd.Models.Chat;
 using CRM.EndPoint.FrontEnd.Models.PushNotification;
 using CRM.EndPoint.FrontEnd.Services;

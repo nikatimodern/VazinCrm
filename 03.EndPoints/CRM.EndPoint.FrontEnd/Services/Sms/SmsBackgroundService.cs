@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Microsoft.AspNetCore.SignalR;
@@ -8,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace CRM.EndPoint.FrontEnd.Services.SmsServices;
+namespace CRM.EndPoint.FrontEnd.Services.Sms;
 
 public class SmsBackgroundService(
     IServiceScopeFactory scopeFactory,

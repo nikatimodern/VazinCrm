@@ -8,6 +8,7 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Transfers.Entities;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Services;
+using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;

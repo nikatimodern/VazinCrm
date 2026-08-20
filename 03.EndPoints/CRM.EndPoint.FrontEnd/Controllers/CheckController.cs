@@ -8,6 +8,7 @@ using CRM.Core.Domain.Checks.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.Models.Check;
 using CRM.EndPoint.FrontEnd.Services;
+using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;

@@ -29,7 +29,7 @@ using CRM.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
-namespace CRM.EndPoint.FrontEnd.Services;
+namespace CRM.EndPoint.FrontEnd.Services.LogSystem;
 
 public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
     private readonly List<string> _excludedProps = [
@@ -37,7 +37,7 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
         "UserModifyID", "UserModify", "DateSort", "DateSortTxt", "TaminStep"
     ];
 
-    public async Task<LogSystem> LogChange<T>(T oldEntity, T newEntity, LogActionEnum action, AppUser user,
+    public async Task<Core.Domain.LogSystems.Entities.LogSystem> LogChange<T>(T oldEntity, T newEntity, LogActionEnum action, AppUser user,
         List<string> includedCollections = null, string commentTxt = null)
     {
         try
@@ -114,7 +114,7 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
             };
             var description = LogSetDescription(lSModel);
 
-            var log = new LogSystem {
+            var log = new Core.Domain.LogSystems.Entities.LogSystem {
                 Id = Guid.NewGuid(),
                 EntityName = entityName,
                 EntityId = entityIdValue,
@@ -811,7 +811,7 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
         return (parentNameValue, parentIdValue);
     }
 
-    public async Task<List<LogSystem>> GetEntityLogSystemAsync(string entityName, string entityId, bool isAdmin)
+    public async Task<List<Core.Domain.LogSystems.Entities.LogSystem>> GetEntityLogSystemAsync(string entityName, string entityId, bool isAdmin)
     {
         var includeChangeDetails = isAdmin;
         var includeCommentTxt = isAdmin;

@@ -6,7 +6,6 @@ using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.SaveChangeCustom;
 using CRM.EndPoint.FrontEnd.Services.SetInterval;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
-using CRM.EndPoint.FrontEnd.Services.TaskServices;
 using CRM.Framework;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
@@ -22,16 +21,25 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Security.Claims;
-using CRM.EndPoint.FrontEnd.Services.PushServices;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.IServices.Ai;
+using CRM.EndPoint.FrontEnd.IServices.DocumentRender;
+using CRM.EndPoint.FrontEnd.IServices.Menu;
+using CRM.EndPoint.FrontEnd.IServices.PushNotification;
+using CRM.EndPoint.FrontEnd.IServices.Sms;
+using CRM.EndPoint.FrontEnd.IServices.ViewRender;
 using CRM.EndPoint.FrontEnd.Services.AI;
-using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Configuration;
 using CRM.EndPoint.FrontEnd.Services.Asterisk;
-using CRM.EndPoint.FrontEnd.Services.SmsServices;
+using CRM.EndPoint.FrontEnd.Services.Carizo;
 using CRM.EndPoint.FrontEnd.Services.Chat;
+using CRM.EndPoint.FrontEnd.Services.DocumentRender;
+using CRM.EndPoint.FrontEnd.Services.LogSystem;
+using CRM.EndPoint.FrontEnd.Services.Menu;
+using CRM.EndPoint.FrontEnd.Services.PushNotification;
+using CRM.EndPoint.FrontEnd.Services.Sms;
+using CRM.EndPoint.FrontEnd.Services.ViewRender;
 using WebPush;
 
 namespace CRM.EndPoint.FrontEnd {
@@ -294,8 +302,6 @@ namespace CRM.EndPoint.FrontEnd {
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseSession();
-
-            app.UseMiddleware<ErrorLoggingMiddleware>();
 
             app.UseEndpoints(endpoints => {
                 endpoints.MapControllerRoute(

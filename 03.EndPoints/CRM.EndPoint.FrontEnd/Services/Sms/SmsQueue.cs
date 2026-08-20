@@ -1,9 +1,10 @@
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 
-namespace CRM.EndPoint.FrontEnd.Services.SmsServices;
+namespace CRM.EndPoint.FrontEnd.Services.Sms;
 
 
 public class SmsQueue : ISmsQueue {

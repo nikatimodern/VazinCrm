@@ -1,14 +1,12 @@
-﻿using CRM.Core.Domain.Carizos.Entities;
+﻿using carizoEntity = CRM.Core.Domain.Carizos.Entities.Carizo;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Microsoft.AspNetCore.SignalR;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Infrastructures.Sql;
 
-namespace CRM.EndPoint.FrontEnd.Services.SaveChangeCustom
-{
-    public class CrmSaveCahngeAsync
-    {
+namespace CRM.EndPoint.FrontEnd.Services.SaveChangeCustom {
+    public class CrmSaveCahngeAsync {
         private readonly CRMContextDb db;
         private readonly IHubContext<TaskHub> hub;
 
@@ -21,20 +19,15 @@ namespace CRM.EndPoint.FrontEnd.Services.SaveChangeCustom
 
         public async Task SaveChange()
         {
-            var enti = db.ChangeTracker.Entries<Carizo>();//اگر جدول کاریزو ترک شده باشه یعنی مقدارش اضاف یا ویرایش شده باشه
+            var enti = db.ChangeTracker.Entries<carizoEntity>(); //اگر جدول کاریزو ترک شده باشه یعنی مقدارش اضاف یا ویرایش شده باشه
             if (enti.Any())
             {
                 await db.SaveChangesAsync();
                 await hub.Clients.All.SendAsync("RefreshTasks");
-            }
-            else
+            } else
             {
                 await db.SaveChangesAsync();
             }
         }
-
-
-
-
     }
 }
