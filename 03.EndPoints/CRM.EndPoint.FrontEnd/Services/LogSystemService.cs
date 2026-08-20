@@ -26,7 +26,6 @@ using CRM.Core.Domain.Transfers.Entities;
 using CRM.Core.Domain.Transfers.Enums;
 using CRM.EndPoint.FrontEnd.Models.LogSystem;
 using CRM.Infrastructures.Sql;
-using Generics.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 

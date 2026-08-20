@@ -1,9 +1,6 @@
-﻿@using CRM.EndPoint.FrontEnd.Services
-@{
+﻿@{
     ViewData["Title"] = "CustomerProfile";
     Layout = "_Layout";
-    var isAdmin = User.IsInRole(AppRoles.Admin);
-    var isSalesAdmin = User.IsInRole(AppRoles.SalesAdmin);
 }
 
 <div id="customerProfile-wrapper" class="d-flex flex-column" style="height: calc(100dvh - 88px);">
@@ -12,7 +9,7 @@
             <p>@ViewBag.SubTitle</p>
             <p>@ViewBag.detail</p>
         </div>
-        @if (isAdmin || isSalesAdmin) {
+        @if (User.IsAdmin() || User.IsSalesAdmin()) {
             <div class="d-flex align-items-center justify-content-end justify-content-xxl-start gap-1 flex-grow-1 flex-xxl-grow-0" style="font-size:clamp(11px,2vw,13px)">
                 <span>در اختیار: </span>
                 <span>@ViewBag.SelExpertRel</span>
@@ -56,7 +53,7 @@
 
             <div class="tab-pane fade border-0 flex-grow-1" id="factorTab-pane" role="tabpanel" aria-labelledby="factorTab" tabindex="0" style="display: flex;flex-direction:column;width:100%">
                 <div style="display:none;flex-direction:column;justify-content:center;align-items:center;width:100%;min-height: 0;" id="DivFacListId">
-                    <div class="fbold mb-1 d-flex align-items-center gap-2"  id="FactorDivTitleId">
+                    <div class="fbold mb-1 d-flex align-items-center gap-2" id="FactorDivTitleId">
                     </div>
                     <div class="InfoData" style=" width:100%;overflow:auto;" id="DetailDivList">
                     </div>
@@ -162,7 +159,6 @@
             getAllDetailAmount();
             removeTabFactorsDesktop();
 
-            // await  getAllFactor();
             document.getElementById("FLshowLoading").style.display = "none";
             focusTargetPf();
         });
@@ -198,7 +194,6 @@
 
             //_this.parentElement.parentElement.parentElement.style.backgroundColor = "lightcyan"
 
-            // getAllFactor(pfId, serialNumber);
             document.getElementById("DivFacListId").style.display = "flex";
         };
 
@@ -236,27 +231,6 @@
             }
         };
 
-
-        const getAllFactor = async (pfId = null, ser = null) => {
-
-            //dddddddd
-            $("#FLshowLoading").css("display", "");
-            $.get(baseUrl + `Customer/GetAllFactorPartial?customerId=${customerId}&pfid=${pfId}&sNumber=${ser}`, (res) => {
-                $("#DetailDivList").children().remove();
-                $("#DetailDivList").append(res);
-                $("#FLshowLoading").css("display", "none");
-                if (pfId != null) {
-                    document.getElementById("FactorDivTitleId").innerHTML = `<span class="mp buttonGreen" style="border-radius:5px; font-size:20px; height:20px;width:20px !important; cursor:pointer" onclick="hideFact()">×</span> <span>تمام فاکتورهای مربوط به پیش فاکتور ${ser}</span> `;
-                } else {
-                    document.getElementById("FactorDivTitleId").innerHTML = "تمام فاکتور ها";
-                }
-            })
-             .fail(() => {
-                 setTimeout(() => {
-                     getAllFactor();
-                 }, 1000);
-             });
-        };
 
         const getAllPreFactor = async (showDeleted = false) => {
             try {

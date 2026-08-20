@@ -8,9 +8,9 @@ using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.Deals.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
+using CRM.EndPoint.FrontEnd.Extensions;
+using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Services;
-using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
@@ -88,7 +88,7 @@ public class DealController : Controller {
         var sortColumnIndex = Request.Form["order[0][column]"].FirstOrDefault();
         var sortDirection = Request.Form["order[0][dir]"].FirstOrDefault();
         var sortColumn = Request.Form[$"columns[{sortColumnIndex}][data]"].FirstOrDefault();
-        var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
+        var model = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["model"].FirstOrDefault());
 
         if (string.IsNullOrEmpty(searchValue)) searchValue = model?.serVal;
 
@@ -167,7 +167,7 @@ public class DealController : Controller {
 
 
     [HttpPost]
-    public async Task<IActionResult> GetAllDeals([FromBody] filterVModel model)
+    public async Task<IActionResult> GetAllDeals([FromBody] FilterVModel model)
     {
         try
         {

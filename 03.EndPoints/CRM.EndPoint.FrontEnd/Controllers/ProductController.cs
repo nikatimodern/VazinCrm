@@ -1,9 +1,8 @@
-﻿using Generics.Infrastructures.Sql;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using System.Threading.Tasks;
+using CRM.EndPoint.FrontEnd.Models;
 using CRM.Infrastructures.Sql;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {

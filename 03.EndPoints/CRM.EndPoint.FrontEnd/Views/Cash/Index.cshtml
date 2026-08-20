@@ -1,9 +1,8 @@
-@model CRM.EndPoint.FrontEnd.Models.ViewModel.Cash.CashIndexVModel
+@model CRM.EndPoint.FrontEnd.Models.Cash.CashIndexVModel
 
 @{
-    var isFinancial = User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی");
-    var isAdmin = User.IsInRole("مدیر ارشد");
     Layout = "_Layout";
+    var isFinancial = User.IsFinancial();
 }
 
 
@@ -153,7 +152,7 @@
 
 @section Scripts {
     <script>
-        window.isAdminOrFinancial = @(isFinancial || isAdmin ? "true" : "false");
+        window.isAdminOrFinancial = @(isFinancial || User.IsAdmin() ? "true" : "false");
     </script>
     <script src="~/js/cash.js" asp-append-version="true"></script>
 }

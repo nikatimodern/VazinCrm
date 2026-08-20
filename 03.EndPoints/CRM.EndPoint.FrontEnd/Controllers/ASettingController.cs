@@ -1,9 +1,6 @@
 ﻿using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.ASettings.Entities;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Home;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Services;
-using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -17,7 +14,9 @@ using CRM.Core.Domain;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
-using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
+using CRM.EndPoint.FrontEnd.Extensions;
+using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Models.Setting;
 using CRM.Infrastructures.Sql;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
@@ -60,7 +59,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                var modelF = JsonConvert.DeserializeObject<filterVModel>(Request.Form["modelF"].FirstOrDefault());
+                var modelF = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["modelF"].FirstOrDefault());
                 var draw = Request.Form["draw"].FirstOrDefault();
                 var start = Request.Form["start"].FirstOrDefault();
                 var length = Request.Form["length"].FirstOrDefault();
@@ -71,7 +70,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 int skip = start != null ? Convert.ToInt32(start) : 0;
                 int recordsTotal = 0;
 
-                var model = new List<AllDeletedVmodel>();
+                var model = new List<AllDeletedVModel>();
 
                 /// customer
                 var Qcus = db.Customers.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted == true).AsQueryable();
@@ -87,7 +86,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 foreach (var item in cus)
                 {
-                    model.Add(new AllDeletedVmodel() {
+                    model.Add(new AllDeletedVModel() {
                         EntityId = item.Id,
                         EntityType = EntityTypeEnum.Customer,
                         EntityTypeTxt = "مشتری",
@@ -102,7 +101,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 ////endCustomer
 
 
-                IQueryable<AllDeletedVmodel> dataF;
+                IQueryable<AllDeletedVModel> dataF;
                 dataF = model.AsQueryable();
 
 
@@ -153,7 +152,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
                 //recordsTotal = dataF.Count();
-                List<AllDeletedVmodel> data = null;
+                List<AllDeletedVModel> data = null;
                 //if (pageSize == -1)
                 //    data =  dataF.Skip(skip).ToList();
                 //else
@@ -175,9 +174,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                var model = new List<AllDeletedVmodel>();
+                var model = new List<AllDeletedVModel>();
 
-                async Task AddEntities<T>(IQueryable<T> query, Func<T, AllDeletedVmodel> map)
+                async Task AddEntities<T>(IQueryable<T> query, Func<T, AllDeletedVModel> map)
                 {
                     var list = await query.ToListAsync();
                     model.AddRange(list.Select(map));
@@ -202,7 +201,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             f.CustomerCode,
                             f.UserModify
                         }),
-                        item => new AllDeletedVmodel {
+                        item => new AllDeletedVModel {
                             EntityId = item.Id,
                             EntityType = EntityTypeEnum.Customer,
                             EntityTypeTxt = "مشتری",
@@ -238,7 +237,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             f.UserModify,
                             CustomerCode = f.CustomerEntity != null ? f.CustomerEntity.CustomerCode : (int?)null
                         }),
-                        item => new AllDeletedVmodel {
+                        item => new AllDeletedVModel {
                             EntityId = item.Id,
                             EntityType = EntityTypeEnum.PreFactor,
                             EntityTypeTxt = "پیش فاکتور",
@@ -271,7 +270,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             f.UserModify,
                             f.CustomerCode
                         }),
-                        item => new AllDeletedVmodel {
+                        item => new AllDeletedVModel {
                             EntityId = item.Id,
                             EntityType = EntityTypeEnum.Factor,
                             EntityTypeTxt = "فاکتور",
@@ -304,7 +303,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             f.UserModify,
                             f.CustomerCode
                         }),
-                        item => new AllDeletedVmodel {
+                        item => new AllDeletedVModel {
                             EntityId = item.Id,
                             EntityType = EntityTypeEnum.OrderHead,
                             EntityTypeTxt = "حواله تولید",
@@ -336,7 +335,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             f.SupplierTxt,
                             f.UserModify,
                         }),
-                        item => new AllDeletedVmodel {
+                        item => new AllDeletedVModel {
                             EntityId = item.Id,
                             EntityType = EntityTypeEnum.SupplyFactor,
                             EntityTypeTxt = "فاکتور تامین",
@@ -368,7 +367,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             f.ToAccountTxt,
                             f.UserModify,
                         }),
-                        item => new AllDeletedVmodel {
+                        item => new AllDeletedVModel {
                             EntityId = item.Id,
                             EntityType = EntityTypeEnum.Payment,
                             EntityTypeTxt = "پرداختی",
@@ -401,7 +400,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             f.Amount,
                             f.UserModify,
                         }),
-                        item => new AllDeletedVmodel {
+                        item => new AllDeletedVModel {
                             EntityId = item.Id,
                             EntityType = EntityTypeEnum.RequestAmount,
                             EntityTypeTxt = "درخواست وجه",
@@ -420,7 +419,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
             catch (Exception ex)
             {
-                return Json(new { total = 0, data = new List<AllDeletedVmodel>(), error = ex.Message });
+                return Json(new { total = 0, data = new List<AllDeletedVModel>(), error = ex.Message });
             }
         }
 

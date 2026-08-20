@@ -11,16 +11,15 @@ using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Cashes.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Cash;
+using CRM.EndPoint.FrontEnd.Extensions;
+using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Models.Cash;
 using CRM.EndPoint.FrontEnd.Services;
-using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
@@ -50,7 +49,7 @@ public class CashController : Controller {
     [Authorize(Roles = "مدیر ارشد,تنخواه دار,مدیر مالی,کارشناس مالی")]
     public async Task<IActionResult> Index()
     {
-        var isTaminUser = User.IsInRole("مدیر تامین") || User.IsInRole("کارشناس تامین");
+        var isTaminUser = User.IsTamin();
         var model = new CashIndexVModel {
             IsTaminUser = isTaminUser,
             CashCenters = await GetAllCashCenters(),
@@ -511,7 +510,7 @@ public class CashController : Controller {
         {
             var draw = Request.Form["draw"].FirstOrDefault();
             var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
-            var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
+            var model = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["model"].FirstOrDefault());
             var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
             var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][data]"].FirstOrDefault();
             var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
@@ -1082,7 +1081,7 @@ public class CashController : Controller {
     {
         try
         {
-            var isTaminUser = User.IsInRole("مدیر تامین") || User.IsInRole("کارشناس تامین");
+            var isTaminUser = User.IsTamin();
             var data = await GetAllCashTitles(isTaminUser);
             return Ok(data);
         }

@@ -4,7 +4,6 @@ using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.Orders.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.EndPoint.FrontEnd.Models.Dashboard;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
@@ -17,7 +16,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Orders.Enums;
-using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
+using CRM.EndPoint.FrontEnd.Extensions;
+using CRM.EndPoint.FrontEnd.Models;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
@@ -54,7 +54,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [HttpPost]
-        public async Task<IActionResult> GetFinancialReport([FromBody] filterVModel model)
+        public async Task<IActionResult> GetFinancialReport([FromBody] FilterVModel model)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var roles = await userManager.GetRolesAsync(user);
@@ -116,7 +116,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [HttpPost]
-        public async Task<IActionResult> GetLogSystem([FromBody] filterVModel model)
+        public async Task<IActionResult> GetLogSystem([FromBody] FilterVModel model)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var rols = await userManager.GetRolesAsync(user);
@@ -143,7 +143,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [HttpPost]
-        public async Task<IActionResult> GetInfoFactors([FromBody] filterVModel model)
+        public async Task<IActionResult> GetInfoFactors([FromBody] FilterVModel model)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             //var rols = await userManager.GetRolesAsync(user);
@@ -183,7 +183,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [HttpPost]
-        public async Task<IActionResult> getCustomerSuccess([FromBody] filterVModel model)
+        public async Task<IActionResult> getCustomerSuccess([FromBody] FilterVModel model)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var rols = await userManager.GetRolesAsync(user);
@@ -219,7 +219,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [HttpPost]
-        public async Task<IActionResult> GetReportsCount([FromBody] filterVModel model)
+        public async Task<IActionResult> GetReportsCount([FromBody] FilterVModel model)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var rols = await userManager.GetRolesAsync(user);
@@ -243,7 +243,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [HttpPost]
-        public async Task<IActionResult> GetOrderCount([FromBody] filterVModel _filter)
+        public async Task<IActionResult> GetOrderCount([FromBody] FilterVModel _filter)
         {
             var user = userManager.GetUserAsync(HttpContext.User).Result;
             var rols = await userManager.GetRolesAsync(user);
@@ -289,7 +289,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [HttpPost]
-        public async Task<IActionResult> GetDashFactors([FromBody] filterVModel filter)
+        public async Task<IActionResult> GetDashFactors([FromBody] FilterVModel filter)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var roles = await userManager.GetRolesAsync(user);

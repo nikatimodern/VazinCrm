@@ -1,12 +1,3 @@
-@using CRM.EndPoint.FrontEnd.Services
-@{
-    var isAdmin = User.IsInRole(AppRoles.Admin);
-    var isTaminAdmin = User.IsInRole(AppRoles.TaminAdmin);
-    var isSalesAdmin = User.IsInRole(AppRoles.SalesAdmin);
-    var isFinancialAdmin = User.IsInRole(AppRoles.FinancialAdmin);
-    var isManagingDirector = User.IsInRole(AppRoles.ManagingDirector);
-}
-
 <!-- Modal editTaskModal -->
 <div class="modal fade" id="editTaskModal" aria-modal="true" role="dialog" tabindex="-1" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -137,7 +128,7 @@
                                 </div>
                             </div>
                         </div>
-                        @if (isAdmin || isSalesAdmin || isTaminAdmin || isFinancialAdmin || isManagingDirector) {
+                        @if (User.IsAdmin() || User.IsSalesAdmin() || User.IsTaminAdmin() || User.IsFinancialAdmin() || User.IsManagingDirector()) {
                             <div id="editTaskAssignWrapper">
                                 <div class="mb-2" style="width:100%;background-color: rgba(0,0,0,0.1);height:1px"></div>
                                 <div>

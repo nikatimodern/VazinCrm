@@ -1,14 +1,9 @@
-﻿@using System.Security.Claims
-@using CRM.Core.Domain.Deals.Enums
+﻿@using CRM.Core.Domain.Deals.Enums
 @using CRM.Core.Domain.PreFactors.Enum
-@using CRM.EndPoint.FrontEnd.Services
-@model PrefactorViewModel ;
+@model CRM.EndPoint.FrontEnd.Models.PreFactor.PrefactorViewModel ;
 
 @{
     Layout = null;
-    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-    var isSalesAdmin = User.IsInRole(AppRoles.SalesAdmin);
-    var isAdmin = User.IsInRole(AppRoles.Admin);
 }
 
 <div style="width:100%;display:flex;flex-direction:column;gap:5px ">
@@ -17,7 +12,8 @@
         foreach (var item in Model.data ?? Enumerable.Empty<PreFactor>()) {
             var isInvalid = item.Pftype is (int)PreFactorEnum.فاقد_اعتبار or (int)PreFactorEnum.بسته_شده
                 or (int)PreFactorEnum.حذف_شده or (int)PreFactorEnum.برگشت_خورده_از_طرف_مدیر_فروش;
-            var hasAccess = item.Deal?.FinancialStatus != DealFinancialStausEnum.تایید_شده && (isAdmin || isSalesAdmin || item.UserCreatorID == userId);
+            var hasAccess = item.Deal?.FinancialStatus != DealFinancialStausEnum.تایید_شده
+                            && (User.IsAdmin() || User.IsSalesAdmin() || item.UserCreatorID == User.GetUserId());
             var hideAddInvoiceBtns = isInvalid || !hasAccess;
 
             <div class="d-flex w-100">

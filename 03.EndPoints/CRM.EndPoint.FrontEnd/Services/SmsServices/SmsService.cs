@@ -4,8 +4,8 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Models.Configuration;
 using CRM.EndPoint.FrontEnd.Models.Sms;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 

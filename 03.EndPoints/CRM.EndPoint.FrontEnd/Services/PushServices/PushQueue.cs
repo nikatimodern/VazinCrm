@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
-using CRM.EndPoint.FrontEnd.ISerives;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
+using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.Models.PushNotification;
 
 namespace CRM.EndPoint.FrontEnd.Services.PushServices;
 

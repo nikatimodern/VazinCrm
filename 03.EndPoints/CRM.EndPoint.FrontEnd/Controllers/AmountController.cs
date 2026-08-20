@@ -1,7 +1,6 @@
 ﻿using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Products.Entities;
-using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Generics.Infrastructures.Sql;
@@ -13,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.EndPoint.FrontEnd.IServices;
 using CRM.Infrastructures.Sql;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
@@ -25,11 +25,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly CRMContextDb db;
         private readonly UserContextDb udb;
         private readonly LogSystemService _logSystemService;
-        private readonly IVeiwRenderService vrs;
+        private readonly IViewRenderService vrs;
         private readonly IHubContext<TaskHub> hub;
 
         public AmountController(UserManager<AppUser> userManager, Service GenService, FileSaver fileSaver,
-            DateTimeServices dtService, CRMContextDb db, UserContextDb udb, LogSystemService logSystemService, IVeiwRenderService vrs,
+            DateTimeServices dtService, CRMContextDb db, UserContextDb udb, LogSystemService logSystemService, IViewRenderService vrs,
             IHubContext<TaskHub> hub)
         {
             this.userManager = userManager;

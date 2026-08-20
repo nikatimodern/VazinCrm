@@ -1,6 +1,5 @@
 ﻿using CRM.Core.Domain;
 using CRM.Core.Domain.AppUsers.Entities;
-using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.CustomValidator;
 using CRM.EndPoint.FrontEnd.Services.Factor;
@@ -26,8 +25,10 @@ using System.Security.Claims;
 using CRM.EndPoint.FrontEnd.Services.PushServices;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using CRM.EndPoint.FrontEnd.IServices;
 using CRM.EndPoint.FrontEnd.Services.AI;
 using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Models.Configuration;
 using CRM.EndPoint.FrontEnd.Services.Asterisk;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using CRM.EndPoint.FrontEnd.Services.Chat;
@@ -136,7 +137,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddTransient<CrmSaveCahngeAsync>();
             services.AddTransient<TimedHostedService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            services.AddScoped<IVeiwRenderService, VeiwRenderService>();
+            services.AddScoped<IViewRenderService, ViewRenderService>();
             services.AddScoped<LogSystemService>();
 
             services.AddSingleton<IPushQueue, PushQueue>();

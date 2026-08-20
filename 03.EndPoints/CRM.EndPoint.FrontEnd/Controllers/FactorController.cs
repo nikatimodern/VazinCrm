@@ -16,8 +16,6 @@ using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Factor;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.RemainedPf;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Sepidar;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.SaveChangeCustom;
@@ -37,14 +35,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Deals.Enums;
-using CRM.EndPoint.FrontEnd.ISerives;
 using CRM.Core.Domain.Supplies.Enums;
-using CRM.EndPoint.FrontEnd.Models.DocumentRenderOptions;
+using CRM.EndPoint.FrontEnd.Extensions;
+using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.Models.Accountancy;
+using CRM.EndPoint.FrontEnd.Models.DocumentRender;
+using CRM.EndPoint.FrontEnd.Models.PreFactor;
+using CRM.EndPoint.FrontEnd.Models.PushNotification;
 using CRM.EndPoint.FrontEnd.Models.Sms;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Accountency;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
-using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Microsoft.Playwright;
@@ -901,7 +899,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var customer = await db.Customers.Where(f => f.Id == factor.CustomerId).FirstOrDefaultAsync();
                 var myCompany = await db.Companies.Include(f => f.CompanyFiles).FirstOrDefaultAsync();
-                FactorViewModel model = new FactorViewModel() {
+                PreviewFactorVModel model = new PreviewFactorVModel() {
                     Factor = factor,
                     Company = myCompany,
                     _Customer = customer,
@@ -962,7 +960,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         : [];
 
 
-                var model = new PfactorViewModel {
+                var model = new PreviewPrePfactorVModel {
                     PreFactor = pfactor,
                     Company = myCompany,
                     TermsPreFactor = terms,

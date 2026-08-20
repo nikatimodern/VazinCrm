@@ -11,14 +11,13 @@ using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.Payments.Enums;
 using CRM.Core.Domain.RequestAmounts.Entities;
 using CRM.Core.Domain.RequestAmounts.Enums;
-using CRM.EndPoint.FrontEnd.ISerives;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Amount;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
+using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Models.RequestAmount;
+using CRM.EndPoint.FrontEnd.Models.Supply;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Infrastructures.Sql;
-using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -34,11 +33,11 @@ public class RequestAmountController : Controller {
     private readonly DateTimeServices dtService;
     private readonly CRMContextDb db;
     private readonly LogSystemService _logSystemService;
-    private readonly IVeiwRenderService vrs;
+    private readonly IViewRenderService vrs;
     private readonly IHubContext<TaskHub> hub;
 
     public RequestAmountController(UserManager<AppUser> userManager, FileSaver fileSaver,
-        DateTimeServices dtService, CRMContextDb db, LogSystemService logSystemService, IVeiwRenderService vrs,
+        DateTimeServices dtService, CRMContextDb db, LogSystemService logSystemService, IViewRenderService vrs,
         IHubContext<TaskHub> hub)
     {
         this.userManager = userManager;
@@ -810,7 +809,7 @@ public class RequestAmountController : Controller {
         {
             var draw = Request.Form["draw"].FirstOrDefault();
             var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
-            var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
+            var model = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["model"].FirstOrDefault());
             var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
             var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
             var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();

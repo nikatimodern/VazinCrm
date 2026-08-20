@@ -1,17 +1,14 @@
 ﻿@using CRM.Core.Domain.Factors.Enum
-@using CRM.EndPoint.FrontEnd.Services
 @model CRM.EndPoint.FrontEnd.Models.Factor.FactorsViewModel ;
 
 @{
     Layout = null;
 
-    var isFinancial = User.IsInRole(AppRoles.FinancialExpert) || User.IsInRole(AppRoles.FinancialAdmin);
-    var isAdmin = User.IsInRole(AppRoles.Admin);
-    var isCustomer = User.IsInRole(AppRoles.Customer);
+    var isAdminOrFinancial = User.IsAdmin() || User.IsFinancial();
 }
 
 <div style="width:100%;display:flex;flex-direction:column;gap:5px;">
-    @foreach (var item in Model.factors.OrderByDescending(f => f.ModifyDate)) {
+    @foreach (var item in Model.Factors.OrderByDescending(f => f.ModifyDate)) {
         var isReturnFactor = item.ParentReturnedId != null;
 
         <div class="w-100 d-flex">
@@ -56,7 +53,7 @@
                                     if (item.status == FactorStatus.ابطال_شده) {
                                         <label class="fbold">ابطال شده</label>
                                     } else {
-                                        if (isAdmin || isFinancial) {
+                                        if (User.IsAdmin() || User.IsFinancial()) {
                                             <button class="fMedium buttonBlue" style="padding: 2px 6px;font-size: 11px;" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @ViewBag.PassType)">
                                                 انتخاب از سپیدار
                                             </button>
@@ -65,7 +62,7 @@
                                         }
                                     }
                                 } else {
-                                    if (isAdmin || isFinancial) {
+                                    if (isAdminOrFinancial) {
                                         <label class="fbold hoverLink" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @ViewBag.PassType)">@item.SnFinancial</label>
                                     } else {
                                         <label class="fbold">@item.SnFinancial</label>
@@ -120,7 +117,7 @@
                         <div class="d-flex align-items-center gap-1 gap-md-2">
                             @if (Model._Setting?.FactorTowStep == true && !isReturnFactor && !item.Returned) {
                                 if (item.status == FactorStatus.در_دست_تایید) {
-                                    if (isAdmin || isFinancial) {
+                                    if (isAdminOrFinancial) {
                                         <button class="buttonCancel3" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 3, @ViewBag.PassType, '@item.PfactorSerialNumber')">
                                             ابطال
                                         </button>
@@ -137,7 +134,7 @@
                                         <div class="fbold" style="color:darkgreen">
                                             تایید شده
                                         </div>
-                                        @if (isAdmin || isFinancial) {
+                                        @if (isAdminOrFinancial) {
                                             <div style="cursor:pointer;color:#333" onclick="acceptFactor('@item.Id', 1, @ViewBag.PassType, '@item.PfactorSerialNumber')" data-title="بازگشت">
                                                 <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>
                                             </div>
@@ -148,7 +145,7 @@
                                         <div class="fbold" style="color:darkred">
                                             ابطال شده
                                         </div>
-                                        @if (isAdmin || isFinancial) {
+                                        @if (isAdminOrFinancial) {
                                             <div style="cursor:pointer;color:#333" onclick="acceptFactor('@item.Id', 1, @ViewBag.PassType, '@item.PfactorSerialNumber')" data-title="بازگشت">
                                                 <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>
                                             </div>
@@ -174,8 +171,8 @@
                 </div>
 
                 <div class="d-flex flex-sm-column align-items-center justify-content-evenly mt-2 mt-sm-0 mx-0 mx-sm-2" style="row-gap:8px;font-size:15px">
-                    @if (isAdmin || isFinancial) {
-                        if (isAdmin) {
+                    @if (isAdminOrFinancial) {
+                        if (User.IsAdmin()) {
                             <button class="flex-center" data-title-right="حذف" style="color:var(--DarkColor);" onclick="delFactor('@item.Id', @ViewBag.PassType)">
                                 <i class="fa fa-trash"></i>
                             </button>
@@ -190,20 +187,20 @@
                         <i class="fa fa-eye"></i>
                     </button>
 
-                    @if (!isCustomer && item.CustomerId != null) {
+                    @if (!User.IsCustomer() && item.CustomerId != null) {
                         <button class="flex-center" data-title-right="پروفایل" style="color:var(--DarkColor);" onclick="openCustomerProfile('@item.CustomerId', '@item.PfactorSerialNumber')">
                             <i class="fa fa-user"></i>
                         </button>
                     }
 
-                    @if ((isAdmin || isFinancial) && !isReturnFactor) {
+                    @if ((isAdminOrFinancial) && !isReturnFactor) {
                         <button class="flex-center" data-title-right="فاکتور برگشتی" style="color:darkred" onclick="returnFactor('@item.Id','@item.CustomerId',@ViewBag.PassType)">
                             <i class="fa fa-arrow-right"></i>
                             @* <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M19.933 13.041a8 8 0 1 1 -9.925 -8.788c3.899 -1 7.935 1.007 9.425 4.747" /><path d="M20 4v5h-5" /></svg> *@
                         </button>
                     }
 
-                    @if (!isCustomer) {
+                    @if (!User.IsCustomer()) {
                         <button class="flex-center" data-title-right="تاریخچه" style="color:var(--DarkColor)" onclick="showLogEntity('@nameof(Factor)', '@item.Id')">
                             <svg style="width: 18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l4 2" /></svg>
                         </button>

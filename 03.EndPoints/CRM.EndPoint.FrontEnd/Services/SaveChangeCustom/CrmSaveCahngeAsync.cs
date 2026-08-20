@@ -1,6 +1,5 @@
 ﻿using CRM.Core.Domain.Carizos.Entities;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
-using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.SignalR;
 using System.Linq;
 using System.Threading.Tasks;

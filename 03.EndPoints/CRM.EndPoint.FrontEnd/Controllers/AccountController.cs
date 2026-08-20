@@ -1,6 +1,4 @@
 ﻿using CRM.Core.Domain.AppUsers.Entities;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Login;
 using CRM.EndPoint.FrontEnd.Services;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authentication;
@@ -17,8 +15,10 @@ using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Microsoft.AspNetCore.SignalR;
 using CRM.Core.Domain.LogSystems.Entities;
+using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Models.Customer;
+using CRM.EndPoint.FrontEnd.Models.Login;
 using CRM.EndPoint.FrontEnd.Models.Sms;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Customer;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using CRM.Infrastructures.Sql;
 

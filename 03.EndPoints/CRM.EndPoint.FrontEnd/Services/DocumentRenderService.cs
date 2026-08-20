@@ -4,8 +4,8 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
-using CRM.EndPoint.FrontEnd.ISerives;
-using CRM.EndPoint.FrontEnd.Models.DocumentRenderOptions;
+using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.Models.DocumentRender;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Playwright;
 

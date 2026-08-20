@@ -1,9 +1,7 @@
 ﻿using CRM.Core.Domain.BaseItems.Entities;
 using CRM.Core.Domain.Company.Entities;
 using CRM.Core.Domain.Products.Entities;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Services;
-using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +10,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Cashes.Enums;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.BaseItem;
+using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Models.BaseItem;
 using CRM.Infrastructures.Sql;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {

@@ -5,10 +5,6 @@ using CRM.Core.Domain.Customers.Enum;
 using CRM.Core.Domain.Factors.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
-using CRM.EndPoint.FrontEnd.ISerives;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Customer;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.PreFactorVm;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
@@ -23,7 +19,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
+using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Models.Customer;
+using CRM.EndPoint.FrontEnd.Models.PreFactor;
+using CRM.EndPoint.FrontEnd.Models.PushNotification;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 
 
@@ -40,13 +40,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly Sepidar1ContextDb S1db;
         private readonly Sepidar2ContextDb S2db;
         private readonly IHubContext<TaskHub> hub;
-        private readonly IVeiwRenderService vrs;
+        private readonly IViewRenderService vrs;
         private readonly LogSystemService _logSystemService;
         private readonly IPushQueue pushQueue;
 
         public CustomerController(SepidarService sps, UserManager<AppUser> userManager, Service GenService, FileSaver fileSaver,
             DateTimeServices dtService, CRMContextDb db, UserContextDb udb, Sepidar1ContextDb S1db, Sepidar2ContextDb S2db,
-            IHubContext<TaskHub> hub, IVeiwRenderService vrs, LogSystemService logSystemService, IPushQueue pushQueue)
+            IHubContext<TaskHub> hub, IViewRenderService vrs, LogSystemService logSystemService, IPushQueue pushQueue)
         {
             this.sps = sps;
             this.userManager = userManager;
@@ -272,13 +272,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return RedirectToAction("AccessDenied", "Account");
         }
 
-        [Authorize(Policy = "NotCustomerOnly")]
-        public async Task<IActionResult> Customers()
-        {
-            ViewBag.SubTitle = "لیست مشتریان من";
-            ViewBag.Head = "Customers";
-            return View();
-        }
 
         [Authorize(Policy = "NotCustomerOnly")]
         [HttpGet]
@@ -986,50 +979,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch
             {
                 return BadRequest();
-            }
-        }
-
-
-        [HttpGet]
-        public async Task<IActionResult> GetAllFactorPartial(Guid customerId, Guid pfid, int sNumber)
-        {
-            try
-            {
-                var user = await userManager.GetUserAsync(HttpContext.User);
-                var rols = await userManager.GetRolesAsync(user);
-                ViewBag.EditAccess = false;
-
-                //if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش"))
-                //{
-                //    ViewBag.EditAccess = true;
-                //}
-
-                IList<Factor> data;
-                if (rols.Contains("مدیر ارشد"))
-                {
-                    data = await (from s in db.Factors
-                        where s.CustomerId == customerId
-                        orderby s.CreateDate descending
-                        select s).ToListAsync();
-                } else
-                {
-                    data = await (from s in db.Factors
-                        where s.CustomerId == customerId && s.UserCreatorID == user.Id
-                        orderby s.CreateDate descending
-                        select s).ToListAsync();
-                }
-
-                if (pfid != Guid.Empty)
-                {
-                    data = data.Where(f => f.PfactorID == pfid).ToList();
-                }
-
-
-                return PartialView(data);
-            }
-            catch
-            {
-                return null;
             }
         }
 

@@ -1,11 +1,7 @@
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.AppUsers.Entities;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.AccountanciesVm;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Accountency;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.SaveChangeCustom;
-using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,10 +17,11 @@ using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
-using CRM.EndPoint.FrontEnd.ISerives;
-using CRM.EndPoint.FrontEnd.Models.Payment;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
-using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
+using CRM.EndPoint.FrontEnd.Extensions;
+using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Models.Accountancy;
+using CRM.EndPoint.FrontEnd.Models.PushNotification;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.EndPoint.FrontEnd.Services.TaskServices;
 using CRM.Infrastructures.Sql;
@@ -39,7 +36,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly CRMContextDb db;
         private readonly TaskServices _ts;
         private readonly IHubContext<TaskHub> hub;
-        private readonly IVeiwRenderService _vrs;
+        private readonly IViewRenderService _vrs;
         private readonly LogSystemService _logSystemService;
         private readonly IPushQueue pushQueue;
         private readonly CrmSaveCahngeAsync crmSaveCahngeAsync;
@@ -47,7 +44,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         public AccountancyController(CrmSaveCahngeAsync crmSaveCahngeAsync, UserManager<AppUser> userManager, Service GenService,
-            DateTimeServices dtService, CRMContextDb db, TaskServices ts, IHubContext<TaskHub> hub, IVeiwRenderService vrs,
+            DateTimeServices dtService, CRMContextDb db, TaskServices ts, IHubContext<TaskHub> hub, IViewRenderService vrs,
             LogSystemService logSystemService,
             IPushQueue pushQueue)
         {
@@ -520,7 +517,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var rols = await userManager.GetRolesAsync(user);
-                AccfilterVModel modelF = JsonConvert.DeserializeObject<AccfilterVModel>(Request.Form["modelF"].FirstOrDefault());
+                AccFilterVModel modelF = JsonConvert.DeserializeObject<AccFilterVModel>(Request.Form["modelF"].FirstOrDefault());
                 var draw = Request.Form["draw"].FirstOrDefault();
                 var start = Request.Form["start"].FirstOrDefault();
                 var length = Request.Form["length"].FirstOrDefault();
@@ -685,7 +682,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
                 var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
                 var searchValue = Request.Form["search[value]"].FirstOrDefault();
-                var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
+                var model = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["model"].FirstOrDefault());
                 int pageSize = length != null ? Convert.ToInt32(length) : 0;
                 int skip = start != null ? Convert.ToInt32(start) : 0;
                 int recordsTotal = 0;

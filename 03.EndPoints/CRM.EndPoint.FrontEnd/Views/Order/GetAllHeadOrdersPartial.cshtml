@@ -5,12 +5,8 @@
 @{
     Layout = null;
     var passType = ViewBag.PassType;
-    
-    var isFinancial = User.IsInRole(AppRoles.FinancialExpert) || User.IsInRole(AppRoles.FinancialAdmin);
-    var isAdmin = User.IsInRole(AppRoles.Admin);
-    var isTamin = User.IsInRole(AppRoles.TaminAdmin) || User.IsInRole(AppRoles.TaminExpert);
 
-    var showAddRequestAmountBtn = passType != 4 && (isAdmin || isTamin || isFinancial);
+    var showAddRequestAmountBtn = passType != 4 && (User.IsAdmin() || User.IsTamin() || User.IsFinancial());
 }
 
 @foreach (var item in Model ?? []) {

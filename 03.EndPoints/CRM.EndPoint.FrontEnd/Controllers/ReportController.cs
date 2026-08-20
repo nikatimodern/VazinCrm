@@ -1,7 +1,6 @@
 ﻿using ClosedXML.Excel;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Reports.Entities;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
 using CRM.EndPoint.FrontEnd.Services;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
@@ -17,9 +16,10 @@ using System.Threading.Tasks;
 using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Reports.Enum;
-using CRM.EndPoint.FrontEnd.ISerives;
+using CRM.EndPoint.FrontEnd.Extensions;
+using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Services.Asterisk;
-using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using Microsoft.AspNetCore.SignalR;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Infrastructures.Sql;
@@ -34,12 +34,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly DateTimeServices dts;
         private readonly UserContextDb udb;
         private readonly Service genService;
-        private readonly IVeiwRenderService vrs;
+        private readonly IViewRenderService vrs;
         private readonly LogSystemService _logSystemService;
         private readonly IssabelService issabelService;
 
         public ReportController(IHubContext<TaskHub> hub, UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db,
-            DateTimeServices dts, UserContextDb udb, Service GenService, IVeiwRenderService vrs, LogSystemService logSystemService,
+            DateTimeServices dts, UserContextDb udb, Service GenService, IViewRenderService vrs, LogSystemService logSystemService,
             IssabelService issabelService)
         {
             this.hub = hub;

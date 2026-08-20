@@ -1,16 +1,16 @@
 using System.Collections.Generic;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.ASettings.Entities;
-using CRM.Core.Domain.BaseItems.Entities;
-using CRM.Core.Domain.Customers.Entities;
-using CRM.Core.Domain.PreFactors.Entities;
+using BaseItemEntity = CRM.Core.Domain.BaseItems.Entities.BaseItem;
+using CustomerEntity = CRM.Core.Domain.Customers.Entities.Customer;
+using PreFactorEntity = CRM.Core.Domain.PreFactors.Entities.PreFactor;
 
 namespace CRM.EndPoint.FrontEnd.Models.Factor;
 
 public class UpdateCustomerVModel {
-    public PreFactor PreFactor { get; set; }
-    public Customer Customer { get; set; }
-    public List<BaseItem> WorkSenf { get; set; }
+    public PreFactorEntity PreFactor { get; set; }
+    public CustomerEntity Customer { get; set; }
+    public List<BaseItemEntity> WorkSenf { get; set; }
     public List<BankAccount> BankAccounts { get; set; }
     public ASetting Setting { get; set; }
 }

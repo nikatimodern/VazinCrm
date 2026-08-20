@@ -1,4 +1,4 @@
-﻿@model AdminViewModel
+﻿@model CRM.EndPoint.FrontEnd.Models.Admin.AdminViewModel
 @{
     ViewData["Title"] = "Index";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -105,7 +105,7 @@
                             <td colspan="3" class="text-center">کاربری یافت نشد</td>
                         </tr>
                     } else {
-                        foreach (var item in Model.Rols) {
+                        foreach (var item in Model.Roles) {
                             <tr style="font-family: 'IRANSans'">
                                 <td>@item.Name</td>
                                 <td>

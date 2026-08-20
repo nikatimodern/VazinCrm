@@ -1,9 +1,7 @@
 @using CRM.Core.Domain.PreFactors.Enum
-@using CRM.EndPoint.FrontEnd.Services
 @model PreFactor
 
 @{
-    var isCustomer = User.IsInRole(AppRoles.Customer);
     var isInvalid = ViewData["IsInvalid"] as bool? ?? false;
 }
 
@@ -54,7 +52,7 @@
 
                 <span style="position:absolute;width: max-content;top: 100%;">
                     <span class="d-none @(!isInvalid ? "d-md-inline-block" : "")">@label</span>
-                    @if (!isCustomer && type == (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین && Model.UserTaminId != null) {
+                    @if (!User.IsCustomer() && type == (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین && Model.UserTaminId != null) {
                         var text = "کارشناس تامین: " + Model.UserTaminTxt;
                         <span data-bs-toggle="popover" data-bs-content="@Html?.Raw(text)">
                             <svg style="width: 12px;color: #666" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM9 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.75 8a.75.75 0 0 0 0 1.5h.75v1.75a.75.75 0 0 0 1.5 0v-2.5A.75.75 0 0 0 8.25 8h-1.5Z" clip-rule="evenodd" /></svg>

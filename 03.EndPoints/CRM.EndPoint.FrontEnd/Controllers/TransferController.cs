@@ -6,11 +6,10 @@ using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Transfers.Entities;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
+using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Infrastructures.Sql;
-using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -43,7 +42,7 @@ public class TransferController(
         var sortColumnIndex = Request.Form["order[0][column]"].FirstOrDefault();
         var sortDirection = Request.Form["order[0][dir]"].FirstOrDefault();
         var sortColumn = Request.Form[$"columns[{sortColumnIndex}][data]"].FirstOrDefault();
-        var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
+        var model = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["model"].FirstOrDefault());
 
         if (string.IsNullOrEmpty(searchValue)) searchValue = model?.serVal;
 

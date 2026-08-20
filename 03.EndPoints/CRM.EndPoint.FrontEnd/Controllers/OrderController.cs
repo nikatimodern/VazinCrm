@@ -1,10 +1,6 @@
 ﻿using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Orders.Entities;
-using CRM.EndPoint.FrontEnd.ISerives;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.PrintViewModel;
 using CRM.EndPoint.FrontEnd.Services;
-using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -18,10 +14,13 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
-using CRM.EndPoint.FrontEnd.Models.DocumentRenderOptions;
+using CRM.EndPoint.FrontEnd.Extensions;
+using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Models.DocumentRender;
+using CRM.EndPoint.FrontEnd.Models.Order;
 using CRM.EndPoint.FrontEnd.Models.Sms;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
-using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
+using CRM.EndPoint.FrontEnd.Models.Supply;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using CRM.Infrastructures.Sql;
 using Microsoft.Playwright;
@@ -30,7 +29,7 @@ using Microsoft.Playwright;
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize(Policy = "NotCustomerOnly")]
     public class OrderController : Controller {
-        private readonly IVeiwRenderService vrs;
+        private readonly IViewRenderService vrs;
         private readonly DateTimeServices dtService;
         private readonly CRMContextDb db;
         private readonly UserManager<AppUser> userManager;
@@ -38,7 +37,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly ISmsQueue smsQueue;
         private readonly IDocumentRenderService documentRender;
 
-        public OrderController(IVeiwRenderService vrs, DateTimeServices dtService,
+        public OrderController(IViewRenderService vrs, DateTimeServices dtService,
             CRMContextDb db, UserManager<AppUser> userManager, LogSystemService logSystemService,
             ISmsQueue smsQueue, IDocumentRenderService documentRender)
         {
@@ -160,7 +159,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 return NotFound("پیش فاکتور حذف شده است");
             }
 
-            var ss = new OrederPrintViewModel() {
+            var ss = new OrderPrintViewModel() {
                 Company = com,
                 OrderHead = order,
                 OfficialType = pf.OfficialType,
@@ -269,7 +268,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [HttpPost]
-        public async Task<IActionResult> GetAllHeadOrdersPartial([FromBody] filterVModel model, [FromQuery] int fStatus = -1)
+        public async Task<IActionResult> GetAllHeadOrdersPartial([FromBody] FilterVModel model, [FromQuery] int fStatus = -1)
         {
             try
             {

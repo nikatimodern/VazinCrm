@@ -1,6 +1,4 @@
 ﻿using CRM.Core.Domain.AppUsers.Entities;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Admin;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Login;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +6,8 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.EndPoint.FrontEnd.Models.Admin;
+using CRM.EndPoint.FrontEnd.Models.Login;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize(Roles = "مدیر ارشد")]
@@ -38,7 +38,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var users = userManager.Users.Where(f => f.OrganAdmin == false).ToList();
             var rols = roleManager.Roles.ToList();
             var model = new AdminViewModel() {
-                Rols = rols,
+                Roles = rols,
                 Users = users
             };
 

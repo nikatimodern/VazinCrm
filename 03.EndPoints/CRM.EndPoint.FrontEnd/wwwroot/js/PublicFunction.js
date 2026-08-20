@@ -1308,7 +1308,6 @@ const submitFactorOK = async (type, unlinkSepidar = false) => {
                     await getAllPreFactor();
                     if (factor.id) await refreshFactorPartial();
                     getAllDetailAmount();
-                    //getAllFactor();
                 } else if (type === 4) {
                     if (isModalOpen("dealPreFactorsModal")) {
                         await refreshDealPreFactors();

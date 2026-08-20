@@ -5,7 +5,6 @@ using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.SystemWarnings.Entities;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Infrastructures.Sql;
-using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,7 +15,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.LogSystems.Entities;
-using CRM.EndPoint.FrontEnd.ISerives;
+using CRM.EndPoint.FrontEnd.IServices;
 
 namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
     public class TimedHostedService : IHostedService, IDisposable {

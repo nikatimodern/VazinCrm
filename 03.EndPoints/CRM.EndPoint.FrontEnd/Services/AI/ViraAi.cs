@@ -5,7 +5,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Ai;
+using CRM.EndPoint.FrontEnd.Models.Ai;
 using Microsoft.Extensions.Logging;
 
 namespace CRM.EndPoint.FrontEnd.Services.AI;

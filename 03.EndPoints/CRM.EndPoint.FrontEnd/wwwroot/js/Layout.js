@@ -326,32 +326,68 @@ document.getElementById("DateFilterChk")?.addEventListener("change", () => {
 });
 
 
-let filterVarConfig;
+let filterVarConfig = null;
+const getFilterElement = (id) => document.getElementById(id);
+
+const getFilterInput = (name) => document.querySelector(`#FilterModal [name="${name}"]`);
+
 const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
-    const filterCallBack = filterBtn.getAttribute("data-filterCallBack"); /*کال بک فانکشنی بعد از فیلتر اجرا میشه*/
-    const ContentFilterDiv = filterBtn.getAttribute("data-filterContentId"); /*دایوی که موارد فیلتر رو روش نشون میده */
-    const txtSercheId = filterBtn.getAttribute("data-filterInpSearchId"); /*آیدی تکس باکس سرچ*/
-    const varSearch = filterBtn.getAttribute("data-filterVarSearch"); /*اسم ظرفی که مقدار جستجو داخلش ریخته میشود*/
-    filterVarConfig = filterBtn.getAttribute("data-filterVarConfig"); /*اسم متغیر کانفیگ فیلتر */
+    if (!filterBtn) return;
     
+    const filterCallBack = filterBtn.getAttribute("data-filterCallBack");
+    const ContentFilterDiv = filterBtn.getAttribute("data-filterContentId");
+    const txtSercheId = filterBtn.getAttribute("data-filterInpSearchId");
+    const varSearch = filterBtn.getAttribute("data-filterVarSearch");
     
-    GetCustomersOpId("customerFilter", null, "#FilterFormId");
-    if (filterVarConfig === "cashConfigFilter") {
-        document.getElementById("SelFilterLabel").textContent = "کارشناس";
-        GetSelsOpId("selFilter", null, "#FilterFormId", 1);
-    } else {
-        document.getElementById("SelFilterLabel").textContent = "کارشناس فروش";
-        GetSelsOpId("selFilter", null, "#FilterFormId");
+    filterVarConfig = filterBtn.getAttribute("data-filterVarConfig");
+    
+    if (!filterVarConfig) {
+        console.warn("Filter config not found.");
+        return;
     }
     
+    const selLabelElm = getFilterElement("SelFilterLabel");
+    const selChkElm = getFilterElement("SelFilterChd");
+    const cusChkElm = getFilterElement("CusFilterChd");
+    const dateChkElm = getFilterElement("DateFilterChk");
     
-    if (filterItemBlackList.length) {
-        filterItemBlackList.forEach(elm => document.getElementById(elm).style.display = "none");
+    // Customer
+    if (cusChkElm) {
+        GetCustomersOpId("customerFilter", null, "#FilterFormId");
+    }
+    
+    // Seller
+    if (selLabelElm && selChkElm) {
+        if (filterVarConfig === "cashConfigFilter") {
+            selLabelElm.textContent = "کارشناس";
+            GetSelsOpId("selFilter", null, "#FilterFormId", 1);
+        } else {
+            selLabelElm.textContent = "کارشناس فروش";
+            GetSelsOpId("selFilter", null, "#FilterFormId");
+        }
+    }
+    
+    // Blacklist
+    filterItemBlackList.forEach(id => {
+        const elm = getFilterElement(id);
+        if (elm) {
+            elm.style.display = "none";
+        }
+    });
+    
+    // Config
+    const currentConfig = window[filterVarConfig];
+    
+    if (!currentConfig) {
+        console.warn(`Filter config "${filterVarConfig}" not found.`);
+        return;
     }
     
     window[filterVarConfig] = {
-        ...window[filterVarConfig],
-        filterVar: { ...window[filterVarConfig].filterVar },
+        ...currentConfig,
+        filterVar: {
+            ...(currentConfig.filterVar || {}),
+        },
         filterCallBack,
         ContentFilterDiv,
         txtSercheId,
@@ -360,84 +396,175 @@ const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
     };
     
     const list = window[filterVarConfig].filterVar;
-    if (list?.CusFilterChd) {
-        document.getElementById("CusFilterChd").checked = true;
-        filterToggleDisable(true, "CusFilterDivContent");
-        $("#customerFilter").val(list.customerFilter).trigger("change");
-    } else {
-        document.getElementById("CusFilterChd").checked = false;
-        $("#customerFilter").val(null).trigger("change");
-        filterToggleDisable(false, "CusFilterDivContent");
+    
+    // Customer filter
+    if (cusChkElm) {
+        const customerFilter = getFilterElement("customerFilter");
+        
+        if (list?.CusFilterChd) {
+            cusChkElm.checked = true;
+            
+            filterToggleDisable(true, "CusFilterDivContent");
+            
+            if (customerFilter) {
+                $("#customerFilter").val(list.customerFilter).trigger("change");
+            }
+        } else {
+            cusChkElm.checked = false;
+            
+            if (customerFilter) {
+                $("#customerFilter").val(null).trigger("change");
+            }
+            
+            filterToggleDisable(false, "CusFilterDivContent");
+        }
     }
     
-    if (list?.SelFilterChd) {
-        document.getElementById("SelFilterChd").checked = true;
-        filterToggleDisable(true, "SelFilterDivContent");
-        $("#selFilter").val(list.selFilter).trigger("change");
-    } else {
-        document.getElementById("SelFilterChd").checked = false;
-        filterToggleDisable(false, "SelFilterDivContent");
-        $("#selFilter").val(null).trigger("change");
+    // Seller filter
+    if (selChkElm) {
+        const selFilter = getFilterElement("selFilter");
+        
+        if (list?.SelFilterChd) {
+            selChkElm.checked = true;
+            
+            filterToggleDisable(true, "SelFilterDivContent");
+            
+            if (selFilter) {
+                $("#selFilter").val(list.selFilter).trigger("change");
+            }
+        } else {
+            selChkElm.checked = false;
+            
+            if (selFilter) {
+                $("#selFilter").val(null).trigger("change");
+            }
+            
+            filterToggleDisable(false, "SelFilterDivContent");
+        }
     }
     
-    if (list?.DateFilterChk) {
-        document.getElementById("DateFilterChk").checked = true;
-        filterToggleDisable(true, "DateFilterDivContent");
-        filterToggleDisable(true, "dateFilterBtnId");
-        document.querySelector("#FilterModal [name='toDate']").value = list.toDate;
-        document.querySelector("#FilterModal [name='fromDate']").value = list.fromDate;
-    } else {
-        document.getElementById("DateFilterChk").checked = false;
-        filterToggleDisable(false, "DateFilterDivContent");
-        filterToggleDisable(false, "dateFilterBtnId");
-        document.querySelector("#FilterModal [name='toDate']").value = "";
-        document.querySelector("#FilterModal [name='fromDate']").value = "";
+    // Date filter
+    if (dateChkElm) {
+        const toDate = getFilterInput("toDate");
+        const fromDate = getFilterInput("fromDate");
+        
+        if (list?.DateFilterChk) {
+            dateChkElm.checked = true;
+            
+            filterToggleDisable(true, "DateFilterDivContent");
+            filterToggleDisable(true, "dateFilterBtnId");
+            
+            if (toDate) {
+                toDate.value = list.toDate ?? "";
+            }
+            
+            if (fromDate) {
+                fromDate.value = list.fromDate ?? "";
+            }
+        } else {
+            dateChkElm.checked = false;
+            
+            filterToggleDisable(false, "DateFilterDivContent");
+            filterToggleDisable(false, "dateFilterBtnId");
+            
+            if (toDate) {
+                toDate.value = "";
+            }
+            
+            if (fromDate) {
+                fromDate.value = "";
+            }
+        }
     }
-    window[filterVarConfig].varSearch = document.getElementById(window[filterVarConfig].txtSercheId)?.value;
     
-    $("#FilterModal").modal("toggle");
+    // Search value
+    window[filterVarConfig].varSearch = document.getElementById(window[filterVarConfig].txtSercheId)?.value ?? "";
+    
+    ModalToggle("FilterModal");
 };
+
 
 const FilterAccepted = async (filConfig = null) => {
     try {
         if (filConfig) {
             filterVarConfig = filConfig.filterVarConfig;
+            if (!filterVarConfig) {
+                console.warn("Filter config not found.");
+                return;
+            }
+            
             window[filterVarConfig] = filConfig;
             showFilterContent(window[filterVarConfig].filterVar);
-            const callBack = eval(window[filterVarConfig].filterCallBack);
-            if (callBack) await callBack();
-        } else if (await mySer.CheckValidForm("#FilterFormId")) {
-            
-            let data = mySer.convertFormToJSON("#FilterFormId");
-            
-            if (CusFilterChd.checked) {
-                data.CusFilterChd = true;
-                const el = document.getElementById("customerFilter");
-                data.customerFilterTxt = el.options[el.selectedIndex]?.text;
-            } else data.CusFilterChd = false;
-            
-            if (SelFilterChd.checked) {
-                data.SelFilterChd = true;
-                const el = document.getElementById("selFilter");
-                data.selFilterTxt = el.options[el.selectedIndex]?.text;
-            } else data.SelFilterChd = false;
-            
-            if (DateFilterChk.checked) data.DateFilterChk = true; else data.DateFilterChk = false;
-            
-            window[filterVarConfig].filterVar = data;
-            showFilterContent(data);
-            
-            if (!window[filterVarConfig].filterVar.SelFilterChd && !window[filterVarConfig].filterVar.DateFilterChk && !window[filterVarConfig].filterVar.CusFilterChd) {
-                window[filterVarConfig].filterVar = null;
-            }
-            const callBack = eval(window[filterVarConfig].filterCallBack);
-            if (callBack) await callBack();
-            $("#FilterModal").modal("toggle");
+            await executeFilterCallback(window[filterVarConfig].filterCallBack);
+            return;
         }
-    } catch {
-        setTimeout(async () => await FilterAccepted(filConfig), 3000);
+        
+        if (!await mySer.CheckValidForm("#FilterFormId")) return;
+        
+        const data = getFilterData();
+        
+        // Save filter
+        if (!filterVarConfig || !window[filterVarConfig]) {
+            console.warn("Filter config is not available.");
+            return;
+        }
+        
+        window[filterVarConfig].filterVar = data;
+        
+        showFilterContent(data);
+        
+        // اگر هیچ فیلتری فعال نیست
+        if (!data.SelFilterChd && !data.DateFilterChk && !data.CusFilterChd) {
+            window[filterVarConfig].filterVar = null;
+        }
+        
+        // Callback
+        await executeFilterCallback(window[filterVarConfig].filterCallBack);
+        
+        ModalToggle("FilterModal");
+        
+    } catch (error) {
+        console.error("FilterAccepted error:", error);
+    }
+};
+
+const getFilterData = () => {
+    const data = mySer.convertFormToJSON("#FilterFormId");
+    
+    const cusChk = getFilterElement("CusFilterChd");
+    const selChk = getFilterElement("SelFilterChd");
+    const dateChk = getFilterElement("DateFilterChk");
+    
+    data.CusFilterChd = cusChk?.checked ?? false;
+    data.SelFilterChd = selChk?.checked ?? false;
+    data.DateFilterChk = dateChk?.checked ?? false;
+    
+    const customer = getFilterElement("customerFilter");
+    const seller = getFilterElement("selFilter");
+    
+    if (data.CusFilterChd && customer) {
+        data.customerFilterTxt = customer.options[customer.selectedIndex]?.text ?? "";
     }
     
+    if (data.SelFilterChd && seller) {
+        data.selFilterTxt = seller.options[seller.selectedIndex]?.text ?? "";
+    }
+    
+    return data;
+};
+
+const executeFilterCallback = async (callbackName) => {
+    if (!callbackName) return;
+    
+    try {
+        const callback = eval(callbackName);
+        
+        if (typeof callback === "function") {
+            await callback();
+        }
+    } catch (error) {
+        console.error(`Filter callback "${callbackName}" could not be executed:`, error);
+    }
 };
 
 const showFilterContent = (model) => {

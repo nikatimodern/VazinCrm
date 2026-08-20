@@ -1,8 +1,8 @@
-﻿using CRM.EndPoint.FrontEnd.Models.ViewModel.Login;
-using System;
+﻿using System;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
+using CRM.EndPoint.FrontEnd.Models.Login;
 
 namespace CRM.EndPoint.FrontEnd.Services
 {

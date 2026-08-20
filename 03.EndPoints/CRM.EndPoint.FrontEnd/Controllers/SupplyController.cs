@@ -1,5 +1,4 @@
 ﻿using CRM.Core.Domain.Supplies.Entities;
-using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,11 +19,10 @@ using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Supplies.Enums;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Reports;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Supply;
+using CRM.EndPoint.FrontEnd.Extensions;
+using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Models.Supply;
 using CRM.EndPoint.FrontEnd.Services;
-using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
 using CRM.Infrastructures.Sql;
 using Dapper;
 using Microsoft.AspNetCore.Identity;
@@ -275,7 +273,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var draw = Request.Form["draw"].FirstOrDefault();
                 var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
-                var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
+                var model = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["model"].FirstOrDefault());
                 var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
                 var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
                 var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
@@ -615,7 +613,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var draw = Request.Form["draw"].FirstOrDefault();
                 var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
-                var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
+                var model = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["model"].FirstOrDefault());
                 var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
                 var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
                 var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
@@ -827,7 +825,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var draw = Request.Form["draw"].FirstOrDefault();
                 var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
-                var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
+                var model = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["model"].FirstOrDefault());
                 var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
                 var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
                 var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
@@ -962,7 +960,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var draw = Request.Form["draw"].FirstOrDefault();
                 var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
-                var model = JsonConvert.DeserializeObject<filterVModel>(Request.Form["model"].FirstOrDefault());
+                var model = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["model"].FirstOrDefault());
                 var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
                 var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
                 var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();

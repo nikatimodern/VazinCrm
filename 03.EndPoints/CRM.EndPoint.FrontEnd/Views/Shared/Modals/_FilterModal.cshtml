@@ -1,13 +1,3 @@
-@using CRM.EndPoint.FrontEnd.Services
-@{
-    var isAdmin = User.IsInRole(AppRoles.Admin);
-    var isSalesAdmin = User.IsInRole(AppRoles.SalesAdmin);
-    var isTaminAdmin = User.IsInRole(AppRoles.TaminAdmin);
-    var isFinancialAdmin = User.IsInRole(AppRoles.FinancialAdmin);
-    var isFinancialExpert = User.IsInRole(AppRoles.FinancialExpert);
-    var isManagingDirector = User.IsInRole(AppRoles.ManagingDirector);
-}
-
 <!-- Modal Filter -->
 <div class="modal fade " dir="ltr" id="FilterModal" tabindex="-1" role="dialog" data-bs-focus="false" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
     <div class=" modal-dialog modal-dialog-centered " role="document">
@@ -28,7 +18,7 @@
                             </select>
                         </div>
                     </div>
-                    @if (isAdmin || isSalesAdmin || isTaminAdmin || isFinancialAdmin || isFinancialExpert || isManagingDirector) {
+                    @if (User.IsAdmin() || User.IsSalesAdmin() || User.IsTaminAdmin() || User.IsFinancial() || User.IsManagingDirector()) {
                         <div class="d-flex flex-column">
                             <div class="checkbox-wrapper-20">
                                 <div class="switch">

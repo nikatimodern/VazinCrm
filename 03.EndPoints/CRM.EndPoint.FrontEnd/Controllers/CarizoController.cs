@@ -1,8 +1,6 @@
 ﻿using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Carizos.Entities;
 using CRM.Core.Domain.Carizos.Enum;
-using CRM.EndPoint.FrontEnd.ISerives;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.CarizoVm;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.SaveChangeCustom;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
@@ -18,13 +16,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.LogSystems.Entities;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.PushNotification;
+using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.Models.Carizo;
+using CRM.EndPoint.FrontEnd.Models.PushNotification;
 using CRM.Infrastructures.Sql;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize(Policy = "NotCustomerOnly")]
     public class CarizoController : Controller {
-        private readonly IVeiwRenderService vrs;
+        private readonly IViewRenderService vrs;
 
         //private readonly ChatHub chat;
         private readonly CrmSaveCahngeAsync crmSaveCahngeAsync;
@@ -40,7 +40,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly LogSystemService _logSystemService;
         private readonly IPushQueue pushQueue;
 
-        public CarizoController(IVeiwRenderService vrs, CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, CRMContextDb db, UserContextDb udb,
+        public CarizoController(IViewRenderService vrs, CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, CRMContextDb db, UserContextDb udb,
             UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager, DateTimeServices dts, IHubContext<TaskHub> hub,
             Service GenService, LogSystemService logSystemService, IPushQueue pushQueue)
         {

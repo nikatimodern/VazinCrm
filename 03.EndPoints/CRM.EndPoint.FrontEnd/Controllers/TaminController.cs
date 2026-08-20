@@ -42,7 +42,7 @@ public class TaminController : Controller
         //var Orders = await db.Orders.AsNoTracking().Where(f => f.PreFactorItemId != null).ToListAsync();
         //var model = await db.PreFactorItems
         //    .Where(f => Orders.Select(f => f.PreFactorItemId).ToArray().Contains(f.Id))
-        //    .Select(f=> new OpenOrderViewModel()
+        //    .Select(f=> new 
         //    {
         //        Name=f.SupplierName,
         //        Product=f.ProductSmallName ,

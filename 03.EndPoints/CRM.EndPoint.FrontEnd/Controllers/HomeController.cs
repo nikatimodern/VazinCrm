@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using CRM.Core.Domain.Cashes.Enums;
+using CRM.EndPoint.FrontEnd.Extensions;
 using CRM.EndPoint.FrontEnd.Services.SmsServices;
 using CRM.EndPoint.FrontEnd.Services.AI;
 using CRM.EndPoint.FrontEnd.Services.Asterisk;
@@ -170,9 +170,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                var user = await userManager.GetUserAsync(HttpContext.User);
-                var roles = await userManager.GetRolesAsync(user);
-                var isAdmin = roles.Contains("مدیر ارشد");
+                var isAdmin = User.IsAdmin();
 
                 var logs = await logSystemService.GetEntityLogSystemAsync(entityName, entityId, isAdmin);
                 return Ok(logs);

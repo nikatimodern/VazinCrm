@@ -4,10 +4,6 @@ using CRM.Core.Domain.ASettings.Entities;
 using CRM.Core.Domain.Factors.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
-using CRM.EndPoint.FrontEnd.ISerives;
-using CRM.EndPoint.FrontEnd.Models.ViewModel;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.Cartable;
-using CRM.EndPoint.FrontEnd.Models.ViewModel.PreFactorVm;
 using CRM.EndPoint.FrontEnd.Models.Factor;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.Infrastructures.Sql;
@@ -24,8 +20,11 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Supplies.Enums;
-using CRM.EndPoint.FrontEnd.Models.PreFactorVm;
-using CRM.EndPoint.FrontEnd.Services.QueryExtensions;
+using CRM.EndPoint.FrontEnd.Extensions;
+using CRM.EndPoint.FrontEnd.IServices;
+using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Models.Cartable;
+using CRM.EndPoint.FrontEnd.Models.PreFactor;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 
 // ReSharper disable EntityFramework.UnsupportedServerSideFunctionCall
@@ -41,13 +40,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly Sepidar1ContextDb s1Db;
         private readonly IPushQueue pushQueue;
         private readonly IPushService pushService;
-        private readonly IVeiwRenderService vrs;
+        private readonly IViewRenderService vrs;
         private readonly UserManager<AppUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
         private readonly ASetting _setting;
 
 
-        public CartableController(IVeiwRenderService vrs, UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager, Service GenService,
+        public CartableController(IViewRenderService vrs, UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager, Service GenService,
             FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb s1db, IPushQueue pushQueue,
             IPushService pushService)
         {
@@ -98,22 +97,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        [HttpGet]
-        public IActionResult GetCartableMali(string serVal)
-        {
-            return PartialView();
-        }
 
-
-        [HttpGet]
-        public IActionResult GetItemsSeRegistered()
-        {
-            return PartialView();
-        }
 
         [HttpPost]
         [Authorize(Roles = "کارشناس فروش ,مدیر ارشد ,مدیر مالی, کارشناس مالی,مدیر فروش,کارشناس تامین")]
-        public async Task<IActionResult> PreFactorAcceptedPartial([FromBody] filterVModel model)
+        public async Task<IActionResult> PreFactorAcceptedPartial([FromBody] FilterVModel model)
         {
             try
             {
@@ -143,7 +131,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> PrefactorExportToExcel(filterVModel model)
+        public async Task<IActionResult> PrefactorExportToExcel(FilterVModel model)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var roles = await userManager.GetRolesAsync(user);
@@ -155,7 +143,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 requestBody = await reader.ReadToEndAsync();
             }
 
-            var model1 = JsonSerializer.Deserialize<filterVModel>(requestBody);
+            var model1 = JsonSerializer.Deserialize<FilterVModel>(requestBody);
 
             try
             {
@@ -223,7 +211,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> FactorExportToExcel(filterVModel model)
+        public async Task<IActionResult> FactorExportToExcel(FilterVModel model)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var roles = await userManager.GetRolesAsync(user);
@@ -234,7 +222,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 requestBody = await reader.ReadToEndAsync();
             }
 
-            var model1 = JsonSerializer.Deserialize<filterVModel>(requestBody);
+            var model1 = JsonSerializer.Deserialize<FilterVModel>(requestBody);
 
             try
             {
@@ -303,7 +291,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        private async Task<IList<PreFactor>> GetPrefactors(filterVModel model, AppUser user, IList<string> roles)
+        private async Task<IList<PreFactor>> GetPrefactors(FilterVModel model, AppUser user, IList<string> roles)
         {
             try
             {
@@ -431,7 +419,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        private async Task<IList<Factor>> GetFactors(filterVModel model, AppUser user, IList<string> roles)
+        private async Task<IList<Factor>> GetFactors(FilterVModel model, AppUser user, IList<string> roles)
         {
             try
             {
@@ -504,9 +492,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var model = new TaminViewModel {
                     UserId = user.Id,
                     Setting = _setting,
-                    IsAdmin = rols.Contains("مدیر ارشد") || rols.Contains("مدیر تامین")
+                    IsAdmin = User.IsAdmin() || User.IsTaminAdmin()
                 };
-
+                
 
                 var queryBase = db.PreFactors.AsQueryable();
 
@@ -654,72 +642,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        [HttpGet]
-        [Authorize(Roles = "کارشناس تامین , مدیر تامین , مدیر ارشد , مدیر عامل")]
-        public async Task<IActionResult> GetPreFactorManagingDirector(string serVal, int type = 1)
-        {
-            try
-            {
-                var query = db.PreFactors.AsQueryable();
-
-                if (!string.IsNullOrWhiteSpace(serVal))
-                {
-                    query = query.Where(f =>
-                        f.AgentName.Contains(serVal) ||
-                        f.Customer.Contains(serVal) ||
-                        f.SerialNumber == TextService.convertToInt(serVal)
-                    );
-                }
-
-
-                switch (type)
-                {
-                    case 1:
-                        query = query.Where(f => f.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی && f.AcceptedManagingDirector == null)
-                            .Where(pf =>
-                                db.Accountancies.ForPreFactor().OnlyTamin()
-                                    .Any(a => a.pfid == pf.Id && a.Status != AccStatusEnum.ثبت_اولیه)
-                            );
-
-                        break;
-                    case 2:
-                        query = query.Where(f => f.AcceptedManagingDirector == true);
-                        break;
-                    case 3:
-                        query = query.Where(f => f.AcceptedManagingDirector == false);
-                        break;
-                }
-
-
-                var result = await query
-                    .OrderByDescending(g => g.CreateDate)
-                    .Take(100)
-                    .Select(pf => new PreFactorFinancialExpertVModel {
-                        PreFactor = pf,
-                        ReceiveAmount =
-                            db.Accountancies.AsNoTracking().ForPreFactor()
-                                .NotVosoled()
-                                .Where(a => a.pfid == pf.Id)
-                                .Sum(f => f.AccType == AcEnum.واریزی ? f.credit : -f.BackWard) ?? 0,
-
-                        NotAcceptedMdAccCount =
-                            db.Accountancies.AsNoTracking().ForPreFactor().OnlyTamin()
-                                .Count(a => a.pfid == pf.Id && a.Status != AccStatusEnum.تایید_شده),
-
-                        TotalAccCount =
-                            db.Accountancies.AsNoTracking().ForPreFactor().OnlyTamin()
-                                .Count(a => a.pfid == pf.Id),
-                    })
-                    .ToListAsync();
-
-                var html = await vrs.RenderToStringAsync("GetPreFactorManagingDirector", result);
-                return Ok(new { count = result.Count, html });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
 
         [HttpGet]
         public async Task<IActionResult> GetSelesExpertPartial()
@@ -802,7 +724,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var fList = await GetFactors(model.FModel, user, rols);
 
             var vModel = new FactorsViewModel {
-                factors = fList,
+                Factors = fList,
                 _Setting = _setting,
             };
 
@@ -830,7 +752,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 };
 
                 var model = new FactorsViewModel {
-                    factors = fList,
+                    Factors = fList,
                     _Setting = _setting
                 };
 

@@ -2,23 +2,19 @@
 @using CRM.Core.Domain.Deals.Enums
 @using CRM.Core.Domain.PreFactors.Enum
 @using CRM.EndPoint.FrontEnd.Services
-@model PrefactorViewModel;
+@model CRM.EndPoint.FrontEnd.Models.PreFactor.PrefactorViewModel;
 
 @{
     Layout = null;
-    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
     var passType = ViewBag.PassType; // 1: CustomerProfile | 4: Deal
-
-    var isSalesAdmin = User.IsInRole(AppRoles.SalesAdmin);
-    var isAdmin = User.IsInRole(AppRoles.Admin);
-    var isCustomer = User.IsInRole(AppRoles.Customer);
 }
 
 <div class="d-flex flex-column w-100" style="gap: 5px">
     @foreach (var item in Model.data) {
         var isInvalid = item.Pftype is (int)PreFactorEnum.فاقد_اعتبار or (int)PreFactorEnum.بسته_شده
             or (int)PreFactorEnum.حذف_شده or (int)PreFactorEnum.برگشت_خورده_از_طرف_مدیر_فروش;
-        var hasAccess = item.Deal?.FinancialStatus != DealFinancialStausEnum.تایید_شده && (isAdmin || isSalesAdmin || item.UserCreatorID == userId);
+        var hasAccess = item.Deal?.FinancialStatus != DealFinancialStausEnum.تایید_شده
+                        && (User.IsAdmin() || User.IsSalesAdmin() || item.UserCreatorID == User.GetUserId());
         var hideAddInvoiceBtns = isInvalid || !hasAccess;
 
 
@@ -176,7 +172,7 @@
                                     if (hasAccess) {
                                         <button style="border-radius:4px;height:auto;width:90px;" class="buttonGreen px-2" onclick="backDelivered('@item.Id', @passType)">لغو اتمام کار</button>
                                     }
-                                    
+
                                     break;
                             }
                         </div>
@@ -203,7 +199,7 @@
                                 }
                             }
 
-                            @if (Model._Setting.Sepidar == true && !isCustomer) {
+                            @if (Model._Setting.Sepidar == true && !User.IsCustomer()) {
                                 if (item.CountFactorSepidar == 0) {
                                     <button class="buttonDisabled flex-center flex-column" disabled style="border-radius:4px;height:auto;width: 80px;padding: 0 4px;">
                                         <span>فاکتور سپیدار </span>
@@ -230,7 +226,7 @@
                              model="item"
                              view-data='new ViewDataDictionary(ViewData) { ["IsInvalid"] = isInvalid }' />
 
-                    @if (!isCustomer) {
+                    @if (!User.IsCustomer()) {
                         <partial name="~/Views/PreFactor/_PreFactorDescription.cshtml" model="item" />
                     }
 
