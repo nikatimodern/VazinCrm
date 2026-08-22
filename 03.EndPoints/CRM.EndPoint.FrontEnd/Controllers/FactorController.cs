@@ -63,6 +63,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly IPushQueue pushQueue;
         private readonly ISmsQueue smsQueue;
         private readonly IDocumentRenderService documentRender;
+        private readonly PreFactorService preFactorService;
         private readonly CrmSaveCahngeAsync crmSaveCahngeAsync;
         private readonly TaskServices ts;
         private readonly SepidarService sps;
@@ -76,7 +77,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             FileSaver fileSaver,
             DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb S1db,
             IHubContext<TaskHub> hub, LogSystemService logSystemService, IPushQueue pushQueue, ISmsQueue smsQueue,
-            IDocumentRenderService documentRender)
+            IDocumentRenderService documentRender, PreFactorService preFactorService)
         {
             this.crmSaveCahngeAsync = crmSaveCahngeAsync;
             this.ts = ts;
@@ -96,6 +97,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.pushQueue = pushQueue;
             this.smsQueue = smsQueue;
             this.documentRender = documentRender;
+            this.preFactorService = preFactorService;
         }
 
         [Authorize(Policy = "NotCustomerOnly")]
@@ -245,7 +247,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             pf.ModifyDate = DateTime.Now;
             pf.ModifyDateTxt = dtService.GetDateTimePersian();
 
-            pf = await genService.AcceptOrRejectPreFactor(pf, 1);
+            pf = await preFactorService.AcceptOrRejectPreFactor(pf, 1);
 
             await _logSystemService.LogChange(oldPf, pf, LogActionEnum.تایید_و_تغییر_وضعیت, user);
 
@@ -334,7 +336,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     }
                 }
 
-                pf = await genService.AcceptOrRejectPreFactor(pf, 2);
+                pf = await preFactorService.AcceptOrRejectPreFactor(pf, 2);
 
                 await _logSystemService.LogChange(oldPf, pf, LogActionEnum.رد_و_تغییر_وضعیت, user);
                 await db.SaveChangesAsync();
@@ -569,7 +571,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 pf.TaminStepTxt = nameof(TaminStepEnum.تایید_شده).Replace("_", " ");
             }
 
-            pf = await genService.AcceptOrRejectPreFactor(pf, 1);
+            pf = await preFactorService.AcceptOrRejectPreFactor(pf, 1);
 
             await _logSystemService.LogChange(oldPf, pf, LogActionEnum.تایید_و_تغییر_وضعیت, user);
             await db.SaveChangesAsync();
@@ -639,7 +641,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         item.IsDeleted = true;
                 }*/
 
-                pf = await genService.AcceptOrRejectPreFactor(pf, 2);
+                pf = await preFactorService.AcceptOrRejectPreFactor(pf, 2);
 
                 await _logSystemService.LogChange(oldPf, pf, LogActionEnum.رد_و_تغییر_وضعیت, user);
 
@@ -728,7 +730,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             pf.ModifyDate = DateTime.Now;
             pf.ModifyDateTxt = dtService.GetDateTimePersian();
 
-            pf = await genService.AcceptOrRejectPreFactor(pf, 1);
+            pf = await preFactorService.AcceptOrRejectPreFactor(pf, 1);
 
             await _logSystemService.LogChange(oldPf, pf, LogActionEnum.تایید_و_تغییر_وضعیت, user);
             await db.SaveChangesAsync();
@@ -772,7 +774,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 pf.ModifyDate = DateTime.Now;
                 pf.ModifyDateTxt = dtService.GetDateTimePersian();
 
-                pf = await genService.AcceptOrRejectPreFactor(pf, 2);
+                pf = await preFactorService.AcceptOrRejectPreFactor(pf, 2);
 
                 await _logSystemService.LogChange(oldPf, pf, LogActionEnum.رد_و_تغییر_وضعیت, user);
                 await db.SaveChangesAsync();
@@ -1283,7 +1285,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 pf.PftypeTxt = Service.GetTypeTxtPfactor(pf.Pftype);
             } else
             {
-                pf = await genService.AcceptOrRejectPreFactor(pf, 1);
+                pf = await preFactorService.AcceptOrRejectPreFactor(pf, 1);
             }
 
             await regAccountancy(pf);
@@ -2843,7 +2845,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var pf = await db.PreFactors.Where(f => f.Id == id).FirstOrDefaultAsync();
 
-            await genService.DeletePreFactor(pf, user);
+            await preFactorService.DeletePreFactor(pf, user);
             await db.SaveChangesAsync();
             return Ok();
         }

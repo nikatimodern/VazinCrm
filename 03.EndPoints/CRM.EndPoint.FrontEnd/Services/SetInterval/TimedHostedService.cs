@@ -202,7 +202,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
                 using var scope = serviceScopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<CRMContextDb>();
                 var dtService = scope.ServiceProvider.GetRequiredService<DateTimeServices>();
-                var genService = scope.ServiceProvider.GetRequiredService<Service>();
+                var preFactorService = scope.ServiceProvider.GetRequiredService<PreFactorService>();
                 var logSystemService = scope.ServiceProvider.GetRequiredService<LogSystemService>();
 
                 var _data = await (from items in db.PreFactors
@@ -249,7 +249,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
 
                     if (DateTime.Now >= item.ValidityDateMiladi.Value.AddDays(15))
                     {
-                        await genService.DeletePreFactor(item, new AppUser { FirstName = "سیستم", Id = null });
+                        await preFactorService.DeletePreFactor(item, new AppUser { FirstName = "سیستم", Id = null });
                     }
                 }
 

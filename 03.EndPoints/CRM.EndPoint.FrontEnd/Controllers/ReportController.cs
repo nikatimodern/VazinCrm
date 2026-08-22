@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -30,26 +29,22 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
     public class ReportController : Controller {
         private readonly IHubContext<TaskHub> hub;
         private readonly UserManager<AppUser> userManager;
-        private readonly ILogger<HomeController> _logger;
         private readonly CRMContextDb db;
         private readonly DateTimeServices dts;
         private readonly UserContextDb udb;
-        private readonly Service genService;
         private readonly IViewRenderService vrs;
         private readonly LogSystemService _logSystemService;
         private readonly IssabelService issabelService;
 
-        public ReportController(IHubContext<TaskHub> hub, UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db,
-            DateTimeServices dts, UserContextDb udb, Service GenService, IViewRenderService vrs, LogSystemService logSystemService,
+        public ReportController(IHubContext<TaskHub> hub, UserManager<AppUser> userManager, CRMContextDb db,
+            DateTimeServices dts, UserContextDb udb, IViewRenderService vrs, LogSystemService logSystemService,
             IssabelService issabelService)
         {
             this.hub = hub;
             this.userManager = userManager;
-            _logger = logger;
             this.db = db;
             this.dts = dts;
             this.udb = udb;
-            genService = GenService;
             this.vrs = vrs;
             _logSystemService = logSystemService;
             this.issabelService = issabelService;
@@ -105,65 +100,27 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                using var workbook = new XLWorkbook();
-                //workbook.ColumnWidth = 30;
-                var worksheet = workbook.Worksheets.Add("Reports");
-                worksheet.Columns().AdjustToContents();
+                var data = await GetAllReports(model);
+                
+                
+                var columns = new List<ExcelColumnConfig<Report>>
+                {
+                    new() { Header = "تاریخ", ValueSelector = x => TextService.ToEnglishNumber($"{x.RegDateTxt} {x.RegTimeTxt}") },
+                    new() { Header = "نوع", ValueSelector = x => x.ReportTypeTxt },
+                    new() { Header = "مشتری", ValueSelector = x => x.CustomerTxt },
+                    new() { Header = "تلفن", ValueSelector = x => x.RepTel },
+                    new() { Header = "متن گزارش", ValueSelector = x => x.ReportText },
+                    new() { Header = "کارشناس فروش", ValueSelector = x => x.UserCreator }
+                };
 
-                worksheet.RightToLeft = true;
-                var currentRow = 1;
-
-                worksheet.Row(currentRow).Style.Fill.SetBackgroundColor(XLColor.LightGreen);
-                worksheet.Row(currentRow).Style.Font.Bold = true;
-                worksheet.Cell(currentRow, 1).Value = "ردیف";
-                worksheet.Cell(currentRow, 2).Value = "تاریخ";
-                worksheet.Cell(currentRow, 3).Value = "نوع";
-                worksheet.Cell(currentRow, 4).Value = "مشتری";
-                worksheet.Cell(currentRow, 5).Value = "تلفن";
-                worksheet.Cell(currentRow, 6).Value = "متن گزارش";
-                worksheet.Cell(currentRow, 7).Value = "کارشناس فروش";
                 if (model._type == (int)ReportTypeEnum.گزارش_پیگیری)
                 {
-                    worksheet.Cell(currentRow, 8).Value = "نتیجه تماس";
-                    worksheet.Cell(currentRow, 9).Value = "نتیجه نهایی";
-                    worksheet.Cell(currentRow, 10).Value = "علت انصراف";
+                    columns.Add(new() { Header = "نتیجه تماس", ValueSelector = x => x.ResultCallTxt });
+                    columns.Add(new() { Header = "نتیجه نهایی", ValueSelector = x => x.FinalResultCallTxt });
+                    columns.Add(new() { Header = "علت انصراف", ValueSelector = x => x.ReasonCancelTxt });
                 }
 
-
-                var data = await GetAllReports(model);
-
-                foreach (var item in data)
-                {
-                    currentRow++;
-                    if (currentRow % 2 == 0)
-                        worksheet.Row(currentRow).Style.Fill.SetBackgroundColor(XLColor.LightCyan);
-                    worksheet.Cell(currentRow, 1).Value = currentRow;
-                    worksheet.Cell(currentRow, 2).Value = TextService.ToEnglishNumber(item.RegDateTxt + " " + item.RegTimeTxt);
-                    worksheet.Cell(currentRow, 3).Value = item.ReportTypeTxt;
-                    worksheet.Cell(currentRow, 4).Value = item.CustomerTxt;
-                    worksheet.Cell(currentRow, 5).Value = item.RepTel;
-                    worksheet.Cell(currentRow, 6).Value = item.ReportText;
-                    worksheet.Cell(currentRow, 7).Value = item.UserCreator;
-                    if (model._type == (int)ReportTypeEnum.گزارش_پیگیری)
-                    {
-                        worksheet.Cell(currentRow, 8).Value = item.ResultCallTxt;
-                        worksheet.Cell(currentRow, 9).Value = item.FinalResultCallTxt;
-                        worksheet.Cell(currentRow, 10).Value = item.ReasonCancelTxt;
-                    }
-                }
-
-                worksheet.Columns().AdjustToContents();
-                worksheet.Columns().Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                worksheet.Columns().Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-
-                using var stream = new MemoryStream();
-                workbook.SaveAs(stream);
-                var content = stream.ToArray();
-                return File(
-                    content,
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    "Reports.xlsx"
-                );
+                return ExcelExportService.ExportToExcel(data, columns, "Reports");
             }
             catch (Exception e)
             {

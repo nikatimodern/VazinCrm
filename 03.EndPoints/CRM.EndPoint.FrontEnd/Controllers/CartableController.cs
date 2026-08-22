@@ -34,34 +34,21 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
     public class CartableController : Controller {
         private readonly Service genService;
-        private readonly FileSaver fileSaver;
-        private readonly DateTimeServices dtService;
         private readonly CRMContextDb db;
-        private readonly UserContextDb udb;
-        private readonly Sepidar1ContextDb s1Db;
-        private readonly IPushQueue pushQueue;
-        private readonly IPushService pushService;
+        private readonly PreFactorService preFactorService;
         private readonly IViewRenderService vrs;
         private readonly UserManager<AppUser> userManager;
-        private readonly RoleManager<IdentityRole> roleManager;
         private readonly ASetting _setting;
 
 
-        public CartableController(IViewRenderService vrs, UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager, Service GenService,
-            FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb s1db, IPushQueue pushQueue,
-            IPushService pushService)
+        public CartableController(IViewRenderService vrs, UserManager<AppUser> userManager, Service GenService, CRMContextDb db,
+            PreFactorService preFactorService)
         {
             this.vrs = vrs;
             this.userManager = userManager;
-            this.roleManager = roleManager;
             genService = GenService;
-            this.fileSaver = fileSaver;
-            this.dtService = dtService;
             this.db = db;
-            udb = Udb;
-            s1Db = s1db;
-            this.pushQueue = pushQueue;
-            this.pushService = pushService;
+            this.preFactorService = preFactorService;
             this._setting = db.ASettings.FirstOrDefault();
         }
 
@@ -99,17 +86,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-
         [HttpPost]
         [Authorize(Roles = "کارشناس فروش ,مدیر ارشد ,مدیر مالی, کارشناس مالی,مدیر فروش,کارشناس تامین")]
         public async Task<IActionResult> PreFactorAcceptedPartial([FromBody] FilterVModel model)
         {
             try
             {
-                var user = await userManager.GetUserAsync(HttpContext.User);
-                var roles = await userManager.GetRolesAsync(user);
-
-                var pList = await GetPrefactors(model, user, roles);
+                var pList = await GetPrefactors(model);
                 if (pList == null)
                     throw new Exception();
 
@@ -132,77 +115,28 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> PrefactorExportToExcel(FilterVModel model)
+        public async Task<IActionResult> PrefactorExportToExcel([FromBody] FilterVModel model)
         {
-            var user = await userManager.GetUserAsync(HttpContext.User);
-            var roles = await userManager.GetRolesAsync(user);
-
-            // خواندن بدنه درخواست
-            string requestBody;
-            using (var reader = new StreamReader(Request.Body))
-            {
-                requestBody = await reader.ReadToEndAsync();
-            }
-
-            var model1 = JsonSerializer.Deserialize<FilterVModel>(requestBody);
-
             try
             {
-                using (var workbook = new XLWorkbook())
-                {
-                    //workbook.ColumnWidth = 30;
-                    var worksheet = workbook.Worksheets.Add("PreFactors");
-                    worksheet.Columns().AdjustToContents();
-                    worksheet.RightToLeft = true;
-                    var currentRow = 1;
+                var preFactors = await GetPrefactors(model);
 
-                    worksheet.Row(currentRow).Style.Fill.SetBackgroundColor(XLColor.LightGreen);
-                    worksheet.Row(currentRow).Style.Font.Bold = true;
-                    worksheet.Cell(currentRow, 1).Value = "ردیف";
-                    worksheet.Cell(currentRow, 2).Value = "شماره سریال";
-                    worksheet.Cell(currentRow, 3).Value = "نوع";
-                    worksheet.Cell(currentRow, 4).Value = "تاریخ صدور";
-                    worksheet.Cell(currentRow, 5).Value = "تاریخ اعتبار";
-                    worksheet.Cell(currentRow, 6).Value = "جمع کل";
-                    worksheet.Cell(currentRow, 7).Value = "جمع کل با ارزش افزوده";
-                    worksheet.Cell(currentRow, 8).Value = "مشتری";
-                    worksheet.Cell(currentRow, 9).Value = "کارشناس فروش";
-                    worksheet.Cell(currentRow, 10).Value = "وضعیت";
-                    worksheet.Cell(currentRow, 11).Value = "تایید";
-                    worksheet.Cell(currentRow, 12).Value = "صادراتی";
-                    worksheet.Column(6).Style.NumberFormat.Format = "#,##0_-ريال";
-                    worksheet.Column(7).Style.NumberFormat.Format = "#,##0_-ريال";
-                    var preFactors = await GetPrefactors(model1, user, roles);
-                    foreach (var item in preFactors ?? [])
-                    {
-                        currentRow++;
-                        if (currentRow % 2 == 0)
-                            worksheet.Row(currentRow).Style.Fill.SetBackgroundColor(XLColor.LightCyan);
-                        worksheet.Cell(currentRow, 1).Value = currentRow;
-                        worksheet.Cell(currentRow, 2).Value = item.SerialNumber;
-                        worksheet.Cell(currentRow, 3).Value = item.OfficialType == 1 ? "رسمی" : "غیر رسمی";
-                        worksheet.Cell(currentRow, 4).Value = TextService.ToEnglishNumber(item.Date);
-                        worksheet.Cell(currentRow, 5).Value = TextService.ToEnglishNumber(item.ValidityDade);
-                        worksheet.Cell(currentRow, 6).Value = item.SumTotalAmount;
-                        worksheet.Cell(currentRow, 7).Value = item.PaymentAmount;
-                        worksheet.Cell(currentRow, 8).Value = item.Customer + " " + item.AgentName;
-                        worksheet.Cell(currentRow, 9).Value = item.UserCreator;
-                        worksheet.Cell(currentRow, 10).Value = item.PftypeTxt;
-                        worksheet.Cell(currentRow, 11).Value = item.Accepted == true ? "بله" : "خیر";
-                        worksheet.Cell(currentRow, 12).Value = item.Export == true ? "بله" : "خیر";
-                    }
 
-                    worksheet.Columns().AdjustToContents();
-                    using (var stream = new MemoryStream())
-                    {
-                        workbook.SaveAs(stream);
-                        var content = stream.ToArray();
-                        return File(
-                            content,
-                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            "ManagementList.xlsx");
-                    }
-                }
+                var columns = new List<ExcelColumnConfig<PreFactor>> {
+                    new() { Header = "شماره سریال", ValueSelector = x => x.SerialNumber },
+                    new() { Header = "نوع", ValueSelector = x => x.OfficialType == 1 ? "رسمی" : "غیر رسمی" },
+                    new() { Header = "تاریخ صدور", ValueSelector = x => TextService.ToEnglishNumber(x.Date) },
+                    new() { Header = "تاریخ اعتبار", ValueSelector = x => TextService.ToEnglishNumber(x.ValidityDade) },
+                    new() { Header = "جمع کل", ValueSelector = x => x.SumTotalAmount, NumberFormat = "#,##0_-ريال" },
+                    new() { Header = "جمع کل با ارزش افزوده", ValueSelector = x => x.PaymentAmount, NumberFormat = "#,##0_-ريال" },
+                    new() { Header = "مشتری", ValueSelector = x => $"{x.Customer} {x.AgentName}" },
+                    new() { Header = "کارشناس فروش", ValueSelector = x => x.UserCreator },
+                    new() { Header = "وضعیت", ValueSelector = x => x.PftypeTxt },
+                    new() { Header = "تایید", ValueSelector = x => x.Accepted == true ? "بله" : "خیر" },
+                    new() { Header = "صادراتی", ValueSelector = x => x.Export == true ? "بله" : "خیر" }
+                };
+
+                return ExcelExportService.ExportToExcel(preFactors, columns, "PreFactors");
             }
             catch
             {
@@ -225,83 +159,32 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             var model1 = JsonSerializer.Deserialize<FilterVModel>(requestBody);
 
-            try
-            {
-                using (var workbook = new XLWorkbook())
-                {
-                    //workbook.ColumnWidth = 30;
-                    var worksheet = workbook.Worksheets.Add("PreFactors");
-                    worksheet.Columns().AdjustToContents();
-                    worksheet.RightToLeft = true;
-                    var currentRow = 1;
+            var factors = await GetFactors(model1, user, roles);
+            var columns = new List<ExcelColumnConfig<Factor>> {
+                new() { Header = "شماره سریال", ValueSelector = x => x.SerialNumber },
+                new() { Header = "نوع", ValueSelector = x => x.OfficialType == 1 ? "رسمی" : "غیر رسمی" },
+                new() { Header = "تاریخ", ValueSelector = x => TextService.ToEnglishNumber(x.Date) },
+                new() { Header = "شماره پیش فاکتور", ValueSelector = x => x.PfactorSerialNumber },
+                new() { Header = "جمع کل", ValueSelector = x => x.SumTotalAmount, NumberFormat = "#,##0_-ريال" },
+                new() { Header = "جمع کل با ارزش افزوده", ValueSelector = x => x.PaymentAmount, NumberFormat = "#,##0_-ريال" },
+                new() { Header = "مشتری", ValueSelector = x => $"{x.Customer} {x.AgentName}" },
+                new() { Header = "کارشناس فروش", ValueSelector = x => x.SelerFullName },
+                new() { Header = "شماره فاکتور مالی", ValueSelector = x => x.SnFinancial },
+                new() { Header = "وضعیت", ValueSelector = x => x.statusTxt },
+                new() { Header = "صادراتی", ValueSelector = x => x.Export == true ? "بله" : "خیر" },
+                new() { Header = "ثبت شده توسط", ValueSelector = x => x.UserCreator }
+            };
 
-                    worksheet.Row(currentRow).Style.Fill.SetBackgroundColor(XLColor.LightGreen);
-                    worksheet.Row(currentRow).Style.Font.Bold = true;
-                    worksheet.Cell(currentRow, 1).Value = "ردیف";
-                    worksheet.Cell(currentRow, 2).Value = "شماره سریال";
-                    worksheet.Cell(currentRow, 3).Value = "نوع";
-                    worksheet.Cell(currentRow, 4).Value = "تاریخ";
-                    worksheet.Cell(currentRow, 5).Value = "شماره پیش فاکتور";
-                    worksheet.Cell(currentRow, 6).Value = "جمع کل";
-                    worksheet.Cell(currentRow, 7).Value = "جمع کل با ارزش افزوده";
-                    worksheet.Cell(currentRow, 8).Value = "مشتری";
-                    worksheet.Cell(currentRow, 9).Value = "کارشناس فروش";
-                    worksheet.Cell(currentRow, 10).Value = "شماره فاکتور مالی";
-                    worksheet.Cell(currentRow, 11).Value = "وضعیت";
-                    worksheet.Cell(currentRow, 12).Value = "صادراتی";
-                    worksheet.Cell(currentRow, 13).Value = "ثبت شده توسط";
-                    worksheet.Column(6).Style.NumberFormat.Format = "#,##0_-ريال";
-                    worksheet.Column(7).Style.NumberFormat.Format = "#,##0_-ريال";
-                    var factors = await GetFactors(model1, user, roles);
-                    foreach (var item in factors)
-                    {
-                        currentRow++;
-                        if (currentRow % 2 == 0)
-                            worksheet.Row(currentRow).Style.Fill.SetBackgroundColor(XLColor.LightCyan);
-                        worksheet.Cell(currentRow, 1).Value = currentRow;
-                        worksheet.Cell(currentRow, 2).Value = item.SerialNumber;
-                        worksheet.Cell(currentRow, 3).Value = item.OfficialType == 1 ? "رسمی" : "غیر رسمی";
-                        worksheet.Cell(currentRow, 4).Value = TextService.ToEnglishNumber(item.Date);
-                        worksheet.Cell(currentRow, 5).Value = item.PfactorSerialNumber;
-                        worksheet.Cell(currentRow, 6).Value = item.SumTotalAmount;
-                        worksheet.Cell(currentRow, 7).Value = item.PaymentAmount;
-                        worksheet.Cell(currentRow, 8).Value = item.Customer + " " + item.AgentName;
-                        worksheet.Cell(currentRow, 9).Value = item.SelerFullName;
-                        worksheet.Cell(currentRow, 10).Value = item.SnFinancial;
-                        worksheet.Cell(currentRow, 11).Value = item.statusTxt;
-                        worksheet.Cell(currentRow, 12).Value = item.Export == true ? "بله" : "خیر";
-                        worksheet.Cell(currentRow, 13).Value = item.UserCreator;
-                    }
-
-                    worksheet.Columns().AdjustToContents();
-                    using (var stream = new MemoryStream())
-                    {
-                        workbook.SaveAs(stream);
-                        var content = stream.ToArray();
-                        return File(
-                            content,
-                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            "ManagementList.xlsx");
-                    }
-                }
-            }
-            catch
-            {
-                return null;
-            }
+            return ExcelExportService.ExportToExcel(factors, columns, "PreFactors");
         }
 
 
-        private async Task<IList<PreFactor>> GetPrefactors(FilterVModel model, AppUser user, IList<string> roles)
+        private async Task<IList<PreFactor>> GetPrefactors(FilterVModel model)
         {
             try
             {
-                var pListQ = db.PreFactors
-                    .Include(x => x.Deal)
-                    .Include(f => f.CustomerEntity)
-                    .OrderByDescending(f => f.DateMiladi)
-                    .ThenByDescending(f => f.CreateDate)
-                    .AsQueryable();
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                var pListQ = preFactorService.BuildQuery();
 
                 if (!string.IsNullOrWhiteSpace(model.serVal))
                 {
@@ -316,14 +199,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     );
                 }
 
-                if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر فروش") && !roles.Contains("کارشناس مالی") && !roles.Contains("مدیر مالی"))
-                {
-                    pListQ = pListQ.Where(f => f.UserCreatorID == user.Id);
-                }
-
                 if (model.filt != null)
                 {
                     pListQ = pListQ.ApplyFilter(model, f => f.CustomerId, f => f.DateMiladi, f => f.UserCreatorID);
+                }
+
+                if (!User.IsAdmin() && !User.IsSalesAdmin() && !User.IsFinancial())
+                {
+                    pListQ = pListQ.Where(f => f.UserCreatorID == user.Id);
                 }
 
                 pListQ = model._type switch {
@@ -339,78 +222,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var pList = await pListQ.AsNoTracking().ToListAsync();
 
-                var preFactorIds = pList.Select(x => x.Id).ToArray();
-
-                // Accountancy
-                var accountancyData = await db.Accountancies
-                    .AsNoTracking()
-                    .ForPreFactor()
-                    .NotVosoled()
-                    .Where(x => x.pfid.HasValue && preFactorIds.Contains(x.pfid.Value))
-                    .GroupBy(x => x.pfid)
-                    .Select(g => new {
-                        PreFactorId = g.Key,
-                        ReciveAmount = g.Sum(x => x.AccType == AcEnum.واریزی ? x.credit : -x.BackWard)
-                    })
-                    .ToDictionaryAsync(x => x.PreFactorId.Value, x => x.ReciveAmount ?? 0);
-
-
-                // Factor Counts
-                Dictionary<Guid, int> factorCounts = new();
-                if (_setting?.CrmFactors == true)
-                {
-                    factorCounts = await db.Factors
-                        .AsNoTracking()
-                        .Where(x => preFactorIds.Contains(x.PfactorID))
-                        .GroupBy(x => x.PfactorID)
-                        .Select(g => new {
-                            PreFactorId = g.Key,
-                            Count = g.Count()
-                        })
-                        .ToDictionaryAsync(x => x.PreFactorId, x => x.Count);
-                }
-
-                // Sepidar
-                Dictionary<Guid, int> sepidarCounts = new();
-                if (_setting?.Sepidar == true)
-                {
-                    var serialNumbers = pList.Select(x => x.SerialNumber).ToArray();
-
-                    var invoices = await s1Db.vwInvoice.AsNoTracking()
-                        .Where(x => x.QuotationNumber.HasValue && serialNumbers.Contains(x.QuotationNumber.Value))
-                        .Select(x => new {
-                            SerialNumber = x.QuotationNumber.Value,
-                            x.CreationDate
-                        })
-                        .ToListAsync();
-
-                    sepidarCounts = pList.ToDictionary(
-                        pf => pf.Id,
-                        pf => invoices.Count(x => x.SerialNumber == pf.SerialNumber && x.CreationDate >= pf.CreateDate)
-                    );
-                }
-
-                foreach (var item in pList)
-                {
-                    accountancyData.TryGetValue(item.Id, out var receiveAmount);
-
-                    item.ReciveAmount = receiveAmount;
-
-                    item.PaymentAmount = item.SumTotalAmount + item.TotalTax - item.Discount - item.ReciveAmount;
-                    item.SumTotalAmountTax = item.SumTotalAmount + item.TotalTax - item.Discount;
-
-                    if (_setting?.Sepidar == true)
-                    {
-                        sepidarCounts.TryGetValue(item.Id, out var count);
-                        item.CountFactorSepidar = count;
-                    }
-
-                    if (_setting?.CrmFactors == true)
-                    {
-                        factorCounts.TryGetValue(item.Id, out var count);
-                        item.CountFactor = count;
-                    }
-                }
+                await preFactorService.FillDetailsAsync(pList);
 
                 return pList;
             }
@@ -495,7 +307,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     Setting = _setting,
                     IsAdmin = User.IsAdmin() || User.IsTaminAdmin()
                 };
-                
+
 
                 var queryBase = db.PreFactors.AsQueryable();
 

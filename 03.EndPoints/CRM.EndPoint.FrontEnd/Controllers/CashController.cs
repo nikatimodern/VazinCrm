@@ -31,18 +31,16 @@ public class CashController : Controller {
     private readonly UserContextDb udb;
     private readonly UserManager<AppUser> userManager;
     private readonly DateTimeServices dtService;
-    private readonly Service genService;
     private readonly LogSystemService logSystemService;
     private readonly FileSaver fileSaver;
 
-    public CashController(CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, DateTimeServices dtService, Service genService,
+    public CashController(CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, DateTimeServices dtService,
         LogSystemService logSystemService, FileSaver fileSaver)
     {
         this.db = db;
         this.udb = udb;
         this.userManager = userManager;
         this.dtService = dtService;
-        this.genService = genService;
         this.logSystemService = logSystemService;
         this.fileSaver = fileSaver;
     }
@@ -805,101 +803,44 @@ public class CashController : Controller {
                 await AssignPaymentVoucherNumbers(cashItems, startVoucherNumber.Value);
             }
 
+            var columns = new List<ExcelColumnConfig<Cash>> {
+                new() { Header = "نوع قلم", ValueSelector = _ => "PaymentDraft" },
+                new() { Header = "اعلاميه پرداخت نوع پرداخت", ValueSelector = _ => 2 },
+                new() { Header = "اعلاميه پرداخت طرف مقابل", ValueSelector = x => x.CostCenter?.Title },
+                new() { Header = "اعلاميه پرداخت كد تفصيل", ValueSelector = x => x.CostCenter?.Code },
+                new() { Header = "اعلاميه پرداخت شماره", ValueSelector = x => x.PaymentVoucherNumber },
+                new() { Header = "اعلاميه پرداخت تاريخ", ValueSelector = x => x.CostDate },
+                new() { Header = "اعلاميه پرداخت كد معين", ValueSelector = x => x.CostTitle?.MoeinCode },
+                new() { Header = "اعلاميه پرداخت صندوق", ValueSelector = _ => "صندوق" },
+                new() { Header = "اعلاميه پرداخت مبلغ پرداخت", ValueSelector = x => x.Amount }, // TODO
+                new() { Header = "اعلاميه پرداخت مبلغ نقد", ValueSelector = _ => 0 },
+                new() { Header = "اعلاميه پرداخت شرح", ValueSelector = x => x.CostDescription },
+                new() { Header = "اعلاميه پرداخت شرح(2)", ValueSelector = x => x.CostDescription },
+                new() { Header = "پرداخت چك حساب بانكي1", ValueSelector = _ => "" },
+                new() { Header = "پرداخت چك شماره", ValueSelector = _ => "" },
+                new() { Header = "پرداخت چك پشت نمره", ValueSelector = _ => "" },
+                new() { Header = "پرداخت چك مبلغ", ValueSelector = _ => "" },
+                new() { Header = "پرداخت چك تاريخ سررسيد", ValueSelector = _ => "" },
+                new() { Header = "پرداخت چك نوع مدت", ValueSelector = _ => "" },
+                new() { Header = "پرداخت چك شرح", ValueSelector = _ => "" },
+                new() { Header = "پرداخت چك شرح(2)", ValueSelector = _ => "" },
+                new() { Header = "پرداخت چك وضعيت", ValueSelector = _ => "" },
+                new() { Header = "اعلاميه برداشت شماره", ValueSelector = x => string.IsNullOrEmpty(x.ReferenceNumber) ? "0" : x.ReferenceNumber },
+                new() { Header = "اعلاميه برداشت تاريخ", ValueSelector = x => x.CostDate },
+                new() { Header = "اعلاميه برداشت مبلغ", ValueSelector = x => x.Amount },
+                new() { Header = "اعلاميه برداشت حساب بانكي", ValueSelector = x => x.BankAccountTxt },
+                new() { Header = "اعلاميه برداشت شرح", ValueSelector = x => x.CostDescription },
+                new() { Header = "اعلاميه برداشت شرح(2)", ValueSelector = _ => "" },
+                new() { Header = "اعلاميه برداشت تفصيل حساب بانكي", ValueSelector = x => x.BankAccount?.AccountCode },
+                new() { Header = "اعلاميه برداشت نرخ كارمزد بانكي", ValueSelector = _ => 1 },
+                new() { Header = "اعلاميه برداشت كارمزد بانكي", ValueSelector = x => x.Fee == 0 ? "" : x.Fee },
+                new() { Header = "اعلاميه برداشت كارمزد بانكي به ارز پايه", ValueSelector = x => x.Fee == 0 ? "" : x.Fee },
+                new() { Header = "اعلاميه پرداخت كد معين كارمزد بانكي", ValueSelector = x => x.Fee == 0 ? "" : 7704 },
+                new() { Header = "اعلاميه پرداخت تخفيف", ValueSelector = _ => 0 },
+                new() { Header = "اعلاميه پرداخت استقراري", ValueSelector = _ => "False" }
+            };
 
-            using var workbook = new XLWorkbook();
-            var ws = workbook.Worksheets.Add("تنخواه");
-
-            string[] headers = [
-                "نوع قلم", // 1
-                "اعلاميه پرداخت نوع پرداخت", // 2
-                "اعلاميه پرداخت طرف مقابل", // 3
-                "اعلاميه پرداخت كد تفصيل", // 4
-                "اعلاميه پرداخت شماره", // 5
-                "اعلاميه پرداخت تاريخ", // 6
-                "اعلاميه پرداخت كد معين", // 7
-                "اعلاميه پرداخت صندوق", // 8
-                "اعلاميه پرداخت مبلغ پرداخت", // 9
-                "اعلاميه پرداخت مبلغ نقد", // 10
-                "اعلاميه پرداخت شرح", // 11
-                "اعلاميه پرداخت شرح(2)", // 12
-                "پرداخت چك حساب بانكي1", // 13
-                "پرداخت چك شماره", // 14
-                "پرداخت چك پشت نمره", // 15
-                "پرداخت چك مبلغ", // 16
-                "پرداخت چك تاريخ سررسيد", // 17
-                "پرداخت چك نوع مدت", // 18
-                "پرداخت چك شرح", // 19
-                "پرداخت چك شرح(2)", // 20
-                "پرداخت چك وضعيت", // 21
-                "اعلاميه برداشت شماره", // 22
-                "اعلاميه برداشت تاريخ", // 23
-                "اعلاميه برداشت مبلغ", // 24
-                "اعلاميه برداشت حساب بانكي", // 25
-                "اعلاميه برداشت شرح", // 26
-                "اعلاميه برداشت شرح(2)", // 27
-                "اعلاميه برداشت تفصيل حساب بانكي", // 28
-                "اعلاميه برداشت نرخ كارمزد بانكي", // 29
-                "اعلاميه برداشت كارمزد بانكي", // 30
-                "اعلاميه برداشت كارمزد بانكي به ارز پايه", // 31
-                "اعلاميه پرداخت كد معين كارمزد بانكي", // 32
-                "اعلاميه پرداخت تخفيف", // 33
-                "اعلاميه پرداخت استقراري" // 34
-            ];
-
-            for (var i = 0; i < headers.Length; i++)
-            {
-                ws.Cell(1, i + 1).Value = headers[i];
-                ws.Cell(1, i + 1).Style.Font.Bold = true;
-            }
-
-            var row = 2;
-
-            foreach (var item in cashItems)
-            {
-                ws.Cell(row, 1).Value = "PaymentDraft";
-                ws.Cell(row, 2).Value = 2;
-                ws.Cell(row, 3).Value = item.CostCenter.Title;
-                ws.Cell(row, 4).Value = item.CostCenter.Code;
-                ws.Cell(row, 5).Value = item.PaymentVoucherNumber;
-                ws.Cell(row, 6).Value = item.CostDate;
-                ws.Cell(row, 7).Value = item.CostTitle.MoeinCode;
-                ws.Cell(row, 8).Value = "صندوق";
-                ws.Cell(row, 9).Value = item.Amount; //TODO
-                ws.Cell(row, 10).Value = 0;
-                ws.Cell(row, 11).Value = item.CostDescription;
-                ws.Cell(row, 12).Value = item.CostDescription;
-                ws.Cell(row, 13).Value = "";
-                ws.Cell(row, 14).Value = "";
-                ws.Cell(row, 15).Value = "";
-                ws.Cell(row, 16).Value = "";
-                ws.Cell(row, 17).Value = "";
-                ws.Cell(row, 18).Value = "";
-                ws.Cell(row, 19).Value = "";
-                ws.Cell(row, 20).Value = "";
-                ws.Cell(row, 21).Value = "";
-                ws.Cell(row, 22).Value = string.IsNullOrEmpty(item.ReferenceNumber) ? "0" : item.ReferenceNumber;
-                ws.Cell(row, 23).Value = item.CostDate;
-                ws.Cell(row, 24).Value = item.Amount;
-                ws.Cell(row, 25).Value = item.BankAccountTxt;
-                ws.Cell(row, 26).Value = item.CostDescription;
-                ws.Cell(row, 27).Value = "";
-                ws.Cell(row, 28).Value = item.BankAccount?.AccountCode;
-                ws.Cell(row, 29).Value = 1;
-                ws.Cell(row, 30).Value = item.Fee == 0 ? "" : item.Fee;
-                ws.Cell(row, 31).Value = item.Fee == 0 ? "" : item.Fee;
-                ws.Cell(row, 32).Value = item.Fee == 0 ? "" : 7704;
-                ws.Cell(row, 33).Value = 0;
-                ws.Cell(row, 34).Value = "False";
-
-                row++;
-            }
-
-            ws.Columns().AdjustToContents();
-
-            using var stream = new MemoryStream();
-            workbook.SaveAs(stream);
-
-            return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "CashGroup.xlsx");
+            return ExcelExportService.ExportToExcel(cashItems, columns, "تنخواه", rightToLeft: false, includeRowNumber: false);
         }
         catch (Exception ex)
         {

@@ -171,6 +171,8 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<IDocumentRenderService, DocumentRenderService>();
 
             services.AddScoped<IMenuService, MenuService>();
+            services.AddScoped<PreFactorService>();
+            services.AddSingleton<ExcelExportService>();
 
             services.AddSingleton<WebPushClient>(sp => {
                 var handler = new SocketsHttpHandler {

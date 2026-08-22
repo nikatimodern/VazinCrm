@@ -45,10 +45,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly IViewRenderService vrs;
         private readonly LogSystemService _logSystemService;
         private readonly IPushQueue pushQueue;
+        private readonly PreFactorService preFactorService;
 
         public CustomerController(SepidarService sps, UserManager<AppUser> userManager, Service GenService, FileSaver fileSaver,
             DateTimeServices dtService, CRMContextDb db, UserContextDb udb, Sepidar1ContextDb S1db, Sepidar2ContextDb S2db,
-            IHubContext<TaskHub> hub, IViewRenderService vrs, LogSystemService logSystemService, IPushQueue pushQueue)
+            IHubContext<TaskHub> hub, IViewRenderService vrs, LogSystemService logSystemService, IPushQueue pushQueue, PreFactorService preFactorService)
         {
             this.sps = sps;
             this.userManager = userManager;
@@ -63,6 +64,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.vrs = vrs;
             _logSystemService = logSystemService;
             this.pushQueue = pushQueue;
+            this.preFactorService = preFactorService;
         }
 
         [Authorize(Policy = "NotCustomerOnly")]
@@ -994,13 +996,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var taminUsers = await userManager.GetUsersInRoleAsync("کارشناس تامین");
                 ViewBag.PassType = dealId == null ? 1 : 4;
 
-                var query = db.PreFactors
-                    .AsNoTracking()
-                    .Include(x => x.Deal)
-                    .AsQueryable();
+                var query = preFactorService.BuildQuery();
 
                 if (showDeleted)
+                {
                     query = query.IgnoreQueryFilters();
+                }
 
                 if (dealId.HasValue)
                 {
@@ -1013,95 +1014,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     return Ok(new { count = 0, html = string.Empty });
                 }
 
-
-                var data = await query
-                    .OrderByDescending(x => x.CreateDate)
-                    .ToListAsync();
-
-                if (data.Count == 0)
-                {
-                    var emptyModel = new PrefactorViewModel {
-                        data = data,
-                        UserTamin = taminUsers,
-                        _Setting = setting
-                    };
-
-                    var emptyHtml = await vrs.RenderToStringAsync("GetAllPreFactorPartial", emptyModel,
-                        new Dictionary<string, object> {
-                            { "PassType", ViewBag.PassType }
-                        });
-
-                    return Ok(new { count = 0, html = emptyHtml });
-                }
-
-                var preFactorIds = data.Select(x => x.Id).ToArray();
-
-                // Accountancy
-                var accountancyData = await db.Accountancies
-                    .AsNoTracking()
-                    .ForPreFactor()
-                    .Where(x => x.pfid.HasValue && preFactorIds.Contains(x.pfid.Value))
-                    .NotVosoled()
-                    .GroupBy(x => x.pfid)
-                    .Select(g => new {
-                        PreFactorId = g.Key,
-                        ReciveAmount = g.Sum(x => x.AccType == AcEnum.واریزی ? x.credit : -x.BackWard)
-                    })
-                    .ToDictionaryAsync(x => x.PreFactorId.Value, x => x.ReciveAmount ?? 0);
-
-                // Factor Counts
-                Dictionary<Guid, int> factorCounts = new();
-                if (setting?.CrmFactors == true)
-                {
-                    factorCounts = await db.Factors
-                        .AsNoTracking()
-                        .Where(x => preFactorIds.Contains(x.PfactorID))
-                        .GroupBy(x => x.PfactorID)
-                        .Select(g => new {
-                            PreFactorId = g.Key,
-                            Count = g.Count()
-                        })
-                        .ToDictionaryAsync(x => x.PreFactorId, x => x.Count);
-                }
-
-                // Sepidar
-                Dictionary<int, int> sepidarCounts = new();
-                if (setting?.Sepidar == true)
-                {
-                    var serialNumbers = data.Select(x => x.SerialNumber).ToArray();
-
-                    sepidarCounts = await S1db.vwInvoice.AsNoTracking()
-                        .Where(x => x.QuotationNumber.HasValue && serialNumbers.Contains(x.QuotationNumber.Value))
-                        .GroupBy(x => x.QuotationNumber.Value)
-                        .Select(g => new {
-                            SerialNumber = g.Key,
-                            Count = g.Count()
-                        })
-                        .ToDictionaryAsync(x => x.SerialNumber, x => x.Count);
-                }
-
-
-                foreach (var item in data)
-                {
-                    accountancyData.TryGetValue(item.Id, out var receiveAmount);
-
-                    item.ReciveAmount = receiveAmount;
-
-                    item.PaymentAmount = item.SumTotalAmount + item.TotalTax - item.Discount - item.ReciveAmount;
-                    item.SumTotalAmountTax = item.SumTotalAmount + item.TotalTax - item.Discount;
-
-                    if (setting?.Sepidar == true)
-                    {
-                        sepidarCounts.TryGetValue(item.SerialNumber, out var count);
-                        item.CountFactorSepidar = count;
-                    }
-
-                    if (setting?.CrmFactors == true)
-                    {
-                        factorCounts.TryGetValue(item.Id, out var count);
-                        item.CountFactor = count;
-                    }
-                }
+                var data = await query.AsNoTracking().ToListAsync();
+                
+                await preFactorService.FillDetailsAsync(data);
 
                 var model = new PrefactorViewModel {
                     data = data,
