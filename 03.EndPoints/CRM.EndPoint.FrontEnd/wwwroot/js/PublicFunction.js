@@ -1738,13 +1738,13 @@ const acceptFactor = async (id, type, passType, PfactorSerialNumber) => {
 };
 
 
-let pfIdChangeUser;
-async function showModalChangeUserPf(pfId, cusId) {
+/*let pfIdChangeUser;
+async function showModalChangeUsersPf(pfId, cusId) {
     pfIdChangeUser = pfId;
     $("#changeUserPfModal").modal("toggle");
     document.getElementById("FLshowLoading").style.display = "flex";
     try {
-        const res = await fetch(`/Customer/GetUsersForCustomer?cusId=${cusId}&pfId=${pfId}`);
+        const res = await fetch(`/Customer/GetUsersForPreFactor?cusId=${cusId}&pfId=${pfId}`);
         const data = await res.json();
         
         
@@ -1767,24 +1767,71 @@ async function showModalChangeUserPf(pfId, cusId) {
     } catch (err) {
         console.log(err);
     }
-}
-async function submitChangeUserPf() {
-    const userId = document.getElementById("selectOptUserPf").value;
-    const userFullName = document.getElementById("selectOptUserPf").selectedOptions[0].innerText;
+}*/
+
+let pfIdChangeUser;
+async function showModalChangeUsersPf(pfId, cusId) {
+    pfIdChangeUser = pfId;
+    
+    ModalToggle("changeUserPfModal");
+    FLshowLoading();
     
     try {
-        document.getElementById("FLshowLoading").style.display = "";
-        const res = await fetch(`/Customer/ChangeUserPf?userId=${userId}&pfId=${pfIdChangeUser}&userFullName=${userFullName}`);
-        if (res.ok) {
-            $("#changeUserPfModal").modal("toggle");
-            toastifySuccess("با موفقیت ویرایش شد");
+        const res = await fetch(`/Customer/GetUsersForPreFactor?cusId=${cusId}&pfId=${pfId}`);
+        
+        const data = await res.json();
+        
+        const salesSelect = document.getElementById("selectOptUserPf");
+        const taminSelect = document.getElementById("selectOptTaminPf");
+        
+        salesSelect.innerHTML = "";
+        taminSelect.innerHTML = "";
+        
+        const salesFragment = document.createDocumentFragment();
+        data.salesUsers.forEach(item => {
+            const opt = document.createElement("option");
             
-            document.getElementById("FLshowLoading").style.display = "none";
-        }
+            opt.innerText = item.text;
+            opt.value = item.id;
+            opt.selected = item.target;
+            opt.style.backgroundColor = item.target ? "#1967d24a" : "#fff";
+            
+            salesFragment.appendChild(opt);
+        });
+        salesSelect.appendChild(salesFragment);
+        
+        
+        const taminFragment = document.createDocumentFragment();
+        data.taminUsers.forEach(item => {
+            const opt = document.createElement("option");
+            
+            opt.innerText = item.text;
+            opt.value = item.id;
+            opt.selected = item.target;
+            opt.style.backgroundColor = item.target ? "#1967d24a" : "#fff";
+            
+            taminFragment.appendChild(opt);
+        });
+        taminSelect.appendChild(taminFragment);
     } catch (err) {
         console.log(err);
-        setTimeout(async () => await submitChangeUserPf(), 2000);
+    } finally {
+        FLshowLoading(false);
     }
+}
+
+
+async function submitChangeUsersPf() {
+    const userId = document.getElementById("selectOptUserPf").value;
+    const taminUserId = document.getElementById("selectOptTaminPf").value;
+    
+    await sendApiRequest({
+        url: "/Customer/ChangeUsersPreFactor",
+        params: { userId, taminUserId, pfId: pfIdChangeUser },
+        onSuccess: () => {
+            ModalToggle("changeUserPfModal");
+        },
+    });
 }
 
 const upfactorItem = (index) => {

@@ -1,11 +1,27 @@
 @model PreFactor
+@{
+    var isDealClosed = ViewData["isDealClosed"] as bool? ?? false;
+}
 
-@if (!string.IsNullOrEmpty(Model.CommentText)) {
-    <div class="my-2 mt-md-3 mx-auto" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px"></div>
+@if (!string.IsNullOrEmpty(Model.CommentText) || isDealClosed) {
+    <div class="my-2 mt-md-3 mx-auto" style="background-color: rgba(0, 0, 0, 0.15); width: 85%; height: 1px"></div>
+
     <div class="d-flex flex-wrap">
         <div class="px-2 d-flex justify-content-around gap-1">
-            <label style="color:gray">توضیحات:</label>
-            <span class="flex-grow-1" style="white-space: pre-line">@Html.Raw(Model.CommentText)</span>
+            <label style="color: gray">توضیحات:</label>
+
+            <div class="flex-grow-1">
+                @if (!string.IsNullOrEmpty(Model.CommentText)) {
+                    <span style="white-space: pre-line">@Html.Raw(Model.CommentText)</span>
+                }
+
+                @if (isDealClosed) {
+                    <div class="fMedium flex-center gap-1" style="color: #198754">
+                        <svg style="width: 16px" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.403 12.652a3 3 0 0 0 0-5.304 3 3 0 0 0-3.75-3.751 3 3 0 0 0-5.305 0 3 3 0 0 0-3.751 3.75 3 3 0 0 0 0 5.305 3 3 0 0 0 3.75 3.751 3 3 0 0 0 5.305 0 3 3 0 0 0 3.751-3.75Zm-2.546-4.46a.75.75 0 0 0-1.214-.883l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" /></svg>
+                        سفارش این پیش‌فاکتور، تایید مالی شده است.
+                    </div>
+                }
+            </div>
         </div>
     </div>
 }

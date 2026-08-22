@@ -11,10 +11,10 @@
     @foreach (var item in Model.data) {
         var isInvalid = item.Pftype is (int)PreFactorEnum.فاقد_اعتبار or (int)PreFactorEnum.بسته_شده
             or (int)PreFactorEnum.حذف_شده or (int)PreFactorEnum.برگشت_خورده_از_طرف_مدیر_فروش;
-        var hasAccess = item.Deal?.FinancialStatus != DealFinancialStausEnum.تایید_شده
-                        && (User.IsAdmin() || User.IsSalesAdmin() || item.UserCreatorID == User.GetUserId());
-        var hideAddInvoiceBtns = isInvalid || !hasAccess;
 
+        var isDealClosed = item.Deal?.FinancialStatus == DealFinancialStausEnum.تایید_شده;
+        var hasAccess = !isDealClosed && (User.IsAdmin() || User.IsSalesAdmin() || item.UserCreatorID == User.GetUserId());
+        var hideAddInvoiceBtns = isInvalid || !hasAccess;
 
         <div class="d-flex w-100 position-relative">
             @if (item.IsDeleted) {
@@ -26,7 +26,7 @@
 
             <partial name="~/Views/PreFactor/_PreFactorSideLabels.cshtml" model="item" />
 
-            <div data-serialnumber="@item.SerialNumber" class="d-flex flex-column flex-sm-row justify-content-between InfoDataItem_Prefactor w-100 py-2">
+            <div data-serialnumber="@item.SerialNumber" class="d-flex flex-column flex-sm-row flex-grow-1 justify-content-between InfoDataItem_Prefactor w-100 py-2" style="@(isDealClosed ? "background-color: #19875414" : "")">
                 <div class="d-flex flex-column w-100 justify-content-between">
                     <div class="mp flex-column flex-md-row px-2" style=" display:flex;justify-content:space-between; width:100%;direction:rtl; height:100%">
 
@@ -225,7 +225,9 @@
                              view-data='new ViewDataDictionary(ViewData) { ["IsInvalid"] = isInvalid }' />
 
                     @if (!User.IsCustomer()) {
-                        <partial name="~/Views/PreFactor/_PreFactorDescription.cshtml" model="item" />
+                        <partial name="~/Views/PreFactor/_PreFactorDescription.cshtml"
+                                 model="item"
+                                 view-data='new ViewDataDictionary(ViewData) { ["IsDealClosed"] = isDealClosed }' />
                     }
 
                     <div class="d-sm-none mt-3" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
