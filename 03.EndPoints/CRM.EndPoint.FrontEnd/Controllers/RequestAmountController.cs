@@ -16,6 +16,7 @@ using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.RequestAmount;
 using CRM.EndPoint.FrontEnd.Models.Supply;
 using CRM.EndPoint.FrontEnd.Services;
+using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Infrastructures.Sql;
@@ -655,15 +656,37 @@ public class RequestAmountController : Controller {
             };
 
 
+            var supplierFinancials = db.GetSupplierFinancialSummaries();
+
             var data = await query
+                .GroupJoin(supplierFinancials,
+                    ra => ra.SupplierId,
+                    sf => sf.SupplierId,
+                    (ra, financials) => new {
+                        RequestAmount = ra,
+                        Financial = financials.FirstOrDefault()
+                    }
+                )
+                .Select(x => new RequestAmountVModel {
+                    RequestAmount = x.RequestAmount,
+                    SupplyFactorSerials = x.RequestAmount.RequestAmountSupplyFactor.Select(x => x.SupplyFactor.FactorSerial).ToList(),
+                    OrderHeadSerials = x.RequestAmount.RequestAmountOrderHeads.Select(x => x.OrderHead.OrderNumber).ToList(),
+                    CustomerNames = x.RequestAmount.RequestAmountOrderHeads.Select(x => x.OrderHead.CustomerTxt).ToList(),
+                    TotalPaymentAmount = x.RequestAmount.RequestAmountPayments.Sum(x => x.Amount),
+                    SupplierDebt = x.Financial != null ? x.Financial.SupplierDebt : 0
+                })
+                .ToListAsync();
+
+
+            /*var data = await query
                 .Select(ra => new RequestAmountVModel {
                     RequestAmount = ra,
                     SupplyFactorSerials = ra.RequestAmountSupplyFactor.Select(x => x.SupplyFactor.FactorSerial).ToList(),
                     OrderHeadSerials = ra.RequestAmountOrderHeads.Select(x => x.OrderHead.OrderNumber).ToList(),
                     CustomerNames = ra.RequestAmountOrderHeads.Select(x => x.OrderHead.CustomerTxt).ToList(),
-                    TotalPaymentAmount = ra.RequestAmountPayments.Sum(x => x.Amount)
+                    TotalPaymentAmount = ra.RequestAmountPayments.Sum(x => x.Amount),
                 })
-                .ToListAsync();
+                .ToListAsync();*/
 
 
             var html = await vrs.RenderToStringAsync("GetAllRequestAmountsPartial", data,

@@ -314,7 +314,7 @@ function createSetAmountPaymentItem() {
                     <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto pe-xl-2">
                         <span class="flex-shrink-0" style="color: #535353">مبلغ تایید شده: </span>
 
-                        <div class="fbold column-gap-1 badge badge-outline-green">
+                        <div class="fbold column-gap-1 badge badge-outline-green" style="color: #333">
                             <span style="font-size: 16px;">${item.acceptedAmount.toLocaleString()}</span>
                             <span style="font-size: 11px;">ريال</span>
                             <span style="font-size: 16px; color:#888">${item.acceptedAmountPercent ? item.acceptedAmountPercent + "%" : ""}</span>
@@ -556,7 +556,7 @@ async function getAllRequestAmountByOrderHead(ohId) {
 
 
 let isSetupReqAmountModal = false;
-async function setupSelectOptionsReqAmount(targetId) {
+async function setupSelectOptionsReqAmount() {
     if (isSetupReqAmountModal) return;
     const totalAmountSupFactorElm = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
     
@@ -570,12 +570,35 @@ async function setupSelectOptionsReqAmount(targetId) {
         
         async onItemAdd(supplierId) {
             selectSupplier.disable();
-            const totalSupplyFactorAmount = await getTotalAmountSupplyFactor(supplierId);
-            if (totalSupplyFactorAmount !== null) {
+            const supplierSummary = await getSupplierFinancialSummary(supplierId);
+            if (supplierSummary !== null) {
+                const debt = supplierSummary.supplierDebt;
+                const debtColor = debt < 0 ? "#b42318" : debt > 0 ? "#16803c" : "#666";
+                const debtBackground = debt < 0 ? "#fff3f3" : debt > 0 ? "#f0faf3" : "#f5f5f5";
+                
                 totalAmountSupFactorElm.innerHTML = `
-                    <div class="d-flex flex-column" style="font-size: 12px">
-                         <span>جمع مبالغ فاکتور رسمی: <b style="color: #333">${totalSupplyFactorAmount?.official?.toLocaleString()}</b> ريال</span>
-                         <span>جمع مبالغ فاکتور غیررسمی: <b style="color: #333">${totalSupplyFactorAmount?.notOfficial?.toLocaleString()}</b> ريال</span>
+                    <div class="d-flex flex-column align-items-end justify-content-center gap-1" style="font-size: 12px;color: #666">
+                        <div class="d-flex flex-column flex-sm-row align-items-end justify-content-end column-gap-3 me-1">
+                            <span>
+                                جمع فاکتورها:
+                                <b dir="ltr" style="color: #333">${supplierSummary.totalSupplyAmount?.toLocaleString()}</b>
+                                <span class="fs-small">ریال</span>
+                            </span>
+                
+                            <span class="d-none d-sm-inline">|</span>
+                
+                            <span>
+                                جمع پرداختی‌ها:
+                                <b dir="ltr" style="color: #333">${supplierSummary.totalPaidAmount?.toLocaleString()}</b>
+                                <span class="fs-small">ریال</span>
+                            </span>
+                        </div>
+                
+                        <div class="px-2 py-1 rounded" style="background: ${debtBackground};color: ${debtColor}">
+                            مانده بدهی:
+                            <b dir="ltr">${debt?.toLocaleString()}</b>
+                            <span class="fs-small">ریال</span>
+                        </div>
                     </div>
                 `;
             }

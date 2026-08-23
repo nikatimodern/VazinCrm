@@ -19,10 +19,10 @@ using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Supplies.Enums;
-using CRM.EndPoint.FrontEnd.Extensions;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Supply;
 using CRM.EndPoint.FrontEnd.Services;
+using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.Infrastructures.Sql;
 using Dapper;
@@ -335,8 +335,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-
-        public async Task<IActionResult> GetTotalAmountSupplyFactor(Guid supplierId)
+        public async Task<IActionResult> GetSupplierFinancialSummary(Guid supplierId)
         {
             /*var totalAmount = await db.SupplyFactors
                 .AsNoTracking()
@@ -344,7 +343,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 .SumAsync(f => f.Amount);*/
 
 
-            var grouped = await db.SupplyFactors
+            /*var grouped = await db.SupplyFactors
                 .AsNoTracking()
                 .Where(f => f.SupplierId == supplierId)
                 .GroupBy(f => f.OfficialType)
@@ -357,9 +356,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var data = new {
                 official = grouped.FirstOrDefault(x => x.OfficialType == 1)?.TotalAmount ?? 0,
                 notOfficial = grouped.FirstOrDefault(x => x.OfficialType == 0)?.TotalAmount ?? 0
-            };
+            };*/
 
-            return Ok(data);
+            var summary = await db
+                .GetSupplierFinancialSummaries()
+                .FirstOrDefaultAsync(x => x.SupplierId == supplierId);
+
+            return Ok(summary);
         }
 
         public async Task<IActionResult> DeleteSupplyFactor(Guid id)
