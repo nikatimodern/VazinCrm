@@ -3892,6 +3892,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("CreateDateTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("DealId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("FactorDate")
                         .HasColumnType("datetime2");
 
@@ -3932,6 +3935,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DealId");
 
                     b.ToTable("SupplyFactors");
                 });
@@ -4562,6 +4567,16 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Supplies.Entities.SupplyFactor", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Deals.Entities.Deal", "Deal")
+                        .WithMany("SupplyFactors")
+                        .HasForeignKey("DealId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Deal");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Supplies.Entities.SupplyFactorOrderHead", b =>
                 {
                     b.HasOne("CRM.Core.Domain.Orders.Entities.OrderHead", null)
@@ -4668,6 +4683,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Navigation("PreFactors");
 
                     b.Navigation("Reports");
+
+                    b.Navigation("SupplyFactors");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Factors.Entities.Factor", b =>

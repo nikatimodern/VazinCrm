@@ -1,32 +1,34 @@
 ﻿using CRM.Core.Domain.Supplies.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace CRM.Infrastructures.Sql.Supplies.Configs {
-    public class SupplyFactorConfigs : IEntityTypeConfiguration<SupplyFactor> {
-        public void Configure(EntityTypeBuilder<SupplyFactor> builder)
-        {
-            builder.HasKey(x => x.Id);
+namespace CRM.Infrastructures.Sql.Supplies.Configs;
 
-            builder.HasMany(f => f.SupplyFactorOrderHeads)
-                .WithOne()
-                .HasForeignKey(f => f.SupplyFactorId)
-                .OnDelete(DeleteBehavior.Cascade);
+public class SupplyFactorConfigs : IEntityTypeConfiguration<SupplyFactor> {
+    public void Configure(EntityTypeBuilder<SupplyFactor> builder)
+    {
+        builder.HasKey(x => x.Id);
 
-            builder.HasMany(f => f.RequestAmountSupplyFactor)
-                .WithOne(f => f.SupplyFactor)
-                .HasForeignKey(f => f.SupplyFactorId)
-                .OnDelete(DeleteBehavior.Cascade);
+        builder.HasMany(f => f.SupplyFactorOrderHeads)
+            .WithOne()
+            .HasForeignKey(f => f.SupplyFactorId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasMany(f => f.PaymentSupplyFactors)
-                .WithOne()
-                .HasForeignKey(f => f.SupplyFactorId)
-                .OnDelete(DeleteBehavior.Cascade);
+        builder.HasMany(f => f.RequestAmountSupplyFactor)
+            .WithOne(f => f.SupplyFactor)
+            .HasForeignKey(f => f.SupplyFactorId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Property(f => f.Amount).HasPrecision(20, 0);
-        }
+        builder.HasMany(f => f.PaymentSupplyFactors)
+            .WithOne()
+            .HasForeignKey(f => f.SupplyFactorId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(f => f.Deal)
+            .WithMany(f => f.SupplyFactors)
+            .HasForeignKey(f => f.DealId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.Property(f => f.Amount).HasPrecision(20, 0);
     }
 }

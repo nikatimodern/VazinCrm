@@ -1,8 +1,6 @@
 using CRM.Core.Domain.CallRecordings.Entities;
-using CRM.Core.Domain.Reports.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.Extensions.Configuration;
 
 namespace CRM.Infrastructures.Sql.Reports.Configs;
 

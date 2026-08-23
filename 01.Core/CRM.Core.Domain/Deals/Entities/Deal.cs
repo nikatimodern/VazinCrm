@@ -9,6 +9,7 @@ using CRM.Core.Domain.Factors.Entities;
 using CRM.Core.Domain.Orders.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Reports.Entities;
+using CRM.Core.Domain.Supplies.Entities;
 using CRM.Framework.Domain;
 
 namespace CRM.Core.Domain.Deals.Entities;
@@ -44,12 +45,14 @@ public class Deal : BaseEntity {
     public bool Suspend { get; set; }
     public DealFinancialStausEnum FinancialStatus { get; set; }
 
-    
+
     public ICollection<Factor> Factors { get; set; }
     public ICollection<Accountancy> Accountancies { get; set; }
     public ICollection<PreFactor> PreFactors { get; set; }
-    public ICollection<Report> Reports { get; set; } 
-    public ICollection<OrderHead> OrderHeads { get; set; } 
+    public ICollection<Report> Reports { get; set; }
+    public ICollection<OrderHead> OrderHeads { get; set; }
+
+    public ICollection<SupplyFactor> SupplyFactors { get; set; }
 
     [NotMapped] public Counts Counts { get; set; } = new Counts();
     [NotMapped] public List<AppUser> UserIdsForSuspend { get; set; }

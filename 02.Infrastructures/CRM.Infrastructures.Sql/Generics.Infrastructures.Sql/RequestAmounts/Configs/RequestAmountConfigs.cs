@@ -1,9 +1,6 @@
 ﻿using CRM.Core.Domain.RequestAmounts.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using CRM.Core.Domain.Accountancies.Entities;
 
 namespace CRM.Infrastructures.Sql.RequestAmounts.Configs {
