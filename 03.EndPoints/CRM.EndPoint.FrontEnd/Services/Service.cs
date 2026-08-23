@@ -9,48 +9,29 @@ using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Customers.Enum;
 using CRM.Core.Domain.Emails.Entities;
 using CRM.Core.Domain.Factors.Enum;
-using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Reports.Enum;
 using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.Core.Domain.Transfers.Entities;
 using CRM.EndPoint.FrontEnd.Models.Cartable;
-using CRM.EndPoint.FrontEnd.Services.LogSystem;
-using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Infrastructures.Sql;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 
 namespace CRM.EndPoint.FrontEnd.Services {
     public class Service : Controller {
         private readonly CRMContextDb db;
-        private readonly DateTimeServices dtService;
-        private readonly LogSystemService logSystemService;
         private readonly UserManager<AppUser> userManager;
-        private readonly IHubContext<TaskHub> hub;
 
-        public Service(CRMContextDb _db, DateTimeServices dtService, LogSystemService logSystemService, UserManager<AppUser> userManager,
-            IHubContext<TaskHub> hub)
+        public Service(CRMContextDb db, UserManager<AppUser> userManager)
         {
-            db = _db;
-            this.dtService = dtService;
-            this.logSystemService = logSystemService;
+            this.db = db;
             this.userManager = userManager;
-            this.hub = hub;
         }
-
-        public interface IFilterableEntity {
-            Guid CustomerId { get; set; }
-            DateTime CreateDate { get; set; }
-            string UserCreatorID { get; set; }
-        }
-
-
 
 
         public async Task AddEmail(string title, string message, AppUser fromUser, string toUserId, string toUserName, EntityTypeEnum? entityName,
@@ -70,6 +51,13 @@ namespace CRM.EndPoint.FrontEnd.Services {
             };
 
             db.Emails.Add(newEmail);
+        }
+        
+        
+        public async Task<int> GetEmailsNotSeenCount(Guid userId)
+        {
+            var emailsCount = await db.Emails.AsNoTracking().Where(e => e.ToId == userId && !e.Seen).CountAsync();
+            return emailsCount;
         }
 
 
@@ -196,11 +184,6 @@ namespace CRM.EndPoint.FrontEnd.Services {
             return countObj;
         }
 
-        public async Task<int> GetEmailsNotSeenCount(Guid userId)
-        {
-            var emailsCount = await db.Emails.AsNoTracking().Where(e => e.ToId == userId && !e.Seen).CountAsync();
-            return emailsCount;
-        }
 
         public async Task<FinancialStepEnum> GetFinancialStep(PreFactor pf)
         {
@@ -265,14 +248,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
             return new { Remained, FacAmount, FacPayment };
         }
 
-
-        public static PreFactor UpdateTaxAmountPreFactor(PreFactor pf)
-        {
-            pf.PercentTax = pf.OfficialType == 1 ? 10 : 0;
-            pf.TotalTax = pf.OfficialType == 1 ? pf.SumTotalAmount * 10 / 100 : 0;
-            pf.PaymentAmount = pf.SumTotalAmount + pf.TotalTax;
-            return pf;
-        }
+        
 
         public T UpdatePaymentAmount<T>(T model) where T : class
         {
@@ -362,43 +338,6 @@ namespace CRM.EndPoint.FrontEnd.Services {
                 .FirstOrDefault(f => (int)f == type).ToString().Replace("_", " ");
             return s;
         }
-
-
-        //[HttpPost]
-        //public async Task<IActionResult> GotoCartable(GotoCartableViewmodel model)
-        //{
-        //    try
-        //    {
-        //        //var userInRol = await userManager.GetUsersInRoleAsync("کارشناس مالی");
-        //        var rol = await udb.Roles.Where(f => f.Name == model.rol).FirstOrDefaultAsync();
-        //        if (rol != null)
-        //        {
-        //            switch (model.entityName)
-        //            {
-        //                case "PreFactor":
-        //                    var data = await db.PreFactors
-        //                        .Where(f => f.Id == Guid.Parse(model.entityId))
-        //                        .FirstOrDefaultAsync();
-        //                    //data.CartableRolID = rol.Id;
-        //                    //data.CartableRolTxt = rol.Name;
-        //                    //if (!string.IsNullOrEmpty(model.user))
-        //                    //{
-        //                    //    data.CartableUserId = model.user;
-        //                    //    data.CartableUserTxt = udb.Users.Where(f => f.Id == model.user).FirstOrDefaultAsync().Result.FullName;
-        //                    //}
-        //                    await db.SaveChangesAsync();
-        //                    return Ok();
-        //            }
-        //        }
-        //        return BadRequest();
-        //    }
-        //    catch
-        //    {
-        //        return BadRequest();
-
-        //    }
-
-        //}
 
 
         public async Task<bool> IsCustomerExport(Guid? customerId)

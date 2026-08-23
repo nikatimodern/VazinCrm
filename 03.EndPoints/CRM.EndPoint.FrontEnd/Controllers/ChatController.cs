@@ -28,19 +28,17 @@ public class ChatController : Controller {
     private readonly CRMContextDb db;
     private readonly UserContextDb udb;
     private readonly UserManager<AppUser> userManager;
-    private readonly SignInManager<AppUser> signInManager;
     private readonly FileSaver fileSaver;
     private readonly IHubContext<TaskHub> hub;
     private readonly IPushQueue pushQueue;
 
-    public ChatController(DateTimeServices dtService, CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager,
-        SignInManager<AppUser> signInManager, FileSaver fileSaver, IHubContext<TaskHub> hub, IPushQueue pushQueue)
+    public ChatController(DateTimeServices dtService, CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, FileSaver fileSaver,
+        IHubContext<TaskHub> hub, IPushQueue pushQueue)
     {
         this.dtService = dtService;
         this.db = db;
         this.udb = udb;
         this.userManager = userManager;
-        this.signInManager = signInManager;
         this.fileSaver = fileSaver;
         this.hub = hub;
         this.pushQueue = pushQueue;
@@ -138,7 +136,7 @@ public class ChatController : Controller {
             var attachment = attachments.FirstOrDefault(x => x.EntityId == chat.Id);
 
             chat.FileName = attachment?.OriginalFilename ?? Path.GetFileName(chat.FileAddress);
-            chat.FileSize = fileSaver.FormatFileSize(attachment?.FileSize);
+            chat.FileSize = FileSaver.FormatFileSize(attachment?.FileSize);
 
             if (!chat.Read && chat.UserCreatorID != fromUser.Id)
             {

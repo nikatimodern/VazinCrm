@@ -1,8 +1,6 @@
-﻿using CRM.Core.Domain.Accountancies.Enum;
-using CRM.Core.Domain.AppUsers.Entities;
+﻿using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Customers.Enum;
-using CRM.Core.Domain.Factors.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.EndPoint.FrontEnd.Services;
@@ -26,7 +24,6 @@ using CRM.EndPoint.FrontEnd.Models.Customer;
 using CRM.EndPoint.FrontEnd.Models.PreFactor;
 using CRM.EndPoint.FrontEnd.Models.PushNotification;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
-using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 
 
 namespace CRM.EndPoint.FrontEnd.Controllers {

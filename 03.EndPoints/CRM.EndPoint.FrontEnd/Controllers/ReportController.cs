@@ -1,5 +1,4 @@
-﻿using ClosedXML.Excel;
-using CRM.Core.Domain.AppUsers.Entities;
+﻿using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Reports.Entities;
 using CRM.EndPoint.FrontEnd.Services;
 using Generics.Infrastructures.Sql;

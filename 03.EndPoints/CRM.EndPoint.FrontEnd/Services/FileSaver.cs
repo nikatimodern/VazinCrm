@@ -49,7 +49,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
             }
         }
 
-        private ImageCodecInfo GetEncoder(ImageFormat format)
+        private static ImageCodecInfo GetEncoder(ImageFormat format)
         {
             return ImageCodecInfo.GetImageDecoders()
                 .FirstOrDefault(codec => codec.FormatID == format.Guid);
@@ -119,7 +119,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
             return @"\Uploaded\ContractAtt\" + fileName;
         }*/
 
-        public string SaveFile(byte[] fileBytes, string fileName, string fileExten, string folder)
+        private string SaveFile(byte[] fileBytes, string fileName, string fileExten, string folder)
         {
             if (fileBytes == null || fileBytes.Length == 0 || string.IsNullOrWhiteSpace(fileExten)) return null;
 
@@ -374,8 +374,8 @@ namespace CRM.EndPoint.FrontEnd.Services {
             }
 
             var ms = new MemoryStream();
-            if (UpImagesSportMan != null)
-                UpImagesSportMan.CopyTo(ms);
+
+            UpImagesSportMan.CopyTo(ms);
             return ms.ToArray();
         }
 
@@ -390,13 +390,13 @@ namespace CRM.EndPoint.FrontEnd.Services {
                 File.Delete(fullPath);
         }
 
-        public void CheckUrl(string Path)
+        private static void CheckUrl(string Path)
         {
             if (!Directory.Exists(Path))
                 Directory.CreateDirectory(Path);
         }
 
-        public string FormatFileSize(long? bytes)
+        public static string FormatFileSize(long? bytes)
         {
             if (bytes == null) return null;
 

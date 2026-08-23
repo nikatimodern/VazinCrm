@@ -1145,7 +1145,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (setting.CustomerCanChooseInvoiceType)
                 {
                     pf.OfficialType = model.OfficialType;
-                    pf = Service.UpdateTaxAmountPreFactor(pf);
+                    pf = PreFactorService.UpdateTaxAmountPreFactor(pf);
                 }
 
                 await _logSystemService.LogChange(oldPf, pf, LogActionEnum.تایید_و_تغییر_وضعیت, user, null, "تایید پیش‌فاکتور توسط مشتری");
@@ -3043,7 +3043,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var preFactor = await db.PreFactors.Where(f => f.Id == preFactorId).FirstOrDefaultAsync();
 
             preFactor.SumTotalAmount = model.Sum(f => f.TotalAmount) - preFactor.Discount;
-            preFactor = Service.UpdateTaxAmountPreFactor(preFactor);
+            preFactor = PreFactorService.UpdateTaxAmountPreFactor(preFactor);
 
 
             if (setting.SetAmountByRoleType != SetAmountRoleEnum.فروش)

@@ -210,4 +210,12 @@ public class PreFactorService(
             throw;
         }
     }
+    
+    public static PreFactor UpdateTaxAmountPreFactor(PreFactor pf)
+    {
+        pf.PercentTax = pf.OfficialType == 1 ? 10 : 0;
+        pf.TotalTax = pf.OfficialType == 1 ? pf.SumTotalAmount * 10 / 100 : 0;
+        pf.PaymentAmount = pf.SumTotalAmount + pf.TotalTax;
+        return pf;
+    }
 }
