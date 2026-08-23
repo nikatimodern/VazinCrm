@@ -1,9 +1,6 @@
 ﻿using CRM.Core.Domain.ASettings.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace CRM.Infrastructures.Sql.ASettings.Configs
 {

@@ -2,9 +2,6 @@
 using CRM.Core.Domain.Cartables.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Generics.Infrastructures.Sql {
     public class UserContextDb : IdentityDbContext<AppUser> {

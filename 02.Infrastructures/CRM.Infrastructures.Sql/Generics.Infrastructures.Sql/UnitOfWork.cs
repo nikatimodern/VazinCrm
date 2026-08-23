@@ -1,5 +1,4 @@
 ﻿using CRM.Core.Domain;
-using System;
 using CRM.Infrastructures.Sql;
 
 namespace Generics.Infrastructures.Sql

@@ -1,9 +1,6 @@
 ﻿using CRM.Core.Domain.LogSystems.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using CRM.Core.Domain.Cartables.Entities;
 
 namespace CRM.Infrastructures.Sql.LogSystems.Configs {

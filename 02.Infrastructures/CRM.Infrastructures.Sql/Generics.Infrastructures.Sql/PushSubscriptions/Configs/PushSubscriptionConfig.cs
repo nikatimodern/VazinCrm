@@ -1,4 +1,3 @@
-using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.WebPushSubscriptions.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
