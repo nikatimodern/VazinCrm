@@ -1828,6 +1828,7 @@ async function submitChangeUsersPf() {
     await sendApiRequest({
         url: "/Customer/ChangeUsersPreFactor",
         params: { userId, taminUserId, pfId: pfIdChangeUser },
+        successMsg: "با موفقیت ثبت شد",
         onSuccess: () => {
             ModalToggle("changeUserPfModal");
         },

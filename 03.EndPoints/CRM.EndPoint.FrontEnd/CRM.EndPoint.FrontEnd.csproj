@@ -48,7 +48,6 @@
   </ItemGroup>
   
   <ItemGroup>
-    <Folder Include="Views\Supply\Modals\" />
     <Folder Include="wwwroot\Uploaded\CompanyImage\" />
     <Folder Include="wwwroot\Uploaded\LoginImg\" />
   </ItemGroup>

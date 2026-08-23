@@ -7013,7 +7013,7 @@ table tr.payment-vosoled > td {
 }
 
 
-.deal-document-link {
+.deal-document-action {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -7032,24 +7032,71 @@ table tr.payment-vosoled > td {
 }
 
 
-.deal-document-link svg {
+.deal-document-action svg {
 	width: 20px;
 }
 
 
-.deal-document-link span {
+.deal-document-action span {
 	/* font-size: 13px; */
 	font-family: IRANSansMedium;
 	line-height: 1;
 }
 
 
-.deal-document-link:hover {
+.deal-document-action:hover {
 	color: #6d28d9;
 	background-color: #f5f3ff;
 }
 
 
-.deal-document-link:active {
+.deal-document-action:active {
+	transform: scale(0.96);
+}
+
+
+.deal-document-add {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	
+	min-width: 38px;
+	padding: 4px 7px;
+	
+	color: #64748b;
+	border: 1px dashed #cbd5e1;
+	border-radius: 6px;
+	background-color: transparent;
+	
+	cursor: pointer;
+	user-select: none;
+	
+	font-family: IRANSansMedium;
+	font-size: 12px;
+	line-height: 1;
+	
+	transition: color 0.15s ease,
+	background-color 0.15s ease,
+	border-color 0.15s ease,
+	transform 0.15s ease;
+}
+
+
+.deal-document-add svg {
+	width: 16px;
+	height: 16px;
+	stroke-width: 1.8;
+}
+
+
+.deal-document-add:hover {
+	color: #6d28d9;
+	background-color: #f5f3ff;
+	border-color: #c4b5fd;
+}
+
+
+.deal-document-add:active {
 	transform: scale(0.96);
 }

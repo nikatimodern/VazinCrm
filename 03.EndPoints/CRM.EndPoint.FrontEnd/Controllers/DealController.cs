@@ -295,6 +295,12 @@ public class DealController : Controller {
             .GroupBy(f => f.DealId)
             .Select(g => new { g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Key, x => x.Count);
+        
+        var supplyFactorCounts = await db.SupplyFactors
+            .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
+            .GroupBy(f => f.DealId)
+            .Select(g => new { g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Key, x => x.Count);
 
         foreach (var deal in deals)
         {
@@ -303,6 +309,7 @@ public class DealController : Controller {
             deal.Counts.Report = reportCounts.GetValueOrDefault(deal.Id);
             deal.Counts.OrderHead = orderHeadCounts.GetValueOrDefault(deal.Id);
             deal.Counts.Accountancy = accCounts.GetValueOrDefault(deal.Id);
+            deal.Counts.SupplyFactor = supplyFactorCounts.GetValueOrDefault(deal.Id);
         }
     }
 

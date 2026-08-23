@@ -34,10 +34,18 @@
                     <span style="font-size: 13px; color: gray">تامین کننده:</span>
                     <span class="fbold">@supplyFactor.SupplierTxt</span>
                 </div>
-                <div class="d-flex align-items-baseline justify-content-center flex-wrap column-gap-2 mb-2 text-center">
-                    <span style="font-size: 13px; color: gray">حواله تولید:</span>
-                    <span class="fbold direction-ltr">@string.Join(", ", orderSerials)</span>
-                </div>
+                @if (orderSerials.Any()) {
+                    <div class="d-flex align-items-baseline justify-content-center flex-wrap column-gap-2 mb-2 text-center">
+                        <span style="font-size: 13px; color: gray">حواله تولید:</span>
+                        <span class="fbold direction-ltr">@string.Join(", ", orderSerials)</span>
+                    </div>
+                }
+                @if (supplyFactor.Deal != null) {
+                    <div class="d-flex align-items-baseline justify-content-center flex-wrap column-gap-2 mb-2 text-center">
+                        <span style="font-size: 13px; color: gray">شماره سفارش:</span>
+                        <span class="fbold direction-ltr">@supplyFactor.Deal.SerialNumber</span>
+                    </div>
+                }
                 <div class="d-flex align-items-baseline justify-content-center flex-wrap column-gap-2 text-center">
                     <span style="font-size: 13px; color: gray">ثبت شده توسط:</span>
                     <span class="fbold">@supplyFactor.UserCreator</span>

@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
  * @param {Object|null} [options.headers=null] - Custom HTTP request headers.
  * @param {"json"|"blob"|"arraybuffer"|"text"|"document"|"stream"} [options.responseType="json"] - Expected response type.
  * @param {Function|null} [options.onSuccess=null] - Success callback function `(response) => {}`.
- * @param {string|null} [options.successMsg="با موفقیت انجام شد"] - Success toast message (set empty string "" or null to disable).
+ * @param {string|null} [options.successMsg=undefined] - Success toast message (set empty string "" or null to disable).
  * @param {boolean} [options.showLoading=true] - Toggle loading indicator display.
  * @returns {Promise<Object|null>} Returns response data on success, or null on failure.
  */
@@ -50,17 +50,30 @@ async function sendApiRequest(
         headers = null,
         responseType = "json",
         onSuccess = null,
-        successMsg = "با موفقیت انجام شد",
+        successMsg = undefined,
         showLoading = true,
     }) {
     try {
+        
+        method = method.toUpperCase();
+        
+        if (successMsg === undefined) {
+            successMsg = {
+                GET: null,
+                POST: "با موفقیت ثبت شد",
+                PUT: "با موفقیت ویرایش شد",
+                DELETE: "با موفقیت حذف شد",
+                PATCH: "با موفقیت ویرایش شد",
+            }[method] ?? null;
+        }
+        
         if (showLoading && typeof FLshowLoading === "function") {
             FLshowLoading(true);
         }
         
         const config = {
-            url: url,
-            method: method.toUpperCase(),
+            url,
+            method,
             responseType,
         };
         
@@ -4171,21 +4184,11 @@ async function deleteItem(options) {
         confirmText: "بله، حذف شود",
         
         onConfirm: async () => {
-            try {
-                FLshowLoading();
-                
-                const res = await axios.delete(url);
-                
-                if (res.status !== 200) return;
-                
-                toastifySuccess("با موفقیت حذف شد");
-                await callback?.(res.data);
-            } catch (err) {
-                console.error(err);
-                toastifyError("خطا در حذف اطلاعات");
-            } finally {
-                FLshowLoading(false);
-            }
+            await sendApiRequest({
+                method: "DELETE",
+                url,
+                onSuccess: async (res) => await callback?.(res.data),
+            });
         },
     });
 }

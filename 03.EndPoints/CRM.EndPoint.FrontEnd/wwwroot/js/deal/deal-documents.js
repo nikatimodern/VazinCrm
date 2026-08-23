@@ -45,6 +45,14 @@ const showModalDealOrders = async (deal) => {
     ModalToggle("dealOrdersModal");
 };
 
+const showModalDealSupplyFactors = async (deal) => {
+    currentDealDocumentData = deal;
+    document.getElementById("dealSupplyFactorsTitle").textContent = `${deal.customerName}${deal.customerCode ? ` (کد مشتری: ${deal.customerCode})` : ""}`;
+    
+    await getSupplyFactorsFromDeal(deal.id);
+    ModalToggle("supplyFactorsModal");
+};
+
 const showModalDealInvoices = async (deal) => {
     await getInvoicesFromDeal(deal.id);
 };
@@ -82,6 +90,18 @@ const getReportFromDeal = async (dealId) => {
         document.getElementById("dealReports").innerHTML = res.data.html;
         FLshowLoading(false);
     }
+};
+
+const getSupplyFactorsFromDeal = async (dealId) => {
+    if (!dealId) return;
+    
+    await sendApiRequest({
+        url: "/Supply/GetAllSupplyFactorsPartial",
+        params: { dealId },
+        onSuccess: (res) => {
+            document.getElementById("dealSupplyFactors").innerHTML = res.data;
+        },
+    });
 };
 
 const getOrdersFromDeal = async (dealId) => {
@@ -122,6 +142,7 @@ const refreshDealPreFactors = async () => await getPreFactorFromDeal(currentDeal
 const refreshDealFactors = async () => await getAllFactorsModal(currentDealDocumentData?.id, 4);
 const refreshDealReports = async () => await getReportFromDeal(currentDealDocumentData?.id);
 const refreshDealOrders = async () => await getOrdersFromDeal(currentDealDocumentData?.id);
+const refreshDealSupplyFactors = async () => await getSupplyFactorsFromDeal(currentDealDocumentData?.id);
 
 
 document.getElementById("dealPreFactorsRefresh")?.addEventListener("click", () => getPreFactorFromDeal(currentDealDocumentData.id, true));
@@ -134,6 +155,8 @@ document.getElementById("dealReportsAdd")?.addEventListener("click", async () =>
     };
     await ShowModalReport(model, 4, currentDealDocumentData.id, currentDealDocumentData.serialNumber);
 });
+
+document.getElementById("dealSupplyFactorsAdd")?.addEventListener("click", async () => await showSupplyFactorModal(currentDealDocumentData.id));
 
 const deletedPrefactorToggle = initEyeToggle({
     selector: ".showDeletedPrefactor-icon",

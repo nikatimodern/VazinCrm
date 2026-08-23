@@ -378,11 +378,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return Ok();
         }
 
-        public async Task<IActionResult> GetAllSupplyFactorsPartial(string search)
+        public async Task<IActionResult> GetAllSupplyFactorsPartial(string search, Guid? dealId = null)
         {
             try
             {
-                var query = db.SupplyFactors.AsNoTracking();
+                var query = db.SupplyFactors.Include(f => f.Deal).AsNoTracking();
+
+                if (dealId != null)
+                {
+                    query = query.Where(f => f.DealId == dealId);
+                }
 
                 if (!string.IsNullOrEmpty(search))
                 {

@@ -829,7 +829,6 @@ async function exportGroupCashToExcel() {
         params: { groupId: currentCashGroupId, startVoucherNumber },
         responseType: "blob",
         showLoading: false,
-        successMsg: null,
         onSuccess: (response) => {
             const blob = response.data;
             

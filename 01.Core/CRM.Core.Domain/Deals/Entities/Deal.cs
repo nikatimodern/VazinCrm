@@ -64,4 +64,5 @@ public class Counts {
     public int Report { get; set; }
     public int Accountancy { get; set; }
     public int OrderHead { get; set; }
+    public int SupplyFactor { get; set; }
 }

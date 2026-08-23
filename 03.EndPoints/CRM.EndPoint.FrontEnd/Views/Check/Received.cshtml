@@ -72,7 +72,6 @@
                 await sendApiRequest({
                     url: `/Accountancy/GetAllPaymentCartablePartial`,
                     params: { serVal: val, type: type, cartable: 7, payType: 2 },
-                    successMsg: null,
                     onSuccess: function (res) {
                         const data = res.data;
                         document.getElementById("receivedChecksContentId").innerHTML = data.html;

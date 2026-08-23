@@ -58,7 +58,6 @@ const deleteDeal = async (id) => {
                 url: "/Deal/DeleteDeal",
                 method: "DELETE",
                 params: { id },
-                successMsg: "سفارش با موفقیت حذف شد.",
                 onSuccess: getAllDeals,
             });
         },
