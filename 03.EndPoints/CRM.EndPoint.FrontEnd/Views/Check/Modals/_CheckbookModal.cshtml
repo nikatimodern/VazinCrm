@@ -1,0 +1,22 @@
+<!-- Modal checkbook -->
+<div class="modal fade" id="checkbookModal" tabindex="-1" role="dialog" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content col-12 p-2">
+            <div class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">ثبت دسته چک</div>
+            <div class="modal-body pb-2">
+                <form id="checkbookForm" class="d-flex flex-column gap-2">
+
+                    <div>
+                        <label for="bankAccountId-checkbook" class="mb-1">انتخاب حساب بانکی:</label>
+                        <select name="bankAccountId" class="form-select" id="bankAccountId-checkbook" required></select>
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-1 mt-2">
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="cancelNewCheckbookModal()">انصراف</button>
+                        <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitCheckbookModal()">ثبت</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

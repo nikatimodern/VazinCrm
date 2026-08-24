@@ -3870,8 +3870,9 @@ function ShowTab(target) {
  * @param {Array<text: String, value: String>} optionItems - optionItems
  * @param {boolean} [addDefault=true] - add default option
  * @param {string} [defaultText="انتخاب"] - default Text
+ * @param {boolean} [selectTarget=false] - select target option
  */
-function createOption(targetSelect, optionItems, addDefault = true, defaultText = "انتخاب") {
+function createOption(targetSelect, optionItems, addDefault = true, defaultText = "انتخاب", selectTarget = false) {
     let selectElm;
     if (typeof targetSelect === "string") {
         selectElm = document.getElementById(targetSelect.replace("#", ""));
@@ -3884,19 +3885,32 @@ function createOption(targetSelect, optionItems, addDefault = true, defaultText 
     }
     
     selectElm.innerHTML = "";
-    if (addDefault) {
+    
+    const hasTarget = optionItems.some(item => item.target);
+    
+    if (addDefault && !hasTarget) {
         const o = document.createElement("option");
         o.innerText = defaultText;
         o.value = "";
+        o.selected = true;
         selectElm.appendChild(o);
     }
     
-    optionItems.forEach((item) => {
+    
+    optionItems.forEach(item => {
         const o = document.createElement("option");
+        
         o.innerText = item.text;
         o.value = item.value;
+        
+        if (selectTarget && item.target) {
+            o.selected = true;
+            o.style.backgroundColor = "#1967d24a";
+        }
+        
         selectElm.appendChild(o);
     });
+    
 }
 
 

@@ -44,6 +44,6 @@
 </div>
 
 @if (!User.IsCustomer()) {
-    <partial name="~/Views/Accountancy/Modals/_InvoiceModal.cshtml" />
+    <partial name="_InvoiceModal.cshtml" />
     <partial name="Modals/_NotAcceptModal" />
 }

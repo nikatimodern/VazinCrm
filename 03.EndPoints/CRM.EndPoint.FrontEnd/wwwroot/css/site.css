@@ -7014,10 +7014,7 @@ table tr.payment-vosoled > td {
 
 
 .deal-document-action {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 5px;
+	display: inline-block;
 	
 	min-width: 38px;
 	padding: 4px 7px;
@@ -7056,10 +7053,7 @@ table tr.payment-vosoled > td {
 
 
 .deal-document-add {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 4px;
+	display: inline-block;
 	
 	min-width: 38px;
 	padding: 4px 7px;

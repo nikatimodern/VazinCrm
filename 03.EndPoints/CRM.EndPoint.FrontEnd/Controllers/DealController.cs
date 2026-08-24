@@ -90,16 +90,12 @@ public class DealController : Controller {
         var sortDirection = Request.Form["order[0][dir]"].FirstOrDefault();
         var sortColumn = Request.Form[$"columns[{sortColumnIndex}][data]"].FirstOrDefault();
         var model = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["model"].FirstOrDefault());
-
-        if (string.IsNullOrEmpty(searchValue)) searchValue = model?.serVal;
-
+        
         var baseQuery = db.Deals.AsNoTracking();
-
-        var recordsTotal = await baseQuery.CountAsync();
-
+        
         if (!string.IsNullOrEmpty(searchValue))
         {
-            var serVal = model.serVal.Trim();
+            var serVal = searchValue.Trim();
             baseQuery = baseQuery.Where(f =>
                 f.SerialNumber.ToString() == serVal ||
                 f.CustomerCode.ToString() == serVal ||
@@ -109,7 +105,6 @@ public class DealController : Controller {
                 f.Title.Contains(serVal)
             );
         }
-
 
         if (model?.filt != null)
         {
@@ -148,19 +143,21 @@ public class DealController : Controller {
             query = query.OrderByDescending(c => c.CreateDate);
         }
 
-        query = length != -1
-            ? query.Skip(start).Take(length)
-            : query.Take(100);
-
+        var recordsTotal = await query.CountAsync();
+        
+        if (length != -1)
+        {
+            query = query.Skip(start).Take(length);
+        }
+        
         var data = await query.ToListAsync();
-        var recordsFiltered = data.Count;
 
         await SetDealCountsAsync(data);
 
         return Json(new {
             draw,
             recordsTotal,
-            recordsFiltered,
+            recordsFiltered = recordsTotal,
             data,
             filterCounts
         });
@@ -295,7 +292,7 @@ public class DealController : Controller {
             .GroupBy(f => f.DealId)
             .Select(g => new { g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Key, x => x.Count);
-        
+
         var supplyFactorCounts = await db.SupplyFactors
             .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
             .GroupBy(f => f.DealId)

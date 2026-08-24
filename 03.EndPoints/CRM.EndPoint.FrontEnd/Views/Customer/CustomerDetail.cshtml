@@ -127,16 +127,16 @@
         <div style="height:60dvh; display:flex; flex-direction:column;flex-basis:45%;gap:1rem ">
 
             <div class="gap-1" style=" display:flex; flex-direction:column ">
-                <label class="fbold" >وضعیت مشتری:</label>
+                <label class="fbold">وضعیت مشتری:</label>
                 <div class="InfoData" style="width:100%;">
-                    <label class="fbold"  id="statusId"></label>
+                    <label class="fbold" id="statusId"></label>
 
                 </div>
             </div>
             <div class="d-flex flex-column">
-                <div class="fbold d-flex gap-1" >
+                <div class="fbold d-flex gap-1">
                     <span>کارشناسانی که با این مشتری در ارتباط هستند:</span>
-                    <div type="button" id="addExpertsBtn" class="mx-2" data-bs-toggle="modal" data-bs-target="#expertsModal" onclick="" >
+                    <div type="button" id="addExpertsBtn" class="mx-2" data-bs-toggle="modal" data-bs-target="#expertsModal" onclick="">
                         <i class="fa fa-plus"></i>
                     </div>
                 </div>
@@ -147,7 +147,7 @@
                 </div>
             </div>
             <div class="gap-1" style=" display:flex;justify-content:end;flex-direction:column; flex:1;overflow:auto">
-                <label class="fbold" >مشتری هایی که مشابهت نام دارند:</label>
+                <label class="fbold">مشتری هایی که مشابهت نام دارند:</label>
                 <div class="InfoData" style="width:100%; overflow:auto;flex:auto" id="custRelId">
                 </div>
             </div>
@@ -158,29 +158,7 @@
 
 </div>
 
-<!-- experts Modal -->
-<div class="modal fade" id="expertsModal" tabindex="-1" aria-labelledby="expertsModalLabel" aria-hidden="true" data-bs-focus="false">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="expertsModalLabel">کارشناسان فروش</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div id="loadingModalUpModal" class="fa-2x mt-3" style="display: none; justify-content: center;">
-                <i class="fas fa-spinner fa-spin"></i>
-            </div>
-            <div class="modal-body">
-
-            </div>
-
-            <div class="modal-footer">
-
-                <button type="button" onclick="addSelExperts()" class="btn" style="background-color:#02514C;color:#fff">ثبت</button>
-            </div>
-
-        </div>
-    </div>
-</div>
+<partial name="Modals/_ChangeSaleExpertsModal" />
 
 <script>
 
@@ -224,7 +202,7 @@
                 $("#workSenf").text(res.workSenfTxt || "-");
                 $("#workSenfDescription").text(res.workSenfDescription || "-");
 
-                if(res.juridical === 1){
+                if (res.juridical === 1) {
                     $("#JuridicalUpDiv").show();
                     $("#companyName").text(res.companyName || "-");
                     $("#shenaseMeli").text(res.shenaseMeli || "-");
@@ -236,7 +214,7 @@
                 $("#city").text(res.city || "-");
                 $("#address").text(res.address || "-");
 
-                document.getElementById("openProfileCustomerIcon").addEventListener("click", () => openCustomerProfile(res.id))
+                document.getElementById("openProfileCustomerIcon").addEventListener("click", () => openCustomerProfile(res.id));
 
 
                 $("#loadingModalUp").css("display", "none");

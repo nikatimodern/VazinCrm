@@ -342,7 +342,7 @@ const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
     filterVarConfig = filterBtn.getAttribute("data-filterVarConfig");
     
     if (!filterVarConfig) {
-        console.warn("Filter config not found.");
+        console.error("Filter config not found.");
         return;
     }
     
@@ -694,7 +694,7 @@ const getDateFilter = async (type, btn) => {
 };
 
 
-window.onSelectfilterDate = function () {
+window.onSelectFilterDate = function () {
     currentDateTypeFilter = null;
     // currentYear = '';
     // currentMonth = '';
@@ -4555,7 +4555,19 @@ function initSearchInput(inputId, callback) {
     }
 }
 
-function initChangeRadio(name, callback) {
+function initChangeRadio(name, callback, delegation = false) {
+    if (delegation) {
+        document.addEventListener("change", async event => {
+            const radio = event.target.closest(`input[name="${name}"]`);
+            
+            if (!radio) return;
+            
+            await callback(event, radio);
+        });
+        
+        return;
+    }
+    
     const radios = document.querySelectorAll(`input[name="${name}"]`);
     
     if (!radios.length) {

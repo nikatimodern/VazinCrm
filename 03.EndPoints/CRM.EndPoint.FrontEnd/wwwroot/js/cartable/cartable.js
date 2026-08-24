@@ -38,8 +38,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     initChangeRadio("FinancialRequestFilter", GetRequestFinancialExpert);
     
     //////////////////////financial deal//////////////////////
-    initSearchInput("FinancialDealSearchId", GetDealFinancialExpert);
-    initChangeRadio("FinancialDealFilter", GetDealFinancialExpert);
+    // initSearchInput("FinancialDealSearchId", GetDealFinancialExpert);
+    initChangeRadio("FinancialDealFilter", GetDealFinancialExpert, true);
     
     //////////////////////MD req//////////////////////
     initSearchInput("MDRequestAmountSearchId", GetRequestManagingDirector);
@@ -583,28 +583,27 @@ const GetRequestFinancialExpert = async () => {
 let dealTbl;
 let dealModel = { filt: null, serVal: null };
 const GetDealFinancialExpert = async () => {
-    const val = document.getElementById("FinancialDealSearchId")?.value.trim() ?? "";
-    const type = document.querySelector("input[type='radio'][name='FinancialDealFilter']:checked")?.value;
-    if (type === undefined) return;
-    
     setUrlParams({ sub: "FinancialDealTab" });
     ShowTab("#FinancialDealTab");
     
+    const type = document.querySelector("input[type='radio'][name='FinancialDealFilter']:checked")?.value ?? 0;
     dealModel._type = Number(type);
-    dealModel.serVal = val;
+    dealModel.filt = window.dealConfigFilter?.filterVar;
     
     if (dealTbl) {
         dealTbl.ajax.reload();
     } else {
+        FLshowLoading();
         getAllDealsDt();
+        FLshowLoading(false);
     }
 };
 
+window.dealConfigFilter = {};
 function getAllDealsDt() {
     const dealTableElm = document.getElementById("DealTable");
     
     dealTbl = $(dealTableElm).DataTable({
-        paging: false,
         lengthMenu: [10, 25, 50, 100, { label: "همه", value: -1 }],
         pageLength: 10,
         processing: true,
@@ -613,11 +612,9 @@ function getAllDealsDt() {
             return: true,
         },
         ordering: true,
-        order: [[3, "desc"]],
-        filter: true,
-        stateSave: false,
+        order: { name: "createDateTxt", dir: "desc" },
         scrollCollapse: true,
-        scrollY: "clamp(150px, calc(100dvh - 280px), 100dvh)",
+        scrollY: "clamp(150px, calc(100dvh - 315px), 100dvh)",
         responsive: true,
         ajax: {
             url: `/Deal/GetAllDealsDt`,
@@ -626,13 +623,11 @@ function getAllDealsDt() {
                 d.model = JSON.stringify(dealModel);
             },
             dataSrc: function (json) {
-                document.getElementById("FinancialDealCount").textContent = json.recordsFiltered;
-                
                 updateFilterSwitchState({
                     wrapperSelector: "#FinancialDealTab-pane",
                     filterData: json.filterCounts,
                     currentFilterValue: dealModel._type,
-                    searchValue: dealModel.serVal,
+                    searchValue: dealTbl.search(),
                     onChange: (type) => {
                         dealModel._type = Number(type);
                         dealTbl.ajax.reload();
@@ -647,10 +642,9 @@ function getAllDealsDt() {
         ],
         columns: [
             { data: "serialNumber" },
-            
             { data: "title", className: "wrap-text" },
-            { data: "commentText", className: "wrap-text", render: data => data || "-" },
-            { data: "createDateTxt", render: data => renderDateTimeHtml(data) },
+            // { data: "commentText", className: "wrap-text", render: data => data || "-" },
+            { data: "createDateTxt", name: "createDateTxt", render: data => renderDateTimeHtml(data) },
             { data: "userCreator" },
             {
                 data: "customerName",
@@ -658,7 +652,8 @@ function getAllDealsDt() {
                 render: function (data, type, row) {
                     return `${data ?? ""}${row.customerCode ? " (کد مشتری: " + row.customerCode + ")" : ""}`;
                 },
-            }, {
+            },
+            {
                 data: "status",
                 render: data => {
                     if (data === 1) return `<span class="fMedium" style="color: #3b82f6">باز</span>`;
@@ -778,14 +773,47 @@ function getAllDealsDt() {
             }
         },
         language: languageDatatable,
-        layout: null,
-        initComplete: () => {
-            document.querySelectorAll("#DealTable_wrapper > div.row").forEach((row) => {
-                row.classList.add("d-flex", "flex-wrap");
-                row.classList.remove("row");
-            });
-        },
+        layout: layoutDatatable,
+        initComplete: initFilterDealTable,
     });
+    function initFilterDealTable() {
+        const dtSearch = document.querySelector(".dt-search");
+        const searchInput = dtSearch?.querySelector("input");
+        if (!searchInput) return;
+        
+        const filterButton = `
+            <div class="btnFilter pe-md-2" data-filterVarConfig="dealConfigFilter" data-filterCallBack="GetDealFinancialExpert" data-filterContentId="contentDealFilterId" onclick="ShowFilterPopup(this)">
+                <svg style="width:24px;height:24px;color:#333" viewBox="0 0 24 24" fill="currentColor" ><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd" /></svg>
+            </div>
+        `;
+        const radioBtns = `
+            <ul class="filter-switch mt-1 mt-md-0">
+                <li class="filter-switch-item">
+                    <input type="radio" name="FinancialDealFilter" id="FinancialDealFilterAll" value="-1" />
+                    <label for="FinancialDealFilterAll">همه</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="FinancialDealFilter" id="FinancialDealFilter1" value="0" checked />
+                    <label for="FinancialDealFilter1">
+                        تایید نشده
+                        <span class="badge-count filter-count-badge"></span>
+                    </label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="FinancialDealFilter" id="FinancialDealFilter2" value="1" />
+                    <label for="FinancialDealFilter2">
+                        تایید شده
+                        <span class="badge-count filter-count-badge"></span>
+                    </label>
+                </li>
+            </ul>
+        `;
+        const contentFilter = `<div id="contentDealFilterId" class="ContentFilter mt-2 mt-md-0 ms-md-2 justify-content-start"></div>`;
+        
+        searchInput.insertAdjacentHTML("afterend", filterButton);
+        dtSearch.insertAdjacentHTML("afterend", contentFilter);
+        dtSearch.insertAdjacentHTML("afterend", radioBtns);
+    }
     
     
     dealTableElm.addEventListener("click", async (e) => {

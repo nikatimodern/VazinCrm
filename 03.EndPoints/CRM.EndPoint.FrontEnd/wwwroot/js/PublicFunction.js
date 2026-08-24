@@ -1772,52 +1772,18 @@ async function showModalChangeUsersPf(pfId, cusId) {
 let pfIdChangeUser;
 async function showModalChangeUsersPf(pfId, cusId) {
     pfIdChangeUser = pfId;
+        
+    const data = await sendApiRequest({
+        url: "/Customer/GetUsersForPreFactor",
+        params: { cusId, pfId },
+    });
+    
+    if (!data) return;
+    
+    createOption("selectOptUserPf", data.salesUsers, false, "انتخاب", true);
+    createOption("selectOptTaminPf", data.taminUsers, true, "انتخاب", true);
     
     ModalToggle("changeUserPfModal");
-    FLshowLoading();
-    
-    try {
-        const res = await fetch(`/Customer/GetUsersForPreFactor?cusId=${cusId}&pfId=${pfId}`);
-        
-        const data = await res.json();
-        
-        const salesSelect = document.getElementById("selectOptUserPf");
-        const taminSelect = document.getElementById("selectOptTaminPf");
-        
-        salesSelect.innerHTML = "";
-        taminSelect.innerHTML = "";
-        
-        const salesFragment = document.createDocumentFragment();
-        data.salesUsers.forEach(item => {
-            const opt = document.createElement("option");
-            
-            opt.innerText = item.text;
-            opt.value = item.id;
-            opt.selected = item.target;
-            opt.style.backgroundColor = item.target ? "#1967d24a" : "#fff";
-            
-            salesFragment.appendChild(opt);
-        });
-        salesSelect.appendChild(salesFragment);
-        
-        
-        const taminFragment = document.createDocumentFragment();
-        data.taminUsers.forEach(item => {
-            const opt = document.createElement("option");
-            
-            opt.innerText = item.text;
-            opt.value = item.id;
-            opt.selected = item.target;
-            opt.style.backgroundColor = item.target ? "#1967d24a" : "#fff";
-            
-            taminFragment.appendChild(opt);
-        });
-        taminSelect.appendChild(taminFragment);
-    } catch (err) {
-        console.log(err);
-    } finally {
-        FLshowLoading(false);
-    }
 }
 
 
@@ -1829,9 +1795,7 @@ async function submitChangeUsersPf() {
         url: "/Customer/ChangeUsersPreFactor",
         params: { userId, taminUserId, pfId: pfIdChangeUser },
         successMsg: "با موفقیت ثبت شد",
-        onSuccess: () => {
-            ModalToggle("changeUserPfModal");
-        },
+        onSuccess: () => ModalToggle("changeUserPfModal", "hide"),
     });
 }
 

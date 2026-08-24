@@ -1,0 +1,57 @@
+@model CRM.EndPoint.FrontEnd.Models.Admin.AdminViewModel
+
+<!-- Modal Roles -->
+<div class="modal fade" id="ModalRols" tabindex="-1" role="dialog" data-bs-focus="false" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="direction:rtl;background-color:lightgray">
+                <h1 class="modal-title fs-5">انتخاب نقش</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-sm table-bordered" style="text-align:center">
+                    <tr style="font-family:'IRANSansBold'">
+
+                        <th>نام</th>
+                        <th>عملیات</th>
+                    </tr>
+                    @if (!Model.Users.Any()) {
+                        <tr>
+                            <td colspan="3" class="text-center">کاربری یافت نشد</td>
+                        </tr>
+                    } else {
+                        foreach (var item in Model.Roles ?? []) {
+                            <tr style="font-family: 'IRANSans'">
+                                <td>@item.Name</td>
+                                <td>
+                                    <button class="btn btn-outline-primary" onclick="$('#roleName').val('@item.Name')">
+                                        انتخاب
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </table>
+            </div>
+            <div class="modal-footer">
+                <form asp-action="AddUserToRole" method="post" class="w-100">
+                    <div class="row mp" dir="rtl">
+                        <div class="col-6 form-group ps-0">
+                            <label>نام کاربری</label>
+                            <input type="text" name="userName" id="userName" class="form-control" />
+                        </div>
+                        <div class="col-6 form-group pe-0">
+                            <label>نام نقش</label>
+                            <input type="text" name="roleName" Id="roleName" class="form-control" />
+                        </div>
+                    </div>
+                    <div style="text-align:end; margin-top:10px;">
+                        <button type="button" class="buttonCancel2" data-bs-dismiss="modal">بستن</button>
+                        <button type="submit" class="buttonGreen3">ثبت</button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

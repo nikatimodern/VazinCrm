@@ -51,30 +51,30 @@
     </div>
     <div class="CartableContent mx-auto">
 
-        <partial name="~/Views/Cartable/_CartablePreFactorFactor.cshtml" /> @*کارتابل پیش فاکتور و فاکتور*@
+        <partial name="_CartablePreFactorFactor" /> @*کارتابل پیش فاکتور و فاکتور*@
 
         @if (canAccessFinancialExpert) {
-            <partial name="~/Views/Cartable/_CartableFinancialExpert.cshtml" /> @*کارتابل کارشناس مالی*@
+            <partial name="_CartableFinancialExpert" /> @*کارتابل کارشناس مالی*@
         }
 
         @if (canAccessFinancialAdmin) {
-            <partial name="~/Views/Cartable/_CartableFinancialAdmin.cshtml" /> @*کارتابل مدیر مالی*@
+            <partial name="_CartableFinancialAdmin" /> @*کارتابل مدیر مالی*@
         }
 
         @if (canAccessSalesExpert) {
-            <partial name="~/Views/Cartable/_CartableSalesExpert.cshtml" /> @*کارتابل کارشناس فروش*@
+            <partial name="_CartableSalesExpert" /> @*کارتابل کارشناس فروش*@
         }
 
         @if (canAccessSalesAdmin) {
-            <partial name="~/Views/Cartable/_CartableSalesAdmin.cshtml" /> @*کارتابل مدیر فروش*@
+            <partial name="_CartableSalesAdmin" /> @*کارتابل مدیر فروش*@
         }
 
         @if (canAccessTaminExpert) {
-            <partial name="~/Views/Cartable/_CartableTaminExpert.cshtml" /> @*کارتابل کارشناس تامین*@
+            <partial name="_CartableTaminExpert" /> @*کارتابل کارشناس تامین*@
         }
 
         @if (canAccessManagingDirector) {
-            <partial name="~/Views/Cartable/_CartableManagingDirector.cshtml" /> @*کارتابل مدیر عامل*@
+            <partial name="_CartableManagingDirector" /> @*کارتابل مدیر عامل*@
         }
     </div>
 </div>

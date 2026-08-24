@@ -48,37 +48,18 @@
 
 <div class="parentLogin">
     <div class="d-none p-2" id="historyBackIcon" onclick="window.history.back()">
-        <svg fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
     </div>
     <div class="loginRenderBody">
         @RenderBody()
     </div>
     <div class="d-none d-lg-flex justify-content-center align-items-center" style="width: 50%;">
-        <img src="~/uploaded/loginimg/img.png" style="width:90%;"/>
+        <img src="~/uploaded/loginimg/img.png" style="width:90%;" />
         @* <img src="~/Img/question.gif" style="width:80%;" /> *@
     </div>
-
 </div>
 
-
-
-<div class="modal fade" id="selectAccountModal" tabindex="-1" style="direction: rtl" data-bs-focus="false">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5">انتخاب حساب کاربری</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-
-            <div class="modal-body">
-                <p class="mb-3 text-muted fMedium" style="direction: rtl;text-align:right">
-                    چند حساب با این شماره یافت شد. لطفاً یکی را انتخاب کنید:
-                </p>
-                <div id="accountList" class="list-group"></div>
-            </div>
-        </div>
-    </div>
-</div>
+<partial name="~/Views/Account/Modals/_SelectAccountModal.cshtml" />
 
 <script>
     document.getElementById("historyBackIcon").classList.toggle("d-none", window.location.pathname === "/");

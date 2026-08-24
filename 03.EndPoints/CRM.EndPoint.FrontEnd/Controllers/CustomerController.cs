@@ -46,7 +46,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         public CustomerController(SepidarService sps, UserManager<AppUser> userManager, Service GenService, FileSaver fileSaver,
             DateTimeServices dtService, CRMContextDb db, UserContextDb udb, Sepidar1ContextDb S1db, Sepidar2ContextDb S2db,
-            IHubContext<TaskHub> hub, IViewRenderService vrs, LogSystemService logSystemService, IPushQueue pushQueue, PreFactorService preFactorService)
+            IHubContext<TaskHub> hub, IViewRenderService vrs, LogSystemService logSystemService, IPushQueue pushQueue,
+            PreFactorService preFactorService)
         {
             this.sps = sps;
             this.userManager = userManager;
@@ -1012,7 +1013,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
 
                 var data = await query.AsNoTracking().ToListAsync();
-                
+
                 await preFactorService.FillDetailsAsync(data);
 
                 var model = new PrefactorViewModel {
@@ -1038,11 +1039,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> GetUsersForPreFactor(Guid cusId, Guid pfId)
         {
-            var cusUsers = await db.UserCustomers
-                .Where(x => x.CustomerId == cusId)
-                .Select(x => x.UserId.ToString())
-                .ToListAsync();
-
             var pf = await db.PreFactors.Where(x => x.Id == pfId).Select(x => new {
                 x.UserCreatorID,
                 x.UserTaminId
@@ -1050,16 +1046,52 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             if (pf == null) return NotFound();
 
-            var salesUsers = await udb.Users
-                .Where(x => cusUsers.Contains(x.Id))
-                .Select(x => new SelectOptionIdDto {
-                    id = Guid.Parse(x.Id),
-                    text = x.FullName,
-                    Target = x.Id == pf.UserCreatorID
-                })
-                .ToListAsync();
+            List<SelectOptionIdDto> salesUsers;
+            if (cusId != Guid.Empty)
+            {
+                var cusUsers = await db.UserCustomers
+                    .Where(x => x.CustomerId == cusId)
+                    .Select(x => x.UserId.ToString())
+                    .ToListAsync();
 
-            var taminUsers = (await userManager.GetUsersInRoleAsync("کارشناس تامین"))
+
+                salesUsers = await udb.Users
+                    .Where(x => cusUsers.Contains(x.Id))
+                    .Select(x => new SelectOptionIdDto {
+                        id = Guid.Parse(x.Id),
+                        text = x.FullName,
+                        Target = x.Id == pf.UserCreatorID
+                    })
+                    .ToListAsync();
+            } else
+            {
+                salesUsers = (await userManager.GetUsersInRoleAsync(AppRoles.SalesExpert))
+                    .Select(x => new SelectOptionIdDto {
+                        id = Guid.Parse(x.Id),
+                        text = x.FullName,
+                        Target = x.Id == pf.UserCreatorID
+                    })
+                    .ToList();
+
+                if (!salesUsers.Any(x => x.id.ToString() == pf.UserCreatorID))
+                {
+                    var currentUser = await udb.Users
+                        .Where(x => x.Id == pf.UserCreatorID)
+                        .Select(x => new { x.Id, x.FullName })
+                        .FirstOrDefaultAsync();
+
+                    if (currentUser != null)
+                    {
+                        salesUsers.Insert(0, new SelectOptionIdDto {
+                            id = Guid.Parse(currentUser.Id),
+                            text = currentUser.FullName,
+                            Target = true
+                        });
+                    }
+                }
+            }
+
+            var taminUsers = (await userManager.GetUsersInRoleAsync(AppRoles.TaminExpert))
                 .Select(x => new SelectOptionIdDto {
                     id = Guid.Parse(x.Id),
                     text = x.FullName,
@@ -1081,29 +1113,42 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             if (pf == null) return NotFound();
 
-            var users = await udb.Users
-                .Where(x => x.Id == userId.ToString() || x.Id == taminUserId.ToString())
-                .Select(x => new {
-                    x.Id,
-                    x.FullName
-                }).ToListAsync();
-
-            var salesUser = users.FirstOrDefault(x => x.Id == userId.ToString());
-            var taminUser = users.FirstOrDefault(x => x.Id == taminUserId.ToString());
-
-            if (salesUser == null || taminUser == null) return BadRequest();
-
-            pf.UserCreatorID = userId.ToString();
-            pf.UserCreator = salesUser.FullName;
-
-            pf.UserTaminId = taminUserId;
-            pf.UserTaminTxt = taminUser.FullName;
-
-            var factors = await db.Factors.Where(x => x.PfactorID == pf.Id).ToListAsync();
-            foreach (var factor in factors)
+            if (taminUserId != Guid.Empty)
             {
-                factor.SelerFullName = salesUser.FullName;
-                factor.SelerId = userId.ToString();
+                var taminUser = await udb.Users
+                    .Where(x => x.Id == taminUserId.ToString())
+                    .Select(x => new {
+                        x.Id,
+                        x.FullName
+                    }).FirstOrDefaultAsync();
+
+                if (taminUser == null) return BadRequest();
+
+                pf.UserTaminId = taminUserId;
+                pf.UserTaminTxt = taminUser.FullName;
+            }
+
+            if (userId != Guid.Empty)
+            {
+                var salesUser = await udb.Users
+                    .Where(x => x.Id == userId.ToString())
+                    .Select(x => new {
+                        x.Id,
+                        x.FullName
+                    }).FirstOrDefaultAsync();
+
+                if (salesUser == null) return BadRequest();
+
+                pf.UserCreatorID = userId.ToString();
+                pf.UserCreator = salesUser.FullName;
+
+
+                var factors = await db.Factors.Where(x => x.PfactorID == pf.Id).ToListAsync();
+                foreach (var factor in factors)
+                {
+                    factor.SelerFullName = salesUser.FullName;
+                    factor.SelerId = userId.ToString();
+                }
             }
 
             await db.SaveChangesAsync();

@@ -63,30 +63,8 @@
 </div>
 
 
-
-<div class="modal fade" id="selectAccountModal" tabindex="-1" style="direction: rtl" data-bs-focus="false">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5">انتخاب حساب کاربری</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-
-            <div class="modal-body">
-                <p class="mb-3 text-muted fMedium" style="direction: rtl;text-align:right">
-                    چند حساب با این شماره یافت شد. لطفاً یکی را انتخاب کنید:
-                </p>
-                <div id="accountList" class="list-group"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-
+<partial name="~/Views/Account/Modals/_SelectAccountModal.cshtml" />
 <partial name="Modals/_PwaInstallModal" />
-
-
-
 
 <script>
     document.getElementById("historyBackIcon").classList.toggle("d-none", window.location.pathname === "/");

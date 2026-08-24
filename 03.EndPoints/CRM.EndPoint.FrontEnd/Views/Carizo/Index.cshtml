@@ -59,7 +59,7 @@
                 <div class="tasks-container">
                     @* <span class="carizo-badge fbold">تمام فعالیت ها</span> *@
                     <div class="p-2 w-100 d-flex align-items-center justify-content-center mb-2">
-                        <partial name="~/Views/Carizo/_AddTaskFormContainer.cshtml" />
+                        <partial name="_AddTaskFormContainer" />
                     </div>
 
                     <div class="w-100 flex-grow-1 px-2" style="height: 100%;overflow:auto">
@@ -120,14 +120,12 @@
 
             </div>
         </div>
-
-
     </div>
 </div>
 
 
 
-<partial name="~/Views/Carizo/Modals/_EditTaskModal.cshtml" />
+<partial name="Modals/_EditTaskModal" />
 
 
 @section Scripts {

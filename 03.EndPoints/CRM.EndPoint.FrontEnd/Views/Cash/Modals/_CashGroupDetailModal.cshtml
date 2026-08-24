@@ -1,0 +1,58 @@
+<div class="modal fade" id="cashGroupDetailModal" tabindex="-1" role="dialog" data-bs-focus="false">
+    <div class="modal-dialog modal-xxl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header d-flex justify-content-between align-items-center">
+                <h5 class="modal-title fbold flex-center gap-1" style="font-size: 15px">
+                    <i class="fa fa-folder-open text-dark me-1"></i>
+                    جزئیات گروه تنخواه شماره <span id="modalGroupNumber" class="fbold"></span>
+                </h5>
+                <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="card bg-light border-0 mb-3 rounded-3">
+                    <div class="card-body p-2">
+                        <div class="row text-center g-2 align-items-center">
+                            <div class="col-6 col-md-3 border-end flex-center flex-column gap-2">
+                                <span class="text-muted" style="font-size: 13px">ارسال‌کننده</span>
+                                <strong id="modalGroupUser" class="fbold text-dark">-</strong>
+                            </div>
+                            <div class="col-6 col-md-3 border-end flex-center flex-column gap-2">
+                                <span class="text-muted" style="font-size: 13px">تاریخ ارسال</span>
+                                <strong id="modalGroupDate" class="fbold text-dark" dir="ltr">-</strong>
+                            </div>
+                            <div class="col-6 col-md-3 border-end flex-center flex-column gap-2">
+                                <span class="text-muted" style="font-size: 13px">تعداد اقلام</span>
+                                <strong id="modalGroupCount" class="fbold text-dark">-</strong>
+                            </div>
+                            <div class="col-6 col-md-3 flex-center flex-column gap-2">
+                                <span class="text-muted" style="font-size: 13px">جمع کل مبلغ</span>
+                                <div>
+                                    <strong id="modalGroupTotal" class="fbold fs-5" style="color: darkgreen" dir="ltr">0</strong>
+                                    <small class="text-muted">ریال</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="width: 100%;">
+                    <partial name="_CashTablePartial" model='"cashTableModal"' />
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="w-100 d-flex justify-content-between gap-2">
+                    <button type="button" class="buttonCancel3 d-flex align-items-center gap-2 d-none" style="padding-block: 4px !important" id="btnRejectGroup" onclick="rejectCashGroup()">
+                        بازگشت / ارسال به تنخواه‌دار
+                        <svg style="width:16px;height:16px;transform: scaleX(-1)" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>
+                    </button>
+                    <button type="button" class="buttonGreen2 d-flex align-items-center gap-2 d-none" style="padding-block: 4px !important" id="btnApproveGroup" onclick="approveCashGroup()">
+                        تایید کل گروه
+                        <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
