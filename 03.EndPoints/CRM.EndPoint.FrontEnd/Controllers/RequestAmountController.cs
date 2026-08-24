@@ -268,7 +268,7 @@ public class RequestAmountController : Controller {
             var user = await userManager.GetUserAsync(HttpContext.User);
 
             var validation = await ValidateRequestAmountsPayment(model);
-            if (!validation.IsValid) return StatusCode(201, validation.Message);
+            if (!validation.IsValid) return BadRequest(validation.Message);
 
             var isNewPayment = model.Id == Guid.Empty;
             await AddOrUpdatePayment(model, user, isNewPayment);
@@ -520,9 +520,7 @@ public class RequestAmountController : Controller {
     {
         try
         {
-            var user = await userManager.GetUserAsync(HttpContext.User);
-            var roles = await userManager.GetRolesAsync(user);
-            var isFinancial = roles.Contains("کارشناس مالی");
+            var hasAccess = User.IsFinancial() || User.IsAdmin();
 
             var draw = Request.Form["draw"].FirstOrDefault();
             var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
@@ -577,7 +575,7 @@ public class RequestAmountController : Controller {
                 recordsTotal,
                 recordsFiltered = recordsTotal,
                 data,
-                isFinancial
+                hasAccess
             });
         }
         catch (Exception ex)
@@ -587,27 +585,15 @@ public class RequestAmountController : Controller {
     }
 
 
-    public async Task<IActionResult> GetAllRequestAmountsPartial(int passType, int type = -1, string search = "", Guid? orderHeadId = null)
+    public async Task<IActionResult> GetAllRequestAmountsPartial(int type = -1, string search = "", Guid? orderHeadId = null)
     {
         try
         {
-            var user = await userManager.GetUserAsync(HttpContext.User);
-            var roles = await userManager.GetRolesAsync(user);
-            var isFinancial = roles.Contains("کارشناس مالی");
-            var isAdmin = roles.Contains("مدیر ارشد");
-            var isManager = roles.Contains("مدیر عامل");
-            var isTaminAdmin = roles.Contains("مدیر تامین");
-
-            if (passType == 2 && !isManager && !isAdmin)
-            {
-                return NoContent();
-            }
-
             var baseQuery = db.RequestAmounts.OrderByDescending(f => f.CreateDate).AsNoTracking();
 
-            if (!isAdmin && !isFinancial && !isManager && !isTaminAdmin)
+            if (!User.IsAdmin() && !User.IsFinancial() && !User.IsManagingDirector() && !User.IsTaminAdmin())
             {
-                baseQuery = baseQuery.Where(f => f.UserCreatorID == user.Id);
+                baseQuery = baseQuery.Where(f => f.UserCreatorID == User.GetUserId());
             }
 
             if (orderHeadId.HasValue)
@@ -689,15 +675,7 @@ public class RequestAmountController : Controller {
                 .ToListAsync();*/
 
 
-            var html = await vrs.RenderToStringAsync("GetAllRequestAmountsPartial", data,
-                new Dictionary<string, object> {
-                    { "PassType", passType },
-                    { "IsFinancial", isFinancial },
-                    { "IsAdmin", isAdmin },
-                    { "IsManager", isManager },
-                    { "UserId", user.Id }
-                }
-            );
+            var html = await vrs.RenderToStringAsync("GetAllRequestAmountsPartial", data);
 
             return Ok(new { count = data.Count, html, filterCounts });
         }

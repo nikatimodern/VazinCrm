@@ -387,7 +387,7 @@ const GetRequestManagingDirector = async () => {
     ShowTab("#MDRequestAmountTab");
     try {
         FLshowLoading();
-        const res = await axios(`/RequestAmount/GetAllRequestAmountsPartial?search=${val}&type=${type}&passType=2`);
+        const res = await axios(`/RequestAmount/GetAllRequestAmountsPartial?search=${val}&type=${type}`);
         if (res.status === 200) {
             const data = res.data;
             document.getElementById("MDRequestAmountContentId").innerHTML = data.html;
@@ -431,63 +431,6 @@ const GetTransferManagingDirector = async () => {
     }
 };
 
-function changePercentAcceptedRequestAmount(select, amount) {
-    const percent = Number(select.value);
-    const input = select.parentElement.querySelector("input");
-    const acceptAmount = percent * amount / 100;
-    input.value = acceptAmount ? acceptAmount.toLocaleString() : "";
-    updateCurrencyHint(input);
-    
-    select.style.backgroundColor = acceptAmount ? "#cef5ce" : "";
-    toggleAcceptBtn(select, acceptAmount);
-}
-
-function changeAcceptedRequestAmount(input, amount) {
-    setTimeout(() => {
-        const inputValue = Number(SeparatedNumberRemove(input.value)) || 0;
-        const select = input.parentElement.querySelector("select");
-        const percent = Number(select.value);
-        if (percent * amount / 100 !== inputValue) {
-            select.value = "";
-            select.style.backgroundColor = "";
-        }
-        toggleAcceptBtn(input, inputValue);
-    });
-}
-
-function toggleAcceptBtn(elm, acceptAmount) {
-    const acceptBtn = elm.closest(".layered-card").querySelector(".buttonGreen2");
-    if (acceptAmount === 0) {
-        toggleElementsDisabled(acceptBtn, true);
-    } else {
-        toggleElementsDisabled(acceptBtn, false);
-    }
-}
-
-async function submitAcceptedRequestAmount(btn, id) {
-    const card = btn.closest(".layered-card");
-    const input = card.querySelector("input.acceptedAmount");
-    const selOpPercent = card.querySelector("select.acceptedAmountPercent");
-    
-    const model = {
-        id,
-        acceptedAmount: Number(SeparatedNumberRemove(input.value)),
-        acceptedAmountPercent: selOpPercent.value ? Number(selOpPercent.value) : null,
-    };
-    
-    try {
-        FLshowLoading();
-        const res = await axios.post(`/RequestAmount/SetAcceptedRequestAmount`, model);
-        if (res.status === 200) {
-            await GetRequestManagingDirector();
-        }
-    } catch (err) {
-        console.log(err);
-        toastifyError("خطای سرور");
-    } finally {
-        FLshowLoading(false);
-    }
-}
 
 const GetPreFactorFinancialExpert = async () => {
     const val = document.getElementById("FinancialExpertSearchId")?.value.trim() ?? "";
@@ -560,7 +503,7 @@ const GetRequestFinancialExpert = async () => {
     ShowTab("#FinancialRequestTab");
     try {
         FLshowLoading();
-        const res = await axios(`/RequestAmount/GetAllRequestAmountsPartial?search=${val}&type=${type}&passType=3`);
+        const res = await axios(`/RequestAmount/GetAllRequestAmountsPartial?search=${val}&type=${type}`);
         const data = res.data;
         financialRequestContentElm.innerHTML = data.html;
         document.getElementById("FinancialRequestCount").textContent = data.count;

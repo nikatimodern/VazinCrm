@@ -190,7 +190,9 @@ public class PreFactorService(
             {
                 i.IsDeleted = true;
                 if (string.IsNullOrEmpty(user.Id))
+                {
                     i.CommentText = "حذف شده توسط سیستم";
+                }
             }
 
             var accS = await db.Accountancies.ForPreFactor(pf.Id).ToListAsync();
@@ -210,7 +212,7 @@ public class PreFactorService(
             throw;
         }
     }
-    
+
     public static PreFactor UpdateTaxAmountPreFactor(PreFactor pf)
     {
         pf.PercentTax = pf.OfficialType == 1 ? 10 : 0;
