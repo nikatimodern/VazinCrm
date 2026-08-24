@@ -2,11 +2,6 @@
 @model List<CRM.EndPoint.FrontEnd.Models.RequestAmount.RequestAmountVModel>
 
 @{
-    var passType = ViewBag.PassType; //1: requestAmount | 2: cartable MD
-    var isFinancial = ViewBag.IsFinancial;
-    var isAdmin = ViewBag.IsAdmin;
-    var isManager = ViewBag.IsManager;
-    var userId = ViewBag.UserId;
     var index = 0;
 }
 
@@ -14,14 +9,15 @@
     @foreach (var item in Model ?? []) {
         index += 1;
         var reqAmount = item.RequestAmount;
-        var isCreator = reqAmount.UserCreatorID == userId;
+        var isCreator = reqAmount.UserCreatorID == User.GetUserId();
         var supplyFactorSerials = item.SupplyFactorSerials;
         var orderHeadNumbers = item.OrderHeadSerials;
         var customerNames = item.CustomerNames;
         var status = reqAmount.RequestStatus;
         var isFullyPaid = item.TotalPaymentAmount >= reqAmount.AcceptedAmount;
-        var canEditDocType = (isFinancial && reqAmount.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت) ||
-                             (passType == 2 && reqAmount.RequestStatus == RequestStatusEnum.در_انتظار_تایید_مدیرعامل);
+        var canEditDocType = User.IsAdmin() ||
+                             (User.IsFinancial() && reqAmount.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت) ||
+                             (User.IsManagingDirector() && reqAmount.RequestStatus == RequestStatusEnum.در_انتظار_تایید_مدیرعامل);
 
         var bgCssClass = status switch {
             RequestStatusEnum.در_انتظار_پرداخت => "layered-green-light",
@@ -136,161 +132,85 @@
                     </div>
                 }
             </div>
-            @if (passType == 1 || passType == 3) {
-                <div class="layered-card__layer col-12 col-xl d-flex flex-column justify-content-xl-evenly align-items-center gap-2 px-3 px-xl-2 py-2">
-                    <div class="w-100 d-flex column-gap-1 flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
-                        <span style="font-size: 13px; color: #777">مبلغ تایید شده:</span>
+            @{
+                int?[] acceptedAmountPercentList = [25, 50, 75, 100];
+                var percent = reqAmount.AcceptedAmountPercent;
+            }
+            <div class="layered-card__layer col-12 col-xl d-flex flex-column justify-content-xl-evenly align-items-center gap-2 px-3 px-xl-2 py-2">
+                <div class="w-100 d-flex column-gap-1 flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
+                    <span style="font-size: 13px; color: #777" class="flex-shrink-0">مبلغ تایید شده:</span>
+                    @if ((User.IsManagingDirector() || User.IsAdmin()) && status == RequestStatusEnum.در_انتظار_تایید_مدیرعامل) {
+                        <div class="input-group">
+                            <input type="text" class="acceptedAmount form-control currencyNumber" min="@item.TotalPaymentAmount" oninput="changeAcceptedRequestAmount(this, @reqAmount.Amount)" value="@(reqAmount.AcceptedAmount > 0 ? $"{reqAmount.AcceptedAmount:n0}" : "")" required data-currency-hint="#reqAmountCurrencyHint@(index)">
+                            <select class="acceptedAmountPercent form-select form-select-xs" style="@(acceptedAmountPercentList.Contains(percent) ? "background-color: #cef5ce" : "border-color: #b5b5b5");color: #333" onchange="changePercentAcceptedRequestAmount(this, @reqAmount.Amount)">
+                                <option value="" selected="@(percent == 0 ? "selected" : null)">درصد</option>
+                                @foreach (var p in acceptedAmountPercentList) {
+                                    <option value="@p" selected="@(percent == p ? "selected" : null)">@p%</option>
+                                }
+                            </select>
+                        </div>
+                        <span class="currencyHint" id="reqAmountCurrencyHint@(index)"></span>
+                    } else {
                         <div class="fbold column-gap-1 @(status is RequestStatusEnum.در_انتظار_پرداخت or RequestStatusEnum.پرداخت_شده ? "badge badge-outline-green" : "")" style="color: #333">
                             <span style="font-size: 16px;">@($"{reqAmount.AcceptedAmount:n0}")</span>
                             <span style="font-size: 11px;">ريال</span>
                             <span style="font-size: 16px; color:darkgray">
-                            @(reqAmount.AcceptedAmountPercent.HasValue ? $"{reqAmount.AcceptedAmountPercent.Value}%" : "")
-                        </span>
-                        </div>
-                    </div>
-                    @if (item.TotalPaymentAmount > 0) {
-                        <div class="w-100 d-flex column-gap-1 flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
-                            <span style="font-size: 13px; color: #777">مبلغ پرداخت شده:</span>
-                            <button class="fbold flex-center badge badge-green" onclick="ShowModalListPayment('@reqAmount.Id')">
-                                <span class="d-flex align-items-baseline column-gap-1">
-                                    <span style="font-size: 14px;">@($"{item.TotalPaymentAmount:n0}")</span>
-                                    <span style="font-size: 10px;">ريال</span>
-                                </span>
-                                <span class="flex-center ps-2 ms-1" style="border-right: 1px solid whitesmoke">
-                                    <i class="fa @(isFinancial ? "fa-pencil" : "fa-eye") " style="font-size: 10px;color: white"></i>
-                                </span>
-                            </button>
+                                @(reqAmount.AcceptedAmountPercent.HasValue ? $"{reqAmount.AcceptedAmountPercent.Value}%" : "")
+                            </span>
                         </div>
                     }
                 </div>
-
-                <div class="layered-card__layer col-12 col-xl-auto col-xxl-1 flex-center flex-row flex-xl-column p-2 px-xl-3 gap-4 gap-xl-3" style="min-width: 140px;">
-                    @switch (status) {
-                        case RequestStatusEnum.ثبت_اولیه:
-                            if (isCreator) {
-                                <div class="flex-center flex-xl-column gap-3">
-                                    <div class="flex-center flex-row gap-4 gap-xl-3">
-                                        <button class="flex-center p-0" data-title-right="ویرایش" style="color:#333" onclick="showEditRequestAmountModal('@reqAmount.Id')">
-                                            <i class="fa fa-pencil"></i>
-                                        </button>
-
-                                        <button class="flex-center p-0" data-title-right="حذف" style="color:#333" onclick="deleteRequestAmount('@reqAmount.Id')">
-                                            <i class="fa fa-trash"></i>
-                                        </button>
-                                    </div>
-                                    <button class="buttonGreen2" onclick="changeStatusReqAmount('@reqAmount.Id', 1)">ارسال به مدیرعامل</button>
-                                </div>
-                            } else {
-                                <span class="fbold" style="color:#777">@reqAmount.RequestStatusTxt</span>
-                            }
-
-                            break;
-                        case RequestStatusEnum.در_انتظار_تایید_مدیرعامل:
-                        case RequestStatusEnum.در_انتظار_ارسال_به_مالی:
-                            <span class="fbold text-center" style="color: rebeccapurple">@reqAmount.RequestStatusTxt</span>
-                            break;
-                        case RequestStatusEnum.در_انتظار_پرداخت:
-                            if (isFinancial) {
-                                <div class="flex-center flex-xl-column gap-1">
-                                    @if (isFullyPaid) {
-                                        <button class="buttonGreen2" onclick="changeStatusReqAmount('@reqAmount.Id', 4)">پرداخت شد</button>
-                                    } else {
-                                        <button class="buttonGreen2" onclick="showAttachReqAmount('@reqAmount.Id')">ثبت پرداختی</button>
-                                    }
-                                    <button class="buttonCancel3" onclick="changeStatusReqAmount('@reqAmount.Id', 1)">برگشت</button>
-                                </div>
-                            } else {
-                                <span class="fbold" style="color: #4f817d">@reqAmount.RequestStatusTxt</span>
-                            }
-
-                            break;
-                        case RequestStatusEnum.پرداخت_شده:
-                            if (isFullyPaid) {
-                                <div class="flex-center flex-wrap column-gap-1">
-                                    <svg style="width: 18px" viewBox="0 0 20 20" fill="#04857c"><path fill-rule="evenodd" d="M16.403 12.652a3 3 0 0 0 0-5.304 3 3 0 0 0-3.75-3.751 3 3 0 0 0-5.305 0 3 3 0 0 0-3.751 3.75 3 3 0 0 0 0 5.305 3 3 0 0 0 3.75 3.751 3 3 0 0 0 5.305 0 3 3 0 0 0 3.751-3.75Zm-2.546-4.46a.75.75 0 0 0-1.214-.883l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" /></svg>
-                                    <span class="fbold" style="color: #04857c">@reqAmount.RequestStatusTxt</span>
-                                </div>
-                            } else {
-                                if (isFinancial) {
-                                    <div class="flex-center flex-xl-column gap-1">
-                                        <button class="buttonGreen2" onclick="showAttachReqAmount('@reqAmount.Id')">ثبت پرداختی</button>
-                                    </div>
-                                }
-
-                                <div class="flex-center flex-wrap column-gap-2">
-                                    <span class="fbold" style="color: #04857c">@reqAmount.RequestStatusTxt</span>
-                                    @if (isFinancial) {
-                                        <span style="cursor:pointer;color:#333" onclick="changeStatusReqAmount('@reqAmount.Id', 1)" data-title-right="بازگشت به مدیرعامل">
-                                            <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" />
-                                            </svg>
-                                        </span>
-                                    }
-                                </div>
-                            }
-
-                            break;
-                    }
-                </div>
-            } else if (passType == 2) {
-                int?[] acceptedAmountPercentList = [25, 50, 75, 100];
-                var percent = reqAmount.AcceptedAmountPercent;
-                var pendingMd = status == RequestStatusEnum.در_انتظار_تایید_مدیرعامل;
-
-                <div class="layered-card__layer col-12 col-xl d-flex flex-column justify-content-xl-evenly align-items-center gap-2 px-3 px-xl-2 py-2">
+                @if (item.TotalPaymentAmount > 0) {
                     <div class="w-100 d-flex column-gap-1 flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
-                        <span style="font-size: 13px; color: #777" class="flex-shrink-0">مبلغ تایید شده:</span>
-                        @if (pendingMd) {
-                            <div class="input-group">
-                                <input @(pendingMd ? "" : "disabled") type="text" class="acceptedAmount form-control currencyNumber" min="@item.TotalPaymentAmount" oninput="changeAcceptedRequestAmount(this, @reqAmount.Amount)" value="@(reqAmount.AcceptedAmount > 0 ? $"{reqAmount.AcceptedAmount:n0}" : "")" required data-currency-hint="#reqAmountCurrencyHint@(index)">
-                                <select class="acceptedAmountPercent form-select form-select-xs" @(pendingMd ? "" : "disabled") style="@(acceptedAmountPercentList.Contains(percent) ? "background-color: #cef5ce" : "border-color: #b5b5b5");color: #333" onchange="changePercentAcceptedRequestAmount(this, @reqAmount.Amount)">
-                                    <option value="" selected="@(percent == 0 ? "selected" : null)">درصد</option>
-                                    @foreach (var p in acceptedAmountPercentList) {
-                                        <option value="@p" selected="@(percent == p ? "selected" : null)">@p%</option>
-                                    }
-                                </select>
-                            </div>
-                            <span class="currencyHint" id="reqAmountCurrencyHint@(index)"></span>
-                        } else {
-                            <div class="fbold column-gap-1 @(status is RequestStatusEnum.در_انتظار_پرداخت or RequestStatusEnum.پرداخت_شده ? "badge badge-outline-green" : "")" style="color: #333">
-                                <span style="font-size: 16px;">@($"{reqAmount.AcceptedAmount:n0}")</span>
-                                <span style="font-size: 11px;">ريال</span>
-                                <span style="font-size: 16px; color:darkgray">
-                                    @(reqAmount.AcceptedAmountPercent.HasValue ? $"{reqAmount.AcceptedAmountPercent.Value}%" : "")
-                                </span>
-                            </div>
-                        }
+                        <span style="font-size: 13px; color: #777">مبلغ پرداخت شده:</span>
+                        <button class="fbold flex-center badge badge-green" onclick="ShowModalListPayment('@reqAmount.Id')">
+                            <span class="d-flex align-items-baseline column-gap-1">
+                                <span style="font-size: 14px;">@($"{item.TotalPaymentAmount:n0}")</span>
+                                <span style="font-size: 10px;">ريال</span>
+                            </span>
+                            <span class="flex-center ps-2 ms-1" style="border-right: 1px solid whitesmoke">
+                                <i class="fa @(User.IsFinancial() || User.IsAdmin() ? "fa-pencil" : "fa-eye")" style="font-size: 10px;color: white"></i>
+                            </span>
+                        </button>
                     </div>
-                    @if (item.TotalPaymentAmount > 0) {
-                        <div class="w-100 d-flex column-gap-1 flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
-                            <span style="font-size: 13px; color: #777">مبلغ پرداخت شده:</span>
-                            <button class="fbold flex-center badge badge-green" onclick="ShowModalListPayment('@reqAmount.Id')">
-                                <span class="d-flex align-items-baseline column-gap-1">
-                                    <span style="font-size: 14px;">@($"{item.TotalPaymentAmount:n0}")</span>
-                                    <span style="font-size: 10px;">ريال</span>
-                                </span>
-                                <span class="flex-center ps-2 ms-1" style="border-right: 1px solid whitesmoke">
-                                    <i class="fa @(isFinancial ? "fa-pencil" : "fa-eye") " style="font-size: 10px;color: white"></i>
-                                </span>
-                            </button>
-                        </div>
-                    }
-                </div>
+                }
+            </div>
+            <div class="layered-card__layer col-12 col-xl-auto col-xxl-1 flex-center flex-row flex-xl-column p-2 px-xl-3 gap-4 gap-xl-3" style="min-width: 140px;">
+                @switch (status) {
+                    case RequestStatusEnum.ثبت_اولیه:
+                        if (isCreator || User.IsAdmin()) {
+                            <div class="flex-center flex-xl-column gap-3">
+                                <div class="flex-center flex-row gap-4 gap-xl-3">
+                                    <button class="flex-center p-0" data-title-right="ویرایش" style="color:#333" onclick="showEditRequestAmountModal('@reqAmount.Id')">
+                                        <i class="fa fa-pencil"></i>
+                                    </button>
 
-                <div class="layered-card__layer col-12 col-xl-auto col-xxl-1 flex-center flex-row flex-xl-column p-2 px-xl-3 gap-4 gap-xl-3" style="min-width: 140px;">
-                    @switch (status) {
-                        case RequestStatusEnum.ثبت_اولیه:
+                                    <button class="flex-center p-0" data-title-right="حذف" style="color:#333" onclick="deleteRequestAmount('@reqAmount.Id')">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                                <button class="buttonGreen2" onclick="changeStatusReqAmount('@reqAmount.Id', 1)">ارسال به مدیرعامل</button>
+                            </div>
+                        } else {
                             <span class="fbold" style="color:#777">@reqAmount.RequestStatusTxt</span>
-                            break;
-                        case RequestStatusEnum.در_انتظار_تایید_مدیرعامل:
+                        }
+
+                        break;
+                    case RequestStatusEnum.در_انتظار_تایید_مدیرعامل:
+                        if (User.IsManagingDirector() || User.IsAdmin()) {
                             <div class="inline-flex-center flex-xl-column gap-2">
                                 <button class="buttonGreen2" onclick="submitAcceptedRequestAmount(this, '@reqAmount.Id')" @(reqAmount.AcceptedAmount == 0 ? "disabled" : "")>
                                     تایید
                                 </button>
                                 <button class="buttonCancel3" onclick="changeStatusReqAmount('@reqAmount.Id', 0)">برگشت</button>
                             </div>
-                            break;
-                        case RequestStatusEnum.در_انتظار_ارسال_به_مالی:
+                        } else {
+                            <span class="fbold text-center" style="color: rebeccapurple">@reqAmount.RequestStatusTxt</span>
+                        }
+
+                        break;
+                    case RequestStatusEnum.در_انتظار_ارسال_به_مالی:
+                        if (User.IsManagingDirector() || User.IsAdmin()) {
                             var targetStatus = item.TotalPaymentAmount > 0 ? (int)RequestStatusEnum.پرداخت_شده : (int)RequestStatusEnum.در_انتظار_پرداخت;
                             <div class="inline-flex-center flex-xl-column gap-2">
                                 <button class="buttonGreen2" onclick="changeStatusReqAmount('@reqAmount.Id', @targetStatus)" @(reqAmount.AcceptedAmount == 0 ? "disabled" : "")>
@@ -298,21 +218,55 @@
                                 </button>
                                 <button class="buttonCancel3" onclick="changeStatusReqAmount('@reqAmount.Id', 1)">برگشت</button>
                             </div>
-                            break;
-                        case RequestStatusEnum.در_انتظار_پرداخت:
-                            <span class="fbold text-center" style="color: #4f817d">@reqAmount.RequestStatusTxt</span>
-                            break;
-                        case RequestStatusEnum.پرداخت_شده:
-                            <div class="flex-center flex-wrap column-gap-1">
+                        } else {
+                            <span class="fbold text-center" style="color: rebeccapurple">@reqAmount.RequestStatusTxt</span>
+                        }
+
+                        break;
+
+                    case RequestStatusEnum.در_انتظار_پرداخت:
+                        if (User.IsFinancial() || User.IsAdmin()) {
+                            <div class="flex-center flex-xl-column gap-1">
                                 @if (isFullyPaid) {
-                                    <svg style="width: 18px" viewBox="0 0 20 20" fill="#04857c"><path fill-rule="evenodd" d="M16.403 12.652a3 3 0 0 0 0-5.304 3 3 0 0 0-3.75-3.751 3 3 0 0 0-5.305 0 3 3 0 0 0-3.751 3.75 3 3 0 0 0 0 5.305 3 3 0 0 0 3.75 3.751 3 3 0 0 0 5.305 0 3 3 0 0 0 3.751-3.75Zm-2.546-4.46a.75.75 0 0 0-1.214-.883l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" /></svg>
+                                    <button class="buttonGreen2" onclick="changeStatusReqAmount('@reqAmount.Id', 4)">پرداخت شد</button>
+                                } else {
+                                    <button class="buttonGreen2" onclick="showAttachReqAmount('@reqAmount.Id')">ثبت پرداختی</button>
                                 }
+                                <button class="buttonCancel3" onclick="changeStatusReqAmount('@reqAmount.Id', 1)">برگشت</button>
+                            </div>
+                        } else {
+                            <span class="fbold text-center" style="color: #4f817d">@reqAmount.RequestStatusTxt</span>
+                        }
+
+                        break;
+                    case RequestStatusEnum.پرداخت_شده:
+                        if (isFullyPaid) {
+                            <div class="flex-center flex-wrap column-gap-1">
+                                <svg style="width: 18px" viewBox="0 0 20 20" fill="#04857c"><path fill-rule="evenodd" d="M16.403 12.652a3 3 0 0 0 0-5.304 3 3 0 0 0-3.75-3.751 3 3 0 0 0-5.305 0 3 3 0 0 0-3.751 3.75 3 3 0 0 0 0 5.305 3 3 0 0 0 3.75 3.751 3 3 0 0 0 5.305 0 3 3 0 0 0 3.751-3.75Zm-2.546-4.46a.75.75 0 0 0-1.214-.883l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" /></svg>
                                 <span class="fbold" style="color: #04857c">@reqAmount.RequestStatusTxt</span>
                             </div>
-                            break;
-                    }
-                </div>
-            }
+                        } else {
+                            if (User.IsFinancial() || User.IsAdmin()) {
+                                <div class="flex-center flex-xl-column gap-1">
+                                    <button class="buttonGreen2" onclick="showAttachReqAmount('@reqAmount.Id')">ثبت پرداختی</button>
+                                </div>
+                            }
+
+                            <div class="flex-center flex-wrap column-gap-2">
+                                <span class="fbold" style="color: #04857c">@reqAmount.RequestStatusTxt</span>
+                                @if (User.IsFinancial() || User.IsAdmin()) {
+                                    <span style="cursor:pointer;color:#333" onclick="changeStatusReqAmount('@reqAmount.Id', 1)" data-title-right="بازگشت به مدیرعامل">
+                                        <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" />
+                                        </svg>
+                                    </span>
+                                }
+                            </div>
+                        }
+
+                        break;
+                }
+            </div>
         </div>
     }
 </div>
