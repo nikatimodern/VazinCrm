@@ -4369,6 +4369,112 @@ function renderDateTimeHtml(value, { empty = "-", className = "" } = {}) {
 }
 
 
+/**
+ * Resolves an element from an element reference or its ID.
+ *
+ * Supports:
+ * - HTMLElement
+ * - Element
+ * - ID with or without "#"
+ *
+ * @param {string|Element|null|undefined} target - Element or element ID.
+ * @returns {Element|null} The resolved element, or null if not found.
+ */
+function resolveElement(target) {
+    if (target instanceof Element) {
+        return target;
+    }
+    
+    if (typeof target !== "string" || !target.trim()) {
+        return null;
+    }
+    
+    const id = target.trim().replace(/^#/, "");
+    
+    return document.getElementById(id);
+}
+
+
+/**
+ * Initializes a search input and handles search on Enter key
+ * or by clicking the search icon inside its search group.
+ *
+ * @param {string|HTMLInputElement} input - Search input element or its ID.
+ *
+ * @param {(event: KeyboardEvent|MouseEvent, input: HTMLInputElement) => void|Promise<void>} callback
+ * Callback function executed when a search is triggered.
+ *
+ * @returns {void}
+ */
+function initSearchInput(input, callback) {
+    input = resolveElement(input);
+    
+    if (!input) return;
+    
+    
+    const handleSearch = async (event) => {
+        await callback(event, input);
+    };
+    
+    input.addEventListener("keyup", async (event) => {
+        if (event.key === "Enter") {
+            await handleSearch(event);
+        }
+    });
+    
+    const searchGroup = input.closest(".search-group");
+    if (!searchGroup) {
+        return;
+    }
+    
+    const searchIcon = searchGroup.querySelector(".search-icon");
+    searchIcon?.addEventListener("click", async (event) => {
+        await handleSearch(event);
+    });
+}
+
+/**
+ * Initializes change event handling for a radio button group.
+ * Supports both direct event listeners and event delegation.
+ *
+ * @param {string} name - The name attribute of the radio button group.
+ *
+ * @param {(event: Event, radio: HTMLInputElement) => void|Promise<void>} callback
+ * Callback function executed when a radio button changes.
+ *
+ * @param {boolean} [delegation=false] - Whether to use event delegation.
+ *
+ * @returns {void}
+ */
+function initChangeRadio(name, callback, delegation = false) {
+    if (!name || typeof callback !== "function") {
+        return;
+    }
+    
+    if (delegation) {
+        document.addEventListener("change", async (event) => {
+            const radio = event.target.closest(`input[type="radio"][name="${name}"]`);
+            
+            if (!radio) return;
+            
+            await callback(event, radio);
+        });
+        
+        return;
+    }
+    
+    const radios = document.querySelectorAll(`input[type="radio"][name="${name}"]`);
+    
+    if (!radios.length) return;
+    
+    radios.forEach(radio => {
+        radio.addEventListener("change", async (event) => {
+            await callback(event, radio);
+        });
+    });
+}
+
+
 class DynamicSkeleton {
     /**
      * @param {Object} options

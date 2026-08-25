@@ -1,19 +1,16 @@
 var AccParentId = null;
-var baseDesPfactor = [];
-var baseDesFactor = [];
+
 var showFlag = 0;
 var customerIdUp = null;
-var FormCode = null /*--- 1:Customer/Index , 2:Customer/Customers, 3:Cartable/Index مدیر فروش ---*/;
+
 // var userRol = null;
 // var rol;
 var currentUser;
 var pfactorID = null;
 var factorID = null;
-var AccepedAttachment = [];
 var SanadPayList = [];
 var attachInvoiceList = [];
 var setting = null;
-var pFactorSerialNumber = null;
 
 
 var Invo_id = null;
@@ -187,54 +184,6 @@ function closeNotification() {
 
 /////////////////////////////
 
-const showModalPreFactorDescription = () => {
-    $("#preFactorDescriptionModal").modal("toggle");
-};
-const showModalFactorDescription = () => {
-    $("#FactorDescriptionModal").modal("toggle");
-};
-const closeModalPreFactorDescription = () => {
-    $("#preFactorDescriptionModal").modal("toggle");
-};
-const closeModalFactorDescription = () => {
-    $("#FactorDescriptionModal").modal("toggle");
-};
-
-
-const showModalItemPreFactor = () => {
-    $("#ItemPreFactorModal").modal("toggle");
-};
-const showModalItemFactor = () => {
-    $("#ItemFactorModal").modal("toggle");
-};
-const addItemPreFactor = async () => {
-    document.getElementById("FLshowLoading").style.display = "";
-    const isValid = await AddPfItem();
-    document.getElementById("FLshowLoading").style.display = "none";
-    if (isValid) {
-        $("#ItemPreFactorModal").modal("toggle");
-        toastifySuccess("با موفقیت اضافه شد!");
-    }
-};
-const addItemFactor = async () => {
-    document.getElementById("FLshowLoading").style.display = "";
-    const isValid = await AddfItem();
-    document.getElementById("FLshowLoading").style.display = "none";
-    if (isValid) {
-        $("#ItemFactorModal").modal("toggle");
-        toastifySuccess("با موفقیت اضافه شد!");
-    }
-};
-const canselModalItemPreFactor = () => {
-    mySer.emptyForm("PreFacItem");
-    $("#ItemPreFactorModal").modal("hide");
-};
-
-const canselModalItemFactor = () => {
-    mySer.emptyForm("FacItem");
-    $("#ItemFactorModal").modal("hide");
-};
-
 
 const getAndSetAllProduct = async (from, searchValue = "") => {
     FLshowLoading();
@@ -260,20 +209,6 @@ const showModalAmount = async () => {
 
 const closeModalAmount = () => {
     $("#ListAmount").modal("toggle");
-};
-
-
-const getBaseDescription = async (type = null) => {  // 0: preFactor | 1: Factor | 2: termsPrefactor
-    try {
-        const res = await axios(`/Factor/GetItemsDescription?type=${type}`);
-        if (res.status === 200) {
-            return res.data;
-        }
-        return null;
-    } catch (err) {
-        console.error(err);
-        return null;
-    }
 };
 
 
@@ -701,83 +636,6 @@ window.onSelectFilterDate = function () {
 };
 
 
-/*const PayFormChangeOld = (type) => {
-
-    type = Number(type);
-    const fromBankAccountInvoiceModalWrapper = document.getElementById("FromBankAccountInvoiceModalWrapper");
-    const toBankAccountInvoiceModalWrapper = document.getElementById("ToBankAccountInvoiceModalWrapper");
-    switch (type) {
-        case 1: // نقدی
-            document.querySelector("#VosolDateDivId label").textContent = "تاریخ پرداخت";
-            document.querySelector("#VosolDateDivId input").placeholder = "تاریخ پرداخت";
-
-            fromBankAccountInvoiceModalWrapper.classList.add("d-none");
-            fromBankAccountInvoiceModalWrapper.querySelectorAll("input").forEach(el => el.removeAttribute("required"));
-            toBankAccountInvoiceModalWrapper.classList.remove("d-none");
-            toBankAccountInvoiceModalWrapper.querySelector("select").setAttribute("required", "required");
-            if (!toBankAccountInvoiceModalWrapper.querySelector("input").classList.contains("d-none")) {
-                toBankAccountInvoiceModalWrapper.querySelector("input").setAttribute("required", "required");
-            }
-
-            document.querySelector("#InvoiceModalId .container-uploader span").textContent = "تصویر رسید را انتخاب کنید یا اینجا رها کنید";
-            document.getElementById("ReciveDateDivId").classList.add("d-none");
-            document.getElementById("ReciveDate").removeAttribute("required");
-            break;
-        case 2: // چکی
-            document.querySelector("#VosolDateDivId label").textContent = "تاریخ وصول";
-            document.querySelector("#VosolDateDivId input").placeholder = "تاریخ وصول";
-
-            fromBankAccountInvoiceModalWrapper.classList.add("d-none");
-            fromBankAccountInvoiceModalWrapper.querySelectorAll("input").forEach(el => el.removeAttribute("required"));
-            toBankAccountInvoiceModalWrapper.classList.add("d-none");
-            toBankAccountInvoiceModalWrapper.querySelectorAll("input, select").forEach(el => el.removeAttribute("required"));
-
-            document.querySelector("#InvoiceModalId .container-uploader span").textContent = "تصویر چک را انتخاب کنید یا اینجا رها کنید";
-            document.getElementById("ReciveDateDivId").classList.remove("d-none");
-            document.getElementById("ReciveDate").setAttribute("required", "");
-            break;
-        case 3: // اعتباری
-            document.querySelector("#VosolDateDivId label").textContent = "تاریخ وصول";
-            document.querySelector("#VosolDateDivId input").placeholder = "تاریخ وصول";
-
-            fromBankAccountInvoiceModalWrapper.classList.add("d-none");
-            fromBankAccountInvoiceModalWrapper.querySelectorAll("input").forEach(el => el.removeAttribute("required"));
-            toBankAccountInvoiceModalWrapper.classList.add("d-none");
-            toBankAccountInvoiceModalWrapper.querySelectorAll("input, select").forEach(el => el.removeAttribute("required"));
-
-            document.querySelector("#InvoiceModalId .container-uploader span").textContent = "تصویر رسید را انتخاب کنید یا اینجا رها کنید";
-            document.getElementById("ReciveDateDivId").classList.add("d-none");
-            document.getElementById("ReciveDate").removeAttribute("required");
-            break;
-        case 4: // تهاتری
-            document.querySelector("#VosolDateDivId label").textContent = "تاریخ پرداخت";
-            document.querySelector("#VosolDateDivId input").placeholder = "تاریخ پرداخت";
-
-            fromBankAccountInvoiceModalWrapper.classList.remove("d-none");
-            fromBankAccountInvoiceModalWrapper.querySelectorAll("input").forEach(el => el.setAttribute("required", "required"));
-            toBankAccountInvoiceModalWrapper.classList.remove("d-none");
-            toBankAccountInvoiceModalWrapper.querySelector("select").setAttribute("required", "required");
-            if (!toBankAccountInvoiceModalWrapper.querySelector("input").classList.contains("d-none")) {
-                toBankAccountInvoiceModalWrapper.querySelector("input").setAttribute("required", "required");
-            }
-
-            document.querySelector("#InvoiceModalId .container-uploader span").textContent = "تصویر رسید را انتخاب کنید یا اینجا رها کنید";
-            document.getElementById("ReciveDateDivId").classList.add("d-none");
-            document.getElementById("ReciveDate").removeAttribute("required");
-
-
-            /!*const toAccountSelect = document.getElementById("BankAccountId");
-            toAccountSelect.value = "other";
-            toAccountSelect.style.display = "none";
-            const bankAccountTxt = document.getElementById("BankAccountTxt");
-            bankAccountTxt.style.display = "";
-            bankAccountTxt.setAttribute("required", "required");
-            *!/
-            break;
-    }
-
-};*/
-
 const PayFormChange = (modalId, type) => {
     const modal = document.getElementById(modalId);
     const selectedType = Number(type);
@@ -965,38 +823,6 @@ const AcceptSetting = async () => {
         const PreFacItem = document.getElementById("PreFacItem");
         if (PreFacItem) PreFacItem.style.gridTemplateColumns = "2.1fr 3.2fr 1fr 1fr 0.4fr";
     }
-};
-
-
-const cancelShowDeliverDetailModal = () => {
-    $("#DeliverDetail").modal("toggle");
-};
-
-const cancelShowDeliverModal = () => {
-    $("#Deviver").modal("toggle");
-};
-
-const showModalDeliverItem = (pfid, pfItemId) => {
-    $("#FLshowLoading").css("display", "");
-    $.get(baseUrl + `Factor/GetPartialAllItemFactorDetail?pfId=${pfid}&pfItemId=${pfItemId}`, (res) => {
-        $("#DeliverDetailBodyId").children().remove();
-        $("#DeliverDetailBodyId").append(res);
-        $("#FLshowLoading").css("display", "none");
-    });
-    
-    $("#DeliverDetail").modal("show");
-};
-
-
-const showModalDeliver = (pfid) => {
-    $("#FLshowLoading").css("display", "");
-    
-    $.get(baseUrl + `Factor/GetPartialAllItemFactor?pfId=${pfid}`, (res) => {
-        $("#DeliverBodyId").children().remove();
-        $("#DeliverBodyId").append(res);
-        $("#FLshowLoading").css("display", "none");
-    });
-    $("#Deviver").modal("show");
 };
 
 
@@ -1652,282 +1478,6 @@ window.open(`/Order/Index`);
 };*/
 
 
-const f_showDescItem = () => {
-    
-    let items = "";
-    
-    FactorDescItems.forEach((item, index) => {
-        
-        
-        items += `<li class="mp" style="display:flex"><p class="mp"> ${item.text}</p> <span onclick="DelFactorDescItem(${index})"> <i style="cursor:pointer;" class="fa fa-trash"></i> </span>  </li>`;
-        
-        // if (item.isDeleted == false) {
-        //     if (item.dir == "rtl") {
-        //         items = items + `<li class='mp' style='display:flex'><p class='mp'> ${item.text}</p> <span onclick='DelFactorDescItem(${index})'> <i style='cursor:pointer; color:light-gray' class='fa fa-trash'></i> </span>  </li>`
-        //     }
-        //     else {
-        //         items = items + `<li class='mp' style='display:flex'><p class='mp'> ${item.text}</p> <span onclick='DelFactorDescItem(${index})'> <i style='cursor:pointer; color:light-gray' class='fa fa-trash'></i> </span>  </li>`
-        //     }
-        // }
-        
-        
-    });
-    items = "<ul class='mp'>" + items + "</ul>";
-    
-    
-    $("#factorDescId").children().remove();
-    $("#factorDescIdMobile").children().remove();
-    $("#factorDescIdTablet").children().remove();
-    
-    
-    $("#factorDescId").append(items);
-    $("#factorDescIdMobile").append(items);
-    $("#factorDescIdTablet").append(items);
-    
-};
-
-
-let deliveredPfId;
-let deliveredType;
-const getUndeliveredOrderHeads = async () => {
-    const res = await axios(`/Order/GetUndeliveredOrderHeads?pfId=${deliveredPfId}`);
-    const data = res.data.trim();
-    document.getElementById("UndeliveredOrderHeads").innerHTML = data;
-    const deliveredOkBtn = document.getElementById("UndeliveredOrderHeadsModalOkBtn");
-    if (data.includes("empty-msg")) {
-        deliveredOkBtn.textContent = "اتمام کار";
-        return false;
-    } else {
-        deliveredOkBtn.textContent = "تحویل همه و اتمام کار";
-        return true;
-    }
-};
-let UndeliveredModalIsShow;
-const delivered = async (id, type) => {
-    deliveredPfId = id;
-    deliveredType = type;
-    FLshowLoading();
-    const hasUndelivered = await getUndeliveredOrderHeads();
-    FLshowLoading(false);
-    if (hasUndelivered) {
-        UndeliveredModalIsShow = true;
-        $("#UndeliveredOrderHeadsModal").modal("show");
-    } else {
-        deliveredOk();
-    }
-};
-
-const deliveredOk = () => {
-    Swal.fire({
-        title: "اتمام کار!",
-        text: "آیا مطمئن هستید؟",
-        icon: "question",
-        showCancelButton: true,
-        cancelButtonColor: "#adadad",
-        confirmButtonColor: "#3085d6",
-        cancelButtonText: "انصراف",
-        confirmButtonText: "بله، به مشتری تحویل داده شد",
-    }).then(async (result) => {
-        if (result.isConfirmed) {
-            if (await ChangePf(deliveredPfId, 7)) {
-                if (deliveredType === 1) {
-                    await getAllPreFactor();
-                } else if (deliveredType === 4) {
-                    await refreshDealPreFactors();
-                }
-                toastifySuccess("پیش فاکتور اتمام کار خورد");
-                if (UndeliveredModalIsShow) $("#UndeliveredOrderHeadsModal").modal("hide");
-            }
-        }
-    });
-};
-
-const backDelivered = async (pfId, passType) => {
-    if (await ChangePf(pfId, 6)) {
-        if (passType === 1) {
-            await getAllPreFactor();
-        } else if (passType === 4) {
-            await refreshDealPreFactors();
-        }
-    }
-};
-
-
-const regUtamin = async (pfId, type) => {
-    if (!await mySer.CheckValidForm(pfId)) return;
-    
-    try {
-        FLshowLoading();
-        const el = document.getElementById("S_" + pfId);
-        const res = await axios(`/Factor/UtaminReg?pfId=${pfId}&usId=${el.value}`);
-        if (res.status === 200) {
-            if (type === 1) {
-                await getAllPreFactor();
-            } else if (type === 4) {
-                await refreshDealPreFactors();
-            }
-            
-            FLshowLoading(false);
-            // showSmsSendingToast();
-            //toastifySuccess("به مسئول تامین واگذار شد");
-        }
-    } catch (err) {
-        console.log(err);
-        toastifyError("خطای سرور");
-        //setTimeout(async () => await regUtamin(id), 3000);
-    } finally {
-        FLshowLoading(false);
-    }
-};
-
-const resendRegUtamin = async (pfId, userTaminId, type) => {
-    try {
-        FLshowLoading();
-        const res = await axios(`/Factor/ResendRegUtamin?pfId=${pfId}&usId=${userTaminId}`);
-        if (res.status === 200) {
-            if (type === 1) {
-                await getAllPreFactor();
-            } else if (type === 4) {
-                await refreshDealPreFactors();
-            }
-            //showSmsSendingToast();
-            // toastifyInfo("پیامک در صف ارسال قرار گرفت");
-            //toastifySuccess("ارسال مجدد انجام شد");
-        }
-    } catch (err) {
-        console.log(err);
-        //setTimeout(async () => await resendRegUtamin(pfId, userTaminId), 3000);
-    } finally {
-        FLshowLoading(false);
-    }
-};
-
-let smsSendedPfId;
-let typeSubmitSmsSendPf;
-const showMobileModal = async (id, type) => {
-    typeSubmitSmsSendPf = type;
-    try {
-        ModalToggle("MobileModal");
-        smsSendedPfId = id;
-        const res = await axios(`/factor/GetCustomerPhone/${id}`);
-        if (res.status === 200) {
-            document.getElementById("mobileid").value = res.data;
-        }
-        
-    } catch (err) {
-        console.log(err);
-        setTimeout(async () => await showMobileModal(id, type), 3000);
-    }
-};
-
-const SendToCustomer = async () => {
-    try {
-        FLshowLoading();
-        const toNumber = document.getElementById("mobileid").value;
-        const res = await axios(`/Factor/SendToCustomer?id=${smsSendedPfId}&toNumber=${toNumber}`);
-        if (res.status === 200) {
-            if (typeSubmitSmsSendPf === 1) {
-                await getAllPreFactor();
-            } else if (typeSubmitSmsSendPf === 3) {
-                await GetSelesExpertPartial();
-            } else if (typeSubmitSmsSendPf === 4) {
-                await refreshDealPreFactors();
-            }
-            
-            // showSmsSendingToast();
-            //toastifySuccess("ارسال انجام شد");
-            $("#MobileModal").modal("toggle");
-        }
-    } catch (err) {
-        console.log(err);
-        toastifyError("خطای سرور");
-        /*CounterSmsSend = CounterSmsSend + 1;
-        if (CounterSmsSend < 3) {
-            toastifyError("ارسال با خطا روبرو شد");
-            setTimeout(async () => await SendToCustomer(), 3000);
-        } else {
-            CounterSmsSend = 0;
-            document.getElementById("FLshowLoading").style.display = "none";
-            $("#MobileModal").modal("toggle");
-            if (typeSubmitSmsSendPf === 1) {
-                await getAllPreFactor();
-            } else if (typeSubmitSmsSendPf === 4) {
-                await refreshDealPreFactors();
-            }
-            Swal.fire({
-                title: "خطا!", text: "لینک تایید ارسال نشد", icon: "error", confirmButtonText: "بستن",
-            });
-            
-        }*/
-    } finally {
-        FLshowLoading(false);
-    }
-};
-
-const acceptSalesAdmin = async (id) => {
-    try {
-        FLshowLoading();
-        const res = await axios(`/Factor/AcceptSalesAdmin/${id}`);
-        if (res.status === 200) {
-            toastifySuccess("پیش فاکتور تایید شد");
-            await GetPreFactorSalesAdmin();
-            
-        } else if (res.status === 201) {
-            toastifyError(res.data);
-        }
-        FLshowLoading(false);
-    } catch (err) {
-        console.log(err);
-        setTimeout(async () => await acceptSalesAdmin(id), 3000);
-    }
-};
-
-
-const ChangePf = async (id, code) => {
-    FLshowLoading();
-    return new Promise((resolve) => {
-        $.get(baseUrl + `Factor/ChangeStatePf?id=${id}&tCode=${code}`, () => {
-            FLshowLoading(false);
-            resolve(true);
-        })
-         .fail(() => {
-             setTimeout(async () => await ChangePf(id, code), 3000);
-         });
-    });
-};
-
-const Backward = (id, type) => {
-    Swal.fire({
-        title: "بازگشت!",
-        text: "با این اقدام پیش فاکتور به مرحله اول فرایند منتقل می شود. آیا مطمئن هستید؟",
-        icon: "warning",
-        showCancelButton: true,
-        cancelButtonColor: "#adadad",
-        confirmButtonColor: "#e64942",
-        cancelButtonText: "انصراف",
-        confirmButtonText: "بله",
-    })
-        .then((result) => {
-            if (result.isConfirmed) {
-                $.get(baseUrl + "Factor/Backward/" + id, async () => {
-                    if (type === 0) {
-                        await GetPreFactorPartial();
-                    } else if (type === 1) {
-                        await getAllPreFactor();
-                    } else if (type === 4) {
-                        await refreshDealPreFactors();
-                    } else if (type === 5) {
-                        await GetPreFactorTaminExpert();
-                    }
-                }).fail(() => {
-                    setTimeout(() => Backward(id), 2000);
-                });
-            }
-            
-        });
-};
-
-
 const GetSetting = async () => {
     return new Promise((resolve) => {
         $.get("/ASetting/GetSetting", (res) => {
@@ -1957,42 +1507,6 @@ const setDateTime = async () => {
         el.innerHTML = `${dt}`;
         
     }, 30000);
-};
-
-
-const AddfItem = async () => {
-    
-    if (await mySer.CheckValidForm("#FacItem")) {
-        
-        let data = mySer.convertFormToJSON("#FacItem");
-        let el_procode = Array.from(document.getElementById("FacItem").elements)
-                              .filter(f => f.name === "productCode")[0];
-        
-        if (el_procode.value !== "") {
-            
-            data.productSmallName = el_procode.options[el_procode.selectedIndex].text;
-        }
-        
-        let el_Unit = Array.from(document.getElementById("FacItem").elements).filter(f => f.name === "unit")[0];
-        data.unitTxt = el_Unit.options[el_Unit.selectedIndex].text;
-        data.unit = Number(data.unit);
-        data.id = null;
-        
-        _factorItems.push(data);
-        factor.factorItems = _factorItems;
-        ShowItemfactor();
-        mySer.emptyForm("FacItem");
-        
-        let calStatus = await calculateTotalFactor();
-        
-        //calculateTextFactor();
-        
-        el_procode.focus();
-        
-        return true;
-    } else {
-        return false;
-    }
 };
 
 
@@ -2512,20 +2026,6 @@ async function acceptFinancial(pfId) {
     }
 }
 
-
-const backStepPf = async (id, _type, formId) => {
-    
-    
-    await changeTypePfactor(id, _type, formId, "برگشت خورده");
-    
-    
-    //await changeTypePfactorOk(id, _type, "برگشت خورده");
-    //toastifySuccess("تغییر انجام شد");
-    
-    
-};
-
-
 let idNotAccept;
 let typeNotAccept;
 const notAcceptCommentElm = document.getElementById("NotAcceptComment");
@@ -2718,92 +2218,8 @@ const closeModalInvoice = () => {
 };
 
 
-const showSubMenu = (id) => {
-    $("#" + id).children().toggleClass("show");
-};
-
-
 var delImgPerStatus = 0;
 
-
-const AttachDoc = async (id) => {
-    pfactorID = id;
-    ModalToggle("Attachments", "show");
-    try {
-        FLshowLoading();
-        const res = await axios(`/Factor/GetAttachment/${id}?type=2`);
-        AccepedAttachment = res.data;
-        FileUpReload("AcAtID");
-    } catch (err) {
-        toastifyError("خطای سرور!");
-        console.log(err);
-    } finally {
-        FLshowLoading(false);
-    }
-    
-};
-
-
-const CheckAcPfAtach = async (id) => {
-    
-    return new Promise((resolve, reject) => {
-        pfactorID = id;
-        document.getElementById("FLshowLoading").style.display = "";
-        $.get(`/Factor/GetAttachment/${id}?type=2`, (res) => {
-            document.getElementById("FLshowLoading").style.display = "none";
-            
-            if (res.length > 0) {
-                
-                resolve(true);
-                
-            } else {
-                
-                resolve(false);
-            }
-        })
-         .fail(() => {
-             CheckAcPfAtach(id);
-         });
-    });
-};
-
-const AcceptPfactor = async (id, type) => {
-    document.getElementById("FLshowLoading").style.display = "";
-    $.get("/Factor/AcceptPreFactorManual/" + id, async (res) => {
-        if (type === 1) {
-            await getAllPreFactor();
-        } else if (type === 3) {
-            await GetSelesExpertPartial();
-        } else if (type === 4) {
-            await refreshDealPreFactors();
-            if (typeof getAllDeals === "function") {
-                await getAllDeals();
-            }
-        }
-        toastifySuccess("پیش فاکتور تایید شد.");
-        document.getElementById("FLshowLoading").style.display = "none";
-    })
-     .fail(() => {
-         setTimeout(async () => await AcceptPfactor(id, type), 3000);
-     });
-};
-
-const HandAccepting = async (id, type) => {
-    if (setting.attAcceptHanding === true) {
-        if (await CheckAcPfAtach(id)) {
-            await AcceptPfactor(id, type);
-        } else {
-            Swal.fire({
-                icon: "error",
-                title: "خطا در تایید",
-                text: "تایید انجام نشد فایل تایید باید ضمیمه شود",
-                confirmButtonText: "باشه",
-            });
-        }
-    } else {
-        await AcceptPfactor(id);
-    }
-};
 
 const openCustomerProfile = async (id, pfSerialNum) => {
     if (!id) return;
@@ -3151,36 +2567,6 @@ const setBadge = (target, count) => {
 
 const GoToCarEnvelope = () => {
     window.location.href = `/cartable/Index?tab=${locationTabIdEnvelope}`;
-};
-
-const SubmitAcAttach = async (typeAttach) => {
-    const model = { listAttach: AccepedAttachment, id: pfactorID };
-    
-    try {
-        FLshowLoading();
-        const res = await axios.post("/Factor/addAcPrefacAttachment", model);
-        if (res.status === 200) {
-            toastifySuccess("ثبت با موفقیت انجام شد");
-            AccepedAttachment = [];
-            ModalToggle("Attachments", "hide");
-            document.getElementById("imageDisplayAcAt").innerHTML = "";
-            document.getElementById("AcAtID").value = "";
-        }
-    } catch (err) {
-        console.log(err);
-        toastifyError("خطای سرور");
-    } finally {
-        FLshowLoading(false);
-    }
-    
-};
-
-const cancelAttachment = () => {
-    
-    $("#Attachments").modal("toggle");
-    AccepedAttachment = [];
-    document.getElementById("imageDisplayAcAt").innerHTML = "";
-    document.getElementById("AcAtID").value = "";
 };
 
 
@@ -3819,193 +3205,6 @@ async function finishTask(id, type, thisBtn, loc = 1) {
     }
 }
 
-///////////upload Image
-
-
-//const fileHandler = (file, name, type, nameTarget) => {
-
-//    if (type.split("/")[0] !== "image") {
-
-//        document.getElementById("error_" + nameTarget).innerText = "فقط تصویر مجاز است";
-//        return false;
-//    }
-//    else {
-
-//        document.getElementById("error_" + nameTarget).innerText = "";
-//        let reader = new FileReader();
-//        reader.readAsDataURL(file);
-//        reader.onloadend = () => {
-
-//            if (nameTarget == "AcAt") {
-//                AcAtImageList.push(
-//                    {
-//                        Filename: nameTarget,
-//                        Filetype: type,
-//                        fileExten: name.split(".")[1],
-//                        fileBinery: reader.result.split(',')[1]
-//                    }
-//                )
-//            }
-//            if (nameTarget == "logo") {
-//                logo = {
-//                    Filename: nameTarget,
-//                    Filetype: type,
-//                    fileExten: name.split(".")[1],
-//                    fileBinery: reader.result.split(',')[1]
-//                }
-//            }
-//            if (nameTarget == "MohrR") {
-//                MohrR = {
-//                    Filename: nameTarget,
-//                    Filetype: type,
-//                    fileExten: name.split(".")[1],
-//                    fileBinery: reader.result.split(',')[1]
-//                }
-//            }
-//            if (nameTarget == "Mohr") {
-//                Mohr = {
-//                    Filename: nameTarget,
-//                    Filetype: type,
-//                    fileExten: name.split(".")[1],
-//                    fileBinery: reader.result.split(',')[1]
-//                }
-//            }
-
-
-//            let imageContainer = document.createElement("figure");
-//            let img = document.createElement("img");
-//            img.src = reader.result;
-//            imageContainer.appendChild(img);
-//            imageContainer.innerHTML += `<figcaption>${name}</figcaption>`;
-//            document.getElementById("image-display_" + nameTarget).appendChild(imageContainer);
-//        };
-
-
-//    }
-
-//};
-
-
-//async function Generate(item) {
-//    return await new Promise((resolve, reject) => {
-
-//        let nameTarget = item.getAttribute("name")
-//        Array.from(item.files).forEach(async (file, index) => {
-
-//            var bin = await GetBinery(file);
-//            alert(nameTarget);
-//            if (nameTarget == "AcAt") {
-
-//                AcAtImageList.push(
-//                    {
-//                        id: null,
-//                        Filename: nameTarget,
-//                        Filetype: file.type,
-//                        fileExten: file.name.split(".")[1],
-//                        fileBinery: bin.split(',')[1]
-//                    }
-//                )
-//            }
-
-
-//        });
-//        resolve();
-
-
-//    })
-
-//}
-
-
-//async function GetBinery(file) {
-//    return await new Promise((resolve, reject) => {
-//        var reader = new FileReader();
-//        reader.onload = function () {
-//            resolve(reader.result);
-//        };
-//        reader.readAsDataURL(file);
-//    });
-//}
-
-
-//Array.from(containers).forEach((item, index) => {
-//    let tn = item.getAttribute("name")
-
-//    item.addEventListener(
-//        "dragenter",
-//        (e) => {
-//            e.preventDefault();
-//            e.stopPropagation();
-//            item.classList.add("active");
-//        },
-//        false
-//    );
-
-//    item.addEventListener(
-//        "dragleave",
-//        (e) => {
-//            e.preventDefault();
-//            e.stopPropagation();
-//            item.classList.remove("active");
-//        },
-//        false
-//    );
-
-//    item.addEventListener(
-//        "dragover",
-//        (e) => {
-//            e.preventDefault();
-//            e.stopPropagation();
-//            item.classList.add("active");
-//        },
-//        false
-//    );
-
-//    item.addEventListener(
-//        "drop",
-//        (e) => {
-//            e.preventDefault();
-//            e.stopPropagation();
-//            item.classList.remove("active");
-//            let draggedData = e.dataTransfer;
-//            let files = draggedData.files;
-//            var _id = "image-display_" + tn;
-
-//            document.getElementById(_id).innerHTML = "";
-
-//            Array.from(files).forEach((file) => {
-//                fileHandler(file, file.name, file.type, tn);
-//            });
-//        },
-//        false
-//    );
-
-
-//})
-
-
-window.onload = () => {
-    var errors = document.getElementsByClassName("error");
-    Array.from(errors).forEach((item) => {
-        item.innerHTML = "";
-    });
-    //error.innerText = "";
-};
-
-// const dateTime = document.querySelector("#dateTimeNowId")
-// console.log(dateTime)
-
-
-/*lightbox.option({
-    resizeDuration: 500, wrapAround: true,
-});*/
-
-function initLightbox() {
-    if (!window.Lightbox3) return;
-    
-    const { Lightbox } = Lightbox3;
-    Lightbox.init();
-}
 
 const overlay = document.getElementById("overlay");
 const mobileMoreMenuBtn = document.getElementById("mobileMoreMenuBtn");
@@ -4195,19 +3394,19 @@ function initDomWarningsModal() {
             const div = document.createElement("div");
             div.className = "warning-box";
             div.innerHTML = `
-                    <div class="d-flex align-items-center gap-2">
-                        <svg style="width: 18px;flex-shrink: 0; color: #EF5350;" viewBox="0 0 16 16" fill="currentColor"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
-                        <span style="color: #444;">${item.message}</span>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="d-flex align-items-center justify-content-center showDetails" style="cursor: pointer;">
-                            <svg style="width: 18px;color: #ed2e2a;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" /><path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 0 1 0-1.113ZM17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0Z" clip-rule="evenodd" /></svg>
-                        </span>
-                        <span class="d-flex align-items-center justify-content-center deleteWarning" style="cursor: pointer;">
-                            <svg style="width: 18px;color: #EF5350;" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
-                        </span>
-                    </div>
-                `;
+                <div class="d-flex align-items-center gap-2">
+                    <svg style="width: 18px;flex-shrink: 0; color: #EF5350;" viewBox="0 0 16 16" fill="currentColor"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
+                    <span style="color: #444;">${item.message}</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="d-flex align-items-center justify-content-center showDetails" style="cursor: pointer;">
+                        <svg style="width: 18px;color: #ed2e2a;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" /><path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 0 1 0-1.113ZM17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0Z" clip-rule="evenodd" /></svg>
+                    </span>
+                    <span class="d-flex align-items-center justify-content-center deleteWarning" style="cursor: pointer;">
+                        <svg style="width: 18px;color: #EF5350;" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
+                    </span>
+                </div>
+            `;
             div.querySelector(".deleteWarning").addEventListener("click", () => removeWarning(item.id));
             div.querySelector(".showDetails").addEventListener("click", () => showDetailsWarning(item.entityId));
             
@@ -4525,59 +3724,4 @@ function createDomLogSystem(data) {
 
 function showAgentReviewText(btn) {
     btn.closest(".agent-review-box")?.classList.toggle("open");
-}
-
-function initSearchInput(inputId, callback) {
-    const input = document.getElementById(inputId);
-    
-    if (!input) {
-        //console.warn(`Search input not found: ${inputId}`);
-        return;
-    }
-    
-    const handleSearch = async (event) => {
-        await callback(event, input);
-    };
-    
-    input.addEventListener("keyup", async (event) => {
-        if (event.key === "Enter") {
-            await handleSearch(event);
-        }
-    });
-    
-    const searchGroup = input.closest(".search-group");
-    if (searchGroup) {
-        const searchIcon = searchGroup.querySelector(".search-icon");
-        
-        searchIcon?.addEventListener("click", async (event) => {
-            await handleSearch(event);
-        });
-    }
-}
-
-function initChangeRadio(name, callback, delegation = false) {
-    if (delegation) {
-        document.addEventListener("change", async event => {
-            const radio = event.target.closest(`input[name="${name}"]`);
-            
-            if (!radio) return;
-            
-            await callback(event, radio);
-        });
-        
-        return;
-    }
-    
-    const radios = document.querySelectorAll(`input[name="${name}"]`);
-    
-    if (!radios.length) {
-        //console.warn(`Radio group not found: ${name}`);
-        return;
-    }
-    
-    radios.forEach(radio => {
-        radio.addEventListener("change", async event => {
-            await callback(event, radio);
-        });
-    });
 }

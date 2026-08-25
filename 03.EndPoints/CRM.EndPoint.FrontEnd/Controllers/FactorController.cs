@@ -1400,136 +1400,29 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> changeTypePfactor(Guid? id, int type, string des)
+        public async Task<IActionResult> ExpirePreFactor([FromBody] DescriptionIdVModel model)
         {
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
-                var oldPf = await db.PreFactors.AsNoTracking().Where(F => F.Id == id).FirstOrDefaultAsync();
-                PreFactor pf = null;
 
-                switch (type)
-                {
-                    case 1:
-                        pf = await db.PreFactors.Where(F => F.Id == id).FirstOrDefaultAsync();
+                var pf = await db.PreFactors.FindAsync(model.Id);
 
-                        pf.PrePftype = pf.Pftype;
-                        pf.Pftype = type;
-                        pf.PftypeTxt = Service.GetTypeTxtPfactor(type);
-                        pf.PftypeChangeDateTxt = dtService.GetDateTimePersian(DateTime.Now);
-                        pf.PftypeChangeDate = DateTime.Now;
-                        pf.ExpireValidateDesc = des;
-                        pf.AcceptedFinancial = null;
+                pf.PrePftype = pf.Pftype;
+                pf.Pftype = (int)PreFactorEnum.بسته_شده;
+                pf.PftypeTxt = Service.GetTypeTxtPfactor(pf.Pftype);
+                pf.PftypeChangeDate = DateTime.Now;
+                pf.PftypeChangeDateTxt = dtService.GetDateTimePersian();
+                pf.ExpireValidateDesc = model.Description;
 
-                        await _logSystemService.LogChange(oldPf, pf, LogActionEnum.تغییر_وضعیت, user);
-                        await db.SaveChangesAsync();
-                        break;
-                    case 2:
-                        pf = await db.PreFactors.Where(F => F.Id == id).FirstOrDefaultAsync();
+                pf.UserModify = user.FullName;
+                pf.UserModifyID = user.Id;
+                pf.ModifyDate = DateTime.Now;
+                pf.ModifyDateTxt = dtService.GetDateTimePersian();
 
-                        pf.PrePftype = pf.Pftype;
-                        pf.Pftype = type;
-                        pf.PftypeTxt = Service.GetTypeTxtPfactor(type);
-                        pf.PftypeChangeDateTxt = dtService.GetDateTimePersian(DateTime.Now);
-                        pf.PftypeChangeDate = DateTime.Now;
-                        pf.ExpireValidateDesc = des;
-                        pf.AcceptedFinancial = null;
-
-                        await _logSystemService.LogChange(oldPf, pf, LogActionEnum.تغییر_وضعیت, user);
-                        await db.SaveChangesAsync();
-                        break;
-                    case 3:
-                        pf = await db.PreFactors.Where(F => F.Id == id).FirstOrDefaultAsync();
-
-                        pf.PrePftype = pf.Pftype;
-                        pf.Pftype = type;
-                        pf.PftypeTxt = Service.GetTypeTxtPfactor(type);
-                        pf.PftypeChangeDateTxt = dtService.GetDateTimePersian(DateTime.Now);
-                        pf.PftypeChangeDate = DateTime.Now;
-                        pf.ExpireValidateDesc = des;
-
-                        pf.AcceptedFinancial = null;
-
-                        await _logSystemService.LogChange(oldPf, pf, LogActionEnum.تغییر_وضعیت, user);
-                        await db.SaveChangesAsync();
-                        break;
-                    case 6:
-
-                        pf = await db.PreFactors.Include(f => f.PreFactorItems).Include(f => f.Descriptions).Where(F => F.Id == id)
-                            .FirstOrDefaultAsync();
-
-
-                        pf.PrePftype = pf.Pftype;
-                        pf.Pftype = (int)PreFactorEnum.در_انتظار_تولید;
-                        pf.PftypeTxt = "تکمیل وجه شده";
-                        pf.PftypeChangeDateTxt = dtService.GetDateTimePersian(DateTime.Now);
-                        pf.PftypeChangeDate = DateTime.Now;
-                        var js = JsonConvert.SerializeObject(pf);
-                        var fac = JsonConvert.DeserializeObject<Factor>(js);
-                        fac.Id = Guid.Empty;
-                        fac.SerialNumber = 0;
-                        fac.PfactorSerialNumber = pf.SerialNumber;
-                        fac.PfactorID = pf.Id;
-                        fac.DateCompleted = DateTime.Now;
-                        fac.DateCompletedTxt = dtService.GetDatePersian();
-
-                        IList<FactorItem> Fitems = new List<FactorItem>();
-
-                        foreach (var item in db.PreFactorItems.Where(f => f.PrefactorId == pf.Id).ToList())
-                        {
-                            Fitems.Add(new FactorItem() {
-                                Product = item.Product,
-                                ProductSmallName = item.ProductSmallName,
-                                Row = item.Row,
-                                TotalAmount = item.TotalAmount,
-                                Unit = item.Unit,
-                                UnitAmount = item.UnitAmount,
-                                UnitTxt = item.UnitTxt,
-                                WeightCount = item.WeightCount,
-                                CreateDate = DateTime.Now,
-                                CreateDateTxt = dtService.GetDateTimePersian(DateTime.Now),
-                                UserCreator = item.UserCreator,
-                                UserCreatorID = item.UserCreatorID,
-                            });
-                        }
-
-                        IList<FactorDescription> FitemDes = new List<FactorDescription>();
-                        foreach (var item in db.PreFactorDescriptions.Where(f => f.PrefactorId == pf.Id).ToList())
-                        {
-                            FitemDes.Add(new FactorDescription() {
-                                Order = item.Order,
-                                Text = item.Text,
-                                Dir = item.Dir
-                            });
-                        }
-
-                        fac.FactorItems = Fitems;
-                        fac.Descriptions = FitemDes;
-                        await db.AddAsync(fac);
-
-                        await db.SaveChangesAsync();
-                        break;
-
-                    case 8:
-                        pf = await db.PreFactors.Where(F => F.Id == id).FirstOrDefaultAsync();
-
-                        pf.PrePftype = pf.Pftype;
-                        pf.Pftype = (int)PreFactorEnum.بسته_شده;
-                        pf.PftypeTxt = Service.GetTypeTxtPfactor(type);
-                        pf.PftypeChangeDateTxt = dtService.GetDateTimePersian(DateTime.Now);
-                        pf.PftypeChangeDate = DateTime.Now;
-                        pf.ExpireValidateDesc = des;
-
-                        pf.UserModify = user.FullName;
-                        pf.UserModifyID = user.Id;
-                        pf.ModifyDate = DateTime.Now;
-                        pf.ModifyDateTxt = dtService.GetDateTimePersian();
-
-                        await _logSystemService.LogChange(oldPf, pf, LogActionEnum.تغییر_وضعیت, user);
-                        await db.SaveChangesAsync();
-                        break;
-                }
-
+                var oldPf = (PreFactor)db.Entry(pf).OriginalValues.ToObject();
+                await _logSystemService.LogChange(oldPf, pf, LogActionEnum.تغییر_وضعیت, user);
+                await db.SaveChangesAsync();
                 return Ok();
             }
             catch
@@ -1832,7 +1725,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> addAcPrefacAttachment([FromBody] AttachmentModel model)
+        public async Task<IActionResult> AddAcPrefacAttachment([FromBody] AttachmentModel model)
         {
             try
             {
@@ -2208,7 +2101,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> ChangeStatePf(Guid id, int tCode)
+        public async Task<IActionResult> ChangeStatePf(Guid id, int code)
         {
             try
             {
@@ -2216,7 +2109,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var oldPf = await db.PreFactors.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
                 var pf = await db.PreFactors.Where(f => f.Id == id).FirstOrDefaultAsync();
-                switch (tCode)
+                switch (code)
                 {
                     case (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد: // 7
                     {
@@ -2238,8 +2131,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
 
                 pf.PrePftype = pf.Pftype;
-                pf.Pftype = tCode;
-                pf.PftypeTxt = Service.GetTypeTxtPfactor(tCode);
+                pf.Pftype = code;
+                pf.PftypeTxt = Service.GetTypeTxtPfactor(code);
 
                 pf.UserModify = user.FullName;
                 pf.UserModifyID = user.Id;
@@ -2477,9 +2370,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
-                var cus = await db.Customers.AsTracking().Where(f => f.Id == model.CustomerId).FirstOrDefaultAsync();
-                var pf = await db.PreFactors.AsNoTracking().Where(f => f.Id == model.PfactorID).FirstOrDefaultAsync();
-                var deal = await db.Deals.Where(f => f.Id == model.DealId).FirstOrDefaultAsync();
+                var cus = await db.Customers.AsTracking().FirstOrDefaultAsync(f => f.Id == model.CustomerId);
+                var pf = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.PfactorID);
+                var deal = await db.Deals.FirstOrDefaultAsync(f => f.Id == model.DealId);
 
                 bool isNewFactor;
                 Factor oldModel = null;
@@ -2501,12 +2394,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         parent?.Returned = true;
                     }
 
+                    model.CountNum = 0;
                     model.UserCreatorID = user.Id;
                     model.UserCreator = user.FullName;
                     model.CreateDate = DateTime.Now;
                     model.CreateDateTxt = dtService.GetDateTimePersian();
-                    model.Date = dtService.GetDatePersian();
-                    model.CountNum = 0;
+                    if (string.IsNullOrEmpty(model.Date))
+                    {
+                        model.Date = dtService.GetDatePersian();
+                    }
 
                     if (cus != null)
                     {

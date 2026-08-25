@@ -5,6 +5,7 @@ namespace CRM.EndPoint.FrontEnd.Models {
     {
         public T Value { get; set; }
         public string Text { get; set; }
+        public bool? Target { get; set; } = false;
     }
 
     public class SelectOptionIdDto {

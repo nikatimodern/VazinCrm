@@ -847,6 +847,25 @@ if (financialRequestContentElm) {
 
 ////////////////////////////////////////////////////////
 
+
+const acceptSalesAdmin = async (id) => {
+    try {
+        FLshowLoading();
+        const res = await axios(`/Factor/AcceptSalesAdmin/${id}`);
+        if (res.status === 200) {
+            toastifySuccess("پیش فاکتور تایید شد");
+            await GetPreFactorSalesAdmin();
+            
+        } else if (res.status === 201) {
+            toastifyError(res.data);
+        }
+        FLshowLoading(false);
+    } catch (err) {
+        console.log(err);
+        setTimeout(async () => await acceptSalesAdmin(id), 3000);
+    }
+};
+
 const showPrefac = async (pfNumber) => {
     document.getElementById("f0").checked = true;
     document.getElementById("searchId").value = pfNumber;

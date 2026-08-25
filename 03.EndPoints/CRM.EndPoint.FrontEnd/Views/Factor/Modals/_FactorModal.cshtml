@@ -59,7 +59,7 @@
                                 </div>
                             </form>
                             <div class="d-lg-none">
-                                <button class="btn btn-sm btn-secondary" onclick="showModalItemFactor()">افزودن</button>
+                                <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#ItemFactorModal">افزودن</button>
                             </div>
                         </div>
                     </div>
@@ -109,8 +109,7 @@
                                             </div>
                                         </div>
                                     </div>
-
-                                    <select class="form-control" style="width:100%;" name="productCode" id="productCode">
+                                    <select class="w-100 center fs-6 show-dropdown-arrow" name="productCode" id="productCode">
                                     </select>
                                 </div>
                                 <div style=" display:flex;flex-direction:column;align-items:center; ">
@@ -138,7 +137,7 @@
 
                                 <div>
                                     <label>&nbsp;</label>
-                                    <button id="f_AddBtnId" type="button" class="buttonGreen3 align-items-center justify-content-center" style="display: flex;height: 2rem;padding-inline: 10px" onclick="AddfItem()">
+                                    <button id="f_AddBtnId" type="button" class="buttonGreen3 align-items-center justify-content-center" style="display: flex;height: 2rem;padding-inline: 10px" onclick="addFactorItem()">
                                         <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                                         </svg>
@@ -208,7 +207,7 @@
                                 </div>
                             </div>
                             <div class="d-lg-none mt-3">
-                                <button class="btn btn-sm btn-secondary" onclick="showModalFactorDescription()">افزودن توضیحات</button>
+                                <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#FactorDescriptionModal">افزودن توضیحات</button>
                             </div>
                         </div>
 

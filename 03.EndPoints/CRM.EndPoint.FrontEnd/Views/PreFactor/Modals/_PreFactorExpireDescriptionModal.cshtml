@@ -19,7 +19,7 @@
 
                         <div class="form-group">
                             <label style="font-size:15px;font-family:'IRANSansBold'">علت بستن پیش فاکتور</label>
-                            <select id="M_ex_Item" name="M_ex_Item" class="form-control" required onchange="M_ex_cheItem(this)">
+                            <select id="M_ex_Item" name="M_ex_Item" class="form-control" required>
                                 <option value="1">بالا بودن قیمت کالا</option>
                                 <option value="2">بالا بودن قیمت کلیشه</option>
                                 <option value="3">به تفاهم نرسیدن سر نحوه تسویه</option>
@@ -29,13 +29,13 @@
                         </div>
                         <div id="descExpirePfactorID" class="form-group" style="display:none">
                             <label style="font-size:15px; font-family:'IRANSansBold'">توضیحات</label>
-                            <textarea id="descExpirePfactorIDTXT" name="des" class="form-control" rows="5" style="height:150px !important"></textarea>
+                            <textarea id="descExpirePfactorIdTxt" name="des" class="form-control" rows="5" style="height:150px !important"></textarea>
                         </div>
 
                     </form>
                 </div>
                 <div style="display:flex; justify-content:end">
-                    <button class="btn btn-dark" onclick="SubmitdescExpirePfactor()">ثبت</button>
+                    <button class="btn btn-dark" onclick="SubmitDescExpirePreFactor()">ثبت</button>
                 </div>
             </div>
 

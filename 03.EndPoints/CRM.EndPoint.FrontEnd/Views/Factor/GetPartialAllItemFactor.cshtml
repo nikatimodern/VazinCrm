@@ -2,7 +2,6 @@
 
 
 <div class="p-2" style="width:100%;direction:rtl; max-height: calc(100dvh - 400px);overflow-y: auto;overflow-x: hidden;">
-
     <table id="AllItemsFactorTable" class="table table-striped table-bordered table-hover no-footer nowrap" style="width:100%">
         <thead>
         <tr>
@@ -14,7 +13,7 @@
         </tr>
         </thead>
         <tbody style="font-family:IRANSansBold !important;">
-        @foreach (var item in Model) {
+        @foreach (var item in Model ?? []) {
             <tr>
                 <td>@item.Product</td>
                 <td>@item.PfWeightCount</td>
@@ -30,21 +29,3 @@
         </tbody>
     </table>
 </div>
-
-
-
-<script>
-
-    $("#AllItemsFactorTable").DataTable({
-        paging: false,
-        scrollCollapse: true,
-        //scrollY: "calc(100dvh - 400px)",
-        responsive: true,
-        ordering: false,
-        searching: false,
-        language: languageDatatable,
-        layout: null,
-    });
-
-
-</script>

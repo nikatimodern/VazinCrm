@@ -1,5 +1,5 @@
 <!-- Modal Deliver Detail-->
-<div class="modal fade" dir="ltr" id="DeliverDetail" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+<div class="modal fade" dir="ltr" id="DeliverDetailModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
     <div class=" modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content col-12 px-1 px-sm-2" style="background-color:#dfdfdf; padding-block:10px !important">
             <div style="height:28px;  display:flex; justify-content:center; align-items:center;  background: linear-gradient(to bottom, #025751, #00302d); color:white;border-radius:5px">
@@ -13,7 +13,7 @@
 
             <div class="pt-2" style="width:100%; display:flex;justify-content:center">
                 @* <button class="buttonGreen" style="border-radius:5px" onclick="submitPrefactor()">ثبت</button> *@
-                <button class="buttonCancel2" style="border-radius:5px" onclick="cancelShowDeliverDetailModal() ">انصراف</button>
+                <button class="buttonCancel2" style="border-radius:5px" data-bs-dismiss="modal">انصراف</button>
             </div>
         </div>
     </div>

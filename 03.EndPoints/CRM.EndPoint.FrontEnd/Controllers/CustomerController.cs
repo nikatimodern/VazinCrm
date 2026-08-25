@@ -1046,7 +1046,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             if (pf == null) return NotFound();
 
-            List<SelectOptionIdDto> salesUsers;
+            List<SelectOptionDto<Guid>> salesUsers;
             if (cusId != Guid.Empty)
             {
                 var cusUsers = await db.UserCustomers
@@ -1057,23 +1057,23 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 salesUsers = await udb.Users
                     .Where(x => cusUsers.Contains(x.Id))
-                    .Select(x => new SelectOptionIdDto {
-                        id = Guid.Parse(x.Id),
-                        text = x.FullName,
+                    .Select(x => new SelectOptionDto<Guid>()  {
+                        Value = Guid.Parse(x.Id),
+                        Text = x.FullName,
                         Target = x.Id == pf.UserCreatorID
                     })
                     .ToListAsync();
             } else
             {
                 salesUsers = (await userManager.GetUsersInRoleAsync(AppRoles.SalesExpert))
-                    .Select(x => new SelectOptionIdDto {
-                        id = Guid.Parse(x.Id),
-                        text = x.FullName,
+                    .Select(x => new SelectOptionDto<Guid> {
+                        Value = Guid.Parse(x.Id),
+                        Text = x.FullName,
                         Target = x.Id == pf.UserCreatorID
                     })
                     .ToList();
 
-                if (!salesUsers.Any(x => x.id.ToString() == pf.UserCreatorID))
+                if (!salesUsers.Any(x => x.Value.ToString() == pf.UserCreatorID))
                 {
                     var currentUser = await udb.Users
                         .Where(x => x.Id == pf.UserCreatorID)
@@ -1082,9 +1082,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                     if (currentUser != null)
                     {
-                        salesUsers.Insert(0, new SelectOptionIdDto {
-                            id = Guid.Parse(currentUser.Id),
-                            text = currentUser.FullName,
+                        salesUsers.Insert(0, new SelectOptionDto<Guid> {
+                            Value = Guid.Parse(currentUser.Id),
+                            Text = currentUser.FullName,
                             Target = true
                         });
                     }
@@ -1092,9 +1092,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
 
             var taminUsers = (await userManager.GetUsersInRoleAsync(AppRoles.TaminExpert))
-                .Select(x => new SelectOptionIdDto {
-                    id = Guid.Parse(x.Id),
-                    text = x.FullName,
+                .Select(x => new SelectOptionDto<Guid> {
+                    Value = Guid.Parse(x.Id),
+                    Text = x.FullName,
                     Target = Guid.Parse(x.Id) == pf.UserTaminId
                 })
                 .ToList();
