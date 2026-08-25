@@ -38,7 +38,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     initChangeRadio("FinancialRequestFilter", GetRequestFinancialExpert);
     
     //////////////////////financial deal//////////////////////
-    // initSearchInput("FinancialDealSearchId", GetDealFinancialExpert);
     initChangeRadio("FinancialDealFilter", GetDealFinancialExpert, true);
     
     //////////////////////MD req//////////////////////
@@ -593,9 +592,7 @@ const GetDealFinancialExpert = async () => {
     if (dealTbl) {
         dealTbl.ajax.reload();
     } else {
-        FLshowLoading();
         getAllDealsDt();
-        FLshowLoading(false);
     }
 };
 
@@ -641,9 +638,8 @@ function getAllDealsDt() {
             { targets: "_all", defaultContent: "-" },
         ],
         columns: [
-            { data: "serialNumber" },
+            { data: "serialNumber", responsivePriority: 1 },
             { data: "title", className: "wrap-text" },
-            // { data: "commentText", className: "wrap-text", render: data => data || "-" },
             { data: "createDateTxt", name: "createDateTxt", render: data => renderDateTimeHtml(data) },
             { data: "userCreator" },
             {
@@ -664,6 +660,7 @@ function getAllDealsDt() {
             },
             {
                 data: "counts.preFactor",
+                responsivePriority: 2,
                 orderable: false,
                 render: function (data) {
                     if (!data) return "-";
@@ -678,6 +675,7 @@ function getAllDealsDt() {
             },
             {
                 data: "counts.factor",
+                responsivePriority: 3,
                 orderable: false,
                 render: function (data) {
                     if (!data) return "-";
@@ -692,6 +690,7 @@ function getAllDealsDt() {
             },
             {
                 data: "counts.accountancy",
+                responsivePriority: 4,
                 orderable: false,
                 render: function (data) {
                     if (!data) return "-";
@@ -706,6 +705,7 @@ function getAllDealsDt() {
             },
             {
                 data: "counts.orderHead",
+                responsivePriority: 5,
                 orderable: false,
                 render: function (data) {
                     if (!data) return "-";
@@ -734,6 +734,7 @@ function getAllDealsDt() {
             },*/
             {
                 data: "counts.supplyFactor",
+                responsivePriority: 6,
                 orderable: false,
                 render: function (data) {
                     if (!data) {
@@ -755,6 +756,7 @@ function getAllDealsDt() {
             },
             {
                 data: "id",
+                responsivePriority: 7,
                 orderable: false,
                 render: function (data, type, row) {
                     if (row.financialStatus === 0) {
@@ -775,6 +777,7 @@ function getAllDealsDt() {
         language: languageDatatable,
         layout: layoutDatatable,
         initComplete: initFilterDealTable,
+        
     });
     function initFilterDealTable() {
         const dtSearch = document.querySelector(".dt-search");
