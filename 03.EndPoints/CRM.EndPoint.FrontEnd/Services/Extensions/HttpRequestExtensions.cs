@@ -1,7 +1,7 @@
 using System.Linq;
 using Microsoft.AspNetCore.Http;
 
-namespace CRM.EndPoint.FrontEnd.Extensions;
+namespace CRM.EndPoint.FrontEnd.Services.Extensions;
 
 public static class HttpRequestExtensions {
     public static string GetSignalRConnectionId(this HttpRequest request)

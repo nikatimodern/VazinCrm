@@ -1,7 +1,6 @@
 using System.Security.Claims;
-using CRM.EndPoint.FrontEnd.Services;
 
-namespace CRM.EndPoint.FrontEnd.Extensions;
+namespace CRM.EndPoint.FrontEnd.Services.Extensions;
 
 public static class ClaimsPrincipalExtensions
 {

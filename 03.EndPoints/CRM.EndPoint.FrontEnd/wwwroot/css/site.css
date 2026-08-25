@@ -3964,14 +3964,14 @@ a.badge-red:hover {
 .badge-outline-green {
 	background: transparent;
 	border: 1px solid var(--color8);
-	color: #333;
+	color: var(--color8);
 }
 
 
 .badge-outline-purple {
 	background: transparent;
 	border: 1px solid rebeccapurple;
-	color: #333;
+	color: rebeccapurple;
 }
 
 

@@ -2,9 +2,8 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using CRM.EndPoint.FrontEnd.Models;
-using CRM.EndPoint.FrontEnd.Services;
 
-namespace CRM.EndPoint.FrontEnd.Extensions;
+namespace CRM.EndPoint.FrontEnd.Services.Extensions;
 
 public static class QueryFilterExtensions {
     public static IQueryable<T> ApplyFilter<T>(

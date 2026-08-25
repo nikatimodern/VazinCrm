@@ -37,6 +37,7 @@ async function showAddSupplyFactorModal(elm) {
         title: "انتخاب فاکتور تامین",
         selectedIds: supplyFactorsSelectedIds,
         load: async ({ search, selectedIds }) => {
+            
             FLshowLoading();
             const res = await axios.post("/Supply/GetAllSupplyFactorsTablePartial", { search, selectedIds });
             FLshowLoading(false);
@@ -55,38 +56,18 @@ let paymentData = {};
 var reqAmountAttachment = [];
 let reqAmountId;
 let paymentTable;
-let isFinancialPaymentTable;
+let canEditPaymentTable;
+
+let reqAmountAttachModal = document.getElementById("reqAmountAttachModal");
 
 async function changeStatusReqAmount(id, status) {
-    try {
-        FLshowLoading();
-        const res = await axios(`/RequestAmount/ChangeStatusRequestAmount?id=${id}&status=${status}`);
-        if (res.status === 200) {
-            const currentPath = window.location.pathname.toLowerCase();
-            if (currentPath.includes("cartable")) {
-                const { tab } = getUrlParams();
-                switch (tab) {
-                    case "TManagingDirectorId":
-                        await GetRequestManagingDirector();
-                        break;
-                    case "TFinancialExpertId":
-                        await GetRequestFinancialExpert();
-                        break;
-                }
-            } else if (currentPath.includes("order")) {
-                await getAllRequestAmountByOrderHead(ohReqAmountId);
-                
-            } else if (currentPath.includes("requestamount")) {
-                await getAllRequestAmount();
-                
-            }
-        }
-    } catch (err) {
-        console.log(err);
-        toastifyError("خطای سرور");
-    } finally {
-        FLshowLoading(false);
-    }
+    await sendApiRequest({
+        method: "POST",
+        url: "/RequestAmount/ChangeStatusRequestAmount",
+        successMsg: null,
+        params: { id, status },
+        onSuccess: refreshRequestAmountDom,
+    });
 }
 
 const ShowModalListPayment = async (id) => {
@@ -108,7 +89,7 @@ const initPaymentTable = () => {
             url: ``,
             type: "POST",
             dataSrc: function (json) {
-                isFinancialPaymentTable = json.isFinancial;
+                canEditPaymentTable = json.hasAccess;
                 return json.data;
             },
         },
@@ -149,7 +130,7 @@ const initPaymentTable = () => {
                     return `
                         <div class="inline-flex-center gap-1">
                             <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.payment.id}', 9)"><i class="fa fa-paperclip"></i></button>
-                          ${isFinancialPaymentTable
+                          ${canEditPaymentTable
                         ? ` <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditPaymentModal('${row.payment.id}')"><i class="fa fa-pencil"></i></button>
                             <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deletePayment('${row.payment.id}')"><i class="fa fa-trash"></i></button>`
                         : ""}
@@ -174,71 +155,33 @@ const getAllPaymentsList = (id) => {
 
 
 const deletePayment = async (id) => {
-    Swal.fire({
-        title: "حذف!",
-        text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
-        icon: "warning",
-        showCancelButton: true,
-        cancelButtonColor: "#adadad",
-        confirmButtonColor: "#e64942",
-        cancelButtonText: "انصراف",
-        confirmButtonText: "بله، حذف شود",
-    }).then(async (willDelete) => {
-        if (willDelete.isConfirmed) {
-            FLshowLoading();
-            const res = await axios(`/RequestAmount/DeletePayment/${id}`);
-            if (res.status === 200) {
-                toastifySuccess("با موفقیت حذف شد");
-                paymentTable.ajax.reload();
-                
-                const currentPath = window.location.pathname.toLowerCase();
-                if (currentPath.includes("cartable")) {
-                    const { tab } = getUrlParams();
-                    switch (tab) {
-                        case "TManagingDirectorId":
-                            await GetRequestManagingDirector();
-                            break;
-                        case "TFinancialExpertId":
-                            await GetRequestFinancialExpert();
-                            break;
-                    }
-                } else if (currentPath.includes("requestamount")) {
-                    await getAllRequestAmount();
-                }
-                
-            }
-            FLshowLoading(false);
-        }
+    await deleteItem({
+        url: `/RequestAmount/DeletePayment/${id}`,
+        callback: async () => {
+            paymentTable.ajax.reload();
+            await refreshRequestAmountDom();
+        },
     });
 };
 
 async function showEditPaymentModal(id) {
-    FLshowLoading();
-    await getAllBankAccounts([
-        { element: "#reqAmountAttachModal select[name='fromAccountId']", type: [1] },
-        { element: "#reqAmountAttachModal select[name='toAccountId']", type: [2, 3], isTomSelect: true },
-    ]);
-    ModalToggle("reqAmountAttachModal", "show");
+    const data = await sendApiRequest({
+        url: "/Supply/GetPayment",
+        params: { paymentId: id },
+    });
+    if (!data) return;
     
-    try {
-        const res = await axios(`/Supply/GetPayment?paymentId=${id}`);
-        if (res.status === 200) {
-            paymentData = res.data.payment;
-            mySer.convertJsonToForm(paymentData, "reqAmountAttachForm");
-            if (paymentData.paymentMode === 1) {
-                const targetInputAmount = document.querySelector("#reqAmountAttachModal input[name='amount']");
-                toggleElementsDisabled(targetInputAmount, true);
-                const amountEditIcon = document.querySelector("#reqAmountAttachModal #paymentAmountGroupEditIcon");
-                amountEditIcon.classList.remove("d-none");
-            }
-            reqAmountAttachment = res.data.attachments;
-            FileUpReload("reqAmountAttach");
-        }
-    } catch (err) {
-        console.log(err);
-    } finally {
-        FLshowLoading(false);
+    await showAttachReqAmount();
+    paymentData = data.payment;
+    mySer.convertJsonToForm(paymentData, "reqAmountAttachForm");
+    if (paymentData.paymentMode === 1) {
+        const targetInputAmount = reqAmountAttachModal.querySelector("input[name='amount']");
+        toggleElementsDisabled(targetInputAmount, true);
+        const amountEditIcon = reqAmountAttachModal.querySelector("#paymentAmountGroupEditIcon");
+        amountEditIcon.classList.remove("d-none");
     }
+    reqAmountAttachment = data.attachments;
+    FileUpReload("reqAmountAttach");
 }
 
 
@@ -249,40 +192,34 @@ let reqAmountPaymentModal = document.getElementById("requestAmountPaymentModal")
 let isGroupPayment = false;
 async function showSetAmountPaymentItemModal(filterIds) {
     isGroupPayment = true;
-    FLshowLoading();
-    try {
-        const res = await axios.post("/RequestAmount/GetRequestsAmountByFilteredIds", { filterIds });
-        if (res.status === 200) {
+    await sendApiRequest({
+        method: "POST",
+        url: "/RequestAmount/GetRequestsAmountByFilteredIds",
+        data: { filterIds },
+        successMsg: null,
+        onSuccess: (res) => {
             requestAmountListData = res.data;
             
             createSetAmountPaymentItem();
             ModalToggle(reqAmountPaymentModal);
-        }
-    } catch (err) {
-        console.error(err);
-        toastifyError("خطا در بارگذاری اطلاعات");
-    } finally {
-        FLshowLoading(false);
-    }
+        },
+    });
 }
 
 async function showEditAmountPaymentItemModal() {
     isGroupPayment = true;
-    FLshowLoading();
-    try {
-        const res = await axios(`/RequestAmount/GetRequestAmountsWithPaidAmountByPayment?paymentId=${paymentData.id}`);
-        if (res.status === 200) {
-            requestAmountListData = res.data;
-            
-            createSetAmountPaymentItem();
-            ModalToggle(reqAmountPaymentModal);
-        }
-    } catch (err) {
-        console.error(err);
-        toastifyError("خطا در بارگذاری اطلاعات");
-    } finally {
-        FLshowLoading(false);
-    }
+    const data = await sendApiRequest({
+        url: "/RequestAmount/GetRequestAmountsWithPaidAmountByPayment",
+        params: { paymentId: paymentData.id },
+        onSuccess: refreshRequestAmountDom,
+    });
+    
+    if (!data) return;
+    
+    requestAmountListData = data;
+    
+    createSetAmountPaymentItem();
+    ModalToggle(reqAmountPaymentModal);
 }
 
 
@@ -314,7 +251,7 @@ function createSetAmountPaymentItem() {
                     <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto pe-xl-2">
                         <span class="flex-shrink-0" style="color: #535353">مبلغ تایید شده: </span>
 
-                        <div class="fbold column-gap-1 badge badge-outline-green">
+                        <div class="fbold column-gap-1 badge badge-outline-green" style="color: #333">
                             <span style="font-size: 16px;">${item.acceptedAmount.toLocaleString()}</span>
                             <span style="font-size: 11px;">ريال</span>
                             <span style="font-size: 16px; color:#888">${item.acceptedAmountPercent ? item.acceptedAmountPercent + "%" : ""}</span>
@@ -333,7 +270,6 @@ function createSetAmountPaymentItem() {
 }
 
 
-let reqAmountAttachModal = document.getElementById("reqAmountAttachModal");
 let requestAmountPaymentMap = [];
 async function goToStepAttachReqAmount() {
     if (!await mySer.CheckValidForm("setAmountPaymentForm")) return;
@@ -348,11 +284,6 @@ async function goToStepAttachReqAmount() {
             amount: Number(SeparatedNumberRemove(amountValue)),
         };
     });
-    await getAllBankAccounts([
-        { element: "#reqAmountAttachModal select[name='fromAccountId']", type: [1] },
-        { element: "#reqAmountAttachModal select[name='toAccountId']", type: [2, 3], isTomSelect: true },
-    ]);
-    
     const allInputsAmount = Array.from(reqAmountPaymentModal.querySelectorAll("input[name='amount']"));
     const totalAmount = allInputsAmount.reduce((sum, i) => sum + Number(SeparatedNumberRemove(i.value) || 0), 0);
     const targetInputAmount = reqAmountAttachModal.querySelector("input[name='amount']");
@@ -360,7 +291,8 @@ async function goToStepAttachReqAmount() {
     targetInputAmount.value = totalAmount.toLocaleString();
     toggleElementsDisabled(targetInputAmount, true);
     ModalToggle(reqAmountPaymentModal, "hide");
-    ModalToggle(reqAmountAttachModal, "show");
+    
+    await showAttachReqAmount();
 }
 
 function cancelRequestAmountPaymentModal() {
@@ -370,24 +302,31 @@ function cancelRequestAmountPaymentModal() {
 }
 
 
+let isLoadedBankAccounts = false;
 const showAttachReqAmount = async (id) => {
-    reqAmountId = id;
-    await getAllBankAccounts([
-        { element: "#reqAmountAttachModal select[name='fromAccountId']", type: [1] },
-        { element: "#reqAmountAttachModal select[name='toAccountId']", type: [2, 3], isTomSelect: true },
-    ]);
-    ModalToggle("reqAmountAttachModal", "show");
+    if (id) {
+        reqAmountId = id;
+    }
+    if (!isLoadedBankAccounts) {
+        await getAllBankAccounts([
+            { element: "#reqAmountAttachModal select[name='fromAccountId']", type: [1] },
+            { element: "#reqAmountAttachModal select[name='toAccountId']", type: [2, 3], isTomSelect: true },
+        ]);
+        isLoadedBankAccounts = true;
+    }
+    
+    ModalToggle(reqAmountAttachModal, "show");
 };
 
 
 const cancelReqAmountAttach = () => {
-    ModalToggle("reqAmountAttachModal", "hide");
+    ModalToggle(reqAmountAttachModal, "hide");
     reqAmountAttachment = [];
     paymentData = {};
     document.getElementById("imageDisplayReqAmountAt").innerHTML = "";
     document.getElementById("reqAmountAttach").value = "";
     mySer.emptyForm("reqAmountAttachForm");
-    const targetInputAmount = document.querySelector("#reqAmountAttachModal input[name='amount']");
+    const targetInputAmount = reqAmountAttachModal.querySelector("input[name='amount']");
     const amountEditIcon = reqAmountAttachModal.querySelector("#paymentAmountGroupEditIcon");
     toggleElementsDisabled(targetInputAmount, false);
     amountEditIcon.classList.add("d-none");
@@ -421,39 +360,25 @@ const submitReqAmountAttach = async () => {
         paymentMode: isGroupPayment && requestAmountPaymentMap?.length > 1 ? 1 : 0,
     };
     
-    FLshowLoading();
-    try {
-        const res = await axios.post("/RequestAmount/AddPaymentByRequestAmount", model);
-        if (res.status === 200) {
-            toastifySuccess("ثبت با موفقیت انجام شد");
-            cancelReqAmountAttach();
-            if (isGroupPayment) {
-                cancelRequestAmountPaymentModal();
-                requestSelection.hideSelectionMode();
+    
+    await sendApiRequest({
+        method: "POST",
+        url: "/RequestAmount/AddPaymentByRequestAmount",
+        data: model,
+        onSuccess: async (res) => {
+            if (res.status === 200) {
+                cancelReqAmountAttach();
+                if (isGroupPayment) {
+                    cancelRequestAmountPaymentModal();
+                    requestSelection.hideSelectionMode();
+                }
+                if (model.id && paymentTable) {
+                    paymentTable.ajax.reload();
+                }
+                await refreshRequestAmountDom();
             }
-            if (model.id && paymentTable) {
-                paymentTable.ajax.reload();
-            }
-            const currentPath = window.location.pathname.toLowerCase();
-            if (currentPath.includes("cartable")) {
-                await GetRequestFinancialExpert();
-            } else if (currentPath.includes("requestamount")) {
-                await getAllRequestAmount();
-            } else if (currentPath.includes("order")) {
-                await getAllRequestAmountByOrderHead(ohReqAmountId);
-            }
-        } else if (res.status === 201) {
-            console.log(res);
-            toastifyError(res.data);
-        }
-    } catch (err) {
-        toastifyError("خطای سرور!");
-        console.log(err);
-        setTimeout(async () => await submitReqAmountAttach(), 3000);
-        
-    } finally {
-        FLshowLoading(false);
-    }
+        },
+    });
 };
 
 
@@ -484,24 +409,17 @@ async function submitAddBankAccount() {
         model.shebaNumber = "IR " + model.shebaNumber.trim();
     }
     
-    try {
-        FLshowLoading();
-        const res = await axios.post("/Accountancy/AddBankAccount", model);
-        if (res.status === 200) {
-            toastifySuccess("با موفقیت ثبت شد");
-            
+    await sendApiRequest({
+        method: "POST",
+        url: "/Accountancy/AddBankAccount",
+        data: model,
+        onSuccess: async () => {
             toggleAddBankAccountModal();
             await getAllBankAccounts([
-                { element: "#reqAmountAttachModal select[name='fromAccountId']", type: [1] },
                 { element: "#reqAmountAttachModal select[name='toAccountId']", type: [2, 3], isTomSelect: true },
             ], true);
-        }
-    } catch (err) {
-        toastifyError("خطای سرور");
-        console.log(err);
-    } finally {
-        FLshowLoading(false);
-    }
+        },
+    });
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -540,23 +458,19 @@ async function showAllRequestAmountModal(ohId, ohNumber) {
 }
 
 async function getAllRequestAmountByOrderHead(ohId) {
-    try {
-        FLshowLoading();
-        const res = await axios(`/RequestAmount/GetAllRequestAmountsPartial?orderHeadId=${ohId}&passType=1`);
-        if (res.status === 200) {
-            document.querySelector("#allRequestAmountsModal #requestAmountsBodyModal").innerHTML = res.data.html;
-        }
-    } catch (err) {
-        console.log(err);
-        toastifyError("خطای سرور");
-    } finally {
-        FLshowLoading(false);
-    }
+    const data = await sendApiRequest({
+        url: "/RequestAmount/GetAllRequestAmountsPartial",
+        params: { orderHeadId: ohId },
+        onSuccess: refreshRequestAmountDom,
+    });
+    if (!data) return;
+    
+    document.querySelector("#allRequestAmountsModal #requestAmountsBodyModal").innerHTML = data.html;
 }
 
 
 let isSetupReqAmountModal = false;
-async function setupSelectOptionsReqAmount(targetId) {
+async function setupSelectOptionsReqAmount() {
     if (isSetupReqAmountModal) return;
     const totalAmountSupFactorElm = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
     
@@ -570,12 +484,35 @@ async function setupSelectOptionsReqAmount(targetId) {
         
         async onItemAdd(supplierId) {
             selectSupplier.disable();
-            const totalSupplyFactorAmount = await getTotalAmountSupplyFactor(supplierId);
-            if (totalSupplyFactorAmount !== null) {
+            const supplierSummary = await getSupplierFinancialSummary(supplierId);
+            if (supplierSummary !== null) {
+                const debt = supplierSummary.supplierDebt;
+                const debtColor = debt < 0 ? "#b42318" : debt > 0 ? "#16803c" : "#666";
+                const debtBackground = debt < 0 ? "#fff3f3" : debt > 0 ? "#f0faf3" : "#f5f5f5";
+                
                 totalAmountSupFactorElm.innerHTML = `
-                    <div class="d-flex flex-column" style="font-size: 12px">
-                         <span>جمع مبالغ فاکتور رسمی: <b style="color: #333">${totalSupplyFactorAmount?.official?.toLocaleString()}</b> ريال</span>
-                         <span>جمع مبالغ فاکتور غیررسمی: <b style="color: #333">${totalSupplyFactorAmount?.notOfficial?.toLocaleString()}</b> ريال</span>
+                    <div class="d-flex flex-column align-items-end justify-content-center gap-1" style="font-size: 12px;color: #666">
+                        <div class="d-flex flex-column flex-sm-row align-items-end justify-content-end column-gap-3 me-1">
+                            <span>
+                                جمع فاکتورها:
+                                <b dir="ltr" style="color: #333">${supplierSummary.totalSupplyAmount?.toLocaleString()}</b>
+                                <span class="fs-small">ریال</span>
+                            </span>
+                
+                            <span class="d-none d-sm-inline">|</span>
+                
+                            <span>
+                                جمع پرداختی‌ها:
+                                <b dir="ltr" style="color: #333">${supplierSummary.totalPaidAmount?.toLocaleString()}</b>
+                                <span class="fs-small">ریال</span>
+                            </span>
+                        </div>
+                
+                        <div class="px-2 py-1 rounded" style="background: ${debtBackground};color: ${debtColor}">
+                            مانده بدهی:
+                            <b dir="ltr">${debt?.toLocaleString()}</b>
+                            <span class="fs-small">ریال</span>
+                        </div>
                     </div>
                 `;
             }
@@ -616,35 +553,19 @@ async function submitRequestAmountModal() {
         requestAmountOrderHeads: orderHeadsSelectedIds.map(id => ({ orderHeadId: id, requestAmountId: requestAmountData.id })),
     };
     
-    try {
-        FLshowLoading();
-        const apiUrl = model.id ? "/RequestAmount/UpdateRequestAmount" : "/RequestAmount/AddRequestAmount";
-        const res = await axios.post(apiUrl, model);
-        if (res.status === 200) {
-            const currentPath = window.location.pathname.toLowerCase();
-            if (currentPath.includes("requestamount")) {
-                getAllRequestAmount();
-            } else if (currentPath.includes("cartable")) {
-                await GetRequestFinancialExpert();
-            } else if (currentPath.includes("order")) {
-                refreshOrders();
-                if (model.id) {
-                    await getAllRequestAmountByOrderHead(ohReqAmountId);
-                } else {
-                    await showAllRequestAmountModal(ohReqAmountId);
-                }
-            }
-            
-            toastifySuccess("با موفقیت ثبت شد");
+    await sendApiRequest({
+        method: "POST",
+        url: model.id ? "/RequestAmount/UpdateRequestAmount" : "/RequestAmount/AddRequestAmount",
+        data: model,
+        onSuccess: async () => {
             cancelRequestAmountModal();
-        }
-    } catch (err) {
-        toastifyError("خطای سرور");
-        console.log(err);
-    } finally {
-        FLshowLoading(false);
-    }
-    
+            await refreshRequestAmountDom();
+            const currentPath = window.location.pathname.toLowerCase();
+            if (currentPath.includes("order") && !model.id) {
+                await showAllRequestAmountModal(ohReqAmountId);
+            }
+        },
+    });
 }
 
 
@@ -668,64 +589,37 @@ function cancelRequestAmountModal() {
 
 
 async function showEditRequestAmountModal(id) {
-    FLshowLoading();
     await showAddRequestAmountModal();
+    const data = await sendApiRequest({
+        url: "/RequestAmount/GetRequestAmount",
+        params: { id },
+    });
+    if (!data) return;
     
-    try {
-        const res = await axios(`/RequestAmount/GetRequestAmount/${id}`);
-        if (res.status === 200) {
-            requestAmountData = res.data.requestAmount;
-            const supplyFactorSerials = res.data.supplyFactorSerials;
-            const orderHeadSerials = res.data.orderHeadSerials;
-            mySer.convertJsonToForm(requestAmountData, "requestAmountForm");
-            supplyFactorsSelectedIds = requestAmountData.requestAmountSupplyFactor.map(r => r.supplyFactorId);
-            orderHeadsSelectedIds = requestAmountData.requestAmountOrderHeads.map(r => r.orderHeadId);
-            
-            const inpElmSupplyFactor = addReqAmountModal.querySelector("#reqAmountSupplyFactor");
-            if (inpElmSupplyFactor) {
-                inpElmSupplyFactor.value = supplyFactorSerials.join(", ");
-            }
-            
-            const inpElmOrderHead = addReqAmountModal.querySelector("#reqAmountOrderHead");
-            if (inpElmOrderHead) {
-                inpElmOrderHead.value = orderHeadSerials.join(", ");
-            }
-        }
-        
-    } catch (err) {
-        console.log(err);
-    } finally {
-        FLshowLoading(false);
+    requestAmountData = data.requestAmount;
+    const supplyFactorSerials = data.supplyFactorSerials;
+    const orderHeadSerials = data.orderHeadSerials;
+    
+    mySer.convertJsonToForm(requestAmountData, "requestAmountForm");
+    supplyFactorsSelectedIds = requestAmountData.requestAmountSupplyFactor.map(r => r.supplyFactorId);
+    orderHeadsSelectedIds = requestAmountData.requestAmountOrderHeads.map(r => r.orderHeadId);
+    
+    const inpElmSupplyFactor = addReqAmountModal.querySelector("#reqAmountSupplyFactor");
+    if (inpElmSupplyFactor) {
+        inpElmSupplyFactor.value = supplyFactorSerials.join(", ");
+    }
+    
+    const inpElmOrderHead = addReqAmountModal.querySelector("#reqAmountOrderHead");
+    if (inpElmOrderHead) {
+        inpElmOrderHead.value = orderHeadSerials.join(", ");
     }
 }
 
 
 const deleteRequestAmount = async (id) => {
-    Swal.fire({
-        title: "حذف!",
-        text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
-        icon: "warning",
-        showCancelButton: true,
-        cancelButtonColor: "#adadad",
-        confirmButtonColor: "#e64942",
-        cancelButtonText: "انصراف",
-        confirmButtonText: "بله، حذف شود",
-    }).then(async (willDelete) => {
-        if (willDelete.isConfirmed) {
-            FLshowLoading();
-            const res = await axios(`/RequestAmount/DeleteRequestAmount/${id}`);
-            if (res.status === 200) {
-                toastifySuccess("با موفقیت حذف شد");
-                const currentPath = window.location.pathname.toLowerCase();
-                if (currentPath.includes("requestamount")) {
-                    getAllRequestAmount();
-                } else if (currentPath.includes("order")) {
-                    await getAllRequestAmountByOrderHead(ohReqAmountId);
-                    refreshOrders();
-                }
-            }
-            FLshowLoading(false);
-        }
+    await deleteItem({
+        url: `/RequestAmount/DeleteRequestAmount/${id}`,
+        callback: refreshRequestAmountDom,
     });
 };
 
@@ -776,6 +670,81 @@ const closeDocTypeSelect = (select) => {
     wrapper.querySelector(".doc-type-text").classList.remove("d-none");
 };
 
+
+function changePercentAcceptedRequestAmount(select, amount) {
+    const percent = Number(select.value);
+    const input = select.parentElement.querySelector("input");
+    const acceptAmount = percent * amount / 100;
+    input.value = acceptAmount ? acceptAmount.toLocaleString() : "";
+    updateCurrencyHint(input);
+    
+    select.style.backgroundColor = acceptAmount ? "#cef5ce" : "";
+    toggleAcceptBtn(select, acceptAmount);
+}
+
+function changeAcceptedRequestAmount(input, amount) {
+    setTimeout(() => {
+        const inputValue = Number(SeparatedNumberRemove(input.value)) || 0;
+        const select = input.parentElement.querySelector("select");
+        const percent = Number(select.value);
+        if (percent * amount / 100 !== inputValue) {
+            select.value = "";
+            select.style.backgroundColor = "";
+        }
+        toggleAcceptBtn(input, inputValue);
+    });
+}
+
+function toggleAcceptBtn(elm, acceptAmount) {
+    const acceptBtn = elm.closest(".layered-card").querySelector(".buttonGreen2");
+    if (acceptAmount === 0) {
+        toggleElementsDisabled(acceptBtn, true);
+    } else {
+        toggleElementsDisabled(acceptBtn, false);
+    }
+}
+
+async function submitAcceptedRequestAmount(btn, id) {
+    const card = btn.closest(".layered-card");
+    const input = card.querySelector("input.acceptedAmount");
+    const selOpPercent = card.querySelector("select.acceptedAmountPercent");
+    
+    const model = {
+        id,
+        acceptedAmount: Number(SeparatedNumberRemove(input.value)),
+        acceptedAmountPercent: selOpPercent.value ? Number(selOpPercent.value) : null,
+    };
+    
+    await sendApiRequest({
+        method: "POST",
+        url: "/RequestAmount/SetAcceptedRequestAmount",
+        data: model,
+        successMsg: null,
+        onSuccess: refreshRequestAmountDom,
+    });
+}
+
+async function refreshRequestAmountDom() {
+    const currentPath = window.location.pathname.toLowerCase();
+    if (currentPath.includes("cartable")) {
+        const { tab } = getUrlParams();
+        switch (tab) {
+            case "TManagingDirectorId":
+                await GetRequestManagingDirector();
+                break;
+            case "TFinancialExpertId":
+                await GetRequestFinancialExpert();
+                break;
+        }
+    } else if (currentPath.includes("order")) {
+        await getAllRequestAmountByOrderHead(ohReqAmountId);
+        refreshOrders();
+        
+    } else if (currentPath.includes("requestamount")) {
+        await getAllRequestAmount();
+    }
+}
+
 document.addEventListener("click", e => {
     const editBtn = e.target.closest(".doc-type-edit-btn");
     
@@ -806,25 +775,20 @@ document.addEventListener("change", async (e) => {
     const select = e.target;
     const card = select.closest(".layered-card");
     
-    const id = card.dataset.id;
-    const docType = Number(select.value);
     select.disabled = true;
-    
-    try {
-        const res = await axios.post("/RequestAmount/ChangeDocTypeRequestAmount", { id, docType });
-        if (res.status === 200) {
+    await sendApiRequest({
+        method: "POST",
+        url: "/RequestAmount/ChangeDocTypeRequestAmount",
+        data: { id: card.dataset.id, docType: Number(select.value) },
+        successMsg: null,
+        onSuccess: () => {
             const selectedText = select.options[select.selectedIndex].text;
             const docTypeText = card.querySelector(".doc-type-text");
             docTypeText.textContent = `(${selectedText})`;
             
             select.classList.add("d-none");
             docTypeText.classList.remove("d-none");
-        }
-        
-    } catch (err) {
-        console.log(err);
-        toastifyError("خطای سرور");
-    } finally {
-        select.disabled = false;
-    }
+        },
+    });
+    select.disabled = false;
 });

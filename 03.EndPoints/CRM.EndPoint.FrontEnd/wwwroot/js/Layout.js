@@ -4392,9 +4392,9 @@ async function getOrderHeadIdsBySupplier(supplierId) {
     }
 }
 
-async function getTotalAmountSupplyFactor(supplierId) {
+async function getSupplierFinancialSummary(supplierId) {
     try {
-        const res = await axios(`/Supply/GetTotalAmountSupplyFactor?supplierId=${supplierId}`);
+        const res = await axios(`/Supply/GetSupplierFinancialSummary?supplierId=${supplierId}`);
         if (res.status === 200) {
             return res.data;
         }
