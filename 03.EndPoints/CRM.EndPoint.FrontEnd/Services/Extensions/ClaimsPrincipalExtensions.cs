@@ -1,9 +1,10 @@
+using System.Linq;
+using System.Reflection;
 using System.Security.Claims;
 
 namespace CRM.EndPoint.FrontEnd.Services.Extensions;
 
-public static class ClaimsPrincipalExtensions
-{
+public static class ClaimsPrincipalExtensions {
     extension(ClaimsPrincipal user) {
         public bool IsAdmin() => user.IsInRole(AppRoles.Admin);
 
@@ -34,5 +35,18 @@ public static class ClaimsPrincipalExtensions
         public bool IsCustomer() => user.IsInRole(AppRoles.Customer);
 
         public string GetUserId() => user.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        public string[] GetRoleNames()
+        {
+            var roleMap = typeof(AppRoles)
+                .GetFields(BindingFlags.Public | BindingFlags.Static)
+                .ToDictionary(x => x.GetValue(null)?.ToString(), x => x.Name);
+
+            return user.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => roleMap.TryGetValue(c.Value, out var roleName) ? roleName : null)
+                .Where(x => x != null)
+                .ToArray();
+        }
     }
 }

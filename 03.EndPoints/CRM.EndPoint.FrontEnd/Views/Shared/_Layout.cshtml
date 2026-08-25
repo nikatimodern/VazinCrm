@@ -1,24 +1,3 @@
-@using System.Reflection
-@using System.Security.Claims
-@using CRM.EndPoint.FrontEnd.Services
-@{
-    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-    var roleMap = typeof(AppRoles)
-        .GetFields(BindingFlags.Public | BindingFlags.Static)
-        .ToDictionary(x => x.GetValue(null)?.ToString(), x => x.Name);
-
-    var userRoles = User.Claims
-        .Where(c => c.Type == ClaimTypes.Role)
-        .Select(c => roleMap.TryGetValue(c.Value, out var roleName) ? roleName : null)
-        .Where(x => x != null)
-        .ToArray();
-    /*var userRoles = User.Claims
-        .Where(c => c.Type == ClaimTypes.Role)
-        .Select(c => c.Value)
-        .ToArray();*/
-}
-
 <!DOCTYPE html>
 <html lang="fa">
 
@@ -76,14 +55,11 @@
     <link rel="stylesheet" href="~/lib/DatePickers/persian-datepicker.min.css" />
     <link rel="stylesheet" href="~/lib/timepicker/bootstrap-timepicker.min.css" />
     <link rel="stylesheet" href="~/lib/toastify/toastify.min.css" />
-    <link rel="stylesheet" href="~/lib/lightBox2/css/lightbox.min.css" />
-    @* <link rel="stylesheet" href="~/lib/lightBox3/css/lightbox3.min.css" /> *@
     <link rel="stylesheet" href="~/lib/viewerJs/css/viewer.min.css" />
     <link rel="stylesheet" href="~/lib/SweetAlert/sweetalert2.min.css" />
     <link rel="stylesheet" href="~/lib/select2/css/select2.min.css" />
     <link rel="stylesheet" href="~/lib/CropperJs/cropper.min.css" />
     <link rel="stylesheet" href="~/lib/jQuery-Datatable/datatablesB.min.css" />
-    @* <link rel="stylesheet" href="~/lib/jQuery-Datatable/datatables.min.css" /> *@
     <link rel="stylesheet" href="~/lib/Awesomplete/Awesomplete.css" />
     <link rel="stylesheet" href="~/lib/TomSelect/tom-select.min.css" />
 
@@ -91,7 +67,7 @@
     <link rel="stylesheet" href="~/css/site.css?v=6.0.1" />
     <link rel="stylesheet" href="~/css/table.css?v=6.0.1" />
     <link rel="stylesheet" href="~/css/layoutResponsive.css?v=6.0.1" />
-    <link rel="stylesheet" href="~/css/customerIndexResponsive.css?v=6.0.1" />
+
     <link rel="stylesheet" href="~/css/customerProfileResponsive.css?v=6.0.1" />
     <link rel="stylesheet" href="~/css/listProduct.css?v=6.0.1" />
     <link rel="stylesheet" href="~/css/carizo.css?v=6.0.1" />
@@ -101,6 +77,8 @@
     <link rel="stylesheet" href="~/css/deal.css?v=6.0.1" />
     <link rel="stylesheet" href="~/css/cartableStyle.css?v=6.0.1" />
     <link rel="stylesheet" href="~/css/email.css?v=6.0.1" />
+
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 
 
@@ -182,14 +160,11 @@
 </script>
 
 <script>
-    Object.defineProperty(window, "userRoles", {
-        value: Object.freeze(@Html.Raw(Json.Serialize(userRoles))),
-        writable: false,
-        configurable: false,
-        enumerable: false,
-    });
-    Object.defineProperty(window, "userId", {
-        value: @Html.Raw(Json.Serialize(userId)),
+    Object.defineProperty(window, "userContext", {
+        value: Object.freeze({
+            id: @Html.Raw(Json.Serialize(User.GetUserId())),
+            roles: Object.freeze(@Html.Raw(Json.Serialize(User.GetRoleNames()))),
+        }),
         writable: false,
         configurable: false,
         enumerable: false,
@@ -209,14 +184,9 @@
 <script src="~/lib/select2/js/select2.full.min.js"></script>
 <script src="~/lib/CropperJs/cropper.min.js"></script>
 <script src="~/lib/jQuery-Datatable/datatablesB.min.js"></script>
-@* <script src="~/lib/jQuery-Datatable/datatables.min.js"></script> *@
-@* <script src="~/lib/lightBox2/js/lightbox.min.js"></script> *@
-@* <script src="~/lib/lightBox3/js/lightbox3.min.js"></script> *@
 <script src="~/lib/viewerJs/js/viewer.min.js"></script>
 <script src="~/lib/Signalr/signalr.min.js"></script>
 <script src="~/lib/Sortable/Sortable.min.js"></script>
-@* <script src="~/lib/chartjs/chart.js"></script> *@
-@* <script src="~/lib/chartjs/chartjs-plugin-annotation.min.js"></script> *@
 <script src="~/lib/Awesomplete/awesomplete.min.js"></script>
 <script src="~/lib/TomSelect/tom-select.complete.min.js"></script>
 
@@ -226,7 +196,6 @@
 <script src="~/js/File.js?v=6.0.1"></script>
 <script src="~/js/PublicFunction.js?v=6.0.1"></script>
 <script src="~/js/DateValidate.js?v=6.0.1"></script>
-@* <script src="~/js/dashboard.js?v=6.0.1"></script> *@
 <script src="~/js/Layout.js?v=6.0.1" defer></script>
 
 <script>

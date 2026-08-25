@@ -4,7 +4,7 @@ let currentDealDocumentData = {};
 const showModalDealPreFactors = async (deal) => {
     currentDealDocumentData = deal;
     const canAdd =
-        (deal.userCreatorID === window.userId || window.userRoles.some(i => ["Admin", "SalseAdmin"].includes(i)))
+        (deal.userCreatorID === window.userContext.id || window.userContext.roles.some(i => ["Admin", "SalseAdmin"].includes(i)))
         && deal.financialStatus !== 1;
     
     document.getElementById("dealPreFactorsAdd").classList.toggle("d-none", !canAdd);
@@ -28,7 +28,7 @@ const showModalDealFactors = async (deal, sNumber) => {
 
 const showModalDealReports = async (deal) => {
     currentDealDocumentData = deal;
-    const canAdd = deal.userCreatorID === window.userId || window.userRoles.some(i => ["Admin", "SalseAdmin"].includes(i));
+    const canAdd = deal.userCreatorID === window.userContext.id || window.userContext.roles.some(i => ["Admin", "SalseAdmin"].includes(i));
     
     document.getElementById("dealReportsAdd").classList.toggle("d-none", !canAdd);
     document.getElementById("dealReportsTitle").textContent = `${deal.customerName}${deal.customerCode ? ` (کد مشتری: ${deal.customerCode})` : ""}`;
