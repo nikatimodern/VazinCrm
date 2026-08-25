@@ -1,0 +1,30 @@
+<div class="d-flex flex-column h-100 w-100 p-3">
+    <div class="d-flex align-items-center justify-content-between w-100 mb-2">
+        <div class="fbold d-flex align-items-center gap-2" style="font-size:clamp(15px,1.5vw,18px); color: #6767fd;">
+            <div class="d-flex align-items-center justify-content-center">
+                <svg style="width:24px;height:24px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" /></svg>
+            </div>
+            <span>فعالیت های امروز</span>
+        </div>
+
+        <div>
+            <select id="systematicTaskDash" class="form-select form-select-sm">
+                <option value="0">همه موارد</option>
+                <option value="1">سیستمی</option>
+                <option value="2">غیر سیستمی</option>
+            </select>
+        </div>
+    </div>
+    <div class="flex-grow-1" style="overflow:auto;padding-block:6px;padding-left:2px;">
+        <div id="noTaskImg" class="flex-column align-items-center justify-content-center h-100" style="color:#8a99c1; font-size:clamp(12px, 2vw, 14px);display:none">
+            <span class="d-flex align-items-center justify-content-center">
+                <img src="~/Img/no-task.jpg" style="width:clamp(110px,12.5vw,140px)" alt="no-task" />
+            </span>
+            <span class="mt-2">
+                هیچ فعالیتی برای امروز ثبت نشده!
+            </span>
+        </div>
+        <div id="todayTaskDashId" class="d-flex flex-column gap-2" style="width:100%">
+        </div>
+    </div>
+</div>

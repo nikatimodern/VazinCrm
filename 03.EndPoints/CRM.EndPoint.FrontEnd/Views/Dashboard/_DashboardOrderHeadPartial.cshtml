@@ -1,0 +1,42 @@
+<div class="dashCardItem">
+    <div class="dashCardIcon" style="border-color: #838383;color:#838383;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /><path d="M17 18h1" /><path d="M12 18h1" /><path d="M7 18h1" /></svg>
+    </div>
+    <div class="dashCardContent">
+        <div class="fbold">
+            <span id="ordersAllCount" style="font-size:clamp(19px, 6.1cqw, 20px)"></span>
+            <span style="font-size:clamp(14px, 4.7cqw, 16px)">دستور تولید</span>
+        </div>
+        <div class="d-flex flex-column align-items-start gap-1 flex-grow-1">
+            <div class="d-flex flex-column" style="font-size:11px;">
+                <div class="w-100 d-flex align-items-baseline gap-2">
+                    <div style="color:rgb(0 103 139)">
+                        <span id="inOrderCount" class="fbold" style="font-size:clamp(14px, 4.5cqw, 15px)"></span>
+                        <span>ثبت اولیه</span>
+                    </div>
+                    /
+                    <div style="color:rgb(137 139 0)">
+                        <span id="ordersProgressCount" class="fbold" style="font-size:clamp(14px, 4.5cqw, 15px)"></span>
+                        <span>مرحله تولید</span>
+                    </div>
+                </div>
+
+                <div class="w-100 d-flex align-items-baseline gap-2">
+                    <div style="color:rgb(0 131 17)">
+                        <span id="ordersDoneCount" class="fbold" style="font-size:clamp(14px, 4.5cqw, 15px)"></span>
+                        <span>آماده تحویل</span>
+                    </div>
+                    /
+                    <div style="color:rgb(120 120 120)">
+                        <span id="ordersDeliverCount" class="fbold" style="font-size:clamp(14px, 4.5cqw, 15px)"></span>
+                        <span>تحویل شده</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="showOrdersFromDash" onclick="redirectFromDashboard('Order')" class="dash-readMore" style="color:#838383;">
+            <span style="font-size:clamp(10px, 3.3cqw, 11px)">دستور تولیدها</span>
+            <svg style="width:clamp(16px, 5.3cqw, 18px);height:clamp(16px, 5.3cqw, 18px)" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 15.75 3 12m0 0 3.75-3.75M3 12h18" /></svg>
+        </div>
+    </div>
+</div>
