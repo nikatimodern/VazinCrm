@@ -437,18 +437,14 @@
 
 .financialInfoIcon {
   width: 13px;
-  
   color: #888;
-  
   cursor: pointer;
-  
   transition: .2s;
 }
 
 
 .financialInfoIcon:hover {
   color: #1f857c;
-  
   transform: scale(1.1);
 }
 

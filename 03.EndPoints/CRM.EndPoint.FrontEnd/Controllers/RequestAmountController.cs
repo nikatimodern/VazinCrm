@@ -659,7 +659,9 @@ public class RequestAmountController : Controller {
                     OrderHeadSerials = x.RequestAmount.RequestAmountOrderHeads.Select(x => x.OrderHead.OrderNumber).ToList(),
                     CustomerNames = x.RequestAmount.RequestAmountOrderHeads.Select(x => x.OrderHead.CustomerTxt).ToList(),
                     TotalPaymentAmount = x.RequestAmount.RequestAmountPayments.Sum(x => x.Amount),
-                    SupplierDebt = x.Financial != null ? x.Financial.SupplierDebt : 0
+                    SupplierDebt = x.Financial != null ? x.Financial.SupplierDebt : 0,
+                    TotalSupplyFactor = x.Financial != null ? x.Financial.TotalSupplyAmount : 0,
+                    TotalSupplyPayment = x.Financial != null ? x.Financial.TotalPaidAmount : 0,
                 })
                 .ToListAsync();
 
