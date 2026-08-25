@@ -20,7 +20,7 @@
                 <td>@item.ItemTitle</td>
                 <td>@item.PfSerial</td>
                 <td>@item.SupplierTxt</td>
-                <td>@($"{int.Parse(item.Weight):n0}")</td>
+                <td>@(int.TryParse(item.Weight, out var weight) ? $"{weight:n0}" : "-")</td>
                 <td>@($"{item.UnitAmount:n0}")</td>
                 <td>@($"{item.TotalAmount:n0}")</td>
             </tr>

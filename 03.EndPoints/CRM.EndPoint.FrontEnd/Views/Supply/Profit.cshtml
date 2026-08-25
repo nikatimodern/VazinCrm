@@ -275,15 +275,14 @@
         }
 
         async function getAllSuppliesDetails(dealId) {
-            FLshowLoading();
-            const suppliesWrapper = document.getElementById("suppliesBodyModal");
+            const data = await sendApiRequest({
+                url: "/Supply/GetSuppliesDetails",
+                params: { dealId },
+            });
+            if (!data) return;
 
-            const res = await axios(`/Supply/GetSuppliesDetails?dealId=${dealId}`);
-            if (res.status === 200) {
-                suppliesWrapper.innerHTML = res.data;
-                initSuppliesDataTable();
-                FLshowLoading(false);
-            }
+            document.getElementById("suppliesBodyModal").innerHTML = data;
+            initSuppliesDataTable();
         }
 
 

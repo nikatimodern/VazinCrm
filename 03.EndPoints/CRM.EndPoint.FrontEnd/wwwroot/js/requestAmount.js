@@ -460,8 +460,7 @@ async function showAllRequestAmountModal(ohId, ohNumber) {
 async function getAllRequestAmountByOrderHead(ohId) {
     const data = await sendApiRequest({
         url: "/RequestAmount/GetAllRequestAmountsPartial",
-        params: { orderHeadId: ohId },
-        onSuccess: refreshRequestAmountDom,
+        params: { orderHeadId: ohId }
     });
     if (!data) return;
     
