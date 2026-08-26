@@ -2,83 +2,91 @@
     display: flex;
     
 }*/
+	
+#FactorDivTitleId {
+	font-size: 20px;
+}
 
 
 @media all and (max-width: 767px) {
-  #FactorDivTitleId {
-    font-size: 16px !important;
-  }
-  
-  #custRelId {
-    max-height: 300px;
-  }
+	#FactorDivTitleId {
+		font-size: 14px !important;
+	}
+	
+	.hide-factor__btn {
+		height: 16px;
+		width: 16px;
+		font-size: 12px;
+	}
+	
+	#custRelId {
+		max-height: 300px;
+	}
 }
 
 
 @media all and (max-width: 1399px) {
-  
-  .hide-factor__btn {
-    display: none !important;
-  }
-  
-  #TabFactors .nav-link {
-    height: 24px;
-    line-height: 1;
-  }
-  
-  #TabFactors {
-    display: flex !important;
-  }
-  
-  
-  .parent-factors {
-    border: 2px solid #02514b;
-    border-end-end-radius: 0;
-    border-end-start-radius: 20px;
-    border-start-end-radius: 20px;
-    padding: 5px;
-  }
+	
+
+	
+	#TabFactors .nav-link {
+		height: 24px;
+		line-height: 1;
+	}
+	
+	#TabFactors {
+		display: flex !important;
+	}
+	
+	
+	.parent-factors {
+		border: 2px solid #02514b;
+		border-end-end-radius: 0;
+		border-end-start-radius: 20px;
+		border-start-end-radius: 20px;
+		padding: 5px;
+	}
 }
 
 
 .TCus {
-  border: 1px solid;
-  border-bottom: none;
-  border-start-end-radius: 10px;
-  border-start-start-radius: 10px;
-  display: none;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  cursor: pointer;
-  width: 150px;
-  height: 30px;
-  margin-left: 1px;
-  background-color: rgb(230, 230, 230);
+	border: 1px solid;
+	border-bottom: none;
+	border-start-end-radius: 10px;
+	border-start-start-radius: 10px;
+	display: none;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+	cursor: pointer;
+	width: 150px;
+	height: 30px;
+	margin-left: 1px;
+	background-color: rgb(230, 230, 230);
 }
 
 
 .TCus:hover {
-  border: 1px solid var(--DarkColor);
-  border-bottom: none;
-  background-color: var(--DarkColor);
-  color: white;
-  margin: 0;
+	border: 1px solid var(--DarkColor);
+	border-bottom: none;
+	background-color: var(--DarkColor);
+	color: white;
+	margin: 0;
 }
 
 
 .TCus > p {
-  font-family: "IRANSansBold";
-  margin: 0;
+	font-family: "IRANSansBold";
+	margin: 0;
 }
 
 
 .TCusActive {
-  border: 1px solid var(--DarkColor);
-  border-bottom: none;
-  background-color: var(--DarkColor);
-  color: white;
-  margin: 0;
+	border: 1px solid var(--DarkColor);
+	border-bottom: none;
+	background-color: var(--DarkColor);
+	color: white;
+	margin: 0;
 }
 
 

@@ -2768,15 +2768,15 @@ const createSupplierTomSelect = (element, items) => {
     });
 };
 
-const hideFact = () => {
-    document.getElementById("DivFacListId").style.display = "none";
+const hideFact = async () => {
+    //document.getElementById("DivFacListId").style.display = "none";
+    await GetFactorPartial({ passType: 1, customerId });
     
+    document.querySelector(".SelectedPf").classList.remove("SelectedPf");
+    document.getElementById("FactorDivTitleId").innerHTML = `<span class="d-none d-xxl-inline-block">فاکتورها</span>`;
     if (window.innerWidth < 1400) {
         ShowTab("preFactorTab");
     }
-    
-    let pd = document.getElementsByClassName("SelectedPf");
-    pd[0]?.classList.remove("SelectedPf");
 };
 
 
