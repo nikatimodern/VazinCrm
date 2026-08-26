@@ -166,54 +166,62 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> AcceptFactor(Guid id, int type)
         {
-            var user = await userManager.GetUserAsync(HttpContext.User);
-
-            var oldFac = await db.Factors.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
-            var fac = await db.Factors.Where(f => f.Id == id).FirstOrDefaultAsync();
-
-            switch (type)
+            try
             {
-                case 1:
-                    fac.status = FactorStatus.در_دست_تایید;
-                    fac.statusTxt = nameof(FactorStatus.در_دست_تایید).Replace("_", " ");
-                    break;
-                case 2:
-                    if (string.IsNullOrEmpty(fac.SnFinancial))
-                        return NoContent();
+                var user = await userManager.GetUserAsync(HttpContext.User);
 
-                    fac.status = FactorStatus.تایید_شده;
-                    fac.statusTxt = nameof(FactorStatus.تایید_شده).Replace("_", " ");
-                    break;
-                case 3:
-                    fac.status = FactorStatus.ابطال_شده;
-                    fac.statusTxt = nameof(FactorStatus.ابطال_شده).Replace("_", " ");
-                    break;
+                var oldFac = await db.Factors.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
+                var fac = await db.Factors.Where(f => f.Id == id).FirstOrDefaultAsync();
+
+                switch (type)
+                {
+                    case 1:
+                        fac.status = FactorStatus.در_دست_تایید;
+                        fac.statusTxt = nameof(FactorStatus.در_دست_تایید).Replace("_", " ");
+                        break;
+                    case 2:
+                        if (string.IsNullOrEmpty(fac.SnFinancial))
+                            return BadRequest("شماره فاکتور مالی وارد نشده است!");
+
+                        fac.status = FactorStatus.تایید_شده;
+                        fac.statusTxt = nameof(FactorStatus.تایید_شده).Replace("_", " ");
+                        break;
+                    case 3:
+                        fac.status = FactorStatus.ابطال_شده;
+                        fac.statusTxt = nameof(FactorStatus.ابطال_شده).Replace("_", " ");
+                        break;
+                }
+
+                fac.UserModify = user.FullName;
+                fac.UserModifyID = user.Id;
+                fac.ModifyDate = DateTime.Now;
+                fac.ModifyDateTxt = dtService.GetDateTimePersian();
+
+                await db.SaveChangesAsync();
+
+                if (fac.CustomerId != null)
+                {
+                    var cus = await db.Customers.Where(f => f.Id == fac.CustomerId).FirstOrDefaultAsync();
+                    cus.Success = await genService.IsCustomerActive(fac.CustomerId);
+                    cus.Export = await genService.IsCustomerExport(fac.CustomerId);
+                }
+
+                var action = fac.status switch {
+                    FactorStatus.تایید_شده => LogActionEnum.تایید_و_تغییر_وضعیت,
+                    FactorStatus.ابطال_شده => LogActionEnum.رد_و_تغییر_وضعیت,
+                    _ => LogActionEnum.تغییر_وضعیت
+                };
+
+                await _logSystemService.LogChange(oldFac, fac, action, user);
+
+                await db.SaveChangesAsync();
+                return Ok();
             }
-
-            fac.UserModify = user.FullName;
-            fac.UserModifyID = user.Id;
-            fac.ModifyDate = DateTime.Now;
-            fac.ModifyDateTxt = dtService.GetDateTimePersian();
-
-            await db.SaveChangesAsync();
-
-            if (fac.CustomerId != null)
+            catch (Exception e)
             {
-                var cus = await db.Customers.Where(f => f.Id == fac.CustomerId).FirstOrDefaultAsync();
-                cus.Success = await genService.IsCustomerActive(fac.CustomerId);
-                cus.Export = await genService.IsCustomerExport(fac.CustomerId);
+                Console.WriteLine(e);
+                throw;
             }
-
-            var action = fac.status switch {
-                FactorStatus.تایید_شده => LogActionEnum.تایید_و_تغییر_وضعیت,
-                FactorStatus.ابطال_شده => LogActionEnum.رد_و_تغییر_وضعیت,
-                _ => LogActionEnum.تغییر_وضعیت
-            };
-
-            await _logSystemService.LogChange(oldFac, fac, action, user);
-
-            await db.SaveChangesAsync();
-            return Ok();
         }
 
 
@@ -2216,7 +2224,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> AddPrefactor(PreFactor model)
+        public async Task<IActionResult> AddPrefactor([FromBody] PreFactor model)
         {
             await using var transAction = await db.Database.BeginTransactionAsync();
             try
@@ -2230,7 +2238,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     return Conflict("سفارش مربوط به این پیش‌فاکتور تایید مالی شده است");
                 }
 
-                bool isNewPrefactor = false;
+                var isNewPrefactor = false;
                 PreFactor oldModel = null;
 
 
@@ -2242,7 +2250,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
                 var deletedItems = model.PreFactorItems.Where(f => f.IsDeleted).Select(f => f.Id).ToList();
-                if (deletedItems.Any())
+                if (deletedItems.Count > 0)
                 {
                     var supplies = await db.Supplies.Where(f => deletedItems.Contains(f.PfItemId.Value)).ToListAsync();
                     foreach (var supply in supplies)
@@ -2304,8 +2312,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     model.UserModify = user.FullName;
                     model.ModifyDate = DateTime.Now;
                     model.ModifyDateTxt = dtService.GetDateTimePersian();
-                    if (model.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش || model.Pftype == (int)PreFactorEnum.در_انتظار_تولید ||
-                        model.Pftype == (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد)
+                    if (model.Pftype is (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش or (int)PreFactorEnum.در_انتظار_تولید
+                        or (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد)
                     {
                         await regAccountancy(model);
                     }
@@ -2355,7 +2363,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (Exception e)
             {
                 await transAction.RollbackAsync();
-                return BadRequest(e.Message);
+                return BadRequest();
             }
         }
 
@@ -2706,7 +2714,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [Authorize(Roles = "مدیر ارشد,مدیر مالی,کارشناس مالی")]
-        [HttpGet]
         public async Task<IActionResult> DelFactor(Guid id)
         {
             AppUser user = await userManager.GetUserAsync(HttpContext.User);
@@ -2735,7 +2742,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [Authorize]
-        [HttpGet]
+        [HttpDelete]
         public async Task<IActionResult> DelPreFactor(Guid id)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);

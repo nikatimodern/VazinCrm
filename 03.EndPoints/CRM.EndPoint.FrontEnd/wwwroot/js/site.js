@@ -4370,14 +4370,14 @@ function renderDateTimeHtml(value, { empty = "-", className = "" } = {}) {
 
 
 /**
- * Resolves an element from an element reference or its ID.
+ * Resolves a DOM element from an element reference, ID, or CSS selector.
  *
  * Supports:
- * - HTMLElement
  * - Element
  * - ID with or without "#"
+ * - CSS selector
  *
- * @param {string|Element|null|undefined} target - Element or element ID.
+ * @param {Element|string|null|undefined} target - Element, element ID, or CSS selector.
  * @returns {Element|null} The resolved element, or null if not found.
  */
 function resolveElement(target) {
@@ -4389,9 +4389,22 @@ function resolveElement(target) {
         return null;
     }
     
-    const id = target.trim().replace(/^#/, "");
+    const value = target.trim();
     
-    return document.getElementById(id);
+    // ID
+    const id = value.replace(/^#/, "");
+    const elementById = document.getElementById(id);
+    
+    if (elementById) {
+        return elementById;
+    }
+    
+    // CSS selector
+    try {
+        return document.querySelector(value);
+    } catch {
+        return null;
+    }
 }
 
 

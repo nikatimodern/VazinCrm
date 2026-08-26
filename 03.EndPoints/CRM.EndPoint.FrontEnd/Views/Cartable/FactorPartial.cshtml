@@ -7,17 +7,17 @@
     var isAdminOrFinancial = User.IsAdmin() || User.IsFinancial();
 }
 
-<div style="width:100%;display:flex;flex-direction:column;gap:5px;">
+<div class="d-flex flex-column w-100" style="gap: 5px">
     @foreach (var item in Model.Factors.OrderByDescending(f => f.ModifyDate)) {
         var isReturnFactor = item.ParentReturnedId != null;
 
         <div class="w-100 d-flex">
             @if (item.OfficialType == 1) {
-                <div class="InfoDataHead_PrefactorRasmi" style="display:flex;width:24px !important">
+                <div class="InfoDataHead_PrefactorRasmi">
                     <label style="transform: rotate(90deg)">رسمی</label>
                 </div>
             } else {
-                <div class="InfoDataHead_PrefactorNonRasmi" style="display:flex;width:24px !important">
+                <div class="InfoDataHead_PrefactorNonRasmi">
                     <label style="transform: rotate(90deg)">غیررسمی</label>
                 </div>
             }
@@ -118,10 +118,10 @@
                             @if (Model._Setting?.FactorTowStep == true && !isReturnFactor && !item.Returned) {
                                 if (item.status == FactorStatus.در_دست_تایید) {
                                     if (isAdminOrFinancial) {
-                                        <button class="buttonCancel3" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 3, @ViewBag.PassType, '@item.PfactorSerialNumber')">
+                                        <button class="buttonCancel3" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 3, @ViewBag.PassType)">
                                             ابطال
                                         </button>
-                                        <button class="buttonGray" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 2, @ViewBag.PassType, '@item.PfactorSerialNumber')">
+                                        <button class="buttonGray" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 2, @ViewBag.PassType)">
                                             تایید
                                         </button>
                                     } else {
@@ -135,7 +135,7 @@
                                             تایید شده
                                         </div>
                                         @if (isAdminOrFinancial) {
-                                            <div style="cursor:pointer;color:#333" onclick="acceptFactor('@item.Id', 1, @ViewBag.PassType, '@item.PfactorSerialNumber')" data-title="بازگشت">
+                                            <div style="cursor:pointer;color:#333" onclick="acceptFactor('@item.Id', 1, @ViewBag.PassType)" data-title="بازگشت">
                                                 <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>
                                             </div>
                                         }
@@ -146,7 +146,7 @@
                                             ابطال شده
                                         </div>
                                         @if (isAdminOrFinancial) {
-                                            <div style="cursor:pointer;color:#333" onclick="acceptFactor('@item.Id', 1, @ViewBag.PassType, '@item.PfactorSerialNumber')" data-title="بازگشت">
+                                            <div style="cursor:pointer;color:#333" onclick="acceptFactor('@item.Id', 1, @ViewBag.PassType)" data-title="بازگشت">
                                                 <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>
                                             </div>
                                         }
@@ -173,12 +173,12 @@
                 <div class="d-flex flex-sm-column align-items-center justify-content-evenly mt-2 mt-sm-0 mx-0 mx-sm-2" style="row-gap:8px;font-size:15px">
                     @if (isAdminOrFinancial) {
                         if (User.IsAdmin()) {
-                            <button class="flex-center" data-title-right="حذف" style="color:var(--DarkColor);" onclick="delFactor('@item.Id', @ViewBag.PassType)">
+                            <button class="flex-center" data-title-right="حذف" style="color:var(--DarkColor);" onclick="deleteFactor('@item.Id', @ViewBag.PassType)">
                                 <i class="fa fa-trash"></i>
                             </button>
                         }
 
-                        <button class="flex-center" data-title-right="ویرایش" style="color:var(--DarkColor);" onclick="upFactor('@item.Id','@item.CustomerId',@ViewBag.PassType)">
+                        <button class="flex-center" data-title-right="ویرایش" style="color:var(--DarkColor);" onclick="upFactor('@item.Id', @ViewBag.PassType)">
                             <i class="fa fa-pencil"></i>
                         </button>
                     }
@@ -194,7 +194,7 @@
                     }
 
                     @if ((isAdminOrFinancial) && !isReturnFactor) {
-                        <button class="flex-center" data-title-right="فاکتور برگشتی" style="color:darkred" onclick="returnFactor('@item.Id','@item.CustomerId',@ViewBag.PassType)">
+                        <button class="flex-center" data-title-right="فاکتور برگشتی" style="color:darkred" onclick="returnFactor('@item.Id', @ViewBag.PassType)">
                             <i class="fa fa-arrow-right"></i>
                             @* <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M19.933 13.041a8 8 0 1 1 -9.925 -8.788c3.899 -1 7.935 1.007 9.425 4.747" /><path d="M20 4v5h-5" /></svg> *@
                         </button>

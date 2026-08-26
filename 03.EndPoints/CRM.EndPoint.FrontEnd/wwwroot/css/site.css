@@ -4568,6 +4568,7 @@ p {
 	flex-direction: column;
 	align-items: center;
 	justify-content: space-around;
+	white-space: nowrap;
 }
 
 
@@ -4623,28 +4624,22 @@ p {
 
 
 .InfoDataItem_Prefactor {
-	border-right: solid 2px var(--DarkColor);
-	border-top: solid 2px var(--DarkColor);
-	border-bottom: solid 2px var(--DarkColor);
-	border-left: solid 2px var(--DarkColor);
+	border: 2px solid var(--DarkColor);
 	border-bottom-left-radius: 5px;
 	border-top-left-radius: 5px;
-	/*   border: solid 2px rebeccapurple;*/
-	/*border: solid 2px #0065f2;*/
-	background-color: #ffffff;
-	/*    border-start-end-radius: 10px;
-border-end-end-radius: 10px;*/
+	background-color: #fff;
 }
 
 
 .InfoDataItemHead {
 	color: aliceblue;
-	background-color: #4c1087;
-	width: 3%;
+	background-color: #4c1087;;
+	width: 24px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
+	flex-shrink: 0;
 	border-bottom-right-radius: 10px;
 }
 
@@ -4694,15 +4689,11 @@ border-end-end-radius: 10px;*/
 
 .InfoDataItem {
 	border: solid 2px rebeccapurple;
-	/*    border-right: solid 2px rebeccapurple;
-border-top: solid 2px rebeccapurple;
-border-bottom: solid 2px rebeccapurple;
-border-left: solid 2px rebeccapurple;*/
-	/*   border: solid 2px rebeccapurple;*/
-	/*border: solid 2px #0065f2;*/
-	background-color: #ffffff;
-	/*    border-start-end-radius: 10px;
-border-end-end-radius: 10px;*/
+	display: flex;
+	justify-content: space-between;
+	width: 100%;
+	background-color: #fff;
+	padding-block: .25rem;
 }
 
 

@@ -46,7 +46,7 @@
                                 </div>
                             </form>
                             <div class="d-lg-none">
-                                <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#ItemPreFactorModal">افزودن</button>
+                                <button class="btn btn-sm btn-secondary" onclick="ModalToggle('ItemPreFactorModal')">افزودن</button>
                             </div>
                         </div>
                         <div class="col-12 col-lg-5 col-xl-4 d-flex flex-column gap-1">
@@ -56,18 +56,18 @@
                                     <input class="form-control" type="text" name="serialNumber" id="serialNumber" placeholder="شماره سریال" disabled />
                                 </div>
                             </div>
-                            <form id="dateFormId" class="d-flex align-items-center w-100">
+                            <div class="d-flex align-items-center w-100">
                                 <label class="col-3 text-center">تاریخ:</label>
                                 <div class="col-9">
                                     <input class="sdate form-control" type="text" name="date" id="date" placeholder="yyyy/mm/dd" data-slots="ymd" required />
                                 </div>
-                            </form>
-                            <form id="validityDadeFormId" class="d-flex align-items-center w-100">
+                            </div>
+                            <div class="d-flex align-items-center w-100">
                                 <label class="col-3 text-center">تاریخ اعتبار:</label>
                                 <div class="col-9">
                                     <input class="sdate form-control" type="text" name="validityDade" id="validityDade" placeholder="yyyy/mm/dd" data-slots="ymd" required />
                                 </div>
-                            </form>
+                            </div>
                         </div>
                     </div>
 
@@ -86,11 +86,11 @@
                                         <div id="PfPrintableAlertId" class="d-flex gap-2" style="font-size:10px">
                                             <div class="d-flex align-items-center gap-1">
                                                 <label for="printableF">غیر چاپدار</label>
-                                                <input type="radio" name="printable" id="printableF" data-alertId="PfPrintableAlertId" value="0" required />
+                                                <input type="radio" name="printable" id="printableF" class="valueNumber" data-alertId="PfPrintableAlertId" value="0" required />
                                             </div>
                                             <div class="d-flex align-items-center gap-1">
                                                 <label for="printableT">چاپدار</label>
-                                                <input type="radio" name="printable" id="printableT" data-alertId="PfPrintableAlertId" value="1" required />
+                                                <input type="radio" name="printable" id="printableT" class="valueNumber" data-alertId="PfPrintableAlertId" value="1" required />
                                             </div>
                                         </div>
                                     </div>
@@ -107,7 +107,7 @@
                                 </div>
                                 <div class="d-flex flex-column align-items-center">
                                     <label>واحد</label>
-                                    <select class="form-control" style="width: 100%" name="unit" id="unit" required></select>
+                                    <select class="form-control valueNumber" style="width: 100%" name="unit" id="unit" required></select>
                                 </div>
 
                                 <div class="unitAmountBoxPrefactorModal" style="display:flex;flex-direction:column;align-items:center; ">
@@ -121,16 +121,16 @@
                                 </div>
                                 <div>
                                     <label>&nbsp;</label>
-                                    <button id="AddBtnId" class="buttonPurple2 align-items-center justify-content-center w-100" style="display: flex;height: 2rem;padding-inline: 10px" type="button" onclick="AddPfItem()">
+                                    <button id="AddBtnId" class="buttonPurple2 align-items-center justify-content-center w-100" style="display: flex;height: 2rem;padding-inline: 10px" type="button" onclick="addPfItem()">
                                         <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                                         </svg>
                                     </button>
                                     <div id="UpBtnId" style="display:none;flex-direction:column">
-                                        <button class="buttonGreen3" onclick="UpPfItem()" type="button" style="display:flex;justify-content:center; align-items:center;height: 26px;padding-inline: 10px">
+                                        <button class="buttonGreen3" onclick="updatePfItem()" type="button" style="display:flex;justify-content:center; align-items:center;height: 26px;padding-inline: 10px">
                                             <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                                         </button>
-                                        <button class="buttonCancel2" onclick="UpPfItemCancel()" type="button" style="display:flex;justify-content:center; align-items:center;height: 26px;padding-inline: 10px">
+                                        <button class="buttonCancel2" onclick="cancelUpdatePfItem()" type="button" style="display:flex;justify-content:center; align-items:center;height: 26px;padding-inline: 10px">
                                             <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
                                         </button>
                                     </div>
@@ -156,7 +156,7 @@
                                 <div class="h-100 w-100 d-flex flex-column">
                                     <div class="d-flex w-100 position-relative">
                                         <textarea id="descriptionIdTablet" rows="6" class="form-control" style="height:54px;padding:4px 4px 4px 36px" type="text" placeholder="توضیحات"></textarea>
-                                        <button style="position: absolute;left: 1px;bottom: 1px;display: flex;justify-content: center;align-items: center;top: 1px;padding-inline: 8px;box-shadow: none" class="buttonPurple2" onclick="addPreFactorDescItem()">
+                                        <button style="position: absolute;left: 1px;bottom: 1px;display: flex;justify-content: center;align-items: center;top: 1px;padding-inline: 8px;box-shadow: none" class="buttonPurple2" onclick="addPfDescriptionItem()">
                                             <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                                         </button>
                                     </div>
@@ -173,7 +173,7 @@
                                 <div class="col-12 d-flex justify-content-around">
                                     <label class="col-4 col-xl-2 text-center">تخفیف :</label>
                                     <div class="col-8 col-xl-10">
-                                        <input inputmode="numeric" class="form-control currencyNumber" name="discount" id="discount" type="text" value="0" onkeyup="calculateTotal()" />
+                                        <input inputmode="numeric" class="form-control currencyNumber" name="discount" id="discount" type="text" value="0" onkeyup="calculatePreFactorTotals()" />
                                     </div>
                                 </div>
                                 <div class="col-12 d-flex justify-content-around">
@@ -187,7 +187,7 @@
                             </div>
 
                             <div class="d-lg-none mt-3 descriptionPreFactorBox">
-                                <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#preFactorDescriptionModal">افزودن توضیحات</button>
+                                <button class="btn btn-sm btn-secondary" onclick="ModalToggle('preFactorDescriptionModal')">افزودن توضیحات</button>
                             </div>
                         </div>
                     </div>
@@ -208,7 +208,7 @@
                         <div class="h-100 w-100 d-flex flex-column">
                             <div class="w-100 d-flex position-relative">
                                 <textarea id="descriptionId" rows="6" class="form-control w-100" style="height:130px;padding:4px 4px 4px 36px" type="text" placeholder="توضیحات"></textarea>
-                                <button style="position: absolute;left: 1px;bottom: 1px;display: flex;justify-content: center;align-items: center;top: 1px;padding-inline: 8px;box-shadow: none" class="buttonPurple2" onclick="addPreFactorDescItem()">
+                                <button style="position: absolute;left: 1px;bottom: 1px;display: flex;justify-content: center;align-items: center;top: 1px;padding-inline: 8px;box-shadow: none" class="buttonPurple2" onclick="addPfDescriptionItem()">
                                     <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                                 </button>
                             </div>
@@ -220,7 +220,7 @@
                 <div class="my-3 mx-auto" style="width: 97%;height:2px;background-color:rebeccapurple"></div>
                 <div class="d-flex justify-content-center w-100 gap-1">
                     <button class="buttonCancel2" onclick="cancelPreFactor() ">انصراف</button>
-                    <button class="buttonGreen3" onclick="submitPrefactor()">ثبت</button>
+                    <button class="buttonGreen3" onclick="submitPreFactor()">ثبت</button>
                 </div>
             </div>
         </div>

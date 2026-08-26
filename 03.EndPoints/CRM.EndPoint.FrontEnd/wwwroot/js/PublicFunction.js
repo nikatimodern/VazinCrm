@@ -1,17 +1,10 @@
-﻿let dealData = {};
-var customerId = null;
+﻿var customerId = null;
 
 const getBaseDescription = async (type = null) => {  // 0: preFactor | 1: Factor | 2: termsPrefactor
-    try {
-        const res = await axios(`/Factor/GetItemsDescription?type=${type}`);
-        if (res.status === 200) {
-            return res.data;
-        }
-        return null;
-    } catch (err) {
-        console.error(err);
-        return null;
-    }
+    return await sendApiRequest({
+        url: "/Factor/GetItemsDescription",
+        params: { type },
+    });
 };
 
 function calculateItem(formId, weightSelector = "[name='weightCount']", unitSelector = "[name='unitAmount']", totalSelector = "[name='totalAmount']") {
@@ -126,23 +119,31 @@ const Unit = (type, formId, defaultValueId) => {
 };
 
 
-let loadAllProduct = false;
-const getAllProductOp = (formId) => {
-    if (loadAllProduct) return;
-    formId = formId.replace("#", "");
+let allProductPromise = null;
+
+const getAllProductOp = (form) => {
+    const formElement = resolveElement(form);
+    if (!formElement) return;
     
-    const productCodeElm = document.querySelector(`#${formId} select[name='productCode']`);
-    axios(`/Product/GetAllProduct`).then((res) => {
-        new TomSelect(productCodeElm, {
-            options: res.data,
+    const productCodeElement = formElement.querySelector("select[name='productCode']");
+    if (!productCodeElement) return;
+    
+    if (!allProductPromise) {
+        allProductPromise = axios("/Product/GetAllProduct").then(res => res.data);
+    }
+    
+    
+    allProductPromise.then(products => {
+        if (productCodeElement.tomselect) return;
+        
+        new TomSelect(productCodeElement, {
+            options: products,
             valueField: "id",
             placeholder: "انتخاب",
             maxItems: 1,
             selectOnTab: true,
             // dropdownParent
         });
-        
-        loadAllProduct = true;
     });
 };
 

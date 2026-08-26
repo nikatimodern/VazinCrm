@@ -15,11 +15,11 @@
                                 <div id="FprintableAlertId" class="mp" style="display:flex;flex-direction:row-reverse; font-size:10px;gap:8px ">
                                     <div class="d-flex align-items-center gap-1">
                                         <label for="f_printableT">چاپدار</label>
-                                        <input type="radio" name="f_printable" id="f_printableT" data-alertId="FprintableAlertId" data-def="true" value='1' required />
+                                        <input type="radio" name="printable" class="valueNumber" id="f_printableT" data-alertId="FprintableAlertId" data-def="true" value='1' required />
                                     </div>
                                     <div class="d-flex align-items-center gap-1">
                                         <label for="f_printableF">غیر چاپدار</label>
-                                        <input type="radio" name="f_printable" id="f_printableF" data-alertId="FprintableAlertId" data-def="true" value='0' required />
+                                        <input type="radio" name="printable" class="valueNumber" id="f_printableF" data-alertId="FprintableAlertId" data-def="true" value='0' required />
                                     </div>
                                 </div>
                             </div>
@@ -37,7 +37,7 @@
                         </div>
                         <div style="display:flex;flex-direction:column;align-items:center; ">
                             <label>واحد</label>
-                            <select class="form-control" style="width:100%;" name="unit" id="unit" disabled required>
+                            <select class="form-control valueNumber" style="width:100%;"  name="unit" id="unit" disabled required>
                             </select>
                         </div>
                         <div style="display:flex;flex-direction:column;align-items:center; ">
@@ -47,7 +47,7 @@
                         </div>
                         <div style="display:flex;flex-direction:column;align-items:center; ">
                             <label>مبلغ کل (ریال)</label>
-                            <input class=" form-control inpAmount" type="text" name="totalAmount" id="totalAmount" disabled />
+                            <input class="currencyNumber form-control inpAmount" type="text" name="totalAmount" id="totalAmount" disabled />
                         </div>
                     </form>
                 </div>

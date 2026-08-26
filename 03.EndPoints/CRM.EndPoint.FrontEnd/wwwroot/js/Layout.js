@@ -1336,6 +1336,7 @@ const AddFromPreFactorModal = () => {
 
 let tempPfItemsNotInOrders = [];
 const selectPfactorItem = (id) => {
+    if (!id) return;
     const index = pfItemsNotInOrders.findIndex(i => i.id === id);
     let selectedItem = pfItemsNotInOrders.splice(index, 1)[0];
     tempPfItemsNotInOrders.push(selectedItem);

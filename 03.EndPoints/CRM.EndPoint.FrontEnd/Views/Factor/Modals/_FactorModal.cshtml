@@ -59,7 +59,7 @@
                                 </div>
                             </form>
                             <div class="d-lg-none">
-                                <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#ItemFactorModal">افزودن</button>
+                                <button class="btn btn-sm btn-secondary" onclick="ModalToggle('ItemFactorModal')">افزودن</button>
                             </div>
                         </div>
                     </div>
@@ -101,11 +101,11 @@
                                         <div id="FprintableAlertId" class="mp" style="display:flex;flex-direction:row-reverse; font-size:10px;gap:8px ">
                                             <div class="d-flex align-items-center gap-1">
                                                 <label for="f_printableT">چاپدار</label>
-                                                <input type="radio" name="printable" id="f_printableT" data-alertId="FprintableAlertId" data-def="true" value="1" required />
+                                                <input type="radio" name="printable" class="valueNumber" id="f_printableT" data-alertId="FprintableAlertId" data-def="true" value="1" required />
                                             </div>
                                             <div class="d-flex align-items-center gap-1">
                                                 <label for="f_printableF">غیر چاپدار</label>
-                                                <input type="radio" name="printable" id="f_printableF" data-alertId="FprintableAlertId" data-def="true" value="0" required />
+                                                <input type="radio" name="printable" class="valueNumber" id="f_printableF" data-alertId="FprintableAlertId" data-def="true" value="0" required />
                                             </div>
                                         </div>
                                     </div>
@@ -122,7 +122,7 @@
                                 </div>
                                 <div style="display:flex;flex-direction:column;align-items:center; ">
                                     <label>واحد</label>
-                                    <select class="form-control" style="width:100%;" name="unit" id="unit" disabled required>
+                                    <select class="form-control valueNumber" style="width:100%;" name="unit" id="unit" disabled required>
                                     </select>
                                 </div>
                                 <div style="display:flex;flex-direction:column;align-items:center; ">
@@ -171,7 +171,7 @@
                                 <div class="col-12 justify-content-around" style="display:flex; flex-direction:row-reverse;">
                                     <label class="col-4 col-xl-2 justify-content-center" style="display:flex;"><span>: تخفیف</span></label>
                                     <div class="col-8 col-xl-10">
-                                        <input inputmode="numeric" class="form-control currencyNumber" name="f_discount" id="f_discount" type="text" value="0" onkeyup="calculateTotalFactor()" />
+                                        <input inputmode="numeric" class="form-control currencyNumber" name="f_discount" id="f_discount" type="text" value="0" onkeyup="calculateFactorTotals()" />
                                     </div>
                                 </div>
                                 <div class="col-12 justify-content-around" style="display:flex;flex-direction:row-reverse;">
@@ -183,7 +183,7 @@
 
                                 @*                            <div style="display:none;flex-direction:row-reverse;" id="divReciveAmountId">
                             <label style="display:flex;width:30%"><span> :پرداختی </span><span> مبلغ </span></label>
-                            <input class="form-control" name="f_reciveAmount" id="f_reciveAmount" type="text" style="width:70%" value="0" onkeyup="calculateTotalFactor()" />
+                            <input class="form-control" name="f_reciveAmount" id="f_reciveAmount" type="text" style="width:70%" value="0" onkeyup="calculateFactorTotals()" />
                             </div>*@
                                 <div class="col-12 justify-content-around" style="display:flex;flex-direction:row-reverse;">
                                     <label class="col-4 col-xl-2 justify-content-center" style="display:flex;"><span>: مبلغ نهایی</span></label>
@@ -207,7 +207,7 @@
                                 </div>
                             </div>
                             <div class="d-lg-none mt-3">
-                                <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#FactorDescriptionModal">افزودن توضیحات</button>
+                                <button class="btn btn-sm btn-secondary" onclick="ModalToggle('FactorDescriptionModal')">افزودن توضیحات</button>
                             </div>
                         </div>
 

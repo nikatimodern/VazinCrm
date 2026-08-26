@@ -20,11 +20,11 @@
                                 <div id="PfPrintableAlertId" class="mp" style="display:flex;flex-direction:row-reverse; font-size:10px;gap:8px ">
                                     <div class="d-flex align-items-center gap-1">
                                         <label for="printableT">چاپدار</label>
-                                        <input type="radio" name="printable" id="printableT" data-alertId="PfPrintableAlertId" data-def="true" value="1" required />
+                                        <input type="radio" name="printable" id="printableT" class="valueNumber" data-alertId="PfPrintableAlertId" data-def="true" value="1" required />
                                     </div>
                                     <div class="d-flex align-items-center gap-1">
                                         <label for="printableF">غیر چاپدار</label>
-                                        <input type="radio" name="printable" id="printableF" data-alertId="PfPrintableAlertId" data-def="true" value="0" required />
+                                        <input type="radio" name="printable" id="printableF" class="valueNumber" data-alertId="PfPrintableAlertId" data-def="true" value="0" required />
                                     </div>
                                 </div>
                             </div>
@@ -43,7 +43,7 @@
                         </div>
                         <div style="display:flex;flex-direction:column;align-items:center; ">
                             <label>واحد</label>
-                            <select class="form-control" style="width:100%;" name="unit" id="unit" required>
+                            <select class="form-control valueNumber" style="width:100%;" name="unit" id="unit" required>
                             </select>
                         </div>
                         <div class="unitAmountBoxPrefactorModal" style="display:flex;flex-direction:column;align-items:center; ">
@@ -73,10 +73,10 @@
                         </button>
                         <button id="CancelBtnId" class="buttonCancel2" onclick="canselModalItemPreFactor()">انصراف</button>
                         <div id="UpBtnId" class="align-items-center" style="display:none;gap:4px">
-                            <button class="buttonGreen3" onclick="UpPfItem()">
+                            <button class="buttonGreen3" onclick="updatePfItem()">
                                 ثبت
                             </button>
-                            <button class="buttonCancel2" onclick="UpPfItemCancel()">
+                            <button class="buttonCancel2" onclick="cancelUpdatePfItem()">
                                 انصراف
                             </button>
                         </div>

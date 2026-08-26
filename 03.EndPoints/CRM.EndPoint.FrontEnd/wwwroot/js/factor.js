@@ -1,24 +1,24 @@
-let f_officialType = 1;
 let factor = {};
-let typeSubmitFactor = null;
-let fItemUpIndex = null;
-let _factorItems = [];
-let FactorDescItems;
+let factorItems = [];
+let factorDescriptionItems = [];
+let fItemIndex = null;
+let typeSubmitFactor;
+
 let supplyData = [];
 
 document.querySelectorAll("#Factor input[type='radio'][name='f_official']")?.forEach(radio => {
     const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
     radio.addEventListener("change", async (e) => {
-        f_officialType = Number(e.target.value);
-        currencyTypeElm.toggleAttribute("disabled", f_officialType === 1);
-        await calculateTotalFactor();
+        factor.officialType = Number(e.target.value);
+        currencyTypeElm.toggleAttribute("disabled", factor.officialType === 1);
+        await calculateFactorTotals();
     });
 });
 
 document.querySelector("#FacItem input[name='weightCount']")?.addEventListener("input", () => calculateItem("FacItem"));
 document.querySelector("#FacItem input[name='unitAmount']")?.addEventListener("input", () => calculateItem("FacItem"));
 
-const AddFactor = async (pfId = null, type = 1) => {
+const AddFactor = async (pfId, type = 1) => {
     
     if (!await isAllowedToAddFactor(pfId)) return;
     typeSubmitFactor = type;
@@ -32,18 +32,16 @@ const AddFactor = async (pfId = null, type = 1) => {
     const pfData = (await axios(`/Factor/GetPFactor/${pfId}`)).data;
     supplyData = (await axios(`/Supply/GetSupplies?pfId=${pfId}`)).data;
     
-    dealData.id = pfData.dealId;
-    
     if (!supplyData?.length) {
         toastifyError("بهای تامینی ثبت نشده است!");
         FLshowLoading(false);
         return;
     }
     
-    _factorItems = pfData.preFactorItems;
+    factorItems = pfData.preFactorItems;
     
-    _factorItems = _factorItems.filter(pfItem => supplyData.some(sup => sup.pfItemId === pfItem.id));
-    _factorItems.forEach(pfItem => {
+    factorItems = factorItems.filter(pfItem => supplyData.some(sup => sup.pfItemId === pfItem.id));
+    factorItems.forEach(pfItem => {
         pfItem.weightCount = supplyData.filter(sup => sup.pfItemId === pfItem.id).reduce((sum, cur) => sum + Number(cur.weight), 0);
         pfItem.totalAmount = calcTotalAmount(pfItem.weightCount, pfItem.unitAmount);
     });
@@ -53,46 +51,42 @@ const AddFactor = async (pfId = null, type = 1) => {
         item.id = null;
     });
     
-    Array.from(_factorItems).forEach((item) => {
+    Array.from(factorItems).forEach((item) => {
         item.pfItemId = item.id;
         item.id = null;
     });
     
-    customerId = pfData.customerId;
     factor = pfData;
     factor.pfactorID = pfData.id;
     factor.pfactorSerialNumber = pfData.serialNumber;
     factor.serialNumber = null;
     factor.id = null;
-    factor.factorItems = _factorItems;
+    factor.factorItems = factorItems;
     factor.date = await todayDate();
     
-    factor.officialType = pfData.officialType;
-    f_officialType = pfData.officialType;
-    
     factor.descriptions = [];
-    FactorDescItems = [];
+    factorDescriptionItems = [];
     
     const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
     currencyTypeElm.value = pfData.currencyType ?? 0;
-    currencyTypeElm.toggleAttribute("disabled", f_officialType === 1);
+    currencyTypeElm.toggleAttribute("disabled", factor.officialType === 1);
     
     if (factor.officialType === 0) {
         baseDesFactor.filter(f => f.official === false).map((item) => {
             item = { ...item, isDeleted: false };
             factor.descriptions.push(item);
-            FactorDescItems.push(item);
+            factorDescriptionItems.push(item);
         });
     } else {
         baseDesFactor.filter(f => f.official === true).map((item) => {
             item = { ...item, isDeleted: false };
             factor.descriptions.push(item);
-            FactorDescItems.push(item);
+            factorDescriptionItems.push(item);
         });
     }
     
     document.getElementsByName("f_official").forEach((o) => {
-        if (o.type === "radio" && Number(o.value) === f_officialType) {
+        if (o.type === "radio" && Number(o.value) === factor.officialType) {
             o.checked = true;
         }
     });
@@ -110,7 +104,7 @@ const AddFactor = async (pfId = null, type = 1) => {
         $("#f_totalTax").text(SeperatedNumberGenerate(factor.totalTax));
         $("#f_paymentAmount").text(SeperatedNumberGenerate(factor.paymentAmount));*/
     $("#f_discount").val(factor.discount.toLocaleString());
-    await calculateTotalFactor();
+    await calculateFactorTotals();
     $("#Factor").modal("show");
     
     ShowItemFactor();
@@ -119,11 +113,10 @@ const AddFactor = async (pfId = null, type = 1) => {
 };
 
 
-const upFactor = (fid, cid, type = 1) => {
+const upFactor = (fid, type = 1) => {
     typeSubmitFactor = type;
     currentFactorContext.passType = type;
     
-    customerId = cid;
     
     document.getElementById("FLshowLoading").style.display = "";
     Unit(2);
@@ -131,13 +124,12 @@ const upFactor = (fid, cid, type = 1) => {
     $.get(baseUrl + `factor/getFactor/${fid}`, (res) => {
         factorID = res.id;
         factor = res;
-        _factorItems = res.factorItems;
-        f_officialType = res.officialType;
-        FactorDescItems = res.descriptions;
+        factorItems = res.factorItems;
+        factorDescriptionItems = res.descriptions;
         
         const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
         currencyTypeElm.value = res.currencyType ?? 0;
-        currencyTypeElm.toggleAttribute("disabled", f_officialType === 1);
+        currencyTypeElm.toggleAttribute("disabled", factor.officialType === 1);
         
         document.getElementsByName("f_official").forEach((o, v) => {
             if (o.type === "radio" && o.value == factor.officialType) {
@@ -177,11 +169,10 @@ const upFactor = (fid, cid, type = 1) => {
 };
 
 
-const returnFactor = async (fid, cid, type = 1) => {
+const returnFactor = async (fid, type = 1) => {
     typeSubmitFactor = type;
     currentFactorContext.passType = type;
     
-    customerId = cid;
     const modalFactor = document.getElementById("Factor");
     modalFactor.classList.add("returned-factor");
     
@@ -199,18 +190,17 @@ const returnFactor = async (fid, cid, type = 1) => {
     factor.factorItems = factor.factorItems.map((f) => ({ ...f, id: null }));
     factor.date = await todayDate();
     
-    _factorItems = factor.factorItems;
-    f_officialType = factor.officialType;
-    FactorDescItems = factor.descriptions;
+    factorItems = factor.factorItems;
+    factorDescriptionItems = factor.descriptions;
     
     
     const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
     currencyTypeElm.value = factor.currencyType ?? 0;
-    toggleElementsDisabled(currencyTypeElm, f_officialType === 1);
+    toggleElementsDisabled(currencyTypeElm, factor.officialType === 1);
     
     
     modalFactor.querySelectorAll("input[name='f_official']").forEach((i) => {
-        i.checked = Number(i.value) === f_officialType;
+        i.checked = Number(i.value) === factor.officialType;
     });
     
     const exportValue = factor.export ? "1" : "0";
@@ -249,53 +239,44 @@ const calcTotalAmount = (weight, unitValue) => {
     
     return w * u;
 };
-
-
-const calculateTotalFactor = async () => {
-    return new Promise((resolve, reject) => {
-        try {
-            let data = _factorItems.filter(f => f.isDeleted !== true);
-            let _SumTotalAmount = 0;
-            let _TotalTax = 0;
-            let _PaymentAmount;
-            
-            let _Discount = Number(SeparatedNumberRemove(document.getElementById("f_discount").value)) || 0;
-            
-            data.forEach(item => {
-                let itemAmount = item.totalAmount;
-                _SumTotalAmount += itemAmount;
-            });
-            
-            _SumTotalAmount = Math.round(_SumTotalAmount);
-            _Discount = Math.round(_Discount);
-            
-            if (f_officialType === 1) {
-                _TotalTax = Math.round(((_SumTotalAmount - _Discount) * 10) / 100);
-            }
-            
-            _PaymentAmount = _SumTotalAmount - _Discount + _TotalTax;
-            factor.sumTotalAmount = _SumTotalAmount;
-            factor.discount = _Discount;
-            factor.totalTax = _TotalTax;
-            factor.paymentAmount = Math.round(_PaymentAmount);
-            
-            
-            factor.officialType = f_officialType;
-            
-            document.getElementById("f_sumTotalAmount").innerText = factor.sumTotalAmount.toLocaleString();
-            document.getElementById("f_totalTax").innerText = factor.totalTax.toLocaleString();
-            document.getElementById("f_paymentAmount").innerText = factor.paymentAmount.toLocaleString();
-            return resolve(true);
-        } catch {
-            return reject(false);
-        }
+const calculateFactorTotals = () => {
+    return new Promise((resolve) => {
+        const data = factorItems.filter(item => !item.isDeleted);
+        
+        let sumTotalAmount = 0;
+        
+        const discountInput = document.getElementById("f_discount");
+        const discount = Math.round(Number(SeparatedNumberRemove(discountInput.value)) || 0);
+        
+        data.forEach(item => {
+            sumTotalAmount += Number(item.totalAmount) || 0;
+        });
+        
+        sumTotalAmount = Math.round(sumTotalAmount);
+        
+        const totalTax = factor.officialType === 1
+            ? Math.round((sumTotalAmount - discount) * 0.1)
+            : 0;
+        
+        const paymentAmount = sumTotalAmount - discount + totalTax;
+        
+        factor.sumTotalAmount = sumTotalAmount;
+        factor.discount = discount;
+        factor.totalTax = totalTax;
+        factor.paymentAmount = Math.round(paymentAmount);
+        
+        document.getElementById("f_sumTotalAmount").textContent = factor.sumTotalAmount.toLocaleString();
+        document.getElementById("f_totalTax").textContent = factor.totalTax.toLocaleString();
+        document.getElementById("f_paymentAmount").textContent = factor.paymentAmount.toLocaleString();
+        
+        resolve(factor);
     });
-    
 };
+
 const showFactorDescItem = () => {
     let items = "";
     
-    FactorDescItems.forEach((item, index) => {
+    factorDescriptionItems.forEach((item, index) => {
         items += `
             <li class="mp d-flex">
                 <p>${item.text}</p>
@@ -318,9 +299,9 @@ const showFactorDescItem = () => {
 
 const ShowItemFactor = () => {
     let ob = `<div class="d-flex flex-column w-100" style="gap:5px">`;
-    _factorItems.forEach((item, index) => {
+    factorItems.forEach((item, index) => {
         if (item.product == null) item.product = "";
-        _factorItems[index].row = index + 1;
+        factorItems[index].row = index + 1;
         const uAmount = item.unitAmount.toLocaleString();
         const tAmount = item.totalAmount.toLocaleString();
         
@@ -335,6 +316,9 @@ const ShowItemFactor = () => {
                    <label class="fbold">${index + 1}</label>
                 </div>
                 <div class="InfoDataItemFactor">
+                    <div class="flex-center flex-column flex-shrink-0 px-2" style="width: 22px">
+                        <label class="fbold" style="writing-mode: sideways-lr">${Number(item.printable) === 1 ? "چـاپـدار" : ""}</label>
+                    </div>
                     <div style="display:flex;justify-content:space-between; width:100%;flex-wrap:wrap;">
                        <div class="col-12 col-lg-5 d-flex flex-column align-items-center justify-content-around">
                            <label>شرح کالا</label>
@@ -381,8 +365,8 @@ const ShowItemFactor = () => {
 };
 
 
-const calculateTextFactor = () => {
-    const model = _factorItems.filter(f => !f.isDeleted);
+const calculateFactorText = () => {
+    const model = factorItems.filter(f => !f.isDeleted);
     const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
     const currencyTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
     
@@ -424,7 +408,7 @@ const calculateTextFactor = () => {
 
 const showFactorDescItems = () => {
     let items = "";
-    FactorDescItems.forEach((item, index) => {
+    factorDescriptionItems.forEach((item, index) => {
         if (item.isDeleted === false) {
             items = items + `<li style="display:flex;gap:2px"><p class="mp"> ${item.text}</p> <span onclick="DelFactorDescItem(${index})"> <i style="cursor:pointer;" class="fa fa-trash"></i> </span>  </li>`;
             
@@ -451,7 +435,7 @@ const addFactorDescItem = () => {
         val = $("#f_descriptionId").val();
     }
     
-    FactorDescItems.push({ text: val, isDeleted: false, dir: "" });
+    factorDescriptionItems.push({ text: val, isDeleted: false, dir: "" });
     
     $("#f_descriptionId").val("");
     $("#f_descriptionIdMobile").val("");
@@ -461,11 +445,11 @@ const addFactorDescItem = () => {
 };
 
 const DelFactorDescItem = (index) => {
-    if (FactorDescItems[index].id == null) {
-        FactorDescItems.splice(index, 1);
+    if (factorDescriptionItems[index].id == null) {
+        factorDescriptionItems.splice(index, 1);
         showFactorDescItems();
     } else {
-        FactorDescItems[index].isDeleted = true;
+        factorDescriptionItems[index].isDeleted = true;
         showFactorDescItems();
     }
 };
@@ -488,14 +472,14 @@ const addFactorItem = async () => {
         data.unit = Number(data.unit);
         data.id = null;
         
-        _factorItems.push(data);
-        factor.factorItems = _factorItems;
+        factorItems.push(data);
+        factor.factorItems = factorItems;
         ShowItemFactor();
         mySer.emptyForm("FacItem");
         
-        let calStatus = await calculateTotalFactor();
+        let calStatus = await calculateFactorTotals();
         
-        //calculateTextFactor();
+        //calculateFactorText();
         
         el_procode.focus();
         
@@ -565,7 +549,7 @@ const submitFactor = async () => {
 
 const submitFactorOK = async (type, unlinkSepidar = false) => {
     if (await mySer.CheckValidForm("#f_dateFormId") && await mySer.CheckValidForm("#f_SerialFormId")) {
-        if (_factorItems.length <= 0) {
+        if (factorItems.length <= 0) {
             $("#preFactorItemId").parent().css("border", "2px solid #ff6d00");
             toastifyError("فاکتور خالی");
             return;
@@ -574,9 +558,7 @@ const submitFactorOK = async (type, unlinkSepidar = false) => {
         FLshowLoading();
         factor.snFinancial = document.querySelector("#snFinancialFormId input[name='snFinancial']").value || null;
         factor.date = document.querySelector("#f_dateFormId input[name='f_date']").value;
-        factor.officialType = f_officialType;
-        factor.customerId = customerId;
-        factor.descriptions = FactorDescItems;
+        factor.descriptions = factorDescriptionItems;
         factor.export = document.getElementById("f_export").checked;
         
         const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
@@ -653,7 +635,7 @@ const cancelFactor = () => {
     $("#F_currencyTypeSelect").val("0");
     
     factor = {};
-    _factorItems = [];
+    factorItems = [];
     $("#FactorItemId").children().remove();
     UpfItemCancel();
     
@@ -667,99 +649,79 @@ const cancelFactor = () => {
 };
 
 
-const delFactor = (id, type) => {
-    Swal.fire({
-        title: "حذف!",
-        text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
-        icon: "warning",
-        showCancelButton: true,
-        cancelButtonColor: "#adadad",
-        confirmButtonColor: "#e64942",
-        cancelButtonText: "انصراف",
-        confirmButtonText: "بله، حذف شود",
-    })
-        .then((willDelete) => {
-            
-            if (willDelete.isConfirmed) delFactorOk(id, type);
-        });
-};
-const delFactorOk = (id, type) => {
-    if (!id) return;
-    
-    FLshowLoading();
-    $.get(baseUrl + "Factor/DelFactor/" + id, async () => {
-        if (type === 0) {
-            await refreshFactorPartial();
-            //await GetPreFactorPartial();
-            
-        } else if (type === 1) {
-            await getAllPreFactor();
-            await refreshFactorPartial();
-            
-            getAllDetailAmount();
-        } else if (type === 4) {
-            await refreshDealFactors();
-        } else if (type === 5 || type === 6) {
-            await getAllFactorsModal(id, type);
-        }
-        
-        FLshowLoading(false);
-        toastifySuccess("عملیات انجام شد");
-    })
-     .fail(() => {
-         setTimeout(() => delFactorOk(id, type), 3000);
-     });
-    
+const deleteFactor = async (id, type) => {
+    await deleteItem({
+        url: `/Factor/DelFactor/${id}`,
+        callback: async () => {
+            if (type === 0) {
+                await refreshFactorPartial();
+                //await GetPreFactorPartial();
+                
+            } else if (type === 1) {
+                await getAllPreFactor();
+                await refreshFactorPartial();
+                
+                getAllDetailAmount();
+            } else if (type === 4) {
+                await refreshDealFactors();
+            } else if (type === 5 || type === 6) {
+                await getAllFactorsModal(id, type);
+            }
+        },
+    });
 };
 
-
-//PasType==1 => customerFactorList , PasType==0 => CartableFactorList
-const getFacSepidar = async (pfId, serialNumber = null, _this, PassType, dealId) => { // TODO
-    if (PassType === 4) {
+const getFacSepidar = async (serialNumber = null, _this, passType, dealId) => { // PassType: 1 = customerProfile | 0 = cartable
+    if (passType === 4) {
         const dealRes = await axios(`/Deal/GetDeal/${dealId}`);
         await showModalDealFactors(dealRes.data, serialNumber);
         return;
     }
-    FLshowLoading();
-    document.querySelector(".SelectedPf")?.classList.remove("SelectedPf");
-    _this.closest(".InfoDataItem_Prefactor").classList.add("SelectedPf");
     
-    const res = await getAllFactorSepidar(pfId, serialNumber);
+    const html = await getAllFactorSepidar(serialNumber);
     
-    if (PassType === 1) {
-        document.getElementById("DetailDivList").innerHTML = res;
-        document.getElementById("DivFacListId").style.display = "flex";
-        document.getElementById("FactorDivTitleId").innerHTML = pfId
-            ? `
-                <button class="buttonGreen hide-factor__btn" onclick="hideFact()">
-                    <i class="fas fa-times"></i>
-                </button>
-                <span style="font-size: 20px">تمام فاکتورهای مربوط به پیش فاکتور  ${serialNumber} </span>`
-            : `<span style="font-size:20px">تمام فاکتور ها</span>`;
-        
-    } else if (PassType === 0) {
-        document.getElementById("fAcceptedList").innerHTML = res;
-        document.getElementById("f_all").checked = true;
-        document.getElementById("HideFactorPartialId").style.display = "flex";
-    }
-    
-    if (window.innerWidth < 1400) {
-        const allFactorTab = new bootstrap.Tab(document.getElementById(PassType === 0 ? "allFactorTab" : "factorTab"));
-        allFactorTab.show();
-    }
-    FLshowLoading(false);
+    updateSepidarFactorUI(html, serialNumber, _this, passType);
 };
 
-const getAllFactorSepidar = async (pfId = null, ser = null) => {
-    return new Promise(resolve => {
-        $.get(baseUrl + `Customer/GetFactorsSepidar?customerId=${customerId}&pfId=${pfId}&sNumber=${ser}`, (res) => {
-            resolve(res.html);
-        })
-         .fail(() => {
-             setTimeout(() => getAllFactorSepidar(), 3000);
-         });
+const updateSepidarFactorUI = (html, serialNumber, element, passType) => {
+    if (!html) return;
+    
+    document.querySelector(".SelectedPf")?.classList.remove("SelectedPf");
+    element.closest(".InfoDataItem_Prefactor")?.classList.add("SelectedPf");
+    
+    
+    if (passType === 1) {
+        document.getElementById("DetailDivList").innerHTML = html;
+        document.getElementById("DivFacListId").style.display = "flex";
+        document.getElementById("FactorDivTitleId").innerHTML = serialNumber ? `
+            <button class="buttonGreen hide-factor__btn" onclick="hideFact()">
+                <i class="fas fa-times"></i>
+            </button>
+            <span style="font-size: 20px">تمام فاکتورهای مربوط به پیش فاکتور  ${serialNumber} </span>`
+            : `<span style="font-size: 20px">تمام فاکتور ها</span>`;
         
+        if (window.innerWidth < 1400) {
+            ShowTab("factorTab");
+        }
+    } else if (passType === 0) {
+        document.getElementById("fAcceptedList").innerHTML = html;
+        document.getElementById("f_all").checked = true;
+        document.getElementById("HideFactorPartialId").style.display = "flex";
+        
+        if (window.innerWidth < 1400) {
+            ShowTab("allFactorTab");
+        }
+    }
+};
+
+
+const getAllFactorSepidar = async (ser = null) => {
+    const data = await sendApiRequest({
+        url: "/Customer/GetFactorsSepidar",
+        params: { sNumber: ser },
     });
+    
+    return data.html;
 };
 
 let crmFactorId;
@@ -895,7 +857,7 @@ const getAllFactorsModal = async (id, type, sNumber) => {
     if (!id) return;
     
     FLshowLoading();
-    if (type === 4) dealData.id = id;
+    
     const factorsWrapper = document.getElementById("factorsBodyModal");
     const apiUrl = sNumber
         ? `/Customer/GetFactorsSepidar?sNumber=${sNumber}`
@@ -919,20 +881,12 @@ const getAllFactorsModal = async (id, type, sNumber) => {
 };
 
 
-const acceptFactor = async (id, type, passType, PfactorSerialNumber) => {
-    try {
-        FLshowLoading();
-        const res = await axios(`${baseUrl}Factor/AcceptFactor?id=${id}&type=${type}`);
-        
-        if (res.status === 200) {
-            if (type === 2) {
-                toastifySuccess("با موفقیت ثبت نهایی شد.");
-            } else if (type === 3) {
-                toastifySuccess("ابطال انجام شد.");
-            } else if (type === 1) {
-                toastifySuccess("برگشت انجام شد.");
-            }
-            
+const acceptFactor = async (id, type, passType) => {
+    await sendApiRequest({
+        url: "/Factor/AcceptFactor",
+        params: { id, type },
+        successMsg: type === 2 ? "با موفقیت تایید نهایی شد" : type === 3 ? "ابطال شد" : null,
+        onSuccess: async () => {
             if (passType === 0) {
                 await refreshFactorPartial();
             } else if (passType === 1) {
@@ -943,18 +897,10 @@ const acceptFactor = async (id, type, passType, PfactorSerialNumber) => {
             } else if (passType === 6) {
                 await getAllFactorsModal(id, 6);
             }
-            
-        } else if (res.status === 204) {
-            toastifyError("شماره فاکتور مالی وارد نشده است!");
-        } else {
-            toastifyError("خطا در ارسال اطلاعات!");
-        }
-        FLshowLoading(false);
-    } catch (err) {
-        console.log(err);
-        setTimeout(async () => await acceptFactor(id, type, passType, PfactorSerialNumber), 3000);
-    }
+        },
+    });
 };
+
 const addItemFactor = async () => {
     FLshowLoading();
     const isValid = await addFactorItem();
@@ -976,8 +922,8 @@ const upFactorItem = (index) => {
     if (window.innerWidth < 992) {
         ModalToggle("ItemFactorModal", "show");
     }
-    fItemUpIndex = index;
-    mySer.convertJsonToForm(_factorItems[index], "FacItem");
+    fItemIndex = index;
+    mySer.convertJsonToForm(factorItems[index], "FacItem");
     
     document.getElementById("f_AddBtnId").style.display = "none";
     document.getElementById("f_CancelBtnId").style.display = "none";
@@ -987,7 +933,7 @@ const upFactorItem = (index) => {
 
 const UpfItemCancel = () => {
     mySer.emptyForm("FacItem");
-    fItemUpIndex = null;
+    fItemIndex = null;
     
     document.getElementById("f_AddBtnId").style.display = "flex";
     document.getElementById("f_CancelBtnId").style.display = "flex";
@@ -1000,69 +946,54 @@ const UpfItemCancel = () => {
 
 
 const UpfItem = async () => {
+    const form = document.getElementById("FacItem");
+    const productCode = form.elements.namedItem("productCode");
+    const unit = form.elements.namedItem("unit");
     
-    const productCodeElm = document.querySelector("#FacItem select[name='productCode']");
+    const data = mySer.convertFormToJSON("#FacItem");
     
-    let data = mySer.convertFormToJSON("#FacItem");
-    
-    
-    if (productCodeElm.value) {
-        data.productSmallName = productCodeElm.options[productCodeElm.selectedIndex].text;
+    if (productCode.value) {
+        data.productSmallName = productCode.options[productCode.selectedIndex].text;
     }
     
-    data.id = _factorItems[fItemUpIndex].id;
-    data.factorId = _factorItems[fItemUpIndex].factorId;
-    data.pfItemId = _factorItems[fItemUpIndex].pfItemId;
-    
-    
     //اگر کسب و کار کوچک بود این موارد باید برداشته شود
-    data.unit = _factorItems[fItemUpIndex].unit;
-    data.unitTxt = _factorItems[fItemUpIndex].unitTxt;
+    data.unitTxt = unit.options[unit.selectedIndex].text;
     //تا اینجا
     
     //اگر کسب و کار کوچک بود این موارد باید فعال شود
-    //var el_Unit = Array.from(document.getElementById("FacItem").elements).filter(f => f.name == "unit")[0]
-    //if (el_Unit.value != "") {
-    //    data.unitTxt = el_Unit.options[el_Unit.selectedIndex].text;
+    //if (unit.value != "") {
+    //    data.unitTxt = unit.options[unit.selectedIndex].text;
     //}
     //تا اینجا
     
-    _factorItems[fItemUpIndex] = data;
+    factorItems[fItemIndex] = {
+        ...factorItems[fItemIndex],
+        ...data,
+    };
     
-    data.unit = Number(data.unit);
-    
-    
-    $("#f_AddBtnId").css("display", "flex");
-    $("#f_UpBtnId").css("display", "none");
     ShowItemFactor();
-    fItemUpIndex = null;
-    mySer.emptyForm("FacItem");
-    let calcStatus = await calculateTotalFactor();
-    //calculateTextFactor();
-    
+    await calculateFactorTotals();
+    //calculateFactorText();
     
     toastifySuccess("با موفقیت ویرایش شد!");
-    
-    if (window.innerWidth < 992) {
-        canselModalItemFactor();
-    }
+    UpfItemCancel();
 };
 
 
 const delFactorItem = async (index) => {
-    let item = _factorItems[index];
+    let item = factorItems[index];
     
     if (item.id != null) {
         item.isDeleted = true;
         
-        _factorItems = _factorItems.filter(f => f.isDeleted !== true);
+        factorItems = factorItems.filter(f => f.isDeleted !== true);
         ShowItemFactor();
-        await calculateTotalFactor();
-        calculateTextFactor();
+        await calculateFactorTotals();
+        calculateFactorText();
     } else {
-        _factorItems.splice(index, 1);
+        factorItems.splice(index, 1);
         ShowItemFactor();
-        await calculateTotalFactor();
-        calculateTextFactor();
+        await calculateFactorTotals();
+        calculateFactorText();
     }
 };

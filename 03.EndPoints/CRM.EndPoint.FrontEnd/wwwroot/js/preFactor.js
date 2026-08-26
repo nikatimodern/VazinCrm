@@ -1,10 +1,12 @@
-let _officialType = 0;
-let typeSubmitPfactor = null;
+let pFactor = {};
+let pFactorItems = [];
+let pFactorDescriptionItems = [];
+let pfItemIndex = null;
 let baseDesPfactor = [];
-let PreFactorDescItems;
-let _pfactorItems = [];
-let pfactor = {};
-let PfItemUpIndex = null;
+let typeSubmitPfactor;
+
+let dealData = {};
+
 let descriptionInpId;
 let descriptionListId;
 let prePaymentPercentId;
@@ -27,38 +29,37 @@ const prePaymentPercentElm = document.getElementById(prePaymentPercentId);
 
 document.querySelector("#PreFacItem input[name='weightCount']")?.addEventListener("input", () => calculateItem("PreFacItem"));
 document.querySelector("#PreFacItem input[name='unitAmount']")?.addEventListener("input", () => calculateItem("PreFacItem"));
-prePaymentPercentElm?.addEventListener("change", () => calculateText());
+prePaymentPercentElm?.addEventListener("change", () => calculatePreFactorText());
 document.querySelectorAll("#PreFactor input[type='radio'][name='official']")?.forEach(radio => {
     const currencyTypeElm = document.querySelector("#PfHeadFormId select[name='currencyType']");
     radio.addEventListener("change", (e) => {
-        _officialType = Number(e.target.value);
-        currencyTypeElm.toggleAttribute("disabled", _officialType === 1);
+        pFactor.officialType = Number(e.target.value);
+        currencyTypeElm.toggleAttribute("disabled", pFactor.officialType);
         currencyTypeElm.value = 0;
-        calculateTotal();
-        descGenerate();
-        calculateText();
+        calculatePreFactorTotals();
+        generatePFactorDescriptions();
+        calculatePreFactorText();
     });
 });
 
 const showModalAddPfactor = async (type, cusId = null, deal) => {
     typeSubmitPfactor = type;
     dealData = deal;
-    customerId = cusId;
     FLshowLoading();
     baseDesPfactor = await getBaseDescription(0);
-    PreFactorDescItems = [];
+    pFactor.customerId = cusId;
     
     baseDesPfactor.filter(f => !f.official).map(item => {
-        PreFactorDescItems.push({ text: item.text, isDeleted: false, official: item.official });
+        pFactorDescriptionItems.push({ text: item.text, isDeleted: false, official: item.official });
     });
-    showPreFactorDescItems();
+    showPfDescriptionItems();
     toggleDisplayPrefactorModal();
-    //_officialType = 1;//رسمی
+    
     $("#official").checked = true;
     $("#PreFactor").modal("show");
     $("#date").val(await todayDate());
-    //$("#validityDade").val(await tomorrowDate());
-    $("#validityDade").val(await todayDate());
+    
+    $("#validityDade").val(await todayDate()); // await tomorrowDate()
     getAllProductOp("PreFacItem");
     Unit(1);
     FLshowLoading(false);
@@ -86,16 +87,14 @@ const upPfactor = async (id, type) => {
     $.get(baseUrl + "Factor/GetPFactor/" + id, (res) => {
         toggleDisplayPrefactorModal(res.paymentAmount === 0);
         
-        pfactor = res;
-        _pfactorItems = res.preFactorItems;
-        _officialType = res.officialType;
-        PreFactorDescItems = res.descriptions;
+        pFactor = res;
+        pFactorItems = res.preFactorItems;
+        pFactorDescriptionItems = res.descriptions;
         dealData.id = res.dealId;
         dealData.serialNumber = res.dealSerialNumber;
-        customerId = res.customerId;
         
         document.querySelectorAll("#PreFactor input[name='official']").forEach((i) => {
-            i.checked = Number(i.value) === _officialType;
+            i.checked = Number(i.value) === pFactor.officialType;
         });
         
         const exportValue = res.export ? "1" : "0";
@@ -105,20 +104,20 @@ const upPfactor = async (id, type) => {
         
         const currencyTypeElm = document.querySelector("#PfHeadFormId select[name='currencyType']");
         currencyTypeElm.value = res.currencyType ?? 0;
-        currencyTypeElm.toggleAttribute("disabled", _officialType === 1);
+        currencyTypeElm.toggleAttribute("disabled", pFactor.officialType === 1);
         
-        $("#serialNumber").val(pfactor.serialNumber);
-        $("#date").val(pfactor.date);
-        $("#validityDade").val(pfactor.validityDade);
+        $("#serialNumber").val(pFactor.serialNumber);
+        $("#date").val(pFactor.date);
+        $("#validityDade").val(pFactor.validityDade);
         
-        $("#sumTotalAmount").text(pfactor.sumTotalAmount.toLocaleString());
-        $("#discount").val(pfactor.discount.toLocaleString());
-        $("#totalTax").text(pfactor.totalTax.toLocaleString());
-        $("#paymentAmount").text(pfactor.paymentAmount.toLocaleString());
+        $("#sumTotalAmount").text(pFactor.sumTotalAmount.toLocaleString());
+        $("#discount").val(pFactor.discount.toLocaleString());
+        $("#totalTax").text(pFactor.totalTax.toLocaleString());
+        $("#paymentAmount").text(pFactor.paymentAmount.toLocaleString());
         
         ModalToggle("#PreFactor");
-        ShowItemPfactor();
-        showPreFactorDescItems();
+        showPFactorItems();
+        showPfDescriptionItems();
         FLshowLoading(false);
     })
      .fail(() => {
@@ -139,6 +138,7 @@ const cancelPreFactor = () => {
     document.getElementById("totalTax").innerHTML = "";
     document.getElementById("paymentAmount").innerHTML = "";
     document.getElementById("preFactorItemId").innerHTML = "";
+    document.getElementById("preFactorItemId").classList.remove("AlertReq");
     
     document.getElementById("descriptionId").value = "";
     document.getElementById("descriptionIdTablet").value = "";
@@ -146,24 +146,19 @@ const cancelPreFactor = () => {
     
     prePaymentPercentElm.value = Array.from(prePaymentPercentElm.children).find(i => i.defaultSelected).value;
     
-    pfactor = {};
-    _pfactorItems = [];
-    _officialType = null;
-    UpPfItemCancel();
+    pFactor = {};
+    pFactorItems = [];
+    pFactorDescriptionItems = [];
+    cancelUpdatePfItem();
 };
 
-const calculateText = () => {
-    const model = _pfactorItems.filter(f => !f.isDeleted);
+const calculatePreFactorText = () => {
+    const model = pFactorItems.filter(f => !f.isDeleted);
     const currencyTypeElm = document.querySelector("#PfHeadFormId select[name='currencyType']");
     const currencyTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
     const prePaymentPercent = Number(prePaymentPercentElm.value);
     
-    /*let sumTotal = document.getElementById("sumTotalAmount").innerText;
-    sumTotal = Number(SeparatedNumberRemove(sumTotal));*/
-    
-    let sumTotal = pfactor.paymentAmount;
-    //let totalTax = pfactor.totalTax;
-    //let sumTotalTax = pfactor.paymentAmount;
+    let sumTotal = pFactor.paymentAmount;
     
     let valueText;
     const kelisheItems = model.filter(item => item.productSmallName.includes("کلیشه"));
@@ -171,7 +166,7 @@ const calculateText = () => {
     
     let kelisheTotalAmount, cilandrTotalAmount;
     
-    if (_officialType) {
+    if (pFactor.officialType) {
         kelisheTotalAmount = kelisheItems.reduce((sum, item) => {
             let totalAmount = Number(SeparatedNumberRemove(item.totalAmount));
             return sum + totalAmount + (totalAmount * 0.1);
@@ -208,13 +203,12 @@ const calculateText = () => {
     document.getElementById(descriptionInpId).value = valueText;
 };
 
-const ShowItemPfactor = () => {
-    //const model = _pfactorItems.filter(f => !f.isDeleted);
-    document.getElementById("preFactorItemId").innerHTML = generateItemPfactorDom(_pfactorItems);
+const showPFactorItems = () => {
+    document.getElementById("preFactorItemId").innerHTML = generateItemPfactorDom(pFactorItems);
 };
 
 const generateItemPfactorDom = (data, type = "edit-delete") => {
-    let ob = `<div style="display:flex; flex-direction:column;width:100%;gap:5px">`;
+    let ob = `<div class="d-flex flex-column w-100" style="gap:5px">`;
     data.forEach((item, index) => {
         if (item.isDeleted) return;
         if (item.product == null) item.product = "";
@@ -222,17 +216,16 @@ const generateItemPfactorDom = (data, type = "edit-delete") => {
         item.row = index + 1;
         const uAmount = item.unitAmount.toLocaleString();
         const tAmount = item.totalAmount.toLocaleString();
-        item.printableTxt = Number(item.printable) === 1 ? "چـاپـدار" : "";
         
         let actionButtons = "";
         
         if (type === "edit-delete") {
             actionButtons = `
                 <button class="flex-center" style="color:#3f0e6e">
-                    <i class="mp fa fa-trash" onclick="delPfactorItem(${index})"></i>
+                    <i class="fa fa-trash" onclick="deletePfItem(${index})"></i>
                 </button>
                 <button class="flex-center" style="color:#3f0e6e">
-                    <i class="mp fa fa-pencil" onclick="upPfactorItem(${index})"></i>
+                    <i class="fa fa-pencil" onclick="showUpdatePfItem(${index})"></i>
                 </button>
             `;
         } else if (type === "select") {
@@ -244,16 +237,16 @@ const generateItemPfactorDom = (data, type = "edit-delete") => {
         }
         
         ob += `
-            <div style="width:100%;display:flex">
-                <div class="InfoDataItemHead" style="display:flex;width:24px;flex-shrink: 0">
-                    <label style="font-family:'IRANSansBold'">${index + 1}</label>
+            <div class="d-flex w-100">
+                <div class="InfoDataItemHead">
+                    <label class="fbold">${index + 1}</label>
                 </div>
-                <div class="InfoDataItem py-1" style="display:flex;justify-content:space-between; width:100%; direction:rtl;">
-                    <div class="px-2" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width: 22px;flex-shrink: 0;">
-                        <label style="writing-mode: sideways-lr;font-family:'IRANSansBold'">${item.printableTxt}</label>
+                <div class="InfoDataItem">
+                    <div class="flex-center flex-column flex-shrink-0 px-2" style="width: 22px">
+                        <label class="fbold" style="writing-mode: sideways-lr">${Number(item.printable) === 1 ? "چـاپـدار" : ""}</label>
                     </div>
-                    <div style="display:flex;justify-content:space-between; width:100%;flex-wrap:wrap;">
-                        <div class="col-12 col-lg-5" style="display:flex;flex-direction:column;align-items:center;justify-content:space-around">
+                    <div class="d-flex justify-content-between flex-wrap w-100">
+                        <div class="col-12 col-lg-5 InfoDataItemOp">
                             <label>شرح کالا</label>
                             <label class="px-2 d-flex gap-1 fbold">
                                 <span>${item.productSmallName}</span>
@@ -261,29 +254,28 @@ const generateItemPfactorDom = (data, type = "edit-delete") => {
                             </label>
                         </div>
                         <div class="d-lg-none" style="width:90%;margin-block: 4px;margin-inline: auto; height:1px; background-color:rgba(0,0,0,0.15);"></div>
-                        <div class="col-6 col-lg-1" style="white-space: nowrap;display:flex;flex-direction:column;align-items:center;justify-content:space-around">
-                            <label style="display:flex">تعداد/مقدار</label>
-                            <label style="font-family:'IRANSansBold'">${item.weightCount}</label>
+                        <div class="col-6 col-lg-1 InfoDataItemOp">
+                            <label>تعداد/مقدار</label>
+                            <label class="fbold">${item.weightCount}</label>
                         </div>
-                        <div class="col-6 col-lg-1" style="white-space: nowrap; display:flex;flex-direction:column;align-items:center;justify-content:space-around">
+                        <div class="col-6 col-lg-1 InfoDataItemOp">
                             <label>واحد</label>
-                            <label style="font-family:'IRANSansBold'">${item.unitTxt}</label>
+                            <label class="fbold">${item.unitTxt}</label>
                         </div>
                         <div class="d-lg-none" style="width:90%;margin-block: 4px;margin-inline: auto; height:1px; background-color:rgba(0,0,0,0.15);"></div>
-                        <div class="col-6 col-lg-2" style="white-space: nowrap;display:flex;flex-direction:column;align-items:center;justify-content:space-around">
+                        <div class="col-6 col-lg-2 InfoDataItemOp">
                             <label>مبلغ واحد</label>
-                            <label style="font-family:'IRANSansBold'">${uAmount === "0" ? "-" : uAmount} ${item.currencyTypeTxt ?? ""}</label>
+                            <label class="fbold">${uAmount === "0" ? "-" : uAmount} ${item.currencyTypeTxt ?? ""}</label>
                         </div>
-                        <div class="col-6 col-lg-2" style="white-space: nowrap;display:flex;flex-direction:column;align-items:center;justify-content:space-around">
+                        <div class="col-6 col-lg-2 InfoDataItemOp">
                             <label>مبلغ کل</label>
-                            <label style="font-family:'IRANSansBold'">${tAmount === "0" ? "-" : tAmount} ${item.currencyTypeTxt ?? ""}</label>
+                            <label class="fbold">${tAmount === "0" ? "-" : tAmount} ${item.currencyTypeTxt ?? ""}</label>
                         </div>
                     </div>
 
-                    <div class="InfoDataItemOp col-auto" style="padding-inline: 6px;flex-shrink: 0">
+                    <div class="InfoDataItemOp col-auto flex-shrink-0" style="padding-inline: 6px">
                         ${actionButtons}
                     </div>
-
                 </div>
             </div>
         `;
@@ -294,14 +286,14 @@ const generateItemPfactorDom = (data, type = "edit-delete") => {
 };
 
 
-const showPreFactorDescItems = () => {
+const showPfDescriptionItems = () => {
     let items = "";
-    PreFactorDescItems.forEach((item, index) => {
+    pFactorDescriptionItems.forEach((item, index) => {
         if (!item.isDeleted) {
             items += `
                 <li class="d-flex gap-1">
                     <p>${item.text}</p>
-                    <span class="cursor-pointer" onclick="DelPreFactorDescItem(${index})">
+                    <span class="cursor-pointer" onclick="deletePfDescriptionItem(${index})">
                         <i class="fa fa-trash"></i>
                     </span>
                 </li>
@@ -314,14 +306,14 @@ const showPreFactorDescItems = () => {
     document.getElementById(descriptionListId).innerHTML = items;
 };
 
-const addPreFactorDescItem = () => {
+const addPfDescriptionItem = () => {
     const inputElement = document.getElementById(descriptionInpId);
     const val = inputElement.value;
     inputElement.value = "";
     
     if (val.length) {
-        PreFactorDescItems.push({ text: val, isDeleted: false, dir: null });
-        showPreFactorDescItems();
+        pFactorDescriptionItems.push({ text: val, isDeleted: false, dir: null });
+        showPfDescriptionItems();
         
         setTimeout(() => {
             const listElement = document.getElementById(descriptionListId);
@@ -331,141 +323,100 @@ const addPreFactorDescItem = () => {
 };
 
 
-const DelPreFactorDescItem = (index) => {
-    if (!PreFactorDescItems[index].id) {
-        PreFactorDescItems.splice(index, 1);
+const deletePfDescriptionItem = (index) => {
+    if (!pFactorDescriptionItems[index].id) {
+        pFactorDescriptionItems.splice(index, 1);
     } else {
-        PreFactorDescItems[index].isDeleted = true;
+        pFactorDescriptionItems[index].isDeleted = true;
     }
-    showPreFactorDescItems();
+    showPfDescriptionItems();
 };
 
-const AddPfItem = async () => {
+const addPfItem = async () => {
     document.getElementById("preFactorItemId").classList.remove("AlertReq");
     
-    if (await mySer.CheckValidForm("#PreFacItem")) {
-        const productCodeElm = document.querySelector("#PreFacItem select[name='productCode']");
-        const unitElm = document.querySelector("#PreFacItem select[name='unit']");
-        
-        const data = mySer.convertFormToJSON("#PreFacItem");
-        
-        data.productSmallName = productCodeElm.options[productCodeElm.selectedIndex].text;
-        data.unitTxt = unitElm.options[unitElm.selectedIndex].text;
-        data.totalAmount = SeparatedNumberRemove(data.totalAmount);
-        data.unitAmount = SeparatedNumberRemove(data.unitAmount);
-        data.id = null;
-        _pfactorItems.push(data);
-        pfactor.PreFactorItems = _pfactorItems;
-        
-        ShowItemPfactor();
-        mySer.emptyForm("PreFacItem");
-        
-        calculateTotal();
-        calculateText();
-        
-        document.getElementById("printableF")?.focus();
-        return true;
-        
-    } else {
-        return false;
-    }
+    if (!await mySer.CheckValidForm("#PreFacItem")) return false;
+    
+    const productCodeElm = document.querySelector("#PreFacItem select[name='productCode']");
+    const unitElm = document.querySelector("#PreFacItem select[name='unit']");
+    
+    const data = mySer.convertFormToJSON("#PreFacItem");
+    
+    data.productSmallName = productCodeElm.options[productCodeElm.selectedIndex].text;
+    data.unitTxt = unitElm.options[unitElm.selectedIndex].text;
+    data.totalAmount = SeparatedNumberRemove(data.totalAmount);
+    data.unitAmount = SeparatedNumberRemove(data.unitAmount);
+    pFactorItems.push(data);
+    pFactor.PreFactorItems = pFactorItems;
+    
+    showPFactorItems();
+    mySer.emptyForm("PreFacItem");
+    
+    calculatePreFactorTotals();
+    calculatePreFactorText();
+    
+    document.getElementById("printableF")?.focus();
+    return true;
 };
 
-const UpPfItem = () => {
+const updatePfItem = () => {
+    const form = document.getElementById("PreFacItem");
     
-    //ایندکس فیلتر شده 
+    const productCode = form.elements.namedItem("productCode");
+    const unit = form.elements.namedItem("unit");
     
+    const data = mySer.convertFormToJSON("#PreFacItem");
     
-    var el_procode = Array.from(document.getElementById("PreFacItem").elements).filter(f => f.name == "productCode")[0];
-    
-    var data = mySer.convertFormToJSON("#PreFacItem");
-    
-    if (el_procode.value != "") {
-        data.productSmallName = el_procode.options[el_procode.selectedIndex].text;
-    }
-    
-    
-    data.id = _pfactorItems[PfItemUpIndex].id;
-    data.prefactorId = _pfactorItems[PfItemUpIndex].prefactorId;
-    
-    var el_Unit = Array.from(document.getElementById("PreFacItem").elements).filter(f => f.name == "unit")[0];
-    data.unitTxt = el_Unit.options[el_Unit.selectedIndex].text;
-    
-    
-    data.officialType = _officialType;
-    data.isDeleted = false;
+    data.productSmallName = productCode.options[productCode.selectedIndex].text;
+    data.unitTxt = unit.options[unit.selectedIndex].text;
     
     data.totalAmount = Number(SeparatedNumberRemove(data.totalAmount));
     data.unit = Number(SeparatedNumberRemove(data.unit));
     data.unitAmount = Number(SeparatedNumberRemove(data.unitAmount));
     
-    
-    _pfactorItems[PfItemUpIndex].printable = data.printable;
-    _pfactorItems[PfItemUpIndex].printableTxt = data.printableTxt;
-    _pfactorItems[PfItemUpIndex].product = data.product;
-    _pfactorItems[PfItemUpIndex].productCode = data.productCode;
-    _pfactorItems[PfItemUpIndex].productSmallName = data.productSmallName;
-    _pfactorItems[PfItemUpIndex].weightCount = data.weightCount;
-    _pfactorItems[PfItemUpIndex].unit = data.unit;
-    _pfactorItems[PfItemUpIndex].unitTxt = data.unitTxt;
-    _pfactorItems[PfItemUpIndex].unitAmount = data.unitAmount;
-    _pfactorItems[PfItemUpIndex].totalAmount = data.totalAmount;
-    _pfactorItems[PfItemUpIndex].productGroup = data.productGroup;
-    _pfactorItems[PfItemUpIndex].productGroupTxt = data.productGroupTxt;
+    pFactorItems[pfItemIndex] = {
+        ...pFactorItems[pfItemIndex],
+        ...data,
+    };
     
     
-    $("#AddBtnId").css("display", "flex");
-    $("#CancelBtnId").css("display", "flex");
-    $("#UpBtnId").css("display", "none");
-    
-    
-    ShowItemPfactor();
-    PfItemUpIndex = null;
-    mySer.emptyForm("PreFacItem");
-    calculateTotal();
-    calculateText();
+    showPFactorItems();
+    calculatePreFactorTotals();
+    calculatePreFactorText();
     
     toastifySuccess("با موفقیت ویرایش شد!");
-    
-    if (window.innerWidth < 992) {
-        canselModalItemPreFactor();
-    }
-    
+    cancelUpdatePfItem();
 };
 
 
-const delPfactorItem = (index) => {
-    let item = _pfactorItems[index];
+const deletePfItem = (index) => {
+    let item = pFactorItems[index];
     
-    if (item.id != null) {
+    if (item.id) {
         item.isDeleted = true;
-        //_pfactorItems = _pfactorItems.filter(f => f.isDeleted != true);
-        
-        ShowItemPfactor();
-        calculateTotal();
-        calculateText();
     } else {
-        _pfactorItems.splice(index, 1);
-        ShowItemPfactor();
-        calculateTotal();
-        calculateText();
+        pFactorItems.splice(index, 1);
     }
     
+    showPFactorItems();
+    calculatePreFactorTotals();
+    calculatePreFactorText();
 };
-const upPfactorItem = (index) => {
+const showUpdatePfItem = (index) => {
     if (window.innerWidth < 992) {
         ModalToggle("ItemPreFactorModal");
     }
-    PfItemUpIndex = index;
+    pfItemIndex = index;
     
-    mySer.convertJsonToForm(_pfactorItems[index], "PreFacItem");
+    mySer.convertJsonToForm(pFactorItems[index], "PreFacItem");
     document.getElementById("AddBtnId").style.display = "none";
     document.getElementById("CancelBtnId").style.display = "none";
     document.getElementById("UpBtnId").style.display = "flex";
 };
-const UpPfItemCancel = () => {
+
+const cancelUpdatePfItem = () => {
     mySer.emptyForm("PreFacItem");
-    PfItemUpIndex = null;
+    pfItemIndex = null;
     
     document.getElementById("AddBtnId").style.display = "flex";
     document.getElementById("CancelBtnId").style.display = "flex";
@@ -475,9 +426,10 @@ const UpPfItemCancel = () => {
         canselModalItemPreFactor();
     }
 };
+
 const addItemPreFactor = async () => {
     FLshowLoading();
-    const isValid = await AddPfItem();
+    const isValid = await addPfItem();
     FLshowLoading(false);
     if (isValid) {
         ModalToggle("ItemPreFactorModal");
@@ -489,37 +441,40 @@ const canselModalItemPreFactor = () => {
     mySer.emptyForm("PreFacItem");
     ModalToggle("ItemPreFactorModal", "hide");
 };
-const calculateTotal = () => {
-    let data = _pfactorItems.filter(f => f.isDeleted !== true);
-    let _SumTotalAmount = 0;
-    let _TotalTax = 0;
+
+const calculatePreFactorTotals = () => {
+    const data = pFactorItems.filter(item => !item.isDeleted);
     
-    let _PaymentAmount;
-    let _Discount = Number(SeparatedNumberRemove($("#discount").val()));
+    let sumTotalAmount = 0;
+    let totalTax = 0;
+    
+    const discountInput = document.getElementById("discount");
+    const discount = Number(SeparatedNumberRemove(discountInput.value));
     
     data.forEach(item => {
-        _SumTotalAmount = Number(_SumTotalAmount) + Number(SeparatedNumberRemove(item.totalAmount));
+        sumTotalAmount += Number(SeparatedNumberRemove(item.totalAmount));
     });
     
-    if (_officialType === 1) {
-        _TotalTax = Math.round(((_SumTotalAmount - _Discount) * 10) / 100);
+    if (pFactor.officialType === 1) {
+        totalTax = Math.round((sumTotalAmount - discount) * 0.1);
     }
-    _PaymentAmount = (Number(_SumTotalAmount) - _Discount + Number(_TotalTax));
     
-    pfactor.sumTotalAmount = Math.round(_SumTotalAmount);
-    pfactor.discount = Math.round(_Discount);
-    pfactor.totalTax = Math.round(_TotalTax);
-    pfactor.paymentAmount = Math.round(_PaymentAmount);
+    const paymentAmount = sumTotalAmount - discount + totalTax;
     
-    $("#sumTotalAmount").text(pfactor.sumTotalAmount.toLocaleString());
-    $("#discount").val(pfactor.discount.toLocaleString());
-    $("#totalTax").text(pfactor.totalTax.toLocaleString());
-    $("#paymentAmount").text(pfactor.paymentAmount.toLocaleString());
+    pFactor.sumTotalAmount = Math.round(sumTotalAmount);
+    pFactor.discount = Math.round(discount);
+    pFactor.totalTax = Math.round(totalTax);
+    pFactor.paymentAmount = Math.round(paymentAmount);
+    
+    discountInput.value = pFactor.discount.toLocaleString();
+    document.getElementById("sumTotalAmount").textContent = pFactor.sumTotalAmount.toLocaleString();
+    document.getElementById("totalTax").textContent = pFactor.totalTax.toLocaleString();
+    document.getElementById("paymentAmount").textContent = pFactor.paymentAmount.toLocaleString();
 };
 
-const descGenerate = () => {
-    if (_officialType === 0) { //اگر غیر رسمی بود
-        PreFactorDescItems = PreFactorDescItems.filter(item => {
+const generatePFactorDescriptions = () => {
+    if (pFactor.officialType === 0) { //اگر غیر رسمی بود
+        pFactorDescriptionItems = pFactorDescriptionItems.filter(item => {
             if (item.official === true) {
                 if (item.id == null) {
                     return false;
@@ -531,13 +486,13 @@ const descGenerate = () => {
             return true;
         });
     } else { //اگر رسمی بود
-        PreFactorDescItems = [
-            ...PreFactorDescItems.filter(item => !item.official),
+        pFactorDescriptionItems = [
+            ...pFactorDescriptionItems.filter(item => !item.official),
             ...baseDesPfactor.filter(item => item.official),
         ];
     }
-    showPreFactorDescItems();
-    if (_officialType === 1) {
+    showPfDescriptionItems();
+    if (pFactor.officialType === 1) {
         setTimeout(() => {
             const listElement = document.getElementById(descriptionListId);
             listElement.scrollTop = listElement.scrollHeight;
@@ -546,71 +501,65 @@ const descGenerate = () => {
 };
 
 
-const submitPrefactor = async () => {
-    await submitPrefactorOK(Number(typeSubmitPfactor));
-};
-
-const submitPrefactorOK = async (type) => {
-    if (await mySer.CheckValidForm("#PfHeadFormId") & await mySer.CheckValidForm("#validityDadeFormId") & await mySer.CheckValidForm("#dateFormId")) {
-        
-        if (_pfactorItems.filter(f => f.isDeleted !== true).length > 0) {
-            
-            FLshowLoading();
-            pfactor.serialNumber = $("#serialNumber").val();
-            pfactor.date = toEnglishDigits($("#date").val());
-            pfactor.validityDade = toEnglishDigits($("#validityDade").val());
-            pfactor.officialType = _officialType;
-            pfactor.customerId = customerId;
-            pfactor.descriptions = PreFactorDescItems;
-            pfactor.export = document.getElementById("export").checked;
-            pfactor.dealId = dealData.id;
-            pfactor.dealSerialNumber = dealData.serialNumber;
-            
-            const currencyTypeElm = document.querySelector("#PfHeadFormId select[name='currencyType']");
-            pfactor.currencyType = currencyTypeElm.value;
-            pfactor.currencyTypeTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
-            
-            $.post(baseUrl + "Factor/AddPrefactor", pfactor, async () => {
-                if (type === 0) { // PreFactor/Factor
-                    await GetPreFactorPartial();
-                } else if (type === 1) { // CustomerProfile
-                    await getAllPreFactor();
-                } else if (type === 2) { // SalesAdmin
-                    await GetPreFactorSalesAdmin();
-                } else if (type === 4) { //Deal
-                    await refreshDealPreFactors();
-                    if (typeof getAllDeals === "function") {
-                        await getAllDeals();
-                    }
-                    if (!isModalOpen("dealPreFactorsModal")) {
-                        await showModalDealPreFactors(dealData);
-                    }
-                }
-                
-                toastifySuccess("پیش فاکتور با موفقیت ثبت شد.");
-                cancelPreFactor();
-                $("#PreFactor").modal("toggle");
-                FLshowLoading(false);
-            })
-             .fail((err) => {
-                 const message = err.responseText;
-                 if (err.status === 409) {
-                     toastifyError(message);
-                     FLshowLoading(false);
-                     return;
-                 }
-                 setTimeout(async () => {
-                     await submitPrefactorOK(type);
-                 }, 2000);
-             });
-        } else {
-            document.getElementById("preFactorItemId").classList.add("AlertReq");
-            FLshowLoading(false);
-            toastifyError("پیش فاکتور خالی است");
-        }
+const submitPreFactor = async () => {
+    const dateInput = document.getElementById("date");
+    const validityDateInput = document.getElementById("validityDade");
+    
+    if (!await mySer.CheckValidForm("#PfHeadFormId") || !validityDateInput.value || !dateInput.value) {
+        return;
     }
     
+    const activeItems = pFactorItems.filter(item => !item.isDeleted);
+    
+    if (!activeItems.length) {
+        document.getElementById("preFactorItemId").classList.add("AlertReq");
+        toastifyError("پیش فاکتور خالی است");
+        return;
+    }
+    
+    const currencyTypeElement = document.querySelector("#PfHeadFormId select[name='currencyType']");
+    
+    pFactor.serialNumber = Number(document.getElementById("serialNumber").value);
+    pFactor.date = toEnglishDigits(dateInput.value);
+    pFactor.validityDade = toEnglishDigits(validityDateInput.value);
+    pFactor.descriptions = pFactorDescriptionItems;
+    pFactor.export = document.getElementById("export").checked;
+    pFactor.dealId = dealData.id;
+    pFactor.dealSerialNumber = dealData.serialNumber;
+    
+    pFactor.currencyType = Number(currencyTypeElement.value);
+    pFactor.currencyTypeTxt = currencyTypeElement.options[currencyTypeElement.selectedIndex].text.trim();
+    
+    await sendApiRequest({
+        url: "/Factor/AddPrefactor",
+        method: "POST",
+        data: pFactor,
+        successMsg: "پیش‌فاکتور با موفقیت ثبت شد.",
+        
+        onSuccess: async () => {
+            if (typeSubmitPfactor === 0) { // PreFactor/Factor
+                await GetPreFactorPartial();
+            } else if (typeSubmitPfactor === 1) { // CustomerProfile
+                await getAllPreFactor();
+            } else if (typeSubmitPfactor === 2) { // SalesAdmin
+                await GetPreFactorSalesAdmin();
+            } else if (typeSubmitPfactor === 4) {  // Deal
+                await refreshDealPreFactors();
+                
+                if (typeof getAllDeals === "function") {
+                    await getAllDeals();
+                }
+                
+                if (!isModalOpen("dealPreFactorsModal")) {
+                    await showModalDealPreFactors(dealData);
+                }
+            }
+            
+            cancelPreFactor();
+        },
+    });
 };
+
 
 let expirePfModalId = null;
 let expirePfModalPassType = null;
@@ -663,7 +612,7 @@ expirePFactorSelectElm?.addEventListener("change", (e) => {
 });
 
 
-const delPfactor = async (id, type) => {
+const deletePreFactor = async (id, type) => {
     await deleteItem({
         url: `/Factor/DelPreFactor/${id}`,
         callback: async () => {
@@ -711,6 +660,8 @@ async function submitChangeUsersPf() {
         onSuccess: () => ModalToggle("changeUserPfModal", "hide"),
     });
 }
+
+///////////////////////////////////////////////////////////////////////////////////////
 const showModalReceiptsPreFactor = async (id) => {
     await getAllReceiptsPreFactor(id);
     $("#AttachmentReceiptModal").modal("show");
@@ -812,11 +763,11 @@ async function acceptAcc(id, accepted, pfId) {
         },
     });
 }
-
+///////////////////////////////////////////////////////////////////////////////////////
 
 const HandAccepting = async (id, type) => {
     if (setting.attAcceptHanding === true) {
-        if (await CheckPreFactorAttachment(id)) {
+        if (await checkPreFactorAttachment(id)) {
             await acceptPreFactorManual(id, type);
         } else {
             Swal.fire({
@@ -831,7 +782,7 @@ const HandAccepting = async (id, type) => {
     }
 };
 
-const CheckPreFactorAttachment = async (id) => {
+const checkPreFactorAttachment = async (id) => {
     const data = await sendApiRequest({
         url: "/Factor/GetAttachment",
         params: { id, type: 2 },

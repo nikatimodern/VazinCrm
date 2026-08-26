@@ -957,14 +957,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize(Policy = "NotCustomerOnly")]
         [HttpGet]
-        public async Task<IActionResult> GetFactorsSepidar(Guid customerId, Guid pfId, int sNumber)
+        public async Task<IActionResult> GetFactorsSepidar(int sNumber)
         {
             try
             {
-                ViewBag.PassType = 1;
-                //Quotation q1 = S1db.vwQuotation.Where(f => f.Number == sNumber).FirstOrDefault();
-
-                List<Invoice> s1 = await S1db.vwInvoice.Include(f => f.InvoiceItems).Where(f => f.QuotationNumber == sNumber).ToListAsync();
+                var s1 = await S1db.vwInvoice.Include(f => f.InvoiceItems).Where(f => f.QuotationNumber == sNumber).ToListAsync();
 
                 foreach (var item in s1)
                 {
@@ -976,7 +973,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var html = await vrs.RenderToStringAsync("GetFactorsSepidar", s1);
 
                 return Ok(new { count = s1.Count, html });
-                //return PartialView(s1);
             }
             catch
             {
@@ -1057,7 +1053,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 salesUsers = await udb.Users
                     .Where(x => cusUsers.Contains(x.Id))
-                    .Select(x => new SelectOptionDto<Guid>()  {
+                    .Select(x => new SelectOptionDto<Guid>() {
                         Value = Guid.Parse(x.Id),
                         Text = x.FullName,
                         Target = x.Id == pf.UserCreatorID
