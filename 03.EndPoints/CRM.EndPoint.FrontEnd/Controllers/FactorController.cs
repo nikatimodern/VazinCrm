@@ -46,7 +46,6 @@ using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Services.Carizo;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
-using CRM.EndPoint.FrontEnd.Services.Sms;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Microsoft.Playwright;
 
@@ -57,7 +56,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly DateTimeServices dtService;
         private readonly CRMContextDb db;
         private readonly UserContextDb udb;
-        private readonly Sepidar1ContextDb S1db;
         private readonly IHubContext<TaskHub> hub;
         private readonly LogSystemService _logSystemService;
         private readonly IPushQueue pushQueue;
@@ -66,32 +64,27 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly PreFactorService preFactorService;
         private readonly CrmSaveCahngeAsync crmSaveCahngeAsync;
         private readonly TaskServices ts;
-        private readonly SepidarService sps;
-        private readonly SmsService smsServ;
+        private readonly SepidarService sepidarService;
         private readonly UserManager<AppUser> userManager;
         private readonly SignInManager<AppUser> signInManager;
-        private readonly RoleManager<IdentityRole> roleManager;
 
-        public FactorController(CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, SepidarService sps, SmsService SmsServ,
-            UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, RoleManager<IdentityRole> roleManager, Service GenService,
+        public FactorController(CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, SepidarService sepidarService,
+            UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, Service GenService,
             FileSaver fileSaver,
-            DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb S1db,
+            DateTimeServices dtService, CRMContextDb db, UserContextDb Udb,
             IHubContext<TaskHub> hub, LogSystemService logSystemService, IPushQueue pushQueue, ISmsQueue smsQueue,
             IDocumentRenderService documentRender, PreFactorService preFactorService)
         {
             this.crmSaveCahngeAsync = crmSaveCahngeAsync;
             this.ts = ts;
-            this.sps = sps;
-            smsServ = SmsServ;
+            this.sepidarService = sepidarService;
             this.userManager = userManager;
             this.signInManager = signInManager;
-            this.roleManager = roleManager;
             genService = GenService;
             this.fileSaver = fileSaver;
             this.dtService = dtService;
             this.db = db;
             udb = Udb;
-            this.S1db = S1db;
             this.hub = hub;
             _logSystemService = logSystemService;
             this.pushQueue = pushQueue;
@@ -865,11 +858,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 //                    .Where(f => f.Id == id).FirstOrDefaultAsync();
                 //var customer = await db.Customers.Where(f => f.Id == factor.CustomerId).FirstOrDefaultAsync();
 
-                var s1 = await S1db.vwInvoice.Include(f => f.InvoiceItems).Where(f => f.InvoiceId == id).FirstOrDefaultAsync();
+                var s1 = await sepidarService.GetInvoiceWithItemsAsync(id);
 
                 if (s1 == null) return NotFound();
 
-                s1.ExtraDescription = sps.getNoteFactor(s1.InvoiceId);
+                s1.ExtraDescription = sepidarService.getNoteInvoice(s1.InvoiceId);
 
                 var myCompany = await db.Companies.Include(f => f.CompanyFiles).FirstOrDefaultAsync();
                 SepidarFactorViewModel model = new SepidarFactorViewModel() {
@@ -2450,7 +2443,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                     if (setting.Sepidar == true && model.SepidarId != null)
                     {
-                        var sF = await S1db.vwInvoice.AsNoTracking().Where(f => f.InvoiceId == model.SepidarId).FirstOrDefaultAsync();
+                        var sF = await sepidarService.GetInvoiceAsync(model.SepidarId);
                         if (sF == null) return Ok(new { status = 201 });
 
                         model.DateMiladi = sF.Date;
@@ -2860,50 +2853,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [Authorize]
-        [HttpGet]
-        public async Task<IActionResult> GetSepidarFactors(int pfSerialNumber)
-        {
-            try
-            {
-                var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
-                if (setting.Sepidar == true)
-                {
-                    ViewBag.PassType = 2;
-                    var sepidarFactors = await S1db.vwInvoice.AsNoTracking().Where(f => f.QuotationNumber == pfSerialNumber).ToListAsync();
-
-                    return PartialView("~/Views/Customer/GetFactorsSepidar.cshtml", sepidarFactors);
-                }
-
-                return NoContent();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-        }
-
-        [Authorize]
         [HttpPost]
         public async Task<IActionResult> UpdateFactorFinancial([FromBody] FactorFinancialVModel model)
         {
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
-                var sepidar = await S1db.vwInvoice.AsNoTracking()
-                    .Where(f => f.InvoiceId == model.SepidarId)
-                    .Select(f => new {
-                        f.InvoiceId,
-                        f.Number,
-                        f.Date,
-                        f.DateTXT,
-                        f.CustomerPartyRef,
-                        f.CustomerPartyName,
-                    })
-                    .FirstOrDefaultAsync();
 
-                var oldFactor = await db.Factors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.CrmFactorId);
+                var sepidar = await sepidarService.GetInvoiceSummaryAsync(model.SepidarId);
                 var factor = await db.Factors.FirstOrDefaultAsync(f => f.Id == model.CrmFactorId);
+
                 factor.DateMiladi = sepidar.Date;
                 factor.Date = sepidar.DateTXT;
                 factor.SepidarId = sepidar.InvoiceId;
@@ -2921,6 +2880,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 customer.FinancialCustomerId = sepidar.CustomerPartyRef;
                 customer.FinancialCustomerName = sepidar.CustomerPartyName;
 
+                var oldFactor = (Factor)db.Entry(factor).OriginalValues.ToObject();
                 await _logSystemService.LogChange(oldFactor, factor, LogActionEnum.ویرایش, user);
                 await db.SaveChangesAsync();
                 return Ok();
@@ -3106,8 +3066,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
             }
 
-
-            return errorList.Count > 0 ? Ok(new ReturnVModel { Status = false, Errors = errorList }) : Ok();
+            return Ok(new ReturnVModel {
+                Status = errorList.Count == 0,
+                Errors = errorList
+            });
         }
 
 

@@ -29,35 +29,29 @@ using CRM.EndPoint.FrontEnd.Services.LogSystem;
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
     public class CustomerController : Controller {
-        private readonly SepidarService sps;
+        private readonly SepidarService sepidarService;
         private readonly UserManager<AppUser> userManager;
         private readonly Service genService;
-        private readonly FileSaver fileSaver;
         private readonly DateTimeServices dtService;
         private readonly CRMContextDb db;
         private readonly UserContextDb udb;
-        private readonly Sepidar1ContextDb S1db;
-        private readonly Sepidar2ContextDb S2db;
         private readonly IHubContext<TaskHub> hub;
         private readonly IViewRenderService vrs;
         private readonly LogSystemService _logSystemService;
         private readonly IPushQueue pushQueue;
         private readonly PreFactorService preFactorService;
 
-        public CustomerController(SepidarService sps, UserManager<AppUser> userManager, Service GenService, FileSaver fileSaver,
-            DateTimeServices dtService, CRMContextDb db, UserContextDb udb, Sepidar1ContextDb S1db, Sepidar2ContextDb S2db,
+        public CustomerController(SepidarService sepidarService, UserManager<AppUser> userManager, Service GenService,
+            DateTimeServices dtService, CRMContextDb db, UserContextDb udb,
             IHubContext<TaskHub> hub, IViewRenderService vrs, LogSystemService logSystemService, IPushQueue pushQueue,
             PreFactorService preFactorService)
         {
-            this.sps = sps;
+            this.sepidarService = sepidarService;
             this.userManager = userManager;
             genService = GenService;
-            this.fileSaver = fileSaver;
             this.dtService = dtService;
             this.db = db;
             this.udb = udb;
-            this.S1db = S1db;
-            this.S2db = S2db;
             this.hub = hub;
             this.vrs = vrs;
             _logSystemService = logSystemService;
@@ -955,24 +949,35 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return Ok(data);
         }
 
+
         [Authorize(Policy = "NotCustomerOnly")]
         [HttpGet]
-        public async Task<IActionResult> GetFactorsSepidar(int sNumber)
+        public async Task<IActionResult> GetSepidarFactors(int pfSerialNumber, int passType = 1)
         {
             try
             {
-                var s1 = await S1db.vwInvoice.Include(f => f.InvoiceItems).Where(f => f.QuotationNumber == sNumber).ToListAsync();
+                var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
 
-                foreach (var item in s1)
+                if (setting?.Sepidar != true) return NoContent();
+
+                var factors = await sepidarService.GetInvoicesByQuotationNumberAsync(pfSerialNumber);
+
+                if (passType == 1)
                 {
-                    item.ExtraDescription = sps.getNoteFactor(item.InvoiceId);
+                    foreach (var factor in factors)
+                    {
+                        factor.ExtraDescription = sepidarService.getNoteInvoice(factor.InvoiceId);
+                    }
                 }
 
+                var html = await vrs.RenderToStringAsync("GetSepidarFactors",
+                    factors,
+                    new Dictionary<string, object> {
+                        { "PassType", passType },
+                    }
+                );
 
-                //Invoice s2 = S2db.vwInvoice.Where(f => f.Number == s1.Number && f.Date==s1.Date ).FirstOrDefault();
-                var html = await vrs.RenderToStringAsync("GetFactorsSepidar", s1);
-
-                return Ok(new { count = s1.Count, html });
+                return Ok(new { count = factors.Count, html });
             }
             catch
             {

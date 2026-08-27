@@ -23,23 +23,14 @@ using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize(Policy = "NotCustomerOnly")]
     public class DashboardController : Controller {
-        private readonly Sepidar1ContextDb s1Db;
-        private readonly Sepidar2ContextDb s2Db;
         private readonly UserManager<AppUser> userManager;
-        private readonly Service genService;
-        private readonly FileSaver fileSaver;
         private readonly DateTimeServices dtService;
         private readonly CRMContextDb db;
         private readonly UserContextDb udb;
 
-        public DashboardController(Sepidar1ContextDb s1db, Sepidar2ContextDb s2db, UserManager<AppUser> userManager, Service GenService,
-            FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db, UserContextDb udb)
+        public DashboardController(UserManager<AppUser> userManager, DateTimeServices dtService, CRMContextDb db, UserContextDb udb)
         {
-            s1Db = s1db;
-            s2Db = s2db;
             this.userManager = userManager;
-            genService = GenService;
-            this.fileSaver = fileSaver;
             this.dtService = dtService;
             this.db = db;
             this.udb = udb;
@@ -316,22 +307,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             return Ok(model);
         }
-
-
-        public async Task<IActionResult> getFactorSepidarVazin()
-        {
-            //var invo = await s1Db.vwInvoice.ToListAsync();
-
-            //foreach (var item in invo)
-            //{
-
-
-            //}
-
-
-            return Ok();
-        }
-
+        
 
         [HttpPost]
         public async Task<IActionResult> GetDashboardPartial(FilterViewModel _filter)

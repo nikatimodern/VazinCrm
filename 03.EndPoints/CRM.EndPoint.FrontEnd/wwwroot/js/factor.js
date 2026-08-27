@@ -530,39 +530,43 @@ const deleteFDescriptionItem = (index) => {
 
 
 const isAllowedToAddFactor = async (pfId) => {
-    const res = await axios(`/Factor/IsAllowedToAddFactor?pfId=${pfId}`);
-    if (res.data?.status === false) {
-        const errorModalElm = document.getElementById("ErrorModalId");
-        //errorModalElm.querySelector(".modal-title").textContent = "برای صدور فاکتور ابتدا باید موارد زیر را برطرف نمایید:";
+    const data = await sendApiRequest({
+        url: "/Factor/IsAllowedToAddFactor",
+        params: { pfId },
+    });
+    
+    if (data.status) return true;
+    
+    const errorModalElm = document.getElementById("ErrorModalId");
+    //errorModalElm.querySelector(".modal-title").textContent = "برای صدور فاکتور ابتدا باید موارد زیر را برطرف نمایید:";
+    
+    const container = document.createElement("div");
+    container.classList.add("error-list");
+    data.errors.forEach(err => {
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("error-item");
         
-        const container = document.createElement("div");
-        container.classList.add("error-list");
-        res.data.errors.forEach(err => {
-            const wrapper = document.createElement("div");
-            wrapper.classList.add("error-item");
-            
-            wrapper.innerHTML = `
-                <h6>${err.title}</h6>
-                <div class="d-flex align-items-center gap-2">
-                    <p>${err.message}</p>
-                    ${err.code === 32 ? `<button class="btn btn-sm btn-secondary">صورتحساب</button>` : ""}
-                </div>
-            `;
-            wrapper.querySelector("button")?.addEventListener("click", async () => {
-                if (err.code === 32) {
-                    ModalToggle(errorModalElm, "hide");
-                    await ShowModalListInvoice(pfId, 1, "", 5, true);
-                }
-            });
-            
-            container.appendChild(wrapper);
+        wrapper.innerHTML = `
+            <h6>${err.title}</h6>
+            <div class="d-flex align-items-center gap-2">
+                <p>${err.message}</p>
+                ${err.code === 32 ? `<button class="btn btn-sm btn-secondary">صورتحساب</button>` : ""}
+            </div>
+        `;
+        wrapper.querySelector("button")?.addEventListener("click", async () => {
+            if (err.code === 32) {
+                ModalToggle(errorModalElm, "hide");
+                await ShowModalListInvoice(pfId, 1, "", 5, true);
+            }
         });
-        errorModalElm.querySelector("#ErrorContentId").innerHTML = "";
-        errorModalElm.querySelector("#ErrorContentId").appendChild(container);
-        ModalToggle(errorModalElm);
-        return false;
-    }
-    return true;
+        
+        container.appendChild(wrapper);
+    });
+    errorModalElm.querySelector("#ErrorContentId").innerHTML = "";
+    errorModalElm.querySelector("#ErrorContentId").appendChild(container);
+    ModalToggle(errorModalElm);
+    
+    return false;
 };
 
 
@@ -718,11 +722,9 @@ let currentFactorContext = {
     passType: 0,
 };
 
-const GetFactorPartial = async ({ id, element, serialNumber, passType = 0, dealId, showLoading = true, customerId = null } = {}) => {
-    if (passType === 4 && dealId) {
-        const dealRes = await axios(`/Deal/GetDeal/${dealId}`);
-        await showModalDealFactors(dealRes.data);
-        return;
+const GetFactorPartial = async ({ id, element, serialNumber, passType = 0, showLoading = true, customerId = null } = {}) => {
+    if (passType === 4) {
+        return await showModalDealFactors(currentDealDocumentData);
     }
     
     currentFactorContext = { id, serialNumber, passType };
@@ -795,18 +797,16 @@ const renderFactorPartial = (data, serialNumber, passType) => {
     document.getElementById("DetailDivList").innerHTML = data.html;
 };
 
-const getFacSepidar = async (serialNumber, element, passType, dealId) => { // PassType: 1 = customerProfile | 0 = cartable
+const showSepidarFactors = async (pfSerialNumber, element, passType) => { // PassType: 1 = customerProfile | 0 = cartable
     if (passType === 4) {
-        const dealRes = await axios(`/Deal/GetDeal/${dealId}`);
-        await showModalDealFactors(dealRes.data, serialNumber);
-        return;
+        return await showModalDealFactors(currentDealDocumentData, pfSerialNumber);
     }
     updateFactorUI(element, passType);
     
     await sendApiRequest({
-        url: "/Customer/GetFactorsSepidar",
-        params: { sNumber: serialNumber },
-        onSuccess: (res) => renderFactorPartial(res.data, serialNumber, passType),
+        url: "/Customer/GetSepidarFactors",
+        params: { pfSerialNumber },
+        onSuccess: (res) => renderFactorPartial(res.data, pfSerialNumber, passType),
     });
 };
 
@@ -814,10 +814,10 @@ const getFacSepidar = async (serialNumber, element, passType, dealId) => { // Pa
 let crmFactorId;
 const showSepidarFactorsModal = async (pfSerialNumber, fId, type) => {
     await sendApiRequest({
-        url: "/Factor/GetSepidarFactors",
-        params: { pfSerialNumber },
+        url: "/Customer/GetSepidarFactors",
+        params: { pfSerialNumber, passType: 2 },
         onSuccess: (res) => {
-            document.getElementById("sepidarFactors").innerHTML = res.data;
+            document.getElementById("sepidarFactors").innerHTML = res.data.html;
             ModalToggle("sepidarFactorsModal");
             
             typeSubmitFactor = type;
@@ -855,11 +855,11 @@ const hideSelectedFactor = async () => {
     await GetFactorPartial();
 };
 
-const getAllFactorsModal = async (id, type, sNumber) => {
+const getAllFactorsModal = async (id, type, pfSerialNumber) => {
     if (!id) return;
     
-    const apiUrl = sNumber
-        ? `/Customer/GetFactorsSepidar?sNumber=${sNumber}`
+    const apiUrl = pfSerialNumber
+        ? `/Customer/GetSepidarFactors?pfSerialNumber=${pfSerialNumber}`
         : `/Cartable/GetAllFactorsPartialModal?id=${id}&type=${type}`;
     
     await sendApiRequest({
