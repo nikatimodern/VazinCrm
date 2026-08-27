@@ -76,7 +76,7 @@
                             <div style="width:100%; display:flex;position:relative">
                                 <textarea id="f_descriptionId" rows="6" class="form-control" style="height:100px !important; width:100%;padding:4px 4px 4px 36px !important" type="text" placeholder="توضیحات"></textarea>
 
-                                <button style="position: absolute;left: 1px;bottom: 1px;display: flex;justify-content: center;align-items: center;top: 1px;padding-inline: 8px;box-shadow: none" class="buttonGreen3" onclick="addFactorDescItem()">
+                                <button style="position: absolute;left: 1px;bottom: 1px;display: flex;justify-content: center;align-items: center;top: 1px;padding-inline: 8px;box-shadow: none" class="buttonGreen3" onclick="addFDescriptionItem()">
                                     <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                                 </button>
                             </div>
@@ -137,17 +137,17 @@
 
                                 <div>
                                     <label>&nbsp;</label>
-                                    <button id="f_AddBtnId" type="button" class="buttonGreen3 align-items-center justify-content-center" style="display: flex;height: 2rem;padding-inline: 10px" onclick="addFactorItem()">
+                                    <button id="f_AddBtnId" type="button" class="buttonGreen3 align-items-center justify-content-center" style="display: flex;height: 2rem;padding-inline: 10px" onclick="addFItem()">
                                         <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                                         </svg>
 
                                     </button>
                                     <div id="f_UpBtnId" style="display:none;flex-direction:column">
-                                        <button class="buttonGreen3" type="button" onclick="UpfItem()" style="display:flex;justify-content:center; align-items:center;height: 26px;padding-inline: 10px">
+                                        <button class="buttonGreen3" type="button" onclick="updateFItem()" style="display:flex;justify-content:center; align-items:center;height: 26px;padding-inline: 10px">
                                             <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                                         </button>
-                                        <button class="buttonCancel2" type="button" onclick="UpfItemCancel()" style="display:flex;justify-content:center; align-items:center;height: 26px;padding-inline: 10px">
+                                        <button class="buttonCancel2" type="button" onclick="cancelUpdateFItem()" style="display:flex;justify-content:center; align-items:center;height: 26px;padding-inline: 10px">
                                             <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
                                             </svg>
@@ -198,7 +198,7 @@
                                 <div class="h-100" style="direction:rtl; width:100%;display:flex;flex-direction:column;">
                                     <div style="width:100%; display:flex;position:relative">
                                         <textarea id="f_descriptionIdTablet" rows="6" class="form-control" style="height:54px !important; width:100%;padding:4px 4px 4px 36px !important" type="text" placeholder="توضیحات"></textarea>
-                                        <button style="position: absolute;left: 1px;bottom: 1px;display: flex;justify-content: center;align-items: center;top: 1px;padding-inline: 8px;box-shadow: none" class="buttonGreen3" onclick="addFactorDescItem()">
+                                        <button style="position: absolute;left: 1px;bottom: 1px;display: flex;justify-content: center;align-items: center;top: 1px;padding-inline: 8px;box-shadow: none" class="buttonGreen3" onclick="addFDescriptionItem()">
                                             <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                                         </button>
                                     </div>

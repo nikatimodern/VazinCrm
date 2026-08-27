@@ -3925,7 +3925,9 @@ const toEnglishDigits = (val) => {
 function calculateTotalPrice(weight, unitPrice) {
     const w = parseFloat(SeparatedNumberRemove(weight)) || 0;
     const u = parseFloat(SeparatedNumberRemove(unitPrice)) || 0;
-    return (w * u) ? (w * u).toLocaleString() : "";
+    
+    const result = w * u;
+    return result ? result.toLocaleString() : "";
 }
 
 

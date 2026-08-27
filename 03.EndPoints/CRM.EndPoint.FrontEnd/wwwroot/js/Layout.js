@@ -3435,7 +3435,7 @@ async function removeWarning(id) {
     }
 }
 async function showDetailsWarning(id) {
-    const res = await axios(`/Factor/getFactor?id=${id}`);
+    const res = await axios(`/Factor/GetFactor?id=${id}`);
     const data = res.data;
     const object = {
         factorSerialNumber: data.serialNumber,

@@ -445,7 +445,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> getFactor(Guid id)
+        public async Task<IActionResult> GetFactor(Guid id)
         {
             var data = await db.Factors
                 .Include(f => f.FactorItems)
