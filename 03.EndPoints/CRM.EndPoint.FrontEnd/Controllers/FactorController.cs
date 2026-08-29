@@ -278,6 +278,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await hub.Clients.User(pf.UserCreatorID).SendAsync("notifInfo",
                 $"پیش‌فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusText} توسط <b>{user.FullName}</b> تایید شد و در انتظار تایید مالی قرار گرفت",
                 $"/Customer/CustomerProfile?Id={pf.CustomerId}");
+
             pushQueue.Enqueue(new PushQueueItem {
                 UserId = pf.UserCreatorID,
                 Title = "تایید پیش‌فاکتور",

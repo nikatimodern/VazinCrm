@@ -153,8 +153,9 @@ class ModalSelector {
     constructor(options = {}) {
         this.modal = document.querySelector(options.modal ?? "#modalSelector");
         
-        if (!this.modal)
-            throw new Error("ModalSelector: modal element was not found.");
+        if (!this.modal) {
+            return;
+        }
         
         this.titleElement = this.modal.querySelector(options.title ?? "#modalSelectorTitle");
         this.searchInput = this.modal.querySelector(options.search ?? "#modalSelectorSearch");

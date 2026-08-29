@@ -1,18 +1,14 @@
-﻿@{
-    ViewData["Title"] = "CustomerProfile";
-    Layout = "_Layout";
-}
+﻿@model CRM.EndPoint.FrontEnd.Models.Customer.CustomerPanelVModel
 
 <div id="customerProfile-wrapper" class="d-flex flex-column" style="height: calc(100dvh - 88px);">
     <div class="d-flex col-12 flex-wrap gap-1 flex-xxl-column fbold pb-1 pb-xxl-0">
         <div class="d-flex" style=" justify-content:start; flex-direction:column;font-size:clamp(14px,2vw,18px)">
-            <p>@ViewBag.SubTitle</p>
-            <p>@ViewBag.detail</p>
+            <p>@Model.CustomerName</p>
         </div>
         @if (User.IsAdmin() || User.IsSalesAdmin()) {
             <div class="d-flex align-items-center justify-content-end justify-content-xxl-start gap-1 flex-grow-1 flex-xxl-grow-0" style="font-size:clamp(11px,2vw,13px)">
                 <span>در اختیار: </span>
-                <span>@ViewBag.SelExpertRel</span>
+                <span>@Model.SelExpertRel</span>
             </div>
         }
     </div>
@@ -42,7 +38,7 @@
                         </button>
                     </div>
 
-                    @*<div class="me-1 parentPlusAdd text-end" onclick="showModalAddPfactor(1, '@ViewBag.CustomerId')">
+                    @*<div class="me-1 parentPlusAdd text-end" onclick="showModalAddPfactor(1, '@Model.CustomerId')">
                         <svg style="width: 20px;cursor: pointer" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                     </div>*@
 
@@ -63,62 +59,7 @@
 
     </div>
 
-    <div class="buttonDiv mt-2">
-        <div style="display:flex;justify-content:center; width:100%; ">
-            <div style="display:flex;flex-direction:column;align-items:center; justify-content:center;width:100% ">
-                <div class="buttonDivContent">
-                    <div class="gap-2 gap-lg-3 flex-column flex-lg-row" style="font-size:clamp(12px,2vw,14px);align-items:center; width:100%; display:flex; justify-content:space-between ">
-                        <div class="col flex-wrap gap-2 w-100" style="display:flex; justify-content:space-around " id="wallet-details">
-                            <div class="gap-1 gap-lg-2" style="display:flex; justify-content:center; align-items:center;">
-                                <label style="color:lightgray">مبلغ کل فاکتورها: </label>
-                                <div class="fbold d-flex align-items-baseline gap-1" style="color:white;">
-                                    <span id="AllFacAmountId" style="font-size:clamp(14px,1.5vw,18px);">-</span>
-                                    <span style="color:white;font-size:clamp(12px,2vw,13px);">ريال</span>
-                                </div>
-                            </div>
-                            <div class="gap-1 gap-lg-2" style="display:flex; justify-content:center; align-items:center;">
-                                <label style="color:lightgray">پرداخت شده:</label>
-                                <div class="fbold d-flex align-items-baseline gap-1" style="color:white;">
-                                    <span id="AllFacPaymentId" style="font-size:clamp(14px,1.5vw,18px);">-</span>
-                                    <span style="color:white;font-size:clamp(12px,2vw,13px);">ريال</span>
-                                </div>
-                            </div>
-                            <div class="gap-1 gap-lg-2 " style="display:flex; justify-content:center; align-items:center;">
-                                <label style="color:lightgray" id="AllreminedTitleId">مانده بدهی:</label>
-                                <div class="fbold d-flex align-items-baseline gap-1" style="color:white;">
-                                    <span id="AllRemainedId" style="font-size:clamp(14px,1.5vw,18px);">-</span>
-                                    <span style="color:white;font-size:clamp(12px,2vw,13px);">ريال</span>
-                                </div>
-                            </div>
-                            @* <button style="border-radius:5px; height:fit-content" class="buttonPurple">صورت حساب</button> *@
-                        </div>
-                        @* width:350px; *@
-                        <div class="walledNotCredit cursor-pointer" id="wallet-balance" style="min-width: 280px;width: auto" onclick="ShowModalInvoiceWallet(1)">
-                            <div class="d-flex align-items-center justify-content-around gap-1 gap-lg-2">
-                                <span class="fMedium" style="color:lightgray">اعتبار کیف پول: </span>
-                                <span class="fbold d-flex align-items-baseline gap-1 gap-xl-2" style="color:white;">
-                                    <span id="WalletId" style="font-size:22px;">-</span>
-                                    <span style="color:white;font-size:clamp(13px,2vw,14px);">ريال</span>
-                                </span>
-                            </div>
-                        </div>
-                        @*
-                    <div>
-                    <label  style="color:lightgray">کل پیش پرداخت:</label>
-                    <label class="fbold" style="color:white;font-size:17px" id="AllPFacPaymentId"></label>
-                    </div>
-                     *@
-
-                        @*<div>
-                    <label  style="color:lightgray" id="AllreminedTitleId">مانده:</label>
-                    <label class="fbold" style="color:white;font-size:17px" id="AllRemainedId"></label>
-                    </div>*@
-                        @*<button style="border-radius:5px; height:fit-content" class="buttonPurple">صورت حساب</button>*@
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <partial name="_CustomerFinancialSummaryPartial" />
 </div>
 
 
@@ -138,214 +79,9 @@
 
 @section scripts {
     <script>
-        var CurrentStep = 1;
-        var allStep = 3;
-        var JuridicalFlag = 0;
-        var JuridicalTBL;
-        var NoneJuridicalTBL;
-
-
-        document.addEventListener("DOMContentLoaded", async () => {
-            customerId = '@ViewBag.CustomerId';
-
-            await Promise.all([getAllPreFactor(), GetFactorPartial({ passType: 1, customerId })]);
-
-            showTaminDropdown();
-            getAllDetailAmount();
-            removeTabFactorsDesktop();
-
-            focusTargetPf();
-        });
-
-        function focusTargetPf() {
-            const targetPf = sessionStorage.getItem("targetPf");
-            if (!targetPf) return;
-            sessionStorage.removeItem("targetPf");
-
-            const el = document.querySelector(`[data-serialnumber="${targetPf}"]`);
-            if (!el) return;
-            el.scrollIntoView({ behavior: "smooth", block: "center" });
-
-            flashItem(el, { duration: 2500 });
-        }
-
-
-        const removeTabFactorsDesktop = () => {
-            if (window.innerWidth >= 1400) {
-                document.getElementById("tabContentFactors").classList.remove("tab-content");
-                document.getElementById("preFactorTab-pane").classList.remove("tab-pane", "fade");
-                document.getElementById("factorTab-pane").classList.remove("tab-pane", "fade");
-            } else {
-                document.getElementById("tabContentFactors").classList.add("tab-content");
-                document.getElementById("preFactorTab-pane").classList.add("tab-pane", "fade");
-                document.getElementById("factorTab-pane").classList.add("tab-pane", "fade");
-            }
-            window.addEventListener("resize", removeTabFactorsDesktop);
-        };
-
-
-        const getFacAmount = (pfId, serialNumber = null, _this) => {
-
-            //_this.parentElement.parentElement.parentElement.style.backgroundColor = "lightcyan"
-
-            document.getElementById("DivFacListId").style.display = "flex";
-        };
-
-        const getAllDetailAmount = () => {
-            axios(`/Factor/GetDetailAmount?cusId=${customerId}`).then((res) => {
-                document.getElementById("AllFacAmountId").textContent = res.data.facAmount.toLocaleString();
-                document.getElementById("AllFacPaymentId").textContent = res.data.allPrePayment.toLocaleString();
-                document.getElementById("AllRemainedId").textContent = res.data.remained.toLocaleString();
-                document.getElementById("WalletId").textContent = res.data.wallet.toLocaleString();
-
-                const walletBalance = document.getElementById("wallet-balance");
-                if (res.data.wallet > 0) {
-                    walletBalance.classList.remove("walledNotCredit");
-                    walletBalance.classList.add("walledCredit");
-                } else {
-                    walletBalance.classList.remove("walledCredit");
-                    walletBalance.classList.add("walledNotCredit");
-                }
-            });
-        };
-
-
-        const delimageAcPfact = (item) => {
-
-            if (acceptedImg.id == null) {
-
-                var sss = "image-display_" + item;
-                document.getElementById(sss).innerHTML = "";
-                acceptedImg = null;
-            } else {
-
-                var sss = "image-display_" + item;
-                document.getElementById(sss).innerHTML = "";
-                acceptedImg.IsDeleted = true;
-            }
-        };
-
-
-        const getAllPreFactor = async (showDeleted = false) => {
-            await sendApiRequest({
-                url: "/Customer/GetAllPreFactorPartial",
-                params: { customerId, showDeleted },
-                onSuccess: (res) => {
-                    document.getElementById("PreFactorDivList").innerHTML = res.data.html;
-
-                    @*const sss = Array.from(document.getElementsByClassName("test"));
-                    sss.forEach((item) => {
-                        $(item).select2({
-                            dir: "rtl",
-                            placeholder: "انتخاب",
-                            selectionCssClass: "form-control",
-                            width: "100px",
-                        });
-                        $(item).val(null).trigger("change");
-                    });*@;
-                    if (deletedToggleIcon.isVisible && !showDeleted) {
-                        deletedToggleIcon.isVisible = false;
-                    }
-                },
-            });
-        };
-
-
-        const HodeDivStep = () => {
-
-            $("#Step1").css("display", "none");
-            $("#Step2").css("display", "none");
-            $("#Step3").css("display", "none");
-            $("#Step4").css("display", "none");
-
-        };
-        const ShowDivStep = () => {
-            HodeDivStep();
-            $("#Step" + CurrentStep).css("display", "flex");
-        };
-
-        const backStep = () => {
-            CurrentStep = CurrentStep - 1;
-            if (CurrentStep == 0)
-                CurrentStep = 3;
-            gotoStep(CurrentStep);
-        };
-        const nextStep = () => {
-            CurrentStep = CurrentStep + 1;
-            if (CurrentStep > allStep)
-                CurrentStep = 1;
-            gotoStep(CurrentStep);
-        };
-        const deactive = () => {
-            $("#hStep1").removeClass("ac");
-            $("#hStep2").removeClass("ac");
-            $("#hStep3").removeClass("ac");
-        };
-        const gotoStep = (step) => {
-            deactive();
-            CurrentStep = step;
-            $("#hStep" + step).addClass("ac");
-            ShowDivStep();
-        };
-        const setDefaultWorkSenf = () => {
-            $("#workSenf").val(null).trigger("change");
-        };
-
-
-        const onclickHog = () => {
-            JuridicalFlag = 1;
-            gotoStep(2);
-        };
-
-        const ChangeForm = () => {
-            JuridicalFlag = $("input[type='radio'][name='juridical']:checked")[0].value;
-
-            //اگر True بود حقوقی هست
-            if (JuridicalFlag == 1) {
-                $("#JuridicalDiv").css("display", "flex");
-                //$("#PStep2").css("display", "");
-                //$("#hStep2").removeClass("dac");
-                addReq();
-            } else {
-                $("#حقیقی").css("display", "none");
-                $("#JuridicalDiv").css("display", "none");
-                //$("#PStep2").css("display", "none");
-                //$("#hStep2").addClass("dac");
-
-                removeReq();
-            }
-        };
-        const removeReq = () => {
-            var items = document.getElementsByClassName("hog");
-            $.each(items, (index, item) => {
-                item.removeAttribute("required");
-            });
-        };
-        const addReq = () => {
-
-            var items = document.getElementsByClassName("hog");
-            $.each(items, (index, item) => {
-                item.setAttribute("required", "");
-            });
-        };
-
-
-        const DelCustomerItem = (id) => {
-            alert(id);
-        };
-
-
-        const deletedToggleIcon = initEyeToggle({
-            selector: ".showDeletedPrefactor-icon",
-            onShow: async () => await getAllPreFactor(true),
-            onHide: async () => await getAllPreFactor(false),
-            showTitle: "نمایش حذف‌شده‌ها",
-            hideTitle: "مخفی کردن حذف‌شده‌ها",
-            titlePosition: "left",
-        });
-
+        customerId = '@Model.CustomerId';
     </script>
-
+    <script src="~/js/customerProfile.js" asp-append-version="true"></script>
 }
 
 

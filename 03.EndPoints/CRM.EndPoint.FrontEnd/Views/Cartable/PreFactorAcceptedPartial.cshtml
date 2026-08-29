@@ -95,10 +95,10 @@
 
                             <div class="d-md-none my-2 " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
 
-                            <div class="col-12 col-md-2 px-2 flex-row flex-md-column gap-2 flex-wrap" style=" font-size: 13px;display:flex;align-items:center;justify-content:space-evenly">
+                            @*<div class="col-12 col-md-2 px-2 flex-row flex-md-column gap-2 flex-wrap" style=" font-size: 13px;display:flex;align-items:center;justify-content:space-evenly">
                                 @if (Model._Setting.CrmFactors == true) {
                                     if (item.CountFactor == 0) {
-                                        <button class="buttonDisabled flex-center flex-column" disabled style="border-radius:4px;height:auto;width: 80px;padding: 0 4px;">
+                                        <button class="buttonDisabled" disabled>
                                             <span>فاکتور CRM </span>
                                             <span style="display:flex;justify-content:center;gap: 2px"> <span> @item.CountFactor </span> <span>عدد</span></span>
                                         </button>
@@ -112,7 +112,7 @@
 
                                 @if (Model._Setting.Sepidar == true) {
                                     if (item.CountFactorSepidar == 0) {
-                                        <button class="buttonDisabled flex-center flex-column" disabled style="border-radius:4px;height:auto;width: 80px;padding: 0 4px;">
+                                        <button class="buttonDisabled" disabled>
                                             <span>فاکتور سپیدار </span>
                                             <span style="display:flex;justify-content:center;gap: 2px"> <span> @item.CountFactorSepidar </span> <span>عدد</span></span>
                                         </button>
@@ -123,7 +123,12 @@
                                         </button>
                                     }
                                 }
-                            </div>
+                            </div>*@
+
+                            <partial name="~/Views/PreFactor/_PreFactorFactorsCountPartial.cshtml"
+                                     model="item"
+                                     view-data='new ViewDataDictionary(ViewData) { ["Setting"] = Model._Setting, ["PassType"] = 0 }' />
+
                             <div class="d-sm-none mt-2 " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
                         </div>
 

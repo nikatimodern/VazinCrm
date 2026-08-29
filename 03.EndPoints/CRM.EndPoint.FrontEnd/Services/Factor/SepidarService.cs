@@ -1,9 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using CRM.Infrastructures.Sql;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.EndPoint.FrontEnd.Models.Factor;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.EndPoint.FrontEnd.Services.Factor {
@@ -31,16 +34,23 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                 .ToListAsync();
         }
 
-        public async Task<List<SepidarInvoiceDto>> GetInvoicesByQuotationNumbersAsync(int[] serialNumbers)
+        public async Task<List<SepidarInvoiceDto>> GetInvoicesByQuotationNumbersAsync(int[] serialNumbers, CancellationToken ct = default)
         {
-            return await s1Db.vwInvoice
-                .AsNoTracking()
-                .Where(x => x.QuotationNumber.HasValue && serialNumbers.Contains(x.QuotationNumber.Value))
-                .Select(x => new SepidarInvoiceDto {
-                    QuotationNumber = x.QuotationNumber.Value,
-                    CreationDate = x.CreationDate
-                })
-                .ToListAsync();
+            try
+            {
+                return await s1Db.vwInvoice
+                    .AsNoTracking()
+                    .Where(x => x.QuotationNumber.HasValue && Enumerable.Contains(serialNumbers, x.QuotationNumber.Value))
+                    .Select(x => new SepidarInvoiceDto {
+                        QuotationNumber = x.QuotationNumber.Value,
+                        CreationDate = x.CreationDate
+                    })
+                    .ToListAsync(cancellationToken: ct);
+            }
+            catch (SqlException)
+            {
+                return null;
+            }
         }
 
 

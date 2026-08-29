@@ -24,14 +24,14 @@ const AddFactor = async (pfId, type = 1) => {
     typeSubmitFactor = type;
     currentFactorContext = { passType: type };
     
-    FLshowLoading();
     
     getAllProductOp("#FacItem");
     Unit(2);
     
     const baseDesFactor = await getBaseDescription(1);
-    const pfData = (await axios(`/Factor/GetPFactor/${pfId}`)).data;
+    const pfData = await getPreFactor(pfId);
     
+    FLshowLoading();
     supplyData = (await axios(`/Supply/GetSupplies?pfId=${pfId}`)).data;
     if (!supplyData?.length) {
         toastifyError("بهای تامینی ثبت نشده است!");
@@ -118,10 +118,7 @@ const upFactor = async (id, type = 1) => {
     Unit(2);
     getAllProductOp("FacItem");
     
-    const data = await sendApiRequest({
-        url: "/Factor/GetFactor/",
-        params: { id },
-    });
+    const data = await getFactor(id);
     
     if (!data) return;
     
@@ -170,7 +167,7 @@ const returnFactor = async (fid, type = 1) => {
     FLshowLoading();
     Unit(2);
     getAllProductOp("FacItem");
-    factor = (await axios(`/factor/GetFactor/${fid}`)).data;
+    factor = await getFactor(fid);
     factor.id = null;
     factor.serialNumber = null;
     factor.parentReturnedId = fid;
@@ -220,6 +217,13 @@ const returnFactor = async (fid, type = 1) => {
     
     ModalToggle(modalFactor, "show");
     FLshowLoading(false);
+};
+
+const getFactor = async (id) => {
+    return await sendApiRequest({
+        url: "/Factor/GetFactor/",
+        params: { id },
+    });
 };
 
 const showFactorItems = () => {

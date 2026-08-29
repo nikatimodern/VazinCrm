@@ -83,10 +83,7 @@ const upPfactor = async (id, type) => {
     Unit(1, "PreFacItem");
     baseDesPfactor = await getBaseDescription(0);
     
-    const data = await sendApiRequest({
-        url: "/Factor/GetPFactor/",
-        params: { id },
-    });
+    const data = await getPreFactor(id);
     
     if (!data) return;
     
@@ -125,6 +122,13 @@ const upPfactor = async (id, type) => {
     ModalToggle("#PreFactor");
     
 };
+const getPreFactor = async (id) => {
+    return await sendApiRequest({
+        url: "/Factor/GetPFactor/",
+        params: { id },
+    });
+};
+
 const cancelPreFactor = () => {
     ModalToggle("#PreFactor", "hide");
     

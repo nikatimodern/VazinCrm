@@ -1,0 +1,52 @@
+@using CRM.Core.Domain.ASettings.Entities
+@model PreFactor
+
+@{
+    var setting = ViewData["Setting"] as ASetting;
+    var passType = ViewData["PassType"] as int? ?? 0;
+
+    if (Model == null) return;
+}
+
+<div class="col-12 col-md-2 d-flex align-items-center justify-content-evenly flex-row flex-md-column gap-2 flex-wrap px-2" style="font-size: 13px">
+    @if (setting?.CrmFactors == true) {
+        if (Model.CountFactor == 0) {
+            <button class="buttonDisabled" disabled>
+                <span>فاکتور ها</span>
+                <span class="flex-center" style="gap: 2px">
+                    <span>@Model.CountFactor</span>
+                    <span>عدد</span>
+                </span>
+            </button>
+        } else {
+            <button class="buttonGreen factorCount-btn"
+                    onclick="GetFactorPartial({id: '@Model.Id', element: this, serialNumber: '@Model.SerialNumber', passType: @passType })">
+                <span>فاکتور ها</span>
+                <span class="flex-center" style="gap: 2px">
+                    <span>@Model.CountFactor</span>
+                    <span>عدد</span>
+                </span>
+            </button>
+        }
+    }
+
+    @if (!User.IsCustomer() && setting?.Sepidar == true && Model.CountFactorSepidar != null) {
+        if (Model.CountFactorSepidar == 0) {
+            <button class="buttonDisabled" disabled>
+                <span>فاکتور سپیدار </span>
+                <span class="flex-center" style="gap: 2px">
+                    <span>@Model.CountFactorSepidar</span>
+                    <span>عدد</span>
+                </span>
+            </button>
+        } else {
+            <button class="buttonPurple factorCount-btn" onclick="showSepidarFactors('@Model.SerialNumber', this, @passType)">
+                <span>فاکتور سپیدار </span>
+                <span class="flex-center" style="gap: 2px">
+                    <span>@Model.CountFactorSepidar</span>
+                    <span>عدد</span>
+                </span>
+            </button>
+        }
+    }
+</div>

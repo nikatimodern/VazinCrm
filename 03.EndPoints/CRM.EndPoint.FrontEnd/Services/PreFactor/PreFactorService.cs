@@ -72,8 +72,7 @@ public class PreFactorService(
         }
 
         // Sepidar
-        Dictionary<Guid, int> sepidarCounts = new();
-
+        Dictionary<Guid, int> sepidarCounts = null;
         if (setting?.Sepidar == true)
         {
             var serialNumbers = data
@@ -82,10 +81,13 @@ public class PreFactorService(
 
             var invoices = await sepidarService.GetInvoicesByQuotationNumbersAsync(serialNumbers);
 
-            sepidarCounts = data.ToDictionary(
-                pf => pf.Id,
-                pf => invoices.Count(x => x.QuotationNumber == pf.SerialNumber && x.CreationDate >= pf.CreateDate)
-            );
+            if (invoices is not null)
+            {
+                sepidarCounts = data.ToDictionary(
+                    pf => pf.Id,
+                    pf => invoices.Count(x => x.QuotationNumber == pf.SerialNumber && x.CreationDate >= pf.CreateDate)
+                );
+            }
         }
 
         foreach (var item in data)
@@ -98,7 +100,7 @@ public class PreFactorService(
 
             item.SumTotalAmountTax = item.SumTotalAmount + item.TotalTax - item.Discount;
 
-            if (setting?.Sepidar == true)
+            if (setting?.Sepidar == true && sepidarCounts is not null)
             {
                 sepidarCounts.TryGetValue(item.Id, out var count);
 

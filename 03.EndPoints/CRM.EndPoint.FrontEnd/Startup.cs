@@ -239,37 +239,32 @@ namespace CRM.EndPoint.FrontEnd {
                 options.Events = new CookieAuthenticationEvents {
                     OnRedirectToAccessDenied = async context => {
                         var user = context.HttpContext.User;
-                        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
 
-                        if (!string.IsNullOrEmpty(userId))
+                        // کاربر احراز هویت نشده
+                        if (string.IsNullOrEmpty(userId))
                         {
-                            var requestPath = context.Request.Path.Value?.ToLower();
-                            Console.WriteLine($"[AccessDenied] Path: {requestPath} | Time: {DateTime.Now}");
-
-                            if (user.IsInRole("مشتری") || user.IsInRole("تامین کننده"))
-                            {
-                                //var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<AppUser>>();
-                                //var loginUser = await userManager.GetUserAsync(user);
-
-                                context.Response.StatusCode = 302;
-
-                                context.Response.Redirect("/Account/Home");
-                                //context.Response.Redirect($"/Customer/CustomerProfile/{loginUser.PersonId}");
-                                return;
-                            }
-
-                            var hubContext = context.HttpContext.RequestServices.GetRequiredService<IHubContext<TaskHub>>();
-
-                            // ارسال نوتیف
-                            await hubContext.Clients.User(userId).SendAsync("ShowAccessDeniedMessage", "شما به این بخش دسترسی ندارید!");
-
-
-                            context.Response.StatusCode = 204;
+                            context.Response.Redirect(context.RedirectUri);
                             return;
                         }
 
-                        // اگر احراز هویت نشده بود، همچنان بفرست به لاگین
-                        context.Response.Redirect(context.RedirectUri);
+                        var requestPath = context.HttpContext.Request.Path;
+
+                        Console.WriteLine($"[AccessDenied] Path: {requestPath} | Time: {DateTime.Now}");
+
+                        if (user.IsInRole("مشتری") || user.IsInRole("تامین کننده"))
+                        {
+                            context.Response.Redirect("/Account/Home");
+                            return;
+                        }
+
+                        /*// اطلاع‌رسانی به کاربر
+                        var hubContext = context.HttpContext.RequestServices
+                            .GetRequiredService<IHubContext<TaskHub>>();
+
+                        await hubContext.Clients.User(userId).SendAsync("ShowAccessDeniedMessage", "شما به این بخش دسترسی ندارید!");*/
+
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     }
                 };
             });
@@ -285,7 +280,9 @@ namespace CRM.EndPoint.FrontEnd {
 
             if (env.IsDevelopment())
             {
-                app.UseDeveloperExceptionPage();
+//                app.UseDeveloperExceptionPage();
+                app.UseExceptionHandler("/Error/500"); // فقط برای exceptionهای واقعی (500+)
+                app.UseStatusCodePagesWithReExecute("/Error/{0}"); // برای status code ها مثل 404 / 401 / 403
             } else
             {
                 app.UseExceptionHandler("/Error/500"); // فقط برای exceptionهای واقعی (500+)

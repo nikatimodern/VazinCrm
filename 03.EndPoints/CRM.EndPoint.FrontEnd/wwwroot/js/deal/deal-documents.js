@@ -60,36 +60,44 @@ const showModalDealInvoices = async (deal) => {
 //get
 const getPreFactorFromDeal = async (dealId, isRefresh = false, showDeleted = false) => {
     if (!dealId) return;
-    FLshowLoading();
     const dealPreFactorsElm = document.getElementById("dealPreFactors");
     if (isRefresh) dealPreFactorsElm.innerHTML = "";
-    const res = await axios(`/Customer/GetAllPreFactorPartial?dealId=${dealId}&showDeleted=${showDeleted}`);
     
-    if (res.status === 200) {
-        if (res.data.count) {
+    await sendApiRequest({
+        url: "/Customer/GetAllPreFactorPartial",
+        params: { dealId, showDeleted },
+        onSuccess: (res) => {
+            if (res.data.count === 0) {
+                dealPreFactorsElm.innerHTML = `
+                    <div class="d-flex flex-column align-items-center pb-4">
+                        <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
+                        <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ پیش فاکتوری برای نمایش وجود ندارد!</div>
+                    </div>
+                `;
+                dealPreFactorsElm.style.background = "#fff";
+                return;
+            }
+            
+            
             dealPreFactorsElm.innerHTML = res.data.html;
-        } else {
-            dealPreFactorsElm.innerHTML = `
-                <div class="d-flex flex-column align-items-center pb-4">
-                    <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
-                    <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ پیش فاکتوری برای نمایش وجود ندارد!</div>
-                </div>
-            `;
-            dealPreFactorsElm.style.background = "#fff";
-        }
-        FLshowLoading(false);
-    }
+        },
+    });
 };
 
 
 const getReportFromDeal = async (dealId) => {
     if (!dealId) return;
-    FLshowLoading();
-    const res = await axios.post(`/Report/GetAllReportPartial?dealId=${dealId}`, {});
-    if (res.status === 200) {
-        document.getElementById("dealReports").innerHTML = res.data.html;
-        FLshowLoading(false);
-    }
+    
+    await sendApiRequest({
+        url: "/Report/GetAllReportPartial",
+        method: "POST",
+        successMsg: null,
+        params: { dealId },
+        data: {},
+        onSuccess: (res) => {
+            document.getElementById("dealReports").innerHTML = res.data.html;
+        },
+    });
 };
 
 const getSupplyFactorsFromDeal = async (dealId) => {
@@ -106,29 +114,30 @@ const getSupplyFactorsFromDeal = async (dealId) => {
 
 const getOrdersFromDeal = async (dealId) => {
     if (!dealId) return;
-    FLshowLoading();
-    const res = await axios(`/Order/GetAllDealOrdersPartial?dealId=${dealId}`);
-    if (res.status === 200) {
-        for (const [key, data] of Object.entries(res.data)) {
-            const containerElm = document.getElementById(`${key}Tab-pane`);
-            const CountElm = document.getElementById(`${key}Count`);
-            if (data.count) {
-                containerElm.innerHTML = data.html;
-                CountElm.style.display = "flex";
-                CountElm.textContent = data.count;
-            } else {
-                CountElm.style.display = "none";
-                containerElm.innerHTML = `
-                    <div class="d-flex flex-column align-items-center justify-content-center h-100 pb-4">
-                        <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
-                        <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ حواله ای برای نمایش وجود ندارد!</div>
-                    </div>
-                `;
+    
+    await sendApiRequest({
+        url: "/Order/GetAllDealOrdersPartial",
+        params: { dealId },
+        onSuccess: (res) => {
+            for (const [key, data] of Object.entries(res.data)) {
+                const containerElm = document.getElementById(`${key}Tab-pane`);
+                const CountElm = document.getElementById(`${key}Count`);
+                if (data.count) {
+                    containerElm.innerHTML = data.html;
+                    CountElm.style.display = "flex";
+                    CountElm.textContent = data.count;
+                } else {
+                    CountElm.style.display = "none";
+                    containerElm.innerHTML = `
+                        <div class="d-flex flex-column align-items-center justify-content-center h-100 pb-4">
+                            <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
+                            <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ حواله ای برای نمایش وجود ندارد!</div>
+                        </div>
+                    `;
+                }
             }
-        }
-        
-        FLshowLoading(false);
-    }
+        },
+    });
 };
 
 const getInvoicesFromDeal = async (dealId) => {

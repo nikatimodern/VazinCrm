@@ -1,7 +1,15 @@
 @{
-    var statusCode = ViewBag.StatusCode;
-    var errorMessage = ViewBag.ErrorMessage;
+    var statusCode = (int)ViewBag.StatusCode;
+    var errorMessage = ViewBag.ErrorMessage as string;
+    var originalPath = ViewBag.OriginalPath as string;
+
     Layout = statusCode == 404 ? "_Layout" : null;
+
+    var errorImage = statusCode switch {
+        404 => "/static/404.png",
+        403 => "/static/403.png",
+        _ => "/static/500.png"
+    };
 }
 
 <!DOCTYPE html>
@@ -63,18 +71,47 @@
                 all: unset;
                 cursor: pointer;
                 display: inline-block;
-                padding: .5rem 1rem;
+                padding: .55rem 1.1rem;
                 border-radius: .5rem;
                 background: #004944;
                 color: #fff;
                 font-size: 1rem;
-                transition: transform .1s ease, box-shadow .1s ease;
+                font-weight: 500;
+                transition: all .15s ease;
+                box-sizing: border-box;
+            }
+
+            & button:hover {
+                background: #00645d;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 10px rgba(0, 73, 68, .2);
+            }
+
+            & button:active {
+                transform: translateY(0);
+                box-shadow: 0 2px 6px rgba(0, 0, 0, .15) inset;
             }
 
 
-            & button:active {
-                transform: translateY(1px);
-                box-shadow: 0 2px 6px rgba(0, 0, 0, .15) inset;
+            & button.btn-back {
+                background: transparent;
+                color: #004944;
+                border: 1px solid #004944;
+            }
+
+            & button.btn-back:hover {
+                background: #004944;
+                color: #fff;
+            }
+
+
+            & button.btn-home {
+                background: #004944;
+                color: #fff;
+            }
+
+            & button.btn-home:hover {
+                background: #00645d;
             }
 
 
@@ -103,23 +140,42 @@
 <body>
 
 <div class="err-container">
+
     <div class="icon">
-        <img src="@(statusCode == 404 ? "/static/404.png" : "/static/500.png")" alt="error">
+        <img src="@(errorImage)" alt="error">
     </div>
     <h1>خطای @statusCode</h1>
     @switch (statusCode) {
         case 404: {
             <h3>@(string.IsNullOrEmpty(errorMessage) ? "متاسفانه صفحه مورد نظر شما یافت نشد!" : errorMessage)</h3>
+
+            <button class="btn-back" onclick="history.back()">
+                بازگشت به صفحه قبل
+            </button>
+
             <a href="/">
-                <button>بازگشت به صفحه اصلی</button>
+                <button class="btn-home">رفتن به صفحه اصلی</button>
             </a>
+
             break;
         }
+
+        case 403: {
+            <h3>شما به این بخش دسترسی ندارید!</h3>
+
+            <a href="/">
+                <button class="btn-home">رفتن به صفحه اصلی</button>
+            </a>
+
+            break;
+        }
+
         case >= 500: {
             <h3>در حال حاضر امکان پردازش درخواست وجود ندارد!</h3>
             <button onclick="location.reload()">بارگذاری مجدد</button>
             break;
         }
+
         default: {
             <h3>در انجام درخواست مشکلی به وجود آمده!</h3>
             <button onclick="location.reload()">بارگذاری مجدد</button>
