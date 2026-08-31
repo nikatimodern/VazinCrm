@@ -2764,7 +2764,7 @@ const createSupplierTomSelect = (element, items) => {
 };
 
 const hideFact = async () => {
-    //document.getElementById("DivFacListId").style.display = "none";
+    // document.getElementById("DivFacListId").classList.add("d-none");
     await GetFactorPartial({ passType: 1, customerId });
     
     document.querySelector(".SelectedPf").classList.remove("SelectedPf");

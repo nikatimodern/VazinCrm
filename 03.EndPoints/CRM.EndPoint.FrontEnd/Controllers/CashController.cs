@@ -444,7 +444,7 @@ public class CashController : Controller {
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var item = await db.Cashes.Where(f => f.Id == id).FirstOrDefaultAsync();
-            if (item == null) return NotFound();
+            if (item == null) return NotFound("رکوردی یافت نشد!");
 
             item.IsDeleted = true;
             item.ModifyDate = DateTime.Now;
@@ -476,7 +476,7 @@ public class CashController : Controller {
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var item = await db.Cashiers.Where(f => f.Id == id).FirstOrDefaultAsync();
-            if (item == null) return NotFound();
+            if (item == null) return NotFound("رکوردی یافت نشد!");
 
             item.IsDeleted = true;
             item.ModifyDate = DateTime.Now;
@@ -1160,7 +1160,7 @@ public class CashController : Controller {
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var item = await db.BaseCashes.Where(f => f.Id == id).FirstOrDefaultAsync();
-            if (item == null) return NotFound();
+            if (item == null) return NotFound("رکوردی یافت نشد!");
 
             item.IsDeleted = true;
             item.ModifyDate = DateTime.Now;

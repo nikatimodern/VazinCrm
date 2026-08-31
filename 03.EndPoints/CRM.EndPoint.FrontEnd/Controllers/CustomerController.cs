@@ -185,6 +185,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (User.IsAdmin() || User.IsSalesAdmin())
                 return true;
 
+            if (User.IsCustomer())
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                return await db.Customers.AnyAsync(x => x.Id == customerId && x.Mobile == user.PhoneNumber);
+            }
+
             var userId = Guid.Parse(User.GetUserId());
             return await db.UserCustomers.AnyAsync(x => x.UserId == userId && x.CustomerId == customerId);
         }
@@ -196,12 +202,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (id == Guid.Empty)
                 return BadRequest();
 
-
-            var customer = await db.Customers
+            var query = db.Customers
                 .AsNoTracking()
                 .Include(x => x.UserCustomers)
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(x => x.Id == id);
+                .AsQueryable();
+
+            if (User.IsAdmin())
+            {
+                query = query.IgnoreQueryFilters();
+            }
+
+            var customer = await query.FirstOrDefaultAsync(x => x.Id == id);
 
 
             if (customer == null)
@@ -221,62 +232,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return View(model);
         }
 
-
+        [Authorize(Roles = "مدیر ارشد ,مدیر فروش")]
         [HttpGet]
-        public async Task<ActionResult> CustomerPanel(Guid id)
+        public ActionResult CustomerDetail(Guid id)
         {
             if (id == Guid.Empty)
                 return BadRequest();
 
-            var customer = await db.Customers
-                .AsNoTracking()
-                .Include(x => x.UserCustomers)
-                .FirstOrDefaultAsync(x => x.Id == id);
-
-            if (customer == null)
-                return NotFound();
-
-            var selExpertRel = await GetUsersRel(customer.UserCustomers);
-
-            var model = new CustomerPanelVModel {
-                CustomerId = id,
-                CustomerName =
-                    $"{customer.CustomerCode} {customer.CompanyName} ({(customer.Sex == 1 ? "جناب آقای" : "سرکار خانم")} {customer.AgentName})",
-                SelExpertRel = selExpertRel
-            };
-
-            return View(model);
-        }
-
-
-        [Authorize(Roles = "مدیر ارشد ,مدیر فروش")]
-        [HttpGet]
-        public async Task<ActionResult> CustomerDetail(Guid Id)
-        {
-            if (Id != Guid.Empty)
-            {
-                var user = userManager.GetUserAsync(HttpContext.User).Result;
-                var rols = userManager.GetRolesAsync(user).Result.ToArray();
-
-                if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش"))
-                {
-                    var data = await db.Customers.Where(f => f.Id == Id).FirstOrDefaultAsync();
-                    string sexTxt = "";
-                    if (data.Sex == 1)
-                        sexTxt = "جناب آقای";
-                    else if (data.Sex == 0)
-                        sexTxt = "سرکار خانم";
-                    ViewBag.SubTitle = data.CompanyName + " (" + sexTxt + " " + data.AgentName + ")" + " " + data.CustomerCode;
-                    ViewBag.CustomerId = Id;
-                    ViewBag.rol = "";
-                    return View();
-                } else
-                {
-                    return RedirectToAction("AccessDenied", "Account");
-                }
-            }
-
-            return RedirectToAction("AccessDenied", "Account");
+            ViewBag.CustomerId = id;
+            return View();
         }
 
 
@@ -293,10 +257,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             cu.UserModify = user.FullName;
             cu.UserModifyID = user.Id;
 
-            foreach (var item in cu.PreFactors)
+            foreach (var item in cu.PreFactors ?? [])
             {
                 item.IsDeleted = true;
-                foreach (var it in item.Factors)
+                foreach (var it in item.Factors ?? [])
                 {
                     it.IsDeleted = true;
                     it.ModifyDate = DateTime.Now;
@@ -1055,7 +1019,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 x.UserTaminId
             }).FirstOrDefaultAsync();
 
-            if (pf == null) return NotFound();
+            if (pf == null) return NotFound("رکوردی یافت نشد!");
 
             List<SelectOptionDto<Guid>> salesUsers;
             if (cusId != Guid.Empty)
@@ -1122,7 +1086,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var pf = await db.PreFactors.FirstOrDefaultAsync(x => x.Id == pfId);
 
-            if (pf == null) return NotFound();
+            if (pf == null) return NotFound("رکوردی یافت نشد!");
 
             if (taminUserId != Guid.Empty)
             {

@@ -252,11 +252,11 @@ namespace CRM.EndPoint.FrontEnd {
 
                         Console.WriteLine($"[AccessDenied] Path: {requestPath} | Time: {DateTime.Now}");
 
-                        if (user.IsInRole("مشتری") || user.IsInRole("تامین کننده"))
+                        /*if (user.IsInRole("مشتری") || user.IsInRole("تامین کننده"))
                         {
                             context.Response.Redirect("/Account/Home");
                             return;
-                        }
+                        }*/
 
                         /*// اطلاع‌رسانی به کاربر
                         var hubContext = context.HttpContext.RequestServices
@@ -280,9 +280,7 @@ namespace CRM.EndPoint.FrontEnd {
 
             if (env.IsDevelopment())
             {
-//                app.UseDeveloperExceptionPage();
-                app.UseExceptionHandler("/Error/500"); // فقط برای exceptionهای واقعی (500+)
-                app.UseStatusCodePagesWithReExecute("/Error/{0}"); // برای status code ها مثل 404 / 401 / 403
+                app.UseDeveloperExceptionPage();
             } else
             {
                 app.UseExceptionHandler("/Error/500"); // فقط برای exceptionهای واقعی (500+)

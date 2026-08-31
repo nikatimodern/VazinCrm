@@ -150,7 +150,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             if (order == null)
             {
-                HttpContext.Items["ErrorMessage"] = "حواله تولیدی پیدا نشد!";
+                HttpContext.Items["ErrorMessage"] = "حواله تولیدی یافت نشد!";
                 return NotFound();
             }
 

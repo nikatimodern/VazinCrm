@@ -318,7 +318,7 @@ public class ChatController : Controller {
     {
         var chat = await db.Chats.FirstOrDefaultAsync(x => x.Id == editedChat.Id);
 
-        if (chat == null) return NotFound();
+        if (chat == null) return NotFound("رکوردی یافت نشد!");
 
         chat.Text = editedChat?.Text?.Trim();
         chat.IsEdited = true;
@@ -370,7 +370,7 @@ public class ChatController : Controller {
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var item = await db.Chats.FirstOrDefaultAsync(f => f.Id == id);
-            if (item == null) return NotFound();
+            if (item == null) return NotFound("رکوردی یافت نشد!");
 
             item.IsDeleted = true;
             item.ModifyDate = DateTime.Now;

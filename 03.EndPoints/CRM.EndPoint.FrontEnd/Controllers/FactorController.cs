@@ -461,7 +461,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 .Where(f => f.PfactorID == pfId && f.status == FactorStatus.تایید_شده)
                 .ToListAsync();
 
-            IList<AllItemsViewModel> model = new List<AllItemsViewModel>();
+            var model = new List<AllItemsViewModel>();
 
             foreach (var item in pFac.PreFactorItems)
             {
@@ -472,19 +472,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     {
                         if (fitem.PfItemId == item.Id)
                         {
-                            Sum_WeightCount = Sum_WeightCount + decimal.Parse(fitem.WeightCount);
+                            Sum_WeightCount += decimal.Parse(fitem.WeightCount);
                         }
                     }
                 }
 
-                model.Add(new AllItemsViewModel() {
+                model.Add(new AllItemsViewModel{
                     PfId = pfId,
                     PfItemid = item.Id,
                     Product = item.ProductSmallName + " " + item.Product,
                     PfWeightCount = item.WeightCount + " " + item.UnitTxt,
-                    FWeightCount = Sum_WeightCount.ToString() + " " + item.UnitTxt,
-                    Remained = (Int32.Parse(item.WeightCount) - Sum_WeightCount).ToString() + " " + item.UnitTxt,
-                    RemainedFlag = (Int32.Parse(item.WeightCount) - Sum_WeightCount) <= 0 ? true : false
+                    FWeightCount = Sum_WeightCount + " " + item.UnitTxt,
+                    Remained = int.Parse(item.WeightCount) - Sum_WeightCount + " " + item.UnitTxt,
+                    RemainedFlag = int.Parse(item.WeightCount) <= Sum_WeightCount
                 });
             }
 
@@ -534,7 +534,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
 
             var pf = await db.PreFactors.Where(f => f.Id == id).FirstOrDefaultAsync();
-            if (pf == null) return NotFound();
+            if (pf == null) return NotFound("پیش‌فاکتور یافت نشد!");
 
             string cusMobile;
             if (pf.CustomerId != null)
@@ -1108,7 +1108,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 var pf = await db.PreFactors.FirstOrDefaultAsync(f => f.Id.ToString().StartsWith(se));
-                if (pf == null) return NotFound();
+                if (pf == null) return NotFound("پیش‌فاکتور یافت نشد!");
 
                 var cus = await db.Customers.Where(f => f.Id == pf.CustomerId).FirstOrDefaultAsync();
                 var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
@@ -2365,7 +2365,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> AddFactor(Factor model, bool unlinkSepidar = false)
         {
-            if (model == null) return NotFound();
+            if (model == null) return BadRequest();
 
             await using var transAction = await db.Database.BeginTransactionAsync();
             try

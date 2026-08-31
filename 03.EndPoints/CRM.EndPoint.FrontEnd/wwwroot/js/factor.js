@@ -797,7 +797,7 @@ const renderFactorPartial = (data, serialNumber, passType) => {
         </div>`
         : `<span class="d-none d-xxl-inline-block">فاکتورها</span>`;
     
-    document.getElementById("DivFacListId").style.display = "flex";
+    document.getElementById("DivFacListId").classList.remove("d-none")
     document.getElementById("DetailDivList").innerHTML = data.html;
 };
 

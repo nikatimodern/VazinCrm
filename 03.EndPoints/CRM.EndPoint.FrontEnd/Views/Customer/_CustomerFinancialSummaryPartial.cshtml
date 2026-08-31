@@ -1,54 +1,52 @@
 <div class="buttonDiv mt-2">
-    <div style="display:flex;justify-content:center; width:100%; ">
-        <div style="display:flex;flex-direction:column;align-items:center; justify-content:center;width:100% ">
+    <div class="d-flex justify-content-center w-100">
+        <div class="flex-center flex-column w-100">
             <div class="buttonDivContent">
-                <div class="gap-2 gap-lg-3 flex-column flex-lg-row" style="font-size:clamp(12px,2vw,14px);align-items:center; width:100%; display:flex; justify-content:space-between ">
-                    <div class="col flex-wrap gap-2 w-100" style="display:flex; justify-content:space-around " id="wallet-details">
-                        <div class="gap-1 gap-lg-2" style="display:flex; justify-content:center; align-items:center;">
+                <div class="d-flex align-items-center justify-content-between flex-column flex-lg-row gap-2 gap-lg-3 w-100" style="font-size:clamp(12px,2vw,14px)">
+                    <div class="col d-flex justify-content-around flex-wrap gap-2 w-100" id="wallet-details">
+                        <div class="gap-1 gap-lg-2 flex-center">
                             <label style="color:lightgray">مبلغ کل فاکتورها: </label>
                             <div class="fbold d-flex align-items-baseline gap-1" style="color:white;">
                                 <span id="AllFacAmountId" style="font-size:clamp(14px,1.5vw,18px);">-</span>
                                 <span style="color:white;font-size:clamp(12px,2vw,13px);">ريال</span>
                             </div>
                         </div>
-                        <div class="gap-1 gap-lg-2" style="display:flex; justify-content:center; align-items:center;">
+                        <div class="gap-1 gap-lg-2 flex-center">
                             <label style="color:lightgray">پرداخت شده:</label>
                             <div class="fbold d-flex align-items-baseline gap-1" style="color:white;">
                                 <span id="AllFacPaymentId" style="font-size:clamp(14px,1.5vw,18px);">-</span>
                                 <span style="color:white;font-size:clamp(12px,2vw,13px);">ريال</span>
                             </div>
                         </div>
-                        <div class="gap-1 gap-lg-2 " style="display:flex; justify-content:center; align-items:center;">
+                        <div class="gap-1 gap-lg-2 flex-center">
                             <label style="color:lightgray" id="AllreminedTitleId">مانده بدهی:</label>
                             <div class="fbold d-flex align-items-baseline gap-1" style="color:white;">
                                 <span id="AllRemainedId" style="font-size:clamp(14px,1.5vw,18px);">-</span>
                                 <span style="color:white;font-size:clamp(12px,2vw,13px);">ريال</span>
                             </div>
                         </div>
-                        @* <button style="border-radius:5px; height:fit-content" class="buttonPurple">صورت حساب</button> *@
                     </div>
-                    @* width:350px; *@
-                    <div class="walledNotCredit cursor-pointer" id="wallet-balance" style="min-width: 280px;width: auto" onclick="ShowModalInvoiceWallet(1)">
-                        <div class="d-flex align-items-center justify-content-around gap-1 gap-lg-2">
-                            <span class="fMedium" style="color:lightgray">اعتبار کیف پول: </span>
-                            <span class="fbold d-flex align-items-baseline gap-1 gap-xl-2" style="color:white;">
+                    @if (User.IsCustomer()) {
+                        <div class="walledNotCredit" id="wallet-balance">
+                            <div class="d-flex align-items-center justify-content-around gap-1 gap-lg-2">
+                                <span class="fMedium" style="color:lightgray">اعتبار کیف پول: </span>
+                                <span class="fbold d-flex align-items-baseline gap-1 gap-xl-2" style="color:white;">
                                     <span id="WalletId" style="font-size:22px;">-</span>
                                     <span style="color:white;font-size:clamp(13px,2vw,14px);">ريال</span>
                                 </span>
+                            </div>
                         </div>
-                    </div>
-                    @*
-                    <div>
-                    <label  style="color:lightgray">کل پیش پرداخت:</label>
-                    <label class="fbold" style="color:white;font-size:17px" id="AllPFacPaymentId"></label>
-                    </div>
-                     *@
-
-                    @*<div>
-                    <label  style="color:lightgray" id="AllreminedTitleId">مانده:</label>
-                    <label class="fbold" style="color:white;font-size:17px" id="AllRemainedId"></label>
-                    </div>*@
-                    @*<button style="border-radius:5px; height:fit-content" class="buttonPurple">صورت حساب</button>*@
+                    } else {
+                        <div class="walledNotCredit cursor-pointer" id="wallet-balance" onclick="ShowModalInvoiceWallet(1)">
+                            <div class="d-flex align-items-center justify-content-around gap-1 gap-lg-2">
+                                <span class="fMedium" style="color:lightgray">اعتبار کیف پول: </span>
+                                <span class="fbold d-flex align-items-baseline gap-1 gap-xl-2" style="color:white;">
+                                    <span id="WalletId" style="font-size:22px;">-</span>
+                                    <span style="color:white;font-size:clamp(13px,2vw,14px);">ريال</span>
+                                </span>
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
         </div>

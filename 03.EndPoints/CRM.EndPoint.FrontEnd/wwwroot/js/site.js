@@ -105,16 +105,22 @@ async function sendApiRequest(
     } catch (err) {
         console.error("API Error:", err);
         
+        const response = err.response;
+        const status = err.status || response?.status || "";
+        
+        const contentType = response?.headers?.["content-type"] ?? "";
+        
         let errorMessage;
-        if (err.response?.data instanceof Blob) {
-            errorMessage = await err.response.data.text();
-        } else if (typeof err.response?.data === "string") {
-            errorMessage = err.response.data;
-        } else if (err.response?.data?.message) {
-            errorMessage = err.response.data.message;
+        if (contentType.includes("text/html")) {
+            errorMessage = null;
+        } else if (response?.data instanceof Blob) {
+            errorMessage = await response.data.text();
+        } else if (typeof response?.data === "string") {
+            errorMessage = response.data;
+        } else if (response?.data?.message) {
+            errorMessage = response.data.message;
         }
         
-        const status = err.status || "";
         errorMessage = errorMessage || `خطایی در ارتباط با سرور رخ داده است ${status ? `(${status})` : ""}`;
         
         if (typeof toastifyError === "function") {

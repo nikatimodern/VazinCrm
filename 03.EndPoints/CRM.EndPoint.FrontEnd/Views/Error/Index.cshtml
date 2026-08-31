@@ -3,7 +3,9 @@
     var errorMessage = ViewBag.ErrorMessage as string;
     var originalPath = ViewBag.OriginalPath as string;
 
-    Layout = statusCode == 404 ? "_Layout" : null;
+    Layout = statusCode == 404
+        ? User.IsCustomer() ? "_CustomerLayout" : "_Layout"
+        : null;
 
     var errorImage = statusCode switch {
         404 => "/static/404.png",

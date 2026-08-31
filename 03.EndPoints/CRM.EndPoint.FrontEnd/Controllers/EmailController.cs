@@ -74,7 +74,7 @@ public class EmailController(CRMContextDb db, UserManager<AppUser> userManager, 
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var email = await db.Emails.Where(e => e.Id == id).FirstOrDefaultAsync();
-            if (email == null) return NotFound();
+            if (email == null) return NotFound("رکوردی یافت نشد!");
 
             if (type == 1)
             {
