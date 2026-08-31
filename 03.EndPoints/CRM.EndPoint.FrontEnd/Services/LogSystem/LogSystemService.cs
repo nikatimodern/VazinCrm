@@ -24,6 +24,7 @@ using CRM.Core.Domain.RequestAmounts.Entities;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.Core.Domain.Transfers.Entities;
 using CRM.Core.Domain.Transfers.Enums;
+using CRM.Core.Domain.Warehouses.Entities;
 using CRM.EndPoint.FrontEnd.Models.LogSystem;
 using CRM.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
@@ -208,7 +209,7 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
 
                     case LogActionEnum.بازیابی:
                         return $"سفارش شماره {serialNumber} با عنوان <i>{deal.Title}</i> توسط <b>{fullName}</b> بازیابی شد.";
-                    
+
                     case LogActionEnum.تایید_و_تغییر_وضعیت:
                         return $"سفارش شماره {serialNumber} با عنوان <i>{deal.Title}</i> توسط <b>{fullName}</b> تایید مالی شد.";
 
@@ -573,6 +574,33 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
 
                     case LogActionEnum.حذف:
                         return $"یک عنوان هزینه تنخواه ({baseCash.CostTitle}) توسط <b>{fullName}</b> حذف شد.";
+                }
+
+                break;
+
+            case Warehouse w:
+                switch (action)
+                {
+                    case LogActionEnum.ثبت:
+                        return $"یک انبار ({w.Title}) توسط <b>{fullName}</b> ثبت شد.";
+
+                    case LogActionEnum.حذف:
+                        return $"انبار ({w.Title}) توسط <b>{fullName}</b> حذف شد.";
+                }
+
+                break;
+
+            case WarehouseProduct wp:
+                switch (action)
+                {
+                    case LogActionEnum.ثبت:
+                        return $"یک محصول انبار ({wp.ProductTxt}) توسط <b>{fullName}</b> ثبت شد.";
+
+                    case LogActionEnum.ویرایش:
+                        return $"محصول انبار ({wp.ProductTxt}) توسط <b>{fullName}</b> ویرایش شد.";
+
+                    case LogActionEnum.حذف:
+                        return $" محصول انبار ({wp.ProductTxt}) توسط <b>{fullName}</b> حذف شد.";
                 }
 
                 break;

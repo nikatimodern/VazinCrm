@@ -23,7 +23,6 @@ public class CheckController(
     UserManager<AppUser> userManager,
     DateTimeServices dtService,
     LogSystemService logSystemService) : Controller {
-    
     [HttpGet]
     public async Task<IActionResult> Index()
     {
@@ -38,7 +37,7 @@ public class CheckController(
     }
 
 
-    public async Task<List<CheckbookVModel>> GetAllCheckbooks()
+    private async Task<List<CheckbookVModel>> GetAllCheckbooks()
     {
         var checkbooks = await db.Checkbooks
             .AsNoTracking()

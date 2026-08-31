@@ -6777,17 +6777,18 @@ table tr.payment-vosoled > td {
 }
 
 
-.checkbook-grid {
+/*  */
+.cards-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 	gap: 1.5rem;
 }
 
 
-.checkbook-card {
+.clickable-card {
 	background: #fff;
 	border-radius: 12px;
-	border: 1px solid var(--checkbook-card-color);
+	border: 1px solid var(--clickable-card-color);
 	border-top-width: 8px;
 	padding: 1.5rem;
 	cursor: pointer;
@@ -6796,18 +6797,18 @@ table tr.payment-vosoled > td {
 }
 
 
-.checkbook-card .checkbook-card__title {
+.clickable-card .clickable-card__title {
 	font-family: IRANSansBold;
 	margin-bottom: .5rem;
-	color: var(--checkbook-card-color);
+	color: var(--clickable-card-color);
 	transition: color 0.25s;
 }
 
 
-.checkbook-card .checkbook-card__badge {
-	background-color: var(--checkbook-card-bg);
-	color: var(--checkbook-card-color);
-	border: 1px solid var(--checkbook-card-bg-border);
+.clickable-card .clickable-card__badge {
+	background-color: var(--clickable-card-bg);
+	color: var(--clickable-card-color);
+	border: 1px solid var(--clickable-card-bg-border);
 	padding: 0.25rem 0.5rem;
 	font-size: 11px;
 	font-family: IRANSansBold;
@@ -6816,45 +6817,54 @@ table tr.payment-vosoled > td {
 }
 
 
-.checkbook-card:hover {
+.clickable-card:hover {
 	transform: translateY(-4px);
 	box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
-	border-color: var(--checkbook-card-color);
+	border-color: var(--clickable-card-color);
 }
 
 
-.checkbook-card {
-	--checkbook-card-color: #475569;
-	--checkbook-card-bg: #f8fafc;
-	--checkbook-card-bg-border: #e2e8f0;
+.clickable-card {
+	--clickable-card-color: #475569;
+	--clickable-card-bg: #f8fafc;
+	--clickable-card-bg-border: #e2e8f0;
 }
 
 
-/* .checkbook-card:nth-child(4n+1) {
-  --checkbook-card-color: #2563eb;
-  --checkbook-card-bg: #eff6ff;
-  --checkbook-card-bg-border: #bfdbfe;
+/*
+.clickable-card.warehouse-card {
+	--clickable-card-color: #0d9488;
+	--clickable-card-bg: #f0fdfa;
+	--clickable-card-bg-border: #ccfbf1;
+}
+*/
+
+
+/* .clickable-card:nth-child(4n+1) {
+  --clickable-card-color: #2563eb;
+  --clickable-card-bg: #eff6ff;
+  --clickable-card-bg-border: #bfdbfe;
 }
 
-.checkbook-card:nth-child(4n+2) {
-  --checkbook-card-color: #0d9488;
-  --checkbook-card-bg: #f0fdfa;
-  --checkbook-card-bg-border: #ccfbf1;
+.clickable-card:nth-child(4n+2) {
+  --clickable-card-color: #0d9488;
+  --clickable-card-bg: #f0fdfa;
+  --clickable-card-bg-border: #ccfbf1;
 }
 
-.checkbook-card:nth-child(4n+3) {
-  --checkbook-card-color: #4f46e5;
-  --checkbook-card-bg: #f5f3ff;
-  --checkbook-card-bg-border: #ddd6fe;
+.clickable-card:nth-child(4n+3) {
+  --clickable-card-color: #4f46e5;
+  --clickable-card-bg: #f5f3ff;
+  --clickable-card-bg-border: #ddd6fe;
 }
 
-.checkbook-card:nth-child(4n+4) {
-  --checkbook-card-color: #475569;
-  --checkbook-card-bg: #f8fafc;
-  --checkbook-card-bg-border: #e2e8f0;
+.clickable-card:nth-child(4n+4) {
+  --clickable-card-color: #475569;
+  --clickable-card-bg: #f8fafc;
+  --clickable-card-bg-border: #e2e8f0;
 } */
 
-.card-add-dashed {
+.clickable-card-add {
 	border: 2px dashed #cbd5e1 !important;
 	background: transparent;
 	display: flex;
@@ -6866,7 +6876,7 @@ table tr.payment-vosoled > td {
 }
 
 
-.card-add-dashed:hover {
+.clickable-card-add:hover {
 	border-color: #475569 !important;
 	color: #475569;
 	transform: translateY(-4px);
@@ -6877,7 +6887,7 @@ table tr.payment-vosoled > td {
 	display: inline-block;
 	width: 4px;
 	height: 18px;
-	background-color: #475569;
+	background-color: var(--clickable-card-color, #475569) ;
 	border-radius: 2px;
 }
 
