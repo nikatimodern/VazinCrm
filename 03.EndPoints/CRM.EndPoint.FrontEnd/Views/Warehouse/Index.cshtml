@@ -16,17 +16,21 @@
         </div>
     </div>
 
-    <div id="warehouseProducts-section" class="@(hasWarehouseId ? "" : "d-none")">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+    <div id="warehouseTransactions-section" class="@(hasWarehouseId ? "" : "d-none")">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
             <div class="d-flex align-items-center gap-2">
                 <span class="section-title-dot"></span>
-                <h5 id="selected-checkbook-title" class="fbold text-dark m-0">لیست محصولات</h5>
+                <h5 id="selected-warehouse-title" class="fbold text-dark m-0">گردش انبار</h5>
             </div>
 
-            <div class="d-flex gap-2">
-                <button class="buttonGreen0" onclick="ModalToggle('warehouseProductModal')">
-                    افزودن محصول جدید
+            <div class="section-actions d-flex gap-2 flex-grow-1 justify-content-end">
+                <button class="buttonGreen0" onclick="showWarehouseTransactionModal(1)">
+                    ورود به انبار
                     <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
+                </button>
+                <button class="buttonCancel2" onclick="showWarehouseTransactionModal(0)">
+                    خروج از انبار
+                    <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 10a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H4.75A.75.75 0 0 1 4 10Z" clip-rule="evenodd" /></svg>
                 </button>
                 <button class="buttonCancel-white" onclick="backToWarehouses()">
                     بازگشت
@@ -36,12 +40,14 @@
         </div>
 
         <div>
-            <table id="warehouseProductsTable" class="table-hover table table-bordered nowrap table-striped">
+            <table id="warehouseTransactionsTable" class="table-hover table table-bordered nowrap">
                 <thead>
                 <tr>
                     <th>شرح محصول</th>
                     <th>مقدار</th>
                     <th>واحد</th>
+                    <th>تاریخ ثبت</th>
+                    <th>نوع</th>
                     <th>عملیات</th>
                 </tr>
                 </thead>
@@ -53,9 +59,8 @@
 </div>
 
 
-
 <partial name="Modals/_WarehouseModal" />
-<partial name="Modals/_WarehouseProductModal" />
+<partial name="Modals/_WarehouseTransactionModal" />
 
 @section Scripts {
     <script src="~/js/warehouse.js" asp-append-version="true"></script>

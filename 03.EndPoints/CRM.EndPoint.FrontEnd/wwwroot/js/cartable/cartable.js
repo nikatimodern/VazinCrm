@@ -720,7 +720,6 @@ function getAllDealsDt() {
         language: languageDatatable,
         layout: layoutDatatable,
         initComplete: initFilterDealTable,
-        
     });
     function initFilterDealTable() {
         const dtSearch = document.querySelector(".dt-search");

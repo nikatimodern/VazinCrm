@@ -590,7 +590,7 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
 
                 break;
 
-            case WarehouseProduct wp:
+            case WarehouseTransaction wp:
                 switch (action)
                 {
                     case LogActionEnum.ثبت:

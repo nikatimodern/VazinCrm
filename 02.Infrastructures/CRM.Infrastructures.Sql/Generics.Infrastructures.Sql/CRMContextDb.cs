@@ -97,7 +97,7 @@ namespace CRM.Infrastructures.Sql {
         public DbSet<CashGroup> CashGroups { get; set; }
         public DbSet<CashOrderHead> CashOrderHeads { get; set; }
         public DbSet<Warehouse> Warehouses { get; set; }
-        public DbSet<WarehouseProduct> WarehousesProducts { get; set; }
+        public DbSet<WarehouseTransaction> WarehouseTransactions { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -159,7 +159,7 @@ namespace CRM.Infrastructures.Sql {
             modelBuilder.Entity<CashGroup>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<CashOrderHead>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<Warehouse>().HasQueryFilter(f => f.IsDeleted == false);
-            modelBuilder.Entity<WarehouseProduct>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<WarehouseTransaction>().HasQueryFilter(f => f.IsDeleted == false);
 
 
             modelBuilder.Entity<Order>().Ignore(f => f.Row);
