@@ -131,23 +131,66 @@ function showWarehouseTransactions(id, title) {
         warehouseTransactionTbl.ajax.url(`/Warehouse/GetWarehouseTransactionsDt?warehouseId=${id}`).load();
     }
 }
-
-function showWarehouseTransactionModal(type) {
-    warehouseTransactionsData.transactionType = type;
+const configWarehouseTransactionModal = (type) => {
+    const isOut = type === 0;
+    const color = isOut ? "#851b1d" : "var(--color8)";
+    
     const titleElm = warehouseTransactionModal.querySelector(".modal-title");
     const contentElm = warehouseTransactionModal.querySelector(".modal-content");
     
-    titleElm.textContent = type === 1 ? "ورود به انبار" : "خروج از انبار";
-    titleElm.style.backgroundColor = type === 1 ? "var(--color8)" : "#851b1d";
-    contentElm.style.borderColor = type === 1 ? "var(--color8)" : "#851b1d";
+    titleElm.textContent = isOut ? "خروج از انبار" : "ورود به انبار";
+    titleElm.style.backgroundColor = color;
+    contentElm.style.borderColor = color;
+};
+const showWarehouseInModal = () => {
+    warehouseTransactionsData.transactionType = 1;
     
+    configWarehouseTransactionModal(1);
     ModalToggle(warehouseTransactionModal, "show");
-}
+};
+const showWarehouseOutModal = (data) => {
+    warehouseTransactionsData.transactionType = 0;
+    warehouseTransactionsData.parentId = data.id;
+    
+    const productElm = warehouseTransactionModal.querySelector("input[name='productTxt']");
+    const unitElm = warehouseTransactionModal.querySelector("select[name='unit']");
+    
+    productElm.value = data.productTxt;
+    unitElm.value = data.unit;
+    
+    toggleElementsDisabled(productElm, true);
+    toggleElementsDisabled(unitElm, true);
+    
+    configWarehouseTransactionModal(0);
+    ModalToggle(warehouseTransactionModal, "show");
+};
+
 function cancelWarehouseTransactionModal() {
-    warehouseTransactionsData = {};
     ModalToggle(warehouseTransactionModal, "hide");
+    warehouseTransactionsData = { warehouseId: warehouseTransactionsData.warehouseId };
     mySer.emptyForm("warehouseTransactionForm");
+    
+    const productElm = warehouseTransactionModal.querySelector("input[name='productTxt']");
+    const unitElm = warehouseTransactionModal.querySelector("select[name='unit']");
+    toggleElementsDisabled(productElm, false);
+    toggleElementsDisabled(unitElm, false);
 }
+
+const editWarehouseTransaction = async (data) => {
+    warehouseTransactionsData = data;
+    
+    configWarehouseTransactionModal(data.transactionType);
+    mySer.convertJsonToForm(data, "warehouseTransactionForm");
+    ModalToggle(warehouseTransactionModal, "show");
+};
+
+const getWarehouseTransaction = async (id) => {
+    return await sendApiRequest({
+        url: "/Warehouse/GetWarehouseTransaction",
+        params: { id },
+    });
+};
+
 
 async function submitWarehouseTransactionModal() {
     if (!await mySer.CheckValidForm("warehouseTransactionForm")) return;
@@ -198,10 +241,14 @@ function initWarehouseTransaction(id) {
             { data: "transactionType", render: data => data === 1 ? "ورود" : "خروج" },
             {
                 data: "id",
-                render: data => `
+                orderable: false,
+                render: (data, type, row) => `
                     <div class="inline-flex-center gap-1">
-                        <button type="button" style="width: 25px;font-size: 12px" class="buttonGreen3 flex-center shadow-none" onclick="editWarehouseTransaction('${data}')"><i class="fa fa-pencil"></i></button>
-                        <button type="button" style="width: 25px;font-size: 12px" class="buttonCancel2 flex-center shadow-none" onclick="deleteWarehouseTransaction('${data}')"><i class="fa fa-trash"></i></button>
+                        ${true || row.transactionType === 1 ? `
+                            <button class="icon-button icon-button--orange" style="width: 32px" data-title-right="ثبت خروج از انبار" data-action="warehouse-out"><i class="fa fa-sign-out"></i>                            </button>
+                        ` : ""}
+                        <button class="icon-button icon-button--green" data-action="warehouse-edit"><i class="fa fa-pencil"></i></button>
+                        <button class="icon-button icon-button--red" data-action="warehouse-delete"><i class="fa fa-trash"></i></button>
                     </div>
                 `,
             },
@@ -222,24 +269,31 @@ function initWarehouseTransaction(id) {
             });
         },
     });
-}
-
-
-const editWarehouseTransaction = async (id) => {
-    warehouseTransactionsData = await getWarehouseTransaction(id);
-    if (!warehouseTransactionsData) return;
     
-    mySer.convertJsonToForm(warehouseTransactionsData, "warehouseTransactionForm");
-    
-    ModalToggle(warehouseTransactionModal);
-};
-
-const getWarehouseTransaction = async (id) => {
-    return await sendApiRequest({
-        url: "/Warehouse/GetWarehouseTransaction",
-        params: { id },
+    document.querySelector("#warehouseTransactionsTable")?.addEventListener("click", async (e) => {
+        const button = e.target.closest("[data-action]");
+        if (!button) return;
+        
+        const rowElement = button.closest("tr");
+        const data = warehouseTransactionTbl.row(rowElement).data();
+        
+        if (!data) return;
+        
+        switch (button.dataset.action) {
+            case "warehouse-out":
+                showWarehouseOutModal(data);
+                break;
+            
+            case "warehouse-edit":
+                await editWarehouseTransaction(data);
+                break;
+            
+            case "warehouse-delete":
+                await deleteWarehouseTransaction(data.id);
+                break;
+        }
     });
-};
+}
 
 const deleteWarehouseTransaction = async (id) => {
     await deleteItem({

@@ -3571,6 +3571,8 @@ document.querySelectorAll(".chip").forEach(chip => {
 
 
 const toggleElementsDisabled = (elms, isDisabled = true) => {
+    if (!elms) return;
+    
     const items = elms instanceof NodeList || elms instanceof Array ? elms : [elms];
     items.forEach(el => {
         if (el.tomselect) {

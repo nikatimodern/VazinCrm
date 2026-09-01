@@ -189,33 +189,40 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpPost]
     public async Task<IActionResult> AddWarehouseTransaction([FromBody] WarehouseTransaction model)
     {
-        if (model == null) return BadRequest();
-
-        var user = await userManager.GetUserAsync(HttpContext.User);
-        model.UnitTxt = model.Unit.ToString().Replace("_", " ");
-
-        if (model.Id == Guid.Empty)
+        try
         {
-            model.UserCreator = user.FullName;
-            model.UserCreatorID = user.Id;
+            if (model == null) return BadRequest();
 
-            db.WarehouseTransactions.Add(model);
-            await logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
-        } else
-        {
-            var oldItem = await db.WarehouseTransactions.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
-            model.ModifyDate = DateTime.Now;
-            model.ModifyDateTxt = BaseServices.GetDateTimePersian();
-            model.UserModify = user.FullName;
-            model.UserModifyID = user.Id;
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            model.UnitTxt = model.Unit.ToString().Replace("_", " ");
 
-            db.WarehouseTransactions.Update(model);
-            await logSystemService.LogChange(oldItem, model, LogActionEnum.ویرایش, user);
+            if (model.Id == Guid.Empty)
+            {
+                model.UserCreator = user.FullName;
+                model.UserCreatorID = user.Id;
+
+                db.WarehouseTransactions.Add(model);
+                await logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
+            } else
+            {
+                var oldItem = await db.WarehouseTransactions.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
+                model.ModifyDate = DateTime.Now;
+                model.ModifyDateTxt = BaseServices.GetDateTimePersian();
+                model.UserModify = user.FullName;
+                model.UserModifyID = user.Id;
+
+                db.WarehouseTransactions.Update(model);
+                await logSystemService.LogChange(oldItem, model, LogActionEnum.ویرایش, user);
+            }
+
+
+            await db.SaveChangesAsync();
+            return Ok();
         }
-
-
-        await db.SaveChangesAsync();
-        return Ok();
+        catch (Exception)
+        {
+            return BadRequest();
+        }
     }
 
     [HttpDelete]

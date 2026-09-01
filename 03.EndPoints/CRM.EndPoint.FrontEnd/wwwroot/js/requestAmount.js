@@ -129,10 +129,10 @@ const initPaymentTable = () => {
                 render: function (data, type, row) {
                     return `
                         <div class="inline-flex-center gap-1">
-                            <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.payment.id}', 9)"><i class="fa fa-paperclip"></i></button>
+                            <button type="button" class="icon-button icon-button--gray" onclick="showAttachments('${row.payment.id}', 9)"><i class="fa fa-paperclip"></i></button>
                           ${canEditPaymentTable
-                        ? ` <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditPaymentModal('${row.payment.id}')"><i class="fa fa-pencil"></i></button>
-                            <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deletePayment('${row.payment.id}')"><i class="fa fa-trash"></i></button>`
+                        ? ` <button type="button" class="icon-button icon-button--green" onclick="showEditPaymentModal('${row.payment.id}')"><i class="fa fa-pencil"></i></button>
+                            <button type="button" class="icon-button icon-button--red" onclick="deletePayment('${row.payment.id}')"><i class="fa fa-trash"></i></button>`
                         : ""}
                             
                         </div>

@@ -11,5 +11,6 @@ public class WarehouseTransaction : BaseEntity {
     public UnitTypeEnums Unit { get; set; }
     public string UnitTxt { get; set; }
     public decimal Weight { get; set; }
+    public Guid? ParentId { get; set; }
     public WarehouseTransactionTypeEnum TransactionType { get; set; }
 }

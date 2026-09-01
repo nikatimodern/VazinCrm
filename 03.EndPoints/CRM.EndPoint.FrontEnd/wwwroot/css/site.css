@@ -3996,6 +3996,77 @@ a.badge-red:hover {
 }
 
 
+.icon-button {
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border-radius: 4px;
+	
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	
+	font-size: 12px;
+	transition: background-color 0.15s ease, color 0.15s ease;
+	color: #fff;
+}
+
+
+.icon-button svg {
+	width: 24px !important;
+}
+
+
+.icon-button--green {
+	background-color: #02514C;
+}
+
+
+.icon-button--green:hover {
+	background-color: #003e39;
+}
+
+
+.icon-button--gray {
+	background-color: rgb(135, 135, 135);
+}
+
+
+.icon-button--gray:hover {
+	background-color: #5C5F66;
+}
+
+
+.icon-button--red {
+	background-color: #851b1d;
+}
+
+
+.icon-button--red:hover {
+	background-color: #631617;
+}
+
+
+.icon-button--orange {
+	background-color: #c65d16;
+}
+
+
+.icon-button--orange:hover {
+	background-color: var(--color19);
+}
+
+
+.icon-button--blue {
+	background-color: var(--color21);
+}
+
+
+.icon-button--blue:hover {
+	background-color: #014ab0;
+}
+
+
 .PhoneAddedPartner {
 	width: 100%;
 	display: flex;
@@ -6794,6 +6865,7 @@ table tr.payment-vosoled > td {
 	cursor: pointer;
 	transition: all 0.25s ease-in-out;
 	position: relative;
+	min-height: 120px;
 }
 
 
@@ -6897,6 +6969,73 @@ table tr.payment-vosoled > td {
 	border-radius: 2px;
 }
 
+
+.warehouse-transaction-actions {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+}
+
+
+.warehouse-action {
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	border: 0;
+	border-radius: 6px;
+	
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+
+.warehouse-action i {
+	font-size: 12px;
+}
+
+
+.warehouse-action--out {
+	background: #fff3e8;
+	color: #c65d16;
+}
+
+
+.warehouse-action--out:hover {
+	background: #c65d16;
+	color: #fff;
+}
+
+
+.warehouse-action--edit {
+	background: #e8f5f5;
+	color: #075e5e;
+}
+
+
+.warehouse-action--edit:hover {
+	background: #075e5e;
+	color: #fff;
+}
+
+
+.warehouse-action--delete {
+	background: #fbe9e9;
+	color: #9b1818;
+}
+
+
+.warehouse-action--delete:hover {
+	background: #9b1818;
+	color: #fff;
+}
+
+
+/*  */
 
 .required-mark label:has(+ :is(input, textarea, select)[required])::after {
 	content: " *";

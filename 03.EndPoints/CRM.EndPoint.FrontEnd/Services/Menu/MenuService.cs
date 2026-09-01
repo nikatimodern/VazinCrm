@@ -335,6 +335,9 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                         Title = "انبار",
                         Url = "/Warehouse/Index",
                         DisplayOrder = 5,
+                        Roles = [
+                            AppRoles.Admin
+                        ],
                     },
 
                     #endregion

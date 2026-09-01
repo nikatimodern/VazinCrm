@@ -122,8 +122,8 @@ function initCheckbookTable(id) {
                 data: "id",
                 render: data => `
                     <div class="inline-flex-center gap-1">
-                        <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="editCheck('${data}')"><i class="fa fa-pencil"></i></button>
-                        <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deleteCheck('${data}')"><i class="fa fa-trash"></i></button>
+                        <button type="button" class="icon-button icon-button--green" onclick="editCheck('${data}')"><i class="fa fa-pencil"></i></button>
+                        <button type="button" class="icon-button icon-button--red" onclick="deleteCheck('${data}')"><i class="fa fa-trash"></i></button>
                     </div>
                 `,
             },
