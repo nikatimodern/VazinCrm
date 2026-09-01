@@ -31,7 +31,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             .AsNoTracking()
             .Select(c => new WarehousVModel {
                 Warehouse = c,
-                WarehouseProductsCount = c.WarehouseProducts.Count
+                WarehouseTransactionsCount = c.WarehouseTransactions.Count
             })
             .ToListAsync();
 
@@ -51,11 +51,26 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         if (model == null) return BadRequest();
 
         var user = await userManager.GetUserAsync(HttpContext.User);
-        model.UserCreatorID = user.Id;
-        model.UserCreator = user.FullName;
 
-        db.Warehouses.Add(model);
-        await logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
+        if (model.Id == Guid.Empty)
+        {
+            model.UserCreatorID = user.Id;
+            model.UserCreator = user.FullName;
+
+            db.Warehouses.Add(model);
+            await logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
+        } else
+        {
+            var oldItem = await db.Warehouses.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
+            model.ModifyDate = DateTime.Now;
+            model.ModifyDateTxt = BaseServices.GetDateTimePersian();
+            model.UserModify = user.FullName;
+            model.UserModifyID = user.Id;
+
+            db.Warehouses.Update(model);
+            await logSystemService.LogChange(oldItem, model, LogActionEnum.ویرایش, user);
+        }
+
         await db.SaveChangesAsync();
         return Ok();
     }
@@ -82,37 +97,97 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     }
 
 
-    public async Task<IActionResult> GetWarehouseProduct(Guid id)
+    public async Task<IActionResult> GetWarehouse(Guid id)
     {
         try
         {
-            var item = await db.WarehousesProducts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
+            var item = await db.Warehouses.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
             if (item == null) return NotFound("رکوردی یافت نشد!");
 
             return Ok(item);
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetWarehouseProductsDt(Guid warehouseId)
+
+    public async Task<IActionResult> GetWarehouseTransaction(Guid id)
     {
-        var checks = await db.WarehousesProducts
-            .AsNoTracking()
-            .Where(f => f.WarehouseId == warehouseId)
-            .OrderByDescending(f => f.CreateDate)
-            .ToListAsync();
-        var model = new {
-            data = checks,
-        };
-        return Ok(model);
+        try
+        {
+            var item = await db.WarehouseTransactions.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
+            if (item == null) return NotFound("رکوردی یافت نشد!");
+
+            return Ok(item);
+        }
+        catch (Exception)
+        {
+            return BadRequest();
+        }
     }
 
     [HttpPost]
-    public async Task<IActionResult> AddWarehouseProduct([FromBody] WarehouseProduct model)
+    public async Task<IActionResult> GetWarehouseTransactionsDt(Guid warehouseId)
+    {
+        var draw = Request.Form["draw"].FirstOrDefault();
+        var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
+        var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
+        var searchValue = Request.Form["search[value]"].FirstOrDefault();
+        var sortColumnIndex = Request.Form["order[0][column]"].FirstOrDefault();
+        var sortDirection = Request.Form["order[0][dir]"].FirstOrDefault();
+        var sortColumn = Request.Form[$"columns[{sortColumnIndex}][data]"].FirstOrDefault();
+//        var model = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["model"].FirstOrDefault());
+
+
+        var query = db.WarehouseTransactions
+            .AsNoTracking()
+            .Where(f => f.WarehouseId == warehouseId)
+            .AsQueryable();
+
+        if (!string.IsNullOrEmpty(searchValue))
+        {
+            var serVal = searchValue.Trim();
+            query = query.Where(f =>
+                f.ProductTxt.Contains(serVal)
+            );
+        }
+
+        if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortDirection))
+        {
+            var isAsc = sortDirection == "asc";
+
+            query = sortColumn switch {
+                "productTxt" => isAsc ? query.OrderBy(c => c.ProductTxt) : query.OrderByDescending(c => c.ProductTxt),
+                "weight" => isAsc ? query.OrderBy(c => c.Weight) : query.OrderByDescending(c => c.Weight),
+                "transactionType" => isAsc ? query.OrderBy(c => c.TransactionType) : query.OrderByDescending(c => c.TransactionType),
+                _ => isAsc ? query.OrderBy(c => c.CreateDate) : query.OrderByDescending(c => c.CreateDate),
+            };
+        } else
+        {
+            query = query.OrderByDescending(c => c.CreateDate);
+        }
+
+        var recordsTotal = await query.CountAsync();
+
+        if (length != -1)
+        {
+            query = query.Skip(start).Take(length);
+        }
+
+        var data = await query.ToListAsync();
+
+        return Json(new {
+            draw,
+            recordsTotal,
+            recordsFiltered = recordsTotal,
+            data,
+        });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> AddWarehouseTransaction([FromBody] WarehouseTransaction model)
     {
         if (model == null) return BadRequest();
 
@@ -124,17 +199,17 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             model.UserCreator = user.FullName;
             model.UserCreatorID = user.Id;
 
-            db.WarehousesProducts.Add(model);
+            db.WarehouseTransactions.Add(model);
             await logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
         } else
         {
-            var oldItem = await db.WarehousesProducts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
+            var oldItem = await db.WarehouseTransactions.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
             model.ModifyDate = DateTime.Now;
             model.ModifyDateTxt = BaseServices.GetDateTimePersian();
             model.UserModify = user.FullName;
             model.UserModifyID = user.Id;
 
-            db.WarehousesProducts.Update(model);
+            db.WarehouseTransactions.Update(model);
             await logSystemService.LogChange(oldItem, model, LogActionEnum.ویرایش, user);
         }
 
@@ -144,11 +219,11 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     }
 
     [HttpDelete]
-    public async Task<IActionResult> DeleteWarehouseProduct(Guid id)
+    public async Task<IActionResult> DeleteWarehouseTransaction(Guid id)
     {
         if (id == Guid.Empty) return BadRequest();
 
-        var product = await db.WarehousesProducts.FindAsync(id);
+        var product = await db.WarehouseTransactions.FindAsync(id);
         if (product == null) return NotFound("رکوردی یافت نشد!");
 
         var user = await userManager.GetUserAsync(HttpContext.User);

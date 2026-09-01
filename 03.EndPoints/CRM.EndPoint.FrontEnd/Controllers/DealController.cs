@@ -90,9 +90,9 @@ public class DealController : Controller {
         var sortDirection = Request.Form["order[0][dir]"].FirstOrDefault();
         var sortColumn = Request.Form[$"columns[{sortColumnIndex}][data]"].FirstOrDefault();
         var model = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["model"].FirstOrDefault());
-        
+
         var baseQuery = db.Deals.AsNoTracking();
-        
+
         if (!string.IsNullOrEmpty(searchValue))
         {
             var serVal = searchValue.Trim();
@@ -144,12 +144,12 @@ public class DealController : Controller {
         }
 
         var recordsTotal = await query.CountAsync();
-        
+
         if (length != -1)
         {
             query = query.Skip(start).Take(length);
         }
-        
+
         var data = await query.ToListAsync();
 
         await SetDealCountsAsync(data);

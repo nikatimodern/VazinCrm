@@ -1,34 +1,36 @@
-let warehouseProductsData = {};
-let warehouseProductTbl = null;
+let warehouseData = {};
+let warehouseTransactionsData = {};
+let warehouseTransactionTbl = null;
 
 const warehouseModal = document.getElementById("warehouseModal");
-const warehouseProductModal = document.getElementById("warehouseProductModal");
+const warehouseTransactionModal = document.getElementById("warehouseTransactionModal");
 const warehouseFormElm = warehouseModal.querySelector("#warehouseForm");
 const warehousesSection = document.getElementById("warehouses-section");
-const warehouseProductsSection = document.getElementById("warehouseProducts-section");
+const warehouseTransactionsSection = document.getElementById("warehouseTransactions-section");
 
 window.addEventListener("popstate", syncWarehouseViewWithUrl);
 
 document.addEventListener("DOMContentLoaded", () => {
     syncWarehouseViewWithUrl();
-    Unit(3, "warehouseProductForm");
+    Unit(3, "warehouseTransactionForm");
 });
 
 function syncWarehouseViewWithUrl() {
     const { warehouse, title } = getUrlParams();
     if (warehouse) {
-        showWarehouseProducts(warehouse, decodeURIComponent(title || "انبار"));
+        showWarehouseTransactions(warehouse, decodeURIComponent(title || "انبار"));
     } else {
         warehousesSection.classList.remove("d-none");
-        warehouseProductsSection.classList.add("d-none");
+        warehouseTransactionsSection.classList.add("d-none");
     }
 }
 
 warehouseModal?.addEventListener("hidden.bs.modal", cancelWarehouseModal);
-warehouseProductModal?.addEventListener("hidden.bs.modal", cancelWarehouseProductModal);
+warehouseTransactionModal?.addEventListener("hidden.bs.modal", cancelWarehouseTransactionModal);
 
 
 function cancelWarehouseModal() {
+    warehouseData = {};
     mySer.emptyForm("warehouseForm");
     ModalToggle(warehouseModal, "hide");
 }
@@ -37,10 +39,15 @@ warehouseFormElm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (!await mySer.CheckValidForm("warehouseForm")) return;
     
+    const model = {
+        ...warehouseData,
+        ...mySer.convertFormToJSON("warehouseForm"),
+    };
+    
     await sendApiRequest({
         url: "/Warehouse/AddWarehouse",
         method: "POST",
-        data: mySer.convertFormToJSON("warehouseForm"),
+        data: model,
         onSuccess: async () => {
             cancelWarehouseModal();
             await GetAllWarehouses();
@@ -65,6 +72,18 @@ async function deleteWarehouse(id) {
     });
 }
 
+async function editWarehouse(id) {
+    warehouseDropdown.close();
+    await sendApiRequest({
+        url: `/Warehouse/GetWarehouse/${id}`,
+        onSuccess: (res) => {
+            warehouseData = res.data;
+            mySer.convertJsonToForm(warehouseData, "warehouseForm");
+            ModalToggle(warehouseModal, "show");
+        },
+    });
+}
+
 
 document.addEventListener("click", (e) => {
     const card = e.target.closest(".clickable-card");
@@ -74,7 +93,7 @@ document.addEventListener("click", (e) => {
     const { id, warehouseTitle: title } = card.dataset;
     if (!id) return;
     
-    showWarehouseProducts(id, title);
+    showWarehouseTransactions(id, title);
 });
 
 const warehouseDropdown = Dropdown.setupDelegate({
@@ -90,82 +109,114 @@ const warehouseDropdown = Dropdown.setupDelegate({
 
 
 function backToWarehouses() {
-    warehouseProductsData = {};
+    warehouseTransactionsData = {};
     setUrlParams({ warehouse: null, title: null });
-    warehouseProductsSection.classList.add("d-none");
+    warehouseTransactionsSection.classList.add("d-none");
     warehousesSection.classList.remove("d-none");
 }
 
-
-function showWarehouseProducts(id, title) {
+/* ----------------------------------------------------------- */
+function showWarehouseTransactions(id, title) {
     warehousesSection.classList.add("d-none");
-    warehouseProductsSection.querySelector("#selected-checkbook-title").innerText = "لیست محصولات " + title || "";
-    warehouseProductsSection.classList.remove("d-none");
+    warehouseTransactionsSection.querySelector("#selected-warehouse-title").innerText = "گردش انبار " + title || "";
+    warehouseTransactionsSection.classList.remove("d-none");
     
-    warehouseProductsData.warehouseId = id;
+    warehouseTransactionsData.warehouseId = id;
     setUrlParams({ warehouse: id, title: title }, { replace: false });
     
-    if (!warehouseProductTbl) {
-        initWarehouseProduct(id);
+    if (!warehouseTransactionTbl) {
+        initWarehouseTransaction(id);
     } else {
-        warehouseProductTbl.clear().draw();
-        warehouseProductTbl.ajax.url(`/Warehouse/GetWarehouseProductsDt?warehouseId=${id}`).load();
+        warehouseTransactionTbl.clear().draw();
+        warehouseTransactionTbl.ajax.url(`/Warehouse/GetWarehouseTransactionsDt?warehouseId=${id}`).load();
     }
 }
 
-function cancelWarehouseProductModal() {
-    ModalToggle(warehouseProductModal, "hide");
-    mySer.emptyForm("warehouseProductForm");
+function showWarehouseTransactionModal(type) {
+    warehouseTransactionsData.transactionType = type;
+    const titleElm = warehouseTransactionModal.querySelector(".modal-title");
+    const contentElm = warehouseTransactionModal.querySelector(".modal-content");
+    
+    titleElm.textContent = type === 1 ? "ورود به انبار" : "خروج از انبار";
+    titleElm.style.backgroundColor = type === 1 ? "var(--color8)" : "#851b1d";
+    contentElm.style.borderColor = type === 1 ? "var(--color8)" : "#851b1d";
+    
+    ModalToggle(warehouseTransactionModal, "show");
+}
+function cancelWarehouseTransactionModal() {
+    warehouseTransactionsData = {};
+    ModalToggle(warehouseTransactionModal, "hide");
+    mySer.emptyForm("warehouseTransactionForm");
 }
 
-async function submitWarehouseProductModal() {
-    if (!await mySer.CheckValidForm("warehouseProductForm")) return;
+async function submitWarehouseTransactionModal() {
+    if (!await mySer.CheckValidForm("warehouseTransactionForm")) return;
     const model = {
-        ...warehouseProductsData,
-        ...mySer.convertFormToJSON("warehouseProductForm"),
+        ...warehouseTransactionsData,
+        ...mySer.convertFormToJSON("warehouseTransactionForm"),
     };
     
     await sendApiRequest({
-        url: "/Warehouse/AddWarehouseProduct",
+        url: "/Warehouse/AddWarehouseTransaction",
         method: "POST",
         data: model,
         onSuccess: () => {
-            cancelWarehouseProductModal();
-            warehouseProductTbl.ajax.reload();
+            cancelWarehouseTransactionModal();
+            warehouseTransactionTbl.ajax.reload();
             GetAllWarehouses();
         },
     });
 }
 
-function initWarehouseProduct(id) {
-    warehouseProductTbl = $("#warehouseProductsTable").DataTable({
+function initWarehouseTransaction(id) {
+    warehouseTransactionTbl = $("#warehouseTransactionsTable").DataTable({
+        // lengthMenu: [10, 25, 50, 100, { label: "همه", value: -1 }],
+        // pageLength: 10,
         paging: false,
+        processing: true,
+        serverSide: true,
+        search: {
+            return: true,
+        },
+        ordering: true,
+        order: { name: "createDateTxt", dir: "desc" },
+        responsive: true,
         scrollCollapse: true,
         scrollY: "calc(100dvh - 400px)",
-        responsive: true,
-        ordering: false,
-        searching: false,
         ajax: {
-            url: `/Warehouse/GetWarehouseProductsDt?warehouseId=${id}`,
+            url: `/Warehouse/GetWarehouseTransactionsDt?warehouseId=${id}`,
+            type: "POST",
         },
+        columnDefs: [
+            { targets: "_all", defaultContent: "-" },
+        ],
         columns: [
             { data: "productTxt" },
-            { data: "weight" },
+            { data: "weight", className: "direction-ltr", render: (data, type, row) => row.transactionType === 1 ? `+${data}` : `-${data}` },
             { data: "unitTxt" },
+            { data: "createDateTxt", name: "createDateTxt", render: renderDateTimeHtml },
+            { data: "transactionType", render: data => data === 1 ? "ورود" : "خروج" },
             {
                 data: "id",
                 render: data => `
                     <div class="inline-flex-center gap-1">
-                        <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="editWarehouseProduct('${data}')"><i class="fa fa-pencil"></i></button>
-                        <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deleteWarehouseProduct('${data}')"><i class="fa fa-trash"></i></button>
+                        <button type="button" style="width: 25px;font-size: 12px" class="buttonGreen3 flex-center shadow-none" onclick="editWarehouseTransaction('${data}')"><i class="fa fa-pencil"></i></button>
+                        <button type="button" style="width: 25px;font-size: 12px" class="buttonCancel2 flex-center shadow-none" onclick="deleteWarehouseTransaction('${data}')"><i class="fa fa-trash"></i></button>
                     </div>
                 `,
             },
         ],
         language: languageDatatable,
         layout: null,
+        createdRow: (row, data) => {
+            if (data.transactionType === 1) {
+                row.classList.add("tableRow-bgGreen");
+            } else if (data.transactionType === 0) {
+                row.classList.add("tableRow-bgRed");
+            }
+        },
         initComplete: () => {
-            document.querySelectorAll("#warehouseProductsTable_wrapper > div.row").forEach((row) => {
+            document.querySelectorAll("#warehouseTransactionsTable_wrapper > div.row").forEach((row) => {
                 row.classList.add("d-flex", "flex-wrap");
                 row.classList.remove("row");
             });
@@ -174,27 +225,27 @@ function initWarehouseProduct(id) {
 }
 
 
-const editWarehouseProduct = async (id) => {
-    warehouseProductsData = await getWarehouseProduct(id);
-    if (!warehouseProductsData) return;
+const editWarehouseTransaction = async (id) => {
+    warehouseTransactionsData = await getWarehouseTransaction(id);
+    if (!warehouseTransactionsData) return;
     
-    mySer.convertJsonToForm(warehouseProductsData, "warehouseProductForm");
+    mySer.convertJsonToForm(warehouseTransactionsData, "warehouseTransactionForm");
     
-    ModalToggle(warehouseProductModal);
+    ModalToggle(warehouseTransactionModal);
 };
 
-const getWarehouseProduct = async (id) => {
+const getWarehouseTransaction = async (id) => {
     return await sendApiRequest({
-        url: "/Warehouse/GetWarehouseProduct",
+        url: "/Warehouse/GetWarehouseTransaction",
         params: { id },
     });
 };
 
-const deleteWarehouseProduct = async (id) => {
+const deleteWarehouseTransaction = async (id) => {
     await deleteItem({
-        url: `/Warehouse/DeleteWarehouseProduct/${id}`,
+        url: `/Warehouse/DeleteWarehouseTransaction/${id}`,
         callback: () => {
-            warehouseProductTbl.ajax.reload();
+            warehouseTransactionTbl.ajax.reload();
             GetAllWarehouses();
         },
     });
