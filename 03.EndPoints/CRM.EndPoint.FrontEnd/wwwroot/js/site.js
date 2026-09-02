@@ -3929,14 +3929,13 @@ const toEnglishDigits = (val) => {
         .replace(/[٠-٩]/g, d => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));// Arabic
 };
 
+
 function calculateTotalPrice(weight, unitPrice) {
     const w = parseFloat(SeparatedNumberRemove(weight)) || 0;
     const u = parseFloat(SeparatedNumberRemove(unitPrice)) || 0;
     
-    const result = w * u;
-    return result ? result.toLocaleString() : "";
+    return w * u;
 }
-
 
 function getUrlParams() {
     const params = new URLSearchParams(window.location.search);

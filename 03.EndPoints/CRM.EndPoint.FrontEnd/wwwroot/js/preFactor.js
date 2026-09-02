@@ -522,6 +522,13 @@ const submitPreFactor = async () => {
         return;
     }
     
+    await submitPreFactorOk();
+};
+
+const submitPreFactorOk = async () => {
+    const dateInput = document.getElementById("date");
+    const validityDateInput = document.getElementById("validityDade");
+    
     const currencyTypeElement = document.querySelector("#PfHeadFormId select[name='currencyType']");
     
     pFactor.serialNumber = Number(document.getElementById("serialNumber").value);
@@ -564,7 +571,6 @@ const submitPreFactor = async () => {
         },
     });
 };
-
 
 let expirePfModalId = null;
 let expirePfModalPassType = null;

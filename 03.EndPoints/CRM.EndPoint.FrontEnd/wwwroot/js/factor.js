@@ -22,7 +22,7 @@ const AddFactor = async (pfId, type = 1) => {
     if (!await isAllowedToAddFactor(pfId)) return;
     
     typeSubmitFactor = type;
-    currentFactorContext = { passType: type };
+    currentFactorContext.passType = type;
     
     
     getAllProductOp("#FacItem");
@@ -407,7 +407,6 @@ const deleteFItem = async (index) => {
 const calculateFactorTotals = () => {
     return new Promise((resolve) => {
         const data = factorItems.filter(item => !item.isDeleted);
-        
         let sumTotalAmount = 0;
         
         const discountInput = document.getElementById("f_discount");
@@ -576,6 +575,14 @@ const isAllowedToAddFactor = async (pfId) => {
 
 //OfficialRqModal
 const submitFactor = async () => {
+    if (!await mySer.CheckValidForm("#f_dateFormId") || !await mySer.CheckValidForm("#f_SerialFormId")) return;
+    
+    if (factorItems.length <= 0) {
+        $("#preFactorItemId").parent().css("border", "2px solid #ff6d00");
+        toastifyError("فاکتور خالی");
+        return;
+    }
+    
     if (!factor.parentReturnedId) { // اگر فاکتور برگشتی نبود
         const sumTotalSupply = supplyData.reduce((sum, cur) => sum + (cur.supplyType === 3 ? -cur.totalAmount : cur.totalAmount), 0);
         if (factor.sumTotalAmount <= sumTotalSupply) {
@@ -592,78 +599,69 @@ const submitFactor = async () => {
             if (!result.isConfirmed) return;
         }
     }
+    
     await submitFactorOK(Number(typeSubmitFactor));
 };
 
 const submitFactorOK = async (type, unlinkSepidar = false) => {
-    if (await mySer.CheckValidForm("#f_dateFormId") && await mySer.CheckValidForm("#f_SerialFormId")) {
-        if (factorItems.length <= 0) {
-            $("#preFactorItemId").parent().css("border", "2px solid #ff6d00");
-            toastifyError("فاکتور خالی");
-            return;
+    FLshowLoading();
+    factor.snFinancial = document.querySelector("#snFinancialFormId input[name='snFinancial']").value || null;
+    factor.date = document.querySelector("#f_dateFormId input[name='f_date']").value;
+    factor.descriptions = factorDescriptionItems;
+    factor.export = document.getElementById("f_export").checked;
+    
+    const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
+    factor.currencyType = Number(currencyTypeElm.value);
+    factor.currencyTypeTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
+    
+    $.post(`/Factor/AddFactor?unlinkSepidar=${unlinkSepidar}`, factor, async (res) => {
+        FLshowLoading(false);
+        if (res.status === 200) {
+            if (type === 0) {
+                await refreshFactorPartial();
+                await GetPreFactorPartial();
+            } else if (type === 1) {
+                await getAllPreFactor();
+                await refreshFactorPartial();
+                getAllDetailAmount();
+            } else if (type === 4) {
+                if (isModalOpen("dealPreFactorsModal")) {
+                    await refreshDealPreFactors();
+                }
+                if (isModalOpen("FactorsModal")) {
+                    await refreshDealFactors();
+                }
+            } else if (type === 5) {
+                await getAllFactorsModal(factor.pfactorID, 5);
+            } else if (type === 6) {
+                await getAllFactorsModal(factor.id, 6);
+            }
+            toastifySuccess("فاکتور با موفقیت ثبت شد.");
+            cancelFactor();
+            FLshowLoading(false);
+        } else if (res.status === 201) {
+            FLshowLoading(false);
+            const result = await Swal.fire({
+                title: "خطا در همگام‌سازی با سپیدار!",
+                text: "فاکتور معادل در سیستم سپیدار یافت نشد. برای ثبت تغییرات، لازم است ارتباط این فاکتور با سپیدار قطع شود. آیا تایید می‌کنید؟",
+                icon: "error",
+                showCancelButton: true,
+                cancelButtonColor: "#adadad",
+                confirmButtonColor: "#e64942",
+                cancelButtonText: "انصراف",
+                confirmButtonText: "ارتباط قطع شود",
+            });
+            
+            if (result.isConfirmed) {
+                await submitFactorOK(type, true);
+            }
         }
         
-        FLshowLoading();
-        factor.snFinancial = document.querySelector("#snFinancialFormId input[name='snFinancial']").value || null;
-        factor.date = document.querySelector("#f_dateFormId input[name='f_date']").value;
-        factor.descriptions = factorDescriptionItems;
-        factor.export = document.getElementById("f_export").checked;
-        
-        const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
-        factor.currencyType = Number(currencyTypeElm.value);
-        factor.currencyTypeTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
-        
-        $.post(`/Factor/AddFactor?unlinkSepidar=${unlinkSepidar}`, factor, async (res) => {
-            FLshowLoading(false);
-            if (res.status === 200) {
-                if (type === 0) {
-                    await refreshFactorPartial();
-                    await GetPreFactorPartial();
-                } else if (type === 1) {
-                    await getAllPreFactor();
-                    if (factor.id) await refreshFactorPartial();
-                    getAllDetailAmount();
-                } else if (type === 4) {
-                    if (isModalOpen("dealPreFactorsModal")) {
-                        await refreshDealPreFactors();
-                    }
-                    if (isModalOpen("FactorsModal")) {
-                        await refreshDealFactors();
-                    }
-                } else if (type === 5) {
-                    await getAllFactorsModal(factor.pfactorID, 5);
-                } else if (type === 6) {
-                    await getAllFactorsModal(factor.id, 6);
-                }
-                toastifySuccess("فاکتور با موفقیت ثبت شد.");
-                cancelFactor();
-                ModalToggle("#Factor");
-                FLshowLoading(false);
-            } else if (res.status === 201) {
-                FLshowLoading(false);
-                const result = await Swal.fire({
-                    title: "خطا در همگام‌سازی با سپیدار!",
-                    text: "فاکتور معادل در سیستم سپیدار یافت نشد. برای ثبت تغییرات، لازم است ارتباط این فاکتور با سپیدار قطع شود. آیا تایید می‌کنید؟",
-                    icon: "error",
-                    showCancelButton: true,
-                    cancelButtonColor: "#adadad",
-                    confirmButtonColor: "#e64942",
-                    cancelButtonText: "انصراف",
-                    confirmButtonText: "ارتباط قطع شود",
-                });
-                
-                if (result.isConfirmed) {
-                    await submitFactorOK(type, true);
-                }
-            }
-            
-        }).fail((err) => {
-            console.log(err);
-            setTimeout(async () => await submitFactorOK(type), 3000);
-        });
-        
-        
-    }
+    }).fail((err) => {
+        console.log(err);
+        setTimeout(async () => await submitFactorOK(type), 3000);
+    });
+    
 };
 
 
@@ -724,6 +722,7 @@ let currentFactorContext = {
     id: null,
     serialNumber: null,
     passType: 0,
+    customerId: null,
 };
 
 const GetFactorPartial = async ({ id, element, serialNumber, passType = 0, showLoading = true, customerId = null } = {}) => {
@@ -731,9 +730,9 @@ const GetFactorPartial = async ({ id, element, serialNumber, passType = 0, showL
         return await showModalDealFactors(currentDealDocumentData);
     }
     
-    currentFactorContext = { id, serialNumber, passType };
+    currentFactorContext = { id, serialNumber, passType, customerId };
     
-    updateFactorUI(element, passType);
+    updateFactorUI(element, passType, serialNumber);
     
     const model = {
         passType,
@@ -752,7 +751,7 @@ const GetFactorPartial = async ({ id, element, serialNumber, passType = 0, showL
         showLoading,
         data: model,
         successMsg: null,
-        onSuccess: (res) => renderFactorPartial(res.data, serialNumber, passType),
+        onSuccess: (res) => renderFactorPartial(res.data, passType),
     });
 };
 
@@ -762,7 +761,7 @@ const refreshFactorPartial = async (showLoading = true) => {
 };
 
 
-const updateFactorUI = (element, passType) => {
+const updateFactorUI = (element, passType, serialNumber) => {
     if (!element) return;
     
     document.querySelector(".SelectedPf")?.classList.remove("SelectedPf");
@@ -770,47 +769,54 @@ const updateFactorUI = (element, passType) => {
     
     if (passType === 0) {
         document.getElementById("f_all").checked = true;
-        document.getElementById("HideFactorPartialId").style.display = "flex";
+        document.getElementById("HideFactorPartialId").classList.remove("d-none");
         document.getElementById("f_searchId").value = "";
+    } else {
+        toggleFactorTitle(serialNumber);
     }
     
     if (window.innerWidth < 1400) {
         ShowTab(passType === 0 ? "allFactorTab" : "factorTab");
     }
-    
 };
 
-const renderFactorPartial = (data, serialNumber, passType) => {
+const renderFactorPartial = (data, passType) => {
     if (passType === 0) {
         document.getElementById("fAcceptedList").innerHTML = data.html;
         document.getElementById("fCountId").innerHTML = data.count;
         document.getElementById("fCountMobileId").innerText = data.count;
-        return;
+        
+    } else {
+        document.getElementById("DetailDivList").innerHTML = data.html;
+        document.getElementById("factorCount").innerHTML = data.count;
+        document.getElementById("DivFacListId").classList.remove("d-none");
     }
+};
+
+const toggleFactorTitle = (serialNumber) => {
+    const allFactorTitle = document.getElementById("allFactorTitle");
+    const relatedFactorTitle = document.getElementById("relatedFactorTitle");
     
-    document.getElementById("FactorDivTitleId").innerHTML = serialNumber != null ? `
-        <div class="flex-center gap-2">
-            <button class="buttonGreen hide-factor__btn" onclick="hideFact()">
-                <i class="fas fa-times"></i>
-            </button>
-            <span>تمام فاکتورهای مربوط به پیش فاکتور ${serialNumber || ""}</span>
-        </div>`
-        : `<span class="d-none d-xxl-inline-block">فاکتورها</span>`;
-    
-    document.getElementById("DivFacListId").classList.remove("d-none")
-    document.getElementById("DetailDivList").innerHTML = data.html;
+    if (serialNumber) {
+        allFactorTitle.classList.add("d-none");
+        relatedFactorTitle.classList.remove("d-none");
+        document.getElementById("relatedPfSerialNumber").textContent = serialNumber;
+    } else {
+        allFactorTitle.classList.remove("d-none");
+        relatedFactorTitle.classList.add("d-none");
+    }
 };
 
 const showSepidarFactors = async (pfSerialNumber, element, passType) => { // PassType: 1 = customerProfile | 0 = cartable
     if (passType === 4) {
         return await showModalDealFactors(currentDealDocumentData, pfSerialNumber);
     }
-    updateFactorUI(element, passType);
+    updateFactorUI(element, passType, pfSerialNumber);
     
     await sendApiRequest({
         url: "/Customer/GetSepidarFactors",
         params: { pfSerialNumber },
-        onSuccess: (res) => renderFactorPartial(res.data, pfSerialNumber, passType),
+        onSuccess: (res) => renderFactorPartial(res.data, passType),
     });
 };
 
@@ -853,10 +859,24 @@ const updateFactorFinancial = async (sepidarId) => {
 
 
 const hideSelectedFactor = async () => {
-    document.getElementById("HideFactorPartialId").style.display = "none";
+    document.getElementById("HideFactorPartialId").classList.add("d-none");
     document.querySelector(".SelectedPf")?.classList.remove("SelectedPf");
     
     await GetFactorPartial();
+};
+
+
+const hideFact = async () => {
+    // document.getElementById("DivFacListId").classList.add("d-none");
+    await GetFactorPartial({ passType: 1, customerId });
+    
+    document.querySelector(".SelectedPf").classList.remove("SelectedPf");
+    
+    toggleFactorTitle();
+    
+    if (window.innerWidth < 1400) {
+        ShowTab("preFactorTab");
+    }
 };
 
 const getAllFactorsModal = async (id, type, pfSerialNumber) => {

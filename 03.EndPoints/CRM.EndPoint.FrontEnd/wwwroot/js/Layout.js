@@ -2763,16 +2763,6 @@ const createSupplierTomSelect = (element, items) => {
     });
 };
 
-const hideFact = async () => {
-    // document.getElementById("DivFacListId").classList.add("d-none");
-    await GetFactorPartial({ passType: 1, customerId });
-    
-    document.querySelector(".SelectedPf").classList.remove("SelectedPf");
-    document.getElementById("FactorDivTitleId").innerHTML = `<span class="d-none d-xxl-inline-block">فاکتورها</span>`;
-    if (window.innerWidth < 1400) {
-        ShowTab("preFactorTab");
-    }
-};
 
 
 function showTaminDropdown() {

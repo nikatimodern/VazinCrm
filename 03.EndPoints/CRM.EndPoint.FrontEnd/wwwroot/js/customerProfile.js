@@ -60,6 +60,7 @@ const getAllPreFactor = async (showDeleted = false) => {
         params: { customerId: customerId, showDeleted },
         onSuccess: (res) => {
             document.getElementById("PreFactorDivList").innerHTML = res.data.html;
+            document.getElementById("preFactorCount").innerHTML = res.data.count;
             if (deletedToggleIcon?.isVisible && !showDeleted) {
                 deletedToggleIcon.isVisible = false;
             }

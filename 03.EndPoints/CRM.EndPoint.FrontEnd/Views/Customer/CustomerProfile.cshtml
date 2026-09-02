@@ -39,6 +39,10 @@
                             </button>
                         }
                     </div>
+                    <p class="fbold d-flex align-items-center gap-2" style="font-size: clamp(15px, 1.4vw, 18px);color:rgb(84 57 213)">
+                        تعداد:
+                        <span id="preFactorCount"></span>
+                    </p>
                 </div>
                 <div class="InfoData w-100 overflow-auto" id="PreFactorDivList">
                 </div>
@@ -47,13 +51,25 @@
             <div class="tab-pane fade border-0 d-flex flex-column flex-grow-1 w-100" id="factorTab-pane" role="tabpanel" aria-labelledby="factorTab" tabindex="0">
                 <div class="d-flex flex-column justify-content-center w-100 d-none" style="min-height: 0" id="DivFacListId">
                     <div class="fbold mb-1 px-2" id="FactorDivTitleId">
+                        <div id="relatedFactorTitle" class="flex-center gap-2 d-none">
+                            <button class="buttonGreen hide-factor__btn" onclick="hideFact()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <span>تمام فاکتورهای مربوط به پیش فاکتور <span id="relatedPfSerialNumber"></span></span>
+                        </div>
+                        <div id="allFactorTitle" class="d-flex justify-content-between w-100">
+                            <span class="d-none d-xxl-inline-block">فاکتورها</span>
+                            <p class="fbold d-flex align-items-center gap-2 flex-grow-1 justify-content-end" style="font-size: clamp(15px, 1.4vw, 18px);color:rgb(84 57 213)">
+                                تعداد:
+                                <span id="factorCount"></span>
+                            </p>
+                        </div>
                     </div>
                     <div class="InfoData w-100 overflow-auto" id="DetailDivList">
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 
     <partial name="_CustomerFinancialSummaryPartial" />
