@@ -16,6 +16,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.IServices.PushNotification;
+using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 
 namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
@@ -102,18 +103,27 @@ namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
             {
                 using var scope = serviceScopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<CRMContextDb>();
-                var S1db = scope.ServiceProvider.GetRequiredService<Sepidar1ContextDb>();
+                var s1Db = scope.ServiceProvider.GetRequiredService<Sepidar1ContextDb>();
 
-                var crmFactors = db.Factors.AsNoTracking().Where(f => f.status == FactorStatus.تایید_شده && f.SepidarId != null).ToList();
+                var crmFactors = await db.Factors.AsNoTracking()
+                    .Where(f => f.status == FactorStatus.تایید_شده && f.SepidarId != null)
+                    .Select(f => new {
+                        f.Id,
+                        f.SerialNumber,
+                        f.SepidarId,
+                        f.PaymentAmount
+                    })
+                    .ToListAsync();
 
-                var joined = (from crm in crmFactors
-                        join sepidar in S1db.vwInvoice.AsNoTracking()
-                            on crm.SepidarId equals sepidar.InvoiceId
-                        let crmInt = (long)crm.PaymentAmount
-                        let sepInt = (long)sepidar.NetPrice
-                        let flag = (crmInt / 10) != (sepInt / 10)
-                        select new { crm, sepidar, flag })
-                    .Where(f => f.flag).ToList();
+
+                var joined = (
+                    from crm in crmFactors
+                    join sepidar in s1Db!.vwInvoice.AsNoTracking().Select(x => new { x.InvoiceId, x.NetPrice })
+                        on crm.SepidarId equals sepidar.InvoiceId
+                    where sepidar.NetPrice.HasValue && (long)(crm.PaymentAmount / 10) != (long)(sepidar.NetPrice / 10)
+                    select new { crm, sepidar }
+                ).ToList();
+
 
                 var warnings = joined
                     .Select(f => new SystemWarning {

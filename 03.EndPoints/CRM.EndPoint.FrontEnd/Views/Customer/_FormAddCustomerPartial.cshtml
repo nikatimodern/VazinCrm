@@ -1,21 +1,21 @@
 <div id="formAddCustom" class="mt-4 pt-md-2" style="display:none">
-    <div style="display:flex;justify-content:center ">
-        <div class="col-11 col-lg-9 mx-auto" style=" display:flex;flex-wrap:wrap;">
+    <div class="flex-center">
+        <div class="col-11 col-lg-9 mx-auto d-flex flex-wrap">
             <div style="padding:0 !important;margin:0 !important; width:100% !important;height:2px; background-color:gray; border-radius:20px; ">
             </div>
-            <div style=" display:flex;flex-direction:row-reverse; justify-content:space-between; margin-top:-9px !important; width:100%;">
-                <div class="PStepStart">
+            <div class="d-flex justify-content-between w-100" style="margin-top:-9px">
+                <div class="d-flex flex-column align-items-start">
                     <div class="step ac" id="hStep1">
                     </div>
                     <p>پایه</p>
                 </div>
-                <div class="PStep">
-                    <div class="step " id="hStep2">
+                <div class="d-flex flex-column align-items-center">
+                    <div class="step" id="hStep2">
                     </div>
                     <p>اطلاعات صنف کاری</p>
                 </div>
-                <div class="PStepEnd">
-                    <div class="step " id="hStep3">
+                <div class="d-flex flex-column align-items-end">
+                    <div class="step" id="hStep3">
                     </div>
                     <p>آدرس</p>
                 </div>
@@ -35,26 +35,26 @@
                     <div class="d-flex align-items-center flex-column mb-2">
                         <div id="customerSupplierAlertRq" style="display:flex;width:100%; justify-content:center;">
                             <div class="form-group d-flex align-items-center gap-1" style="margin-left: 10px">
-                                <input type="radio" data-alertId="customerSupplierAlertRq" name="roleType" id="customerSupplier1" value="1" checked required />
+                                <input type="radio" data-alertId="customerSupplierAlertRq" name="roleType" id="customerSupplier1" class="valueNumber" value="1" checked required />
                                 <label class="fbold" for="customerSupplier1">مشتری</label>
                             </div>
                             <div class="form-group d-flex align-items-center gap-1" style="margin-left: 10px">
-                                <input type="radio" data-alertId="customerSupplierAlertRq" name="roleType" id="customerSupplier2" value="2" required />
+                                <input type="radio" data-alertId="customerSupplierAlertRq" name="roleType" id="customerSupplier2" class="valueNumber" value="2" required />
                                 <label class="fbold" for="customerSupplier2">تامین کننده</label>
                             </div>
                             <div class="form-group d-flex align-items-center gap-1">
-                                <input type="radio" data-alertId="customerSupplierAlertRq" name="roleType" id="customerSupplier3" value="3" required />
+                                <input type="radio" data-alertId="customerSupplierAlertRq" name="roleType" id="customerSupplier3" class="valueNumber" value="3" required />
                                 <label class="fbold" for="customerSupplier3">تامین کننده - مشتری</label>
                             </div>
                         </div>
                         <div id="juridicalAlertRq" style="display:flex;width:100%; justify-content:center;direction:ltr ">
                             <div class="form-group d-flex align-items-center gap-1" style="margin:10px">
                                 <label class="fbold" for="JuridicalA">حقیقی</label>
-                                <input type="radio" data-alertId="juridicalAlertRq" name="juridical" id="JuridicalA" value="0" checked required />
+                                <input type="radio" data-alertId="juridicalAlertRq" name="juridical" id="JuridicalA" class="valueNumber" value="0" checked required />
                             </div>
                             <div class="form-group d-flex align-items-center gap-1" style="margin:10px">
                                 <label class="fbold" for="JuridicalB">حقوقی</label>
-                                <input type="radio" data-alertId="juridicalAlertRq" name="juridical" id="JuridicalB" value="1" required />
+                                <input type="radio" data-alertId="juridicalAlertRq" name="juridical" id="JuridicalB" class="valueNumber" value="1" required />
                             </div>
                         </div>
 
@@ -66,13 +66,13 @@
                                     نام:
                                 </label>
                                 <div id="sexAlertRq" style="display:flex; justify-content:space-around;width:40%">
-                                    <div class="mp d-flex align-items-center gap-1">
-                                        <label style="cursor:pointer" class="mp tText" for="man">آقا</label>
-                                        <input style="cursor:pointer" data-alertId="sexAlertRq" class="mp" type="radio" id="man" name="sex" value="1" required />
+                                    <div class="d-flex align-items-center gap-1">
+                                        <label class="mp tText" for="man">آقا</label>
+                                        <input data-alertId="sexAlertRq" type="radio" id="man" name="sex" class="valueNumber" value="1" required />
                                     </div>
-                                    <div class="mp d-flex align-items-center gap-1">
-                                        <label style="cursor:pointer" class="mp tText" for="woman">خانم</label>
-                                        <input style="cursor:pointer" data-alertId="sexAlertRq" type="radio" id="woman" name="sex" value="0" required />
+                                    <div class="d-flex align-items-center gap-1">
+                                        <label class="mp tText" for="woman">خانم</label>
+                                        <input data-alertId="sexAlertRq" type="radio" id="woman" name="sex" class="valueNumber" value="0" required />
                                     </div>
                                 </div>
                             </div>
@@ -110,10 +110,7 @@
                     </div>
 
                 </form>
-                @*Step2 اطلاعات شرکت مربوط به حقوقی*@
-                @*                                <div id="Step2" style="display:none;width:100%;justify-content:center;">
-                        </div>*@
-                @*Step3 اطلاعات صنف کاری*@
+                @*Step2 اطلاعات صنف کاری*@
                 <form id="Step2" class="row col-11 col-md-9 mx-auto col-lg-8" style="display:none;justify-content:center; ">
                     <div class="form-group col-12 col-lg-6 col-xl-4">
                         <label class=" fmp tText " style=" text-align:end" id="WorkSenfTxt">صنف کاری:</label>
@@ -137,7 +134,7 @@
 
 
                 </form>
-                @*Step4 اطلاعات آدرس*@
+                @*Step3 اطلاعات آدرس*@
                 <form id="Step3" style="display:none;justify-content:center;">
                     <div style="display:flex;" class="row col-11 col-md-9 mx-auto col-lg-8 p-0">
                         <div class="form-group col-12 col-lg-6 col-xl-3">
@@ -163,46 +160,10 @@
             <div id="InBtnNonJuridicalDiv" class="mp" style="width:100% !important; display:flex; direction: ltr; justify-content:center ">
                 <div style="width:100%; display:flex; justify-content:start; margin-top:20px;  ">
                     <button class="btnGroupBase btnLeft" onclick="backStep()">قبلی</button>
-                    <button class="btnGroupBase btnRight fbold" id="btnIn" style="margin-left:5px; " onclick="submitformCustomerBase()">تایید و بعدی</button>
+                    <button class="btnGroupBase btnRight fbold" id="btnIn" style="margin-left:5px; " onclick="submitFormCustomerBase()">تایید و بعدی</button>
                     @*<button class=" btnRight" onclick="nextStep()"><i class="fas fa-angle-right"></i></button>*@
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div id="DivNoneJuridicalTBL" style="margin-top:10px !important; display:none" dir="rtl">
-        <p class="fmp" style="font-size:large; font-family:'IRANSansBold'">لیست مشتریان حقیقی:</p>
-        <div class="row InfoData mp" style="overflow-x: auto;">
-            <table style=" width:100% " class="table  table-bordered table-hover table-striped; " id="NoneJuridicalTBL">
-                <thead style="text-align:center">
-                <tr>
-                    <th>Id</th>
-                    <th>نام</th>
-                    <th>نام خانوادگی</th>
-                    <th>موبایل</th>
-                    <th>عملیات</th>
-                </tr>
-                </thead>
-            </table>
-        </div>
-
-    </div>
-
-    <div id="DivJuridicalTBL" style="margin-top:10px !important; display:none" dir="rtl">
-        <p class="fmp" style="font-size:large; font-family:'IRANSansBold'">لیست مشتریان حقوقی:</p>
-        <div class="row InfoData mp" style="overflow-x: auto;">
-            <table class="table  table-bordered table-hover table-striped" id="JuridicalTBL">
-                <thead style="text-align:center">
-                <tr>
-                    <th>Id</th>
-                    <th>نام شرکت</th>
-                    <th>شناسه ملی</th>
-                    <th>نام نماینده</th>
-                    <th>نام خانوادگی نماینده</th>
-                    <th>عملیات</th>
-                </tr>
-                </thead>
-            </table>
         </div>
     </div>
 </div>

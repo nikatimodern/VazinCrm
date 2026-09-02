@@ -2219,18 +2219,12 @@ const closeModalInvoice = () => {
 };
 
 
-var delImgPerStatus = 0;
-
-
-const openCustomerProfile = async (id, pfSerialNum) => {
+const openCustomerProfile = (id, pfSerialNum) => {
     if (!id) return;
-    const res = await axios(`/Customer/CustomerProfile?Id=${id}`);
-    if (res.status === 200) {
-        sessionStorage.setItem("targetPf", pfSerialNum);
-        window.open("/Customer/CustomerProfile?Id=" + id);
-    } else if (res.status === 204) {
-        toastifyError("شما به این صفحه دسترسی ندارید!");
-    }
+    
+    sessionStorage.setItem("targetPf", pfSerialNum);
+    
+    window.open(`/Customer/CustomerProfile?Id=${encodeURIComponent(id)}`, "_blank");
 };
 
 
@@ -2332,6 +2326,7 @@ const CloseMenu = () => {
 
 let cropper;
 let personImageFile = null;
+let delImgPerStatus = 0;
 const profileModal = document.getElementById("UserSetting");
 const cropModal = document.getElementById("cropModal");
 const inpPersonImg = profileModal.querySelector("#InpPersonImg");
@@ -2768,16 +2763,6 @@ const createSupplierTomSelect = (element, items) => {
     });
 };
 
-const hideFact = () => {
-    document.getElementById("DivFacListId").style.display = "none";
-    
-    if (window.innerWidth < 1400) {
-        ShowTab("preFactorTab");
-    }
-    
-    let pd = document.getElementsByClassName("SelectedPf");
-    pd[0]?.classList.remove("SelectedPf");
-};
 
 
 function showTaminDropdown() {
@@ -3435,7 +3420,7 @@ async function removeWarning(id) {
     }
 }
 async function showDetailsWarning(id) {
-    const res = await axios(`/Factor/getFactor?id=${id}`);
+    const res = await axios(`/Factor/GetFactor?id=${id}`);
     const data = res.data;
     const object = {
         factorSerialNumber: data.serialNumber,

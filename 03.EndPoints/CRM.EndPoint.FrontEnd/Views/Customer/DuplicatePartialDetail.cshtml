@@ -65,85 +65,10 @@
                             <div class="d-flex align-items-center justify-content-center" style="color:#fff;width:100%">
                                 <a style="  width:50%" class="mp buttonPurple buttonCusPartial " href="/Customer/CustomerDetail?Id=@item.Id" target="_blank"><i class="fa fa-search"></i></a>
                             </div>
-
-                            @* @if (item.Accepted)
-                            {
-                                <div style="display:flex;justify-content:end;gap:5px; width:104px;margin-bottom:10px !important;color:#fff">
-                                    <a style=" width:50%" href="/Customer/CustomerProfile?Id=@item.Id" class="mp buttonGreen buttonCusPartial"><i class="fa fa-eye"></i></a>
-                                    <button style=" width:50%" class="mp buttonGreen buttonCusPartial " onclick="ShowModalUpCustomer('@item.Id')"><i class=" fa fa-pencil"></i></button>
-                                    <button style=" width:50%" class="mp buttonOrange buttonCusPartial " onclick="ShowModalReport('@item.Id','@item.CustomerCode','@item.CompanyName','@item.AgentName','@item.Sex','@item.Mobile')"><i class=" fa fa-text"></i></button>
-                                    @if (ViewBag.AccessAccepte)
-                                    {
-                                        <a style=" width:50%" class="mp buttonPurple buttonCusPartial " href="/Customer/CustomerDetail?Id=@item.Id" target="_blank"><i class="fa fa-search"></i></a>
-                                    }
-                                </div>
-                            }
-                            else
-                            {
-                                <div style="display:flex;flex-direction:column; justify-content:center; align-items:center;">
-                                    <p class="mp fbold text-center" style=" color: var(--color25); font-family:'IRANSansBold'; ">در انتظار تایید</p>
-                                    @if (ViewBag.AccessAccepte)
-                                    {
-                                        <div style="display:flex;margin-bottom:10px !important; width:100%; justify-content:space-around">
-                                            <button style="  width:30px" class="mp buttonPurple buttonCusPartial " title="تایید" onclick="AcceptCus('@item.Id')"><i class=" fa fa-check"></i></button>
-                                            <button style=" width:30px;font-size:18px" class="mp buttonPurple buttonCusPartial " title="عدم تایید" onclick="AbortCus('@item.Id')">×</button>
-                                            <a style="    width:30px" class="mp buttonPurple buttonCusPartial " title="مشاهده جزئیات" href="/Customer/CustomerDetail?Id=@item.Id" target="_blank"><i class="fa fa-search"></i></a>
-
-                                        </div>
-                                    }
-                                </div>
-                            } *@
                         </div>
                     </div>
                 </div>
             </div>
-
-            @* <div class="slide-container swiper" style=" padding:15px 0 !important;  width:190px !important;  ">
-                <div class="slide-content" >
-                    <div class="card-wrapper swiper-wrapper" >
-                        <div class="card swiper-slide" style="height: 100%">
-                            <div class="image-content">
-                                @if (item.Juridical == 1)
-                                {
-                                    <span class="overlayJuri" ></span>
-                                }
-                                else
-                                {
-                                    <span class="overlay" ></span>
-                                }
-                                <div class="card-image">
-                                    <img  style="width:100%" src="~/Img/User.png" class="rounded-circle" alt="...">
-                                </div>
-                            </div>
-
-                            <div class="card-content mp" style="margin-block:10px !important">
-                                <div style="display:flex"><span> کد مشتری: </span><span class="fbold">@item.CustomerCode </span>  </div>
-                                <div style="display:flex"><span> نام: </span><span class="fbold">@item.AgentName </span>  </div>
-                                <div style="display:flex"><span> تلفن همراه : </span><span class="fbold">@item.Mobile </span>  </div>
-                                @if (item.Juridical == 1)
-                                {
-                                    <div style="display:flex"><span> شرکت: </span><span class="fbold">@item.CompanyName </span>  </div>
-                                    <div style="display:flex"><span> نوع: </span><span class="fbold">حقوقی</span>  </div>
-                                }
-                                else
-                                {
-                                    <div style="display:flex"><span> نوع: </span><span class="fbold">حقیقی</span>  </div>
-                                }
-                                <div style="display:flex"><span> توسط: </span><span class="fbold">@item.UserCreator</span>  </div>
-
-                                <div  style="width:100%; display:flex; justify-content:center; flex-wrap:wrap; ">
-                                    <a style="color:#fff;  width:50%" class="mp buttonPurple buttonCusPartial " href="/Customer/CustomerDetail?Id=@item.Id" target="_blank"><i class="fa fa-search"></i></a>
-
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-
-            </div>
- *@
 
         }
 
@@ -156,11 +81,6 @@
             <h1>یافت نشد!</h1>
             <h5>هیچ مشتری یافت نشد</h5>
 
-            @*           <section class="mp  test">
-        <div class="four_zero_four_bg">
-        </div>
-
-        </section>*@
         </div>
     }
 </div>

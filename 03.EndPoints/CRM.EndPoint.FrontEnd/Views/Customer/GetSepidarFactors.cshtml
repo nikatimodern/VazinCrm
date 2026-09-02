@@ -2,6 +2,7 @@
 
 @{
     Layout = null;
+    var passType = ViewBag.PassType;
 }
 
 <div style="width:100%;display:flex;flex-direction:column;gap:5px;">
@@ -82,7 +83,7 @@
                                     <p style="color:gray; font-size:small;" class="mp">فاکتور سپیدار</p>
                                 }
                             </div>
-                            @if (ViewBag.PassType == 2) {
+                            @if (passType == 2) {
                                 <div class="ms-2">
                                     <button class="buttonBlue" onclick="updateFactorFinancial(@item.InvoiceId)">
                                         انتخاب

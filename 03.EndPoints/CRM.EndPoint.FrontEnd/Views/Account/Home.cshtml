@@ -9,7 +9,7 @@
 
 <div class="d-flex flex-column align-items-center justify-content-center gap-3">
     @foreach (var item in Model ?? []) {
-        <a asp-controller="Customer" asp-action="CustomerPanel" asp-route-id="@item?.CustomerId">
+        <a asp-controller="Customer" asp-action="CustomerProfile" asp-route-id="@item?.CustomerId">
             <button class="buttonPurple2 flex-center flex-column" style="width: 240px;height: 120px;font-size: 16px">
                 <span>پنل مشتری </span>
                 <span class="fMedium">@item?.CustomerName</span>

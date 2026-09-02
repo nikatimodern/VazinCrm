@@ -109,10 +109,10 @@
                                 <p class="mp fbold text-center" style=" color: var(--color25); font-family:'IRANSansBold'; ">در انتظار تایید</p>
                                 @if (ViewBag.AccessAccepte) {
                                     <div style="display:flex;margin-bottom:10px !important; width:100%; justify-content:space-around;color:#fff;">
-                                        <button style="  width:30px" class="mp buttonPurple buttonCusPartial " title="تایید" onclick="AcceptCus('@item.Id')">
+                                        <button style="  width:30px" class="mp buttonPurple buttonCusPartial " title="تایید" onclick="acceptCustomer('@item.Id')">
                                             <i class=" fa fa-check"></i>
                                         </button>
-                                        <button style=" width:30px;font-size:18px" class="mp buttonPurple buttonCusPartial " title="عدم تایید" onclick="AbortCus('@item.Id')">×</button>
+                                        <button style=" width:30px;font-size:18px" class="mp buttonPurple buttonCusPartial " title="عدم تایید" onclick="abortCustomer('@item.Id')">×</button>
                                         <a style="width:30px" class="mp buttonPurple buttonCusPartial " title="مشاهده جزئیات" href="/Customer/CustomerDetail?Id=@item.Id" target="_blank">
                                             <i class="fa fa-search"></i>
                                         </a>

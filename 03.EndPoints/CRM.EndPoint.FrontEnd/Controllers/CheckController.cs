@@ -176,7 +176,7 @@ public class CheckController(
         try
         {
             var item = await db.Checks.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
-            if (item == null) return NotFound();
+            if (item == null) return NotFound("رکوردی یافت نشد!");
 
             return Ok(item);
         }
@@ -193,7 +193,7 @@ public class CheckController(
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var item = await db.Checks.FirstOrDefaultAsync(f => f.Id == id);
-            if (item == null) return NotFound();
+            if (item == null) return NotFound("رکوردی یافت نشد!");
 
             item.IsDeleted = true;
             item.ModifyDate = DateTime.Now;
@@ -219,7 +219,7 @@ public class CheckController(
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var item = await db.Checkbooks.Include(f => f.Checks).FirstOrDefaultAsync(f => f.Id == id);
-            if (item == null) return NotFound();
+            if (item == null) return NotFound("رکوردی یافت نشد!");
 
             item.IsDeleted = true;
             item.ModifyDate = DateTime.Now;

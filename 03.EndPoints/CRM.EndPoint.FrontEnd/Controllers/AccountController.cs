@@ -580,7 +580,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var user = await userManager.FindByIdAsync(userId);
             if (user == null)
-                return NotFound();
+                return NotFound("رکوردی یافت نشد!");
 
             if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow)
             {
