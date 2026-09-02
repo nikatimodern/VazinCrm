@@ -5,8 +5,13 @@
             <div class="modal-body pb-2">
                 <form id="warehouseTransactionForm" class="d-flex flex-column gap-2">
                     <div>
-                        <label>شرح محصول</label>
-                        <input class="form-control" name="productTxt" required>
+                        <label>محصول</label>
+                        <select class="w-100 center fs-6 show-dropdown-arrow" name="productCode" required>
+                        </select>
+                    </div>
+                    <div>
+                        <label>شرح کالا</label>
+                        <input class="form-control" name="productDescription" required>
                     </div>
                     <div>
                         <label>تعداد/مقدار</label>

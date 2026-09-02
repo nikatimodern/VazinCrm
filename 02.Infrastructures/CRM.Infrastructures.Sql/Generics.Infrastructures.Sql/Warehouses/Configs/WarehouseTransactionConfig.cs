@@ -9,11 +9,11 @@ public class WarehouseTransactionConfig : IEntityTypeConfiguration<WarehouseTran
     {
         builder.HasKey(x => x.Id);
 
-        builder.HasOne(x => x.Warehouse)
-            .WithMany(x => x.WarehouseTransactions)
-            .HasForeignKey(x => x.WarehouseId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         builder.Property(x => x.Weight).HasPrecision(20, 0);
+
+        builder.HasOne(x => x.WarehouseProduct)
+            .WithMany(x => x.Transactions)
+            .HasForeignKey(x => x.WarehouseProductId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -241,6 +241,12 @@ button {
 }
 
 
+.disabled .ts-control {
+	background-color: var(--bs-secondary-bg);
+	opacity: 1;
+}
+
+
 /*  */
 
 

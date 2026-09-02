@@ -590,7 +590,7 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
 
                 break;
 
-            case WarehouseTransaction wp:
+            /*case WarehouseTransaction wp:
                 switch (action)
                 {
                     case LogActionEnum.ثبت:
@@ -601,7 +601,7 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
 
                     case LogActionEnum.حذف:
                         return $" محصول انبار ({wp.ProductTxt}) توسط <b>{fullName}</b> حذف شد.";
-                }
+                }*/
 
                 break;
         }

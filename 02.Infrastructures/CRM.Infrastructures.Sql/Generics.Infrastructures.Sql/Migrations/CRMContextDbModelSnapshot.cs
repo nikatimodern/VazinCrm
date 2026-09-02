@@ -4152,6 +4152,69 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("Warehouses");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Warehouses.Entities.WarehouseProduct", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("ProductCode")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ProductDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProductSmallName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Unit")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UnitTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("WarehouseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductCode");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.ToTable("WarehouseProducts");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Warehouses.Entities.WarehouseTransaction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4176,20 +4239,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("ModifyDateTxt")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("ParentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ProductTxt")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("TransactionType")
                         .HasColumnType("int");
-
-                    b.Property<int>("Unit")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UnitTxt")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserCreator")
                         .HasColumnType("nvarchar(max)");
@@ -4203,7 +4254,7 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("UserModifyID")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("WarehouseId")
+                    b.Property<Guid>("WarehouseProductId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Weight")
@@ -4212,7 +4263,7 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("WarehouseId");
+                    b.HasIndex("WarehouseProductId");
 
                     b.ToTable("WarehouseTransactions");
                 });
@@ -4701,15 +4752,33 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("CRM.Core.Domain.Warehouses.Entities.WarehouseTransaction", b =>
+            modelBuilder.Entity("CRM.Core.Domain.Warehouses.Entities.WarehouseProduct", b =>
                 {
+                    b.HasOne("CRM.Core.Domain.Products.Entities.Product", "Product")
+                        .WithMany("WarehouseProducts")
+                        .HasForeignKey("ProductCode")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("CRM.Core.Domain.Warehouses.Entities.Warehouse", "Warehouse")
-                        .WithMany("WarehouseTransactions")
+                        .WithMany("WarehouseProducts")
                         .HasForeignKey("WarehouseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Product");
+
                     b.Navigation("Warehouse");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Warehouses.Entities.WarehouseTransaction", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Warehouses.Entities.WarehouseProduct", "WarehouseProduct")
+                        .WithMany("Transactions")
+                        .HasForeignKey("WarehouseProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("WarehouseProduct");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Accountancies.Entities.BankAccount", b =>
@@ -4854,6 +4923,8 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Products.Entities.Product", b =>
                 {
                     b.Navigation("ProductAmounts");
+
+                    b.Navigation("WarehouseProducts");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Products.Entities.ProductGroup", b =>
@@ -4898,7 +4969,12 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.Warehouses.Entities.Warehouse", b =>
                 {
-                    b.Navigation("WarehouseTransactions");
+                    b.Navigation("WarehouseProducts");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Warehouses.Entities.WarehouseProduct", b =>
+                {
+                    b.Navigation("Transactions");
                 });
 #pragma warning restore 612, 618
         }

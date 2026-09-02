@@ -60,7 +60,7 @@ const showModalAddPfactor = async (type, cusId = null, deal) => {
     $("#date").val(await todayDate());
     
     $("#validityDade").val(await todayDate()); // await tomorrowDate()
-    getAllProductOp("PreFacItem");
+    await getAllProductOp("PreFacItem");
     Unit(1);
     FLshowLoading(false);
 };
@@ -79,7 +79,7 @@ const toggleDisplayPrefactorModal = (isHide = true) => {
 const upPfactor = async (id, type) => {
     typeSubmitPfactor = type;
     
-    getAllProductOp("PreFacItem");
+    await getAllProductOp("PreFacItem");
     Unit(1, "PreFacItem");
     baseDesPfactor = await getBaseDescription(0);
     

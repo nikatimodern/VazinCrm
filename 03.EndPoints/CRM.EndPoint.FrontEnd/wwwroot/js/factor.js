@@ -25,7 +25,7 @@ const AddFactor = async (pfId, type = 1) => {
     currentFactorContext.passType = type;
     
     
-    getAllProductOp("#FacItem");
+    await getAllProductOp("FacItem");
     Unit(2);
     
     const baseDesFactor = await getBaseDescription(1);
@@ -116,7 +116,7 @@ const upFactor = async (id, type = 1) => {
     currentFactorContext.passType = type;
     
     Unit(2);
-    getAllProductOp("FacItem");
+    await getAllProductOp("FacItem");
     
     const data = await getFactor(id);
     
@@ -166,7 +166,7 @@ const returnFactor = async (fid, type = 1) => {
     
     FLshowLoading();
     Unit(2);
-    getAllProductOp("FacItem");
+    await getAllProductOp("FacItem");
     factor = await getFactor(fid);
     factor.id = null;
     factor.serialNumber = null;

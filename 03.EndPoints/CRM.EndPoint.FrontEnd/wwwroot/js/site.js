@@ -103,30 +103,7 @@ async function sendApiRequest(
             return response.data;
         }
     } catch (err) {
-        console.error("API Error:", err);
-        
-        const response = err.response;
-        const status = err.status || response?.status || "";
-        
-        const contentType = response?.headers?.["content-type"] ?? "";
-        
-        let errorMessage;
-        if (contentType.includes("text/html")) {
-            errorMessage = null;
-        } else if (response?.data instanceof Blob) {
-            errorMessage = await response.data.text();
-        } else if (typeof response?.data === "string") {
-            errorMessage = response.data;
-        } else if (response?.data?.message) {
-            errorMessage = response.data.message;
-        }
-        
-        errorMessage = errorMessage || `خطایی در ارتباط با سرور رخ داده است ${status ? `(${status})` : ""}`;
-        
-        if (typeof toastifyError === "function") {
-            toastifyError(errorMessage);
-        }
-        
+        await handleApiError(err);
         return null;
     } finally {
         if (showLoading && typeof FLshowLoading === "function") {
@@ -134,7 +111,33 @@ async function sendApiRequest(
         }
     }
 }
-
+async function handleApiError(err) {
+    console.error("API Error:", err);
+    const response = err?.response;
+    const status = err?.status || response?.status || "";
+    
+    const contentType = response?.headers?.["content-type"] ?? "";
+    
+    let errorMessage;
+    
+    if (contentType.includes("text/html")) {
+        errorMessage = null;
+    } else if (response?.data instanceof Blob) {
+        errorMessage = await response.data.text();
+    } else if (typeof response?.data === "string") {
+        errorMessage = response.data;
+    } else if (response?.data?.message) {
+        errorMessage = response.data.message;
+    } else if (err?.responseText) {
+        errorMessage = err.responseText;
+    }
+    
+    errorMessage = errorMessage || `خطایی در ارتباط با سرور رخ داده است${status ? ` (${status})` : ""}`;
+    
+    if (typeof toastifyError === "function") {
+        toastifyError(errorMessage);
+    }
+}
 
 /**
  * Provides a reusable modal-based selector component for loading,
@@ -3184,8 +3187,7 @@ class MyService {
             formEl = document.querySelector(selector);
         }
         
-        
-        const disabledEls = Array.from(formEl.querySelectorAll(":disabled"));
+        const disabledEls = Array.from(formEl.querySelectorAll("input:disabled, select:disabled, textarea:disabled"));
         disabledEls.forEach(el => el.removeAttribute("disabled"));
         
         if (formEl.tagName.toLowerCase() !== "form") {
@@ -4211,7 +4213,7 @@ async function deleteItem(options) {
             await sendApiRequest({
                 method: "DELETE",
                 url,
-                onSuccess: async (res) => await callback?.(res.data),
+                onSuccess: async (res) => await callback?.(res),
             });
         },
     });

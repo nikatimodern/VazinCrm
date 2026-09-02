@@ -477,7 +477,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     }
                 }
 
-                model.Add(new AllItemsViewModel{
+                model.Add(new AllItemsViewModel {
                     PfId = pfId,
                     PfItemid = item.Id,
                     Product = item.ProductSmallName + " " + item.Product,
@@ -2558,7 +2558,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await _logSystemService.LogChange(oldPf, pf, LogActionEnum.تغییر_وضعیت, user);
 
             await db.SaveChangesAsync();
-            //await smsServ.SendAcceptPfactorToTamin(userTamin.PhoneNumber, pf.SerialNumber);
+
             await smsQueue.QueueAsync(new SmsJob {
                 Type = SmsType.AcceptPfactorToTamin,
                 Mobile = userTamin.PhoneNumber,
