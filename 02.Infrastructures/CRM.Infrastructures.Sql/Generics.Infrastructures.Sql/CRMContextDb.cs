@@ -99,6 +99,7 @@ namespace CRM.Infrastructures.Sql {
         public DbSet<Warehouse> Warehouses { get; set; }
         public DbSet<WarehouseProduct> WarehouseProducts { get; set; }
         public DbSet<WarehouseTransaction> WarehouseTransactions { get; set; }
+        public DbSet<WarehouseUser> WarehouseUsers { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

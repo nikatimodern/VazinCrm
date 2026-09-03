@@ -44,11 +44,26 @@ function syncWarehouseViewWithUrl() {
 }
 
 warehouseModal?.addEventListener("hidden.bs.modal", cancelWarehouseModal);
+warehouseModal?.addEventListener("show.bs.modal", showWarehouseModal);
 warehouseTransactionModal?.addEventListener("hidden.bs.modal", cancelWarehouseTransactionModal);
 warehouseTransactionHistoryModal?.addEventListener("hidden.bs.modal", () => warehouseProductsData = {});
 
 function backToWarehouses() {
     history.back();
+}
+
+
+let warehouseUsersInitialized = false;
+async function showWarehouseModal() {
+    if (warehouseUsersInitialized) return;
+    
+    const users = await CrmSer.getUsers(1);
+    new TomSelect("#warehouseUsers", {
+        options: users,
+        valueField: "id",
+        selectOnTab: true,
+    });
+    warehouseUsersInitialized = true;
 }
 
 function cancelWarehouseModal() {
@@ -64,6 +79,7 @@ warehouseFormElm?.addEventListener("submit", async (e) => {
         ...warehouseData,
         ...mySer.convertFormToJSON("warehouseForm"),
     };
+    return;
     
     await sendApiRequest({
         url: "/Warehouse/AddWarehouse",
@@ -159,7 +175,7 @@ const openWarehouseTransactionModal = async (type) => {
     ModalToggle(warehouseTransactionModal, "show");
 };
 
-const showWarehouseModal = async (type, data) => {
+const showWarehouseTransactionModal = async (type, data) => {
     warehouseTransactionsData.transactionType = type;
     await openWarehouseTransactionModal(type);
     if (data) {
@@ -292,11 +308,11 @@ function initWarehouseProductsTable(id) {
         if (!data) return;
         switch (button.dataset.action) {
             case "warehouse-in":
-                showWarehouseModal(1, data);
+                showWarehouseTransactionModal(1, data);
                 break;
             
             case "warehouse-out":
-                showWarehouseModal(0, data);
+                showWarehouseTransactionModal(0, data);
                 break;
             
             case "warehouse-history":

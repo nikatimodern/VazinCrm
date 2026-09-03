@@ -8,6 +8,7 @@ using CRM.Core.Domain.Warehouses.Entities;
 using CRM.Core.Domain.Warehouses.Enums;
 using CRM.EndPoint.FrontEnd.Models.Warehouse;
 using CRM.EndPoint.FrontEnd.Services;
+using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.Framework;
 using CRM.Infrastructures.Sql;
@@ -41,6 +42,12 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
 
     public async Task<IActionResult> GetAllWarehousesPartial()
+    {
+        var warehouses = await GetAllWarehouses();
+        return PartialView(warehouses);
+    }
+    
+    public async Task<IActionResult> GetUsers()
     {
         var warehouses = await GetAllWarehouses();
         return PartialView(warehouses);
@@ -143,7 +150,6 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             var sortDirection = Request.Form["order[0][dir]"].FirstOrDefault();
             var sortColumn = Request.Form[$"columns[{sortColumnIndex}][data]"].FirstOrDefault();
 //        var model = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["model"].FirstOrDefault());
-
 
             var query = db.WarehouseProducts
                 .AsNoTracking()
@@ -266,14 +272,28 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     public async Task<IActionResult> AddWarehouseTransaction([FromBody] WarehouseTransactionVModel model)
     {
         if (model == null) return BadRequest();
+
+
+        var user = await userManager.GetUserAsync(HttpContext.User);
+        if (user == null) return Unauthorized();
+
+        if (model.Weight <= 0)
+            return BadRequest("مقدار باید بیشتر از صفر باشد.");
+
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
         {
-            var user = await userManager.GetUserAsync(HttpContext.User);
-
             WarehouseProduct warehouseProduct;
             if (!model.WarehouseProductId.HasValue) // محصول جدید
             {
+                var exists = await db.WarehouseProducts.AnyAsync(x =>
+                    x.WarehouseId == model.WarehouseId &&
+                    x.ProductCode == model.ProductCode &&
+                    x.ProductSmallName == model.ProductSmallName);
+
+                if (exists)
+                    return Conflict("این محصول قبلاً در این انبار ثبت شده است.");
+
                 warehouseProduct = new WarehouseProduct {
                     WarehouseId = model.WarehouseId,
                     ProductCode = model.ProductCode,
@@ -290,7 +310,18 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             } else
             {
                 warehouseProduct = await db.WarehouseProducts.FirstOrDefaultAsync(x => x.Id == model.WarehouseProductId.Value);
-                if (warehouseProduct == null) return NotFound();
+
+                if (warehouseProduct == null)
+                    return NotFound("محصول مورد نظر یافت نشد.");
+
+                // خروج از انبار
+                if (model.TransactionType == WarehouseTransactionTypeEnum.خروج)
+                {
+                    var currentStock = await db.WarehouseTransactions.GetStockAsync(warehouseProduct.Id);
+
+                    if (model.Weight > currentStock)
+                        return BadRequest($"موجودی کافی نیست. موجودی فعلی: {currentStock} {warehouseProduct.UnitTxt}");
+                }
             }
 
             var warehouseTransaction = new WarehouseTransaction {
@@ -308,7 +339,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             await transaction.CommitAsync();
             return Ok();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             await transaction.RollbackAsync();
             return BadRequest();
@@ -318,24 +349,20 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpPost]
     public async Task<IActionResult> UpdateWarehouseTransaction([FromBody] WarehouseTransaction model)
     {
+        if (model == null) return BadRequest();
+        if (model.Weight <= 0) return BadRequest("مقدار باید بیشتر از صفر باشد.");
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
         {
-            if (model == null) return BadRequest();
-            if (model.Weight <= 0) return BadRequest("مقدار وارد شده صحیح نیست.");
-
             var data = await db.WarehouseTransactions.FirstOrDefaultAsync(x => x.Id == model.Id);
             if (data == null) return NotFound();
 
             var user = await userManager.GetUserAsync(HttpContext.User);
 
             // موجودی فعلی بدون این تراکنش
-            var stockWithoutCurrentTransaction = await db.WarehouseTransactions
-                .Where(x => x.WarehouseProductId == data.WarehouseProductId && x.Id != model.Id)
-                .SumAsync(x => x.TransactionType == WarehouseTransactionTypeEnum.ورود ? x.Weight : -x.Weight);
+            var stockWithoutCurrent = await db.WarehouseTransactions.GetStockWithoutTransactionAsync(data.WarehouseProductId, model.Id);
 
-            var newStock = stockWithoutCurrentTransaction +
-                           (model.TransactionType == WarehouseTransactionTypeEnum.ورود ? model.Weight : -model.Weight);
+            var newStock = stockWithoutCurrent + (model.TransactionType == WarehouseTransactionTypeEnum.ورود ? model.Weight : -model.Weight);
 
             if (newStock < 0) return BadRequest("موجودی کافی نیست.");
 
@@ -382,10 +409,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         await logSystemService.LogChange(warehouseTransaction, null, LogActionEnum.حذف, user);
         await db.SaveChangesAsync();
 
-        var stock = await db.WarehouseTransactions
-            .AsNoTracking()
-            .Where(x => x.WarehouseProductId == warehouseTransaction.WarehouseProductId)
-            .SumAsync(x => x.TransactionType == WarehouseTransactionTypeEnum.ورود ? x.Weight : -x.Weight);
+        var stock = await db.WarehouseTransactions.AsNoTracking().GetStockAsync(warehouseTransaction.WarehouseProductId);
 
         return Ok(new { stock });
     }

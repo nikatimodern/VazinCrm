@@ -6541,13 +6541,13 @@ table tr.payment-vosoled > td {
 
 /* wrapper */
 
-.ts-wrapper.single .ts-control:hover {
+.ts-wrapper .ts-control:hover {
 	border-color: #c9d2dc;
 }
 
 
 /* فلش پایین */
-.ts-wrapper.single.show-dropdown-arrow .ts-control::after {
+.ts-wrapper.show-dropdown-arrow .ts-control::after {
 	content: "";
 	position: absolute;
 	left: 12px;
@@ -6562,12 +6562,12 @@ table tr.payment-vosoled > td {
 }
 
 
-.ts-wrapper.single.dropdown-active.show-dropdown-arrow .ts-control::after {
+.ts-wrapper.dropdown-active.show-dropdown-arrow .ts-control::after {
 	transform: translateY(-30%) rotate(-135deg);
 }
 
 
-.ts-wrapper.single.show-dropdown-arrow .ts-control:not(.rtl) {
+.ts-wrapper.show-dropdown-arrow .ts-control:not(.rtl) {
 	padding-left: 28px !important;
 }
 

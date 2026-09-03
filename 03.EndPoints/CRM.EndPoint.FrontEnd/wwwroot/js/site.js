@@ -3007,39 +3007,25 @@ class GetDate {
 
 class CrmService {
     /**
-     * این تابع بر اساس مقدار ورودی، عملیات مختلفی انجام می‌دهد.
-     * @param {number} option
-     *  - `1`: تمام کاربران
-     *  - `2`: کارشناسان فروش
+     * دریافت لیست کاربران بر اساس نوع کاربر.
+     * @param {number} type
+     * @returns {Promise<Array>} لیست کاربران
+     *
+     * @example
+     * const users = await CrmSer.getUsers(1);
+     *  // 1: همه کاربران
+     *  // 2: کارشناسان فروش
+     *  // 3: کارشناسان تامین
      */
-    async getUsers(option) {
+    async getUsers(type) {
+        const response = await fetch(`/Account/GetUsers?type=${type}`);
         
-        return new Promise((resolve) => {
-            
-            fetch(`/Account/GetUsers?type=${Number(option)}`)
-                .then(response => {
-                    return response.json();
-                })
-                .then(data => {
-                    resolve(data);
-                })
-                .catch(error => {
-                    console.log(error);
-                });
-            
-        });
+        if (!response.ok) {
+            throw new Error("خطا در دریافت لیست کاربران");
+        }
+        
+        return await response.json();
     }
-    
-    
-    //async getPrefactor(pfid) {
-    //    return new Promise(async (resolve, reject) => {
-    //        $.get(baseUrl + "Factor/GetPFactor/" + pfid, (res) => {
-    //            resolve(res);
-    //        })
-    //    })
-    //}
-    
-    
 }
 
 class MyService {
@@ -3205,14 +3191,24 @@ class MyService {
                 jsonData[name] = null;
                 continue;
             }
-            value = toEnglishDigits(value);
+            
+            let parsedValue = value;
             
             if (field?.classList.contains("currencyNumber") || field?.classList.contains("digitNumber")) {
-                jsonData[name] = Number(SeparatedNumberRemove(value));
+                parsedValue = Number(SeparatedNumberRemove(value));
+                
             } else if (field?.classList.contains("valueNumber")) {
-                jsonData[name] = Number(value);
+                parsedValue = Number(value);
+            }
+            
+            if (field?.multiple) {
+                if (!jsonData[name]) {
+                    jsonData[name] = [];
+                }
+                
+                jsonData[name].push(parsedValue);
             } else {
-                jsonData[name] = value;
+                jsonData[name] = parsedValue;
             }
         }
         

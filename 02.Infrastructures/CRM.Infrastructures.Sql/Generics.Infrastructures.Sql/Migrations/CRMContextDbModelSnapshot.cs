@@ -4268,6 +4268,25 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("WarehouseTransactions");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Warehouses.Entities.WarehouseUser", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("WarehouseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.ToTable("WarehouseUsers");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.WebPushSubscriptions.Entities.WebPushSubscription", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4781,6 +4800,17 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Navigation("WarehouseProduct");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Warehouses.Entities.WarehouseUser", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Warehouses.Entities.Warehouse", "Warehouse")
+                        .WithMany("WarehouseUsers")
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Warehouse");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Accountancies.Entities.BankAccount", b =>
                 {
                     b.Navigation("Accountancies");
@@ -4970,6 +5000,8 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Warehouses.Entities.Warehouse", b =>
                 {
                     b.Navigation("WarehouseProducts");
+
+                    b.Navigation("WarehouseUsers");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Warehouses.Entities.WarehouseProduct", b =>
