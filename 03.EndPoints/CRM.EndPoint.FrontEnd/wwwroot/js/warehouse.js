@@ -57,13 +57,13 @@ let warehouseUsersInitialized = false;
 async function showWarehouseModal() {
     if (warehouseUsersInitialized) return;
     
-    const users = await CrmSer.getUsers(1);
+/*    const users = await CrmSer.getUsers(1);
     new TomSelect("#warehouseUsers", {
         options: users,
         valueField: "id",
         selectOnTab: true,
     });
-    warehouseUsersInitialized = true;
+    warehouseUsersInitialized = true;*/
 }
 
 function cancelWarehouseModal() {
@@ -79,7 +79,7 @@ warehouseFormElm?.addEventListener("submit", async (e) => {
         ...warehouseData,
         ...mySer.convertFormToJSON("warehouseForm"),
     };
-    return;
+    // return;
     
     await sendApiRequest({
         url: "/Warehouse/AddWarehouse",
