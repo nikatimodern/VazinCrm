@@ -3128,12 +3128,21 @@ class MyService {
                         }
                         break;
                     case "select-one":
+                    case "select-multiple":
                         if (elm.tomselect) {
-                            elm.tomselect.setValue(value, true);
+                            elm.tomselect.setValue(value ?? [], true);
                         } else {
-                            elm.value = value ?? "";
+                            if (elm.multiple) {
+                                const values = Array.isArray(value) ? value.map(String) : [];
+                                Array.from(elm.options).forEach(option => {
+                                    option.selected = values.includes(option.value);
+                                });
+                            } else {
+                                elm.value = value ?? "";
+                            }
                             elm.dispatchEvent(new Event("change"));
                         }
+                        
                         break;
                     case "radio":
                         const radioBtn = form.querySelector(`input[name="${key}"][value="${value}"]`);

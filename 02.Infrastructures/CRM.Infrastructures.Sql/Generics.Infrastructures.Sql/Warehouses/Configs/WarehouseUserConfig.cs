@@ -7,7 +7,9 @@ namespace CRM.Infrastructures.Sql.Warehouses.Configs;
 public class WarehouseUserConfig : IEntityTypeConfiguration<WarehouseUser> {
     public void Configure(EntityTypeBuilder<WarehouseUser> builder)
     {
-        builder.HasKey(x => x.Id);
+        builder.Property(x => x.UserId).IsRequired();
+        
+        builder.HasKey(x => new { x.UserId, x.WarehouseId });
 
         builder.HasOne(x => x.Warehouse)
             .WithMany(x => x.WarehouseUsers)

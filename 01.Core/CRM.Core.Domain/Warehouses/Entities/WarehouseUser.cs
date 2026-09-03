@@ -5,8 +5,7 @@ using CRM.Framework.Domain;
 namespace CRM.Core.Domain.Warehouses.Entities;
 
 public class WarehouseUser {
-    public Guid Id { get; set; }
-    public Guid UserId { get; set; }
+    public string UserId { get; set; }
     public Guid WarehouseId { get; set; }
     public Warehouse Warehouse { get; set; }
 }

@@ -27,17 +27,41 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         return View(warehouses);
     }
 
-    public async Task<List<WarehousVModel>> GetAllWarehouses()
+    private async Task<WarehousePageVModel> GetAllWarehouses()
     {
-        var warehouses = await db.Warehouses
-            .AsNoTracking()
-            .Select(c => new WarehousVModel {
-                Warehouse = c,
-                WarehouseProductsCount = c.WarehouseProducts.Count
+        var isManager = User.IsAdmin() || User.IsManagingDirector() || User.IsTaminAdmin();
+
+        var query = db.Warehouses.AsNoTracking();
+
+        if (!isManager)
+        {
+            query = query.Where(x => x.WarehouseUsers.Any(u => u.UserId == User.GetUserId()));
+        }
+
+        var warehouses = await query
+            .Select(x => new WarehouseDataVModel {
+                Warehouse = x,
+                WarehouseProductsCount = x.WarehouseProducts.Count,
+                UserIds = x.WarehouseUsers.Select(x => x.UserId).ToList(),
             })
             .ToListAsync();
 
-        return warehouses;
+        var userIds = warehouses.SelectMany(x => x.UserIds).Distinct().ToList();
+
+        var userMap = await userManager.Users
+            .Where(x => userIds.Contains(x.Id))
+            .ToDictionaryAsync(x => x.Id, x => x.FullName);
+
+        warehouses.ForEach(x =>
+            x.UserNames = x.UserIds
+                .Where(userMap.ContainsKey)
+                .Select(id => userMap[id])
+                .ToList());
+
+        return new WarehousePageVModel {
+            Warehouses = warehouses,
+            IsManager = isManager
+        };
     }
 
 
@@ -46,7 +70,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         var warehouses = await GetAllWarehouses();
         return PartialView(warehouses);
     }
-    
+
     public async Task<IActionResult> GetUsers()
     {
         var warehouses = await GetAllWarehouses();
@@ -54,29 +78,39 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     }
 
     [HttpPost]
-    public async Task<IActionResult> AddWarehouse([FromBody] Warehouse model)
+    public async Task<IActionResult> AddWarehouse([FromBody] WarehouseVModel model)
     {
         if (model == null) return BadRequest();
 
         var user = await userManager.GetUserAsync(HttpContext.User);
 
+        Warehouse warehouse;
         if (model.Id == Guid.Empty)
         {
-            model.UserCreatorID = user.Id;
-            model.UserCreator = user.FullName;
+            warehouse = new Warehouse {
+                Title = model.Title,
+                UserCreator = user.FullName,
+                UserCreatorID = user.Id,
+                WarehouseUsers = model.UserIds?.ConvertAll(userId => new WarehouseUser { UserId = userId })
+            };
 
-            db.Warehouses.Add(model);
-            await logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
+            db.Warehouses.Add(warehouse);
+            await logSystemService.LogChange(warehouse, null, LogActionEnum.ثبت, user);
         } else
         {
-            var oldItem = await db.Warehouses.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
-            model.ModifyDate = DateTime.Now;
-            model.ModifyDateTxt = BaseServices.GetDateTimePersian();
-            model.UserModify = user.FullName;
-            model.UserModifyID = user.Id;
+            warehouse = await db.Warehouses.Include(w => w.WarehouseUsers).FirstOrDefaultAsync(x => x.Id == model.Id);
+            if (warehouse == null) return NotFound();
 
-            db.Warehouses.Update(model);
-            await logSystemService.LogChange(oldItem, model, LogActionEnum.ویرایش, user);
+            warehouse.Title = model.Title;
+            warehouse.ModifyDate = DateTime.Now;
+            warehouse.ModifyDateTxt = BaseServices.GetDateTimePersian();
+            warehouse.UserModify = user.FullName;
+            warehouse.UserModifyID = user.Id;
+
+            warehouse.WarehouseUsers = model.UserIds?.ConvertAll(userId => new WarehouseUser { WarehouseId = warehouse.Id, UserId = userId });
+
+            var oldWarehouse = (Warehouse)db.Entry(warehouse).OriginalValues.ToObject();
+            await logSystemService.LogChange(oldWarehouse, warehouse, LogActionEnum.ویرایش, user, ["WarehouseUsers"]);
         }
 
         await db.SaveChangesAsync();
@@ -109,7 +143,15 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     {
         try
         {
-            var item = await db.Warehouses.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
+            var item = await db.Warehouses.AsNoTracking()
+                .Include(f => f.WarehouseUsers)
+                .Select(f => new WarehouseVModel {
+                    Id = f.Id,
+                    Title = f.Title,
+                    UserIds = f.WarehouseUsers.Select(f => f.UserId).ToList()
+                })
+                .FirstOrDefaultAsync(f => f.Id == id);
+
             if (item == null) return NotFound("رکوردی یافت نشد!");
 
             return Ok(item);
@@ -289,7 +331,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
                 var exists = await db.WarehouseProducts.AnyAsync(x =>
                     x.WarehouseId == model.WarehouseId &&
                     x.ProductCode == model.ProductCode &&
-                    x.ProductSmallName == model.ProductSmallName);
+                    x.ProductDescription == model.ProductDescription);
 
                 if (exists)
                     return Conflict("این محصول قبلاً در این انبار ثبت شده است.");

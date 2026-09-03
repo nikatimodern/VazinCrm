@@ -1,4 +1,4 @@
-@model IList<CRM.EndPoint.FrontEnd.Models.Warehouse.WarehousVModel>
+@model CRM.EndPoint.FrontEnd.Models.Warehouse.WarehousePageVModel
 @{
     Layout = "_Layout";
     var hasWarehouseId = Context.Request.Query.ContainsKey("warehouse");
@@ -8,7 +8,7 @@
     <div id="warehouses-section" class="@(hasWarehouseId ? "d-none" : "")">
         <div class="d-flex align-items-center gap-2 mb-3">
             <span class="section-title-dot"></span>
-            <h5 class="fbold text-dark m-0">انبار ها</h5>
+            <h5 class="fbold text-dark m-0">@(Model.IsManager ? "انبار ها" : "انبار های من")</h5>
         </div>
 
         <div id="warehousesContainer">

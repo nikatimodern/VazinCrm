@@ -44,7 +44,6 @@ function syncWarehouseViewWithUrl() {
 }
 
 warehouseModal?.addEventListener("hidden.bs.modal", cancelWarehouseModal);
-warehouseModal?.addEventListener("show.bs.modal", showWarehouseModal);
 warehouseTransactionModal?.addEventListener("hidden.bs.modal", cancelWarehouseTransactionModal);
 warehouseTransactionHistoryModal?.addEventListener("hidden.bs.modal", () => warehouseProductsData = {});
 
@@ -53,23 +52,37 @@ function backToWarehouses() {
 }
 
 
-let warehouseUsersInitialized = false;
 async function showWarehouseModal() {
-    if (warehouseUsersInitialized) return;
-    
-/*    const users = await CrmSer.getUsers(1);
-    new TomSelect("#warehouseUsers", {
-        options: users,
-        valueField: "id",
-        selectOnTab: true,
-    });
-    warehouseUsersInitialized = true;*/
+    ModalToggle(warehouseModal, "show");
+    await initWarehouseUsers();
 }
-
 function cancelWarehouseModal() {
     warehouseData = {};
     mySer.emptyForm("warehouseForm");
 }
+
+
+let warehouseUsersPromise = null;
+async function initWarehouseUsers() {
+    const select = warehouseModal.querySelector("#warehouseUsers");
+    if (!warehouseUsersPromise) {
+        FLshowLoading();
+        warehouseUsersPromise = CrmSer.getUsers(1);
+    }
+    
+    const users = await warehouseUsersPromise;
+    FLshowLoading(false);
+    
+    if (select.tomselect) return;
+    
+    new TomSelect(select, {
+        options: users,
+        valueField: "id",
+        selectOnTab: true,
+        placeholder: "انتخاب کاربران",
+    });
+}
+
 
 warehouseFormElm?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -79,7 +92,6 @@ warehouseFormElm?.addEventListener("submit", async (e) => {
         ...warehouseData,
         ...mySer.convertFormToJSON("warehouseForm"),
     };
-    // return;
     
     await sendApiRequest({
         url: "/Warehouse/AddWarehouse",
@@ -111,12 +123,13 @@ async function deleteWarehouse(id) {
 
 async function editWarehouse(id) {
     warehouseDropdown.close();
+    await showWarehouseModal();
+    
     await sendApiRequest({
         url: `/Warehouse/GetWarehouse/${id}`,
         onSuccess: (res) => {
             warehouseData = res.data;
             mySer.convertJsonToForm(warehouseData, "warehouseForm");
-            ModalToggle(warehouseModal, "show");
         },
     });
 }
