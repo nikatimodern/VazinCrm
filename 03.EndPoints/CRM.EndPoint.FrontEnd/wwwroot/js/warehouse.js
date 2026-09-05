@@ -321,11 +321,11 @@ function initWarehouseProductsTable(id) {
         if (!data) return;
         switch (button.dataset.action) {
             case "warehouse-in":
-                showWarehouseTransactionModal(1, data);
+                await showWarehouseTransactionModal(1, data);
                 break;
             
             case "warehouse-out":
-                showWarehouseTransactionModal(0, data);
+                await showWarehouseTransactionModal(0, data);
                 break;
             
             case "warehouse-history":
