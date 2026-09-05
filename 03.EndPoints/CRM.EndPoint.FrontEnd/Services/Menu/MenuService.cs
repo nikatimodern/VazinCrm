@@ -11,7 +11,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace CRM.EndPoint.FrontEnd.Services.Menu;
 
-
 public class MenuService(IServiceProvider serviceProvider) : IMenuService {
     public async Task<List<MenuItem>> GetMenusAsync(ClaimsPrincipal user)
     {
@@ -325,6 +324,26 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                             AppRoles.FinancialExpert,
                             AppRoles.FinancialAdmin
                         ]
+                    },
+
+                    #endregion
+
+                    #region انبار
+
+                    new MenuItem {
+                        Id = "warehouse",
+                        Title = "انبار",
+                        Url = "/Warehouse/Index",
+                        DisplayOrder = 5,
+                        Roles = [
+                            AppRoles.Admin,
+                            AppRoles.ManagingDirector,
+                            AppRoles.ExecutiveDirector,
+                            AppRoles.TaminExpert,
+                            AppRoles.TaminAdmin,
+                            AppRoles.FinancialExpert,
+                            AppRoles.FinancialAdmin,
+                        ],
                     },
 
                     #endregion

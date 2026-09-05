@@ -180,7 +180,7 @@ public class TransferController(
                 })
                 .FirstOrDefaultAsync();
 
-            if (data == null) return NotFound();
+            if (data == null) return NotFound("رکوردی یافت نشد!");
 
             return Ok(data);
         }
@@ -197,7 +197,7 @@ public class TransferController(
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var item = await db.Transfers.FirstOrDefaultAsync(f => f.Id == id);
-            if (item == null) return NotFound();
+            if (item == null) return NotFound("رکوردی یافت نشد!");
 
             item.IsDeleted = true;
             item.ModifyDate = DateTime.Now;
@@ -224,7 +224,7 @@ public class TransferController(
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var transfer = await db.Transfers.FirstOrDefaultAsync(f => f.Id == id);
-            if (transfer == null) return NotFound();
+            if (transfer == null) return NotFound("رکوردی یافت نشد!");
 
             if (transfer.Status != newStatus)
             {

@@ -23,41 +23,36 @@ using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Customer;
 using CRM.EndPoint.FrontEnd.Models.PreFactor;
 using CRM.EndPoint.FrontEnd.Models.PushNotification;
+using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
     public class CustomerController : Controller {
-        private readonly SepidarService sps;
+        private readonly SepidarService sepidarService;
         private readonly UserManager<AppUser> userManager;
         private readonly Service genService;
-        private readonly FileSaver fileSaver;
         private readonly DateTimeServices dtService;
         private readonly CRMContextDb db;
         private readonly UserContextDb udb;
-        private readonly Sepidar1ContextDb S1db;
-        private readonly Sepidar2ContextDb S2db;
         private readonly IHubContext<TaskHub> hub;
         private readonly IViewRenderService vrs;
         private readonly LogSystemService _logSystemService;
         private readonly IPushQueue pushQueue;
         private readonly PreFactorService preFactorService;
 
-        public CustomerController(SepidarService sps, UserManager<AppUser> userManager, Service GenService, FileSaver fileSaver,
-            DateTimeServices dtService, CRMContextDb db, UserContextDb udb, Sepidar1ContextDb S1db, Sepidar2ContextDb S2db,
+        public CustomerController(SepidarService sepidarService, UserManager<AppUser> userManager, Service GenService,
+            DateTimeServices dtService, CRMContextDb db, UserContextDb udb,
             IHubContext<TaskHub> hub, IViewRenderService vrs, LogSystemService logSystemService, IPushQueue pushQueue,
             PreFactorService preFactorService)
         {
-            this.sps = sps;
+            this.sepidarService = sepidarService;
             this.userManager = userManager;
             genService = GenService;
-            this.fileSaver = fileSaver;
             this.dtService = dtService;
             this.db = db;
             this.udb = udb;
-            this.S1db = S1db;
-            this.S2db = S2db;
             this.hub = hub;
             this.vrs = vrs;
             _logSystemService = logSystemService;
@@ -185,102 +180,76 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        [HttpGet]
-        public async Task<ActionResult> CustomerProfile(Guid Id)
+        private async Task<bool> CanAccessCustomerProfile(Guid customerId)
         {
-            var data = await db.Customers.Include(f => f.UserCustomers).IgnoreQueryFilters().Where(f => f.Id == Id).FirstOrDefaultAsync();
-            if (data == null)
-            {
-                return NotFound();
-            }
+            if (User.IsAdmin() || User.IsSalesAdmin())
+                return true;
 
-            if (Id != Guid.Empty)
+            if (User.IsCustomer())
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
-                var rols = await userManager.GetRolesAsync(user);
-
-                var sexTxt = data.Sex == 1 ? "جناب آقای" : "سرکار خانم";
-                ViewBag.SubTitle = "پنل مشتری" + " " + data.CustomerCode + " " + data.CompanyName + " (" + sexTxt + " " + data.AgentName + ")";
-                ViewBag.CustomerId = Id;
-                ViewBag.SelExpertRel = await GetUsersRel(data);
-
-                if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش"))
-                {
-                    return View();
-                }
-
-                var customersForUser = await db.UserCustomers.Where(f => f.UserId == Guid.Parse(user.Id)).Select(f => f.CustomerId).ToArrayAsync();
-
-                if (customersForUser.Contains(Id))
-                {
-                    return View();
-                }
+                return await db.Customers.AnyAsync(x => x.Id == customerId && x.Mobile == user.PhoneNumber);
             }
 
-            //return RedirectToAction("AccessDenied", "Account", new { returnUrl = "/Cartable/Index", accesDenid = true });
-            return NoContent();
-            //return RedirectToAction("AccessDenied", "Account", new { showNotifyOnly = true });
+            var userId = Guid.Parse(User.GetUserId());
+            return await db.UserCustomers.AnyAsync(x => x.UserId == userId && x.CustomerId == customerId);
         }
+
 
         [HttpGet]
-        public async Task<ActionResult> CustomerPanel(Guid Id)
+        public async Task<IActionResult> CustomerProfile(Guid id)
         {
-            if (Id == Guid.Empty)
+            if (id == Guid.Empty)
                 return BadRequest();
 
-            var cus = await db.Customers.AsNoTracking().Include(f => f.UserCustomers).Where(f => f.Id == Id).FirstOrDefaultAsync();
-            if (cus == null)
+            var query = db.Customers
+                .AsNoTracking()
+                .Include(x => x.UserCustomers)
+                .AsQueryable();
+
+            if (User.IsAdmin())
+            {
+                query = query.IgnoreQueryFilters();
+            }
+
+            var customer = await query.FirstOrDefaultAsync(x => x.Id == id);
+
+
+            if (customer == null)
                 return NotFound();
 
-            var selExpertRel = await GetUsersRel(cus);
+            if (!await CanAccessCustomerProfile(id))
+                return Forbid();
 
-            var customer = new CustomerPanelVModel {
-                CustomerId = Id,
-                CustomerName = $"{cus.CustomerCode} {cus.CompanyName} ({(cus.Sex == 1 ? "جناب آقای" : "سرکار خانم")} {cus.AgentName})",
-                SelExpertRel = selExpertRel
+            var model = new CustomerPanelVModel {
+                CustomerId = customer.Id,
+                CustomerName =
+                    $"پنل مشتری {customer.CustomerCode} {customer.CompanyName} " +
+                    $"({(customer.Sex == 1 ? "جناب آقای" : "سرکار خانم")} {customer.AgentName})",
+                SelExpertRel = await GetUsersRel(customer.UserCustomers)
             };
 
-            return View(customer);
+            return View(model);
         }
-
 
         [Authorize(Roles = "مدیر ارشد ,مدیر فروش")]
         [HttpGet]
-        public async Task<ActionResult> CustomerDetail(Guid Id)
+        public ActionResult CustomerDetail(Guid id)
         {
-            if (Id != Guid.Empty)
-            {
-                var user = userManager.GetUserAsync(HttpContext.User).Result;
-                var rols = userManager.GetRolesAsync(user).Result.ToArray();
+            if (id == Guid.Empty)
+                return BadRequest();
 
-                if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش"))
-                {
-                    var data = await db.Customers.Where(f => f.Id == Id).FirstOrDefaultAsync();
-                    string sexTxt = "";
-                    if (data.Sex == 1)
-                        sexTxt = "جناب آقای";
-                    else if (data.Sex == 0)
-                        sexTxt = "سرکار خانم";
-                    ViewBag.SubTitle = data.CompanyName + " (" + sexTxt + " " + data.AgentName + ")" + " " + data.CustomerCode;
-                    ViewBag.CustomerId = Id;
-                    ViewBag.rol = "";
-                    return View();
-                } else
-                {
-                    return RedirectToAction("AccessDenied", "Account");
-                }
-            }
-
-            return RedirectToAction("AccessDenied", "Account");
+            ViewBag.CustomerId = id;
+            return View();
         }
 
 
         [Authorize(Policy = "NotCustomerOnly")]
         [HttpGet]
-        public async Task<IActionResult> AbortCustomer(Guid cid)
+        public async Task<IActionResult> AbortCustomer(Guid id)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
-            var cu = await db.Customers.Include(f => f.PreFactors).ThenInclude(f => f.Factors).Where(f => f.Id == cid).FirstOrDefaultAsync();
+            var cu = await db.Customers.Include(f => f.PreFactors).ThenInclude(f => f.Factors).Where(f => f.Id == id).FirstOrDefaultAsync();
 
             await _logSystemService.LogChange(cu, null, LogActionEnum.حذف, user);
 
@@ -288,10 +257,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             cu.UserModify = user.FullName;
             cu.UserModifyID = user.Id;
 
-            foreach (var item in cu.PreFactors)
+            foreach (var item in cu.PreFactors ?? [])
             {
                 item.IsDeleted = true;
-                foreach (var it in item.Factors)
+                foreach (var it in item.Factors ?? [])
                 {
                     it.IsDeleted = true;
                     it.ModifyDate = DateTime.Now;
@@ -317,11 +286,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize(Roles = "مدیر ارشد ,مدیر فروش")]
         [HttpGet]
-        public async Task<IActionResult> AcceptCustomer(Guid cid)
+        public async Task<IActionResult> AcceptCustomer(Guid id)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
-            var oldCu = await db.Customers.AsNoTracking().Where(f => f.Id == cid).FirstOrDefaultAsync();
-            var cu = await db.Customers.Where(f => f.Id == cid).FirstOrDefaultAsync();
+            var oldCu = await db.Customers.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
+            var cu = await db.Customers.Where(f => f.Id == id).FirstOrDefaultAsync();
 
             cu.Accepted = true;
             cu.DateSort = DateTime.Now;
@@ -355,18 +324,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             customer.Accepted = false;
 
 
-            var uc = db.UserCustomers.Where(f => f.UserId == Guid.Parse(user.Id) && f.CustomerId == id).Any();
-            if (!uc)
-            {
-                db.UserCustomers.Add(new UserCustomer() {
-                    CustomerId = id,
-                    UserId = Guid.Parse(user.Id)
-                });
-                await db.SaveChangesAsync();
-                return Ok(1);
-            }
+            var uc = await db.UserCustomers.AnyAsync(f => f.UserId == Guid.Parse(user.Id) && f.CustomerId == id);
+            if (uc) return Ok(0);
 
-            return Ok(0);
+
+            db.UserCustomers.Add(new UserCustomer {
+                CustomerId = id,
+                UserId = Guid.Parse(user.Id)
+            });
+            await db.SaveChangesAsync();
+            return Ok(1);
         }
 
         [Authorize(Policy = "NotCustomerOnly")]
@@ -397,9 +364,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize(Policy = "NotCustomerOnly")]
         [HttpPost]
-        public async Task<IActionResult> CheckDuplicate(Customer model)
+        public async Task<IActionResult> CheckDuplicate([FromBody] Customer model)
         {
-            IQueryable<Customer> data = null;
+            if (model == null) return BadRequest();
+
+            IQueryable<Customer> data;
 
             if (model.Juridical == 1)
             {
@@ -513,40 +482,38 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize(Policy = "NotCustomerOnly")]
         [HttpPost]
-        public async Task<IActionResult> AddCustomer(Customer model)
+        public async Task<IActionResult> AddCustomer([FromBody] Customer model)
         {
+            if (model == null) return BadRequest();
+
+            await using var transaction = await db.Database.BeginTransactionAsync();
             try
             {
-                var sm = db.ASettings.FirstOrDefaultAsync().Result.SmallOffice;
-                await using var transaction = await db.Database.BeginTransactionAsync();
+                var setting = await db.ASettings.FirstOrDefaultAsync();
                 var user = await userManager.GetUserAsync(HttpContext.User);
+
                 model.UserCreator = user.FullName;
                 model.UserCreatorID = user.Id;
-                //model.CreateDate = DateTime.Now;
-                //model.CreateDateTxt = dtService.GetDateTimePersian();
                 model.RoleTypeTxt = Service.GetTypeTxtRoleType((int)model.RoleType);
 
-                if (sm)
-                    model.Accepted = true;
+                if (setting.SmallOffice) model.Accepted = true;
 
 
-                bool addStatus = true;
-
-                if (model.Juridical == 1)
+                /*if (model.Juridical == 1)
                 {
                     bool chShenaseMeli = db.Customers.Any(f => f.ShenaseMeli == model.ShenaseMeli);
                     bool chEghtesadiCode = db.Customers.Any(f => f.EghtesadiCode == model.EghtesadiCode);
                     bool chNumberRegister = db.Customers.Any(f => f.NumberRegister == model.NumberRegister);
-                }
+                }*/
 
                 model.NormalizedCompanyName = TextService.NormalizeText(model.CompanyName);
                 model.NormalizedAgentName = TextService.NormalizeText(model.AgentName);
 
-                if (addStatus)
-                    db.Customers.Add(model);
+
+                db.Customers.Add(model);
 
 
-                UserCustomer us = new UserCustomer() {
+                var us = new UserCustomer() {
                     UserId = Guid.Parse(user.Id),
                     CustomerId = model.Id
                 };
@@ -562,6 +529,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
             catch
             {
+                await transaction.RollbackAsync();
                 return BadRequest();
             }
         }
@@ -802,9 +770,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        public async Task<string> GetUsersRel(Customer cus)
+        public async Task<string> GetUsersRel(IList<UserCustomer> userCustomers)
         {
-            var uu = cus.UserCustomers.Select(d => d.UserId.ToString()).ToList();
+            var uu = userCustomers.Select(d => d.UserId.ToString()).ToList();
 
             var users = await udb.Users.AsNoTracking().Where(f => uu.Contains(f.Id)).Select(f => f.FullName).ToArrayAsync();
 
@@ -955,24 +923,35 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return Ok(data);
         }
 
+
         [Authorize(Policy = "NotCustomerOnly")]
         [HttpGet]
-        public async Task<IActionResult> GetFactorsSepidar(int sNumber)
+        public async Task<IActionResult> GetSepidarFactors(int pfSerialNumber, int passType = 1)
         {
             try
             {
-                var s1 = await S1db.vwInvoice.Include(f => f.InvoiceItems).Where(f => f.QuotationNumber == sNumber).ToListAsync();
+                var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
 
-                foreach (var item in s1)
+                if (setting?.Sepidar != true) return NoContent();
+
+                var factors = await sepidarService.GetInvoicesByQuotationNumberAsync(pfSerialNumber);
+
+                if (passType == 1)
                 {
-                    item.ExtraDescription = sps.getNoteFactor(item.InvoiceId);
+                    foreach (var factor in factors)
+                    {
+                        factor.ExtraDescription = sepidarService.getNoteInvoice(factor.InvoiceId);
+                    }
                 }
 
+                var html = await vrs.RenderToStringAsync("GetSepidarFactors",
+                    factors,
+                    new Dictionary<string, object> {
+                        { "PassType", passType },
+                    }
+                );
 
-                //Invoice s2 = S2db.vwInvoice.Where(f => f.Number == s1.Number && f.Date==s1.Date ).FirstOrDefault();
-                var html = await vrs.RenderToStringAsync("GetFactorsSepidar", s1);
-
-                return Ok(new { count = s1.Count, html });
+                return Ok(new { count = factors.Count, html });
             }
             catch
             {
@@ -992,7 +971,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var query = preFactorService.BuildQuery();
 
-                if (showDeleted)
+                if (showDeleted && !User.IsCustomer())
                 {
                     query = query.IgnoreQueryFilters();
                 }
@@ -1027,7 +1006,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -1040,7 +1019,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 x.UserTaminId
             }).FirstOrDefaultAsync();
 
-            if (pf == null) return NotFound();
+            if (pf == null) return NotFound("رکوردی یافت نشد!");
 
             List<SelectOptionDto<Guid>> salesUsers;
             if (cusId != Guid.Empty)
@@ -1107,7 +1086,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var pf = await db.PreFactors.FirstOrDefaultAsync(x => x.Id == pfId);
 
-            if (pf == null) return NotFound();
+            if (pf == null) return NotFound("رکوردی یافت نشد!");
 
             if (taminUserId != Guid.Empty)
             {

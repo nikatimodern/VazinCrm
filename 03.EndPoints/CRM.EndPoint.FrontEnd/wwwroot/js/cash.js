@@ -319,10 +319,10 @@ const getAllCashesDt = () => {
                 render: function (data, type, row) {
                     return `
                         <div class="inline-flex-center gap-1">
-                            <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
+                            <button type="button" class="icon-button icon-button--gray" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
                             ${row.status === 0 ? `
-                                <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditCashModal('${row.id}')"><i class="fa fa-pencil"></i></button>
-                                <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deleteCash('${row.id}')"><i class="fa fa-trash"></i></button>
+                                <button type="button" class="icon-button icon-button--green" onclick="showEditCashModal('${row.id}')"><i class="fa fa-pencil"></i></button>
+                                <button type="button" class="icon-button icon-button--red" onclick="deleteCash('${row.id}')"><i class="fa fa-trash"></i></button>
                             ` : ""}
                         </div>
                     `;
@@ -760,10 +760,10 @@ function getAllCashesModalDt() {
                 render: function (data, type, row) {
                     return `
                         <div class="inline-flex-center gap-1">
-                            <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonGray flex-center" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
+                            <button type="button" class="icon-button icon-button--gray" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
                             ${row.status === 0 ? `
-                                <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="showEditCashModal('${row.id}')"><i class="fa fa-pencil"></i></button>
-                                <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deleteCash('${row.id}')"><i class="fa fa-trash"></i></button>
+                                <button type="button" class="icon-button icon-button--green" onclick="showEditCashModal('${row.id}')"><i class="fa fa-pencil"></i></button>
+                                <button type="button" class="icon-button icon-button--red" onclick="deleteCash('${row.id}')"><i class="fa fa-trash"></i></button>
                             ` : ""}
                         </div>
                     `;

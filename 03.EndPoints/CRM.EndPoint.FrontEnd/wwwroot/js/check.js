@@ -4,21 +4,24 @@ let payeeCheckTomSelect;
 
 let checkbooksSection = document.getElementById("checkbooks-section");
 let checkSection = document.getElementById("checks-section");
+
+
+window.addEventListener("popstate", syncCheckViewWithUrl);
+
 document.addEventListener("DOMContentLoaded", async () => {
-    
-    window.addEventListener("popstate", () => {
-        const { cBook, cBookName } = getUrlParams();
-        if (cBook) {
-            showChecks(cBook, decodeURIComponent(cBookName || "دسته چک"));
-        } else {
-            checkbooksSection.classList.remove("d-none");
-            checkSection.classList.add("d-none");
-        }
-    });
-    
+    syncCheckViewWithUrl();
     await initSelectTomCheck();
 });
 
+function syncCheckViewWithUrl() {
+    const { cBook, cBookName } = getUrlParams();
+    if (cBook) {
+        showChecks(cBook, decodeURIComponent(cBookName || "دسته چک"));
+    } else {
+        checkbooksSection.classList.remove("d-none");
+        checkSection.classList.add("d-none");
+    }
+}
 
 const GetAllCheckbooks = async () => {
     try {
@@ -119,8 +122,8 @@ function initCheckbookTable(id) {
                 data: "id",
                 render: data => `
                     <div class="inline-flex-center gap-1">
-                        <button type="button" style="padding: 6px 6px;box-shadow: none;font-size: 12px" class="buttonGreen3 flex-center" onclick="editCheck('${data}')"><i class="fa fa-pencil"></i></button>
-                        <button type="button" style="padding: 6px 7px;box-shadow: none;font-size: 12px" class="buttonCancel2 flex-center" onclick="deleteCheck('${data}')"><i class="fa fa-trash"></i></button>
+                        <button type="button" class="icon-button icon-button--green" onclick="editCheck('${data}')"><i class="fa fa-pencil"></i></button>
+                        <button type="button" class="icon-button icon-button--red" onclick="deleteCheck('${data}')"><i class="fa fa-trash"></i></button>
                     </div>
                 `,
             },
@@ -356,10 +359,10 @@ const deleteCheckbook = async (id) => {
 
 
 document.addEventListener("click", (e) => {
-    const card = e.target.closest(".checkbook-card");
+    const card = e.target.closest(".clickable-card");
     if (!card) return;
     
-    if (e.target.closest(".checkbook-dropdown__toggle")) return;
+    if (e.target.closest(".clickable-card__toggle")) return;
     const { id, bankName } = card.dataset;
     if (!id) return;
     
@@ -368,7 +371,7 @@ document.addEventListener("click", (e) => {
 
 const checkbookDropdown = Dropdown.setupDelegate({
     container: document,
-    toggleSelector: ".checkbook-dropdown__toggle",
+    toggleSelector: ".clickable-card__toggle",
     options: {
         transitionDuration: 200,
         originalDisplay: "flex",

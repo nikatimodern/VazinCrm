@@ -143,20 +143,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> FactorExportToExcel(FilterVModel model)
+        public async Task<IActionResult> FactorExportToExcel([FromBody] FactorVModel model)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var roles = await userManager.GetRolesAsync(user);
-            // خواندن بدنه درخواست
-            string requestBody;
-            using (var reader = new StreamReader(Request.Body))
-            {
-                requestBody = await reader.ReadToEndAsync();
-            }
 
-            var model1 = JsonSerializer.Deserialize<FilterVModel>(requestBody);
 
-            var factors = await GetFactors(model1, user, roles);
+            var factors = await GetFactors(model, user, roles);
             var columns = new List<ExcelColumnConfig<Factor>> {
                 new() { Header = "شماره سریال", ValueSelector = x => x.SerialNumber },
                 new() { Header = "نوع", ValueSelector = x => x.OfficialType == 1 ? "رسمی" : "غیر رسمی" },
@@ -229,8 +222,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        private async Task<IList<Factor>> GetFactors(FilterVModel model, AppUser user, IList<string> roles)
+        private async Task<IList<Factor>> GetFactors(FactorVModel fModel, AppUser user, IList<string> roles)
         {
+            var model = fModel.FModel;
             try
             {
                 var fListQ = db.Factors.AsQueryable();
@@ -269,7 +263,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (!string.IsNullOrEmpty(model.EntityId))
                 {
                     fListQ = fListQ.Where(f => f.PfactorID == Guid.Parse(model.EntityId)).AsQueryable();
+                } else if (fModel.CustomerId != null)
+                {
+                    fListQ = fListQ.Where(f => f.CustomerId == fModel.CustomerId).AsQueryable();
                 }
+
 
                 fListQ = fListQ
                     .OrderByDescending(f => f.DateMiladi)
@@ -531,7 +529,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var rols = await userManager.GetRolesAsync(user);
 
-            var fList = await GetFactors(model.FModel, user, rols);
+            var fList = await GetFactors(model, user, rols);
 
             var vModel = new FactorsViewModel {
                 Factors = fList,

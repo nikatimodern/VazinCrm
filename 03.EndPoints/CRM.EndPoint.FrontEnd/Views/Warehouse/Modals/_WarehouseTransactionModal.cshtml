@@ -1,0 +1,33 @@
+<div class="modal fade" id="warehouseTransactionModal" tabindex="-1" data-bs-focus="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content col-12 p-2 border-2">
+            <div class="modal-title text-center text-white rounded py-1 fbold" style="background-color: #6c757d">ثبت محصول انبار</div>
+            <div class="modal-body pb-2">
+                <form id="warehouseTransactionForm" class="d-flex flex-column gap-2">
+                    <div>
+                        <label>محصول</label>
+                        <select class="w-100 center fs-6 show-dropdown-arrow" name="productCode" required>
+                        </select>
+                    </div>
+                    <div>
+                        <label>شرح کالا</label>
+                        <input class="form-control" name="productDescription" required>
+                    </div>
+                    <div>
+                        <label>تعداد/مقدار</label>
+                        <input class="form-control valueNumber" type="number" name="weight" required />
+                    </div>
+                    <div>
+                        <label>واحد</label>
+                        <select class="form-select form-select-sm valueNumber" name="unit" required>
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-center gap-1 mt-3">
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" data-bs-dismiss="modal">انصراف</button>
+                        <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitWarehouseTransactionModal()">ثبت</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

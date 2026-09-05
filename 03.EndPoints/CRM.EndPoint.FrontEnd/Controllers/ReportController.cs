@@ -369,11 +369,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var call = await db.CallRecordings.FirstOrDefaultAsync(x => x.Id == callId);
 
-            if (call == null) return NotFound();
+            if (call == null) return NotFound("رکوردی یافت نشد!");
 
             var stream = await issabelService.GetAudioWithRetry(call.RecordingFilePath);
 
-            if (stream == null) return NotFound();
+            if (stream == null) return NotFound("رکوردی یافت نشد!");
 
             return File(stream, "audio/wav", Path.GetFileName(call.RecordingFilePath));
         }

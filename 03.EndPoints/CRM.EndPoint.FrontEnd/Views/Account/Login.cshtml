@@ -26,8 +26,10 @@
                 </span>
                 <input name="password" id="passwordInput" type="password" placeholder="رمز عبور" class="form-group__input form-group__input--ltr" value="">
             </div>
-
-            <button type="submit" class="col-12 buttonGreen2 login-btn d-flex justify-content-center align-items-center" id="login_button">ورود</button>
+            <button type="submit" class="col-12 buttonGreen2 login-btn flex-center" id="login_button">
+                <span>ورود</span>
+                <div class="spinner-border spinner-border-sm d-none ms-2" role="status"></div>
+            </button>
         </form>
         <div class="d-flex align-items-center justify-content-between mt-2">
             <a asp-controller="Account" asp-action="OtpLogin" asp-route-type="Forgot" class="link-purple fMedium">فراموشی رمز عبور</a>
@@ -41,6 +43,7 @@
 
 @section Scripts {
     <script>
+        const loginButton = document.getElementById("login_button");
         document.getElementById("togglePassword").addEventListener("click", function () {
             const passwordInput = document.getElementById("passwordInput");
             const eyeOpen = document.getElementById("eyeOpenPassword");
@@ -60,6 +63,10 @@
         const loginMsgElm = document.getElementById("LoginMsg");
         document.getElementById("loginForm").addEventListener("submit", async (e) => {
             e.preventDefault();
+            toggleElementsDisabled(loginButton);
+            loginButton.querySelector(".spinner-border").classList.remove("d-none");
+
+
             const model = {
                 userName: e.target.userName.value,
                 password: e.target.password.value,
@@ -79,16 +86,21 @@
             loginMsgElm.innerText = "";
             if (res.ok) {
                 goTo(data.url);
-            } else if (res.status === 405) {
+                return;
+            }
+
+            if (res.status === 405) {
                 data.errors.forEach(err => {
                     const pElm = document.createElement("p");
                     pElm.innerText = err;
                     loginMsgElm.appendChild(pElm);
                 });
-                FLshowLoading(false);
             } else {
                 loginMsgElm.innerText = data.message;
             }
+
+            toggleElementsDisabled(loginButton, false);
+            loginButton.querySelector(".spinner-border").classList.add("d-none");
         });
     </script>
 }

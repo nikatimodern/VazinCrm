@@ -1,25 +1,23 @@
-﻿@{
-    ViewData["Title"] = "CustomerProfile";
-    Layout = "_Layout";
+﻿@model CRM.EndPoint.FrontEnd.Models.Customer.CustomerPanelVModel
+@{
+    ViewBag.Title = @Model.CustomerName;
+    Layout = User.IsCustomer() ? "_CustomerLayout" : "_Layout";
 }
 
 <div id="customerProfile-wrapper" class="d-flex flex-column" style="height: calc(100dvh - 88px);">
     <div class="d-flex col-12 flex-wrap gap-1 flex-xxl-column fbold pb-1 pb-xxl-0">
-        <div class="d-flex" style=" justify-content:start; flex-direction:column;font-size:clamp(14px,2vw,18px)">
-            <p>@ViewBag.SubTitle</p>
-            <p>@ViewBag.detail</p>
-        </div>        
-        @if (User.IsAdmin() || User.IsSalesAdmin()) {
+        <div style="font-size:clamp(14px,2vw,18px)">
+            <p>@Model.CustomerName</p>
+        </div>
+        @if (User.IsAdmin() || User.IsSalesAdmin() || User.IsCustomer()) {
             <div class="d-flex align-items-center justify-content-end justify-content-xxl-start gap-1 flex-grow-1 flex-xxl-grow-0" style="font-size:clamp(11px,2vw,13px)">
-                <span>در اختیار: </span>
-                <span>@ViewBag.SelExpertRel</span>
+                <span>@(User.IsCustomer() ? "کارشناس فروش:" : "در اختیار:") </span>
+                <span>@Model.SelExpertRel</span>
             </div>
         }
     </div>
 
-    <div class="flex-grow-1" style="width:100%; display:flex; flex-direction:column; align-items:center;overflow: hidden;">
-
-
+    <div class="d-flex flex-column align-items-center flex-grow-1 w-100 overflow-hidden">
         <ul class="nav nav-tabs" id="TabFactors" role="tablist" style="display: none;">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active text-dark" style="margin-bottom:-2px;isolation:auto" id="preFactorTab" data-bs-toggle="tab" data-bs-target="#preFactorTab-pane" type="button" role="tab" aria-controls="preFactorTab-pane" aria-selected="true">پیش فاکتورها</button>
@@ -29,334 +27,75 @@
             </li>
         </ul>
 
-
-        <div class="parent-factors tab-content mt-xxl-2" id="tabContentFactors" style=" width:100%; justify-content:space-between;display:flex;min-height: 0; ">
-            <div class="tab-pane fade show active border-0 flex-grow-1" id="preFactorTab-pane" role="tabpanel" aria-labelledby="preFactorTab" tabindex="0" style="display: flex;flex-direction:column;width:100%">
-                <div class="mb-1 justify-content-between" style="display:flex; width:100%">
+        <div class="parent-factors tab-content d-flex justify-content-between w-100 mt-xxl-2 gap-2" id="tabContentFactors" style="min-height: 0">
+            <div class="tab-pane fade show active border-0 d-flex flex-column flex-grow-1 w-100" id="preFactorTab-pane" role="tabpanel" aria-labelledby="preFactorTab" tabindex="0">
+                <div class="mb-1 d-flex justify-content-between w-100 px-2">
                     <div class="mp d-flex align-items-center gap-3">
-                        <label class="d-none d-xxl-inline-block fbold" style="font-size:20px">پیش فاکتور ها</label>
-
-                        <button class="showDeletedPrefactor-icon ms-1">
-                            <svg class="closedEye-icon" style="width:16px" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l14.5 14.5a.75.75 0 1 0 1.06-1.06l-1.745-1.745a10.029 10.029 0 0 0 3.3-4.38 1.651 1.651 0 0 0 0-1.185A10.004 10.004 0 0 0 9.999 3a9.956 9.956 0 0 0-4.744 1.194L3.28 2.22ZM7.752 6.69l1.092 1.092a2.5 2.5 0 0 1 3.374 3.373l1.091 1.092a4 4 0 0 0-5.557-5.557Z" clip-rule="evenodd" /><path d="m10.748 13.93 2.523 2.523a9.987 9.987 0 0 1-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 0 1 0-1.186A10.007 10.007 0 0 1 2.839 6.02L6.07 9.252a4 4 0 0 0 4.678 4.678Z" /></svg>
-                            <svg class="openEye-icon d-none" style="width:16px" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" /><path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" clip-rule="evenodd" /></svg>
-                        </button>
+                        <label class="d-none d-xxl-inline-block fbold" style="font-size:20px">پیش فاکتورها</label>
+                        @if (!User.IsCustomer()) {
+                            <button class="showDeletedPrefactor-icon ms-1">
+                                <svg class="closedEye-icon" style="width:16px" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l14.5 14.5a.75.75 0 1 0 1.06-1.06l-1.745-1.745a10.029 10.029 0 0 0 3.3-4.38 1.651 1.651 0 0 0 0-1.185A10.004 10.004 0 0 0 9.999 3a9.956 9.956 0 0 0-4.744 1.194L3.28 2.22ZM7.752 6.69l1.092 1.092a2.5 2.5 0 0 1 3.374 3.373l1.091 1.092a4 4 0 0 0-5.557-5.557Z" clip-rule="evenodd" /><path d="m10.748 13.93 2.523 2.523a9.987 9.987 0 0 1-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 0 1 0-1.186A10.007 10.007 0 0 1 2.839 6.02L6.07 9.252a4 4 0 0 0 4.678 4.678Z" /></svg>
+                                <svg class="openEye-icon d-none" style="width:16px" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" /><path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" clip-rule="evenodd" /></svg>
+                            </button>
+                        }
                     </div>
-
-                    @*<div class="me-1 parentPlusAdd text-end" onclick="showModalAddPfactor(1, '@ViewBag.CustomerId')">
-                        <svg style="width: 20px;cursor: pointer" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                    </div>*@
-
+                    <p class="fbold d-flex align-items-center gap-2" style="font-size: clamp(15px, 1.4vw, 18px);color:rgb(84 57 213)">
+                        تعداد:
+                        <span id="preFactorCount"></span>
+                    </p>
                 </div>
-                <div class="InfoData" style="width:100%;overflow:auto;" id="PreFactorDivList">
-                </div>
-            </div>
-
-            <div class="tab-pane fade border-0 flex-grow-1" id="factorTab-pane" role="tabpanel" aria-labelledby="factorTab" tabindex="0" style="display: flex;flex-direction:column;width:100%">
-                <div style="display:none;flex-direction:column;justify-content:center;align-items:center;width:100%;min-height: 0;" id="DivFacListId">
-                    <div class="fbold mb-1 d-flex align-items-center gap-2" id="FactorDivTitleId">
-                    </div>
-                    <div class="InfoData" style=" width:100%;overflow:auto;" id="DetailDivList">
-                    </div>
+                <div class="InfoData w-100 overflow-auto" id="PreFactorDivList">
                 </div>
             </div>
-        </div>
 
-    </div>
-
-    <div class="buttonDiv mt-2">
-        <div style="display:flex;justify-content:center; width:100%; ">
-            <div style="display:flex;flex-direction:column;align-items:center; justify-content:center;width:100% ">
-                <div class="buttonDivContent">
-                    <div class="gap-2 gap-lg-3 flex-column flex-lg-row" style="font-size:clamp(12px,2vw,14px);align-items:center; width:100%; display:flex; justify-content:space-between ">
-                        <div class="col flex-wrap gap-2 w-100" style="display:flex; justify-content:space-around " id="wallet-details">
-                            <div class="gap-1 gap-lg-2" style="display:flex; justify-content:center; align-items:center;">
-                                <label style="color:lightgray">مبلغ کل فاکتورها: </label>
-                                <div class="fbold d-flex align-items-baseline gap-1" style="color:white;">
-                                    <span id="AllFacAmountId" style="font-size:clamp(14px,1.5vw,18px);">-</span>
-                                    <span style="color:white;font-size:clamp(12px,2vw,13px);">ريال</span>
-                                </div>
-                            </div>
-                            <div class="gap-1 gap-lg-2" style="display:flex; justify-content:center; align-items:center;">
-                                <label style="color:lightgray">پرداخت شده:</label>
-                                <div class="fbold d-flex align-items-baseline gap-1" style="color:white;">
-                                    <span id="AllFacPaymentId" style="font-size:clamp(14px,1.5vw,18px);">-</span>
-                                    <span style="color:white;font-size:clamp(12px,2vw,13px);">ريال</span>
-                                </div>
-                            </div>
-                            <div class="gap-1 gap-lg-2 " style="display:flex; justify-content:center; align-items:center;">
-                                <label style="color:lightgray" id="AllreminedTitleId">مانده بدهی:</label>
-                                <div class="fbold d-flex align-items-baseline gap-1" style="color:white;">
-                                    <span id="AllRemainedId" style="font-size:clamp(14px,1.5vw,18px);">-</span>
-                                    <span style="color:white;font-size:clamp(12px,2vw,13px);">ريال</span>
-                                </div>
-                            </div>
-                            @* <button style="border-radius:5px; height:fit-content" class="buttonPurple">صورت حساب</button> *@
+            <div class="tab-pane fade border-0 d-flex flex-column flex-grow-1 w-100" id="factorTab-pane" role="tabpanel" aria-labelledby="factorTab" tabindex="0">
+                <div class="d-flex flex-column justify-content-center w-100 d-none" style="min-height: 0" id="DivFacListId">
+                    <div class="fbold mb-1 px-2" id="FactorDivTitleId">
+                        <div id="relatedFactorTitle" class="flex-center gap-2 d-none">
+                            <button class="buttonGreen hide-factor__btn" onclick="hideFact()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <span>تمام فاکتورهای مربوط به پیش فاکتور <span id="relatedPfSerialNumber"></span></span>
                         </div>
-                        @* width:350px; *@
-                        <div class="walledNotCredit cursor-pointer" id="wallet-balance" style="min-width: 280px;width: auto" onclick="ShowModalInvoiceWallet(1)">
-                            <div class="d-flex align-items-center justify-content-around gap-1 gap-lg-2">
-                                <span class="fMedium" style="color:lightgray">اعتبار کیف پول: </span>
-                                <span class="fbold d-flex align-items-baseline gap-1 gap-xl-2" style="color:white;">
-                                    <span id="WalletId" style="font-size:22px;">-</span>
-                                    <span style="color:white;font-size:clamp(13px,2vw,14px);">ريال</span>
-                                </span>
-                            </div>
+                        <div id="allFactorTitle" class="d-flex justify-content-between w-100">
+                            <span class="d-none d-xxl-inline-block">فاکتورها</span>
+                            <p class="fbold d-flex align-items-center gap-2 flex-grow-1 justify-content-end" style="font-size: clamp(15px, 1.4vw, 18px);color:rgb(84 57 213)">
+                                تعداد:
+                                <span id="factorCount"></span>
+                            </p>
                         </div>
-                        @*
-                    <div>
-                    <label  style="color:lightgray">کل پیش پرداخت:</label>
-                    <label class="fbold" style="color:white;font-size:17px" id="AllPFacPaymentId"></label>
                     </div>
-                     *@
-
-                        @*<div>
-                    <label  style="color:lightgray" id="AllreminedTitleId">مانده:</label>
-                    <label class="fbold" style="color:white;font-size:17px" id="AllRemainedId"></label>
-                    </div>*@
-                        @*<button style="border-radius:5px; height:fit-content" class="buttonPurple">صورت حساب</button>*@
+                    <div class="InfoData w-100 overflow-auto" id="DetailDivList">
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <partial name="_CustomerFinancialSummaryPartial" />
 </div>
 
+@if (!User.IsCustomer()) {
+    <partial name="~/Views/Factor/Modals/_FactorModal.cshtml" />
+    <partial name="~/Views/Factor/Modals/_FactorSepidarModal.cshtml" />
 
-<partial name="~/Views/Factor/Modals/_FactorModal.cshtml" />
-<partial name="~/Views/Factor/Modals/_FactorSepidarModal.cshtml" />
+    <partial name="~/Views/PreFactor/Modals/_PreFactorModal.cshtml" />
+    <partial name="~/Views/PreFactor/Modals/_PreFactorAttachmentsModal.cshtml" />
+    <partial name="~/Views/PreFactor/Modals/_PreFactorMobileModal.cshtml" />
+    <partial name="~/Views/PreFactor/Modals/_PreFactorChangeUsersModal.cshtml" />
 
-<partial name="~/Views/PreFactor/Modals/_PreFactorModal.cshtml" />
+    <partial name="~/Views/Order/Modals/_UndeliveredOrderHeadsModal.cshtml" />
+    <partial name="~/Views/Order/Modals/_CreateOrderModal.cshtml" />
+}
+
 <partial name="~/Views/PreFactor/Modals/_DeliverModal.cshtml" />
-<partial name="~/Views/PreFactor/Modals/_PreFactorAttachmentsModal.cshtml" />
-<partial name="~/Views/PreFactor/Modals/_PreFactorMobileModal.cshtml" />
-<partial name="~/Views/PreFactor/Modals/_PreFactorChangeUsersModal.cshtml" />
-
-<partial name="~/Views/Order/Modals/_UndeliveredOrderHeadsModal.cshtml" />
-
 <partial name="~/Views/Accountancy/Modals/_InvoiceListModal.cshtml" />
-
-<partial name="~/Views/Order/Modals/_CreateOrderModal.cshtml" />
 
 @section scripts {
     <script>
-        var KelishehItems = [];
-        var perFactorType = null;
-        var CurrentStep = 1;
-        var allStep = 3;
-        var JuridicalFlag = 0;
-        var JuridicalTBL;
-        var NoneJuridicalTBL;
-
-
-        document.addEventListener("DOMContentLoaded", async () => {
-            document.getElementById("FLshowLoading").style.display = "";
-
-            customerId = '@ViewBag.CustomerId';
-
-            await Promise.all([showTaminDropdown(), getAllPreFactor()]);
-
-            getAllDetailAmount();
-            removeTabFactorsDesktop();
-
-            document.getElementById("FLshowLoading").style.display = "none";
-            focusTargetPf();
-        });
-
-        function focusTargetPf() {
-            const targetPf = sessionStorage.getItem("targetPf");
-            if (!targetPf) return;
-            sessionStorage.removeItem("targetPf");
-
-            const el = document.querySelector(`[data-serialnumber="${targetPf}"]`);
-            if (!el) return;
-            el.scrollIntoView({ behavior: "smooth", block: "center" });
-
-            flashItem(el, { duration: 2500 });
-        }
-
-
-        const removeTabFactorsDesktop = () => {
-            if (window.innerWidth >= 1400) {
-                document.getElementById("tabContentFactors").classList.remove("tab-content");
-                document.getElementById("preFactorTab-pane").classList.remove("tab-pane", "fade");
-                document.getElementById("factorTab-pane").classList.remove("tab-pane", "fade");
-            } else {
-                document.getElementById("tabContentFactors").classList.add("tab-content");
-                document.getElementById("preFactorTab-pane").classList.add("tab-pane", "fade");
-                document.getElementById("factorTab-pane").classList.add("tab-pane", "fade");
-            }
-            window.addEventListener("resize", removeTabFactorsDesktop);
-        };
-
-
-        const getFacAmount = (pfId, serialNumber = null, _this) => {
-
-            //_this.parentElement.parentElement.parentElement.style.backgroundColor = "lightcyan"
-
-            document.getElementById("DivFacListId").style.display = "flex";
-        };
-
-        const getAllDetailAmount = () => {
-            axios(`/Factor/GetDetailAmount?cusId=${customerId}`).then((res) => {
-                document.getElementById("AllFacAmountId").textContent = res.data.facAmount.toLocaleString();
-                document.getElementById("AllFacPaymentId").textContent = res.data.allPrePayment.toLocaleString();
-                document.getElementById("AllRemainedId").textContent = res.data.remained.toLocaleString();
-                document.getElementById("WalletId").textContent = res.data.wallet.toLocaleString();
-
-                const walletBalance = document.getElementById("wallet-balance");
-                if (res.data.wallet > 0) {
-                    walletBalance.classList.remove("walledNotCredit");
-                    walletBalance.classList.add("walledCredit");
-                } else {
-                    walletBalance.classList.remove("walledCredit");
-                    walletBalance.classList.add("walledNotCredit");
-                }
-            });
-        };
-
-
-        const delimageAcPfact = (item) => {
-
-            if (acceptedImg.id == null) {
-
-                var sss = "image-display_" + item;
-                document.getElementById(sss).innerHTML = "";
-                acceptedImg = null;
-            } else {
-
-                var sss = "image-display_" + item;
-                document.getElementById(sss).innerHTML = "";
-                acceptedImg.IsDeleted = true;
-            }
-        };
-
-
-        const getAllPreFactor = async (showDeleted = false) => {
-            try {
-                document.getElementById("FLshowLoading").style.display = "";
-                const res = await axios(`${baseUrl}Customer/GetAllPreFactorPartial?customerId=${customerId}&showDeleted=${showDeleted}`);
-
-                if (res.status === 200) {
-                    document.getElementById("PreFactorDivList").innerHTML = res.data.html;
-
-                    const sss = Array.from(document.getElementsByClassName("test"));
-                    sss.forEach((item) => {
-                        $(item).select2({
-                            dir: "rtl",
-                            placeholder: "انتخاب",
-                            selectionCssClass: "form-control",
-                            width: "100px",
-                        });
-                        $(item).val(null).trigger("change");
-                    });
-                    if (deletedToggleIcon.isVisible && !showDeleted) {
-                        deletedToggleIcon.isVisible = false;
-                    }
-                }
-                document.getElementById("FLshowLoading").style.display = "none";
-            } catch (err) {
-                setTimeout(async () => await getAllPreFactor(showDeleted), 3000);
-            }
-
-        };
-
-
-        const HodeDivStep = () => {
-
-            $("#Step1").css("display", "none");
-            $("#Step2").css("display", "none");
-            $("#Step3").css("display", "none");
-            $("#Step4").css("display", "none");
-
-        };
-        const ShowDivStep = () => {
-            HodeDivStep();
-            $("#Step" + CurrentStep).css("display", "flex");
-        };
-
-        const backStep = () => {
-            CurrentStep = CurrentStep - 1;
-            if (CurrentStep == 0)
-                CurrentStep = 3;
-            gotoStep(CurrentStep);
-        };
-        const nextStep = () => {
-            CurrentStep = CurrentStep + 1;
-            if (CurrentStep > allStep)
-                CurrentStep = 1;
-            gotoStep(CurrentStep);
-        };
-        const deactive = () => {
-            $("#hStep1").removeClass("ac");
-            $("#hStep2").removeClass("ac");
-            $("#hStep3").removeClass("ac");
-        };
-        const gotoStep = (step) => {
-            deactive();
-            CurrentStep = step;
-            $("#hStep" + step).addClass("ac");
-            ShowDivStep();
-        };
-        const setDefaultWorkSenf = () => {
-            $("#workSenf").val(null).trigger("change");
-        };
-
-
-        const onclickHog = () => {
-            JuridicalFlag = 1;
-            gotoStep(2);
-        };
-
-        const ChangeForm = () => {
-            JuridicalFlag = $("input[type='radio'][name='juridical']:checked")[0].value;
-
-            //اگر True بود حقوقی هست
-            if (JuridicalFlag == 1) {
-                $("#JuridicalDiv").css("display", "flex");
-                //$("#PStep2").css("display", "");
-                //$("#hStep2").removeClass("dac");
-                addReq();
-            } else {
-                $("#حقیقی").css("display", "none");
-                $("#JuridicalDiv").css("display", "none");
-                //$("#PStep2").css("display", "none");
-                //$("#hStep2").addClass("dac");
-
-                removeReq();
-            }
-        };
-        const removeReq = () => {
-            var items = document.getElementsByClassName("hog");
-            $.each(items, (index, item) => {
-                item.removeAttribute("required");
-            });
-        };
-        const addReq = () => {
-
-            var items = document.getElementsByClassName("hog");
-            $.each(items, (index, item) => {
-                item.setAttribute("required", "");
-            });
-        };
-
-
-        const DelCustomerItem = (id) => {
-            alert(id);
-        };
-
-
-        const deletedToggleIcon = initEyeToggle({
-            selector: ".showDeletedPrefactor-icon",
-            onShow: async () => await getAllPreFactor(true),
-            onHide: async () => await getAllPreFactor(false),
-            showTitle: "نمایش حذف‌شده‌ها",
-            hideTitle: "مخفی کردن حذف‌شده‌ها",
-            titlePosition: "left",
-        });
-
+        customerId = '@Model.CustomerId';
     </script>
-
+    <script src="~/js/customerProfile.js" asp-append-version="true"></script>
 }
 
 

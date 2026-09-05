@@ -858,7 +858,7 @@ public class AccountancyController : Controller {
         var oldAcc = await db.Accountancies.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
         var acc = await db.Accountancies.FirstOrDefaultAsync(f => f.Id == model.Id);
 
-        if (acc == null) return NotFound();
+        if (acc == null) return NotFound("رکوردی یافت نشد!");
 
         acc.CommentText = model.Description;
         if (acc.PayType is PayTypeEnum.نقدی or PayTypeEnum.تهاتری)

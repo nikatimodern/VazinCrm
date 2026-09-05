@@ -7,6 +7,7 @@ using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
+using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Infrastructures.Sql;
@@ -18,7 +19,7 @@ namespace CRM.EndPoint.FrontEnd.Services;
 
 public class PreFactorService(
     CRMContextDb db,
-    Sepidar1ContextDb s1Db,
+    SepidarService sepidarService,
     DateTimeServices dtService,
     IHubContext<TaskHub> hub,
     LogSystemService logSystemService) {
@@ -71,27 +72,22 @@ public class PreFactorService(
         }
 
         // Sepidar
-        Dictionary<Guid, int> sepidarCounts = new();
-
+        Dictionary<Guid, int> sepidarCounts = null;
         if (setting?.Sepidar == true)
         {
             var serialNumbers = data
                 .Select(x => x.SerialNumber)
                 .ToArray();
 
-            var invoices = await s1Db.vwInvoice
-                .AsNoTracking()
-                .Where(x => x.QuotationNumber.HasValue && serialNumbers.Contains(x.QuotationNumber.Value))
-                .Select(x => new {
-                    SerialNumber = x.QuotationNumber.Value,
-                    x.CreationDate
-                })
-                .ToListAsync();
+            var invoices = await sepidarService.GetInvoicesByQuotationNumbersAsync(serialNumbers);
 
-            sepidarCounts = data.ToDictionary(
-                pf => pf.Id,
-                pf => invoices.Count(x => x.SerialNumber == pf.SerialNumber && x.CreationDate >= pf.CreateDate)
-            );
+            if (invoices is not null)
+            {
+                sepidarCounts = data.ToDictionary(
+                    pf => pf.Id,
+                    pf => invoices.Count(x => x.QuotationNumber == pf.SerialNumber && x.CreationDate >= pf.CreateDate)
+                );
+            }
         }
 
         foreach (var item in data)
@@ -104,7 +100,7 @@ public class PreFactorService(
 
             item.SumTotalAmountTax = item.SumTotalAmount + item.TotalTax - item.Discount;
 
-            if (setting?.Sepidar == true)
+            if (setting?.Sepidar == true && sepidarCounts is not null)
             {
                 sepidarCounts.TryGetValue(item.Id, out var count);
 

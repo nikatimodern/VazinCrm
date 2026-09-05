@@ -103,11 +103,12 @@ const exportExcelPreFactors = async () => {
 
 const exportExcelFactors = async () => {
     const model = {
-        serVal: document.getElementById("f_searchId")?.value.trim() ?? "",
-        _type: Number(document.querySelector("input[type='radio'][name='f_type']:checked")?.value ?? 0),
-        filt: window[filterVarConfig] != null ? window[filterVarConfig].filterVar : null,
+        fModel: {
+            serVal: document.getElementById("f_searchId")?.value.trim() ?? "",
+            _type: Number(document.querySelector("input[type='radio'][name='f_type']:checked")?.value ?? 0),
+            filt: window[filterVarConfig] != null ? window[filterVarConfig].filterVar : null,
+        },
     };
-    
     await sendApiRequest({
         url: "/Cartable/FactorExportToExcel",
         method: "POST",
@@ -720,7 +721,6 @@ function getAllDealsDt() {
         language: languageDatatable,
         layout: layoutDatatable,
         initComplete: initFilterDealTable,
-        
     });
     function initFilterDealTable() {
         const dtSearch = document.querySelector(".dt-search");

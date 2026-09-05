@@ -1,9 +1,9 @@
-﻿namespace CRM.EndPoint.FrontEnd.Models.Cartable
-{
-    public class FactorVModel
-    {
-        public FilterVModel FModel { get; set; }
-        public int PassType { get; set; }
+﻿using System;
 
+namespace CRM.EndPoint.FrontEnd.Models.Cartable {
+    public class FactorVModel {
+        public FilterVModel FModel { get; set; }
+        public Guid? CustomerId { get; set; }
+        public int PassType { get; set; }
     }
 }

@@ -99,7 +99,8 @@ function createSetAmountSalesItem() {
         
         fieldset.querySelector("input[name='unitAmount']").addEventListener("input", (e) => {
             const totalInput = fieldset.querySelector("input[name='totalAmount']");
-            totalInput.value = calculateTotalPrice(item.weightCount, e.target.value);
+            const totalPrice = calculateTotalPrice(item.weightCount, e.target.value);
+            totalInput.value = totalPrice ? totalPrice.toLocaleString() : "";
             setAmountSalesModal.querySelector(".btnLeft").textContent = "ثبت و تایید";
         });
         
@@ -252,7 +253,8 @@ function setupSupplyItemModal() {
         const addItemSupplyForm = addItemSupplyModal.querySelector("#addItemSupplyForm");
         
         function updateTotal() {
-            totalPriceInput.value = calculateTotalPrice(weightInputSupplyItemModal.value, unitPriceInput.value);
+            const totalPrice = calculateTotalPrice(weightInputSupplyItemModal.value, unitPriceInput.value);
+            totalPriceInput.value = totalPrice ? totalPrice.toLocaleString() : "";
             updateCurrencyHint(totalPriceInput);
         }
         

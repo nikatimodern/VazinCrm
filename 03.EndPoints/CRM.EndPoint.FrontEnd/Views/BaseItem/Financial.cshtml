@@ -107,8 +107,8 @@
                         render: function (data) {
                             return `
                                 <div class="inline-flex-center gap-1">
-                                    <button type="button" style="padding: 6px 6px;font-size: 12px" class="buttonGreen3 flex-center" onclick='ShowUpdateBaseCash("${data}")'><i class="fa fa-pencil"></i></button>
-                                    <button type="button" style="padding: 6px 7px;font-size: 12px" class="buttonCancel2 flex-center" onclick='DelBaseCashItem("${data}")'><i class="fa fa-trash"></i></button>
+                                    <button type="button" class="icon-button icon-button--green" onclick='ShowUpdateBaseCash("${data}")'><i class="fa fa-pencil"></i></button>
+                                    <button type="button" class="icon-button icon-button--red" onclick='DelBaseCashItem("${data}")'><i class="fa fa-trash"></i></button>
                                 </div>
                             `;
                         },

@@ -528,14 +528,31 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             text = g.FullName
                         })
                         .ToListAsync();
+
                     break;
 
                 case 2:
-                    data = userManager.GetUsersInRoleAsync("کارشناس فروش").Result
+                    data = (await userManager.GetUsersInRoleAsync("کارشناس فروش"))
                         .Select(g => new SelectOptionIdDto() {
                             id = Guid.Parse(g.Id),
                             text = g.FullName
                         }).ToList();
+
+                    break;
+
+                case 3:
+                    var taminExperts = await userManager.GetUsersInRoleAsync(AppRoles.TaminExpert);
+                    var taminAdmins = await userManager.GetUsersInRoleAsync(AppRoles.TaminAdmin);
+
+                    data = taminExperts
+                        .Concat(taminAdmins)
+                        .DistinctBy(x => x.Id)
+                        .Select(g => new SelectOptionIdDto {
+                            id = Guid.Parse(g.Id),
+                            text = g.FullName
+                        })
+                        .ToList();
+
                     break;
             }
 
@@ -580,7 +597,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var user = await userManager.FindByIdAsync(userId);
             if (user == null)
-                return NotFound();
+                return NotFound("رکوردی یافت نشد!");
 
             if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow)
             {

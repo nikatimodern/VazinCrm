@@ -121,7 +121,7 @@ const Unit = (type, formId, defaultValueId) => {
 
 let allProductPromise = null;
 
-const getAllProductOp = (form) => {
+const getAllProductOp = async (form) => {
     const formElement = resolveElement(form);
     if (!formElement) return;
     
@@ -132,18 +132,19 @@ const getAllProductOp = (form) => {
         allProductPromise = axios("/Product/GetAllProduct").then(res => res.data);
     }
     
+    const products = await allProductPromise;
     
-    allProductPromise.then(products => {
-        if (productCodeElement.tomselect) return;
-        
-        new TomSelect(productCodeElement, {
-            options: products,
-            valueField: "id",
-            placeholder: "انتخاب",
-            maxItems: 1,
-            selectOnTab: true,
-            // dropdownParent
-        });
+    if (productCodeElement.tomselect) {
+        return productCodeElement.tomselect;
+    }
+    
+    return new TomSelect(productCodeElement, {
+        options: products,
+        valueField: "id",
+        placeholder: "انتخاب",
+        maxItems: 1,
+        selectOnTab: true,
+        // dropdownParent
     });
 };
 

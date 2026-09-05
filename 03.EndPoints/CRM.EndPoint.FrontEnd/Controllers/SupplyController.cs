@@ -127,7 +127,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.UserModifyID = user.Id;
 
                 var entity = await db.SupplyFactors.Include(x => x.SupplyFactorOrderHeads).FirstOrDefaultAsync(x => x.Id == model.Id);
-                if (entity == null) return NotFound();
+                if (entity == null) return NotFound("رکوردی یافت نشد!");
 
                 await _logSystemService.LogChange(entity, model, LogActionEnum.ویرایش, user, ["SupplyFactorOrderHeads"]);
                 db.Entry(entity).CurrentValues.SetValues(model);
@@ -210,7 +210,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.UserModifyID = user.Id;
 
                 var entity = await db.Payments.Include(x => x.PaymentSupplyFactors).FirstOrDefaultAsync(x => x.Id == model.Id);
-                if (entity == null) return NotFound();
+                if (entity == null) return NotFound("رکوردی یافت نشد!");
 
                 await _logSystemService.LogChange(entity, model, LogActionEnum.ویرایش, user, ["PaymentSupplyFactors"]);
 

@@ -108,7 +108,7 @@ public class RequestAmountController : Controller {
 
             var entity = await db.RequestAmounts.Include(x => x.RequestAmountSupplyFactor).Include(x => x.RequestAmountOrderHeads)
                 .FirstOrDefaultAsync(x => x.Id == model.Id);
-            if (entity == null) return NotFound();
+            if (entity == null) return NotFound("رکوردی یافت نشد!");
 
             await _logSystemService.LogChange(entity, model, LogActionEnum.ویرایش, user, ["RequestAmountOrderHeads"]);
 
@@ -137,7 +137,7 @@ public class RequestAmountController : Controller {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var oldItem = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id);
             var item = await db.RequestAmounts.FirstOrDefaultAsync(x => x.Id == model.Id);
-            if (item == null) return NotFound();
+            if (item == null) return NotFound("رکوردی یافت نشد!");
 
 
             item.DocType = model.DocType;
@@ -203,7 +203,7 @@ public class RequestAmountController : Controller {
             var user = await userManager.GetUserAsync(HttpContext.User);
 
             var item = await db.RequestAmounts.Include(f => f.RequestAmountPayments).FirstOrDefaultAsync(f => f.Id == id);
-            if (item == null) return NotFound();
+            if (item == null) return NotFound("رکوردی یافت نشد!");
 
             await ChangeRequestAmountStatus(item, status, user);
 
@@ -467,7 +467,7 @@ public class RequestAmountController : Controller {
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var item = await db.Payments.Include(f => f.RequestAmountPayments).Where(f => f.Id == id).FirstOrDefaultAsync();
-            if (item == null) return NotFound();
+            if (item == null) return NotFound("رکوردی یافت نشد!");
 
             item.IsDeleted = true;
             item.ModifyDate = DateTime.Now;
@@ -779,7 +779,7 @@ public class RequestAmountController : Controller {
                 .Include(f => f.RequestAmountSupplyFactor)
                 .FirstOrDefaultAsync();
 
-            if (item == null) return NotFound();
+            if (item == null) return NotFound("رکوردی یافت نشد!");
 
             item.IsDeleted = true;
             item.ModifyDate = DateTime.Now;

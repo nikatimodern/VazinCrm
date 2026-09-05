@@ -103,24 +103,7 @@ async function sendApiRequest(
             return response.data;
         }
     } catch (err) {
-        console.error("API Error:", err);
-        
-        let errorMessage;
-        if (err.response?.data instanceof Blob) {
-            errorMessage = await err.response.data.text();
-        } else if (typeof err.response?.data === "string") {
-            errorMessage = err.response.data;
-        } else if (err.response?.data?.message) {
-            errorMessage = err.response.data.message;
-        }
-        
-        const status = err.status || "";
-        errorMessage = errorMessage || `خطایی در ارتباط با سرور رخ داده است ${status ? `(${status})` : ""}`;
-        
-        if (typeof toastifyError === "function") {
-            toastifyError(errorMessage);
-        }
-        
+        await handleApiError(err);
         return null;
     } finally {
         if (showLoading && typeof FLshowLoading === "function") {
@@ -128,7 +111,33 @@ async function sendApiRequest(
         }
     }
 }
-
+async function handleApiError(err) {
+    console.error("API Error:", err);
+    const response = err?.response;
+    const status = err?.status || response?.status || "";
+    
+    const contentType = response?.headers?.["content-type"] ?? "";
+    
+    let errorMessage;
+    
+    if (contentType.includes("text/html")) {
+        errorMessage = null;
+    } else if (response?.data instanceof Blob) {
+        errorMessage = await response.data.text();
+    } else if (typeof response?.data === "string") {
+        errorMessage = response.data;
+    } else if (response?.data?.message) {
+        errorMessage = response.data.message;
+    } else if (err?.responseText) {
+        errorMessage = err.responseText;
+    }
+    
+    errorMessage = errorMessage || `خطایی در ارتباط با سرور رخ داده است${status ? ` (${status})` : ""}`;
+    
+    if (typeof toastifyError === "function") {
+        toastifyError(errorMessage);
+    }
+}
 
 /**
  * Provides a reusable modal-based selector component for loading,
@@ -153,8 +162,9 @@ class ModalSelector {
     constructor(options = {}) {
         this.modal = document.querySelector(options.modal ?? "#modalSelector");
         
-        if (!this.modal)
-            throw new Error("ModalSelector: modal element was not found.");
+        if (!this.modal) {
+            return;
+        }
         
         this.titleElement = this.modal.querySelector(options.title ?? "#modalSelectorTitle");
         this.searchInput = this.modal.querySelector(options.search ?? "#modalSelectorSearch");
@@ -2997,39 +3007,25 @@ class GetDate {
 
 class CrmService {
     /**
-     * این تابع بر اساس مقدار ورودی، عملیات مختلفی انجام می‌دهد.
-     * @param {number} option
-     *  - `1`: تمام کاربران
-     *  - `2`: کارشناسان فروش
+     * دریافت لیست کاربران بر اساس نوع کاربر.
+     * @param {number} type
+     * @returns {Promise<Array>} لیست کاربران
+     *
+     * @example
+     * const users = await CrmSer.getUsers(1);
+     *  // 1: همه کاربران
+     *  // 2: کارشناسان فروش
+     *  // 3: کارشناسان تامین
      */
-    async getUsers(option) {
+    async getUsers(type) {
+        const response = await fetch(`/Account/GetUsers?type=${type}`);
         
-        return new Promise((resolve) => {
-            
-            fetch(`/Account/GetUsers?type=${Number(option)}`)
-                .then(response => {
-                    return response.json();
-                })
-                .then(data => {
-                    resolve(data);
-                })
-                .catch(error => {
-                    console.log(error);
-                });
-            
-        });
+        if (!response.ok) {
+            throw new Error("خطا در دریافت لیست کاربران");
+        }
+        
+        return await response.json();
     }
-    
-    
-    //async getPrefactor(pfid) {
-    //    return new Promise(async (resolve, reject) => {
-    //        $.get(baseUrl + "Factor/GetPFactor/" + pfid, (res) => {
-    //            resolve(res);
-    //        })
-    //    })
-    //}
-    
-    
 }
 
 class MyService {
@@ -3132,12 +3128,21 @@ class MyService {
                         }
                         break;
                     case "select-one":
+                    case "select-multiple":
                         if (elm.tomselect) {
-                            elm.tomselect.setValue(value, true);
+                            elm.tomselect.setValue(value ?? [], true);
                         } else {
-                            elm.value = value ?? "";
+                            if (elm.multiple) {
+                                const values = Array.isArray(value) ? value.map(String) : [];
+                                Array.from(elm.options).forEach(option => {
+                                    option.selected = values.includes(option.value);
+                                });
+                            } else {
+                                elm.value = value ?? "";
+                            }
                             elm.dispatchEvent(new Event("change"));
                         }
+                        
                         break;
                     case "radio":
                         const radioBtn = form.querySelector(`input[name="${key}"][value="${value}"]`);
@@ -3177,8 +3182,7 @@ class MyService {
             formEl = document.querySelector(selector);
         }
         
-        
-        const disabledEls = Array.from(formEl.querySelectorAll(":disabled"));
+        const disabledEls = Array.from(formEl.querySelectorAll("input:disabled, select:disabled, textarea:disabled"));
         disabledEls.forEach(el => el.removeAttribute("disabled"));
         
         if (formEl.tagName.toLowerCase() !== "form") {
@@ -3196,14 +3200,24 @@ class MyService {
                 jsonData[name] = null;
                 continue;
             }
-            value = toEnglishDigits(value);
+            
+            let parsedValue = value;
             
             if (field?.classList.contains("currencyNumber") || field?.classList.contains("digitNumber")) {
-                jsonData[name] = Number(SeparatedNumberRemove(value));
+                parsedValue = Number(SeparatedNumberRemove(value));
+                
             } else if (field?.classList.contains("valueNumber")) {
-                jsonData[name] = Number(value);
+                parsedValue = Number(value);
+            }
+            
+            if (field?.multiple) {
+                if (!jsonData[name]) {
+                    jsonData[name] = [];
+                }
+                
+                jsonData[name].push(parsedValue);
             } else {
-                jsonData[name] = value;
+                jsonData[name] = parsedValue;
             }
         }
         
@@ -3571,6 +3585,8 @@ document.querySelectorAll(".chip").forEach(chip => {
 
 
 const toggleElementsDisabled = (elms, isDisabled = true) => {
+    if (!elms) return;
+    
     const items = elms instanceof NodeList || elms instanceof Array ? elms : [elms];
     items.forEach(el => {
         if (el.tomselect) {
@@ -3922,12 +3938,13 @@ const toEnglishDigits = (val) => {
         .replace(/[٠-٩]/g, d => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));// Arabic
 };
 
+
 function calculateTotalPrice(weight, unitPrice) {
     const w = parseFloat(SeparatedNumberRemove(weight)) || 0;
     const u = parseFloat(SeparatedNumberRemove(unitPrice)) || 0;
-    return (w * u) ? (w * u).toLocaleString() : "";
+    
+    return w * u;
 }
-
 
 function getUrlParams() {
     const params = new URLSearchParams(window.location.search);
@@ -4201,7 +4218,7 @@ async function deleteItem(options) {
             await sendApiRequest({
                 method: "DELETE",
                 url,
-                onSuccess: async (res) => await callback?.(res.data),
+                onSuccess: async (res) => await callback?.(res),
             });
         },
     });

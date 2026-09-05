@@ -7,9 +7,9 @@ let typeSubmitPfactor;
 
 let dealData = {};
 
+let prePaymentPercentId;
 let descriptionInpId;
 let descriptionListId;
-let prePaymentPercentId;
 
 if (window.innerWidth >= 992 && window.innerWidth < 1200) {
     prePaymentPercentId = "prePaymentPercentTablet";
@@ -60,7 +60,7 @@ const showModalAddPfactor = async (type, cusId = null, deal) => {
     $("#date").val(await todayDate());
     
     $("#validityDade").val(await todayDate()); // await tomorrowDate()
-    getAllProductOp("PreFacItem");
+    await getAllProductOp("PreFacItem");
     Unit(1);
     FLshowLoading(false);
 };
@@ -77,53 +77,58 @@ const toggleDisplayPrefactorModal = (isHide = true) => {
     */
 };
 const upPfactor = async (id, type) => {
-    FLshowLoading();
     typeSubmitPfactor = type;
     
-    getAllProductOp("PreFacItem");
+    await getAllProductOp("PreFacItem");
     Unit(1, "PreFacItem");
     baseDesPfactor = await getBaseDescription(0);
     
-    $.get(baseUrl + "Factor/GetPFactor/" + id, (res) => {
-        toggleDisplayPrefactorModal(res.paymentAmount === 0);
-        
-        pFactor = res;
-        pFactorItems = res.preFactorItems;
-        pFactorDescriptionItems = res.descriptions;
-        dealData.id = res.dealId;
-        dealData.serialNumber = res.dealSerialNumber;
-        
-        document.querySelectorAll("#PreFactor input[name='official']").forEach((i) => {
-            i.checked = Number(i.value) === pFactor.officialType;
-        });
-        
-        const exportValue = res.export ? "1" : "0";
-        document.querySelectorAll("#PreFactor input[name='export']").forEach((i) => {
-            i.checked = (i.value === exportValue);
-        });
-        
-        const currencyTypeElm = document.querySelector("#PfHeadFormId select[name='currencyType']");
-        currencyTypeElm.value = res.currencyType ?? 0;
-        currencyTypeElm.toggleAttribute("disabled", pFactor.officialType === 1);
-        
-        $("#serialNumber").val(pFactor.serialNumber);
-        $("#date").val(pFactor.date);
-        $("#validityDade").val(pFactor.validityDade);
-        
-        $("#sumTotalAmount").text(pFactor.sumTotalAmount.toLocaleString());
-        $("#discount").val(pFactor.discount.toLocaleString());
-        $("#totalTax").text(pFactor.totalTax.toLocaleString());
-        $("#paymentAmount").text(pFactor.paymentAmount.toLocaleString());
-        
-        ModalToggle("#PreFactor");
-        showPFactorItems();
-        showPfDescriptionItems();
-        FLshowLoading(false);
-    })
-     .fail(() => {
-         setTimeout(async () => await upPfactor(id, type), 3000);
-     });
+    const data = await getPreFactor(id);
+    
+    if (!data) return;
+    
+    toggleDisplayPrefactorModal(data.paymentAmount === 0);
+    
+    pFactor = data;
+    pFactorItems = data.preFactorItems;
+    pFactorDescriptionItems = data.descriptions;
+    dealData.id = data.dealId;
+    dealData.serialNumber = data.dealSerialNumber;
+    
+    document.querySelectorAll("#PreFactor input[name='official']").forEach((i) => {
+        i.checked = Number(i.value) === pFactor.officialType;
+    });
+    
+    const exportValue = data.export ? "1" : "0";
+    document.querySelectorAll("#PreFactor input[name='export']").forEach((i) => {
+        i.checked = (i.value === exportValue);
+    });
+    
+    const currencyTypeElm = document.querySelector("#PfHeadFormId select[name='currencyType']");
+    currencyTypeElm.value = data.currencyType ?? 0;
+    currencyTypeElm.toggleAttribute("disabled", pFactor.officialType === 1);
+    
+    document.getElementById("serialNumber").value = pFactor.serialNumber;
+    document.getElementById("date").value = pFactor.date;
+    document.getElementById("validityDade").value = pFactor.validityDade;
+    
+    document.getElementById("sumTotalAmount").textContent = pFactor.sumTotalAmount.toLocaleString();
+    document.getElementById("discount").value = pFactor.discount.toLocaleString();
+    document.getElementById("totalTax").textContent = pFactor.totalTax.toLocaleString();
+    document.getElementById("paymentAmount").textContent = pFactor.paymentAmount.toLocaleString();
+    
+    showPFactorItems();
+    showPfDescriptionItems();
+    ModalToggle("#PreFactor");
+    
 };
+const getPreFactor = async (id) => {
+    return await sendApiRequest({
+        url: "/Factor/GetPFactor/",
+        params: { id },
+    });
+};
+
 const cancelPreFactor = () => {
     ModalToggle("#PreFactor", "hide");
     
@@ -311,15 +316,15 @@ const addPfDescriptionItem = () => {
     const val = inputElement.value;
     inputElement.value = "";
     
-    if (val.length) {
-        pFactorDescriptionItems.push({ text: val, isDeleted: false, dir: null });
-        showPfDescriptionItems();
-        
-        setTimeout(() => {
-            const listElement = document.getElementById(descriptionListId);
-            listElement.scrollTop = listElement.scrollHeight;
-        }, 100);
-    }
+    if (!val.length) return;
+    
+    pFactorDescriptionItems.push({ text: val, isDeleted: false, dir: null });
+    showPfDescriptionItems();
+    
+    setTimeout(() => {
+        const listElement = document.getElementById(descriptionListId);
+        listElement.scrollTop = listElement.scrollHeight;
+    }, 100);
 };
 
 
@@ -517,6 +522,13 @@ const submitPreFactor = async () => {
         return;
     }
     
+    await submitPreFactorOk();
+};
+
+const submitPreFactorOk = async () => {
+    const dateInput = document.getElementById("date");
+    const validityDateInput = document.getElementById("validityDade");
+    
     const currencyTypeElement = document.querySelector("#PfHeadFormId select[name='currencyType']");
     
     pFactor.serialNumber = Number(document.getElementById("serialNumber").value);
@@ -559,7 +571,6 @@ const submitPreFactor = async () => {
         },
     });
 };
-
 
 let expirePfModalId = null;
 let expirePfModalPassType = null;

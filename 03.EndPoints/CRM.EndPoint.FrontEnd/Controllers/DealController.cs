@@ -55,7 +55,7 @@ public class DealController : Controller {
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var deal = await db.Deals.FindAsync(id);
-            if (deal == null) return NotFound();
+            if (deal == null) return NotFound("رکوردی یافت نشد!");
 
             deal.FinancialStatus = status;
 
@@ -90,9 +90,9 @@ public class DealController : Controller {
         var sortDirection = Request.Form["order[0][dir]"].FirstOrDefault();
         var sortColumn = Request.Form[$"columns[{sortColumnIndex}][data]"].FirstOrDefault();
         var model = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["model"].FirstOrDefault());
-        
+
         var baseQuery = db.Deals.AsNoTracking();
-        
+
         if (!string.IsNullOrEmpty(searchValue))
         {
             var serVal = searchValue.Trim();
@@ -144,12 +144,12 @@ public class DealController : Controller {
         }
 
         var recordsTotal = await query.CountAsync();
-        
+
         if (length != -1)
         {
             query = query.Skip(start).Take(length);
         }
-        
+
         var data = await query.ToListAsync();
 
         await SetDealCountsAsync(data);
@@ -315,7 +315,7 @@ public class DealController : Controller {
         try
         {
             var deal = await db.Deals.FindAsync(id);
-            if (deal == null) return NotFound();
+            if (deal == null) return NotFound("رکوردی یافت نشد!");
 
             return Ok(deal);
         }
@@ -420,7 +420,7 @@ public class DealController : Controller {
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var deal = await db.Deals.Where(f => f.Id == id).FirstOrDefaultAsync();
-            if (deal == null) return NotFound();
+            if (deal == null) return NotFound("رکوردی یافت نشد!");
 
             deal.IsDeleted = true;
             deal.UserModify = user.FullName;
@@ -455,7 +455,7 @@ public class DealController : Controller {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var oldDeal = await db.Deals.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
             var deal = await db.Deals.Where(f => f.Id == id).FirstOrDefaultAsync();
-            if (deal == null) return NotFound();
+            if (deal == null) return NotFound("رکوردی یافت نشد!");
 
             deal.Status = status;
             deal.UserModify = user.FullName;
@@ -480,7 +480,7 @@ public class DealController : Controller {
             var user = await userManager.GetUserAsync(HttpContext.User);
 
             var deal = await db.Deals.FirstOrDefaultAsync(f => f.Id == dealId);
-            if (deal == null) return NotFound();
+            if (deal == null) return NotFound("رکوردی یافت نشد!");
             if (deal.CustomerId == null) return BadRequest();
 
             if (Guid.Parse(deal.UserCreatorID) == userId)

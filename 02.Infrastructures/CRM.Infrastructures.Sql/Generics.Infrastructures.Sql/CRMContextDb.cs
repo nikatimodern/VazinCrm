@@ -27,6 +27,7 @@ using CRM.Core.Domain.States.Entities;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.Core.Domain.SystemWarnings.Entities;
 using CRM.Core.Domain.Transfers.Entities;
+using CRM.Core.Domain.Warehouses.Entities;
 using CRM.Core.Domain.WebPushSubscriptions.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -95,6 +96,10 @@ namespace CRM.Infrastructures.Sql {
         public DbSet<Transfer> Transfers { get; set; }
         public DbSet<CashGroup> CashGroups { get; set; }
         public DbSet<CashOrderHead> CashOrderHeads { get; set; }
+        public DbSet<Warehouse> Warehouses { get; set; }
+        public DbSet<WarehouseProduct> WarehouseProducts { get; set; }
+        public DbSet<WarehouseTransaction> WarehouseTransactions { get; set; }
+        public DbSet<WarehouseUser> WarehouseUsers { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -155,6 +160,9 @@ namespace CRM.Infrastructures.Sql {
             modelBuilder.Entity<BaseCenterCash>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<CashGroup>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<CashOrderHead>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<Warehouse>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<WarehouseTransaction>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<WarehouseProduct>().HasQueryFilter(f => f.IsDeleted == false);
 
 
             modelBuilder.Entity<Order>().Ignore(f => f.Row);

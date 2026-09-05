@@ -79,6 +79,8 @@
 
             if (this.mobile.value.length < 9) {
                 document.getElementById("otpLoginMsg").textContent = "شماره موبایل معتبر نیست!";
+                mobileLoginBtn.querySelector(".spinner-border").classList.add("d-none");
+                toggleElementsDisabled(mobileLoginBtn, false);
                 return;
             }
             const mobile = "09" + this.mobile.value;

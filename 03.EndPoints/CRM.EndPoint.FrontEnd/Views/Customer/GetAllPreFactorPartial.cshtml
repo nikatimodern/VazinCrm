@@ -176,47 +176,10 @@
                         </div>
                         <div class="d-md-none my-2 " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
 
-                        <div class="col-12 col-md-2 pe-1 flex-row flex-md-column gap-2 flex-wrap" style=" font-size: 13px;display:flex;align-items:center;justify-content:space-evenly">
-                            @if (Model._Setting.CrmFactors == true) {
-                                if (item.CountFactor == 0) {
-                                    <button class="buttonDisabled flex-center flex-column" disabled style="border-radius:4px;height:auto;width: 80px;padding: 0 4px;">
-                                        <span>فاکتور ها </span>
-                                        <span style="display:flex;justify-content:center;gap: 2px">
-                                            <span> @item.CountFactor</span>
-                                            <span>عدد</span>
-                                        </span>
-                                    </button>
-                                } else {
-                                    <button class="buttonGreen" style="flex-direction:column;border-radius:4px;height:auto;padding: 0 6px;width: 80px" onclick="GetFactorPartial({id: '@item.Id', element: this, serialNumber: '@item.SerialNumber', passType: @passType, dealId: '@item.DealId'})">
-                                        <span>فاکتور ها </span>
-                                        <span style="display:flex;justify-content:center;gap: 2px">
-                                            <span> @item.CountFactor</span>
-                                            <span>عدد</span>
-                                        </span>
-                                    </button>
-                                }
-                            }
+                        <partial name="~/Views/PreFactor/_PreFactorFactorsCountPartial.cshtml"
+                                 model="item"
+                                 view-data='new ViewDataDictionary(ViewData) { ["Setting"] = Model._Setting, ["PassType"] = passType }' />
 
-                            @if (Model._Setting.Sepidar == true && !User.IsCustomer()) {
-                                if (item.CountFactorSepidar == 0) {
-                                    <button class="buttonDisabled flex-center flex-column" disabled style="border-radius:4px;height:auto;width: 80px;padding: 0 4px;">
-                                        <span>فاکتور سپیدار </span>
-                                        <span style="display:flex;justify-content:center;gap: 2px">
-                                            <span> @item.CountFactorSepidar</span>
-                                            <span>عدد</span>
-                                        </span>
-                                    </button>
-                                } else {
-                                    <button style="display:flex;flex-direction:column;justify-content:center;align-items:center; border-radius:4px;height:auto;padding: 0 6px;width: 80px" class="buttonPurple" onclick="getFacSepidar('@item.Id','@item.SerialNumber',this,@passType,'@item.DealId')">
-                                        <span>فاکتور سپیدار </span>
-                                        <span style="display:flex;justify-content:center;gap: 2px">
-                                            <span> @item.CountFactorSepidar</span>
-                                            <span>عدد</span>
-                                        </span>
-                                    </button>
-                                }
-                            }
-                        </div>
                         <div class="d-sm-none mt-2 " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
                     </div>
 

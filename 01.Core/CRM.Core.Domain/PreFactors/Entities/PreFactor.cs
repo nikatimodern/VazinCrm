@@ -94,7 +94,7 @@ namespace CRM.Core.Domain.PreFactors.Entities {
 
         [NotMapped] public int RolCode { get; set; }
         [NotMapped] public int CountFactor { get; set; }
-        [NotMapped] public int CountFactorSepidar { get; set; }
+        [NotMapped] public int? CountFactorSepidar { get; set; }
         [NotMapped] public decimal? TotalSupplyAmount { get; set; }
 
         [NotMapped] public bool SupplyMismatch { get; set; }
