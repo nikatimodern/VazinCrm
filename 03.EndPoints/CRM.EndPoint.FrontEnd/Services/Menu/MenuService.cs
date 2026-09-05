@@ -336,7 +336,13 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                         Url = "/Warehouse/Index",
                         DisplayOrder = 5,
                         Roles = [
-                            AppRoles.Admin
+                            AppRoles.Admin,
+                            AppRoles.ManagingDirector,
+                            AppRoles.ExecutiveDirector,
+                            AppRoles.TaminExpert,
+                            AppRoles.TaminAdmin,
+                            AppRoles.FinancialExpert,
+                            AppRoles.FinancialAdmin,
                         ],
                     },
 

@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
+using System.Security.Principal;
 
 namespace CRM.EndPoint.FrontEnd.Services.Extensions;
 

@@ -29,7 +29,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
     private async Task<WarehousePageVModel> GetAllWarehouses()
     {
-        var isManager = User.IsAdmin() || User.IsManagingDirector() || User.IsTaminAdmin();
+        var isManager = User.IsAdmin() || User.IsManagingDirector() || User.IsTaminAdmin() || User.IsSalesAdmin();
 
         var query = db.Warehouses.AsNoTracking();
 
@@ -365,13 +365,9 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     public async Task<IActionResult> AddWarehouseTransaction([FromBody] WarehouseTransactionVModel model)
     {
         if (model == null) return BadRequest();
-
+        if (model.Weight <= 0) return BadRequest("مقدار باید بیشتر از صفر باشد.");
 
         var user = await userManager.GetUserAsync(HttpContext.User);
-        if (user == null) return Unauthorized();
-
-        if (model.Weight <= 0)
-            return BadRequest("مقدار باید بیشتر از صفر باشد.");
 
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
@@ -457,8 +453,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
             var newStock = stockWithoutCurrent + (model.TransactionType == WarehouseTransactionTypeEnum.ورود ? model.Weight : -model.Weight);
 
-            if (newStock < 0) return BadRequest("موجودی کافی نیست.");
-
+            if (newStock < 0) return BadRequest("ویرایش این تراکنش موجب منفی شدن موجودی می‌شود و امکان‌پذیر نیست.");
 
             data.Weight = model.Weight;
 
