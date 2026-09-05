@@ -336,6 +336,8 @@ function initWarehouseProductsTable(id) {
     });
 }
 
+
+/* ----------------------------------------------------------- */
 const showWarehouseTransactionHistory = (data) => {
     warehouseProductsData = data;
     setWarehouseTransactionHistoryHeader();

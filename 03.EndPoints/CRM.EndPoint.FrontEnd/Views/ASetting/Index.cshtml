@@ -113,7 +113,7 @@
             if (setting != null) {
                 data.id = setting.id;
             }
-            console.log(data);
+            
             document.getElementById("FLshowLoading").style.display = "";
             $.post(baseUrl + "ASetting/upSetting", data, async (res) => {
 
