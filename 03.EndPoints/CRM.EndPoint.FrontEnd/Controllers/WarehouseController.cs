@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
@@ -7,7 +6,6 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Warehouses.Entities;
 using CRM.Core.Domain.Warehouses.Enums;
 using CRM.EndPoint.FrontEnd.Models.Warehouse;
-using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.Framework;
@@ -71,11 +69,6 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         return PartialView(warehouses);
     }
 
-    public async Task<IActionResult> GetUsers()
-    {
-        var warehouses = await GetAllWarehouses();
-        return PartialView(warehouses);
-    }
 
     [HttpPost]
     public async Task<IActionResult> AddWarehouse([FromBody] WarehouseVModel model)

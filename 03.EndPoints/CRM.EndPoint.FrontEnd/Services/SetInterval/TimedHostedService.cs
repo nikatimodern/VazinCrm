@@ -16,7 +16,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.IServices.PushNotification;
-using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 
 namespace CRM.EndPoint.FrontEnd.Services.SetInterval {

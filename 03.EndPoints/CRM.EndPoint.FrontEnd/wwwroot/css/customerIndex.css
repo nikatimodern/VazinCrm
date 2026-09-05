@@ -2,14 +2,6 @@
 	width: 95% !important;
 }
 
-
-@media all and (max-width: 767px) {
-	#CustomerPartial {
-		/* max-height: calc(100dvh - 213px) !important */
-	}
-}
-
-
 @media all and (max-width: 991px) {
 	.parent {
 		grid-template-columns: 1fr !important
@@ -39,7 +31,6 @@
 	.parent {
 		grid-template-columns: 1fr 1fr !important
 	}
-	
 }
 
 

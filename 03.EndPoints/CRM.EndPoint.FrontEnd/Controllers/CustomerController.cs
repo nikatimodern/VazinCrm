@@ -2,7 +2,6 @@
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Customers.Enum;
 using CRM.Core.Domain.LogSystems.Entities;
-using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
