@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRM.EndPoint.FrontEnd.Services.Extensions;
 
-public static class WarehouseTransactionExtensions {
+public static class WarehouseExtensions {
     public static readonly Expression<Func<WarehouseTransaction, decimal>>
         StockValueExpression = x => x.TransactionType == WarehouseTransactionTypeEnum.ورود ? x.Weight : -x.Weight;
 

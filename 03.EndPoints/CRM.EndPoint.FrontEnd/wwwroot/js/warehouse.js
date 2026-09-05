@@ -16,6 +16,7 @@ window.addEventListener("popstate", syncWarehouseViewWithUrl);
 document.addEventListener("DOMContentLoaded", () => {
     syncWarehouseViewWithUrl();
     Unit(3, "warehouseTransactionForm");
+    Unit(3, "warehouseProductForm");
 });
 
 
@@ -348,6 +349,56 @@ const showWarehouseTransactionHistory = (data) => {
     }
 };
 
+const editWarehouseProduct = async () => {
+    await getAllProductOp("warehouseProductForm");
+    await sendApiRequest({
+        url: "/Warehouse/GetWarehouseProduct",
+        params: { id: warehouseProductsData.id },
+        onSuccess: (res) => {
+            warehouseProductsData = { ...warehouseProductsData, ...res.data };
+            ModalToggle("warehouseProductModal");
+            mySer.convertJsonToForm(res.data, "warehouseProductForm");
+        },
+    });
+};
+
+
+
+const deleteWarehouseProduct = async (id) => {
+    await deleteItem({
+        url: `/Warehouse/DeleteWarehouseProduct/${warehouseProductsData.id}`,
+        callback: () => {
+            ModalToggle(warehouseTransactionHistoryModal, "hide");
+            warehouseProductTbl?.ajax.reload(null, false);
+            GetAllWarehouses();
+        },
+    });
+};
+
+async function submitWarehouseProductModal() {
+    if (!await mySer.CheckValidForm("warehouseProductForm")) return;
+    
+    const model = {
+        ...warehouseProductsData,
+        ...mySer.convertFormToJSON("warehouseProductForm"),
+        productSmallName: document.querySelector("#warehouseProductForm select[name='productCode']")?.selectedOptions[0].text,
+    };
+    
+    await sendApiRequest({
+        url: "/Warehouse/UpdateWarehouseProduct",
+        method: "POST",
+        data: model,
+        onSuccess: (res) => {
+            ModalToggle("warehouseProductModal", "hide");
+            mySer.emptyForm("warehouseProductForm");
+            warehouseProductsData = { ...warehouseProductsData, ...res.data };
+            setWarehouseTransactionHistoryHeader();
+            warehouseProductTbl?.ajax.reload();
+        },
+    });
+}
+
+
 function initWarehouseTransaction(id) {
     warehouseTransactionTbl = $("#warehouseTransactionTable").DataTable({
         // lengthMenu: [10, 25, 50, 100, { label: "همه", value: -1 }],
@@ -410,8 +461,6 @@ const deleteWarehouseTransaction = async (id) => {
         callback: (res) => {
             warehouseTransactionTbl?.ajax.reload(null, false);
             warehouseProductTbl?.ajax.reload(null, false);
-            console.log(res.data);
-            console.log(res.data);
             if (res.data?.stock !== undefined) {
                 warehouseProductsData.stock = res.data?.stock;
                 setWarehouseTransactionHistoryHeader();
@@ -420,9 +469,14 @@ const deleteWarehouseTransaction = async (id) => {
     });
 };
 
+
 const setWarehouseTransactionHistoryHeader = () => {
     document.getElementById("transactionHistoryProductTitle").textContent =
         `${warehouseProductsData.productSmallName || ""} ${warehouseProductsData.productDescription || ""}`.trim() || "-";
     document.getElementById("transactionHistoryStock").textContent =
         (`${warehouseProductsData.stock?.toLocaleString() ?? "0"} ${warehouseProductsData.unitTxt || ""}`);
+    
+    const deleteBtn = document.getElementById("deleteWarehouseProductBtn");
+    deleteBtn.classList.toggle("opacity-25", warehouseProductsData.stock > 0);
+    toggleElementsDisabled(deleteBtn, warehouseProductsData.stock > 0);
 };
