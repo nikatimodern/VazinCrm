@@ -20,4 +20,5 @@ public class WarehouseProduct : BaseEntity {
     
 
     public IList<WarehouseTransaction> Transactions { get; set; }
+    public IList<WarehouseProductVoucher> WarehouseProductVouchers { get; set; }
 }
