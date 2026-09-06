@@ -437,107 +437,169 @@ class ModalSelector {
 class SelectionManager {
     /**
      * @param {Object} options
-     * @param {string|HTMLElement} options.container - Main items container
-     * @param {string|HTMLElement} [options.selectionBar=".selection-bar"] - Selection actions bar element
-     * @param {string|HTMLElement} [options.toggleBtn=".selection-toggle-btn"] - Button used to enable selection mode
-     * @param {string} [options.itemSelector=".selection-item"] - Selector for selectable items
-     * @param {string|null} [options.checkboxSelector=".selection-checkbox"] - Selector for item checkbox
-     * @param {string} [options.selectedClass="selected"] - Class applied to selected items
-     * @param {string} [options.selectionModeClass="selection-mode"] - Class applied when selection mode is active
-     * @param {(selectedIds: string[], instance: SelectionManager) => void|Promise<void>} [options.onAction] - Callback triggered when action button is clicked
+     * @param {string|HTMLElement} options.container
+     * @param {string|HTMLElement} [options.selectionBar=".selection-bar"]
+     * @param {string|HTMLElement} [options.toggleBtn=".selection-toggle-btn"]
+     * @param {string} [options.itemSelector=".selection-item"]
+     * @param {string|null} [options.checkboxSelector=".selection-checkbox"]
+     * @param {(item: HTMLElement) => string|number} [options.getItemKey]
+     * @param {(item: HTMLElement) => boolean} [options.isSelectable]
+     * @param {() => Iterable<HTMLElement>} [options.itemsProvider]
+     * @param {string} [options.selectedClass="selected"]
+     * @param {string} [options.selectionModeClass="selection-mode"]
+     * @param {boolean} [options.enableShiftSelect=true] - پشتیبانی از Shift+Click
+     * @param {(selectedIds: (string|number)[], instance: SelectionManager) => void|Promise<void>} [options.onAction]
+     * @param {(instance: SelectionManager) => void} [options.onSelectionModeEnter]
+     * @param {(instance: SelectionManager) => void} [options.onSelectionModeExit]
+     * @param {(selectedIds: (string|number)[], instance: SelectionManager) => void} [options.onSelectionChanged]
      */
-    constructor(options) {
-        
+    constructor(options = {}) {
         this.options = {
             container: null,
             selectionBar: ".selection-bar",
             toggleBtn: ".selection-toggle-btn",
-            
             itemSelector: ".selection-item",
             checkboxSelector: ".selection-checkbox",
-            
+            getItemKey: item => item.dataset.id,
             selectedClass: "selected",
             selectionModeClass: "selection-mode",
-            
+            enableShiftSelect: false,
             onAction: null,
             onSelectionModeEnter: null,
             onSelectionModeExit: null,
             onSelectionChanged: null,
-            
-            
             isSelectable: null,
             itemsProvider: null,
             ...options,
         };
         
-        this.cancelBtn = this.selectionBar.querySelector(".cancel-selection");
-        this.clearBtn = this.selectionBar.querySelector(".clear-selection");
-        this.selectAll = this.selectionBar.querySelector(".select-all");
-        this.selectedCounts = this.selectionBar.querySelectorAll(".selected-count");
-        this.actionBtn = this.selectionBar.querySelector(".selection-action-btn");
         this.selectedIds = new Set();
         this.selectionMode = false;
+        this.lastClickedItem = null; // برای پشتیبانی از Shift + Click
+        
+        // ذخیره رفرنس Handlerها برای پاک‌سازی راحت در destroy
+        this._handlers = {};
         
         this.init();
     }
     
-    
-    init() {
-        document.addEventListener("click", e => {
-            const btn = e.target.closest(this.options.toggleBtn);
-            if (!btn) return;
-            this.showSelectionMode();
-        });
-        this.cancelBtn?.addEventListener("click", () => this.hideSelectionMode());
-        this.clearBtn?.addEventListener("click", () => this.clearSelection());
-        this.selectAll?.addEventListener("change", () => this.toggleSelectAll());
-        this.actionBtn?.addEventListener("click", async () => {
-            if (typeof this.options.onAction === "function") {
-                await this.options.onAction(Array.from(this.selectedIds), this);
-            }
-        });
-        
-        this.container?.addEventListener("click", (e) => this.handleItemClick(e));
-    }
-    
-    get toggleBtn() {
-        const elm = this.resolveElement(this.options.toggleBtn);
-        if (!elm) throw new Error("SelectionManager: toggleBtn element not found.");
-        
-        return elm;
-    }
-    
-    get selectionBar() {
-        const elm = this.resolveElement(this.options.selectionBar);
-        if (!elm) throw new Error("SelectionManager: selectionBar element not found.");
-        
-        return elm;
-    }
-    
-    get container() {
-        const elm = this.resolveElement(this.options.container);
-        if (!elm) throw new Error("SelectionManager: container element not found.");
-        
-        return elm;
-    }
+    // ---------------------------------------------------------
+    // Elements
+    // ---------------------------------------------------------
     
     resolveElement(elementOrSelector) {
-        if (elementOrSelector instanceof HTMLElement) {
-            return elementOrSelector;
-        }
-        
+        if (elementOrSelector instanceof HTMLElement) return elementOrSelector;
+        if (typeof elementOrSelector !== "string") return null;
         return document.querySelector(elementOrSelector);
     }
     
-    getItems() {
-        if (typeof this.options.itemsProvider === "function")
-            return this.options.itemsProvider();
-        
-        return this.container.querySelectorAll(this.options.itemSelector);
+    get container() {
+        const element = this.resolveElement(this.options.container);
+        if (!element) {
+            throw new Error("SelectionManager: container element not found.");
+        }
+        return element;
     }
     
+    get selectionBar() { return this.resolveElement(this.options.selectionBar); }
+    get toggleBtn() { return this.resolveElement(this.options.toggleBtn); }
+    get cancelBtn() { return this.selectionBar?.querySelector(".cancel-selection"); }
+    get clearBtn() { return this.selectionBar?.querySelector(".clear-selection"); }
+    get selectAll() { return this.selectionBar?.querySelector(".select-all"); }
+    get selectedCounts() { return this.selectionBar?.querySelectorAll(".selected-count") ?? []; }
+    get actionBtn() { return this.selectionBar?.querySelector(".selection-action-btn"); }
+    
+    // ---------------------------------------------------------
+    // Initialization & Event Binding
+    // ---------------------------------------------------------
+    
+    init() {
+        this.bindEvents();
+        this.decorateItems();
+        this.updateUI();
+    }
+    
+    bindEvents() {
+        
+        this._handlers.documentClick = (e) => {
+            const btn = e.target.closest(this.options.toggleBtn);
+            if (!btn) return;
+            this.showSelectionMode();
+        };
+        document.addEventListener("click", this._handlers.documentClick);
+        
+        this._handlers.cancelClick = () => this.hideSelectionMode();
+        this._handlers.clearClick = () => this.clearSelection();
+        this._handlers.selectAllChange = () => this.toggleSelectAll();
+        this._handlers.actionClick = async () => {
+            if (typeof this.options.onAction === "function") {
+                await this.options.onAction(this.getSelectedIds(), this);
+            }
+        };
+        
+        this.cancelBtn?.addEventListener("click", this._handlers.cancelClick);
+        this.clearBtn?.addEventListener("click", this._handlers.clearClick);
+        this.selectAll?.addEventListener("change", this._handlers.selectAllChange);
+        this.actionBtn?.addEventListener("click", this._handlers.actionClick);
+        
+        
+        this._handlers.containerClick = (e) => this.handleItemClick(e);
+        this.container.addEventListener("click", this._handlers.containerClick);
+    }
+    
+    destroy() {
+        document.removeEventListener("click", this._handlers.documentClick);
+        this.cancelBtn?.removeEventListener("click", this._handlers.cancelClick);
+        this.clearBtn?.removeEventListener("click", this._handlers.clearClick);
+        this.selectAll?.removeEventListener("change", this._handlers.selectAllChange);
+        this.actionBtn?.removeEventListener("click", this._handlers.actionClick);
+        this.container?.removeEventListener("click", this._handlers.containerClick);
+        
+        this.selectedIds.clear();
+        this._handlers = {};
+    }
+    
+    // ---------------------------------------------------------
+    // Items & Keys
+    // ---------------------------------------------------------
+    
+    getItems() {
+        if (typeof this.options.itemsProvider === "function") {
+            const result = this.options.itemsProvider();
+            return Array.from(result ?? []);
+        }
+        return Array.from(this.container.querySelectorAll(this.options.itemSelector));
+    }
+    
+    getItemKey(item) {
+        const key = this.options.getItemKey?.(item);
+        if (key === undefined || key === null || key === "") {
+            return null;
+        }
+        return String(key);
+    }
+    
+    #getSelectableItems() {
+        return this.getItems().filter(item => this.#isItemSelectable(item));
+    }
+    
+    #isItemSelectable(item) {
+        if (typeof this.options.isSelectable === "function") {
+            return this.options.isSelectable(item);
+        }
+        if (this.options.checkboxSelector) {
+            return !!item.querySelector(this.options.checkboxSelector);
+        }
+        return true;
+    }
+    
+    // ---------------------------------------------------------
+    // Selection Mode
+    // ---------------------------------------------------------
     
     #toggleSelectionMode(enable) {
+        if (this.selectionMode === enable) return;
+        
         this.selectionMode = enable;
         this.container.classList.toggle(this.options.selectionModeClass, enable);
         this.selectionBar?.classList.toggle("d-none", !enable);
@@ -548,6 +610,8 @@ class SelectionManager {
         } else {
             this.options.onSelectionModeExit?.(this);
         }
+        
+        this.updateUI();
     }
     
     showSelectionMode() {
@@ -559,168 +623,241 @@ class SelectionManager {
         this.clearSelection();
     }
     
+    // ---------------------------------------------------------
+    // Item Interaction
+    // ---------------------------------------------------------
     
     handleItemClick(e) {
         if (!this.selectionMode) return;
         
         const item = e.target.closest(this.options.itemSelector);
-        if (!item) return;
+        if (!item || !this.container.contains(item) || !this.#isItemSelectable(item)) return;
         
-        if (!this.#isItemSelectable(item)) return;
+        const isCheckboxClick = this.options.checkboxSelector && e.target.closest(this.options.checkboxSelector);
+        const key = this.getItemKey(item);
+        if (!key) return;
+        
+        // پشتیبانی از Range Selection با کلید Shift
+        if (this.options.enableShiftSelect && e.shiftKey && this.lastClickedItem) {
+            this.#handleShiftSelect(item);
+            this.lastClickedItem = item;
+            return;
+        }
         
         let isChecked;
         if (this.options.checkboxSelector) {
             const checkbox = item.querySelector(this.options.checkboxSelector);
             if (!checkbox) return;
             
-            if (!e.target.matches(this.options.checkboxSelector)) {
+            if (!isCheckboxClick) {
                 checkbox.checked = !checkbox.checked;
             }
-            
             isChecked = checkbox.checked;
         } else {
-            isChecked = !this.selectedIds.has(item.dataset.id);
+            isChecked = !this.selectedIds.has(key);
         }
         
         this.toggleItem(item, isChecked);
+        this.lastClickedItem = item;
     }
     
-    
-    toggleItem(item, isChecked) {
-        const id = item.dataset.id;
+    #handleShiftSelect(targetItem) {
+        const selectableItems = this.#getSelectableItems();
+        const startIdx = selectableItems.indexOf(this.lastClickedItem);
+        const endIdx = selectableItems.indexOf(targetItem);
         
-        item.classList.toggle(this.options.selectedClass, isChecked);
+        if (startIdx === -1 || endIdx === -1) return;
         
-        if (isChecked) {
-            this.selectedIds.add(id);
-        } else {
-            this.selectedIds.delete(id);
+        const min = Math.min(startIdx, endIdx);
+        const max = Math.max(startIdx, endIdx);
+        
+        const targetKey = this.getItemKey(targetItem);
+        const shouldSelect = !this.selectedIds.has(targetKey);
+        
+        for (let i = min; i <= max; i++) {
+            this.toggleItem(selectableItems[i], shouldSelect, false);
         }
         
         this.updateUI();
     }
     
-    
-    updateUI() {
-        const count = this.selectedIds.size;
+    toggleItem(item, isSelected, update = true) {
+        const key = this.getItemKey(item);
+        if (!key) return;
         
-        this.selectedCounts?.forEach(i => i.textContent = count);
+        item.classList.toggle(this.options.selectedClass, isSelected);
         
-        if (this.actionBtn) {
-            this.actionBtn.disabled = count === 0;
+        if (this.options.checkboxSelector) {
+            const checkbox = item.querySelector(this.options.checkboxSelector);
+            if (checkbox) {
+                checkbox.checked = isSelected;
+            }
         }
         
-        if (this.selectAll) {
-            const selectableItems = Array.from(this.getItems()).filter(item => this.#isItemSelectable(item));
-            
-            this.selectAll.checked =
-                selectableItems.length > 0 &&
-                selectableItems.every(item => this.selectedIds.has(item.dataset.id));
-            
-            this.selectAll.indeterminate =
-                count > 0 && count < selectableItems.length;
+        if (isSelected) {
+            this.selectedIds.add(key);
+        } else {
+            this.selectedIds.delete(key);
         }
         
-        this.options.onSelectionChanged?.(this.getSelectedIds(), this);
+        if (update) {
+            this.updateUI();
+        }
     }
     
-    #isItemSelectable(item) {
-        if (typeof this.options.isSelectable === "function")
-            return this.options.isSelectable(item);
-        
-        if (this.options.checkboxSelector)
-            return item.querySelector(this.options.checkboxSelector) !== null;
-        
-        return true;
-    }
-    
+    // ---------------------------------------------------------
+    // Select All / Deselect All
+    // ---------------------------------------------------------
     
     toggleSelectAll() {
-        const isChecked = this.selectAll.checked;
+        const selectAll = this.selectAll;
+        if (!selectAll) return;
         
-        const selectableItems = Array.from(this.getItems()).filter(item => this.#isItemSelectable(item));
+        const isChecked = selectAll.checked;
+        const items = this.#getSelectableItems();
         
-        selectableItems.forEach(item => {
-            if (this.options.checkboxSelector) {
-                const checkbox = item.querySelector(this.options.checkboxSelector);
-                if (!checkbox) return;
-                
-                checkbox.checked = isChecked;
-            }
-            
-            this.toggleItem(item, isChecked);
-        });
+        items.forEach(item => this.toggleItem(item, isChecked, false));
+        this.updateUI();
     }
     
+    selectAllItems() {
+        const items = this.#getSelectableItems();
+        items.forEach(item => this.toggleItem(item, true, false));
+        this.updateUI();
+    }
+    
+    deselectAllItems() {
+        const items = this.#getSelectableItems();
+        items.forEach(item => this.toggleItem(item, false, false));
+        this.updateUI();
+    }
+    
+    // ---------------------------------------------------------
+    // Selection Management
+    // ---------------------------------------------------------
     
     clearSelection() {
         this.selectedIds.clear();
-        
         this.getItems().forEach(item => {
             item.classList.remove(this.options.selectedClass);
-            const checkbox = item.querySelector(this.options.checkboxSelector);
-            if (checkbox) {
-                checkbox.checked = false;
+            if (this.options.checkboxSelector) {
+                const checkbox = item.querySelector(this.options.checkboxSelector);
+                if (checkbox) checkbox.checked = false;
             }
         });
-        
         this.updateUI();
     }
-    
     
     restoreSelection() {
         if (!this.selectionMode) return;
         
         this.getItems().forEach(item => {
-            const isSelected = this.selectedIds.has(item.dataset.id);
+            const key = this.getItemKey(item);
+            const isSelected = key ? this.selectedIds.has(key) : false;
             
             item.classList.toggle(this.options.selectedClass, isSelected);
             
-            const checkbox = item.querySelector(this.options.checkboxSelector);
-            if (checkbox) {
-                checkbox.checked = isSelected;
+            if (this.options.checkboxSelector) {
+                const checkbox = item.querySelector(this.options.checkboxSelector);
+                if (checkbox) checkbox.checked = isSelected;
             }
         });
         
         this.updateUI();
     }
     
-    decorateItems() {
+    // ---------------------------------------------------------
+    // UI Update
+    // ---------------------------------------------------------
+    
+    updateUI() {
+        const selectableItems = this.#getSelectableItems();
         
-        this.getItems().forEach(item => {
-            
-            item.classList.remove("selection-enabled");
-            
-            if (this.#isItemSelectable(item)) {
-                item.classList.add("selection-enabled");
-            }
-            
+        const selectedVisibleCount = selectableItems.filter(item => {
+            const key = this.getItemKey(item);
+            return key && this.selectedIds.has(key);
+        }).length;
+        
+        const totalSelected = this.selectedIds.size;
+        
+        this.selectedCounts.forEach(element => {
+            element.textContent = totalSelected;
         });
         
+        if (this.actionBtn) {
+            this.actionBtn.disabled = totalSelected === 0;
+        }
+        
+        if (this.selectAll) {
+            const allSelected = selectableItems.length > 0 && selectedVisibleCount === selectableItems.length;
+            const someSelected = selectedVisibleCount > 0 && selectedVisibleCount < selectableItems.length;
+            
+            this.selectAll.checked = allSelected;
+            this.selectAll.indeterminate = someSelected;
+        }
+        
+        this.options.onSelectionChanged?.(this.getSelectedIds(), this);
+    }
+    
+    // ---------------------------------------------------------
+    // Decoration & Refresh
+    // ---------------------------------------------------------
+    
+    decorateItems() {
+        this.getItems().forEach(item => {
+            const selectable = this.#isItemSelectable(item);
+            item.classList.toggle("selection-enabled", selectable);
+        });
     }
     
     refresh() {
-        
         this.decorateItems();
-        
-        this.restoreSelection();
-        
+        if (this.selectionMode) {
+            this.restoreSelection();
+        } else {
+            this.updateUI();
+        }
     }
     
+    // ---------------------------------------------------------
+    // Public API
+    // ---------------------------------------------------------
     
     getSelectedIds() {
         return Array.from(this.selectedIds);
     }
     
+    hasSelection() {
+        return this.selectedIds.size > 0;
+    }
+    
+    isSelected(item) {
+        const key = this.getItemKey(item);
+        return key ? this.selectedIds.has(key) : false;
+    }
     
     setSelectedIds(ids = []) {
-        
-        this.selectedIds = new Set(ids);
-        
+        if (!Array.isArray(ids)) {
+            throw new TypeError("SelectionManager: ids must be an array.");
+        }
+        // کست تمام IDها به String جهت تضمین همخوانی
+        this.selectedIds = new Set(ids.map(String));
+        this.restoreSelection();
+    }
+    
+    addSelection(id) {
+        if (id === undefined || id === null || id === "") {
+            throw new Error("SelectionManager: invalid selection id.");
+        }
+        this.selectedIds.add(String(id));
+        this.restoreSelection();
+    }
+    
+    removeSelection(id) {
+        this.selectedIds.delete(String(id));
         this.restoreSelection();
     }
 }
-
 
 class Dropdown {
     /**

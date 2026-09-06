@@ -391,19 +391,20 @@ const getAllCashesDt = () => {
         },
     });
     
-    
     const cashSelection = new SelectionManager({
         container: "#cashTable tbody",
         selectionBar: "#cashSelectionToolbar",
         toggleBtn: ".groupSelectCashBtn",
-        itemSelector: "tr",
+        itemSelector: "tr:not(:has(td.dt-empty)):not(.child)",
         selectedClass: "row-selected",
         checkboxSelector: null,
-        itemsProvider: () => document.querySelectorAll("#cashTable tbody tr"),
+        getItemKey: item => item.dataset.id,
+        
         isSelectable: item => {
             const row = cashTbl.row(item);
             return row.any() && row.data().status === 0;
         },
+        
         onAction: async (ids, selection) => {
             await changeStatusGroupCashToPending(ids);
             selection.hideSelectionMode();
@@ -417,6 +418,7 @@ const getAllCashesDt = () => {
             document.querySelector(".buttonExcel").classList.add("d-none");
             document.querySelector(".sendAllBtn").classList.add("d-none");
         },
+        
         onSelectionModeExit() {
             document.querySelector("#cashBalanceContainer").classList.remove("d-none");
             document.querySelector("#cashModalBtn").classList.remove("d-none");
@@ -424,7 +426,6 @@ const getAllCashesDt = () => {
             document.querySelector(".sendAllBtn").classList.remove("d-none");
         },
     });
-    
     
     cashTbl.on("draw.dt", () => cashSelection.refresh());
     
@@ -719,7 +720,7 @@ function getAllCashesModalDt() {
             { data: "amount" },
             { data: "fee" },
             { data: "totalAmount" },
-            { data: "costDescription", className: "wrap-text"  },
+            { data: "costDescription", className: "wrap-text" },
             { data: "userCreator", visible: false, searchable: false },
             {
                 data: "status",

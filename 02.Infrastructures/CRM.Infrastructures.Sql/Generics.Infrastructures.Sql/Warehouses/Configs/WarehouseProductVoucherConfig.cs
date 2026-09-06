@@ -9,6 +9,8 @@ public class WarehouseProductVoucherConfig : IEntityTypeConfiguration<WarehouseP
     {
         builder.HasKey(f => new { f.WarehouseProductId, f.WarehouseVoucherId });
         
+        builder.Property(x => x.Weight).HasPrecision(20, 0);
+        
         builder.HasOne(f => f.WarehouseVoucher)
             .WithMany(f => f.WarehouseProductVouchers)
             .HasForeignKey(f => f.WarehouseVoucherId)

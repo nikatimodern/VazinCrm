@@ -4239,7 +4239,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Weight")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
 
                     b.HasKey("WarehouseProductId", "WarehouseVoucherId");
 

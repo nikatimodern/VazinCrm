@@ -17,6 +17,7 @@
     </div>
 
     <div id="warehouseProducts-section" class="@(hasWarehouseId ? "" : "d-none")">
+
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
             <div class="d-flex align-items-center gap-2">
                 <span class="section-title-dot"></span>
@@ -24,13 +25,47 @@
             </div>
 
             <div class="section-actions d-flex gap-2 flex-grow-1 justify-content-end">
-                <button class="buttonGreen0" onclick="showWarehouseTransactionModal(1)">
+                <button id="warehouseProductBtn" class="buttonGreen0" onclick="showWarehouseTransactionModal(1)">
                     ثبت محصول جدید
-                    <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
+                    <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z"/></svg>
                 </button>
+                
+                <button id="groupSelectWarehouseProductBtn" class="buttonCancel2" onclick="">
+                    ثبت حواله انبار
+                    <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 1 0 1.09 1.03L9.25 4.636v8.614Z"></path><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z"></path></svg>
+                </button>
+                
                 <button class="buttonCancel-white" onclick="backToWarehouses()">
                     بازگشت
-                    <svg style="width: 16px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.5 9.75A2.75 2.75 0 0 1 6.25 7h5.19L9.22 9.22a.75.75 0 1 0 1.06 1.06l3.5-3.5a.75.75 0 0 0 0-1.06l-3.5-3.5a.75.75 0 1 0-1.06 1.06l2.22 2.22H6.25a4.25 4.25 0 0 0 0 8.5h1a.75.75 0 0 0 0-1.5h-1A2.75 2.75 0 0 1 3.5 9.75Z" clip-rule="evenodd" /></svg>
+                    <svg style="width: 16px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.5 9.75A2.75 2.75 0 0 1 6.25 7h5.19L9.22 9.22a.75.75 0 1 0 1.06 1.06l3.5-3.5a.75.75 0 0 0 0-1.06l-3.5-3.5a.75.75 0 1 0-1.06 1.06l2.22 2.22H6.25a4.25 4.25 0 0 0 0 8.5h1a.75.75 0 0 0 0-1.5h-1A2.75 2.75 0 0 1 3.5 9.75Z" clip-rule="evenodd"/></svg>
+                </button>
+            </div>
+        </div>
+        <div id="warehouseSelectionToolbar" class="selection-bar d-none mb-2">
+            <div class="d-none d-lg-flex align-items-center gap-3">
+                <label class="d-flex align-items-center gap-3">
+                    <input type="checkbox" class="select-all" />
+                    <span>انتخاب همه</span>
+                </label>
+            </div>
+
+            <div class="col-12 col-lg-auto flex-center flex-wrap gap-3" style="color: #444">
+                <span class="selected-count fbold" style="color: var(--color8)">0</span>
+                <span>مورد انتخاب شده</span>
+
+                <button class="clear-selection link-green" style="font-size: 13px">
+                    حذف انتخاب
+                </button>
+            </div>
+
+            <div class="col-12 col-lg-auto d-flex align-items-center justify-content-between justify-content-lg-end gap-3">
+                <button class="cancel-selection buttonCancel-white">
+                    <svg style="width: 16px" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
+                    انصراف
+                </button>
+
+                <button class="selection-action-btn buttonGreen0" disabled>
+                    ثبت همه (<span class="selected-count">0</span>)
                 </button>
             </div>
         </div>
@@ -59,6 +94,7 @@
 <partial name="Modals/_WarehouseTransactionModal" />
 <partial name="Modals/_WarehouseTransactionHistoryModal" />
 <partial name="Modals/_WarehouseProductModal" />
+<partial name="Modals/_WarehouseVoucherModal" />
 
 @section Scripts {
     <script src="~/js/warehouse.js" asp-append-version="true"></script>

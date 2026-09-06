@@ -1,15 +1,18 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Warehouses.Entities;
 using CRM.Core.Domain.Warehouses.Enums;
+using CRM.EndPoint.FrontEnd.Models.Supply;
 using CRM.EndPoint.FrontEnd.Models.Warehouse;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.Framework;
 using CRM.Infrastructures.Sql;
+using DocumentFormat.OpenXml.Office2010.ExcelAc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -184,6 +187,31 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         catch (Exception)
         {
             return BadRequest();
+        }
+    }
+
+
+    [HttpPost]
+    public async Task<IActionResult> GetWarehouseProductByFilteredIds([FromBody] GetAllBySelectedVModel model)
+    {
+        try
+        {
+            var data = await db.WarehouseProducts.AsNoTracking()
+                .Where(f => model.FilterIds.Contains(f.Id))
+                .Select(f => new {
+                    f.Id,
+                    f.ProductDescription,
+                    f.ProductSmallName,
+                    f.UnitTxt,
+                    Stock = f.Transactions.Sum(t => t.TransactionType == WarehouseTransactionTypeEnum.ورود ? t.Weight : -t.Weight)
+                })
+                .ToListAsync();
+
+            return Ok(data);
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
         }
     }
 
@@ -538,5 +566,45 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         await db.SaveChangesAsync();
 
         return Ok();
+    }
+
+
+    [HttpPost]
+    public async Task<IActionResult> AddWarehouseVoucher([FromBody] WarehouseVoucher model)
+    {
+        if (model == null) return BadRequest();
+        if (model.WarehouseProductVouchers.Any(x => x.Weight <= 0)) return BadRequest("مقدار باید بیشتر از صفر باشد.");
+
+        var user = await userManager.GetUserAsync(HttpContext.User);
+
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        try
+        {
+            foreach (var item in model.WarehouseProductVouchers)
+            {
+                var warehouseProduct = await db.WarehouseProducts.FirstOrDefaultAsync(x => x.Id == item.WarehouseProductId);
+
+                if (warehouseProduct == null)
+                    return NotFound("محصول مورد نظر یافت نشد.");
+
+                var currentStock = await db.WarehouseTransactions.GetStockAsync(warehouseProduct.Id);
+
+                if (item.Weight > currentStock)
+                    return BadRequest(
+                        $"موجودی ({warehouseProduct.ProductSmallName} {warehouseProduct.ProductDescription}) کافی نیست. موجودی فعلی: {currentStock} {warehouseProduct.UnitTxt}");
+            }
+
+            db.WarehouseVouchers.AddRange(model);
+            await logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
+
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            return BadRequest();
+        }
     }
 }

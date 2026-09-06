@@ -334,7 +334,7 @@ table tr.tableRow-bgGreen td, table tr.tableRow-bgGreen th {
 }*/
 
 
-#cashTable_wrapper .selection-mode tr.selection-enabled {
+table .selection-mode tr.selection-enabled {
   border-right: 3px solid transparent;
   position: relative;
   cursor: pointer;
@@ -342,24 +342,24 @@ table tr.tableRow-bgGreen td, table tr.tableRow-bgGreen th {
 }
 
 
-#cashTable_wrapper .selection-mode tr {
+table .selection-mode tr {
   position: relative;
 }
 
 
-#cashTable_wrapper .selection-mode tr.selection-enabled.row-selected,
-#cashTable_wrapper .selection-mode tr.selection-enabled:hover {
+table .selection-mode tr.selection-enabled.row-selected,
+table .selection-mode tr.selection-enabled:hover {
   border-right-color: #16a34a;
   background: #f8f8f8 !important;
 }
 
 
-#cashTable_wrapper .selection-mode tr.row-selected td {
+table .selection-mode tr.row-selected td {
   background: #e8f5e9 !important;
 }
 
 
-#cashTable_wrapper .selection-mode tr::after {
+table .selection-mode tr::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -369,11 +369,11 @@ table tr.tableRow-bgGreen td, table tr.tableRow-bgGreen th {
 }
 
 
-#cashTable_wrapper .selection-mode tr.selection-enabled::after {
+table .selection-mode tr.selection-enabled::after {
   background: rgba(255, 255, 255, .3);
 }
 
 
-#cashTable_wrapper .selection-mode tr.row-selected::after {
+table .selection-mode tr.row-selected::after {
   background: rgba(0, 0, 0, .05);
 }

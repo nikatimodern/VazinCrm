@@ -3,8 +3,10 @@ let warehouseTransactionsData = {};
 let warehouseProductsData = {};
 let warehouseTransactionTbl = null;
 let warehouseProductTbl = null;
+let warehouseProductSelection;
 
 const warehouseModal = document.getElementById("warehouseModal");
+const warehouseVoucherModal = document.getElementById("warehouseVoucherModal");
 const warehouseTransactionModal = document.getElementById("warehouseTransactionModal");
 const warehouseTransactionHistoryModal = document.getElementById("warehouseTransactionHistoryModal");
 const warehouseFormElm = warehouseModal.querySelector("#warehouseForm");
@@ -46,6 +48,7 @@ function syncWarehouseViewWithUrl() {
 
 warehouseModal?.addEventListener("hidden.bs.modal", cancelWarehouseModal);
 warehouseTransactionModal?.addEventListener("hidden.bs.modal", cancelWarehouseTransactionModal);
+warehouseVoucherModal?.addEventListener("hidden.bs.modal", cancelWarehouseVoucherModal);
 warehouseTransactionHistoryModal?.addEventListener("hidden.bs.modal", () => warehouseProductsData = {});
 
 function backToWarehouses() {
@@ -334,8 +337,115 @@ function initWarehouseProductsTable(id) {
                 break;
         }
     });
+    
+    warehouseProductSelection = new SelectionManager({
+        container: "#warehouseProductsTable tbody",
+        selectionBar: "#warehouseSelectionToolbar",
+        toggleBtn: "#groupSelectWarehouseProductBtn",
+        itemSelector: "tr:not(:has(td.dt-empty)):not(.child)",
+        selectedClass: "row-selected",
+        checkboxSelector: null,
+        getItemKey: item => warehouseProductTbl.row(item).data()?.id,
+        onAction: async (ids) => {
+            await showWarehouseVoucherModal(ids);
+        },
+        
+        onSelectionModeEnter() {
+            document.querySelectorAll("#warehouseProducts-section .section-actions button").forEach(el => el.classList.add("d-none"));
+        },
+        
+        onSelectionModeExit() {
+            document.querySelectorAll("#warehouseProducts-section .section-actions button").forEach(el => el.classList.remove("d-none"));
+        },
+    });
+    
+    
+    warehouseProductTbl.on("draw.dt", () => warehouseProductSelection.refresh());
 }
 
+
+let isGroupVoucher = false;
+let warehouseProductListData = [];
+async function showWarehouseVoucherModal(filterIds) {
+    isGroupVoucher = true;
+    await sendApiRequest({
+        method: "POST",
+        url: "/Warehouse/GetWarehouseProductByFilteredIds",
+        data: { filterIds },
+        successMsg: null,
+        onSuccess: (res) => {
+            warehouseProductListData = res.data;
+            
+            createSetVoucherItem();
+            ModalToggle(warehouseVoucherModal, "show");
+            warehouseProductSelection.hideSelectionMode()
+        },
+    });
+}
+function cancelWarehouseVoucherModal() {
+    isGroupVoucher = false;
+    mySer.emptyForm("warehouseVoucherForm");
+}
+
+function createSetVoucherItem() {
+    const container = warehouseVoucherModal.querySelector("#warehouseVoucherForm");
+    container.innerHTML = "";
+    
+    warehouseProductListData.forEach((item, index) => {
+        const fieldset = document.createElement("fieldset");
+        fieldset.id = `setWarehouseVoucherItem-${index}`;
+        fieldset.dataset.id = item.id;
+        fieldset.innerHTML = `
+            <div class="d-flex flex-wrap align-items-center justify-content-around bgLightRed border rounded-2 overflow-hidden">
+                <div class="d-flex flex-wrap col-12 justify-content-around p-2 row-gap-2">
+                    <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto pe-xl-2">
+                        <span class="flex-shrink-0" style="color: #535353">محصول: </span>
+                        <span class="fbold" style="color: #333">${item.productSmallName || ""} ${item.productDescription || ""}</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto pe-xl-2">
+                        <span class="flex-shrink-0" style="color: #535353">موجودی: </span>
+                        <span class="fbold" style="color: #333">${item.stock || "-"} ${item.unitTxt || ""}</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto">
+                        <span class="flex-shrink-0" style="color: #535353">مقدار: </span>
+                        <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="weight" value="${item.weight ? item.weight.toLocaleString() : ""}" required>
+                    </div>
+                </div>
+            </div>
+            ${index !== warehouseProductListData.length - 1 ? `<div style="width: 95%;height:1px; margin: 10px auto;background-color:darkviolet"></div>` : ""}
+        `;
+        container.appendChild(fieldset);
+    });
+}
+
+
+async function submitWarehouseVoucherModal() {
+    if (!await mySer.CheckValidForm("warehouseVoucherForm")) return;
+    
+    const allItemsArray = Array.from(warehouseVoucherModal.querySelectorAll("fieldset"));
+    
+    const warehouseVoucherListData = allItemsArray.map(item => {
+        const weightValue = item.querySelector("input[name='weight']").value;
+        return {
+            // warehouseVoucherId: paymentData.id,
+            warehouseProductId: item.dataset.id,
+            weight: Number(SeparatedNumberRemove(weightValue)),
+        };
+    });
+    
+    const model = {
+        warehouseProductVouchers: warehouseVoucherListData,
+    };
+    
+    await sendApiRequest({
+        url: "/Warehouse/AddWarehouseVoucher",
+        method: "POST",
+        data: model,
+        onSuccess: async () => {
+            ModalToggle(warehouseVoucherModal, "hide");
+        },
+    });
+}
 
 /* ----------------------------------------------------------- */
 const showWarehouseTransactionHistory = (data) => {
@@ -363,7 +473,6 @@ const editWarehouseProduct = async () => {
         },
     });
 };
-
 
 
 const deleteWarehouseProduct = async (id) => {
