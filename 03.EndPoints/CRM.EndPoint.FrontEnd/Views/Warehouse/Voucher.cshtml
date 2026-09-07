@@ -1,0 +1,118 @@
+@using CRM.Core.Domain.Warehouses.Enums
+@model IList<CRM.Core.Domain.Warehouses.Entities.WarehouseVoucher>
+
+<div class="voucher-wrapper">
+    <!-- نوار جستجو و فیلتر -->
+    <div class="filter-bar">
+        @*<div class="search-group flex-grow-1">
+            <input type="text" class="form-control form-control-sm" id="searchInput" placeholder="جستجو (شماره حواله، سفارش، ثبت‌کننده، کالا...)">
+            <div class="search-icon">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd"></path></svg>
+            </div>
+        </div>*@
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="جستجو (شماره حواله، سفارش، ثبت‌کننده، کالا...)" autocomplete="off" />
+            <span class="searchBox-icon">🔍</span>
+        </div>
+
+        <div class="filter-group">
+            <label for="statusFilter">وضعیت:</label>
+            <select id="statusFilter">
+                <option value="all">همه وضعیت‌ها</option>
+                <option value="Pending">در انتظار تایید تامین</option>
+                <option value="Delivering">در دست تحویل</option>
+                <option value="Completed">تحویل شد</option>
+            </select>
+        </div>
+
+        <div class="filter-stats">
+            تعداد: <span id="vouchersCount">@Model.Count</span> از <span id="totalCount">@Model.Count</span>
+        </div>
+    </div>
+
+    <!-- شبکه‌بندی کارت‌ها -->
+    <div class="voucher-grid" id="voucherGrid">
+        @foreach (var voucher in Model) {
+            var statusClass = voucher.Status switch {
+                WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین => "status-pending",
+                WarehouseVoucherStatusEnum.در_انتظار_تحویل => "status-delivering",
+                WarehouseVoucherStatusEnum.تحویل_شد => "status-completed",
+                _ => "status-default"
+            };
+
+            var productNames = string.Join(" ", voucher.WarehouseProductVouchers.Select(x => x.WarehouseProduct.ProductSmallName + " " + x.WarehouseProduct.ProductDescription));
+
+            <article class="voucher-card"
+                     data-code="@voucher.VoucherNumber"
+                     data-creator="@voucher.UserCreator"
+                     data-products="@productNames">
+
+                <!-- هدر کارت -->
+                <header class="voucher-header">
+                    <div class="voucher-title">
+                        <span class="voucher-number">#@voucher.VoucherNumber</span>
+                        @* <span class="order-number">سفارش: @voucher.OrderCode</span> *@
+                    </div>
+                    <span class="status-badge @statusClass">@voucher.StatusTxt</span>
+                </header>
+
+                <!-- بدنه کارت -->
+                <div class="voucher-body">
+                    <div class="meta-row">
+                        <span class="meta-item">ثبت کننده: <strong>@voucher.UserCreator</strong></span>
+                        <span class="meta-item">تاریخ ثبت: <strong>@(string.Join(" | ", voucher.CreateDateTxt?.Substring(0, 16).Split(' ')))</strong></span>
+                    </div>
+
+                    <div class="items-table-wrapper">
+                        <table class="items-table">
+                            <thead>
+                            <tr>
+                                <th>محصول</th>
+                                <th class="text-end">مقدار</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var item in voucher.WarehouseProductVouchers) {
+                                <tr>
+                                    <td>
+                                        <span class="item-name">@item.WarehouseProduct.ProductSmallName</span>
+                                        @if (!string.IsNullOrEmpty(item.WarehouseProduct.ProductDescription)) {
+                                            <span class="item-desc">@item.WarehouseProduct.ProductDescription</span>
+                                        }
+                                    </td>
+                                    <td class="text-end font-bold">@item.Weight.ToString("N0") <small>@item.WarehouseProduct.UnitTxt</small>
+                                    </td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- فوتر کارت -->
+                <footer class="voucher-footer">
+                    <span class="items-count">@voucher.WarehouseProductVouchers.Count قلم</span>
+                    <div class="footer-actions">
+                        <a class="btn-action" title="مشاهده" asp-action="VoucherDetail" asp-controller="Warehouse" asp-route-id="@voucher.Id">مشاهده</a>
+                        @* <button class="btn-action" title="چاپ" onclick="printVoucher('@voucher.Id')">چاپ</button> *@
+                    </div>
+                </footer>
+            </article>
+        }
+    </div>
+
+    <!-- پیام عدم یافتن نتیجه -->
+    <div id="noResults" class="no-results d-none">
+        هیچ حواله‌ای با این مشخصات یافت نشد.
+    </div>
+</div>
+
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/warehouse.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/warehouse.js" asp-append-version="true"></script>
+}

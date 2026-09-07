@@ -22,6 +22,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 
 [Authorize(Policy = "NotCustomerOnly")]
 public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManager, LogSystemService logSystemService) : Controller {
+    /*--------------------------------- warehouse ----------------------------------*/
+
     public async Task<IActionResult> Index()
     {
         var warehouses = await GetAllWarehouses();
@@ -113,27 +115,6 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         return Ok();
     }
 
-    [HttpDelete]
-    public async Task<IActionResult> DeleteWarehouse(Guid id)
-    {
-        if (id == Guid.Empty) return BadRequest();
-
-        var warehouse = await db.Warehouses.FindAsync(id);
-        if (warehouse == null) return NotFound("رکوردی یافت نشد!");
-
-        var user = await userManager.GetUserAsync(HttpContext.User);
-
-        warehouse.IsDeleted = true;
-        warehouse.UserModifyID = user.Id;
-        warehouse.UserModify = user.FullName;
-        warehouse.ModifyDate = DateTime.Now;
-        warehouse.ModifyDateTxt = BaseServices.GetDateTimePersian();
-
-        await logSystemService.LogChange(warehouse, null, LogActionEnum.حذف, user);
-        await db.SaveChangesAsync();
-        return Ok();
-    }
-
 
     public async Task<IActionResult> GetWarehouse(Guid id)
     {
@@ -159,21 +140,29 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     }
 
 
-    public async Task<IActionResult> GetWarehouseTransaction(Guid id)
+    [HttpDelete]
+    public async Task<IActionResult> DeleteWarehouse(Guid id)
     {
-        try
-        {
-            var item = await db.WarehouseTransactions.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
-            if (item == null) return NotFound();
+        if (id == Guid.Empty) return BadRequest();
 
-            return Ok(item);
-        }
-        catch (Exception)
-        {
-            return BadRequest();
-        }
+        var warehouse = await db.Warehouses.FindAsync(id);
+        if (warehouse == null) return NotFound("رکوردی یافت نشد!");
+
+        var user = await userManager.GetUserAsync(HttpContext.User);
+
+        warehouse.IsDeleted = true;
+        warehouse.UserModifyID = user.Id;
+        warehouse.UserModify = user.FullName;
+        warehouse.ModifyDate = DateTime.Now;
+        warehouse.ModifyDateTxt = BaseServices.GetDateTimePersian();
+
+        await logSystemService.LogChange(warehouse, null, LogActionEnum.حذف, user);
+        await db.SaveChangesAsync();
+        return Ok();
     }
 
+
+    /*--------------------------------- warehouseProduct ----------------------------------*/
 
     public async Task<IActionResult> GetWarehouseProduct(Guid id)
     {
@@ -325,6 +314,51 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         }
     }
 
+
+    [HttpDelete]
+    public async Task<IActionResult> DeleteWarehouseProduct(Guid id)
+    {
+        if (id == Guid.Empty) return BadRequest();
+
+        var warehouseProduct = await db.WarehouseProducts.FindAsync(id);
+        if (warehouseProduct == null) return NotFound("رکوردی یافت نشد!");
+
+        var stock = await db.WarehouseTransactions.GetStockAsync(warehouseProduct.Id);
+        if (stock > 0) return BadRequest("این محصول دارای موجودی است و امکان حذف آن وجود ندارد.");
+
+
+        var user = await userManager.GetUserAsync(HttpContext.User);
+
+        warehouseProduct.IsDeleted = true;
+
+        warehouseProduct.UserModifyID = user.Id;
+        warehouseProduct.UserModify = user.FullName;
+        warehouseProduct.ModifyDate = DateTime.Now;
+        warehouseProduct.ModifyDateTxt = BaseServices.GetDateTimePersian();
+
+        await logSystemService.LogChange(warehouseProduct, null, LogActionEnum.حذف, user);
+        await db.SaveChangesAsync();
+
+        return Ok();
+    }
+
+
+    /*--------------------------------- warehouseTransaction ----------------------------------*/
+
+    public async Task<IActionResult> GetWarehouseTransaction(Guid id)
+    {
+        try
+        {
+            var item = await db.WarehouseTransactions.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
+            if (item == null) return NotFound();
+
+            return Ok(item);
+        }
+        catch (Exception)
+        {
+            return BadRequest();
+        }
+    }
 
     [HttpPost]
     public async Task<IActionResult> GetWarehouseTransactionsDt(Guid productId)
@@ -541,33 +575,33 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         }
     }
 
-    [HttpDelete]
-    public async Task<IActionResult> DeleteWarehouseProduct(Guid id)
+
+    /*--------------------------------- warehouseVoucher ----------------------------------*/
+
+    public async Task<IActionResult> Voucher()
+    {
+        var vouchers = await db.WarehouseVouchers.Include(x => x.WarehouseProductVouchers).ThenInclude(x => x.WarehouseProduct).ToListAsync();
+        return View(vouchers);
+    }
+
+    public IActionResult Voucher2()
+    {
+        return View();
+    }
+
+    public async Task<IActionResult> VoucherDetail(Guid id)
     {
         if (id == Guid.Empty) return BadRequest();
 
-        var warehouseProduct = await db.WarehouseProducts.FindAsync(id);
-        if (warehouseProduct == null) return NotFound("رکوردی یافت نشد!");
+        var voucher = await db.WarehouseVouchers
+            .Include(x => x.WarehouseProductVouchers)
+            .ThenInclude(x => x.WarehouseProduct)
+            .FirstOrDefaultAsync(x => x.Id == id);
 
-        var stock = await db.WarehouseTransactions.GetStockAsync(warehouseProduct.Id);
-        if (stock > 0) return BadRequest("این محصول دارای موجودی است و امکان حذف آن وجود ندارد.");
+        if (voucher == null) return NotFound();
 
-
-        var user = await userManager.GetUserAsync(HttpContext.User);
-
-        warehouseProduct.IsDeleted = true;
-
-        warehouseProduct.UserModifyID = user.Id;
-        warehouseProduct.UserModify = user.FullName;
-        warehouseProduct.ModifyDate = DateTime.Now;
-        warehouseProduct.ModifyDateTxt = BaseServices.GetDateTimePersian();
-
-        await logSystemService.LogChange(warehouseProduct, null, LogActionEnum.حذف, user);
-        await db.SaveChangesAsync();
-
-        return Ok();
+        return View(voucher);
     }
-
 
     [HttpPost]
     public async Task<IActionResult> AddWarehouseVoucher([FromBody] WarehouseVoucher model)
@@ -593,6 +627,10 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
                     return BadRequest(
                         $"موجودی ({warehouseProduct.ProductSmallName} {warehouseProduct.ProductDescription}) کافی نیست. موجودی فعلی: {currentStock} {warehouseProduct.UnitTxt}");
             }
+
+            model.UserCreator = user.FullName;
+            model.UserCreatorID = user.Id;
+            model.Status = WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین;
 
             db.WarehouseVouchers.AddRange(model);
             await logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);

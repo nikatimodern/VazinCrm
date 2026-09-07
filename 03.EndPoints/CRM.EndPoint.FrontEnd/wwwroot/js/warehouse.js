@@ -9,7 +9,7 @@ const warehouseModal = document.getElementById("warehouseModal");
 const warehouseVoucherModal = document.getElementById("warehouseVoucherModal");
 const warehouseTransactionModal = document.getElementById("warehouseTransactionModal");
 const warehouseTransactionHistoryModal = document.getElementById("warehouseTransactionHistoryModal");
-const warehouseFormElm = warehouseModal.querySelector("#warehouseForm");
+const warehouseFormElm = warehouseModal?.querySelector("#warehouseForm");
 const warehousesSection = document.getElementById("warehouses-section");
 const warehouseProductsSection = document.getElementById("warehouseProducts-section");
 
@@ -378,7 +378,7 @@ async function showWarehouseVoucherModal(filterIds) {
             
             createSetVoucherItem();
             ModalToggle(warehouseVoucherModal, "show");
-            warehouseProductSelection.hideSelectionMode()
+            warehouseProductSelection.hideSelectionMode();
         },
     });
 }
@@ -591,3 +591,182 @@ const setWarehouseTransactionHistoryHeader = () => {
     deleteBtn.classList.toggle("opacity-25", warehouseProductsData.stock > 0);
     toggleElementsDisabled(deleteBtn, warehouseProductsData.stock > 0);
 };
+/*-------------------------------------*/
+
+function printWarehouseVoucher() {
+    window.print();
+}
+
+/*-----------------------------------------------------------------------------------------------------*/
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    
+    
+    const grid = document.querySelector("#warehouseVouchersGrid");
+    const searchInput = document.querySelector("#warehouseVoucherSearch");
+    const filters = document.querySelectorAll(".voucher-filter");
+    const emptyState = document.querySelector("#warehouseVouchersEmpty");
+    
+    if (!grid) {
+        return;
+    }
+    
+    let selectedStatus = "all";
+    
+    
+    function filterVouchers() {
+        
+        const search = searchInput?.value
+                                  ?.trim()
+                                  ?.toLocaleLowerCase("fa-IR") ?? "";
+        
+        const cards = grid.querySelectorAll(".warehouse-voucher-card");
+        
+        let visibleCount = 0;
+        
+        cards.forEach(card => {
+            
+            const status = card.dataset.status ?? "";
+            const searchableText = card.dataset.search
+                                       ?.toLocaleLowerCase("fa-IR") ?? "";
+            
+            const statusMatches =
+                selectedStatus === "all" ||
+                status === selectedStatus;
+            
+            const searchMatches =
+                !search ||
+                searchableText.includes(search);
+            
+            const visible =
+                statusMatches &&
+                searchMatches;
+            
+            card.hidden = !visible;
+            
+            if (visible) {
+                visibleCount++;
+            }
+        });
+        
+        
+        if (emptyState) {
+            emptyState.classList.toggle(
+                "visible",
+                visibleCount === 0,
+            );
+        }
+    }
+    
+    
+    filters.forEach(filter => {
+        
+        filter.addEventListener("click", () => {
+            
+            filters.forEach(item => {
+                item.classList.remove("active");
+            });
+            
+            filter.classList.add("active");
+            
+            selectedStatus =
+                filter.dataset.status ?? "all";
+            
+            filterVouchers();
+        });
+        
+    });
+    
+    
+    searchInput?.addEventListener("input", filterVouchers);
+    
+    
+    filterVouchers();
+    
+    
+});
+
+function showWarehouseVoucher(id) {
+    
+    
+    window.location.href =
+        `/Warehouse/VoucherDetail/${id}`;
+    
+    
+}
+
+function createWarehouseVoucher() {
+    
+    
+    window.location.href =
+        "/Warehouse/CreateVoucher";
+    
+    
+}
+
+
+/* -----------------------------------------------gemini----------------------------------------------------- */
+
+document.addEventListener("DOMContentLoaded", () => {
+    const searchInput = document.getElementById("searchInput");
+    const statusFilter = document.getElementById("statusFilter");
+    const cards = document.querySelectorAll(".voucher-card");
+    const vouchersCount = document.getElementById("vouchersCount");
+    const noResults = document.getElementById("noResults");
+    
+    // اعمال فیلتر موقع تایپ یا تغییر وضعیت
+    searchInput.addEventListener("input", filterVouchers);
+    statusFilter.addEventListener("change", filterVouchers);
+    
+    function filterVouchers() {
+        const searchTerm = searchInput.value.trim().toLowerCase();
+        const selectedStatus = statusFilter.value;
+        let visibleCount = 0;
+        
+        cards.forEach(card => {
+            const code = card.getAttribute("data-code")?.toLowerCase();
+            const order = card.getAttribute("data-order")?.toLowerCase();
+            const creator = card.getAttribute("data-creator")?.toLowerCase();
+            const products = card.getAttribute("data-products")?.toLowerCase();
+            const status = card.getAttribute("data-status");
+            
+            // بررسی تطابق عبارت جستجو
+            const matchesSearch = !searchTerm ||
+                code.includes(searchTerm) ||
+                order?.includes(searchTerm) ||
+                creator.includes(searchTerm) ||
+                products.includes(searchTerm);
+            
+            // بررسی تطابق فیلتر وضعیت
+            const matchesStatus = (selectedStatus === "all") || (status === selectedStatus);
+            
+            if (matchesSearch && matchesStatus) {
+                card.classList.remove("d-none");
+                visibleCount++;
+            } else {
+                card.classList.add("d-none");
+            }
+        });
+        
+        // به‌روزرسانی شمارنده
+        if (vouchersCount) {
+            vouchersCount.textContent = visibleCount.toString();
+        }
+        
+        // نمایش پیام عدم وجود نتیجه
+        if (visibleCount === 0) {
+            noResults.classList.remove("d-none");
+        } else {
+            noResults.classList.add("d-none");
+        }
+    }
+});
+
+function viewDetails(voucherCode) {
+    console.log("مشاهده جزییات حواله:", voucherCode);
+}
+
+function printVoucher(voucherCode) {
+    console.log("چاپ حواله:", voucherCode);
+}

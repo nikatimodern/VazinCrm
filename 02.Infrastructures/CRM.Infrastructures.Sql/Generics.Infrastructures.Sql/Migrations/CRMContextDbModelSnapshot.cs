@@ -4344,6 +4344,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<string>("StatusTxt")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("UserCreator")
                         .HasColumnType("nvarchar(max)");
 
