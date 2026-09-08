@@ -1,0 +1,89 @@
+@using CRM.Core.Domain.Warehouses.Enums
+@model CRM.EndPoint.FrontEnd.Models.Warehouse.WarehouseVoucherListVModel
+
+<div class="voucher-grid">
+    @foreach (var voucher in Model?.Items ?? []) {
+        var statusClass = voucher.Status switch {
+            WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین => "status-pending",
+            WarehouseVoucherStatusEnum.در_انتظار_تحویل => "status-delivering",
+            WarehouseVoucherStatusEnum.تحویل_شد => "status-completed",
+            _ => "status-default"
+        };
+
+        <article class="voucher-card">
+            <header class="voucher-header">
+                <div class="voucher-title">
+                    <span class="voucher-number">#@voucher.VoucherNumber</span>
+                    @* <span class="order-number">سفارش: @voucher.OrderCode</span> *@
+                </div>
+                <span class="status-badge voucher-status @statusClass">@voucher.StatusTxt</span>
+            </header>
+
+            <div class="voucher-body">
+                <div class="meta-row">
+                    <span class="meta-item">ثبت کننده: <strong>@voucher.UserCreator</strong></span>
+                    <span class="meta-item">تاریخ ثبت: <strong>@(string.Join(" | ", voucher.CreateDateTxt?.Substring(0, 16).Split(' ')))</strong></span>
+                </div>
+
+                <div class="items-table-wrapper">
+                    <table class="items-table">
+                        <thead>
+                        <tr>
+                            <th>محصول</th>
+                            <th class="text-end">مقدار</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var item in voucher.WarehouseProductVouchers ?? []) {
+                            <tr>
+                                <td>
+                                    <span class="item-name">@item.WarehouseProduct.ProductSmallName</span>
+                                    @if (!string.IsNullOrEmpty(item.WarehouseProduct.ProductDescription)) {
+                                        <span class="item-desc">@item.WarehouseProduct.ProductDescription</span>
+                                    }
+                                </td>
+                                <td class="text-end font-bold">@item.Weight.ToString("N0") <small>@item.WarehouseProduct.UnitTxt</small>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <footer class="voucher-footer">
+                <span class="items-count">@voucher.WarehouseProductVouchers?.Count قلم</span>
+                <div class="footer-actions">
+
+                    @if ((User.IsAdmin() || User.IsTaminAdmin()) && voucher.Status == WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین) {
+                        <button type="button" class="btn-action btn-confirm" onclick="confirmWarehouseVoucher('@voucher.Id')">
+                            <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" /></svg>
+                            تایید حواله
+                        </button>
+                    }
+
+                    @if (voucher.Status == WarehouseVoucherStatusEnum.در_انتظار_تحویل) {
+                        <button type="button" class="btn-action btn-deliver" onclick="deliverWarehouseVoucher('@voucher.Id')">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 8.5 12 4 4 8.5v7L12 20l8-4.5v-7ZM12 6.3l5.8 3.2L12 12.7 6.2 9.5 12 6.3Zm-6 4.9 5 2.8v3.7l-5-2.8v-3.7Zm7 6.5V14l5-2.8v3.7l-5 2.8Z" /></svg>
+                            تحویل شد
+                        </button>
+                    }
+                    <a class="btn-action btn-view" title="مشاهده" asp-action="VoucherDetail" asp-controller="Warehouse" asp-route-id="@voucher.Id">
+                        مشاهده
+                    </a>
+                    @* <button class="btn-action" title="چاپ" onclick="printVoucher('@voucher.Id')">چاپ</button> *@
+                </div>
+            </footer>
+        </article>
+    }
+</div>
+
+@if (Model?.TotalPages > 1) {
+    <div class="pagination-wrapper">
+        @for (var i = 1; i <= Model.TotalPages; i++) {
+            <button type="button" class="pagination-btn @(i == Model.Page ? "active" : "")" data-page="@i">
+                @i
+            </button>
+        }
+    </div>
+}

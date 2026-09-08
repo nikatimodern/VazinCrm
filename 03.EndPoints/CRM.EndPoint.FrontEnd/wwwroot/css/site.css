@@ -6924,19 +6924,18 @@ table tr.payment-vosoled > td {
 }
 
 
-/*
 .clickable-card.warehouse-card {
-	--clickable-card-color: #0d9488;
-	--clickable-card-bg: #f0fdfa;
-	--clickable-card-bg-border: #ccfbf1;
+	--clickable-card-color: #2b6cb0;
+	--clickable-card-bg: #eff6ff;
+	--clickable-card-bg-border: #e2e8f0;
 }
-*/
+/*
 
 
-/* .clickable-card:nth-child(4n+1) {
-  --clickable-card-color: #2563eb;
+.clickable-card:nth-child(4n+1) {
+  --clickable-card-color: #2b6cb0;
   --clickable-card-bg: #eff6ff;
-  --clickable-card-bg-border: #bfdbfe;
+  --clickable-card-bg-border: #e2e8f0;
 }
 
 .clickable-card:nth-child(4n+2) {
@@ -6955,7 +6954,8 @@ table tr.payment-vosoled > td {
   --clickable-card-color: #475569;
   --clickable-card-bg: #f8fafc;
   --clickable-card-bg-border: #e2e8f0;
-} */
+}
+*/
 
 .clickable-card-add {
 	border: 2px dashed #cbd5e1 !important;

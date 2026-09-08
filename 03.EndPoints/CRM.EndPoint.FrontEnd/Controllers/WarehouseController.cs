@@ -6,6 +6,7 @@ using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Warehouses.Entities;
 using CRM.Core.Domain.Warehouses.Enums;
+using CRM.EndPoint.FrontEnd.IServices.ViewRender;
 using CRM.EndPoint.FrontEnd.Models.Supply;
 using CRM.EndPoint.FrontEnd.Models.Warehouse;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
@@ -21,7 +22,8 @@ using Microsoft.EntityFrameworkCore;
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
 [Authorize(Policy = "NotCustomerOnly")]
-public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManager, LogSystemService logSystemService) : Controller {
+public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManager, LogSystemService logSystemService, IViewRenderService vrs)
+    : Controller {
     /*--------------------------------- warehouse ----------------------------------*/
 
     public async Task<IActionResult> Index()
@@ -229,7 +231,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
                 var serVal = searchValue.Trim();
                 query = query.Where(f =>
                     f.ProductDescription.Contains(serVal) ||
-                    f.ProductSmallName.Contains(serVal)
+                    f.ProductSmallName.Contains(serVal) ||
+                    f.UserCreator.Contains(serVal)
                 );
             }
 
@@ -416,77 +419,109 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         });
     }
 
+    private async Task<WarehouseTransaction> AddTransaction(WarehouseTransactionVModel model, AppUser user)
+    {
+        if (model.Weight <= 0)
+            throw new ArgumentException("مقدار باید بیشتر از صفر باشد.");
+
+        var warehouseProduct = await GetOrCreateWarehouseProduct(model, user);
+
+        if (model.TransactionType == WarehouseTransactionTypeEnum.خروج)
+            await ValidateStock(warehouseProduct, model.Weight);
+
+        var warehouseTransaction = new WarehouseTransaction {
+            WarehouseProductId = warehouseProduct.Id,
+            Weight = model.Weight,
+            TransactionType = model.TransactionType,
+            UserCreator = user.FullName,
+            UserCreatorID = user.Id
+        };
+
+        db.WarehouseTransactions.Add(warehouseTransaction);
+
+        await logSystemService.LogChange(warehouseTransaction, null, LogActionEnum.ثبت, user);
+
+        await db.SaveChangesAsync();
+
+        return warehouseTransaction;
+    }
+
+    private async Task<WarehouseProduct> GetOrCreateWarehouseProduct(WarehouseTransactionVModel model, AppUser user)
+    {
+        if (model.WarehouseProductId.HasValue)
+        {
+            var warehouseProduct = await db.WarehouseProducts.FirstOrDefaultAsync(x => x.Id == model.WarehouseProductId.Value);
+
+            if (warehouseProduct == null)
+                throw new KeyNotFoundException("محصول مورد نظر یافت نشد.");
+
+            return warehouseProduct;
+        }
+
+        var exists = await db.WarehouseProducts.AnyAsync(x =>
+            x.WarehouseId == model.WarehouseId &&
+            x.ProductCode == model.ProductCode &&
+            x.ProductDescription == model.ProductDescription);
+
+        if (exists)
+            throw new InvalidOperationException("این محصول قبلاً در این انبار ثبت شده است.");
+
+        var newWarehouseProduct = new WarehouseProduct {
+            WarehouseId = model.WarehouseId,
+            ProductCode = model.ProductCode,
+            ProductSmallName = model.ProductSmallName,
+            ProductDescription = model.ProductDescription,
+            Unit = model.Unit,
+            UnitTxt = model.Unit.ToString().Replace("_", " "),
+            UserCreator = user.FullName,
+            UserCreatorID = user.Id
+        };
+
+        db.WarehouseProducts.Add(newWarehouseProduct);
+
+        await logSystemService.LogChange(newWarehouseProduct, null, LogActionEnum.ثبت, user);
+
+        return newWarehouseProduct;
+    }
+
+    private async Task ValidateStock(WarehouseProduct warehouseProduct, decimal weight)
+    {
+        var currentStock = await db.WarehouseTransactions.GetStockAsync(warehouseProduct.Id);
+
+        if (weight > currentStock)
+        {
+            throw new InvalidOperationException($"موجودی کافی نیست. موجودی فعلی: " + $"{currentStock} {warehouseProduct.UnitTxt}");
+        }
+    }
+
+
     [HttpPost]
     public async Task<IActionResult> AddWarehouseTransaction([FromBody] WarehouseTransactionVModel model)
     {
         if (model == null) return BadRequest();
-        if (model.Weight <= 0) return BadRequest("مقدار باید بیشتر از صفر باشد.");
 
         var user = await userManager.GetUserAsync(HttpContext.User);
-
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
         {
-            WarehouseProduct warehouseProduct;
-            if (!model.WarehouseProductId.HasValue) // محصول جدید
-            {
-                var exists = await db.WarehouseProducts.AnyAsync(x =>
-                    x.WarehouseId == model.WarehouseId &&
-                    x.ProductCode == model.ProductCode &&
-                    x.ProductDescription == model.ProductDescription);
-
-                if (exists)
-                    return Conflict("این محصول قبلاً در این انبار ثبت شده است.");
-
-                warehouseProduct = new WarehouseProduct {
-                    WarehouseId = model.WarehouseId,
-                    ProductCode = model.ProductCode,
-                    ProductSmallName = model.ProductSmallName,
-                    ProductDescription = model.ProductDescription,
-                    Unit = model.Unit,
-                    UnitTxt = model.Unit.ToString().Replace("_", " "),
-                    UserCreator = user.FullName,
-                    UserCreatorID = user.Id
-                };
-
-                db.WarehouseProducts.Add(warehouseProduct);
-                await logSystemService.LogChange(warehouseProduct, null, LogActionEnum.ثبت, user);
-            } else
-            {
-                warehouseProduct = await db.WarehouseProducts.FirstOrDefaultAsync(x => x.Id == model.WarehouseProductId.Value);
-
-                if (warehouseProduct == null)
-                    return NotFound("محصول مورد نظر یافت نشد.");
-
-                // خروج از انبار
-                if (model.TransactionType == WarehouseTransactionTypeEnum.خروج)
-                {
-                    var currentStock = await db.WarehouseTransactions.GetStockAsync(warehouseProduct.Id);
-
-                    if (model.Weight > currentStock)
-                        return BadRequest($"موجودی کافی نیست. موجودی فعلی: {currentStock} {warehouseProduct.UnitTxt}");
-                }
-            }
-
-            var warehouseTransaction = new WarehouseTransaction {
-                WarehouseProductId = warehouseProduct.Id,
-                Weight = model.Weight,
-                TransactionType = model.TransactionType,
-                UserCreator = user.FullName,
-                UserCreatorID = user.Id
-            };
-
-            db.WarehouseTransactions.Add(warehouseTransaction);
-            await logSystemService.LogChange(warehouseTransaction, null, LogActionEnum.ثبت, user);
-
-            await db.SaveChangesAsync();
+            await AddTransaction(model, user);
             await transaction.CommitAsync();
             return Ok();
         }
-        catch (Exception ex)
+        catch (ArgumentException ex)
         {
             await transaction.RollbackAsync();
-            return BadRequest();
+            return BadRequest(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            await transaction.RollbackAsync();
+            return NotFound(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            await transaction.RollbackAsync();
+            return Conflict(ex.Message);
         }
     }
 
@@ -580,13 +615,69 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
     public async Task<IActionResult> Voucher()
     {
-        var vouchers = await db.WarehouseVouchers.Include(x => x.WarehouseProductVouchers).ThenInclude(x => x.WarehouseProduct).ToListAsync();
-        return View(vouchers);
+        var model = await GetWarehouseVouchersAsync();
+        return View(model);
     }
 
-    public IActionResult Voucher2()
+    [HttpGet]
+    public async Task<IActionResult> GetWarehouseVouchers(string search, WarehouseVoucherStatusEnum? status = null, int pageSize = 10, int page = 1)
     {
-        return View();
+        var model = await GetWarehouseVouchersAsync(search, status, page, pageSize);
+
+        var html = await vrs.RenderToStringAsync("_WarehouseVouchersGrid", model);
+        return Ok(new { model.DisplayFrom, model.DisplayTo, model.TotalCount, html });
+    }
+
+
+    private async Task<WarehouseVoucherListVModel> GetWarehouseVouchersAsync(string search = null, WarehouseVoucherStatusEnum? status = null,
+        int page = 1,
+        int pageSize = 10)
+    {
+        var query = db.WarehouseVouchers
+            .AsNoTracking()
+            .Include(x => x.WarehouseProductVouchers)
+            .ThenInclude(x => x.WarehouseProduct)
+            .AsQueryable();
+
+        if (status.HasValue)
+        {
+            query = query.Where(x => x.Status == status);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            search = search.Trim();
+
+            var isVoucherNumber = int.TryParse(search, out var voucherNumber);
+
+            query = query.Where(x =>
+                (isVoucherNumber && x.VoucherNumber == voucherNumber) ||
+                x.UserCreator.Contains(search) ||
+                x.WarehouseProductVouchers.Any(p =>
+                    p.WarehouseProduct.ProductSmallName.Contains(search) ||
+                    p.WarehouseProduct.ProductDescription.Contains(search)
+                )
+            );
+        }
+
+        var totalCount = await query.CountAsync();
+
+        page = Math.Max(page, 1);
+
+        var items = await query
+            .OrderByDescending(x => x.CreateDate)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return new WarehouseVoucherListVModel {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            Search = search,
+            Status = status
+        };
     }
 
     public async Task<IActionResult> VoucherDetail(Guid id)
@@ -644,5 +735,63 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             await transaction.RollbackAsync();
             return BadRequest();
         }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ConfirmWarehouseVoucher(Guid id)
+    {
+        var voucher = await db.WarehouseVouchers.FindAsync(id);
+        if (voucher is null) return NotFound();
+
+        var user = await userManager.GetUserAsync(HttpContext.User);
+
+        if (voucher.Status != WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین)
+        {
+            return BadRequest("این حواله در وضعیت قابل تایید قرار ندارد.");
+        }
+
+        voucher.Status = WarehouseVoucherStatusEnum.در_انتظار_تحویل;
+        voucher.UserModify = user.FullName;
+        voucher.UserModifyID = user.Id;
+
+        await db.SaveChangesAsync();
+        return Ok();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeliverWarehouseVoucher(Guid id)
+    {
+        var voucher = await db.WarehouseVouchers
+            .Include(x => x.WarehouseProductVouchers)
+            .ThenInclude(x => x.WarehouseProduct)
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (voucher is null) return NotFound();
+
+        var user = await userManager.GetUserAsync(HttpContext.User);
+
+        if (voucher.Status != WarehouseVoucherStatusEnum.در_انتظار_تحویل)
+        {
+            return BadRequest("این حواله در وضعیت قابل تحویل قرار ندارد.");
+        }
+
+        voucher.Status = WarehouseVoucherStatusEnum.تحویل_شد;
+        voucher.UserModify = user.FullName;
+        voucher.UserModifyID = user.Id;
+
+        foreach (var productVoucher in voucher.WarehouseProductVouchers ?? [])
+        {
+            var transactionModel = new WarehouseTransactionVModel {
+                WarehouseProductId = productVoucher.WarehouseProductId,
+                WarehouseId = productVoucher.WarehouseProduct.WarehouseId,
+                Weight = productVoucher.Weight,
+                TransactionType = WarehouseTransactionTypeEnum.خروج
+            };
+
+            await AddTransaction(transactionModel, user);
+        }
+
+        await db.SaveChangesAsync();
+        return Ok();
     }
 }

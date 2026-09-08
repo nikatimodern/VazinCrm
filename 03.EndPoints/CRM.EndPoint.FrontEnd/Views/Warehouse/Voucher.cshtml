@@ -1,111 +1,55 @@
-@using CRM.Core.Domain.Warehouses.Enums
-@model IList<CRM.Core.Domain.Warehouses.Entities.WarehouseVoucher>
+@model CRM.EndPoint.FrontEnd.Models.Warehouse.WarehouseVoucherListVModel
 
 <div class="voucher-wrapper">
-    <!-- نوار جستجو و فیلتر -->
     <div class="filter-bar">
-        @*<div class="search-group flex-grow-1">
-            <input type="text" class="form-control form-control-sm" id="searchInput" placeholder="جستجو (شماره حواله، سفارش، ثبت‌کننده، کالا...)">
+        <div class="search-group">
+            <input class="form-control" type="text" id="WarehouseVoucherSearchId" placeholder="جستجو..." autocomplete="off">
             <div class="search-icon">
-                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd"></path></svg>
+                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
             </div>
-        </div>*@
-
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="جستجو (شماره حواله، سفارش، ثبت‌کننده، کالا...)" autocomplete="off" />
-            <span class="searchBox-icon">🔍</span>
         </div>
 
-        <div class="filter-group">
-            <label for="statusFilter">وضعیت:</label>
-            <select id="statusFilter">
-                <option value="all">همه وضعیت‌ها</option>
-                <option value="Pending">در انتظار تایید تامین</option>
-                <option value="Delivering">در دست تحویل</option>
-                <option value="Completed">تحویل شد</option>
-            </select>
-        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <ul class="filter-switch flex-grow-1">
+                <li class="filter-switch-item">
+                    <input type="radio" name="WarehouseVoucherFilter" id="WarehouseVoucherFilterAll" value="-1" checked>
+                    <label for="WarehouseVoucherFilterAll">همه</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="WarehouseVoucherFilter" id="WarehouseVoucherFilter1" value="0">
+                    <label for="WarehouseVoucherFilter1">در انتظار تایید تامین</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="WarehouseVoucherFilter" id="WarehouseVoucherFilter2" value="1">
+                    <label for="WarehouseVoucherFilter2">در انتظار تحویل</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="WarehouseVoucherFilter" id="WarehouseVoucherFilter3" value="2">
+                    <label for="WarehouseVoucherFilter3">تحویل شد</label>
+                </li>
+            </ul>
 
-        <div class="filter-stats">
-            تعداد: <span id="vouchersCount">@Model.Count</span> از <span id="totalCount">@Model.Count</span>
+            <div class="filter-stats">
+                نمایش
+                <span id="vouchersFrom">@Model.DisplayFrom</span>
+                تا
+                <span id="vouchersTo">@Model.DisplayTo</span>
+                از
+                <span id="totalCount">@Model.TotalCount</span>
+            </div>
         </div>
     </div>
 
-    <!-- شبکه‌بندی کارت‌ها -->
-    <div class="voucher-grid" id="voucherGrid">
-        @foreach (var voucher in Model) {
-            var statusClass = voucher.Status switch {
-                WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین => "status-pending",
-                WarehouseVoucherStatusEnum.در_انتظار_تحویل => "status-delivering",
-                WarehouseVoucherStatusEnum.تحویل_شد => "status-completed",
-                _ => "status-default"
-            };
-
-            var productNames = string.Join(" ", voucher.WarehouseProductVouchers.Select(x => x.WarehouseProduct.ProductSmallName + " " + x.WarehouseProduct.ProductDescription));
-
-            <article class="voucher-card"
-                     data-code="@voucher.VoucherNumber"
-                     data-creator="@voucher.UserCreator"
-                     data-products="@productNames">
-
-                <!-- هدر کارت -->
-                <header class="voucher-header">
-                    <div class="voucher-title">
-                        <span class="voucher-number">#@voucher.VoucherNumber</span>
-                        @* <span class="order-number">سفارش: @voucher.OrderCode</span> *@
-                    </div>
-                    <span class="status-badge @statusClass">@voucher.StatusTxt</span>
-                </header>
-
-                <!-- بدنه کارت -->
-                <div class="voucher-body">
-                    <div class="meta-row">
-                        <span class="meta-item">ثبت کننده: <strong>@voucher.UserCreator</strong></span>
-                        <span class="meta-item">تاریخ ثبت: <strong>@(string.Join(" | ", voucher.CreateDateTxt?.Substring(0, 16).Split(' ')))</strong></span>
-                    </div>
-
-                    <div class="items-table-wrapper">
-                        <table class="items-table">
-                            <thead>
-                            <tr>
-                                <th>محصول</th>
-                                <th class="text-end">مقدار</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            @foreach (var item in voucher.WarehouseProductVouchers) {
-                                <tr>
-                                    <td>
-                                        <span class="item-name">@item.WarehouseProduct.ProductSmallName</span>
-                                        @if (!string.IsNullOrEmpty(item.WarehouseProduct.ProductDescription)) {
-                                            <span class="item-desc">@item.WarehouseProduct.ProductDescription</span>
-                                        }
-                                    </td>
-                                    <td class="text-end font-bold">@item.Weight.ToString("N0") <small>@item.WarehouseProduct.UnitTxt</small>
-                                    </td>
-                                </tr>
-                            }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- فوتر کارت -->
-                <footer class="voucher-footer">
-                    <span class="items-count">@voucher.WarehouseProductVouchers.Count قلم</span>
-                    <div class="footer-actions">
-                        <a class="btn-action" title="مشاهده" asp-action="VoucherDetail" asp-controller="Warehouse" asp-route-id="@voucher.Id">مشاهده</a>
-                        @* <button class="btn-action" title="چاپ" onclick="printVoucher('@voucher.Id')">چاپ</button> *@
-                    </div>
-                </footer>
-            </article>
-        }
+    <div id="voucherGridContainer">
+        <partial name="_WarehouseVouchersGrid" model="Model" />
     </div>
 
-    <!-- پیام عدم یافتن نتیجه -->
     <div id="noResults" class="no-results d-none">
         هیچ حواله‌ای با این مشخصات یافت نشد.
     </div>
+
+    <div id="voucherPagination" class="pagination-wrapper"></div>
+
 </div>
 
 
@@ -114,5 +58,62 @@
 }
 
 @section Scripts {
-    <script src="~/js/warehouse.js" asp-append-version="true"></script>
+    <script>
+        const warehouseVoucherState = { page: 1 };
+        document.addEventListener("DOMContentLoaded", () => {
+
+            initSearchInput("WarehouseVoucherSearchId", loadWarehouseVouchers);
+            initChangeRadio("WarehouseVoucherFilter", loadWarehouseVouchers);
+
+            document.getElementById("voucherGridContainer").addEventListener("click", event => {
+                const button = event.target.closest(".pagination-btn");
+                if (!button) return;
+                warehouseVoucherState.page = Number(button.dataset.page);
+                loadWarehouseVouchers(warehouseVoucherState.page);
+            });
+        });
+
+        async function loadWarehouseVouchers(page = 1) {
+            const search = document.getElementById("WarehouseVoucherSearchId").value.trim();
+            const status = Number(document.querySelector(`input[name="WarehouseVoucherFilter"]:checked`).value);
+
+            const data = await sendApiRequest({
+                url: "/Warehouse/GetWarehouseVouchers",
+                params: {
+                    page,
+                    search,
+                    status: status !== -1 ? status : null,
+                },
+            });
+
+            document.getElementById("voucherGridContainer").innerHTML = data.html;
+            document.getElementById("totalCount").innerHTML = data.totalCount;
+            document.getElementById("vouchersFrom").innerHTML = data.displayFrom;
+            document.getElementById("vouchersTo").innerHTML = data.displayTo;
+        }
+
+        async function confirmWarehouseVoucher(id) {
+            await sendApiRequest({
+                url: "/Warehouse/ConfirmWarehouseVoucher",
+                method: "POST",
+                params: { id },
+                successMsg: "حواله با موفقیت تایید شد.",
+                onSuccess: async () => {
+                    await loadWarehouseVouchers(warehouseVoucherState.page);
+                },
+            });
+        }
+        async function deliverWarehouseVoucher(id) {
+            await sendApiRequest({
+                url: "/Warehouse/DeliverWarehouseVoucher",
+                method: "POST",
+                params: { id },
+                successMsg: "حواله با موفقیت تحویل شد.",
+                onSuccess: async () => {
+                    await loadWarehouseVouchers(warehouseVoucherState.page);
+                },
+            });
+        }
+
+    </script>
 }
