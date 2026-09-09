@@ -5,15 +5,6 @@ using CRM.Core.Domain.Warehouses.Enums;
 
 namespace CRM.EndPoint.FrontEnd.Models.Warehouse;
 
-public class WarehouseVoucherFilterVModel {
-    public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 10;
-
-    public string Search { get; set; }
-
-    public WarehouseVoucherStatusEnum? Status { get; set; }
-}
-
 public class WarehouseVoucherListVModel {
     public IList<WarehouseVoucher> Items { get; set; } = [];
 

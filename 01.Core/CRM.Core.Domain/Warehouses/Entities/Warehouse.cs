@@ -7,4 +7,5 @@ public class Warehouse : BaseEntity {
     public string Title { get; set; }
     public ICollection<WarehouseProduct> WarehouseProducts { get; set; }
     public ICollection<WarehouseUser> WarehouseUsers { get; set; }
+    public ICollection<WarehouseVoucher> WarehouseVouchers { get; set; }
 }

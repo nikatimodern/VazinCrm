@@ -9,5 +9,10 @@ public class WarehouseVoucherConfig : IEntityTypeConfiguration<WarehouseVoucher>
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.VoucherNumber).ValueGeneratedOnAdd();
+        
+        builder.HasOne(x => x.Warehouse)
+            .WithMany(x => x.WarehouseVouchers)
+            .HasForeignKey(x => x.WarehouseId)
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }

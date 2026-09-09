@@ -10,6 +10,12 @@
         </div>
 
         <div class="d-flex flex-wrap gap-2">
+            @*<div>
+                <select class="form-select">
+                    <option value="-1">همه انبارها</option>
+                </select>
+            </div>*@
+            
             <ul class="filter-switch flex-grow-1">
                 <li class="filter-switch-item">
                     <input type="radio" name="WarehouseVoucherFilter" id="WarehouseVoucherFilterAll" value="-1" checked>
@@ -41,79 +47,33 @@
     </div>
 
     <div id="voucherGridContainer">
-        <partial name="_WarehouseVouchersGrid" model="Model" />
-    </div>
-
-    <div id="noResults" class="no-results d-none">
-        هیچ حواله‌ای با این مشخصات یافت نشد.
+        <partial name="_WarehouseVouchers" model="Model" />
     </div>
 
     <div id="voucherPagination" class="pagination-wrapper"></div>
-
 </div>
 
+<partial name="Modals/_WarehouseVoucherModal" />
 
 @section Styles {
     <link rel="stylesheet" href="~/css/warehouse.css" asp-append-version="true" />
 }
 
 @section Scripts {
+    <script src="~/js/warehouse/warehouse-voucher.js" asp-append-version="true"></script>
     <script>
-        const warehouseVoucherState = { page: 1 };
         document.addEventListener("DOMContentLoaded", () => {
-
+            
             initSearchInput("WarehouseVoucherSearchId", loadWarehouseVouchers);
             initChangeRadio("WarehouseVoucherFilter", loadWarehouseVouchers);
 
-            document.getElementById("voucherGridContainer").addEventListener("click", event => {
-                const button = event.target.closest(".pagination-btn");
+            document.getElementById("voucherGridContainer").addEventListener("click", async (e) => {
+                const button = e.target.closest(".pagination-btn");
                 if (!button) return;
                 warehouseVoucherState.page = Number(button.dataset.page);
-                loadWarehouseVouchers(warehouseVoucherState.page);
+                window.scrollTo(0, 0);
+                await loadWarehouseVouchers(warehouseVoucherState.page);
             });
         });
-
-        async function loadWarehouseVouchers(page = 1) {
-            const search = document.getElementById("WarehouseVoucherSearchId").value.trim();
-            const status = Number(document.querySelector(`input[name="WarehouseVoucherFilter"]:checked`).value);
-
-            const data = await sendApiRequest({
-                url: "/Warehouse/GetWarehouseVouchers",
-                params: {
-                    page,
-                    search,
-                    status: status !== -1 ? status : null,
-                },
-            });
-
-            document.getElementById("voucherGridContainer").innerHTML = data.html;
-            document.getElementById("totalCount").innerHTML = data.totalCount;
-            document.getElementById("vouchersFrom").innerHTML = data.displayFrom;
-            document.getElementById("vouchersTo").innerHTML = data.displayTo;
-        }
-
-        async function confirmWarehouseVoucher(id) {
-            await sendApiRequest({
-                url: "/Warehouse/ConfirmWarehouseVoucher",
-                method: "POST",
-                params: { id },
-                successMsg: "حواله با موفقیت تایید شد.",
-                onSuccess: async () => {
-                    await loadWarehouseVouchers(warehouseVoucherState.page);
-                },
-            });
-        }
-        async function deliverWarehouseVoucher(id) {
-            await sendApiRequest({
-                url: "/Warehouse/DeliverWarehouseVoucher",
-                method: "POST",
-                params: { id },
-                successMsg: "حواله با موفقیت تحویل شد.",
-                onSuccess: async () => {
-                    await loadWarehouseVouchers(warehouseVoucherState.page);
-                },
-            });
-        }
-
     </script>
 }

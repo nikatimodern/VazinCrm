@@ -1827,6 +1827,7 @@ const toastifySuccess = (text, duration = 3000) => {
         close: false,
         gravity: "top",
         position: "center",
+        escapeMarkup: false,
         stopOnFocus: false,
         style: {
             background: "linear-gradient(135deg, rgba(2,81,75,1) 21%, rgba(0,59,54,1) 100%)",

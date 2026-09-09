@@ -6,7 +6,6 @@ let warehouseProductTbl = null;
 let warehouseProductSelection;
 
 const warehouseModal = document.getElementById("warehouseModal");
-const warehouseVoucherModal = document.getElementById("warehouseVoucherModal");
 const warehouseTransactionModal = document.getElementById("warehouseTransactionModal");
 const warehouseTransactionHistoryModal = document.getElementById("warehouseTransactionHistoryModal");
 const warehouseFormElm = warehouseModal?.querySelector("#warehouseForm");
@@ -34,7 +33,7 @@ function syncWarehouseViewWithUrl() {
     
     warehouseData.id = warehouse;
     
-    warehouseProductsSection.querySelector("#selected-warehouse-title").innerText = decodeURIComponent(title || "انبار");
+    warehouseProductsSection.querySelector("#selected-warehouse-title").innerText = "محصولات " + decodeURIComponent(title || "انبار");
     warehousesSection.classList.add("d-none");
     warehouseProductsSection.classList.remove("d-none");
     
@@ -44,11 +43,12 @@ function syncWarehouseViewWithUrl() {
         warehouseProductTbl.clear().draw();
         warehouseProductTbl.ajax.url(`/Warehouse/GetWarehouseProductsDt?warehouseId=${warehouse}`).load();
     }
+    
+    showLastWarehouseVouchers(warehouseData.id);
 }
 
 warehouseModal?.addEventListener("hidden.bs.modal", cancelWarehouseModal);
 warehouseTransactionModal?.addEventListener("hidden.bs.modal", cancelWarehouseTransactionModal);
-warehouseVoucherModal?.addEventListener("hidden.bs.modal", cancelWarehouseVoucherModal);
 warehouseTransactionHistoryModal?.addEventListener("hidden.bs.modal", () => warehouseProductsData = {});
 
 function backToWarehouses() {
@@ -161,11 +161,13 @@ const warehouseDropdown = Dropdown.setupDelegate({
         placement: "right",
     },
 });
+
 /* ----------------------------------------------------------- */
 function showWarehouseProducts(id, title) {
     setUrlParams({ warehouse: id, title: title }, { replace: false });
     syncWarehouseViewWithUrl();
 }
+
 const configWarehouseTransactionModal = (type) => {
     const isOut = type === 0;
     const color = isOut ? "#851b1d" : "var(--color8)";
@@ -177,6 +179,7 @@ const configWarehouseTransactionModal = (type) => {
     titleElm.style.backgroundColor = color;
     contentElm.style.borderColor = color;
 };
+
 const setWarehouseTransactionModal = (data) => {
     if (!data) return;
     
@@ -291,7 +294,7 @@ function initWarehouseProductsTable(id) {
                 orderable: false,
                 render: (data, type, row) => `
                     <div class="inline-flex-center gap-2">
-                        <button class="icon-button icon-button--red" style="width: 32px" data-title-right="خروج از انبار" data-action="warehouse-out">
+                        <button class="icon-button icon-button--red" style="width: 32px" data-title-right="ثبت حواله انبار" data-action="warehouse-out">
                           <svg style="width: 18px !important" viewBox="0 0 20 20" fill="currentColor"><path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 1 0 1.09 1.03L9.25 4.636v8.614Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
                         </button>
                         <button class="icon-button icon-button--green" style="width: 32px" data-title-right="ورود به انبار" data-action="warehouse-in">
@@ -353,10 +356,12 @@ function initWarehouseProductsTable(id) {
         
         onSelectionModeEnter() {
             document.querySelectorAll("#warehouseProducts-section .section-actions button").forEach(el => el.classList.add("d-none"));
+            document.querySelector("#warehouseProducts-section .warehouse-vouchers-section").classList.add("d-none");
         },
         
         onSelectionModeExit() {
             document.querySelectorAll("#warehouseProducts-section .section-actions button").forEach(el => el.classList.remove("d-none"));
+            document.querySelector("#warehouseProducts-section .warehouse-vouchers-section").classList.remove("d-none");
         },
     });
     
@@ -365,87 +370,17 @@ function initWarehouseProductsTable(id) {
 }
 
 
-let warehouseProductListData = [];
-async function showWarehouseVoucherModal(filterIds) {
-    await sendApiRequest({
-        method: "POST",
-        url: "/Warehouse/GetWarehouseProductByFilteredIds",
-        data: { filterIds },
-        successMsg: null,
-        onSuccess: (res) => {
-            warehouseProductListData = res.data;
-            
-            createSetVoucherItem();
-            ModalToggle(warehouseVoucherModal, "show");
-            warehouseProductSelection.hideSelectionMode();
-        },
+function showLastWarehouseVouchers(warehouseId) {
+    sendApiRequest({
+        url: "/Warehouse/GetLastWarehouseVouchers",
+        params: { warehouseId },
+    }).then(data => {
+        document.getElementById("lastWarehouseVouchersGrid").innerHTML = data;
     });
 }
-
-function cancelWarehouseVoucherModal() {
-    mySer.emptyForm("warehouseVoucherForm");
+function showWarehouseVouchersPage() {
+    goTo(`/Warehouse/Voucher?warehouseId=${warehouseData.id}`, true);
 }
-
-function createSetVoucherItem() {
-    const container = warehouseVoucherModal.querySelector("#warehouseVoucherForm");
-    container.innerHTML = "";
-    
-    warehouseProductListData.forEach((item, index) => {
-        const fieldset = document.createElement("fieldset");
-        fieldset.id = `setWarehouseVoucherItem-${index}`;
-        fieldset.dataset.id = item.id;
-        fieldset.innerHTML = `
-            <div class="d-flex flex-wrap align-items-center justify-content-around bgLightRed border rounded-2 overflow-hidden">
-                <div class="d-flex flex-wrap col-12 justify-content-around p-2 row-gap-2">
-                    <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto pe-xl-2">
-                        <span class="flex-shrink-0" style="color: #535353">محصول: </span>
-                        <span class="fbold" style="color: #333">${item.productSmallName || ""} ${item.productDescription || ""}</span>
-                    </div>
-                    <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto pe-xl-2">
-                        <span class="flex-shrink-0" style="color: #535353">موجودی: </span>
-                        <span class="fbold" style="color: #333">${item.stock || "-"} ${item.unitTxt || ""}</span>
-                    </div>
-                    <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto">
-                        <span class="flex-shrink-0" style="color: #535353">مقدار: </span>
-                        <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="weight" value="${item.weight ? item.weight.toLocaleString() : ""}" required>
-                    </div>
-                </div>
-            </div>
-            ${index !== warehouseProductListData.length - 1 ? `<div style="width: 95%;height:1px; margin: 10px auto;background-color:darkviolet"></div>` : ""}
-        `;
-        container.appendChild(fieldset);
-    });
-}
-
-
-async function submitWarehouseVoucherModal() {
-    if (!await mySer.CheckValidForm("warehouseVoucherForm")) return;
-    
-    const allItemsArray = Array.from(warehouseVoucherModal.querySelectorAll("fieldset"));
-    
-    const warehouseVoucherListData = allItemsArray.map(item => {
-        const weightValue = item.querySelector("input[name='weight']").value;
-        return {
-            // warehouseVoucherId: paymentData.id,
-            warehouseProductId: item.dataset.id,
-            weight: Number(SeparatedNumberRemove(weightValue)),
-        };
-    });
-    
-    const model = {
-        warehouseProductVouchers: warehouseVoucherListData,
-    };
-    
-    await sendApiRequest({
-        url: "/Warehouse/AddWarehouseVoucher",
-        method: "POST",
-        data: model,
-        onSuccess: async () => {
-            ModalToggle(warehouseVoucherModal, "hide");
-        },
-    });
-}
-
 /* ----------------------------------------------------------- */
 const showWarehouseTransactionHistory = (data) => {
     warehouseProductsData = data;
@@ -590,3 +525,4 @@ const setWarehouseTransactionHistoryHeader = () => {
     deleteBtn.classList.toggle("opacity-25", warehouseProductsData.stock > 0);
     toggleElementsDisabled(deleteBtn, warehouseProductsData.stock > 0);
 };
+

@@ -1,0 +1,13 @@
+@model CRM.EndPoint.FrontEnd.Models.Warehouse.WarehouseVoucherListVModel
+
+<partial name="_WarehouseVouchersGrid" model="Model?.Items" />
+
+@if (Model?.TotalPages > 1) {
+    <div class="pagination-wrapper">
+        @for (var i = 1; i <= Model.TotalPages; i++) {
+            <button type="button" class="pagination-btn @(i == Model.Page ? "active" : "")" data-page="@i">
+                @i
+            </button>
+        }
+    </div>
+}

@@ -4365,7 +4365,12 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VoucherNumber"));
 
+                    b.Property<Guid>("WarehouseId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("WarehouseId");
 
                     b.ToTable("WarehouseVouchers");
                 });
@@ -4913,6 +4918,17 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Navigation("Warehouse");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Warehouses.Entities.WarehouseVoucher", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Warehouses.Entities.Warehouse", "Warehouse")
+                        .WithMany("WarehouseVouchers")
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Warehouse");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Accountancies.Entities.BankAccount", b =>
                 {
                     b.Navigation("Accountancies");
@@ -5104,6 +5120,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Navigation("WarehouseProducts");
 
                     b.Navigation("WarehouseUsers");
+
+                    b.Navigation("WarehouseVouchers");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Warehouses.Entities.WarehouseProduct", b =>

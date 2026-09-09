@@ -32,16 +32,17 @@
 	--warehouse-pending-border: #fbd38d;
 	
 	/* Status - Delivering */
+	/* Status - Delivering */
 	--warehouse-delivering-bg: #ebf8ff;
 	--warehouse-delivering-text: #3182ce;
 	--warehouse-delivering-border: #90cdf4;
 	
-	/* Status - Completed */
+	/* Completed / Success */
 	--warehouse-completed-bg: #f0fff4;
 	--warehouse-completed-text: #38a169;
 	--warehouse-completed-border: #9ae6b4;
 	
-	/* Status - Default */
+	/* Neutral */
 	--warehouse-default-bg: #edf2f7;
 	--warehouse-default-text: #4a5568;
 	--warehouse-default-border: #cbd5e0;
@@ -64,14 +65,7 @@
 
 .voucher-wrapper,
 .warehouse-voucher {
-	font-family: IRANSans, Tahoma, sans-serif;
 	color: var(--warehouse-text);
-}
-
-
-.voucher-wrapper *,
-.warehouse-voucher * {
-	box-sizing: border-box;
 }
 
 
@@ -156,6 +150,14 @@
 	border-color: var(--warehouse-primary);
 	
 	box-shadow: 0 0 0 3px rgba(43, 108, 176, .08);
+}
+
+
+.voucher-wrapper .form-select {
+	color: var(--warehouse-text-muted);
+	background-color: var(--warehouse-primary-soft);
+	border: 1px solid var(--warehouse-border);
+	border-radius: var(--warehouse-radius-sm);
 }
 
 
@@ -333,11 +335,10 @@
    Voucher Grid
    ========================================================= */
 
-.voucher-wrapper .voucher-grid {
+.voucher-grid {
 	display: grid;
 	
-	grid-template-columns:
-        repeat(auto-fill, minmax(320px, 1fr));
+	grid-template-columns:        repeat(auto-fill, minmax(300px, 1fr));
 	
 	gap: 12px;
 }
@@ -347,7 +348,7 @@
    Voucher Card
    ========================================================= */
 
-.voucher-wrapper .voucher-card {
+.voucher-card {
 	position: relative;
 	
 	display: flex;
@@ -372,7 +373,7 @@
 }
 
 
-.voucher-wrapper .voucher-card:hover {
+.voucher-card:hover {
 	transform: translateY(-2px);
 	
 	box-shadow: var(--warehouse-shadow-md);
@@ -383,7 +384,7 @@
    Card Header
    ========================================================= */
 
-.voucher-wrapper .voucher-card .voucher-header {
+.voucher-card .voucher-header {
 	min-width: 0;
 	
 	display: flex;
@@ -398,12 +399,12 @@
 }
 
 
-.voucher-wrapper .voucher-title {
+.voucher-title {
 	min-width: 0;
 }
 
 
-.voucher-wrapper .voucher-number {
+.voucher-number {
 	color: var(--warehouse-primary);
 	
 	font-size: 1rem;
@@ -411,7 +412,7 @@
 }
 
 
-.voucher-wrapper .order-number {
+.voucher-card .order-number {
 	display: block;
 	
 	margin-top: 1px;
@@ -426,7 +427,7 @@
    Status Badge
    ========================================================= */
 
-.voucher-wrapper .status-badge {
+.voucher-card .status-badge {
 	flex-shrink: 0;
 	
 	padding: 4px 9px;
@@ -446,7 +447,7 @@
    Card Body
    ========================================================= */
 
-.voucher-wrapper .voucher-body {
+.voucher-card .voucher-body {
 	min-height: 0;
 	
 	flex: 1;
@@ -464,7 +465,7 @@
    Meta
    ========================================================= */
 
-.voucher-wrapper .meta-row {
+.voucher-card .meta-row {
 	display: flex;
 	justify-content: space-between;
 	
@@ -483,7 +484,7 @@
 }
 
 
-.voucher-wrapper .meta-item {
+.voucher-card .meta-item {
 	min-width: 0;
 	
 	white-space: nowrap;
@@ -492,7 +493,7 @@
 }
 
 
-.voucher-wrapper .meta-item strong {
+.voucher-card .meta-item strong {
 	color: var(--warehouse-text);
 	font-family: IRANSansBold;
 }
@@ -502,7 +503,7 @@
    Items Table
    ========================================================= */
 
-.voucher-wrapper .items-table-wrapper {
+.voucher-card .items-table-wrapper {
 	min-height: 0;
 	
 	flex: 1;
@@ -516,18 +517,18 @@
 }
 
 
-.voucher-wrapper .items-table-wrapper::-webkit-scrollbar {
+.voucher-card .items-table-wrapper::-webkit-scrollbar {
 	width: 4px;
 }
 
 
-.voucher-wrapper .items-table-wrapper::-webkit-scrollbar-thumb {
+.voucher-card .items-table-wrapper::-webkit-scrollbar-thumb {
 	background: var(--warehouse-border-strong);
 	border-radius: 4px;
 }
 
 
-.voucher-wrapper .items-table {
+.voucher-card .items-table {
 	width: 100%;
 	
 	border-collapse: collapse;
@@ -538,7 +539,7 @@
 }
 
 
-.voucher-wrapper .items-table th {
+.voucher-card .items-table th {
 	position: sticky;
 	top: 0;
 	
@@ -553,21 +554,21 @@
 }
 
 
-.voucher-wrapper .items-table td {
+.voucher-card .items-table td {
 	padding: 6px 8px;
 	
 	border-top: 1px solid var(--warehouse-border);
 }
 
 
-.voucher-wrapper .item-name {
+.voucher-card .item-name {
 	display: block;
 	
 	font-family: IRANSansBold;
 }
 
 
-.voucher-wrapper .item-desc {
+.voucher-card .item-desc {
 	display: block;
 	
 	color: var(--warehouse-text-muted);
@@ -576,7 +577,7 @@
 }
 
 
-.voucher-wrapper .font-bold {
+.voucher-card .font-bold {
 	font-family: IRANSansBold;
 }
 
@@ -585,7 +586,7 @@
    Card Footer
    ========================================================= */
 
-.voucher-wrapper .voucher-footer {
+.voucher-card .voucher-footer {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -598,7 +599,7 @@
 }
 
 
-.voucher-wrapper .items-count {
+.voucher-card .items-count {
 	color: var(--warehouse-text-muted);
 	
 	font-size: .72rem;
@@ -606,14 +607,15 @@
 }
 
 
-.voucher-wrapper .footer-actions {
+.voucher-card .footer-actions {
 	display: flex;
 	align-items: center;
 	gap: 6px;
 }
 
 
-.voucher-wrapper .btn-action {
+.voucher-card .btn-action,
+.warehouse-vouchers-section .btn-action {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -638,20 +640,21 @@
 }
 
 
-.voucher-wrapper .btn-action svg {
+.voucher-card .btn-action svg,
+.warehouse-vouchers-section .btn-action svg {
 	width: 16px;
 }
 
 
 /* تایید حواله */
-.voucher-wrapper .btn-confirm {
+.voucher-card .btn-confirm {
 	color: var(--warehouse-completed-text);
 	background: var(--warehouse-completed-bg);
 	border-color: var(--warehouse-completed-border);
 }
 
 
-.voucher-wrapper .btn-confirm:hover {
+.voucher-card .btn-confirm:hover {
 	color: #fff;
 	background: var(--warehouse-completed-text);
 	border-color: var(--warehouse-completed-text);
@@ -659,14 +662,14 @@
 
 
 /* تحویل حواله */
-.voucher-wrapper .btn-deliver {
+.voucher-card .btn-deliver {
 	color: var(--warehouse-primary);
 	background: var(--warehouse-primary-soft);
 	border-color: #bfd5eb;
 }
 
 
-.voucher-wrapper .btn-deliver:hover {
+.voucher-card .btn-deliver:hover {
 	color: #fff;
 	background: var(--warehouse-primary);
 	border-color: var(--warehouse-primary);
@@ -674,21 +677,23 @@
 
 
 /* مشاهده */
-.voucher-wrapper .btn-view {
+.voucher-card .btn-view,
+.warehouse-vouchers-section .btn-view {
 	color: var(--warehouse-text-secondary);
 	background: var(--warehouse-surface);
 	border-color: var(--warehouse-border);
 }
 
 
-.voucher-wrapper .btn-view:hover {
+.voucher-card .btn-view:hover,
+.warehouse-vouchers-section .btn-view:hover {
 	color: var(--warehouse-primary);
 	background: var(--warehouse-primary-softer);
 	border-color: var(--warehouse-primary);
 }
 
 
-.voucher-wrapper .btn-confirm svg {
+.voucher-card .btn-confirm svg {
 	width: 16px;
 }
 
@@ -697,7 +702,7 @@
    No Results
    ========================================================= */
 
-.voucher-wrapper .no-results {
+.voucher-noResults {
 	margin-top: 18px;
 	padding: 40px;
 	
@@ -818,9 +823,7 @@
 .warehouse-voucher .voucher-header-actions {
 	display: flex;
 	align-items: center;
-	gap: 10px;
-	
-	flex-shrink: 0;
+	gap: 8px;
 }
 
 
@@ -841,6 +844,7 @@
 	font-family: IRANSansBold;
 	
 	white-space: nowrap;
+	margin-left: 4px;
 }
 
 
@@ -883,6 +887,7 @@
 }
 
 
+/* 
 .warehouse-voucher .voucher-action-btn {
 	width: 40px;
 	height: 40px;
@@ -909,6 +914,86 @@
 	color: var(--warehouse-primary);
 	background: var(--warehouse-primary-soft);
 	border-color: var(--warehouse-border-strong);
+} */
+
+
+.warehouse-voucher .voucher-action-btn {
+	height: 36px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	
+	padding: 0 12px;
+	
+	border: 1px solid transparent;
+	border-radius: var(--warehouse-radius-sm);
+	
+	font-size: 10px;
+	font-family: IRANSansBold;
+	
+	cursor: pointer;
+	transition: color .2s ease,
+	background .2s ease,
+	border-color .2s ease,
+	box-shadow .2s ease;
+}
+
+
+.warehouse-voucher .voucher-action-btn svg {
+	width: 16px;
+	height: 16px;
+}
+
+
+/* تایید حواله */
+.warehouse-voucher .voucher-action-confirm {
+	color: var(--warehouse-completed-text);
+	background: var(--warehouse-completed-bg);
+	border-color: var(--warehouse-completed-border);
+}
+
+
+.warehouse-voucher .voucher-action-confirm:hover {
+	color: #fff;
+	background: var(--warehouse-completed-text);
+	border-color: var(--warehouse-completed-text);
+}
+
+
+/* ثبت تحویل */
+.warehouse-voucher .voucher-action-deliver {
+	color: var(--warehouse-primary);
+	background: var(--warehouse-primary-soft);
+	border-color: #bfd5eb;
+}
+
+
+.warehouse-voucher .voucher-action-deliver:hover {
+	color: #fff;
+	background: var(--warehouse-primary);
+	border-color: var(--warehouse-primary);
+}
+
+
+/* پرینت */
+.warehouse-voucher .voucher-action-print {
+	width: 36px;
+	padding: 0;
+	
+	color: var(--warehouse-text-muted);
+	background: var(--warehouse-surface);
+	border-color: var(--warehouse-border);
+	
+	margin-right: 8px;
+	border-right: 1px solid var(--warehouse-border);
+}
+
+
+.warehouse-voucher .voucher-action-print:hover {
+	color: var(--warehouse-primary);
+	background: var(--warehouse-primary-softer);
+	border-color: var(--warehouse-primary);
 }
 
 
@@ -1542,7 +1627,7 @@
 		height: 38px;
 	}
 	
-	.voucher-wrapper .voucher-grid {
+	.voucher-grid {
 		grid-template-columns: 1fr;
 		
 		gap: 10px;
@@ -1889,4 +1974,87 @@
 	color: #fff;
 	background: var(--warehouse-primary);
 	border-color: var(--warehouse-primary);
+}
+
+
+.voucher-item-grid {
+	display: grid;
+	grid-template-columns: minmax(220px, 1fr) minmax(140px, 180px) minmax(160px, 200px) 40px;
+	align-items: center;
+	column-gap: 24px;
+}
+
+
+.voucher-item-field {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+
+.voucher-item-label {
+	color: #535353;
+	flex-shrink: 0;
+}
+
+
+.voucher-item-value {
+	color: #333;
+	min-width: 0;
+}
+
+
+.voucher-item-field input {
+	max-width: 160px;
+}
+
+
+.voucher-item-action {
+	display: flex;
+	align-items: center;
+	justify-content: end;
+}
+
+
+.remove-voucher-item {
+	width: 30px;
+	height: 30px;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	cursor: pointer;
+	border-radius: 5px;
+	transition: background-color 0.15s ease;
+}
+
+
+.remove-voucher-item:hover {
+	background-color: rgba(139, 0, 0, 0.08);
+}
+
+
+@media (max-width: 991px) {
+	.voucher-item-grid {
+		grid-template-columns: 1fr;
+		row-gap: .5rem;
+	}
+	
+	.voucher-item-field {
+		justify-content: space-between;
+	}
+}
+
+
+
+/* دکمه‌های فقط آیکون */
+.voucher-wrapper .btn-icon {
+	width: 32px;
+	flex: 0 0 32px;
+}
+
+.voucher-wrapper .btn-icon svg {
+	width: 15px;
+	height: 15px;
+	display: block;
 }

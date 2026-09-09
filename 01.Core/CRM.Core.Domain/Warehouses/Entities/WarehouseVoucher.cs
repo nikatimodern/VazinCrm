@@ -7,7 +7,10 @@ namespace CRM.Core.Domain.Warehouses.Entities;
 
 public class WarehouseVoucher : BaseEntity { // حواله انبار
     public int VoucherNumber { get; set; }
-
+    public Warehouse Warehouse { get; set; }
+    public Guid WarehouseId { get; set; }
+    
+    public IList<WarehouseProductVoucher> WarehouseProductVouchers { get; set; }
     public WarehouseVoucherStatusEnum Status {
         get;
         set {
@@ -17,5 +20,4 @@ public class WarehouseVoucher : BaseEntity { // حواله انبار
     }
 
     public string StatusTxt { get; private set; }
-    public IList<WarehouseProductVoucher> WarehouseProductVouchers { get; set; }
 }
