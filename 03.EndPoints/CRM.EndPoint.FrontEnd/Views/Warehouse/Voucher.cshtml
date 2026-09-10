@@ -1,8 +1,7 @@
 @model CRM.EndPoint.FrontEnd.Models.Warehouse.WarehouseVoucherListVModel
 @{
-    var warehouseId = Guid.Parse(Context.Request.Query["warehouseId"]);
+    Guid? warehouseId = Guid.TryParse(Context.Request.Query["warehouseId"], out var id) ? id : null;
 }
-
 <div class="voucher-wrapper">
     <div class="filter-bar">
         <div class="search-group">
@@ -17,7 +16,7 @@
                 <select class="form-select" id="WarehouseVoucherWarehouseId">
                     <option value="null">همه انبارها</option>
                     @foreach (var warehouse in Model?.Warehouses ?? []) {
-                        <option value="@warehouse.Id" selected="@(warehouse.Id == warehouseId ? true : false)">@warehouse.Title</option>
+                        <option value="@warehouse.Id" selected="@(warehouse.Id == warehouseId)">@warehouse.Title</option>
                     }
                 </select>
             </div>

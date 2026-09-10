@@ -178,9 +178,7 @@ async function confirmWarehouseVoucher(id) {
         method: "POST",
         params: { id },
         successMsg: "حواله با موفقیت تایید شد.",
-        onSuccess: async () => {
-            await refreshWarehouseVouchers();
-        },
+        onSuccess: refreshWarehouseVouchers,
     });
 }
 
@@ -190,17 +188,13 @@ async function deliverWarehouseVoucher(id) {
         method: "POST",
         params: { id },
         successMsg: "حواله با موفقیت تحویل شد.",
-        onSuccess: async () => {
-            await refreshWarehouseVouchers();
-        },
+        onSuccess: refreshWarehouseVouchers,
     });
 }
 
 const deleteWarehouseVoucher = async (id) => {
     await deleteItem({
         url: `/Warehouse/DeleteWarehouseVoucher/${id}`,
-        callback: async () => {
-            await refreshWarehouseVouchers();
-        },
+        callback: refreshWarehouseVouchers,
     });
 };

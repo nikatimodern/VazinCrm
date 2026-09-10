@@ -487,7 +487,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
         if (weight > currentStock)
         {
-            throw new InvalidOperationException($"موجودی کافی نیست. موجودی فعلی: " + $"{currentStock} {warehouseProduct.UnitTxt}");
+            throw new InvalidOperationException(
+                $"موجودی ({warehouseProduct.ProductSmallName} {warehouseProduct.ProductDescription}) کافی نیست. موجودی فعلی: {currentStock} {warehouseProduct.UnitTxt}");
         }
     }
 
