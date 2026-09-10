@@ -13,4 +13,5 @@ public class WarehouseTransactionVModel {
     public UnitTypeEnums Unit { get; set; }
     public decimal Weight { get; set; }
     public WarehouseTransactionTypeEnum TransactionType { get; set; }
+    public Guid? WarehouseVoucherId { get; set; }
 }

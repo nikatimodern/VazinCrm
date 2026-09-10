@@ -15,5 +15,10 @@ public class WarehouseTransactionConfig : IEntityTypeConfiguration<WarehouseTran
             .WithMany(x => x.Transactions)
             .HasForeignKey(x => x.WarehouseProductId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(x => x.WarehouseVoucher)
+            .WithMany(x => x.Transactions)
+            .HasForeignKey(x => x.WarehouseVoucherId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

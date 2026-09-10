@@ -697,7 +697,57 @@
 	width: 16px;
 }
 
+/*  */
+/* گروه‌بندی دکمه‌های آیکونی در سمت راست فوتر */
+.voucher-card .footer-management-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
 
+/* استایل پایه دکمه‌های آیکونی */
+.voucher-card .btn-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	border-radius: var(--warehouse-radius-sm, 6px);
+	border: 1px solid transparent;
+	background: transparent;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+/* دکمه ویرایش (خاکستری/ثانویه) */
+.voucher-card .btn-icon-secondary {
+	color: var(--warehouse-text-secondary, #64748b);
+	background: var(--warehouse-surface, #f8fafc);
+	border-color: var(--warehouse-border, #e2e8f0);
+}
+
+.voucher-card .btn-icon-secondary:hover {
+	color: var(--warehouse-primary, #2563eb);
+	background: var(--warehouse-primary-softer, #eff6ff);
+	border-color: var(--warehouse-primary, #2563eb);
+	transform: translateY(-1px);
+}
+
+/* دکمه حذف (قرمز/خطر) */
+.voucher-card .btn-icon-danger {
+	color: #dc2626;
+	background: #fef2f2;
+	border-color: #fecaca;
+}
+
+.voucher-card .btn-icon-danger:hover {
+	color: #ffffff;
+	background: #dc2626;
+	border-color: #dc2626;
+	box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+	transform: translateY(-1px);
+}
 /* =========================================================
    No Results
    ========================================================= */
@@ -2043,18 +2093,4 @@
 	.voucher-item-field {
 		justify-content: space-between;
 	}
-}
-
-
-
-/* دکمه‌های فقط آیکون */
-.voucher-wrapper .btn-icon {
-	width: 32px;
-	flex: 0 0 32px;
-}
-
-.voucher-wrapper .btn-icon svg {
-	width: 15px;
-	height: 15px;
-	display: block;
 }

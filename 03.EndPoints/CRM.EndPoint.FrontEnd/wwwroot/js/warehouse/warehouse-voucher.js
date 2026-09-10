@@ -14,11 +14,13 @@ async function loadWarehouseVouchers(page = 1) {
     const { warehouseId } = getUrlParams();
     const data = await sendApiRequest({
         url: "/Warehouse/GetWarehouseVouchers",
-        params: {
+        method: "POST",
+        successMsg: null,
+        params: { warehouseId },
+        data: {
             page,
             search,
             status: status !== -1 ? status : null,
-            warehouseId: warehouseId,
         },
     });
     
@@ -30,7 +32,12 @@ async function loadWarehouseVouchers(page = 1) {
 
 
 async function refreshWarehouseVouchers() {
-    
+    const currentPath = window.location.pathname.toLowerCase();
+    if (currentPath.includes("voucher")) {
+        await loadWarehouseVouchers(warehouseVoucherState.page);
+    } else {
+        showLastWarehouseVouchers();
+    }
 }
 
 let warehouseProductListData = [];
@@ -151,7 +158,7 @@ async function submitWarehouseVoucherModal() {
             ModalToggle(warehouseVoucherModal, "hide");
             if (isEdit) {
                 toastifySuccess("حواله انبار با موفقیت ویرایش شد.");
-                refreshWarehouseVouchers();
+                await refreshWarehouseVouchers();
             } else {
                 toastifySuccess(`
                     حواله انبار با موفقیت ثبت شد.
@@ -172,7 +179,7 @@ async function confirmWarehouseVoucher(id) {
         params: { id },
         successMsg: "حواله با موفقیت تایید شد.",
         onSuccess: async () => {
-            await loadWarehouseVouchers(warehouseVoucherState.page);
+            await refreshWarehouseVouchers();
         },
     });
 }
@@ -184,10 +191,16 @@ async function deliverWarehouseVoucher(id) {
         params: { id },
         successMsg: "حواله با موفقیت تحویل شد.",
         onSuccess: async () => {
-            const currentPath = window.location.pathname.toLowerCase();
-            if (currentPath.includes("voucher")) {
-                await loadWarehouseVouchers(warehouseVoucherState.page);
-            }
+            await refreshWarehouseVouchers();
         },
     });
 }
+
+const deleteWarehouseVoucher = async (id) => {
+    await deleteItem({
+        url: `/Warehouse/DeleteWarehouseVoucher/${id}`,
+        callback: async () => {
+            await refreshWarehouseVouchers();
+        },
+    });
+};

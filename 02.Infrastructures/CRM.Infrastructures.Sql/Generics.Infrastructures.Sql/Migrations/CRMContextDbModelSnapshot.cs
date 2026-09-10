@@ -4291,6 +4291,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<Guid>("WarehouseProductId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("WarehouseVoucherId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<decimal>("Weight")
                         .HasPrecision(20)
                         .HasColumnType("decimal(20,0)");
@@ -4298,6 +4301,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("WarehouseProductId");
+
+                    b.HasIndex("WarehouseVoucherId");
 
                     b.ToTable("WarehouseTransactions");
                 });
@@ -4904,7 +4909,14 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("CRM.Core.Domain.Warehouses.Entities.WarehouseVoucher", "WarehouseVoucher")
+                        .WithMany("Transactions")
+                        .HasForeignKey("WarehouseVoucherId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.Navigation("WarehouseProduct");
+
+                    b.Navigation("WarehouseVoucher");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Warehouses.Entities.WarehouseUser", b =>
@@ -5133,6 +5145,8 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.Warehouses.Entities.WarehouseVoucher", b =>
                 {
+                    b.Navigation("Transactions");
+
                     b.Navigation("WarehouseProductVouchers");
                 });
 #pragma warning restore 612, 618

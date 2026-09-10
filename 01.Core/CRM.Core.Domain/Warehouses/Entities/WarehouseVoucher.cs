@@ -11,6 +11,7 @@ public class WarehouseVoucher : BaseEntity { // حواله انبار
     public Guid WarehouseId { get; set; }
     
     public IList<WarehouseProductVoucher> WarehouseProductVouchers { get; set; }
+    public IList<WarehouseTransaction> Transactions { get; set; }
     public WarehouseVoucherStatusEnum Status {
         get;
         set {
@@ -18,6 +19,5 @@ public class WarehouseVoucher : BaseEntity { // حواله انبار
             StatusTxt = value.ToString().Replace("_", " ");
         }
     }
-
     public string StatusTxt { get; private set; }
 }

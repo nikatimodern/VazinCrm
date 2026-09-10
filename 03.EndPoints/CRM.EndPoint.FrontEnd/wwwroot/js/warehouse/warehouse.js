@@ -44,7 +44,7 @@ function syncWarehouseViewWithUrl() {
         warehouseProductTbl.ajax.url(`/Warehouse/GetWarehouseProductsDt?warehouseId=${warehouse}`).load();
     }
     
-    showLastWarehouseVouchers(warehouseData.id);
+    showLastWarehouseVouchers();
 }
 
 warehouseModal?.addEventListener("hidden.bs.modal", cancelWarehouseModal);
@@ -370,10 +370,10 @@ function initWarehouseProductsTable(id) {
 }
 
 
-function showLastWarehouseVouchers(warehouseId) {
+function showLastWarehouseVouchers() {
     sendApiRequest({
         url: "/Warehouse/GetLastWarehouseVouchers",
-        params: { warehouseId },
+        params: { warehouseId: warehouseData.id },
     }).then(data => {
         document.getElementById("lastWarehouseVouchersGrid").innerHTML = data;
     });
@@ -409,7 +409,7 @@ const editWarehouseProduct = async () => {
 };
 
 
-const deleteWarehouseProduct = async (id) => {
+const deleteWarehouseProduct = async () => {
     await deleteItem({
         url: `/Warehouse/DeleteWarehouseProduct/${warehouseProductsData.id}`,
         callback: () => {

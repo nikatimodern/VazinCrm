@@ -1,4 +1,7 @@
 @model CRM.EndPoint.FrontEnd.Models.Warehouse.WarehouseVoucherListVModel
+@{
+    var warehouseId = Guid.Parse(Context.Request.Query["warehouseId"]);
+}
 
 <div class="voucher-wrapper">
     <div class="filter-bar">
@@ -10,12 +13,15 @@
         </div>
 
         <div class="d-flex flex-wrap gap-2">
-            @*<div>
-                <select class="form-select">
-                    <option value="-1">همه انبارها</option>
+            <div>
+                <select class="form-select" id="WarehouseVoucherWarehouseId">
+                    <option value="null">همه انبارها</option>
+                    @foreach (var warehouse in Model?.Warehouses ?? []) {
+                        <option value="@warehouse.Id" selected="@(warehouse.Id == warehouseId ? true : false)">@warehouse.Title</option>
+                    }
                 </select>
-            </div>*@
-            
+            </div>
+
             <ul class="filter-switch flex-grow-1">
                 <li class="filter-switch-item">
                     <input type="radio" name="WarehouseVoucherFilter" id="WarehouseVoucherFilterAll" value="-1" checked>
@@ -63,15 +69,21 @@
     <script src="~/js/warehouse/warehouse-voucher.js" asp-append-version="true"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            
-            initSearchInput("WarehouseVoucherSearchId", loadWarehouseVouchers);
-            initChangeRadio("WarehouseVoucherFilter", loadWarehouseVouchers);
+
+            initSearchInput("WarehouseVoucherSearchId", () => loadWarehouseVouchers());
+            initChangeRadio("WarehouseVoucherFilter", () => loadWarehouseVouchers());
 
             document.getElementById("voucherGridContainer").addEventListener("click", async (e) => {
                 const button = e.target.closest(".pagination-btn");
                 if (!button) return;
                 warehouseVoucherState.page = Number(button.dataset.page);
                 window.scrollTo(0, 0);
+                await loadWarehouseVouchers(warehouseVoucherState.page);
+            });
+
+            document.getElementById("WarehouseVoucherWarehouseId").addEventListener("change", async (e) => {
+                const value = e.target.value === "null" ? null : e.target.value;
+                setUrlParams({ warehouseId: value });
                 await loadWarehouseVouchers(warehouseVoucherState.page);
             });
         });
