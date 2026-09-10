@@ -890,6 +890,9 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpPost]
     public async Task<IActionResult> DeliverWarehouseVoucher(Guid id)
     {
+        try
+        {
+
         var voucher = await db.WarehouseVouchers
             .Include(x => x.WarehouseProductVouchers)
             .ThenInclude(x => x.WarehouseProduct)
@@ -930,6 +933,12 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         await db.SaveChangesAsync();
         await transaction.CommitAsync();
         return Ok();
+        }
+        catch (Exception ex)
+        {
+            
+            return BadRequest(ex.Message);
+        }
     }
 
 
