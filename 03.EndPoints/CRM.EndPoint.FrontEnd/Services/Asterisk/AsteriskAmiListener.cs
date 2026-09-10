@@ -49,38 +49,74 @@ public class AsteriskAmiListener : BackgroundService {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var config = _config.GetSection("voipConfig").Get<AppSettingVoip>();
-        if (config?.ActiveStatus != true) return;
 
-        var ami = new AsteriskAMI(config._hostname, config._port, config._username, config._password);
-        try
-        {
-            await ami.ConnectAsync();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, $"[AMI] Connection failed: {ex.Message}");
-            Console.WriteLine($"[AMI] Connection failed: {ex.Message}");
+        if (config?.ActiveStatus != true)
             return;
-        }
 
-        try
+        while (!stoppingToken.IsCancellationRequested)
         {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                var raw = await ami.ReadRawAsync();
-                var events = ParseAmiResponse(raw);
+            AsteriskAMI ami = null;
 
-                foreach (var ev in events ?? [])
+            try
+            {
+                logger.LogInformation("[AMI] Connecting to {Host}:{Port}",
+                    config._hostname,
+                    config._port);
+
+                ami = new AsteriskAMI(
+                    config._hostname,
+                    config._port,
+                    config._username,
+                    config._password);
+
+                await ami.ConnectAsync();
+
+                logger.LogInformation("[AMI] Connected successfully.");
+
+                while (!stoppingToken.IsCancellationRequested)
                 {
-                    await HandleEvent(ev);
+                    var raw = await ami.ReadRawAsync();
+
+                    if (string.IsNullOrWhiteSpace(raw))
+                        throw new Exception("AMI connection closed.");
+
+                    var events = ParseAmiResponse(raw);
+
+                    foreach (var ev in events ?? [])
+                    {
+                        await HandleEvent(ev);
+                    }
+                }
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "[AMI] Connection failed/lost. Reconnecting in 5 seconds...");
+
+                logger.LogError(
+                    $"[AMI] Connection failed/lost: {ex.Message}");
+            }
+
+            if (!stoppingToken.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(
+                        TimeSpan.FromSeconds(5),
+                        stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
                 }
             }
         }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, $"[AMI] ExecuteAsync has error: {ex.Message}");
-            Console.WriteLine($"[AMI] Connection disconnect: {ex.Message}");
-        }
+
+        logger.LogInformation("[AMI] Listener stopped.");
     }
 
     private async Task HandleEvent(Dictionary<string, string> ev)
