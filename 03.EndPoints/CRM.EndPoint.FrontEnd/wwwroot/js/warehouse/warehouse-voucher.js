@@ -173,22 +173,30 @@ async function submitWarehouseVoucherModal() {
 
 
 async function confirmWarehouseVoucher(id) {
-    await sendApiRequest({
-        url: "/Warehouse/ConfirmWarehouseVoucher",
-        method: "POST",
-        params: { id },
-        successMsg: "حواله با موفقیت تایید شد.",
-        onSuccess: refreshWarehouseVouchers,
+    await confirmAlert({
+        icon: "question",
+        confirmText: "بله، تایید شود",
+        onConfirm: async () => await sendApiRequest({
+            url: "/Warehouse/ConfirmWarehouseVoucher",
+            method: "POST",
+            params: { id },
+            successMsg: "حواله با موفقیت تایید شد.",
+            onSuccess: refreshWarehouseVouchers,
+        }),
     });
 }
 
 async function deliverWarehouseVoucher(id) {
-    await sendApiRequest({
-        url: "/Warehouse/DeliverWarehouseVoucher",
-        method: "POST",
-        params: { id },
-        successMsg: "حواله با موفقیت تحویل شد.",
-        onSuccess: refreshWarehouseVouchers,
+    await confirmAlert({
+        icon: "question",
+        confirmText: "بله، تحویل شود",
+        onConfirm: async () => await sendApiRequest({
+            url: "/Warehouse/DeliverWarehouseVoucher",
+            method: "POST",
+            params: { id },
+            successMsg: "حواله با موفقیت تحویل شد.",
+            onSuccess: refreshWarehouseVouchers,
+        }),
     });
 }
 
