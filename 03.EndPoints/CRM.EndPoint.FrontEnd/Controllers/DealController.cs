@@ -64,7 +64,6 @@ public class DealController : Controller {
             deal.ModifyDate = DateTime.Now;
             deal.ModifyDateTxt = dtService.GetDateTimePersian();
 
-
             var oldDeal = (Deal)db.Entry(deal).OriginalValues.ToObject();
             var logAction = status == DealFinancialStausEnum.تایید_شده ? LogActionEnum.تایید_و_تغییر_وضعیت : LogActionEnum.رد_و_تغییر_وضعیت;
             await _logSystemService.LogChange(oldDeal, deal, logAction, user);
@@ -246,9 +245,9 @@ public class DealController : Controller {
                 isAdmin
             });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return BadRequest(ex.Message);
+            return BadRequest();
         }
     }
 

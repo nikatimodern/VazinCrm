@@ -72,9 +72,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     return Ok(new { Status = false, Result = new { } });
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.InnerException);
+                return BadRequest();
             }
         }
     }

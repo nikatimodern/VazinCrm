@@ -86,7 +86,7 @@ public class RequestAmountController : Controller {
         catch (Exception e)
         {
             await transaction.RollbackAsync();
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -123,7 +123,7 @@ public class RequestAmountController : Controller {
         catch (Exception e)
         {
             await transaction.RollbackAsync();
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -157,7 +157,7 @@ public class RequestAmountController : Controller {
         catch (Exception e)
         {
             await transaction.RollbackAsync();
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -190,7 +190,7 @@ public class RequestAmountController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -213,7 +213,7 @@ public class RequestAmountController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -278,10 +278,10 @@ public class RequestAmountController : Controller {
             await transaction.CommitAsync();
             return Ok();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             await transaction.RollbackAsync();
-            return BadRequest(ex.Message);
+            return BadRequest();
         }
     }
 
@@ -510,7 +510,7 @@ public class RequestAmountController : Controller {
         catch (Exception e)
         {
             await transaction.RollbackAsync();
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -578,9 +578,9 @@ public class RequestAmountController : Controller {
                 hasAccess
             });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return BadRequest(ex.Message);
+            return BadRequest();
         }
     }
 
@@ -683,7 +683,7 @@ public class RequestAmountController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -718,7 +718,7 @@ public class RequestAmountController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -735,7 +735,7 @@ public class RequestAmountController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -763,7 +763,7 @@ public class RequestAmountController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -803,7 +803,7 @@ public class RequestAmountController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -861,9 +861,9 @@ public class RequestAmountController : Controller {
                 data,
             });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return BadRequest(ex.Message);
+            return BadRequest();
         }
     }
 }

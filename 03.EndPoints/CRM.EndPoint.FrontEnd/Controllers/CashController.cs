@@ -116,7 +116,7 @@ public class CashController : Controller {
         catch (Exception e)
         {
             await transaction.RollbackAsync();
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -158,7 +158,7 @@ public class CashController : Controller {
         catch (Exception e)
         {
             await transaction.RollbackAsync();
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -181,7 +181,7 @@ public class CashController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -239,7 +239,7 @@ public class CashController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -262,7 +262,7 @@ public class CashController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -287,7 +287,7 @@ public class CashController : Controller {
         catch (Exception e)
         {
             await transaction.RollbackAsync();
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -311,7 +311,7 @@ public class CashController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -345,7 +345,7 @@ public class CashController : Controller {
         catch (Exception e)
         {
             await transaction.RollbackAsync();
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -434,7 +434,7 @@ public class CashController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -465,7 +465,7 @@ public class CashController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -496,7 +496,7 @@ public class CashController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -646,9 +646,9 @@ public class CashController : Controller {
                 cashierBalance
             });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return BadRequest(ex.Message);
+            return BadRequest();
         }
     }
 
@@ -766,9 +766,9 @@ public class CashController : Controller {
                 data
             });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return BadRequest(ex.Message);
+            return BadRequest();
         }
     }
 
@@ -840,9 +840,9 @@ public class CashController : Controller {
 
             return ExcelExportService.ExportToExcel(cashItems, columns, "تنخواه", rightToLeft: false, includeRowNumber: false);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return BadRequest(ex.Message);
+            return BadRequest();
         }
     }
 
@@ -942,9 +942,9 @@ public class CashController : Controller {
                 data,
             });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return BadRequest(ex.Message);
+            return BadRequest();
         }
     }
 
@@ -967,7 +967,7 @@ public class CashController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -1012,7 +1012,7 @@ public class CashController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -1027,7 +1027,7 @@ public class CashController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -1040,7 +1040,7 @@ public class CashController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -1149,7 +1149,7 @@ public class CashController : Controller {
         catch (Exception e)
         {
             await transaction.RollbackAsync();
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -1175,7 +1175,7 @@ public class CashController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 }

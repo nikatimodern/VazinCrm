@@ -107,7 +107,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (Exception e)
             {
                 await transaction.RollbackAsync();
-                return BadRequest(e.Message);
+                return BadRequest();
             }
         }
 
@@ -149,7 +149,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (Exception e)
             {
                 await transaction.RollbackAsync();
-                return BadRequest(e.Message);
+                return BadRequest();
             }
         }
 
@@ -188,7 +188,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (Exception e)
             {
                 await transaction.RollbackAsync();
-                return BadRequest(e.Message);
+                return BadRequest();
             }
         }
 
@@ -232,7 +232,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (Exception e)
             {
                 await transaction.RollbackAsync();
-                return BadRequest(e.Message);
+                return BadRequest();
             }
         }
 
@@ -262,9 +262,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     .FirstOrDefaultAsync();
                 return Ok(data);
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(e.Message);
+                return BadRequest();
             }
         }
 
@@ -329,9 +329,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     data,
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -418,9 +418,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return PartialView(data);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -452,9 +452,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var data = await query.ToListAsync();
                 return PartialView(data);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -481,9 +481,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return Ok(data);
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(e.Message);
+                return BadRequest();
             }
         }
 
@@ -550,9 +550,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return PartialView(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -601,9 +601,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await db.SaveChangesAsync();
                 return Ok();
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(e.Message);
+                return BadRequest();
             }
         }
 
@@ -821,9 +821,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     }
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -956,9 +956,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     }
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -1043,9 +1043,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     data,
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -1068,9 +1068,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return PartialView(supplies);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 

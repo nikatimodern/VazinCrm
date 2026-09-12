@@ -162,7 +162,7 @@ public class TransferController(
         catch (Exception e)
         {
             await transaction.RollbackAsync();
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -186,7 +186,7 @@ public class TransferController(
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -213,7 +213,7 @@ public class TransferController(
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 

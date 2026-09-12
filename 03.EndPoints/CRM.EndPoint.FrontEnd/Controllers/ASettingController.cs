@@ -164,9 +164,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var jsonData = new { draw, recordsFiltered = recordsTotal, recordsTotal, data };
                 return Ok(jsonData);
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(e.Message);
+                return BadRequest();
             }
         }
 
@@ -577,9 +577,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await db.SaveChangesAsync();
                 return Ok();
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(e.Message);
+                return BadRequest();
             }
         }
 

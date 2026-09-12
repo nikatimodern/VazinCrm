@@ -1,5 +1,5 @@
 const warehouseVoucherState = { page: 1 };
-let warehouseVoucherId = null;
+let warehouseVoucherId;
 
 
 const warehouseVoucherModal = document.getElementById("warehouseVoucherModal");
@@ -33,9 +33,12 @@ async function loadWarehouseVouchers(page = 1) {
 
 async function refreshWarehouseVouchers() {
     const currentPath = window.location.pathname.toLowerCase();
-    if (currentPath.includes("voucher")) {
+    if (currentPath.includes("voucherdetail")) {
+        location.reload();
+    } else if (currentPath.includes("voucher")) {
         await loadWarehouseVouchers(warehouseVoucherState.page);
     } else {
+        warehouseProductTbl?.ajax.reload(null, false);
         showLastWarehouseVouchers();
     }
 }
@@ -75,7 +78,14 @@ async function editWarehouseVoucher(id) {
 
 function cancelWarehouseVoucherModal() {
     mySer.emptyForm("warehouseVoucherForm");
+    warehouseVoucherId = undefined;
 }
+
+document.getElementById("warehouseVoucherForm").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+        e.preventDefault();
+    }
+});
 
 function createSetVoucherItem() {
     const container = warehouseVoucherModal.querySelector("#warehouseVoucherForm");
@@ -88,7 +98,7 @@ function createSetVoucherItem() {
         fieldset.dataset.id = item.warehouseProductId;
         
         fieldset.innerHTML = `
-            <div class="bgLightRed border rounded-2 overflow-hidden">
+            <div class="bgLightBlue border rounded-2 overflow-hidden">
                 <div class="voucher-item-grid p-2">
                     <div class="voucher-item-field">
                         <span class="voucher-item-label">محصول:</span>
@@ -97,7 +107,7 @@ function createSetVoucherItem() {
                     
                     <div class="voucher-item-field">
                         <span class="voucher-item-label">موجودی:</span>
-                        <span class="fbold voucher-item-value">${item.stock || "-"} ${item.unitTxt || ""}</span>
+                        <span class="fbold voucher-item-value">${item.stock ?? "-"} ${item.unitTxt || ""}</span>
                     </div>
                     
                     <div class="voucher-item-field">
@@ -114,7 +124,7 @@ function createSetVoucherItem() {
                 </div>
             </div>
 
-            ${index !== warehouseProductListData.length - 1 ? `<div style="width: 95%; height: 1px; margin: 10px auto; background-color: darkviolet"></div>` : ""}
+            ${index !== warehouseProductListData.length - 1 ? `<div style="width: 95%; height: 1px; margin: 10px auto; background-color: #8989ff"></div>` : ""}
         `;
         
         fieldset.querySelector(".remove-voucher-item")?.addEventListener("click", () => {
@@ -158,7 +168,6 @@ async function submitWarehouseVoucherModal() {
             ModalToggle(warehouseVoucherModal, "hide");
             if (isEdit) {
                 toastifySuccess("حواله انبار با موفقیت ویرایش شد.");
-                await refreshWarehouseVouchers();
             } else {
                 toastifySuccess(`
                     حواله انبار با موفقیت ثبت شد.
@@ -167,6 +176,21 @@ async function submitWarehouseVoucherModal() {
                     </a>
                 `, 6000);
             }
+            await refreshWarehouseVouchers();
+        },
+        onError: async (err) => {
+            FLshowLoading(false);
+            const status = err.response?.status;
+            
+            if (status === 409) {
+                await showAlert({
+                    title: "امکان انجام عملیات نیست",
+                    text: err.response.data,
+                    icon: "error",
+                });
+                return;
+            }
+            await handleApiError(err);
         },
     });
 }
@@ -197,6 +221,20 @@ async function deliverWarehouseVoucher(id) {
             successMsg: "حواله با موفقیت تحویل شد.",
             onSuccess: refreshWarehouseVouchers,
         }),
+        onError: async (err) => {
+            FLshowLoading(false);
+            const status = err.response?.status;
+            
+            if (status === 409) {
+                await showAlert({
+                    title: "امکان انجام عملیات نیست",
+                    text: err.response.data,
+                    icon: "error",
+                });
+                return;
+            }
+            await handleApiError(err);
+        },
     });
 }
 

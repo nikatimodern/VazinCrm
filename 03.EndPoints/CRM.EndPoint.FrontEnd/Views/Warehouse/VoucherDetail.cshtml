@@ -5,7 +5,7 @@
     var statusClass = Model.Status switch {
         WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین => "status-pending",
         WarehouseVoucherStatusEnum.در_انتظار_تحویل => "status-delivering",
-        WarehouseVoucherStatusEnum.تحویل_شد => "status-completed",
+        WarehouseVoucherStatusEnum.تحویل_شده => "status-completed",
         _ => "status-default"
     };
 }
@@ -110,7 +110,7 @@
             var currentStep = Model.Status switch {
                 WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین => 1,
                 WarehouseVoucherStatusEnum.در_انتظار_تحویل => 2,
-                WarehouseVoucherStatusEnum.تحویل_شد => 3,
+                WarehouseVoucherStatusEnum.تحویل_شده => 3,
                 _ => 1
             };
         }
@@ -248,25 +248,42 @@
     <!-- Summary -->
     <div class="voucher-summary">
 
-        <div class="summary-icon">
-            <svg style="width: 20px" fill="currentColor" viewBox="0 0 640 640"><path d="M288 64L288 128C288 136.8 295.2 144 304 144L336 144C344.8 144 352 136.8 352 128L352 64L384 64C419.3 64 448 92.7 448 128L448 256C448 261.5 447.3 266.9 446 272L194 272C192.7 266.9 192 261.5 192 256L192 128C192 92.7 220.7 64 256 64L288 64zM384 576C372.8 576 362.2 573.1 353 568C362.5 551.5 368 532.4 368 512L368 384C368 363.6 362.5 344.5 353 328C362.2 322.9 372.7 320 384 320L416 320L416 384C416 392.8 423.2 400 432 400L464 400C472.8 400 480 392.8 480 384L480 320L512 320C547.3 320 576 348.7 576 384L576 512C576 547.3 547.3 576 512 576L384 576zM64 384C64 348.7 92.7 320 128 320L160 320L160 384C160 392.8 167.2 400 176 400L208 400C216.8 400 224 392.8 224 384L224 320L256 320C291.3 320 320 348.7 320 384L320 512C320 547.3 291.3 576 256 576L128 576C92.7 576 64 547.3 64 512L64 384z" /></svg>
+        <div class="d-flex align-items-center">
+            <div class="summary-icon">
+                <svg style="width: 20px" fill="currentColor" viewBox="0 0 640 640"><path d="M288 64L288 128C288 136.8 295.2 144 304 144L336 144C344.8 144 352 136.8 352 128L352 64L384 64C419.3 64 448 92.7 448 128L448 256C448 261.5 447.3 266.9 446 272L194 272C192.7 266.9 192 261.5 192 256L192 128C192 92.7 220.7 64 256 64L288 64zM384 576C372.8 576 362.2 573.1 353 568C362.5 551.5 368 532.4 368 512L368 384C368 363.6 362.5 344.5 353 328C362.2 322.9 372.7 320 384 320L416 320L416 384C416 392.8 423.2 400 432 400L464 400C472.8 400 480 392.8 480 384L480 320L512 320C547.3 320 576 348.7 576 384L576 512C576 547.3 547.3 576 512 576L384 576zM64 384C64 348.7 92.7 320 128 320L160 320L160 384C160 392.8 167.2 400 176 400L208 400C216.8 400 224 392.8 224 384L224 320L256 320C291.3 320 320 348.7 320 384L320 512C320 547.3 291.3 576 256 576L128 576C92.7 576 64 547.3 64 512L64 384z" /></svg>
+            </div>
+
+            @*<div class="summary-content">
+                <span>مجموع اقلام حواله</span>
+                <strong>@Model.WarehouseProductVouchers?.Count قلم کالا</strong>
+            </div>
+            *@
+
+            <div class="summary-divider"></div>
+
+            <div class="summary-content">
+                <span>وضعیت فعلی</span>
+                <strong class="summary-status @statusClass">
+                    <span class="status-dot"></span>
+                    @Model.StatusTxt
+                </strong>
+            </div>
+
         </div>
 
-        <div class="summary-content">
-            <span>مجموع اقلام حواله</span>
-            <strong>@Model.WarehouseProductVouchers?.Count قلم کالا</strong>
+        <div class="d-flex align-items-center">
+            @if (Model.Status == WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین) {
+                <button type="button" class="voucher-action-btn voucher-action-confirm" onclick="confirmWarehouseVoucher('@Model.Id')">
+                    <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" /></svg>
+                    تایید حواله
+                </button>
+            } else if (Model.Status == WarehouseVoucherStatusEnum.در_انتظار_تحویل) {
+                <button type="button" class="voucher-action-btn voucher-action-deliver" onclick="deliverWarehouseVoucher('@Model.Id')">
+                    <i class="fas fa-box-check"></i>
+                    تحویل شد
+                </button>
+            }
         </div>
-
-        <div class="summary-divider"></div>
-
-        <div class="summary-content">
-            <span>وضعیت فعلی</span>
-            <strong class="summary-status @statusClass">
-                <span class="status-dot"></span>
-                @Model.StatusTxt
-            </strong>
-        </div>
-
     </div>
 
 </div>
@@ -274,4 +291,8 @@
 
 @section Styles {
     <link rel="stylesheet" href="~/css/warehouse.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/warehouse/warehouse-voucher.js" asp-append-version="true"></script>
 }

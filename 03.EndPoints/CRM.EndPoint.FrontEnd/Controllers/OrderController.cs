@@ -187,9 +187,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return File(pdf, "application/pdf", "Order.pdf");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -206,9 +206,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return File(image, "image/png", "Order.png");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -262,9 +262,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return NoContent();
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(e.Message);
+                return BadRequest();
             }
         }
 
@@ -344,9 +344,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return Ok(new { registered, producing, finished, deliveredCount });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.InnerException);
+                return BadRequest();
             }
         }
 
@@ -499,9 +499,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return Ok(model);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -517,9 +517,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return Ok(model);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -533,9 +533,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var orderHeads = await db.OrderHeads.Where(f => f.Prefactor == pfId && f.Status != OrderHeadStatusEnum.تحویل_شده).ToListAsync();
                 return PartialView("GetOrderHead", orderHeads);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -563,9 +563,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return Ok(data);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -614,9 +614,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var orderHeads = await query.ToListAsync();
                 return PartialView("GetOrderHead", orderHeads);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -657,9 +657,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return Ok(data);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }*/
 
@@ -688,9 +688,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await db.SaveChangesAsync();
                 return Ok();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -860,9 +860,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return NoContent();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -909,9 +909,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await db.SaveChangesAsync();
                 return Ok();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
     }

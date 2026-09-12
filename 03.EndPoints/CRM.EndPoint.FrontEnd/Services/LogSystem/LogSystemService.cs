@@ -586,22 +586,60 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
 
                     case LogActionEnum.حذف:
                         return $"انبار ({w.Title}) توسط <b>{fullName}</b> حذف شد.";
+
+                    case LogActionEnum.ویرایش:
+                        return $"انبار ({w.Title}) توسط <b>{fullName}</b> ویرایش شد.";
+                }
+
+                break;
+            case WarehouseProduct wp:
+                switch (action)
+                {
+                    case LogActionEnum.ثبت:
+                        return $"یک محصول ({wp.ProductSmallName}) توسط <b>{fullName}</b> در انبار ثبت شد.";
+
+                    case LogActionEnum.حذف:
+                        return $"یک محصول ({wp.ProductSmallName}) توسط <b>{fullName}</b> از انبار حذف شد.";
+
+                    case LogActionEnum.ویرایش:
+                        return $"یک محصول ({wp.ProductSmallName}) توسط <b>{fullName}</b> در انبار ویرایش شد.";
                 }
 
                 break;
 
-            /*case WarehouseTransaction wp:
+            case WarehouseTransaction wp:
                 switch (action)
                 {
                     case LogActionEnum.ثبت:
-                        return $"یک محصول انبار ({wp.ProductTxt}) توسط <b>{fullName}</b> ثبت شد.";
+                        return $"یک تراکنش انبار ({wp.TransactionType.ToString()}) توسط <b>{fullName}</b> ثبت شد.";
 
                     case LogActionEnum.ویرایش:
-                        return $"محصول انبار ({wp.ProductTxt}) توسط <b>{fullName}</b> ویرایش شد.";
+                        return $"یک تراکنش انبار ({wp.TransactionType.ToString()}) توسط <b>{fullName}</b> ویرایش شد.";
 
                     case LogActionEnum.حذف:
-                        return $" محصول انبار ({wp.ProductTxt}) توسط <b>{fullName}</b> حذف شد.";
-                }*/
+                        return $"یک تراکنش انبار ({wp.TransactionType.ToString()}) توسط <b>{fullName}</b> حذف شد.";
+                }
+
+                break;
+            case WarehouseVoucher wv:
+                switch (action)
+                {
+                    case LogActionEnum.ثبت:
+                        return $"یک حواله انبار یه شماره حواله {serialNumber} توسط <b>{fullName}</b> ثبت شد.";
+
+                    case LogActionEnum.ویرایش:
+                        return $"حواله انبار شماره حواله {serialNumber} توسط <b>{fullName}</b> ویرایش شد.";
+
+                    case LogActionEnum.حذف:
+                        return $"حواله انبار شماره حواله {serialNumber} توسط <b>{fullName}</b> حذف شد.";
+
+                    case LogActionEnum.تایید_و_تغییر_وضعیت:
+                        return $"حواله انبار شماره حواله {serialNumber} توسط <b>{fullName}</b> تایید شد.";
+
+                    case LogActionEnum.تغییر_وضعیت:
+                        return
+                            $"حواله انبار شماره حواله {serialNumber} توسط <b>{fullName}</b> از وضعیت <b>{wv.StatusTxt}</b> به وضعیت <b class=\"text-dark\">{wv.StatusTxt}</b> تغییر یافت.";
+                }
 
                 break;
         }
@@ -625,6 +663,7 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
             Cash c => c.Serial,
             Check c => TextService.ExtractNumber(c.SerialNumber),
             Transfer c => c.TransferNumber,
+            WarehouseVoucher c => c.VoucherNumber,
             _ => null
         };
     }

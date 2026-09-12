@@ -101,9 +101,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return Ok(new { count = vModel.data?.Count ?? 0, html });
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(e.Message);
+                return BadRequest();
             }
         }
 
@@ -442,9 +442,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var html = await vrs.RenderToStringAsync("GetPreFactorFinancialExpert", result);
                 return Ok(new { count = result.Count, html, filterCounts });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -515,9 +515,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var html = await vrs.RenderToStringAsync("GetPreFactorSalesAdmin", pList);
                 return Ok(new { count = pList.Count, html, filterCounts });
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(e.Message);
+                return BadRequest();
             }
         }
 
@@ -570,9 +570,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return Ok(new { count = fList?.Count ?? 0, html });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
     }

@@ -357,9 +357,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 });
                 return Ok();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -805,9 +805,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 });
                 return Ok();
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(e.Message);
+                return BadRequest();
             }
         }
 
@@ -994,9 +994,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return File(pdf, "application/pdf", "PreFactor.pdf");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -1016,9 +1016,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return File(zip, "application/zip", "PreFactorImages.zip");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -1031,9 +1031,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return File(pdf, "application/pdf", "Factor.pdf");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -1050,9 +1050,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return File(image, "image/png", "Factor.png");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -1236,10 +1236,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return Ok();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                await transAction.RollbackAsync();
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -1284,6 +1283,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 pf.PrePftype = pf.Pftype;
                 pf.Pftype = (int)PreFactorEnum.در_انتظار_تولید;
                 pf.PftypeTxt = Service.GetTypeTxtPfactor(pf.Pftype);
+                pf.AcceptedFinancial = true;
             } else
             {
                 pf = await preFactorService.AcceptOrRejectPreFactor(pf, 1);
@@ -1395,7 +1395,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 return Ok(res);
             } else
             {
-                return BadRequest(res);
+                return BadRequest();
             }*/
         }
 
@@ -1768,9 +1768,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await db.SaveChangesAsync();
                 return Ok();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -1989,9 +1989,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return Ok(new { remained, facAmount, allPrePayment, wallet });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -2521,7 +2521,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (Exception e)
             {
                 await transAction.RollbackAsync();
-                return BadRequest(e);
+                return BadRequest();
             }
         }
 
@@ -2665,9 +2665,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var items = await GetBaseDescriptions(type);
                 return Ok(items);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -2679,9 +2679,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var items = await GetBaseDescriptions(BaseDescriptionTypeEnum.PrefactorTerms);
                 return Ok(items);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -2885,9 +2885,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await db.SaveChangesAsync();
                 return Ok();
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(e.Message);
+                return BadRequest();
             }
         }
 
@@ -2999,9 +2999,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return Ok();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -3098,9 +3098,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var preFactors = await query.ToListAsync();
                 return PartialView(preFactors);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
     }

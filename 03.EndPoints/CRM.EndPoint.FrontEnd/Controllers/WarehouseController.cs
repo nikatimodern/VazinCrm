@@ -187,22 +187,31 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     {
         try
         {
-            var data = await db.WarehouseProducts.AsNoTracking()
+            var data = await db.WarehouseProducts
+                .AsNoTracking()
                 .Where(f => model.FilterIds.Contains(f.Id))
                 .Select(f => new {
                     WarehouseProductId = f.Id,
                     f.ProductDescription,
                     f.ProductSmallName,
                     f.UnitTxt,
-                    Stock = f.Transactions.Sum(t => t.TransactionType == WarehouseTransactionTypeEnum.ورود ? t.Weight : -t.Weight)
+                    WStock = f.Transactions.Sum(t => t.TransactionType == WarehouseTransactionTypeEnum.ورود ? t.Weight : -t.Weight),
+                    InCirculation = f.WarehouseProductVouchers.Where(v => v.WarehouseVoucher.Status != WarehouseVoucherStatusEnum.تحویل_شده)
+                        .Sum(v => v.Weight)
+                })
+                .Select(x => new {
+                    x.WarehouseProductId,
+                    x.ProductDescription,
+                    x.ProductSmallName,
+                    x.UnitTxt,
+                    Stock = x.WStock - x.InCirculation
                 })
                 .ToListAsync();
-
             return Ok(data);
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -259,6 +268,19 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
             var data = await query
                 .Select(x => new {
+                    WarehouseProductId = x.Id,
+                    x.ProductDescription,
+                    x.ProductSmallName,
+                    x.UnitTxt,
+                    x.Id,
+                    x.ProductCode,
+                    x.Unit,
+                    x.UserCreator,
+                    WStock = x.Transactions.Sum(t => t.TransactionType == WarehouseTransactionTypeEnum.ورود ? t.Weight : -t.Weight),
+                    InCirculation = x.WarehouseProductVouchers.Where(v => v.WarehouseVoucher.Status != WarehouseVoucherStatusEnum.تحویل_شده)
+                        .Sum(v => v.Weight)
+                })
+                .Select(x => new {
                     x.Id,
                     x.ProductCode,
                     x.ProductSmallName,
@@ -266,7 +288,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
                     x.Unit,
                     x.UnitTxt,
                     x.UserCreator,
-                    Stock = x.Transactions.Sum(t => t.TransactionType == WarehouseTransactionTypeEnum.ورود ? t.Weight : -t.Weight)
+                    Stock = x.WStock - x.InCirculation
                 })
                 .ToListAsync();
 
@@ -325,6 +347,10 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
         var warehouseProduct = await db.WarehouseProducts.FindAsync(id);
         if (warehouseProduct == null) return NotFound("رکوردی یافت نشد!");
+
+
+        var hasVoucher = await db.WarehouseProductVouchers.AnyAsync(f => f.WarehouseProductId == id);
+        if (hasVoucher) return BadRequest("این محصول دارای حواله انبار است و امکان حذف آن وجود ندارد.");
 
         var stock = await db.WarehouseTransactions.GetStockAsync(warehouseProduct.Id);
         if (stock > 0) return BadRequest("این محصول دارای موجودی است و امکان حذف آن وجود ندارد.");
@@ -426,8 +452,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
         var warehouseProduct = await GetOrCreateWarehouseProduct(model, user);
 
-        if (model.TransactionType == WarehouseTransactionTypeEnum.خروج)
-            await ValidateStock(warehouseProduct, model.Weight);
+/*        if (model.TransactionType == WarehouseTransactionTypeEnum.خروج)
+            await ValidateStock(warehouseProduct, model.Weight, model.Id);*/
 
         var warehouseTransaction = new WarehouseTransaction {
             WarehouseProductId = warehouseProduct.Id,
@@ -481,17 +507,17 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         return newWarehouseProduct;
     }
 
-    private async Task ValidateStock(WarehouseProduct warehouseProduct, decimal weight)
+    private async Task ValidateStock(WarehouseProduct warehouseProduct, decimal weight, Guid? excludedVoucherId = null)
     {
-        var currentStock = await db.WarehouseTransactions.GetStockAsync(warehouseProduct.Id);
+        var availableStock = await db.GetWarehouseProductAvailableStockAsync(warehouseProduct.Id, excludedVoucherId: excludedVoucherId);
 
-        if (weight > currentStock)
+        if (weight > availableStock)
         {
             throw new InvalidOperationException(
-                $"موجودی ({warehouseProduct.ProductSmallName} {warehouseProduct.ProductDescription}) کافی نیست. موجودی فعلی: {currentStock} {warehouseProduct.UnitTxt}");
+                $"موجودی ({warehouseProduct.ProductSmallName} {warehouseProduct.ProductDescription}) کافی نیست. \n" +
+                $"موجودی فعلی: {availableStock} {warehouseProduct.UnitTxt}");
         }
     }
-
 
     [HttpPost]
     public async Task<IActionResult> AddWarehouseTransaction([FromBody] WarehouseTransactionVModel model)
@@ -522,6 +548,10 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             await transaction.RollbackAsync();
             return Conflict(ex.Message);
         }
+        catch (Exception)
+        {
+            return BadRequest();
+        }
     }
 
     [HttpPost]
@@ -538,9 +568,10 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             var user = await userManager.GetUserAsync(HttpContext.User);
 
             // موجودی فعلی بدون این تراکنش
-            var stockWithoutCurrent = await db.WarehouseTransactions.GetStockWithoutTransactionAsync(data.WarehouseProductId, model.Id);
 
-            var newStock = stockWithoutCurrent + (model.TransactionType == WarehouseTransactionTypeEnum.ورود ? model.Weight : -model.Weight);
+            var availableStockWithoutCurrent =
+                await db.GetWarehouseProductAvailableStockAsync(data.WarehouseProductId, excludedTransactionId: data.Id);
+            var newStock = availableStockWithoutCurrent + (model.TransactionType == WarehouseTransactionTypeEnum.ورود ? model.Weight : -model.Weight);
 
             if (newStock < 0) return BadRequest("ویرایش این تراکنش موجب منفی شدن موجودی می‌شود و امکان‌پذیر نیست.");
 
@@ -553,7 +584,6 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
             var oldData = (WarehouseTransaction)db.Entry(data).OriginalValues.ToObject();
             await logSystemService.LogChange(oldData, data, LogActionEnum.ویرایش, user);
-
 
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -580,10 +610,10 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             if (warehouseTransaction == null)
                 return NotFound("رکوردی یافت نشد!");
 
-            var stockWithoutCurrent =
-                await db.WarehouseTransactions.GetStockWithoutTransactionAsync(warehouseTransaction.WarehouseProductId, warehouseTransaction.Id);
+            var availableStock = await db.GetWarehouseProductAvailableStockAsync(warehouseTransaction.WarehouseProductId,
+                excludedTransactionId: warehouseTransaction.Id);
 
-            if (stockWithoutCurrent < 0)
+            if (availableStock < 0)
                 return BadRequest("حذف این تراکنش موجب منفی شدن موجودی می‌شود و امکان‌پذیر نیست.");
 
             var user = await userManager.GetUserAsync(HttpContext.User);
@@ -600,7 +630,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            return Ok(new { stock = stockWithoutCurrent });
+            return Ok(new { stock = availableStock });
         }
         catch (Exception)
         {
@@ -632,7 +662,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     {
         var model = new WarehouseVoucherListVModel {
             Page = 1,
-            PageSize = 5,
+            PageSize = 6,
         };
 
         var data = await GetWarehouseVouchersAsync(model, warehouseId: warehouseId);
@@ -731,7 +761,18 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
                 v.WarehouseProduct.ProductSmallName,
                 v.WarehouseProduct.ProductDescription,
                 v.WarehouseProduct.UnitTxt,
-                Stock = v.WarehouseProduct.Transactions.Sum(t => t.TransactionType == WarehouseTransactionTypeEnum.ورود ? t.Weight : -t.Weight)
+                WStock = v.WarehouseProduct.Transactions.Sum(t => t.TransactionType == WarehouseTransactionTypeEnum.ورود ? t.Weight : -t.Weight),
+                InCirculation = v.WarehouseProduct.WarehouseProductVouchers
+                    .Where(x => x.WarehouseVoucher.Status != WarehouseVoucherStatusEnum.تحویل_شده && x.WarehouseVoucherId != id)
+                    .Sum(x => x.Weight)
+            })
+            .Select(v => new {
+                v.WarehouseProductId,
+                v.Weight,
+                v.ProductSmallName,
+                v.ProductDescription,
+                v.UnitTxt,
+                Stock = v.WStock - v.InCirculation
             })
             .ToListAsync();
 
@@ -755,40 +796,60 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpPost]
     public async Task<IActionResult> AddWarehouseVoucher([FromBody] WarehouseVoucher model)
     {
-        if (model == null) return BadRequest();
-        if (model.WarehouseProductVouchers.Any(x => x.Weight <= 0)) return BadRequest("مقدار باید بیشتر از صفر باشد.");
+        if (model?.WarehouseProductVouchers == null || model.WarehouseProductVouchers.Count == 0)
+            return BadRequest("حداقل یک محصول باید در حواله وجود داشته باشد.");
+
+        if (model.WarehouseProductVouchers.Any(x => x.Weight <= 0))
+            return BadRequest("مقدار باید بیشتر از صفر باشد.");
 
         var user = await userManager.GetUserAsync(HttpContext.User);
+
+        var productIds = model.WarehouseProductVouchers
+            .Select(x => x.WarehouseProductId)
+            .Distinct()
+            .ToList();
+
+        var warehouseProducts = (await db.WarehouseProducts.Where(x => productIds.Contains(x.Id)).ToListAsync()).ToDictionary(x => x.Id);
+
+        if (warehouseProducts.Count == 0)
+            return NotFound("محصول مورد نظر یافت نشد.");
+
+        var warehouseIds = warehouseProducts.Values.Select(x => x.WarehouseId).Distinct().ToList();
+        if (warehouseIds.Count != 1)
+            return BadRequest("محصولات حواله باید متعلق به یک انبار باشند.");
+
+        var warehouseId = warehouseIds[0];
 
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
         {
             foreach (var item in model.WarehouseProductVouchers)
             {
-                var warehouseProduct = await db.WarehouseProducts.FirstOrDefaultAsync(x => x.Id == item.WarehouseProductId);
-
-                if (warehouseProduct == null)
+                if (!warehouseProducts.TryGetValue(item.WarehouseProductId, out var warehouseProduct))
                     return NotFound("محصول مورد نظر یافت نشد.");
 
-                var currentStock = await db.WarehouseTransactions.GetStockAsync(warehouseProduct.Id);
-
-                if (item.Weight > currentStock)
-                    return BadRequest(
-                        $"موجودی ({warehouseProduct.ProductSmallName} {warehouseProduct.ProductDescription}) کافی نیست. موجودی فعلی: {currentStock} {warehouseProduct.UnitTxt}");
+                await ValidateStock(warehouseProduct, item.Weight);
             }
 
+            model.WarehouseId = warehouseId;
             model.UserCreator = user.FullName;
             model.UserCreatorID = user.Id;
             model.Status = WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین;
 
             db.WarehouseVouchers.AddRange(model);
+            await db.SaveChangesAsync();
             await logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
 
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
             return Ok();
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
+        {
+            await transaction.RollbackAsync();
+            return Conflict(ex.Message);
+        }
+        catch (Exception)
         {
             await transaction.RollbackAsync();
             return BadRequest();
@@ -820,26 +881,22 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         if (voucher == null)
             return NotFound("حواله مورد نظر یافت نشد.");
 
-        if (voucher.Status == WarehouseVoucherStatusEnum.تحویل_شد)
+        if (voucher.Status == WarehouseVoucherStatusEnum.تحویل_شده)
             return BadRequest("این حواله در وضعیت قابل ویرایش نیست.");
-
-        foreach (var item in model.WarehouseProductVouchers)
-        {
-            var warehouseProduct = await db.WarehouseProducts.FirstOrDefaultAsync(x => x.Id == item.WarehouseProductId);
-
-            if (warehouseProduct == null)
-                return NotFound("محصول مورد نظر یافت نشد.");
-
-            var currentStock = await db.WarehouseTransactions.GetStockAsync(warehouseProduct.Id);
-
-            if (item.Weight > currentStock)
-                return BadRequest(
-                    $"موجودی ({warehouseProduct.ProductSmallName} {warehouseProduct.ProductDescription}) کافی نیست. موجودی فعلی: {currentStock} {warehouseProduct.UnitTxt}");
-        }
 
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
         {
+            foreach (var item in model.WarehouseProductVouchers)
+            {
+                var warehouseProduct = await db.WarehouseProducts.FirstOrDefaultAsync(x => x.Id == item.WarehouseProductId);
+
+                if (warehouseProduct == null)
+                    return NotFound("محصول مورد نظر یافت نشد.");
+
+                await ValidateStock(warehouseProduct, item.Weight, voucher.Id);
+            }
+
             voucher.WarehouseProductVouchers = model.WarehouseProductVouchers;
 
             voucher.UserModifyID = user.Id;
@@ -853,6 +910,10 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
             return Ok();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
         }
         catch (Exception ex)
         {
@@ -891,9 +952,6 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpPost]
     public async Task<IActionResult> DeliverWarehouseVoucher(Guid id)
     {
-        try
-        {
-
         var voucher = await db.WarehouseVouchers
             .Include(x => x.WarehouseProductVouchers)
             .ThenInclude(x => x.WarehouseProduct)
@@ -909,36 +967,52 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         }
 
         await using var transaction = await db.Database.BeginTransactionAsync();
-        voucher.Status = WarehouseVoucherStatusEnum.تحویل_شد;
-
-        voucher.UserModify = user.FullName;
-        voucher.UserModifyID = user.Id;
-        voucher.ModifyDate = DateTime.Now;
-        voucher.ModifyDateTxt = BaseServices.GetDateTimePersian();
-
-        foreach (var productVoucher in voucher.WarehouseProductVouchers ?? [])
+        try
         {
-            var transactionModel = new WarehouseTransactionVModel {
-                WarehouseProductId = productVoucher.WarehouseProductId,
-                WarehouseId = productVoucher.WarehouseProduct.WarehouseId,
-                WarehouseVoucherId = voucher.Id,
-                Weight = productVoucher.Weight,
-                TransactionType = WarehouseTransactionTypeEnum.خروج
-            };
+            voucher.Status = WarehouseVoucherStatusEnum.تحویل_شده;
 
-            await AddTransaction(transactionModel, user);
-        }
+            voucher.UserModify = user.FullName;
+            voucher.UserModifyID = user.Id;
+            voucher.ModifyDate = DateTime.Now;
+            voucher.ModifyDateTxt = BaseServices.GetDateTimePersian();
 
-        var oldVoucher = (WarehouseVoucher)db.Entry(voucher).OriginalValues.ToObject();
-        await logSystemService.LogChange(oldVoucher, voucher, LogActionEnum.تغییر_وضعیت, user);
-        await db.SaveChangesAsync();
-        await transaction.CommitAsync();
-        return Ok();
+            foreach (var productVoucher in voucher.WarehouseProductVouchers ?? [])
+            {
+                var transactionModel = new WarehouseTransactionVModel {
+                    WarehouseProductId = productVoucher.WarehouseProductId,
+                    WarehouseId = productVoucher.WarehouseProduct.WarehouseId,
+                    WarehouseVoucherId = voucher.Id,
+                    Weight = productVoucher.Weight,
+                    TransactionType = WarehouseTransactionTypeEnum.خروج
+                };
+
+                await AddTransaction(transactionModel, user);
+            }
+
+            var oldVoucher = (WarehouseVoucher)db.Entry(voucher).OriginalValues.ToObject();
+            await logSystemService.LogChange(oldVoucher, voucher, LogActionEnum.تغییر_وضعیت, user);
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return Ok();
         }
-        catch (Exception ex)
+        catch (ArgumentException ex)
         {
-            
+            await transaction.RollbackAsync();
             return BadRequest(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            await transaction.RollbackAsync();
+            return NotFound(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            await transaction.RollbackAsync();
+            return Conflict(ex.Message);
+        }
+        catch (Exception)
+        {
+            return BadRequest();
         }
     }
 
@@ -956,7 +1030,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             if (warehouseVoucher == null)
                 return NotFound("رکوردی یافت نشد!");
 
-            if (warehouseVoucher.Status == WarehouseVoucherStatusEnum.تحویل_شد)
+            if (warehouseVoucher.Status == WarehouseVoucherStatusEnum.تحویل_شده)
                 return BadRequest("این حواله در وضعیت قابل حذف نیست.");
 
             var user = await userManager.GetUserAsync(HttpContext.User);
@@ -968,7 +1042,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             warehouseVoucher.ModifyDate = DateTime.Now;
             warehouseVoucher.ModifyDateTxt = BaseServices.GetDateTimePersian();
 
-            if (warehouseVoucher.Status == WarehouseVoucherStatusEnum.تحویل_شد)
+            if (warehouseVoucher.Status == WarehouseVoucherStatusEnum.تحویل_شده)
             {
                 foreach (var item in warehouseVoucher.Transactions ?? [])
                 {

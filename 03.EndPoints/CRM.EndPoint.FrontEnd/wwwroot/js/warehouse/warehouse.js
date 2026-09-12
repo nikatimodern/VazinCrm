@@ -257,13 +257,27 @@ async function submitWarehouseTransactionModal() {
                 setWarehouseTransactionHistoryHeader();
             }
         },
+        onError: async (err) => {
+            FLshowLoading(false);
+            const status = err.response?.status;
+            
+            if (status === 409) {
+                await showAlert({
+                    title: "امکان انجام عملیات نیست",
+                    text: err.response.data,
+                    icon: "error",
+                });
+                return;
+            }
+            await handleApiError(err);
+        },
     });
 }
 
 function initWarehouseProductsTable(id) {
     warehouseProductTbl = $("#warehouseProductsTable").DataTable({
-        lengthMenu: [10, 25, 50, 100, { label: "همه", value: -1 }],
-        pageLength: 10,
+        lengthMenu: [5, 10, 20, { label: "همه", value: -1 }],
+        pageLength: 5,
         // paging: false,
         processing: true,
         serverSide: true,
@@ -294,9 +308,11 @@ function initWarehouseProductsTable(id) {
                 orderable: false,
                 render: (data, type, row) => `
                     <div class="inline-flex-center gap-2">
-                        <button class="icon-button icon-button--red" style="width: 32px" data-title-right="ثبت حواله انبار" data-action="warehouse-out">
-                          <svg style="width: 18px !important" viewBox="0 0 20 20" fill="currentColor"><path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 1 0 1.09 1.03L9.25 4.636v8.614Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
-                        </button>
+                        ${row.stock > 0 ? `
+                            <button class="icon-button icon-button--blue" style="width: 32px" data-title-right="ثبت حواله انبار" data-action="warehouse-out">
+                              <svg style="width: 18px !important" viewBox="0 0 20 20" fill="currentColor"><path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 1 0 1.09 1.03L9.25 4.636v8.614Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
+                            </button>
+                        ` : ""}
                         <button class="icon-button icon-button--green" style="width: 32px" data-title-right="ورود به انبار" data-action="warehouse-in">
                             <svg style="width: 18px !important" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
                         </button>
@@ -350,6 +366,10 @@ function initWarehouseProductsTable(id) {
         selectedClass: "row-selected",
         checkboxSelector: null,
         getItemKey: item => warehouseProductTbl.row(item).data()?.id,
+        isSelectable: item => {
+            const data = warehouseProductTbl.row(item).data();
+            return data?.stock > 0;
+        },
         onAction: async (ids) => {
             await showWarehouseVoucherModal(ids);
         },
@@ -365,7 +385,6 @@ function initWarehouseProductsTable(id) {
         },
     });
     
-    
     warehouseProductTbl.on("draw.dt", () => warehouseProductSelection.refresh());
 }
 
@@ -374,13 +393,16 @@ function showLastWarehouseVouchers() {
     sendApiRequest({
         url: "/Warehouse/GetLastWarehouseVouchers",
         params: { warehouseId: warehouseData.id },
+        showLoading: false,
     }).then(data => {
         document.getElementById("lastWarehouseVouchersGrid").innerHTML = data;
     });
 }
+
 function showWarehouseVouchersPage() {
     goTo(`/Warehouse/Voucher?warehouseId=${warehouseData.id}`, true);
 }
+
 /* ----------------------------------------------------------- */
 const showWarehouseTransactionHistory = (data) => {
     warehouseProductsData = data;
@@ -474,10 +496,12 @@ function initWarehouseTransaction(id) {
             {
                 data: "id",
                 orderable: false,
-                render: data => `
+                render: (data, type, row) => `
                     <div class="inline-flex-center gap-1">
+                    ${row.transactionType === 1 ? `
                         <button class="icon-button icon-button--green" data-action="warehouse-edit" onclick="editWarehouseTransaction('${data}')"><i class="fa fa-pencil"></i></button>
                         <button class="icon-button icon-button--red" data-action="warehouse-delete" onclick="deleteWarehouseTransaction('${data}')"><i class="fa fa-trash"></i></button>
+                    ` : ""}
                     </div>
                 `,
             },

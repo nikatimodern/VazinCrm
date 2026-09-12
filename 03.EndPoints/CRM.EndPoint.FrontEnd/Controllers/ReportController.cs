@@ -86,9 +86,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return Ok(result);
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(e.Message);
+                return BadRequest();
             }
         }
 
@@ -121,9 +121,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return ExcelExportService.ExportToExcel(data, columns, "Reports");
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(e.InnerException);
+                return BadRequest();
             }
         }
 

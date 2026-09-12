@@ -473,9 +473,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await db.SaveChangesAsync();
                 return Ok();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
 
@@ -863,9 +863,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return PartialView("GetAllCustomerPartial", data);
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(e.Message);
+                return BadRequest();
             }
         }
 
@@ -1003,7 +1003,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return Ok(new { count = data.Count, html });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return BadRequest();
             }

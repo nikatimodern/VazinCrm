@@ -98,7 +98,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (Exception e)
             {
                 await trans.RollbackAsync();
-                return BadRequest(e.Message);
+                return BadRequest();
             }
         }
 
@@ -203,9 +203,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await db.SaveChangesAsync();
                 return Ok();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return BadRequest();
             }
         }
     }

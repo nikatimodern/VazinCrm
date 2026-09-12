@@ -4,10 +4,12 @@
 @if (Model.Any()) {
     <div class="voucher-grid">
         @foreach (var voucher in Model ?? []) {
+            var isNewVoucher = voucher.CreateDate >= DateTime.Now.AddDays(-1);
+
             var statusClass = voucher.Status switch {
                 WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین => "status-pending",
                 WarehouseVoucherStatusEnum.در_انتظار_تحویل => "status-delivering",
-                WarehouseVoucherStatusEnum.تحویل_شد => "status-completed",
+                WarehouseVoucherStatusEnum.تحویل_شده => "status-completed",
                 _ => "status-default"
             };
 
@@ -15,7 +17,16 @@
                 <header class="voucher-header">
                     <div class="voucher-title">
                         <span class="voucher-number">#@voucher.VoucherNumber</span>
-                        <span class="order-number">انبار: @voucher.Warehouse?.Title</span>
+                        @if (isNewVoucher) {
+                            <span class="badge-new-blue" title="ثبت شده در ۲۴ ساعت اخیر">
+                                <span class="pulse-dot"></span>
+                                جدید
+                            </span>
+                        }
+
+                        <a class="order-number warehouse-link" asp-controller="Warehouse" asp-action="Index" asp-route-warehouse="@voucher.WarehouseId" asp-route-title="@voucher.Warehouse?.Title">
+                            انبار: @voucher.Warehouse?.Title
+                        </a>
                         @* <span class="order-number">سفارش: @voucher.OrderCode</span> *@
                     </div>
                     <span class="status-badge voucher-status @statusClass">
@@ -26,7 +37,7 @@
                 <div class="voucher-body">
                     <div class="meta-row">
                         <span class="meta-item">ثبت کننده: <strong>@voucher.UserCreator</strong></span>
-                        <span class="meta-item">تاریخ ثبت: <strong>@(string.Join(" | ", voucher.CreateDateTxt?.Substring(0, 16).Split(' ')))</strong></span>
+                        <span class="meta-item">تاریخ ثبت: <strong dir="ltr">@(string.Join(" | ", voucher.CreateDateTxt?.Substring(0, 16).Split(' ')))</strong></span>
                     </div>
 
                     <div class="items-table-wrapper">
@@ -58,7 +69,7 @@
                 <footer class="voucher-footer">
                     <div class="footer-management-actions">
                         @* <span class="items-count">@voucher.WarehouseProductVouchers?.Count قلم</span> *@
-                        @if (voucher.Status != WarehouseVoucherStatusEnum.تحویل_شد) {
+                        @if (voucher.Status != WarehouseVoucherStatusEnum.تحویل_شده) {
                             <button type="button" class="btn-icon btn-icon-danger" data-title="حذف" onclick="deleteWarehouseVoucher('@voucher.Id')">
                                 <svg style="width: 14px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z" clip-rule="evenodd" /></svg>
                             </button>
@@ -84,13 +95,13 @@
                                 تحویل شد
                             </button>
                         }
-                        <a class="btn-action btn-view" title="مشاهده" asp-action="VoucherDetail" asp-controller="Warehouse" asp-route-id="@voucher.Id">
+                        <a class="btn-action btn-view" asp-action="VoucherDetail" asp-controller="Warehouse" asp-route-id="@voucher.Id">
                             <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" /><path fill-rule="evenodd" d="M1.38 8.28a.87.87 0 0 1 0-.566 7.003 7.003 0 0 1 13.238.006.87.87 0 0 1 0 .566A7.003 7.003 0 0 1 1.379 8.28ZM11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" clip-rule="evenodd" /></svg>
                             مشاهده
                         </a>
 
 
-                        @* <button class="btn-action" title="چاپ" onclick="printVoucher('@voucher.Id')">چاپ</button> *@
+                        @* <button class="btn-action" onclick="printVoucher('@voucher.Id')">چاپ</button> *@
                     </div>
                 </footer>
             </article>

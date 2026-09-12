@@ -2308,7 +2308,7 @@ input[type=checkbox], input[type=radio] {
 	--color18: #3e4a03;
 	--color19: #905901;
 	--color20: #ffb800;
-	--color21: #0065f2;
+	--color21: #2b6cb0;
 	--color22: #014ab0;
 	--color23: #133cad;
 	--color24: #4070f4;
@@ -2358,7 +2358,7 @@ input[type=checkbox], input[type=radio] {
 
 .bgLightBlue {
 	background-color: #e8f3ff !important;
-	border-color: #c8ddff !important;
+	border-color: #aecdff !important;
 }
 
 
@@ -3594,7 +3594,7 @@ user-select: none;
 	color: #fff;
 	font-size: 13px;
 	border-radius: 4px;
-	box-shadow: 0 2px 10px #0065f24a;
+	box-shadow: 0 2px 10px #2b6cb04a;
 	user-select: none;
 	transition: all 0.3s;
 	border: none;
@@ -3603,12 +3603,12 @@ user-select: none;
 
 
 .buttonBlue:hover {
-	background-color: #014ab0;
+	background-color: #1f4e82;
 }
 
 
 .buttonBlue:active {
-	background-color: #014ab0;
+	background-color: #1f4e82;
 }
 
 
@@ -3617,7 +3617,7 @@ user-select: none;
 	padding: 2px 8px !important;
 	font-size: 12px;
 	border-radius: 4px;
-	box-shadow: 0 2px 10px #0065f24a;
+	box-shadow: 0 2px 10px #2b6cb04a;
 	color: #fff;
 	border: none;
 	user-select: none;
@@ -3625,13 +3625,13 @@ user-select: none;
 }
 
 
-.buttonBlue2:hover {
-	background-color: #014ab0;
+.buttonBlue:hover {
+	background-color: #1f4e82;
 }
 
 
-.buttonBlue2:active {
-	background-color: #014ab0;
+.buttonBlue:active {
+	background-color: #1f4e82;
 }
 
 
@@ -4075,7 +4075,7 @@ a.badge-red:hover {
 
 
 .icon-button--blue:hover {
-	background-color: #014ab0;
+	background-color: #1f4e82;
 }
 
 
@@ -6929,6 +6929,8 @@ table tr.payment-vosoled > td {
 	--clickable-card-bg: #eff6ff;
 	--clickable-card-bg-border: #e2e8f0;
 }
+
+
 /*
 
 
@@ -7253,4 +7255,9 @@ table tr.payment-vosoled > td {
 
 .deal-document-add:active {
 	transform: scale(0.96);
+}
+
+
+div:where(.swal2-container) div:where(.swal2-html-container) {
+	white-space: pre-line;
 }

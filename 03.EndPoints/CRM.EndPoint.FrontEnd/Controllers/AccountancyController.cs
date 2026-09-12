@@ -347,8 +347,7 @@ public class AccountancyController : Controller {
 
             var accS = await query.ToListAsync();
 
-            var model = new PaymentPartialVModel
-            {
+            var model = new PaymentPartialVModel {
                 Items = accS,
                 PassType = cartable == CartableEnum.کارشناس_تامین ? 56 : 55,
                 UserId = user.Id
@@ -452,9 +451,9 @@ public class AccountancyController : Controller {
             var data = new { showAcceptPfBtn, showChangeStatusAllBtn, customerId };
             return Ok(new { data, html });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return BadRequest(ex.Message);
+            return BadRequest();
         }
     }
 
@@ -484,9 +483,9 @@ public class AccountancyController : Controller {
 
             return PartialView("GetAllWalletPartial", accList);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return BadRequest(ex.Message);
+            return BadRequest();
         }
     }
 
@@ -511,7 +510,7 @@ public class AccountancyController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -671,9 +670,9 @@ public class AccountancyController : Controller {
 
             return Ok(data);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return BadRequest(ex.Message);
+            return BadRequest();
         }
     }
 
@@ -766,9 +765,9 @@ public class AccountancyController : Controller {
             await db.SaveChangesAsync();
             return Ok();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return BadRequest(ex.Message);
+            return BadRequest();
         }
     }
 
@@ -793,7 +792,7 @@ public class AccountancyController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 
@@ -819,9 +818,9 @@ public class AccountancyController : Controller {
 
             return Ok();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return BadRequest(ex.Message);
+            return BadRequest();
         }
     }
 
@@ -844,7 +843,7 @@ public class AccountancyController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
 
         return Ok();
@@ -964,7 +963,7 @@ public class AccountancyController : Controller {
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest();
         }
     }
 }

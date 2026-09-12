@@ -50,6 +50,7 @@ async function sendApiRequest(
         headers = null,
         responseType = "json",
         onSuccess = null,
+        onError = null,
         successMsg = undefined,
         showLoading = true,
     }) {
@@ -103,7 +104,11 @@ async function sendApiRequest(
             return response.data;
         }
     } catch (err) {
-        await handleApiError(err);
+        if (typeof onError === "function") {
+            await onError(err);
+        } else {
+            await handleApiError(err);
+        }
         return null;
     } finally {
         if (showLoading && typeof FLshowLoading === "function") {
@@ -120,7 +125,7 @@ async function handleApiError(err) {
     
     let errorMessage;
     
-    if (contentType.includes("text/html")) {
+    if (status >= 500 || contentType.includes("text/html")) {
         errorMessage = null;
     } else if (response?.data instanceof Blob) {
         errorMessage = await response.data.text();
@@ -501,13 +506,33 @@ class SelectionManager {
         return element;
     }
     
-    get selectionBar() { return this.resolveElement(this.options.selectionBar); }
-    get toggleBtn() { return this.resolveElement(this.options.toggleBtn); }
-    get cancelBtn() { return this.selectionBar?.querySelector(".cancel-selection"); }
-    get clearBtn() { return this.selectionBar?.querySelector(".clear-selection"); }
-    get selectAll() { return this.selectionBar?.querySelector(".select-all"); }
-    get selectedCounts() { return this.selectionBar?.querySelectorAll(".selected-count") ?? []; }
-    get actionBtn() { return this.selectionBar?.querySelector(".selection-action-btn"); }
+    get selectionBar() {
+        return this.resolveElement(this.options.selectionBar);
+    }
+    
+    get toggleBtn() {
+        return this.resolveElement(this.options.toggleBtn);
+    }
+    
+    get cancelBtn() {
+        return this.selectionBar?.querySelector(".cancel-selection");
+    }
+    
+    get clearBtn() {
+        return this.selectionBar?.querySelector(".clear-selection");
+    }
+    
+    get selectAll() {
+        return this.selectionBar?.querySelector(".select-all");
+    }
+    
+    get selectedCounts() {
+        return this.selectionBar?.querySelectorAll(".selected-count") ?? [];
+    }
+    
+    get actionBtn() {
+        return this.selectionBar?.querySelector(".selection-action-btn");
+    }
     
     // ---------------------------------------------------------
     // Initialization & Event Binding
@@ -4359,6 +4384,39 @@ async function deleteItem(options) {
                 onSuccess: async (res) => await callback?.(res),
             });
         },
+    });
+}
+
+/**
+ * Displays a customizable SweetAlert2 message without confirmation actions.
+ *
+ * @async
+ * @param {Object} options Alert configuration.
+ * @param {string} [options.title=""] Dialog title.
+ * @param {string} [options.text=""] Dialog message.
+ * @param {"warning"|"error"|"success"|"info"|"question"} [options.icon="info"] Alert icon.
+ * @param {"light"|"dark"} [options.theme="light"] Theme of the popup.
+ * @param {string} [options.confirmText="باشه"] Close button text.
+ * @param {string} [options.confirmButtonColor="#0d6efd"] Confirm button color.
+ * @returns {Promise<SweetAlertResult>} SweetAlert2 result.
+ */
+async function showAlert(
+    {
+        title = "",
+        text = "",
+        icon = "info",
+        theme = "light",
+        confirmText = "باشه",
+        confirmButtonColor = "#0d6efd",
+    } = {}) {
+    
+    return await Swal.fire({
+        title,
+        text,
+        icon,
+        theme,
+        confirmButtonColor,
+        confirmButtonText: confirmText,
     });
 }
 
