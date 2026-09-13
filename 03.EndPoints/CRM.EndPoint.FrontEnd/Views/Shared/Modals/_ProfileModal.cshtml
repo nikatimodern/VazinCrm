@@ -1,12 +1,12 @@
 @model AppUser
 @{
-/*    var profileSrc = string.IsNullOrEmpty(Model?.PersonImageUrl)
-        ? Url?.Content("~/Img/User.png")
-        : Url?.Content(Model.PersonImageUrl);*/
+    if (Model == null || User.Identity is not { IsAuthenticated: true }) return;
+
     var profileSrc = string.IsNullOrEmpty(Model?.PersonImageUrl)
-        ? "/Img/User.png"
-        : Model.PersonImageUrl;
+        ? Url?.Content("~/Img/User.png")
+        : Url?.Content(Model.PersonImageUrl);
 }
+
 <!-- Modal UserSetting -->
 <div class="modal fade" id="UserSetting" tabindex="-1" role="dialog" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-centered profile-modal-dialog" role="document">

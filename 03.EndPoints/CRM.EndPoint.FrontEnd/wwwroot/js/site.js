@@ -76,6 +76,11 @@ async function sendApiRequest(
             url,
             method,
             responseType,
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "X-Current-Page": window.location.pathname + window.location.search,
+                ...(headers ?? {}),
+            },
         };
         
         if (params !== null) {
@@ -84,10 +89,6 @@ async function sendApiRequest(
         
         if (data !== null) {
             config.data = data;
-        }
-        
-        if (headers !== null) {
-            config.headers = headers;
         }
         
         const response = await axios(config);
@@ -103,12 +104,22 @@ async function sendApiRequest(
             
             return response.data;
         }
+        
     } catch (err) {
+        const response = err?.response;
+        
+        if (response?.status === 401 && response.headers?.["x-auth-expired"] === "true") {
+            const loginUrl = response?.headers?.["x-login-url"];
+            location.href = loginUrl || "/Account/Login";
+            return null;
+        }
+        
         if (typeof onError === "function") {
             await onError(err);
         } else {
             await handleApiError(err);
         }
+        
         return null;
     } finally {
         if (showLoading && typeof FLshowLoading === "function") {
@@ -116,6 +127,7 @@ async function sendApiRequest(
         }
     }
 }
+
 async function handleApiError(err) {
     console.error("API Error:", err);
     const response = err?.response;

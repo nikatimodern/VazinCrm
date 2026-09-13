@@ -22,6 +22,7 @@ using System;
 using System.Security.Claims;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.IServices.Ai;
 using CRM.EndPoint.FrontEnd.IServices.DocumentRender;
 using CRM.EndPoint.FrontEnd.IServices.Menu;
@@ -233,37 +234,32 @@ namespace CRM.EndPoint.FrontEnd {
                 .AddRazorRuntimeCompilation();
 
             services.ConfigureApplicationCookie(options => {
-                options.AccessDeniedPath = "/AccessDenied-Skip"; // مسیر جعلی که ما خودمون مدیریت می‌کنیم
-
                 options.Events = new CookieAuthenticationEvents {
-                    OnRedirectToAccessDenied = async context => {
-                        var user = context.HttpContext.User;
-                        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-
-                        // کاربر احراز هویت نشده
-                        if (string.IsNullOrEmpty(userId))
+                    OnRedirectToAccessDenied = context => {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        return Task.CompletedTask;
+                    },
+                    OnRedirectToLogin = context => {
+                        if (context.Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                         {
-                            context.Response.Redirect(context.RedirectUri);
-                            return;
+                            var currentPage = context.Request.Headers["X-Current-Page"].ToString();
+
+                            var loginUrl = "/Account/Login";
+
+                            if (!string.IsNullOrWhiteSpace(currentPage))
+                            {
+                                loginUrl += $"?ReturnUrl={Uri.EscapeDataString(currentPage)}";
+                            }
+
+                            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                            context.Response.Headers["X-Auth-Expired"] = "true";
+                            context.Response.Headers["X-Login-Url"] = loginUrl;
+
+                            return Task.CompletedTask;
                         }
 
-                        var requestPath = context.HttpContext.Request.Path;
-
-                        Console.WriteLine($"[AccessDenied] Path: {requestPath} | Time: {DateTime.Now}");
-
-                        /*if (user.IsInRole("مشتری") || user.IsInRole("تامین کننده"))
-                        {
-                            context.Response.Redirect("/Account/Home");
-                            return;
-                        }*/
-
-                        /*// اطلاع‌رسانی به کاربر
-                        var hubContext = context.HttpContext.RequestServices
-                            .GetRequiredService<IHubContext<TaskHub>>();
-
-                        await hubContext.Clients.User(userId).SendAsync("ShowAccessDeniedMessage", "شما به این بخش دسترسی ندارید!");*/
-
-                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        context.Response.Redirect(context.RedirectUri);
+                        return Task.CompletedTask;
                     }
                 };
             });
@@ -285,8 +281,6 @@ namespace CRM.EndPoint.FrontEnd {
                 app.UseExceptionHandler("/Error/500"); // فقط برای exceptionهای واقعی (500+)
                 app.UseStatusCodePagesWithReExecute("/Error/{0}"); // برای status code ها مثل 404 / 401 / 403
 
-                // app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
