@@ -14,11 +14,15 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
+using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Services.AI;
 using CRM.EndPoint.FrontEnd.Services.Asterisk;
 using CRM.EndPoint.FrontEnd.Services.Carizo;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
+using CRM.EndPoint.FrontEnd.Services.Sms;
+using IPE.SmsIrClient;
+using IPE.SmsIrClient.Models.Requests;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
@@ -41,11 +45,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly GapgptAi gapgptAi;
         private readonly LogSystemService logSystemService;
         private readonly TaskServices ts;
+        private readonly ISmsIrService smsIrService;
 
         public HomeController(IWebHostEnvironment appEnvironment, TimedHostedService hostService, IConfiguration conf,
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
             Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue, IssabelService issabelService,
-            AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi, LogSystemService logSystemService, TaskServices ts)
+            AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi, LogSystemService logSystemService, TaskServices ts, ISmsIrService smsIrService)
         {
             this.appEnvironment = appEnvironment;
             this.hostService = hostService;
@@ -60,6 +65,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.smsQueue = smsQueue;
             this.logSystemService = logSystemService;
             this.ts = ts;
+            this.smsIrService = smsIrService;
             this.issabelService = issabelService;
             this.aiPrompts = aiPrompts;
             this.viraAi = viraAi;
@@ -73,7 +79,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-                
+                //var result = await smsIrService.SendAsync("09369100273", "پیام تست Vazin CRM");
+                /*var result2 = await smsIrService.SendVerifyCodeAsync("09369100273", 123456,
+                    [new SmsIrParameter { Name = "Code1", Value = "123456" }]);*/
+
+                var smsIr = new SmsIr("OKn2Wo1pzMo1z2zGJ1Cc64B80cajprhXq7lDFU5E045eNdgN");
+//                var bulkSendResult = await smsIr.VerifySendAsync("09369100273", 697243, [new VerifySendParameter("number", "140510")]);
+                var verificationSendResult = await smsIr.GetLatestReceivesAsync();
+                return Ok(verificationSendResult);
+
                 /*
                 var baseCashes = await db.BaseCashes.IgnoreQueryFilters().ToListAsync();
                 foreach (var baseCash in baseCashes)

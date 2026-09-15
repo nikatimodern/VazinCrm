@@ -174,6 +174,8 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<PreFactorService>();
             services.AddSingleton<ExcelExportService>();
 
+            services.AddSmsIr(Configuration);
+
             services.AddSingleton<WebPushClient>(sp => {
                 var handler = new SocketsHttpHandler {
                     EnableMultipleHttp2Connections = false,
