@@ -84,7 +84,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     [new SmsIrParameter { Name = "Code1", Value = "123456" }]);*/
 
                 var smsIr = new SmsIr("OKn2Wo1pzMo1z2zGJ1Cc64B80cajprhXq7lDFU5E045eNdgN");
-//                var bulkSendResult = await smsIr.VerifySendAsync("09369100273", 697243, [new VerifySendParameter("number", "140510")]);
+                var bulkSendResult = await smsIr.VerifySendAsync("09369100273", 697243,
+                    [new VerifySendParameter("number", "140510"), new VerifySendParameter("link", "dwe")]);
                 var verificationSendResult = await smsIr.GetLatestReceivesAsync();
                 return Ok(verificationSendResult);
 
