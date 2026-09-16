@@ -40,7 +40,9 @@ public class CallRecording : BaseEntity {
     public string AvanegarRequestId { get; set; }
     public int AiAttempts { get; set; }
 
+    public double? AiDurationSeconds { get; set; }
     public string AgentReview { get; set; }
     public int? AgentScore { get; set; }
-    public double? AiDurationSeconds { get; set; }
+    public int? CustomerScore { get; set; }
+    public string CustomerReview { get; set; }
 }

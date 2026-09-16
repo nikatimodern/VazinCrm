@@ -4,14 +4,14 @@ using System.Text.Json.Serialization;
 namespace CRM.EndPoint.FrontEnd.Models.Ai;
 
 public class SummaryResult {
-    public bool Success { get; set; }
-    public SummaryModel Data { get; set; }
-    public string Error { get; set; }
-    public double? ElapsedSeconds { get; set; }
+    public bool Success { get; init; }
+    public SummaryModel Data { get; init; }
+    public string Error { get; init; }
+    public double? ElapsedSeconds { get; init; }
 }
 
 public class AiGapgptModel {
-    public List<Choice> Choices { get; set; }
+    public List<Choice> Choices { get; init; }
 }
 
 public class Choice {
@@ -24,17 +24,21 @@ public class Message {
 }
 
 public class SummaryModel {
-    [JsonPropertyName("summary")] public string Summary { get; set; }
+    [JsonPropertyName("summary")] public string Summary { get; init; }
 
-    [JsonPropertyName("customer")] public string Customer { get; set; }
+    [JsonPropertyName("customer")] public string Customer { get; init; }
 
-    [JsonPropertyName("product")] public string Product { get; set; }
+    [JsonPropertyName("product")] public string Product { get; init; }
 
-    [JsonPropertyName("salesAgent")] public SalesAgentModel SalesAgent { get; set; }
+    [JsonPropertyName("callEvaluation")] public CallEvaluationModel CallEvaluation { get; init; }
 }
 
-public class SalesAgentModel {
-    [JsonPropertyName("review")] public string Review { get; set; }
+public class CallEvaluationModel {
+    [JsonPropertyName("agentReview")] public string AgentReview { get; set; }
 
-    [JsonPropertyName("score")] public int? Score { get; set; }
+    [JsonPropertyName("customerReview")] public string CustomerReview { get; set; }
+
+    [JsonPropertyName("agentScore")] public int? AgentScore { get; set; }
+
+    [JsonPropertyName("customerScore")] public int? CustomerScore { get; set; }
 }

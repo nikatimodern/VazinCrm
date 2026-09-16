@@ -20,7 +20,7 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
         try
         {
             logger.LogInformation("Gemini Audio Processing.");
-            var prompt = aiPrompts.AnalyzeAudioCall(string.Join(", ", userNames));
+            var prompt = AiPrompts.AnalyzeAudioCall(string.Join(", ", userNames));
 
             var requestBody = new { // https://gapgpt.app/platform-v2/tokens
                 model = "gemini-2.5-flash",
