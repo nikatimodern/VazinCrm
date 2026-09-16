@@ -1,227 +1,133 @@
 using System;
 using System.Collections.Generic;
-using System.Net.Http.Json;
-using System.Text.Json;
-using System.Linq;
-using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
+using CRM.EndPoint.FrontEnd.Models.Configuration;
 using CRM.EndPoint.FrontEnd.Models.Sms;
-using Microsoft.Extensions.Options;
+using IPE.SmsIrClient;
+using IPE.SmsIrClient.Models.Requests;
+using IPE.SmsIrClient.Models.Results;
+using Microsoft.Extensions.Configuration;
 
 namespace CRM.EndPoint.FrontEnd.Services.Sms;
 
 public sealed class SmsIrService : ISmsIrService {
-    private readonly HttpClient _httpClient;
-    private readonly SmsIrOptions _options;
+    private readonly SmsIr _smsIr;
+    private readonly SmsIrSetting _smsConfig;
 
-    private static readonly JsonSerializerOptions JsonOptions = new() {
-        PropertyNameCaseInsensitive = true
-    };
-
-    public SmsIrService(HttpClient httpClient, IOptions<SmsIrOptions> options)
+    public SmsIrService(IConfiguration configuration)
     {
-        _httpClient = httpClient;
-        _options = options.Value;
+        _smsConfig = configuration?.GetSection("SmsIrConfig").Get<SmsIrSetting>();
+        var apiKey = _smsConfig.ApiKey ?? throw new InvalidOperationException("SmsIr API Key is not configured.");
+
+        _smsIr = new SmsIr(apiKey);
     }
 
-    public async Task<SmsIrSendResponse> SendAsync(string mobile, string message, long? sendDateTime = null,
-        CancellationToken cancellationToken = default)
+    public Task<SmsIrResult<SendResult>> SendAsync(string mobile, string messageText)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(mobile);
-        ArgumentException.ThrowIfNullOrWhiteSpace(message);
-
-        var result = await SendBulkAsync([mobile], message, sendDateTime, cancellationToken);
-
-        return new SmsIrSendResponse {
-            MessageId = result.MessageIds.FirstOrDefault(),
-            Cost = result.Cost,
-            PackId = result.PackId
-        };
+        return _smsIr.BulkSendAsync(_smsConfig.LineNumber, messageText, [mobile]);
     }
 
-    public async Task<SmsIrSendBulkResponse> SendBulkAsync(IEnumerable<string> mobiles, string message, long? sendDateTime = null,
-        CancellationToken cancellationToken = default)
+    public Task<SmsIrResult<SendResult>> BulkSendAsync(string messageText, string[] mobiles, int? sendDateTime = null)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(message);
-
-        var mobileList = mobiles
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct()
-            .ToList();
-
-        if (mobileList.Count == 0)
-            throw new ArgumentException("حداقل یک شماره موبایل باید وارد شود.");
-
-        var request = new SmsIrSendBulkRequest {
-            LineNumber = _options.LineNumber,
-            MessageText = message,
-            Mobiles = mobileList,
-            SendDateTime = sendDateTime
-        };
-
-        return await PostAsync<SmsIrSendBulkResponse>("send/bulk", request, cancellationToken);
+        return _smsIr.BulkSendAsync(_smsConfig.LineNumber, messageText, mobiles, sendDateTime);
     }
 
-    public async Task<SmsIrBulkSendResponse> SendLikeToLikeAsync(IEnumerable<string> mobiles, IEnumerable<string> messages, long? sendDateTime = null,
-        CancellationToken cancellationToken = default)
+
+    public async Task<ResponseSmsModel> SendPatternSms(SmsJob job)
     {
-        var mobileList = mobiles
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .ToList();
-
-        var messageList = messages
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .ToList();
-
-        if (mobileList.Count == 0)
-            throw new ArgumentException("حداقل یک شماره موبایل باید وارد شود.");
-
-        if (mobileList.Count != messageList.Count)
-            throw new ArgumentException(
-                "تعداد شماره موبایل و متن پیام باید برابر باشد.");
-
-        var request = new SmsIrSendLikeToLikeRequest {
-            LineNumber = _options.LineNumber,
-            Mobiles = mobileList,
-            MessageTexts = messageList,
-            SendDateTime = sendDateTime
-        };
-
-        return await PostAsync<SmsIrBulkSendResponse>(
-            "send/likeToLike",
-            request,
-            cancellationToken);
-    }
-
-    public async Task<SmsIrSendResponse> SendVerifyCodeAsync(string mobile, int templateId, IEnumerable<SmsIrParameter> parameters,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(mobile);
-
-        var parameterList = parameters?.ToList() ?? [];
-
-        if (parameterList.Count == 0)
-            throw new ArgumentException("حداقل یک پارامتر برای قالب پیامک باید وارد شود.");
-
-        var request = new SmsIrVerifyRequest {
-            Mobile = mobile,
-            TemplateId = templateId,
-            Parameters = parameterList
-        };
-
-        return await PostAsync<SmsIrSendResponse>("send/verify", request, cancellationToken);
-    }
-
-    public async Task DeleteScheduledAsync(long packId, CancellationToken cancellationToken = default)
-    {
-        using var response = await _httpClient.DeleteAsync($"send/scheduled/{packId}", cancellationToken);
-
-        await EnsureSuccessAsync(response);
-    }
-
-    public async Task<SmsIrSendResponse> GetMessageAsync(long messageId, CancellationToken cancellationToken = default)
-    {
-        return await GetAsync<SmsIrSendResponse>($"send/{messageId}", cancellationToken);
-    }
-
-    public async Task<SmsIrBulkSendResponse> GetPackAsync(long packId, CancellationToken cancellationToken = default)
-    {
-        return await GetAsync<SmsIrBulkSendResponse>($"send/pack/{packId}", cancellationToken);
-    }
-
-    public async Task<decimal> GetCreditAsync(CancellationToken cancellationToken = default)
-    {
-        var result = await GetAsync<SmsIrCreditResponse>("credit", cancellationToken);
-
-        return result?.Credit ?? 0;
-    }
-
-    public async Task<IReadOnlyList<SmsIrLine>> GetLinesAsync(CancellationToken cancellationToken = default)
-    {
-        var result = await GetAsync<List<SmsIrLine>>("line", cancellationToken);
-
-        return result ?? [];
-    }
-
-    private async Task<T> PostAsync<T>(string endpoint, object request, CancellationToken cancellationToken)
-    {
-        using var response = await _httpClient.PostAsJsonAsync(endpoint, request, JsonOptions, cancellationToken);
-
-        return await ReadResponseAsync<T>(response, cancellationToken);
-    }
-
-    private async Task<T> GetAsync<T>(string endpoint, CancellationToken cancellationToken)
-    {
-        using var response = await _httpClient.GetAsync(endpoint, cancellationToken);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            await EnsureSuccessAsync(response);
-        }
-
-        var result = await response.Content.ReadFromJsonAsync<SmsIrApiResponse<T>>(JsonOptions, cancellationToken);
-
-
-        if (result is null)
-            throw new SmsIrApiException((int)response.StatusCode, "پاسخ نامعتبر از SMS.ir دریافت شد.");
-
-        return result.Data;
-    }
-
-    private static async Task<T> ReadResponseAsync<T>(HttpResponseMessage response, CancellationToken cancellationToken)
-    {
-        var content = await response.Content.ReadAsStringAsync(cancellationToken);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            string message = null;
-
-            try
-            {
-                var error = JsonSerializer.Deserialize<SmsIrApiResponse<JsonElement>>(content, JsonOptions);
-
-                message = error?.Message;
-            }
-            catch
-            {
-                // Ignore invalid error payload.
-            }
-
-            throw new SmsIrApiException((int)response.StatusCode, message ?? content);
-        }
-
-        var result = JsonSerializer.Deserialize<SmsIrApiResponse<T>>(content, JsonOptions);
-
-        if (result is null)
-            throw new SmsIrApiException((int)response.StatusCode, "پاسخ نامعتبر از SMS.ir دریافت شد.");
-
-        if (result.Data is null)
-            throw new SmsIrApiException((int)response.StatusCode, result.Message ?? "پاسخ نامعتبر از SMS.ir دریافت شد.");
-
-        return result.Data;
-    }
-
-    private static async Task EnsureSuccessAsync(HttpResponseMessage response)
-    {
-        if (response.IsSuccessStatusCode)
-            return;
-
-        var content = await response.Content.ReadAsStringAsync();
-
-        string message = null;
+        var res = new ResponseSmsModel();
 
         try
         {
-            var error = JsonSerializer.Deserialize<SmsIrApiResponse<JsonElement>>(content, JsonOptions);
+            var templateId = 0;
+            List<VerifySendParameter> parameters;
 
-            message = error?.Message;
+            switch (job.Type)
+            {
+                // تایید پیش‌فاکتور توسط مشتری
+                case SmsType.AcceptPfactorToCustomer:
+                    templateId = _smsConfig.Patterns.AcceptPfactorToCustomer;
+
+                    parameters = [
+                        new VerifySendParameter("number", job.SerialNumber),
+                        new VerifySendParameter("link", job.PfactorId?.ToString().Substring(0, 7))
+                    ];
+                    break;
+
+                // تایید پیش‌فاکتور توسط تامین
+                case SmsType.AcceptPfactorToTamin:
+                    templateId = _smsConfig.Patterns.AcceptPfactorToTamin;
+
+                    parameters = [
+                        new VerifySendParameter("number", job.SerialNumber),
+                        new VerifySendParameter("link", "Cartable/Index?tab=TTaminExpertId")
+                    ];
+                    break;
+
+                // تایید مدیر فروش برای مشتری
+                case SmsType.AcceptedSalesAdminToCustomer:
+                    templateId = _smsConfig.Patterns.AcceptedSalesAdminToCustomer;
+
+                    parameters = [new VerifySendParameter("number", job.SerialNumber)];
+                    break;
+
+                // محصول آماده تحویل
+                case SmsType.ReadyToDeliverToCustomer:
+                    templateId = _smsConfig.Patterns.ReadyToDeliverToCustomer;
+
+                    parameters = [new VerifySendParameter("number", job.SerialNumber)];
+                    break;
+
+                // لینک واریز پیش‌پرداخت
+                case SmsType.PaymentLinkToCustomer:
+                    templateId = _smsConfig.Patterns.PaymentPfactorLink;
+
+                    parameters = [
+                        new VerifySendParameter("number", job.SerialNumber!),
+                        new VerifySendParameter("link", job.PfactorId?.ToString().Substring(0, 7))
+                    ];
+                    break;
+
+                // OTP Login
+                case SmsType.OtpLogin:
+                    templateId = _smsConfig.Patterns.OtpLogin;
+
+                    parameters = [new VerifySendParameter("number", job.Code)];
+                    break;
+
+                // OTP Forgot Password
+                case SmsType.OtpForgot:
+                    templateId = _smsConfig.Patterns.OtpForgot;
+
+                    parameters = [new VerifySendParameter("number", job.Code)];
+                    break;
+
+
+                // chat reminder
+                case SmsType.ChatReminder:
+                    templateId = _smsConfig.Patterns.ChatReminder;
+
+                    parameters = [new VerifySendParameter("number", job.Mobile)];
+                    break;
+
+
+                default:
+                    throw new NotSupportedException($"SMS type '{job.Type}' is not supported by SMS.ir.");
+            }
+
+            var result = await _smsIr.VerifySendAsync(job.Mobile, templateId, parameters.ToArray());
+
+            res.code = result.Status;
+            res.Desc = result.Message;
+
+            return res;
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore invalid error payload.
-        }
+            res.code = 0;
+            res.Desc = ex.Message;
 
-        throw new SmsIrApiException((int)response.StatusCode, message ?? content);
+            return res;
+        }
     }
 }

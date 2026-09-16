@@ -14,7 +14,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
-using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Services.AI;
 using CRM.EndPoint.FrontEnd.Services.Asterisk;
 using CRM.EndPoint.FrontEnd.Services.Carizo;
@@ -79,16 +78,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-                //var result = await smsIrService.SendAsync("09369100273", "پیام تست Vazin CRM");
-                /*var result2 = await smsIrService.SendVerifyCodeAsync("09369100273", 123456,
-                    [new SmsIrParameter { Name = "Code1", Value = "123456" }]);*/
+                
+                var bulkSendResult = await smsIrService.SendAsync("09369100273", "سلام");
 
-                var smsIr = new SmsIr("OKn2Wo1pzMo1z2zGJ1Cc64B80cajprhXq7lDFU5E045eNdgN");
-                var bulkSendResult = await smsIr.VerifySendAsync("09369100273", 697243,
-                    [new VerifySendParameter("number", "140510"), new VerifySendParameter("link", "dwe")]);
-                var verificationSendResult = await smsIr.GetLatestReceivesAsync();
-                return Ok(verificationSendResult);
-
+                return Ok();
                 /*
                 var baseCashes = await db.BaseCashes.IgnoreQueryFilters().ToListAsync();
                 foreach (var baseCash in baseCashes)

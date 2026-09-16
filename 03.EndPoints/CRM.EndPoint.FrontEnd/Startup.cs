@@ -19,7 +19,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
-using System.Security.Claims;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
@@ -174,7 +173,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<PreFactorService>();
             services.AddSingleton<ExcelExportService>();
 
-            services.AddSmsIr(Configuration);
+            services.AddScoped<ISmsIrService, SmsIrService>();
 
             services.AddSingleton<WebPushClient>(sp => {
                 var handler = new SocketsHttpHandler {
@@ -224,11 +223,11 @@ namespace CRM.EndPoint.FrontEnd {
                 client.DefaultRequestHeaders.Add("Pass", "admin@54321");
             });
 
-            services.AddHttpClient<SmsService>(client => {
-                var smsConfig = Configuration?.GetSection("smsConfig").Get<appSettingSms>();
+            services.AddHttpClient<FarazSmsService>(client => {
+                var farazSmsConfig = Configuration?.GetSection("FarazSmsConfig").Get<FarazSmsSetting>();
 
-                client.BaseAddress = new Uri(smsConfig?._Url);
-                client.DefaultRequestHeaders.Add("Api-Key", smsConfig?._apiKey);
+                client.BaseAddress = new Uri(farazSmsConfig?.Url);
+                client.DefaultRequestHeaders.Add("Api-Key", farazSmsConfig?.ApiKey);
             });
 
             services

@@ -73,6 +73,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<bool>("SmallOffice")
                         .HasColumnType("bit");
 
+                    b.Property<Guid>("SmsServiceCode")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
                     b.ToTable("ASettings");

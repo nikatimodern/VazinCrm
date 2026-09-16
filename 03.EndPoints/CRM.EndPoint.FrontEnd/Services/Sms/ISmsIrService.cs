@@ -1,49 +1,16 @@
-using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Models.Sms;
+using IPE.SmsIrClient.Models.Requests;
+using IPE.SmsIrClient.Models.Results;
 
 namespace CRM.EndPoint.FrontEnd.Services.Sms;
 
-public interface ISmsIrService {
-    Task<SmsIrSendResponse> SendAsync(
-        string mobile,
-        string message,
-        long? sendDateTime = null,
-        CancellationToken cancellationToken = default);
 
-    Task<SmsIrSendBulkResponse> SendBulkAsync(IEnumerable<string> mobiles,
-        string message,
-        long? sendDateTime = null,
-        CancellationToken cancellationToken = default);
+public interface ISmsIrService
+{
+    Task<SmsIrResult<SendResult>> SendAsync(string mobile, string messageText);
 
-    Task<SmsIrBulkSendResponse> SendLikeToLikeAsync(
-        IEnumerable<string> mobiles,
-        IEnumerable<string> messages,
-        long? sendDateTime = null,
-        CancellationToken cancellationToken = default);
+    Task<SmsIrResult<SendResult>> BulkSendAsync(string messageText, string[] mobiles, int? sendDateTime = null);
 
-    Task<SmsIrSendResponse> SendVerifyCodeAsync(
-        string mobile,
-        int templateId,
-        IEnumerable<SmsIrParameter> parameters,
-        CancellationToken cancellationToken = default);
-
-    Task DeleteScheduledAsync(
-        long packId,
-        CancellationToken cancellationToken = default);
-
-    Task<SmsIrSendResponse?> GetMessageAsync(
-        long messageId,
-        CancellationToken cancellationToken = default);
-
-    Task<SmsIrBulkSendResponse?> GetPackAsync(
-        long packId,
-        CancellationToken cancellationToken = default);
-
-    Task<decimal> GetCreditAsync(
-        CancellationToken cancellationToken = default);
-
-    Task<IReadOnlyList<SmsIrLine>> GetLinesAsync(
-        CancellationToken cancellationToken = default);
+    Task<ResponseSmsModel> SendPatternSms(SmsJob job);
 }
