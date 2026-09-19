@@ -407,6 +407,7 @@ const deleteFItem = async (index) => {
 const calculateFactorTotals = () => {
     return new Promise((resolve) => {
         const data = factorItems.filter(item => !item.isDeleted);
+        let taxPercent = setting?.taxPercent || 10;
         let sumTotalAmount = 0;
         
         const discountInput = document.getElementById("f_discount");
@@ -418,9 +419,16 @@ const calculateFactorTotals = () => {
         
         sumTotalAmount = Math.round(sumTotalAmount);
         
-        const totalTax = factor.officialType === 1
-            ? Math.round((sumTotalAmount - discount) * 0.1)
-            : 0;
+        let totalTax = 0;
+        
+        if (factor.officialType === 1) {
+            factor.percentTax = taxPercent;
+            
+            totalTax = Math.round((sumTotalAmount - discount) * taxPercent / 100);
+        } else {
+            factor.percentTax = 0;
+        }
+        
         
         const paymentAmount = sumTotalAmount - discount + totalTax;
         

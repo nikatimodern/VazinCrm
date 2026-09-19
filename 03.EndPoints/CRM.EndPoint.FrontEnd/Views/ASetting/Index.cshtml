@@ -98,6 +98,10 @@
                 <label style="cursor:pointer;" for="smallOffice">درصد</label>
 
             </div> *@
+            <div class="d-flex align-items-center gap-1">
+                <label for="TaxPercent" class="flex-shrink-0">درصد مالیات:</label>
+                <input class="form-control" type="number" id="TaxPercent" name="taxPercent" min="0" max="99" />
+            </div>
 
         </form>
         <div style="display:flex;justify-content:end">
@@ -130,6 +134,8 @@
             if (setting != null) {
                 data.id = setting.id;
             }
+
+            document.getElementById("FLshowLoading").style.display = "";
 
             FLshowLoading();
             $.post(baseUrl + "ASetting/upSetting", data, async (res) => {

@@ -124,7 +124,7 @@ const upPfactor = async (id, type) => {
 };
 const getPreFactor = async (id) => {
     return await sendApiRequest({
-        url: "/Factor/GetPFactor/",
+        url: "/Factor/GetPFactor",
         params: { id },
     });
 };
@@ -450,26 +450,35 @@ const canselModalItemPreFactor = () => {
 const calculatePreFactorTotals = () => {
     const data = pFactorItems.filter(item => !item.isDeleted);
     
+    let taxPercent = setting?.taxPercent || 10;
     let sumTotalAmount = 0;
     let totalTax = 0;
     
     const discountInput = document.getElementById("discount");
-    const discount = Number(SeparatedNumberRemove(discountInput.value));
+    const discount = Math.round(Number(SeparatedNumberRemove(discountInput.value)) || 0);
     
     data.forEach(item => {
-        sumTotalAmount += Number(SeparatedNumberRemove(item.totalAmount));
+        sumTotalAmount += Number(SeparatedNumberRemove(item.totalAmount)) || 0;
     });
     
+    sumTotalAmount = Math.round(sumTotalAmount);
+    
     if (pFactor.officialType === 1) {
-        totalTax = Math.round((sumTotalAmount - discount) * 0.1);
+        pFactor.percentTax = taxPercent;
+        
+        totalTax = Math.round((sumTotalAmount - discount) * taxPercent / 100);
+    } else {
+        pFactor.percentTax = 0;
     }
     
     const paymentAmount = sumTotalAmount - discount + totalTax;
     
-    pFactor.sumTotalAmount = Math.round(sumTotalAmount);
-    pFactor.discount = Math.round(discount);
-    pFactor.totalTax = Math.round(totalTax);
+    
+    pFactor.sumTotalAmount = sumTotalAmount;
+    pFactor.discount = discount;
+    pFactor.totalTax = totalTax;
     pFactor.paymentAmount = Math.round(paymentAmount);
+    
     
     discountInput.value = pFactor.discount.toLocaleString();
     document.getElementById("sumTotalAmount").textContent = pFactor.sumTotalAmount.toLocaleString();

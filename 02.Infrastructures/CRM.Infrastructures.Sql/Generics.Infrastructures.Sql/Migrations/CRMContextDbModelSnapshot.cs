@@ -76,6 +76,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<Guid>("SmsServiceCode")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("TaxPercent")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.ToTable("ASettings");
