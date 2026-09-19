@@ -19,7 +19,6 @@ using CRM.EndPoint.FrontEnd.Services.Asterisk;
 using CRM.EndPoint.FrontEnd.Services.Carizo;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
-using CRM.EndPoint.FrontEnd.Services.Sms;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
