@@ -42,7 +42,7 @@ public class SmsBackgroundService(
         {
             try
             {
-                var result = await smsService.SendAsync(job);
+                var result = await smsService.SendPatternAsync(job);
 
                 if (result.code is 200 or 1)
                 {

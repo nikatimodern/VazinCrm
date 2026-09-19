@@ -20,8 +20,6 @@ using CRM.EndPoint.FrontEnd.Services.Carizo;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.EndPoint.FrontEnd.Services.Sms;
-using IPE.SmsIrClient;
-using IPE.SmsIrClient.Models.Requests;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
@@ -78,8 +76,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-                
-                var bulkSendResult = await smsIrService.SendAsync("09369100273", "سلام");
+//                var bulkSendResult = await smsIrService.SendTextAsync(["09369100273"], "سلام");
 
                 return Ok();
                 /*

@@ -20,7 +20,7 @@ public class FarazSmsService {
         farazConfig = config.GetSection("FarazSmsConfig").Get<FarazSmsSetting>();
     }
 
-    public async Task<ResponseSmsModel> SendPatternSms(SmsJob job)
+    public async Task<ResponseSmsModel> SendPatternAsync(SmsJob job)
     {
         ResponseSmsModel res = new();
 
@@ -109,7 +109,7 @@ public class FarazSmsService {
 
         try
         {
-            var model = new PatternSmsRequest {
+            var model = new FarazSmsPatternRequest {
                 code = patternCode,
                 recipient = job.Mobile,
                 line_number = farazConfig.LineNumber,
@@ -119,11 +119,51 @@ public class FarazSmsService {
 
             var content = new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json");
 
-            var response = await httpClient.PostAsync("", content);
+            var response = await httpClient.PostAsync("pattern", content);
 
             var responseText = await response.Content.ReadAsStringAsync();
 
-            var result = JsonConvert.DeserializeObject<PatternSmsResponse>(responseText);
+            var result = JsonConvert.DeserializeObject<FarazSmsResponse>(responseText);
+
+            res.code = response.IsSuccessStatusCode ? 200 : 0;
+            res.Desc = !string.IsNullOrEmpty(result?.message) ? result.message : result?.status ?? responseText;
+
+            return res;
+        }
+        catch (Exception ex)
+        {
+            res.code = 0;
+            res.Desc = ex.Message;
+            return res;
+        }
+    }
+
+
+    public async Task<ResponseSmsModel> SendTextAsync(string[] mobiles, string message)
+    {
+        var res = new ResponseSmsModel();
+
+        if (farazConfig.ActiveStatus != true)
+        {
+            res.code = 0;
+            res.Desc = "ارسال پیامک غیر فعال است";
+            return res;
+        }
+
+        try
+        {
+            var model = new FarazSmsTextRequest {
+                recipients = mobiles,
+                text = message,
+                line_number = farazConfig.LineNumber
+            };
+
+            var content = new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json");
+
+            var response = await httpClient.PostAsync("simple", content);
+            var responseText = await response.Content.ReadAsStringAsync();
+
+            var result = JsonConvert.DeserializeObject<FarazSmsResponse>(responseText);
 
             res.code = response.IsSuccessStatusCode ? 200 : 0;
             res.Desc = !string.IsNullOrEmpty(result?.message) ? result.message : result?.status ?? responseText;

@@ -22,7 +22,7 @@ namespace CRM.EndPoint.FrontEnd.Models.Configuration {
         public T ChatReminder { get; set; }
     }
 
-    public class PatternSmsRequest {
+    public class FarazSmsPatternRequest {
         public string code { get; set; }
         public Dictionary<string, string> attributes { get; set; }
         public string recipient { get; set; }
@@ -30,7 +30,14 @@ namespace CRM.EndPoint.FrontEnd.Models.Configuration {
         public string number_format { get; set; } = "english";
     }
 
-    public class PatternSmsResponse {
+    public class FarazSmsTextRequest {
+        public string text { get; set; }
+        public string[] recipients { get; set; }
+        public string line_number { get; set; }
+        public string number_format { get; set; } = "english";
+    }
+
+    public class FarazSmsResponse {
         public string status { get; set; }
         public object data { get; set; }
         public string message { get; set; }

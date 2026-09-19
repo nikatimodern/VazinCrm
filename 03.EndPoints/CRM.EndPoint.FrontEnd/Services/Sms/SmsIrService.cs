@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Models.Configuration;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using IPE.SmsIrClient;
 using IPE.SmsIrClient.Models.Requests;
-using IPE.SmsIrClient.Models.Results;
 using Microsoft.Extensions.Configuration;
 
 namespace CRM.EndPoint.FrontEnd.Services.Sms;
@@ -22,24 +22,72 @@ public sealed class SmsIrService : ISmsIrService {
         _smsIr = new SmsIr(apiKey);
     }
 
-    public Task<SmsIrResult<SendResult>> SendAsync(string mobile, string messageText)
+    public async Task<SmsDashboardModel> GetDashboardAsync()
     {
-        return _smsIr.BulkSendAsync(_smsConfig.LineNumber, messageText, [mobile]);
+        var credit = await _smsIr.GetCreditAsync();
+        var lines = await _smsIr.GetLinesAsync();
+
+        return new SmsDashboardModel {
+            Provider = "SMS.ir",
+            Credit = credit.Status == 1 ? credit.Data : null,
+            Lines = lines.Status == 1 ? lines.Data.ToList() : []
+        };
     }
 
-    public Task<SmsIrResult<SendResult>> BulkSendAsync(string messageText, string[] mobiles, int? sendDateTime = null)
+    public async Task<IReadOnlyList<SmsReportModel>> GetReportsAsync(int page = 1, int pageSize = 100)
     {
-        return _smsIr.BulkSendAsync(_smsConfig.LineNumber, messageText, mobiles, sendDateTime);
+        var result = await _smsIr.GetLiveReportAsync(page, pageSize);
+
+        if (result.Status != 1 || result.Data == null)
+            return [];
+
+        return result.Data
+            .Select(x => new SmsReportModel {
+                MessageId = x.MessageId,
+                MessageText = x.MessageText,
+                Mobile = x.Mobile,
+                DeliveryState = x.DeliveryState,
+                DeliveryDateTime = x.DeliveryDateTime,
+                SendDateTime = x.SendDateTime
+            })
+            .ToList();
+    }
+
+    public async Task<IReadOnlyList<SmsReceiveModel>> GetReceivesAsync(int page = 1, int pageSize = 100, bool sortByNewest = true)
+    {
+        var result = await _smsIr.GetLiveReceivesAsync(page, pageSize, sortByNewest);
+
+        if (result?.Status != 1 || result.Data == null)
+            return [];
+
+        return result.Data
+            .Select(x => new SmsReceiveModel {
+                Mobile = x.Mobile,
+                MessageText = x.MessageText,
+                Number = x.Number,
+                ReceivedDateTime = x.ReceivedDateTime
+            })
+            .ToList();
+    }
+
+    public async Task<ResponseSmsModel> SendTextAsync(string[] mobiles, string messageText, int? sendDateTime = null)
+    {
+        var result = await _smsIr.BulkSendAsync(_smsConfig.LineNumber, messageText, mobiles, sendDateTime);
+
+        return new ResponseSmsModel {
+            code = result.Status == 1 ? 200 : result.Status,
+            Desc = result.Message
+        };
     }
 
 
-    public async Task<ResponseSmsModel> SendPatternSms(SmsJob job)
+    public async Task<ResponseSmsModel> SendPatternAsync(SmsJob job)
     {
         var res = new ResponseSmsModel();
 
         try
         {
-            var templateId = 0;
+            int templateId;
             List<VerifySendParameter> parameters;
 
             switch (job.Type)
@@ -60,7 +108,7 @@ public sealed class SmsIrService : ISmsIrService {
 
                     parameters = [
                         new VerifySendParameter("number", job.SerialNumber),
-                        new VerifySendParameter("link", "Cartable/Index?tab=TTaminExpertId")
+                        new VerifySendParameter("link", "?tab=TTaminExpertId")
                     ];
                     break;
 
@@ -117,7 +165,7 @@ public sealed class SmsIrService : ISmsIrService {
 
             var result = await _smsIr.VerifySendAsync(job.Mobile, templateId, parameters.ToArray());
 
-            res.code = result.Status;
+            res.code = result.Status == 1 ? 200 : result.Status;
             res.Desc = result.Message;
 
             return res;

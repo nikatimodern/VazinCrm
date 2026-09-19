@@ -174,6 +174,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddSingleton<ExcelExportService>();
 
             services.AddScoped<ISmsIrService, SmsIrService>();
+            services.AddHostedService<CustomerFeedbackSmsWorker>();
 
             services.AddSingleton<WebPushClient>(sp => {
                 var handler = new SocketsHttpHandler {
