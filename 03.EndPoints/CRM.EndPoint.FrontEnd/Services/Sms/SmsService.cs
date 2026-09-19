@@ -27,6 +27,9 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
             );
         }
 
+
+
+
         private async Task<ResponseSmsModel> ExecuteAsync(Func<Task<ResponseSmsModel>> farazAction, Func<Task<ResponseSmsModel>> smsIrAction)
         {
             var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();

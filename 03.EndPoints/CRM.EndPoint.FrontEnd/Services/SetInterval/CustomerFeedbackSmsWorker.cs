@@ -41,12 +41,13 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
         var smsService = scope.ServiceProvider.GetRequiredService<SmsService>();
 
         var targetDate = DateTime.Now.AddDays(-7);
-
-        var factors = await db.Factors.Where(x =>
-            x.CustomerFeedbackSmsSentDate == null
-            && x.DateMiladi <= targetDate
-            && x.DateMiladi >= DateTime.Parse("2026-07-19")
-        ).ToListAsync(ct);
+        var startDate = DateTime.Parse("2026-08-19");
+        var factors = await db.Factors.Where(f=>f.SerialNumber== 140580).ToListAsync();
+        //var factors = await db.Factors.Where(x =>
+        //    x.CustomerFeedbackSmsSentDate == null
+        //    && x.DateMiladi <= targetDate
+        //    && x.DateMiladi >= startDate
+        //).ToListAsync(ct);
 
         foreach (var factor in factors)
         {
@@ -58,11 +59,11 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
                 var result = await smsService.SendTextAsync([mobile], CustomerFeedbackMessage);
                 if (result?.code is not (200 or 1)) continue;
 
-
-                logger.LogInformation("feedback SMS sent successfully. Mobile:{Mobile}", mobile);
-
                 factor.CustomerFeedbackSmsSentDate = DateTime.Now;
                 await db.SaveChangesAsync(ct);
+                
+                logger.LogInformation("feedback SMS sent successfully. Mobile:{Mobile}", mobile);
+                
             }
             catch (Exception ex)
             {
