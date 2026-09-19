@@ -476,6 +476,7 @@ public class AccountancyController : Controller {
                 .ForCustomer(cusId)
                 .NotVosoled()
                 .Where(f => f.Wallet)
+                .Where(f => f.PayType != PayTypeEnum.انتقال && f.AccType == AcEnum.واریزی)
                 .ToListAsync();
 
             if (accList.Count == 0)

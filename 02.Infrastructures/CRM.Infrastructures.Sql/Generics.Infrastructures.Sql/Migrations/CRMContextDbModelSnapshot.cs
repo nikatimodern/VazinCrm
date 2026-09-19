@@ -73,6 +73,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<bool>("SmallOffice")
                         .HasColumnType("bit");
 
+                    b.Property<int>("TaxPercent")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.ToTable("ASettings");

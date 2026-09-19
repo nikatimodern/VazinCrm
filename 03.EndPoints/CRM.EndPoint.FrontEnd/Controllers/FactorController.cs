@@ -2225,6 +2225,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var cus = await db.Customers.Where(f => f.Id == model.CustomerId).FirstOrDefaultAsync();
                 var deal = await db.Deals.Where(f => f.Id == model.DealId).FirstOrDefaultAsync();
+                var setting = await db.ASettings.AsNoTracking().FirstAsync();
 
                 if (deal?.FinancialStatus == DealFinancialStausEnum.تایید_شده)
                 {
@@ -2318,7 +2319,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
                 model = await checkPrefactor(model);
-                model = genService.UpdatePaymentAmount(model);
+                model = Service.UpdatePaymentAmount(model, setting.TaxPercent);
 
                 db.PreFactors.Update(model);
                 db.Entry(model).Property(f => f.SerialNumber).IsModified = false;
@@ -2463,7 +2464,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.ModifyDateTxt = dtService.GetDateTimePersian();
                 model.DateMiladi = dtService.GetDateMiladi(model.Date);
 
-                model = genService.UpdatePaymentAmount(model);
+                model = Service.UpdatePaymentAmount(model, setting.TaxPercent);
 
 
                 db.Factors.Update(model);
