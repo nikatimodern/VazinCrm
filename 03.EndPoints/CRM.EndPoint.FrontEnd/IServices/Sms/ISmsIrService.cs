@@ -2,12 +2,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 
-namespace CRM.EndPoint.FrontEnd.Services.Sms;
+namespace CRM.EndPoint.FrontEnd.IServices.Sms;
 
-
-public interface ISmsIrService
-{
-    
+public interface ISmsIrService {
     Task<SmsDashboardModel> GetDashboardAsync();
     Task<IReadOnlyList<SmsReportModel>> GetReportsAsync(int page = 1, int pageSize = 100);
     Task<IReadOnlyList<SmsReceiveModel>> GetReceivesAsync(int page = 1, int pageSize = 100, bool sortByNewest = true);
