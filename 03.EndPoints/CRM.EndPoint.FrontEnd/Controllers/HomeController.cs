@@ -44,13 +44,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly TaskServices ts;
         private readonly ISmsIrService smsIrService;
 
-        public HomeController(IWebHostEnvironment appEnvironment, TimedHostedService hostService, IConfiguration conf,
+        public HomeController(IWebHostEnvironment appEnvironment,
+            
+            //TimedHostedService hostService,
+            
+            IConfiguration conf,
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
             Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue, IssabelService issabelService,
             AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi, LogSystemService logSystemService, TaskServices ts, ISmsIrService smsIrService)
         {
             this.appEnvironment = appEnvironment;
-            this.hostService = hostService;
+            //this.hostService = hostService;
             this.conf = conf;
             this.userManager = userManager;
             _logger = logger;
@@ -73,38 +77,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [Authorize(Policy = "NotCustomerOnly")]
         public async Task<IActionResult> Index()
         {
-            await using var trans = await db.Database.BeginTransactionAsync();
-            try
-            {
-//                var bulkSendResult = await smsIrService.SendTextAsync(["09369100273"], "سلام");
-
-                return Ok();
-                /*
-                var baseCashes = await db.BaseCashes.IgnoreQueryFilters().ToListAsync();
-                foreach (var baseCash in baseCashes)
-                {
-                    if ((int)baseCash.BaseCashType == 2)
-                    {
-                        baseCash.BaseCashType = BaseCashTypeEnum.تامین;
-                    }
-                    baseCash.BaseCashTypeTxt = Enum.IsDefined(baseCash.BaseCashType) ? baseCash.BaseCashType.ToString() : "-";
-                }
-*/
-
-
-                /*const string path = "/var/spool/asterisk/monitor/2026/07/18/q-0006-9124606687-20260718-145823-1784370449.414873.wav";
-                var stream = await issabelService.GetAudioWithRetry(path);
-                stream = await issabelService.ConvertToFlac(stream);*/
-                //await db.SaveChangesAsync();
-                await trans.CommitAsync();
-                ViewBag.SubTitle = "سامانه مدیریت مشتری";
-                return View();
-            }
-            catch (Exception e)
-            {
-                await trans.RollbackAsync();
-                return BadRequest();
-            }
+            return Ok();
         }
 
 
@@ -157,13 +130,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        [HttpGet]
-        public async Task<IActionResult> WarningsSepidarCrmFactors()
-        {
-            await hostService.CompareSepidarCrmFactors();
-            var data = await db.SystemWarnings.ToListAsync();
-            return Ok(data);
-        }
+        //[HttpGet]
+        //public async Task<IActionResult> WarningsSepidarCrmFactors()
+        //{
+        //    await hostService.CompareSepidarCrmFactors();
+        //    var data = await db.SystemWarnings.ToListAsync();
+        //    return Ok(data);
+        //}
 
         public async Task<IActionResult> GetAllSystemWarnings()
         {

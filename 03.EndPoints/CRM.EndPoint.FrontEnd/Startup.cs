@@ -142,7 +142,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddTransient<ChatHub>();
             services.AddTransient<TaskServices>();
             services.AddTransient<CrmSaveCahngeAsync>();
-            services.AddTransient<TimedHostedService>();
+            //services.AddTransient<TimedHostedService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IViewRenderService, ViewRenderService>();
             services.AddScoped<LogSystemService>();
