@@ -26,9 +26,11 @@ if (window.innerWidth >= 992 && window.innerWidth < 1200) {
 }
 const prePaymentPercentElm = document.getElementById(prePaymentPercentId);
 
-
-document.querySelector("#PreFacItem input[name='weightCount']")?.addEventListener("input", () => calculateItem("PreFacItem"));
-document.querySelector("#PreFacItem input[name='unitAmount']")?.addEventListener("input", () => calculateItem("PreFacItem"));
+document.querySelector("#PreFacItem")?.addEventListener("input", (e) => {
+    if (e.target.matches("[name='weightCount']") || e.target.matches("[name='unitAmount']") || e.target.matches("[name='discount']")) {
+        calculateItem("PreFacItem");
+    }
+});
 prePaymentPercentElm?.addEventListener("change", () => calculatePreFactorText());
 document.querySelectorAll("#PreFactor input[type='radio'][name='official']")?.forEach(radio => {
     const currencyTypeElm = document.querySelector("#PfHeadFormId select[name='currencyType']");
@@ -120,7 +122,14 @@ const upPfactor = async (id, type) => {
     showPFactorItems();
     showPfDescriptionItems();
     ModalToggle("#PreFactor");
-    
+    bindInvoiceDiscount?.({
+        items: pFactorItems,
+        invoice: pFactor,
+        discountInputId: "Discount",
+        sumTotalAmountId: "SumTotalAmount",
+        totalTaxId: "TotalTax",
+        paymentAmountId: "PaymentAmount"
+    });
 };
 const getPreFactor = async (id) => {
     return await sendApiRequest({
@@ -209,9 +218,126 @@ const calculatePreFactorText = () => {
 };
 
 const showPFactorItems = () => {
-    document.getElementById("preFactorItemId").innerHTML = generateItemPfactorDom(pFactorItems);
+    // document.getElementById("preFactorItemId").innerHTML = generateItemPfactorDom(pFactorItems);
+    document.getElementById("preFactorItemId").replaceChildren(
+        generateFactorItemDom(pFactorItems, { onDelete: deletePfItem, onUpdate: showUpdatePfItem }),
+    );
+    /*
+    document.getElementById("preFactorItemId").innerHTML =
+        generateFactorItemDom(pFactorItems, { onDelete: "deletePfItem", onUpdate: "showUpdatePfItem" });*/
 };
 
+/*
+const generateItemPfactorDom = (data, type = "edit-delete") => {
+    let ob = `<div class="pf-items-list">`;
+    
+    data.forEach((item, index) => {
+        if (item.isDeleted) return;
+        
+        item.product ??= "";
+        item.discount ??= 0;
+        item.row = index + 1;
+        const beforeDiscountAmount = calculateTotalPrice(item.weightCount, item.unitAmount);
+        
+        const beforeDiscountAmountStr = beforeDiscountAmount ? beforeDiscountAmount.toLocaleString() : "-";
+        const uAmount = item.unitAmount ? item.unitAmount.toLocaleString() : "-";
+        const discountAmount = item.discount ? item.discount.toLocaleString() : "-";
+        const tAmount = item.totalAmount ? item.totalAmount.toLocaleString() : "-";
+        
+        let actionButtons = "";
+        
+        if (type === "edit-delete") {
+            actionButtons = `
+                <button type="button" class="pf-item-action" onclick="deletePfItem(${index})">
+                    <i class="fa fa-trash"></i>
+                </button>
+                <button type="button" class="pf-item-action" onclick="showUpdatePfItem(${index})">
+                    <i class="fa fa-pencil"></i>
+                </button>
+            `;
+        } else if (type === "select") {
+            actionButtons = `
+                <button type="button" class="buttonPurple2" onclick="selectPfactorItem('${item.id}')">
+                    افزودن
+                </button>
+            `;
+        }
+        
+        ob += `
+            <div class="pf-item-row">
+                <div class="InfoDataItemHead">${index + 1}</div>
+
+                <div class="InfoDataItem">
+                    <div class="pf-item-printable">
+                        ${Number(item.printable) === 1 ? "چـاپـدار" : ""}
+                    </div>
+
+                    <div class="pf-item-content">
+                        <div class="pf-item-field pf-item-product">
+                            <label>شرح کالا</label>
+                            <label>
+                                <span>${item.productSmallName ?? ""}</span>
+                                <span>${item.product ?? ""}</span>
+                            </label>
+                        </div>
+                        
+                        <div class="pf-item-field pf-item-quantity">
+                            <label>تعداد/مقدار</label>
+                            <label>${item.weightCount}</label>
+                        </div>
+                        
+                        <div class="pf-item-field pf-item-unit">
+                            <label>واحد</label>
+                            <label>${item.unitTxt ?? ""}</label>
+                        </div>
+                        
+                        <div class="pf-item-field pf-item-unit-amount">
+                            <label>مبلغ واحد</label>
+                            <label>
+                                ${uAmount}
+                                ${item.currencyTypeTxt ?? ""}
+                            </label>
+                        </div>
+                        
+                        <div class="pf-item-field pf-item-beforeDiscount">
+                            <label><span class="d-none d-sm-inline">مبلغ </span>قبل تخفیف</label>
+                            <label>
+                                ${beforeDiscountAmountStr}
+                                ${item.currencyTypeTxt ?? ""}
+                            </label>
+                        </div>
+                        
+                        <div class="pf-item-field pf-item-discount">
+                            <label>تخفیف</label>
+                            <label>
+                                ${discountAmount}
+                                ${item.currencyTypeTxt ?? ""}
+                            </label>
+                        </div>
+                        
+                        <div class="pf-item-field pf-item-total">
+                            <label>مبلغ نهایی</label>
+                            <label>
+                                ${tAmount}
+                                ${item.currencyTypeTxt ?? ""}
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="InfoDataItemOp pf-item-actions">
+                        ${actionButtons}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    ob += `</div>`;
+    return ob;
+};
+*/
+
+/*
 const generateItemPfactorDom = (data, type = "edit-delete") => {
     let ob = `<div class="d-flex flex-column w-100" style="gap:5px">`;
     data.forEach((item, index) => {
@@ -289,6 +415,7 @@ const generateItemPfactorDom = (data, type = "edit-delete") => {
     ob += `</div>`;
     return ob;
 };
+*/
 
 
 const showPfDescriptionItems = () => {
@@ -296,7 +423,7 @@ const showPfDescriptionItems = () => {
     pFactorDescriptionItems.forEach((item, index) => {
         if (!item.isDeleted) {
             items += `
-                <li class="d-flex gap-1">
+                <li class="d-flex justify-content-between gap-1">
                     <p>${item.text}</p>
                     <span class="cursor-pointer" onclick="deletePfDescriptionItem(${index})">
                         <i class="fa fa-trash"></i>
@@ -341,6 +468,7 @@ const addPfItem = async () => {
     document.getElementById("preFactorItemId").classList.remove("AlertReq");
     
     if (!await mySer.CheckValidForm("#PreFacItem")) return false;
+    if (!validatePfItemDiscount("PreFacItem")) return false;
     
     const productCodeElm = document.querySelector("#PreFacItem select[name='productCode']");
     const unitElm = document.querySelector("#PreFacItem select[name='unit']");
@@ -349,8 +477,11 @@ const addPfItem = async () => {
     
     data.productSmallName = productCodeElm.options[productCodeElm.selectedIndex].text;
     data.unitTxt = unitElm.options[unitElm.selectedIndex].text;
-    data.totalAmount = SeparatedNumberRemove(data.totalAmount);
-    data.unitAmount = SeparatedNumberRemove(data.unitAmount);
+    
+    data.totalAmount = Number(SeparatedNumberRemove(data.totalAmount)) || 0;
+    data.unitAmount = Number(SeparatedNumberRemove(data.unitAmount)) || 0;
+    data.discount = Number(SeparatedNumberRemove(data.discount)) || 0;
+    
     pFactorItems.push(data);
     pFactor.PreFactorItems = pFactorItems;
     
@@ -364,7 +495,10 @@ const addPfItem = async () => {
     return true;
 };
 
-const updatePfItem = () => {
+const updatePfItem = async () => {
+    if (!await mySer.CheckValidForm("#PreFacItem")) return false;
+    if (!validatePfItemDiscount("PreFacItem")) return false;
+    
     const form = document.getElementById("PreFacItem");
     
     const productCode = form.elements.namedItem("productCode");
@@ -375,9 +509,11 @@ const updatePfItem = () => {
     data.productSmallName = productCode.options[productCode.selectedIndex].text;
     data.unitTxt = unit.options[unit.selectedIndex].text;
     
-    data.totalAmount = Number(SeparatedNumberRemove(data.totalAmount));
-    data.unit = Number(SeparatedNumberRemove(data.unit));
-    data.unitAmount = Number(SeparatedNumberRemove(data.unitAmount));
+    data.totalAmount = Number(SeparatedNumberRemove(data.totalAmount)) || 0;
+    data.discount = Number(SeparatedNumberRemove(data.discount)) || 0;
+    data.unit = Number(SeparatedNumberRemove(data.unit)) || 0;
+    data.unitAmount = Number(SeparatedNumberRemove(data.unitAmount)) || 0;
+    
     
     pFactorItems[pfItemIndex] = {
         ...pFactorItems[pfItemIndex],
@@ -407,6 +543,7 @@ const deletePfItem = (index) => {
     calculatePreFactorTotals();
     calculatePreFactorText();
 };
+
 const showUpdatePfItem = (index) => {
     if (window.innerWidth < 992) {
         ModalToggle("ItemPreFactorModal");
@@ -448,42 +585,14 @@ const canselModalItemPreFactor = () => {
 };
 
 const calculatePreFactorTotals = () => {
-    const data = pFactorItems.filter(item => !item.isDeleted);
-    
-    let taxPercent = setting?.taxPercent || 10;
-    let sumTotalAmount = 0;
-    let totalTax = 0;
-    
-    const discountInput = document.getElementById("discount");
-    const discount = Math.round(Number(SeparatedNumberRemove(discountInput.value)) || 0);
-    
-    data.forEach(item => {
-        sumTotalAmount += Number(SeparatedNumberRemove(item.totalAmount)) || 0;
+    return calculateInvoiceTotals({
+        items: pFactorItems,
+        invoice: pFactor,
+        discountInputId: "discount",
+        sumTotalAmountId: "sumTotalAmount",
+        totalTaxId: "totalTax",
+        paymentAmountId: "paymentAmount",
     });
-    
-    sumTotalAmount = Math.round(sumTotalAmount);
-    
-    if (pFactor.officialType === 1) {
-        pFactor.percentTax = taxPercent;
-        
-        totalTax = Math.round((sumTotalAmount - discount) * taxPercent / 100);
-    } else {
-        pFactor.percentTax = 0;
-    }
-    
-    const paymentAmount = sumTotalAmount - discount + totalTax;
-    
-    
-    pFactor.sumTotalAmount = sumTotalAmount;
-    pFactor.discount = discount;
-    pFactor.totalTax = totalTax;
-    pFactor.paymentAmount = Math.round(paymentAmount);
-    
-    
-    discountInput.value = pFactor.discount.toLocaleString();
-    document.getElementById("sumTotalAmount").textContent = pFactor.sumTotalAmount.toLocaleString();
-    document.getElementById("totalTax").textContent = pFactor.totalTax.toLocaleString();
-    document.getElementById("paymentAmount").textContent = pFactor.paymentAmount.toLocaleString();
 };
 
 const generatePFactorDescriptions = () => {

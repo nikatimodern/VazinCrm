@@ -12,6 +12,7 @@ namespace CRM.Infrastructures.Sql.PreFactors.Configs
             builder.HasKey(f => f.Id);
             builder.Property(f => f.UnitAmount).HasPrecision(20, 0);
             builder.Property(f => f.TotalAmount).HasPrecision(20, 0);
+            builder.Property(f => f.Discount).HasPrecision(20, 0);
             builder.Property(f => f.TaminUnitAmount).HasPrecision(20, 0);
             builder.Property(f => f.TaminTotalAmount).HasPrecision(20, 0);
             builder.HasMany(f => f.supplies)

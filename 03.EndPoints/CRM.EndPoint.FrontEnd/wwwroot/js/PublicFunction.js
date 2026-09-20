@@ -7,32 +7,256 @@ const getBaseDescription = async (type = null) => {  // 0: preFactor | 1: Factor
     });
 };
 
-function calculateItem(formId, weightSelector = "[name='weightCount']", unitSelector = "[name='unitAmount']", totalSelector = "[name='totalAmount']") {
+function calculateItem(formId, weightSelector = "[name='weightCount']", unitSelector = "[name='unitAmount']", totalSelector = "[name='totalAmount']", discountSelector = "[name='discount']") {
     const form = document.getElementById(formId);
     const getValue = (selector) => {
         const el = form.querySelector(selector);
-        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") return el.value;
-        return el.innerText;
+        if (!el) return 0;
+        
+        return el.tagName === "INPUT" || el.tagName === "TEXTAREA"
+            ? SeparatedNumberRemove(el.value)
+            : SeparatedNumberRemove(el.innerText);
     };
-    const setValue = (selector, val) => {
+    
+    const setValue = (selector, value) => {
         const el = form.querySelector(selector);
+        if (!el) return;
+        
         if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
-            el.value = val;
+            el.value = value;
         } else {
-            el.innerText = val;
+            el.innerText = value;
         }
     };
     
-    let unitAmount = Number(SeparatedNumberRemove(getValue(unitSelector)));
-    let weightCount = Number(getValue(weightSelector));
-    let total = Math.round(unitAmount * weightCount);
+    const unitAmount = Number(getValue(unitSelector)) || 0;
+    const weightCount = Number(getValue(weightSelector)) || 0;
+    const discount = Number(getValue(discountSelector)) || 0;
     
-    if (total.toString().includes(".")) {
-        total = Number(total.toString().split(".")[0]);
-    }
+    
+    const amountBeforeDiscount = Math.round(unitAmount * weightCount);
+    const total = Math.max(0, amountBeforeDiscount - discount);
     
     setValue(totalSelector, total.toLocaleString());
 }
+
+const validatePfItemDiscount = (formId) => {
+    const form = document.getElementById(formId);
+    
+    const weightCount = Number(form.elements.namedItem("weightCount").value) || 0;
+    const unitAmount = Number(SeparatedNumberRemove(form.elements.namedItem("unitAmount").value)) || 0;
+    const discount = Number(SeparatedNumberRemove(form.elements.namedItem("discount").value)) || 0;
+    
+    const amountBeforeDiscount = Math.round(weightCount * unitAmount);
+    
+    if (discount > amountBeforeDiscount) {
+        const discountInput = form.elements.namedItem("discount");
+        
+        discountInput.classList.add("AlertReq");
+        discountInput.focus();
+        
+        return false;
+    }
+    
+    form.elements.namedItem("discount").classList.remove("AlertReq");
+    
+    return true;
+};
+
+const calculateInvoiceTotals = ({ items, invoice, discountInputId, sumTotalAmountId, totalTaxId, paymentAmountId }) => {
+    const activeItems = items.filter(item => !item.isDeleted);
+    
+    const taxPercent = setting?.taxPercent || 10;
+    const discountInput = document.getElementById(discountInputId);
+    
+    const requestedDiscount = Math.round(Number(SeparatedNumberRemove(discountInput?.value)) || 0);
+    
+    let sumTotalAmount = 0;
+    
+    activeItems.forEach(item => {
+        sumTotalAmount += Number(SeparatedNumberRemove(item.totalAmount)) || 0;
+    });
+    
+    sumTotalAmount = Math.round(sumTotalAmount);
+    
+    const discount = Math.min(Math.max(0, requestedDiscount), sumTotalAmount);
+    
+    const amountBeforeTax = Math.max(0, sumTotalAmount - discount);
+    
+    let totalTax = 0;
+    
+    if (invoice.officialType === 1) {
+        invoice.percentTax = taxPercent;
+        totalTax = Math.round(amountBeforeTax * taxPercent / 100);
+    } else {
+        invoice.percentTax = 0;
+    }
+    
+    const paymentAmount = Math.round(amountBeforeTax + totalTax);
+    
+    invoice.sumTotalAmount = sumTotalAmount;
+    invoice.discount = discount;
+    invoice.totalTax = totalTax;
+    invoice.paymentAmount = paymentAmount;
+    
+    if (discountInput) {
+        discountInput.value = discount.toLocaleString();
+    }
+    
+    const sumTotalAmountElement = document.getElementById(sumTotalAmountId);
+    const totalTaxElement = document.getElementById(totalTaxId);
+    const paymentAmountElement = document.getElementById(paymentAmountId);
+    
+    if (sumTotalAmountElement) {
+        sumTotalAmountElement.textContent = sumTotalAmount.toLocaleString();
+    }
+    
+    if (totalTaxElement) {
+        totalTaxElement.textContent = totalTax.toLocaleString();
+    }
+    
+    if (paymentAmountElement) {
+        paymentAmountElement.textContent = paymentAmount.toLocaleString();
+    }
+    
+    return invoice;
+};
+
+
+const generateFactorItemDom = (data, { type = "edit-delete", onDelete, onUpdate, onSelect } = {}) => {
+    
+    const container = document.createElement("div");
+    container.className = "pf-items-list";
+    
+    data.forEach((item, index) => {
+        if (item.isDeleted) return;
+        
+        item.product ??= "";
+        item.discount ??= 0;
+        item.row = index + 1;
+        
+        const beforeDiscountAmount = calculateTotalPrice(item.weightCount, item.unitAmount);
+        
+        const beforeDiscountAmountStr = beforeDiscountAmount ? beforeDiscountAmount.toLocaleString() : "-";
+        const uAmount = item.unitAmount ? item.unitAmount.toLocaleString() : "-";
+        const discountAmount = item.discount ? item.discount.toLocaleString() : "-";
+        const tAmount = item.totalAmount ? item.totalAmount.toLocaleString() : "-";
+        
+        const element = document.createElement("div");
+        element.className = "pf-item";
+        
+        let actionButtons = "";
+        
+        if (type === "edit-delete") {
+            actionButtons = `
+                <button type="button" class="pf-item-action pf-item-delete">
+                    <i class="fa fa-trash"></i>
+                </button>
+
+                <button type="button" class="pf-item-action pf-item-update">
+                    <i class="fa fa-pencil"></i>
+                </button>
+            `;
+        } else if (type === "select") {
+            actionButtons = `
+                <button type="button" class="buttonPurple2 pf-item-select">
+                    افزودن
+                </button>
+            `;
+        }
+        
+        element.innerHTML = `
+            <div class="pf-item-row">
+                <div class="InfoDataItemHead">
+                    ${index + 1}
+                </div>
+
+                <div class="InfoDataItem">
+                    <div class="pf-item-printable">
+                        ${Number(item.printable) === 1 ? "چـاپـدار" : ""}
+                    </div>
+
+                    <div class="pf-item-content">
+
+                        <div class="pf-item-field pf-item-product">
+                            <label>شرح کالا</label>
+                            <label>
+                                <span>${item.productSmallName ?? ""}</span>
+                                <span>${item.product ?? ""}</span>
+                            </label>
+                        </div>
+
+                        <div class="pf-item-field pf-item-quantity">
+                            <label>تعداد/مقدار</label>
+                            <label>${item.weightCount}</label>
+                        </div>
+
+                        <div class="pf-item-field pf-item-unit">
+                            <label>واحد</label>
+                            <label>${item.unitTxt ?? ""}</label>
+                        </div>
+
+                        <div class="pf-item-field pf-item-unit-amount">
+                            <label>مبلغ واحد</label>
+                            <label>
+                                ${uAmount}
+                                ${item.currencyTypeTxt ?? ""}
+                            </label>
+                        </div>
+
+                        <div class="pf-item-field pf-item-beforeDiscount">
+                            <label><span class="d-none d-sm-inline">مبلغ </span>قبل تخفیف</label>
+                            <label>
+                                ${beforeDiscountAmountStr}
+                                ${item.currencyTypeTxt ?? ""}
+                            </label>
+                        </div>
+
+                        <div class="pf-item-field pf-item-discount">
+                            <label>تخفیف</label>
+                            <label>
+                                ${discountAmount}
+                                ${item.currencyTypeTxt ?? ""}
+                            </label>
+                        </div>
+
+                        <div class="pf-item-field pf-item-total">
+                            <label>مبلغ نهایی</label>
+                            <label>
+                                ${tAmount}
+                                ${item.currencyTypeTxt ?? ""}
+                            </label>
+                        </div>
+
+                    </div>
+
+                    <div class="InfoDataItemOp pf-item-actions">
+                        ${actionButtons}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        if (type === "edit-delete") {
+            element.querySelector(".pf-item-delete")?.addEventListener("click", async () => {
+                await onDelete?.(index, item.id);
+            });
+            
+            element.querySelector(".pf-item-update")?.addEventListener("click", async () => {
+                await onUpdate?.(index, item.id);
+            });
+        } else if (type === "select") {
+            element.querySelector(".pf-item-select")?.addEventListener("click", async () => {
+                await onSelect?.(index, item.id);
+            });
+        }
+        
+        container.appendChild(element);
+        
+    });
+    
+    return container;
+};
 
 
 if (window.innerWidth < 992) {

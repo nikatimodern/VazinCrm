@@ -1330,7 +1330,11 @@ const ShowUpdateHeadOrder = async (id, passType, dealId) => {
 
 const AddFromPreFactorModal = () => {
     document.querySelector("#AddFromPreFactorModal .modal-title").textContent = `آیتم های اضافه نشده از پیش‌فاکتور ${pfItemsGroupedData[0].prefactorSer}`;
-    document.getElementById("AddFromPreFactor").innerHTML = generateItemPfactorDom(pfItemsNotInOrders, "select");
+    
+    document.getElementById("AddFromPreFactor").replaceChildren(
+        generateFactorItemDom(pfItemsNotInOrders, { type: "select", onSelect: (index, id) => selectPfactorItem(id) }),
+    );
+    
     $("#AddFromPreFactorModal").modal("toggle");
 };
 
@@ -2762,7 +2766,6 @@ const createSupplierTomSelect = (element, items) => {
         },
     });
 };
-
 
 
 function showTaminDropdown() {

@@ -1,6 +1,6 @@
 <!-- Modal PreFactor -->
 <div class="modal fade" id="PreFactor" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-dialog modal-dialog-centered modal-xxl">
         <div class="modal-content col-12">
             <div class="modal-header pb-0 border-0">
                 <div class="w-100 flex-center text-white fbold" style="background-color:rebeccapurple;border-radius:5px;height: 24px;">
@@ -11,7 +11,6 @@
             <div class="modal-body d-flex flex-column justify-content-between w-100">
                 <div>
                     <div class="d-flex flex-column-reverse flex-lg-row gap-3 px-2 align-items-center justify-content-between w-100">
-
                         <div class="col-12 col-lg-3 d-flex align-items-end justify-content-between flex-grow-1">
                             <form class="d-flex flex-column justify-content-between row-gap-3" id="PfHeadFormId" style="flex-grow:0.6">
                                 <div class="d-flex justify-content-evenly">
@@ -79,9 +78,9 @@
                     <div class="col-12 col-xl-9 d-flex flex-column justify-content-between bodyPreFactorModal">
 
                         <div id="PreFacItemContainer" class="d-none d-lg-flex justify-content-between w-100">
-                            <form id="PreFacItem" class="w-100">
+                            <form id="PreFacItem" class="w-100 pf-item-form">
                                 <div class="d-flex flex-column align-items-center">
-                                    <div class="d-flex justify-content-between w-100">
+                                    <div class="d-flex justify-content-between column-gap-2 w-100">
                                         <label>محصول</label>
                                         <div id="PfPrintableAlertId" class="d-flex gap-2" style="font-size:10px">
                                             <div class="d-flex align-items-center gap-1">
@@ -116,36 +115,31 @@
                                     <span class="currencyHint"></span>
                                 </div>
 
-                                <div class="totalAmountBoxPrefactorModal" style="display:flex;flex-direction:column;align-items:center; ">
-                                    <label>مبلغ کل</label>
+                                <div>
+                                    <label for="itemDiscount">تخفیف</label>
+                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="discount" id="itemDiscount" value="0" autocomplete="off" data-currency-hint="next" />
+                                    <span class="currencyHint"></span>
+                                </div>
+
+                                <div class="totalAmountBoxPrefactorModal">
+                                    <label>مبلغ نهایی</label>
                                     <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="totalAmount" id="totalAmount" disabled />
                                 </div>
 
-                                <div class="discountBoxPrefactorModal" style="display:flex;flex-direction:column;align-items:center; ">
-                                    <label>تخفیف</label>
-                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="discount" id="discount" required data-currency-hint="next" />
-                                    <span class="currencyHint"></span>
-                                </div>
                                 <div>
                                     <label>&nbsp;</label>
-                                    <button id="AddBtnId" class="buttonPurple2 align-items-center justify-content-center w-100" style="display: flex;height: 2rem;padding-inline: 10px" type="button" onclick="addPfItem()">
-                                        <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                                        </svg>
+                                    <button id="AddBtnId" class="buttonPurple2 flex-center w-100 p-0" style="height: 2rem" type="button" onclick="addPfItem()">
+                                        <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                                     </button>
                                     <div id="UpBtnId" style="display:none;flex-direction:column">
-                                        <button class="buttonGreen3" onclick="updatePfItem()" type="button" style="display:flex;justify-content:center; align-items:center;height: 26px;padding-inline: 10px">
+                                        <button class="buttonGreen3 flex-center w-100 p-0" onclick="updatePfItem()" type="button" style="height: 26px">
                                             <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                                         </button>
-                                        <button class="buttonCancel2" onclick="cancelUpdatePfItem()" type="button" style="display:flex;justify-content:center; align-items:center;height: 26px;padding-inline: 10px">
+                                        <button class="buttonCancel2 flex-center w-100 p-0" onclick="cancelUpdatePfItem()" type="button" style="height: 26px">
                                             <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
                                         </button>
                                     </div>
                                 </div>
-
-
-
-
                             </form>
                         </div>
                         <div class="InfoData flex-grow-1 mt-2" style="width:100%;height:auto;min-height:60px;max-height:200px;overflow:auto;border-color:rebeccapurple;;scrollbar-color: rebeccapurple #0000;" id="preFactorItemId">
@@ -223,14 +217,14 @@
                                     <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                                 </button>
                             </div>
-                            <div class="flex-grow-1 pe-1 w-100 d-flex mt-3 overflow-auto" style=" max-height:310px;scroll-behavior:smooth;scrollbar-color: rebeccapurple #0000" id="PfactorDescId">
+                            <div class="flex-grow-1 pe-1 w-100 d-flex mt-3 overflow-auto" style="max-height:310px;scroll-behavior:smooth;scrollbar-color: rebeccapurple #0000" id="PfactorDescId">
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="my-3 mx-auto" style="width: 97%;height:2px;background-color:rebeccapurple"></div>
                 <div class="d-flex justify-content-center w-100 gap-1">
-                    <button class="buttonCancel2" onclick="cancelPreFactor() ">انصراف</button>
+                    <button class="buttonCancel2" onclick="cancelPreFactor()">انصراف</button>
                     <button class="buttonGreen3" onclick="submitPreFactor()">ثبت</button>
                 </div>
             </div>

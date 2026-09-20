@@ -33,32 +33,33 @@
                             <select class="w-100 center fs-6 show-dropdown-arrow" name="productCode" id="productCode" required>
                             </select>
                         </div>
-                        <div style=" display:flex;flex-direction:column;align-items:center; ">
+                        <div class="d-flex flex-column align-items-center">
                             <label>شرح کالا</label>
                             <input class="form-control" type="text" name="product" id="product" style="direction:rtl" />
                         </div>
-                        <div style=" display:flex;flex-direction:column;align-items:center; ">
+                        <div class="d-flex flex-column align-items-center">
                             <label>تعداد/مقدار </label>
                             <input class="form-control" type="number" name="weightCount" id="weightCount" required />
                         </div>
-                        <div style="display:flex;flex-direction:column;align-items:center; ">
+                        <div class="d-flex flex-column align-items-center">
                             <label>واحد</label>
                             <select class="form-control valueNumber" style="width:100%;" name="unit" id="unit" required>
                             </select>
                         </div>
-                        <div class="unitAmountBoxPrefactorModal" style="display:flex;flex-direction:column;align-items:center; ">
+                        <div class="unitAmountBoxPrefactorModal d-flex flex-column align-items-center">
                             <label>مبلغ واحد (ریال)</label>
                             <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="unitAmount" required data-currency-hint="next" />
                             <span class="currencyHint"></span>
                         </div>
-                        <div class="totalAmountBoxPrefactorModal" style="display:flex;flex-direction:column;align-items:center; ">
-                            <label>مبلغ کل (ریال)</label>
-                            <input class=" form-control inpAmount" type="text" name="totalAmount" id="totalAmount" disabled />
+                        <div class="d-flex flex-column align-items-center">
+                            <label for="itemDiscount">تخفیف</label>
+                            <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="discount" id="itemDiscount" value="0" autocomplete="off" data-currency-hint="next" />
+                            <span class="currencyHint"></span>
                         </div>
-                        @*<div style="width:15%; display:flex;flex-direction:column;align-items:center; ">
-                                <label>تخفیف</label>
-                                <input class="form-control" type="text" placeholder="تخفیف" />
-                                </div>*@
+                        <div class="totalAmountBoxPrefactorModal d-flex flex-column align-items-center">
+                            <label>مبلغ کل (ریال)</label>
+                            <input class="form-control inpAmount" type="text" name="totalAmount" id="totalAmount" disabled />
+                        </div>
                     </form>
                 </div>
                 <div style="padding-block: 16px; width:95%;margin-inline:auto  ">

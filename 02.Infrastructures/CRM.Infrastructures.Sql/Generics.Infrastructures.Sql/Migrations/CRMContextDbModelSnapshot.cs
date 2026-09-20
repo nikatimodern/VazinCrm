@@ -2348,6 +2348,10 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("CreateDateTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal>("Discount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -2382,10 +2386,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal?>("TaminTotalAmount")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
 
                     b.Property<decimal?>("TaminUnitAmount")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
 
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(20)
@@ -3100,6 +3106,10 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.Property<string>("CreateDateTxt")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Discount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");

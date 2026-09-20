@@ -13,6 +13,8 @@ namespace CRM.Core.Domain.Factors.Entities
         public string UnitTxt { get; set; }
         public decimal UnitAmount { get; set; }
         public decimal TotalAmount { get; set; }
+        public decimal Discount { get; set; }
+        
         public decimal? TaminUnitAmount { get; set; }
         public decimal? TaminTotalAmount { get; set; }
         //public PreFactor PreFactor { get; set; }

@@ -15,8 +15,11 @@ document.querySelectorAll("#Factor input[type='radio'][name='f_official']")?.for
     });
 });
 
-document.querySelector("#FacItem input[name='weightCount']")?.addEventListener("input", () => calculateItem("FacItem"));
-document.querySelector("#FacItem input[name='unitAmount']")?.addEventListener("input", () => calculateItem("FacItem"));
+document.querySelector("#FacItem")?.addEventListener("input", (e) => {
+    if (e.target.matches("[name='weightCount']") || e.target.matches("[name='unitAmount']") || e.target.matches("[name='discount']")) {
+        calculateItem("FacItem");
+    }
+});
 
 const AddFactor = async (pfId, type = 1) => {
     if (!await isAllowedToAddFactor(pfId)) return;
@@ -226,54 +229,93 @@ const getFactor = async (id) => {
     });
 };
 
+/*
 const showFactorItems = () => {
-    let ob = `<div class="d-flex flex-column w-100" style="gap:5px">`;
+    let ob = `<div class="pf-items-list">`;
+    
     factorItems.forEach((item, index) => {
-        if (item.product == null) item.product = "";
-        factorItems[index].row = index + 1;
+        if (item.isDeleted) return;
+        
+        item.product ??= "";
+        item.discount ??= 0;
+        item.row = index + 1;
+        const beforeDiscountAmount = calculateTotalPrice(item.weightCount, item.unitAmount);
+        
+        const beforeDiscountAmountStr = beforeDiscountAmount ? beforeDiscountAmount.toLocaleString() : "-";
+        const uAmount = item.unitAmount ? item.unitAmount.toLocaleString() : "-";
+        const discountAmount = item.discount ? item.discount.toLocaleString() : "-";
+        const tAmount = item.totalAmount ? item.totalAmount.toLocaleString() : "-";
         
         ob += `
-            <div class="d-flex w-100">
-                <div class="InfoDataItemHeadFactor">
-                   <label class="fbold">${index + 1}</label>
-                </div>
-                <div class="InfoDataItemFactor">
-                    <div class="flex-center flex-column flex-shrink-0 px-2" style="width: 22px">
-                        <label class="fbold" style="writing-mode: sideways-lr">${Number(item.printable) === 1 ? "چـاپـدار" : ""}</label>
+            <div class="pf-item-row">
+                <div class="InfoDataItemHead InfoDataItemHeadFactor">${index + 1}</div>
+
+                <div class="InfoDataItem InfoDataItemFactor">
+                    <div class="pf-item-printable">
+                        ${Number(item.printable) === 1 ? "چـاپـدار" : ""}
                     </div>
-                    <div class="d-flex flex-wrap justify-content-between w-100">
-                       <div class="col-12 col-lg-5 InfoDataItemOp">
-                           <label>شرح کالا</label>
-                           <label class="px-2 d-flex gap-1 fbold">
-                                <span>${item.productSmallName}</span>
-                                <span>${item.product}</span>
-                           </label>
-                       </div>
-                       <div class="d-lg-none" style="width:90%;margin-block: 4px;margin-inline: auto; height:1px; background-color:rgba(0,0,0,0.15);">
+
+                    <div class="pf-item-content">
+                        <div class="pf-item-field pf-item-product">
+                            <label>شرح کالا</label>
+                            <label>
+                                <span>${item.productSmallName ?? ""}</span>
+                                <span>${item.product ?? ""}</span>
+                            </label>
                         </div>
-                       <div class="col-6 col-lg-1 InfoDataItemOp">
-                           <label>تعداد/مقدار</label>
-                           <label class="fbold">${item.weightCount}</label>
-                       </div>
-                       <div class="col-6 col-lg-1 InfoDataItemOp">
-                           <label>واحد</label>
-                           <label class="fbold">${item.unitTxt}</label>
-                       </div>
-                        <div class="d-lg-none" style="width:90%;margin-block: 4px;margin-inline: auto; height:1px; background-color:rgba(0,0,0,0.15);">
+
+                        <div class="pf-item-field pf-item-quantity">
+                            <label>تعداد/مقدار</label>
+                            <label>${item.weightCount}</label>
                         </div>
-                       <div class="col-6 col-lg-2 InfoDataItemOp">
-                           <label>مبلغ واحد</label>
-                           <label class="fbold">${item.unitAmount.toLocaleString()}</label>
-                       </div>
-                       <div class="col-6 col-lg-2 InfoDataItemOp">
-                           <label>مبلغ کل</label>
-                           <label class="fbold">${item.totalAmount.toLocaleString()}</label>
-                       </div>
+
+                        <div class="pf-item-field pf-item-unit">
+                            <label>واحد</label>
+                            <label>${item.unitTxt ?? ""}</label>
+                        </div>
+
+                        <div class="pf-item-field pf-item-unit-amount">
+                            <label>مبلغ واحد</label>
+                            <label>
+                                ${uAmount}
+                                ${item.currencyTypeTxt ?? ""}
+                            </label>
+                        </div>
+
+                        <div class="pf-item-field pf-item-beforeDiscount">
+                            <label>مبلغ قبل تخفیف</label>
+                            <label>
+                                ${beforeDiscountAmountStr}
+                                ${item.currencyTypeTxt ?? ""}
+                            </label>
+                        </div>
+                        
+                        
+                        <div class="pf-item-field pf-item-discount">
+                            <label>تخفیف</label>
+                            <label>
+                                ${discountAmount}
+                                ${item.currencyTypeTxt ?? ""}
+                            </label>
+                        </div>
+
+                        <div class="pf-item-field pf-item-total">
+                            <label>مبلغ نهایی</label>
+                            <label>
+                                ${tAmount}
+                                ${item.currencyTypeTxt ?? ""}
+                            </label>
+                        </div>
                     </div>
-                    
-                    <div class="InfoDataItemOp col-auto" style="padding-inline: 6px;flex-shrink: 0">
-                       <button class="flex-center"><i class="mp fa fa-trash" onclick="deleteFItem(${index})"></i></button>
-                       <button class="flex-center"><i class="mp fa fa-pencil" onclick="showUpdateFItem(${index})"></i></button>
+
+                    <div class="InfoDataItemOp pf-item-actions">
+                        <button type="button" class="pf-item-action" onclick="deleteFItem(${index})">
+                            <i class="fa fa-trash"></i>
+                        </button>
+
+                        <button type="button" class="pf-item-action" onclick="showUpdateFItem(${index})">
+                            <i class="fa fa-pencil"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -284,15 +326,23 @@ const showFactorItems = () => {
     
     document.getElementById("FactorItemId").innerHTML = ob;
 };
+*/
 
+const showFactorItems = () => {
+    document.getElementById("FactorItemId").replaceChildren(
+        generateFactorItemDom(factorItems, { onDelete: deleteFItem, onUpdate: showUpdateFItem }),
+    );
+};
 
 const addFItem = async () => {
     if (!await mySer.CheckValidForm("#FacItem")) return false;
-    
-    let data = mySer.convertFormToJSON("#FacItem");
+    if (!validatePfItemDiscount("FacItem")) return false;
     
     const productCodeElm = document.querySelector("#FacItem select[name='productCode']");
     const unitElm = document.querySelector("#FacItem select[name='unit']");
+    
+    let data = mySer.convertFormToJSON("#FacItem");
+    
     data.productSmallName = productCodeElm.options[productCodeElm.selectedIndex].text;
     data.unitTxt = unitElm.options[unitElm.selectedIndex].text;
     
@@ -354,7 +404,11 @@ const cancelUpdateFItem = () => {
 
 
 const updateFItem = async () => {
+    if (!await mySer.CheckValidForm("#FacItem")) return false;
+    if (!validatePfItemDiscount("FacItem")) return false;
+    
     const form = document.getElementById("FacItem");
+    
     const productCode = form.elements.namedItem("productCode");
     const unit = form.elements.namedItem("unit");
     
@@ -393,7 +447,7 @@ const deleteFItem = async (index) => {
     
     if (item.id != null) {
         item.isDeleted = true;
-        factorItems = factorItems.filter(f => f.isDeleted !== true);
+        // factorItems = factorItems.filter(f => f.isDeleted !== true);
     } else {
         factorItems.splice(index, 1);
     }
@@ -406,42 +460,15 @@ const deleteFItem = async (index) => {
 
 const calculateFactorTotals = () => {
     return new Promise((resolve) => {
-        const data = factorItems.filter(item => !item.isDeleted);
-        let taxPercent = setting?.taxPercent || 10;
-        let sumTotalAmount = 0;
-        
-        const discountInput = document.getElementById("f_discount");
-        const discount = Math.round(Number(SeparatedNumberRemove(discountInput.value)) || 0);
-        
-        data.forEach(item => {
-            sumTotalAmount += Number(item.totalAmount) || 0;
+        calculateInvoiceTotals({
+            items: factorItems,
+            invoice: factor,
+            discountInputId: "f_discount",
+            sumTotalAmountId: "f_sumTotalAmount",
+            totalTaxId: "f_totalTax",
+            paymentAmountId: "f_paymentAmount",
         });
-        
-        sumTotalAmount = Math.round(sumTotalAmount);
-        
-        let totalTax = 0;
-        
-        if (factor.officialType === 1) {
-            factor.percentTax = taxPercent;
-            
-            totalTax = Math.round((sumTotalAmount - discount) * taxPercent / 100);
-        } else {
-            factor.percentTax = 0;
-        }
-        
-        
-        const paymentAmount = sumTotalAmount - discount + totalTax;
-        
-        factor.sumTotalAmount = sumTotalAmount;
-        factor.discount = discount;
-        factor.totalTax = totalTax;
-        factor.paymentAmount = Math.round(paymentAmount);
-        
-        document.getElementById("f_sumTotalAmount").textContent = factor.sumTotalAmount.toLocaleString();
-        document.getElementById("f_totalTax").textContent = factor.totalTax.toLocaleString();
-        document.getElementById("f_paymentAmount").textContent = factor.paymentAmount.toLocaleString();
-        
-        resolve(factor);
+        resolve(true);
     });
 };
 
@@ -490,7 +517,7 @@ const showFDescriptionItems = () => {
         if (item.isDeleted) return;
         
         items += `
-            <li class="mp d-flex">
+            <li class="d-flex justify-content-between gap-1">
                 <p>${item.text}</p>
                 <span onclick="deleteFDescriptionItem(${index})">
                     <i style="cursor: pointer;" class="fa fa-trash"></i>

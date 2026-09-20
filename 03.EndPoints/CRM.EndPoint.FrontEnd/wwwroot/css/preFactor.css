@@ -1,0 +1,342 @@
+.pf-item-form {
+	display: grid;
+	grid-template-columns:
+        minmax(120px, 2.1fr)
+        minmax(150px, 3.2fr)
+        minmax(75px, 1fr)
+        minmax(75px, 1fr)
+        minmax(105px, 1.6fr)
+        minmax(90px, 1.5fr)
+        minmax(115px, 1.6fr)
+        38px;
+	
+	gap: 4px;
+}
+
+
+.pf-item-form > div {
+	min-width: 0;
+}
+
+
+.pf-item-form label {
+	display: block;
+	text-align: center;
+	white-space: nowrap;
+	color: #333;
+}
+
+
+.pf-item-row {
+	display: flex;
+	width: 100%;
+}
+
+
+@media (min-width: 992px) and (max-width: 1199px) {
+	.pf-item-form {
+		grid-template-columns:
+            minmax(100px, 1.8fr)
+            minmax(125px, 2.5fr)
+            minmax(65px, .9fr)
+            minmax(65px, .9fr)
+            minmax(95px, 1.4fr)
+            minmax(80px, 1.3fr)
+            minmax(105px, 1.4fr)
+            34px;
+	}
+}
+
+
+@media (min-width: 1500px) {
+	.pf-item-form {
+		grid-template-columns: 2.2fr 3.5fr 1fr 1fr 1.7fr 1.6fr 1.7fr 44px;
+	}
+}
+
+
+.InfoDataItem {
+	border: 2px solid rebeccapurple;
+	display: flex;
+	justify-content: space-between;
+	width: 100%;
+	background-color: #fff;
+	padding-block: .25rem;
+	min-width: 0;
+}
+
+
+.InfoDataItemHead {
+	color: aliceblue;
+	background-color: #4c1087;;
+	width: 24px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	border-bottom-right-radius: 10px;
+	font-family: IRANSansBold;
+}
+
+
+#FactorItemId .InfoDataItem {
+	border-color: #00625b;
+}
+
+
+#FactorItemId .InfoDataItemHead {
+	background-color: #00302d;
+}
+
+
+#FactorItemId .InfoDataItem .InfoDataItemOp button {
+	color: #02514C;
+}
+
+
+.returned-factor .InfoDataItemHead {
+	background-color: darkred !important;
+}
+
+
+.returned-factor .InfoDataItem,
+.returned-factor .InfoData {
+	border-color: darkred !important;
+}
+
+
+.returned-factor .InfoDataItem .InfoDataItemOp button {
+	color: darkred !important;
+}
+
+
+.pf-items-list {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	gap: 5px;
+}
+
+
+.pf-item-content {
+	display: grid;
+	grid-template-columns:
+       minmax(170px, 2.3fr) /* شرح کالا */
+        minmax(65px, .7fr)   /* تعداد */
+        minmax(65px, .7fr)   /* واحد */
+        minmax(95px, 1.05fr) /* مبلغ واحد */
+        minmax(110px, 1.25fr) /* قبل تخفیف */
+        minmax(95px, 1.05fr) /* تخفیف */
+        minmax(110px, 1.25fr); /* مبلغ نهایی */
+	align-items: stretch;
+	flex: 1;
+	min-width: 0;
+}
+
+
+.pf-item-field {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: space-evenly;
+	min-width: 0;
+	padding-inline: 4px;
+}
+
+
+.pf-item-field > label:first-child {
+	font-size: 12px;
+	color: #888;
+}
+
+
+.pf-item-field > label:last-child {
+	font-size: 14px;
+	font-family: IRANSansBold;
+	overflow: hidden;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+}
+
+
+.pf-item-product > label:last-child {
+	text-overflow: ellipsis;
+	font-size: 13px !important;
+	padding-inline: .5rem;
+}
+
+
+.pf-item-printable {
+	width: 22px;
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	
+	writing-mode: sideways-lr;
+	font-size: 13px;
+	font-family: IRANSansBold;
+}
+
+
+.pf-item-actions {
+	flex-shrink: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-evenly;
+	gap: 2px;
+	padding-inline: 4px;
+}
+
+
+.pf-item-action {
+	width: 24px;
+	height: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #3f0e6e;
+}
+
+
+.pf-item-action:hover {
+	color: #6d28d9;
+}
+
+
+/* .pf-item-discount-value {
+	color: #6d28d9;
+}
+
+.pf-item-total-value {
+	color: #004944;
+} */
+
+@media (min-width: 992px) and (max-width: 1199px) {
+	.pf-item-content {
+		grid-template-columns:
+             minmax(140px, 1.9fr)
+            minmax(55px, .65fr)
+            minmax(55px, .65fr)
+            minmax(80px, 1fr)   /* مبلغ واحد */
+            minmax(85px, 1.1fr) /* قبل تخفیف */
+            minmax(80px, 1fr)   /* تخفیف */
+            minmax(90px, 1.15fr); /* نهایی */
+	}
+	
+	.pf-item-field > label:last-child {
+		font-size: 13px;
+	}
+	
+	.pf-item-field > label:first-child {
+		font-size: 11px;
+	}
+}
+
+
+@media (min-width: 1200px) {
+	.pf-item-content {
+		grid-template-columns:
+             minmax(180px, 2.4fr)
+            minmax(65px, .7fr)
+            minmax(65px, .7fr)
+            minmax(100px, 1.1fr)
+            minmax(110px, 1.25fr)
+            minmax(100px, 1.1fr)
+            minmax(115px, 1.3fr);
+	}
+}
+
+
+@media (min-width: 1500px) {
+	.pf-item-content {
+		grid-template-columns:
+           2.7fr
+            .8fr
+            .8fr
+            1.2fr  
+            1.4fr
+            1.2fr
+            1.45fr;
+	}
+}
+
+
+@media (max-width: 991px) {
+	.InfoDataItem {
+		padding: 0;
+	}
+	
+	.pf-item-content {
+		grid-template-columns: repeat(7, minmax(0, 1fr));
+		padding-inline: 2px;
+	}
+	
+	.pf-item-field {
+		padding: 5px 3px;
+	}
+	
+	.pf-item-product {
+		grid-column: 1 / -1;
+		border-bottom: 1px solid #ddd;
+		align-items: center;
+	}
+	
+	.pf-item-quantity,
+	.pf-item-unit {
+		grid-column: span 2;
+	}
+	
+	.pf-item-unit-amount {
+		grid-column: span 3;
+	}
+	
+	.pf-item-discount,
+	.pf-item-beforeDiscount {
+		grid-column: span 2;
+		border-top: 1px solid #ddd;
+	}
+	
+	.pf-item-total {
+		grid-column: span 3;
+		border-top: 1px solid #ddd;
+	}
+	
+	
+	.pf-item-field > label:first-child {
+		font-size: 11px;
+		color: #888;
+		margin-bottom: 3px;
+	}
+	
+	.pf-item-field > label:last-child {
+		font-size: 13px;
+		line-height: 1.4;
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		text-align: center;
+	}
+	
+	.pf-item-product > label:last-child {
+		width: 100%;
+		font-size: 13px !important;
+		line-height: 1.5;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: normal;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+	}
+	
+	.pf-item-actions {
+		padding-inline: 0;
+	}
+	
+	.InfoDataItemHead {
+		width: 20px;
+	}
+}

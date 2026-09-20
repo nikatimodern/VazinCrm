@@ -13,9 +13,10 @@ namespace CRM.Core.Domain.PreFactors.Entities {
         public string UnitTxt { get; set; }
         public decimal UnitAmount { get; set; }
         public decimal TotalAmount { get; set; }
+        public decimal Discount { get; set; }
+
         public decimal? TaminUnitAmount { get; set; }
         public decimal? TaminTotalAmount { get; set; }
-
 
         public Guid? ProductGroup { get; set; }
         public string ProductGroupTxt { get; set; }

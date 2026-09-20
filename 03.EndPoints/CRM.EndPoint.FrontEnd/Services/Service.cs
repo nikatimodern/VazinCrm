@@ -260,7 +260,12 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
                 foreach (var item in items)
                 {
-                    item.TotalAmount = decimal.Parse(item.WeightCount) * item.UnitAmount;
+                    var weightCount = decimal.Parse(item.WeightCount);
+                    var amountBeforeDiscount = weightCount * item.UnitAmount;
+
+                    item.Discount = Math.Min(Math.Round(item.Discount), amountBeforeDiscount);
+                    item.TotalAmount = Math.Max(0, amountBeforeDiscount - item.Discount);
+
                     sumTotalAmount += item.TotalAmount;
                 }
 
@@ -268,19 +273,20 @@ namespace CRM.EndPoint.FrontEnd.Services {
                 factor.Discount = Math.Round(factor.Discount);
 
                 decimal totalTax = 0;
+                var amountBeforeTax = Math.Max(0, factor.SumTotalAmount - factor.Discount);
 
                 if (factor.OfficialType == 1)
                 {
                     factor.PercentTax = taxPercent;
 
-                    totalTax = Math.Round((factor.SumTotalAmount - factor.Discount) * taxPercent / 100m);
+                    totalTax = Math.Round(amountBeforeTax * taxPercent / 100m);
                 } else
                 {
                     factor.PercentTax = 0;
                 }
 
                 factor.TotalTax = totalTax;
-                factor.PaymentAmount = Math.Round(factor.SumTotalAmount - factor.Discount + totalTax);
+                factor.PaymentAmount = Math.Round(amountBeforeTax + totalTax);
             } else if (model is PreFactor preFactor)
             {
                 var items = preFactor.PreFactorItems.Where(x => !x.IsDeleted);
@@ -289,7 +295,12 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
                 foreach (var item in items)
                 {
-                    item.TotalAmount = decimal.Parse(item.WeightCount) * item.UnitAmount;
+                    var weightCount = decimal.Parse(item.WeightCount);
+                    var amountBeforeDiscount = weightCount * item.UnitAmount;
+
+                    item.Discount = Math.Min(Math.Round(item.Discount), amountBeforeDiscount);
+                    item.TotalAmount = Math.Max(0, amountBeforeDiscount - item.Discount);
+
                     sumTotalAmount += item.TotalAmount;
                 }
 
@@ -297,19 +308,20 @@ namespace CRM.EndPoint.FrontEnd.Services {
                 preFactor.Discount = Math.Round(preFactor.Discount);
 
                 decimal totalTax = 0;
+                var amountBeforeTax = Math.Max(0, preFactor.SumTotalAmount - preFactor.Discount);
 
                 if (preFactor.OfficialType == 1)
                 {
                     preFactor.PercentTax = taxPercent;
 
-                    totalTax = Math.Round((preFactor.SumTotalAmount - preFactor.Discount) * taxPercent / 100m);
+                    totalTax = Math.Round(amountBeforeTax * taxPercent / 100m);
                 } else
                 {
                     preFactor.PercentTax = 0;
                 }
 
                 preFactor.TotalTax = totalTax;
-                preFactor.PaymentAmount = Math.Round(preFactor.SumTotalAmount - preFactor.Discount + totalTax);
+                preFactor.PaymentAmount = Math.Round(amountBeforeTax + totalTax);
             }
 
             return model;

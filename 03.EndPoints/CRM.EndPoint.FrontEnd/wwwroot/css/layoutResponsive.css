@@ -31,9 +31,9 @@
 
 
 
-#PreFactor #PreFacItem, #Factor #FacItem {
+/* #PreFactor #PreFacItem, #Factor #FacItem {
 	display: grid;
-	grid-template-columns: 2.1fr 2fr 1fr 1fr 1.6fr 1.6fr 0.4fr  ;
+	grid-template-columns: 2.1fr 3.2fr 1fr 1fr 1.6fr 1.6fr 0.4fr;
 	gap: 4px;
 }
 
@@ -42,7 +42,7 @@
 	#PreFactor #PreFacItem, #Factor #FacItem {
 		grid-template-columns: 2.3fr 3.2fr 1fr 1fr 1.6fr 1.6fr 0.4fr;
 	}
-}
+} */
 
 
 @media (min-width: 992px) {
