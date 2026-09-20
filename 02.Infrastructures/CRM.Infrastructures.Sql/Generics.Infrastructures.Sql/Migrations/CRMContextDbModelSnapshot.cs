@@ -73,6 +73,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<bool>("SmallOffice")
                         .HasColumnType("bit");
 
+                    b.Property<Guid>("SmsServiceCode")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("TaxPercent")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.ToTable("ASettings");
@@ -2152,6 +2158,9 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.Property<int?>("CustomerCode")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("CustomerFeedbackSmsSentDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("CustomerId")
                         .HasColumnType("uniqueidentifier");

@@ -1,144 +1,88 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
-using CRM.EndPoint.FrontEnd.Models.Configuration;
+using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models.Sms;
-using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
+using CRM.Infrastructures.Sql;
+using Microsoft.EntityFrameworkCore;
 
 namespace CRM.EndPoint.FrontEnd.Services.Sms {
-    public class SmsService {
-        private readonly RequestServices request;
-        private readonly HttpClient httpClient;
-        private readonly appSettingSms smsConfig;
+    public class SmsService(CRMContextDb db, FarazSmsService farazSmsService, ISmsIrService smsIrService) {
+        private const string FarazSmsCode = "cdde93d8-0522-4370-a734-008265e10245";
+        private const string SmsIrCode = "c02f8771-cf60-4891-84cb-a21de966b3fc";
 
-        public SmsService(RequestServices request, HttpClient httpClient, IConfiguration config)
+        public Task<ResponseSmsModel> SendPatternAsync(SmsJob job)
         {
-            this.request = request;
-            this.httpClient = httpClient;
-            smsConfig = config.GetSection("smsConfig").Get<appSettingSms>();
+            return ExecuteAsync(
+                () => farazSmsService.SendPatternAsync(job),
+                () => smsIrService.SendPatternAsync(job)
+            );
         }
 
-        private async Task<ResponseSmsModel> SendPatternSms(string toNumber, string patternCode, Dictionary<string, string> attrs)
+        public Task<ResponseSmsModel> SendTextAsync(string[] mobiles, string message)
         {
-            ResponseSmsModel res = new();
+            return ExecuteAsync(
+                () => farazSmsService.SendTextAsync(mobiles, message),
+                () => smsIrService.SendTextAsync(mobiles, message)
+            );
+        }
 
-            if (smsConfig.ActiveStatus != true)
+
+
+
+        private async Task<ResponseSmsModel> ExecuteAsync(Func<Task<ResponseSmsModel>> farazAction, Func<Task<ResponseSmsModel>> smsIrAction)
+        {
+            var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
+
+            if (setting?.SmsServiceCode == null)
             {
-                res.code = 0;
-                res.Desc = "ارسال پیامک غیر فعال است";
-                return res;
+                return new ResponseSmsModel { code = 0, Desc = "سرویس پیامک تنظیم نشده است" };
             }
 
             try
             {
-                var model = new PatternSmsRequest {
-                    code = patternCode,
-                    recipient = toNumber,
-                    line_number = smsConfig._fromNumber,
-                    attributes = attrs
+                return setting.SmsServiceCode.ToString() switch {
+                    FarazSmsCode => await farazAction(),
+                    SmsIrCode => await smsIrAction(),
+                    _ => new ResponseSmsModel { code = 0, Desc = "سرویس پیامک نامعتبر است" }
                 };
-
-
-                var content = new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json");
-
-                var response = await httpClient.PostAsync("", content);
-
-                var responseText = await response.Content.ReadAsStringAsync();
-
-                var result = JsonConvert.DeserializeObject<PatternSmsResponse>(responseText);
-
-                res.code = response.IsSuccessStatusCode ? 200 : 0;
-                res.Desc = !string.IsNullOrEmpty(result?.message) ? result.message : result?.status ?? responseText;
-
-                return res;
             }
             catch (Exception ex)
             {
-                res.code = 0;
-                res.Desc = ex.Message;
-                return res;
+                return new ResponseSmsModel { code = 0, Desc = ex.Message };
             }
         }
 
-
-        public async Task<ResponseSmsModel> SendAsync(SmsJob job)
+        public async Task<SmsDashboardModel> GetDashboardAsync()
         {
-            string patternCode;
-            Dictionary<string, string> attrs = null;
+            var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
 
-            switch (job.Type)
-            {
-                // تایید پیش‌فاکتور توسط مشتری
-                case SmsType.AcceptPfactorToCustomer:
-                    patternCode = smsConfig.Patterns.AcceptPfactorToCustomer;
-                    attrs = new Dictionary<string, string> {
-                        ["number"] = job.SerialNumber,
-                        ["link"] = job.PfactorId?.ToString().Substring(0, 7)
-                    };
-                    break;
+            return setting?.SmsServiceCode.ToString() switch {
+//                FarazSmsCode => await farazSmsService.GetDashboardAsync(),
+                SmsIrCode => await smsIrService.GetDashboardAsync(),
+                _ => null
+            };
+        }
 
-                // تایید پیش‌فاکتور توسط تامین
-                case SmsType.AcceptPfactorToTamin:
-                    patternCode = smsConfig.Patterns.AcceptPfactorToTamin;
-                    attrs = new Dictionary<string, string> {
-                        ["number"] = job.SerialNumber,
-                        ["link"] = "Cartable/Index?tab=TTaminExpertId"
-                    };
-                    break;
+        public async Task<IReadOnlyList<SmsReportModel>> GetReportsAsync(int page = 1, int pageSize = 100)
+        {
+            var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
 
-                // تایید مدیر فروش (برای مشتری)
-                case SmsType.AcceptedSalesAdminToCustomer:
-                    patternCode = smsConfig.Patterns.AcceptedSalesAdminToCustomer;
-                    attrs = new Dictionary<string, string> {
-                        ["number"] = job.SerialNumber
-                    };
-                    break;
+            return setting?.SmsServiceCode.ToString() switch {
+//                FarazSmsCode => await farazSmsService.GetReportsAsync(page, pageSize),
+                SmsIrCode => await smsIrService.GetReportsAsync(page, pageSize),
+                _ => []
+            };
+        }
+        public async Task<IReadOnlyList<SmsReceiveModel>> GetReceivesAsync(int page = 1, int pageSize = 100)
+        {
+            var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
 
-                // محصول آماده تحویل (برای مشتری)
-                case SmsType.ReadyToDeliverToCustomer:
-                    patternCode = smsConfig.Patterns.ReadyToDeliverToCustomer;
-                    attrs = new Dictionary<string, string> {
-                        ["number"] = job.SerialNumber
-                    };
-                    break;
-
-                // لینک واریز پیش پرداخت (برای مشتری)
-                case SmsType.PaymentLinkToCustomer:
-                    patternCode = smsConfig.Patterns.PaymentPfactorLink;
-                    attrs = new Dictionary<string, string> {
-                        ["number"] = job.SerialNumber!,
-                        ["link"] = job.PfactorId?.ToString().Substring(0, 7)
-                    };
-                    break;
-
-                // ارسال OTP
-                case SmsType.OtpLogin:
-                    patternCode = smsConfig.Patterns.OtpLogin;
-                    attrs = new Dictionary<string, string> {
-                        ["number"] = job.Code
-                    };
-                    break;
-
-                case SmsType.OtpForgot:
-                    patternCode = smsConfig.Patterns.OtpForgot;
-                    attrs = new Dictionary<string, string> {
-                        ["number"] = job.Code
-                    };
-                    break;
-
-                // chat reminder
-                case SmsType.ChatReminder:
-                    patternCode = smsConfig.Patterns.ChatReminder;
-                    break;
-
-                default:
-                    throw new NotSupportedException();
-            }
-
-            return await SendPatternSms(job.Mobile, patternCode, attrs);
+            return setting?.SmsServiceCode.ToString() switch {
+//                FarazSmsCode => await farazSmsService.GetReceivesAsync(page, pageSize),
+                SmsIrCode => await smsIrService.GetReceivesAsync(page, pageSize),
+                _ => []
+            };
         }
     }
 }

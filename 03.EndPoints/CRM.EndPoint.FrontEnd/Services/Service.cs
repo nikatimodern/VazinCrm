@@ -14,6 +14,7 @@ using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Reports.Enum;
 using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.Core.Domain.Transfers.Entities;
+using FactorEntity = CRM.Core.Domain.Factors.Entities.Factor;
 using CRM.EndPoint.FrontEnd.Models.Cartable;
 using CRM.Infrastructures.Sql;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
@@ -52,8 +53,8 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
             db.Emails.Add(newEmail);
         }
-        
-        
+
+
         public async Task<int> GetEmailsNotSeenCount(Guid userId)
         {
             var emailsCount = await db.Emails.AsNoTracking().Where(e => e.ToId == userId && !e.Seen).CountAsync();
@@ -248,58 +249,67 @@ namespace CRM.EndPoint.FrontEnd.Services {
             return new { Remained, FacAmount, FacPayment };
         }
 
-        
 
-        public T UpdatePaymentAmount<T>(T model) where T : class
+        public static T UpdatePaymentAmount<T>(T model, int taxPercent) where T : class
         {
-            if (typeof(T) == typeof(Core.Domain.Factors.Entities.Factor))
+            if (model is FactorEntity factor)
             {
-                var factor = model as Core.Domain.Factors.Entities.Factor;
-                var items = factor.FactorItems.Where(f => !f.IsDeleted);
+                var items = factor.FactorItems.Where(x => !x.IsDeleted);
+
                 decimal sumTotalAmount = 0;
-                decimal totalTax = 0;
-                decimal paymentAmount = 0;
+
                 foreach (var item in items)
                 {
                     item.TotalAmount = decimal.Parse(item.WeightCount) * item.UnitAmount;
-
                     sumTotalAmount += item.TotalAmount;
                 }
 
+                factor.SumTotalAmount = Math.Round(sumTotalAmount);
+                factor.Discount = Math.Round(factor.Discount);
+
+                decimal totalTax = 0;
 
                 if (factor.OfficialType == 1)
                 {
-                    totalTax = Math.Round((sumTotalAmount - factor.Discount) * 10 / 100);
+                    factor.PercentTax = taxPercent;
+
+                    totalTax = Math.Round((factor.SumTotalAmount - factor.Discount) * taxPercent / 100m);
+                } else
+                {
+                    factor.PercentTax = 0;
                 }
 
-                paymentAmount = (sumTotalAmount - factor.Discount) + totalTax;
-                factor.SumTotalAmount = Math.Round(sumTotalAmount);
-                factor.TotalTax = Math.Round(totalTax);
-                factor.PaymentAmount = Math.Round(paymentAmount);
-            } else if (typeof(T) == typeof(PreFactor))
+                factor.TotalTax = totalTax;
+                factor.PaymentAmount = Math.Round(factor.SumTotalAmount - factor.Discount + totalTax);
+            } else if (model is PreFactor preFactor)
             {
-                var preFactor = model as PreFactor;
-                var items = preFactor.PreFactorItems.Where(f => !f.IsDeleted);
+                var items = preFactor.PreFactorItems.Where(x => !x.IsDeleted);
+
                 decimal sumTotalAmount = 0;
-                decimal totalTax = 0;
-                decimal paymentAmount = 0;
+
                 foreach (var item in items)
                 {
                     item.TotalAmount = decimal.Parse(item.WeightCount) * item.UnitAmount;
-
                     sumTotalAmount += item.TotalAmount;
                 }
 
+                preFactor.SumTotalAmount = Math.Round(sumTotalAmount);
+                preFactor.Discount = Math.Round(preFactor.Discount);
+
+                decimal totalTax = 0;
 
                 if (preFactor.OfficialType == 1)
                 {
-                    totalTax = Math.Round((sumTotalAmount - preFactor.Discount) * 10 / 100);
+                    preFactor.PercentTax = taxPercent;
+
+                    totalTax = Math.Round((preFactor.SumTotalAmount - preFactor.Discount) * taxPercent / 100m);
+                } else
+                {
+                    preFactor.PercentTax = 0;
                 }
 
-                paymentAmount = sumTotalAmount - preFactor.Discount + totalTax;
-                preFactor.SumTotalAmount = Math.Round(sumTotalAmount);
-                preFactor.TotalTax = Math.Round(totalTax);
-                preFactor.PaymentAmount = Math.Round(paymentAmount);
+                preFactor.TotalTax = totalTax;
+                preFactor.PaymentAmount = Math.Round(preFactor.SumTotalAmount - preFactor.Discount + totalTax);
             }
 
             return model;

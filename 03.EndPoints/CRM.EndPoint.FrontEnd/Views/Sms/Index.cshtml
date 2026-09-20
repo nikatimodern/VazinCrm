@@ -1,0 +1,123 @@
+<div class="sms-page">
+    <div class="sms-page-header">
+        <div>
+            <div class="sms-page-title">مدیریت پیامک</div>
+            <div class="sms-page-subtitle">گزارش ارسال و پیامک‌های دریافتی</div>
+        </div>
+
+        <button type="button" class="btn sms-refresh-btn" id="refreshSmsBtn">
+            <i class="fas fa-arrows-rotate"></i>
+            بروزرسانی
+        </button>
+    </div>
+
+    <div class="sms-summary-grid">
+        <div class="sms-summary-card">
+            <div class="sms-summary-icon sms-summary-icon-credit">
+                <i class="fas fa-wallet"></i>
+            </div>
+            <div class="sms-summary-content">
+                <span>موجودی حساب</span>
+                <strong id="smsCredit">-</strong>
+            </div>
+        </div>
+
+        <div class="sms-summary-card">
+            <div class="sms-summary-icon sms-summary-icon-provider">
+                <i class="fas fa-signal"></i>
+            </div>
+            <div class="sms-summary-content">
+                <span>سرویس فعال</span>
+                <strong id="smsProvider">-</strong>
+            </div>
+        </div>
+
+        <div class="sms-summary-card">
+            <div class="sms-summary-icon sms-summary-icon-lines">
+                <i class="fas fa-sim-card"></i>
+            </div>
+            <div class="sms-summary-content">
+                <span>خطوط فعال</span>
+                <strong id="smsLines">-</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="sms-content-card">
+        <div class="sms-tabs">
+            <button type="button"
+                    class="sms-tab active"
+                    data-tab="reports">
+                <i class="fa-regular fa-paper-plane"></i>
+                گزارش ارسال
+                <span class="sms-tab-count" id="reportsCount">0</span>
+            </button>
+
+            <button type="button"
+                    class="sms-tab"
+                    data-tab="receives">
+                <i class="fa-regular fa-comment-dots"></i>
+                پیامک‌های دریافتی
+                <span class="sms-tab-count" id="receivesCount">0</span>
+            </button>
+        </div>
+
+        <div class="sms-tab-content" id="reportsTab">
+            <div class="sms-table-header">
+                <div>
+                    <h6>گزارش ارسال پیامک</h6>
+                    <span>وضعیت و جزئیات پیامک‌های ارسال‌شده</span>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table id="smsReportsTable"
+                       class="table sms-table align-middle w-100">
+                    <thead>
+                    <tr>
+                        <th>شماره</th>
+                        <th>متن پیام</th>
+                        <th>وضعیت</th>
+                        <th>تاریخ ارسال</th>
+                        <th>تاریخ تحویل</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="sms-tab-content d-none" id="receivesTab">
+            <div class="sms-table-header">
+                <div>
+                    <h6>پیامک‌های دریافتی</h6>
+                    <span>پیام‌های دریافت‌شده روی خطوط</span>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table id="smsReceivesTable"
+                       class="table sms-table align-middle w-100">
+                    <thead>
+                    <tr>
+                        <th>شماره</th>
+                        <th>متن پیام</th>
+                        <th>خط</th>
+                        <th>تاریخ دریافت</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script src="~/js/sms.js" asp-append-version="true"></script>
+}
+
+@section Styles {
+    <link href="~/css/sms.css" asp-append-version="true" />
+}

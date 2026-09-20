@@ -53,6 +53,10 @@ public static class AccountancyQueryExtensions {
     {
         return a => a.PayType == PayTypeEnum.نقدی || a.PayType == PayTypeEnum.چکی;
     }
+    public static Expression<Func<Accountancy, bool>> OnlyTaminExpr()
+    {
+        return a => a.PayType == PayTypeEnum.اعتباری || a.PayType == PayTypeEnum.تهاتری;
+    }
 
     public static IQueryable<Accountancy> OnlyFinancial(this IQueryable<Accountancy> query)
     {

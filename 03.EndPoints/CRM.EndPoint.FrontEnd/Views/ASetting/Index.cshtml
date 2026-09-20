@@ -39,42 +39,57 @@
                 <input type="checkbox" id="crmFactors" name="crmFactors" value="true" />
                 <label style="cursor:pointer;" for="crmFactors">صدور فاکتور درون برنامه</label>
             </div>
+
             <div class="d-flex align-items-center gap-1">
                 <input type="checkbox" id="FactorTowStep" name="factorTowStep" value="true" />
                 <label style="cursor:pointer;" for="FactorTowStep">صدور فاکتور دو مرحله ای</label>
             </div>
+
             <div class="d-flex align-items-center gap-1">
                 <input type="checkbox" id="customerCanChooseInvoiceType" name="customerCanChooseInvoiceType" value="true" />
                 <label style="cursor:pointer;" for="customerCanChooseInvoiceType">انتخاب نوع فاکتور توسط مشتری</label>
             </div>
+
             <div class="d-flex align-items-center gap-1">
                 <input type="checkbox" id="financialConfirm" name="financialConfirm" value="true" />
                 <label style="cursor:pointer;" for="financialConfirm">تایید مالی پیش فاکتور</label>
             </div>
+
             <div class="d-flex align-items-center gap-1">
                 <input type="checkbox" id="setSupplyAmountByTamin" name="setSupplyAmountByTamin" value="true" />
                 <label style="cursor:pointer;" for="setSupplyAmountByTamin">ورود بهای تامین</label>
             </div>
+
             <div class="d-flex align-items-center gap-1">
                 <input type="checkbox" id="setSupplyByTamin" name="setSupplyByTamin" value="true" />
                 <label style="cursor:pointer;" for="setSupplyByTamin">ورود تامین کننده</label>
             </div>
+
             <div class="d-flex align-items-center gap-1">
                 <input type="checkbox" id="multiSelectOrderHeadsInRequestAmount" name="multiSelectOrderHeadsInRequestAmount" value="true" />
                 <label style="cursor:pointer;" for="multiSelectOrderHeadsInRequestAmount">انتخاب چندتایی حواله تولید در ثبت درخواست وجه پیش پرداخت</label>
             </div>
+
             <div class="d-flex align-items-center gap-1">
                 <input type="checkbox" id="customerAssignExpert" name="customerAssignExpert" value="true" />
                 <label style="cursor:pointer;" for="customerAssignExpert">مشتری اختصاصی</label>
             </div>
+
             <div class="d-flex align-items-center gap-1">
                 <label for="setAmountByRoleType" class="flex-shrink-0">ورود مبلغ توسط: </label>
-                <select class="form-select form-select-sm" name="setAmountByRoleType" id="setAmountByRoleType">
+                <select class="form-select form-select-sm" name="setAmountByRoleType" id="setAmountByRoleType" required>
                     <option value="1">فروش</option>
                     <option value="2">تامین</option>
                     <option value="3">فروش و تامین</option>
                 </select>
             </div>
+
+            <div class="d-flex align-items-center gap-1">
+                <label for="SmsServiceCodeId" class="flex-shrink-0">سرویس پیامک </label>
+                <select class="form-select form-select-sm" name="smsServiceCode" id="SmsServiceCodeId" required>
+                </select>
+            </div>
+
             @*             <div  style="display:flex; direction:rtl">
                 <label style="width:fit-content; cursor:pointer;" for="smallOffice">ارزش افزوده:</label>
                
@@ -83,6 +98,10 @@
                 <label style="cursor:pointer;" for="smallOffice">درصد</label>
 
             </div> *@
+            <div class="d-flex align-items-center gap-1">
+                <label for="TaxPercent" class="flex-shrink-0">درصد مالیات:</label>
+                <input class="form-control" type="number" id="TaxPercent" name="taxPercent" min="0" max="99" />
+            </div>
 
         </form>
         <div style="display:flex;justify-content:end">
@@ -98,32 +117,48 @@
 @section Scripts{
 
     <script>
-        $(document).ready(async () => {
-            document.getElementById("FLshowLoading").style.display = "";
+        document.addEventListener("DOMContentLoaded", async () => {
+            FLshowLoading();
+            await getSmsService();
             setting = await GetSetting();
             mySer.convertJsonToForm(setting, "SettingFormId");
-            document.getElementById("FLshowLoading").style.display = "none";
+            FLshowLoading(false);
         });
 
-        const submitSetting = () => {
+
+        const submitSetting = async () => {
+            if (!await mySer.CheckValidForm("SettingFormId")) return;
 
             const data = mySer.convertFormToJSON("SettingFormId");
 
             if (setting != null) {
                 data.id = setting.id;
             }
-            
+
             document.getElementById("FLshowLoading").style.display = "";
+
+            FLshowLoading();
             $.post(baseUrl + "ASetting/upSetting", data, async (res) => {
 
                 setting = await GetSetting();
 
                 toastifySuccess("عملیات با موفقیت انجام شد");
-                document.getElementById("FLshowLoading").style.display = "none";
-
+                FLshowLoading(false);
             });
+
         };
 
-    </script>
+        const getSmsService = async () => {
 
+            let smsServiceData = await sendApiRequest({
+                url: "/BaseItem/GetItemsOp",
+                params: { typeCode: 7 },
+            });
+
+            smsServiceData = smsServiceData.map((item) => ({ ...item, value: item.id }));
+
+            createOption("SmsServiceCodeId", smsServiceData);
+        };
+        
+    </script>
 }

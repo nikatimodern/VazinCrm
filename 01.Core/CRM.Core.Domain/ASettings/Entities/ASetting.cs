@@ -24,7 +24,9 @@ namespace CRM.Core.Domain.ASettings.Entities
         public bool SetSupplyByTamin { get; set; } = false;
         public bool MultiSelectOrderHeadsInRequestAmount { get; set; } = false;
         public bool CustomerAssignExpert { get; set; } = false;
-
+        
+        public int TaxPercent { get; set; } = 10;
+        public Guid SmsServiceCode { get; set; }
     }
 
     public enum SetAmountRoleEnum {

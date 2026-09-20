@@ -86,5 +86,6 @@ namespace CRM.Core.Domain.Factors.Entities {
 
         public bool Returned { get; set; }
         public Guid? ParentReturnedId { get; set; }
+        public DateTime? CustomerFeedbackSmsSentDate { get; set; }
     }
 }
