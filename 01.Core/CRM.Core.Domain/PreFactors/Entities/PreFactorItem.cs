@@ -14,6 +14,7 @@ namespace CRM.Core.Domain.PreFactors.Entities {
         public decimal UnitAmount { get; set; }
         public decimal TotalAmount { get; set; }
         public decimal Discount { get; set; }
+        public decimal TaxAmount { get; set; }
 
         public decimal? TaminUnitAmount { get; set; }
         public decimal? TaminTotalAmount { get; set; }
@@ -30,6 +31,7 @@ namespace CRM.Core.Domain.PreFactors.Entities {
         public Guid PrefactorId { get; set; }
 
         public List<Supply> supplies { get; set; }
+
         //public Guid? SupplierId { get; set; }
         //public string SupplierName { get; set; }
     }

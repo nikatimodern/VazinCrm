@@ -163,12 +163,19 @@
                         <th>شرح کالا/خدمت</th>
                         <th>تعداد/مقدار</th>
                         <th>واحد</th>
-                        <th>مبلغ واحد</th>
-                        <th>مبلغ کل</th>
+                        <th>مبلغ واحد <span class="fs-small">(ریال)</span></th>
+                        <th>مبلغ قبل از تخفیف <span class="fs-small">(ریال)</span></th>
+                        <th>مبلغ تخفیف <span class="fs-small">(ریال)</span></th>
+                        <th>مبلغ مالیات و عوارض <span class="fs-small">(ریال)</span></th>
+                        <th>مبلغ کل <span class="fs-small">(ریال)</span></th>
                     </tr>
                     </thead>
                     <tbody>
                     @foreach (var item in Model.Factor.FactorItems ?? []) {
+                        var beforeDiscount = item.UnitAmount * decimal.Parse(item.WeightCount);
+                        var taxAmount = Model.Factor.OfficialType == 1 
+                            ? (beforeDiscount - item.Discount) * Model.Factor.PercentTax / 100
+                            : 0;
                         <tr>
                             <td>@item.Row</td>
                             <td>
@@ -181,6 +188,9 @@
                             <td>@item.WeightCount</td>
                             <td>@item.UnitTxt</td>
                             <td>@($"{item.UnitAmount:n0}")</td>
+                            <td>@($"{beforeDiscount:n0}")</td>
+                            <td>@($"{item.Discount:n0}")</td>
+                            <td>@($"{item.TaxAmount:n0}")</td>
                             <td>@($"{item.TotalAmount:n0}")</td>
                         </tr>
                     }

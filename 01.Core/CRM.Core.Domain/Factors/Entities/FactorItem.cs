@@ -14,10 +14,10 @@ namespace CRM.Core.Domain.Factors.Entities
         public decimal UnitAmount { get; set; }
         public decimal TotalAmount { get; set; }
         public decimal Discount { get; set; }
+        public decimal TaxAmount { get; set; }
         
         public decimal? TaminUnitAmount { get; set; }
         public decimal? TaminTotalAmount { get; set; }
-        //public PreFactor PreFactor { get; set; }
         public Guid factorId { get; set; }
         public Guid? ProductCode { get; set; }
         public string ProductSmallName { get; set; }

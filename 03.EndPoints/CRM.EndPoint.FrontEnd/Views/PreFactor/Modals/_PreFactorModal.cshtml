@@ -10,7 +10,7 @@
 
             <div class="modal-body d-flex flex-column justify-content-between w-100">
                 <div>
-                    <div class="d-flex flex-column-reverse flex-lg-row gap-3 px-2 align-items-center justify-content-between w-100">
+                    <div class="headerPreFactorBox d-flex flex-column-reverse flex-lg-row gap-2 px-2 align-items-center justify-content-between w-100">
                         <div class="col-12 col-lg-3 d-flex align-items-end justify-content-between flex-grow-1">
                             <form class="d-flex flex-column justify-content-between row-gap-3" id="PfHeadFormId" style="flex-grow:0.6">
                                 <div class="d-flex justify-content-evenly">
@@ -73,9 +73,9 @@
                 </div>
                 <div class="d-none d-lg-block my-3 mx-auto" style="width: 97%;height:2px;background-color:rebeccapurple"></div>
 
-                <div class="d-flex justify-content-between w-100 flex-column-reverse flex-xl-row">
+                <div class="d-flex justify-content-between w-100 flex-column-reverse pf-1500-row">
 
-                    <div class="col-12 col-xl-9 d-flex flex-column justify-content-between bodyPreFactorModal">
+                    <div class="col-12 pf-1500-main d-flex flex-column justify-content-between bodyPreFactorModal">
 
                         <div id="PreFacItemContainer" class="d-none d-lg-flex justify-content-between w-100">
                             <form id="PreFacItem" class="w-100 pf-item-form">
@@ -142,10 +142,10 @@
                                 </div>
                             </form>
                         </div>
-                        <div class="InfoData flex-grow-1 mt-2" style="width:100%;height:auto;min-height:60px;max-height:200px;overflow:auto;border-color:rebeccapurple;scrollbar-color: rebeccapurple #0000;" id="preFactorItemId">
+                        <div class="InfoData pf-items-container" id="preFactorItemId">
                         </div>
                         <div class="d-flex flex-column flex-lg-row align-items-center justify-content-end w-100 mt-3 amountsPreFactorModalBox">
-                            <div class="d-none d-lg-block d-xl-none col-12 col-lg-6 col-xl-12 descriptionPreFactorBox">
+                            <div class="d-none d-lg-block pf-1500-hide col-12 col-lg-6 descriptionPreFactorBox">
                                 <div class="d-flex align-items-center gap-2 mb-2">
                                     <label for="prePaymentPercentTablet" style="font-size: 13px;line-height: 1">درصد پیش‌پرداخت:</label>
                                     <select class="form-select form-select-sm w-auto" id="prePaymentPercentTablet">
@@ -170,24 +170,24 @@
                                 </div>
                             </div>
 
-                            <div class="col-12 col-lg-6 col-xl-11 d-flex flex-column gap-1 pe-1">
+                            <div class="col-12 col-lg-6 pf-1500-col-11 d-flex flex-column gap-1 pe-1">
                                 <div class="col-12 d-flex justify-content-around">
-                                    <label class="col-4 col-xl-2 text-center">جمع مبلغ کل :</label>
-                                    <label class="col-8 col-xl-10 form-controlLable" name="sumTotalAmount" id="sumTotalAmount" value="0" disabled></label>
+                                    <label class="col-4 col-xl-3 text-center">جمع مبلغ کل :</label>
+                                    <label class="col-8 col-xl-9 form-controlLable" name="sumTotalAmount" id="sumTotalAmount" value="0" disabled></label>
                                 </div>
                                 <div class="col-12 d-flex justify-content-around">
-                                    <label class="col-4 col-xl-2 text-center">تخفیف :</label>
-                                    <div class="col-8 col-xl-10">
+                                    <label class="col-4 col-xl-3 text-center">تخفیف :</label>
+                                    <div class="col-8 col-xl-9">
                                         <input inputmode="numeric" class="form-control currencyNumber" name="discount" id="discount" type="text" value="0" />
                                     </div>
                                 </div>
                                 <div class="col-12 d-flex justify-content-around">
-                                    <label class="col-4 col-xl-2 text-center">مالیات و عوارض :</label>
-                                    <label class="col-8 col-xl-10 form-controlLable" name="totalTax" id="totalTax" type="text" value="0"></label>
+                                    <label class="col-4 col-xl-3 text-center">مالیات و عوارض :</label>
+                                    <label class="col-8 col-xl-9 form-controlLable" name="totalTax" id="totalTax" type="text" value="0"></label>
                                 </div>
                                 <div class="col-12 d-flex justify-content-around">
-                                    <label class="col-4 col-xl-2 text-center">مبلغ نهایی :</label>
-                                    <label class="col-8 col-xl-10 form-controlLable" name="paymentAmount" id="paymentAmount" type="text" value="0"></label>
+                                    <label class="col-4 col-xl-3 text-center">مبلغ نهایی :</label>
+                                    <label class="col-8 col-xl-9 form-controlLable" name="paymentAmount" id="paymentAmount" type="text" value="0"></label>
                                 </div>
                             </div>
 
@@ -197,7 +197,7 @@
                         </div>
                     </div>
 
-                    <div class="d-none d-xl-block col-12 col-xl-3 ps-3 pt-3 pt-xl-0 descriptionPreFactorBox">
+                    <div class="d-none pf-1500-show pf-1500-description col-12 ps-3 pt-3 pf-1500-pt-0 descriptionPreFactorBox">
                         <div class="d-flex align-items-center gap-2 mb-2">
                             <label for="prePaymentPercent" style="font-size: 13px;line-height: 1">درصد پیش‌پرداخت:</label>
                             <select class="form-select form-select-sm w-auto" id="prePaymentPercent">

@@ -12,5 +12,6 @@ public class FactorItemConfig : IEntityTypeConfiguration<FactorItem> {
         builder.Property(f => f.TaminUnitAmount).HasPrecision(20, 0);
         builder.Property(f => f.TaminTotalAmount).HasPrecision(20, 0);
         builder.Property(f => f.Discount).HasPrecision(20, 0);
+        builder.Property(f => f.TaxAmount).HasPrecision(20, 0);
     }
 }

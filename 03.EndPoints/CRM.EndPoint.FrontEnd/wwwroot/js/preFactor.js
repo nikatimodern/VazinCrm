@@ -11,7 +11,7 @@ let prePaymentPercentId;
 let descriptionInpId;
 let descriptionListId;
 
-if (window.innerWidth >= 992 && window.innerWidth < 1200) {
+if (window.innerWidth >= 992 && window.innerWidth < 1500) {
     prePaymentPercentId = "prePaymentPercentTablet";
     descriptionInpId = "descriptionIdTablet";
     descriptionListId = "PfactorDescIdTablet";
@@ -36,9 +36,11 @@ document.querySelectorAll("#PreFactor input[type='radio'][name='official']")?.fo
     const currencyTypeElm = document.querySelector("#PfHeadFormId select[name='currencyType']");
     radio.addEventListener("change", (e) => {
         pFactor.officialType = Number(e.target.value);
-        currencyTypeElm.toggleAttribute("disabled", pFactor.officialType);
+        currencyTypeElm.disabled = pFactor.officialType === 1;
         currencyTypeElm.value = 0;
+        
         calculatePreFactorTotals();
+        showPFactorItems();
         generatePFactorDescriptions();
         calculatePreFactorText();
     });
@@ -122,14 +124,6 @@ const upPfactor = async (id, type) => {
     showPFactorItems();
     showPfDescriptionItems();
     ModalToggle("#PreFactor");
-    bindInvoiceDiscount?.({
-        items: pFactorItems,
-        invoice: pFactor,
-        discountInputId: "Discount",
-        sumTotalAmountId: "SumTotalAmount",
-        totalTaxId: "TotalTax",
-        paymentAmountId: "PaymentAmount"
-    });
 };
 const getPreFactor = async (id) => {
     return await sendApiRequest({

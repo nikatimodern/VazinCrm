@@ -250,7 +250,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
         }
 
 
-        public static T UpdatePaymentAmount<T>(T model, int taxPercent) where T : class
+        public static T UpdatePaymentAmount<T>(T model, int taxPercent, bool taxAfterDiscount = false) where T : class
         {
             if (model is FactorEntity factor)
             {
@@ -258,6 +258,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
                 decimal sumTotalAmount = 0;
                 decimal totalDiscount = 0;
+                decimal totalTax = 0;
 
                 foreach (var item in items)
                 {
@@ -272,38 +273,48 @@ namespace CRM.EndPoint.FrontEnd.Services {
                     // مبلغ نهایی آیتم
                     item.TotalAmount = Math.Max(0, amountBeforeDiscount - item.Discount);
 
-                    // مجموع مبلغ قبل از تخفیف
-                    sumTotalAmount += amountBeforeDiscount;
+                    // مالیات آیتم
+                    if (factor.OfficialType == 1)
+                    {
+                        var taxBase = taxAfterDiscount
+                            ? item.TotalAmount
+                            : amountBeforeDiscount;
 
-                    // مجموع تخفیف آیتم‌ها
+                        item.TaxAmount = CalculateTax(taxBase, taxPercent);
+                    } else
+                    {
+                        item.TaxAmount = 0;
+                    }
+
+                    sumTotalAmount += amountBeforeDiscount;
                     totalDiscount += item.Discount;
+                    totalTax += item.TaxAmount;
                 }
 
                 factor.SumTotalAmount = Math.Round(sumTotalAmount);
                 factor.Discount = Math.Round(totalDiscount);
 
-                var amountBeforeTax = Math.Max(0, factor.SumTotalAmount - factor.Discount);
-
-                decimal totalTax = 0;
-
                 if (factor.OfficialType == 1)
                 {
                     factor.PercentTax = taxPercent;
-
-                    totalTax = Math.Round(amountBeforeTax * taxPercent / 100m);
                 } else
                 {
                     factor.PercentTax = 0;
+                    totalTax = 0;
                 }
 
-                factor.TotalTax = totalTax;
-                factor.PaymentAmount = Math.Round(amountBeforeTax + totalTax);
+                factor.TotalTax = Math.Round(totalTax);
+
+                var amountBeforeTax = Math.Max(0, factor.SumTotalAmount - factor.Discount);
+
+                factor.PaymentAmount = Math.Round(amountBeforeTax + factor.TotalTax);
             } else if (model is PreFactor preFactor)
             {
                 var items = preFactor.PreFactorItems.Where(x => !x.IsDeleted);
 
                 decimal sumTotalAmount = 0;
                 decimal totalDiscount = 0;
+                decimal totalTax = 0;
 
                 foreach (var item in items)
                 {
@@ -318,35 +329,49 @@ namespace CRM.EndPoint.FrontEnd.Services {
                     // مبلغ نهایی آیتم
                     item.TotalAmount = Math.Max(0, amountBeforeDiscount - item.Discount);
 
-                    // مجموع مبلغ قبل از تخفیف
-                    sumTotalAmount += amountBeforeDiscount;
+                    // مالیات آیتم
+                    if (preFactor.OfficialType == 1)
+                    {
+                        var taxBase = taxAfterDiscount
+                            ? item.TotalAmount
+                            : amountBeforeDiscount;
 
-                    // مجموع تخفیف آیتم‌ها
+                        item.TaxAmount = CalculateTax(taxBase, taxPercent);
+                    } else
+                    {
+                        item.TaxAmount = 0;
+                    }
+
+                    sumTotalAmount += amountBeforeDiscount;
                     totalDiscount += item.Discount;
+                    totalTax += item.TaxAmount;
                 }
 
                 preFactor.SumTotalAmount = Math.Round(sumTotalAmount);
                 preFactor.Discount = Math.Round(totalDiscount);
 
-                var amountBeforeTax = Math.Max(0, preFactor.SumTotalAmount - preFactor.Discount);
-
-                decimal totalTax = 0;
-
                 if (preFactor.OfficialType == 1)
                 {
                     preFactor.PercentTax = taxPercent;
-
-                    totalTax = Math.Round(amountBeforeTax * taxPercent / 100m);
                 } else
                 {
                     preFactor.PercentTax = 0;
+                    totalTax = 0;
                 }
 
-                preFactor.TotalTax = totalTax;
-                preFactor.PaymentAmount = Math.Round(amountBeforeTax + totalTax);
+                preFactor.TotalTax = Math.Round(totalTax);
+
+                var amountBeforeTax = Math.Max(0, preFactor.SumTotalAmount - preFactor.Discount);
+
+                preFactor.PaymentAmount = Math.Round(amountBeforeTax + preFactor.TotalTax);
             }
 
             return model;
+        }
+
+        private static decimal CalculateTax(decimal amount, int taxPercent)
+        {
+            return Math.Round(amount * taxPercent / 100m);
         }
 
         public static string GetTypeTxtPfactor(int type)

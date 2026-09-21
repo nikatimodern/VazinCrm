@@ -76,6 +76,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<Guid>("SmsServiceCode")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("TaxAfterDiscount")
+                        .HasColumnType("bit");
+
                     b.Property<int>("TaxPercent")
                         .HasColumnType("int");
 
@@ -2393,6 +2396,10 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasPrecision(20)
                         .HasColumnType("decimal(20,0)");
 
+                    b.Property<decimal>("TaxAmount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
+
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(20)
                         .HasColumnType("decimal(20,0)");
@@ -3152,6 +3159,10 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("decimal(20,0)");
 
                     b.Property<decimal?>("TaminUnitAmount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
+
+                    b.Property<decimal>("TaxAmount")
                         .HasPrecision(20)
                         .HasColumnType("decimal(20,0)");
 

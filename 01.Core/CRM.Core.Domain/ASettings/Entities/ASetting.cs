@@ -26,6 +26,7 @@ namespace CRM.Core.Domain.ASettings.Entities
         public bool CustomerAssignExpert { get; set; } = false;
         
         public int TaxPercent { get; set; } = 10;
+        public bool TaxAfterDiscount { get; set; }
         public Guid SmsServiceCode { get; set; }
     }
 

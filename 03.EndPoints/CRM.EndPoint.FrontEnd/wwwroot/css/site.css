@@ -2188,15 +2188,15 @@ ul li::before {
 
 
 .form-controlLable {
-	border: 1px solid #ced4da !important;
-	/*border-radius: 0.3125rem !important;*/
-	height: 2rem !important;
-	border-radius: 0.3125rem !important;
-	background-color: #ebebeb !important;
+	border: 1px solid #ced4da;
+	/*border-radius: 0.3125rem;*/
+	height: 2rem;
+	border-radius: 0.3125rem;
+	background-color: #ebebeb;
 	text-align: center;
-	font-size: 14px !important;
-	padding: 0px 0px 0px 0px !important;
-	margin: 0px 0px 0px 0px !important;
+	font-size: 14px;
+	padding: 0;
+	margin: 0;
 	color: black;
 	align-items: center;
 	display: flex;

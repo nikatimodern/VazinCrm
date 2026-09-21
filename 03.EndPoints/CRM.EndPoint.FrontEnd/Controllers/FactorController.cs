@@ -2319,7 +2319,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
                 model = await checkPrefactor(model);
-                model = Service.UpdatePaymentAmount(model, setting.TaxPercent);
+                model = Service.UpdatePaymentAmount(model, setting.TaxPercent, setting.TaxAfterDiscount);
 
                 db.PreFactors.Update(model);
                 db.Entry(model).Property(f => f.SerialNumber).IsModified = false;
@@ -2464,7 +2464,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.ModifyDateTxt = dtService.GetDateTimePersian();
                 model.DateMiladi = dtService.GetDateMiladi(model.Date);
 
-                model = Service.UpdatePaymentAmount(model, setting.TaxPercent);
+                model = Service.UpdatePaymentAmount(model, setting.TaxPercent, setting.TaxAfterDiscount);
 
 
                 db.Factors.Update(model);

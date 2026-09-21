@@ -40,7 +40,7 @@ const getBaseDescription = async (type = null) => {  // 0: preFactor | 1: Factor
     setValue(totalSelector, total.toLocaleString());
 }*/
 
-function calculateItem(
+/*function calculateItem(
     formId,
     weightSelector = "[name='weightCount']",
     unitSelector = "[name='unitAmount']",
@@ -81,6 +81,95 @@ function calculateItem(
     
     setValue(discountSelector, discount.toLocaleString());
     setValue(totalSelector, total.toLocaleString());
+}*/
+
+function calculateItem(
+    formId,
+    weightSelector = "[name='weightCount']",
+    unitSelector = "[name='unitAmount']",
+    totalSelector = "[name='totalAmount']",
+    discountSelector = "[name='discount']",
+) {
+    const form = document.getElementById(formId);
+    if (!form) return;
+    
+    const getValue = (selector) => {
+        const el = form.querySelector(selector);
+        if (!el) return 0;
+        
+        return el.tagName === "INPUT" || el.tagName === "TEXTAREA"
+            ? SeparatedNumberRemove(el.value)
+            : SeparatedNumberRemove(el.innerText);
+    };
+    
+    const setValue = (selector, value) => {
+        const el = form.querySelector(selector);
+        if (!el) return;
+        
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+            el.value = value;
+        } else {
+            el.innerText = value;
+        }
+    };
+    
+    const unitAmount = Number(getValue(unitSelector)) || 0;
+    const weightCount = Number(getValue(weightSelector)) || 0;
+    let discount = Number(getValue(discountSelector)) || 0;
+    
+    const amountBeforeDiscount = Math.round(
+        unitAmount * weightCount
+    );
+    
+    discount = Math.min(
+        Math.max(0, Math.round(discount)),
+        amountBeforeDiscount
+    );
+    
+    /*
+     * مبلغ بعد از تخفیف
+     */
+    const amountAfterDiscount = Math.max(
+        0,
+        amountBeforeDiscount - discount
+    );
+    
+    /*
+     * مالیات
+     */
+    let taxAmount = 0;
+    
+    if (pFactor.officialType === 1) {
+        const taxPercent = setting?.taxPercent || 10;
+        const taxAfterDiscount = setting?.taxAfterDiscount ?? true;
+        
+        const taxBase = taxAfterDiscount
+            ? amountAfterDiscount
+            : amountBeforeDiscount;
+        
+        taxAmount = calculateItemTax(
+            taxBase,
+            taxPercent
+        );
+    }
+    
+    /*
+     * مبلغ نهایی شامل مالیات
+     */
+    const total = Math.max(
+        0,
+        amountAfterDiscount + taxAmount
+    );
+    
+    setValue(
+        discountSelector,
+        discount.toLocaleString()
+    );
+    
+    setValue(
+        totalSelector,
+        total.toLocaleString()
+    );
 }
 
 
@@ -124,68 +213,6 @@ const distributeItemDiscount = (items, totalDiscount) => {
     });
 };
 
-
-/*
-const calculateInvoiceTotals = ({ items, invoice, discountInputId, sumTotalAmountId, totalTaxId, paymentAmountId }) => {
-    const activeItems = items.filter(item => !item.isDeleted);
-    
-    const taxPercent = setting?.taxPercent || 10;
-    const discountInput = document.getElementById(discountInputId);
-    
-    const requestedDiscount = Math.round(Number(SeparatedNumberRemove(discountInput?.value)) || 0);
-    
-    let sumTotalAmount = 0;
-    
-    activeItems.forEach(item => {
-        sumTotalAmount += Number(SeparatedNumberRemove(item.totalAmount)) || 0;
-    });
-    
-    sumTotalAmount = Math.round(sumTotalAmount);
-    
-    const discount = Math.min(Math.max(0, requestedDiscount), sumTotalAmount);
-    
-    const amountBeforeTax = Math.max(0, sumTotalAmount - discount);
-    
-    let totalTax = 0;
-    
-    if (invoice.officialType === 1) {
-        invoice.percentTax = taxPercent;
-        totalTax = Math.round(amountBeforeTax * taxPercent / 100);
-    } else {
-        invoice.percentTax = 0;
-    }
-    
-    const paymentAmount = Math.round(amountBeforeTax + totalTax);
-    
-    invoice.sumTotalAmount = sumTotalAmount;
-    invoice.discount = discount;
-    invoice.totalTax = totalTax;
-    invoice.paymentAmount = paymentAmount;
-    
-    if (discountInput) {
-        discountInput.value = discount.toLocaleString();
-    }
-    
-    const sumTotalAmountElement = document.getElementById(sumTotalAmountId);
-    const totalTaxElement = document.getElementById(totalTaxId);
-    const paymentAmountElement = document.getElementById(paymentAmountId);
-    
-    if (sumTotalAmountElement) {
-        sumTotalAmountElement.textContent = sumTotalAmount.toLocaleString();
-    }
-    
-    if (totalTaxElement) {
-        totalTaxElement.textContent = totalTax.toLocaleString();
-    }
-    
-    if (paymentAmountElement) {
-        paymentAmountElement.textContent = paymentAmount.toLocaleString();
-    }
-    
-    return invoice;
-};
-*/
-
 const calculateInvoiceTotals = (
     {
         items,
@@ -199,11 +226,17 @@ const calculateInvoiceTotals = (
     const activeItems = items.filter(item => !item.isDeleted);
     
     const taxPercent = setting?.taxPercent || 10;
+    const taxAfterDiscount = setting?.taxAfterDiscount ?? true;
+    
     const discountInput = document.getElementById(discountInputId);
     
     let sumTotalAmount = 0;
+    let totalDiscount = 0;
+    let totalTax = 0;
     
-    // مبلغ قبل از تخفیف
+    /*
+     * مبلغ قبل از تخفیف
+     */
     activeItems.forEach(item => {
         const beforeDiscount = Math.round((Number(item.weightCount) || 0) * (Number(item.unitAmount) || 0));
         
@@ -221,25 +254,51 @@ const calculateInvoiceTotals = (
         
         distributeItemDiscount(activeItems, requestedDiscount);
     }
+    /*
+     * محاسبه تخفیف، مبلغ نهایی و مالیات هر آیتم
+     */
+    activeItems.forEach(item => {
+        const beforeDiscount = Math.round((Number(item.weightCount) || 0) * (Number(item.unitAmount) || 0));
+        
+        const discount = Math.min(Math.max(0, Math.round(Number(item.discount) || 0)), beforeDiscount);
+        
+        item.discount = discount;
+        
+        item.totalAmount = Math.max(0, beforeDiscount - discount);
+        
+        /*
+         * مالیات فقط برای فاکتور رسمی
+         */
+        if (invoice.officialType === 1) {
+            const taxBase = taxAfterDiscount
+                ? item.totalAmount
+                : beforeDiscount;
+            
+            item.taxAmount = calculateItemTax(taxBase, taxPercent);
+        } else {
+            item.taxAmount = 0;
+        }
+        
+        totalDiscount += item.discount;
+        totalTax += item.taxAmount;
+    });
     
-    // مجموع تخفیف آیتم‌ها
-    const totalDiscount = Math.round(
-        activeItems.reduce((sum, item) => sum + (Number(item.discount) || 0), 0),
-    );
+    totalDiscount = Math.round(totalDiscount);
+    totalTax = Math.round(totalTax);
     
-    // مبلغ بعد از تخفیف و قبل از مالیات
+    /*
+     * درصد مالیات فاکتور
+     */
+    invoice.percentTax = invoice.officialType === 1 ? taxPercent : 0;
+    
+    /*
+     * مبلغ قبل از مالیات
+     */
     const amountBeforeTax = Math.max(0, sumTotalAmount - totalDiscount);
     
-    let totalTax = 0;
-    
-    if (invoice.officialType === 1) {
-        invoice.percentTax = taxPercent;
-        
-        totalTax = Math.round(amountBeforeTax * taxPercent / 100);
-    } else {
-        invoice.percentTax = 0;
-    }
-    
+    /*
+     * مبلغ نهایی
+     */
     const paymentAmount = Math.round(amountBeforeTax + totalTax);
     
     invoice.sumTotalAmount = sumTotalAmount;
@@ -247,7 +306,9 @@ const calculateInvoiceTotals = (
     invoice.totalTax = totalTax;
     invoice.paymentAmount = paymentAmount;
     
-    
+    /*
+     * UI
+     */
     const sumTotalAmountElement = document.getElementById(sumTotalAmountId);
     const totalTaxElement = document.getElementById(totalTaxId);
     const paymentAmountElement = document.getElementById(paymentAmountId);
@@ -270,8 +331,9 @@ const calculateInvoiceTotals = (
     
     return invoice;
 };
-
-
+const calculateItemTax = (amount, taxPercent) => {
+    return Math.round(amount * taxPercent / 100);
+};
 
 const generateFactorItemDom = (data, { type = "edit-delete", onDelete, onUpdate, onSelect } = {}) => {
     
@@ -290,6 +352,7 @@ const generateFactorItemDom = (data, { type = "edit-delete", onDelete, onUpdate,
         const beforeDiscountAmountStr = beforeDiscountAmount ? beforeDiscountAmount.toLocaleString() : "-";
         const uAmount = item.unitAmount ? item.unitAmount.toLocaleString() : "-";
         const discountAmount = item.discount ? item.discount.toLocaleString() : "-";
+        const taxAmount = item.taxAmount ? item.taxAmount.toLocaleString() : "-";
         const tAmount = item.totalAmount ? item.totalAmount.toLocaleString() : "-";
         
         const element = document.createElement("div");
@@ -366,6 +429,13 @@ const generateFactorItemDom = (data, { type = "edit-delete", onDelete, onUpdate,
                             <label>تخفیف</label>
                             <label>
                                 ${discountAmount}
+                                ${item.currencyTypeTxt ?? ""}
+                            </label>
+                        </div>
+                        <div class="pf-item-field pf-item-tax">
+                            <label>مالیات</label>
+                            <label>
+                                ${taxAmount}
                                 ${item.currencyTypeTxt ?? ""}
                             </label>
                         </div>

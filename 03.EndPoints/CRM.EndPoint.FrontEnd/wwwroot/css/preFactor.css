@@ -33,6 +33,19 @@
 }
 
 
+.pf-items-container {
+	flex-grow: 1;
+	margin-top: .5rem;
+	width: 100%;
+	height: auto;
+	min-height: 60px;
+	max-height: 200px;
+	overflow: auto;
+	border-color: rebeccapurple;
+	scrollbar-color: rebeccapurple #0000;
+}
+
+
 @media (min-width: 992px) and (max-width: 1199px) {
 	.pf-item-form {
 		grid-template-columns:
@@ -128,6 +141,7 @@
         minmax(95px, 1.05fr) /* مبلغ واحد */
         minmax(110px, 1.25fr) /* قبل تخفیف */
         minmax(95px, 1.05fr) /* تخفیف */
+        minmax(95px, 1.05fr) /* مالیات */
         minmax(110px, 1.25fr); /* مبلغ نهایی */
 	align-items: stretch;
 	flex: 1;
@@ -154,6 +168,7 @@
 .pf-item-field > label:last-child {
 	font-size: 14px;
 	font-family: IRANSansBold;
+	text-align: center;
 	overflow: hidden;
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
@@ -163,7 +178,7 @@
 
 .pf-item-product > label:last-child {
 	text-overflow: ellipsis;
-	font-size: 13px !important;
+	font-size: 13px;
 	padding-inline: .5rem;
 }
 
@@ -223,15 +238,26 @@
             minmax(80px, 1fr)   /* مبلغ واحد */
             minmax(85px, 1.1fr) /* قبل تخفیف */
             minmax(80px, 1fr)   /* تخفیف */
+            minmax(80px, 1fr)   /* مالیات */
             minmax(90px, 1.15fr); /* نهایی */
 	}
 	
 	.pf-item-field > label:last-child {
-		font-size: 13px;
+		font-size: 12px;
 	}
+	
 	
 	.pf-item-field > label:first-child {
 		font-size: 11px;
+	}
+	
+	.pf-item-field.pf-item-quantity > label:first-child {
+		font-size: 10px;
+	}
+	
+	.pf-item-printable {
+		width: 18px;
+		font-size: 12px;
 	}
 }
 
@@ -244,6 +270,7 @@
             minmax(65px, .7fr)
             minmax(100px, 1.1fr)
             minmax(110px, 1.25fr)
+            minmax(100px, 1.1fr)
             minmax(100px, 1.1fr)
             minmax(115px, 1.3fr);
 	}
@@ -259,61 +286,113 @@
             1.2fr  
             1.4fr
             1.2fr
+            1.2fr
             1.45fr;
 	}
 }
 
 
 @media (max-width: 991px) {
+	
+	/* ---------------------------
+		 Item list
+	--------------------------- */
+	.pf-items-container {
+		max-height: calc(100dvh - 500px) !important;
+	}
+	
 	.InfoDataItem {
 		padding: 0;
 	}
 	
+	.pf-items-list {
+		gap: 4px;
+	}
+	
+	.pf-item-row {
+		width: 100%;
+	}
+	
+	.InfoDataItemHead {
+		width: 20px;
+		font-size: 12px;
+	}
+	
 	.pf-item-content {
-		grid-template-columns: repeat(7, minmax(0, 1fr));
+		display: grid;
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+		
 		padding-inline: 2px;
+		gap: 0;
 	}
 	
 	.pf-item-field {
+		min-width: 0;
 		padding: 5px 3px;
 	}
 	
+	
+	/* ردیف اول: شرح کالا */
 	.pf-item-product {
 		grid-column: 1 / -1;
 		border-bottom: 1px solid #ddd;
 		align-items: center;
+		min-height: 48px;
 	}
 	
-	.pf-item-quantity,
+	
+	/* ردیف دوم */
+	.pf-item-quantity {
+		grid-column: span 2;
+	}
+	
 	.pf-item-unit {
 		grid-column: span 2;
 	}
 	
 	.pf-item-unit-amount {
-		grid-column: span 3;
+		grid-column: span 2;
 	}
 	
-	.pf-item-discount,
+	
+	/* ردیف سوم */
 	.pf-item-beforeDiscount {
 		grid-column: span 2;
 		border-top: 1px solid #ddd;
 	}
 	
-	.pf-item-total {
-		grid-column: span 3;
+	.pf-item-discount {
+		grid-column: span 2;
+		border-top: 1px solid #ddd;
+	}
+	
+	.pf-item-tax {
+		grid-column: span 2;
 		border-top: 1px solid #ddd;
 	}
 	
 	
+	/* ردیف چهارم */
+	.pf-item-total {
+		grid-column: 1 / -1;
+		border-top: 1px solid #ddd;
+		min-height: 42px;
+	}
+	
+	
+	/* ---------------------------
+		 Text
+	--------------------------- */
 	.pf-item-field > label:first-child {
-		font-size: 11px;
+		font-size: 10px;
 		color: #888;
-		margin-bottom: 3px;
+		margin-bottom: 2px;
+		line-height: 1.2;
 	}
 	
 	.pf-item-field > label:last-child {
-		font-size: 13px;
-		line-height: 1.4;
+		font-size: 12px;
+		line-height: 1.35;
 		max-width: 100%;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -322,21 +401,164 @@
 	
 	.pf-item-product > label:last-child {
 		width: 100%;
-		font-size: 13px !important;
-		line-height: 1.5;
-		overflow: hidden;
-		text-overflow: ellipsis;
+		font-size: 13px;
+		line-height: 1.4;
 		white-space: normal;
 		display: -webkit-box;
 		-webkit-box-orient: vertical;
 		-webkit-line-clamp: 2;
 	}
 	
-	.pf-item-actions {
-		padding-inline: 0;
+	.pf-item-total > label:last-child {
+		font-size: 14px;
 	}
 	
-	.InfoDataItemHead {
-		width: 20px;
+	
+	/* ---------------------------
+		 Printable
+	--------------------------- */
+	.pf-item-printable {
+		width: 18px;
+		font-size: 11px;
+	}
+	
+	
+	/* ---------------------------
+		 Actions
+	--------------------------- */
+	.pf-item-actions {
+		padding-inline: 2px;
+		gap: 2px;
+	}
+	
+	.pf-item-action {
+		width: 22px;
+		height: 22px;
+	}
+	
+	
+	/* ---------------------------
+		 Amounts section
+	--------------------------- */
+	.amountsPreFactorModalBox {
+		margin-top: 8px !important;
+		gap: 2px !important;
+	}
+	
+	.amountsPreFactorModalBox > div {
+		min-height: 0;
+	}
+	
+	.headerPreFactorBox .form-control,
+	.amountsPreFactorModalBox .form-control,
+	.amountsPreFactorModalBox .form-controlLable {
+		height: 24px;
+	}
+	
+	.headerPreFactorBox .form-control,
+	.amountsPreFactorModalBox label {
+		line-height: 24px;
+	}
+	
+	
+	/* ---------------------------
+		 فاصله کلی پایین فرم
+	--------------------------- */
+	.amountsPreFactorModalBox + * {
+		margin-top: 8px !important;
+	}
+}
+
+
+/* PreFactor - custom XXL breakpoint */
+@media (min-width: 1500px) {
+	.pf-1500-row {
+		flex-direction: row !important;
+	}
+	
+	.pf-1500-col-9 {
+		width: 75% !important;
+		flex: 0 0 75% !important;
+	}
+	
+	.pf-1500-col-3 {
+		width: 25% !important;
+		flex: 0 0 25% !important;
+	}
+	
+	.pf-1500-col-11 {
+		width: 91.666667% !important;
+		flex: 0 0 91.666667% !important;
+	}
+	
+	.pf-1500-block {
+		display: block !important;
+	}
+	
+	.pf-1500-flex {
+		display: flex !important;
+	}
+	
+	.pf-1500-none {
+		display: none !important;
+	}
+}
+
+
+@media (max-width: 1499px) {
+	.pf-before-1500-block {
+		display: block !important;
+	}
+	
+	.pf-before-1500-flex {
+		display: flex !important;
+	}
+}
+
+
+@media (min-width: 1500px) {
+	.pf-1500-row {
+		flex-direction: row !important;
+	}
+	
+	.pf-1500-col-3 {
+		width: 25% !important;
+		flex: 0 0 25% !important;
+	}
+	
+	.pf-1500-col-9 {
+		width: 75% !important;
+		flex: 0 0 75% !important;
+	}
+	
+	.pf-1500-col-11 {
+		width: 91.666667% !important;
+		flex: 0 0 91.666667% !important;
+	}
+	
+	.pf-1500-show {
+		display: block !important;
+	}
+	
+	.pf-1500-show-flex {
+		display: flex !important;
+	}
+	
+	.pf-1500-hide {
+		display: none !important;
+	}
+	
+	.pf-1500-pt-0 {
+		padding-top: 0 !important;
+	}
+	
+	.pf-1500-main {
+		width: 80% !important;
+		flex: 0 0 80% !important;
+	}
+	
+	.pf-1500-description {
+		width: 20% !important;
+		flex: 0 0 20% !important;
 	}
 }
