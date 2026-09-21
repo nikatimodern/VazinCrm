@@ -7,7 +7,7 @@ const getBaseDescription = async (type = null) => {  // 0: preFactor | 1: Factor
     });
 };
 
-function calculateItem(formId, weightSelector = "[name='weightCount']", unitSelector = "[name='unitAmount']", totalSelector = "[name='totalAmount']", discountSelector = "[name='discount']") {
+/*function calculateItem(formId, weightSelector = "[name='weightCount']", unitSelector = "[name='unitAmount']", totalSelector = "[name='totalAmount']", discountSelector = "[name='discount']") {
     const form = document.getElementById(formId);
     const getValue = (selector) => {
         const el = form.querySelector(selector);
@@ -38,31 +38,94 @@ function calculateItem(formId, weightSelector = "[name='weightCount']", unitSele
     const total = Math.max(0, amountBeforeDiscount - discount);
     
     setValue(totalSelector, total.toLocaleString());
-}
+}*/
 
-const validatePfItemDiscount = (formId) => {
+function calculateItem(
+    formId,
+    weightSelector = "[name='weightCount']",
+    unitSelector = "[name='unitAmount']",
+    totalSelector = "[name='totalAmount']",
+    discountSelector = "[name='discount']",
+) {
     const form = document.getElementById(formId);
     
-    const weightCount = Number(form.elements.namedItem("weightCount").value) || 0;
-    const unitAmount = Number(SeparatedNumberRemove(form.elements.namedItem("unitAmount").value)) || 0;
-    const discount = Number(SeparatedNumberRemove(form.elements.namedItem("discount").value)) || 0;
-    
-    const amountBeforeDiscount = Math.round(weightCount * unitAmount);
-    
-    if (discount > amountBeforeDiscount) {
-        const discountInput = form.elements.namedItem("discount");
+    const getValue = (selector) => {
+        const el = form.querySelector(selector);
+        if (!el) return 0;
         
-        discountInput.classList.add("AlertReq");
-        discountInput.focus();
+        return el.tagName === "INPUT" || el.tagName === "TEXTAREA"
+            ? SeparatedNumberRemove(el.value)
+            : SeparatedNumberRemove(el.innerText);
+    };
+    
+    const setValue = (selector, value) => {
+        const el = form.querySelector(selector);
+        if (!el) return;
         
-        return false;
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+            el.value = value;
+        } else {
+            el.innerText = value;
+        }
+    };
+    
+    const unitAmount = Number(getValue(unitSelector)) || 0;
+    const weightCount = Number(getValue(weightSelector)) || 0;
+    let discount = Number(getValue(discountSelector)) || 0;
+    
+    const amountBeforeDiscount = Math.round(unitAmount * weightCount);
+    
+    discount = Math.min(Math.max(0, Math.round(discount)), amountBeforeDiscount);
+    
+    const total = Math.max(0, amountBeforeDiscount - discount);
+    
+    setValue(discountSelector, discount.toLocaleString());
+    setValue(totalSelector, total.toLocaleString());
+}
+
+
+const distributeItemDiscount = (items, totalDiscount) => {
+    let remainingDiscount = Math.max(0, Math.round(totalDiscount));
+    
+    const totalBeforeDiscount = items.reduce((sum, item) => {
+        const amount = Math.round((Number(item.weightCount) || 0) * (Number(item.unitAmount) || 0));
+        
+        return sum + amount;
+    }, 0);
+    
+    if (!totalBeforeDiscount || !remainingDiscount) {
+        items.forEach(item => {
+            item.discount = 0;
+            
+            const beforeDiscount = Math.round((Number(item.weightCount) || 0) * (Number(item.unitAmount) || 0));
+            
+            item.totalAmount = beforeDiscount;
+        });
+        
+        return;
     }
     
-    form.elements.namedItem("discount").classList.remove("AlertReq");
+    remainingDiscount = Math.min(remainingDiscount, totalBeforeDiscount);
     
-    return true;
+    items.forEach((item, index) => {
+        const beforeDiscount = Math.round((Number(item.weightCount) || 0) * (Number(item.unitAmount) || 0));
+        
+        if (index === items.length - 1) {
+            item.discount = Math.min(remainingDiscount, beforeDiscount);
+        } else {
+            const proportionalDiscount = Math.round(remainingDiscount * beforeDiscount / totalBeforeDiscount); // تخفیف نسبی
+            
+            item.discount = Math.min(proportionalDiscount, beforeDiscount);
+            
+            remainingDiscount -= item.discount;
+        }
+        
+        item.totalAmount = Math.max(0, beforeDiscount - item.discount);
+    });
 };
 
+
+/*
 const calculateInvoiceTotals = ({ items, invoice, discountInputId, sumTotalAmountId, totalTaxId, paymentAmountId }) => {
     const activeItems = items.filter(item => !item.isDeleted);
     
@@ -121,6 +184,93 @@ const calculateInvoiceTotals = ({ items, invoice, discountInputId, sumTotalAmoun
     
     return invoice;
 };
+*/
+
+const calculateInvoiceTotals = (
+    {
+        items,
+        invoice,
+        discountInputId,
+        sumTotalAmountId,
+        totalTaxId,
+        paymentAmountId,
+        updateItemsFromDiscount = false,
+    }) => {
+    const activeItems = items.filter(item => !item.isDeleted);
+    
+    const taxPercent = setting?.taxPercent || 10;
+    const discountInput = document.getElementById(discountInputId);
+    
+    let sumTotalAmount = 0;
+    
+    // مبلغ قبل از تخفیف
+    activeItems.forEach(item => {
+        const beforeDiscount = Math.round((Number(item.weightCount) || 0) * (Number(item.unitAmount) || 0));
+        
+        sumTotalAmount += beforeDiscount;
+    });
+    
+    sumTotalAmount = Math.round(sumTotalAmount);
+    
+    /*
+     * اگر تخفیف کلی توسط کاربر تغییر کرده،
+     * آن را بین آیتم‌ها تقسیم کن.
+     */
+    if (updateItemsFromDiscount && discountInput) {
+        const requestedDiscount = Math.max(0, Math.round(Number(SeparatedNumberRemove(discountInput.value)) || 0));
+        
+        distributeItemDiscount(activeItems, requestedDiscount);
+    }
+    
+    // مجموع تخفیف آیتم‌ها
+    const totalDiscount = Math.round(
+        activeItems.reduce((sum, item) => sum + (Number(item.discount) || 0), 0),
+    );
+    
+    // مبلغ بعد از تخفیف و قبل از مالیات
+    const amountBeforeTax = Math.max(0, sumTotalAmount - totalDiscount);
+    
+    let totalTax = 0;
+    
+    if (invoice.officialType === 1) {
+        invoice.percentTax = taxPercent;
+        
+        totalTax = Math.round(amountBeforeTax * taxPercent / 100);
+    } else {
+        invoice.percentTax = 0;
+    }
+    
+    const paymentAmount = Math.round(amountBeforeTax + totalTax);
+    
+    invoice.sumTotalAmount = sumTotalAmount;
+    invoice.discount = totalDiscount;
+    invoice.totalTax = totalTax;
+    invoice.paymentAmount = paymentAmount;
+    
+    
+    const sumTotalAmountElement = document.getElementById(sumTotalAmountId);
+    const totalTaxElement = document.getElementById(totalTaxId);
+    const paymentAmountElement = document.getElementById(paymentAmountId);
+    
+    if (discountInput) {
+        discountInput.value = totalDiscount.toLocaleString();
+    }
+    
+    if (sumTotalAmountElement) {
+        sumTotalAmountElement.textContent = sumTotalAmount.toLocaleString();
+    }
+    
+    if (totalTaxElement) {
+        totalTaxElement.textContent = totalTax.toLocaleString();
+    }
+    
+    if (paymentAmountElement) {
+        paymentAmountElement.textContent = paymentAmount.toLocaleString();
+    }
+    
+    return invoice;
+};
+
 
 
 const generateFactorItemDom = (data, { type = "edit-delete", onDelete, onUpdate, onSelect } = {}) => {
@@ -256,6 +406,30 @@ const generateFactorItemDom = (data, { type = "edit-delete", onDelete, onUpdate,
     });
     
     return container;
+};
+
+
+const validatePfItemDiscount = (formId) => {
+    const form = document.getElementById(formId);
+    
+    const weightCount = Number(form.elements.namedItem("weightCount").value) || 0;
+    const unitAmount = Number(SeparatedNumberRemove(form.elements.namedItem("unitAmount").value)) || 0;
+    const discount = Number(SeparatedNumberRemove(form.elements.namedItem("discount").value)) || 0;
+    
+    const amountBeforeDiscount = Math.round(weightCount * unitAmount);
+    
+    if (discount > amountBeforeDiscount) {
+        const discountInput = form.elements.namedItem("discount");
+        
+        discountInput.classList.add("AlertReq");
+        discountInput.focus();
+        
+        return false;
+    }
+    
+    form.elements.namedItem("discount").classList.remove("AlertReq");
+    
+    return true;
 };
 
 

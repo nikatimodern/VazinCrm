@@ -257,23 +257,34 @@ namespace CRM.EndPoint.FrontEnd.Services {
                 var items = factor.FactorItems.Where(x => !x.IsDeleted);
 
                 decimal sumTotalAmount = 0;
+                decimal totalDiscount = 0;
 
                 foreach (var item in items)
                 {
                     var weightCount = decimal.Parse(item.WeightCount);
-                    var amountBeforeDiscount = weightCount * item.UnitAmount;
 
-                    item.Discount = Math.Min(Math.Round(item.Discount), amountBeforeDiscount);
+                    // مبلغ قبل از تخفیف
+                    var amountBeforeDiscount = Math.Round(weightCount * item.UnitAmount);
+
+                    // تخفیف آیتم
+                    item.Discount = Math.Min(Math.Max(0, Math.Round(item.Discount)), amountBeforeDiscount);
+
+                    // مبلغ نهایی آیتم
                     item.TotalAmount = Math.Max(0, amountBeforeDiscount - item.Discount);
 
-                    sumTotalAmount += item.TotalAmount;
+                    // مجموع مبلغ قبل از تخفیف
+                    sumTotalAmount += amountBeforeDiscount;
+
+                    // مجموع تخفیف آیتم‌ها
+                    totalDiscount += item.Discount;
                 }
 
                 factor.SumTotalAmount = Math.Round(sumTotalAmount);
-                factor.Discount = Math.Round(factor.Discount);
+                factor.Discount = Math.Round(totalDiscount);
+
+                var amountBeforeTax = Math.Max(0, factor.SumTotalAmount - factor.Discount);
 
                 decimal totalTax = 0;
-                var amountBeforeTax = Math.Max(0, factor.SumTotalAmount - factor.Discount);
 
                 if (factor.OfficialType == 1)
                 {
@@ -292,23 +303,34 @@ namespace CRM.EndPoint.FrontEnd.Services {
                 var items = preFactor.PreFactorItems.Where(x => !x.IsDeleted);
 
                 decimal sumTotalAmount = 0;
+                decimal totalDiscount = 0;
 
                 foreach (var item in items)
                 {
                     var weightCount = decimal.Parse(item.WeightCount);
-                    var amountBeforeDiscount = weightCount * item.UnitAmount;
 
-                    item.Discount = Math.Min(Math.Round(item.Discount), amountBeforeDiscount);
+                    // مبلغ قبل از تخفیف
+                    var amountBeforeDiscount = Math.Round(weightCount * item.UnitAmount);
+
+                    // تخفیف آیتم
+                    item.Discount = Math.Min(Math.Max(0, Math.Round(item.Discount)), amountBeforeDiscount);
+
+                    // مبلغ نهایی آیتم
                     item.TotalAmount = Math.Max(0, amountBeforeDiscount - item.Discount);
 
-                    sumTotalAmount += item.TotalAmount;
+                    // مجموع مبلغ قبل از تخفیف
+                    sumTotalAmount += amountBeforeDiscount;
+
+                    // مجموع تخفیف آیتم‌ها
+                    totalDiscount += item.Discount;
                 }
 
                 preFactor.SumTotalAmount = Math.Round(sumTotalAmount);
-                preFactor.Discount = Math.Round(preFactor.Discount);
+                preFactor.Discount = Math.Round(totalDiscount);
+
+                var amountBeforeTax = Math.Max(0, preFactor.SumTotalAmount - preFactor.Discount);
 
                 decimal totalTax = 0;
-                var amountBeforeTax = Math.Max(0, preFactor.SumTotalAmount - preFactor.Discount);
 
                 if (preFactor.OfficialType == 1)
                 {

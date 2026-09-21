@@ -103,9 +103,9 @@ const AddFactor = async (pfId, type = 1) => {
     document.getElementById("f_date").value = factor.date ?? "";
     document.getElementById("f_discount").value = factor.discount?.toLocaleString() ?? "0";
     
+    
+    
     await calculateFactorTotals();
-    
-    
     showFactorItems();
     showFDescriptionItems();
     
@@ -334,6 +334,14 @@ const showFactorItems = () => {
     );
 };
 
+
+document.getElementById("f_discount")?.addEventListener("input", async () => {
+    await calculateFactorTotals(true);
+    
+    showFactorItems();
+});
+
+
 const addFItem = async () => {
     if (!await mySer.CheckValidForm("#FacItem")) return false;
     if (!validatePfItemDiscount("FacItem")) return false;
@@ -349,11 +357,11 @@ const addFItem = async () => {
     factorItems.push(data);
     factor.factorItems = factorItems;
     
-    showFactorItems();
-    mySer.emptyForm("FacItem");
     
     await calculateFactorTotals();
+    showFactorItems();
     //calculateFactorText();
+    mySer.emptyForm("FacItem");
     
     return true;
 };
@@ -433,8 +441,8 @@ const updateFItem = async () => {
         ...data,
     };
     
-    showFactorItems();
     await calculateFactorTotals();
+    showFactorItems();
     //calculateFactorText();
     
     toastifySuccess("با موفقیت ویرایش شد!");
@@ -452,13 +460,13 @@ const deleteFItem = async (index) => {
         factorItems.splice(index, 1);
     }
     
-    showFactorItems();
     await calculateFactorTotals();
+    showFactorItems();
     calculateFactorText();
 };
 
 
-const calculateFactorTotals = () => {
+const calculateFactorTotals = (updateItemsFromDiscount = false) => {
     return new Promise((resolve) => {
         calculateInvoiceTotals({
             items: factorItems,
@@ -467,6 +475,7 @@ const calculateFactorTotals = () => {
             sumTotalAmountId: "f_sumTotalAmount",
             totalTaxId: "f_totalTax",
             paymentAmountId: "f_paymentAmount",
+            updateItemsFromDiscount
         });
         resolve(true);
     });
@@ -611,10 +620,11 @@ const isAllowedToAddFactor = async (pfId) => {
 //OfficialRqModal
 const submitFactor = async () => {
     if (!await mySer.CheckValidForm("#f_dateFormId") || !await mySer.CheckValidForm("#f_SerialFormId")) return;
-    
-    if (factorItems.length <= 0) {
-        $("#preFactorItemId").parent().css("border", "2px solid #ff6d00");
-        toastifyError("فاکتور خالی");
+        
+    const activeItems = factorItems.filter(item => !item.isDeleted);
+    if (!activeItems.length) {
+        document.getElementById("FactorItemId").classList.add("AlertReq");
+        toastifyError("فاکتور خالی است");
         return;
     }
     
@@ -719,6 +729,7 @@ const cancelFactor = () => {
     factorItems = [];
     $("#FactorItemId").children().remove();
     cancelUpdateFItem();
+    document.getElementById("FactorItemId").classList.remove("AlertReq");
     
     const modalTitle = document.getElementById("factorModalTitle");
     modalTitle.textContent = "صدور فاکتور";

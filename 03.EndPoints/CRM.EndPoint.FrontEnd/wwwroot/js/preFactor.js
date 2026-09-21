@@ -485,12 +485,11 @@ const addPfItem = async () => {
     pFactorItems.push(data);
     pFactor.PreFactorItems = pFactorItems;
     
-    showPFactorItems();
-    mySer.emptyForm("PreFacItem");
-    
     calculatePreFactorTotals();
+    showPFactorItems();
     calculatePreFactorText();
     
+    mySer.emptyForm("PreFacItem");
     document.getElementById("printableF")?.focus();
     return true;
 };
@@ -521,8 +520,8 @@ const updatePfItem = async () => {
     };
     
     
-    showPFactorItems();
     calculatePreFactorTotals();
+    showPFactorItems();
     calculatePreFactorText();
     
     toastifySuccess("با موفقیت ویرایش شد!");
@@ -539,8 +538,8 @@ const deletePfItem = (index) => {
         pFactorItems.splice(index, 1);
     }
     
-    showPFactorItems();
     calculatePreFactorTotals();
+    showPFactorItems();
     calculatePreFactorText();
 };
 
@@ -584,6 +583,7 @@ const canselModalItemPreFactor = () => {
     ModalToggle("ItemPreFactorModal", "hide");
 };
 
+/*
 const calculatePreFactorTotals = () => {
     return calculateInvoiceTotals({
         items: pFactorItems,
@@ -594,6 +594,26 @@ const calculatePreFactorTotals = () => {
         paymentAmountId: "paymentAmount",
     });
 };
+*/
+
+const calculatePreFactorTotals = (updateItemsFromDiscount = false) => {
+    return calculateInvoiceTotals({
+        items: pFactorItems,
+        invoice: pFactor,
+        discountInputId: "discount",
+        sumTotalAmountId: "sumTotalAmount",
+        totalTaxId: "totalTax",
+        paymentAmountId: "paymentAmount",
+        updateItemsFromDiscount
+    });
+};
+
+document.getElementById("discount")?.addEventListener("input", () => {
+    calculatePreFactorTotals(true);
+    
+    showPFactorItems();
+});
+
 
 const generatePFactorDescriptions = () => {
     if (pFactor.officialType === 0) { //اگر غیر رسمی بود
