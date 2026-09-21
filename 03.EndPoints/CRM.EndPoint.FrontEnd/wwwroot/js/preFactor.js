@@ -598,7 +598,7 @@ const calculatePreFactorTotals = (updateItemsFromDiscount = false) => {
         sumTotalAmountId: "sumTotalAmount",
         totalTaxId: "totalTax",
         paymentAmountId: "paymentAmount",
-        updateItemsFromDiscount
+        updateItemsFromDiscount,
     });
 };
 

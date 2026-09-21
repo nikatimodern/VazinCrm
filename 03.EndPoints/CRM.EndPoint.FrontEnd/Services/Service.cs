@@ -259,26 +259,25 @@ namespace CRM.EndPoint.FrontEnd.Services {
                 decimal sumTotalAmount = 0;
                 decimal totalDiscount = 0;
                 decimal totalTax = 0;
+                decimal paymentAmount = 0;
 
                 foreach (var item in items)
                 {
                     var weightCount = decimal.Parse(item.WeightCount);
 
-                    // مبلغ قبل از تخفیف
+                    // مبلغ قبل از تخفیف و مالیات
                     var amountBeforeDiscount = Math.Round(weightCount * item.UnitAmount);
 
                     // تخفیف آیتم
                     item.Discount = Math.Min(Math.Max(0, Math.Round(item.Discount)), amountBeforeDiscount);
 
-                    // مبلغ نهایی آیتم
-                    item.TotalAmount = Math.Max(0, amountBeforeDiscount - item.Discount);
+                    // مبلغ بعد از تخفیف
+                    var amountAfterDiscount = Math.Max(0, amountBeforeDiscount - item.Discount);
 
                     // مالیات آیتم
                     if (factor.OfficialType == 1)
                     {
-                        var taxBase = taxAfterDiscount
-                            ? item.TotalAmount
-                            : amountBeforeDiscount;
+                        var taxBase = taxAfterDiscount ? amountAfterDiscount : amountBeforeDiscount;
 
                         item.TaxAmount = CalculateTax(taxBase, taxPercent);
                     } else
@@ -286,9 +285,13 @@ namespace CRM.EndPoint.FrontEnd.Services {
                         item.TaxAmount = 0;
                     }
 
+                    // مبلغ نهایی آیتم = بعد از تخفیف + مالیات
+                    item.TotalAmount = Math.Max(0, amountAfterDiscount + item.TaxAmount);
+
                     sumTotalAmount += amountBeforeDiscount;
                     totalDiscount += item.Discount;
                     totalTax += item.TaxAmount;
+                    paymentAmount += item.TotalAmount;
                 }
 
                 factor.SumTotalAmount = Math.Round(sumTotalAmount);
@@ -304,10 +307,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
                 }
 
                 factor.TotalTax = Math.Round(totalTax);
-
-                var amountBeforeTax = Math.Max(0, factor.SumTotalAmount - factor.Discount);
-
-                factor.PaymentAmount = Math.Round(amountBeforeTax + factor.TotalTax);
+                factor.PaymentAmount = Math.Round(paymentAmount);
             } else if (model is PreFactor preFactor)
             {
                 var items = preFactor.PreFactorItems.Where(x => !x.IsDeleted);
@@ -315,26 +315,25 @@ namespace CRM.EndPoint.FrontEnd.Services {
                 decimal sumTotalAmount = 0;
                 decimal totalDiscount = 0;
                 decimal totalTax = 0;
+                decimal paymentAmount = 0;
 
                 foreach (var item in items)
                 {
                     var weightCount = decimal.Parse(item.WeightCount);
 
-                    // مبلغ قبل از تخفیف
+                    // مبلغ قبل از تخفیف و مالیات
                     var amountBeforeDiscount = Math.Round(weightCount * item.UnitAmount);
 
                     // تخفیف آیتم
                     item.Discount = Math.Min(Math.Max(0, Math.Round(item.Discount)), amountBeforeDiscount);
 
-                    // مبلغ نهایی آیتم
-                    item.TotalAmount = Math.Max(0, amountBeforeDiscount - item.Discount);
+                    // مبلغ بعد از تخفیف
+                    var amountAfterDiscount = Math.Max(0, amountBeforeDiscount - item.Discount);
 
                     // مالیات آیتم
                     if (preFactor.OfficialType == 1)
                     {
-                        var taxBase = taxAfterDiscount
-                            ? item.TotalAmount
-                            : amountBeforeDiscount;
+                        var taxBase = taxAfterDiscount ? amountAfterDiscount : amountBeforeDiscount;
 
                         item.TaxAmount = CalculateTax(taxBase, taxPercent);
                     } else
@@ -342,9 +341,13 @@ namespace CRM.EndPoint.FrontEnd.Services {
                         item.TaxAmount = 0;
                     }
 
+                    // مبلغ نهایی آیتم = بعد از تخفیف + مالیات
+                    item.TotalAmount = Math.Max(0, amountAfterDiscount + item.TaxAmount);
+
                     sumTotalAmount += amountBeforeDiscount;
                     totalDiscount += item.Discount;
                     totalTax += item.TaxAmount;
+                    paymentAmount += item.TotalAmount;
                 }
 
                 preFactor.SumTotalAmount = Math.Round(sumTotalAmount);
@@ -360,10 +363,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
                 }
 
                 preFactor.TotalTax = Math.Round(totalTax);
-
-                var amountBeforeTax = Math.Max(0, preFactor.SumTotalAmount - preFactor.Discount);
-
-                preFactor.PaymentAmount = Math.Round(amountBeforeTax + preFactor.TotalTax);
+                preFactor.PaymentAmount = Math.Round(paymentAmount);
             }
 
             return model;

@@ -40,7 +40,7 @@ const getBaseDescription = async (type = null) => {  // 0: preFactor | 1: Factor
     setValue(totalSelector, total.toLocaleString());
 }*/
 
-function calculateItem(
+/*function calculateItem(
     formId,
     weightSelector = "[name='weightCount']",
     unitSelector = "[name='unitAmount']",
@@ -80,6 +80,80 @@ function calculateItem(
     const total = Math.max(0, amountBeforeDiscount - discount);
     
     setValue(discountSelector, discount.toLocaleString());
+    setValue(totalSelector, total.toLocaleString());
+}*/
+
+function calculateItem(
+    formId,
+    weightSelector = "[name='weightCount']",
+    unitSelector = "[name='unitAmount']",
+    totalSelector = "[name='totalAmount']",
+    discountSelector = "[name='discount']",
+) {
+    const form = document.getElementById(formId);
+    if (!form) return;
+    
+    const getValue = (selector) => {
+        const el = form.querySelector(selector);
+        if (!el) return 0;
+        
+        return el.tagName === "INPUT" || el.tagName === "TEXTAREA"
+            ? SeparatedNumberRemove(el.value)
+            : SeparatedNumberRemove(el.innerText);
+    };
+    
+    const setValue = (selector, value) => {
+        const el = form.querySelector(selector);
+        if (!el) return;
+        
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+            el.value = value;
+        } else {
+            el.innerText = value;
+        }
+    };
+    
+    const unitAmount = Number(getValue(unitSelector)) || 0;
+    const weightCount = Number(getValue(weightSelector)) || 0;
+    let discount = Number(getValue(discountSelector)) || 0;
+    
+    /*
+     * مبلغ قبل از تخفیف و مالیات
+     */
+    const amountBeforeDiscount = Math.round(unitAmount * weightCount);
+    
+    /*
+     * تخفیف
+     */
+    discount = Math.min(Math.max(0, Math.round(discount)), amountBeforeDiscount);
+    
+    /*
+     * مبلغ بعد از تخفیف
+     */
+    const amountAfterDiscount = Math.max(0, amountBeforeDiscount - discount);
+    
+    /*
+     * مالیات
+     */
+    let taxAmount = 0;
+    
+    if (pFactor.officialType === 1) {
+        const taxPercent = setting?.taxPercent || 10;
+        const taxAfterDiscount = setting?.taxAfterDiscount ?? true;
+        
+        const taxBase = taxAfterDiscount ? amountAfterDiscount : amountBeforeDiscount;
+        
+        taxAmount = calculateItemTax(taxBase, taxPercent);
+    }
+    
+    /*
+     * مبلغ نهایی:
+     * مبلغ قبل تخفیف - تخفیف + مالیات
+     */
+    const total = Math.max(0, amountAfterDiscount + taxAmount);
+    
+    setValue(discountSelector, discount.toLocaleString());
+    
     setValue(totalSelector, total.toLocaleString());
 }
 
@@ -124,16 +198,15 @@ const distributeItemDiscount = (items, totalDiscount) => {
     });
 };
 
-const calculateInvoiceTotals = (
-    {
-        items,
-        invoice,
-        discountInputId,
-        sumTotalAmountId,
-        totalTaxId,
-        paymentAmountId,
-        updateItemsFromDiscount = false,
-    }) => {
+const calculateInvoiceTotals = ({
+                                    items,
+                                    invoice,
+                                    discountInputId,
+                                    sumTotalAmountId,
+                                    totalTaxId,
+                                    paymentAmountId,
+                                    updateItemsFromDiscount = false,
+                                }) => {
     const activeItems = items.filter(item => !item.isDeleted);
     
     const taxPercent = setting?.taxPercent || 10;
@@ -144,9 +217,10 @@ const calculateInvoiceTotals = (
     let sumTotalAmount = 0;
     let totalDiscount = 0;
     let totalTax = 0;
+    let paymentAmount = 0;
     
     /*
-     * مبلغ قبل از تخفیف
+     * مبلغ قبل از تخفیف و مالیات
      */
     activeItems.forEach(item => {
         const beforeDiscount = Math.round((Number(item.weightCount) || 0) * (Number(item.unitAmount) || 0));
@@ -157,32 +231,39 @@ const calculateInvoiceTotals = (
     sumTotalAmount = Math.round(sumTotalAmount);
     
     /*
-     * اگر تخفیف کلی توسط کاربر تغییر کرده،
-     * آن را بین آیتم‌ها تقسیم کن.
+     * اگر تخفیف کلی تغییر کرده،
+     * تخفیف را بین آیتم‌ها تقسیم کن.
      */
     if (updateItemsFromDiscount && discountInput) {
         const requestedDiscount = Math.max(0, Math.round(Number(SeparatedNumberRemove(discountInput.value)) || 0));
         
         distributeItemDiscount(activeItems, requestedDiscount);
     }
+    
     /*
-     * محاسبه تخفیف، مبلغ نهایی و مالیات هر آیتم
+     * محاسبه نهایی هر آیتم
      */
     activeItems.forEach(item => {
         const beforeDiscount = Math.round((Number(item.weightCount) || 0) * (Number(item.unitAmount) || 0));
         
+        /*
+         * تخفیف آیتم
+         */
         const discount = Math.min(Math.max(0, Math.round(Number(item.discount) || 0)), beforeDiscount);
         
         item.discount = discount;
         
-        item.totalAmount = Math.max(0, beforeDiscount - discount);
+        /*
+         * مبلغ بعد از تخفیف
+         */
+        const amountAfterDiscount = Math.max(0, beforeDiscount - discount);
         
         /*
-         * مالیات فقط برای فاکتور رسمی
+         * مالیات آیتم
          */
         if (invoice.officialType === 1) {
             const taxBase = taxAfterDiscount
-                ? item.totalAmount
+                ? amountAfterDiscount
                 : beforeDiscount;
             
             item.taxAmount = calculateItemTax(taxBase, taxPercent);
@@ -190,28 +271,29 @@ const calculateInvoiceTotals = (
             item.taxAmount = 0;
         }
         
+        /*
+         * مبلغ نهایی آیتم:
+         * بعد از تخفیف + مالیات
+         */
+        item.totalAmount = Math.max(0, amountAfterDiscount + item.taxAmount);
+        
         totalDiscount += item.discount;
         totalTax += item.taxAmount;
+        paymentAmount += item.totalAmount;
     });
     
     totalDiscount = Math.round(totalDiscount);
     totalTax = Math.round(totalTax);
+    paymentAmount = Math.round(paymentAmount);
     
     /*
-     * درصد مالیات فاکتور
+     * درصد مالیات
      */
     invoice.percentTax = invoice.officialType === 1 ? taxPercent : 0;
     
     /*
-     * مبلغ قبل از مالیات
+     * اطلاعات نهایی فاکتور
      */
-    const amountBeforeTax = Math.max(0, sumTotalAmount - totalDiscount);
-    
-    /*
-     * مبلغ نهایی
-     */
-    const paymentAmount = Math.round(amountBeforeTax + totalTax);
-    
     invoice.sumTotalAmount = sumTotalAmount;
     invoice.discount = totalDiscount;
     invoice.totalTax = totalTax;
@@ -227,7 +309,6 @@ const calculateInvoiceTotals = (
     if (discountInput) {
         discountInput.value = totalDiscount.toLocaleString();
     }
-    
     if (sumTotalAmountElement) {
         sumTotalAmountElement.textContent = sumTotalAmount.toLocaleString();
     }
@@ -242,6 +323,8 @@ const calculateInvoiceTotals = (
     
     return invoice;
 };
+
+
 const calculateItemTax = (amount, taxPercent) => {
     return Math.round(amount * taxPercent / 100);
 };

@@ -12,6 +12,7 @@ document.querySelectorAll("#Factor input[type='radio'][name='f_official']")?.for
         factor.officialType = Number(e.target.value);
         currencyTypeElm.toggleAttribute("disabled", factor.officialType === 1);
         await calculateFactorTotals();
+        showFactorItems();
     });
 });
 
@@ -102,7 +103,6 @@ const AddFactor = async (pfId, type = 1) => {
     document.getElementById("f_serialNumber").value = factor.serialNumber ?? "";
     document.getElementById("f_date").value = factor.date ?? "";
     document.getElementById("f_discount").value = factor.discount?.toLocaleString() ?? "0";
-    
     
     
     await calculateFactorTotals();
@@ -475,7 +475,7 @@ const calculateFactorTotals = (updateItemsFromDiscount = false) => {
             sumTotalAmountId: "f_sumTotalAmount",
             totalTaxId: "f_totalTax",
             paymentAmountId: "f_paymentAmount",
-            updateItemsFromDiscount
+            updateItemsFromDiscount,
         });
         resolve(true);
     });
@@ -548,7 +548,7 @@ const showFDescriptionItems = () => {
 
 const addFDescriptionItem = () => {
     let val;
-    if (window.innerWidth >= 992 && window.innerWidth < 1200) {
+    if (window.innerWidth >= 992 && window.innerWidth < 1500) {
         val = $("#f_descriptionIdTablet").val();
         
     } else if (window.innerWidth < 992) {
@@ -620,7 +620,7 @@ const isAllowedToAddFactor = async (pfId) => {
 //OfficialRqModal
 const submitFactor = async () => {
     if (!await mySer.CheckValidForm("#f_dateFormId") || !await mySer.CheckValidForm("#f_SerialFormId")) return;
-        
+    
     const activeItems = factorItems.filter(item => !item.isDeleted);
     if (!activeItems.length) {
         document.getElementById("FactorItemId").classList.add("AlertReq");
