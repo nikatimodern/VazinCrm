@@ -120,7 +120,7 @@
                 <div class="d-flex align-items-center w-100">
                     <div class="col-12 d-flex align-items-center gap-2">
                         <label class="text-muted">نشانی: </label>
-                        <label class="fbold">@Model.invoice.PartyAddress</label>
+                        <label class="fbold">@Model.invoice.CustomerCity @Model.invoice.PartyAddress</label>
                     </div>
                 </div>
             </div>
@@ -151,7 +151,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    @foreach (var item in Model.invoice.InvoiceItems) {
+                    @foreach (var item in Model.invoice.InvoiceItems ?? []) {
                         <tr>
                             <td>@item.RowID </td>
                             <td>@item.ItemCode</td>
@@ -162,7 +162,7 @@
                             <td>@($"{item.Price:n0}") <span style="font-size:10px;">ريال</span></td>
                             <td>@($"{item.Discount:n0}") <span style="font-size:10px;">ريال</span></td>
                             <td>@($"{item.AdditionFactor:n0}") <span style="font-size:10px;">ريال</span></td>
-                            <td>@($"{item.PriceInBaseCurrency:n0}") <span style="font-size:10px;">ريال</span></td>
+                            <td>@($"{(item.Price - item.Discount + item.AdditionFactor):n0}") <span style="font-size:10px;">ريال</span></td>
                             <td>@($"{item.Tax:n0}") <span style="font-size:10px;">ريال</span></td>
                             <td>@($"{item.NetPrice:n0}") <span style="font-size:10px;">ريال</span></td>
                         </tr>
@@ -181,7 +181,7 @@
                             @($"{Model.invoice.InvoiceItems.Sum(f => f.AdditionFactor):n0}") <span style="font-size:11px;">ريال</span>
                         </td>
                         <td style="background-color:#eee">
-                            @($"{Model.invoice.InvoiceItems.Sum(f => f.PriceInBaseCurrency):n0}") <span style="font-size:11px;">ريال</span>
+                            @($"{Model.invoice.InvoiceItems.Sum(f => (f.Price - f.Discount + f.AdditionFactor)):n0}") <span style="font-size:11px;">ريال</span>
                         </td>
                         <td style="background-color:#eee">
                             @($"{Model.invoice.InvoiceItems.Sum(f => f.Tax):n0}") <span style="font-size:11px;">ريال</span>
