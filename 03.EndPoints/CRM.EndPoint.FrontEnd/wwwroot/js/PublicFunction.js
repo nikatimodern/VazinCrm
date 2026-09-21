@@ -40,7 +40,7 @@ const getBaseDescription = async (type = null) => {  // 0: preFactor | 1: Factor
     setValue(totalSelector, total.toLocaleString());
 }*/
 
-/*function calculateItem(
+function calculateItem(
     formId,
     weightSelector = "[name='weightCount']",
     unitSelector = "[name='unitAmount']",
@@ -81,95 +81,6 @@ const getBaseDescription = async (type = null) => {  // 0: preFactor | 1: Factor
     
     setValue(discountSelector, discount.toLocaleString());
     setValue(totalSelector, total.toLocaleString());
-}*/
-
-function calculateItem(
-    formId,
-    weightSelector = "[name='weightCount']",
-    unitSelector = "[name='unitAmount']",
-    totalSelector = "[name='totalAmount']",
-    discountSelector = "[name='discount']",
-) {
-    const form = document.getElementById(formId);
-    if (!form) return;
-    
-    const getValue = (selector) => {
-        const el = form.querySelector(selector);
-        if (!el) return 0;
-        
-        return el.tagName === "INPUT" || el.tagName === "TEXTAREA"
-            ? SeparatedNumberRemove(el.value)
-            : SeparatedNumberRemove(el.innerText);
-    };
-    
-    const setValue = (selector, value) => {
-        const el = form.querySelector(selector);
-        if (!el) return;
-        
-        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
-            el.value = value;
-        } else {
-            el.innerText = value;
-        }
-    };
-    
-    const unitAmount = Number(getValue(unitSelector)) || 0;
-    const weightCount = Number(getValue(weightSelector)) || 0;
-    let discount = Number(getValue(discountSelector)) || 0;
-    
-    const amountBeforeDiscount = Math.round(
-        unitAmount * weightCount
-    );
-    
-    discount = Math.min(
-        Math.max(0, Math.round(discount)),
-        amountBeforeDiscount
-    );
-    
-    /*
-     * مبلغ بعد از تخفیف
-     */
-    const amountAfterDiscount = Math.max(
-        0,
-        amountBeforeDiscount - discount
-    );
-    
-    /*
-     * مالیات
-     */
-    let taxAmount = 0;
-    
-    if (pFactor.officialType === 1) {
-        const taxPercent = setting?.taxPercent || 10;
-        const taxAfterDiscount = setting?.taxAfterDiscount ?? true;
-        
-        const taxBase = taxAfterDiscount
-            ? amountAfterDiscount
-            : amountBeforeDiscount;
-        
-        taxAmount = calculateItemTax(
-            taxBase,
-            taxPercent
-        );
-    }
-    
-    /*
-     * مبلغ نهایی شامل مالیات
-     */
-    const total = Math.max(
-        0,
-        amountAfterDiscount + taxAmount
-    );
-    
-    setValue(
-        discountSelector,
-        discount.toLocaleString()
-    );
-    
-    setValue(
-        totalSelector,
-        total.toLocaleString()
-    );
 }
 
 
