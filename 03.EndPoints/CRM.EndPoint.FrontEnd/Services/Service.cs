@@ -256,6 +256,8 @@ namespace CRM.EndPoint.FrontEnd.Services {
             {
                 var items = factor.FactorItems.Where(x => !x.IsDeleted);
 
+                var isOfficial = factor.OfficialType == 1;
+                
                 decimal sumTotalAmount = 0;
                 decimal totalDiscount = 0;
                 decimal totalTax = 0;
@@ -275,7 +277,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
                     var amountAfterDiscount = Math.Max(0, amountBeforeDiscount - item.Discount);
 
                     // مالیات آیتم
-                    if (factor.OfficialType == 1)
+                    if (isOfficial)
                     {
                         var taxBase = taxAfterDiscount ? amountAfterDiscount : amountBeforeDiscount;
 
@@ -296,22 +298,15 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
                 factor.SumTotalAmount = Math.Round(sumTotalAmount);
                 factor.Discount = Math.Round(totalDiscount);
-
-                if (factor.OfficialType == 1)
-                {
-                    factor.PercentTax = taxPercent;
-                } else
-                {
-                    factor.PercentTax = 0;
-                    totalTax = 0;
-                }
-
+                factor.PercentTax = isOfficial ? taxPercent : 0;
                 factor.TotalTax = Math.Round(totalTax);
                 factor.PaymentAmount = Math.Round(paymentAmount);
             } else if (model is PreFactor preFactor)
             {
                 var items = preFactor.PreFactorItems.Where(x => !x.IsDeleted);
 
+                var isOfficial = preFactor.OfficialType == 1;
+                
                 decimal sumTotalAmount = 0;
                 decimal totalDiscount = 0;
                 decimal totalTax = 0;
@@ -331,7 +326,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
                     var amountAfterDiscount = Math.Max(0, amountBeforeDiscount - item.Discount);
 
                     // مالیات آیتم
-                    if (preFactor.OfficialType == 1)
+                    if (isOfficial)
                     {
                         var taxBase = taxAfterDiscount ? amountAfterDiscount : amountBeforeDiscount;
 
@@ -352,16 +347,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
                 preFactor.SumTotalAmount = Math.Round(sumTotalAmount);
                 preFactor.Discount = Math.Round(totalDiscount);
-
-                if (preFactor.OfficialType == 1)
-                {
-                    preFactor.PercentTax = taxPercent;
-                } else
-                {
-                    preFactor.PercentTax = 0;
-                    totalTax = 0;
-                }
-
+                preFactor.PercentTax = isOfficial ? taxPercent : 0;
                 preFactor.TotalTax = Math.Round(totalTax);
                 preFactor.PaymentAmount = Math.Round(paymentAmount);
             }
