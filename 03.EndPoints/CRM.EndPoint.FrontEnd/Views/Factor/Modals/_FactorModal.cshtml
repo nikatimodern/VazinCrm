@@ -1,11 +1,9 @@
 <!-- Modal Factor -->
-<div class="modal fade" id="Factor" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
+<div class="modal fade factor-modal" id="Factor" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered modal-xxl">
         <div class="modal-content col-12">
             <div class="modal-header pb-0" style="border:none">
-                <div id="factorModalTitle" class="w-100 flex-center fbold" style="background-color:#00302d;color:white;border-radius:5px">
-                    صدور فاکتور
-                </div>
+                <div class="factor-modal-title">صدور فاکتور</div>
             </div>
 
             <div class="modal-body d-flex flex-column justify-content-between w-100">
@@ -71,8 +69,8 @@
                     </div>
 
                 </div>
-                <div class="d-none d-lg-block p-3 pb-1 pb-lg-3" style="width:100%;">
-                    <div style="width:100%; height:2px; background-color:#00302d;">
+                <div class="d-none d-lg-block p-3 pb-1 pb-lg-3 w-100">
+                    <div class="pf-divider w-100">
                     </div>
                 </div>
                 <div class="d-flex justify-content-between w-100 flex-column-reverse pf-1500-row">
@@ -143,9 +141,9 @@
                             </form>
                         </div>
 
-                        <div class="InfoData pf-items-container" style="border-color:#008077;scrollbar-color: #008077 #0000;" id="FactorItemId">
+                        <div class="InfoData pf-items-container" id="FactorItemId">
                         </div>
-                        <div class="d-flex flex-column flex-lg-row align-items-center justify-content-end w-100 mt-3 amountsPreFactorModalBox">
+                        <div class="d-flex flex-column flex-lg-row justify-content-end w-100 mt-3 amountsPreFactorModalBox">
                             <div class="d-none d-lg-block pf-1500-hide col-12 col-lg-6 descriptionPreFactorBox">
                                 <div class="h-100" style=" width:100%;display:flex;flex-direction:column;">
                                     <div style="width:100%; display:flex;position:relative">
@@ -206,7 +204,7 @@
                 </div>
             </div>
             <div>
-                <div class="mx-auto" style="width: 97%;height:2px;background-color:#00302d"></div>
+                <div class="pf-divider"></div>
                 <div class="d-flex justify-content-center w-100 gap-1 my-3">
                     <button class="buttonCancel2" onclick="cancelFactor() ">انصراف</button>
                     <button class="buttonGreen3" onclick="submitFactor()">ثبت</button>

@@ -1,0 +1,74 @@
+<!-- Modal SupplyFactor -->
+<div class="modal fade" id="supplyFactorModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content col-12 p-2">
+            <div class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">فاکتور تامین</div>
+            <div class="modal-body pb-2">
+                <form id="supplyFactorForm" class="d-flex flex-column gap-2">
+                    <div>
+                        <div class="flex-center w-100 gap-3 gap-lg-5" id="supplyFactorOfficialAlert">
+                            <div class="d-flex align-items-center gap-1">
+                                <label class="fbold" for="supplyFactorOfficial">رسمی</label>
+                                <input type="radio" class="valueNumber" name="officialType" id="supplyFactorOfficial" value="1" data-alertid="supplyFactorOfficialAlert" required>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <label class="fbold" for="supplyFactorUnofficial">غیر رسمی</label>
+                                <input type="radio" class="valueNumber" name="officialType" id="supplyFactorUnofficial" value="0" data-alertid="supplyFactorOfficialAlert" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="supplyFactorAmount">مبلغ:</label>
+                        <input id="supplyFactorAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="amount" required data-currency-hint="next">
+                        <span class="currencyHint"></span>
+                    </div>
+
+                    <div>
+                        <label for="supplyFactorNumber">شماره فاکتور:</label>
+                        <input id="supplyFactorNumber" class="form-control" name="factorSerial" required />
+                    </div>
+
+                    <div>
+                        <label for="supplyFactorDate">تاریخ:</label>
+                        <input id="supplyFactorDate" class="sdate form-control" name="factorDateTxt" placeholder="yyyy/mm/dd" data-slots="ymd" required />
+                    </div>
+
+                    <div>
+                        <label for="supplyFactorSupplierId">تامین‌ کننده:</label>
+                        <select class="show-dropdown-arrow" name="supplierId" id="supplyFactorSupplierId" required>
+                        </select>
+                    </div>
+
+                    <div id="supplyFactorOrderHeadWrapper">
+                        <label for="supplyFactorOrderHead">بابت حواله تولید:</label>
+                        <div class="input-group mb-3">
+                            <input id="supplyFactorOrderHead" type="text" class="form-control direction-ltr" placeholder="حواله تولید.." disabled required>
+                            <button id="showAddOrderHeadBtn" class="btn btn-sm btn-secondary" type="button" onclick="showAddOrderHeadModal()" disabled>انتخاب</button>
+                        </div>
+                        @* <input name="supplierId" class="form-control" id="supplyFactorOrderHead" /> *@
+                    </div>
+
+
+                    <div>
+                        <label for="supplyFactorAtt">تصویر فاکتور:</label>
+                        <div class="container-uploader">
+                            <input type="file" class="uploadBtn" data-varList="supplyFactorAttachments" data-showList="DivShowSupplyFactorAtt" id="supplyFactorAtt" accept="*/*" multiple required />
+                            <label for="supplyFactorAtt">
+                                <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                                <span>تصویر فاکتور را انتخاب یا اینجا رها کنید</span>
+                            </label>
+                            <div class="image-display" id="DivShowSupplyFactorAtt"></div>
+                        </div>
+                    </div>
+
+
+                    <div class="d-flex justify-content-center gap-1 mt-2">
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="cancelSupplyFactorModal()">انصراف</button>
+                        <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitSupplyFactorModal()">ثبت</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

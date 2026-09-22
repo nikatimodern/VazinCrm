@@ -269,13 +269,9 @@ const calculatePreFactorText = () => {
 
 
 const showPFactorItems = () => {
-    // document.getElementById("preFactorItemId").innerHTML = generateItemPfactorDom(pFactorItems);
     document.getElementById("preFactorItemId").replaceChildren(
         generateInvoiceItemDom(pFactorItems, { onDelete: deletePfItem, onUpdate: showUpdatePfItem }),
     );
-    /*
-    document.getElementById("preFactorItemId").innerHTML =
-        generateInvoiceItemDom(pFactorItems, { onDelete: "deletePfItem", onUpdate: "showUpdatePfItem" });*/
 };
 
 /*

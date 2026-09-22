@@ -202,9 +202,8 @@ const returnFactor = async (fid, type = 1) => {
     modalFactor.querySelector("#f_dateFormId input[name='f_date']").value = factor.date;
     modalFactor.querySelector("#snFinancialFormId input[name='snFinancial']").value = factor.snFinancial;
     
-    const modalTitle = modalFactor.querySelector("#factorModalTitle");
+    const modalTitle = modalFactor.querySelector(".factor-modal-title");
     modalTitle.textContent = "فاکتور برگشتی";
-    modalTitle.style.backgroundColor = "darkred";
     
     modalFactor.querySelectorAll(".modal-body .buttonGreen3").forEach((el) => {
         el.classList.replace("buttonGreen3", "buttonCancel3");
@@ -632,9 +631,8 @@ const cancelFactor = () => {
     cancelUpdateFItem();
     document.getElementById("FactorItemId").classList.remove("AlertReq");
     
-    const modalTitle = document.getElementById("factorModalTitle");
+    const modalTitle = modalFactor.querySelector(".factor-modal-title");
     modalTitle.textContent = "صدور فاکتور";
-    modalTitle.style.backgroundColor = "#00302d";
     modalFactor.classList.remove("returned-factor");
     modalFactor.querySelectorAll(".modal-body .buttonCancel3").forEach((el) => {
         el.classList.replace("buttonCancel3", "buttonGreen3");

@@ -1,74 +1,218 @@
 <!-- Modal SupplyFactor -->
-<div class="modal fade" id="supplyFactorModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-md">
-        <div class="modal-content col-12 p-2">
-            <div class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">فاکتور تامین</div>
-            <div class="modal-body pb-2">
-                <form id="supplyFactorForm" class="d-flex flex-column gap-2">
-                    <div>
-                        <div class="flex-center w-100 gap-3 gap-lg-5" id="supplyFactorOfficialAlert">
-                            <div class="d-flex align-items-center gap-1">
-                                <label class="fbold" for="supplyFactorOfficial">رسمی</label>
-                                <input type="radio" class="valueNumber" name="officialType" id="supplyFactorOfficial" value="1" data-alertid="supplyFactorOfficialAlert" required>
+<div class="modal fade factor-modal" id="supplyFactorModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-xxl">
+        <div class="modal-content col-12">
+            <div class="modal-header pb-0 border-0">
+                <div class="factor-modal-title">صدور فاکتور تامین</div>
+            </div>
+
+            <div class="modal-body d-flex flex-column justify-content-between w-100">
+                <div>
+                    <div class="headerPreFactorBox d-flex flex-column-reverse flex-lg-row gap-2 px-2 align-items-center justify-content-between w-100">
+                        <div class="col-12 col-lg-3 d-flex align-items-end justify-content-between flex-grow-1">
+                            <form class="d-flex flex-column justify-content-between row-gap-3" id="supplyFactorHeadFormId" style="flex-grow:0.6">
+                                <div class="d-flex justify-content-evenly">
+                                    <div class="d-flex w-100 justify-content-around flex-column gap-1 gap-lg-2" id="officialAlert">
+                                        <div class="mp d-flex align-items-center gap-1">
+                                            <label class="fbold" for="sf-official">رسمی</label>
+                                            <input type="radio" name="official" id="sf-official" value="1" data-alertid="officialAlert" required />
+                                        </div>
+                                        <div class="mp d-flex align-items-center gap-1">
+                                            <label class="fbold" for="sf-unofficial">غیر رسمی</label>
+                                            <input type="radio" name="official" id="sf-unofficial" value="0" data-alertid="officialAlert" required />
+                                        </div>
+                                    </div>
+                                    <div class="d-flex w-100 justify-content-around flex-column gap-1 gap-lg-2" id="exportAlert">
+                                        <div class="mp d-flex align-items-center gap-1">
+                                            <label class="fbold" for="sf-export">صادراتی</label>
+                                            <input type="radio" name="export" id="sf-export" value="1" data-alertid="exportAlert" required />
+                                        </div>
+                                        <div class="mp d-flex align-items-center gap-1">
+                                            <label class="fbold" for="sf-unexport">غیر صادراتی</label>
+                                            <input type="radio" name="export" id="sf-unexport" value="0" data-alertid="exportAlert" required />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <label for="sf-currencyTypeSelect">نوع ارز</label>
+                                    <select class="form-select form-select-sm w-auto" name="currencyType" id="sf-currencyTypeSelect">
+                                        <option value="0" selected>ریال</option>
+                                        @*<option value="1">دلار</option>
+                                        <option value="2">یورو</option>*@
+                                    </select>
+                                </div>
+                            </form>
+                            <div class="d-lg-none">
+                                <button class="btn btn-sm btn-secondary" onclick="ModalToggle('ItemPreFactorModal')">افزودن</button>
                             </div>
-                            <div class="d-flex align-items-center gap-1">
-                                <label class="fbold" for="supplyFactorUnofficial">غیر رسمی</label>
-                                <input type="radio" class="valueNumber" name="officialType" id="supplyFactorUnofficial" value="0" data-alertid="supplyFactorOfficialAlert" required>
+                        </div>
+                        <div class="col-12 col-lg-5 col-xl-4 d-flex flex-column gap-1">
+                            <div class="d-flex align-items-center w-100">
+                                <label class="col-3 text-center" for="sf-serialNumber">شماره سریال:</label>
+                                <div class="col-9">
+                                    <input class="form-control" type="text" name="serialNumber" id="sf-serialNumber" placeholder="شماره سریال" />
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center w-100">
+                                <label class="col-3 text-center" for="sf-date">تاریخ:</label>
+                                <div class="col-9">
+                                    <input class="sdate form-control" type="text" name="date" id="sf-date" placeholder="yyyy/mm/dd" data-mask-date required />
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center w-100">
+                                <label class="col-3 text-center" for="sf-validityDade">تامین کننده:</label>
+                                <div class="col-9">
+                                    <input class="sdate form-control" type="text" name="validityDade" id="sf-validityDade" required />
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div>
-                        <label for="supplyFactorAmount">مبلغ:</label>
-                        <input id="supplyFactorAmount" inputmode="numeric" class="form-control currencyNumber inpAmount" name="amount" required data-currency-hint="next">
-                        <span class="currencyHint"></span>
-                    </div>
+                </div>
+                <div class="d-none d-lg-block my-3 pf-divider"></div>
 
-                    <div>
-                        <label for="supplyFactorNumber">شماره فاکتور:</label>
-                        <input id="supplyFactorNumber" class="form-control" name="factorSerial" required />
-                    </div>
+                <div class="d-flex justify-content-between w-100 flex-column-reverse pf-1500-row">
 
-                    <div>
-                        <label for="supplyFactorDate">تاریخ:</label>
-                        <input id="supplyFactorDate" class="sdate form-control" name="factorDateTxt" placeholder="yyyy/mm/dd" data-slots="ymd" required />
-                    </div>
+                    <div class="col-12 pf-1500-main d-flex flex-column justify-content-between bodyPreFactorModal">
 
-                    <div>
-                        <label for="supplyFactorSupplierId">تامین‌ کننده:</label>
-                        <select class="show-dropdown-arrow" name="supplierId" id="supplyFactorSupplierId" required>
-                        </select>
-                    </div>
+                        <div id="supplyFactorContainer" class="d-none d-lg-flex justify-content-between w-100">
+                            <form id="supplyFactorItem" class="w-100 pf-item-form">
+                                <div class="d-flex flex-column align-items-center">
+                                    <div class="d-flex justify-content-between column-gap-2 w-100">
+                                        <label>محصول</label>
+                                        <div id="sf-PfPrintableAlertId" class="d-flex gap-2" style="font-size:10px">
+                                            <div class="d-flex align-items-center gap-1">
+                                                <label for="sf-printableF">غیر چاپدار</label>
+                                                <input type="radio" name="printable" id="sf-printableF" class="valueNumber" data-alertId="sf-PrintableAlertId" value="0" required />
+                                            </div>
+                                            <div class="d-flex align-items-center gap-1">
+                                                <label for="sf-printableT">چاپدار</label>
+                                                <input type="radio" name="printable" id="sf-printableT" class="valueNumber" data-alertId="sf-PfPrintableAlertId" value="1" required />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <select class="w-100 center fs-6 show-dropdown-arrow" name="productCode" id="sf-productCode" required>
+                                    </select>
+                                </div>
+                                <div class="d-flex flex-column align-items-center">
+                                    <label>شرح کالا</label>
+                                    <input class="form-control" type="text" name="product" id="sf-product" />
+                                </div>
+                                <div class="d-flex flex-column align-items-center">
+                                    <label>تعداد/مقدار </label>
+                                    <input class="form-control" type="number" name="weightCount" min="0" id="sf-weightCount" required />
+                                </div>
+                                <div class="d-flex flex-column align-items-center">
+                                    <label>واحد</label>
+                                    <select class="form-control valueNumber" style="width: 100%" name="unit" id="sf-unit" required></select>
+                                </div>
 
-                    <div id="supplyFactorOrderHeadWrapper">
-                        <label for="supplyFactorOrderHead">بابت حواله تولید:</label>
-                        <div class="input-group mb-3">
-                            <input id="supplyFactorOrderHead" type="text" class="form-control direction-ltr" placeholder="حواله تولید.." disabled required>
-                            <button id="showAddOrderHeadBtn" class="btn btn-sm btn-secondary" type="button" onclick="showAddOrderHeadModal()" disabled>انتخاب</button>
+                                <div class="unitAmountBoxPrefactorModal" style="display:flex;flex-direction:column;align-items:center; ">
+                                    <label>مبلغ واحد</label>
+                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="sf-unitAmount" required data-currency-hint="next" />
+                                    <span class="currencyHint"></span>
+                                </div>
+
+                                <div>
+                                    <label for="sf-itemDiscount">تخفیف</label>
+                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="discount" id="sf-itemDiscount" value="0" autocomplete="off" data-currency-hint="next" />
+                                    <span class="currencyHint"></span>
+                                </div>
+
+                                <div class="totalAmountBoxPrefactorModal">
+                                    <label>مبلغ نهایی</label>
+                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="totalAmount" id="sf-totalAmount" disabled />
+                                </div>
+
+                                <div>
+                                    <label>&nbsp;</label>
+                                    <button id="sf-AddBtnId" class="buttonGray flex-center w-100 p-0" style="height: 2rem" type="button" onclick="addSfItem()">
+                                        <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                                    </button>
+                                    <div id="sf-UpBtnId" style="display:none;flex-direction:column">
+                                        <button class="buttonGreen3 flex-center w-100 p-0" onclick="updateSfItem()" type="button" style="height: 26px">
+                                            <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                                        </button>
+                                        <button class="buttonCancel2 flex-center w-100 p-0" onclick="cancelUpdateSfItem()" type="button" style="height: 26px">
+                                            <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
-                        @* <input name="supplierId" class="form-control" id="supplyFactorOrderHead" /> *@
-                    </div>
+                        <div class="InfoData pf-items-container" id="supplyFactorItemId">
+                        </div>
+                        <div class="d-flex flex-column flex-lg-row justify-content-end w-100 mt-3 amountsPreFactorModalBox">
+                            <div class="d-none d-lg-block col-12 col-lg-6">
+                                <div class="h-100 w-100 d-flex flex-column">
+                                    <div class="d-flex w-100 position-relative">
+                                        <textarea id="descriptionIdTablet" rows="6" class="form-control" style="height:54px;padding:4px 4px 4px 36px" type="text" placeholder="توضیحات"></textarea>
+                                        <button style="position: absolute;left: 1px;bottom: 1px;display: flex;justify-content: center;align-items: center;top: 1px;padding-inline: 8px;box-shadow: none" class="buttonGray" onclick="addPfDescriptionItem()">
+                                            <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                                        </button>
+                                    </div>
+                                    <div class="d-flex w-100 mt-3 flex-grow-1 pe-1 overflow-auto" style="max-height:106px" id="supplyFactorDescIdTablet">
+                                    </div>
+                                </div>
+                            </div>
 
+                            <div class="col-12 col-lg-6 d-flex flex-column gap-1 pe-1">
+                                <div class="col-12 d-flex justify-content-around">
+                                    <label class="col-4 col-xl-3 text-center">جمع مبلغ کل :</label>
+                                    <label class="col-8 col-xl-9 form-controlLable" name="sumTotalAmount" id="sf-sumTotalAmount" value="0" disabled></label>
+                                </div>
+                                <div class="col-12 d-flex justify-content-around">
+                                    <label class="col-4 col-xl-3 text-center">تخفیف :</label>
+                                    <div class="col-8 col-xl-9">
+                                        <input inputmode="numeric" class="form-control currencyNumber" name="discount" id="sf-discount" type="text" value="0" />
+                                    </div>
+                                </div>
+                                <div class="col-12 d-flex justify-content-around">
+                                    <label class="col-4 col-xl-3 text-center">مالیات و عوارض :</label>
+                                    <label class="col-8 col-xl-9 form-controlLable" name="totalTax" id="sf-totalTax" type="text" value="0"></label>
+                                </div>
+                                <div class="col-12 d-flex justify-content-around">
+                                    <label class="col-4 col-xl-3 text-center">مبلغ نهایی :</label>
+                                    <label class="col-8 col-xl-9 form-controlLable" name="paymentAmount" id="sf-paymentAmount" type="text" value="0"></label>
+                                </div>
+                            </div>
 
-                    <div>
-                        <label for="supplyFactorAtt">تصویر فاکتور:</label>
-                        <div class="container-uploader">
-                            <input type="file" class="uploadBtn" data-varList="supplyFactorAttachments" data-showList="DivShowSupplyFactorAtt" id="supplyFactorAtt" accept="*/*" multiple required />
-                            <label for="supplyFactorAtt">
-                                <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-                                <span>تصویر فاکتور را انتخاب یا اینجا رها کنید</span>
-                            </label>
-                            <div class="image-display" id="DivShowSupplyFactorAtt"></div>
+                            <div class="d-lg-none mt-3 text-center descriptionPreFactorBox">
+                                <button class="btn btn-sm btn-secondary" onclick="ModalToggle('preFactorDescriptionModal')">افزودن توضیحات</button>
+                            </div>
                         </div>
                     </div>
 
-
-                    <div class="d-flex justify-content-center gap-1 mt-2">
-                        <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="cancelSupplyFactorModal()">انصراف</button>
-                        <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitSupplyFactorModal()">ثبت</button>
+                    <div class="d-none pf-1500-show pf-1500-description col-12 px-3 pt-3 pf-1500-pt-0">
+                        <div class="d-flex flex-column justify-content-between w-100 h-100">
+                            <div>
+                                <label for="supplyFactorAtt">تصویر فاکتور:</label>
+                                <div class="container-uploader">
+                                    <input type="file" class="uploadBtn" data-varList="supplyFactorAttachments" data-showList="DivShowSupplyFactorAtt" id="supplyFactorAtt" accept="*/*" required />
+                                    <label for="supplyFactorAtt">
+                                        <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                                        <span>تصویر فاکتور را انتخاب یا اینجا رها کنید</span>
+                                    </label>
+                                    <div class="image-display" id="DivShowSupplyFactorAtt"></div>
+                                </div>
+                            </div>
+                            <button type="button" class="supply-factor-ai-btn">
+                                <img src="/Img/ai-svg.svg" class="ai-svg-icon" alt="AI">
+                                <span>استخراج اطلاعات فاکتور با هوش مصنوعی</span>
+                            </button>
+                        </div>
                     </div>
-                </form>
+                </div>
+                <div class="pf-divider my-3"></div>
+                <div class="d-flex justify-content-center w-100 gap-1">
+                    <button type="button" class="buttonCancel2" onclick="cancelSupplyFactorModal()">انصراف</button>
+                    <button type="button" class="buttonGreen3" onclick="submitSupplyFactorModal()">ثبت</button>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+@* <partial name="_PreFactorDescriptionModal.cshtml" /> *@
+@* <partial name="_PreFactorItemModal.cshtml" /> *@
+

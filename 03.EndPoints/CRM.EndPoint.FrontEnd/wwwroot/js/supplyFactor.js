@@ -1,14 +1,26 @@
 var supplyFactorAttachments = [];
 let orderHeadsSupFactorSelectedIds = [];
 let supplyFactorData = {};
+let supplyFactorItems = [];
+let sfItemIndex = null;
+
+
+document.querySelector("#supplyFactorItem")?.addEventListener("input", (e) => {
+    if (e.target.matches("[name='weightCount']") || e.target.matches("[name='unitAmount']") || e.target.matches("[name='discount']")) {
+        calculateItem("supplyFactorItem");
+    }
+});
 
 async function showSupplyFactorModal(dealId = null) {
     supplyFactorData.dealId = dealId;
     
-    document.getElementById("supplyFactorOrderHeadWrapper").classList.toggle("d-none", dealId !== null);
-    toggleElementsRequired(document.getElementById("supplyFactorOrderHead"), dealId === null);
+    document.getElementById("supplyFactorOrderHeadWrapper")?.classList.toggle("d-none", dealId !== null);
     
-    await setupSelectOptions();
+    /*toggleElementsRequired(document.getElementById("supplyFactorOrderHead"), dealId === null);
+    await setupSelectOptions();*/
+    
+    await getAllProductOp("supplyFactorItem");
+    Unit(4, "supplyFactorItem");
     ModalToggle("#supplyFactorModal");
 }
 
@@ -17,13 +29,130 @@ function cancelSupplyFactorModal() {
     supplyFactorData = {};
     
     orderHeadsSupFactorSelectedIds = [];
-    modalSelector.reset();
+/*    modalSelector.reset();
     
     mySer.emptyForm("supplyFactorForm");
     
-    toggleElementsDisabled(document.getElementById("showAddOrderHeadBtn"), true);
+    toggleElementsDisabled(document.getElementById("showAddOrderHeadBtn"), true);*/
     ModalToggle("#supplyFactorModal", "hide");
 }
+
+
+
+
+const addSfItem = async () => {
+    document.getElementById("supplyFactorItemId").classList.remove("AlertReq");
+    
+    if (!await mySer.CheckValidForm("#supplyFactorItem")) return false;
+    if (!validatePfItemDiscount("supplyFactorItem")) return false;
+    
+    const productCodeElm = document.querySelector("#supplyFactorItem select[name='productCode']");
+    const unitElm = document.querySelector("#supplyFactorItem select[name='unit']");
+    
+    const data = mySer.convertFormToJSON("#supplyFactorItem");
+    
+    data.productSmallName = productCodeElm.options[productCodeElm.selectedIndex].text;
+    data.unitTxt = unitElm.options[unitElm.selectedIndex].text;
+    
+    data.totalAmount = Number(SeparatedNumberRemove(data.totalAmount)) || 0;
+    data.unitAmount = Number(SeparatedNumberRemove(data.unitAmount)) || 0;
+    data.discount = Number(SeparatedNumberRemove(data.discount)) || 0;
+    
+    supplyFactorItems.push(data);
+    supplyFactorData.Items = supplyFactorItems;
+    
+    calculateSupplyFactorTotals();
+    showSupplyFactorItems();
+    
+    mySer.emptyForm("supplyFactorItem");
+    document.getElementById("sf-printableF")?.focus();
+    return true;
+};
+
+const calculateSupplyFactorTotals = (updateItemsFromDiscount = false) => {
+    return calculateInvoiceTotals({
+        items: supplyFactorItems,
+        invoice: supplyFactorData,
+        discountInputId: "sf-discount",
+        sumTotalAmountId: "sf-sumTotalAmount",
+        totalTaxId: "sf-totalTax",
+        paymentAmountId: "sf-paymentAmount",
+        updateItemsFromDiscount,
+    });
+};
+
+const showSupplyFactorItems = () => {
+    document.getElementById("supplyFactorItemId").replaceChildren(
+        generateInvoiceItemDom(supplyFactorItems, { onDelete: deleteSfItem, onUpdate: showUpdateSfItem }),
+    );
+};
+
+
+const deleteSfItem = (index) => {
+    let item = supplyFactorItems[index];
+    
+    if (item.id) {
+        item.isDeleted = true;
+    } else {
+        supplyFactorItems.splice(index, 1);
+    }
+    
+    calculateSupplyFactorTotals();
+    showSupplyFactorItems();
+};
+
+const showUpdateSfItem = (index) => {
+    /*if (window.innerWidth < 992) {
+        ModalToggle("ItemPreFactorModal");
+    }*/
+    sfItemIndex = index;
+    
+    mySer.convertJsonToForm(supplyFactorItems[index], "supplyFactorItem");
+    document.getElementById("sf-AddBtnId").style.display = "none";
+    // document.getElementById("sf-CancelBtnId").style.display = "none";
+    document.getElementById("sf-UpBtnId").style.display = "flex";
+};
+
+const updateSfItem = async () => {
+    if (!await mySer.CheckValidForm("#supplyFactorItem")) return false;
+    if (!validatePfItemDiscount("supplyFactorItem")) return false;
+    
+    const form = document.getElementById("supplyFactorItem");
+    
+    const productCode = form.elements.namedItem("productCode");
+    const unit = form.elements.namedItem("unit");
+    
+    const data = mySer.convertFormToJSON("#supplyFactorItem");
+    
+    data.productSmallName = productCode.options[productCode.selectedIndex].text;
+    data.unitTxt = unit.options[unit.selectedIndex].text;
+    
+    
+    supplyFactorItems[sfItemIndex] = {
+        ...supplyFactorItems[sfItemIndex],
+        ...data,
+    };
+    
+    
+    calculateSupplyFactorTotals();
+    showSupplyFactorItems();
+            
+    toastifySuccess("با موفقیت ویرایش شد!");
+    cancelUpdateSfItem();
+};
+
+const cancelUpdateSfItem = () => {
+    mySer.emptyForm("supplyFactorItem");
+    sfItemIndex = null;
+    
+    document.getElementById("sf-AddBtnId").style.display = "flex";
+    // document.getElementById("sf-CancelBtnId").style.display = "flex";
+    document.getElementById("sf-UpBtnId").style.display = "none";
+    
+   /* if (window.innerWidth < 992) {
+        canselModalItemPreFactor();
+    }*/
+};
 
 ///////////////////
 async function showAddOrderHeadModal() {

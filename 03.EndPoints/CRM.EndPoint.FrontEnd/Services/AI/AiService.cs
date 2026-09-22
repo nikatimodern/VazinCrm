@@ -307,7 +307,7 @@ public class AiService(
 
             await db.CallRecordings.AddAsync(call, ct);
             await db.SaveChangesAsync(ct);
-            logger.LogInformation("Call saved: {path}", call.RecordingFilePath);
+            logger.LogInformation("Call saved: {Path}", call.RecordingFilePath);
             return call;
         }
         catch (Exception ex)

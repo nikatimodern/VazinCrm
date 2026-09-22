@@ -1,3 +1,38 @@
+.factor-modal {
+	--factor-color: rebeccapurple;
+	--factor-color-dark: #4a0d82;
+	--factor-color-light: #6d28d9;
+}
+
+
+.factor-modal#PreFactor {
+	--factor-color: rebeccapurple;
+	--factor-color-dark: #4b0082;
+	--factor-color-light: #6d28d9;
+}
+
+
+.factor-modal#Factor {
+	--factor-color: #00564f;
+	--factor-color-dark: #00322e;
+	--factor-color-light: #007a70;
+}
+
+
+.factor-modal#Factor.returned-factor {
+	--factor-color: #6e0000;
+	--factor-color-dark: #6b0000;
+	--factor-color-light: #980000;
+}
+
+
+.factor-modal#supplyFactorModal {
+	--factor-color: #6c757d;
+	--factor-color-dark: #545961;
+	--factor-color-light: #838e98;
+}
+
+
 .pf-item-form {
 	display: grid;
 	grid-template-columns:
@@ -37,12 +72,10 @@
 	flex-grow: 1;
 	margin-top: .5rem;
 	width: 100%;
-	height: auto;
-	min-height: 60px;
-	max-height: 200px;
+	height: 240px;
 	overflow: auto;
-	border-color: rebeccapurple;
-	scrollbar-color: rebeccapurple #0000;
+	border-color: var(--factor-color);
+	scrollbar-color: var(--factor-color) #0000;
 }
 
 
@@ -69,7 +102,7 @@
 
 
 .InfoDataItem {
-	border: 2px solid rebeccapurple;
+	border: 2px solid var(--factor-color);
 	display: flex;
 	justify-content: space-between;
 	width: 100%;
@@ -81,7 +114,7 @@
 
 .InfoDataItemHead {
 	color: aliceblue;
-	background-color: #4c1087;;
+	background-color: var(--factor-color-dark);
 	width: 24px;
 	display: flex;
 	flex-direction: column;
@@ -90,37 +123,6 @@
 	flex-shrink: 0;
 	border-bottom-right-radius: 10px;
 	font-family: IRANSansBold;
-}
-
-
-#FactorItemId .InfoDataItem {
-	border-color: #00625b;
-}
-
-
-#FactorItemId .InfoDataItemHead {
-	background-color: #00302d;
-}
-
-
-#FactorItemId .InfoDataItem .InfoDataItemOp button {
-	color: #02514C;
-}
-
-
-.returned-factor .InfoDataItemHead {
-	background-color: darkred !important;
-}
-
-
-.returned-factor .InfoDataItem,
-.returned-factor .InfoData {
-	border-color: darkred !important;
-}
-
-
-.returned-factor .InfoDataItem .InfoDataItemOp button {
-	color: darkred !important;
 }
 
 
@@ -197,10 +199,12 @@
 
 
 .pf-item-actions {
-	flex-shrink: 0;
 	display: flex;
 	flex-direction: column;
-	justify-content: space-evenly;
+	align-items: center;
+	justify-content: space-around;
+	flex-shrink: 0;
+	white-space: nowrap;
 	gap: 2px;
 	padding-inline: 4px;
 }
@@ -212,12 +216,34 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	color: #3f0e6e;
+	transition: color .25s;
+	color: var(--factor-color-dark);
 }
 
 
 .pf-item-action:hover {
-	color: #6d28d9;
+	color: var(--factor-color-light);
+}
+
+
+.pf-divider {
+	width: 97%;
+	height: 2px;
+	margin-inline: auto;
+	background-color: var(--factor-color-dark);
+}
+
+
+.factor-modal-title {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #fff;
+	width: 100%;
+	font-family: IRANSansBold;
+	background-color: var(--factor-color);
+	border-radius: 5px;
+	height: 24px;
 }
 
 
@@ -298,7 +324,12 @@
 		 Item list
 	--------------------------- */
 	.pf-items-container {
-		max-height: calc(100dvh - 500px) !important;
+		height: auto;
+		min-height: 60px;
+		max-height: calc(100dvh - 500px);
+		border: none;
+		border-block: 2px solid var(--factor-color);
+		border-radius: unset;
 	}
 	
 	.InfoDataItem {
@@ -560,5 +591,308 @@
 	.pf-1500-description {
 		width: 20% !important;
 		flex: 0 0 20% !important;
+	}
+}
+
+
+/* ------------------------------------------------------------------------------------------ */
+
+/* =========================================================
+   Supply Factor
+   ========================================================= */
+
+.supply-factor-title {
+	background-color: #6c757d;
+	border-radius: 5px;
+	height: 24px;
+}
+
+
+.supply-factor-separator {
+	width: 97%;
+	height: 2px;
+	background-color: #6c757d;
+}
+
+
+/* =========================================================
+   Main layout
+   ========================================================= */
+
+.supply-factor-main {
+	width: 80%;
+	flex: 0 0 80%;
+}
+
+
+.supply-factor-attachment {
+	width: 20%;
+	flex: 0 0 20%;
+	padding-left: 12px;
+}
+
+
+.supply-factor-attachment-inner {
+	height: 100%;
+	min-height: 300px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	gap: 10px;
+}
+
+
+/* =========================================================
+   Attachment
+   ========================================================= */
+
+.supply-factor-uploader {
+	width: 100%;
+	min-height: 220px;
+}
+
+
+.supply-factor-uploader .image-display {
+	max-height: 250px;
+	overflow-y: auto;
+	scrollbar-color: #6c757d #0000;
+}
+
+
+/* =========================================================
+   AI button
+   ========================================================= */
+
+.supply-factor-ai-btn {
+	width: 100%;
+	min-height: 42px;
+	border: 1px solid #6c757d;
+	border-radius: 5px;
+	background-color: #6c757d;
+	color: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 7px;
+	padding: 6px 10px;
+	font-family: inherit;
+	cursor: pointer;
+	transition: .15s ease;
+}
+
+
+.supply-factor-ai-btn:hover {
+	background-color: #5c636a;
+}
+
+
+.supply-factor-ai-btn img {
+	flex-shrink: 0;
+	height: 16px;
+}
+
+
+/* =========================================================
+   Bottom section
+   ========================================================= */
+
+.supply-factor-bottom {
+	width: 100%;
+	display: flex;
+	align-items: stretch;
+	justify-content: space-between;
+	gap: 12px;
+	margin-top: 12px;
+}
+
+
+/* Description - right side */
+.supply-factor-description {
+	width: 42%;
+	flex: 0 0 42%;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+}
+
+
+.supply-factor-description textarea {
+	min-height: 82px;
+	height: 82px;
+	resize: none;
+	padding: 5px 36px 5px 5px;
+}
+
+
+.supply-factor-description-btn {
+	position: absolute;
+	right: 1px;
+	top: 1px;
+	bottom: 1px;
+	width: 30px;
+	padding: 0;
+	border: none;
+	background-color: #6c757d;
+	color: #fff;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+
+/* Amounts */
+.supply-factor-amounts {
+	width: 58%;
+	flex: 0 0 58%;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding-left: 4px;
+}
+
+
+.supply-factor-amounts > div {
+	min-height: 0;
+}
+
+
+.supply-factor-amounts .form-control,
+.supply-factor-amounts .form-controlLable {
+	height: 26px;
+}
+
+
+/* =========================================================
+   Buttons
+   ========================================================= */
+
+.supply-factor-add-btn,
+.supply-factor-update-btn {
+	background-color: #6c757d;
+	color: #fff;
+	border: none;
+	border-radius: 4px;
+}
+
+
+.supply-factor-add-btn:hover,
+.supply-factor-update-btn:hover {
+	background-color: #5c636a;
+}
+
+
+.supply-factor-submit-btn {
+	background-color: #6c757d;
+	color: #fff;
+	border: none;
+	border-radius: 5px;
+	padding: 5px 14px;
+	font-family: inherit;
+}
+
+
+.supply-factor-submit-btn:hover {
+	background-color: #5c636a;
+}
+
+
+/* =========================================================
+   Before 1500px
+   ========================================================= */
+
+@media (max-width: 1499px) {
+	
+	.supply-factor-main {
+		width: 100%;
+		flex: 0 0 100%;
+	}
+	
+	.supply-factor-attachment {
+		width: 100%;
+		flex: 0 0 100%;
+		padding-left: 0;
+		margin-bottom: 12px;
+	}
+	
+	.supply-factor-attachment-inner {
+		min-height: 180px;
+	}
+	
+	.supply-factor-bottom {
+		gap: 10px;
+	}
+	
+	.supply-factor-description {
+		width: 40%;
+		flex-basis: 40%;
+	}
+	
+	.supply-factor-amounts {
+		width: 60%;
+		flex-basis: 60%;
+	}
+}
+
+
+/* =========================================================
+   Mobile
+   ========================================================= */
+
+@media (max-width: 991px) {
+	
+	.supply-factor-bottom {
+		flex-direction: column;
+		gap: 8px;
+	}
+	
+	.supply-factor-description,
+	.supply-factor-amounts {
+		width: 100%;
+		flex-basis: 100%;
+	}
+	
+	.supply-factor-description textarea {
+		height: 80px;
+		min-height: 80px;
+	}
+	
+	.supply-factor-attachment-inner {
+		min-height: 160px;
+	}
+	
+	.supply-factor-ai-btn {
+		min-height: 38px;
+		font-size: 12px;
+	}
+}
+
+
+/* =========================================================
+   1500px+
+   ========================================================= */
+
+@media (min-width: 1500px) {
+	
+	.supply-factor-main {
+		width: 80% !important;
+		flex: 0 0 80% !important;
+	}
+	
+	.supply-factor-attachment {
+		width: 20% !important;
+		flex: 0 0 20% !important;
+	}
+	
+	.supply-factor-bottom {
+		margin-top: 10px;
+	}
+	
+	.supply-factor-description textarea {
+		height: 78px;
+		min-height: 78px;
+	}
+	
+	.supply-factor-amounts {
+		padding-left: 8px;
 	}
 }

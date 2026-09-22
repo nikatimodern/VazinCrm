@@ -363,7 +363,7 @@ const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate
 
                     </div>
 
-                    <div class="InfoDataItemOp pf-item-actions">
+                    <div class="pf-item-actions">
                         ${actionButtons}
                     </div>
                 </div>
@@ -466,15 +466,15 @@ const Unit = (type, formId, defaultValueId) => {
         });
         $(unitElm).val(null).trigger("change");
     } else if (type === 2) {
-        const fun = Array.from(document.getElementById("FacItem").elements).filter(f => f.name == "unit")[0];
-        $(fun).select2({
+        const unitElm = document.querySelector("#FacItem select[name='unit']");
+        $(unitElm).select2({
             data: unitItems,
             dir: "rtl",
             placeholder: "انتخاب",
             selectionCssClass: "form-control",
             dropdownParent: window.innerWidth < 992 ? $("#ItemFactorModal") : $("#Factor"),
         });
-        $(fun).val(null).trigger("change");
+        $(unitElm).val(null).trigger("change");
     } else if (type === 3) {
         const unitInput = document.querySelector(`#${formId} select[name='unit']`);
         unitInput.innerHTML = "";
@@ -496,6 +496,17 @@ const Unit = (type, formId, defaultValueId) => {
             fragment.appendChild(opt);
         });
         unitInput.appendChild(fragment);
+    }else if (type === 4) {
+        const unitElm = document.querySelector("#supplyFactorItem select[name='unit']");
+        $(unitElm).select2({
+            data: unitItems,
+            dir: "rtl",
+            placeholder: "انتخاب",
+            minimumResultsForSearch: Infinity,
+            selectionCssClass: "form-control",
+            dropdownParent: $("#supplyFactorModal"),
+        });
+        $(unitElm).val(null).trigger("change");
     }
 };
 

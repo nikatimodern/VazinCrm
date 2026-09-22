@@ -1,11 +1,9 @@
 <!-- Modal PreFactor -->
-<div class="modal fade" id="PreFactor" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
+<div class="modal fade factor-modal" id="PreFactor" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered modal-xxl">
         <div class="modal-content col-12">
             <div class="modal-header pb-0 border-0">
-                <div class="w-100 flex-center text-white fbold" style="background-color:rebeccapurple;border-radius:5px;height: 24px;">
-                    صدور پیش فاکتور
-                </div>
+                <div class="factor-modal-title">صدور پیش فاکتور</div>
             </div>
 
             <div class="modal-body d-flex flex-column justify-content-between w-100">
@@ -71,7 +69,7 @@
                     </div>
 
                 </div>
-                <div class="d-none d-lg-block my-3 mx-auto" style="width: 97%;height:2px;background-color:rebeccapurple"></div>
+                <div class="d-none d-lg-block my-3 pf-divider"></div>
 
                 <div class="d-flex justify-content-between w-100 flex-column-reverse pf-1500-row">
 
@@ -144,7 +142,7 @@
                         </div>
                         <div class="InfoData pf-items-container" id="preFactorItemId">
                         </div>
-                        <div class="d-flex flex-column flex-lg-row align-items-center justify-content-end w-100 mt-3 amountsPreFactorModalBox">
+                        <div class="d-flex flex-column flex-lg-row justify-content-end w-100 mt-3 amountsPreFactorModalBox">
                             <div class="d-none d-lg-block pf-1500-hide col-12 col-lg-6 descriptionPreFactorBox">
                                 <div class="d-flex align-items-center gap-2 mb-2">
                                     <label for="prePaymentPercentTablet" style="font-size: 13px;line-height: 1">درصد پیش‌پرداخت:</label>
@@ -165,7 +163,7 @@
                                             <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                                         </button>
                                     </div>
-                                    <div class="d-flex w-100 mt-3 flex-grow-1 pe-1 overflow-auto" style="max-height:106px;scroll-behavior:smooth;scrollbar-color: rebeccapurple #0000" id="PfactorDescIdTablet">
+                                    <div class="d-flex w-100 mt-3 flex-grow-1 pe-1 overflow-auto" style="max-height:106px" id="PfactorDescIdTablet">
                                     </div>
                                 </div>
                             </div>
@@ -191,7 +189,7 @@
                                 </div>
                             </div>
 
-                            <div class="d-lg-none mt-3 descriptionPreFactorBox">
+                            <div class="d-lg-none mt-3 text-center descriptionPreFactorBox">
                                 <button class="btn btn-sm btn-secondary" onclick="ModalToggle('preFactorDescriptionModal')">افزودن توضیحات</button>
                             </div>
                         </div>
@@ -222,7 +220,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="my-3 mx-auto" style="width: 97%;height:2px;background-color:rebeccapurple"></div>
+                <div class="pf-divider my-3"></div>
                 <div class="d-flex justify-content-center w-100 gap-1">
                     <button class="buttonCancel2" onclick="cancelPreFactor()">انصراف</button>
                     <button class="buttonGreen3" onclick="submitPreFactor()">ثبت</button>
