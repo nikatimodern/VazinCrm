@@ -43,6 +43,7 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
         var targetDate = DateTime.Now.AddDays(-7);
         var startDate = DateTime.Parse("2026-08-19");
         var factors = await db.Factors.Where(f=>f.SerialNumber== 140580).ToListAsync();
+
         //var factors = await db.Factors.Where(x =>
         //    x.CustomerFeedbackSmsSentDate == null
         //    && x.DateMiladi <= targetDate

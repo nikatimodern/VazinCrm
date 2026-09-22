@@ -44,13 +44,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly TaskServices ts;
         private readonly ISmsIrService smsIrService;
 
-        public HomeController(IWebHostEnvironment appEnvironment, TimedHostedService hostService, IConfiguration conf,
+        public HomeController(IWebHostEnvironment appEnvironment,
+            
+            //TimedHostedService hostService,
+            
+            IConfiguration conf,
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
             Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue, IssabelService issabelService,
             AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi, LogSystemService logSystemService, TaskServices ts, ISmsIrService smsIrService)
         {
             this.appEnvironment = appEnvironment;
-            this.hostService = hostService;
+            //this.hostService = hostService;
             this.conf = conf;
             this.userManager = userManager;
             _logger = logger;
@@ -200,13 +204,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        [HttpGet]
-        public async Task<IActionResult> WarningsSepidarCrmFactors()
-        {
-            await hostService.CompareSepidarCrmFactors();
-            var data = await db.SystemWarnings.ToListAsync();
-            return Ok(data);
-        }
+        //[HttpGet]
+        //public async Task<IActionResult> WarningsSepidarCrmFactors()
+        //{
+        //    await hostService.CompareSepidarCrmFactors();
+        //    var data = await db.SystemWarnings.ToListAsync();
+        //    return Ok(data);
+        //}
 
         public async Task<IActionResult> GetAllSystemWarnings()
         {
