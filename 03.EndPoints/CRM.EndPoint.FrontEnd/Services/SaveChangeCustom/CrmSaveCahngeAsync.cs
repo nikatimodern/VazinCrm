@@ -19,7 +19,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SaveChangeCustom {
 
         public async Task SaveChange()
         {
-            var enti = db.ChangeTracker.Entries<carizoEntity>(); //اگر جدول کاریزو ترک شده باشه یعنی مقدارش اضاف یا ویرایش شده باشه
+            var enti = db.ChangeTracker.Entries<carizoEntity>(); //اگر جدول کاربان ترک شده باشه یعنی مقدارش اضاف یا ویرایش شده باشه
             if (enti.Any())
             {
                 await db.SaveChangesAsync();

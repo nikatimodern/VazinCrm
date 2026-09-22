@@ -907,7 +907,7 @@ public class AccountancyController : Controller {
         }
 
 
-        // ثبت کاریزو
+        // ثبت کاربان
         if (acc.PayType is PayTypeEnum.اعتباری or PayTypeEnum.چکی or PayTypeEnum.تهاتری)
         {
             if (status == AccStatusEnum.تایید_شده)

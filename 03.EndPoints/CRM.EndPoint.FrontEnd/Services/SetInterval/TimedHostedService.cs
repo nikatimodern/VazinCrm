@@ -187,7 +187,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
                     {
                         pushQueue.Enqueue(new PushQueueItem {
                             UserId = userId,
-                            Title = "یادآوری کاریزو",
+                            Title = "یادآوری کاربان",
                             Body = "یک یا چند کاریزوی شما موعد آن سررسیده است.",
                             Url = "/Carizo/Index",
                             Tag = "carizo-remind"

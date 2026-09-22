@@ -597,7 +597,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                                             $"کار <b>{CModel.Title}</b> توسط <b>{_user.FullName}</b> تغییر کرد");
                                         pushQueue.Enqueue(new PushQueueItem {
                                             UserId = CModel.AssignUserId,
-                                            Title = "تغییر کاریزو",
+                                            Title = "تغییر کاربان",
                                             Body = $"فعالیت {CModel.Title} توسط {_user.FullName} تغییر کرد",
                                             Url = "/Carizo/Index",
                                             Tag = "carizo-assign" + model2.Id
