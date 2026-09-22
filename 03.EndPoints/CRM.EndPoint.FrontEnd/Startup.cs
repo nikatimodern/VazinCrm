@@ -67,7 +67,13 @@ namespace CRM.EndPoint.FrontEnd {
 
 
             //AddSingleton
-            services.AddHostedService<TimedHostedService>();
+            //services.AddHostedService<TimedHostedService>();
+            services.AddSingleton<TimedHostedService>();
+            services.AddHostedService(sp =>
+                sp.GetRequiredService<TimedHostedService>());
+
+
+
             services.AddHostedService<AsteriskAmiListener>();
 
             services.AddAuthorizationBuilder()
