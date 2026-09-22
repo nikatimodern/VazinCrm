@@ -862,7 +862,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (s1 == null) return NotFound();
 
-                s1.ExtraDescription = sepidarService.getNoteInvoice(s1.InvoiceId);
+                s1.ExtraDescription = sepidarService.GetNoteInvoice(s1.InvoiceId);
 
                 var myCompany = await db.Companies.Include(f => f.CompanyFiles).FirstOrDefaultAsync();
                 SepidarFactorViewModel model = new SepidarFactorViewModel() {

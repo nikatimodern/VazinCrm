@@ -939,7 +939,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     foreach (var factor in factors)
                     {
-                        factor.ExtraDescription = sepidarService.getNoteInvoice(factor.InvoiceId);
+                        factor.ExtraDescription = sepidarService.GetNoteInvoice(factor.InvoiceId);
                     }
                 }
 

@@ -7,82 +7,6 @@ const getBaseDescription = async (type = null) => {  // 0: preFactor | 1: Factor
     });
 };
 
-/*function calculateItem(formId, weightSelector = "[name='weightCount']", unitSelector = "[name='unitAmount']", totalSelector = "[name='totalAmount']", discountSelector = "[name='discount']") {
-    const form = document.getElementById(formId);
-    const getValue = (selector) => {
-        const el = form.querySelector(selector);
-        if (!el) return 0;
-        
-        return el.tagName === "INPUT" || el.tagName === "TEXTAREA"
-            ? SeparatedNumberRemove(el.value)
-            : SeparatedNumberRemove(el.innerText);
-    };
-    
-    const setValue = (selector, value) => {
-        const el = form.querySelector(selector);
-        if (!el) return;
-        
-        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
-            el.value = value;
-        } else {
-            el.innerText = value;
-        }
-    };
-    
-    const unitAmount = Number(getValue(unitSelector)) || 0;
-    const weightCount = Number(getValue(weightSelector)) || 0;
-    const discount = Number(getValue(discountSelector)) || 0;
-    
-    
-    const amountBeforeDiscount = Math.round(unitAmount * weightCount);
-    const total = Math.max(0, amountBeforeDiscount - discount);
-    
-    setValue(totalSelector, total.toLocaleString());
-}*/
-
-/*function calculateItem(
-    formId,
-    weightSelector = "[name='weightCount']",
-    unitSelector = "[name='unitAmount']",
-    totalSelector = "[name='totalAmount']",
-    discountSelector = "[name='discount']",
-) {
-    const form = document.getElementById(formId);
-    
-    const getValue = (selector) => {
-        const el = form.querySelector(selector);
-        if (!el) return 0;
-        
-        return el.tagName === "INPUT" || el.tagName === "TEXTAREA"
-            ? SeparatedNumberRemove(el.value)
-            : SeparatedNumberRemove(el.innerText);
-    };
-    
-    const setValue = (selector, value) => {
-        const el = form.querySelector(selector);
-        if (!el) return;
-        
-        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
-            el.value = value;
-        } else {
-            el.innerText = value;
-        }
-    };
-    
-    const unitAmount = Number(getValue(unitSelector)) || 0;
-    const weightCount = Number(getValue(weightSelector)) || 0;
-    let discount = Number(getValue(discountSelector)) || 0;
-    
-    const amountBeforeDiscount = Math.round(unitAmount * weightCount);
-    
-    discount = Math.min(Math.max(0, Math.round(discount)), amountBeforeDiscount);
-    
-    const total = Math.max(0, amountBeforeDiscount - discount);
-    
-    setValue(discountSelector, discount.toLocaleString());
-    setValue(totalSelector, total.toLocaleString());
-}*/
-
 function calculateItem(
     formId,
     weightSelector = "[name='weightCount']",
@@ -170,10 +94,6 @@ const distributeItemDiscount = (items, totalDiscount) => {
     if (!totalBeforeDiscount || !remainingDiscount) {
         items.forEach(item => {
             item.discount = 0;
-            
-            const beforeDiscount = Math.round((Number(item.weightCount) || 0) * (Number(item.unitAmount) || 0));
-            
-            item.totalAmount = beforeDiscount;
         });
         
         return;
@@ -187,14 +107,12 @@ const distributeItemDiscount = (items, totalDiscount) => {
         if (index === items.length - 1) {
             item.discount = Math.min(remainingDiscount, beforeDiscount);
         } else {
-            const proportionalDiscount = Math.round(remainingDiscount * beforeDiscount / totalBeforeDiscount); // تخفیف نسبی
+            const proportionalDiscount = Math.round(remainingDiscount * beforeDiscount / totalBeforeDiscount);
             
             item.discount = Math.min(proportionalDiscount, beforeDiscount);
             
             remainingDiscount -= item.discount;
         }
-        
-        item.totalAmount = Math.max(0, beforeDiscount - item.discount);
     });
 };
 

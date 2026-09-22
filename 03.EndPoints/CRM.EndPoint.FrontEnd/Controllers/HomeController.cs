@@ -80,7 +80,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-                var before1403 = DateTime.Parse("2024-03-20");
+                /*var before1403 = DateTime.Parse("2024-03-20");
 
                 var factors9 = await db.Factors.IgnoreQueryFilters()
                     .Include(f => f.FactorItems)
@@ -118,7 +118,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 foreach (var pf in preFactors10)
                 {
                     Service.UpdatePaymentAmount(pf, 10, true);
-                }
+                }*/
 
 
 //                var bulkSendResult = await smsIrService.SendTextAsync(["09369100273"], "سلام");

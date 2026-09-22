@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using CRM.Infrastructures.Sql;
 using System.Linq;
 using System.Threading;
@@ -70,7 +71,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
         }
 
 
-        public string getNoteInvoice(int? refId)
+        public string GetNoteInvoice(int? refId)
         {
             var note = s1Db.ExtraData
                 .Where(f => f.EntityTypeName == "SG.Sales.InvoiceManagement.Common.DsInvoice" && f.EntityRef == refId)
