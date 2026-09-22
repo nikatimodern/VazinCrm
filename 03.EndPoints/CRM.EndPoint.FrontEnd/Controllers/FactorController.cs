@@ -955,8 +955,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         && f.Status == AccStatusEnum.تایید_شده
                     ).SumAsync(f => f.credit.Value);
 
-                pfactor.PaymentAmount = pfactor.SumTotalAmount + pfactor.TotalTax - pfactor.Discount - pfactor.ReciveAmount;
                 pfactor.SumTotalAmountTax = pfactor.SumTotalAmount + pfactor.TotalTax - pfactor.Discount;
+                pfactor.PaymentAmount = pfactor.SumTotalAmountTax - pfactor.ReciveAmount;
 
 
                 var terms = //pfactor.Accepted &&

@@ -160,7 +160,7 @@ const cancelPreFactor = () => {
     cancelUpdatePfItem();
 };
 
-const calculatePreFactorText = () => {
+/*const calculatePreFactorText = () => {
     const model = pFactorItems.filter(f => !f.isDeleted);
     const currencyTypeElm = document.querySelector("#PfHeadFormId select[name='currencyType']");
     const currencyTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
@@ -209,16 +209,73 @@ const calculatePreFactorText = () => {
     }
     
     document.getElementById(descriptionInpId).value = valueText;
+};*/
+
+const calculatePreFactorText = () => {
+    const model = pFactorItems.filter(f => !f.isDeleted);
+    const currencyTypeElm = document.querySelector("#PfHeadFormId select[name='currencyType']");
+    const currencyTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
+    const prePaymentPercent = Number(prePaymentPercentElm.value) || 0;
+    
+    const sumTotal = Number(pFactor.paymentAmount) || 0;
+    
+    const kelisheItems = model.filter(item => item.productSmallName.includes("کلیشه"));
+    const cilandrItems = model.filter(item => item.productSmallName.includes("سیلندر"));
+    
+    const kelisheTotalAmount = Math.round(
+        kelisheItems.reduce((sum, item) => sum + (Number(SeparatedNumberRemove(item.totalAmount)) || 0), 0),
+    );
+    
+    const cilandrTotalAmount = Math.round(
+        cilandrItems.reduce((sum, item) => sum + (Number(SeparatedNumberRemove(item.totalAmount)) || 0), 0),
+    );
+    
+    // مبلغ کل بدون کلیشه و سیلندر
+    const totalWithoutBoth = Math.max(0, sumTotal - kelisheTotalAmount - cilandrTotalAmount);
+    
+    const prePayment = Math.round(totalWithoutBoth * prePaymentPercent / 100);
+    const toolsTotalAmount = kelisheTotalAmount + cilandrTotalAmount;
+    const finalTotalAmount = prePayment + toolsTotalAmount;
+    
+    let valueText;
+    
+    if (kelisheItems.length > 0 && cilandrItems.length > 0) {
+        valueText =
+            `${prePaymentPercent} درصد مبلغ کل ${prePayment.toLocaleString()} ${currencyTxt} ` +
+            `و تمام مبلغ کلیشه و سیلندر ${toolsTotalAmount.toLocaleString()} ${currencyTxt} ` +
+            `که جمعا معادل ${finalTotalAmount.toLocaleString()} ${currencyTxt} می‌شود ` +
+            `در ابتدای کار دریافت خواهد شد`;
+    } else if (kelisheItems.length > 0) {
+        valueText =
+            `${prePaymentPercent} درصد مبلغ کل ${prePayment.toLocaleString()} ${currencyTxt} ` +
+            `و تمام مبلغ کلیشه ${kelisheTotalAmount.toLocaleString()} ${currencyTxt} ` +
+            `که جمعا معادل ${finalTotalAmount.toLocaleString()} ${currencyTxt} می‌شود ` +
+            `در ابتدای کار دریافت خواهد شد`;
+    } else if (cilandrItems.length > 0) {
+        valueText =
+            `${prePaymentPercent} درصد مبلغ کل ${prePayment.toLocaleString()} ${currencyTxt} ` +
+            `و تمام مبلغ سیلندر ${cilandrTotalAmount.toLocaleString()} ${currencyTxt} ` +
+            `که جمعا معادل ${finalTotalAmount.toLocaleString()} ${currencyTxt} می‌شود ` +
+            `در ابتدای کار دریافت خواهد شد`;
+    } else {
+        valueText =
+            `${prePaymentPercent} درصد از مبلغ کل معادل ` +
+            `${prePayment.toLocaleString()} ${currencyTxt} ` +
+            `در ابتدای کار دریافت می‌شود`;
+    }
+    
+    document.getElementById(descriptionInpId).value = valueText;
 };
+
 
 const showPFactorItems = () => {
     // document.getElementById("preFactorItemId").innerHTML = generateItemPfactorDom(pFactorItems);
     document.getElementById("preFactorItemId").replaceChildren(
-        generateFactorItemDom(pFactorItems, { onDelete: deletePfItem, onUpdate: showUpdatePfItem }),
+        generateInvoiceItemDom(pFactorItems, { onDelete: deletePfItem, onUpdate: showUpdatePfItem }),
     );
     /*
     document.getElementById("preFactorItemId").innerHTML =
-        generateFactorItemDom(pFactorItems, { onDelete: "deletePfItem", onUpdate: "showUpdatePfItem" });*/
+        generateInvoiceItemDom(pFactorItems, { onDelete: "deletePfItem", onUpdate: "showUpdatePfItem" });*/
 };
 
 /*
@@ -606,6 +663,7 @@ document.getElementById("discount")?.addEventListener("input", () => {
     calculatePreFactorTotals(true);
     
     showPFactorItems();
+    calculatePreFactorText();
 });
 
 

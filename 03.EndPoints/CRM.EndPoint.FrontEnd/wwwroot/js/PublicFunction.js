@@ -198,15 +198,16 @@ const distributeItemDiscount = (items, totalDiscount) => {
     });
 };
 
-const calculateInvoiceTotals = ({
-                                    items,
-                                    invoice,
-                                    discountInputId,
-                                    sumTotalAmountId,
-                                    totalTaxId,
-                                    paymentAmountId,
-                                    updateItemsFromDiscount = false,
-                                }) => {
+const calculateInvoiceTotals = (
+    {
+        items,
+        invoice,
+        discountInputId,
+        sumTotalAmountId,
+        totalTaxId,
+        paymentAmountId,
+        updateItemsFromDiscount = false,
+    }) => {
     const activeItems = items.filter(item => !item.isDeleted);
     
     const taxPercent = setting?.taxPercent || 10;
@@ -329,7 +330,7 @@ const calculateItemTax = (amount, taxPercent) => {
     return Math.round(amount * taxPercent / 100);
 };
 
-const generateFactorItemDom = (data, { type = "edit-delete", onDelete, onUpdate, onSelect } = {}) => {
+const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate, onSelect } = {}) => {
     
     const container = document.createElement("div");
     container.className = "pf-items-list";
@@ -345,7 +346,7 @@ const generateFactorItemDom = (data, { type = "edit-delete", onDelete, onUpdate,
         
         const beforeDiscountAmountStr = beforeDiscountAmount ? beforeDiscountAmount.toLocaleString() : "-";
         const uAmount = item.unitAmount ? item.unitAmount.toLocaleString() : "-";
-        const discountAmount = item.discount ? item.discount.toLocaleString() : "-";
+        const discountAmount = item.discount ? item.discount.toLocaleString() : "0";
         const taxAmount = item.taxAmount ? item.taxAmount.toLocaleString() : "-";
         const tAmount = item.totalAmount ? item.totalAmount.toLocaleString() : "-";
         
@@ -407,7 +408,7 @@ const generateFactorItemDom = (data, { type = "edit-delete", onDelete, onUpdate,
                             <label>مبلغ واحد</label>
                             <label>
                                 ${uAmount}
-                                ${item.currencyTypeTxt ?? ""}
+                                <span class="fs-small">${item.currencyTypeTxt ?? ""}</span>
                             </label>
                         </div>
 
@@ -415,7 +416,7 @@ const generateFactorItemDom = (data, { type = "edit-delete", onDelete, onUpdate,
                             <label><span class="d-none d-sm-inline">مبلغ </span>قبل تخفیف</label>
                             <label>
                                 ${beforeDiscountAmountStr}
-                                ${item.currencyTypeTxt ?? ""}
+                                <span class="fs-small">${item.currencyTypeTxt ?? ""}</span>
                             </label>
                         </div>
 
@@ -423,14 +424,14 @@ const generateFactorItemDom = (data, { type = "edit-delete", onDelete, onUpdate,
                             <label>تخفیف</label>
                             <label>
                                 ${discountAmount}
-                                ${item.currencyTypeTxt ?? ""}
+                                <span class="fs-small">${item.currencyTypeTxt ?? ""}</span>
                             </label>
                         </div>
                         <div class="pf-item-field pf-item-tax">
                             <label>مالیات</label>
                             <label>
                                 ${taxAmount}
-                                ${item.currencyTypeTxt ?? ""}
+                                <span class="fs-small">${item.currencyTypeTxt ?? ""}</span>
                             </label>
                         </div>
 
@@ -438,7 +439,7 @@ const generateFactorItemDom = (data, { type = "edit-delete", onDelete, onUpdate,
                             <label>مبلغ نهایی</label>
                             <label>
                                 ${tAmount}
-                                ${item.currencyTypeTxt ?? ""}
+                                <span class="fs-small">${item.currencyTypeTxt ?? ""}</span>
                             </label>
                         </div>
 

@@ -64,9 +64,13 @@ function createSetAmountSalesItem() {
     const container = setAmountSalesModal.querySelector("#setAmountSalesForm");
     container.innerHTML = "";
     
+    const isOfficial = taminPreFac.officialType === 1;
+    
     taminPreFac.preFactorItems.forEach((item, index) => {
         const fieldset = document.createElement("fieldset");
         fieldset.id = `setAmountSalesForm-${index}`;
+        const totalLabel = isOfficial && item.discount ? " با مالیات و تخفیف" : isOfficial ? " با مالیات" : item.discount ? " با تخفیف" : "";
+        
         fieldset.innerHTML = `
             <div class="d-flex flex-wrap align-items-center justify-content-around setAmountSalesItem ${index % 2 ? "bgPurple" : "bgGreen"}" style="border: 1px solid;border-radius: 6px;overflow: hidden">
                 <div class="d-flex col-12 justify-content-around p-1 px-2" style="background-color: ${index % 2 ? "rebeccapurple" : "#04857c"};color: #fff">
@@ -89,7 +93,8 @@ function createSetAmountSalesItem() {
                         <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="unitAmount" value="${item.unitAmount ? item.unitAmount.toLocaleString() : ""}" required placeholder="به ریال">
                     </div>
                     <div class="d-flex align-items-center gap-1 gap-xl-2 col-6 col-xl-auto">
-                        <span class="flex-shrink-0" style="color: #535353">مبلغ کل: </span>
+<!--                         <span class="flex-shrink-0" style="color: #535353">${`مبلغ کل${totalLabel}: `}</span> -->
+                        <span class="flex-shrink-0" style="color: #535353">مبلغ نهایی: </span>
                         <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="totalAmount" value="${item.totalAmount ? item.totalAmount.toLocaleString() : ""}" disabled>
                     </div>
                 </div>

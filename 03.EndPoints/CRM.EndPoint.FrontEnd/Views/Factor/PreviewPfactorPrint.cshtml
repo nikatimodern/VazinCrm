@@ -173,8 +173,10 @@
                         <th>شرح کالا/خدمت</th>
                         <th>تعداد/مقدار</th>
                         <th>واحد</th>
-                        <th>مبلغ واحد</th>
-                        <th>مبلغ کل</th>
+                        <th>مبلغ واحد @*<span class="fs-small">(ریال)</span>*@</th>
+                        <th>مبلغ تخفیف @*<span class="fs-small">(ریال)</span>*@</th>
+                        <th>مالیات و عوارض @*<span class="fs-small">(ریال)</span>*@</th>
+                        <th>مبلغ کل @*<span class="fs-small">(ریال)</span>*@</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -191,6 +193,8 @@
                             <td>@item.WeightCount</td>
                             <td>@item.UnitTxt</td>
                             <td>@($"{item.UnitAmount:n0}")</td>
+                            <td>@($"{item.Discount:n0}")</td>
+                            <td>@($"{item.TaxAmount:n0}")</td>
                             <td>@($"{item.TotalAmount:n0}")</td>
                         </tr>
                     }
@@ -253,7 +257,7 @@
     </article>
 </section>
 
-<!-- صفحه دوم: شرایط و توضیحات تکمیلی -->
+@* صفحه دوم: شرایط و توضیحات تکمیلی *@
 @if (termsPreFactor.Any()) {
     <section id="termsSection" class="sheet d-flex" style="border-radius:12px; page-break-before: always;">
         <article class="d-flex flex-column flex-grow-1 m-3 text-justify" style="border: 2px solid gray; border-radius:8px; padding: 10px; line-height: 1.8;">
@@ -285,7 +289,7 @@
     </section>
 }
 
-<!-- دکمه‌ها -->
+@* دکمه‌ها *@
 <div class="d-flex flex-column align-items-center justify-content-center w-100" style="position:fixed;top:85%; z-index:9999" id="previewPrintBtns">
     <div class="btn-group">
         <button class="btn buttonCancel fbold" style="width: 100px" onclick="window.close()">انصراف</button>
