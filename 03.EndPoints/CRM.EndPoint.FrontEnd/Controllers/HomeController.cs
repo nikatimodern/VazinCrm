@@ -80,68 +80,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-                /*var before1403 = DateTime.Parse("2024-03-20");
-
-                var factors9 = await db.Factors.IgnoreQueryFilters()
-                    .Include(f => f.FactorItems)
-                    .Where(f => f.DateMiladi < before1403)
-                    .ToListAsync();
-                var preFactors9 = await db.PreFactors.IgnoreQueryFilters()
-                    .Include(f => f.PreFactorItems)
-                    .Where(f => f.DateMiladi < before1403)
-                    .ToListAsync();
-
-                var factors10 = await db.Factors.IgnoreQueryFilters()
-                    .Include(f => f.FactorItems)
-                    .Where(f => f.DateMiladi >= before1403)
-                    .ToListAsync();
-                var preFactors10 = await db.PreFactors.IgnoreQueryFilters()
-                    .Include(f => f.PreFactorItems)
-                    .Where(f => f.DateMiladi >= before1403)
-                    .ToListAsync();
-
-                foreach (var factor in factors9)
-                {
-                    Service.UpdatePaymentAmount(factor, 9, true);
-                }
-
-                foreach (var pf in preFactors9)
-                {
-                    Service.UpdatePaymentAmount(pf, 9, true);
-                }
-
-                foreach (var factor in factors10)
-                {
-                    Service.UpdatePaymentAmount(factor, 10, true);
-                }
-
-                foreach (var pf in preFactors10)
-                {
-                    Service.UpdatePaymentAmount(pf, 10, true);
-                }*/
-
-
-//                var bulkSendResult = await smsIrService.SendTextAsync(["09369100273"], "سلام");
-
-
-                /*
-                var baseCashes = await db.BaseCashes.IgnoreQueryFilters().ToListAsync();
-                foreach (var baseCash in baseCashes)
-                {
-                    if ((int)baseCash.BaseCashType == 2)
-                    {
-                        baseCash.BaseCashType = BaseCashTypeEnum.تامین;
-                    }
-                    baseCash.BaseCashTypeTxt = Enum.IsDefined(baseCash.BaseCashType) ? baseCash.BaseCashType.ToString() : "-";
-                }
-*/
-
-
-                /*const string path = "/var/spool/asterisk/monitor/2026/07/18/q-0006-9124606687-20260718-145823-1784370449.414873.wav";
-                var stream = await issabelService.GetAudioWithRetry(path);
-                stream = await issabelService.ConvertToFlac(stream);*/
-
-
                 await db.SaveChangesAsync();
                 await trans.CommitAsync();
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
