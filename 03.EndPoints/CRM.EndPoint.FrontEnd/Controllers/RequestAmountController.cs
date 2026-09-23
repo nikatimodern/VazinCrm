@@ -612,7 +612,7 @@ public class RequestAmountController : Controller {
                     f.UserCreator.Contains(search) ||
                     f.CashierTxt.Contains(search) ||
                     f.RequestAmountSupplyFactor.Any(raSf =>
-                        db.SupplyFactors.Any(sf => sf.Id == raSf.SupplyFactorId && sf.FactorSerial == search)
+                        db.SupplyFactors.Any(sf => sf.Id == raSf.SupplyFactorId && sf.SerialNumber == search)
                     ) ||
                     f.RequestAmountOrderHeads.Any(raOh =>
                         db.OrderHeads.Any(oh => oh.Id == raOh.OrderHeadId && oh.OrderNumber.ToString() == search)
@@ -655,7 +655,7 @@ public class RequestAmountController : Controller {
                 )
                 .Select(x => new RequestAmountVModel {
                     RequestAmount = x.RequestAmount,
-                    SupplyFactorSerials = x.RequestAmount.RequestAmountSupplyFactor.Select(x => x.SupplyFactor.FactorSerial).ToList(),
+                    SupplyFactorSerials = x.RequestAmount.RequestAmountSupplyFactor.Select(x => x.SupplyFactor.SerialNumber).ToList(),
                     OrderHeadSerials = x.RequestAmount.RequestAmountOrderHeads.Select(x => x.OrderHead.OrderNumber).ToList(),
                     CustomerNames = x.RequestAmount.RequestAmountOrderHeads.Select(x => x.OrderHead.CustomerTxt).ToList(),
                     TotalPaymentAmount = x.RequestAmount.RequestAmountPayments.Sum(x => x.Amount),
@@ -701,7 +701,7 @@ public class RequestAmountController : Controller {
                         .Join(db.SupplyFactors,
                             raSf => raSf.SupplyFactorId,
                             sf => sf.Id,
-                            (raSf, sf) => sf.FactorSerial
+                            (raSf, sf) => sf.SerialNumber
                         )
                         .ToList(),
                     OrderHeadSerials = ra.RequestAmountOrderHeads

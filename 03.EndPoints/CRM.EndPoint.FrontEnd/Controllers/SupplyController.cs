@@ -5,11 +5,14 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.ASettings.Entities;
+using CRM.Core.Domain.Attachments.Entities;
 using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Customers.Enum;
@@ -22,10 +25,12 @@ using CRM.Core.Domain.Supplies.Enums;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Supply;
 using CRM.EndPoint.FrontEnd.Services;
+using CRM.EndPoint.FrontEnd.Services.AI;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.Infrastructures.Sql;
 using Dapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
@@ -39,9 +44,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly Service genService;
         private readonly LogSystemService _logSystemService;
         private readonly FileSaver fileSaver;
+        private readonly GapgptAi gapgptAi;
 
         public SupplyController(CRMContextDb db, UserManager<AppUser> userManager, DateTimeServices dtService, Service genService,
-            LogSystemService logSystemService, FileSaver fileSaver)
+            LogSystemService logSystemService, FileSaver fileSaver, GapgptAi gapgptAi)
         {
             this.db = db;
             this.dtService = dtService;
@@ -49,6 +55,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.genService = genService;
             _logSystemService = logSystemService;
             this.fileSaver = fileSaver;
+            this.gapgptAi = gapgptAi;
         }
 
         [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
@@ -86,7 +93,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 model.UserCreator = user.FullName;
                 model.UserCreatorID = user.Id;
-                model.FactorDate = dtService.GetDateMiladi(model.FactorDateTxt) ?? DateTime.Now;
+                model.DateMiladi = dtService.GetDateMiladi(model.Date) ?? DateTime.Now;
 
                 await db.SupplyFactors.AddAsync(model);
 
@@ -120,7 +127,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
 
-                model.FactorDate = dtService.GetDateMiladi(model.FactorDateTxt) ?? DateTime.Now;
+                model.DateMiladi = dtService.GetDateMiladi(model.Date) ?? DateTime.Now;
                 model.ModifyDate = DateTime.Now;
                 model.ModifyDateTxt = dtService.GetDateTimePersian();
                 model.UserModify = user.FullName;
@@ -252,7 +259,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             .Join(db.SupplyFactors,
                                 pSf => pSf.SupplyFactorId,
                                 sf => sf.Id,
-                                (pSf, sf) => sf.FactorSerial
+                                (pSf, sf) => sf.SerialNumber
                             )
                             .ToList(),
                         Attachments = db.Attachments
@@ -396,7 +403,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     var searchNumber = TextService.convertToInt(search);
                     query = query.Where(f =>
-                        f.FactorSerial == search ||
+                        f.SerialNumber == search ||
                         f.SupplierTxt.Contains(search) ||
                         f.SupplyFactorOrderHeads.Any(sfOh =>
                             db.OrderHeads.Any(oh => oh.Id == sfOh.OrderHeadId && oh.OrderNumber == searchNumber)
@@ -441,8 +448,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     query = query.Where(f =>
                         f.SupplierTxt.Contains(search) ||
-                        f.FactorSerial == search ||
-                        f.Amount == TextService.convertToInt(search)
+                        f.SerialNumber == search ||
+                        f.PaymentAmount == TextService.convertToInt(search)
                     );
                 } else
                 {
@@ -1091,6 +1098,46 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var data = await result.Distinct().ToListAsync();
 
             return Ok(data);
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> ProccessSupplyFactorWithAi([FromBody] Attachment attachment, CancellationToken ct)
+        {
+            if (attachment == null || attachment.File == null || attachment.File.Length == 0)
+            {
+                return BadRequest("فایل فاکتور ارسال نشده است.");
+            }
+
+            var extension = attachment.fileExten;
+
+            if (string.IsNullOrWhiteSpace(extension))
+            {
+                extension = Path.GetExtension(attachment.OriginalFilename);
+            }
+
+            if (string.IsNullOrWhiteSpace(extension))
+            {
+                return BadRequest("فرمت فایل مشخص نیست.");
+            }
+
+            extension = extension.TrimStart('.').ToLowerInvariant();
+
+            var allowedExtensions = new[] { "pdf", "jpg", "jpeg", "png", "webp" };
+
+            if (!allowedExtensions.Contains(extension))
+            {
+                return BadRequest("فرمت فایل پشتیبانی نمی‌شود.");
+            }
+
+            var result = await gapgptAi.ProcessInvoiceWithGemini(attachment.File, extension, ct);
+
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
         }
     }
 }

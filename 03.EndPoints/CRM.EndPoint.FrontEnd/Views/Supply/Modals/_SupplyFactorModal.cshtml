@@ -7,41 +7,41 @@
             </div>
 
             <div class="modal-body d-flex flex-column justify-content-between w-100">
-                <div>
-                    <div class="headerPreFactorBox d-flex flex-column-reverse flex-lg-row gap-2 px-2 align-items-center justify-content-between w-100">
+                <div class="headerPreFactorBox">
+                    <form id="supplyFactorHeadFormId" class="d-flex flex-column-reverse flex-lg-row gap-2 px-2 align-items-start justify-content-between w-100">
                         <div class="col-12 col-lg-3 d-flex align-items-end justify-content-between flex-grow-1">
-                            <form class="d-flex flex-column justify-content-between row-gap-3" id="supplyFactorHeadFormId" style="flex-grow:0.6">
+                            <div class="d-flex flex-column justify-content-between row-gap-3" style="flex-grow:0.6">
                                 <div class="d-flex justify-content-evenly">
-                                    <div class="d-flex w-100 justify-content-around flex-column gap-1 gap-lg-2" id="officialAlert">
+                                    <div class="d-flex w-100 justify-content-around flex-column gap-1 gap-lg-2" id="sf-officialAlert">
                                         <div class="mp d-flex align-items-center gap-1">
                                             <label class="fbold" for="sf-official">رسمی</label>
-                                            <input type="radio" name="official" id="sf-official" value="1" data-alertid="officialAlert" required />
+                                            <input type="radio" class="valueNumber" name="officialType" id="sf-official" value="1" data-alertid="sf-officialAlert" required />
                                         </div>
                                         <div class="mp d-flex align-items-center gap-1">
                                             <label class="fbold" for="sf-unofficial">غیر رسمی</label>
-                                            <input type="radio" name="official" id="sf-unofficial" value="0" data-alertid="officialAlert" required />
+                                            <input type="radio" class="valueNumber" name="officialType" id="sf-unofficial" value="0" data-alertid="sf-officialAlert" required />
                                         </div>
                                     </div>
-                                    <div class="d-flex w-100 justify-content-around flex-column gap-1 gap-lg-2" id="exportAlert">
+                                    @*<div class="d-flex w-100 justify-content-around flex-column gap-1 gap-lg-2" id="sf-exportAlert">
                                         <div class="mp d-flex align-items-center gap-1">
                                             <label class="fbold" for="sf-export">صادراتی</label>
-                                            <input type="radio" name="export" id="sf-export" value="1" data-alertid="exportAlert" required />
+                                            <input type="radio" class="valueNumber" name="export" id="sf-export" value="1" data-alertid="sf-exportAlert" required />
                                         </div>
                                         <div class="mp d-flex align-items-center gap-1">
                                             <label class="fbold" for="sf-unexport">غیر صادراتی</label>
-                                            <input type="radio" name="export" id="sf-unexport" value="0" data-alertid="exportAlert" required />
+                                            <input type="radio" class="valueNumber" name="export" id="sf-unexport" value="0" data-alertid="sf-exportAlert" required />
                                         </div>
-                                    </div>
+                                    </div>*@
                                 </div>
-                                <div class="d-flex align-items-center gap-2">
+                                @*<div class="d-flex align-items-center gap-2">
                                     <label for="sf-currencyTypeSelect">نوع ارز</label>
-                                    <select class="form-select form-select-sm w-auto" name="currencyType" id="sf-currencyTypeSelect">
+                                    <select class="form-select form-select-sm w-auto valueNumber" name="currencyType" id="sf-currencyTypeSelect">
                                         <option value="0" selected>ریال</option>
-                                        @*<option value="1">دلار</option>
-                                        <option value="2">یورو</option>*@
+                                        $1$<option value="1">دلار</option>
+                                        <option value="2">یورو</option>#1#
                                     </select>
-                                </div>
-                            </form>
+                                </div>*@
+                            </div>
                             <div class="d-lg-none">
                                 <button class="btn btn-sm btn-secondary" onclick="ModalToggle('ItemPreFactorModal')">افزودن</button>
                             </div>
@@ -50,24 +50,24 @@
                             <div class="d-flex align-items-center w-100">
                                 <label class="col-3 text-center" for="sf-serialNumber">شماره سریال:</label>
                                 <div class="col-9">
-                                    <input class="form-control" type="text" name="serialNumber" id="sf-serialNumber" placeholder="شماره سریال" />
+                                    <input class="form-control" type="text" name="serialNumber" id="sf-serialNumber" />
                                 </div>
                             </div>
                             <div class="d-flex align-items-center w-100">
                                 <label class="col-3 text-center" for="sf-date">تاریخ:</label>
                                 <div class="col-9">
-                                    <input class="sdate form-control" type="text" name="date" id="sf-date" placeholder="yyyy/mm/dd" data-mask-date required />
+                                    <input class="sdate form-control" type="text" name="date" id="sf-date" data-mask-date required />
                                 </div>
                             </div>
                             <div class="d-flex align-items-center w-100">
-                                <label class="col-3 text-center" for="sf-validityDade">تامین کننده:</label>
+                                <label class="col-3 text-center" for="sf-SupplierId">تامین کننده:</label>
                                 <div class="col-9">
-                                    <input class="sdate form-control" type="text" name="validityDade" id="sf-validityDade" required />
+                                    <select class="show-dropdown-arrow center" name="supplierId" id="sf-SupplierId" required>
+                                    </select>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
+                    </form>
                 </div>
                 <div class="d-none d-lg-block my-3 pf-divider"></div>
 
@@ -143,20 +143,20 @@
                         <div class="InfoData pf-items-container" id="supplyFactorItemId">
                         </div>
                         <div class="d-flex flex-column flex-lg-row justify-content-end w-100 mt-3 amountsPreFactorModalBox">
-                            <div class="d-none d-lg-block col-12 col-lg-6">
-                                <div class="h-100 w-100 d-flex flex-column">
+                            <div class="d-none d-lg-block pf-1500-hide col-12 col-lg-6">
+                                @*<div class="h-100 w-100 d-flex flex-column">
                                     <div class="d-flex w-100 position-relative">
-                                        <textarea id="descriptionIdTablet" rows="6" class="form-control" style="height:54px;padding:4px 4px 4px 36px" type="text" placeholder="توضیحات"></textarea>
-                                        <button style="position: absolute;left: 1px;bottom: 1px;display: flex;justify-content: center;align-items: center;top: 1px;padding-inline: 8px;box-shadow: none" class="buttonGray" onclick="addPfDescriptionItem()">
+                                        <textarea id="sf-descriptionId" rows="6" class="form-control" style="height:54px;padding:4px 4px 4px 36px" type="text" placeholder="توضیحات"></textarea>
+                                        <button style="position: absolute;left: 1px;bottom: 1px;display: flex;justify-content: center;align-items: center;top: 1px;padding-inline: 8px;box-shadow: none" class="buttonGray" onclick="addSfDescriptionItem()">
                                             <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                                         </button>
                                     </div>
-                                    <div class="d-flex w-100 mt-3 flex-grow-1 pe-1 overflow-auto" style="max-height:106px" id="supplyFactorDescIdTablet">
+                                    <div class="mt-3 flex-grow-1 pe-1 overflow-auto" style="max-height:106px" id="supplyFactorDescIdTablet">
                                     </div>
-                                </div>
+                                </div>*@
                             </div>
 
-                            <div class="col-12 col-lg-6 d-flex flex-column gap-1 pe-1">
+                            <div class="col-12 col-lg-6 pf-1500-col-11 d-flex flex-column gap-1 pe-1">
                                 <div class="col-12 d-flex justify-content-around">
                                     <label class="col-4 col-xl-3 text-center">جمع مبلغ کل :</label>
                                     <label class="col-8 col-xl-9 form-controlLable" name="sumTotalAmount" id="sf-sumTotalAmount" value="0" disabled></label>
@@ -175,10 +175,12 @@
                                     <label class="col-4 col-xl-3 text-center">مبلغ نهایی :</label>
                                     <label class="col-8 col-xl-9 form-controlLable" name="paymentAmount" id="sf-paymentAmount" type="text" value="0"></label>
                                 </div>
-                            </div>
-
-                            <div class="d-lg-none mt-3 text-center descriptionPreFactorBox">
-                                <button class="btn btn-sm btn-secondary" onclick="ModalToggle('preFactorDescriptionModal')">افزودن توضیحات</button>
+                                <div class="col-12 d-flex justify-content-around">
+                                    <label class="col-4 col-xl-3 text-center">توضیحات: </label>
+                                    <div class="col-8 col-xl-9">
+                                        <input inputmode="numeric" class="form-control" name="description" id="sf-description" type="text"  />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -190,14 +192,15 @@
                                 <div class="container-uploader">
                                     <input type="file" class="uploadBtn" data-varList="supplyFactorAttachments" data-showList="DivShowSupplyFactorAtt" id="supplyFactorAtt" accept="*/*" required />
                                     <label for="supplyFactorAtt">
-                                        <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
                                         <span>تصویر فاکتور را انتخاب یا اینجا رها کنید</span>
                                     </label>
                                     <div class="image-display" id="DivShowSupplyFactorAtt"></div>
                                 </div>
                             </div>
-                            <button type="button" class="supply-factor-ai-btn">
+                            <button type="button" id="supplyFactorAiBtn" class="buttonAi" onclick="proccessSupplyFactorWithAi()">
                                 <img src="/Img/ai-svg.svg" class="ai-svg-icon" alt="AI">
+                                <div class="spinner-border spinner-border-sm d-none"></div>
                                 <span>استخراج اطلاعات فاکتور با هوش مصنوعی</span>
                             </button>
                         </div>
@@ -205,8 +208,8 @@
                 </div>
                 <div class="pf-divider my-3"></div>
                 <div class="d-flex justify-content-center w-100 gap-1">
-                    <button type="button" class="buttonCancel2" onclick="cancelSupplyFactorModal()">انصراف</button>
-                    <button type="button" class="buttonGreen3" onclick="submitSupplyFactorModal()">ثبت</button>
+                    <button type="button" id="cancelSupplyFactorBtn" class="buttonCancel2" onclick="cancelSupplyFactorModal()">انصراف</button>
+                    <button type="button" id="submitSupplyFactorBtn" class="buttonGreen3" onclick="submitSupplyFactorModal()">ثبت</button>
                 </div>
             </div>
         </div>

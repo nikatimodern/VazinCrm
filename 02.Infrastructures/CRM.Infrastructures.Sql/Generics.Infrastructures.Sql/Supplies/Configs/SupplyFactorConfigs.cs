@@ -29,6 +29,9 @@ public class SupplyFactorConfigs : IEntityTypeConfiguration<SupplyFactor> {
             .HasForeignKey(f => f.DealId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        builder.Property(f => f.Amount).HasPrecision(20, 0);
+        builder.Property(f => f.PaymentAmount).HasPrecision(20, 0);
+        builder.Property(f => f.SumTotalAmount).HasPrecision(20, 0);
+        builder.Property(f => f.TotalTax).HasPrecision(20, 0);
+        builder.Property(f => f.Discount).HasPrecision(20, 0);
     }
 }

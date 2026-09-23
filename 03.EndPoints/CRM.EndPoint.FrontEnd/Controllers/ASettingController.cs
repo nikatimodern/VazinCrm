@@ -322,7 +322,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     if (!string.IsNullOrWhiteSpace(search))
                     {
                         query = query.Where(f =>
-                            f.FactorSerial == search
+                            f.SerialNumber == search
                             || f.SupplierTxt.Contains(search)
                             || f.UserModify.Contains(search)
                         );
@@ -330,7 +330,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                     await AddEntities(query.Select(f => new {
                             f.Id,
-                            f.FactorSerial,
+                            FactorSerial = f.SerialNumber,
                             f.ModifyDate,
                             f.ModifyDateTxt,
                             f.SupplierTxt,

@@ -13,7 +13,7 @@ public static class SupplierFinancialExtensions {
             .GroupBy(x => x.SupplierId)
             .Select(g => new {
                 SupplierId = g.Key,
-                SupplyAmount = g.Sum(x => x.Amount),
+                SupplyAmount = g.Sum(x => x.PaymentAmount),
                 PaidAmount = 0m
             });
 

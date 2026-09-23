@@ -3915,10 +3915,6 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(20)
-                        .HasColumnType("decimal(20,0)");
-
                     b.Property<string>("CommentText")
                         .HasColumnType("nvarchar(max)");
 
@@ -3928,17 +3924,21 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("CreateDateTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Date")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("DateMiladi")
+                        .HasColumnType("datetime2");
+
                     b.Property<Guid?>("DealId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("FactorDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("FactorDateTxt")
+                    b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FactorSerial")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<decimal>("Discount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -3952,11 +3952,26 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<byte>("OfficialType")
                         .HasColumnType("tinyint");
 
+                    b.Property<decimal>("PaymentAmount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
+
+                    b.Property<string>("SerialNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("SumTotalAmount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
+
                     b.Property<Guid>("SupplierId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("SupplierTxt")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("TotalTax")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
 
                     b.Property<string>("UserCreator")
                         .HasColumnType("nvarchar(max)");
@@ -3975,6 +3990,89 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.HasIndex("DealId");
 
                     b.ToTable("SupplyFactors");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Supplies.Entities.SupplyFactorItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Discount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte?>("Printable")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Product")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("ProductCode")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ProductSmallName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SupplyFactorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
+
+                    b.Property<int>("Unit")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("UnitAmount")
+                        .HasPrecision(20)
+                        .HasColumnType("decimal(20,0)");
+
+                    b.Property<string>("UnitTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("WeightCount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SupplyFactorId");
+
+                    b.ToTable("SupplyFactorItems");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Supplies.Entities.SupplyFactorOrderHead", b =>
@@ -4885,6 +4983,17 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Navigation("Deal");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Supplies.Entities.SupplyFactorItem", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Supplies.Entities.SupplyFactor", "SupplyFactor")
+                        .WithMany("Items")
+                        .HasForeignKey("SupplyFactorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SupplyFactor");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Supplies.Entities.SupplyFactorOrderHead", b =>
                 {
                     b.HasOne("CRM.Core.Domain.Orders.Entities.OrderHead", null)
@@ -5156,6 +5265,8 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.Supplies.Entities.SupplyFactor", b =>
                 {
+                    b.Navigation("Items");
+
                     b.Navigation("PaymentSupplyFactors");
 
                     b.Navigation("RequestAmountSupplyFactor");

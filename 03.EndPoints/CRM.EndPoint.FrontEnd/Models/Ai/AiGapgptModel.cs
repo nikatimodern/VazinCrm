@@ -3,9 +3,9 @@ using System.Text.Json.Serialization;
 
 namespace CRM.EndPoint.FrontEnd.Models.Ai;
 
-public class SummaryResult {
+public class AiGapgptResult<T> {
     public bool Success { get; init; }
-    public SummaryModel Data { get; init; }
+    public T Data { get; init; }
     public string Error { get; init; }
     public double? ElapsedSeconds { get; init; }
 }

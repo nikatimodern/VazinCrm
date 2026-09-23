@@ -469,13 +469,13 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
                 switch (action)
                 {
                     case LogActionEnum.ثبت:
-                        return $"یک فاکتور تامین به شماره فاکتور {supplyFactor.FactorSerial} توسط <b>{fullName}</b> ثبت شد.";
+                        return $"یک فاکتور تامین به شماره فاکتور {supplyFactor.SerialNumber} توسط <b>{fullName}</b> ثبت شد.";
 
                     case LogActionEnum.ویرایش:
-                        return $"یک فاکتور تامین به شماره فاکتور {supplyFactor.FactorSerial} توسط <b>{fullName}</b> ویرایش شد.";
+                        return $"یک فاکتور تامین به شماره فاکتور {supplyFactor.SerialNumber} توسط <b>{fullName}</b> ویرایش شد.";
 
                     case LogActionEnum.حذف:
-                        return $"یک فاکتور تامین به شماره فاکتور {supplyFactor.FactorSerial} توسط <b>{fullName}</b> حذف شد.";
+                        return $"یک فاکتور تامین به شماره فاکتور {supplyFactor.SerialNumber} توسط <b>{fullName}</b> حذف شد.";
                 }
 
                 break;
@@ -658,7 +658,7 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
             OrderHead o => o.OrderNumber,
             Customer c => c.CustomerCode,
             Payment p => p.PaymentNumber,
-            SupplyFactor s => TextService.ExtractNumber(s.FactorSerial),
+            SupplyFactor s => TextService.ExtractNumber(s.SerialNumber),
             RequestAmount r => r.RequestNumber,
             Cash c => c.Serial,
             Check c => TextService.ExtractNumber(c.SerialNumber),

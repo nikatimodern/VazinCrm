@@ -11,18 +11,28 @@ using CRM.Core.Domain.Deals.Entities;
 namespace CRM.Core.Domain.Supplies.Entities {
     public class SupplyFactor : BaseEntity {
         public byte OfficialType { get; set; }
-        public string FactorSerial { get; set; } //شماره فاکتور صادر شده توسط تامیین کننده
-        public decimal Amount { get; set; }
+        public string SerialNumber { get; set; } //شماره فاکتور صادر شده توسط تامین کننده
+        public decimal PaymentAmount { get; set; }
         public Guid SupplierId { get; set; }
         public string SupplierTxt { get; set; }
 
         [NotMapped] public IList<Attachment> Attachments { get; set; }
 
-        public DateTime FactorDate { get; set; }
-        public string FactorDateTxt { get; set; }
+        public DateTime DateMiladi { get; set; }
+        public string Date { get; set; }
 
         public Guid? DealId { get; set; }
         public Deal Deal { get; set; }
+
+
+        public decimal SumTotalAmount { get; set; } // مبلغ کل قبل از تخفیف و مالیات
+        public decimal Discount { get; set; }
+        public decimal TotalTax { get; set; }
+        public string Description { get; set; }
+
+
+        public IList<SupplyFactorItem> Items { get; set; }
+
 
         public IList<SupplyFactorOrderHead> SupplyFactorOrderHeads { get; set; }
         public IList<RequestAmountSupplyFactor> RequestAmountSupplyFactor { get; set; }
