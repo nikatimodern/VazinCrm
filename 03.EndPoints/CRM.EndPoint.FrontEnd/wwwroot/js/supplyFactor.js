@@ -1,7 +1,8 @@
-var supplyFactorAttachments = [];
+window.supplyFactorAttachments = [];
 let orderHeadsSupFactorSelectedIds = [];
-let supplyFactorData = { items: [], descriptions: [] };
+let supplyFactorData = { items: [] };
 let sfItemIndex = null;
+let incompleteSfItemsCount = 0;
 
 const supplyFactorAiBtn = document.getElementById("supplyFactorAiBtn");
 const supplyFactorDiscountInp = document.getElementById("sf-discount");
@@ -33,14 +34,13 @@ async function showSupplyFactorModal(dealId = null) {
 }
 
 async function initSupplyFactorModal() {
-    await setupSelectOptions();
-    await getAllProductOp("supplyFactorItem");
+    await Promise.all([setupSelectOptions(), getAllProductOp("supplyFactorItem")]);
     Unit(4, "supplyFactorItem");
 }
 
 function cancelSupplyFactorModal() {
-    supplyFactorAttachments = [];
-    let supplyFactorData = { items: [], descriptions: [] };
+    window.supplyFactorAttachments = [];
+    supplyFactorData = { items: [] };
     
     orderHeadsSupFactorSelectedIds = [];
     
@@ -60,14 +60,15 @@ function cancelSupplyFactorModal() {
     // toggleElementsDisabled(document.getElementById("showAddOrderHeadBtn"), true);
     ModalToggle("#supplyFactorModal", "hide");
     clearUpload("supplyFactorAtt");
+    updateSupplyFactorValidationState();
 }
 
 
 const addSfItem = async () => {
-    document.getElementById("supplyFactorItemId").classList.remove("AlertReq");
-    
     if (!await mySer.CheckValidForm("#supplyFactorItem")) return false;
     if (!validatePfItemDiscount("supplyFactorItem")) return false;
+    
+    document.getElementById("supplyFactorItemId").classList.remove("AlertReq");
     
     const productCodeElm = document.querySelector("#supplyFactorItem select[name='productCode']");
     const unitElm = document.querySelector("#supplyFactorItem select[name='unit']");
@@ -103,10 +104,18 @@ const calculateSupplyFactorTotals = (updateItemsFromDiscount = false) => {
     });
 };
 
+const requiredSfFieldNames = getRequiredFieldNames("supplyFactorItem");
 const showSupplyFactorItems = () => {
+    
     document.getElementById("supplyFactorItemId").replaceChildren(
-        generateInvoiceItemDom(supplyFactorData.items, { onDelete: deleteSfItem, onUpdate: showUpdateSfItem }),
+        generateInvoiceItemDom(supplyFactorData.items, {
+            onDelete: deleteSfItem,
+            onUpdate: showUpdateSfItem,
+            requiredFieldNames: requiredSfFieldNames,
+        }),
     );
+    
+    updateSupplyFactorValidationState();
 };
 
 
@@ -123,15 +132,17 @@ const deleteSfItem = (index) => {
     showSupplyFactorItems();
 };
 
-const showUpdateSfItem = (index) => {
+const showUpdateSfItem = async (index) => {
     /*if (window.innerWidth < 992) {
         ModalToggle("ItemPreFactorModal");
     }*/
     sfItemIndex = index;
     
     mySer.convertJsonToForm(supplyFactorData.items[index], "supplyFactorItem");
-    document.getElementById("sf-AddBtnId").style.display = "none";
+    await mySer.CheckValidForm("#supplyFactorItem");
+    
     // document.getElementById("sf-CancelBtnId").style.display = "none";
+    document.getElementById("sf-AddBtnId").style.display = "none";
     document.getElementById("sf-UpBtnId").style.display = "flex";
 };
 
@@ -218,7 +229,7 @@ async function proccessSupplyFactorWithAi() {
         "items": [{
             "product": "لفاف ملزومات پر کردن ، دربندی و بسته بندی",
             "weightCount": 966,
-            "unit": 2,
+            "unit": null,
             "unitTxt": "کیلوگرم",
             "unitAmount": 3950000,
             "totalAmount": 3815700000,
@@ -230,14 +241,14 @@ async function proccessSupplyFactorWithAi() {
         }],
     };
     
-    supplyFactorData = sfData;
+    supplyFactorData = { ...supplyFactorData, ...sfData };
     
     calculateSupplyFactorTotals();
     showSupplyFactorItems();
     mySer.convertJsonToForm(supplyFactorData, "supplyFactorHeadFormId");
     
     
-    /*    if (supplyFactorAttachments.every(item => item.isDeleted)) {
+    /*    if (window.supplyFactorAttachments.every(item => item.isDeleted)) {
             toastifyError("سند فاکتور باید بارگذاری شود");
             return;
         }
@@ -245,13 +256,59 @@ async function proccessSupplyFactorWithAi() {
         await sendApiRequest({
             url: "/Supply/ProccessSupplyFactorWithAi/",
             method: "POST",
-            data: supplyFactorAttachments[0],
+            data: window.supplyFactorAttachments[0],
             successMsg: null,
             onSuccess: (res) => {
                 console.log(res);
             }
         })*/
 }
+
+
+const updateSupplyFactorValidationState = () => {
+  /*  incompleteSfItemsCount = supplyFactorData.items.filter(item => {
+        if (item.isDeleted) return false;
+        
+        const incompleteFields = requiredSfFieldNames.filter(field => {
+            const value = item[field];
+            
+            console.log(value, field);
+            
+            return value === null || value === undefined || String(value).trim() === "";
+        });
+        console.log(incompleteFields);
+        return incompleteFields.length > 0;
+    }).length;*/
+    incompleteSfItemsCount = supplyFactorData.items.reduce((count, item) => {
+        if (item.isDeleted) return false;
+        
+        return count + requiredSfFieldNames.filter(fieldName => {
+            const value = item[fieldName];
+            return value === null || value === undefined || String(value).trim() === '';
+        }).length;
+    }, 0);
+    
+    const message = document.getElementById("supplyFactorValidationMessage");
+    const submitBtn = document.getElementById("submitSupplyFactorBtn");
+    
+    if (incompleteSfItemsCount > 0) {
+        message.className = "pf-validation-message";
+        message.innerHTML = `
+            <i class="fa fa-exclamation-circle"></i>
+            <span>
+                ${incompleteSfItemsCount} آیتم ناقص است؛
+                برای ثبت فاکتور، ابتدا آیتم‌های ناقص را ویرایش و تکمیل کنید.
+            </span>
+        `;
+        
+        toggleElementsDisabled(submitBtn);
+    } else {
+        message.className = "d-none";
+        message.innerHTML = "";
+        
+        toggleElementsDisabled(submitBtn, false);
+    }
+};
 
 ///////////////////
 async function showAddOrderHeadModal() {
@@ -312,8 +369,6 @@ async function setupSelectOptions() {
 }
 
 async function submitSupplyFactorModal() {
-    if (!await mySer.CheckValidForm("#supplyFactorHeadFormId")) return;
-    
     const activeItems = supplyFactorData.items.filter(item => !item.isDeleted);
     if (!activeItems.length) {
         document.getElementById("supplyFactorItemId").classList.add("AlertReq");
@@ -321,7 +376,14 @@ async function submitSupplyFactorModal() {
         return;
     }
     
-    if (supplyFactorAttachments.every(item => item.isDeleted)) {
+    if (incompleteSfItemsCount > 0) {
+        toastifyError("برای ثبت فاکتور، ابتدا آیتم‌های ناقص را ویرایش و تکمیل کنید.");
+        return;
+    }
+    
+    if (!await mySer.CheckValidForm("#supplyFactorHeadFormId")) return;
+    
+    if (window.supplyFactorAttachments.every(item => item.isDeleted)) {
         toastifyError("تصویر فاکتور اجباری است");
         return;
     }
@@ -331,7 +393,8 @@ async function submitSupplyFactorModal() {
         ...supplyFactorData,
         ...mySer.convertFormToJSON("supplyFactorHeadFormId"),
         supplierTxt: supplierSelect.options[supplierSelect.selectedIndex].text,
-        attachments: supplyFactorAttachments,
+        description: document.getElementById("sf-description")?.value?.trim(),
+        attachments: window.supplyFactorAttachments,
     };
     console.log(model);
     
@@ -359,7 +422,14 @@ async function submitSupplyFactorModal() {
 }
 
 
-async function showEditSupplyFactorModal(id) {
+async function getSupplyFactor(id) {
+    return await sendApiRequest({
+        url: "/Supply/GetSupplyFactor",
+        params: { id },
+    });
+}
+
+/*async function showEditSupplyFactorModal(id) {
     await sendApiRequest({
         url: "/Supply/GetSupplyFactor",
         params: { id },
@@ -372,54 +442,33 @@ async function showEditSupplyFactorModal(id) {
             orderHeadsSupFactorSelectedIds = supplyFactorData.supplyFactorOrderHeads.map(o => o.orderHeadId);
             document.getElementById("supplyFactorOrderHead").value = res.data.orderSerials.join(", ");
             
-            supplyFactorAttachments = res.data.attachments;
+            window.supplyFactorAttachments = res.data.attachments;
             FileUpReload("supplyFactorAtt");
         },
     });
-}
+}*/
 
-
-const upPfactor = async (id) => {
+async function showEditSupplyFactorModal(id) {
     await initSupplyFactorModal();
     
-    const data = await getPreFactor(id);
-    
+    const data = await getSupplyFactor(id);
     if (!data) return;
     
-    toggleDisplayPrefactorModal(data.paymentAmount === 0);
+    supplyFactorData = data.supplyFactor;
+    window.supplyFactorAttachments = data.attachments;
     
-    pFactor = data;
-    pFactorItems = data.preFactorItems;
-    pFactorDescriptionItems = data.descriptions;
-    dealData.id = data.dealId;
-    dealData.serialNumber = data.dealSerialNumber;
+    FileUpReload("supplyFactorAtt");
+    mySer.convertJsonToForm(supplyFactorData, "supplyFactorHeadFormId");
     
-    document.querySelectorAll("#PreFactor input[name='official']").forEach((i) => {
-        i.checked = Number(i.value) === pFactor.officialType;
-    });
+    document.getElementById("sf-sumTotalAmount").textContent = supplyFactorData.sumTotalAmount.toLocaleString();
+    document.getElementById("sf-totalTax").textContent = supplyFactorData.totalTax.toLocaleString();
+    document.getElementById("sf-paymentAmount").textContent = supplyFactorData.paymentAmount.toLocaleString();
+    document.getElementById("sf-discount").value = supplyFactorData.discount.toLocaleString();
+    document.getElementById("sf-description").value = supplyFactorData.description;
     
-    const exportValue = data.export ? "1" : "0";
-    document.querySelectorAll("#PreFactor input[name='export']").forEach((i) => {
-        i.checked = (i.value === exportValue);
-    });
-    
-    const currencyTypeElm = document.querySelector("#PfHeadFormId select[name='currencyType']");
-    currencyTypeElm.value = data.currencyType ?? 0;
-    currencyTypeElm.toggleAttribute("disabled", pFactor.officialType === 1);
-    
-    document.getElementById("serialNumber").value = pFactor.serialNumber;
-    document.getElementById("date").value = pFactor.date;
-    document.getElementById("validityDade").value = pFactor.validityDade;
-    
-    document.getElementById("sumTotalAmount").textContent = pFactor.sumTotalAmount.toLocaleString();
-    document.getElementById("discount").value = pFactor.discount.toLocaleString();
-    document.getElementById("totalTax").textContent = pFactor.totalTax.toLocaleString();
-    document.getElementById("paymentAmount").textContent = pFactor.paymentAmount.toLocaleString();
-    
-    showPFactorItems();
-    showPfDescriptionItems();
-    ModalToggle("#PreFactor");
-};
+    showSupplyFactorItems();
+    ModalToggle("#supplyFactorModal");
+}
 
 
 const deleteSupplyFactor = async (id) => {

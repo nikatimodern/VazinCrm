@@ -247,7 +247,7 @@ const calculateItemTax = (amount, taxPercent) => {
     return Math.round(amount * taxPercent / 100);
 };
 
-const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate, onSelect } = {}) => {
+const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate, onSelect, requiredFieldNames = [] } = {}) => {
     
     const container = document.createElement("div");
     container.className = "pf-items-list";
@@ -258,6 +258,11 @@ const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate
         item.product ??= "";
         item.discount ??= 0;
         item.row = index + 1;
+        const isProductMissing = !item.productCode;
+        const isIncomplete = requiredFieldNames.some(name => {
+            const value = item[name];
+            return value === null || value === undefined || String(value).trim() === "";
+        });
         
         
         const weight = Number(SeparatedNumberRemove(item.weightCount ?? item.weight)) || 0;
@@ -270,7 +275,8 @@ const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate
         const tAmount = item.totalAmount ? item.totalAmount.toLocaleString() : "-";
         
         const element = document.createElement("div");
-        element.className = "pf-item";
+        // element.className = "pf-item";
+        element.className = `pf-item ${isIncomplete ? "pf-item-incomplete" : ""}`;
         
         let actionButtons = "";
         
@@ -310,6 +316,11 @@ const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate
                             <label>
                                 <span>${item.productSmallName ?? ""}</span>
                                 <span>${item.product ?? ""}</span>
+                                ${isIncomplete ? `
+                                    <p class="pf-item-missing-product">
+                                      <i class="fa fa-exclamation-circle"></i>
+                                      ${isProductMissing ? "نیاز به انتخاب محصول" : "نیاز به اصلاح"}
+                                    </p>` : ""}
                             </label>
                         </div>
 

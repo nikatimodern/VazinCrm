@@ -3449,9 +3449,23 @@ class MyService {
             const elements = Array.from(form.elements);
             
             let isValid = true;
-            
+            let firstInvalidElement = null;
             const addAlert = (el, className = "AlertReq") => {
                 if (!el) return;
+                
+                if (!firstInvalidElement) {
+                    firstInvalidElement = el;
+                    
+                    setTimeout(() => {
+                        if (el.tomselect) {
+                            el.tomselect.focus();
+                        } else if (el.hasAttribute("data-select2-id")) {
+                            $(`#select2-${el.id}-container`).parent().focus();
+                        } else {
+                            el.focus();
+                        }
+                    });
+                }
                 
                 if (el.tomselect) {
                     el.tomselect.control.classList.add(className);
@@ -4805,3 +4819,11 @@ const Skeleton = (() => {
     };
     
 })();
+
+
+function getRequiredFieldNames(formId) {
+    const form = document.getElementById(formId);
+    if (!form) return [];
+    
+    return [...new Set(Array.from(form.querySelectorAll("[required]")).map(el => el.name).filter(Boolean))];
+}

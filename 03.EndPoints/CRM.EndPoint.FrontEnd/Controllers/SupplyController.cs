@@ -133,13 +133,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.UserModify = user.FullName;
                 model.UserModifyID = user.Id;
 
-                var entity = await db.SupplyFactors.Include(x => x.SupplyFactorOrderHeads).FirstOrDefaultAsync(x => x.Id == model.Id);
+                var entity = await db.SupplyFactors
+                    .Include(x => x.SupplyFactorOrderHeads)
+                    .Include(x => x.Items)
+                    .FirstOrDefaultAsync(x => x.Id == model.Id);
+
                 if (entity == null) return NotFound("رکوردی یافت نشد!");
 
-                await _logSystemService.LogChange(entity, model, LogActionEnum.ویرایش, user, ["SupplyFactorOrderHeads"]);
+                await _logSystemService.LogChange(entity, model, LogActionEnum.ویرایش, user, ["SupplyFactorOrderHeads", "Items"]);
                 db.Entry(entity).CurrentValues.SetValues(model);
 
                 entity.SupplyFactorOrderHeads = model.SupplyFactorOrderHeads;
+                entity.Items = model.Items;
+
 
                 var attach = fileSaver.SaveAttachments(model.Attachments, _AttachType.SupplyFactor, null, false);
                 foreach (var att in attach.Where(f => f.EntityId == null))
@@ -472,6 +478,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var data = await db.SupplyFactors.AsNoTracking()
                     .Where(f => f.Id == id)
                     .Include(f => f.SupplyFactorOrderHeads)
+                    .Include(f => f.Items)
                     .Select(sf => new {
                         SupplyFactor = sf,
                         OrderSerials = sf.SupplyFactorOrderHeads
