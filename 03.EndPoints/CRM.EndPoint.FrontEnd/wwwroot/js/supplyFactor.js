@@ -28,23 +28,26 @@ async function showSupplyFactorModal(dealId = null) {
     // document.getElementById("supplyFactorOrderHeadWrapper")?.classList.toggle("d-none", dealId !== null);
     // toggleElementsRequired(document.getElementById("supplyFactorOrderHead"), dealId === null);
     
+    await initSupplyFactorModal();
+    ModalToggle("#supplyFactorModal");
+}
+
+async function initSupplyFactorModal() {
     await setupSelectOptions();
-    
     await getAllProductOp("supplyFactorItem");
     Unit(4, "supplyFactorItem");
-    ModalToggle("#supplyFactorModal");
 }
 
 function cancelSupplyFactorModal() {
     supplyFactorAttachments = [];
-    supplyFactorData = {};
+    let supplyFactorData = { items: [], descriptions: [] };
     
     orderHeadsSupFactorSelectedIds = [];
     
     mySer.emptyForm("supplyFactorItem");
     mySer.emptyForm("supplyFactorHeadFormId");
     
-    document.getElementById("sf-discount").value = "";
+    document.getElementById("sf-discount").value = 0;
     document.getElementById("sf-description").value = "";
     document.getElementById("sf-sumTotalAmount").innerHTML = "";
     document.getElementById("sf-totalTax").innerHTML = "";
@@ -53,10 +56,10 @@ function cancelSupplyFactorModal() {
     document.getElementById("supplyFactorItemId").classList.remove("AlertReq");
     
     
-    
     // modalSelector.reset();
     // toggleElementsDisabled(document.getElementById("showAddOrderHeadBtn"), true);
     ModalToggle("#supplyFactorModal", "hide");
+    clearUpload("supplyFactorAtt");
 }
 
 
@@ -374,6 +377,49 @@ async function showEditSupplyFactorModal(id) {
         },
     });
 }
+
+
+const upPfactor = async (id) => {
+    await initSupplyFactorModal();
+    
+    const data = await getPreFactor(id);
+    
+    if (!data) return;
+    
+    toggleDisplayPrefactorModal(data.paymentAmount === 0);
+    
+    pFactor = data;
+    pFactorItems = data.preFactorItems;
+    pFactorDescriptionItems = data.descriptions;
+    dealData.id = data.dealId;
+    dealData.serialNumber = data.dealSerialNumber;
+    
+    document.querySelectorAll("#PreFactor input[name='official']").forEach((i) => {
+        i.checked = Number(i.value) === pFactor.officialType;
+    });
+    
+    const exportValue = data.export ? "1" : "0";
+    document.querySelectorAll("#PreFactor input[name='export']").forEach((i) => {
+        i.checked = (i.value === exportValue);
+    });
+    
+    const currencyTypeElm = document.querySelector("#PfHeadFormId select[name='currencyType']");
+    currencyTypeElm.value = data.currencyType ?? 0;
+    currencyTypeElm.toggleAttribute("disabled", pFactor.officialType === 1);
+    
+    document.getElementById("serialNumber").value = pFactor.serialNumber;
+    document.getElementById("date").value = pFactor.date;
+    document.getElementById("validityDade").value = pFactor.validityDade;
+    
+    document.getElementById("sumTotalAmount").textContent = pFactor.sumTotalAmount.toLocaleString();
+    document.getElementById("discount").value = pFactor.discount.toLocaleString();
+    document.getElementById("totalTax").textContent = pFactor.totalTax.toLocaleString();
+    document.getElementById("paymentAmount").textContent = pFactor.paymentAmount.toLocaleString();
+    
+    showPFactorItems();
+    showPfDescriptionItems();
+    ModalToggle("#PreFactor");
+};
 
 
 const deleteSupplyFactor = async (id) => {
