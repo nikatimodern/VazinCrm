@@ -83,15 +83,13 @@ function calculateItem(
 
 
 const distributeItemDiscount = (items, totalDiscount) => {
-    let remainingDiscount = Math.max(0, Math.round(totalDiscount));
+    const discount = Math.max(0, Math.round(totalDiscount));
     
     const totalBeforeDiscount = items.reduce((sum, item) => {
-        const amount = Math.round((Number(item.weightCount) || 0) * (Number(item.unitAmount) || 0));
-        
-        return sum + amount;
+        return sum + Math.round((Number(item.weightCount) || 0) * (Number(item.unitAmount) || 0));
     }, 0);
     
-    if (!totalBeforeDiscount || !remainingDiscount) {
+    if (!totalBeforeDiscount || !discount) {
         items.forEach(item => {
             item.discount = 0;
         });
@@ -99,22 +97,23 @@ const distributeItemDiscount = (items, totalDiscount) => {
         return;
     }
     
-    remainingDiscount = Math.min(remainingDiscount, totalBeforeDiscount);
+    const finalDiscount = Math.min(discount, totalBeforeDiscount);
+    
+    let distributedDiscount = 0;
     
     items.forEach((item, index) => {
         const beforeDiscount = Math.round((Number(item.weightCount) || 0) * (Number(item.unitAmount) || 0));
         
         if (index === items.length - 1) {
-            item.discount = Math.min(remainingDiscount, beforeDiscount);
+            item.discount = Math.min(Math.max(0, finalDiscount - distributedDiscount), beforeDiscount);
         } else {
-            const proportionalDiscount = Math.round(remainingDiscount * beforeDiscount / totalBeforeDiscount);
+            item.discount = Math.min(Math.round(finalDiscount * beforeDiscount / totalBeforeDiscount), beforeDiscount);
             
-            item.discount = Math.min(proportionalDiscount, beforeDiscount);
-            
-            remainingDiscount -= item.discount;
+            distributedDiscount += item.discount;
         }
     });
 };
+
 
 const calculateInvoiceTotals = (
     {
