@@ -4,7 +4,7 @@ let supplyFactorData = { items: [], descriptions: [] };
 let sfItemIndex = null;
 
 const supplyFactorAiBtn = document.getElementById("supplyFactorAiBtn");
-const supplyFactorDiscountInp = document.getElementById("sf-discount")
+const supplyFactorDiscountInp = document.getElementById("sf-discount");
 
 document.querySelector("#supplyFactorItem")?.addEventListener("input", (e) => {
     if (e.target.matches("[name='weightCount']") || e.target.matches("[name='unitAmount']") || e.target.matches("[name='discount']")) {
@@ -13,10 +13,10 @@ document.querySelector("#supplyFactorItem")?.addEventListener("input", (e) => {
 });
 
 document.querySelectorAll("#supplyFactorModal input[type='radio'][name='officialType']")?.forEach(radio => {
-    const currencyTypeElm = document.querySelector("#supplyFactorHeadFormId select[name='currencyType']");
+    // const currencyTypeElm = document.querySelector("#supplyFactorHeadFormId select[name='currencyType']");
     radio.addEventListener("change", async (e) => {
         supplyFactorData.officialType = Number(e.target.value);
-        currencyTypeElm.toggleAttribute("disabled", supplyFactorData.officialType === 1);
+        // currencyTypeElm.toggleAttribute("disabled", supplyFactorData.officialType === 1);
         calculateSupplyFactorTotals();
         showSupplyFactorItems();
     });
@@ -40,11 +40,22 @@ function cancelSupplyFactorModal() {
     supplyFactorData = {};
     
     orderHeadsSupFactorSelectedIds = [];
-    /*    modalSelector.reset();
-        
-        mySer.emptyForm("supplyFactorForm");
-        
-        toggleElementsDisabled(document.getElementById("showAddOrderHeadBtn"), true);*/
+    
+    mySer.emptyForm("supplyFactorItem");
+    mySer.emptyForm("supplyFactorHeadFormId");
+    
+    document.getElementById("sf-discount").value = "";
+    document.getElementById("sf-description").value = "";
+    document.getElementById("sf-sumTotalAmount").innerHTML = "";
+    document.getElementById("sf-totalTax").innerHTML = "";
+    document.getElementById("sf-paymentAmount").innerHTML = "";
+    document.getElementById("supplyFactorItemId").innerHTML = "";
+    document.getElementById("supplyFactorItemId").classList.remove("AlertReq");
+    
+    
+    
+    // modalSelector.reset();
+    // toggleElementsDisabled(document.getElementById("showAddOrderHeadBtn"), true);
     ModalToggle("#supplyFactorModal", "hide");
 }
 
@@ -180,24 +191,24 @@ async function proccessSupplyFactorWithAi() {
         ...Array.from(document.getElementById("supplyFactorItem").elements),
         document.getElementById("cancelSupplyFactorBtn"),
         document.getElementById("submitSupplyFactorBtn"),
-        supplyFactorDiscountInp
+        supplyFactorDiscountInp,
     ];
     
     toggleElementsDisabled(elementsToDisable);
     spinner.classList.remove("d-none");
     aiIcon.classList.add("d-none");
     
-    await delay(8000);
+    await delay(300);
     
     toggleElementsDisabled(elementsToDisable, false);
     spinner.classList.add("d-none");
     aiIcon.classList.remove("d-none");
     
     const sfData = {
-/*        "sumTotalAmount": 3815700000,
-        "discount": 0,
-        "totalTax": 381570000,
-        "paymentAmount": 4197270000,*/
+        /*        "sumTotalAmount": 3815700000,
+                "discount": 0,
+                "totalTax": 381570000,
+                "paymentAmount": 4197270000,*/
         "date": "1405/01/26",
         "serialNumber": "2117",
         "officialType": 1,
@@ -223,20 +234,20 @@ async function proccessSupplyFactorWithAi() {
     mySer.convertJsonToForm(supplyFactorData, "supplyFactorHeadFormId");
     
     
-/*    if (supplyFactorAttachments.every(item => item.isDeleted)) {
-        toastifyError("سند فاکتور باید بارگذاری شود");
-        return;
-    }
-    
-    await sendApiRequest({
-        url: "/Supply/ProccessSupplyFactorWithAi/",
-        method: "POST",
-        data: supplyFactorAttachments[0],
-        successMsg: null,
-        onSuccess: (res) => {
-            console.log(res);
+    /*    if (supplyFactorAttachments.every(item => item.isDeleted)) {
+            toastifyError("سند فاکتور باید بارگذاری شود");
+            return;
         }
-    })*/
+        
+        await sendApiRequest({
+            url: "/Supply/ProccessSupplyFactorWithAi/",
+            method: "POST",
+            data: supplyFactorAttachments[0],
+            successMsg: null,
+            onSuccess: (res) => {
+                console.log(res);
+            }
+        })*/
 }
 
 ///////////////////
@@ -321,7 +332,7 @@ async function submitSupplyFactorModal() {
     };
     console.log(model);
     
-    /*await sendApiRequest({
+    await sendApiRequest({
         method: "POST",
         url: model.id ? "/Supply/UpdateSupplyFactor" : "/Supply/AddSupplyFactor",
         data: model,
@@ -341,7 +352,7 @@ async function submitSupplyFactorModal() {
                 refreshDealSupplyFactors();
             }
         },
-    });*/
+    });
 }
 
 

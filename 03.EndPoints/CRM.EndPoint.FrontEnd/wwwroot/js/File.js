@@ -538,3 +538,22 @@ function triggerDownload(url, fileName) {
     a.click();
     a.remove();
 }
+
+
+const clearUpload = (inputId) => {
+    const item = document.getElementById(inputId);
+    if (!item) return;
+    
+    const listName = item.getAttribute("data-varList");
+    const divPre = item.getAttribute("data-showList");
+    
+    window[listName] = [];
+    
+    item.value = "";
+    
+    const previewContainer = document.getElementById(divPre);
+    if (previewContainer) {
+        previewContainer.innerHTML = "";
+        previewContainer.classList.remove("previewContainer");
+    }
+};
