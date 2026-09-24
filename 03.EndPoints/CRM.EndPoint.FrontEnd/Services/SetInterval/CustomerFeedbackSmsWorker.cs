@@ -19,7 +19,7 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        while (!stoppingToken.IsCancellationRequested)
+        /*while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
@@ -31,7 +31,7 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
             }
 
             await Task.Delay(Interval, stoppingToken);
-        }
+        }*/
     }
 
     private async Task SendFeedbackSmsAsync(CancellationToken ct)
