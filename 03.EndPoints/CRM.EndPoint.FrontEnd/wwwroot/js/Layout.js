@@ -1658,16 +1658,13 @@ const cancelModalWallet = async () => {
 };
 
 
-const getListWalletModal = async () => {
+const CheckWallet = async () => {
     try {
         FLshowLoading();
-        const res = await axios(`/Accountancy/GetWalletPartialIfAny?cusId=${customerId}`);
+        const res = await axios(`/Accountancy/CheckWallet?cusId=${customerId}`);
         if (!res.data) return false;
-        
-        document.getElementById("WalletContentId").innerHTML = res.data;
-        initWalletPartial();
-        ModalToggle("#WalletListModalId");
         return true;
+
     } catch (err) {
         console.log(err);
     } finally {
@@ -1734,8 +1731,18 @@ const ShowModalListInvoice = async (id, type, ser, passType, hideAddInvoiceBtns 
 
 
 const ShowModalAddInvoice = async () => {
-    const hasWallet = await getListWalletModal();
-    if (hasWallet) return;
+    const hasWallet = await CheckWallet();
+    if (hasWallet) {
+
+        const res = await axios(`/Accountancy/GetWalletPartialIfAny?cusId=${customerId}`);
+        document.getElementById("WalletContentId").innerHTML = res.data;
+        initWalletPartial();
+        ModalToggle("#WalletListModalId");
+        return;
+
+    }
+
+
     await ShowModalInvoice(1);
 };
 

@@ -33,7 +33,8 @@ using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
-public class AccountancyController : Controller {
+public class AccountancyController : Controller
+{
     private readonly Service genService;
     private readonly DateTimeServices dtService;
     private readonly CRMContextDb db;
@@ -80,7 +81,8 @@ public class AccountancyController : Controller {
 
         var _atach = await db.Attachments.Where(f => f.EntityId == acc.Id).ToListAsync();
 
-        var model = new AccViewModel {
+        var model = new AccViewModel
+        {
             ListAttach = _atach,
             AccData = acc
         };
@@ -123,165 +125,169 @@ public class AccountancyController : Controller {
             case 1:
             case 11:
             case 12:
-            {
-                var item = await db.PreFactors.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
-                if (item == null) return NotFound("پیش فاکتور یافت نشد");
+                {
+                    var item = await db.PreFactors.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
+                    if (item == null) return NotFound("پیش فاکتور یافت نشد");
 
 
-                var ac = db.Accountancies.AsNoTracking()
-                    .Where(f =>
-                        f.pfid == item.Id
-                        && f.AccType == AcEnum.واریزی
-                        && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
-                        && (
-                            (f.PayType != PayTypeEnum.اعتباری && f.PayType != PayTypeEnum.چکی) ||
-                            ((f.PayType == PayTypeEnum.اعتباری || f.PayType == PayTypeEnum.چکی) && f.Vosoled == false)
-                        )
-                    ).Sum(f => f.credit) ?? 0;
-                item.ReciveAmount = ac;
+                    var ac = db.Accountancies.AsNoTracking()
+                        .Where(f =>
+                            f.pfid == item.Id
+                            && f.AccType == AcEnum.واریزی
+                            && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
+                            && (
+                                (f.PayType != PayTypeEnum.اعتباری && f.PayType != PayTypeEnum.چکی) ||
+                                ((f.PayType == PayTypeEnum.اعتباری || f.PayType == PayTypeEnum.چکی) && f.Vosoled == false)
+                            )
+                        ).Sum(f => f.credit) ?? 0;
+                    item.ReciveAmount = ac;
 
-                var acReturn = db.Accountancies.AsNoTracking()
-                    .Where(f =>
-                        f.pfid == item.Id
-                        && f.AccType == AcEnum.برگشتی
-                        && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
-                        && (
-                            (f.PayType != PayTypeEnum.اعتباری && f.PayType != PayTypeEnum.چکی) ||
-                            ((f.PayType == PayTypeEnum.اعتباری || f.PayType == PayTypeEnum.چکی) && f.Vosoled == false)
-                        )
-                    ).Sum(f => f.BackWard) ?? 0;
+                    var acReturn = db.Accountancies.AsNoTracking()
+                        .Where(f =>
+                            f.pfid == item.Id
+                            && f.AccType == AcEnum.برگشتی
+                            && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
+                            && (
+                                (f.PayType != PayTypeEnum.اعتباری && f.PayType != PayTypeEnum.چکی) ||
+                                ((f.PayType == PayTypeEnum.اعتباری || f.PayType == PayTypeEnum.چکی) && f.Vosoled == false)
+                            )
+                        ).Sum(f => f.BackWard) ?? 0;
 
-                item.PaymentAmount = item.SumTotalAmount + item.TotalTax - item.Discount - (item.ReciveAmount - acReturn);
-                item.SumTotalAmountTax = item.SumTotalAmount + item.TotalTax - item.Discount;
+                    item.PaymentAmount = item.SumTotalAmount + item.TotalTax - item.Discount - (item.ReciveAmount - acReturn);
+                    item.SumTotalAmountTax = item.SumTotalAmount + item.TotalTax - item.Discount;
 
-                var model = new PaymentListViewModel {
-                    Discount = item.Discount,
-                    PaymentAmount = item.PaymentAmount < 0 ? 0 : item.PaymentAmount,
-                    ReciveAmount = item.ReciveAmount,
-                    BackwardAmount = acReturn,
-                    SumTotalAmount = item.SumTotalAmount,
-                    SumTotalAmountTax = item.SumTotalAmountTax,
-                    TotalTax = item.TotalTax,
-                };
+                    var model = new PaymentListViewModel
+                    {
+                        Discount = item.Discount,
+                        PaymentAmount = item.PaymentAmount < 0 ? 0 : item.PaymentAmount,
+                        ReciveAmount = item.ReciveAmount,
+                        BackwardAmount = acReturn,
+                        SumTotalAmount = item.SumTotalAmount,
+                        SumTotalAmountTax = item.SumTotalAmountTax,
+                        TotalTax = item.TotalTax,
+                    };
 
-                return PartialView(model);
-            }
+                    return PartialView(model);
+                }
 
             case 2:
-            {
-                var item = await db.Factors.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
+                {
+                    var item = await db.Factors.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
 
 
-                var ac = await db.Accountancies
-                    .Where(f => f.fid == item.Id && f.AccType == AcEnum.واریزی && f.InvoiceType == InvoiceTypeEnum.فاکتور)
-                    .ToListAsync();
-                item.ReciveAmount = ac.Sum(f => f.credit).Value;
-                item.PaymentAmount = item.SumTotalAmount + item.TotalTax - item.Discount - item.ReciveAmount;
-                item.SumTotalAmountTax = item.SumTotalAmount + item.TotalTax - item.Discount;
-                var model = new PaymentListViewModel() {
-                    Discount = item.Discount,
-                    PaymentAmount = item.PaymentAmount,
-                    ReciveAmount = item.ReciveAmount,
-                    SumTotalAmount = item.SumTotalAmount,
-                    SumTotalAmountTax = item.SumTotalAmountTax,
-                    TotalTax = item.TotalTax
-                };
+                    var ac = await db.Accountancies
+                        .Where(f => f.fid == item.Id && f.AccType == AcEnum.واریزی && f.InvoiceType == InvoiceTypeEnum.فاکتور)
+                        .ToListAsync();
+                    item.ReciveAmount = ac.Sum(f => f.credit).Value;
+                    item.PaymentAmount = item.SumTotalAmount + item.TotalTax - item.Discount - item.ReciveAmount;
+                    item.SumTotalAmountTax = item.SumTotalAmount + item.TotalTax - item.Discount;
+                    var model = new PaymentListViewModel()
+                    {
+                        Discount = item.Discount,
+                        PaymentAmount = item.PaymentAmount,
+                        ReciveAmount = item.ReciveAmount,
+                        SumTotalAmount = item.SumTotalAmount,
+                        SumTotalAmountTax = item.SumTotalAmountTax,
+                        TotalTax = item.TotalTax
+                    };
 
-                return PartialView(model);
-            }
+                    return PartialView(model);
+                }
 
             case 3:
-            {
-                var preFactors = await db.PreFactors.AsNoTracking().Where(f => f.DealId == id).ToListAsync();
+                {
+                    var preFactors = await db.PreFactors.AsNoTracking().Where(f => f.DealId == id).ToListAsync();
 
-                var sumDiscount = preFactors.Sum(f => f.Discount);
-                var sumTotalAmount = preFactors.Sum(f => f.SumTotalAmount);
-                var sumTotalTax = preFactors.Sum(f => f.TotalTax);
+                    var sumDiscount = preFactors.Sum(f => f.Discount);
+                    var sumTotalAmount = preFactors.Sum(f => f.SumTotalAmount);
+                    var sumTotalTax = preFactors.Sum(f => f.TotalTax);
 
-                var sumReceiveAmount = db.Accountancies.AsNoTracking()
-                    .Where(f =>
-                        f.DealId == id
-                        && f.AccType == AcEnum.واریزی
-                        && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
-                        && (
-                            (f.PayType != PayTypeEnum.اعتباری && f.PayType != PayTypeEnum.چکی) ||
-                            ((f.PayType == PayTypeEnum.اعتباری || f.PayType == PayTypeEnum.چکی) && f.Vosoled == false)
+                    var sumReceiveAmount = db.Accountancies.AsNoTracking()
+                        .Where(f =>
+                            f.DealId == id
+                            && f.AccType == AcEnum.واریزی
+                            && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
+                            && (
+                                (f.PayType != PayTypeEnum.اعتباری && f.PayType != PayTypeEnum.چکی) ||
+                                ((f.PayType == PayTypeEnum.اعتباری || f.PayType == PayTypeEnum.چکی) && f.Vosoled == false)
+                            )
                         )
-                    )
-                    .Sum(f => f.credit) ?? 0;
+                        .Sum(f => f.credit) ?? 0;
 
-                var sumAcReturn = db.Accountancies.AsNoTracking()
-                    .Where(f =>
-                        f.DealId == id
-                        && f.AccType == AcEnum.برگشتی
-                        && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
-                        && (
-                            (f.PayType != PayTypeEnum.اعتباری && f.PayType != PayTypeEnum.چکی) ||
-                            ((f.PayType == PayTypeEnum.اعتباری || f.PayType == PayTypeEnum.چکی) && f.Vosoled == false)
+                    var sumAcReturn = db.Accountancies.AsNoTracking()
+                        .Where(f =>
+                            f.DealId == id
+                            && f.AccType == AcEnum.برگشتی
+                            && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
+                            && (
+                                (f.PayType != PayTypeEnum.اعتباری && f.PayType != PayTypeEnum.چکی) ||
+                                ((f.PayType == PayTypeEnum.اعتباری || f.PayType == PayTypeEnum.چکی) && f.Vosoled == false)
+                            )
                         )
-                    )
-                    .Sum(f => f.BackWard) ?? 0;
+                        .Sum(f => f.BackWard) ?? 0;
 
-                var sumPaymentAmount = sumTotalAmount + sumTotalTax - sumDiscount - (sumReceiveAmount - sumAcReturn);
-                var sumSumTotalAmountTax = sumTotalAmount + sumTotalTax - sumDiscount;
+                    var sumPaymentAmount = sumTotalAmount + sumTotalTax - sumDiscount - (sumReceiveAmount - sumAcReturn);
+                    var sumSumTotalAmountTax = sumTotalAmount + sumTotalTax - sumDiscount;
 
-                var model = new PaymentListViewModel() {
-                    Discount = sumDiscount,
-                    PaymentAmount = sumPaymentAmount < 0 ? 0 : sumPaymentAmount,
-                    ReciveAmount = sumReceiveAmount,
-                    BackwardAmount = sumAcReturn,
-                    SumTotalAmount = sumTotalAmount,
-                    SumTotalAmountTax = sumSumTotalAmountTax,
-                    TotalTax = sumTotalTax
-                };
+                    var model = new PaymentListViewModel()
+                    {
+                        Discount = sumDiscount,
+                        PaymentAmount = sumPaymentAmount < 0 ? 0 : sumPaymentAmount,
+                        ReciveAmount = sumReceiveAmount,
+                        BackwardAmount = sumAcReturn,
+                        SumTotalAmount = sumTotalAmount,
+                        SumTotalAmountTax = sumSumTotalAmountTax,
+                        TotalTax = sumTotalTax
+                    };
 
-                return PartialView(model);
-            }
+                    return PartialView(model);
+                }
             case 4:
-            {
-                var preFactors = await db.PreFactors.AsNoTracking().Where(f => f.CustomerId == id).ToListAsync();
+                {
+                    var preFactors = await db.PreFactors.AsNoTracking().Where(f => f.CustomerId == id).ToListAsync();
 
-                var sumDiscount = preFactors.Sum(f => f.Discount);
-                var sumTotalAmount = preFactors.Sum(f => f.SumTotalAmount);
-                var sumTotalTax = preFactors.Sum(f => f.TotalTax);
+                    var sumDiscount = preFactors.Sum(f => f.Discount);
+                    var sumTotalAmount = preFactors.Sum(f => f.SumTotalAmount);
+                    var sumTotalTax = preFactors.Sum(f => f.TotalTax);
 
-                var sumReceiveAmount = db.Accountancies.AsNoTracking()
-                    .Where(f =>
-                        f.CustomerId == id
-                        && f.AccType == AcEnum.واریزی
-                        && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
-                        && (
-                            (f.PayType != PayTypeEnum.اعتباری && f.PayType != PayTypeEnum.چکی) ||
-                            ((f.PayType == PayTypeEnum.اعتباری || f.PayType == PayTypeEnum.چکی) && f.Vosoled == false)
-                        )
-                    ).Sum(f => f.credit) ?? 0;
+                    var sumReceiveAmount = db.Accountancies.AsNoTracking()
+                        .Where(f =>
+                            f.CustomerId == id
+                            && f.AccType == AcEnum.واریزی
+                            && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
+                            && (
+                                (f.PayType != PayTypeEnum.اعتباری && f.PayType != PayTypeEnum.چکی) ||
+                                ((f.PayType == PayTypeEnum.اعتباری || f.PayType == PayTypeEnum.چکی) && f.Vosoled == false)
+                            )
+                        ).Sum(f => f.credit) ?? 0;
 
-                var sumAcReturn = db.Accountancies.AsNoTracking()
-                    .Where(f =>
-                        f.CustomerId == id
-                        && f.AccType == AcEnum.برگشتی
-                        && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
-                        && (
-                            (f.PayType != PayTypeEnum.اعتباری && f.PayType != PayTypeEnum.چکی) ||
-                            ((f.PayType == PayTypeEnum.اعتباری || f.PayType == PayTypeEnum.چکی) && f.Vosoled == false)
-                        )
-                    ).Sum(f => f.BackWard) ?? 0;
+                    var sumAcReturn = db.Accountancies.AsNoTracking()
+                        .Where(f =>
+                            f.CustomerId == id
+                            && f.AccType == AcEnum.برگشتی
+                            && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
+                            && (
+                                (f.PayType != PayTypeEnum.اعتباری && f.PayType != PayTypeEnum.چکی) ||
+                                ((f.PayType == PayTypeEnum.اعتباری || f.PayType == PayTypeEnum.چکی) && f.Vosoled == false)
+                            )
+                        ).Sum(f => f.BackWard) ?? 0;
 
-                var sumPaymentAmount = sumTotalAmount + sumTotalTax - sumDiscount - (sumReceiveAmount - sumAcReturn);
-                var sumSumTotalAmountTax = sumTotalAmount + sumTotalTax - sumDiscount;
+                    var sumPaymentAmount = sumTotalAmount + sumTotalTax - sumDiscount - (sumReceiveAmount - sumAcReturn);
+                    var sumSumTotalAmountTax = sumTotalAmount + sumTotalTax - sumDiscount;
 
-                var model = new PaymentListViewModel() {
-                    Discount = sumDiscount,
-                    PaymentAmount = sumPaymentAmount < 0 ? 0 : sumPaymentAmount,
-                    ReciveAmount = sumReceiveAmount,
-                    BackwardAmount = sumAcReturn,
-                    SumTotalAmount = sumTotalAmount,
-                    SumTotalAmountTax = sumSumTotalAmountTax,
-                    TotalTax = sumTotalTax
-                };
+                    var model = new PaymentListViewModel()
+                    {
+                        Discount = sumDiscount,
+                        PaymentAmount = sumPaymentAmount < 0 ? 0 : sumPaymentAmount,
+                        ReciveAmount = sumReceiveAmount,
+                        BackwardAmount = sumAcReturn,
+                        SumTotalAmount = sumTotalAmount,
+                        SumTotalAmountTax = sumSumTotalAmountTax,
+                        TotalTax = sumTotalTax
+                    };
 
-                return PartialView(model);
-            }
+                    return PartialView(model);
+                }
             default:
                 return null;
         }
@@ -308,9 +314,9 @@ public class AccountancyController : Controller {
 
             if (payType.HasValue)
             {
-/*                    baseQuery = payType is PayTypeEnum.اعتباری or PayTypeEnum.چکی
-                        ? baseQuery.Where(f => f.PayType == payType.Value || f.ParentId.HasValue)
-                        : baseQuery.Where(f => f.PayType == payType.Value);*/
+                /*                    baseQuery = payType is PayTypeEnum.اعتباری or PayTypeEnum.چکی
+                                        ? baseQuery.Where(f => f.PayType == payType.Value || f.ParentId.HasValue)
+                                        : baseQuery.Where(f => f.PayType == payType.Value);*/
                 baseQuery = baseQuery.Where(f => f.PayType == payType.Value);
             }
 
@@ -326,14 +332,16 @@ public class AccountancyController : Controller {
                 );
             }
 
-            var filterCounts = new Dictionary<int, int> {
+            var filterCounts = new Dictionary<int, int>
+            {
                 [-1] = await baseQuery.CountAsync(),
                 [1] = await baseQuery.Where(f => f.Status == AccStatusEnum.در_دست_تایید || f.Status == AccStatusEnum.ثبت_اولیه).CountAsync(),
                 [2] = await baseQuery.Where(f => f.Status == AccStatusEnum.تایید_شده).CountAsync(),
                 [3] = await baseQuery.Where(f => f.Status == AccStatusEnum.رد_شده).CountAsync(),
             };
 
-            var query = type switch {
+            var query = type switch
+            {
                 1 => baseQuery.Where(f => f.Status == AccStatusEnum.در_دست_تایید || f.Status == AccStatusEnum.ثبت_اولیه),
                 2 => baseQuery.Where(f => f.Status == AccStatusEnum.تایید_شده),
                 3 => baseQuery.Where(f => f.Status == AccStatusEnum.رد_شده),
@@ -347,7 +355,8 @@ public class AccountancyController : Controller {
 
             var accS = await query.ToListAsync();
 
-            var model = new PaymentPartialVModel {
+            var model = new PaymentPartialVModel
+            {
                 Items = accS,
                 PassType = cartable == CartableEnum.کارشناس_تامین ? 56 : 55,
                 UserId = user.Id
@@ -382,7 +391,8 @@ public class AccountancyController : Controller {
             var showAcceptPfBtn = false;
             var showChangeStatusAllBtn = false;
 
-            var model = new PaymentPartialVModel {
+            var model = new PaymentPartialVModel
+            {
                 PassType = passType,
                 UserId = user.Id
             };
@@ -422,7 +432,8 @@ public class AccountancyController : Controller {
                 if (type == 3) // deal
                 {
                     model.IsCreatorParent = deal?.UserCreatorID == user.Id;
-                } else if (type == 1) // pf
+                }
+                else if (type == 1) // pf
                 {
                     model.IsCreatorParent = pf?.UserCreatorID == user.Id;
 
@@ -467,21 +478,46 @@ public class AccountancyController : Controller {
         model.IsCustomer = roles.Contains("مشتری");
     }
 
+
+
+    private async Task<List<Accountancy>> GetWallet(Guid cusId)
+    {
+
+        var accList = await db.Accountancies.AsNoTracking()
+                    .ForCustomer(cusId)
+                    .NotVosoled()
+                    .Where(f => f.Wallet)
+                    .Where(f => f.PayType != PayTypeEnum.انتقال && f.AccType == AcEnum.واریزی)
+                    .ToListAsync();
+
+
+        return accList;
+
+    }
+
+
+
+    [HttpGet]
+    public async Task<IActionResult> CheckWallet(Guid cusId)
+    {
+        var accList = await GetWallet(cusId);
+
+        if (accList.Count == 0)
+            return Ok(false);
+        else
+            return Ok(true);
+
+    }
+
+
+
+
     [HttpGet]
     public async Task<IActionResult> GetWalletPartialIfAny(Guid cusId)
     {
         try
         {
-            var accList = await db.Accountancies.AsNoTracking()
-                .ForCustomer(cusId)
-                .NotVosoled()
-                .Where(f => f.Wallet)
-                .Where(f => f.PayType != PayTypeEnum.انتقال && f.AccType == AcEnum.واریزی)
-                .ToListAsync();
-
-            if (accList.Count == 0)
-                return Ok(false);
-
+            var accList = await GetWallet(cusId);
             return PartialView("GetAllWalletPartial", accList);
         }
         catch (Exception)
@@ -548,14 +584,16 @@ public class AccountancyController : Controller {
                 dataF = dataF.ApplyFilter(modelF, f => f.CustomerId, f => f.VosolDateM, f => f.UserCreatorID);
             }
 
-            dataF = modelF.AccType switch {
+            dataF = modelF.AccType switch
+            {
                 1 => dataF.Where(f => f.AccType == AcEnum.واریزی).AsQueryable(),
                 2 => dataF.Where(f => f.AccType == AcEnum.بدهکاری).AsQueryable(),
                 3 => dataF.Where(f => f.AccType == AcEnum.برگشتی).AsQueryable(),
                 _ => dataF
             };
 
-            dataF = modelF.PayType switch {
+            dataF = modelF.PayType switch
+            {
                 1 => dataF.Where(f => f.PayType == PayTypeEnum.نقدی).AsQueryable(),
                 2 => dataF.Where(f => f.PayType == PayTypeEnum.چکی).AsQueryable(),
                 3 => dataF.Where(f => f.PayType == PayTypeEnum.اعتباری).AsQueryable(),
@@ -582,7 +620,8 @@ public class AccountancyController : Controller {
             {
                 if (sortColumnDirection == "asc")
                 {
-                    dataF = sortColumn switch {
+                    dataF = sortColumn switch
+                    {
                         "UserCreator" => dataF.OrderBy(f => f.UserCreator),
                         "PfSerialNumber" => dataF.OrderBy(f => f.pfSerialNumber),
                         "BankAccountTxt" => dataF.OrderBy(f => string.IsNullOrEmpty(f.BankAccountTxt)).ThenBy(f => f.BankAccountTxt),
@@ -591,9 +630,11 @@ public class AccountancyController : Controller {
                         "credit" => dataF.OrderBy(f => f.credit == null).ThenBy(f => f.credit),
                         _ => dataF.OrderBy(f => f.SerialNum)
                     };
-                } else
+                }
+                else
                 {
-                    dataF = sortColumn switch {
+                    dataF = sortColumn switch
+                    {
                         "UserCreator" => dataF.OrderByDescending(f => f.UserCreator),
                         "PfSerialNumber" => dataF.OrderByDescending(f => f.pfSerialNumber),
                         "BankAccountTxt" => dataF.OrderBy(f => string.IsNullOrEmpty(f.BankAccountTxt)).ThenByDescending(f => f.BankAccountTxt),
@@ -645,7 +686,8 @@ public class AccountancyController : Controller {
 
 
             var items = await query
-                .Select(f => new {
+                .Select(f => new
+                {
                     f.Id,
                     f.AccountName,
                     f.BankName,
@@ -657,7 +699,8 @@ public class AccountancyController : Controller {
                 })
                 .ToListAsync();
 
-            var data = items.Select(f => new {
+            var data = items.Select(f => new
+            {
                 value = f.Id,
                 accountName = f.AccountName,
                 bankName = f.BankName,
@@ -698,13 +741,16 @@ public class AccountancyController : Controller {
             {
                 if (sortColumnDirection == "asc")
                 {
-                    dataF = sortColumn switch {
+                    dataF = sortColumn switch
+                    {
                         "AccountName" => dataF.OrderBy(f => f.AccountName),
                         _ => dataF.OrderBy(f => f.CreateDate)
                     };
-                } else
+                }
+                else
                 {
-                    dataF = sortColumn switch {
+                    dataF = sortColumn switch
+                    {
                         "AccountName" => dataF.OrderByDescending(f => f.AccountName),
                         _ => dataF.OrderByDescending(f => f.CreateDate)
                     };
@@ -727,7 +773,8 @@ public class AccountancyController : Controller {
             var data = await dataF.ToListAsync();
             recordsTotal = dataF.Count();
 
-            var jsonData = new {
+            var jsonData = new
+            {
                 draw,
                 recordsFiltered = recordsTotal,
                 recordsTotal,
@@ -876,13 +923,15 @@ public class AccountancyController : Controller {
         {
             acc.AcceptedUser = user.FullName;
             acc.AcceptedUserId = user.Id;
-        } else
+        }
+        else
         {
             acc.AcceptedUser = null;
             acc.AcceptedUserId = null;
         }
 
-        var action = acc.Status switch {
+        var action = acc.Status switch
+        {
             AccStatusEnum.تایید_شده => LogActionEnum.تایید_و_تغییر_وضعیت,
             AccStatusEnum.رد_شده => LogActionEnum.رد_و_تغییر_وضعیت,
             _ => LogActionEnum.تغییر_وضعیت
@@ -897,7 +946,8 @@ public class AccountancyController : Controller {
             await genService.AddEmail(
                 $"{acc.AccTypeTxt} نیاز به اصلاح", message, user, acc.UserCreatorID, acc.UserCreator, EntityTypeEnum.Accountancy, acc.Id
             );
-            pushQueue.Enqueue(new PushQueueItem {
+            pushQueue.Enqueue(new PushQueueItem
+            {
                 UserId = acc.UserCreatorID,
                 Title = "واریزی نیاز به اصلاح",
                 Body = $"{acc.AccTypeTxt} مربوط به پیش‌فاکتور {acc.pfSerialNumber} نیاز به اصلاح دارد.",
@@ -913,7 +963,8 @@ public class AccountancyController : Controller {
             if (status == AccStatusEnum.تایید_شده)
             {
                 await _ts.CreatePreFactorAccountancyTasks(acc);
-            } else
+            }
+            else
             {
                 await _ts.RemoveAccountancyTasks(acc.Id);
             }
