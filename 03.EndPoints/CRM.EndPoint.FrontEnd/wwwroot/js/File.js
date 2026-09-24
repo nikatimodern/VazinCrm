@@ -56,10 +56,30 @@ Array.from(uploadButtons).forEach((item, index) => {
     }
 });
 
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 async function processUploadFiles(files, listName, previewIndex, containerUploader) {
     if (!files?.length) return;
+    
+    const input = uploadButtons[previewIndex];
+    const isMultiple = input?.multiple;
+    if (!isMultiple) {
+        const list = window[listName];
+        
+        if (list) {
+            list.forEach(item => {
+                if (item.id) {
+                    item.isDeleted = true;
+                }
+            });
+            
+            window[listName] = list.filter(item => item.id);
+        }
+        
+        files = [files[0]];
+    }
     
     const progress = createUploadProgress(containerUploader);
     const minDuration = 500;
@@ -518,3 +538,22 @@ function triggerDownload(url, fileName) {
     a.click();
     a.remove();
 }
+
+
+const clearUpload = (inputId) => {
+    const item = document.getElementById(inputId);
+    if (!item) return;
+    
+    const listName = item.getAttribute("data-varList");
+    const divPre = item.getAttribute("data-showList");
+    
+    window[listName] = [];
+    
+    item.value = "";
+    
+    const previewContainer = document.getElementById(divPre);
+    if (previewContainer) {
+        previewContainer.innerHTML = "";
+        previewContainer.classList.remove("previewContainer");
+    }
+};

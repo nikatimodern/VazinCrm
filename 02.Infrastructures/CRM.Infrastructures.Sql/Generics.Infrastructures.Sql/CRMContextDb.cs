@@ -102,6 +102,7 @@ namespace CRM.Infrastructures.Sql {
         public DbSet<WarehouseUser> WarehouseUsers { get; set; }
         public DbSet<WarehouseVoucher> WarehouseVouchers { get; set; }
         public DbSet<WarehouseProductVoucher> WarehouseProductVouchers { get; set; }
+        public DbSet<SupplyFactorItem> SupplyFactorItems { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -167,6 +168,7 @@ namespace CRM.Infrastructures.Sql {
             modelBuilder.Entity<WarehouseProduct>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<WarehouseVoucher>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<WarehouseProductVoucher>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<SupplyFactorItem>().HasQueryFilter(f => f.IsDeleted == false);
 
 
             modelBuilder.Entity<Order>().Ignore(f => f.Row);

@@ -1,3 +1,38 @@
+.factor-modal {
+	--factor-color: rebeccapurple;
+	--factor-color-dark: #4a0d82;
+	--factor-color-light: #6d28d9;
+}
+
+
+.factor-modal#PreFactor {
+	--factor-color: rebeccapurple;
+	--factor-color-dark: #4b0082;
+	--factor-color-light: #6d28d9;
+}
+
+
+.factor-modal#Factor {
+	--factor-color: #00564f;
+	--factor-color-dark: #00322e;
+	--factor-color-light: #007a70;
+}
+
+
+.factor-modal#Factor.returned-factor {
+	--factor-color: #6e0000;
+	--factor-color-dark: #6b0000;
+	--factor-color-light: #980000;
+}
+
+
+.factor-modal#supplyFactorModal {
+	--factor-color: #6c757d;
+	--factor-color-dark: #545961;
+	--factor-color-light: #838e98;
+}
+
+
 .pf-item-form {
 	display: grid;
 	grid-template-columns:
@@ -37,12 +72,10 @@
 	flex-grow: 1;
 	margin-top: .5rem;
 	width: 100%;
-	height: auto;
-	min-height: 60px;
-	max-height: 200px;
+	height: 240px;
 	overflow: auto;
-	border-color: rebeccapurple;
-	scrollbar-color: rebeccapurple #0000;
+	border-color: var(--factor-color);
+	scrollbar-color: var(--factor-color) #0000;
 }
 
 
@@ -69,7 +102,7 @@
 
 
 .InfoDataItem {
-	border: 2px solid rebeccapurple;
+	border: 2px solid var(--factor-color);
 	display: flex;
 	justify-content: space-between;
 	width: 100%;
@@ -81,7 +114,7 @@
 
 .InfoDataItemHead {
 	color: aliceblue;
-	background-color: #4c1087;;
+	background-color: var(--factor-color-dark);
 	width: 24px;
 	display: flex;
 	flex-direction: column;
@@ -90,37 +123,6 @@
 	flex-shrink: 0;
 	border-bottom-right-radius: 10px;
 	font-family: IRANSansBold;
-}
-
-
-#FactorItemId .InfoDataItem {
-	border-color: #00625b;
-}
-
-
-#FactorItemId .InfoDataItemHead {
-	background-color: #00302d;
-}
-
-
-#FactorItemId .InfoDataItem .InfoDataItemOp button {
-	color: #02514C;
-}
-
-
-.returned-factor .InfoDataItemHead {
-	background-color: darkred !important;
-}
-
-
-.returned-factor .InfoDataItem,
-.returned-factor .InfoData {
-	border-color: darkred !important;
-}
-
-
-.returned-factor .InfoDataItem .InfoDataItemOp button {
-	color: darkred !important;
 }
 
 
@@ -197,10 +199,12 @@
 
 
 .pf-item-actions {
-	flex-shrink: 0;
 	display: flex;
 	flex-direction: column;
-	justify-content: space-evenly;
+	align-items: center;
+	justify-content: space-around;
+	flex-shrink: 0;
+	white-space: nowrap;
 	gap: 2px;
 	padding-inline: 4px;
 }
@@ -212,12 +216,34 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	color: #3f0e6e;
+	transition: color .25s;
+	color: var(--factor-color-dark);
 }
 
 
 .pf-item-action:hover {
-	color: #6d28d9;
+	color: var(--factor-color-light);
+}
+
+
+.pf-divider {
+	width: 97%;
+	height: 2px;
+	margin-inline: auto;
+	background-color: var(--factor-color-dark);
+}
+
+
+.factor-modal-title {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #fff;
+	width: 100%;
+	font-family: IRANSansBold;
+	background-color: var(--factor-color);
+	border-radius: 5px;
+	height: 24px;
 }
 
 
@@ -298,7 +324,12 @@
 		 Item list
 	--------------------------- */
 	.pf-items-container {
-		max-height: calc(100dvh - 500px) !important;
+		height: auto;
+		min-height: 60px;
+		max-height: calc(100dvh - 500px);
+		border: none;
+		border-block: 2px solid var(--factor-color);
+		border-radius: unset;
 	}
 	
 	.InfoDataItem {
@@ -561,4 +592,13 @@
 		width: 20% !important;
 		flex: 0 0 20% !important;
 	}
+}
+
+
+/* =========================================================
+   Supply Factor
+   ========================================================= */
+
+#supplyFactorModal .container-uploader {
+	min-height: 254px;
 }

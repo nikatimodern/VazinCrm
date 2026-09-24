@@ -45,23 +45,6 @@
 } */
 
 
-@media (min-width: 992px) {
-	#FactorItemId, #preFactorItemId {
-		height: 240px !important;
-		min-height: unset !important;
-		max-height: unset !important;
-	}
-}
-
-
-@media all and (max-width: 991px) {
-	#preFactorItemId, #FactorItemId {
-		border: none;
-		border-block: 2px solid rebeccapurple;
-		border-radius: unset;
-	}
-}
-
 
 @media all and (max-width: 767px) {
 	body {

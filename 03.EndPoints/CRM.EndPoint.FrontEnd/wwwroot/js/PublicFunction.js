@@ -259,7 +259,9 @@ const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate
         item.discount ??= 0;
         item.row = index + 1;
         
-        const beforeDiscountAmount = calculateTotalPrice(item.weightCount, item.unitAmount);
+        
+        const weight = Number(SeparatedNumberRemove(item.weightCount ?? item.weight)) || 0;
+        const beforeDiscountAmount = calculateTotalPrice(weight, item.unitAmount);
         
         const beforeDiscountAmountStr = beforeDiscountAmount ? beforeDiscountAmount.toLocaleString() : "-";
         const uAmount = item.unitAmount ? item.unitAmount.toLocaleString() : "-";
@@ -313,7 +315,7 @@ const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate
 
                         <div class="pf-item-field pf-item-quantity">
                             <label>تعداد/مقدار</label>
-                            <label>${item.weightCount}</label>
+                            <label>${weight.toLocaleString()}</label>
                         </div>
 
                         <div class="pf-item-field pf-item-unit">
@@ -362,7 +364,7 @@ const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate
 
                     </div>
 
-                    <div class="InfoDataItemOp pf-item-actions">
+                    <div class="pf-item-actions">
                         ${actionButtons}
                     </div>
                 </div>
@@ -465,15 +467,15 @@ const Unit = (type, formId, defaultValueId) => {
         });
         $(unitElm).val(null).trigger("change");
     } else if (type === 2) {
-        const fun = Array.from(document.getElementById("FacItem").elements).filter(f => f.name == "unit")[0];
-        $(fun).select2({
+        const unitElm = document.querySelector("#FacItem select[name='unit']");
+        $(unitElm).select2({
             data: unitItems,
             dir: "rtl",
             placeholder: "انتخاب",
             selectionCssClass: "form-control",
             dropdownParent: window.innerWidth < 992 ? $("#ItemFactorModal") : $("#Factor"),
         });
-        $(fun).val(null).trigger("change");
+        $(unitElm).val(null).trigger("change");
     } else if (type === 3) {
         const unitInput = document.querySelector(`#${formId} select[name='unit']`);
         unitInput.innerHTML = "";
@@ -495,6 +497,17 @@ const Unit = (type, formId, defaultValueId) => {
             fragment.appendChild(opt);
         });
         unitInput.appendChild(fragment);
+    } else if (type === 4) {
+        const unitElm = document.querySelector("#supplyFactorItem select[name='unit']");
+        $(unitElm).select2({
+            data: unitItems,
+            dir: "rtl",
+            placeholder: "انتخاب",
+            minimumResultsForSearch: Infinity,
+            selectionCssClass: "form-control",
+            dropdownParent: $("#supplyFactorModal"),
+        });
+        $(unitElm).val(null).trigger("change");
     }
 };
 

@@ -72,7 +72,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 accountancyQuery = accountancyQuery.ApplyFilter(model, null, x => x.VosolDateM);
                 factorQuery = factorQuery.ApplyFilter(model, null, x => x.DateMiladi);
                 paymentQuery = paymentQuery.ApplyFilter(model, null, x => x.PaymentDate);
-                supplyFactorQuery = supplyFactorQuery.ApplyFilter(model, null, x => x.FactorDate);
+                supplyFactorQuery = supplyFactorQuery.ApplyFilter(model, null, x => x.DateMiladi);
             }
 
             var accountancies = await accountancyQuery
@@ -88,7 +88,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             var factorAmount = await factorQuery.SumAsync(f => f.ParentReturnedId == null ? f.PaymentAmount : -f.PaymentAmount);
             var paymentAmount = await paymentQuery.SumAsync(x => x.Amount);
-            var supplyFactorAmount = await supplyFactorQuery.SumAsync(x => x.Amount);
+            var supplyFactorAmount = await supplyFactorQuery.SumAsync(x => x.PaymentAmount);
 
 
             var data = new {
