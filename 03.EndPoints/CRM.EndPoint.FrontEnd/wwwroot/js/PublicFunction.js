@@ -247,8 +247,7 @@ const calculateItemTax = (amount, taxPercent) => {
     return Math.round(amount * taxPercent / 100);
 };
 
-const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate, onSelect, requiredFieldNames = [] } = {}) => {
-    
+const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate, onSelect, fieldRules = {} } = {}) => {
     const container = document.createElement("div");
     container.className = "pf-items-list";
     
@@ -258,12 +257,10 @@ const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate
         item.product ??= "";
         item.discount ??= 0;
         item.row = index + 1;
-        const isProductMissing = !item.productCode;
-        const isIncomplete = requiredFieldNames.some(name => {
-            const value = item[name];
-            return value === null || value === undefined || String(value).trim() === "";
-        });
         
+        const incompleteFields = getIncompleteFields(item, fieldRules);
+        console.log(incompleteFields);
+        const isIncomplete = incompleteFields.length > 0;
         
         const weight = Number(SeparatedNumberRemove(item.weightCount ?? item.weight)) || 0;
         const beforeDiscountAmount = calculateTotalPrice(weight, item.unitAmount);
@@ -319,7 +316,7 @@ const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate
                                 ${isIncomplete ? `
                                     <p class="pf-item-missing-product">
                                       <i class="fa fa-exclamation-circle"></i>
-                                      ${isProductMissing ? "نیاز به انتخاب محصول" : "نیاز به اصلاح"}
+                                      نیاز به ویرایش
                                     </p>` : ""}
                             </label>
                         </div>
@@ -426,6 +423,99 @@ const validatePfItemDiscount = (formId) => {
     
     return true;
 };
+
+
+function getIncompleteItemsCount(items, fieldRules) {
+    return items.filter(item => {
+        if (item.isDeleted) return false;
+        return getIncompleteFields(item, fieldRules).length > 0;
+    }).length;
+}
+
+function getIncompleteFields(item, fieldRules = {}) {
+    return Object.entries(fieldRules).filter(([fieldName, rules]) => {
+        const value = item[fieldName];
+        
+        if (rules.required && (value === null || value === undefined || String(value).trim() === "")) {
+            return true;
+        }
+        
+        if (rules.numeric && (value === null || value === undefined || isNaN(Number(value)))) {
+            return true;
+        }
+        
+        if (rules.notZero && Number(value) === 0) {
+            return true;
+        }
+        
+        if (rules.min !== undefined && Number(value) < rules.min) {
+            return true;
+        }
+        
+        if (rules.max !== undefined && Number(value) > rules.max) {
+            return true;
+        }
+        
+        if (rules.validate && !rules.validate(value, item)) {
+            return true;
+        }
+        
+        return false;
+    }).map(([fieldName]) => fieldName);
+}
+
+
+/**
+ * @param {string} formId
+ * @param {Object<string, {
+ *     required?: boolean,
+ *     numeric?: boolean,
+ *     notZero?: boolean,
+ *     min?: number,
+ *     max?: number,
+ *     pattern?: RegExp,
+ *     validate?: (value: any, item: Object) => boolean
+ * }>} customRules
+ */
+function getFieldRules(formId, customRules = {}) {
+    const form = document.getElementById(formId);
+    if (!form) return {};
+    
+    const rules = {};
+    
+    form.querySelectorAll("[name]").forEach(element => {
+        const name = element.name;
+        if (!name) return;
+        
+        const fieldRules = {};
+        
+        if (element.required) {
+            fieldRules.required = true;
+        }
+        
+        if (element.type === "number" || element.classList.contains("valueNumber") || element.classList.contains("currencyNumber")) {
+            fieldRules.numeric = true;
+        }
+        
+        if (element.classList.contains("currencyNumber")) {
+            fieldRules.min = 0;
+        }
+        
+        rules[name] = {
+            ...fieldRules,
+            ...customRules[name],
+        };
+    });
+    
+    Object.entries(customRules).forEach(([name, fieldRules]) => {
+        rules[name] = {
+            ...(rules[name] ?? {}),
+            ...fieldRules,
+        };
+    });
+    
+    return rules;
+}
 
 
 if (window.innerWidth < 992) {

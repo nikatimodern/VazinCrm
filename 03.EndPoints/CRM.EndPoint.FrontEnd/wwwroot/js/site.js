@@ -4819,11 +4819,3 @@ const Skeleton = (() => {
     };
     
 })();
-
-
-function getRequiredFieldNames(formId) {
-    const form = document.getElementById(formId);
-    if (!form) return [];
-    
-    return [...new Set(Array.from(form.querySelectorAll("[required]")).map(el => el.name).filter(Boolean))];
-}

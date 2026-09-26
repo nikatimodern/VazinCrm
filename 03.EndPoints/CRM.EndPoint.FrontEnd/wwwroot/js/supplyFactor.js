@@ -104,14 +104,15 @@ const calculateSupplyFactorTotals = (updateItemsFromDiscount = false) => {
     });
 };
 
-const requiredSfFieldNames = getRequiredFieldNames("supplyFactorItem");
+
+const sfFieldRules = getFieldRules("supplyFactorItem", { weightCount: { notZero: true, min: 1 } });
 const showSupplyFactorItems = () => {
     
     document.getElementById("supplyFactorItemId").replaceChildren(
         generateInvoiceItemDom(supplyFactorData.items, {
             onDelete: deleteSfItem,
             onUpdate: showUpdateSfItem,
-            requiredFieldNames: requiredSfFieldNames,
+            fieldRules: sfFieldRules,
         }),
     );
     
@@ -196,6 +197,11 @@ supplyFactorDiscountInp?.addEventListener("input", () => {
 supplyFactorAiBtn?.addEventListener("click", proccessSupplyFactorWithAi);
 
 async function proccessSupplyFactorWithAi() {
+    if (window.supplyFactorAttachments.every(item => item.isDeleted)) {
+        toastifyError("سند فاکتور باید بارگذاری شود");
+        return;
+    }
+    
     const spinner = supplyFactorAiBtn.querySelector(".spinner-border");
     const aiIcon = supplyFactorAiBtn.querySelector(".ai-svg-icon");
     
@@ -212,24 +218,14 @@ async function proccessSupplyFactorWithAi() {
     spinner.classList.remove("d-none");
     aiIcon.classList.add("d-none");
     
-    await delay(300);
-    
-    toggleElementsDisabled(elementsToDisable, false);
-    spinner.classList.add("d-none");
-    aiIcon.classList.remove("d-none");
-    
-    const sfData = {
-        /*        "sumTotalAmount": 3815700000,
-                "discount": 0,
-                "totalTax": 381570000,
-                "paymentAmount": 4197270000,*/
+    /*const sfData = {
         "date": "1405/01/26",
         "serialNumber": "2117",
         "officialType": 1,
         "items": [{
             "product": "لفاف ملزومات پر کردن ، دربندی و بسته بندی",
             "weightCount": 966,
-            "unit": null,
+            "unit": 2,
             "unitTxt": "کیلوگرم",
             "unitAmount": 3950000,
             "totalAmount": 3815700000,
@@ -241,52 +237,33 @@ async function proccessSupplyFactorWithAi() {
         }],
     };
     
-    supplyFactorData = { ...supplyFactorData, ...sfData };
-    
-    calculateSupplyFactorTotals();
-    showSupplyFactorItems();
-    mySer.convertJsonToForm(supplyFactorData, "supplyFactorHeadFormId");
+    await delay(300);
+    */
     
     
-    /*    if (window.supplyFactorAttachments.every(item => item.isDeleted)) {
-            toastifyError("سند فاکتور باید بارگذاری شود");
-            return;
-        }
-        
-        await sendApiRequest({
-            url: "/Supply/ProccessSupplyFactorWithAi/",
-            method: "POST",
-            data: window.supplyFactorAttachments[0],
-            successMsg: null,
-            onSuccess: (res) => {
-                console.log(res);
-            }
-        })*/
+    await sendApiRequest({
+        url: "/Supply/ProccessSupplyFactorWithAi/",
+        method: "POST",
+        data: window.supplyFactorAttachments[0],
+        successMsg: null,
+        showLoading: false,
+        onSuccess: (res) => {
+            toggleElementsDisabled(elementsToDisable, false);
+            spinner.classList.add("d-none");
+            aiIcon.classList.remove("d-none");
+            
+            supplyFactorData = { ...supplyFactorData, ...res.data };
+            
+            calculateSupplyFactorTotals();
+            showSupplyFactorItems();
+            mySer.convertJsonToForm(supplyFactorData, "supplyFactorHeadFormId");
+        },
+    });
 }
 
 
 const updateSupplyFactorValidationState = () => {
-  /*  incompleteSfItemsCount = supplyFactorData.items.filter(item => {
-        if (item.isDeleted) return false;
-        
-        const incompleteFields = requiredSfFieldNames.filter(field => {
-            const value = item[field];
-            
-            console.log(value, field);
-            
-            return value === null || value === undefined || String(value).trim() === "";
-        });
-        console.log(incompleteFields);
-        return incompleteFields.length > 0;
-    }).length;*/
-    incompleteSfItemsCount = supplyFactorData.items.reduce((count, item) => {
-        if (item.isDeleted) return false;
-        
-        return count + requiredSfFieldNames.filter(fieldName => {
-            const value = item[fieldName];
-            return value === null || value === undefined || String(value).trim() === '';
-        }).length;
-    }, 0);
+    incompleteSfItemsCount = getIncompleteItemsCount(supplyFactorData.items, sfFieldRules);
     
     const message = document.getElementById("supplyFactorValidationMessage");
     const submitBtn = document.getElementById("submitSupplyFactorBtn");
