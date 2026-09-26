@@ -55,7 +55,9 @@ function cancelSupplyFactorModal() {
     document.getElementById("supplyFactorItemId").innerHTML = "";
     document.getElementById("supplyFactorItemId").classList.remove("AlertReq");
     
-    
+    const messageBox = document.getElementById("supplyFactorWarningMessage");
+    messageBox.classList.add("d-none");
+    messageBox.innerHTML = "";
     // modalSelector.reset();
     // toggleElementsDisabled(document.getElementById("showAddOrderHeadBtn"), true);
     ModalToggle("#supplyFactorModal", "hide");
@@ -218,7 +220,7 @@ async function proccessSupplyFactorWithAi() {
     spinner.classList.remove("d-none");
     aiIcon.classList.add("d-none");
     
-    /*const sfData = {
+    const sfData = {
         "date": "1405/01/26",
         "serialNumber": "2117",
         "officialType": 1,
@@ -237,10 +239,26 @@ async function proccessSupplyFactorWithAi() {
         }],
     };
     
-    await delay(300);
-    */
     
+    toggleElementsDisabled(elementsToDisable, false);
+    spinner.classList.add("d-none");
+    aiIcon.classList.remove("d-none");
     
+    supplyFactorData = { ...supplyFactorData, ...sfData };
+    
+    calculateSupplyFactorTotals();
+    showSupplyFactorItems();
+    mySer.convertJsonToForm(supplyFactorData, "supplyFactorHeadFormId");
+    
+    const messageBox = document.getElementById("supplyFactorWarningMessage");
+    const message = createInlineAlert({
+        type: "warning",
+        message: `اطلاعات این فاکتور توسط هوش مصنوعی استخراج شده است و ممکن است خطا داشته باشد؛ لطفاً پیش از ثبت، از صحت اطلاعات مطمئن شوید.`,
+    });
+    messageBox.classList.remove("d-none");
+    messageBox.replaceChildren(message);
+    
+    return;
     await sendApiRequest({
         url: "/Supply/ProccessSupplyFactorWithAi/",
         method: "POST",
@@ -265,23 +283,21 @@ async function proccessSupplyFactorWithAi() {
 const updateSupplyFactorValidationState = () => {
     incompleteSfItemsCount = getIncompleteItemsCount(supplyFactorData.items, sfFieldRules);
     
-    const message = document.getElementById("supplyFactorValidationMessage");
+    const messageBox = document.getElementById("supplyFactorValidationMessage");
     const submitBtn = document.getElementById("submitSupplyFactorBtn");
     
     if (incompleteSfItemsCount > 0) {
-        message.className = "pf-validation-message";
-        message.innerHTML = `
-            <i class="fa fa-exclamation-circle"></i>
-            <span>
-                ${incompleteSfItemsCount} آیتم ناقص است؛
-                برای ثبت فاکتور، ابتدا آیتم‌های ناقص را ویرایش و تکمیل کنید.
-            </span>
-        `;
+        const message = createInlineAlert({
+            type: "error",
+            message: `${incompleteSfItemsCount} آیتم ناقص است؛ برای ثبت فاکتور، ابتدا آیتم‌های ناقص را ویرایش و تکمیل کنید.`,
+        });
         
+        messageBox.classList.remove("d-none");
+        messageBox.replaceChildren(message);
         toggleElementsDisabled(submitBtn);
     } else {
-        message.className = "d-none";
-        message.innerHTML = "";
+        messageBox.classList.add("d-none");
+        messageBox.innerHTML = "";
         
         toggleElementsDisabled(submitBtn, false);
     }

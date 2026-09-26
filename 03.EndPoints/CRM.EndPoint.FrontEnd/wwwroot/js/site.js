@@ -4819,3 +4819,42 @@ const Skeleton = (() => {
     };
     
 })();
+
+/**
+ * Creates a reusable inline alert message.
+ * @param {Object} options
+ * @param {"error"|"warning"|"success"|"info"} options.type
+ * @param {string} options.message
+ * @param {boolean} [options.dismissible=false]
+ * @param {string} [options.icon]
+ * @returns {HTMLDivElement}
+ */
+function createInlineAlert({ type = "info", message, dismissible = false, icon }) {
+    const icons = {
+        error: "fa-exclamation-circle",
+        warning: "fa-exclamation-triangle",
+        success: "fa-check-circle",
+        info: "fa-info-circle",
+    };
+    
+    const alert = document.createElement("div");
+    alert.className = `inline-alert inline-alert--${type}`;
+    
+    alert.innerHTML = `
+        <i class="fa ${icon || icons[type]}"></i>
+        <span>${message}</span>
+        ${dismissible ? `
+            <button type="button" class="inline-alert__close" aria-label="بستن">
+                <i class="fa fa-times"></i>
+            </button>
+        ` : ""}
+    `;
+    
+    if (dismissible) {
+        alert.querySelector(".inline-alert__close").addEventListener("click", () => {
+            alert.remove();
+        });
+    }
+    
+    return alert;
+}

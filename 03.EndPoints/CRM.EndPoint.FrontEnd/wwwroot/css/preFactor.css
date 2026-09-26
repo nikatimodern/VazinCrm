@@ -629,18 +629,3 @@
 .pf-item-incomplete .pf-item-action.pf-item-update:hover {
 	color: #d65f6c;
 }
-
-
-.pf-validation-message {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 8px 12px;
-	margin-top: .5rem;
-	border: 1px solid #dc3545;
-	border-radius: 6px;
-	background: #fff8f8;
-	color: #b02a37;
-	font-size: 13px;
-	font-family: IRANSansBold;
-}
