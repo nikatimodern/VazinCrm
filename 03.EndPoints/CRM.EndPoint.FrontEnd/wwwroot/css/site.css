@@ -187,6 +187,13 @@ button {
 }
 
 
+@media (min-width: 1400px) {
+	.modal-xxl {
+		max-width: 1320px;
+	}
+}
+
+
 @media (min-width: 1500px) {
 	.modal-xxl {
 		max-width: 1440px;

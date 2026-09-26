@@ -501,94 +501,13 @@
 }
 
 
-/* PreFactor - custom XXL breakpoint */
-@media (min-width: 1500px) {
-	.pf-1500-row {
-		flex-direction: row !important;
-	}
-	
-	.pf-1500-col-9 {
-		width: 75% !important;
-		flex: 0 0 75% !important;
-	}
-	
-	.pf-1500-col-3 {
-		width: 25% !important;
-		flex: 0 0 25% !important;
-	}
-	
-	.pf-1500-col-11 {
-		width: 91.666667% !important;
-		flex: 0 0 91.666667% !important;
-	}
-	
-	.pf-1500-block {
-		display: block !important;
-	}
-	
-	.pf-1500-flex {
-		display: flex !important;
-	}
-	
-	.pf-1500-none {
-		display: none !important;
-	}
-}
-
-
-@media (max-width: 1499px) {
-	.pf-before-1500-block {
-		display: block !important;
-	}
-	
-	.pf-before-1500-flex {
-		display: flex !important;
-	}
-}
-
-
-@media (min-width: 1500px) {
-	.pf-1500-row {
-		flex-direction: row !important;
-	}
-	
-	.pf-1500-col-3 {
-		width: 25% !important;
-		flex: 0 0 25% !important;
-	}
-	
-	.pf-1500-col-9 {
-		width: 75% !important;
-		flex: 0 0 75% !important;
-	}
-	
-	.pf-1500-col-11 {
-		width: 91.666667% !important;
-		flex: 0 0 91.666667% !important;
-	}
-	
-	.pf-1500-show {
-		display: block !important;
-	}
-	
-	.pf-1500-show-flex {
-		display: flex !important;
-	}
-	
-	.pf-1500-hide {
-		display: none !important;
-	}
-	
-	.pf-1500-pt-0 {
-		padding-top: 0 !important;
-	}
-	
-	.pf-1500-main {
+@media (min-width: 1400px) {
+	.col-xxl-80per {
 		width: 80% !important;
 		flex: 0 0 80% !important;
 	}
 	
-	.pf-1500-description {
+	.col-xxl-20per {
 		width: 20% !important;
 		flex: 0 0 20% !important;
 	}
@@ -604,7 +523,7 @@
 }
 
 
-#supplyFactorModal .pf-item-productSmallName {
+.pf-item-productSmallName {
 	color: var(--factor-color-light);
 }
 
