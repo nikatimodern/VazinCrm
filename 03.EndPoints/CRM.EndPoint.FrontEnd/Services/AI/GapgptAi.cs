@@ -11,29 +11,37 @@ using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.EndPoint.FrontEnd.Models.Ai;
+using CRM.EndPoint.FrontEnd.Models.Supply;
 using Microsoft.Extensions.Logging;
 
 namespace CRM.EndPoint.FrontEnd.Services.AI;
 
 public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<GapgptAi> logger) {
-    public async Task<AiGapgptResult<SupplyFactor>> ProcessInvoiceWithGemini(byte[] fileBytes, string extension, CancellationToken ct = default)
+    public async Task<AiGapgptResult<SupplyFactorAiDto>> ProcessInvoiceWithGemini(byte[] fileBytes, string extension, CancellationToken ct = default)
     {
         var base64 = Convert.ToBase64String(fileBytes);
         var mimeType = GetMimeType(extension);
 
         var prompt = aiPrompts.BuildInvoice();
 
+        var contentParts = new List<object> {
+            new { type = "text", text = prompt }
+        };
+
+        if (mimeType == "application/pdf")
+        {
+            contentParts.Add(new { type = "file", file = new { filename = "factor.pdf", file_data = $"data:{mimeType};base64,{base64}" } });
+        } else
+        {
+            contentParts.Add(new { type = "image_url", image_url = new { url = $"data:{mimeType};base64,{base64}" } });
+        }
+
         var requestBody = new {
             model = "gemini-2.5-flash",
             messages = new[] {
                 new {
-                    role = "user", content = new object[] {
-                        new { type = "text", text = prompt },
-                        new { type = "image_url", image_url = new { url = $"data:{mimeType};base64,{base64}" } },
-                        /*new {
-                            type = "file", file = new { filename = "factor.pdf", file_data = $"data:{mimeType};base64,{base64}" }
-                        }*/
-                    }
+                    role = "user",
+                    content = contentParts.ToArray()
                 }
             },
             response_format = new { type = "json_object" },
@@ -51,7 +59,7 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
 
                 logger.LogError("Gemini Invoice API Error ({StatusCode}): {Error}", response.StatusCode, clean);
 
-                return new AiGapgptResult<SupplyFactor> { Success = false, Error = $"API Error ({response.StatusCode}): {clean}" };
+                return new AiGapgptResult<SupplyFactorAiDto> { Success = false, Error = $"API Error ({response.StatusCode})" };
             }
 
             var resJson = await response.Content.ReadFromJsonAsync<AiGapgptModel>(cancellationToken: ct);
@@ -60,35 +68,35 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
 
             if (string.IsNullOrWhiteSpace(content))
             {
-                return new AiGapgptResult<SupplyFactor> { Success = false, Error = "AI returned an empty response." };
+                return new AiGapgptResult<SupplyFactorAiDto> { Success = false, Error = "AI returned an empty response." };
             }
 
-            SupplyFactor resultData;
+            SupplyFactorAiDto resultData;
 
             try
             {
-                resultData = JsonSerializer.Deserialize<SupplyFactor>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                resultData = JsonSerializer.Deserialize<SupplyFactorAiDto>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
-            
+
             catch (JsonException ex)
             {
                 logger.LogError(ex, "Invalid Gemini invoice JSON response: {Content}", content);
-                return new AiGapgptResult<SupplyFactor> { Success = false, Error = "AI returned an invalid invoice JSON response." };
+                return new AiGapgptResult<SupplyFactorAiDto> { Success = false, Error = "AI returned an invalid invoice JSON response." };
             }
 
             if (resultData == null)
             {
-                return new AiGapgptResult<SupplyFactor> { Success = false, Error = "AI returned an empty invoice result." };
+                return new AiGapgptResult<SupplyFactorAiDto> { Success = false, Error = "AI returned an empty invoice result." };
             }
 
             logger.LogInformation("Gemini invoice processing completed");
 
-            return new AiGapgptResult<SupplyFactor> { Success = true, Data = resultData };
+            return new AiGapgptResult<SupplyFactorAiDto> { Success = true, Data = resultData };
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error Gemini invoice processing");
-            return new AiGapgptResult<SupplyFactor> { Success = false, Error = ex.Message };
+            return new AiGapgptResult<SupplyFactorAiDto> { Success = false, Error = ex.Message };
         }
     }
 

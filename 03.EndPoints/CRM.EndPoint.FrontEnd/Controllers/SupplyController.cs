@@ -44,10 +44,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly Service genService;
         private readonly LogSystemService _logSystemService;
         private readonly FileSaver fileSaver;
-        private readonly GapgptAi gapgptAi;
+        private readonly AiService aiService;
 
         public SupplyController(CRMContextDb db, UserManager<AppUser> userManager, DateTimeServices dtService, Service genService,
-            LogSystemService logSystemService, FileSaver fileSaver, GapgptAi gapgptAi)
+            LogSystemService logSystemService, FileSaver fileSaver, AiService aiService)
         {
             this.db = db;
             this.dtService = dtService;
@@ -55,7 +55,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.genService = genService;
             _logSystemService = logSystemService;
             this.fileSaver = fileSaver;
-            this.gapgptAi = gapgptAi;
+            this.aiService = aiService;
         }
 
         [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
@@ -133,13 +133,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.UserModify = user.FullName;
                 model.UserModifyID = user.Id;
 
-                var entity = await db.SupplyFactors.Include(x => x.SupplyFactorOrderHeads).FirstOrDefaultAsync(x => x.Id == model.Id);
+                var entity = await db.SupplyFactors
+                    .Include(x => x.SupplyFactorOrderHeads)
+                    .Include(x => x.Items)
+                    .FirstOrDefaultAsync(x => x.Id == model.Id);
+
                 if (entity == null) return NotFound("رکوردی یافت نشد!");
 
-                await _logSystemService.LogChange(entity, model, LogActionEnum.ویرایش, user, ["SupplyFactorOrderHeads"]);
+                await _logSystemService.LogChange(entity, model, LogActionEnum.ویرایش, user, ["SupplyFactorOrderHeads", "Items"]);
                 db.Entry(entity).CurrentValues.SetValues(model);
 
                 entity.SupplyFactorOrderHeads = model.SupplyFactorOrderHeads;
+                entity.Items = model.Items;
+
 
                 var attach = fileSaver.SaveAttachments(model.Attachments, _AttachType.SupplyFactor, null, false);
                 foreach (var att in attach.Where(f => f.EntityId == null))
@@ -472,6 +478,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var data = await db.SupplyFactors.AsNoTracking()
                     .Where(f => f.Id == id)
                     .Include(f => f.SupplyFactorOrderHeads)
+                    .Include(f => f.Items)
                     .Select(sf => new {
                         SupplyFactor = sf,
                         OrderSerials = sf.SupplyFactorOrderHeads
@@ -1104,40 +1111,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> ProccessSupplyFactorWithAi([FromBody] Attachment attachment, CancellationToken ct)
         {
-            if (attachment == null || attachment.File == null || attachment.File.Length == 0)
-            {
-                return BadRequest("فایل فاکتور ارسال نشده است.");
-            }
-
-            var extension = attachment.fileExten;
-
-            if (string.IsNullOrWhiteSpace(extension))
-            {
-                extension = Path.GetExtension(attachment.OriginalFilename);
-            }
-
-            if (string.IsNullOrWhiteSpace(extension))
-            {
-                return BadRequest("فرمت فایل مشخص نیست.");
-            }
-
-            extension = extension.TrimStart('.').ToLowerInvariant();
-
-            var allowedExtensions = new[] { "pdf", "jpg", "jpeg", "png", "webp" };
-
-            if (!allowedExtensions.Contains(extension))
-            {
-                return BadRequest("فرمت فایل پشتیبانی نمی‌شود.");
-            }
-
-            var result = await gapgptAi.ProcessInvoiceWithGemini(attachment.File, extension, ct);
+            var result = await aiService.ProcessSupplyFactor(attachment, ct);
 
             if (!result.Success)
-            {
-                return BadRequest(result);
-            }
+                return BadRequest(result.Error);
 
-            return Ok(result);
+            return Ok(result.Data);
         }
     }
 }

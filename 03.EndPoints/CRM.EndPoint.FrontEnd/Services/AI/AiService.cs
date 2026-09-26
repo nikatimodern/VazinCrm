@@ -1,11 +1,15 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Attachments.Entities;
 using CRM.Core.Domain.CallRecordings.Entities;
 using CRM.Core.Domain.CallRecordings.Enums;
 using CRM.Core.Domain.Reports.Entities;
 using CRM.Core.Domain.Reports.Enum;
+using CRM.EndPoint.FrontEnd.Models.Ai;
+using CRM.EndPoint.FrontEnd.Models.Supply;
 using CRM.EndPoint.FrontEnd.Services.Asterisk;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Infrastructures.Sql;
@@ -23,6 +27,74 @@ public class AiService(
     IssabelService issabelService,
     ILogger<AiService> logger,
     IHubContext<TaskHub> hub) {
+    public async Task<AiGapgptResult<SupplyFactorAiDto>> ProcessSupplyFactor(Attachment attachment, CancellationToken ct = default)
+    {
+        if (attachment?.File == null || attachment.File.Length == 0)
+        {
+            return new AiGapgptResult<SupplyFactorAiDto> { Success = false, Error = "فایل فاکتور ارسال نشده است." };
+        }
+
+        var extension = attachment.fileExten;
+
+        if (string.IsNullOrWhiteSpace(extension))
+            extension = Path.GetExtension(attachment.OriginalFilename);
+
+        if (string.IsNullOrWhiteSpace(extension))
+        {
+            return new AiGapgptResult<SupplyFactorAiDto> { Success = false, Error = "فرمت فایل مشخص نیست." };
+        }
+
+        extension = extension.TrimStart('.').ToLowerInvariant();
+
+        var allowedExtensions = new[] { "pdf", "jpg", "jpeg", "png", "webp" };
+
+        if (!allowedExtensions.Contains(extension))
+        {
+            return new AiGapgptResult<SupplyFactorAiDto> { Success = false, Error = "فرمت فایل پشتیبانی نمی‌شود." };
+        }
+
+        var result = await gapgptAi.ProcessInvoiceWithGemini(attachment.File, extension, ct);
+
+        if (!result.Success || result.Data == null)
+            return result;
+
+        var items = result.Data.Items;
+
+        if (items == null || items.Count == 0)
+        {
+            return new AiGapgptResult<SupplyFactorAiDto> { Success = false, Error = "هیچ آیتمی از فاکتور استخراج نشد." };
+        }
+
+        var names = items
+            .Where(x => !string.IsNullOrWhiteSpace(x.ProductSmallName))
+            .Select(x => x.ProductSmallName.Trim())
+            .Distinct()
+            .ToList();
+
+        if (names.Count > 0)
+        {
+            var productMap = await db.Products
+                .AsNoTracking()
+                .Where(x => names.Contains(x.Title.Trim()))
+                .Select(x => new { x.Title, x.Id })
+                .ToDictionaryAsync(x => x.Title.Trim(), x => x.Id, ct);
+
+            foreach (var item in items)
+            {
+                if (string.IsNullOrWhiteSpace(item.ProductSmallName))
+                    continue;
+
+                if (productMap.TryGetValue(item.ProductSmallName.Trim(), out var productId))
+                {
+                    item.ProductCode = productId;
+                }
+            }
+        }
+
+        return result;
+    }
+
+
     public async Task ProcessCallRecordingGemini(CallRecording call, CancellationToken ct = default)
     {
         if (call == null) return;
@@ -52,7 +124,8 @@ public class AiService(
             {
                 if (trackedCall.AiAttempts < 3)
                 {
-                    logger.LogWarning("Transient error for Call ID: {Id}. Waiting for retry. Attempt {Attempt}/3", trackedCall.Id, trackedCall.AiAttempts);
+                    logger.LogWarning("Transient error for Call ID: {Id}. Waiting for retry. Attempt {Attempt}/3", trackedCall.Id,
+                        trackedCall.AiAttempts);
                     await UpdateStatus(trackedCall, AiProcessStatusEnum.WaitingForRetry, $"Transient error: {aiResult.Error}", ct);
                 } else
                 {

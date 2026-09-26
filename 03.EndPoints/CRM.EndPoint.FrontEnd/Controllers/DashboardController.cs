@@ -307,7 +307,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             return Ok(model);
         }
-        
+
 
         [HttpPost]
         public async Task<IActionResult> GetDashboardPartial(FilterViewModel _filter)

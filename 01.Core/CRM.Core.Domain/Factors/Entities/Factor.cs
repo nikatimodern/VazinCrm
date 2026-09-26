@@ -8,6 +8,7 @@ using CRM.Framework.Domain;
 
 namespace CRM.Core.Domain.Factors.Entities {
     public class Factor : BaseEntity {
+        
         public decimal SumTotalAmount { get; set; }
         public decimal SumTotalAmountTax { get; set; }
         public decimal Discount { get; set; }

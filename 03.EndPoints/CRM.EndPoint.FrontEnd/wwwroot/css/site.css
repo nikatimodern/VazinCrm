@@ -3657,6 +3657,12 @@ user-select: none;
 	background-color: #003e39;
 }
 
+.buttonGreen3:disabled {
+	background-color: #02514C;
+	box-shadow: none;
+	opacity: 0.45;
+	cursor: not-allowed;
+}
 
 .buttonPurple {
 	height: 37px;
@@ -7242,3 +7248,55 @@ table tr.payment-vosoled > td {
 div:where(.swal2-container) div:where(.swal2-html-container) {
 	white-space: pre-line;
 }
+
+/* ------------------inline-alert------------------ */
+
+.inline-alert {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	margin-top: .5rem;
+	border: 1px solid;
+	border-radius: 6px;
+	font-size: 13px;
+	font-family: IRANSansBold;
+}
+
+.inline-alert--error {
+	border-color: #dc3545;
+	background: #fff8f8;
+	color: #b02a37;
+}
+
+.inline-alert--warning {
+	border-color: #ffc107;
+	background: #fffdf5;
+	color: #997404;
+}
+
+.inline-alert--success {
+	border-color: #198754;
+	background: #f5fff9;
+	color: #146c43;
+}
+
+.inline-alert--info {
+	border-color: #0d6efd;
+	background: #f5f9ff;
+	color: #0a58ca;
+}
+
+.inline-alert__close {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	margin-right: auto;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
+	font-size: 13px;
+}
+/* ------------------------------------ */
