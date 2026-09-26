@@ -220,7 +220,7 @@ async function proccessSupplyFactorWithAi() {
     spinner.classList.remove("d-none");
     aiIcon.classList.add("d-none");
     
-    const sfData = {
+/*    const sfData = {
         "date": "1405/01/26",
         "serialNumber": "2117",
         "officialType": 1,
@@ -238,27 +238,8 @@ async function proccessSupplyFactorWithAi() {
             "printable": 0,
         }],
     };
+    */
     
-    
-    toggleElementsDisabled(elementsToDisable, false);
-    spinner.classList.add("d-none");
-    aiIcon.classList.remove("d-none");
-    
-    supplyFactorData = { ...supplyFactorData, ...sfData };
-    
-    calculateSupplyFactorTotals();
-    showSupplyFactorItems();
-    mySer.convertJsonToForm(supplyFactorData, "supplyFactorHeadFormId");
-    
-    const messageBox = document.getElementById("supplyFactorWarningMessage");
-    const message = createInlineAlert({
-        type: "warning",
-        message: `اطلاعات این فاکتور توسط هوش مصنوعی استخراج شده است و ممکن است خطا داشته باشد؛ لطفاً پیش از ثبت، از صحت اطلاعات مطمئن شوید.`,
-    });
-    messageBox.classList.remove("d-none");
-    messageBox.replaceChildren(message);
-    
-    return;
     await sendApiRequest({
         url: "/Supply/ProccessSupplyFactorWithAi/",
         method: "POST",
@@ -275,6 +256,15 @@ async function proccessSupplyFactorWithAi() {
             calculateSupplyFactorTotals();
             showSupplyFactorItems();
             mySer.convertJsonToForm(supplyFactorData, "supplyFactorHeadFormId");
+            
+            
+            const messageBox = document.getElementById("supplyFactorWarningMessage");
+            const message = createInlineAlert({
+                type: "warning",
+                message: `اطلاعات این فاکتور توسط هوش مصنوعی استخراج شده است و ممکن است خطا داشته باشد؛ لطفاً پیش از ثبت، از صحت اطلاعات مطمئن شوید.`,
+            });
+            messageBox.classList.remove("d-none");
+            messageBox.replaceChildren(message);
         },
     });
 }
