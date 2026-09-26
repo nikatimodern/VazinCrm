@@ -247,16 +247,11 @@ async function proccessSupplyFactorWithAi() {
         successMsg: null,
         showLoading: false,
         onSuccess: (res) => {
-            toggleElementsDisabled(elementsToDisable, false);
-            spinner.classList.add("d-none");
-            aiIcon.classList.remove("d-none");
-            
             supplyFactorData = { ...supplyFactorData, ...res.data };
             
             calculateSupplyFactorTotals();
             showSupplyFactorItems();
             mySer.convertJsonToForm(supplyFactorData, "supplyFactorHeadFormId");
-            
             
             const messageBox = document.getElementById("supplyFactorWarningMessage");
             const message = createInlineAlert({
@@ -267,6 +262,10 @@ async function proccessSupplyFactorWithAi() {
             messageBox.replaceChildren(message);
         },
     });
+    
+    toggleElementsDisabled(elementsToDisable, false);
+    spinner.classList.add("d-none");
+    aiIcon.classList.remove("d-none");
 }
 
 
