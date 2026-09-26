@@ -5,7 +5,7 @@
 }
 
 <div style="width:100%; display:flex; flex-direction:column; gap:12px; padding: 10px;">
-    @foreach (var item in Model) {
+    @foreach (var item in Model ?? []) {
         var supplyFactor = item.SupplyFactor;
         var orderSerials = item.OrderSerials;
         <div class="layered-card" style="background-color: #fff; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; transition: border-color 0.2s; padding: 0;">
@@ -50,6 +50,12 @@
                     <span style="font-size: 13px; color: gray">ثبت شده توسط:</span>
                     <span class="fbold">@supplyFactor.UserCreator</span>
                 </div>
+                @if (!string.IsNullOrEmpty(supplyFactor.Description)) {
+                    <div class="d-flex align-items-baseline justify-content-center flex-wrap column-gap-2 mt-2 text-center">
+                        <span style="font-size: 13px; color: gray">توضیحات:</span>
+                        <span class="fbold direction-ltr" style="font-size: 13px">@supplyFactor.Description</span>
+                    </div>
+                }
             </div>
 
             <div class="layered-card__layer col-12 col-lg-2 d-flex flex-row flex-lg-column justify-content-between justify-content-lg-center align-items-center px-3 py-2">

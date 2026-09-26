@@ -3273,9 +3273,13 @@ class MyService {
         form.querySelectorAll(".currencyHint").forEach(elm => elm.innerHTML = "");
     }
     
-    convertJsonToForm(js, formId, blackListArray = []) {
+    convertJsonToForm(js, formId, blackListArray = [], flashFilled = false) {
         const form = document.getElementById(formId);
         if (!form) return;
+        
+        const flash = elm => {
+            if (flashFilled) flashItem(elm, { duration: 1600 });
+        };
         
         for (const [key, value] of Object.entries(js)) {
             if (blackListArray.includes(key)) continue;
@@ -3298,6 +3302,7 @@ class MyService {
                     case "number":
                     case "tel":
                         elm.value = value;
+                        flash(elm);
                         if (elm.dataset.currencyHint) {
                             updateCurrencyHint(elm);
                         }
@@ -3306,6 +3311,7 @@ class MyService {
                     case "select-multiple":
                         if (elm.tomselect) {
                             elm.tomselect.setValue(value ?? [], true);
+                            flash(elm.tomselect.control);
                         } else {
                             if (elm.multiple) {
                                 const values = Array.isArray(value) ? value.map(String) : [];
@@ -3316,6 +3322,7 @@ class MyService {
                                 elm.value = value ?? "";
                             }
                             elm.dispatchEvent(new Event("change"));
+                            flash(elm);
                         }
                         
                         break;
@@ -3323,11 +3330,12 @@ class MyService {
                         const radioBtn = form.querySelector(`input[name="${key}"][value="${value}"]`);
                         if (radioBtn) radioBtn.checked = true;
                         if (radioBtn.checked) radioBtn.dispatchEvent(new Event("change"));
-                        
+                        flash(elm);
                         break;
                     case "checkbox":
                         elm.checked = Boolean(value);
                         elm.dispatchEvent(new Event("change"));
+                        flash(elm);
                         break;
                     default:
                         break;
@@ -4166,8 +4174,9 @@ function setUrlParams(paramsObj, options = { replace: true }) {
 /**
  * Flash highlight
  * @param {HTMLElement} el
- * @param {{duration?: number}, {color?: string}} options
+ * @param {{duration?: number, color?: string, className?: string}} options
  * @param {number} options.duration - animation duration in ms
+ * @param {string} options.color - Flash color
  * @param {string} options.className - CSS class to apply
  */
 function flashItem(el, options = {}) {
@@ -4176,16 +4185,17 @@ function flashItem(el, options = {}) {
     const {
         duration = 1200,
         color = "#e3f2fd",
+        className = "fill-flash",
     } = options;
     
-    el.style.setProperty("--flash-duration", duration + "ms");
+    el.style.setProperty("--flash-duration", `${duration}ms`);
     el.style.setProperty("--flash-color", color);
     
-    el.classList.remove("fill-flash");
+    el.classList.remove(className);
     void el.offsetWidth;
-    el.classList.add("fill-flash");
+    el.classList.add(className);
     
-    setTimeout(() => el.classList.remove("fill-flash"), duration);
+    setTimeout(() => el.classList.remove(className), duration);
 }
 
 

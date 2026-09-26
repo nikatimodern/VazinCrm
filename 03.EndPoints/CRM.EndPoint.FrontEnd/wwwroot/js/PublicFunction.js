@@ -259,7 +259,6 @@ const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate
         item.row = index + 1;
         
         const incompleteFields = getIncompleteFields(item, fieldRules);
-        console.log(incompleteFields);
         const isIncomplete = incompleteFields.length > 0;
         
         const weight = Number(SeparatedNumberRemove(item.weightCount ?? item.weight)) || 0;
@@ -311,7 +310,7 @@ const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate
                         <div class="pf-item-field pf-item-product">
                             <label>شرح کالا</label>
                             <label>
-                                <span>${item.productSmallName ?? ""}</span>
+                                <span class="pf-item-productSmallName">${item.productSmallName ?? ""}</span>
                                 <span>${item.product ?? ""}</span>
                                 ${isIncomplete ? `
                                     <p class="pf-item-missing-product">

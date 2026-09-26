@@ -220,30 +220,32 @@ async function proccessSupplyFactorWithAi() {
     spinner.classList.remove("d-none");
     aiIcon.classList.add("d-none");
     
-/*    const sfData = {
-        "date": "1405/01/26",
-        "serialNumber": "2117",
-        "officialType": 1,
-        "items": [{
-            "product": "لفاف ملزومات پر کردن ، دربندی و بسته بندی",
-            "weightCount": 966,
-            "unit": 2,
-            "unitTxt": "کیلوگرم",
-            "unitAmount": 3950000,
-            "totalAmount": 3815700000,
-            "discount": 0,
-            "taxAmount": 381570000,
-            "productCode": null,
-            "productSmallName": null,
-            "printable": 0,
-        }],
-    };
-    */
+    /*    const sfData = {
+            "date": "1405/01/26",
+            "serialNumber": "2117",
+            "officialType": 1,
+            "items": [{
+                "product": "لفاف ملزومات پر کردن ، دربندی و بسته بندی",
+                "weightCount": 966,
+                "unit": 2,
+                "unitTxt": "کیلوگرم",
+                "unitAmount": 3950000,
+                "totalAmount": 3815700000,
+                "discount": 0,
+                "taxAmount": 381570000,
+                "productCode": null,
+                "productSmallName": null,
+                "printable": 0,
+            }],
+        };
+        */
+    
+    const attachFile = window.supplyFactorAttachments.filter(i => !i.isDeleted)[0];
     
     await sendApiRequest({
         url: "/Supply/ProccessSupplyFactorWithAi/",
         method: "POST",
-        data: window.supplyFactorAttachments[0],
+        data: attachFile,
         successMsg: null,
         showLoading: false,
         onSuccess: (res) => {
@@ -251,7 +253,7 @@ async function proccessSupplyFactorWithAi() {
             
             calculateSupplyFactorTotals();
             showSupplyFactorItems();
-            mySer.convertJsonToForm(supplyFactorData, "supplyFactorHeadFormId");
+            mySer.convertJsonToForm(supplyFactorData, "supplyFactorHeadFormId", [], true);
             
             const messageBox = document.getElementById("supplyFactorWarningMessage");
             const message = createInlineAlert({

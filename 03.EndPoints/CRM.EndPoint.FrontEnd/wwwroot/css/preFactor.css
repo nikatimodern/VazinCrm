@@ -604,6 +604,11 @@
 }
 
 
+#supplyFactorModal .pf-item-productSmallName {
+	color: var(--factor-color-light);
+}
+
+
 .pf-item-incomplete .InfoDataItem {
 	border: 1px solid #dc3545;
 	background: #fff8f8;
