@@ -1,46 +1,45 @@
 <!-- Modal AddItemFactor -->
-<div class="modal fade " dir="ltr" id="ItemFactorModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-    <div class=" modal-dialog modal-dialog-centered modal-sm ">
-        <div class="modal-content col-12" style="padding:10px !important;">
-            <div style="height:26px;  display:flex; justify-content:center; align-items:center;  background-color: #00302d; color:white;border-radius:5px">
-                <label class="fbold">افزودن آیتم فاکتور</label>
+<div class="modal fade" id="ItemFactorModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content col-12" style="padding:10px">
+            <div class="modal-header p-0 border-0">
+                <div class="factor-modal-title">افزودن آیتم فاکتور</div>
             </div>
-            <div class="modal-body pb-2" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
 
-                <div style="width:100%; ">
-                    <form id="FacItem" style="width:100%;direction:rtl" class="d-flex flex-column gap-2">
-                        <div style="display:flex;flex-direction:column;align-items:center; ">
-                            <div style="width:100%;display:flex;justify-content:space-between ">
+            <div class="modal-body pb-2">
+                <div>
+                    <form id="FacItem" class="d-flex flex-column gap-2 w-100">
+                        <div class="d-flex flex-column">
+                            <div class="d-flex justify-content-between w-100">
                                 <label>محصول</label>
-                                <div id="FprintableAlertId" class="mp" style="display:flex;flex-direction:row-reverse; font-size:10px;gap:8px ">
-                                    <div class="d-flex align-items-center gap-1">
-                                        <label for="f_printableT">چاپدار</label>
-                                        <input type="radio" name="printable" class="valueNumber" id="f_printableT" data-alertId="FprintableAlertId" data-def="true" value='1' required />
-                                    </div>
+                                <div id="FprintableAlertId" class="d-flex gap-2" style="font-size:10px">
                                     <div class="d-flex align-items-center gap-1">
                                         <label for="f_printableF">غیر چاپدار</label>
-                                        <input type="radio" name="printable" class="valueNumber" id="f_printableF" data-alertId="FprintableAlertId" data-def="true" value='0' required />
+                                        <input type="radio" name="printable" class="valueNumber" id="f_printableF" data-alertId="FprintableAlertId" value="0" required />
+                                    </div>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <label for="f_printableT">چاپدار</label>
+                                        <input type="radio" name="printable" class="valueNumber" id="f_printableT" data-alertId="FprintableAlertId" value="1" required />
                                     </div>
                                 </div>
                             </div>
-
                             <select class="w-100 center fs-6 show-dropdown-arrow" name="productCode" id="productCode">
                             </select>
                         </div>
-                        <div style=" display:flex;flex-direction:column;align-items:center; ">
+                        <div class="d-flex flex-column align-items-center">
                             <label>شرح کالا</label>
                             <input class="form-control" type="text" name="product" id="product" style="direction:rtl" />
                         </div>
-                        <div style=" display:flex;flex-direction:column;align-items:center; ">
+                        <div class="d-flex flex-column align-items-center">
                             <label>تعداد/مقدار </label>
                             <input class="form-control" type="number" name="weightCount" id="weightCount" required />
                         </div>
-                        <div style="display:flex;flex-direction:column;align-items:center; ">
+                        <div class="d-flex flex-column align-items-center">
                             <label>واحد</label>
                             <select class="form-control valueNumber" style="width:100%;" name="unit" id="unit" disabled required>
                             </select>
                         </div>
-                        <div style="display:flex;flex-direction:column;align-items:center; ">
+                        <div class="d-flex flex-column align-items-center">
                             <label>مبلغ واحد (ریال)</label>
                             <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="unitAmount" required data-currency-hint="next" />
                             <span class="currencyHint"></span>
@@ -50,37 +49,24 @@
                             <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="discount" id="itemDiscount" value="0" autocomplete="off" data-currency-hint="next" />
                             <span class="currencyHint"></span>
                         </div>
-                        <div style="display:flex;flex-direction:column;align-items:center; ">
+                        <div class="d-flex flex-column align-items-center">
                             <label>مبلغ کل (ریال)</label>
                             <input class="currencyNumber form-control inpAmount" type="text" name="totalAmount" id="totalAmount" disabled />
                         </div>
-
                     </form>
                 </div>
-                <div style="padding-block: 16px; width:95%;margin-inline:auto  ">
-                    <div style="width:100%; height:2px; background-color:#00302d;">
+
+                <div class="my-3 pf-divider"></div>
+
+                <div class="flex-center gap-1">
+                    <button id="f_CancelBtnId" class="buttonCancel2" onclick="canselModalItemFactor()">انصراف</button>
+                    <button id="f_AddBtnId" class="buttonGreen3" onclick="addItemFactor()">ثبت</button>
+                    <div id="f_UpBtnId" class="flex-center gap-1 d-none">
+                        <button class="buttonCancel2" onclick="cancelUpdateFItem()">انصراف</button>
+                        <button class="buttonGreen3" onclick="updateFItem()">ثبت</button>
                     </div>
                 </div>
-
-                <div style="width:100%; display:flex;justify-content:center;">
-                    <div class="d-flex align-items-center" style="gap:4px">
-                        <button id="f_AddBtnId" class="buttonGreen3" onclick="addItemFactor()">
-                            ثبت
-                        </button>
-                        <button id="f_CancelBtnId" class="buttonCancel2" onclick="canselModalItemFactor()">انصراف</button>
-                        <div id="f_UpBtnId" class="align-items-center" style="display:none;gap:4px">
-                            <button class="buttonGreen3" onclick="updateFItem()">
-                                ثبت
-                            </button>
-                            <button class="buttonCancel2" onclick="cancelUpdateFItem()">
-                                انصراف
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
             </div>
-
         </div>
     </div>
 </div>

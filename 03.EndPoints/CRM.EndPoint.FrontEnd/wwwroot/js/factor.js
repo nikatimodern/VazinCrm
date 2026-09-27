@@ -164,7 +164,8 @@ const returnFactor = async (fid, type = 1) => {
     currentFactorContext.passType = type;
     
     const modalFactor = document.getElementById("Factor");
-    modalFactor.classList.add("returned-factor");
+    const modalItemFactor = document.getElementById("ItemFactorModal");
+    [modalFactor, modalItemFactor].forEach(el => el.classList.add("returned-factor"));
     
     
     FLshowLoading();
@@ -291,9 +292,9 @@ const showUpdateFItem = (index) => {
     fItemIndex = index;
     mySer.convertJsonToForm(factorItems[index], "FacItem");
     
-    document.getElementById("f_AddBtnId").style.display = "none";
-    document.getElementById("f_CancelBtnId").style.display = "none";
-    document.getElementById("f_UpBtnId").style.display = "flex";
+    document.getElementById("f_AddBtnId").classList.add("d-none");
+    document.getElementById("f_CancelBtnId").classList.add("d-none");
+    document.getElementById("f_UpBtnId").classList.remove("d-none");
 };
 
 
@@ -301,9 +302,9 @@ const cancelUpdateFItem = () => {
     mySer.emptyForm("FacItem");
     fItemIndex = null;
     
-    document.getElementById("f_AddBtnId").style.display = "flex";
-    document.getElementById("f_CancelBtnId").style.display = "flex";
-    document.getElementById("f_UpBtnId").style.display = "none";
+    document.getElementById("f_AddBtnId").classList.remove("d-none");
+    document.getElementById("f_CancelBtnId").classList.remove("d-none");
+    document.getElementById("f_UpBtnId").classList.add("d-none");
     
     if (window.innerWidth < 992) {
         canselModalItemFactor();
@@ -448,7 +449,7 @@ const showFDescriptionItems = () => {
 
 const addFDescriptionItem = () => {
     let val;
-    if (window.innerWidth >= 992 && window.innerWidth < 1500) {
+    if (window.innerWidth >= 992 && window.innerWidth < 1400) {
         val = $("#f_descriptionIdTablet").val();
         
     } else if (window.innerWidth < 992) {
@@ -612,6 +613,8 @@ const submitFactorOK = async (type, unlinkSepidar = false) => {
 
 const cancelFactor = () => {
     const modalFactor = document.getElementById("Factor");
+    const modalItemFactor = document.getElementById("ItemFactorModal");
+    
     ModalToggle(modalFactor, "hide");
     mySer.emptyForm("FacItem");
     $("#snFinancial").val("");
@@ -633,10 +636,8 @@ const cancelFactor = () => {
     
     const modalTitle = modalFactor.querySelector(".factor-modal-title");
     modalTitle.textContent = "صدور فاکتور";
-    modalFactor.classList.remove("returned-factor");
-    modalFactor.querySelectorAll(".modal-body .buttonCancel3").forEach((el) => {
-        el.classList.replace("buttonCancel3", "buttonGreen3");
-    });
+    modalFactor.querySelectorAll(".modal-body .buttonCancel3").forEach((el) => el.classList.replace("buttonCancel3", "buttonGreen3"));
+    [modalFactor, modalItemFactor].forEach(el => el.classList.remove("returned-factor"));
 };
 
 

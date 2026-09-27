@@ -82,11 +82,11 @@
                                         <div id="FprintableAlertId" class="d-flex gap-2" style="font-size:10px">
                                             <div class="d-flex align-items-center gap-1">
                                                 <label for="f_printableT">چاپدار</label>
-                                                <input type="radio" name="printable" class="valueNumber" id="f_printableT" data-alertId="FprintableAlertId" data-def="true" value="1" required />
+                                                <input type="radio" name="printable" class="valueNumber" id="f_printableT" data-alertId="FprintableAlertId" value="1" required />
                                             </div>
                                             <div class="d-flex align-items-center gap-1">
                                                 <label for="f_printableF">غیر چاپدار</label>
-                                                <input type="radio" name="printable" class="valueNumber" id="f_printableF" data-alertId="FprintableAlertId" data-def="true" value="0" required />
+                                                <input type="radio" name="printable" class="valueNumber" id="f_printableF" data-alertId="FprintableAlertId" value="0" required />
                                             </div>
                                         </div>
                                     </div>
@@ -128,7 +128,7 @@
                                     <button id="f_AddBtnId" type="button" class="buttonGreen3 flex-center w-100 p-0" style="height: 2rem" onclick="addFItem()">
                                         <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                                     </button>
-                                    <div id="f_UpBtnId" style="display:none;flex-direction:column">
+                                    <div id="f_UpBtnId" class="d-flex flex-column d-none">
                                         <button class="buttonGreen3 flex-center w-100 p-0" type="button" onclick="updateFItem()" style="height: 26px">
                                             <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                                         </button>
@@ -140,9 +140,9 @@
                             </form>
                         </div>
 
-                        <div class="InfoData pf-items-container" id="FactorItemId">
+                        <div class="pf-items-container" id="FactorItemId">
                         </div>
-                        <div class="d-flex flex-column flex-lg-row justify-content-end w-100 mt-3 amountsPreFactorModalBox">
+                        <div class="d-flex flex-column flex-lg-row align-items-center justify-content-end w-100 mt-3 amountsPreFactorModalBox">
                             <div class="d-none d-lg-block d-xxl-none col-12 col-lg-6 descriptionPreFactorBox">
                                 <div class="h-100" style=" width:100%;display:flex;flex-direction:column;">
                                     <div style="width:100%; display:flex;position:relative">

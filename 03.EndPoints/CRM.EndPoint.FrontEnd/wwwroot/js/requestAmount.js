@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////
-async function showAddOrderHeadModal() {
+async function showAddOrderHeadRaModal() {
     
     await modalSelector.open({
         title: "انتخاب حواله تولید",
@@ -460,7 +460,7 @@ async function showAllRequestAmountModal(ohId, ohNumber) {
 async function getAllRequestAmountByOrderHead(ohId) {
     const data = await sendApiRequest({
         url: "/RequestAmount/GetAllRequestAmountsPartial",
-        params: { orderHeadId: ohId }
+        params: { orderHeadId: ohId },
     });
     if (!data) return;
     

@@ -1,41 +1,35 @@
 <!-- Modal AddItemPreFactor -->
-<div class="modal fade " dir="ltr" id="ItemPreFactorModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-    <div class=" modal-dialog modal-dialog-centered modal-sm ">
-        <div class="modal-content col-12" style="padding:10px !important;">
-            <div style="height:26px;  display:flex; justify-content:center; align-items:center;  background-color: rebeccapurple; color:white;border-radius:5px">
-                <label class="fbold">افزودن آیتم پیش فاکتور</label>
+<div class="modal fade" id="ItemPreFactorModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content col-12" style="padding:10px">
+            <div class="modal-header p-0 border-0">
+                <div class="factor-modal-title">افزودن آیتم پیش‌فاکتور</div>
             </div>
-            <div class=" modal-body pb-2" style=" display:flex;flex-direction:column; justify-content:space-between; width:100% !important;">
 
-                <div style="width:100%; ">
-                    <form id="PreFacItem" style="width:100%;direction:rtl" class="d-flex flex-column gap-2">
-                        @*<div style="width:5%; display:flex;flex-direction:column;align-items:center; ">
-                            <label>ردیف</label>
-                            <input class="form-control" type="text" name="Row" id="Row" placeholder="ردیف" />
-                            </div>*@
-
-                        <div style="display:flex;flex-direction:column;align-items:center; ">
-                            <div style="width:100%;display:flex;justify-content:space-between ">
+            <div class="modal-body pb-2">
+                <div>
+                    <form id="PreFacItem" class="d-flex flex-column gap-2 w-100">
+                        <div class="d-flex flex-column">
+                            <div class="d-flex justify-content-between w-100">
                                 <label>محصول</label>
-                                <div id="PfPrintableAlertId" class="mp" style="display:flex;flex-direction:row-reverse; font-size:10px;gap:8px ">
-                                    <div class="d-flex align-items-center gap-1">
-                                        <label for="printableT">چاپدار</label>
-                                        <input type="radio" name="printable" id="printableT" class="valueNumber" data-alertId="PfPrintableAlertId" data-def="true" value="1" required />
-                                    </div>
+                                <div id="PfPrintableAlertId" class="d-flex gap-2" style="font-size:10px">
                                     <div class="d-flex align-items-center gap-1">
                                         <label for="printableF">غیر چاپدار</label>
-                                        <input type="radio" name="printable" id="printableF" class="valueNumber" data-alertId="PfPrintableAlertId" data-def="true" value="0" required />
+                                        <input type="radio" name="printable" id="printableF" class="valueNumber" data-alertId="PfPrintableAlertId" value="0" required />
+                                    </div>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <label for="printableT">چاپدار</label>
+                                        <input type="radio" name="printable" id="printableT" class="valueNumber" data-alertId="PfPrintableAlertId" value="1" required />
                                     </div>
                                 </div>
                             </div>
-
-
+                            
                             <select class="w-100 center fs-6 show-dropdown-arrow" name="productCode" id="productCode" required>
                             </select>
                         </div>
                         <div class="d-flex flex-column align-items-center">
                             <label>شرح کالا</label>
-                            <input class="form-control" type="text" name="product" id="product" style="direction:rtl" />
+                            <input class="form-control" type="text" name="product" id="product" />
                         </div>
                         <div class="d-flex flex-column align-items-center">
                             <label>تعداد/مقدار </label>
@@ -62,30 +56,18 @@
                         </div>
                     </form>
                 </div>
-                <div style="padding-block: 16px; width:95%;margin-inline:auto  ">
-                    <div style="width:100%; height:2px; background-color:rebeccapurple;">
+
+                <div class="my-3 pf-divider"></div>
+
+                <div class="flex-center gap-1">
+                    <button id="CancelBtnId" class="buttonCancel2" onclick="canselModalItemPreFactor()">انصراف</button>
+                    <button id="AddBtnId" class="buttonGreen3" onclick="addItemPreFactor()">ثبت</button>
+                    <div id="UpBtnId" class="flex-center gap-1 d-none">
+                        <button class="buttonCancel2" onclick="cancelUpdatePfItem()">انصراف</button>
+                        <button class="buttonGreen3" onclick="updatePfItem()">ثبت</button>
                     </div>
                 </div>
-
-                <div style="width:100%; display:flex;justify-content:center;">
-                    <div class="d-flex align-items-center" style="gap:4px">
-                        <button id="AddBtnId" class="buttonGreen3" onclick="addItemPreFactor()">
-                            ثبت
-                        </button>
-                        <button id="CancelBtnId" class="buttonCancel2" onclick="canselModalItemPreFactor()">انصراف</button>
-                        <div id="UpBtnId" class="align-items-center" style="display:none;gap:4px">
-                            <button class="buttonGreen3" onclick="updatePfItem()">
-                                ثبت
-                            </button>
-                            <button class="buttonCancel2" onclick="cancelUpdatePfItem()">
-                                انصراف
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
             </div>
-
         </div>
     </div>
 </div>

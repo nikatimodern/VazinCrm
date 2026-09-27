@@ -313,7 +313,7 @@ const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate
                                 <span class="pf-item-productSmallName">${item.productSmallName ?? ""}</span>
                                 <span>${item.product ?? ""}</span>
                                 ${isIncomplete ? `
-                                    <p class="pf-item-missing-product">
+                                    <p class="pf-item-incomplete-field">
                                       <i class="fa fa-exclamation-circle"></i>
                                       نیاز به ویرایش
                                     </p>` : ""}
@@ -520,6 +520,7 @@ function getFieldRules(formId, customRules = {}) {
 if (window.innerWidth < 992) {
     document.getElementById("PreFacItemContainer")?.remove();
     document.getElementById("FacItemContainer")?.remove();
+    document.getElementById("supplyFactorContainer")?.remove();
     document.getElementById("orderFormContainer")?.remove();
     const descriptionOrder = document.getElementById("descriptionOrder");
     if (descriptionOrder) descriptionOrder.rows = 3;
@@ -605,7 +606,7 @@ const Unit = (type, formId, defaultValueId) => {
             placeholder: "انتخاب",
             minimumResultsForSearch: Infinity,
             selectionCssClass: "form-control",
-            dropdownParent: $("#supplyFactorModal"),
+            dropdownParent: window.innerWidth < 992 ? $("#ItemSupplyFactorModal") : $("#supplyFactorModal"),
         });
         $(unitElm).val(null).trigger("change");
     }

@@ -3664,12 +3664,14 @@ user-select: none;
 	background-color: #003e39;
 }
 
+
 .buttonGreen3:disabled {
 	background-color: #02514C;
 	box-shadow: none;
 	opacity: 0.45;
 	cursor: not-allowed;
 }
+
 
 .buttonPurple {
 	height: 37px;
@@ -3885,7 +3887,7 @@ user-select: none;
 
 
 .buttonAi {
-	font-size: clamp(10px, 2.1vw, 12px);
+	font-size: 12px;
 	color: white;
 	padding: 8px 10px;
 	border: none;
@@ -5569,6 +5571,7 @@ input[type="file"] {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	flex-wrap: wrap;
 	padding: 1rem;
 	border: 2px dashed #ccc;
 	border-radius: 12px;
@@ -6481,6 +6484,8 @@ table tr.payment-vosoled > td {
 	border-radius: 10px;
 	background: #f3f3f3;
 	font-size: 13px;
+	flex-basis: 100%;
+	flex-shrink: 0;
 }
 
 
@@ -7256,6 +7261,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	white-space: pre-line;
 }
 
+
 /* ------------------inline-alert------------------ */
 
 .inline-alert {
@@ -7263,12 +7269,12 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	align-items: center;
 	gap: 8px;
 	padding: 8px 12px;
-	margin-top: .5rem;
 	border: 1px solid;
 	border-radius: 6px;
-	font-size: 13px;
+	font-size: clamp(12px, 2vw, 13px);
 	font-family: IRANSansBold;
 }
+
 
 .inline-alert--error {
 	border-color: #dc3545;
@@ -7276,11 +7282,13 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	color: #b02a37;
 }
 
+
 .inline-alert--warning {
 	border-color: #ffc107;
 	background: #fffdf5;
 	color: #997404;
 }
+
 
 .inline-alert--success {
 	border-color: #198754;
@@ -7288,11 +7296,13 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	color: #146c43;
 }
 
+
 .inline-alert--info {
 	border-color: #0d6efd;
 	background: #f5f9ff;
 	color: #0a58ca;
 }
+
 
 .inline-alert__close {
 	display: inline-flex;
@@ -7306,4 +7316,6 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	cursor: pointer;
 	font-size: 13px;
 }
+
+
 /* ------------------------------------ */
