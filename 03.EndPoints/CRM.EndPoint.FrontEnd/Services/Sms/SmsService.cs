@@ -28,8 +28,6 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
         }
 
 
-
-
         private async Task<ResponseSmsModel> ExecuteAsync(Func<Task<ResponseSmsModel>> farazAction, Func<Task<ResponseSmsModel>> smsIrAction)
         {
             var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
@@ -58,7 +56,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
             var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
 
             return setting?.SmsServiceCode.ToString() switch {
-//                FarazSmsCode => await farazSmsService.GetDashboardAsync(),
+                FarazSmsCode => await farazSmsService.GetDashboardAsync(),
                 SmsIrCode => await smsIrService.GetDashboardAsync(),
                 _ => null
             };
@@ -74,12 +72,13 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
                 _ => []
             };
         }
+
         public async Task<IReadOnlyList<SmsReceiveModel>> GetReceivesAsync(int page = 1, int pageSize = 100)
         {
             var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
 
             return setting?.SmsServiceCode.ToString() switch {
-//                FarazSmsCode => await farazSmsService.GetReceivesAsync(page, pageSize),
+                FarazSmsCode => await farazSmsService.GetReceivesAsync(page, pageSize),
                 SmsIrCode => await smsIrService.GetReceivesAsync(page, pageSize),
                 _ => []
             };

@@ -1,7 +1,9 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Services.Sms;
 using CRM.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace CRM.EndPoint.FrontEnd.Services.Factor;
+namespace CRM.EndPoint.FrontEnd.Services.SetInterval;
 
 public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory, ILogger<CustomerFeedbackSmsWorker> logger) : BackgroundService {
     private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
@@ -19,7 +21,7 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        /*while (!stoppingToken.IsCancellationRequested)
+        while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
@@ -31,7 +33,7 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
             }
 
             await Task.Delay(Interval, stoppingToken);
-        }*/
+        }
     }
 
     private async Task SendFeedbackSmsAsync(CancellationToken ct)
@@ -41,14 +43,17 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
         var smsService = scope.ServiceProvider.GetRequiredService<SmsService>();
 
         var targetDate = DateTime.Now.AddDays(-7);
-        var startDate = DateTime.Parse("2026-08-19");
-        var factors = await db.Factors.Where(f => f.SerialNumber == 140580).ToListAsync();
+        var startDate = new DateTime(2026, 9, 20);
 
-        //var factors = await db.Factors.Where(x =>
-        //    x.CustomerFeedbackSmsSentDate == null
-        //    && x.DateMiladi <= targetDate
-        //    && x.DateMiladi >= startDate
-        //).ToListAsync(ct);
+        var factors = await db.Factors.Where(x =>
+            x.CustomerFeedbackSmsSentDate == null
+            && x.DateMiladi <= targetDate
+            && x.DateMiladi >= startDate
+        ).ToListAsync(ct);
+
+        if (factors.Count == 0) return;
+        
+        var smsJob = new SmsJob { Type = SmsType.CustomerFeedback };
 
         foreach (var factor in factors)
         {
@@ -57,8 +62,14 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
                 var mobile = factor.Cus_Mobile;
                 if (string.IsNullOrWhiteSpace(mobile)) continue;
 
-                var result = await smsService.SendTextAsync([mobile], CustomerFeedbackMessage);
-                if (result?.code is not (200 or 1)) continue;
+//                var result = await smsService.SendTextAsync([mobile], CustomerFeedbackMessage);
+
+                smsJob.Mobile = mobile;
+                smsJob.SerialNumber = factor.SerialNumber.ToString();
+
+                var result = await smsService.SendPatternAsync(smsJob);
+
+                if (result?.code != 200) continue;
 
                 factor.CustomerFeedbackSmsSentDate = DateTime.Now;
                 await db.SaveChangesAsync(ct);

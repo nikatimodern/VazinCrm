@@ -4,22 +4,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     initSmsReceivesTable();
     await loadSmsDashboard();
     
-    document.getElementById("refreshSmsBtn")
-            ?.addEventListener("click", async () => {
-                await loadSmsDashboard();
-                $("#smsReportsTable").DataTable().ajax.reload(null, false);
-                $("#smsReceivesTable").DataTable().ajax.reload(null, false);
-            });
+    document.getElementById("refreshSmsBtn")?.addEventListener("click", async () => {
+        await loadSmsDashboard();
+        $("#smsReportsTable").DataTable().ajax.reload(null, false);
+        $("#smsReceivesTable").DataTable().ajax.reload(null, false);
+    });
 });
 
 function initSmsTabs() {
     document.querySelectorAll(".sms-tab").forEach(tab => {
         tab.addEventListener("click", () => {
-            document.querySelectorAll(".sms-tab").forEach(x =>
-                x.classList.remove("active"));
+            document.querySelectorAll(".sms-tab").forEach(x => x.classList.remove("active"));
             
-            document.querySelectorAll(".sms-tab-content").forEach(x =>
-                x.classList.add("d-none"));
+            document.querySelectorAll(".sms-tab-content").forEach(x => x.classList.add("d-none"));
             
             tab.classList.add("active");
             
@@ -40,107 +37,66 @@ async function loadSmsDashboard() {
     
     const data = await response.json();
     
-    document.getElementById("smsCredit").textContent =
-        data.credit != null
-            ? `${Number(data.credit).toLocaleString()} تومان`
-            : "-";
-    
-    document.getElementById("smsProvider").textContent =
-        data.provider || "-";
-    
-    document.getElementById("smsLines").textContent =
-        data.lines?.length
-            ? data.lines.length.toLocaleString()
-            : "۰";
+    document.getElementById("smsCredit").textContent = data.credit != null ? `${Number(data.credit).toLocaleString()} تومان` : "-";
+    document.getElementById("smsProvider").textContent = data.provider || "-";
+    document.getElementById("smsLines").textContent = data.lines?.length ? data.lines.length.toLocaleString() : "۰";
 }
 
 function initSmsReportsTable() {
     $("#smsReportsTable").DataTable({
+        pageLength: 5,
+        lengthMenu: [[5, 50, 100], [5, 50, 100]],
         processing: true,
-        serverSide: false,
+        serverSide: true,
         ajax: {
-            url: "/Sms/Reports",
-            dataSrc: function (data) {
-                document.getElementById("reportsCount").textContent =
-                    (data?.length ?? 0).toLocaleString();
+            url: "/Sms/GetReportsDt",
+            type: "POST",
+            dataSrc: function (json) {
+                document.getElementById("reportsCount").textContent = (json.recordsFiltered ?? 0).toLocaleString();
                 
-                return data;
+                return json.data;
             },
         },
         columns: [
-            {
-                data: "mobile",
-                render: value =>
-                    `<span class="sms-mobile">${value ?? "-"}</span>`,
-            },
+            { data: "mobile", render: value => `<span class="sms-mobile">${value ?? "-"}</span>` },
             {
                 data: "messageText",
-                render: value =>
-                    `<span class="sms-message" title="${escapeHtml(value ?? "")}">
-                        ${escapeHtml(value ?? "-")}
-                    </span>`,
+                render: value => `<span class="sms-message" title="${escapeHtml(value ?? "")}">${escapeHtml(value ?? "-")}</span>`,
             },
-            {
-                data: "deliveryState",
-                render: value => renderSmsStatus(value),
-            },
-            {
-                data: "sendDateTime",
-                render: value => formatSmsDate(value),
-            },
-            {
-                data: "deliveryDateTime",
-                render: value => formatSmsDate(value),
-            },
+            { data: "deliveryStateTxt", render: value => renderSmsStatus(value) },
+            { data: "sendDateTimeTxt", render: value => value ?? "-" },
+            { data: "deliveryDateTimeTxt", render: value => value ?? "-" },
         ],
-        pageLength: 20,
-        lengthMenu: [
-            [20, 50, 100, -1],
-            [20, 50, 100, "همه"],
-        ],
+        language: languageDatatable,
+        layout: layoutDatatable,
         order: [[3, "desc"]],
     });
 }
 
 function initSmsReceivesTable() {
     $("#smsReceivesTable").DataTable({
+        pageLength: 5,
+        lengthMenu: [[5, 50, 100], [5, 50, 100]],
         processing: true,
-        serverSide: false,
+        serverSide: true,
         ajax: {
-            url: "/Sms/Receives",
-            dataSrc: function (data) {
-                document.getElementById("receivesCount").textContent =
-                    (data?.length ?? 0).toLocaleString();
+            url: "/Sms/GetReceivesDt",
+            type: "POST",
+            dataSrc: function (json) {
+                document.getElementById("receivesCount").textContent = (json.recordsFiltered ?? 0).toLocaleString();
                 
-                return data;
+                return json.data;
             },
         },
         columns: [
-            {
-                data: "mobile",
-                render: value =>
-                    `<span class="sms-mobile">${value ?? "-"}</span>`,
-            },
-            {
-                data: "messageText",
-                render: value =>
-                    `<span class="sms-message" title="${escapeHtml(value ?? "")}">
-                        ${escapeHtml(value ?? "-")}
-                    </span>`,
-            },
-            {
-                data: "number",
-                render: value =>
-                    `<span class="sms-mobile">${value ?? "-"}</span>`,
-            },
-            {
-                data: "receivedDateTime",
-                render: value => formatSmsDate(value),
-            },
+            { data: "mobile", render: value => `<span class="sms-mobile">${value ?? "-"}</span>` },
+            { data: "messageText", render: value => `<span class="sms-message">${escapeHtml(value ?? "-")}</span>` },
+            { data: "receivedDateTimeTxt", render: value => value ?? "-" },
+            { data: "number", render: value => `<span class="sms-mobile">${value ?? "-"}</span>` },
         ],
-        pageLength: 20,
-        lengthMenu: [[20, 50, 100, -1], [20, 50, 100, "همه"]],
-        order: [[3, "desc"]],
+        language: languageDatatable,
+        layout: layoutDatatable,
+        order: [[2, "desc"]],
     });
 }
 

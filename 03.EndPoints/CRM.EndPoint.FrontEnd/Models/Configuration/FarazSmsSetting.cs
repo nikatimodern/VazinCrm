@@ -20,6 +20,7 @@ namespace CRM.EndPoint.FrontEnd.Models.Configuration {
         public T AcceptPfactorToTamin { get; set; }
         public T PaymentPfactorLink { get; set; }
         public T ChatReminder { get; set; }
+        public T CustomerFeedback { get; set; }
     }
 
     public class FarazSmsPatternRequest {

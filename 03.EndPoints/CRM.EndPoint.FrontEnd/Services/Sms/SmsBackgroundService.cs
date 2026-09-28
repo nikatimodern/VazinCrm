@@ -44,7 +44,7 @@ public class SmsBackgroundService(
             {
                 var result = await smsService.SendPatternAsync(job);
 
-                if (result.code is 200 or 1)
+                if (result.code == 200)
                 {
                     logger.LogInformation("Sms sent successfully. Mobile:{Mobile}", job.Mobile);
                     if (notifyUser) await hub.Clients.Client(job.ConnectionId).SendAsync("SmsSuccess", cancellationToken: token);

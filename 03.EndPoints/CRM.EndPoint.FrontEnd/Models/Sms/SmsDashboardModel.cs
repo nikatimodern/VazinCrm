@@ -7,8 +7,16 @@ public sealed class SmsDashboardModel
 {
     public string Provider { get; set; }
     public decimal? Credit { get; set; }
-    public List<long> Lines { get; set; } = [];
+    public List<string> Lines { get; set; } = [];
     public SmsAccountInfo Account { get; set; }
+}
+
+
+public class SmsLineModel
+{
+    public string Number { get; set; }
+    public bool IsDedicated { get; set; }
+    public decimal SmsCost { get; set; }
 }
 
 public sealed class SmsAccountInfo
@@ -21,17 +29,23 @@ public sealed class SmsAccountInfo
 public sealed class SmsReportModel
 {
     public long MessageId { get; set; }
-    public long Mobile { get; set; }
+    public string Mobile { get; set; }
     public byte? DeliveryState { get; set; }
-    public int SendDateTime { get; set; }
-    public int? DeliveryDateTime { get; set; }
+    public string DeliveryStateTxt { get; set; }
+    public DateTime SendDateTime { get; set; }
+    public string SendDateTimeTxt { get; set; }
+    public DateTime? DeliveryDateTime { get; set; }
+    public string DeliveryDateTimeTxt { get; set; }
     public string MessageText { get; set; }
 }
 
 public sealed class SmsReceiveModel
 {
-    public long Mobile { get; set; }
+    public long Id { get; set; }
+    public string Mobile { get; set; }
     public string MessageText { get; set; }
-    public long Number { get; set; }
-    public int ReceivedDateTime { get; set; }
+    public string Number { get; set; }
+    public DateTime ReceivedDateTime { get; set; }
+    public string ReceivedDateTimeTxt { get; set; }
+    public bool Seen { get; set; }
 }

@@ -31,7 +31,7 @@ public sealed class SmsIrService : ISmsIrService {
         return new SmsDashboardModel {
             Provider = "SMS.ir",
             Credit = credit.Status == 1 ? credit.Data : null,
-            Lines = lines.Status == 1 ? lines.Data.ToList() : []
+            Lines = lines.Status == 1 ? lines.Data.Select(l => l.ToString()).ToList() : []
         };
     }
 
@@ -42,16 +42,25 @@ public sealed class SmsIrService : ISmsIrService {
         if (result.Status != 1 || result.Data == null)
             return [];
 
-        return result.Data
-            .Select(x => new SmsReportModel {
-                MessageId = x.MessageId,
-                MessageText = x.MessageText,
-                Mobile = x.Mobile,
-                DeliveryState = x.DeliveryState,
-                DeliveryDateTime = x.DeliveryDateTime,
-                SendDateTime = x.SendDateTime
-            })
-            .ToList();
+        return result.Data.Select(x => new SmsReportModel {
+            MessageId = x.MessageId,
+            Mobile = x.Mobile.ToString(),
+            DeliveryState = x.DeliveryState,
+            DeliveryStateTxt = GetDeliveryStateText(x.DeliveryState),
+            SendDateTime = DateTimeOffset.FromUnixTimeSeconds(x.SendDateTime).DateTime,
+            DeliveryDateTime = DateTimeOffset.FromUnixTimeSeconds(x.DeliveryDateTime.Value).DateTime,
+            MessageText = x.MessageText
+        }).ToList();
+    }
+
+    private static string GetDeliveryStateText(byte? state)
+    {
+        return state switch {
+            1 => "تحویل شده",
+            2 => "تحویل نشده",
+            3 => "در انتظار",
+            _ => "نامشخص"
+        };
     }
 
     public async Task<IReadOnlyList<SmsReceiveModel>> GetReceivesAsync(int page = 1, int pageSize = 100, bool sortByNewest = true)
@@ -63,10 +72,10 @@ public sealed class SmsIrService : ISmsIrService {
 
         return result.Data
             .Select(x => new SmsReceiveModel {
-                Mobile = x.Mobile,
+                Mobile = x.Mobile.ToString(),
                 MessageText = x.MessageText,
-                Number = x.Number,
-                ReceivedDateTime = x.ReceivedDateTime
+                Number = x.Number.ToString(),
+                ReceivedDateTime = DateTimeOffset.FromUnixTimeSeconds(x.ReceivedDateTime).DateTime
             })
             .ToList();
     }

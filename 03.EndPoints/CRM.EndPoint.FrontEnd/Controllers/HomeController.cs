@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
@@ -19,7 +20,6 @@ using CRM.EndPoint.FrontEnd.Services.Asterisk;
 using CRM.EndPoint.FrontEnd.Services.Carizo;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
-using CRM.EndPoint.FrontEnd.Services.Sms;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
@@ -45,9 +45,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly ISmsIrService smsIrService;
 
         public HomeController(IWebHostEnvironment appEnvironment,
-            
             TimedHostedService hostService,
-            
             IConfiguration conf,
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
             Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue, IssabelService issabelService,
@@ -80,7 +78,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-                await db.SaveChangesAsync();
+                var farazSms = new FarazSMS.FarazSMS("jL7FjgMNBWtA0m8bxGdYUEnOlWYR3LSgzyXSyAk11dDTyfVufk");
+                /*var res = farazSms.SendPattern("oee39ctfj9tfmah", "09369100273",
+                    new Dictionary<string, string> { ["number"] = "14050", ["link"] = "1122334" },
+                    "9982007015");*/    
+
+                //await db.SaveChangesAsync();
                 await trans.CommitAsync();
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();
@@ -88,7 +91,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (Exception e)
             {
                 await trans.RollbackAsync();
-                return BadRequest();
+                return BadRequest(e.Message);
             }
         }
 

@@ -63,12 +63,12 @@
         </div>
 
         <div class="sms-tab-content" id="reportsTab">
-            <div class="sms-table-header">
+            @*<div class="sms-table-header">
                 <div>
                     <h6>گزارش ارسال پیامک</h6>
                     <span>وضعیت و جزئیات پیامک‌های ارسال‌شده</span>
                 </div>
-            </div>
+            </div>*@
 
             <div class="table-responsive">
                 <table id="smsReportsTable"
@@ -88,22 +88,21 @@
         </div>
 
         <div class="sms-tab-content d-none" id="receivesTab">
-            <div class="sms-table-header">
+            @*<div class="sms-table-header">
                 <div>
                     <h6>پیامک‌های دریافتی</h6>
                     <span>پیام‌های دریافت‌شده روی خطوط</span>
                 </div>
-            </div>
+            </div>*@
 
             <div class="table-responsive">
-                <table id="smsReceivesTable"
-                       class="table sms-table align-middle w-100">
+                <table id="smsReceivesTable" class="table sms-table align-middle w-100">
                     <thead>
                     <tr>
                         <th>شماره</th>
                         <th>متن پیام</th>
-                        <th>خط</th>
                         <th>تاریخ دریافت</th>
+                        <th>خط</th>
                     </tr>
                     </thead>
                     <tbody></tbody>
@@ -119,5 +118,5 @@
 }
 
 @section Styles {
-    <link href="~/css/sms.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/sms.css" asp-append-version="true" />
 }

@@ -163,7 +163,7 @@
 	border-radius: 999px;
 	background: #f0f4f4;
 	color: #748482;
-	font-size: .68rem;
+	font-size: 11px;
 }
 
 .sms-tab.active .sms-tab-count {
@@ -185,7 +185,7 @@
 .sms-table-header h6 {
 	margin: 0;
 	color: #243d3c;
-	font-size: .88rem;
+	font-size: 14px;
 	font-weight: 700;
 }
 
@@ -193,7 +193,7 @@
 	display: block;
 	margin-top: .25rem;
 	color: #8a9998;
-	font-size: .73rem;
+	font-size: 12px;
 }
 
 .sms-table {
@@ -205,8 +205,8 @@
 	border-bottom: 1px solid #e5eceb;
 	background: #f8faf9;
 	color: #718180;
-	font-size: .73rem;
-	font-weight: 600;
+	font-size: 13px;
+	font-family: IRANSansBold;
 	white-space: nowrap;
 }
 
@@ -214,7 +214,7 @@
 	padding: .75rem;
 	border-bottom: 1px solid #f0f3f3;
 	color: #3e5352;
-	font-size: .78rem;
+	font-size: 12px;
 	vertical-align: middle;
 }
 
@@ -222,8 +222,16 @@
 	border-bottom: 0;
 }
 
-.sms-table tbody tr:hover {
-	background: #fbfdfd;
+.sms-table tbody tr:nth-child(odd) td {
+	background: #fafcfc;
+}
+
+.sms-table tbody tr:nth-child(even) td {
+	background: #f2f6f5;
+}
+
+.sms-table tbody tr:hover td {
+	background: #f0f7f6;
 }
 
 .sms-mobile {
