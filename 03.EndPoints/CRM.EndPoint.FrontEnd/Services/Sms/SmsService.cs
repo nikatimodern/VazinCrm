@@ -212,7 +212,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
                     Number = item.Number,
                     ReceivedDateTime = item.ReceivedDateTime,
                     CreatedAtFaraz = item.CreatedAtFaraz,
-                    Seen = item.Seen
+                    Seen = item.Seen,
                 });
             }
 

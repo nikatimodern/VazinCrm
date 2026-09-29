@@ -1,13 +1,38 @@
+const syncSmsBtn = document.getElementById("syncSmsBtn");
+
 document.addEventListener("DOMContentLoaded", async () => {
     initSmsTabs();
     initSmsTabTable("receivesTab");
     await loadSmsDashboard();
     
-    document.getElementById("refreshSmsBtn")?.addEventListener("click", async () => {
-        await loadSmsDashboard();
-        $("#smsReportsTable").DataTable().ajax.reload(null, false);
-        $("#smsReceivesTable").DataTable().ajax.reload(null, false);
+    /*    document.getElementById("refreshSmsBtn")?.addEventListener("click", async () => {
+            await loadSmsDashboard();
+            $("#smsReportsTable").DataTable().ajax.reload(null, false);
+            $("#smsReceivesTable").DataTable().ajax.reload(null, false);
+        });*/
+});
+
+syncSmsBtn.addEventListener("click", async () => {
+    const spinner = syncSmsBtn.querySelector(".spinner-border");
+    const syncIcon = syncSmsBtn.querySelector(".sync-icon");
+    
+    toggleElementsDisabled(syncSmsBtn);
+    spinner.classList.remove("d-none");
+    syncIcon.classList.add("d-none");
+    
+    await sendApiRequest({
+        url: "/Sms/SyncReceives",
+        method: "POST",
+        showLoading: false,
+        successMsg: "پیامک‌های جدید با موفقیت همگام‌سازی شدند",
+        onSuccess: () => {
+            $("#smsReceivesTable").DataTable().ajax.reload(null, false);
+        },
     });
+    
+    toggleElementsDisabled(syncSmsBtn, false);
+    spinner.classList.add("d-none");
+    syncIcon.classList.remove("d-none");
 });
 
 function initSmsTabs() {
