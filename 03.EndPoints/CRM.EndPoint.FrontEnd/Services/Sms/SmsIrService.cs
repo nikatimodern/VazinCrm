@@ -35,22 +35,27 @@ public sealed class SmsIrService : ISmsIrService {
         };
     }
 
-    public async Task<IReadOnlyList<SmsReportModel>> GetReportsAsync(int page = 1, int pageSize = 100)
+    public async Task<SmsReportResult> GetReportsAsync(int page = 1, int pageSize = 100)
     {
         var result = await _smsIr.GetLiveReportAsync(page, pageSize);
 
         if (result.Status != 1 || result.Data == null)
-            return [];
+            return new SmsReportResult();
 
-        return result.Data.Select(x => new SmsReportModel {
+        var items = result.Data.Select(x => new SmsReportModel {
             MessageId = x.MessageId,
             Mobile = x.Mobile.ToString(),
-            DeliveryState = x.DeliveryState,
+            DeliveryState = x.DeliveryState.ToString(),
             DeliveryStateTxt = GetDeliveryStateText(x.DeliveryState),
             SendDateTime = DateTimeOffset.FromUnixTimeSeconds(x.SendDateTime).DateTime,
             DeliveryDateTime = DateTimeOffset.FromUnixTimeSeconds(x.DeliveryDateTime.Value).DateTime,
             MessageText = x.MessageText
         }).ToList();
+
+
+        return new SmsReportResult {
+            Data = items,
+        };
     }
 
     private static string GetDeliveryStateText(byte? state)
@@ -63,14 +68,14 @@ public sealed class SmsIrService : ISmsIrService {
         };
     }
 
-    public async Task<IReadOnlyList<SmsReceiveModel>> GetReceivesAsync(int page = 1, int pageSize = 100, bool sortByNewest = true)
+    public async Task<SmsReceiveResult> GetReceivesAsync(int page = 1, int pageSize = 100, bool sortByNewest = true)
     {
         var result = await _smsIr.GetLiveReceivesAsync(page, pageSize, sortByNewest);
 
         if (result?.Status != 1 || result.Data == null)
-            return [];
+            return new SmsReceiveResult();
 
-        return result.Data
+        var items = result.Data
             .Select(x => new SmsReceiveModel {
                 Mobile = x.Mobile.ToString(),
                 MessageText = x.MessageText,
@@ -78,6 +83,10 @@ public sealed class SmsIrService : ISmsIrService {
                 ReceivedDateTime = DateTimeOffset.FromUnixTimeSeconds(x.ReceivedDateTime).DateTime
             })
             .ToList();
+
+        return new SmsReceiveResult {
+            Data = items,
+        };
     }
 
     public async Task<ResponseSmsModel> SendTextAsync(string[] mobiles, string messageText, int? sendDateTime = null)

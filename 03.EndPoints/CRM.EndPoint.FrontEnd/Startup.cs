@@ -73,7 +73,6 @@ namespace CRM.EndPoint.FrontEnd {
                 sp.GetRequiredService<TimedHostedService>());
 
 
-
             services.AddHostedService<AsteriskAmiListener>();
 
             services.AddAuthorizationBuilder()
@@ -181,6 +180,8 @@ namespace CRM.EndPoint.FrontEnd {
 
             services.AddScoped<ISmsIrService, SmsIrService>();
             services.AddHostedService<CustomerFeedbackSmsWorker>();
+
+            services.AddHostedService<SmsSyncWorker>();
 
             services.AddSingleton<WebPushClient>(sp => {
                 var handler = new SocketsHttpHandler {

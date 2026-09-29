@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Models.Configuration;
 using CRM.EndPoint.FrontEnd.Models.Sms;
+using CRM.EndPoint.FrontEnd.Services.Extensions;
 using FarazSMS;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
@@ -14,12 +16,14 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms;
 
 public class FarazSmsService {
     private readonly HttpClient httpClient;
+    private readonly DateTimeServices dtService;
     private readonly FarazSmsSetting farazConfig;
     private readonly FarazSMS.FarazSMS _farazSms;
 
-    public FarazSmsService(HttpClient httpClient, IConfiguration config)
+    public FarazSmsService(HttpClient httpClient, IConfiguration config, DateTimeServices dtService)
     {
         this.httpClient = httpClient;
+        this.dtService = dtService;
         farazConfig = config.GetSection("FarazSmsConfig").Get<FarazSmsSetting>();
         var apiKey = farazConfig?.ApiKey ?? throw new InvalidOperationException("FarazSMS API Key is not configured.");
 
@@ -54,43 +58,144 @@ public class FarazSmsService {
         };
     }
 
-/*    public async Task<IReadOnlyList<SmsReportModel>> GetReportsAsync(int page = 1, int pageSize = 100)
+    public async Task<SmsReportResult> GetReportsAsync(int page = 1, int pageSize = 100)
     {
-        var result = await _farazSms.SendRequestItems(page, pageSize);
+        var result = await _farazSms.SendRequests($"page={page}&limit={pageSize}");
 
-        if (result.Status != 1 || result.Data == null)
-            return [];
+        var data = result.GetProperty("data");
 
-        return result.Data
-            .Select(x => new SmsReportModel {
-                MessageId = x.MessageId,
-                MessageText = x.MessageText,
-                Mobile = x.Mobile,
-                DeliveryState = x.DeliveryState,
-                DeliveryDateTime = x.DeliveryDateTime,
-                SendDateTime = x.SendDateTime
+
+        var items = data
+            .GetProperty("data")
+            .EnumerateArray()
+            .Select(x => {
+                var snapshot = x.GetValue<JsonElement>("snapshot");
+                var metadata = x.GetValue<JsonElement>("metadata");
+
+                var status = x.GetValue<string>("status");
+                var type = x.GetValue<string>("type");
+
+                var sendDate = x.GetValue<DateTime>("schedule").ToLocalTime();
+
+                var line = x.GetValue<JsonElement>("overridden_line");
+
+                if (line.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
+                    line = x.GetValue<JsonElement>("line");
+
+                var messageText = x.GetValue<string>("pattern_text") ?? metadata.GetValue<string>("text");
+
+                return new SmsReportModel {
+                    MessageId = x.GetValue<long>("id"),
+                    Mobile = metadata.GetValue<string>("recipient"),
+                    Number = line.GetValue<string>("number"),
+
+                    Type = type,
+                    TypeTxt = type switch {
+                        "pattern" => "پترن",
+                        "simple" => "عادی",
+                        _ => type
+                    },
+
+                    DeliveryState = status,
+                    DeliveryStateTxt = status switch {
+                        "init" => "در حال آماده‌سازی",
+                        "pending-approval" => "در انتظار تأیید",
+                        "insufficient-balance" => "موجودی ناکافی",
+                        "cancelled" => "لغو شده",
+                        "rejected" => "رد شده",
+                        "in-queue" => "در صف ارسال",
+                        "sent" => "ارسال شده",
+                        _ => "نامشخص"
+                    },
+
+                    SendDateTime = sendDate,
+                    SendDateTimeTxt = dtService.GetDateTimePersian(sendDate),
+
+                    MessageText = messageText
+                };
             })
             .ToList();
-    }*/
 
-    public async Task<IReadOnlyList<SmsReceiveModel>> GetReceivesAsync(int page = 1, int pageSize = 100)
+        return new SmsReportResult {
+            Data = items,
+            Total = data.GetValue<int>("total")
+        };
+    }
+
+
+    public async Task<SmsReceiveResult> GetReceivesAsync(int page = 1, int pageSize = 100)
     {
         var result = await _farazSms.Inbox(page, pageSize);
 
-        return result
-            .GetProperty("data")
+        var data = result.GetProperty("data");
+
+        var items = data
             .GetProperty("data")
             .EnumerateArray()
-            .Select(x => new SmsReceiveModel {
-                Id = x.GetProperty("id").GetInt64(),
-                Mobile = x.GetProperty("from").GetString(),
-                MessageText = x.GetProperty("message").GetString(),
-                Number = x.GetProperty("to").GetString(),
-                ReceivedDateTime = x.GetProperty("received_at").GetDateTime(),
-                ReceivedDateTimeTxt = x.GetProperty("received_at").GetDateTime().ToString("yyyy/MM/dd HH:mm:ss"),
-                Seen = x.GetProperty("seen").GetBoolean()
+            .Select(x => {
+                var receivedDateTime = x.GetProperty("received_at").GetDateTime().ToLocalTime();
+                var createdAt = x.GetProperty("created_at").GetDateTime().ToLocalTime();
+
+                return new SmsReceiveModel {
+                    Id = x.GetProperty("id").GetInt64(),
+                    Mobile = x.GetProperty("from").GetString(),
+                    MessageText = x.GetProperty("message").GetString(),
+                    Number = x.GetProperty("to").GetString(),
+                    CreatedAtFaraz = createdAt,
+                    ReceivedDateTime = receivedDateTime,
+                    ReceivedDateTimeTxt = dtService.GetDateTimePersian(receivedDateTime),
+                    Seen = x.GetProperty("seen").GetBoolean()
+                };
             })
             .ToList();
+
+        return new SmsReceiveResult {
+            Data = items,
+            Total = data.GetProperty("total").GetInt32(),
+            TotalPages = data.GetProperty("last_page").GetInt32()
+        };
+    }
+
+    public async Task<SmsReceiveResult> SearchReceivesAsync(string search, int pageSize = 100)
+    {
+        var allData = new List<SmsReceiveModel>();
+
+        var page = 1;
+        int total;
+
+        while (true)
+        {
+            var result = await GetReceivesAsync(page, pageSize);
+            allData.AddRange(result.Data);
+
+            total = result.Total;
+
+            if (page >= result.TotalPages)
+                break;
+
+            page++;
+        }
+
+        if (search?.Length < 3)
+        {
+            allData = allData.Where(x =>
+                x.Mobile?.Equals(search, StringComparison.OrdinalIgnoreCase) == true ||
+                x.MessageText?.Equals(search, StringComparison.OrdinalIgnoreCase) == true ||
+                x.Number?.Equals(search, StringComparison.OrdinalIgnoreCase) == true
+            ).ToList();
+        } else
+        {
+            allData = allData.Where(x =>
+                x.Mobile?.Contains(search, StringComparison.OrdinalIgnoreCase) == true ||
+                x.MessageText?.Contains(search, StringComparison.OrdinalIgnoreCase) == true ||
+                x.Number?.Contains(search, StringComparison.OrdinalIgnoreCase) == true
+            ).ToList();
+        }
+
+        return new SmsReceiveResult {
+            Data = allData,
+            Total = total
+        };
     }
 
 

@@ -1,7 +1,6 @@
 document.addEventListener("DOMContentLoaded", async () => {
     initSmsTabs();
-    initSmsReportsTable();
-    initSmsReceivesTable();
+    initSmsTabTable("receivesTab");
     await loadSmsDashboard();
     
     document.getElementById("refreshSmsBtn")?.addEventListener("click", async () => {
@@ -15,115 +14,191 @@ function initSmsTabs() {
     document.querySelectorAll(".sms-tab").forEach(tab => {
         tab.addEventListener("click", () => {
             document.querySelectorAll(".sms-tab").forEach(x => x.classList.remove("active"));
-            
             document.querySelectorAll(".sms-tab-content").forEach(x => x.classList.add("d-none"));
             
             tab.classList.add("active");
             
-            const target = tab.dataset.tab === "reports"
-                ? "reportsTab"
-                : "receivesTab";
+            const target = tab.dataset.target;
             
             document.getElementById(target)?.classList.remove("d-none");
+            initSmsTabTable(target);
         });
     });
 }
 
 async function loadSmsDashboard() {
-    const response = await fetch("/Sms/Dashboard");
-    
-    if (!response.ok)
-        return;
-    
-    const data = await response.json();
-    
-    document.getElementById("smsCredit").textContent = data.credit != null ? `${Number(data.credit).toLocaleString()} تومان` : "-";
-    document.getElementById("smsProvider").textContent = data.provider || "-";
-    document.getElementById("smsLines").textContent = data.lines?.length ? data.lines.length.toLocaleString() : "۰";
+    await sendApiRequest({
+        url: "/Sms/Dashboard",
+        showLoading: false,
+        onSuccess: async (res) => {
+            const data = res.data;
+            
+            document.getElementById("smsCredit").textContent = data.credit != null ? `${Number(data.credit).toLocaleString()} تومان` : "-";
+            document.getElementById("smsProvider").textContent = data.provider || "-";
+            document.getElementById("smsLines").textContent = data.lines.map(l => l.trim()).join(", ");
+        },
+    });
 }
 
+function initSmsTabTable(target) {
+    switch (target) {
+        case "reportsTab":
+            initSmsReportsTable();
+            break;
+        
+        case "receivesTab":
+            initSmsReceivesTable();
+            break;
+    }
+}
+
+
 function initSmsReportsTable() {
+    if ($.fn.DataTable.isDataTable("#smsReportsTable"))
+        return;
+    
     $("#smsReportsTable").DataTable({
-        pageLength: 5,
-        lengthMenu: [[5, 50, 100], [5, 50, 100]],
+        pageLength: 10,
+        lengthMenu: [[5, 10, 50, 100], [5, 10, 50, 100]],
         processing: true,
         serverSide: true,
+        search: {
+            return: true,
+        },
+        ordering: false,
+        scrollCollapse: true,
+        responsive: true,
         ajax: {
             url: "/Sms/GetReportsDt",
             type: "POST",
             dataSrc: function (json) {
-                document.getElementById("reportsCount").textContent = (json.recordsFiltered ?? 0).toLocaleString();
-                
-                return json.data;
+                const reportCountElm = document.getElementById("reportsCount");
+                reportCountElm.textContent = (json.recordsFiltered ?? 0).toLocaleString();
+                reportCountElm.classList.remove("d-none");
+                return json.data || [];
             },
         },
+        
         columns: [
             { data: "mobile", render: value => `<span class="sms-mobile">${value ?? "-"}</span>` },
             {
                 data: "messageText",
+                // className: "wrap-text",
                 render: value => `<span class="sms-message" title="${escapeHtml(value ?? "")}">${escapeHtml(value ?? "-")}</span>`,
             },
-            { data: "deliveryStateTxt", render: value => renderSmsStatus(value) },
-            { data: "sendDateTimeTxt", render: value => value ?? "-" },
-            { data: "deliveryDateTimeTxt", render: value => value ?? "-" },
+            { data: "number", render: value => `<span class="sms-line">${value ?? "-"}</span>` },
+            { data: "typeTxt" },
+            { data: "sendDateTimeTxt", render: renderDateTimeHtml },
+            { data: "deliveryState", render: renderSmsStatus },
         ],
+        
         language: languageDatatable,
         layout: layoutDatatable,
-        order: [[3, "desc"]],
     });
 }
 
+
 function initSmsReceivesTable() {
-    $("#smsReceivesTable").DataTable({
-        pageLength: 5,
-        lengthMenu: [[5, 50, 100], [5, 50, 100]],
+    if ($.fn.DataTable.isDataTable("#smsReceivesTable"))
+        return;
+    
+    const table = $("#smsReceivesTable").DataTable({
+        pageLength: 10,
+        lengthMenu: [[5, 10, 50, 100], [5, 10, 50, 100]],
         processing: true,
         serverSide: true,
+        search: {
+            return: true,
+        },
+        ordering: false,
+        scrollCollapse: true,
+        responsive: true,
         ajax: {
             url: "/Sms/GetReceivesDt",
             type: "POST",
             dataSrc: function (json) {
-                document.getElementById("receivesCount").textContent = (json.recordsFiltered ?? 0).toLocaleString();
-                
+                const receivesCountElm = document.getElementById("receivesCount");
+                receivesCountElm.textContent = (json.recordsFiltered ?? 0).toLocaleString();
+                receivesCountElm.classList.remove("d-none");
                 return json.data;
             },
         },
         columns: [
             { data: "mobile", render: value => `<span class="sms-mobile">${value ?? "-"}</span>` },
             { data: "messageText", render: value => `<span class="sms-message">${escapeHtml(value ?? "-")}</span>` },
-            { data: "receivedDateTimeTxt", render: value => value ?? "-" },
+            { data: "receivedDateTimeTxt", render: renderDateTimeHtml },
             { data: "number", render: value => `<span class="sms-mobile">${value ?? "-"}</span>` },
         ],
         language: languageDatatable,
         layout: layoutDatatable,
-        order: [[2, "desc"]],
     });
+    
+    table.on("draw.dt", togglePageLength);
+    
+    function togglePageLength() {
+        const searchValue = table.search();
+        const wrapper = table.table().container();
+        
+        wrapper.querySelector(".dt-length").classList.toggle("d-none", searchValue);
+    }
 }
 
 function renderSmsStatus(state) {
-    if (state == null)
-        return `<span class="sms-status sms-status-unknown">نامشخص</span>`;
-    
-    switch (Number(state)) {
-        case 1:
+    switch (state) {
+        case "sent":
             return `
                 <span class="sms-status sms-status-success">
                     <i class="fa-solid fa-check"></i>
-                    تحویل شده
+                    ارسال شده
                 </span>`;
         
-        case 0:
+        case "in-queue":
             return `
                 <span class="sms-status sms-status-pending">
                     <i class="fa-solid fa-clock"></i>
-                    در انتظار
+                    در صف ارسال
+                </span>`;
+        
+        case "init":
+            return `
+                <span class="sms-status sms-status-pending">
+                    <i class="fa-solid fa-spinner"></i>
+                    در حال آماده‌سازی
+                </span>`;
+        
+        case "pending-approval":
+            return `
+                <span class="sms-status sms-status-pending">
+                    <i class="fa-solid fa-hourglass-half"></i>
+                    در انتظار تأیید
+                </span>`;
+        
+        case "insufficient-balance":
+            return `
+                <span class="sms-status sms-status-error">
+                    <i class="fa-solid fa-wallet"></i>
+                    موجودی ناکافی
+                </span>`;
+        
+        case "cancelled":
+            return `
+                <span class="sms-status sms-status-error">
+                    <i class="fa-solid fa-ban"></i>
+                    لغو شده
+                </span>`;
+        
+        case "rejected":
+            return `
+                <span class="sms-status sms-status-error">
+                    <i class="fa-solid fa-xmark"></i>
+                    رد شده
                 </span>`;
         
         default:
             return `
-                <span class="sms-status sms-status-error">
-                    <i class="fa-solid fa-xmark"></i>
-                    ناموفق
+                <span class="sms-status sms-status-unknown">
+                    <i class="fa-solid fa-question"></i>
+                    نامشخص
                 </span>`;
     }
 }

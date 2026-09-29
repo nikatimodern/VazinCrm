@@ -172,7 +172,7 @@
 }
 
 .sms-tab-content {
-	padding: 1rem;
+	padding: .5rem;
 }
 
 .sms-table-header {
@@ -243,11 +243,11 @@
 }
 
 .sms-message {
-	display: block;
+/* 	display: inline-block;
 	max-width: 420px;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	white-space: nowrap;
+	white-space: nowrap; */
 	color: #526665;
 }
 
@@ -298,9 +298,5 @@
 	
 	.sms-tab-content {
 		padding: .7rem;
-	}
-	
-	.sms-message {
-		max-width: 220px;
 	}
 }

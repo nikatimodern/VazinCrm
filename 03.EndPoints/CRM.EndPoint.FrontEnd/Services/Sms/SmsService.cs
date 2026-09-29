@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Sms.Entities;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.Infrastructures.Sql;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.EndPoint.FrontEnd.Services.Sms {
@@ -62,26 +66,157 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
             };
         }
 
-        public async Task<IReadOnlyList<SmsReportModel>> GetReportsAsync(int page = 1, int pageSize = 100)
+        public async Task<SmsReportResult> GetReportsAsync(int page = 1, int pageSize = 100)
         {
             var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
 
             return setting?.SmsServiceCode.ToString() switch {
-//                FarazSmsCode => await farazSmsService.GetReportsAsync(page, pageSize),
+                FarazSmsCode => await farazSmsService.GetReportsAsync(page, pageSize),
                 SmsIrCode => await smsIrService.GetReportsAsync(page, pageSize),
-                _ => []
+                _ => new SmsReportResult()
             };
         }
 
-        public async Task<IReadOnlyList<SmsReceiveModel>> GetReceivesAsync(int page = 1, int pageSize = 100)
+        public async Task<SmsReceiveResult> GetReceivesAsync(int page = 1, int pageSize = 100)
         {
             var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
 
             return setting?.SmsServiceCode.ToString() switch {
                 FarazSmsCode => await farazSmsService.GetReceivesAsync(page, pageSize),
                 SmsIrCode => await smsIrService.GetReceivesAsync(page, pageSize),
-                _ => []
+                _ => new SmsReceiveResult()
             };
+        }
+
+        public async Task<SmsReceiveResult> SearchReceivesAsync(string search, int pageSize = 100)
+        {
+            var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
+
+            return setting?.SmsServiceCode.ToString() switch {
+                FarazSmsCode => await farazSmsService.SearchReceivesAsync(search, pageSize),
+//                SmsIrCode => await smsIrService.SearchReceivesAsync(search, pageSize),
+                _ => new SmsReceiveResult()
+            };
+        }
+
+        /*public async Task SyncReceivesAsync(CancellationToken cancellationToken = default)
+        {
+            const int pageSize = 100;
+
+            var page = 1;
+
+            while (true)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var result = await GetReceivesAsync(page, pageSize);
+
+                if (result.Data.Count == 0)
+                    break;
+
+                var farazIds = result.Data.Select(x => x.Id).ToList();
+
+                var existingSms = await db.Sms
+                    .Where(x => farazIds.Contains(x.FarazId))
+                    .ToDictionaryAsync(x => x.FarazId, cancellationToken);
+
+                foreach (var item in result.Data)
+                {
+                    if (existingSms.TryGetValue(item.Id, out _)) continue;
+
+                    db.Sms.Add(new SmsEntity {
+                        FarazId = item.Id,
+                        Mobile = item.Mobile,
+                        MessageText = item.MessageText,
+                        Number = item.Number,
+                        ReceivedDateTime = item.ReceivedDateTime,
+                        Seen = item.Seen
+                    });
+                }
+
+                await db.SaveChangesAsync(cancellationToken);
+
+                if (page >= result.TotalPages)
+                    break;
+
+                page++;
+            }
+        }*/
+
+        public async Task SyncReceivesAsync(CancellationToken cancellationToken = default)
+        {
+            const int pageSize = 100;
+            const int overlapHours = 1;
+
+            var lastReceivedDate = await db.ReceivedSmses
+                .AsNoTracking()
+                .Select(x => (DateTime?)x.CreatedAtFaraz)
+                .MaxAsync(cancellationToken);
+
+            var syncFromDate = lastReceivedDate?.AddHours(-overlapHours);
+
+            var page = 1;
+            var items = new List<SmsReceiveModel>();
+
+            while (true)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var result = await GetReceivesAsync(page, pageSize);
+
+                if (result.Data.Count == 0)
+                    break;
+
+                items.AddRange(
+                    syncFromDate == null
+                        ? result.Data
+                        : result.Data.Where(x => x.CreatedAtFaraz >= syncFromDate.Value));
+
+                var oldestItemInPage = result.Data.Min(x => x.CreatedAtFaraz);
+
+                if (syncFromDate != null && oldestItemInPage < syncFromDate.Value)
+                {
+                    break;
+                }
+
+                if (page >= result.TotalPages)
+                    break;
+
+                page++;
+            }
+
+            if (items.Count == 0)
+                return;
+
+            var farazIds = items
+                .Select(x => x.Id)
+                .Distinct()
+                .ToList();
+
+            var existingSms = await db.ReceivedSmses
+                .Where(x => farazIds.Contains(x.FarazId))
+                .ToDictionaryAsync(x => x.FarazId, cancellationToken);
+
+            foreach (var item in items)
+            {
+                if (existingSms.TryGetValue(item.Id, out var existing))
+                {
+                    existing.Seen = item.Seen;
+                    continue;
+                }
+
+                db.ReceivedSmses.Add(new ReceivedSms {
+                    FarazId = item.Id,
+                    Mobile = item.Mobile,
+                    MessageText = item.MessageText,
+                    Number = item.Number,
+                    ReceivedDateTime = item.ReceivedDateTime,
+                    CreatedAtFaraz = item.CreatedAtFaraz,
+                    Seen = item.Seen
+                });
+            }
+
+            await db.SaveChangesAsync(cancellationToken);
         }
     }
 }

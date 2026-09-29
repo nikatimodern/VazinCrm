@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Services.Sms;
 using Microsoft.AspNetCore.Mvc;
@@ -29,9 +30,11 @@ public class SmsController(SmsService smsService) : Controller {
             var searchValue = Request.Form["search[value]"].FirstOrDefault()?.Trim().ToLower();
 
             var pageSize = length == -1 ? 100 : Math.Min(length, 100);
-            var page = start / pageSize + 1;
+            var page = (start / pageSize) + 1;
 
-            var data = await smsService.GetReportsAsync(page, pageSize);
+            var result = await smsService.GetReportsAsync(page, pageSize);
+
+            var data = result.Data;
 
             if (!string.IsNullOrEmpty(searchValue))
             {
@@ -43,18 +46,16 @@ public class SmsController(SmsService smsService) : Controller {
                 ).ToList();
             }
 
-            var recordsTotal = data.Count;
-
             return Json(new {
                 draw,
-                recordsTotal,
-                recordsFiltered = recordsTotal,
-                data
+                recordsTotal = result.Total,
+                recordsFiltered = result.Total,
+                data,
             });
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return BadRequest();
+            return BadRequest(ex.Message);
         }
     }
 
@@ -69,31 +70,52 @@ public class SmsController(SmsService smsService) : Controller {
             var searchValue = Request.Form["search[value]"].FirstOrDefault()?.Trim().ToLower();
 
             var pageSize = length == -1 ? 100 : Math.Min(length, 100);
-            var page = start / pageSize + 1;
 
-            var data = await smsService.GetReceivesAsync(page, pageSize);
-
-            if (!string.IsNullOrEmpty(searchValue))
+            // Search
+            if (!string.IsNullOrWhiteSpace(searchValue))
             {
-                data = data.Where(x =>
-                    x.Mobile.Contains(searchValue) ||
-                    x.MessageText.Contains(searchValue) ||
-                    x.Number.Contains(searchValue)
-                ).ToList();
+                var searchResult = await smsService.SearchReceivesAsync(searchValue);
+
+                var filteredData = searchResult.Data;
+
+                return Json(new {
+                    draw,
+                    recordsTotal = searchResult.Total,
+                    recordsFiltered = filteredData.Count,
+                    data = filteredData
+                });
             }
 
-            var recordsTotal = data.Count;
+            var page = (start / pageSize) + 1;
+
+            var result = await smsService.GetReceivesAsync(page, pageSize);
 
             return Json(new {
                 draw,
-                recordsTotal,
-                recordsFiltered = recordsTotal,
-                data
+                recordsTotal = result.Total,
+                recordsFiltered = result.Total,
+                data = result.Data,
             });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+
+    [HttpPost]
+    public async Task<IActionResult> SyncSms(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await smsService.SyncReceivesAsync(cancellationToken);
+
+            return Ok("پیام‌ها با موفقیت همگام‌سازی شدند.");
         }
         catch (Exception)
         {
-            return BadRequest();
+            return BadRequest("خطا در همگام‌سازی پیام‌ها.");
         }
     }
 }

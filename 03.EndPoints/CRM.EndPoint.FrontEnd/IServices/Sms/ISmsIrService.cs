@@ -6,8 +6,8 @@ namespace CRM.EndPoint.FrontEnd.IServices.Sms;
 
 public interface ISmsIrService {
     Task<SmsDashboardModel> GetDashboardAsync();
-    Task<IReadOnlyList<SmsReportModel>> GetReportsAsync(int page = 1, int pageSize = 100);
-    Task<IReadOnlyList<SmsReceiveModel>> GetReceivesAsync(int page = 1, int pageSize = 100, bool sortByNewest = true);
+    Task<SmsReportResult> GetReportsAsync(int page = 1, int pageSize = 100);
+    Task<SmsReceiveResult> GetReceivesAsync(int page = 1, int pageSize = 100, bool sortByNewest = true);
 
     Task<ResponseSmsModel> SendTextAsync(string[] mobiles, string messageText, int? sendDateTime = null);
 

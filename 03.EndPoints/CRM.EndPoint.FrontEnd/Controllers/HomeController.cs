@@ -20,6 +20,7 @@ using CRM.EndPoint.FrontEnd.Services.Asterisk;
 using CRM.EndPoint.FrontEnd.Services.Carizo;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
+using CRM.EndPoint.FrontEnd.Services.Sms;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
@@ -42,6 +43,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly GapgptAi gapgptAi;
         private readonly LogSystemService logSystemService;
         private readonly TaskServices ts;
+        private readonly SmsService smsService;
         private readonly ISmsIrService smsIrService;
 
         public HomeController(IWebHostEnvironment appEnvironment,
@@ -49,7 +51,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             IConfiguration conf,
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
             Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue, IssabelService issabelService,
-            AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi, LogSystemService logSystemService, TaskServices ts, ISmsIrService smsIrService)
+            AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi, LogSystemService logSystemService, TaskServices ts, SmsService smsService)
         {
             this.appEnvironment = appEnvironment;
             this.hostService = hostService;
@@ -64,6 +66,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.smsQueue = smsQueue;
             this.logSystemService = logSystemService;
             this.ts = ts;
+            this.smsService = smsService;
             this.smsIrService = smsIrService;
             this.issabelService = issabelService;
             this.aiPrompts = aiPrompts;
@@ -78,10 +81,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-                var farazSms = new FarazSMS.FarazSMS("jL7FjgMNBWtA0m8bxGdYUEnOlWYR3LSgzyXSyAk11dDTyfVufk");
-                /*var res = farazSms.SendPattern("oee39ctfj9tfmah", "09369100273",
-                    new Dictionary<string, string> { ["number"] = "14050", ["link"] = "1122334" },
-                    "9982007015");*/    
+//                await smsService.SyncReceivesAsync();
 
                 //await db.SaveChangesAsync();
                 await trans.CommitAsync();

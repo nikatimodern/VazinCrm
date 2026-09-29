@@ -23,6 +23,7 @@ using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Products.Entities;
 using CRM.Core.Domain.Reports.Entities;
 using CRM.Core.Domain.RequestAmounts.Entities;
+using CRM.Core.Domain.Sms.Entities;
 using CRM.Core.Domain.States.Entities;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.Core.Domain.SystemWarnings.Entities;
@@ -103,6 +104,7 @@ namespace CRM.Infrastructures.Sql {
         public DbSet<WarehouseVoucher> WarehouseVouchers { get; set; }
         public DbSet<WarehouseProductVoucher> WarehouseProductVouchers { get; set; }
         public DbSet<SupplyFactorItem> SupplyFactorItems { get; set; }
+        public DbSet<ReceivedSms> ReceivedSmses { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -169,6 +171,7 @@ namespace CRM.Infrastructures.Sql {
             modelBuilder.Entity<WarehouseVoucher>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<WarehouseProductVoucher>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<SupplyFactorItem>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<ReceivedSms>().HasQueryFilter(f => f.IsDeleted == false);
 
 
             modelBuilder.Entity<Order>().Ignore(f => f.Row);
