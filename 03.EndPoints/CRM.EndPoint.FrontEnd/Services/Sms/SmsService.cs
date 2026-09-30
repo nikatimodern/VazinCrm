@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.EndPoint.FrontEnd.Services.Sms {
-    public class SmsService(CRMContextDb db, FarazSmsService farazSmsService, ISmsIrService smsIrService) {
+    public class SmsService(CRMContextDb db, FarazSmsService farazSmsService, ISmsIrService smsIrService, DateTimeServices dtService) {
         private const string FarazSmsCode = "cdde93d8-0522-4370-a734-008265e10245";
         private const string SmsIrCode = "c02f8771-cf60-4891-84cb-a21de966b3fc";
 
@@ -88,60 +88,6 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
             };
         }
 
-        public async Task<SmsReceiveResult> SearchReceivesAsync(string search, int pageSize = 100)
-        {
-            var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
-
-            return setting?.SmsServiceCode.ToString() switch {
-                FarazSmsCode => await farazSmsService.SearchReceivesAsync(search, pageSize),
-//                SmsIrCode => await smsIrService.SearchReceivesAsync(search, pageSize),
-                _ => new SmsReceiveResult()
-            };
-        }
-
-        /*public async Task SyncReceivesAsync(CancellationToken cancellationToken = default)
-        {
-            const int pageSize = 100;
-
-            var page = 1;
-
-            while (true)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var result = await GetReceivesAsync(page, pageSize);
-
-                if (result.Data.Count == 0)
-                    break;
-
-                var farazIds = result.Data.Select(x => x.Id).ToList();
-
-                var existingSms = await db.Sms
-                    .Where(x => farazIds.Contains(x.FarazId))
-                    .ToDictionaryAsync(x => x.FarazId, cancellationToken);
-
-                foreach (var item in result.Data)
-                {
-                    if (existingSms.TryGetValue(item.Id, out _)) continue;
-
-                    db.Sms.Add(new SmsEntity {
-                        FarazId = item.Id,
-                        Mobile = item.Mobile,
-                        MessageText = item.MessageText,
-                        Number = item.Number,
-                        ReceivedDateTime = item.ReceivedDateTime,
-                        Seen = item.Seen
-                    });
-                }
-
-                await db.SaveChangesAsync(cancellationToken);
-
-                if (page >= result.TotalPages)
-                    break;
-
-                page++;
-            }
-        }*/
 
         public async Task SyncReceivesAsync(CancellationToken cancellationToken = default)
         {
@@ -167,17 +113,12 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
                 if (result.Data.Count == 0)
                     break;
 
-                items.AddRange(
-                    syncFromDate == null
-                        ? result.Data
-                        : result.Data.Where(x => x.CreatedAtFaraz >= syncFromDate.Value));
+                items.AddRange(syncFromDate == null ? result.Data : result.Data.Where(x => x.CreatedAtFaraz >= syncFromDate.Value));
 
                 var oldestItemInPage = result.Data.Min(x => x.CreatedAtFaraz);
 
                 if (syncFromDate != null && oldestItemInPage < syncFromDate.Value)
-                {
                     break;
-                }
 
                 if (page >= result.TotalPages)
                     break;
@@ -212,6 +153,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
                     Number = item.Number,
                     ReceivedDateTime = item.ReceivedDateTime,
                     CreatedAtFaraz = item.CreatedAtFaraz,
+                    ReceivedDateTimeTxt = dtService.GetDateTimePersian(item.ReceivedDateTime),
                     Seen = item.Seen,
                 });
             }

@@ -11,6 +11,7 @@ using CRM.EndPoint.FrontEnd.Services.Extensions;
 using FarazSMS;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace CRM.EndPoint.FrontEnd.Services.Sms;
 
@@ -125,77 +126,19 @@ public class FarazSmsService {
 
     public async Task<SmsReceiveResult> GetReceivesAsync(int page = 1, int pageSize = 100)
     {
-        var result = await _farazSms.Inbox(page, pageSize);
+        var response = await _farazSms.Inbox(page, pageSize);
 
-        var data = result.GetProperty("data");
+        var result = JsonSerializer.Deserialize<SmsReceiveResult>
+            (response.GetProperty("data").GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        var items = data
-            .GetProperty("data")
-            .EnumerateArray()
-            .Select(x => {
-                var receivedDateTime = x.GetProperty("received_at").GetDateTime().ToLocalTime();
-                var createdAt = x.GetProperty("created_at").GetDateTime().ToLocalTime();
-
-                return new SmsReceiveModel {
-                    Id = x.GetProperty("id").GetInt64(),
-                    Mobile = x.GetProperty("from").GetString(),
-                    MessageText = x.GetProperty("message").GetString(),
-                    Number = x.GetProperty("to").GetString(),
-                    CreatedAtFaraz = createdAt,
-                    ReceivedDateTime = receivedDateTime,
-                    ReceivedDateTimeTxt = dtService.GetDateTimePersian(receivedDateTime),
-                    Seen = x.GetProperty("seen").GetBoolean()
-                };
-            })
-            .ToList();
-
-        return new SmsReceiveResult {
-            Data = items,
-            Total = data.GetProperty("total").GetInt32(),
-            TotalPages = data.GetProperty("last_page").GetInt32()
-        };
-    }
-
-    public async Task<SmsReceiveResult> SearchReceivesAsync(string search, int pageSize = 100)
-    {
-        var allData = new List<SmsReceiveModel>();
-
-        var page = 1;
-        int total;
-
-        while (true)
+        foreach (var item in result?.Data ?? [])
         {
-            var result = await GetReceivesAsync(page, pageSize);
-            allData.AddRange(result.Data);
-
-            total = result.Total;
-
-            if (page >= result.TotalPages)
-                break;
-
-            page++;
+            item.CreatedAtFaraz = item.CreatedAtFaraz.ToLocalTime();
+            item.ReceivedDateTime = item.ReceivedDateTime.ToLocalTime();
+            item.ReceivedDateTimeTxt = dtService.GetDateTimePersian(item.ReceivedDateTime);
         }
 
-        if (search?.Length < 3)
-        {
-            allData = allData.Where(x =>
-                x.Mobile?.Equals(search, StringComparison.OrdinalIgnoreCase) == true ||
-                x.MessageText?.Equals(search, StringComparison.OrdinalIgnoreCase) == true ||
-                x.Number?.Equals(search, StringComparison.OrdinalIgnoreCase) == true
-            ).ToList();
-        } else
-        {
-            allData = allData.Where(x =>
-                x.Mobile?.Contains(search, StringComparison.OrdinalIgnoreCase) == true ||
-                x.MessageText?.Contains(search, StringComparison.OrdinalIgnoreCase) == true ||
-                x.Number?.Contains(search, StringComparison.OrdinalIgnoreCase) == true
-            ).ToList();
-        }
-
-        return new SmsReceiveResult {
-            Data = allData,
-            Total = total
-        };
+        return result;
     }
 
 
@@ -203,8 +146,6 @@ public class FarazSmsService {
     {
         string patternCode;
         Dictionary<string, string> attrs;
-
-        var sms = new FarazSMS.FarazSMS(farazConfig.ApiKey, httpClient: httpClient);
 
         switch (job.Type)
         {
@@ -297,7 +238,8 @@ public class FarazSmsService {
 
         try
         {
-            /*var response = sms.SendPattern(patternCode, job.Mobile, attrs, farazConfig.LineNumber);
+            /*var sms = new FarazSMS.FarazSMS(farazConfig.ApiKey, httpClient: httpClient);
+            var response = sms.SendPattern(patternCode, job.Mobile, attrs, farazConfig.LineNumber);
             if (response.Status != TaskStatus.Canceled && response.Status != TaskStatus.Faulted)
             {
                 res.code = 200;

@@ -18,7 +18,7 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
 
     private const string CustomerFeedbackMessage =
         "مشتری گرامی ضمن قدردانی از خرید شما، خواهشمند است در صورت وجود مغایرت در کیفیت، زمان تحویل یا مقدار محصول دریافتی، عدد ۰ را ارسال فرمایید.با تشکر وزین پلاست";
-    
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
@@ -60,7 +60,7 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
 
         var startDate = new DateTime(2026, 8, 29);
         var targetDate = DateTime.Now.AddDays(-7);
-        
+
         var factors = await db.Factors
             .Where(x =>
                 x.CustomerFeedbackSmsSentDate == null &&

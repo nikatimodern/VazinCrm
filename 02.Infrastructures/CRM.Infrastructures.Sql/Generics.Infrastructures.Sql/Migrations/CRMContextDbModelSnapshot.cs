@@ -3854,6 +3854,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<DateTime>("ReceivedDateTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("ReceivedDateTimeTxt")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("Seen")
                         .HasColumnType("bit");
 

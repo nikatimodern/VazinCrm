@@ -82,9 +82,9 @@ function initSmsReportsTable() {
     if ($.fn.DataTable.isDataTable("#smsReportsTable"))
         return;
     
-    $("#smsReportsTable").DataTable({
+    const table = $("#smsReportsTable").DataTable({
         pageLength: 10,
-        lengthMenu: [[5, 10, 50, 100], [5, 10, 50, 100]],
+        lengthMenu: [5, 10, 50, 100],
         processing: true,
         serverSide: true,
         search: {
@@ -105,21 +105,34 @@ function initSmsReportsTable() {
         },
         
         columns: [
-            { data: "mobile", render: value => `<span class="sms-mobile">${value ?? "-"}</span>` },
+            { data: "mobile", render: value => `<span class="sms-mobile">${value ?? "-"}</span>`, responsivePriority: 1 },
             {
                 data: "messageText",
                 // className: "wrap-text",
-                render: value => `<span class="sms-message" title="${escapeHtml(value ?? "")}">${escapeHtml(value ?? "-")}</span>`,
+                render: value => `<span class="sms-message">${escapeHtml(value ?? "-")}</span>`,
             },
             { data: "number", render: value => `<span class="sms-line">${value ?? "-"}</span>` },
             { data: "typeTxt" },
-            { data: "sendDateTimeTxt", render: renderDateTimeHtml },
-            { data: "deliveryState", render: renderSmsStatus },
+            { data: "sendDateTimeTxt", render: renderDateTimeHtml, responsivePriority: 2 },
+            { data: "deliveryState", render: renderSmsStatus, responsivePriority: 3 },
         ],
         
         language: languageDatatable,
         layout: layoutDatatable,
+        
+        initComplete: () => {
+            const wrapper = table.table().container();
+            const dtLength = wrapper.querySelector(".dt-length");
+            
+            const refreshButton = document.createElement("button");
+            refreshButton.classList.add("inline-flex-center");
+            refreshButton.innerHTML = `<svg style="width: 18px;color: #333" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>`;
+            
+            refreshButton.addEventListener("click", () => $("#smsReportsTable").DataTable().ajax.reload(null, false));
+            dtLength.before(refreshButton);
+        },
     });
+    
 }
 
 
@@ -127,9 +140,9 @@ function initSmsReceivesTable() {
     if ($.fn.DataTable.isDataTable("#smsReceivesTable"))
         return;
     
-    const table = $("#smsReceivesTable").DataTable({
+    $("#smsReceivesTable").DataTable({
         pageLength: 10,
-        lengthMenu: [[5, 10, 50, 100], [5, 10, 50, 100]],
+        lengthMenu: [5, 10, 20, 50, 100, { label: "همه", value: -1 }],
         processing: true,
         serverSide: true,
         search: {
@@ -157,15 +170,6 @@ function initSmsReceivesTable() {
         language: languageDatatable,
         layout: layoutDatatable,
     });
-    
-    table.on("draw.dt", togglePageLength);
-    
-    function togglePageLength() {
-        const searchValue = table.search();
-        const wrapper = table.table().container();
-        
-        wrapper.querySelector(".dt-length").classList.toggle("d-none", searchValue);
-    }
 }
 
 function renderSmsStatus(state) {
@@ -228,25 +232,6 @@ function renderSmsStatus(state) {
     }
 }
 
-function formatSmsDate(value) {
-    if (!value)
-        return "-";
-    
-    const number = Number(value);
-    
-    if (!Number.isFinite(number))
-        return "-";
-    
-    const date = new Date(number * 1000);
-    
-    if (Number.isNaN(date.getTime()))
-        return "-";
-    
-    return new Intl.DateTimeFormat("fa-IR", {
-        dateStyle: "short",
-        timeStyle: "short",
-    }).format(date);
-}
 
 function escapeHtml(value) {
     return String(value)

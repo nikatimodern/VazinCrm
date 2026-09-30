@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
-public class SmsController(SmsService smsService, CRMContextDb db, DateTimeServices dtService) : Controller {
+public class SmsController(SmsService smsService, CRMContextDb db) : Controller {
     public IActionResult Index()
     {
         return View();
@@ -82,7 +82,7 @@ public class SmsController(SmsService smsService, CRMContextDb db, DateTimeServi
 
             if (!string.IsNullOrWhiteSpace(searchValue))
             {
-                if (searchValue?.Length < 3)
+                if (searchValue.Length < 3)
                 {
                     query = query.Where(x =>
                         x.Mobile.Equals(searchValue) ||
@@ -102,22 +102,10 @@ public class SmsController(SmsService smsService, CRMContextDb db, DateTimeServi
 
             var recordsFiltered = await query.CountAsync();
 
-            var pageSize = length == -1 ? 100 : Math.Min(length, 100);
+            if (length != -1)
+                query = query.Skip(start).Take(length);
 
-            var data = await query
-                .Skip(start)
-                .Take(pageSize)
-                .Select(x => new SmsReceiveModel {
-                    Id = x.FarazId,
-                    Mobile = x.Mobile,
-                    MessageText = x.MessageText,
-                    Number = x.Number,
-                    CreatedAtFaraz = x.CreatedAtFaraz,
-                    ReceivedDateTime = x.ReceivedDateTime,
-                    ReceivedDateTimeTxt = dtService.GetDateTimePersian(x.ReceivedDateTime),
-                    Seen = x.Seen
-                })
-                .ToListAsync();
+            var data = await query.ToListAsync();
 
             return Json(new {
                 draw,

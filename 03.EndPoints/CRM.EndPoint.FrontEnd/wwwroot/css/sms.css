@@ -2,6 +2,7 @@
 	padding: 1rem 0;
 }
 
+
 .sms-page-header {
 	display: flex;
 	align-items: center;
@@ -10,17 +11,20 @@
 	margin-bottom: 1.25rem;
 }
 
+
 .sms-page-title {
 	font-size: 1.2rem;
-	font-weight: 700;
+	font-family: IRANSansBold;
 	color: #173b3a;
 }
+
 
 .sms-page-subtitle {
 	margin-top: .3rem;
 	color: #829493;
 	font-size: .82rem;
 }
+
 
 .sms-refresh-btn {
 	display: inline-flex;
@@ -34,11 +38,13 @@
 	font-size: .82rem;
 }
 
+
 .sms-refresh-btn:hover {
 	background: #f4f8f8;
 	border-color: #cbdcda;
 	color: #004944;
 }
+
 
 .sms-summary-grid {
 	display: grid;
@@ -46,6 +52,7 @@
 	gap: .9rem;
 	margin-bottom: 1rem;
 }
+
 
 .sms-summary-card {
 	display: flex;
@@ -59,6 +66,7 @@
 	box-shadow: 0 2px 10px rgba(0, 73, 68, .035);
 }
 
+
 .sms-summary-icon {
 	width: 46px;
 	height: 46px;
@@ -70,20 +78,24 @@
 	font-size: 1.05rem;
 }
 
+
 .sms-summary-icon-credit {
 	color: #006b63;
 	background: #e8f6f3;
 }
+
 
 .sms-summary-icon-provider {
 	color: #5b42a5;
 	background: #f0ebfb;
 }
 
+
 .sms-summary-icon-lines {
 	color: #356c73;
 	background: #eaf3f4;
 }
+
 
 .sms-summary-content {
 	display: flex;
@@ -92,16 +104,19 @@
 	gap: .25rem;
 }
 
+
 .sms-summary-content span {
 	color: #849493;
 	font-size: .76rem;
 }
 
+
 .sms-summary-content strong {
 	color: #1d3736;
 	font-size: 1rem;
-	font-weight: 700;
+	font-family: IRANSansBold;
 }
+
 
 .sms-content-card {
 	overflow: hidden;
@@ -111,6 +126,7 @@
 	box-shadow: 0 2px 10px rgba(0, 73, 68, .035);
 }
 
+
 .sms-tabs {
 	display: flex;
 	align-items: center;
@@ -118,6 +134,7 @@
 	padding: .55rem .7rem 0;
 	border-bottom: 1px solid #edf2f2;
 }
+
 
 .sms-tab {
 	position: relative;
@@ -129,9 +146,9 @@
 	background: transparent;
 	color: #81908f;
 	font-size: .82rem;
-	font-weight: 500;
 	cursor: pointer;
 }
+
 
 .sms-tab::after {
 	content: "";
@@ -144,18 +161,21 @@
 	border-radius: 2px 2px 0 0;
 }
 
+
 .sms-tab.active {
 	color: #004944;
-	font-weight: 700;
+	font-family: IRANSansBold;
 }
+
 
 .sms-tab.active::after {
 	background: #004944;
 }
 
+
 .sms-tab-count {
-	min-width: 21px;
-	height: 21px;
+	min-width: 22px;
+	height: 22px;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -166,14 +186,17 @@
 	font-size: 11px;
 }
 
+
 .sms-tab.active .sms-tab-count {
 	background: #e8f5f3;
 	color: #00655e;
 }
 
+
 .sms-tab-content {
 	padding: .5rem;
 }
+
 
 .sms-table-header {
 	display: flex;
@@ -182,12 +205,13 @@
 	margin-bottom: .85rem;
 }
 
+
 .sms-table-header h6 {
 	margin: 0;
 	color: #243d3c;
 	font-size: 14px;
-	font-weight: 700;
 }
+
 
 .sms-table-header span {
 	display: block;
@@ -196,9 +220,11 @@
 	font-size: 12px;
 }
 
+
 .sms-table {
 	margin-bottom: 0 !important;
 }
+
 
 .sms-table thead th {
 	padding: .7rem .75rem;
@@ -210,6 +236,7 @@
 	white-space: nowrap;
 }
 
+
 .sms-table tbody td {
 	padding: .75rem;
 	border-bottom: 1px solid #f0f3f3;
@@ -218,38 +245,45 @@
 	vertical-align: middle;
 }
 
+
 .sms-table tbody tr:last-child td {
 	border-bottom: 0;
 }
+
 
 .sms-table tbody tr:nth-child(odd) td {
 	background: #fafcfc;
 }
 
+
 .sms-table tbody tr:nth-child(even) td {
 	background: #f2f6f5;
 }
+
 
 .sms-table tbody tr:hover td {
 	background: #f0f7f6;
 }
 
+
 .sms-mobile {
 	direction: ltr;
 	display: inline-block;
 	color: #294f4d;
-	font-weight: 600;
+	font-family: IRANSansBold;
 	white-space: nowrap;
 }
 
+
 .sms-message {
-/* 	display: inline-block;
-	max-width: 420px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap; */
+	/* 	display: inline-block;
+		max-width: 420px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap; */
 	color: #526665;
 }
+
 
 .sms-status {
 	display: inline-flex;
@@ -258,29 +292,34 @@
 	padding: .28rem .55rem;
 	border-radius: .45rem;
 	font-size: .68rem;
-	font-weight: 600;
+	font-family: IRANSansBold;
 	white-space: nowrap;
 }
+
 
 .sms-status-success {
 	background: #e9f7f1;
 	color: #187052;
 }
 
+
 .sms-status-pending {
 	background: #f2f4f4;
 	color: #667776;
 }
+
 
 .sms-status-error {
 	background: #fbeeee;
 	color: #9b3c3c;
 }
 
+
 .sms-status-unknown {
 	background: #f1f2f3;
 	color: #707b7b;
 }
+
 
 @media (max-width: 768px) {
 	.sms-page-header {
@@ -297,6 +336,6 @@
 	}
 	
 	.sms-tab-content {
-		padding: .7rem;
+		padding-inline: 0;
 	}
 }

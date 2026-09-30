@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace CRM.EndPoint.FrontEnd.Models.Sms;
 
@@ -50,17 +51,26 @@ public sealed class SmsReportResult {
 
 public sealed class SmsReceiveResult {
     public List<SmsReceiveModel> Data { get; set; } = [];
+
     public int Total { get; set; }
-    public int TotalPages { get; set; }
+
+    [JsonPropertyName("last_page")] public int TotalPages { get; set; }
 }
 
-public sealed class SmsReceiveModel {
+public class SmsReceiveModel {
     public long Id { get; set; }
-    public string Mobile { get; set; }
-    public string MessageText { get; set; }
-    public string Number { get; set; }
-    public DateTime ReceivedDateTime { get; set; }
-    public DateTime CreatedAtFaraz { get; set; }
+
+    [JsonPropertyName("from")] public string Mobile { get; set; }
+
+    [JsonPropertyName("message")] public string MessageText { get; set; }
+
+    [JsonPropertyName("to")] public string Number { get; set; }
+
+    [JsonPropertyName("created_at")] public DateTime CreatedAtFaraz { get; set; }
+
+    [JsonPropertyName("received_at")] public DateTime ReceivedDateTime { get; set; }
+
     public string ReceivedDateTimeTxt { get; set; }
+
     public bool Seen { get; set; }
 }
