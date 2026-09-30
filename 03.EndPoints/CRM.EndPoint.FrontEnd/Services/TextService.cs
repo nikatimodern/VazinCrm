@@ -208,9 +208,14 @@ namespace CRM.EndPoint.FrontEnd.Services {
         }
 
 
-        private static string NormalizeIranMobile(string phone)
+        public static string NormalizeIranMobile(string phone)
         {
             if (string.IsNullOrWhiteSpace(phone)) return "";
+
+            phone = ToEnglishNumber(phone.Trim());
+
+            phone = Regex.Replace(phone, @"[\s\-\(\)]", ""); // حذف فاصله، خط تیره و پرانتز از شماره تلفن
+
             if (phone.StartsWith("+989"))
                 phone = "0" + phone[3..];
 
@@ -220,14 +225,15 @@ namespace CRM.EndPoint.FrontEnd.Services {
             if (phone.StartsWith("989") && phone.Length == 12)
                 phone = "0" + phone[2..];
 
+            if (phone.StartsWith("9") && phone.Length == 10)
+                return "0" + phone;
+
             return phone;
         }
 
         public static bool IsValidPhoneNumber(string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return false;
-
-            input = ToEnglishNumber(input.Trim());
 
             var normalized = NormalizeIranMobile(input);
 

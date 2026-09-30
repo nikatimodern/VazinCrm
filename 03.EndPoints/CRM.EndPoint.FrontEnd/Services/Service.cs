@@ -13,6 +13,8 @@ using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Reports.Enum;
 using CRM.Core.Domain.RequestAmounts.Enums;
+using CRM.Core.Domain.SystemWarnings.Entities;
+using CRM.Core.Domain.SystemWarnings.Enums;
 using CRM.Core.Domain.Transfers.Entities;
 using FactorEntity = CRM.Core.Domain.Factors.Entities.Factor;
 using CRM.EndPoint.FrontEnd.Models.Cartable;
@@ -257,7 +259,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
                 var items = factor.FactorItems.Where(x => !x.IsDeleted);
 
                 var isOfficial = factor.OfficialType == 1;
-                
+
                 decimal sumTotalAmount = 0;
                 decimal totalDiscount = 0;
                 decimal totalTax = 0;
@@ -306,7 +308,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
                 var items = preFactor.PreFactorItems.Where(x => !x.IsDeleted);
 
                 var isOfficial = preFactor.OfficialType == 1;
-                
+
                 decimal sumTotalAmount = 0;
                 decimal totalDiscount = 0;
                 decimal totalTax = 0;
@@ -407,6 +409,35 @@ namespace CRM.EndPoint.FrontEnd.Services {
             var isActive = await db.Factors.AsNoTracking().AnyAsync(f => f.CustomerId == customerId && f.status == FactorStatus.تایید_شده);
 
             return isActive;
+        }
+
+
+        public async Task AddWarning(Guid EntityId, EntityTypeEnum EntityType, WarningTypeEnum WarningType)
+        {
+            string message = null;
+            switch (WarningType)
+            {
+                case WarningTypeEnum.مغایرت_مبلغ_فاکتور_با_فاکتور_سپیدار:
+                    var serialConflict = await db.Factors.AsNoTracking().Where(f => f.Id == EntityId).Select(f => f.SerialNumber).FirstOrDefaultAsync();
+                    message = "مبلغ ثبت شده در فاکتور شماره " + serialConflict + " با فاکتور سپیدار آن مطابقت ندارند.";
+                    break;
+
+                case WarningTypeEnum.عدم_ارسال_پیامک_کنترل_کیفیت:
+                    var serialQc = await db.Factors.AsNoTracking().Where(f => f.Id == EntityId).Select(f => f.SerialNumber).FirstOrDefaultAsync();
+                    message = "پیامک کنترل کیفیت برای فاکتور " + serialQc + " ارسال نشد.";
+                    break;
+            }
+
+            var warning = new SystemWarning {
+                Message = message,
+                EntityType = EntityType,
+                EntityTypeTxt = EntityType.ToString(),
+                EntityId = EntityId,
+                WarningType = WarningType,
+                WarningTypeTxt = WarningType.ToString().Replace("_", " ")
+            };
+
+            db.SystemWarnings.Add(warning);
         }
     }
 }

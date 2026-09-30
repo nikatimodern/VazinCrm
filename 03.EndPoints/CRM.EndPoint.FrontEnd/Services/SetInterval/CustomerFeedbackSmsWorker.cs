@@ -3,6 +3,9 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CRM.Core.Domain;
+using CRM.Core.Domain.Factors.Enum;
+using CRM.Core.Domain.SystemWarnings.Enums;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Services.Sms;
 using CRM.Infrastructures.Sql;
@@ -14,8 +17,6 @@ using Microsoft.Extensions.Logging;
 namespace CRM.EndPoint.FrontEnd.Services.SetInterval;
 
 public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory, ILogger<CustomerFeedbackSmsWorker> logger) : BackgroundService {
-    private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
-
     private const string CustomerFeedbackMessage =
         "مشتری گرامی ضمن قدردانی از خرید شما، خواهشمند است در صورت وجود مغایرت در کیفیت، زمان تحویل یا مقدار محصول دریافتی، عدد ۰ را ارسال فرمایید.با تشکر وزین پلاست";
 
@@ -57,6 +58,7 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
 
         var db = scope.ServiceProvider.GetRequiredService<CRMContextDb>();
         var smsService = scope.ServiceProvider.GetRequiredService<SmsService>();
+        var service = scope.ServiceProvider.GetRequiredService<Service>();
 
         var startDate = new DateTime(2026, 8, 29);
         var targetDate = DateTime.Now.AddDays(-7);
@@ -64,8 +66,9 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
         var factors = await db.Factors
             .Where(x =>
                 x.CustomerFeedbackSmsSentDate == null &&
+                x.DateMiladi >= startDate &&
                 x.DateMiladi <= targetDate &&
-                x.DateMiladi >= startDate
+                x.status != FactorStatus.ابطال_شده
             )
             .OrderBy(x => x.DateMiladi)
             .ToListAsync(ct);
@@ -85,12 +88,17 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
 
         foreach (var factor in factors)
         {
-            ct.ThrowIfCancellationRequested();
+            ct.ThrowIfCancellationRequested(); // وقتی iis استاپ بشه اجرا میشه و میفته توی catch
 
-            var mobile = factor.Cus_Mobile;
+            var mobile = TextService.NormalizeIranMobile(factor.Cus_Mobile);
 
-            if (string.IsNullOrWhiteSpace(mobile))
+            if (!TextService.IsValidPhoneNumber(mobile))
+            {
+                logger.LogWarning("MobileNumber is not valid. Mobile:{Mobile}", mobile);
+                await service.AddWarning(factor.Id, EntityTypeEnum.Factor, WarningTypeEnum.عدم_ارسال_پیامک_کنترل_کیفیت);
+                await db.SaveChangesAsync(ct);
                 continue;
+            }
 
             try
             {
@@ -104,6 +112,8 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
                 if (result?.code != 200)
                 {
                     logger.LogWarning("Feedback SMS failed. SerialNumber:{SerialNumber}, Mobile:{Mobile}", factor.SerialNumber, mobile);
+                    await service.AddWarning(factor.Id, EntityTypeEnum.Factor, WarningTypeEnum.عدم_ارسال_پیامک_کنترل_کیفیت);
+                    await db.SaveChangesAsync(ct);
                     continue;
                 }
 
@@ -115,7 +125,9 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to send feedback SMS for factor {SerialNumber}", factor.SerialNumber);
+                logger.LogError(ex, "Failed to send feedback SMS for factor {SerialNumber}, Mobile:{Mobile}", factor.SerialNumber, mobile);
+                await service.AddWarning(factor.Id, EntityTypeEnum.Factor, WarningTypeEnum.عدم_ارسال_پیامک_کنترل_کیفیت);
+                await db.SaveChangesAsync(ct);
             }
 
             // Provider limit: 50 requests per minute

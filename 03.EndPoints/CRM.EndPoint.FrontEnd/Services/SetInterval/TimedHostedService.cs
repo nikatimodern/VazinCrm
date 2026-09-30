@@ -15,6 +15,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.LogSystems.Entities;
+using CRM.Core.Domain.SystemWarnings.Enums;
 using CRM.EndPoint.FrontEnd.IServices.PushNotification;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 
@@ -129,7 +130,9 @@ namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
                         Message = "مبلغ ثبت شده در فاکتور شماره " + f.crm.SerialNumber + " با فاکتور سپیدار آن مطابقت ندارند.",
                         EntityType = EntityTypeEnum.Factor,
                         EntityTypeTxt = nameof(EntityTypeEnum.Factor),
-                        EntityId = f.crm.Id
+                        EntityId = f.crm.Id,
+                        WarningType = WarningTypeEnum.مغایرت_مبلغ_فاکتور_با_فاکتور_سپیدار,
+                        WarningTypeTxt = (WarningTypeEnum.مغایرت_مبلغ_فاکتور_با_فاکتور_سپیدار).ToString().Replace("_", " ")
                     })
                     .ToList();
 

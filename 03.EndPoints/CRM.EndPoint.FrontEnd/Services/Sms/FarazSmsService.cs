@@ -16,19 +16,17 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 namespace CRM.EndPoint.FrontEnd.Services.Sms;
 
 public class FarazSmsService {
-    private readonly HttpClient httpClient;
     private readonly DateTimeServices dtService;
     private readonly FarazSmsSetting farazConfig;
     private readonly FarazSMS.FarazSMS _farazSms;
 
-    public FarazSmsService(HttpClient httpClient, IConfiguration config, DateTimeServices dtService)
+    public FarazSmsService(HttpClient httpc, IConfiguration config, DateTimeServices dtService)
     {
-        this.httpClient = httpClient;
         this.dtService = dtService;
         farazConfig = config.GetSection("FarazSmsConfig").Get<FarazSmsSetting>();
         var apiKey = farazConfig?.ApiKey ?? throw new InvalidOperationException("FarazSMS API Key is not configured.");
 
-        _farazSms = new FarazSMS.FarazSMS(apiKey, httpClient: httpClient);
+        _farazSms = new FarazSMS.FarazSMS(apiKey, httpClient: httpc);
     }
 
 
@@ -238,15 +236,15 @@ public class FarazSmsService {
 
         try
         {
-            /*var sms = new FarazSMS.FarazSMS(farazConfig.ApiKey, httpClient: httpClient);
-            var response = sms.SendPattern(patternCode, job.Mobile, attrs, farazConfig.LineNumber);
+            var response = _farazSms.SendPattern(patternCode, job.Mobile, attrs, farazConfig.LineNumber);
             if (response.Status != TaskStatus.Canceled && response.Status != TaskStatus.Faulted)
             {
                 res.code = 200;
                 res.Desc = response.Result.ToString();
-            }*/
+            }
 
 
+            /*
             var model = new FarazSmsPatternRequest {
                 code = patternCode,
                 recipient = job.Mobile,
@@ -265,6 +263,7 @@ public class FarazSmsService {
 
             res.code = response.IsSuccessStatusCode ? 200 : 0;
             res.Desc = !string.IsNullOrEmpty(result?.message) ? result.message : result?.status ?? responseText;
+*/
 
             return res;
         }
@@ -286,6 +285,8 @@ public class FarazSmsService {
     public async Task<ResponseSmsModel> SendTextAsync(string[] mobiles, string message)
     {
         var res = new ResponseSmsModel();
+        return null;
+/*
 
         if (farazConfig.ActiveStatus != true)
         {
@@ -319,6 +320,6 @@ public class FarazSmsService {
             res.code = 0;
             res.Desc = ex.Message;
             return res;
-        }
+        }*/
     }
 }

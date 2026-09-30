@@ -4224,6 +4224,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("UserModifyID")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("WarningType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WarningTypeTxt")
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.ToTable("SystemWarnings");
