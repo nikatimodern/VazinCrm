@@ -34,6 +34,7 @@ using System.Threading.Tasks;
 using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Deals.Enums;
 using CRM.Core.Domain.Supplies.Enums;
+using CRM.Core.Domain.SystemWarnings.Enums;
 using CRM.EndPoint.FrontEnd.IServices.DocumentRender;
 using CRM.EndPoint.FrontEnd.IServices.PushNotification;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
@@ -3031,7 +3032,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var errorList = new List<ErrorVModel>();
 
-            var hasAnyWarnings = await db.SystemWarnings.AnyAsync();
+            var hasAnyWarnings = await db.SystemWarnings.AnyAsync(f => f.WarningType == WarningTypeEnum.مغایرت_مبلغ_فاکتور_با_فاکتور_سپیدار);
             if (hasAnyWarnings)
             {
                 errorList.Add(MapError(11));
@@ -3041,6 +3042,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 .Where(f => f.PfId == pfId && f.SupplyType == SupplyTypeEnum.هزینه_تولید)
                 .GroupBy(g => g.PfItemId)
                 .ToListAsync();
+
             if (supplies.Count == 0)
             {
                 errorList.Add(MapError(21));
