@@ -1,0 +1,73 @@
+<!-- Modal AddItemSupplyFactor -->
+<div class="modal fade" id="ItemSupplyFactorModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content col-12" style="padding:10px">
+            <div class="modal-header p-0 border-0">
+                <div class="factor-modal-title">افزودن آیتم فاکتور</div>
+            </div>
+
+            <div class="modal-body pb-2">
+                <div>
+                    <form id="supplyFactorItem" class="d-flex flex-column gap-2 w-100">
+                        <div class="d-flex flex-column">
+                            <div class="d-flex justify-content-between w-100">
+                                <label>محصول</label>
+                                <div id="sf-PfPrintableAlertId" class="d-flex gap-2" style="font-size:10px">
+                                    <div class="d-flex align-items-center gap-1">
+                                        <label for="sf-printableF">غیر چاپدار</label>
+                                        <input type="radio" name="printable" id="sf-printableF" class="valueNumber" data-alertId="sf-PfPrintableAlertId" value="0" required />
+                                    </div>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <label for="sf-printableT">چاپدار</label>
+                                        <input type="radio" name="printable" id="sf-printableT" class="valueNumber" data-alertId="sf-PfPrintableAlertId" value="1" required />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <select class="w-100 center fs-6 show-dropdown-arrow" name="productCode" id="productCode" required>
+                            </select>
+                        </div>
+                        <div class="d-flex flex-column align-items-center">
+                            <label>شرح کالا</label>
+                            <input class="form-control" type="text" name="product" id="sf-product" />
+                        </div>
+                        <div class="d-flex flex-column align-items-center">
+                            <label>تعداد/مقدار </label>
+                            <input class="form-control" type="number" name="weightCount" id="sf-weightCount" required />
+                        </div>
+                        <div class="d-flex flex-column align-items-center">
+                            <label>واحد</label>
+                            <select class="form-control valueNumber" style="width:100%;" name="unit" id="sf-unit" required>
+                            </select>
+                        </div>
+                        <div class="d-flex flex-column align-items-center">
+                            <label>مبلغ واحد (ریال)</label>
+                            <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="unitAmount" id="sf-unitAmount" required data-currency-hint="next" />
+                            <span class="currencyHint"></span>
+                        </div>
+                        <div class="d-flex flex-column align-items-center">
+                            <label for="sf-itemDiscount">تخفیف</label>
+                            <input inputmode="numeric" class="currencyNumber form-control inpAmount" type="text" name="discount" id="sf-itemDiscount" value="0" autocomplete="off" data-currency-hint="next" />
+                            <span class="currencyHint"></span>
+                        </div>
+                        <div class="d-flex flex-column align-items-center">
+                            <label>مبلغ کل (ریال)</label>
+                            <input class="form-control inpAmount" type="text" name="totalAmount" id="sf-totalAmount" disabled />
+                        </div>
+                    </form>
+                </div>
+
+                <div class="my-3 pf-divider"></div>
+
+                <div class="flex-center gap-1">
+                    <button id="sf-CancelBtnId" class="buttonCancel2" onclick="canselModalItemSupplyFactor()">انصراف</button>
+                    <button id="sf-AddBtnId" class="buttonGreen3" onclick="addItemSupplyFactor()">ثبت</button>
+                    <div id="sf-UpBtnId" class="flex-center gap-1 d-none">
+                        <button class="buttonCancel2" onclick="cancelUpdateSfItem()">انصراف</button>
+                        <button class="buttonGreen3" onclick="updateSfItem()">ثبت</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

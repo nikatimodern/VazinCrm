@@ -4,8 +4,19 @@ let supplyFactorData = { items: [] };
 let sfItemIndex = null;
 let incompleteSfItemsCount = 0;
 
-const supplyFactorAiBtn = document.getElementById("supplyFactorAiBtn");
 const supplyFactorDiscountInp = document.getElementById("sf-discount");
+
+
+let supplyFactorAttInpId;
+
+if (window.innerWidth >= 992 && window.innerWidth < 1400) {
+    supplyFactorAttInpId = "supplyFactorTabletAtt";
+} else if (window.innerWidth < 992) {
+    supplyFactorAttInpId = "supplyFactorMobileAtt";
+} else {
+    supplyFactorAttInpId = "supplyFactorAtt";
+}
+
 
 document.querySelector("#supplyFactorItem")?.addEventListener("input", (e) => {
     if (e.target.matches("[name='weightCount']") || e.target.matches("[name='unitAmount']") || e.target.matches("[name='discount']")) {
@@ -14,10 +25,8 @@ document.querySelector("#supplyFactorItem")?.addEventListener("input", (e) => {
 });
 
 document.querySelectorAll("#supplyFactorModal input[type='radio'][name='officialType']")?.forEach(radio => {
-    // const currencyTypeElm = document.querySelector("#supplyFactorHeadFormId select[name='currencyType']");
     radio.addEventListener("change", async (e) => {
         supplyFactorData.officialType = Number(e.target.value);
-        // currencyTypeElm.toggleAttribute("disabled", supplyFactorData.officialType === 1);
         calculateSupplyFactorTotals();
         showSupplyFactorItems();
     });
@@ -61,7 +70,7 @@ function cancelSupplyFactorModal() {
     // modalSelector.reset();
     // toggleElementsDisabled(document.getElementById("showAddOrderHeadBtn"), true);
     ModalToggle("#supplyFactorModal", "hide");
-    clearUpload("supplyFactorAtt");
+    clearUpload(supplyFactorAttInpId);
     updateSupplyFactorValidationState();
 }
 
@@ -136,17 +145,17 @@ const deleteSfItem = (index) => {
 };
 
 const showUpdateSfItem = async (index) => {
-    /*if (window.innerWidth < 992) {
-        ModalToggle("ItemPreFactorModal");
-    }*/
+    if (window.innerWidth < 992) {
+        ModalToggle("ItemSupplyFactorModal");
+    }
     sfItemIndex = index;
     
     mySer.convertJsonToForm(supplyFactorData.items[index], "supplyFactorItem");
     await mySer.CheckValidForm("#supplyFactorItem");
     
-    // document.getElementById("sf-CancelBtnId").style.display = "none";
-    document.getElementById("sf-AddBtnId").style.display = "none";
-    document.getElementById("sf-UpBtnId").style.display = "flex";
+    document.getElementById("sf-CancelBtnId").classList.add("d-none");
+    document.getElementById("sf-AddBtnId").classList.add("d-none");
+    document.getElementById("sf-UpBtnId").classList.remove("d-none");
 };
 
 const updateSfItem = async () => {
@@ -181,14 +190,31 @@ const cancelUpdateSfItem = () => {
     mySer.emptyForm("supplyFactorItem");
     sfItemIndex = null;
     
-    document.getElementById("sf-AddBtnId").style.display = "flex";
-    // document.getElementById("sf-CancelBtnId").style.display = "flex";
-    document.getElementById("sf-UpBtnId").style.display = "none";
+    document.getElementById("sf-AddBtnId").classList.remove("d-none");
+    document.getElementById("sf-CancelBtnId").classList.remove("d-none");
+    document.getElementById("sf-UpBtnId").classList.add("d-none");
     
-    /* if (window.innerWidth < 992) {
-         canselModalItemPreFactor();
-     }*/
+    if (window.innerWidth < 992) {
+        ModalToggle("ItemSupplyFactorModal", "hide");
+    }
 };
+
+const addItemSupplyFactor = async () => {
+    FLshowLoading();
+    const isValid = await addSfItem();
+    FLshowLoading(false);
+    if (isValid) {
+        ModalToggle("ItemSupplyFactorModal", "hide");
+        toastifySuccess("با موفقیت اضافه شد!");
+    }
+};
+
+
+const canselModalItemSupplyFactor = () => {
+    mySer.emptyForm("supplyFactorItem");
+    ModalToggle("ItemSupplyFactorModal", "hide");
+};
+
 
 supplyFactorDiscountInp?.addEventListener("input", () => {
     calculateSupplyFactorTotals(true);
@@ -196,19 +222,16 @@ supplyFactorDiscountInp?.addEventListener("input", () => {
 });
 
 
-supplyFactorAiBtn?.addEventListener("click", proccessSupplyFactorWithAi);
-
-async function proccessSupplyFactorWithAi() {
+async function proccessSupplyFactorWithAi(btn) {
     if (window.supplyFactorAttachments.every(item => item.isDeleted)) {
         toastifyError("سند فاکتور باید بارگذاری شود");
         return;
     }
     
-    const spinner = supplyFactorAiBtn.querySelector(".spinner-border");
-    const aiIcon = supplyFactorAiBtn.querySelector(".ai-svg-icon");
-    
+    const spinner = btn.querySelector(".spinner-border");
+    const aiIcon = btn.querySelector(".ai-svg-icon");
     const elementsToDisable = [
-        supplyFactorAiBtn,
+        btn,
         ...Array.from(document.getElementById("supplyFactorHeadFormId").elements),
         ...Array.from(document.getElementById("supplyFactorItem").elements),
         document.getElementById("cancelSupplyFactorBtn"),
@@ -220,25 +243,25 @@ async function proccessSupplyFactorWithAi() {
     spinner.classList.remove("d-none");
     aiIcon.classList.add("d-none");
     
-    /*    const sfData = {
-            "date": "1405/01/26",
-            "serialNumber": "2117",
-            "officialType": 1,
-            "items": [{
-                "product": "لفاف ملزومات پر کردن ، دربندی و بسته بندی",
-                "weightCount": 966,
-                "unit": 2,
-                "unitTxt": "کیلوگرم",
-                "unitAmount": 3950000,
-                "totalAmount": 3815700000,
-                "discount": 0,
-                "taxAmount": 381570000,
-                "productCode": null,
-                "productSmallName": null,
-                "printable": 0,
-            }],
-        };
-        */
+    /*await delay(3000);
+    const sfData = {
+        "date": "1405/01/26",
+        "serialNumber": "2117",
+        "officialType": 1,
+        "items": [{
+            "product": "لفاف ملزومات پر کردن ، دربندی و بسته بندی",
+            "weightCount": 966,
+            "unit": 2,
+            "unitTxt": "کیلوگرم",
+            "unitAmount": 3950000,
+            "totalAmount": 3815700000,
+            "discount": 0,
+            "taxAmount": 381570000,
+            "productCode": null,
+            "productSmallName": null,
+            "printable": 0,
+        }],
+    };*/
     
     const attachFile = window.supplyFactorAttachments.filter(i => !i.isDeleted)[0];
     
@@ -265,6 +288,7 @@ async function proccessSupplyFactorWithAi() {
         },
     });
     
+    
     toggleElementsDisabled(elementsToDisable, false);
     spinner.classList.add("d-none");
     aiIcon.classList.remove("d-none");
@@ -275,7 +299,6 @@ const updateSupplyFactorValidationState = () => {
     incompleteSfItemsCount = getIncompleteItemsCount(supplyFactorData.items, sfFieldRules);
     
     const messageBox = document.getElementById("supplyFactorValidationMessage");
-    const submitBtn = document.getElementById("submitSupplyFactorBtn");
     
     if (incompleteSfItemsCount > 0) {
         const message = createInlineAlert({
@@ -285,17 +308,14 @@ const updateSupplyFactorValidationState = () => {
         
         messageBox.classList.remove("d-none");
         messageBox.replaceChildren(message);
-        toggleElementsDisabled(submitBtn);
     } else {
         messageBox.classList.add("d-none");
         messageBox.innerHTML = "";
-        
-        toggleElementsDisabled(submitBtn, false);
     }
 };
 
 ///////////////////
-async function showAddOrderHeadModal() {
+async function showAddOrderHeadSfModal() {
     await modalSelector.open({
         title: "انتخاب حواله تولید",
         selectedIds: orderHeadsSupFactorSelectedIds,
@@ -380,7 +400,6 @@ async function submitSupplyFactorModal() {
         description: document.getElementById("sf-description")?.value?.trim(),
         attachments: window.supplyFactorAttachments,
     };
-    console.log(model);
     
     await sendApiRequest({
         method: "POST",
@@ -413,25 +432,6 @@ async function getSupplyFactor(id) {
     });
 }
 
-/*async function showEditSupplyFactorModal(id) {
-    await sendApiRequest({
-        url: "/Supply/GetSupplyFactor",
-        params: { id },
-        onSuccess: async (res) => {
-            supplyFactorData = res.data.supplyFactor;
-            await showSupplyFactorModal(supplyFactorData.dealId);
-            
-            mySer.convertJsonToForm(supplyFactorData, "supplyFactorForm");
-            
-            orderHeadsSupFactorSelectedIds = supplyFactorData.supplyFactorOrderHeads.map(o => o.orderHeadId);
-            document.getElementById("supplyFactorOrderHead").value = res.data.orderSerials.join(", ");
-            
-            window.supplyFactorAttachments = res.data.attachments;
-            FileUpReload("supplyFactorAtt");
-        },
-    });
-}*/
-
 async function showEditSupplyFactorModal(id) {
     await initSupplyFactorModal();
     
@@ -441,7 +441,7 @@ async function showEditSupplyFactorModal(id) {
     supplyFactorData = data.supplyFactor;
     window.supplyFactorAttachments = data.attachments;
     
-    FileUpReload("supplyFactorAtt");
+    FileUpReload(supplyFactorAttInpId);
     mySer.convertJsonToForm(supplyFactorData, "supplyFactorHeadFormId");
     
     document.getElementById("sf-sumTotalAmount").textContent = supplyFactorData.sumTotalAmount.toLocaleString();
@@ -449,6 +449,9 @@ async function showEditSupplyFactorModal(id) {
     document.getElementById("sf-paymentAmount").textContent = supplyFactorData.paymentAmount.toLocaleString();
     document.getElementById("sf-discount").value = supplyFactorData.discount.toLocaleString();
     document.getElementById("sf-description").value = supplyFactorData.description;
+    
+    /*orderHeadsSupFactorSelectedIds = supplyFactorData.supplyFactorOrderHeads.map(o => o.orderHeadId);
+    document.getElementById("supplyFactorOrderHead").value = res.data.orderSerials.join(", ");*/
     
     showSupplyFactorItems();
     ModalToggle("#supplyFactorModal");

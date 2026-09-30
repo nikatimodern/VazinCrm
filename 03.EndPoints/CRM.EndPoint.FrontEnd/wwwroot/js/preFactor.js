@@ -11,7 +11,7 @@ let prePaymentPercentId;
 let descriptionInpId;
 let descriptionListId;
 
-if (window.innerWidth >= 992 && window.innerWidth < 1500) {
+if (window.innerWidth >= 992 && window.innerWidth < 1400) {
     prePaymentPercentId = "prePaymentPercentTablet";
     descriptionInpId = "descriptionIdTablet";
     descriptionListId = "PfactorDescIdTablet";
@@ -597,18 +597,18 @@ const showUpdatePfItem = (index) => {
     pfItemIndex = index;
     
     mySer.convertJsonToForm(pFactorItems[index], "PreFacItem");
-    document.getElementById("AddBtnId").style.display = "none";
-    document.getElementById("CancelBtnId").style.display = "none";
-    document.getElementById("UpBtnId").style.display = "flex";
+    document.getElementById("AddBtnId").classList.add("d-none");
+    document.getElementById("CancelBtnId").classList.add("d-none");
+    document.getElementById("UpBtnId").classList.remove("d-none");
 };
 
 const cancelUpdatePfItem = () => {
     mySer.emptyForm("PreFacItem");
     pfItemIndex = null;
     
-    document.getElementById("AddBtnId").style.display = "flex";
-    document.getElementById("CancelBtnId").style.display = "flex";
-    document.getElementById("UpBtnId").style.display = "none";
+    document.getElementById("AddBtnId").classList.remove("d-none");
+    document.getElementById("CancelBtnId").classList.remove("d-none");
+    document.getElementById("UpBtnId").classList.add("d-none");
     
     if (window.innerWidth < 992) {
         canselModalItemPreFactor();

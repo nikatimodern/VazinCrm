@@ -21,11 +21,12 @@
             </div>*@
         </div>
     </div>
-    <div id="supplyFactorContainer"></div>
+    <div id="supplyFactorsContainer"></div>
 </div>
 
 
 <partial name="Modals/_SupplyFactorModal" />
+<partial name="Modals/_SupplyFactorItemModal" />
 
 @section Scripts {
     <script src="~/js/supplyFactor.js" asp-append-version="true"></script>
@@ -40,7 +41,7 @@
             const val = document.getElementById("supplyFactorSearch")?.value.trim() ?? "";
             FLshowLoading();
             const res = await axios(`/Supply/GetAllSupplyFactorsPartial?search=${val}`);
-            document.getElementById("supplyFactorContainer").innerHTML = res.data;
+            document.getElementById("supplyFactorsContainer").innerHTML = res.data;
             FLshowLoading(false);
         };
     </script>
