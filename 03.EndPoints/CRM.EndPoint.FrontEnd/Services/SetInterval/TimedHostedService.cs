@@ -105,8 +105,14 @@ namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
                 var db = scope.ServiceProvider.GetRequiredService<CRMContextDb>();
                 var s1Db = scope.ServiceProvider.GetRequiredService<Sepidar1ContextDb>();
 
+                var warningFactorIds = await db.SystemWarnings
+                    .AsNoTracking()
+                    .Where(x => x.WarningType == WarningTypeEnum.مغایرت_مبلغ_فاکتور_با_فاکتور_سپیدار)
+                    .Select(x => x.EntityId)
+                    .ToHashSetAsync();
+
                 var crmFactors = await db.Factors.AsNoTracking()
-                    .Where(f => f.status == FactorStatus.تایید_شده && f.SepidarId != null)
+                    .Where(f => f.status == FactorStatus.تایید_شده && f.SepidarId != null && !warningFactorIds.Contains(f.Id))
                     .Select(f => new {
                         f.Id,
                         f.SerialNumber,
@@ -115,29 +121,36 @@ namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
                     })
                     .ToListAsync();
 
+                if (crmFactors.Count == 0)
+                    return;
 
-                var joined = (
+                var mismatched = (
                     from crm in crmFactors
-                    join sepidar in s1Db!.vwInvoice.AsNoTracking().Select(x => new { x.InvoiceId, x.NetPrice })
+                    join sepidar in s1Db.vwInvoice.AsNoTracking().Select(x => new { x.InvoiceId, x.NetPrice })
                         on crm.SepidarId equals sepidar.InvoiceId
                     where sepidar.NetPrice.HasValue && (long)(crm.PaymentAmount / 10) != (long)(sepidar.NetPrice / 10)
                     select new { crm, sepidar }
                 ).ToList();
 
+                if (mismatched.Count == 0)
+                    return;
 
-                var warnings = joined
-                    .Select(f => new SystemWarning {
-                        Message = "مبلغ ثبت شده در فاکتور شماره " + f.crm.SerialNumber + " با فاکتور سپیدار آن مطابقت ندارند.",
+                var newWarnings = mismatched
+                    .Where(x => !warningFactorIds.Contains(x.crm.Id))
+                    .Select(x => new SystemWarning {
+                        Message = "مبلغ ثبت شده در فاکتور شماره " + x.crm.SerialNumber + " با فاکتور سپیدار آن مطابقت ندارد.",
                         EntityType = EntityTypeEnum.Factor,
                         EntityTypeTxt = nameof(EntityTypeEnum.Factor),
-                        EntityId = f.crm.Id,
+                        EntityId = x.crm.Id,
                         WarningType = WarningTypeEnum.مغایرت_مبلغ_فاکتور_با_فاکتور_سپیدار,
-                        WarningTypeTxt = (WarningTypeEnum.مغایرت_مبلغ_فاکتور_با_فاکتور_سپیدار).ToString().Replace("_", " ")
+                        WarningTypeTxt = nameof(WarningTypeEnum.مغایرت_مبلغ_فاکتور_با_فاکتور_سپیدار).Replace("_", " ")
                     })
                     .ToList();
 
-                await db.SystemWarnings.IgnoreQueryFilters().ExecuteDeleteAsync();
-                await db.SystemWarnings.AddRangeAsync(warnings);
+                if (newWarnings.Count == 0)
+                    return;
+
+                await db.SystemWarnings.AddRangeAsync(newWarnings);
                 await db.SaveChangesAsync();
             }
             catch (Exception e)

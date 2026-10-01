@@ -94,7 +94,7 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
 
             if (!TextService.IsValidPhoneNumber(mobile))
             {
-                logger.LogWarning("MobileNumber is not valid. Mobile:{Mobile}", mobile);
+                logger.LogWarning("MobileNumber is not valid. Mobile:{Mobile}, customerCode: {customerCode}", mobile, factor.CustomerCode);
                 await service.AddWarning(factor.Id, EntityTypeEnum.Factor, WarningTypeEnum.عدم_ارسال_پیامک_کنترل_کیفیت);
                 await db.SaveChangesAsync(ct);
                 continue;

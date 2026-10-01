@@ -418,13 +418,20 @@ namespace CRM.EndPoint.FrontEnd.Services {
             switch (WarningType)
             {
                 case WarningTypeEnum.مغایرت_مبلغ_فاکتور_با_فاکتور_سپیدار:
-                    var serialConflict = await db.Factors.AsNoTracking().Where(f => f.Id == EntityId).Select(f => f.SerialNumber).FirstOrDefaultAsync();
+                    var serialConflict = await db.Factors.AsNoTracking().Where(f => f.Id == EntityId).Select(f => f.SerialNumber)
+                        .FirstOrDefaultAsync();
                     message = "مبلغ ثبت شده در فاکتور شماره " + serialConflict + " با فاکتور سپیدار آن مطابقت ندارند.";
                     break;
 
                 case WarningTypeEnum.عدم_ارسال_پیامک_کنترل_کیفیت:
-                    var serialQc = await db.Factors.AsNoTracking().Where(f => f.Id == EntityId).Select(f => f.SerialNumber).FirstOrDefaultAsync();
-                    message = "پیامک کنترل کیفیت برای فاکتور " + serialQc + " ارسال نشد.";
+
+                    var serialQc = await db.Factors.AsNoTracking().Where(f => f.Id == EntityId).Select(f => new {
+                        f.SerialNumber,
+                        f.CustomerCode
+                    }).FirstOrDefaultAsync();
+
+                    message = $"پیامک کنترل کیفیت برای فاکتور {serialQc.SerialNumber} (کد مشتری {serialQc.CustomerCode}) ارسال نشد.";
+
                     break;
             }
 

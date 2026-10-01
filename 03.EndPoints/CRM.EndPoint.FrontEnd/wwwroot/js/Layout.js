@@ -1664,7 +1664,7 @@ const CheckWallet = async () => {
         const res = await axios(`/Accountancy/CheckWallet?cusId=${customerId}`);
         if (!res.data) return false;
         return true;
-
+        
     } catch (err) {
         console.log(err);
     } finally {
@@ -1733,16 +1733,16 @@ const ShowModalListInvoice = async (id, type, ser, passType, hideAddInvoiceBtns 
 const ShowModalAddInvoice = async () => {
     const hasWallet = await CheckWallet();
     if (hasWallet) {
-
+        
         const res = await axios(`/Accountancy/GetWalletPartialIfAny?cusId=${customerId}`);
         document.getElementById("WalletContentId").innerHTML = res.data;
         initWalletPartial();
         ModalToggle("#WalletListModalId");
         return;
-
+        
     }
-
-
+    
+    
     await ShowModalInvoice(1);
 };
 
@@ -3363,25 +3363,23 @@ async function getAllWarnings(isRefresh = false) {
     
     if (!warningContainer) return;
     warningContainer.innerHTML = "";
-    try {
-        isRefresh && FLshowLoading();
-        const url = isRefresh ? `/Home/WarningsSepidarCrmFactors` : `/Home/GetAllSystemWarnings`;
-        const res = await axios(url);
-        
-        warningData = res.data;
-        
-        warningElmBtns.forEach(elm => {
-            elm.classList.toggle("d-none", warningData.length === 0);
-            const badgeWarningCount = elm.querySelector(".badge-count");
-            badgeWarningCount.innerText = warningData.length || "";
-        });
-        
-        initDomWarningsModal();
-        
-        isRefresh && FLshowLoading(false);
-    } catch (err) {
-        console.log(err);
-    }
+    
+    await sendApiRequest({
+        url: "/Home/GetAllSystemWarnings",
+        params: { isRefresh },
+        showLoading: isRefresh,
+        onSuccess: (res) => {
+            warningData = res.data;
+            
+            warningElmBtns.forEach(elm => {
+                elm.classList.toggle("d-none", warningData.length === 0);
+                const badgeWarningCount = elm.querySelector(".badge-count");
+                badgeWarningCount.innerText = warningData.length || "";
+            });
+            
+            initDomWarningsModal();
+        },
+    });
 }
 
 function initDomWarningsModal() {

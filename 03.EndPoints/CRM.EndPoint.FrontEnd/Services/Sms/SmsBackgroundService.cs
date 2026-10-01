@@ -29,11 +29,16 @@ public class SmsBackgroundService(
 
     private async Task ProcessSms(SmsJob job, CancellationToken token)
     {
-        if (job.Mobile?.Length < 8) return;
+        var notifyUser = !string.IsNullOrEmpty(job.ConnectionId);
+        job.Mobile = TextService.NormalizeIranMobile(job.Mobile);
+        if (!TextService.IsValidPhoneNumber(job.Mobile))
+        {
+            if (notifyUser) await hub.Clients.Client(job.ConnectionId).SendAsync("SmsFailed", "شماره موبایل نامعتبر است", cancellationToken: token);
+            return;
+        }
 
         using var scope = scopeFactory.CreateScope();
         var smsService = scope.ServiceProvider.GetRequiredService<SmsService>();
-        var notifyUser = !string.IsNullOrEmpty(job.ConnectionId);
 
         if (notifyUser) await hub.Clients.Client(job.ConnectionId).SendAsync("SmsSending", cancellationToken: token);
         const int maxRetry = 5;

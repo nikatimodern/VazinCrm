@@ -118,9 +118,9 @@ connection.on("SmsSuccess", () => {
     updateSmsToast("پیامک با موفقیت ارسال شد", "success");
 });
 
-connection.on("SmsFailed", () => {
+connection.on("SmsFailed", (message) => {
     //toastifyError("ارسال پیامک ناموفق بود");
-    updateSmsToast("ارسال پیامک ناموفق بود", "error");
+    updateSmsToast(message || "ارسال پیامک ناموفق بود", "error");
 });
 
 connection.on("SmsSending", () => {

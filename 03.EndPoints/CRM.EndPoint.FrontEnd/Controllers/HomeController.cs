@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Core.Domain.SystemWarnings.Enums;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Services.AI;
 using CRM.EndPoint.FrontEnd.Services.Asterisk;
@@ -146,16 +147,22 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [HttpGet]
-        public async Task<IActionResult> WarningsSepidarCrmFactors()
+        public async Task<IActionResult> GetAllSystemWarnings(bool isRefresh = false)
         {
-            await hostService.CompareSepidarCrmFactors();
-            var data = await db.SystemWarnings.ToListAsync();
-            return Ok(data);
-        }
+            if (isRefresh)
+            {
+                await hostService.CompareSepidarCrmFactors();
+            }
 
-        public async Task<IActionResult> GetAllSystemWarnings()
-        {
-            var warnings = await db.SystemWarnings.ToListAsync();
+            var query = db.SystemWarnings.AsQueryable();
+
+            if (!User.IsAdmin())
+            {
+                query = query.Where(f => f.WarningType == WarningTypeEnum.مغایرت_مبلغ_فاکتور_با_فاکتور_سپیدار);
+            }
+
+            var warnings = await query.ToListAsync();
+
             return Ok(warnings);
         }
 
