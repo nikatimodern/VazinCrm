@@ -360,7 +360,7 @@ public class AiPrompts {
                 6 = شاخه
                 7 = رول
 
-                چنانچه واحد در فاکتور درج نشده یا قابل تشخیص نباشد، آن را عدد در نظر بگیر.
+                اگر واحد در فاکتور درج نشده یا قابل تشخیص نیست، مقدار 3 را برگردان.
 
                 تطبیق واحدها:
                 - گرم، gr، g، گرم → 1
@@ -403,7 +403,7 @@ public class AiPrompts {
                       ""product"": null,
                       ""printable"": 0
                       ""weightCount"": 0,
-                      ""unit"": null,
+                      ""unit"": 3,
                       ""unitAmount"": 0,
                       ""discount"": 0,
                       ""taxAmount"": 0,

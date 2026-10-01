@@ -31,13 +31,13 @@ public class SupplyFactorAiItemDto {
     public byte Printable { get; set; }
     public decimal WeightCount { get; set; }
 
-    private UnitTypeEnums _unit;
+    private UnitTypeEnums? _unit;
 
-    public UnitTypeEnums Unit {
+    public UnitTypeEnums? Unit {
         get => _unit;
         set {
             _unit = value;
-            UnitTxt = value.ToString().Replace("_", " ");
+            UnitTxt = value?.ToString().Replace("_", " ");
         }
     }
 

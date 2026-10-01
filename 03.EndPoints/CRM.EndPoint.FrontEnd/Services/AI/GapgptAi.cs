@@ -59,7 +59,10 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
 
                 logger.LogError("Gemini Invoice API Error ({StatusCode}): {Error}", response.StatusCode, clean);
 
-                return new AiGapgptResult<SupplyFactorAiDto> { Success = false, Error = $"API Error ({response.StatusCode})" };
+                return new AiGapgptResult<SupplyFactorAiDto> {
+                    Success = false,
+                    Error = $"خطا در ارتباط با سرویس هوش مصنوعی ({response.StatusCode}). لطفاً کمی بعد دوباره تلاش کنید."
+                };
             }
 
             var resJson = await response.Content.ReadFromJsonAsync<AiGapgptModel>(cancellationToken: ct);
@@ -68,7 +71,10 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
 
             if (string.IsNullOrWhiteSpace(content))
             {
-                return new AiGapgptResult<SupplyFactorAiDto> { Success = false, Error = "AI returned an empty response." };
+                return new AiGapgptResult<SupplyFactorAiDto> {
+                    Success = false,
+                    Error = "پاسخی از سرویس هوش مصنوعی دریافت نشد. لطفاً دوباره تلاش کنید."
+                };
             }
 
             SupplyFactorAiDto resultData;
@@ -81,12 +87,18 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
             catch (JsonException ex)
             {
                 logger.LogError(ex, "Invalid Gemini invoice JSON response: {Content}", content);
-                return new AiGapgptResult<SupplyFactorAiDto> { Success = false, Error = "AI returned an invalid invoice JSON response." };
+                return new AiGapgptResult<SupplyFactorAiDto> {
+                    Success = false,
+                    Error = "اطلاعات دریافتی از سرویس هوش مصنوعی قابل پردازش نیست. لطفاً تصویر فاکتور را بررسی کرده و دوباره ارسال کنید."
+                };
             }
 
             if (resultData == null)
             {
-                return new AiGapgptResult<SupplyFactorAiDto> { Success = false, Error = "AI returned an empty invoice result." };
+                return new AiGapgptResult<SupplyFactorAiDto> {
+                    Success = false,
+                    Error = "اطلاعاتی از فاکتور استخراج نشد. لطفاً از وضوح و کامل بودن تصویر فاکتور مطمئن شوید."
+                };
             }
 
             logger.LogInformation("Gemini invoice processing completed");
@@ -95,8 +107,11 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error Gemini invoice processing");
-            return new AiGapgptResult<SupplyFactorAiDto> { Success = false, Error = ex.Message };
+            logger.LogError(ex, ex.Message);
+            return new AiGapgptResult<SupplyFactorAiDto> {
+                Success = false,
+                Error = "خطای غیرمنتظره‌ای در پردازش فاکتور رخ داد. لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید."
+            };
         }
     }
 
