@@ -94,8 +94,8 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
 
             if (!TextService.IsValidPhoneNumber(mobile))
             {
-                logger.LogWarning("MobileNumber is not valid. Mobile:{Mobile}, customerCode: {customerCode}", mobile, factor.CustomerCode);
-                await service.AddWarning(factor.Id, EntityTypeEnum.Factor, WarningTypeEnum.عدم_ارسال_پیامک_کنترل_کیفیت);
+                logger.LogWarning("MobileNumber is not valid. Mobile:{Mobile}, customerCode:{CustomerCode}", mobile, factor.CustomerCode);
+                await service.AddWarning(factor.Id, EntityTypeEnum.Factor, WarningTypeEnum.عدم_ارسال_پیامک_کنترل_کیفیت, "شماره موبایل نامعتبر است");
                 await db.SaveChangesAsync(ct);
                 continue;
             }
@@ -112,7 +112,8 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
                 if (result?.code != 200)
                 {
                     logger.LogWarning("Feedback SMS failed. SerialNumber:{SerialNumber}, Mobile:{Mobile}", factor.SerialNumber, mobile);
-                    await service.AddWarning(factor.Id, EntityTypeEnum.Factor, WarningTypeEnum.عدم_ارسال_پیامک_کنترل_کیفیت);
+                    await service.AddWarning(factor.Id, EntityTypeEnum.Factor, WarningTypeEnum.عدم_ارسال_پیامک_کنترل_کیفیت,
+                        $"سرویس پیامک خطا برگرداند: {result?.Desc}");
                     await db.SaveChangesAsync(ct);
                     continue;
                 }
@@ -126,7 +127,8 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to send feedback SMS for factor {SerialNumber}, Mobile:{Mobile}", factor.SerialNumber, mobile);
-                await service.AddWarning(factor.Id, EntityTypeEnum.Factor, WarningTypeEnum.عدم_ارسال_پیامک_کنترل_کیفیت);
+                await service.AddWarning(factor.Id, EntityTypeEnum.Factor, WarningTypeEnum.عدم_ارسال_پیامک_کنترل_کیفیت,
+                    $"خطا هنگام ارسال پیامک: {ex.Message}");
                 await db.SaveChangesAsync(ct);
             }
 

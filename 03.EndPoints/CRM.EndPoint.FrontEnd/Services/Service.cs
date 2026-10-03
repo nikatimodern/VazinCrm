@@ -21,6 +21,7 @@ using FactorEntity = CRM.Core.Domain.Factors.Entities.Factor;
 using CRM.EndPoint.FrontEnd.Models.Cartable;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.SetInterval;
+using CRM.Framework;
 using CRM.Infrastructures.Sql;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Microsoft.AspNetCore.Identity;
@@ -33,12 +34,14 @@ namespace CRM.EndPoint.FrontEnd.Services {
         private readonly CRMContextDb db;
         private readonly UserManager<AppUser> userManager;
         private readonly TimedHostedService hostService;
+        private readonly DateTimeServices dtService;
 
-        public Service(CRMContextDb db, UserManager<AppUser> userManager, TimedHostedService hostService)
+        public Service(CRMContextDb db, UserManager<AppUser> userManager, TimedHostedService hostService, DateTimeServices dtService)
         {
             this.db = db;
             this.userManager = userManager;
             this.hostService = hostService;
+            this.dtService = dtService;
         }
 
 
@@ -416,21 +419,31 @@ namespace CRM.EndPoint.FrontEnd.Services {
             return isActive;
         }
 
-
-        public async Task AddWarning(Guid EntityId, EntityTypeEnum EntityType, WarningTypeEnum WarningType)
+        public async Task AddWarning(Guid entityId, EntityTypeEnum entityType, WarningTypeEnum warningType, string comment = null)
         {
+            var warning = await db.SystemWarnings.FirstOrDefaultAsync(x => x.EntityId == entityId && x.WarningType == warningType);
+
+            if (warning != null)
+            {
+                warning.CommentText = comment;
+                warning.ModifyDate = DateTime.Now;
+                warning.ModifyDateTxt = dtService.GetDateTimePersian(warning.ModifyDate.Value);
+                return;
+            }
+
+
             string message = null;
-            switch (WarningType)
+            switch (warningType)
             {
                 case WarningTypeEnum.مغایرت_مبلغ_فاکتور_با_فاکتور_سپیدار:
-                    var serialConflict = await db.Factors.AsNoTracking().Where(f => f.Id == EntityId).Select(f => f.SerialNumber)
+                    var serialConflict = await db.Factors.AsNoTracking().Where(f => f.Id == entityId).Select(f => f.SerialNumber)
                         .FirstOrDefaultAsync();
                     message = "مبلغ ثبت شده در فاکتور شماره " + serialConflict + " با فاکتور سپیدار آن مطابقت ندارند.";
                     break;
 
                 case WarningTypeEnum.عدم_ارسال_پیامک_کنترل_کیفیت:
 
-                    var serialQc = await db.Factors.AsNoTracking().Where(f => f.Id == EntityId).Select(f => new {
+                    var serialQc = await db.Factors.AsNoTracking().Where(f => f.Id == entityId).Select(f => new {
                         f.SerialNumber,
                         f.CustomerCode
                     }).FirstOrDefaultAsync();
@@ -439,17 +452,17 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
                     break;
             }
-
-            var warning = new SystemWarning {
+            
+            db.SystemWarnings.Add(new SystemWarning
+            {
                 Message = message,
-                EntityType = EntityType,
-                EntityTypeTxt = EntityType.ToString(),
-                EntityId = EntityId,
-                WarningType = WarningType,
-                WarningTypeTxt = WarningType.ToString().Replace("_", " ")
-            };
-
-            db.SystemWarnings.Add(warning);
+                CommentText = comment,
+                EntityType = entityType,
+                EntityTypeTxt = entityType.ToString(),
+                EntityId = entityId,
+                WarningType = warningType,
+                WarningTypeTxt = warningType.ToString().Replace("_", " "),
+            });
         }
 
         public async Task<List<SystemWarning>> GetAllWarnings(ClaimsPrincipal user, bool isRefresh = false)
