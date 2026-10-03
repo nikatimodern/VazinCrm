@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,10 +15,8 @@ using Microsoft.Extensions.Logging;
 
 namespace CRM.EndPoint.FrontEnd.Services.SetInterval;
 
+// "مشتری گرامی ضمن قدردانی از خرید شما بابت فاکتور شماره -، خواهشمند است در صورت وجود مغایرت در کیفیت، زمان تحویل یا مقدار محصول دریافتی، عدد 0 را ارسال فرمایید. با سپاس شرکت وزین پلاست ";
 public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory, ILogger<CustomerFeedbackSmsWorker> logger) : BackgroundService {
-    private const string CustomerFeedbackMessage =
-        "مشتری گرامی ضمن قدردانی از خرید شما، خواهشمند است در صورت وجود مغایرت در کیفیت، زمان تحویل یا مقدار محصول دریافتی، عدد ۰ را ارسال فرمایید.با تشکر وزین پلاست";
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
@@ -60,7 +57,7 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
         var smsService = scope.ServiceProvider.GetRequiredService<SmsService>();
         var service = scope.ServiceProvider.GetRequiredService<Service>();
 
-        var startDate = new DateTime(2026, 8, 29);
+        var startDate = new DateTime(2026, 8, 29); // 1405/06/07
         var targetDate = DateTime.Now.AddDays(-7);
 
         var factors = await db.Factors

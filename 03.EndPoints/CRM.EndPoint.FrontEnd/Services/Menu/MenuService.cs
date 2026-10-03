@@ -489,9 +489,8 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                 HideWhenBadgeEmpty = true,
                 GetBadgeCountAsync = async sp => {
                     var service = sp.GetRequiredService<Service>();
-                    if (service == null) return 0;
 
-                    var warnings = await service.GetAllWarnings(user);
+                    var warnings = await service!.GetAllWarnings(user);
                     return warnings?.Count ?? 0;
                 },
                 IconHtml =

@@ -177,7 +177,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var item = await db.SystemWarnings.Where(f => f.Id == id).FirstOrDefaultAsync();
                 if (item == null)
-                    return BadRequest(new { message = "مقداری برای حذف یافت نشد" });
+                    return BadRequest("مقداری برای حذف یافت نشد");
 
 
                 item.IsDeleted = true;
