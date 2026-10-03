@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using CRM.Core.Domain;
 using CRM.Core.Domain.Accountancies.Enum;
@@ -18,6 +19,8 @@ using CRM.Core.Domain.SystemWarnings.Enums;
 using CRM.Core.Domain.Transfers.Entities;
 using FactorEntity = CRM.Core.Domain.Factors.Entities.Factor;
 using CRM.EndPoint.FrontEnd.Models.Cartable;
+using CRM.EndPoint.FrontEnd.Services.Extensions;
+using CRM.EndPoint.FrontEnd.Services.SetInterval;
 using CRM.Infrastructures.Sql;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Microsoft.AspNetCore.Identity;
@@ -29,11 +32,13 @@ namespace CRM.EndPoint.FrontEnd.Services {
     public class Service : Controller {
         private readonly CRMContextDb db;
         private readonly UserManager<AppUser> userManager;
+        private readonly TimedHostedService hostService;
 
-        public Service(CRMContextDb db, UserManager<AppUser> userManager)
+        public Service(CRMContextDb db, UserManager<AppUser> userManager, TimedHostedService hostService)
         {
             this.db = db;
             this.userManager = userManager;
+            this.hostService = hostService;
         }
 
 
@@ -445,6 +450,25 @@ namespace CRM.EndPoint.FrontEnd.Services {
             };
 
             db.SystemWarnings.Add(warning);
+        }
+
+        public async Task<List<SystemWarning>> GetAllWarnings(ClaimsPrincipal user, bool isRefresh = false)
+        {
+            if (isRefresh)
+            {
+                await hostService.CompareSepidarCrmFactors();
+            }
+
+            var query = db.SystemWarnings.AsQueryable();
+
+            if (!user.IsAdmin())
+            {
+                query = query.Where(f => f.WarningType == WarningTypeEnum.مغایرت_مبلغ_فاکتور_با_فاکتور_سپیدار);
+            }
+
+            var warnings = await query.ToListAsync();
+
+            return warnings;
         }
     }
 }

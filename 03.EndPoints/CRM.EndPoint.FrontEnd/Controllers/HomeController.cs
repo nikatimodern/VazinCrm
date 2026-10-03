@@ -27,7 +27,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
     public class HomeController : Controller {
         private readonly IWebHostEnvironment appEnvironment;
-        private readonly TimedHostedService hostService;
         private readonly IConfiguration conf;
         private readonly UserManager<AppUser> userManager;
         private readonly ILogger<HomeController> _logger;
@@ -48,14 +47,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly ISmsIrService smsIrService;
 
         public HomeController(IWebHostEnvironment appEnvironment,
-            TimedHostedService hostService,
             IConfiguration conf,
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
             Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue, IssabelService issabelService,
             AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi, LogSystemService logSystemService, TaskServices ts, SmsService smsService)
         {
             this.appEnvironment = appEnvironment;
-            this.hostService = hostService;
             this.conf = conf;
             this.userManager = userManager;
             _logger = logger;
@@ -149,19 +146,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> GetAllSystemWarnings(bool isRefresh = false)
         {
-            if (isRefresh)
-            {
-                await hostService.CompareSepidarCrmFactors();
-            }
-
-            var query = db.SystemWarnings.AsQueryable();
-
-            if (!User.IsAdmin())
-            {
-                query = query.Where(f => f.WarningType == WarningTypeEnum.مغایرت_مبلغ_فاکتور_با_فاکتور_سپیدار);
-            }
-
-            var warnings = await query.ToListAsync();
+            var warnings = await genService.GetAllWarnings(User, isRefresh);
 
             return Ok(warnings);
         }
