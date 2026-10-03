@@ -38,7 +38,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
 
             if (setting?.SmsServiceCode == null)
             {
-                return new ResponseSmsModel { code = 0, Desc = "سرویس پیامک تنظیم نشده است" };
+                return new ResponseSmsModel { Code = 0, Message = "سرویس پیامک تنظیم نشده است" };
             }
 
             try
@@ -46,12 +46,12 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
                 return setting.SmsServiceCode.ToString() switch {
                     FarazSmsCode => await farazAction(),
                     SmsIrCode => await smsIrAction(),
-                    _ => new ResponseSmsModel { code = 0, Desc = "سرویس پیامک نامعتبر است" }
+                    _ => new ResponseSmsModel { Code = 0, Message = "سرویس پیامک نامعتبر است" }
                 };
             }
             catch (Exception ex)
             {
-                return new ResponseSmsModel { code = 0, Desc = ex.Message };
+                return new ResponseSmsModel { Code = 0, Message = ex.Message };
             }
         }
 
@@ -89,7 +89,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
         }
 
 
-        public async Task SyncReceivesAsync(CancellationToken cancellationToken = default)
+        public async Task SyncReceiveSmsAsync(CancellationToken cancellationToken = default)
         {
             const int pageSize = 100;
             const int overlapHours = 1;
@@ -130,7 +130,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
                 return;
 
             var farazIds = items
-                .Select(x => x.Id)
+                .Select(x => x.MessageId)
                 .Distinct()
                 .ToList();
 
@@ -140,14 +140,14 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
 
             foreach (var item in items)
             {
-                if (existingSms.TryGetValue(item.Id, out var existing))
+                if (existingSms.TryGetValue(item.MessageId, out var existing))
                 {
                     existing.Seen = item.Seen;
                     continue;
                 }
 
                 db.ReceivedSmses.Add(new ReceivedSms {
-                    FarazId = item.Id,
+                    FarazId = item.MessageId,
                     Mobile = item.Mobile,
                     MessageText = item.MessageText,
                     Number = item.Number,
@@ -155,6 +155,90 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
                     CreatedAtFaraz = item.CreatedAtFaraz,
                     ReceivedDateTimeTxt = dtService.GetDateTimePersian(item.ReceivedDateTime),
                     Seen = item.Seen,
+                });
+            }
+
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+
+        public async Task SyncSentSmsAsync(CancellationToken cancellationToken = default)
+        {
+            const int pageSize = 100;
+            const int overlapHours = 1;
+
+            var lastCreatedAt = await db.SentSmses
+                .AsNoTracking()
+                .Select(x => x.CreatedAtFaraz)
+                .MaxAsync(cancellationToken);
+
+            var syncFromDate = lastCreatedAt?.AddHours(-overlapHours);
+
+            var page = 1;
+            var items = new List<SmsReportModel>();
+
+            while (true)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var result = await GetReportsAsync(page, pageSize);
+
+                /*if (result.Data.Count == 0)
+                    break;
+
+                items.AddRange(syncFromDate == null ? result.Data : result.Data.Where(x => x.CreatedAtFaraz >= syncFromDate.Value));
+
+                var oldestItemInPage = result.Data.Min(x => x.CreatedAtFaraz);
+
+                if (syncFromDate != null && oldestItemInPage < syncFromDate.Value)
+                    break;
+
+                if (page >= result.TotalPages)
+                    break;*/
+
+                page++;
+
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+            }
+
+            if (items.Count == 0)
+                return;
+
+            var farazIds = items
+                .Select(x => x.MessageId)
+                .Distinct()
+                .ToList();
+
+            var existingSms = await db.SentSmses
+                .Where(x => farazIds.Contains(x.FarazId))
+                .ToDictionaryAsync(x => x.FarazId, cancellationToken);
+
+            foreach (var item in items)
+            {
+                if (existingSms.TryGetValue(item.MessageId, out var existing))
+                {
+                    existing.DeliveryState = item.DeliveryState;
+                    existing.DeliveryStateTxt = item.DeliveryStateTxt;
+                    continue;
+                }
+
+                db.SentSmses.Add(new SentSms {
+                    FarazId = item.MessageId,
+                    Mobile = item.Mobile,
+                    Number = item.Number,
+
+                    Type = item.Type,
+                    TypeTxt = item.TypeTxt,
+
+                    DeliveryState = item.DeliveryState,
+                    DeliveryStateTxt = item.DeliveryStateTxt,
+
+                    CreatedAtFaraz = item.CreatedAtFaraz,
+
+                    SendDateTime = item.SendDateTime,
+                    SendDateTimeTxt = item.SendDateTimeTxt,
+
+                    MessageText = item.MessageText
                 });
             }
 

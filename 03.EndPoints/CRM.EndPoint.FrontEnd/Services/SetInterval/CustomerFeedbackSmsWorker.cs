@@ -106,11 +106,11 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
 
                 requestCount++;
 
-                if (result?.code != 200)
+                if (result?.Code != 200)
                 {
                     logger.LogWarning("Feedback SMS failed. SerialNumber:{SerialNumber}, Mobile:{Mobile}", factor.SerialNumber, mobile);
                     await service.AddWarning(factor.Id, EntityTypeEnum.Factor, WarningTypeEnum.عدم_ارسال_پیامک_کنترل_کیفیت,
-                        $"سرویس پیامک خطا برگرداند: {result?.Desc}");
+                        $"سرویس پیامک خطا برگرداند: {result?.Message}");
                     await db.SaveChangesAsync(ct);
                     continue;
                 }

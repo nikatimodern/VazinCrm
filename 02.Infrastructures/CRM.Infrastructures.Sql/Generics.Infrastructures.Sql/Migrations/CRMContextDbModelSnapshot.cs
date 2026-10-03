@@ -3827,7 +3827,7 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("CreateDateTxt")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("CreatedAtFaraz")
+                    b.Property<DateTime?>("CreatedAtFaraz")
                         .HasColumnType("datetime2");
 
                     b.Property<long>("FarazId")
@@ -3878,6 +3878,83 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .IsUnique();
 
                     b.ToTable("ReceivedSmses");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sms.Entities.SentSms", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CreatedAtFaraz")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeliveryState")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DeliveryStateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("FarazId")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MessageText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Mobile")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Number")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("SendDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SendDateTimeTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TypeTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FarazId")
+                        .IsUnique();
+
+                    b.ToTable("SentSmses");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.States.Entities.State", b =>

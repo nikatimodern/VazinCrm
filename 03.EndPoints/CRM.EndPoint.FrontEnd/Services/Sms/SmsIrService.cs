@@ -77,6 +77,7 @@ public sealed class SmsIrService : ISmsIrService {
 
         var items = result.Data
             .Select(x => new SmsReceiveModel {
+                MessageId = x.ReceiveReturnId,
                 Mobile = x.Mobile.ToString(),
                 MessageText = x.MessageText,
                 Number = x.Number.ToString(),
@@ -94,8 +95,8 @@ public sealed class SmsIrService : ISmsIrService {
         var result = await _smsIr.BulkSendAsync(_smsConfig.LineNumber, messageText, mobiles, sendDateTime);
 
         return new ResponseSmsModel {
-            code = result.Status == 1 ? 200 : result.Status,
-            Desc = result.Message
+            Code = result.Status == 1 ? 200 : result.Status,
+            Message = result.Message
         };
     }
 
@@ -184,15 +185,15 @@ public sealed class SmsIrService : ISmsIrService {
 
             var result = await _smsIr.VerifySendAsync(job.Mobile, templateId, parameters.ToArray());
 
-            res.code = result.Status == 1 ? 200 : result.Status;
-            res.Desc = result.Message;
+            res.Code = result.Status == 1 ? 200 : result.Status;
+            res.Message = result.Message;
 
             return res;
         }
         catch (Exception ex)
         {
-            res.code = 0;
-            res.Desc = ex.Message;
+            res.Code = 0;
+            res.Message = ex.Message;
 
             return res;
         }

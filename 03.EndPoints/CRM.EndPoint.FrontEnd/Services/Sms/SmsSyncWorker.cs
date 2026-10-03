@@ -30,7 +30,11 @@ public class SmsSyncWorker(IServiceScopeFactory scopeFactory, ILogger<SmsSyncWor
 
                 var smsService = scope.ServiceProvider.GetRequiredService<SmsService>();
 
-                await smsService.SyncReceivesAsync(stoppingToken);
+                await smsService.SyncReceiveSmsAsync(stoppingToken); // سینک پیامهای دریافتی
+
+                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+
+                await smsService.SyncSentSmsAsync(stoppingToken); // سینک پیام های ارسالی
             }
             catch (OperationCanceledException)
             {

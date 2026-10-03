@@ -32,61 +32,82 @@ public class FarazSmsService {
 
     public async Task<SmsDashboardModel> GetDashboardAsync()
     {
-        var credit = await _farazSms.Balance();
-        var lines = await _farazSms.Lines();
+        var responceCredit = await _farazSms.Balance();
+        var responceLines = await _farazSms.Lines();
 
-        var balance = credit
-            .GetProperty("data")
-            .GetProperty("balance_amount")
-            .GetString();
-
-        var lineList = lines
-            .GetProperty("data")
-            .EnumerateArray()
-            .Select(x => new SmsLineModel {
-                Number = x.GetProperty("number").GetString(),
-                IsDedicated = x.GetProperty("is_dedicated").GetBoolean(),
-                SmsCost = x.GetProperty("sms_cost").GetDecimal()
-            })
-            .ToList();
+        var balance = JsonSerializer.Deserialize<FarazBalanceResponse>(responceCredit.GetRawText());
+        var lineList = JsonSerializer.Deserialize<FarazLinesResponse>(responceLines.GetRawText());
 
         return new SmsDashboardModel {
             Provider = "FarazSMS.ir",
-            Credit = decimal.Parse(balance),
-            Lines = lineList.Where(f => f.IsDedicated).Select(f => f.Number).ToList()
+            Credit = decimal.Parse(balance?.data?.balance_amount ?? "0"),
+            Lines = lineList?.data.Where(f => f.is_dedicated).Select(f => f.number).ToList() ?? []
         };
     }
 
     public async Task<SmsReportResult> GetReportsAsync(int page = 1, int pageSize = 100)
     {
-        var result = await _farazSms.SendRequests($"page={page}&limit={pageSize}");
+        var response = await _farazSms.SendRequests($"page={page}&limit={pageSize}");
 
-        var data = result.GetProperty("data");
+        var raw = response.GetRawText();
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(raw);
 
+            var dataArray = document
+                .RootElement
+                .GetProperty("data")
+                .GetProperty("data");
 
-        var items = data
-            .GetProperty("data")
-            .EnumerateArray()
-            .Select(x => {
-                var snapshot = x.GetValue<JsonElement>("snapshot");
-                var metadata = x.GetValue<JsonElement>("metadata");
+            for (int i = 0; i < dataArray.GetArrayLength(); i++)
+            {
+                var item = dataArray[i];
 
-                var status = x.GetValue<string>("status");
-                var type = x.GetValue<string>("type");
+                if (item.TryGetProperty("snapshot", out var snapshot))
+                {
+                    // فقط موارد غیر Object را لاگ کن
+                    if (snapshot.ValueKind != JsonValueKind.Object)
+                    {
+                        Console.WriteLine("========================================");
+                        Console.WriteLine($"❌ Invalid snapshot at Index: {i}");
+                        Console.WriteLine($"Snapshot Type: {snapshot.ValueKind}");
+                        Console.WriteLine($"Snapshot Value: {snapshot}");
+                        Console.WriteLine($"Full Item: {item}");
+                        Console.WriteLine("========================================");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("========================================");
+                    Console.WriteLine($"⚠️ snapshot property missing at Index: {i}");
+                    Console.WriteLine($"Full Item: {item}");
+                    Console.WriteLine("========================================");
+                }
+            }
 
-                var sendDate = x.GetValue<DateTime>("schedule").ToLocalTime();
+            return new SmsReportResult();
+            /*
 
-                var line = x.GetValue<JsonElement>("overridden_line");
+            var result = JsonSerializer.Deserialize<FarazReportResponse>(raw);
+//            Console.WriteLine(raw);
 
-                if (line.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
-                    line = x.GetValue<JsonElement>("line");
+            var data = result?.data ?? new FarazReportData();
 
-                var messageText = x.GetValue<string>("pattern_text") ?? metadata.GetValue<string>("text");
+            var items = data.data?.ConvertAll(x => {
+                var status = x.status;
+                var type = x.type;
+
+                var sendDate = x.schedule.ToLocalTime();
+                var createdAt = x.snapshot?.created_at?.ToLocalTime();
+
+                var line = x.overridden_line ?? x.line;
+
+                var messageText = x.pattern_text ?? x.metadata?.text;
 
                 return new SmsReportModel {
-                    MessageId = x.GetValue<long>("id"),
-                    Mobile = metadata.GetValue<string>("recipient"),
-                    Number = line.GetValue<string>("number"),
+                    MessageId = x.id,
+                    Mobile = x.metadata?.recipient,
+                    Number = line?.number,
 
                     Type = type,
                     TypeTxt = type switch {
@@ -107,18 +128,25 @@ public class FarazSmsService {
                         _ => "نامشخص"
                     },
 
+                    CreatedAtFaraz = createdAt,
                     SendDateTime = sendDate,
                     SendDateTimeTxt = dtService.GetDateTimePersian(sendDate),
 
                     MessageText = messageText
                 };
-            })
-            .ToList();
+            });
 
-        return new SmsReportResult {
-            Data = items,
-            Total = data.GetValue<int>("total")
-        };
+            return new SmsReportResult {
+                Data = items,
+                Total = data.total,
+                TotalPages = data.last_page
+            };*/
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
     }
 
 
@@ -126,17 +154,27 @@ public class FarazSmsService {
     {
         var response = await _farazSms.Inbox(page, pageSize);
 
-        var result = JsonSerializer.Deserialize<SmsReceiveResult>
-            (response.GetProperty("data").GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var result = JsonSerializer.Deserialize<FarazReceiveResponse>(response.GetRawText());
+        var items = result?.data?.data?.ConvertAll(x => {
+            var receivedDateTime = x.received_at.ToLocalTime();
 
-        foreach (var item in result?.Data ?? [])
-        {
-            item.CreatedAtFaraz = item.CreatedAtFaraz.ToLocalTime();
-            item.ReceivedDateTime = item.ReceivedDateTime.ToLocalTime();
-            item.ReceivedDateTimeTxt = dtService.GetDateTimePersian(item.ReceivedDateTime);
-        }
+            return new SmsReceiveModel {
+                MessageId = x.id,
+                Mobile = x.from,
+                MessageText = x.message,
+                Number = x.to,
+                CreatedAtFaraz = x.created_at.ToLocalTime(),
+                ReceivedDateTime = receivedDateTime,
+                ReceivedDateTimeTxt = dtService.GetDateTimePersian(receivedDateTime),
+                Seen = x.seen
+            };
+        }) ?? [];
 
-        return result;
+        return new SmsReceiveResult {
+            Data = items,
+            Total = result?.data?.total ?? 0,
+            TotalPages = result?.data?.last_page ?? 0
+        };
     }
 
 
@@ -229,54 +267,39 @@ public class FarazSmsService {
 
         if (farazConfig.ActiveStatus != true)
         {
-            res.code = 0;
-            res.Desc = "ارسال پیامک غیر فعال است";
+            res.Code = 0;
+            res.Message = "ارسال پیامک غیر فعال است";
             return res;
         }
 
         try
         {
-            var response = _farazSms.SendPattern(patternCode, job.Mobile, attrs, farazConfig.LineNumber);
-            if (response.Status != TaskStatus.Canceled && response.Status != TaskStatus.Faulted)
+            var response = await _farazSms.SendPattern(patternCode, job.Mobile, attrs, farazConfig.LineNumber);
+
+            var result = JsonSerializer.Deserialize<FarazSmsResponse>(response.GetRawText());
+
+            if (result?.status == "success")
             {
-                res.code = 200;
-                res.Desc = response.Result.ToString();
+                res.Code = 200;
+                res.Message = "ارسال با موفقیت انجام شد";
+            } else
+            {
+                res.Code = 0;
+                res.Message = !string.IsNullOrWhiteSpace(result?.message) ? result.message : "خطای ارتباط با سرویس پیامک";
             }
-
-
-            /*
-            var model = new FarazSmsPatternRequest {
-                code = patternCode,
-                recipient = job.Mobile,
-                line_number = farazConfig.LineNumber,
-                attributes = attrs
-            };
-
-
-            var content = new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json");
-
-            var response = await httpClient.PostAsync("pattern", content);
-
-            var responseText = await response.Content.ReadAsStringAsync();
-
-            var result = JsonConvert.DeserializeObject<FarazSmsResponse>(responseText);
-
-            res.code = response.IsSuccessStatusCode ? 200 : 0;
-            res.Desc = !string.IsNullOrEmpty(result?.message) ? result.message : result?.status ?? responseText;
-*/
 
             return res;
         }
         catch (FarazException ex)
         {
-            res.code = ex.StatusCode;
-            res.Desc = ex.Message;
+            res.Code = ex.StatusCode;
+            res.Message = ex.Message;
             return res;
         }
         catch (Exception ex)
         {
-            res.code = 0;
-            res.Desc = ex.Message;
+            res.Code = 0;
+            res.Message = ex.Message;
             return res;
         }
     }
@@ -285,41 +308,44 @@ public class FarazSmsService {
     public async Task<ResponseSmsModel> SendTextAsync(string[] mobiles, string message)
     {
         var res = new ResponseSmsModel();
-        return null;
-/*
 
         if (farazConfig.ActiveStatus != true)
         {
-            res.code = 0;
-            res.Desc = "ارسال پیامک غیر فعال است";
+            res.Code = 0;
+            res.Message = "ارسال پیامک غیر فعال است";
             return res;
         }
 
+
         try
         {
-            var model = new FarazSmsTextRequest {
-                recipients = mobiles,
-                text = message,
-                line_number = farazConfig.LineNumber
-            };
+            var response = await _farazSms.SendSimple(message, mobiles, farazConfig.LineNumber);
 
-            var content = new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json");
+            var result = JsonSerializer.Deserialize<FarazSmsResponse>(response.GetRawText());
 
-            var response = await httpClient.PostAsync("simple", content);
-            var responseText = await response.Content.ReadAsStringAsync();
+            if (result?.status == "success")
+            {
+                res.Code = 200;
+                res.Message = "ارسال با موفقیت انجام شد";
+            } else
+            {
+                res.Code = 0;
+                res.Message = !string.IsNullOrWhiteSpace(result?.message) ? result.message : "خطای ارتباط با سرویس پیامک";
+            }
 
-            var result = JsonConvert.DeserializeObject<FarazSmsResponse>(responseText);
-
-            res.code = response.IsSuccessStatusCode ? 200 : 0;
-            res.Desc = !string.IsNullOrEmpty(result?.message) ? result.message : result?.status ?? responseText;
-
+            return res;
+        }
+        catch (FarazException ex)
+        {
+            res.Code = ex.StatusCode;
+            res.Message = ex.Message;
             return res;
         }
         catch (Exception ex)
         {
-            res.code = 0;
-            res.Desc = ex.Message;
+            res.Code = 0;
+            res.Message = ex.Message;
             return res;
-        }*/
+        }
     }
 }

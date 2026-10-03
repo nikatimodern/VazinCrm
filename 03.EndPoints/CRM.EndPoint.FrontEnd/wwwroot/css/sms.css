@@ -202,7 +202,8 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	margin-bottom: .85rem;
+	padding-inline: 1rem;
+	margin-block: .5rem;
 }
 
 

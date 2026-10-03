@@ -49,7 +49,7 @@ public class SmsBackgroundService(
             {
                 var result = await smsService.SendPatternAsync(job);
 
-                if (result.code == 200)
+                if (result.Code == 200)
                 {
                     logger.LogInformation("Sms sent successfully. Mobile:{Mobile}", job.Mobile);
                     if (notifyUser) await hub.Clients.Client(job.ConnectionId).SendAsync("SmsSuccess", cancellationToken: token);
@@ -57,7 +57,7 @@ public class SmsBackgroundService(
                     return;
                 }
 
-                logger.LogWarning("Sms failed. Retry:{Retry} Mobile:{Mobile} Desc:{Desc}", retry, job.Mobile, result.Desc);
+                logger.LogWarning("Sms failed. Retry:{Retry} Mobile:{Mobile} Desc:{Desc}", retry, job.Mobile, result.Message);
             }
             catch (Exception ex)
             {

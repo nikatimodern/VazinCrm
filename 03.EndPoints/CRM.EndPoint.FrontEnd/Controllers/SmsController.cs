@@ -33,28 +33,48 @@ public class SmsController(SmsService smsService, CRMContextDb db) : Controller 
             var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "20");
             var searchValue = Request.Form["search[value]"].FirstOrDefault()?.Trim().ToLower();
 
-            var pageSize = length == -1 ? 100 : Math.Min(length, 100);
-            var page = (start / pageSize) + 1;
+            var query = db.SentSmses
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedAtFaraz)
+                .AsQueryable();
 
-            var result = await smsService.GetReportsAsync(page, pageSize);
+            var recordsTotal = await query.CountAsync();
 
-            var data = result.Data;
-
-            if (!string.IsNullOrEmpty(searchValue))
+            if (!string.IsNullOrWhiteSpace(searchValue))
             {
-                data = data.Where(x =>
-                    x.Mobile.Contains(searchValue) ||
-                    x.MessageText.Contains(searchValue) ||
-                    x.MessageId.ToString().Contains(searchValue) ||
-                    x.DeliveryStateTxt.Contains(searchValue)
-                ).ToList();
+                if (searchValue.Length < 3)
+                {
+                    query = query.Where(x =>
+                        x.Mobile.Equals(searchValue) ||
+                        x.MessageText.Equals(searchValue) ||
+                        x.FarazId.ToString().Equals(searchValue) ||
+                        x.DeliveryStateTxt.Equals(searchValue) ||
+                        x.Number.Equals(searchValue)
+                    );
+                } else
+                {
+                    query = query.Where(x =>
+                        x.Mobile.Contains(searchValue) ||
+                        x.MessageText.Contains(searchValue) ||
+                        x.FarazId.ToString().Contains(searchValue) ||
+                        x.DeliveryStateTxt.Contains(searchValue) ||
+                        x.Number.Contains(searchValue)
+                    );
+                }
             }
+
+            var recordsFiltered = await query.CountAsync();
+
+            if (length != -1)
+                query = query.Skip(start).Take(length);
+
+            var data = await query.ToListAsync();
 
             return Json(new {
                 draw,
-                recordsTotal = result.Total,
-                recordsFiltered = result.Total,
-                data,
+                recordsTotal,
+                recordsFiltered,
+                data
             });
         }
         catch (Exception ex)
@@ -126,7 +146,23 @@ public class SmsController(SmsService smsService, CRMContextDb db) : Controller 
     {
         try
         {
-            await smsService.SyncReceivesAsync(cancellationToken);
+            await smsService.SyncReceiveSmsAsync(cancellationToken);
+
+            return Ok();
+        }
+        catch (Exception)
+        {
+            return BadRequest();
+        }
+    }
+
+
+    [HttpPost]
+    public async Task<IActionResult> SyncSents(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await smsService.SyncSentSmsAsync(cancellationToken);
 
             return Ok();
         }

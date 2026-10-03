@@ -1,4 +1,5 @@
-const syncSmsBtn = document.getElementById("syncSmsBtn");
+const syncReceivesBtn = document.getElementById("syncReceivesBtn");
+const syncSentSmsBtn = document.getElementById("syncSentSmsBtn");
 
 document.addEventListener("DOMContentLoaded", async () => {
     initSmsTabs();
@@ -12,11 +13,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         });*/
 });
 
-syncSmsBtn.addEventListener("click", async () => {
-    const spinner = syncSmsBtn.querySelector(".spinner-border");
-    const syncIcon = syncSmsBtn.querySelector(".sync-icon");
+syncReceivesBtn.addEventListener("click", async () => {
+    const spinner = syncReceivesBtn.querySelector(".spinner-border");
+    const syncIcon = syncReceivesBtn.querySelector(".sync-icon");
     
-    toggleElementsDisabled(syncSmsBtn);
+    toggleElementsDisabled(syncReceivesBtn);
     spinner.classList.remove("d-none");
     syncIcon.classList.add("d-none");
     
@@ -30,7 +31,32 @@ syncSmsBtn.addEventListener("click", async () => {
         },
     });
     
-    toggleElementsDisabled(syncSmsBtn, false);
+    toggleElementsDisabled(syncReceivesBtn, false);
+    spinner.classList.add("d-none");
+    syncIcon.classList.remove("d-none");
+});
+
+
+syncSentSmsBtn.addEventListener("click", async () => {
+    const spinner = syncSentSmsBtn.querySelector(".spinner-border");
+    const syncIcon = syncSentSmsBtn.querySelector(".sync-icon");
+    
+    toggleElementsDisabled(syncSentSmsBtn);
+    spinner.classList.remove("d-none");
+    syncIcon.classList.add("d-none");
+    
+    
+    await sendApiRequest({
+        url: "/Sms/SyncSents",
+        method: "POST",
+        showLoading: false,
+        successMsg: "پیامک‌های جدید با موفقیت همگام‌سازی شدند",
+        onSuccess: () => {
+            $("#smsReportsTable").DataTable().ajax.reload(null, false);
+        },
+    });
+    
+    toggleElementsDisabled(syncSentSmsBtn, false);
     spinner.classList.add("d-none");
     syncIcon.classList.remove("d-none");
 });
@@ -120,7 +146,7 @@ function initSmsReportsTable() {
         language: languageDatatable,
         layout: layoutDatatable,
         
-        initComplete: () => {
+/*        initComplete: () => {
             const wrapper = table.table().container();
             const dtLength = wrapper.querySelector(".dt-length");
             
@@ -130,7 +156,7 @@ function initSmsReportsTable() {
             
             refreshButton.addEventListener("click", () => $("#smsReportsTable").DataTable().ajax.reload(null, false));
             dtLength.before(refreshButton);
-        },
+        },*/
     });
     
 }
