@@ -452,9 +452,8 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
                     break;
             }
-            
-            db.SystemWarnings.Add(new SystemWarning
-            {
+
+            db.SystemWarnings.Add(new SystemWarning {
                 Message = message,
                 CommentText = comment,
                 EntityType = entityType,
@@ -472,7 +471,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
                 await hostService.CompareSepidarCrmFactors();
             }
 
-            var query = db.SystemWarnings.AsQueryable();
+            var query = db.SystemWarnings.OrderByDescending(f => f.CreateDate).AsQueryable();
 
             if (!user.IsAdmin())
             {
