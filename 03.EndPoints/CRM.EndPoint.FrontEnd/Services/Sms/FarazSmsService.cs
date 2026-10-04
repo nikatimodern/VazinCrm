@@ -48,48 +48,10 @@ public class FarazSmsService {
     public async Task<SmsReportResult> GetReportsAsync(int page = 1, int pageSize = 100)
     {
         var response = await _farazSms.SendRequests($"page={page}&limit={pageSize}");
-
-        var raw = response.GetRawText();
         try
         {
-            using JsonDocument document = JsonDocument.Parse(raw);
-
-            var dataArray = document
-                .RootElement
-                .GetProperty("data")
-                .GetProperty("data");
-
-            for (int i = 0; i < dataArray.GetArrayLength(); i++)
-            {
-                var item = dataArray[i];
-
-                if (item.TryGetProperty("snapshot", out var snapshot))
-                {
-                    // فقط موارد غیر Object را لاگ کن
-                    if (snapshot.ValueKind != JsonValueKind.Object)
-                    {
-                        Console.WriteLine("========================================");
-                        Console.WriteLine($"❌ Invalid snapshot at Index: {i}");
-                        Console.WriteLine($"Snapshot Type: {snapshot.ValueKind}");
-                        Console.WriteLine($"Snapshot Value: {snapshot}");
-                        Console.WriteLine($"Full Item: {item}");
-                        Console.WriteLine("========================================");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("========================================");
-                    Console.WriteLine($"⚠️ snapshot property missing at Index: {i}");
-                    Console.WriteLine($"Full Item: {item}");
-                    Console.WriteLine("========================================");
-                }
-            }
-
-            return new SmsReportResult();
-            /*
-
+            var raw = response.GetRawText();
             var result = JsonSerializer.Deserialize<FarazReportResponse>(raw);
-//            Console.WriteLine(raw);
 
             var data = result?.data ?? new FarazReportData();
 
@@ -113,6 +75,7 @@ public class FarazSmsService {
                     TypeTxt = type switch {
                         "pattern" => "پترن",
                         "simple" => "عادی",
+                        "automatic-response" => "پاسخ خودکار",
                         _ => type
                     },
 
@@ -140,7 +103,7 @@ public class FarazSmsService {
                 Data = items,
                 Total = data.total,
                 TotalPages = data.last_page
-            };*/
+            };
         }
         catch (Exception e)
         {

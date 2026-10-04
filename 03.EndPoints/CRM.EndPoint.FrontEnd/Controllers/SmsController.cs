@@ -48,7 +48,6 @@ public class SmsController(SmsService smsService, CRMContextDb db) : Controller 
                         x.Mobile.Equals(searchValue) ||
                         x.MessageText.Equals(searchValue) ||
                         x.FarazId.ToString().Equals(searchValue) ||
-                        x.DeliveryStateTxt.Equals(searchValue) ||
                         x.Number.Equals(searchValue)
                     );
                 } else
@@ -57,7 +56,6 @@ public class SmsController(SmsService smsService, CRMContextDb db) : Controller 
                         x.Mobile.Contains(searchValue) ||
                         x.MessageText.Contains(searchValue) ||
                         x.FarazId.ToString().Contains(searchValue) ||
-                        x.DeliveryStateTxt.Contains(searchValue) ||
                         x.Number.Contains(searchValue)
                     );
                 }
@@ -107,6 +105,7 @@ public class SmsController(SmsService smsService, CRMContextDb db) : Controller 
                     query = query.Where(x =>
                         x.Mobile.Equals(searchValue) ||
                         x.MessageText.Equals(searchValue) ||
+                        x.FarazId.ToString().Equals(searchValue) ||
                         x.Number.Equals(searchValue)
                     );
                 } else
@@ -114,6 +113,7 @@ public class SmsController(SmsService smsService, CRMContextDb db) : Controller 
                     query = query.Where(x =>
                         x.Mobile.Contains(searchValue) ||
                         x.MessageText.Contains(searchValue) ||
+                        x.FarazId.ToString().Contains(searchValue) ||
                         x.Number.Contains(searchValue)
                     );
                 }

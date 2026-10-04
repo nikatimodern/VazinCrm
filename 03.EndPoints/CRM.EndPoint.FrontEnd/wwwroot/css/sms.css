@@ -1,5 +1,5 @@
 .sms-page {
-	padding: 1rem 0;
+	padding-bottom: 1rem;
 }
 
 
@@ -264,6 +264,15 @@
 
 .sms-table tbody tr:hover td {
 	background: #f0f7f6;
+}
+
+
+.sms-id {
+	direction: ltr;
+	display: inline-block;
+	color: #526665;
+	font-family: IRANSansMedium;
+	white-space: nowrap;
 }
 
 

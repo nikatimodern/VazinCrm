@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace CRM.EndPoint.FrontEnd.Models.Sms;
 
 // Dashboard
 public sealed class FarazBalanceResponse {
-    public FarazBalanceData data { get; set; } = new();
+    public FarazBalanceData data { get; set; }
 }
 
 public sealed class FarazBalanceData {
@@ -13,7 +14,7 @@ public sealed class FarazBalanceData {
 }
 
 public sealed class FarazLinesResponse {
-    public List<FarazLine> data { get; set; } = [];
+    public List<FarazLine> data { get; set; }
 }
 
 public sealed class FarazLine {
@@ -24,11 +25,11 @@ public sealed class FarazLine {
 
 // Receive
 public sealed class FarazReceiveResponse {
-    public FarazReceiveData data { get; set; } = new();
+    public FarazReceiveData data { get; set; }
 }
 
 public sealed class FarazReceiveData {
-    public List<FarazReceiveItem> data { get; set; } = [];
+    public List<FarazReceiveItem> data { get; set; }
     public int total { get; set; }
     public int last_page { get; set; }
 }
@@ -45,11 +46,11 @@ public sealed class FarazReceiveItem {
 
 //Report
 public sealed class FarazReportResponse {
-    public FarazReportData data { get; set; } = new();
+    public FarazReportData data { get; set; }
 }
 
 public sealed class FarazReportData {
-    public List<FarazReportItem> data { get; set; } = [];
+    public List<FarazReportItem> data { get; set; }
     public int total { get; set; }
     public int last_page { get; set; }
 }
@@ -61,7 +62,10 @@ public sealed class FarazReportItem {
     public DateTime schedule { get; set; }
     public string pattern_text { get; set; }
 
+
+    [JsonConverter(typeof(EmptyArrayToNullConverter<FarazReportSnapshot>))]
     public FarazReportSnapshot snapshot { get; set; }
+
     public FarazReportMetadata metadata { get; set; }
 
     public FarazReportLine overridden_line { get; set; }
@@ -88,15 +92,15 @@ public class FarazSmsResponse {
     public string message { get; set; }
 }
 
-public class FarazSmsData {
+public sealed class FarazSmsData {
     public long id { get; set; }
-    public string type { get; set; } // pattern | simple
+    public string type { get; set; } // pattern | simple | automatic-response
     public string status { get; set; } // success | error
     public FarazSmsResponseMetadata metadata { get; set; }
     public DateTime? schedule { get; set; }
 }
 
-public class FarazSmsResponseMetadata {
+public sealed class FarazSmsResponseMetadata {
     public string line_number { get; set; }
     public string number_format { get; set; }
 

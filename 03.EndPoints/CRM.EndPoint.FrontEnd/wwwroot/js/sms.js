@@ -3,8 +3,10 @@ const syncSentSmsBtn = document.getElementById("syncSentSmsBtn");
 
 document.addEventListener("DOMContentLoaded", async () => {
     initSmsTabs();
-    initSmsTabTable("receivesTab");
+    initSmsReportsTable();
+    initSmsReceivesTable();
     await loadSmsDashboard();
+    
     
     /*    document.getElementById("refreshSmsBtn")?.addEventListener("click", async () => {
             await loadSmsDashboard();
@@ -25,7 +27,7 @@ syncReceivesBtn.addEventListener("click", async () => {
         url: "/Sms/SyncReceives",
         method: "POST",
         showLoading: false,
-        successMsg: "پیامک‌های جدید با موفقیت همگام‌سازی شدند",
+        successMsg: "پیامک‌های دریافتی با موفقیت همگام‌سازی شدند",
         onSuccess: () => {
             $("#smsReceivesTable").DataTable().ajax.reload(null, false);
         },
@@ -50,7 +52,7 @@ syncSentSmsBtn.addEventListener("click", async () => {
         url: "/Sms/SyncSents",
         method: "POST",
         showLoading: false,
-        successMsg: "پیامک‌های جدید با موفقیت همگام‌سازی شدند",
+        successMsg: "پیامک‌های ارسالی با موفقیت همگام‌سازی شدند",
         onSuccess: () => {
             $("#smsReportsTable").DataTable().ajax.reload(null, false);
         },
@@ -131,6 +133,7 @@ function initSmsReportsTable() {
         },
         
         columns: [
+            { data: "farazId", render: value => `<span class="sms-id">${value ?? "-"}</span>` },
             { data: "mobile", render: value => `<span class="sms-mobile">${value ?? "-"}</span>`, responsivePriority: 1 },
             {
                 data: "messageText",
@@ -145,18 +148,6 @@ function initSmsReportsTable() {
         
         language: languageDatatable,
         layout: layoutDatatable,
-        
-/*        initComplete: () => {
-            const wrapper = table.table().container();
-            const dtLength = wrapper.querySelector(".dt-length");
-            
-            const refreshButton = document.createElement("button");
-            refreshButton.classList.add("inline-flex-center");
-            refreshButton.innerHTML = `<svg style="width: 18px;color: #333" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>`;
-            
-            refreshButton.addEventListener("click", () => $("#smsReportsTable").DataTable().ajax.reload(null, false));
-            dtLength.before(refreshButton);
-        },*/
     });
     
 }
@@ -188,6 +179,7 @@ function initSmsReceivesTable() {
             },
         },
         columns: [
+            { data: "farazId", render: value => `<span class="sms-id">${value ?? "-"}</span>` },
             { data: "mobile", render: value => `<span class="sms-mobile">${value ?? "-"}</span>` },
             { data: "messageText", render: value => `<span class="sms-message">${escapeHtml(value ?? "-")}</span>` },
             { data: "receivedDateTimeTxt", render: renderDateTimeHtml },

@@ -183,18 +183,22 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
 
                 var result = await GetReportsAsync(page, pageSize);
 
-                /*if (result.Data.Count == 0)
+                if (result.Data.Count == 0)
                     break;
 
-                items.AddRange(syncFromDate == null ? result.Data : result.Data.Where(x => x.CreatedAtFaraz >= syncFromDate.Value));
+                items.AddRange(
+                    syncFromDate == null
+                        ? result.Data
+                        : result.Data.Where(x => (x.CreatedAtFaraz ?? x.SendDateTime) >= syncFromDate.Value)
+                );
 
-                var oldestItemInPage = result.Data.Min(x => x.CreatedAtFaraz);
+                var oldestItemInPage = result.Data.Min(x => x.CreatedAtFaraz ?? x.SendDateTime);
 
                 if (syncFromDate != null && oldestItemInPage < syncFromDate.Value)
                     break;
 
                 if (page >= result.TotalPages)
-                    break;*/
+                    break;
 
                 page++;
 
