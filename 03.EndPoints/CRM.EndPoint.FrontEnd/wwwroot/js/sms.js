@@ -7,12 +7,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     initSmsReceivesTable();
     await loadSmsDashboard();
     
-    
-    /*    document.getElementById("refreshSmsBtn")?.addEventListener("click", async () => {
-            await loadSmsDashboard();
-            $("#smsReportsTable").DataTable().ajax.reload(null, false);
-            $("#smsReceivesTable").DataTable().ajax.reload(null, false);
-        });*/
+    document.getElementById("patternTypeFilter").addEventListener("change", () => {
+        $("#smsReportsTable").DataTable().ajax.reload();
+    });
 });
 
 syncReceivesBtn.addEventListener("click", async () => {
@@ -110,9 +107,9 @@ function initSmsReportsTable() {
     if ($.fn.DataTable.isDataTable("#smsReportsTable"))
         return;
     
-    const table = $("#smsReportsTable").DataTable({
+    $("#smsReportsTable").DataTable({
         pageLength: 10,
-        lengthMenu: [5, 10, 50, 100],
+        lengthMenu: [5, 10, 20, 50, 100, { label: "همه", value: -1 }],
         processing: true,
         serverSide: true,
         search: {
@@ -124,6 +121,9 @@ function initSmsReportsTable() {
         ajax: {
             url: "/Sms/GetReportsDt",
             type: "POST",
+            data: (d) => {
+                d.patternType = document.getElementById("patternTypeFilter").value;
+            },
             dataSrc: function (json) {
                 const reportCountElm = document.getElementById("reportsCount");
                 reportCountElm.textContent = (json.recordsFiltered ?? 0).toLocaleString();

@@ -3925,6 +3925,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("Number")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("PatternType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PatternTypeTxt")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("SendDateTime")
                         .HasColumnType("datetime2");
 

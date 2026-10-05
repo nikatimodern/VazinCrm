@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain;
 using CRM.Core.Domain.Factors.Enum;
+using CRM.Core.Domain.Sms.Enums;
 using CRM.Core.Domain.SystemWarnings.Enums;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Services.Sms;
@@ -79,7 +80,7 @@ public sealed class CustomerFeedbackSmsWorker(IServiceScopeFactory scopeFactory,
 
         logger.LogInformation("Found {Count} factors for customer feedback SMS", factors.Count);
 
-        var smsJob = new SmsJob { Type = SmsType.CustomerFeedback };
+        var smsJob = new SmsJob { PatternType = SmsPatternType.CustomerFeedback };
 
         var requestCount = 0;
 

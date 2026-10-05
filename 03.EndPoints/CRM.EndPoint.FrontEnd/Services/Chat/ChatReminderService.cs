@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Sms.Enums;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.Infrastructures.Sql;
@@ -95,7 +96,7 @@ public class ChatReminderService(CRMContextDb db, UserContextDb udb, ISmsQueue s
                     if (jobsToQueue.Any(j => j.Mobile == phone)) continue;
 
                     jobsToQueue.Add(new SmsJob {
-                        Type = SmsType.ChatReminder,
+                        PatternType = SmsPatternType.ChatReminder,
                         Mobile = phone,
                     });
                 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using CRM.EndPoint.FrontEnd.Services.Sms;
 
 namespace CRM.EndPoint.FrontEnd.Models.Sms;
 
@@ -63,7 +64,7 @@ public sealed class FarazReportItem {
     public string pattern_text { get; set; }
 
 
-    [JsonConverter(typeof(EmptyArrayToNullConverter<FarazReportSnapshot>))]
+    [JsonConverter(typeof(FarazSmsService.FarazReportSnapshotConverter))]
     public FarazReportSnapshot snapshot { get; set; }
 
     public FarazReportMetadata metadata { get; set; }
@@ -79,6 +80,7 @@ public sealed class FarazReportSnapshot {
 public sealed class FarazReportMetadata {
     public string recipient { get; set; }
     public string text { get; set; }
+    public string code { get; set; }
 }
 
 public sealed class FarazReportLine {

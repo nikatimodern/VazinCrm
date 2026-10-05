@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using CRM.Core.Domain.Sms.Enums;
 
 namespace CRM.EndPoint.FrontEnd.Models.Sms;
 
@@ -32,6 +33,10 @@ public class SmsReportModel {
     public DateTime? DeliveryDateTime { get; set; }
     public string DeliveryDateTimeTxt { get; set; }
     public string MessageText { get; set; }
+
+
+    public SmsPatternType? PatternType { get; set; }
+    public string PatternTypeTxt { get; set; }
 }
 
 // SmsReceive

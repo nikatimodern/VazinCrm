@@ -14,6 +14,7 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
+using CRM.Core.Domain.Sms.Enums;
 using CRM.EndPoint.FrontEnd.IServices.DocumentRender;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.IServices.ViewRender;
@@ -250,7 +251,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                         // await smsServ.SendReadyToDeliverToCustomer(cusMobile, hd.PrefactorSer);
                         await smsQueue.QueueAsync(new SmsJob {
-                            Type = SmsType.ReadyToDeliverToCustomer,
+                            PatternType = SmsPatternType.ReadyToDeliverToCustomer,
                             Mobile = cusMobile,
                             SerialNumber = hd.PrefactorSer.ToString(),
                         });

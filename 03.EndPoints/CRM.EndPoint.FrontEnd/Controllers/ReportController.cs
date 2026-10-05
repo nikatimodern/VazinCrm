@@ -100,10 +100,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 var data = await GetAllReports(model);
-                
-                
-                var columns = new List<ExcelColumnConfig<Report>>
-                {
+
+
+                var columns = new List<ExcelColumnConfig<Report>> {
                     new() { Header = "تاریخ", ValueSelector = x => TextService.ToEnglishNumber($"{x.RegDateTxt} {x.RegTimeTxt}") },
                     new() { Header = "نوع", ValueSelector = x => x.ReportTypeTxt },
                     new() { Header = "مشتری", ValueSelector = x => x.CustomerTxt },
@@ -243,7 +242,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     var val = $"%{model.serVal}%";
                     qData = qData.Where(r =>
                         EF.Functions.Like(r.CustomerTxt, val) ||
-                        EF.Functions.Like(r.ReportText, val)
+                        EF.Functions.Like(r.ReportText, val) ||
+                        EF.Functions.Like(r.RepTel, val)
                     );
                 }
 

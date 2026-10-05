@@ -35,14 +35,47 @@
 	border-radius: .65rem;
 	background: #fff;
 	color: #315958;
-	font-size: .82rem;
+	font-size: 12px;
 }
 
 
-.sms-refresh-btn:hover {
-	background: #f4f8f8;
+.sms-refresh-btn svg {
+	flex-shrink: 0;
+}
+
+
+.sms-refresh-btn:hover,
+.sms-refresh-btn:active {
+	background: #f4f8f8 !important;
+	border-color: #cbdcda !important;
+	color: #004944 !important;
+}
+
+
+.sms-select {
+	width: auto;
+	border: 1px solid #dce7e6;
+	border-radius: 8px;
+	background-color: #fff;
+	color: #315958;
+	font-size: 12px;
+	cursor: pointer;
+	box-shadow: none;
+	transition: border-color .2s, box-shadow .2s;
+}
+
+
+.sms-select:hover {
+	background-color: #f4f8f8;
 	border-color: #cbdcda;
-	color: #004944;
+}
+
+
+.sms-select:focus {
+	background-color: #f4f8f8 !important;
+	border-color: #cbdcda !important;
+	box-shadow: 0 0 0 3px rgba(4, 133, 124, .1) !important;
+	outline: none !important;
 }
 
 
@@ -198,10 +231,12 @@
 }
 
 
-.sms-table-header {
+.sms-table-toolbar {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: .5rem;
 	padding-inline: 1rem;
 	margin-block: .5rem;
 }
@@ -219,6 +254,14 @@
 	margin-top: .25rem;
 	color: #8a9998;
 	font-size: 12px;
+}
+
+.sms-table-actions {
+	display: flex;
+	justify-content: flex-end;
+	flex-wrap: wrap;
+	flex-grow: 1;
+	gap: .5rem;
 }
 
 
@@ -347,5 +390,9 @@
 	
 	.sms-tab-content {
 		padding-inline: 0;
+	}
+	
+	.sms-refresh-btn {
+		height: 32px;
 	}
 }

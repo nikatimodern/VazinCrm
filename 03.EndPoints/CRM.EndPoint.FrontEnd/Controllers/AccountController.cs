@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Microsoft.AspNetCore.SignalR;
 using CRM.Core.Domain.LogSystems.Entities;
+using CRM.Core.Domain.Sms.Enums;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Customer;
@@ -220,7 +221,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             //await smsServ.SendOtpSms(mobile, otp, type);
             await smsQueue.QueueAsync(new SmsJob {
-                Type = type == "Forgot" ? SmsType.OtpForgot : SmsType.OtpLogin,
+                PatternType = type == "Forgot" ? SmsPatternType.OtpForgot : SmsPatternType.OtpLogin,
                 Mobile = mobile,
                 Code = otp
             });

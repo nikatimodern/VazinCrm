@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Sms.Enums;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models.Configuration;
 using CRM.EndPoint.FrontEnd.Models.Sms;
@@ -13,11 +14,11 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms;
 
 public sealed class SmsIrService : ISmsIrService {
     private readonly SmsIr _smsIr;
-    private readonly SmsIrSetting _smsConfig;
+    private readonly SmsSetting _smsConfig;
 
     public SmsIrService(IConfiguration configuration)
     {
-        _smsConfig = configuration?.GetSection("SmsIrConfig").Get<SmsIrSetting>();
+        _smsConfig = configuration?.GetSection("SmsIrConfig").Get<SmsSetting>();
         var apiKey = _smsConfig.ApiKey ?? throw new InvalidOperationException("SmsIr API Key is not configured.");
 
         _smsIr = new SmsIr(apiKey);
@@ -92,7 +93,8 @@ public sealed class SmsIrService : ISmsIrService {
 
     public async Task<ResponseSmsModel> SendTextAsync(string[] mobiles, string messageText, int? sendDateTime = null)
     {
-        var result = await _smsIr.BulkSendAsync(_smsConfig.LineNumber, messageText, mobiles, sendDateTime);
+        var lineNumber = long.Parse(_smsConfig.LineNumber);
+        var result = await _smsIr.BulkSendAsync(lineNumber, messageText, mobiles, sendDateTime);
 
         return new ResponseSmsModel {
             Code = result.Status == 1 ? 200 : result.Status,
@@ -107,14 +109,14 @@ public sealed class SmsIrService : ISmsIrService {
 
         try
         {
-            int templateId;
+            string patternCode;
             List<VerifySendParameter> parameters;
 
-            switch (job.Type)
+            switch (job.PatternType)
             {
                 // تایید پیش‌فاکتور توسط مشتری
-                case SmsType.AcceptPfactorToCustomer:
-                    templateId = _smsConfig.Patterns.AcceptPfactorToCustomer;
+                case SmsPatternType.AcceptPfactorToCustomer:
+                    patternCode = _smsConfig.Patterns.AcceptPfactorToCustomer;
 
                     parameters = [
                         new VerifySendParameter("number", job.SerialNumber),
@@ -123,8 +125,8 @@ public sealed class SmsIrService : ISmsIrService {
                     break;
 
                 // تایید پیش‌فاکتور توسط تامین
-                case SmsType.AcceptPfactorToTamin:
-                    templateId = _smsConfig.Patterns.AcceptPfactorToTamin;
+                case SmsPatternType.AcceptPfactorToTamin:
+                    patternCode = _smsConfig.Patterns.AcceptPfactorToTamin;
 
                     parameters = [
                         new VerifySendParameter("number", job.SerialNumber),
@@ -133,22 +135,22 @@ public sealed class SmsIrService : ISmsIrService {
                     break;
 
                 // تایید مدیر فروش برای مشتری
-                case SmsType.AcceptedSalesAdminToCustomer:
-                    templateId = _smsConfig.Patterns.AcceptedSalesAdminToCustomer;
+                case SmsPatternType.AcceptedSalesAdminToCustomer:
+                    patternCode = _smsConfig.Patterns.AcceptedSalesAdminToCustomer;
 
                     parameters = [new VerifySendParameter("number", job.SerialNumber)];
                     break;
 
                 // محصول آماده تحویل
-                case SmsType.ReadyToDeliverToCustomer:
-                    templateId = _smsConfig.Patterns.ReadyToDeliverToCustomer;
+                case SmsPatternType.ReadyToDeliverToCustomer:
+                    patternCode = _smsConfig.Patterns.ReadyToDeliverToCustomer;
 
                     parameters = [new VerifySendParameter("number", job.SerialNumber)];
                     break;
 
                 // لینک واریز پیش‌پرداخت
-                case SmsType.PaymentLinkToCustomer:
-                    templateId = _smsConfig.Patterns.PaymentPfactorLink;
+                case SmsPatternType.PaymentLinkToCustomer:
+                    patternCode = _smsConfig.Patterns.PaymentPfactorLink;
 
                     parameters = [
                         new VerifySendParameter("number", job.SerialNumber!),
@@ -157,31 +159,33 @@ public sealed class SmsIrService : ISmsIrService {
                     break;
 
                 // OTP Login
-                case SmsType.OtpLogin:
-                    templateId = _smsConfig.Patterns.OtpLogin;
+                case SmsPatternType.OtpLogin:
+                    patternCode = _smsConfig.Patterns.OtpLogin;
 
                     parameters = [new VerifySendParameter("number", job.Code)];
                     break;
 
                 // OTP Forgot Password
-                case SmsType.OtpForgot:
-                    templateId = _smsConfig.Patterns.OtpForgot;
+                case SmsPatternType.OtpForgot:
+                    patternCode = _smsConfig.Patterns.OtpForgot;
 
                     parameters = [new VerifySendParameter("number", job.Code)];
                     break;
 
 
                 // chat reminder
-                case SmsType.ChatReminder:
-                    templateId = _smsConfig.Patterns.ChatReminder;
+                case SmsPatternType.ChatReminder:
+                    patternCode = _smsConfig.Patterns.ChatReminder;
 
                     parameters = [new VerifySendParameter("number", job.Mobile)];
                     break;
 
 
                 default:
-                    throw new NotSupportedException($"SMS type '{job.Type}' is not supported by SMS.ir.");
+                    throw new NotSupportedException($"SMS type '{job.PatternType}' is not supported by SMS.ir.");
             }
+
+            var templateId = int.Parse(patternCode);
 
             var result = await _smsIr.VerifySendAsync(job.Mobile, templateId, parameters.ToArray());
 

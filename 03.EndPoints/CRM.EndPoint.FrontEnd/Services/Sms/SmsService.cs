@@ -4,7 +4,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Sms.Entities;
+using CRM.Core.Domain.Sms.Enums;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
+using CRM.EndPoint.FrontEnd.Models.Configuration;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.Infrastructures.Sql;
 using Microsoft.AspNetCore.Mvc;
@@ -237,6 +239,9 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
                     DeliveryState = item.DeliveryState,
                     DeliveryStateTxt = item.DeliveryStateTxt,
 
+                    PatternType = item.PatternType,
+                    PatternTypeTxt = item.PatternTypeTxt,
+
                     CreatedAtFaraz = item.CreatedAtFaraz,
 
                     SendDateTime = item.SendDateTime,
@@ -247,6 +252,25 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
             }
 
             await db.SaveChangesAsync(cancellationToken);
+        }
+
+
+        public static SmsPatternType? GetPatternType(string patternCode, SmsPatterns patterns)
+        {
+            if (string.IsNullOrWhiteSpace(patternCode) || patterns == null)
+                return null;
+
+            foreach (var property in typeof(SmsPatterns).GetProperties())
+            {
+                var code = property.GetValue(patterns)?.ToString();
+
+                if (code == patternCode && Enum.TryParse<SmsPatternType>(property.Name, out var type))
+                {
+                    return type;
+                }
+            }
+
+            return null;
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Sms.Enums;
 using CRM.EndPoint.FrontEnd.Models.Configuration;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
@@ -17,18 +18,42 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms;
 
 public class FarazSmsService {
     private readonly DateTimeServices dtService;
-    private readonly FarazSmsSetting farazConfig;
+    private readonly SmsSetting config;
     private readonly FarazSMS.FarazSMS _farazSms;
 
     public FarazSmsService(HttpClient httpc, IConfiguration config, DateTimeServices dtService)
     {
         this.dtService = dtService;
-        farazConfig = config.GetSection("FarazSmsConfig").Get<FarazSmsSetting>();
-        var apiKey = farazConfig?.ApiKey ?? throw new InvalidOperationException("FarazSMS API Key is not configured.");
+        this.config = config.GetSection("FarazSmsConfig").Get<SmsSetting>();
+        var apiKey = this.config?.ApiKey ?? throw new InvalidOperationException("FarazSMS API Key is not configured.");
 
         _farazSms = new FarazSMS.FarazSMS(apiKey, httpClient: httpc);
     }
 
+
+    private static string GetDeliveryStateTxt(string status)
+    {
+        return status switch {
+            "init" => "در حال آماده‌سازی",
+            "pending-approval" => "در انتظار تأیید",
+            "insufficient-balance" => "موجودی ناکافی",
+            "cancelled" => "لغو شده",
+            "rejected" => "رد شده",
+            "in-queue" => "در صف ارسال",
+            "sent" => "ارسال شده",
+            _ => "نامشخص"
+        };
+    }
+
+    private static string GetTypeSmsTxt(string type)
+    {
+        return type switch {
+            "pattern" => "پترن",
+            "simple" => "عادی",
+            "automatic-response" => "پاسخ خودکار",
+            _ => type
+        };
+    }
 
     public async Task<SmsDashboardModel> GetDashboardAsync()
     {
@@ -65,6 +90,7 @@ public class FarazSmsService {
                 var line = x.overridden_line ?? x.line;
 
                 var messageText = x.pattern_text ?? x.metadata?.text;
+                var patternType = SmsService.GetPatternType(x.metadata?.code, config.Patterns);
 
                 return new SmsReportModel {
                     MessageId = x.id,
@@ -72,24 +98,13 @@ public class FarazSmsService {
                     Number = line?.number,
 
                     Type = type,
-                    TypeTxt = type switch {
-                        "pattern" => "پترن",
-                        "simple" => "عادی",
-                        "automatic-response" => "پاسخ خودکار",
-                        _ => type
-                    },
+                    TypeTxt = GetTypeSmsTxt(type),
+
+                    PatternType = patternType,
+                    PatternTypeTxt = patternType.GetDescription(),
 
                     DeliveryState = status,
-                    DeliveryStateTxt = status switch {
-                        "init" => "در حال آماده‌سازی",
-                        "pending-approval" => "در انتظار تأیید",
-                        "insufficient-balance" => "موجودی ناکافی",
-                        "cancelled" => "لغو شده",
-                        "rejected" => "رد شده",
-                        "in-queue" => "در صف ارسال",
-                        "sent" => "ارسال شده",
-                        _ => "نامشخص"
-                    },
+                    DeliveryStateTxt = GetDeliveryStateTxt(status),
 
                     CreatedAtFaraz = createdAt,
                     SendDateTime = sendDate,
@@ -146,11 +161,11 @@ public class FarazSmsService {
         string patternCode;
         Dictionary<string, string> attrs;
 
-        switch (job.Type)
+        switch (job.PatternType)
         {
             // تایید پیش‌فاکتور توسط مشتری
-            case SmsType.AcceptPfactorToCustomer:
-                patternCode = farazConfig.Patterns.AcceptPfactorToCustomer;
+            case SmsPatternType.AcceptPfactorToCustomer:
+                patternCode = config.Patterns.AcceptPfactorToCustomer;
                 attrs = new Dictionary<string, string> {
                     ["number"] = job.SerialNumber,
                     ["link"] = job.PfactorId?.ToString().Substring(0, 7)
@@ -158,8 +173,8 @@ public class FarazSmsService {
                 break;
 
             // تایید پیش‌فاکتور توسط تامین
-            case SmsType.AcceptPfactorToTamin:
-                patternCode = farazConfig.Patterns.AcceptPfactorToTamin;
+            case SmsPatternType.AcceptPfactorToTamin:
+                patternCode = config.Patterns.AcceptPfactorToTamin;
                 attrs = new Dictionary<string, string> {
                     ["number"] = job.SerialNumber,
                     ["link"] = "Cartable/Index?tab=TTaminExpertId"
@@ -167,24 +182,24 @@ public class FarazSmsService {
                 break;
 
             // تایید مدیر فروش (برای مشتری)
-            case SmsType.AcceptedSalesAdminToCustomer:
-                patternCode = farazConfig.Patterns.AcceptedSalesAdminToCustomer;
+            case SmsPatternType.AcceptedSalesAdminToCustomer:
+                patternCode = config.Patterns.AcceptedSalesAdminToCustomer;
                 attrs = new Dictionary<string, string> {
                     ["number"] = job.SerialNumber
                 };
                 break;
 
             // محصول آماده تحویل (برای مشتری)
-            case SmsType.ReadyToDeliverToCustomer:
-                patternCode = farazConfig.Patterns.ReadyToDeliverToCustomer;
+            case SmsPatternType.ReadyToDeliverToCustomer:
+                patternCode = config.Patterns.ReadyToDeliverToCustomer;
                 attrs = new Dictionary<string, string> {
                     ["number"] = job.SerialNumber
                 };
                 break;
 
             // لینک واریز پیش پرداخت (برای مشتری)
-            case SmsType.PaymentLinkToCustomer:
-                patternCode = farazConfig.Patterns.PaymentPfactorLink;
+            case SmsPatternType.PaymentLinkToCustomer:
+                patternCode = config.Patterns.PaymentPfactorLink;
                 attrs = new Dictionary<string, string> {
                     ["number"] = job.SerialNumber,
                     ["link"] = job.PfactorId?.ToString().Substring(0, 7)
@@ -192,31 +207,31 @@ public class FarazSmsService {
                 break;
 
             // ارسال OTP
-            case SmsType.OtpLogin:
-                patternCode = farazConfig.Patterns.OtpLogin;
+            case SmsPatternType.OtpLogin:
+                patternCode = config.Patterns.OtpLogin;
                 attrs = new Dictionary<string, string> {
                     ["number"] = job.Code
                 };
                 break;
 
-            case SmsType.OtpForgot:
-                patternCode = farazConfig.Patterns.OtpForgot;
+            case SmsPatternType.OtpForgot:
+                patternCode = config.Patterns.OtpForgot;
                 attrs = new Dictionary<string, string> {
                     ["number"] = job.Code
                 };
                 break;
 
             // chat reminder
-            case SmsType.ChatReminder:
-                patternCode = farazConfig.Patterns.ChatReminder;
+            case SmsPatternType.ChatReminder:
+                patternCode = config.Patterns.ChatReminder;
                 attrs = new Dictionary<string, string> {
                     ["number"] = job.Mobile
                 };
                 break;
 
             // فیدبک مشتری بعد از خرید
-            case SmsType.CustomerFeedback:
-                patternCode = farazConfig.Patterns.CustomerFeedback;
+            case SmsPatternType.CustomerFeedback:
+                patternCode = config.Patterns.CustomerFeedback;
                 attrs = new Dictionary<string, string> {
                     ["number"] = job.SerialNumber
                 };
@@ -228,7 +243,7 @@ public class FarazSmsService {
 
         var res = new ResponseSmsModel();
 
-        if (farazConfig.ActiveStatus != true)
+        if (config.ActiveStatus != true)
         {
             res.Code = 0;
             res.Message = "ارسال پیامک غیر فعال است";
@@ -237,7 +252,7 @@ public class FarazSmsService {
 
         try
         {
-            var response = await _farazSms.SendPattern(patternCode, job.Mobile, attrs, farazConfig.LineNumber);
+            var response = await _farazSms.SendPattern(patternCode, job.Mobile, attrs, config.LineNumber);
 
             var result = JsonSerializer.Deserialize<FarazSmsResponse>(response.GetRawText());
 
@@ -272,7 +287,7 @@ public class FarazSmsService {
     {
         var res = new ResponseSmsModel();
 
-        if (farazConfig.ActiveStatus != true)
+        if (config.ActiveStatus != true)
         {
             res.Code = 0;
             res.Message = "ارسال پیامک غیر فعال است";
@@ -282,7 +297,7 @@ public class FarazSmsService {
 
         try
         {
-            var response = await _farazSms.SendSimple(message, mobiles, farazConfig.LineNumber);
+            var response = await _farazSms.SendSimple(message, mobiles, config.LineNumber);
 
             var result = JsonSerializer.Deserialize<FarazSmsResponse>(response.GetRawText());
 
@@ -309,6 +324,34 @@ public class FarazSmsService {
             res.Code = 0;
             res.Message = ex.Message;
             return res;
+        }
+    }
+
+
+    public sealed class FarazReportSnapshotConverter : System.Text.Json.Serialization.JsonConverter<FarazReportSnapshot> {
+        public override FarazReportSnapshot Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.Null)
+                return null;
+
+            if (reader.TokenType == JsonTokenType.StartArray)
+            {
+                using var document = JsonDocument.ParseValue(ref reader);
+
+                return null;
+            }
+
+            if (reader.TokenType == JsonTokenType.StartObject)
+            {
+                return JsonSerializer.Deserialize<FarazReportSnapshot>(ref reader, options);
+            }
+
+            return null;
+        }
+
+        public override void Write(Utf8JsonWriter writer, FarazReportSnapshot value, JsonSerializerOptions options)
+        {
+            JsonSerializer.Serialize(writer, value, options);
         }
     }
 }

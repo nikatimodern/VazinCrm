@@ -33,6 +33,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Deals.Enums;
+using CRM.Core.Domain.Sms.Enums;
 using CRM.Core.Domain.Supplies.Enums;
 using CRM.Core.Domain.SystemWarnings.Enums;
 using CRM.EndPoint.FrontEnd.IServices.DocumentRender;
@@ -270,7 +271,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             //await smsServ.SendAcceptedSalesAdminToCustomer(cusMobile, pf.SerialNumber);
             await smsQueue.QueueAsync(new SmsJob {
-                Type = SmsType.AcceptedSalesAdminToCustomer,
+                PatternType = SmsPatternType.AcceptedSalesAdminToCustomer,
                 Mobile = cusMobile,
                 SerialNumber = pf.SerialNumber.ToString(),
             });
@@ -1383,7 +1384,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await db.SaveChangesAsync();
             //var res = await smsServ.SendAcceptPfactorToCustomer(toNumber, pfactor.SerialNumber, id);
             await smsQueue.QueueAsync(new SmsJob {
-                Type = SmsType.AcceptPfactorToCustomer,
+                PatternType = SmsPatternType.AcceptPfactorToCustomer,
                 Mobile = toNumber,
                 SerialNumber = pfactor.SerialNumber.ToString(),
                 PfactorId = id,
@@ -2561,7 +2562,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await db.SaveChangesAsync();
 
             await smsQueue.QueueAsync(new SmsJob {
-                Type = SmsType.AcceptPfactorToTamin,
+                PatternType = SmsPatternType.AcceptPfactorToTamin,
                 Mobile = userTamin.PhoneNumber,
                 SerialNumber = pf.SerialNumber.ToString(),
                 ConnectionId = Request.GetSignalRConnectionId()
@@ -2596,7 +2597,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 //await smsServ.SendAcceptPfactorToTamin(userTamin.PhoneNumber, pf.SerialNumber);
                 await smsQueue.QueueAsync(new SmsJob {
-                    Type = SmsType.AcceptPfactorToTamin,
+                    PatternType = SmsPatternType.AcceptPfactorToTamin,
                     Mobile = userTamin.PhoneNumber,
                     SerialNumber = pf.SerialNumber.ToString(),
                     ConnectionId = Request.GetSignalRConnectionId()

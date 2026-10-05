@@ -1,4 +1,5 @@
 using System;
+using CRM.Core.Domain.Sms.Enums;
 using CRM.Framework.Domain;
 
 namespace CRM.Core.Domain.Sms.Entities;
@@ -11,6 +12,8 @@ public class SentSms : BaseEntity {
 
     public string Type { get; set; }
     public string TypeTxt { get; set; }
+    public SmsPatternType? PatternType { get; set; }
+    public string PatternTypeTxt { get; set; }
 
     public string DeliveryState { get; set; }
     public string DeliveryStateTxt { get; set; }
