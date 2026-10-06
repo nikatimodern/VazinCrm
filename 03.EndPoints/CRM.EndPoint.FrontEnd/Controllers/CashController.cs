@@ -13,6 +13,7 @@ using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Cash;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
+using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
@@ -31,9 +32,10 @@ public class CashController : Controller {
     private readonly DateTimeServices dtService;
     private readonly LogSystemService logSystemService;
     private readonly FileSaver fileSaver;
+    private readonly SepidarService sepidarService;
 
     public CashController(CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, DateTimeServices dtService,
-        LogSystemService logSystemService, FileSaver fileSaver)
+        LogSystemService logSystemService, FileSaver fileSaver, SepidarService sepidarService)
     {
         this.db = db;
         this.udb = udb;
@@ -41,6 +43,7 @@ public class CashController : Controller {
         this.dtService = dtService;
         this.logSystemService = logSystemService;
         this.fileSaver = fileSaver;
+        this.sepidarService = sepidarService;
     }
 
     [Authorize(Roles = "مدیر ارشد,تنخواه دار,مدیر مالی,کارشناس مالی")]
@@ -1176,6 +1179,24 @@ public class CashController : Controller {
         catch (Exception e)
         {
             return BadRequest();
+        }
+    }
+
+
+    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+    public async Task<IActionResult> SendCashToSepidar(Guid id)
+    {
+        try
+        {
+            var item = await db.Cashes.Include(f => f.CostCenter).Include(f => f.CostTitle).FirstOrDefaultAsync(f => f.Id == id);
+            await sepidarService.AddPaymentHeaderAsync(item);
+
+
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
         }
     }
 }

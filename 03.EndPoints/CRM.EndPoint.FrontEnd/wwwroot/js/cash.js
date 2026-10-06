@@ -81,6 +81,13 @@ async function showEditCashModal(id) {
     }
 }
 
+async function sendCashToSepidar(id) {
+    await sendApiRequest({
+        url: "/Cash/SendCashToSepidar",
+        params: { id },
+    });
+}
+
 const deleteCash = async (id) => {
     Swal.fire({
         title: "حذف!",
@@ -761,6 +768,7 @@ function getAllCashesModalDt() {
                 render: function (data, type, row) {
                     return `
                         <div class="inline-flex-center gap-1">
+                            <button type="button" class="buttonGray" onclick="sendCashToSepidar('${row.id}')">ارسال به سپیدار</button>
                             <button type="button" class="icon-button icon-button--gray" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
                             ${row.status === 0 ? `
                                 <button type="button" class="icon-button icon-button--green" onclick="showEditCashModal('${row.id}')"><i class="fa fa-pencil"></i></button>
