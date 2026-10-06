@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using CRM.Framework;
 
 namespace CRM.Core.Domain.AppUsers.Entities {
     public class AppUser : IdentityUser {
@@ -26,5 +27,9 @@ namespace CRM.Core.Domain.AppUsers.Entities {
         public Guid? PersonId { get; set; }
         public bool IsEmployee { get; set; }
         
+        
+        public DateTime? CreateDate { get; set; } = DateTime.Now;
+        public string CreateDateTxt { get; set; } = BaseServices.GetDateTimePersian();
+
     }
 }
