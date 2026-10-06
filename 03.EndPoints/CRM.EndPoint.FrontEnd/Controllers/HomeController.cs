@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
@@ -76,7 +77,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-//                await smsService.SyncReceivesAsync();
+                var smses = await db.SentSmses.ToListAsync();
+
+                var contacts = await smsService.GetContactNamesAsync(smses.Select(x => (x.Mobile, x.PatternType)));
+
+
+                foreach (var item in smses)
+                {
+                    item.ReceivedFullName = contacts.GetValueOrDefault(item.Mobile);
+                }
+
+                await db.SaveChangesAsync();
+
 
                 //await db.SaveChangesAsync();
                 await trans.CommitAsync();
