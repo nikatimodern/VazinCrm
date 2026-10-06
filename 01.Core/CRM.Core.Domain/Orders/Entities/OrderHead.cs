@@ -1,10 +1,8 @@
-﻿using CRM.Core.Domain.Customers.Entities;
-using CRM.Core.Domain.Orders.Enums;
+﻿using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.Framework.Domain;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.RequestAmounts.Entities;

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
-
-namespace CRM.Core.Domain.Sepidar.Invoices.Entities
+﻿namespace CRM.Core.Domain.Sepidar.Invoices.Entities
 {
     public class InvoiceItem
     {

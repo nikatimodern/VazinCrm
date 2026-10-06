@@ -2,7 +2,6 @@
 using CRM.Framework.Domain;
 using System;
 using System.Collections.Generic;
-using CRM.Core.Domain.PreFactors.Enum;
 
 namespace CRM.Core.Domain.PreFactors.Entities {
     public class PreFactorItem : BaseEntity {

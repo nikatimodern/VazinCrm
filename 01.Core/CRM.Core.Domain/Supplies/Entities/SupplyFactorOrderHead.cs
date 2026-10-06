@@ -1,8 +1,5 @@
-﻿using CRM.Core.Domain.Orders.Entities;
-using CRM.Framework.Domain;
+﻿using CRM.Framework.Domain;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace CRM.Core.Domain.Supplies.Entities
 {

@@ -1,6 +1,4 @@
-﻿using CRM.Core.Domain.AppUsers.Entities;
-using CRM.Framework.Domain;
-using System;
+﻿using System;
 
 namespace CRM.Core.Domain.Cartables.Entities
 {

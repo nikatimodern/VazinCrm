@@ -29,7 +29,6 @@ using CRM.EndPoint.FrontEnd.IServices.PushNotification;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.IServices.ViewRender;
 using CRM.EndPoint.FrontEnd.Services.AI;
-using CRM.EndPoint.FrontEnd.Models.Configuration;
 using CRM.EndPoint.FrontEnd.Services.Asterisk;
 using CRM.EndPoint.FrontEnd.Services.Carizo;
 using CRM.EndPoint.FrontEnd.Services.Chat;

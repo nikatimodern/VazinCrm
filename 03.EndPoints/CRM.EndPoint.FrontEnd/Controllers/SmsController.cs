@@ -3,14 +3,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Sms.Enums;
-using CRM.EndPoint.FrontEnd.Models;
-using CRM.EndPoint.FrontEnd.Models.Sms;
-using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.Sms;
 using CRM.Infrastructures.Sql;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 

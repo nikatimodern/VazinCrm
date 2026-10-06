@@ -1,13 +1,10 @@
 ﻿using CRM.Core.Domain.Customers.Entities;
-using CRM.Framework;
 using CRM.Framework.Domain;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
-using CRM.Core.Domain.Supplies.Entities;
 
 namespace CRM.Core.Domain.PreFactors.Entities {
     public class PreFactor : BaseEntity {

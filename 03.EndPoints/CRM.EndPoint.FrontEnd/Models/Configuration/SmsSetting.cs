@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace CRM.EndPoint.FrontEnd.Models.Configuration {
+﻿namespace CRM.EndPoint.FrontEnd.Models.Configuration {
     public class SmsSetting {
         public string LineNumber { get; set; }
         public string ApiKey { get; set; }

@@ -1,6 +1,4 @@
 using System;
-using CRM.Core.Domain.AppUsers.Entities;
-using CRM.Framework.Domain;
 
 namespace CRM.Core.Domain.Warehouses.Entities;
 

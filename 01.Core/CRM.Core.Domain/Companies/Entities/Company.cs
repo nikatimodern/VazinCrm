@@ -1,7 +1,6 @@
 ﻿using CRM.Framework.Domain;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace CRM.Core.Domain.Company.Entities
 {

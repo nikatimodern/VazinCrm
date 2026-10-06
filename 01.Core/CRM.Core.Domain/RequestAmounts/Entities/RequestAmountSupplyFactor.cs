@@ -1,7 +1,5 @@
 ﻿using CRM.Framework.Domain;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using CRM.Core.Domain.Supplies.Entities;
 
 namespace CRM.Core.Domain.RequestAmounts.Entities {

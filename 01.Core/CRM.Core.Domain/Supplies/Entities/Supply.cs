@@ -1,10 +1,5 @@
-﻿using CRM.Core.Domain.PreFactors.Entities;
-using CRM.Framework.Domain;
+﻿using CRM.Framework.Domain;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using CRM.Core.Domain.Supplies.Enums;
 
 namespace CRM.Core.Domain.Supplies.Entities {

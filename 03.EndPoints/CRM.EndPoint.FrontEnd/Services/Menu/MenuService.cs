@@ -5,8 +5,6 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.IServices.Menu;
 using CRM.EndPoint.FrontEnd.Models.Menu;
-using CRM.Infrastructures.Sql;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CRM.EndPoint.FrontEnd.Services.Menu;

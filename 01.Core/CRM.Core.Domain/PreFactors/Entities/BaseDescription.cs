@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using CRM.Core.Domain.PreFactors.Enum;
+﻿using CRM.Core.Domain.PreFactors.Enum;
 
 namespace CRM.Core.Domain.PreFactors.Entities {
     public class BaseDescription {

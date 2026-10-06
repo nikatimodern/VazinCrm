@@ -1,6 +1,5 @@
 ﻿using CRM.Core.Domain.AppUsers.Entities;
 using CRM.EndPoint.FrontEnd.Services;
-using CRM.EndPoint.FrontEnd.Services.SetInterval;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
@@ -11,10 +10,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CRM.Core.Domain.SystemWarnings.Enums;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Services.AI;
 using CRM.EndPoint.FrontEnd.Services.Asterisk;

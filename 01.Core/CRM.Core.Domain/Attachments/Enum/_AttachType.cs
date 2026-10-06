@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace CRM.Core.Domain.Attachments.Enum {
+﻿namespace CRM.Core.Domain.Attachments.Enum {
     public enum _AttachType {
         DocPayFactor = 1, // سند پرداختی برای فاکتور
         AcceptedCusPreFactor = 2, // سند تایید دستی پیشفاکتور

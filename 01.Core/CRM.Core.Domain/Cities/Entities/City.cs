@@ -1,5 +1,4 @@
 ﻿using CRM.Core.Domain.States.Entities;
-using System.Collections.Generic;
 
 namespace CRM.Core.Domain.Cities.Entities
 {

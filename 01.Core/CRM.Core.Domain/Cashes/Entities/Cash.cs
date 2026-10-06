@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Attachments.Entities;
 using CRM.Core.Domain.Cashes.Enums;

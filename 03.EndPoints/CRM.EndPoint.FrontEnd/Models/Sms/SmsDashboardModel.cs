@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
 using CRM.Core.Domain.Sms.Enums;
 
 namespace CRM.EndPoint.FrontEnd.Models.Sms;

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Checks.Entities;
 using CRM.Framework.Domain;

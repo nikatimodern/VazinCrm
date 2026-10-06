@@ -9,7 +9,6 @@ using System.Threading;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using CRM.Core.Domain.Supplies.Entities;
 using CRM.EndPoint.FrontEnd.Models.Ai;
 using CRM.EndPoint.FrontEnd.Models.Supply;
 using Microsoft.Extensions.Logging;

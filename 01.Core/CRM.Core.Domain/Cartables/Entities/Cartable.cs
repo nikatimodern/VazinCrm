@@ -1,10 +1,6 @@
 ﻿using CRM.Core.Domain.Cartables.Enums;
 using CRM.Framework.Domain;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using CRM.Core.Domain.LogSystems.Entities;
 
 namespace CRM.Core.Domain.Cartables.Entities {

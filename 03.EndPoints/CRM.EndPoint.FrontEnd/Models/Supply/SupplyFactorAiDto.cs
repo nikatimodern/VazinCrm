@@ -9,17 +9,15 @@ public class SupplyFactorAiDto {
     public byte OfficialType { get; set; }
     public string SerialNumber { get; set; }
 
-    private string _date;
-
     public string Date {
-        get => _date;
-        set {
-            _date = value;
+        get;
+        init {
+            field = value;
             DateMiladi = BaseServices.GetDateMiladi(value);
         }
     }
 
-    public DateTime? DateMiladi { get; set; }
+    public DateTime? DateMiladi { get; private set; }
 
     public List<SupplyFactorAiItemDto> Items { get; set; } = [];
 }
@@ -31,12 +29,10 @@ public class SupplyFactorAiItemDto {
     public byte Printable { get; set; }
     public decimal WeightCount { get; set; }
 
-    private UnitTypeEnums? _unit;
-
     public UnitTypeEnums? Unit {
-        get => _unit;
+        get;
         set {
-            _unit = value;
+            field = value;
             UnitTxt = value?.ToString().Replace("_", " ");
         }
     }

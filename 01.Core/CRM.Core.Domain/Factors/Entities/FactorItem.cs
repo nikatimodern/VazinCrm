@@ -1,6 +1,5 @@
 ﻿using CRM.Framework.Domain;
 using System;
-using CRM.Core.Domain.PreFactors.Enum;
 
 namespace CRM.Core.Domain.Factors.Entities
 {

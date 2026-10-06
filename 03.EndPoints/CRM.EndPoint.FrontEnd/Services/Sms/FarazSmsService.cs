@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Sms.Enums;
@@ -11,7 +10,6 @@ using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using FarazSMS;
 using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace CRM.EndPoint.FrontEnd.Services.Sms;

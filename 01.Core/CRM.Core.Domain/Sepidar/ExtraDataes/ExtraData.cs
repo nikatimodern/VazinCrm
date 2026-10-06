@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace CRM.Core.Domain.Sepidar.ExtraDataes
+﻿namespace CRM.Core.Domain.Sepidar.ExtraDataes
 {
     public class ExtraData
     {

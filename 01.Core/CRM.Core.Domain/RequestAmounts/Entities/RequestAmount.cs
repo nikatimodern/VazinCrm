@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using CRM.Core.Domain.Accountancies.Entities;
-using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.RequestAmounts.Enums;
 
 

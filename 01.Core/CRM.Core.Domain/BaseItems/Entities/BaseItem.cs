@@ -1,7 +1,4 @@
-﻿using CRM.Framework.Domain;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
 using CRM.Core.Domain.BaseItems.Enums;
 
 namespace CRM.Core.Domain.BaseItems.Entities

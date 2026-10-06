@@ -1,6 +1,5 @@
 ﻿using System;
 using CRM.Core.Domain.Cartables.Entities;
-using CRM.Core.Domain.Cartables.Enums;
 
 // ReSharper disable InconsistentNaming
 

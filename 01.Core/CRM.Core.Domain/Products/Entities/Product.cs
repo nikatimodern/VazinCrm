@@ -1,8 +1,6 @@
 ﻿using CRM.Framework.Domain;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 using CRM.Core.Domain.Warehouses.Entities;
 
 namespace CRM.Core.Domain.Products.Entities {

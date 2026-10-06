@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using CRM.Core.Domain.Attachments.Entities;
-using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.Core.Domain.Transfers.Enums;
 using CRM.Framework.Domain;
 

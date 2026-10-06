@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace CRM.Core.Domain.Reports.Enum
+﻿namespace CRM.Core.Domain.Reports.Enum
 {
     public enum ReportTypeEnum
     {

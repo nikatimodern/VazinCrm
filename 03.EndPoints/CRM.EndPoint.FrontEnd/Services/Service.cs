@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Reflection;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using CRM.Core.Domain;
@@ -23,7 +21,6 @@ using FactorEntity = CRM.Core.Domain.Factors.Entities.Factor;
 using CRM.EndPoint.FrontEnd.Models.Cartable;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.SetInterval;
-using CRM.Framework;
 using CRM.Infrastructures.Sql;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Microsoft.AspNetCore.Identity;
