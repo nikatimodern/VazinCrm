@@ -6,7 +6,7 @@ namespace CRM.Core.Domain.Sms.Entities;
 public class ReceivedSms : BaseEntity {
     public long FarazId { get; set; }
     public string Mobile { get; set; }
-    public string SenderName { get; set; }
+    public string SenderFullName { get; set; }
     public string MessageText { get; set; }
     public string Number { get; set; }
     public DateTime ReceivedDateTime { get; set; }

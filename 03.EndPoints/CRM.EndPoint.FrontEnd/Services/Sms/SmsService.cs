@@ -136,9 +136,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
             if (items.Count == 0)
                 return;
 
-            var contacts = await GetContactNamesAsync(
-                items.Select(x => (x.Mobile, (SmsPatternType?)null)),
-                cancellationToken);
+            var contacts = await GetContactNamesAsync(items.Select(x => x.Mobile), cancellationToken);
 
             var farazIds = items
                 .Select(x => x.MessageId)
@@ -160,7 +158,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
                 db.ReceivedSmses.Add(new ReceivedSms {
                     FarazId = item.MessageId,
                     Mobile = item.Mobile,
-                    SenderName = contacts.GetValueOrDefault(item.Mobile),
+                    SenderFullName = contacts.GetValueOrDefault(item.Mobile),
                     MessageText = item.MessageText,
                     Number = item.Number,
                     ReceivedDateTime = item.ReceivedDateTime,
@@ -220,7 +218,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
             if (items.Count == 0)
                 return;
 
-            var contacts = await GetContactNamesAsync(items.Select(x => (x.Mobile, x.PatternType)), cancellationToken);
+            var contacts = await GetContactNamesAsync(items.Select(x => x.Mobile), cancellationToken);
 
             var farazIds = items
                 .Select(x => x.MessageId)
@@ -267,24 +265,39 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
             await db.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task<Dictionary<string, string>> GetContactNamesAsync(IEnumerable<(string Mobile, SmsPatternType? PatternType)> items,
-            CancellationToken ct = default)
+        public async Task<Dictionary<string, string>> GetContactNamesAsync(IEnumerable<string> mobiles, CancellationToken ct = default)
         {
-            var data = items
-                .Where(x => !string.IsNullOrWhiteSpace(x.Mobile))
-                .Select(x => (Mobile: TextService.NormalizeIranMobile(x.Mobile), x.PatternType))
-                .Where(x => !string.IsNullOrWhiteSpace(x.Mobile))
-                .ToList();
-
-            var numbers = data.Select(x => x.Mobile).Distinct().ToList();
-
-            var customerNumbers = data
-                .Where(x => x.PatternType == null || IsCustomerPattern(x.PatternType))
-                .Select(x => x.Mobile)
+            var numbers = mobiles
+                .Select(TextService.NormalizeIranMobile)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct()
                 .ToList();
 
+            if (numbers.Count == 0)
+                return [];
+
             var contacts = new Dictionary<string, string>();
+
+            var users = await udb.Users
+                .AsNoTracking()
+                .Where(x => x.PhoneNumber != null && x.FullName != null)
+                .Select(x => new { x.PhoneNumber, x.FirstName, x.LastName, x.FullName })
+                .ToListAsync(ct);
+
+            foreach (var user in users)
+            {
+                var mobile = TextService.NormalizeIranMobile(user.PhoneNumber);
+
+                if (!numbers.Contains(mobile) || string.IsNullOrWhiteSpace(user.FullName) || TextService.NormalizeIranMobile(user.FullName) == mobile)
+                    continue;
+
+                contacts.TryAdd(mobile, user.FullName);
+            }
+
+            var missingNumbers = numbers.Except(contacts.Keys).ToList();
+
+            if (missingNumbers.Count == 0)
+                return contacts;
 
             var customers = await db.Customers
                 .AsNoTracking()
@@ -299,36 +312,15 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
             {
                 var mobile = TextService.NormalizeIranMobile(customer.Mobile);
 
-                if (customerNumbers.Contains(mobile) && !string.IsNullOrWhiteSpace(customer.Name))
-                    contacts.TryAdd(mobile, customer.Name);
-            }
+                if (!missingNumbers.Contains(mobile) || string.IsNullOrWhiteSpace(customer.Name))
+                    continue;
 
-            var missingNumbers = numbers.Except(contacts.Keys).ToList();
-
-            var users = await udb.Users
-                .AsNoTracking()
-                .Where(x => missingNumbers.Contains(x.PhoneNumber) && !string.IsNullOrWhiteSpace(x.FullName) && x.FullName != x.PhoneNumber)
-                .Select(x => new { x.PhoneNumber, x.FullName })
-                .ToListAsync(ct);
-
-            foreach (var user in users)
-            {
-                var mobile = TextService.NormalizeIranMobile(user.PhoneNumber);
-
-                if (missingNumbers.Contains(mobile))
-                    contacts.TryAdd(mobile, user.FullName);
+                contacts.TryAdd(mobile, customer.Name);
             }
 
             return contacts;
         }
 
-        private static bool IsCustomerPattern(SmsPatternType? patternType) =>
-            patternType is
-                SmsPatternType.AcceptPfactorToCustomer or
-                SmsPatternType.AcceptedSalesAdminToCustomer or
-                SmsPatternType.ReadyToDeliverToCustomer or
-                SmsPatternType.PaymentLinkToCustomer or
-                SmsPatternType.CustomerFeedback;
 
         public static SmsPatternType? GetPatternType(string patternCode, SmsPatterns patterns)
         {

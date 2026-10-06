@@ -77,17 +77,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-                var smses = await db.SentSmses.ToListAsync();
+                /*var smses = await db.SentSmses.ToListAsync();
 
-                var contacts = await smsService.GetContactNamesAsync(smses.Select(x => (x.Mobile, x.PatternType)));
-
+                var contacts = await smsService.GetContactNamesAsync(smses.Select(x => x.Mobile));
 
                 foreach (var item in smses)
                 {
                     item.ReceivedFullName = contacts.GetValueOrDefault(item.Mobile);
                 }
 
-                await db.SaveChangesAsync();
+                await db.SaveChangesAsync();*/
 
 
                 //await db.SaveChangesAsync();
