@@ -28,7 +28,7 @@ namespace CRM.Core.Domain.AppUsers.Entities {
         public bool IsEmployee { get; set; }
         
         
-        public DateTime? CreateDate { get; set; } = DateTime.Now;
+        public DateTime CreateDate { get; set; } = DateTime.Now;
         public string CreateDateTxt { get; set; } = BaseServices.GetDateTimePersian();
 
     }

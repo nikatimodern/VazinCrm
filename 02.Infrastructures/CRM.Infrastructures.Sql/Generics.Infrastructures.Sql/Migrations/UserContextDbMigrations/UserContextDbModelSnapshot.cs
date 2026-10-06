@@ -34,7 +34,7 @@ namespace CRM.Infrastructures.Sql.Migrations.UserContextDbMigrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("CreateDate")
+                    b.Property<DateTime>("CreateDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("CreateDateTxt")
