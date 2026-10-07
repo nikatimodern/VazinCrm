@@ -85,6 +85,7 @@ async function sendCashToSepidar(id) {
     await sendApiRequest({
         url: "/Cash/SendCashToSepidar",
         params: { id },
+        successMsg: null,
         onSuccess: async (res) => {
             await confirmAlert({
                 icon: "success",
@@ -92,9 +93,7 @@ async function sendCashToSepidar(id) {
                 text: "آیا سند حسابداری هم ساخته شود؟",
                 confirmText: "بله، ساخته شود",
                 cancelText: "خیر",
-                onConfirm: async () => {
-                    await addVoucherSepidar(id, res.data);
-                },
+                onConfirm: async () => await addVoucherSepidar(id, res.data),
             });
         },
     });
@@ -104,10 +103,8 @@ async function sendCashToSepidar(id) {
 const addVoucherSepidar = async (cashId, paymentHeaderId) => {
     await sendApiRequest({
         url: "/Cash/AddVoucherSepidar",
-        params: { 
-            cashId,
-            paymentHeaderId
-        },
+        params: { cashId, paymentHeaderId },
+        
         successMsg: "سند حسابداری با موفقیت ساخته شد.",
     });
 };

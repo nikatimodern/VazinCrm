@@ -614,6 +614,34 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
             const int bankAccountSlRef = 717; // TODO: فعلاً مطابق داده واقعی؛ بعداً Mapping شود
 
+            var bankDl = await s1Db.DLs.AsNoTracking().SingleOrDefaultAsync(x => x.DLId == bankAccount.DlRef, cancellationToken);
+
+            if (bankDl == null)
+            {
+                throw new InvalidOperationException($"DL حساب بانکی با شناسه {bankAccount.DlRef} در سپیدار پیدا نشد.");
+            }
+
+            var paymentHeaderDl = await s1Db.DLs.AsNoTracking().SingleOrDefaultAsync(x => x.DLId == paymentHeader.DlRef, cancellationToken);
+
+            if (paymentHeaderDl == null)
+            {
+                throw new InvalidOperationException($"DL با شناسه {paymentHeader.DlRef} در سپیدار پیدا نشد.");
+            }
+
+
+            var debitDescription =
+                $"برداشت طی حواله شماره {paymentDraft.Number ?? "0"} " +
+                $"تاریخ {cash.CostDate?.Substring(0, 10)} " +
+                $"از حساب بانکی {bankDl.Title} " +
+                $"بابت {cash.CostDescription}";
+
+            var creditDescription =
+                $"برداشت طی حواله شماره {paymentDraft.Number ?? "0"} " +
+                $"تاریخ {cash.CostDate} " +
+                $"از حساب بانکی {bankDl.Title} " +
+                $"به {paymentHeaderDl.Title} " +
+                $"بابت {cash.CostDescription}";
+
 
             // =========================================================
             // Row 1 - بدهکار: حساب هزینه
@@ -667,8 +695,8 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
                 IssuerEntityName = PaymentIssuerEntityName,
                 IssuerEntityRef = paymentHeader.PaymentHeaderId,
-                Description = cash.CostDescription ?? string.Empty,
-                Description_En = cash.CostDescription ?? string.Empty,
+                Description = debitDescription,
+                Description_En = debitDescription,
                 Version = 1
             };
 
@@ -707,7 +735,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                     IssuerEntityRef = paymentHeader.PaymentHeaderId,
 
                     Description = "بابت هزینه کارمزد خدمات بانکی",
-                    Description_En = string.Empty,
+                    Description_En = "بابت هزینه کارمزد خدمات بانکی",
 
                     Version = 1
                 });
@@ -747,9 +775,9 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
                 IssuerEntityRef = paymentHeader.PaymentHeaderId,
 
-                Description = cash.CostDescription ?? string.Empty,
+                Description = creditDescription,
 
-                Description_En = cash.CostDescription ?? string.Empty,
+                Description_En = creditDescription,
 
                 Version = 1
             };
@@ -785,8 +813,8 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                     IssuerEntityName = PaymentIssuerEntityName,
                     IssuerEntityRef = paymentHeader.PaymentHeaderId,
 
-                    Description = cash.CostDescription ?? string.Empty,
-                    Description_En = cash.CostDescription ?? string.Empty,
+                    Description = "بابت هزینه کارمزد خدمات بانکی",
+                    Description_En = "بابت هزینه کارمزد خدمات بانکی",
 
                     Version = 1
                 });
