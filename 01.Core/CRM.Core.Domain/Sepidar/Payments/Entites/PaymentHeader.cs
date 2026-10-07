@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -87,4 +88,7 @@ public class PaymentHeader
     [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
     [Column(TypeName = "decimal(20,4)")]
     public decimal? PaymentAmount { get; private set; }
+
+
+    public IList<PaymentDraft> PaymentDrafts { get; set; }
 }

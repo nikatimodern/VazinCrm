@@ -370,6 +370,31 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("BankAccounts");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Accountancies.Entities.BankAccountExternalSoftware", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BankAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RefCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RefId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SoftwareName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankAccountId");
+
+                    b.ToTable("BankAccountExternalSoftwares");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Attachments.Entities.Attachment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3781,6 +3806,176 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("InvoiceItem");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Payments.Entites.PaymentDraft", b =>
+                {
+                    b.Property<int>("PaymentDraftId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<decimal>("AmountInBaseCurrency")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<int?>("BankAccountRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("BankFeeAmount")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<decimal?>("BankFeeAmountInBaseCurrency")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<decimal?>("BankFeeAmountRate")
+                        .HasColumnType("decimal(26,16)");
+
+                    b.Property<int>("CurrencyRef")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("Description_En")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<DateTime>("HeaderDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("HeaderNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Number")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<int>("PaymentHeaderRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Rate")
+                        .HasColumnType("decimal(26,16)");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("PaymentDraftId");
+
+                    b.HasIndex("PaymentHeaderRef");
+
+                    b.ToTable("PaymentDraft", "RPA");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Payments.Entites.PaymentHeader", b =>
+                {
+                    b.Property<int>("PaymentHeaderId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AccountSlRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("Amount")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<decimal>("AmountInBaseCurrency")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<int?>("BankFeeSlRef")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CashRef")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CreationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("Creator")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreatorForm")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("CurrencyRef")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("Description_En")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<decimal?>("Discount")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<decimal?>("DiscountInBaseCurrency")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<decimal?>("DiscountRate")
+                        .HasColumnType("decimal(26,16)");
+
+                    b.Property<int>("DlRef")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FiscalYearRef")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ItemType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("LastModificationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("LastModifier")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("PaymentAmount")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("decimal(20,4)");
+
+                    b.Property<decimal>("Rate")
+                        .HasColumnType("decimal(26,16)");
+
+                    b.Property<int?>("ReceiptHeaderRef")
+                        .HasColumnType("int");
+
+                    b.Property<int>("State")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("TotalAmount")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<decimal?>("TotalAmountInBaseCurrency")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("VoucherRef")
+                        .HasColumnType("int");
+
+                    b.HasKey("PaymentHeaderId");
+
+                    b.ToTable("PaymentHeader", "RPA");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.Quotations.Entites.Quotation", b =>
                 {
                     b.Property<int>("QuotationId")
@@ -4739,6 +4934,17 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Navigation("Deal");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Accountancies.Entities.BankAccountExternalSoftware", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Accountancies.Entities.BankAccount", "BankAccount")
+                        .WithMany("ExternalSoftwares")
+                        .HasForeignKey("BankAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BankAccount");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.CallRecordings.Entities.CallParticipant", b =>
                 {
                     b.HasOne("CRM.Core.Domain.CallRecordings.Entities.CallRecording", "CallRecording")
@@ -5122,6 +5328,15 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Payments.Entites.PaymentDraft", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Sepidar.Payments.Entites.PaymentHeader", null)
+                        .WithMany("PaymentDrafts")
+                        .HasForeignKey("PaymentHeaderRef")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Supplies.Entities.Supply", b =>
                 {
                     b.HasOne("CRM.Core.Domain.PreFactors.Entities.PreFactorItem", null)
@@ -5250,6 +5465,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Navigation("Cashes");
 
                     b.Navigation("Checkbooks");
+
+                    b.Navigation("ExternalSoftwares");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.CallRecordings.Entities.CallRecording", b =>
@@ -5413,6 +5630,11 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.Invoices.Entities.Invoice", b =>
                 {
                     b.Navigation("InvoiceItems");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Payments.Entites.PaymentHeader", b =>
+                {
+                    b.Navigation("PaymentDrafts");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.States.Entities.State", b =>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Checks.Entities;
 using CRM.Framework.Domain;
@@ -26,11 +27,7 @@ namespace CRM.Core.Domain.Accountancies.Entities {
         public List<Accountancy> Accountancies { get; set; }
         public List<Checkbook> Checkbooks { get; set; }
         public List<Cash> Cashes { get; set; }
-    }
 
-    public enum BankAccountTypeEnum {
-        شرکت = 1,
-        تامین_کننده = 2,
-        تنخواه_دار = 3
+        public List<BankAccountExternalSoftware> ExternalSoftwares { get; set; }
     }
 }

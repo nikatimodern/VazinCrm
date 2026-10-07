@@ -1189,8 +1189,27 @@ public class CashController : Controller {
         try
         {
             var item = await db.Cashes.Include(f => f.CostCenter).Include(f => f.CostTitle).FirstOrDefaultAsync(f => f.Id == id);
-            await sepidarService.AddPaymentHeaderAsync(item);
+            var paymentHeaderId = await sepidarService.AddPaymentHeaderAsync(item);
 
+
+            return Ok(paymentHeaderId);
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+
+
+    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+    public async Task<IActionResult> AddVoucherSepidar(Guid cashId, int paymentHeaderId)
+    {
+        try
+        {
+            var cash = await db.Cashes.Include(f => f.CostCenter).Include(f => f.CostTitle).FirstOrDefaultAsync(f => f.Id == cashId);
+            var paymentHeader = await sepidarService.GetPaymentHeader(paymentHeaderId);
+
+            await sepidarService.AddVoucherAsync(cash, paymentHeader);
 
             return Ok();
         }
