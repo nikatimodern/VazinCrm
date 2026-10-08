@@ -183,7 +183,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
         }
 
 
-        private async Task<int> GetNextIdAsync(string tableName, CancellationToken cancellationToken = default)
+        private async Task<int> GetNextIdAsync(string tableName, int incValue = 1, CancellationToken cancellationToken = default)
         {
             var connection = s1Db.Database.GetDbConnection();
 
@@ -195,23 +195,28 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                 EXEC FMK.spGetNextId
                     @TableName = @TableName,
                     @Id = @Id OUTPUT,
-                    @IncValue = 1;
+                    @IncValue = @IncValue;
 
                 SELECT @Id;
             ";
 
-            var parameter = command.CreateParameter();
-            parameter.ParameterName = "@TableName";
-            parameter.Value = tableName;
+            var tableParameter = command.CreateParameter();
+            tableParameter.ParameterName = "@TableName";
+            tableParameter.Value = tableName;
 
-            command.Parameters.Add(parameter);
+            var incParameter = command.CreateParameter();
+            incParameter.ParameterName = "@IncValue";
+            incParameter.Value = incValue;
+
+            command.Parameters.Add(tableParameter);
+            command.Parameters.Add(incParameter);
+
             var transaction = s1Db.Database.CurrentTransaction;
 
             if (transaction != null)
             {
                 command.Transaction = transaction.GetDbTransaction();
             }
-
 
             var result = await command.ExecuteScalarAsync(cancellationToken);
 
@@ -297,7 +302,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                 // 5. PaymentHeaderId
                 // -----------------------------
 
-                var paymentHeaderId = await GetNextIdAsync("RPA.PaymentHeader", cancellationToken);
+                var paymentHeaderId = await GetNextIdAsync("RPA.PaymentHeader", cancellationToken: cancellationToken);
 
                 var paymentHeader = new PaymentHeader {
                     PaymentHeaderId = paymentHeaderId, //REQUIRED
@@ -440,7 +445,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
             // 3. ساخت PaymentDraft
             // ---------------------------------------
 
-            var paymentDraftId = await GetNextIdAsync("RPA.PaymentDraft", cancellationToken);
+            var paymentDraftId = await GetNextIdAsync("RPA.PaymentDraft", cancellationToken: cancellationToken);
 
 
             var paymentDraft = new PaymentDraft {
@@ -490,54 +495,221 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
         public async Task AddVoucherAsync(Cash cash, PaymentHeader paymentHeader, CancellationToken cancellationToken = default)
         {
-            var voucherId = await GetNextIdAsync("ACC.Voucher", cancellationToken);
+            if (cash == null)
+                throw new InvalidOperationException("تنخواه پیدا نشد.");
 
-            // TODO: منطق دقیق تولید Number ووچر هنوز مشخص نشده
-            var voucherNumber = await GetNextVoucherNumberAsync(paymentHeader.FiscalYearRef, cancellationToken);
+            if (paymentHeader == null)
+                throw new InvalidOperationException("اعلامیه پرداخت پیدا نشد.");
 
-            // TODO: منطق دقیق DailyNumber هنوز باید قطعی شود
-            var dailyNumber = await GetNextVoucherDailyNumberAsync(cash.CostDateMiladi, paymentHeader.FiscalYearRef, cancellationToken);
+            if (!paymentHeader.AccountSlRef.HasValue)
+                throw new InvalidOperationException("حساب معین اعلامیه پرداخت مشخص نشده است.");
 
-            var description = $"بابت پرداخت طی اعلامیه پرداخت شماره {paymentHeader.Number} تاریخ {cash?.CostDate?.Substring(0, 10)}";
+            if (paymentHeader.FiscalYearRef <= 0)
+                throw new InvalidOperationException("سال مالی اعلامیه پرداخت مشخص نشده است.");
 
-            var now = DateTime.Now;
+            await using var transaction = await s1Db.Database.BeginTransactionAsync(cancellationToken);
 
-            var voucher = new Voucher {
-                VoucherId = voucherId,
-                Number = voucherNumber, // TODO: منطق شماره‌گذاری باید قطعی شود
-                Date = cash.CostDateMiladi,
+            try
+            {
+                // 1. شماره سند
+                var voucherNumber = await GetNextVoucherNumberAsync(paymentHeader.FiscalYearRef, cancellationToken);
 
-                // در نمونه‌های واقعی Number و ReferenceNumber برابر بودند
-                ReferenceNumber = voucherNumber, // TODO: هنوز قطعی نکرده‌ایم همیشه برابر Number باشد
+                // 2. شماره روزانه
+                var dailyNumber = await GetNextVoucherDailyNumberAsync(cash.CostDateMiladi, paymentHeader.FiscalYearRef, cancellationToken);
 
-                SecondaryNumber = null,
 
-                State = 1, // مطابق Voucherهای واقعی PaymentManagement؛ معنای دقیق enum هنوز مشخص نشده
+                var description =
+                    $"بابت پرداخت طی اعلامیه پرداخت شماره " +
+                    $"{paymentHeader.Number} تاریخ " +
+                    $"{cash.CostDate?.Substring(0, 10)}";
 
-                Type = 2, // مطابق Voucherهای ایجادشده توسط PaymentManagement؛ معنای دقیق enum هنوز مشخص نشده
+                var now = DateTime.Now;
 
-                FiscalYearRef = paymentHeader.FiscalYearRef,
-                Description = description,
-                Description_En = description,
-                Version = 1,
-                Creator = 1,
-                CreationDate = now,
-                LastModifier = 1,
-                LastModificationDate = now,
 
-                DailyNumber = dailyNumber, // TODO: منطق تولید باید قطعی شود
+                // ---------------------------------------------
+                // 4. PaymentHeader اطلاعات لازم برای VoucherItem
+                //    را دارد، ولی قبل از ساخت Voucher باید
+                //    Validationهای مربوط به آیتم را انجام دهیم.
+                // ---------------------------------------------
 
-                IssuerSystem = 2, // مطابق Voucherهای PaymentManagement؛ معنای enum هنوز استخراج نشده
+                if (cash.Fee > 0 && !paymentHeader.BankFeeSlRef.HasValue)
+                {
+                    throw new InvalidOperationException("برای این پرداخت کارمزد ثبت شده ولی حساب معین کارمزد مشخص نشده است.");
+                }
 
-                IsMerged = false,
-                MergedIssuerSystem = null
-            };
 
-            //voucher.VoucherItems = await GenerateVoucherItemsAsync(cash, voucher, cancellationToken);
+                // ---------------------------------------------
+                // 5. حساب بانکی PaymentDraft
+                // ---------------------------------------------
 
-            s1Db.Vouchers.Add(voucher);
+                // در این مرحله هنوز ID Voucher رزرو نشده.
+                // PaymentDraft را برای Validation حساب بانکی می‌گیریم.
 
-            await s1Db.SaveChangesAsync(cancellationToken);
+                // TODO:
+                // اگر PaymentDraft را قبلاً ذخیره کرده‌ای،
+                // بهتر است اینجا از همان رکورد موجود استفاده شود.
+                var paymentDraft = await s1Db.PaymentDrafts.AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.PaymentHeaderRef == paymentHeader.PaymentHeaderId, cancellationToken);
+
+                if (paymentDraft == null)
+                    throw new InvalidOperationException($"PaymentDraft مربوط به اعلامیه پرداخت {paymentHeader.Number} پیدا نشد.");
+
+                if (!paymentDraft.BankAccountRef.HasValue)
+                    throw new InvalidOperationException("حساب بانکی PaymentDraft مشخص نشده است.");
+
+
+                // ---------------------------------------------
+                // 6. حساب بانکی را بررسی می‌کنیم
+                // ---------------------------------------------
+
+                var bankAccount = await s1Db.SepidarBankAccounts
+                    .AsNoTracking()
+                    .SingleOrDefaultAsync(x => x.BankAccountId == paymentDraft.BankAccountRef.Value, cancellationToken);
+
+                if (bankAccount == null)
+                    throw new InvalidOperationException($"حساب بانکی سپیدار با شناسه {paymentDraft.BankAccountRef.Value} پیدا نشد.");
+
+
+                // ---------------------------------------------
+                // 7. DL بانک
+                // ---------------------------------------------
+
+                var bankDlExists = await s1Db.DLs
+                    .AsNoTracking()
+                    .AnyAsync(x => x.DLId == bankAccount.DlRef, cancellationToken);
+
+                if (!bankDlExists)
+                    throw new InvalidOperationException($"DL حساب بانکی با شناسه {bankAccount.DlRef} در سپیدار پیدا نشد.");
+
+
+                // ---------------------------------------------
+                // 8. DL مربوط به PaymentHeader
+                // ---------------------------------------------
+
+                var paymentHeaderDlExists = await s1Db.DLs
+                    .AsNoTracking()
+                    .AnyAsync(x => x.DLId == paymentHeader.DlRef, cancellationToken);
+
+                if (!paymentHeaderDlExists)
+                    throw new InvalidOperationException($"DL با شناسه {paymentHeader.DlRef} در سپیدار پیدا نشد.");
+
+
+                // ---------------------------------------------
+                // 9. حساب هزینه
+                // ---------------------------------------------
+
+                var expenseAccount = await s1Db.Accounts
+                    .AsNoTracking()
+                    .Where(x => x.AccountId == paymentHeader.AccountSlRef.Value)
+                    .Select(x => new {
+                        x.AccountId,
+                        x.HasDL,
+                        x.HasTracking
+                    })
+                    .SingleOrDefaultAsync(cancellationToken);
+
+                if (expenseAccount == null)
+                    throw new InvalidOperationException($"حساب معین {paymentHeader.AccountSlRef.Value} در سپیدار پیدا نشد.");
+
+
+                // ---------------------------------------------
+                // 10. حساب بانک
+                // ---------------------------------------------
+
+                // TODO: Mapping واقعی BankAccount -> AccountSLRef
+                const int bankAccountSlRef = 717;
+
+                var bankAccountEntity = await s1Db.Accounts
+                    .AsNoTracking()
+                    .Where(x => x.AccountId == bankAccountSlRef)
+                    .Select(x => new { x.AccountId, x.HasTracking })
+                    .SingleOrDefaultAsync(cancellationToken);
+
+                if (bankAccountEntity == null)
+                    throw new InvalidOperationException($"حساب معین بانک با شناسه {bankAccountSlRef} در سپیدار پیدا نشد.");
+
+
+                // ---------------------------------------------
+                // 11. حساب کارمزد
+                // ---------------------------------------------
+
+                if (cash.Fee > 0)
+                {
+                    var feeAccount = await s1Db.Accounts
+                        .AsNoTracking()
+                        .Where(x => x.AccountId == paymentHeader.BankFeeSlRef!.Value)
+                        .Select(x => x.AccountId)
+                        .SingleOrDefaultAsync(cancellationToken);
+
+                    if (feeAccount == 0)
+                        throw new InvalidOperationException($"حساب معین کارمزد با شناسه {paymentHeader.BankFeeSlRef!.Value} در سپیدار پیدا نشد.");
+                }
+
+
+                // =========================================================
+                // از اینجا به بعد Validationهای لازم انجام شده
+                // =========================================================
+
+                // ---------------------------------------------
+                // 12. PaymentHeaderId
+                // ---------------------------------------------
+
+                // ID ووچر را تازه اینجا رزرو می‌کنیم
+                var voucherId = await GetNextIdAsync("ACC.Voucher", cancellationToken: cancellationToken);
+
+
+                // ---------------------------------------------
+                // 13. ساخت Voucher
+                // ---------------------------------------------
+
+                var voucher = new Voucher {
+                    VoucherId = voucherId,
+                    Number = voucherNumber, // TODO: منطق شماره‌گذاری باید قطعی شود
+
+                    Date = cash.CostDateMiladi,
+
+                    ReferenceNumber = voucherNumber, // TODO: هنوز قطعی نکرده‌ایم همیشه برابر Number باشد
+
+                    SecondaryNumber = null,
+
+                    State = 1, // مطابق Voucherهای واقعی PaymentManagement؛ معنای دقیق enum هنوز مشخص نشده
+                    Type = 2, // مطابق Voucherهای ایجادشده توسط PaymentManagement؛ معنای دقیق enum هنوز مشخص نشده
+
+                    FiscalYearRef = paymentHeader.FiscalYearRef,
+
+                    Description = description,
+                    Description_En = description,
+
+                    Version = 1,
+                    Creator = 1,
+                    CreationDate = now,
+                    LastModifier = 1,
+                    LastModificationDate = now,
+
+                    DailyNumber = dailyNumber, // TODO: منطق تولید باید قطعی شود
+                    IssuerSystem = 2, // مطابق Voucherهای PaymentManagement؛ معنای enum هنوز استخراج نشده
+                    IsMerged = false,
+                    MergedIssuerSystem = null
+                };
+
+
+                // ---------------------------------------------
+                // 14. ساخت VoucherItem
+                // ---------------------------------------------
+
+                voucher.VoucherItems = await GenerateVoucherItemsAsync(cash, paymentHeader, paymentDraft, voucher, cancellationToken);
+
+                s1Db.Vouchers.Add(voucher);
+
+                await s1Db.SaveChangesAsync(cancellationToken);
+
+                await transaction.CommitAsync(cancellationToken);
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
         }
 
 
@@ -558,6 +730,22 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
             return account.HasDL ? dlRef : null;
         }
+
+        private async Task<(string TrackingNumber, DateTime? TrackingDate)> GetTrackingAsync(int accountId, PaymentDraft paymentDraft,
+            CancellationToken cancellationToken = default)
+        {
+            var hasTracking = await s1Db.Accounts
+                .AsNoTracking()
+                .Where(x => x.AccountId == accountId)
+                .Select(x => x.HasTracking)
+                .SingleOrDefaultAsync(cancellationToken);
+
+            if (!hasTracking)
+                return (null, null);
+
+            return (paymentDraft.Number, paymentDraft.Date);
+        }
+
 
         private const string PaymentIssuerEntityName =
             "SG.ReceiptAndPayment.PaymentManagement.Common.DsPayment, " +
@@ -585,7 +773,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                 .SingleOrDefaultAsync(x => x.BankAccountId == paymentDraft.BankAccountRef.Value, cancellationToken);
 
             if (bankAccount == null)
-                throw new InvalidOperationException($"حساب بانکی {paymentDraft.BankAccountRef.Value} در سپیدار پیدا نشد.");
+                throw new InvalidOperationException($"حساب بانکی سپیدار با شناسه {paymentDraft.BankAccountRef.Value} پیدا نشد.");
 
             /*
              * در نمونه‌های واقعی:
@@ -598,7 +786,6 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
              *
              * بنابراین DL بانک قطعی است.
              */
-            var bankDlRef = bankAccount.DlRef;
 
             /*
              * TODO:
@@ -647,11 +834,63 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
             // Row 1 - بدهکار: حساب هزینه
             // =========================================================
 
-            var debitItemId = await GetNextIdAsync("ACC.VoucherItem", cancellationToken);
+            var debitTracking = await GetTrackingAsync(paymentHeader.AccountSlRef.Value, paymentDraft, cancellationToken);
+
+            /*
+             * نکته:
+             * در بیشتر نمونه‌ها PaymentHeader.DlRef به VoucherItem منتقل شده.
+             *
+             * ولی تست AccountSLRef=850 داشت:
+             * PaymentHeader.DlRef = 5
+             * VoucherItem.DLRef = NULL
+             *
+             * چون Account 850، HasDL = false بود.
+             *
+             * پس باید HasDL حساب را بررسی کنیم.
+             */
+            var debitDlRef = await GetVoucherItemDlRefAsync(paymentHeader.AccountSlRef.Value, paymentHeader.DlRef, cancellationToken);
+
+
+            // =========================================================
+            // Tracking حساب بانک
+            // =========================================================
+
+            var creditTracking = await GetTrackingAsync(bankAccountSlRef, paymentDraft, cancellationToken);
+
+
+            // =========================================================
+            // کارمزد
+            // =========================================================
+
+            (string feeTrackingNumber, DateTime? feeTrackingDate) feeTracking = (null, null);
+
+            if (cash.Fee > 0)
+            {
+                if (!paymentHeader.BankFeeSlRef.HasValue)
+                    throw new InvalidOperationException("حساب معین کارمزد بانکی مشخص نشده است.");
+
+                feeTracking = await GetTrackingAsync(paymentHeader.BankFeeSlRef.Value, paymentDraft, cancellationToken);
+            }
+
+
+            // =========================================================
+            // اینجا تمام Validation و Queryهای مورد نیاز انجام شده
+            // و از اینجا به بعد ID رزرو می‌کنیم
+            // =========================================================
+
+            var voucherItemCount = cash.Fee > 0 ? 4 : 2;
+
+            var lastVoucherItemId = await GetNextIdAsync("ACC.VoucherItem", voucherItemCount, cancellationToken);
+
+            var firstVoucherItemId = lastVoucherItemId - voucherItemCount + 1;
+
+
+            // =========================================================
+            // Row 1 - بدهکار: حساب هزینه
+            // =========================================================
 
             var debitItem = new VoucherItem {
-                VoucherItemId = debitItemId,
-
+                VoucherItemId = firstVoucherItemId,
                 VoucherRef = voucher.VoucherId,
 
                 RowNumber = 1,
@@ -670,7 +909,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                  *
                  * پس باید HasDL حساب را بررسی کنیم.
                  */
-                DLRef = await GetVoucherItemDlRefAsync(paymentHeader.AccountSlRef.Value, paymentHeader.DlRef, cancellationToken),
+                DLRef = debitDlRef,
 
                 Debit = cash.Amount,
 
@@ -690,8 +929,8 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                  * ولی در تمام حساب‌ها الزاماً Tracking فعال نیست.
                  * TODO: بهتر است HasTracking حساب بررسی شود.
                  */
-                TrackingNumber = paymentDraft.Number, // TODO
-                TrackingDate = paymentDraft.Date, // TODO
+                TrackingNumber = debitTracking.TrackingNumber, // TODO
+                TrackingDate = debitTracking.TrackingDate, // TODO
 
                 IssuerEntityName = PaymentIssuerEntityName,
                 IssuerEntityRef = paymentHeader.PaymentHeaderId,
@@ -702,20 +941,18 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
             result.Add(debitItem);
 
+
             if (cash.Fee > 0)
             {
-                if (!paymentHeader.BankFeeSlRef.HasValue)
-                    throw new InvalidOperationException("حساب معین کارمزد بانکی مشخص نشده است.");
-
-                var feeDebitItemId = await GetNextIdAsync("ACC.VoucherItem", cancellationToken);
+                const string feeDescription = "بابت هزینه کارمزد خدمات بانکی";
 
                 result.Add(new VoucherItem {
-                    VoucherItemId = feeDebitItemId,
+                    VoucherItemId = firstVoucherItemId + 1,
                     VoucherRef = voucher.VoucherId,
 
                     RowNumber = result.Count + 1,
 
-                    AccountSLRef = paymentHeader.BankFeeSlRef.Value,
+                    AccountSLRef = paymentHeader.BankFeeSlRef!.Value,
 
                     DLRef = null,
 
@@ -728,14 +965,14 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                     CurrencyCredit = null,
 
                     // در نمونه واقعی کارمزد این‌ها وجود داشتند
-                    TrackingNumber = paymentDraft.Number,
-                    TrackingDate = paymentDraft.Date,
+                    TrackingNumber = feeTracking.feeTrackingNumber,
+                    TrackingDate = feeTracking.feeTrackingDate,
 
                     IssuerEntityName = PaymentIssuerEntityName,
                     IssuerEntityRef = paymentHeader.PaymentHeaderId,
 
-                    Description = "بابت هزینه کارمزد خدمات بانکی",
-                    Description_En = "بابت هزینه کارمزد خدمات بانکی",
+                    Description = feeDescription,
+                    Description_En = feeDescription,
 
                     Version = 1
                 });
@@ -746,21 +983,17 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
             // Row 2 - بستانکار: حساب بانکی
             // =========================================================
 
-            var creditItemId = await GetNextIdAsync("ACC.VoucherItem", cancellationToken);
-
             var creditItem = new VoucherItem {
-                VoucherItemId = creditItemId,
-
+                VoucherItemId = firstVoucherItemId + (cash.Fee > 0 ? 2 : 1),
                 VoucherRef = voucher.VoucherId,
 
                 RowNumber = result.Count + 1,
 
                 AccountSLRef = bankAccountSlRef, // TODO: Mapping به‌جای 717
 
-                DLRef = bankDlRef,
+                DLRef = bankAccount.DlRef,
 
                 Debit = 0,
-
                 Credit = cash.Amount,
 
                 CurrencyRef = null,
@@ -768,36 +1001,32 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                 CurrencyDebit = null,
                 CurrencyCredit = null,
 
-                TrackingNumber = null,
-                TrackingDate = null,
+                TrackingNumber = creditTracking.TrackingNumber,
+                TrackingDate = creditTracking.TrackingDate,
 
                 IssuerEntityName = PaymentIssuerEntityName,
-
                 IssuerEntityRef = paymentHeader.PaymentHeaderId,
 
                 Description = creditDescription,
-
                 Description_En = creditDescription,
 
                 Version = 1
             };
 
-
             result.Add(creditItem);
+
 
             if (cash.Fee > 0)
             {
-                var feeCreditItemId = await GetNextIdAsync("ACC.VoucherItem", cancellationToken);
-
                 result.Add(new VoucherItem {
-                    VoucherItemId = feeCreditItemId,
+                    VoucherItemId = firstVoucherItemId + 3,
                     VoucherRef = voucher.VoucherId,
 
                     RowNumber = result.Count + 1,
 
                     AccountSLRef = bankAccountSlRef, // TODO: Mapping حساب بانک
 
-                    DLRef = bankDlRef,
+                    DLRef = bankAccount.DlRef,
 
                     Debit = 0,
                     Credit = cash.Fee,
@@ -807,19 +1036,18 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                     CurrencyDebit = null,
                     CurrencyCredit = null,
 
-                    TrackingNumber = null,
-                    TrackingDate = null,
+                    TrackingNumber = creditTracking.TrackingNumber,
+                    TrackingDate = creditTracking.TrackingDate,
 
                     IssuerEntityName = PaymentIssuerEntityName,
                     IssuerEntityRef = paymentHeader.PaymentHeaderId,
 
-                    Description = "بابت هزینه کارمزد خدمات بانکی",
-                    Description_En = "بابت هزینه کارمزد خدمات بانکی",
+                    Description = creditDescription,
+                    Description_En = creditDescription,
 
                     Version = 1
                 });
             }
-
 
             return result;
         }
