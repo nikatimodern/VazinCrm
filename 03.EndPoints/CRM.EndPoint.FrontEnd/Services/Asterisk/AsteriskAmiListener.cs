@@ -151,7 +151,7 @@ public class AsteriskAmiListener : BackgroundService {
 
             if (string.IsNullOrEmpty(uniqueId) && string.IsNullOrEmpty(destUid)) return;
 
-            var number = GetSrc(ev);
+            var number = TextService.NormalizeIranPhone(GetSrc(ev));
 
             if (string.IsNullOrEmpty(number) || number == "unknown") return;
 
@@ -293,14 +293,15 @@ public class AsteriskAmiListener : BackgroundService {
                 return;
             }
 
-            var src = GetSrc(ev);
+            var src = TextService.NormalizeIranPhone(GetSrc(ev));
+
             if (IsInternal(src))
             {
                 logger.LogInformation("hangup: the call is not external to internal: {FilePath}", call.RecordingPath.Split("/").Last());
                 return;
             }
 
-            //await EnqueueCallAsync(call, src, duration);
+            await EnqueueCallAsync(call, src, duration);
 
             _calls.TryRemove(linkedId, out _);
         }
@@ -318,6 +319,7 @@ public class AsteriskAmiListener : BackgroundService {
         {
             logger.LogWarning("hangup: user is null: {dest}", firstParticipant.Extension);
         }
+
 
         var callRecording = new CallRecording {
             CallerNumber = src,

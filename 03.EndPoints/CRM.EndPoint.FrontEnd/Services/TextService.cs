@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -207,6 +208,95 @@ namespace CRM.EndPoint.FrontEnd.Services {
             return input;
         }
 
+        private static readonly HashSet<string> IranLandlineAreaCodes = [
+            "11", "13", "17",
+            "21", "23", "24", "25", "26", "28",
+            "31", "34", "35", "38",
+            "41", "44", "45",
+            "51", "54", "56", "58",
+            "61", "66",
+            "71", "74", "76", "77",
+            "81", "83", "84", "86", "87"
+        ];
+
+        public static string NormalizeIranPhone(string phone)
+        {
+            if (string.IsNullOrWhiteSpace(phone))
+                return "";
+
+            var mobile = NormalizeIranMobile(phone);
+
+            if (Regex.IsMatch(mobile, @"^09\d{9}$"))
+                return mobile;
+
+            var landline = NormalizeIranLandline(phone);
+
+            if (IsIranLandline(landline))
+                return landline;
+
+            // شماره ثابت بدون پیش‌شماره
+            if (Regex.IsMatch(landline, @"^\d{8}$"))
+                return landline;
+
+            return phone;
+        }
+
+        public static string NormalizeIranLandline(string phone)
+        {
+            if (string.IsNullOrWhiteSpace(phone))
+                return "";
+
+            phone = ToEnglishNumber(phone.Trim());
+            phone = Regex.Replace(phone, @"[\s\-\(\)]", "");
+
+            // شماره 8 رقمی بدون پیش‌شماره
+            if (Regex.IsMatch(phone, @"^\d{8}$"))
+                return phone;
+
+            // 02112345678
+            if (IsIranLandline(phone))
+                return phone;
+
+            // +982112345678
+            if (phone.StartsWith("+98") && phone.Length == 13)
+            {
+                var normalized = "0" + phone[3..];
+
+                if (IsIranLandline(normalized))
+                    return normalized;
+            }
+
+            // 00982112345678
+            if (phone.StartsWith("0098") && phone.Length == 14)
+            {
+                var normalized = "0" + phone[4..];
+
+                if (IsIranLandline(normalized))
+                    return normalized;
+            }
+
+            // 982112345678
+            if (phone.StartsWith("98") && phone.Length == 12)
+            {
+                var normalized = "0" + phone[2..];
+
+                if (IsIranLandline(normalized))
+                    return normalized;
+            }
+
+            return phone;
+        }
+
+        private static bool IsIranLandline(string phone)
+        {
+            if (!Regex.IsMatch(phone, @"^0\d{10}$"))
+                return false;
+
+            var areaCode = phone.Substring(1, 2);
+
+            return IranLandlineAreaCodes.Contains(areaCode);
+        }
+
 
         public static string NormalizeIranMobile(string phone)
         {
@@ -215,6 +305,18 @@ namespace CRM.EndPoint.FrontEnd.Services {
             phone = ToEnglishNumber(phone.Trim());
 
             phone = Regex.Replace(phone, @"[\s\-\(\)]", ""); // حذف فاصله، خط تیره و پرانتز از شماره تلفن
+
+            /*// اگر شماره موبایل ایران نیست، همان شماره را برگردان
+            var isIranMobile =
+                Regex.IsMatch(phone, @"^09\d{9}$") ||
+                Regex.IsMatch(phone, @"^\+989\d{9}$") ||
+                Regex.IsMatch(phone, @"^00989\d{9}$") ||
+                Regex.IsMatch(phone, @"^989\d{9}$") ||
+                Regex.IsMatch(phone, @"^9\d{9}$");
+
+            if (!isIranMobile)
+                return phone;*/
+
 
             if (phone.StartsWith("+989"))
                 phone = "0" + phone[3..];
