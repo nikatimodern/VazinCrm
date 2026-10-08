@@ -71,7 +71,7 @@ public class AsteriskAmiListener : BackgroundService {
 
                 await ami.ConnectAsync();
 
-                logger.LogInformation("[AMI] Connected successfully.");
+                logger.LogInformation("[AMI] Connected successfully");
 
                 while (!stoppingToken.IsCancellationRequested)
                 {
@@ -94,20 +94,16 @@ public class AsteriskAmiListener : BackgroundService {
             }
             catch (Exception ex)
             {
-                logger.LogError(ex,
-                    "[AMI] Connection failed/lost. Reconnecting in 5 seconds...");
+                logger.LogError(ex, "[AMI] Connection failed/lost. Reconnecting in 5 seconds...");
 
-                logger.LogError(
-                    $"[AMI] Connection failed/lost: {ex.Message}");
+                logger.LogError($"[AMI] Connection failed/lost: {ex.Message}");
             }
 
             if (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    await Task.Delay(
-                        TimeSpan.FromSeconds(5),
-                        stoppingToken);
+                    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
                 }
                 catch (OperationCanceledException)
                 {
@@ -116,7 +112,7 @@ public class AsteriskAmiListener : BackgroundService {
             }
         }
 
-        logger.LogInformation("[AMI] Listener stopped.");
+        logger.LogInformation("[AMI] Listener stopped");
     }
 
     private async Task HandleEvent(Dictionary<string, string> ev)
@@ -155,23 +151,23 @@ public class AsteriskAmiListener : BackgroundService {
 
             if (string.IsNullOrEmpty(uniqueId) && string.IsNullOrEmpty(destUid)) return;
 
-            var src = GetSrc(ev);
+            var number = GetSrc(ev);
 
-            if (string.IsNullOrEmpty(src) || src == "unknown") return;
+            if (string.IsNullOrEmpty(number) || number == "unknown") return;
 
             var dest = Get(ev, "DestCallerIDNum"); //DestExten
 
-            var srcIsInternal = IsInternal(src);
+            var srcIsInternal = IsInternal(number);
 
             var userDest = await GetUsers(dest);
             if (userDest == null) return;
 
-            var srcText = await GetSrcText(srcIsInternal, src);
+            var srcText = await GetSrcText(srcIsInternal, number);
 
             if (dest.StartsWith("1"))
             {
                 await _hubContext.Clients.User(userDest.Id)
-                    .SendAsync("IncomingCall", srcText, dest, !string.IsNullOrEmpty(destUid) ? destUid : uniqueId);
+                    .SendAsync("IncomingCall", srcText, number, dest, !string.IsNullOrEmpty(destUid) ? destUid : uniqueId);
             }
         }
         catch (Exception ex)
@@ -255,7 +251,7 @@ public class AsteriskAmiListener : BackgroundService {
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, $"BridgeEnter Error: {ex.Message}");
+            logger.LogError(ex, "BridgeEnter Error: {ExMessage}", ex.Message);
             Console.WriteLine($"BridgeEnter Error: {ex.Message}");
         }
     }
@@ -304,7 +300,7 @@ public class AsteriskAmiListener : BackgroundService {
                 return;
             }
 
-            await EnqueueCallAsync(call, src, duration);
+            //await EnqueueCallAsync(call, src, duration);
 
             _calls.TryRemove(linkedId, out _);
         }

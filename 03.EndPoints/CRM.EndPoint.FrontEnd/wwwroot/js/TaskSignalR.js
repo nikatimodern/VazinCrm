@@ -96,14 +96,42 @@ connectionCall
     .start()
     .catch(err => console.error("SignalR Error:", err));
 
-connectionCall.on("IncomingCall", function (callerNumber, destNumber, uniqueid) {
+connectionCall.on("IncomingCall", function (callerTextNumber, number, destNumber, uniqueid) {
     // console.log("IncomingCall " + uniqueid);
-    notificationIncomingCall(callerNumber, uniqueid, destNumber);
+    notificationIncomingCall(callerTextNumber, uniqueid, destNumber);
+    localStorage.setItem("callData", JSON.stringify(number));
+    document.getElementById("btnCallReportId").classList.remove("d-none");
 });
 
-connectionCall.on("CallEnded", function (uniqueid) {
-    // console.log("CallEnded " + uniqueid);
+
+async function showCallReport() {
+    const mobileNumber = JSON.parse(localStorage.getItem("callData"));
+    
+    ModalToggle("incomingCallReportModal", "show");
+    
+    await sendApiRequest({
+        url: "/Report/GetCallReport",
+        params: { mobileNumber },
+        onSuccess: (res) => {
+            document.getElementById("incomingCallReportContainer").innerHTML = res.data.html;
+        },
+    });
+}
+async function cloesCallReport() {
+    // ModalToggle("incomingCallReportModal", "hide");
+    await delay(5000);
+    localStorage.removeItem("callData");
+    document.getElementById("btnCallReportId").classList.add("d-none");
+}
+
+connectionCall.on("CallEnded", async function (uniqueid) {
+    console.log("CallEnded " + uniqueid);
     closeCallNotif(uniqueid);
+    
+    const notif = activeNotifCall[uniqueid];
+    if (notif) {
+        await cloesCallReport();
+    }
 });
 
 connectionCall.on("CallAnswered", function (uniqueid) {
