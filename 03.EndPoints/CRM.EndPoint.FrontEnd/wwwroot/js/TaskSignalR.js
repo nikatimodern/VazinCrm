@@ -96,15 +96,22 @@ connectionCall
     .start()
     .catch(err => console.error("SignalR Error:", err));
 
+const callHistoryBtn = document.getElementById("callHistoryReportBtn");
+
 connectionCall.on("IncomingCall", function (callerTextNumber, number, destNumber, uniqueid) {
     // console.log("IncomingCall " + uniqueid);
     notificationIncomingCall(callerTextNumber, uniqueid, destNumber);
     localStorage.setItem("callData", JSON.stringify(number));
-    document.getElementById("btnCallReportId").classList.remove("d-none");
+    
+    callHistoryBtn.classList.add("is-visible", "is-ringing");
+    callHistoryBtn.classList.remove("is-answered", "is-open");
 });
 
 
 async function showCallReport() {
+    callHistoryBtn.classList.remove("is-ringing", "is-answered");
+    callHistoryBtn.classList.add("is-open");
+    
     const mobileNumber = JSON.parse(localStorage.getItem("callData"));
     
     ModalToggle("incomingCallReportModal", "show");
@@ -117,26 +124,33 @@ async function showCallReport() {
         },
     });
 }
-async function cloesCallReport() {
+async function closeCallReport() {
     // ModalToggle("incomingCallReportModal", "hide");
     await delay(5000);
     localStorage.removeItem("callData");
-    document.getElementById("btnCallReportId").classList.add("d-none");
+    callHistoryBtn.classList.remove("is-visible", "is-ringing", "is-answered", "is-open");
 }
 
 connectionCall.on("CallEnded", async function (uniqueid) {
     console.log("CallEnded " + uniqueid);
-    closeCallNotif(uniqueid);
     
     const notif = activeNotifCall[uniqueid];
     if (notif) {
-        await cloesCallReport();
+        await closeCallReport();
     }
+    
+    closeCallNotif(uniqueid);
 });
 
 connectionCall.on("CallAnswered", function (uniqueid) {
     // console.log("CallAnswered " + uniqueid);
     answerCallNotif(uniqueid);
+    
+    const notif = activeNotifCall[uniqueid];
+    if (notif) {
+        callHistoryBtn.classList.remove("is-ringing");
+        callHistoryBtn.classList.add("is-answered");
+    }
 });
 
 
