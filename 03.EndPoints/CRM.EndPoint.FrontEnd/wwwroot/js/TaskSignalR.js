@@ -103,8 +103,8 @@ connectionCall.on("IncomingCall", function (callerTextNumber, number, destNumber
     notificationIncomingCall(callerTextNumber, uniqueid, destNumber);
     localStorage.setItem("callData", JSON.stringify(number));
     
+    callHistoryBtn.classList.remove("is-answered", "is-open", "is-ended");
     callHistoryBtn.classList.add("is-visible", "is-ringing");
-    callHistoryBtn.classList.remove("is-answered", "is-open");
 });
 
 
@@ -125,11 +125,12 @@ async function showCallReport() {
     });
 }
 async function closeCallReport() {
-    // ModalToggle("incomingCallReportModal", "hide");
     
+    callHistoryBtn.classList.add("is-ended");
     setTimeout(() => {
+        ModalToggle("incomingCallReportModal", "hide");
         localStorage.removeItem("callData");
-        callHistoryBtn.classList.remove("is-visible", "is-ringing", "is-answered", "is-open");
+        callHistoryBtn.classList.remove("is-visible", "is-ringing", "is-answered", "is-open", "is-ended");
     }, 5000);
 }
 
@@ -144,12 +145,13 @@ connectionCall.on("CallEnded", async function (uniqueid) {
     closeCallNotif(uniqueid);
 });
 
-connectionCall.on("CallAnswered", function (uniqueid) {
+connectionCall.on("CallAnswered", async function (uniqueid) {
     // console.log("CallAnswered " + uniqueid);
     answerCallNotif(uniqueid);
     
     const notif = activeNotifCall[uniqueid];
     if (notif) {
+        await showCallReport();
         callHistoryBtn.classList.remove("is-ringing");
         callHistoryBtn.classList.add("is-answered");
     }

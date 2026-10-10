@@ -267,7 +267,7 @@ public class AsteriskAmiListener : BackgroundService {
 
             if (string.IsNullOrEmpty(uniqueId) && string.IsNullOrEmpty(destUid))
             {
-                logger.LogWarning("hangup: uniqueId and destUid is null: uniqueId:{uniqueId}, destUid:{destUid}", uniqueId, destUid);
+                logger.LogWarning("hangup: uniqueId and destUid is null: uniqueId:{UniqueId}, destUid:{DestUid}", uniqueId, destUid);
                 return;
             }
 
