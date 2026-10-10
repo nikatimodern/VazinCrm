@@ -2,125 +2,239 @@
     Layout = "_Layout";
 }
 
-<div style="display:flex;width:100%; justify-content:center;  ">
+<div style="display:flex;width:100%;justify-content:center;">
     <div class="InfoData col-12 col-md-8 col-xl-6">
-        <form id="SettingFormId" class="mx-2 mx-md-3 my-3" style="display:flex;justify-content:end;flex-direction:column;align-items:start;gap:8px;font-size: clamp(14px,1.6vw,16px)">
-            <div class="d-flex align-items-center gap-1">
-                <input type="checkbox" id="smallOffice" name="smallOffice" value="true" />
-                <label style="cursor:pointer;" for="smallOffice">سازمان کوچک</label>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs bootstrap-only mx-2 mx-md-3 mt-3" id="settingTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="generalSettingsTab" data-bs-toggle="tab" data-bs-target="#generalSettings" type="button" role="tab">
+                    تنظیمات
+                </button>
+            </li>
+
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="communicationSettingsTab" data-bs-toggle="tab" data-bs-target="#externalSoftwareSettings" type="button" role="tab">
+                    ارتباطات
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content bootstrap-only">
+
+            <!-- تنظیمات -->
+            <div class="tab-pane fade show active" id="generalSettings" role="tabpanel">
+                <form id="SettingFormId" class="mx-2 mx-md-3 my-3" style="display:flex;justify-content:end;flex-direction:column;align-items:start;gap:8px;font-size:clamp(14px,1.6vw,16px)">
+
+                    <div class="d-flex align-items-center gap-1">
+                        <input type="checkbox" id="smallOffice" name="smallOffice" value="true" />
+                        <label style="cursor:pointer;" for="smallOffice">سازمان کوچک</label>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <input type="checkbox" id="attAcceptHanding" name="attAcceptHanding" value="true" />
+                        <label style="cursor:pointer;" for="attAcceptHanding">
+                            اجباری بودن سند تاییدی برای تایید دستی پیش فاکتور
+                        </label>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <input type="checkbox" id="attPfPayment" name="attPfPayment" value="true" />
+                        <label style="cursor:pointer;" for="attPfPayment">
+                            اجباری بودن سند پرداختی پیش فاکتور
+                        </label>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <input type="checkbox" id="attFPayment" name="attFPayment" value="true" />
+                        <label style="cursor:pointer;" for="attFPayment">
+                            اجباری بودن سند پرداختی فاکتور
+                        </label>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <input type="checkbox" id="accountancyRequired" name="accountancyRequired" value="true" />
+                        <label style="cursor:pointer;" for="accountancyRequired">
+                            اجباری بودن پیش پرداخت پیش فاکتور
+                        </label>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <input type="checkbox" id="sepidar" name="sepidar" value="true" />
+                        <label style="cursor:pointer;" for="sepidar">
+                            ارتباط با نرم افزار حسابداری سپیدار
+                        </label>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <input type="checkbox" id="crmFactors" name="crmFactors" value="true" />
+                        <label style="cursor:pointer;" for="crmFactors">
+                            صدور فاکتور درون برنامه
+                        </label>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <input type="checkbox" id="FactorTowStep" name="factorTowStep" value="true" />
+                        <label style="cursor:pointer;" for="FactorTowStep">
+                            صدور فاکتور دو مرحله ای
+                        </label>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <input type="checkbox" id="customerCanChooseInvoiceType" name="customerCanChooseInvoiceType" value="true" />
+                        <label style="cursor:pointer;" for="customerCanChooseInvoiceType">
+                            انتخاب نوع فاکتور توسط مشتری
+                        </label>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <input type="checkbox" id="financialConfirm" name="financialConfirm" value="true" />
+                        <label style="cursor:pointer;" for="financialConfirm">
+                            تایید مالی پیش فاکتور
+                        </label>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <input type="checkbox" id="setSupplyAmountByTamin" name="setSupplyAmountByTamin" value="true" />
+                        <label style="cursor:pointer;" for="setSupplyAmountByTamin">
+                            ورود بهای تامین
+                        </label>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <input type="checkbox" id="setSupplyByTamin" name="setSupplyByTamin" value="true" />
+                        <label style="cursor:pointer;" for="setSupplyByTamin">
+                            ورود تامین کننده
+                        </label>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <input type="checkbox" id="multiSelectOrderHeadsInRequestAmount" name="multiSelectOrderHeadsInRequestAmount" value="true" />
+                        <label style="cursor:pointer;" for="multiSelectOrderHeadsInRequestAmount">
+                            انتخاب چندتایی حواله تولید در ثبت درخواست وجه پیش پرداخت
+                        </label>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <input type="checkbox" id="customerAssignExpert" name="customerAssignExpert" value="true" />
+                        <label style="cursor:pointer;" for="customerAssignExpert">
+                            مشتری اختصاصی
+                        </label>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <input type="checkbox" id="TaxAfterDiscount" name="taxAfterDiscount" value="true" />
+                        <label for="TaxAfterDiscount" class="flex-shrink-0">
+                            مبلغ مالیات بعد از تخفیف محاسبه شود
+                        </label>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <label for="TaxPercent" class="flex-shrink-0">
+                            درصد مالیات:
+                        </label>
+                        <input class="form-control" type="number" id="TaxPercent" name="taxPercent" min="0" max="99" />
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <label for="setAmountByRoleType" class="flex-shrink-0">
+                            ورود مبلغ توسط:
+                        </label>
+
+                        <select class="form-select form-select-sm" name="setAmountByRoleType" id="setAmountByRoleType" required>
+                            <option value="1">فروش</option>
+                            <option value="2">تامین</option>
+                            <option value="3">فروش و تامین</option>
+                        </select>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <label for="SmsServiceCodeId" class="flex-shrink-0">
+                            سرویس پیامک
+                        </label>
+
+                        <select class="form-select form-select-sm" name="smsServiceCode" id="SmsServiceCodeId" required>
+                        </select>
+                    </div>
+
+                </form>
+
+                <div style="display:flex;justify-content:end;">
+                    <button class="buttonGreen3" style="line-height:1" onclick="submitSetting()">
+                        ثبت
+                    </button>
+                </div>
+
             </div>
 
-            <div class="d-flex align-items-center gap-1">
-                <input type="checkbox" id="attAcceptHanding" name="attAcceptHanding" value="true" />
-                <label style="cursor:pointer;" for="attAcceptHanding">اجباری بودن سند تاییدی برای تایید دستی پیش فاکتور</label>
-            </div>
 
-            <div class="d-flex align-items-center gap-1">
-                <input type="checkbox" id="attPfPayment" name="attPfPayment" value="true" />
-                <label style="cursor:pointer;" for="attPfPayment">اجباری بودن سند پرداختی پیش فاکتور</label>
-            </div>
+            <!-- تنظیمات ارتباطات -->
+            <div class="tab-pane fade" id="externalSoftwareSettings" role="tabpanel">
 
-            <div class="d-flex align-items-center gap-1">
-                <input type="checkbox" id="attFPayment" name="attFPayment" value="true" />
-                <label style="cursor:pointer;" for="attFPayment">اجباری بودن سند پرداختی فاکتور</label>
-            </div>
+                <div class="mx-2 mx-md-3 my-3">
 
-            <div class="d-flex align-items-center gap-1">
-                <input type="checkbox" id="accountancyRequired" name="accountancyRequired" value="true" />
-                <label style="cursor:pointer;" for="accountancyRequired">اجباری بودن پیش پرداخت پیش فاکتور</label>
-            </div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div>نرم افزارهای متصل</div>
 
-            <div class="d-flex align-items-center gap-1">
-                <input type="checkbox" id="sepidar" name="sepidar" value="true" />
-                <label style="cursor:pointer;" for="sepidar">ارتباط با نرم افزار حسابداری سپیدار</label>
-            </div>
+                        <button type="button" class="buttonGreen3" style="line-height:1" onclick="addExternalSoftware()">
+                            افزودن
+                        </button>
+                    </div>
 
-            <div class="d-flex align-items-center gap-1">
-                <input type="checkbox" id="crmFactors" name="crmFactors" value="true" />
-                <label style="cursor:pointer;" for="crmFactors">صدور فاکتور درون برنامه</label>
+                    <ul id="externalSoftwareList" class="list-group">
+                    </ul>
+                </div>
             </div>
-
-            <div class="d-flex align-items-center gap-1">
-                <input type="checkbox" id="FactorTowStep" name="factorTowStep" value="true" />
-                <label style="cursor:pointer;" for="FactorTowStep">صدور فاکتور دو مرحله ای</label>
-            </div>
-
-            <div class="d-flex align-items-center gap-1">
-                <input type="checkbox" id="customerCanChooseInvoiceType" name="customerCanChooseInvoiceType" value="true" />
-                <label style="cursor:pointer;" for="customerCanChooseInvoiceType">انتخاب نوع فاکتور توسط مشتری</label>
-            </div>
-
-            <div class="d-flex align-items-center gap-1">
-                <input type="checkbox" id="financialConfirm" name="financialConfirm" value="true" />
-                <label style="cursor:pointer;" for="financialConfirm">تایید مالی پیش فاکتور</label>
-            </div>
-
-            <div class="d-flex align-items-center gap-1">
-                <input type="checkbox" id="setSupplyAmountByTamin" name="setSupplyAmountByTamin" value="true" />
-                <label style="cursor:pointer;" for="setSupplyAmountByTamin">ورود بهای تامین</label>
-            </div>
-
-            <div class="d-flex align-items-center gap-1">
-                <input type="checkbox" id="setSupplyByTamin" name="setSupplyByTamin" value="true" />
-                <label style="cursor:pointer;" for="setSupplyByTamin">ورود تامین کننده</label>
-            </div>
-
-            <div class="d-flex align-items-center gap-1">
-                <input type="checkbox" id="multiSelectOrderHeadsInRequestAmount" name="multiSelectOrderHeadsInRequestAmount" value="true" />
-                <label style="cursor:pointer;" for="multiSelectOrderHeadsInRequestAmount">انتخاب چندتایی حواله تولید در ثبت درخواست وجه پیش پرداخت</label>
-            </div>
-
-            <div class="d-flex align-items-center gap-1">
-                <input type="checkbox" id="customerAssignExpert" name="customerAssignExpert" value="true" />
-                <label style="cursor:pointer;" for="customerAssignExpert">مشتری اختصاصی</label>
-            </div>
-
-            <div class="d-flex align-items-center gap-1">
-                <input type="checkbox" id="TaxAfterDiscount" name="taxAfterDiscount" value="true" />
-                <label for="TaxAfterDiscount" class="flex-shrink-0">مبلغ مالیات بعد از تخفیف محاسبه شود</label>
-            </div>
-
-            <div class="d-flex align-items-center gap-1">
-                <label for="TaxPercent" class="flex-shrink-0">درصد مالیات:</label>
-                <input class="form-control" type="number" id="TaxPercent" name="taxPercent" min="0" max="99" />
-            </div>
-
-            <div class="d-flex align-items-center gap-1">
-                <label for="setAmountByRoleType" class="flex-shrink-0">ورود مبلغ توسط: </label>
-                <select class="form-select form-select-sm" name="setAmountByRoleType" id="setAmountByRoleType" required>
-                    <option value="1">فروش</option>
-                    <option value="2">تامین</option>
-                    <option value="3">فروش و تامین</option>
-                </select>
-            </div>
-
-            <div class="d-flex align-items-center gap-1">
-                <label for="SmsServiceCodeId" class="flex-shrink-0">سرویس پیامک </label>
-                <select class="form-select form-select-sm" name="smsServiceCode" id="SmsServiceCodeId" required>
-                </select>
-            </div>
-        </form>
-        
-        <div style="display:flex;justify-content:end">
-            <buttom class="buttonGreen3" style="line-height: 1" onclick="submitSetting()">ثبت</buttom>
         </div>
     </div>
 </div>
 
 
-@section Scripts{
+
+<!-- مودال افزودن ارتباط -->
+<div class="modal fade" id="externalSoftwareModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">افزودن نرم افزار</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                </button>
+            </div>
+
+            <form id="externalSoftwareForm" novalidate>
+                <div class="modal-body">
+                    <label for="externalSoftwareTitle" class="form-label">عنوان نرم افزار</label>
+                    <input type="text" name="title" class="form-control" id="externalSoftwareTitle" required />
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="buttonGreen3">ثبت</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
 
     <script>
+
         document.addEventListener("DOMContentLoaded", async () => {
             FLshowLoading();
+
             await getSmsService();
-            setting = await GetSetting();
+            
+            [setting] = await Promise.all([GetSetting(), getExternalSoftware()]);
+
             mySer.convertJsonToForm(setting, "SettingFormId");
+
             FLshowLoading(false);
         });
 
 
         const submitSetting = async () => {
+
             if (!await mySer.CheckValidForm("SettingFormId")) return;
 
             const data = mySer.convertFormToJSON("SettingFormId");
@@ -132,27 +246,78 @@
             document.getElementById("FLshowLoading").style.display = "";
 
             FLshowLoading();
+
             $.post(baseUrl + "ASetting/upSetting", data, async (res) => {
 
                 setting = await GetSetting();
 
                 toastifySuccess("عملیات با موفقیت انجام شد");
+
                 FLshowLoading(false);
             });
-
         };
+
 
         const getSmsService = async () => {
 
             let smsServiceData = await sendApiRequest({
                 url: "/BaseItem/GetItemsOp",
+                showLoading: false,
                 params: { typeCode: 7 },
             });
 
-            smsServiceData = smsServiceData.map((item) => ({ ...item, value: item.id }));
+            smsServiceData = smsServiceData.map((item) => ({
+                ...item,
+                value: item.id,
+            }));
 
             createOption("SmsServiceCodeId", smsServiceData);
         };
+
+        const addExternalSoftware = () => {
+            mySer.emptyForm("externalSoftwareForm");
+            ModalToggle("externalSoftwareModal", "show");
+        };
+
+
+        document.getElementById("externalSoftwareForm").addEventListener("submit", submitExternalSoftware);
+
+        async function submitExternalSoftware(e) {
+            e.preventDefault();
+            if (!await mySer.CheckValidForm("externalSoftwareForm")) return;
+
+            const data = mySer.convertFormToJSON("externalSoftwareForm");
+
+            await sendApiRequest({
+                url: "/ASetting/AddExternalSoftware",
+                method: "POST",
+                data,
+                onSuccess: async () => {
+                    ModalToggle("externalSoftwareModal", "hide");
+                    await getExternalSoftware();
+                },
+            });
+        }
+
+        async function getExternalSoftware() {
+            const data = await sendApiRequest({
+                url: "/ASetting/GetExternalSoftwares",
+                showLoading: false,
+            });
+            if (!data) return;
+
+            const container = document.getElementById("externalSoftwareList");
+            container.innerHTML = "";
+
+            data.forEach(item => {
+                const element = document.createElement("li");
+
+                element.className = "list-group-item";
+                element.textContent = item.title;
+
+                container.appendChild(element);
+            });
+        }
 
     </script>
 }

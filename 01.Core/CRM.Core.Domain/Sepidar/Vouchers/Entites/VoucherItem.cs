@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace CRM.Core.Domain.Sepidar.Voucher.Entites;
+namespace CRM.Core.Domain.Sepidar.Vouchers.Entites;
 
 [Table("VoucherItem", Schema = "ACC")]
 public class VoucherItem

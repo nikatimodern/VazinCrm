@@ -600,5 +600,35 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 return BadRequest();
             }
         }
+
+        [HttpPost]
+        public async Task<IActionResult> AddExternalSoftware([FromBody] ExternalSoftware model)
+        {
+            try
+            {
+                db.ExternalSoftwares.Add(model);
+                await db.SaveChangesAsync();
+
+                return Ok();
+            }
+            catch
+            {
+                return BadRequest();
+            }
+        }
+
+        public async Task<IActionResult> GetExternalSoftwares()
+        {
+            try
+            {
+                var data = await db.ExternalSoftwares.AsNoTracking().ToListAsync();
+
+                return Ok(data);
+            }
+            catch
+            {
+                return BadRequest();
+            }
+        }
     }
 }

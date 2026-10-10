@@ -72,6 +72,7 @@ public class PaymentHeader
     public int FiscalYearRef { get; set; }
 
     public int? VoucherRef { get; set; }
+    public Vouchers.Entites.Voucher Voucher { get; set; }
 
     [Column(TypeName = "decimal(26,16)")]
     public decimal? DiscountRate { get; set; }

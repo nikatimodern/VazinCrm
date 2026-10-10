@@ -107,6 +107,8 @@ namespace CRM.Infrastructures.Sql {
         public DbSet<ReceivedSms> ReceivedSmses { get; set; }
         public DbSet<SentSms> SentSmses { get; set; }
         public DbSet<BankAccountExternalSoftware> BankAccountExternalSoftwares { get; set; }
+        public DbSet<ExternalMapping> ExternalMappings { get; set; }
+        public DbSet<ExternalSoftware> ExternalSoftwares { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.AppUsers.Entities;
+using CRM.Core.Domain.ASettings.Entities;
+using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Cashes.Enums;
@@ -70,6 +72,8 @@ public class CashController : Controller {
     public async Task<IActionResult> AddCash([FromBody] Cash model)
     {
         if (model == null) return BadRequest();
+
+        if (model.Amount <= 0) return BadRequest("مبلغ هزینه برای معتبر نیست.");
 
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
@@ -1188,8 +1192,27 @@ public class CashController : Controller {
     {
         try
         {
-            var item = await db.Cashes.Include(f => f.CostCenter).Include(f => f.CostTitle).FirstOrDefaultAsync(f => f.Id == id);
-            var paymentHeaderId = await sepidarService.AddPaymentHeaderAsync(item);
+            var x = await db.ExternalMappings.Where(f => f.EntityId == id && f.MapType == ExternalMappingTypeEnum.تنخواه).AnyAsync();
+            if (x) return BadRequest("این تنخواه قبلا منتقل شده است");
+
+
+            var cash = await db.Cashes.Include(f => f.CostCenter).Include(f => f.CostTitle).FirstOrDefaultAsync(f => f.Id == id);
+            if (cash == null || cash.CostCenter == null || cash.CostTitle == null)
+            {
+                return NotFound("تنخواه مورد نظر یافت نشد یا اطلاعات ثبت‌شده آن ناقص می باشد.");
+            }
+
+            var paymentHeaderId = await sepidarService.AddPaymentHeaderAsync(cash);
+
+
+            db.ExternalMappings.Add(new ExternalMapping {
+                ExternalSoftwareId = Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138"),
+                EntityName = "Cash",
+                EntityId = cash.Id,
+                MapType = ExternalMappingTypeEnum.تنخواه,
+                MapTypeTxt = nameof(ExternalMappingTypeEnum.تنخواه),
+            });
+            await db.SaveChangesAsync();
 
 
             return Ok(paymentHeaderId);
@@ -1207,7 +1230,11 @@ public class CashController : Controller {
         try
         {
             var cash = await db.Cashes.Include(f => f.CostCenter).Include(f => f.CostTitle).FirstOrDefaultAsync(f => f.Id == cashId);
+            if (cash == null) return NotFound();
+
+
             var paymentHeader = await sepidarService.GetPaymentHeader(paymentHeaderId);
+            if (paymentHeader == null) return NotFound("");
 
             await sepidarService.AddVoucherAsync(cash, paymentHeader);
 

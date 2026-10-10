@@ -1187,12 +1187,17 @@ const dateTimePicker = (container = document) => {
             const positionY = datePicker.getAttribute("data-y") || "0";
             const instance = $(datePicker).persianDatepicker({
                 onSelect: function (dateText) {
+                    const $input = $(this.model.inputElement);
+                    $input.val(toEnglishDigits($input.val()));
+                    
                     const onSelectCallback = datePicker.getAttribute("data-onSelect");
                     const onSelectId = datePicker.getAttribute("data-id");
-                    if ($(this.model.inputElement).val().length > 0) {
-                        $(this.model.inputElement).removeClass("AlertReq");
+                    
+                    if ($input.val().length > 0) {
+                        $input.removeClass("AlertReq");
                     }
-                    if (onSelectCallback) {
+                    
+                    if (onSelectCallback && typeof window[onSelectCallback] === "function") {
                         if (onSelectId) {
                             window[onSelectCallback](this, onSelectId);
                         } else {

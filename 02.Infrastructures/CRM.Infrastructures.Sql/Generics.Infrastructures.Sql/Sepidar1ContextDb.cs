@@ -8,7 +8,7 @@ using CRM.Core.Domain.Sepidar.FiscalYears.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.Core.Domain.Sepidar.Payments.Entites;
 using CRM.Core.Domain.Sepidar.Quotations.Entites;
-using CRM.Core.Domain.Sepidar.Voucher.Entites;
+using CRM.Core.Domain.Sepidar.Vouchers.Entites;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Infrastructures.Sql {

@@ -1,4 +1,4 @@
-using CRM.Core.Domain.Sepidar.Voucher.Entites;
+using CRM.Core.Domain.Sepidar.Vouchers.Entites;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

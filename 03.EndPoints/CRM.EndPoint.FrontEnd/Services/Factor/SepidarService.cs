@@ -5,10 +5,12 @@ using CRM.Infrastructures.Sql;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CRM.Core.Domain.ASettings.Entities;
+using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.Core.Domain.Sepidar.Payments.Entites;
-using CRM.Core.Domain.Sepidar.Voucher.Entites;
+using CRM.Core.Domain.Sepidar.Vouchers.Entites;
 using CRM.EndPoint.FrontEnd.Models.Factor;
 using CRM.EndPoint.FrontEnd.Models.Sepidar;
 using Microsoft.Data.SqlClient;
@@ -16,7 +18,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CRM.EndPoint.FrontEnd.Services.Factor {
-    public class SepidarService(Sepidar1ContextDb s1Db) {
+    public class SepidarService(Sepidar1ContextDb s1Db, CRMContextDb db) {
         public async Task<Invoice> GetInvoiceAsync(int? invoiceId)
         {
             return await s1Db.vwInvoice
@@ -130,6 +132,11 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                     Title = f.Title
                 })
                 .FirstOrDefaultAsync();
+
+            if (currentYearSpidar == null)
+            {
+                throw new Exception("سال مالی یافت نشد.");
+            }
 
             return currentYearSpidar;
         }
@@ -251,39 +258,20 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
             try
             {
-                if (cash == null)
-                    throw new Exception("هیچ تنخواهی برای ارسال به سپیدار وجود ندارد.");
-
-                if (cash.CostCenter == null)
-                    throw new Exception("مرکز هزینه برای تنخواه مشخص نشده است.");
-
-                if (cash.CostTitle == null)
-                    throw new Exception("عنوان هزینه برای تنخواه مشخص نشده است.");
-
-
-                // -----------------------------
                 // 1. مرکز هزینه
-                // -----------------------------
-
                 var costCenterCode = cash.CostCenter.Code;
                 var dlRef = await GetCostCenterDlIdAsync(costCenterCode, cancellationToken);
 
-                // -----------------------------
                 // 2. حساب معین
-                // -----------------------------
-
                 var moeinCode = cash.CostTitle.MoeinCode.ToString();
                 var accountSlRef = await GetAccountIdByMoeinCodeAsync(moeinCode, cancellationToken);
 
-                // -----------------------------
                 // 3. سال مالی
-                // -----------------------------
-
                 //var fiscalYearRef = await GetFiscalYearIdAsync(cash.CostDateMiladi, cancellationToken);
                 var currentFinancialYear = await GetCurrentFinancialYearSpidar();
 
-                var cashYear = Int32.Parse(TextService.ToEnglishNumber(cash.CostDate?.Substring(0, 4)));
-                var sepidarYear = Int32.Parse(TextService.ToEnglishNumber(currentFinancialYear.Title));
+                var cashYear = int.Parse(TextService.ToEnglishNumber(cash.CostDate?.Substring(0, 4)));
+                var sepidarYear = int.Parse(TextService.ToEnglishNumber(currentFinancialYear.Title));
 
                 if (cashYear != sepidarYear)
                 {
@@ -292,26 +280,21 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
                 var fiscalYearId = currentFinancialYear.FiscalYearId;
 
-                // -----------------------------
                 // 4. شماره اعلامیه پرداخت
-                // -----------------------------
-
                 var paymentNumber = await GetNextPaymentHeaderNumberAsync(fiscalYearId, cancellationToken);
 
-                // -----------------------------
                 // 5. PaymentHeaderId
-                // -----------------------------
-
                 var paymentHeaderId = await GetNextIdAsync("RPA.PaymentHeader", cancellationToken: cancellationToken);
 
+                var now = DateTime.Now;
                 var paymentHeader = new PaymentHeader {
-                    PaymentHeaderId = paymentHeaderId, //REQUIRED
-                    Type = 2, // پرداخت به سایر // جدول  FMK.
+                    PaymentHeaderId = paymentHeaderId,
+                    Type = 2, // پرداخت به سایر // جدول FMK.lookup
                     AccountSlRef = accountSlRef,
                     DlRef = dlRef,
-                    Number = paymentNumber, //REQUIRED
+                    Number = paymentNumber,
                     Date = cash.CostDateMiladi,
-                    CurrencyRef = 1, // فعلا  //REQUIRED
+                    CurrencyRef = 1, // فعلا
                     Description = cash.CostDescription ?? string.Empty,
                     Description_En = cash.CostDescription ?? string.Empty,
                     Discount = 0,
@@ -320,16 +303,16 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                     State = 2, // فعلا
                     CreatorForm = "0", // فعلا
                     Creator = 1,
-                    CreationDate = DateTime.Now,
+                    CreationDate = now,
                     LastModifier = 1,
-                    LastModificationDate = DateTime.Now,
-                    Version = 1, // فعلا
+                    LastModificationDate = now,
+                    Version = 1,
                     Rate = 1,
                     CashRef = 2, // صندوق مرکزی: 2 | صندوق غير رسمي:17
                     Amount = 0,
                     AmountInBaseCurrency = 0,
                     ReceiptHeaderRef = null,
-                    FiscalYearRef = fiscalYearId, //REQUIRED
+                    FiscalYearRef = fiscalYearId,
                     VoucherRef = null,
                     DiscountRate = 1,
                     DiscountInBaseCurrency = 0,
@@ -340,16 +323,20 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                 };
 
 
-                // s1Db.PaymentHeaders.Add(paymentHeader);
+                // Add PaymentDraft
                 var paymentDraft = await GeneratePaymentDraftAsync(cash, paymentHeader, cancellationToken);
-                IList<PaymentDraft> paymentDraftList = new List<PaymentDraft>() { paymentDraft };
-                paymentHeader.PaymentDrafts = paymentDraftList;
-
+                paymentHeader.PaymentDrafts = new List<PaymentDraft>();
+                paymentHeader.PaymentDrafts.Add(paymentDraft);
 
                 s1Db.PaymentHeaders.Add(paymentHeader);
-
                 await s1Db.SaveChangesAsync(cancellationToken);
 
+                // Add Voucher & VoucherItem
+                var voucher = await AddVoucherAsync(cash, paymentHeader, cancellationToken);
+                paymentHeader.Voucher = voucher;
+                paymentHeader.Version = 2;
+
+                await s1Db.SaveChangesAsync(cancellationToken);
                 await trans.CommitAsync(cancellationToken);
 
                 return paymentHeaderId;
@@ -399,52 +386,12 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
         private async Task<PaymentDraft> GeneratePaymentDraftAsync(Cash cash, PaymentHeader paymentHeader,
             CancellationToken cancellationToken = default)
-        { /*
-            if (cash == null)
-                throw new ArgumentNullException(nameof(cash));
-
-            if (cash.Amount <= 0)
-                throw new InvalidOperationException(
-                    $"مبلغ هزینه برای رکورد {cash.Serial} معتبر نیست.");
-
-            if (cash.BankAccount == null)
-                throw new InvalidOperationException(
-                    $"حساب بانکی برای رکورد {cash.Serial} مشخص نشده است.");
-
-            if (!cash.PaymentVoucherNumber.HasValue)
-                throw new InvalidOperationException(
-                    $"شماره اعلامیه پرداخت برای رکورد {cash.Serial} مشخص نشده است.");
-*/
-
-
-            // ---------------------------------------
-            // 1. پیدا کردن PaymentHeader
-            // ---------------------------------------
-
-            /*var paymentHeader = await s1Db.PaymentHeaders
-                .AsNoTracking()
-                .SingleOrDefaultAsync(x => x.Number == cash.PaymentVoucherNumber.Value, cancellationToken);
-
-            if (paymentHeader == null)
-            {
-                throw new InvalidOperationException(
-                    $"PaymentHeader با شماره اعلامیه " +
-                    $"{cash.PaymentVoucherNumber.Value} " +
-                    $"برای رکورد {cash.Serial} پیدا نشد.");
-            }*/
-
-
-            // ---------------------------------------
-            // 2. پیدا کردن حساب بانکی سپیدار
-            // ---------------------------------------
-
+        {
+            // 1. پیدا کردن حساب بانکی سپیدار
             //var bankAccountRef = await GetSepidarBankAccountIdAsync(cash, cancellationToken);
 
 
-            // ---------------------------------------
-            // 3. ساخت PaymentDraft
-            // ---------------------------------------
-
+            // 2. ساخت PaymentDraft
             var paymentDraftId = await GetNextIdAsync("RPA.PaymentDraft", cancellationToken: cancellationToken);
 
 
@@ -493,9 +440,9 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
         }
 
 
-        public async Task AddVoucherAsync(Cash cash, PaymentHeader paymentHeader, CancellationToken cancellationToken = default)
+        public async Task<Voucher> AddVoucherAsync(Cash cash, PaymentHeader paymentHeader, CancellationToken cancellationToken = default)
         {
-            if (cash == null)
+            /*if (cash == null)
                 throw new InvalidOperationException("تنخواه پیدا نشد.");
 
             if (paymentHeader == null)
@@ -505,9 +452,9 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                 throw new InvalidOperationException("حساب معین اعلامیه پرداخت مشخص نشده است.");
 
             if (paymentHeader.FiscalYearRef <= 0)
-                throw new InvalidOperationException("سال مالی اعلامیه پرداخت مشخص نشده است.");
+                throw new InvalidOperationException("سال مالی اعلامیه پرداخت مشخص نشده است.");*/
 
-            await using var transaction = await s1Db.Database.BeginTransactionAsync(cancellationToken);
+//            await using var transaction = await s1Db.Database.BeginTransactionAsync(cancellationToken);
 
             try
             {
@@ -701,13 +648,13 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
                 s1Db.Vouchers.Add(voucher);
 
-                await s1Db.SaveChangesAsync(cancellationToken);
+                return voucher;
 
-                await transaction.CommitAsync(cancellationToken);
+//                await transaction.CommitAsync(cancellationToken);
             }
             catch
             {
-                await transaction.RollbackAsync(cancellationToken);
+//                await transaction.RollbackAsync(cancellationToken);
                 throw;
             }
         }

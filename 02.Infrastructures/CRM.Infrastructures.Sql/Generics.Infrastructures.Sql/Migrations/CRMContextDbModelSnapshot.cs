@@ -87,6 +87,60 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("ASettings");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.ASettings.Entities.ExternalMapping", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("EntityName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ExternalSoftwareId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("MapType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MapTypeTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExternalSoftwareId");
+
+                    b.ToTable("ExternalMappings");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.ASettings.Entities.ExternalSoftware", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ExternalSoftwares");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Accountancies.Entities.Accountancy", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4007,6 +4061,142 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("Quotation");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Voucher.Entites.Voucher", b =>
+                {
+                    b.Property<int>("VoucherId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Creator")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DailyNumber")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("Description_En")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<int>("FiscalYearRef")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsMerged")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("IssuerSystem")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("LastModificationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LastModifier")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("MergedIssuerSystem")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ReferenceNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SecondaryNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int>("State")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("VoucherId");
+
+                    b.ToTable("Voucher", "ACC");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Voucher.Entites.VoucherItem", b =>
+                {
+                    b.Property<int>("VoucherItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AccountSLRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("Credit")
+                        .HasColumnType("decimal(28,4)");
+
+                    b.Property<decimal?>("CurrencyCredit")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<decimal?>("CurrencyDebit")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<decimal?>("CurrencyRate")
+                        .HasColumnType("decimal(26,16)");
+
+                    b.Property<int?>("CurrencyRef")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DLRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("Debit")
+                        .HasColumnType("decimal(28,4)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("Description_En")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("IssuerEntityName")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<int>("IssuerEntityRef")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RowNumber")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("TrackingDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TrackingNumber")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.Property<int>("VoucherRef")
+                        .HasColumnType("int");
+
+                    b.HasKey("VoucherItemId");
+
+                    b.HasIndex("VoucherRef");
+
+                    b.ToTable("VoucherItem", "ACC");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Sms.Entities.ReceivedSms", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4904,6 +5094,17 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("WebPushSubscriptions");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.ASettings.Entities.ExternalMapping", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.ASettings.Entities.ExternalSoftware", "ExternalSoftware")
+                        .WithMany("ExternalMappings")
+                        .HasForeignKey("ExternalSoftwareId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ExternalSoftware");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Accountancies.Entities.Accountancy", b =>
                 {
                     b.HasOne("CRM.Core.Domain.Accountancies.Entities.BankAccount", null)
@@ -5337,6 +5538,15 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Voucher.Entites.VoucherItem", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Sepidar.Voucher.Entites.Voucher", null)
+                        .WithMany("VoucherItems")
+                        .HasForeignKey("VoucherRef")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Supplies.Entities.Supply", b =>
                 {
                     b.HasOne("CRM.Core.Domain.PreFactors.Entities.PreFactorItem", null)
@@ -5456,6 +5666,11 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .IsRequired();
 
                     b.Navigation("Warehouse");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.ASettings.Entities.ExternalSoftware", b =>
+                {
+                    b.Navigation("ExternalMappings");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Accountancies.Entities.BankAccount", b =>
@@ -5635,6 +5850,11 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.Payments.Entites.PaymentHeader", b =>
                 {
                     b.Navigation("PaymentDrafts");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Voucher.Entites.Voucher", b =>
+                {
+                    b.Navigation("VoucherItems");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.States.Entities.State", b =>

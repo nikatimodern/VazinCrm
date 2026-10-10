@@ -5062,12 +5062,12 @@ padding: 0 !important;
 }
 
 
-.tab-pane {
+.tab-content:not(.bootstrap-only) .tab-pane {
 	display: none !important;
 }
 
 
-.tab-pane.active {
+.tab-content:not(.bootstrap-only) .tab-pane.active {
 	display: flex !important;
 }
 
@@ -5087,8 +5087,17 @@ padding: 0 !important;
 
 
 .nav-tabs .nav-link.active {
-	font-family: "IRANSansBold";
+	font-family: IRANSansBold;
 	border-color: #c1c4c7 #c1c4c7 #fff;
+}
+
+
+.nav-tabs:not(.bootstrap-only) .nav-link.active {
+	color: #fff;
+}
+
+
+.nav-tabs#CreateOrderTabs .nav-link.active {
 	color: #fff;
 }
 

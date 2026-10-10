@@ -85,17 +85,7 @@ async function sendCashToSepidar(id) {
     await sendApiRequest({
         url: "/Cash/SendCashToSepidar",
         params: { id },
-        successMsg: null,
-        onSuccess: async (res) => {
-            await confirmAlert({
-                icon: "success",
-                title: "اعلامیه پرداخت با موفقیت ثبت شد",
-                text: "آیا سند حسابداری هم ساخته شود؟",
-                confirmText: "بله، ساخته شود",
-                cancelText: "خیر",
-                onConfirm: async () => await addVoucherSepidar(id, res.data),
-            });
-        },
+        successMsg: "عملیات انتقال با موفقیت انجام شد",
     });
 }
 
