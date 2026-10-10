@@ -135,7 +135,7 @@ async function closeCallReport() {
 }
 
 connectionCall.on("CallEnded", async function (uniqueid) {
-    console.log("CallEnded " + uniqueid);
+    //console.log("CallEnded " + uniqueid);
     
     const notif = activeNotifCall[uniqueid];
     if (notif) {
