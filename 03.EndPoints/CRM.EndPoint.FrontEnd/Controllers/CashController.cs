@@ -1192,15 +1192,15 @@ public class CashController : Controller {
     {
         try
         {
-            var x = await db.ExternalMappings.Where(f => f.EntityId == id && f.MapType == ExternalMappingTypeEnum.تنخواه).AnyAsync();
-            if (x) return BadRequest("این تنخواه قبلا منتقل شده است");
-
+            var isMapped = await db.ExternalMappings.AnyAsync(f => f.EntityId == id && f.MapType == ExternalMappingTypeEnum.تنخواه);
+            if (isMapped) return BadRequest("این تنخواه قبلا منتقل شده است");
 
             var cash = await db.Cashes.Include(f => f.CostCenter).Include(f => f.CostTitle).FirstOrDefaultAsync(f => f.Id == id);
-            if (cash == null || cash.CostCenter == null || cash.CostTitle == null)
-            {
-                return NotFound("تنخواه مورد نظر یافت نشد یا اطلاعات ثبت‌شده آن ناقص می باشد.");
-            }
+            if (cash == null)
+                return NotFound("تنخواه مورد نظر یافت نشد.");
+            if (cash.CostCenter == null || cash.CostTitle == null)
+                return NotFound("اطلاعات ثبت‌شده در تنخواه ناقص می باشد");
+
 
             var paymentHeaderId = await sepidarService.AddPaymentHeaderAsync(cash);
 
@@ -1213,7 +1213,6 @@ public class CashController : Controller {
                 MapTypeTxt = nameof(ExternalMappingTypeEnum.تنخواه),
             });
             await db.SaveChangesAsync();
-
 
             return Ok(paymentHeaderId);
         }
