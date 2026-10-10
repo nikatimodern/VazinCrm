@@ -73,19 +73,25 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [Authorize(Policy = "NotCustomerOnly")]
         public async Task<IActionResult> Index()
         {
-            await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-//                await smsService.SyncReceivesAsync();
+/*
 
-                //await db.SaveChangesAsync();
-                await trans.CommitAsync();
+                
+                var reports = await db.Reports.ToListAsync();
+
+                foreach (var report in reports)
+                {
+                    report?.RepTel = TextService.NormalizeIranPhone(report.RepTel);
+                }
+
+                await db.SaveChangesAsync();*/
+
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();
             }
             catch (Exception e)
             {
-                await trans.RollbackAsync();
                 return BadRequest(e.Message);
             }
         }

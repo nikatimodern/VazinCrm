@@ -96,19 +96,65 @@ connectionCall
     .start()
     .catch(err => console.error("SignalR Error:", err));
 
-connectionCall.on("IncomingCall", function (callerNumber, destNumber, uniqueid) {
+const callHistoryBtn = document.getElementById("callHistoryReportBtn");
+
+connectionCall.on("IncomingCall", function (callerTextNumber, number, destNumber, uniqueid) {
     // console.log("IncomingCall " + uniqueid);
-    notificationIncomingCall(callerNumber, uniqueid, destNumber);
+    notificationIncomingCall(callerTextNumber, uniqueid, destNumber);
+    localStorage.setItem("callData", JSON.stringify(number));
+    
+    callHistoryBtn.classList.remove("is-answered", "is-open", "is-ended");
+    callHistoryBtn.classList.add("is-visible", "is-ringing");
 });
 
-connectionCall.on("CallEnded", function (uniqueid) {
-    // console.log("CallEnded " + uniqueid);
+
+async function showCallReport() {
+    callHistoryBtn.classList.remove("is-ringing", "is-answered");
+    callHistoryBtn.classList.add("is-open");
+    
+    const mobileNumber = JSON.parse(localStorage.getItem("callData"));
+    
+    ModalToggle("incomingCallReportModal", "show");
+    
+    await sendApiRequest({
+        url: "/Report/GetCallReport",
+        params: { mobileNumber },
+        onSuccess: (res) => {
+            document.getElementById("incomingCallReportContainer").innerHTML = res.data.html;
+        },
+    });
+}
+async function closeCallReport() {
+    
+    callHistoryBtn.classList.add("is-ended");
+    setTimeout(() => {
+        ModalToggle("incomingCallReportModal", "hide");
+        localStorage.removeItem("callData");
+        callHistoryBtn.classList.remove("is-visible", "is-ringing", "is-answered", "is-open", "is-ended");
+    }, 5000);
+}
+
+connectionCall.on("CallEnded", async function (uniqueid) {
+    //console.log("CallEnded " + uniqueid);
+    
+    const notif = activeNotifCall[uniqueid];
+    if (notif) {
+        await closeCallReport();
+    }
+    
     closeCallNotif(uniqueid);
 });
 
-connectionCall.on("CallAnswered", function (uniqueid) {
+connectionCall.on("CallAnswered", async function (uniqueid) {
     // console.log("CallAnswered " + uniqueid);
     answerCallNotif(uniqueid);
+    
+    const notif = activeNotifCall[uniqueid];
+    if (notif) {
+        await showCallReport();
+        callHistoryBtn.classList.remove("is-ringing");
+        callHistoryBtn.classList.add("is-answered");
+    }
 });
 
 
