@@ -126,9 +126,11 @@ async function showCallReport() {
 }
 async function closeCallReport() {
     // ModalToggle("incomingCallReportModal", "hide");
-    await delay(5000);
-    localStorage.removeItem("callData");
-    callHistoryBtn.classList.remove("is-visible", "is-ringing", "is-answered", "is-open");
+    
+    setTimeout(() => {
+        localStorage.removeItem("callData");
+        callHistoryBtn.classList.remove("is-visible", "is-ringing", "is-answered", "is-open");
+    }, 5000);
 }
 
 connectionCall.on("CallEnded", async function (uniqueid) {
