@@ -8,5 +8,10 @@ public class ExternalSoftwareConfigs : IEntityTypeConfiguration<ExternalSoftware
     public void Configure(EntityTypeBuilder<ExternalSoftware> builder)
     {
         builder.HasKey(x => x.Id);
+
+        builder.HasMany(x => x.BankAccountExternalSoftwares)
+            .WithOne()
+            .HasForeignKey(x => x.ExSoftwareId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

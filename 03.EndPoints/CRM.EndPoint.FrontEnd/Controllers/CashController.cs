@@ -836,7 +836,7 @@ public class CashController : Controller {
                 new() { Header = "اعلاميه برداشت حساب بانكي", ValueSelector = x => x.BankAccountTxt },
                 new() { Header = "اعلاميه برداشت شرح", ValueSelector = x => x.CostDescription },
                 new() { Header = "اعلاميه برداشت شرح(2)", ValueSelector = _ => "" },
-                new() { Header = "اعلاميه برداشت تفصيل حساب بانكي", ValueSelector = x => x.BankAccount?.AccountCode },
+                new() { Header = "اعلاميه برداشت تفصيل حساب بانكي", ValueSelector = _ => "" },
                 new() { Header = "اعلاميه برداشت نرخ كارمزد بانكي", ValueSelector = _ => 1 },
                 new() { Header = "اعلاميه برداشت كارمزد بانكي", ValueSelector = x => x.Fee == 0 ? "" : x.Fee },
                 new() { Header = "اعلاميه برداشت كارمزد بانكي به ارز پايه", ValueSelector = x => x.Fee == 0 ? "" : x.Fee },
@@ -973,6 +973,32 @@ public class CashController : Controller {
             return Ok(data);
         }
         catch (Exception e)
+        {
+            return BadRequest();
+        }
+    }
+    
+    
+
+    public async Task<IActionResult> GetAllBankAccountCashier()
+    {
+        try
+        {
+            var sepidar1Id = Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138");
+
+            var data = await db.BankAccounts
+                .Where(f => f.BankAccountType == BankAccountTypeEnum.شرکت)
+                .OrderBy(f => f.AccountName)
+                .Select(f => new {
+                    value = f.Id,
+                    text = $"{f.BankName} {f.AccountName} {f.AccountNumber} " +
+                           $"(کد تفضیلی {f.BankAccountExternalSoftwares.Where(f => f.ExSoftwareId == sepidar1Id).Select(f => f.RefCode).FirstOrDefault()})",
+                })
+                .ToListAsync();
+
+            return Ok(data);
+        }
+        catch (Exception)
         {
             return BadRequest();
         }
@@ -1229,7 +1255,7 @@ public class CashController : Controller {
         try
         {
             var cash = await db.Cashes.Include(f => f.CostCenter).Include(f => f.CostTitle).FirstOrDefaultAsync(f => f.Id == cashId);
-            if (cash == null) return NotFound();
+            if (cash == null) return NotFound("تنخواه مورد نظر یافت نشد.");
 
 
             var paymentHeader = await sepidarService.GetPaymentHeader(paymentHeaderId);
@@ -1244,4 +1270,5 @@ public class CashController : Controller {
             return BadRequest(e.Message);
         }
     }
+
 }

@@ -73,6 +73,16 @@
                 maxItems: 1,
                 selectOnTab: true,
             });
+
+            const bankAccouts = await sendApiRequest({
+                url: "/Cash/GetAllBankAccountCashier",
+            });
+            console.log(bankAccouts);
+            new TomSelect("#bankAccountId", {
+                options: bankAccouts,
+                maxItems: 1,
+                selectOnTab: true,
+            });
         };
 
         async function showEditCashierModal(id) {

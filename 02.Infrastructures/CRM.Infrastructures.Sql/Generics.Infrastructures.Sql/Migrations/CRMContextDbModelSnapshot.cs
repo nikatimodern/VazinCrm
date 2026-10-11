@@ -350,9 +350,6 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("AccountCode")
-                        .HasColumnType("int");
-
                     b.Property<string>("AccountName")
                         .HasColumnType("nvarchar(max)");
 
@@ -404,9 +401,6 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("ShebaNumber")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("Status")
-                        .HasColumnType("bit");
-
                     b.Property<string>("UserCreator")
                         .HasColumnType("nvarchar(max)");
 
@@ -433,18 +427,23 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<Guid>("BankAccountId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("ExSoftwareId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ExSoftwareName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("RefCode")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("RefId")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("SoftwareName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("BankAccountId");
+
+                    b.HasIndex("ExSoftwareId");
 
                     b.ToTable("BankAccountExternalSoftwares");
                 });
@@ -1229,6 +1228,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("BankAccountId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("CommentText")
                         .HasColumnType("nvarchar(max)");
 
@@ -1269,6 +1271,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BankAccountId");
 
                     b.ToTable("Cashiers");
                 });
@@ -3708,6 +3712,177 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("RequestAmountSupplyFactors");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Banks.Entites.SepidarBank", b =>
+                {
+                    b.Property<int>("BankId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BankId"));
+
+                    b.Property<string>("Title")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("BankId");
+
+                    b.ToTable("SepidarBank");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Banks.Entites.SepidarBankAccount", b =>
+                {
+                    b.Property<int>("BankAccountId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AccountNo")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<int>("AccountTypeRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Balance")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<int>("BankBranchRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("BillFirstAmount")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<decimal?>("BlockedAmount")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<string>("ClearFormatName")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<DateTime?>("CreationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("Creator")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreditCardNumber")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<int>("CurrencyRef")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DlRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("FirstAmount")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<DateTime>("FirstDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastModificationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("LastModifier")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Owner")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("Owner_En")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<decimal>("Rate")
+                        .HasColumnType("decimal(26,16)");
+
+                    b.Property<string>("ShebaNumber")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<bool>("ShowBankFeeSeparately")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("BankAccountId");
+
+                    b.HasIndex("BankBranchRef");
+
+                    b.HasIndex("DlRef")
+                        .IsUnique();
+
+                    b.ToTable("BankAccount", "RPA");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Banks.Entites.SepidarBankBranch", b =>
+                {
+                    b.Property<int>("BankBranchId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BankBranchId"));
+
+                    b.Property<int>("BankRef")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("BankBranchId");
+
+                    b.HasIndex("BankRef");
+
+                    b.ToTable("SepidarBankBranch");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.DLs.Entites.DL", b =>
+                {
+                    b.Property<int>("DLId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<DateTime>("CreationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Creator")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("LastModificationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LastModifier")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("Title_En")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("DLId");
+
+                    b.ToTable("DL", "ACC");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.ExtraDataes.ExtraData", b =>
                 {
                     b.Property<int>("ExtraDataID")
@@ -4027,6 +4202,10 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasKey("PaymentHeaderId");
 
+                    b.HasIndex("VoucherRef")
+                        .IsUnique()
+                        .HasFilter("[VoucherRef] IS NOT NULL");
+
                     b.ToTable("PaymentHeader", "RPA");
                 });
 
@@ -4061,7 +4240,7 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("Quotation");
                 });
 
-            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Voucher.Entites.Voucher", b =>
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Vouchers.Entites.Voucher", b =>
                 {
                     b.Property<int>("VoucherId")
                         .HasColumnType("int");
@@ -4127,7 +4306,7 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.ToTable("Voucher", "ACC");
                 });
 
-            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Voucher.Entites.VoucherItem", b =>
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Vouchers.Entites.VoucherItem", b =>
                 {
                     b.Property<int>("VoucherItemId")
                         .HasColumnType("int");
@@ -5138,8 +5317,14 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Accountancies.Entities.BankAccountExternalSoftware", b =>
                 {
                     b.HasOne("CRM.Core.Domain.Accountancies.Entities.BankAccount", "BankAccount")
-                        .WithMany("ExternalSoftwares")
+                        .WithMany("BankAccountExternalSoftwares")
                         .HasForeignKey("BankAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CRM.Core.Domain.ASettings.Entities.ExternalSoftware", null)
+                        .WithMany("BankAccountExternalSoftwares")
+                        .HasForeignKey("ExSoftwareId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -5232,6 +5417,16 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Navigation("Cash");
 
                     b.Navigation("OrderHead");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.Cashier", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Accountancies.Entities.BankAccount", "BankAccount")
+                        .WithMany("Cashiers")
+                        .HasForeignKey("BankAccountId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("BankAccount");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Chats.Entities.Chat", b =>
@@ -5520,6 +5715,36 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Navigation("SupplyFactor");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Banks.Entites.SepidarBankAccount", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Sepidar.Banks.Entites.SepidarBankBranch", "SepidarBankBranch")
+                        .WithMany("SepidarBankAccounts")
+                        .HasForeignKey("BankBranchRef")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CRM.Core.Domain.Sepidar.DLs.Entites.DL", "Dl")
+                        .WithOne("SepidarBankAccount")
+                        .HasForeignKey("CRM.Core.Domain.Sepidar.Banks.Entites.SepidarBankAccount", "DlRef")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Dl");
+
+                    b.Navigation("SepidarBankBranch");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Banks.Entites.SepidarBankBranch", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Sepidar.Banks.Entites.SepidarBank", "SepidarBank")
+                        .WithMany("SepidarBankBranches")
+                        .HasForeignKey("BankRef")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SepidarBank");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.Invoices.Entities.InvoiceItem", b =>
                 {
                     b.HasOne("CRM.Core.Domain.Sepidar.Invoices.Entities.Invoice", null)
@@ -5538,9 +5763,19 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Voucher.Entites.VoucherItem", b =>
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Payments.Entites.PaymentHeader", b =>
                 {
-                    b.HasOne("CRM.Core.Domain.Sepidar.Voucher.Entites.Voucher", null)
+                    b.HasOne("CRM.Core.Domain.Sepidar.Vouchers.Entites.Voucher", "Voucher")
+                        .WithOne()
+                        .HasForeignKey("CRM.Core.Domain.Sepidar.Payments.Entites.PaymentHeader", "VoucherRef")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Voucher");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Vouchers.Entites.VoucherItem", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Sepidar.Vouchers.Entites.Voucher", null)
                         .WithMany("VoucherItems")
                         .HasForeignKey("VoucherRef")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -5670,6 +5905,8 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.ASettings.Entities.ExternalSoftware", b =>
                 {
+                    b.Navigation("BankAccountExternalSoftwares");
+
                     b.Navigation("ExternalMappings");
                 });
 
@@ -5677,11 +5914,13 @@ namespace CRM.Infrastructures.Sql.Migrations
                 {
                     b.Navigation("Accountancies");
 
+                    b.Navigation("BankAccountExternalSoftwares");
+
                     b.Navigation("Cashes");
 
-                    b.Navigation("Checkbooks");
+                    b.Navigation("Cashiers");
 
-                    b.Navigation("ExternalSoftwares");
+                    b.Navigation("Checkbooks");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.CallRecordings.Entities.CallRecording", b =>
@@ -5842,6 +6081,21 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Navigation("RequestAmountSupplyFactor");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Banks.Entites.SepidarBank", b =>
+                {
+                    b.Navigation("SepidarBankBranches");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Banks.Entites.SepidarBankBranch", b =>
+                {
+                    b.Navigation("SepidarBankAccounts");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.DLs.Entites.DL", b =>
+                {
+                    b.Navigation("SepidarBankAccount");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.Invoices.Entities.Invoice", b =>
                 {
                     b.Navigation("InvoiceItems");
@@ -5852,7 +6106,7 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Navigation("PaymentDrafts");
                 });
 
-            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Voucher.Entites.Voucher", b =>
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Vouchers.Entites.Voucher", b =>
                 {
                     b.Navigation("VoucherItems");
                 });

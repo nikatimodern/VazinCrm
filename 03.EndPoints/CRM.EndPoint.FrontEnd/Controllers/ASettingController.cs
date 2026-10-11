@@ -601,6 +601,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+
+        [Authorize(Roles = "مدیر ارشد")]
+        public IActionResult ExternalSoftware()
+        {
+            return View();
+        }
+
+        [Authorize(Roles = "مدیر ارشد")]
         [HttpPost]
         public async Task<IActionResult> AddExternalSoftware([FromBody] ExternalSoftware model)
         {

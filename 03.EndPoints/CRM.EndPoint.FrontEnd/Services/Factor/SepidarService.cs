@@ -351,7 +351,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
         //--------------------------------------------------------- PaymentDraft ---------------------------------------------------------
 
-        private async Task<int> GetSepidarBankAccountIdAsync(Cash cash, CancellationToken cancellationToken = default)
+        /*private async Task<int> GetSepidarBankAccountIdAsync(Cash cash, CancellationToken cancellationToken = default)
         {
             var accountCode = cash.BankAccount?.AccountCode.ToString();
 
@@ -381,7 +381,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
             }
 
             return bankAccounts[0].BankAccountId;
-        }
+        }*/
 
 
         private async Task<PaymentDraft> GeneratePaymentDraftAsync(Cash cash, PaymentHeader paymentHeader,
@@ -397,12 +397,12 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
             var paymentDraft = new PaymentDraft {
                 PaymentDraftId = paymentDraftId,
-                Number = "0", // در رکورد تست سپیدار Number = 0 بود
+                Number = "0", // فعلا (باید اصلاح شود)
                 Date = cash.CostDateMiladi,
                 Amount = cash.Amount,
-                BankAccountRef = 28, //bankAccountRef, باید اصلاح شود
+                BankAccountRef = 28, //bankAccountRef, (باید اصلاح شود)
                 Description = cash.CostDescription,
-                Description_En = null,
+                Description_En = "",
                 Version = 1,
                 PaymentHeaderRef = paymentHeader.PaymentHeaderId,
                 HeaderNumber = paymentHeader.Number,
@@ -442,9 +442,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
         public async Task<Voucher> AddVoucherAsync(Cash cash, PaymentHeader paymentHeader, CancellationToken cancellationToken = default)
         {
-            /*if (cash == null)
-                throw new InvalidOperationException("تنخواه پیدا نشد.");
-
+            /*
             if (paymentHeader == null)
                 throw new InvalidOperationException("اعلامیه پرداخت پیدا نشد.");
 

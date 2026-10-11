@@ -10,8 +10,9 @@ public class BankAccountExternalSoftwareConfig : IEntityTypeConfiguration<BankAc
         builder.HasKey(x => x.Id);
 
         builder.HasOne(x => x.BankAccount)
-            .WithMany(x => x.ExternalSoftwares)
+            .WithMany(x => x.BankAccountExternalSoftwares)
             .HasForeignKey(x => x.BankAccountId)
             .OnDelete(DeleteBehavior.Cascade);
+        
     }
 }

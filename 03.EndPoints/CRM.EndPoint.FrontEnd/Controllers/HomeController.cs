@@ -10,8 +10,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Accountancies.Entities;
+using CRM.Core.Domain.Accountancies.Enum;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Services.AI;
 using CRM.EndPoint.FrontEnd.Services.Asterisk;
@@ -41,13 +44,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly LogSystemService logSystemService;
         private readonly TaskServices ts;
         private readonly SmsService smsService;
+        private readonly Sepidar2ContextDb s2Db;
         private readonly ISmsIrService smsIrService;
 
         public HomeController(IWebHostEnvironment appEnvironment,
             IConfiguration conf,
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
             Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue, IssabelService issabelService,
-            AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi, LogSystemService logSystemService, TaskServices ts, SmsService smsService)
+            AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi, LogSystemService logSystemService, TaskServices ts, SmsService smsService, Sepidar2ContextDb s2db)
         {
             this.appEnvironment = appEnvironment;
             this.conf = conf;
@@ -62,6 +66,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.logSystemService = logSystemService;
             this.ts = ts;
             this.smsService = smsService;
+            s2Db = s2db;
             this.smsIrService = smsIrService;
             this.issabelService = issabelService;
             this.aiPrompts = aiPrompts;
@@ -75,17 +80,46 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-/*
+                var banks = await S1db.DLs
+                    .Where(f => f.Type == 4)
+                    .Include(f => f.SepidarBankAccount)
+                    .ThenInclude(f => f.SepidarBankBranch)
+                    .ThenInclude(f => f.SepidarBank)
+                    .ToListAsync();
 
-                
-                var reports = await db.Reports.ToListAsync();
+                var listbanks = new List<BankAccount>();
 
-                foreach (var report in reports)
+                foreach (var bank in banks)
                 {
-                    report?.RepTel = TextService.NormalizeIranPhone(report.RepTel);
+                    var bankAccount = new BankAccount {
+                        BankName = bank.SepidarBankAccount.SepidarBankBranch.SepidarBank.Title,
+                        ShebaNumber = bank.SepidarBankAccount.ShebaNumber,
+                        AccountNumber = bank.SepidarBankAccount.AccountNo,
+                        CartNumber = bank.SepidarBankAccount.CreditCardNumber,
+                        AccountName = bank.SepidarBankAccount.Owner,
+                        OfficialType = 0,
+                        BankAccountType = BankAccountTypeEnum.شرکت,
+                        BankAccountTypeTxt = nameof(BankAccountTypeEnum.شرکت),
+                        Active = true
+                    };
+
+                    var bankAccountExternalSoftware = new BankAccountExternalSoftware {
+                        BankAccount = bankAccount,
+                        ExSoftwareName = "سپیدار پلی اتیلن",
+                        ExSoftwareId = Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138"),
+                        RefCode = bank.Code,
+                        RefId = bank.DLId.ToString(),
+                    };
+
+                    bankAccount.BankAccountExternalSoftwares = [bankAccountExternalSoftware];
+
+
+                    listbanks.Add(bankAccount);
                 }
 
-                await db.SaveChangesAsync();*/
+                await db.BankAccounts.AddRangeAsync(listbanks);
+
+                await db.SaveChangesAsync();
 
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();

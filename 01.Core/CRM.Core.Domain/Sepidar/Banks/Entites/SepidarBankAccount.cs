@@ -1,9 +1,9 @@
 using System;
-
-namespace CRM.Core.Domain.Sepidar.BankAccounts.Entites;
-
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using CRM.Core.Domain.Sepidar.DLs.Entites;
+
+namespace CRM.Core.Domain.Sepidar.Banks.Entites;
 
 [Table("BankAccount", Schema = "RPA")]
 public class SepidarBankAccount
@@ -13,6 +13,7 @@ public class SepidarBankAccount
     public int BankAccountId { get; set; }
 
     public int BankBranchRef { get; set; }
+    public SepidarBankBranch SepidarBankBranch { get; set; }
 
     [Required]
     [MaxLength(250)]
@@ -21,6 +22,8 @@ public class SepidarBankAccount
     public int AccountTypeRef { get; set; }
 
     public int DlRef { get; set; }
+    public DL Dl { get; set; }
+    
 
     public int CurrencyRef { get; set; }
 

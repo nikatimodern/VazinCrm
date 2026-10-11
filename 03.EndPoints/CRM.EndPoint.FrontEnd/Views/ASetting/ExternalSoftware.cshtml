@@ -1,0 +1,96 @@
+@model dynamic
+
+<div class="mx-2 mx-md-3 my-3">
+
+    <div class="d-flex align-items-center justify-content-between mb-2">
+        <div>نرم افزارهای متصل</div>
+
+        <button type="button" class="buttonGreen3" style="line-height:1" onclick="addExternalSoftware()">
+            افزودن
+        </button>
+    </div>
+
+    <ul id="externalSoftwareList" class="list-group">
+    </ul>
+</div>
+
+
+
+<!-- مودال افزودن ارتباط -->
+<div class="modal fade" id="externalSoftwareModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">افزودن نرم افزار</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                </button>
+            </div>
+
+            <form id="externalSoftwareForm" novalidate>
+                <div class="modal-body">
+                    <label for="externalSoftwareTitle" class="form-label">عنوان نرم افزار</label>
+                    <input type="text" name="title" class="form-control" id="externalSoftwareTitle" required />
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="buttonGreen3">ثبت</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await getExternalSoftware();
+        });
+
+        const addExternalSoftware = () => {
+            mySer.emptyForm("externalSoftwareForm");
+            ModalToggle("externalSoftwareModal", "show");
+        };
+
+        document.getElementById("externalSoftwareForm").addEventListener("submit", submitExternalSoftware);
+
+        async function submitExternalSoftware(e) {
+            e.preventDefault();
+            if (!await mySer.CheckValidForm("externalSoftwareForm")) return;
+
+            const data = mySer.convertFormToJSON("externalSoftwareForm");
+
+            await sendApiRequest({
+                url: "/ASetting/AddExternalSoftware",
+                method: "POST",
+                data,
+                onSuccess: async () => {
+                    ModalToggle("externalSoftwareModal", "hide");
+                    await getExternalSoftware();
+                },
+            });
+        }
+
+        async function getExternalSoftware() {
+            const data = await sendApiRequest({
+                url: "/ASetting/GetExternalSoftwares",
+            });
+            if (!data) return;
+
+            const container = document.getElementById("externalSoftwareList");
+            container.innerHTML = "";
+
+            data.forEach(item => {
+                const element = document.createElement("li");
+
+                element.className = "list-group-item";
+                element.textContent = item.title;
+
+                container.appendChild(element);
+            });
+        }
+
+    </script>
+}
