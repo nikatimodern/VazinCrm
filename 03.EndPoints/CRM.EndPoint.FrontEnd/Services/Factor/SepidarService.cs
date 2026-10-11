@@ -387,6 +387,8 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
         private async Task<PaymentDraft> GeneratePaymentDraftAsync(Cash cash, PaymentHeader paymentHeader,
             CancellationToken cancellationToken = default)
         {
+            var exSoftwareId = Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138"); // پارامتر ورودی
+
             // 1. پیدا کردن حساب بانکی سپیدار
             //var bankAccountRef = await GetSepidarBankAccountIdAsync(cash, cancellationToken);
 
@@ -394,13 +396,30 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
             // 2. ساخت PaymentDraft
             var paymentDraftId = await GetNextIdAsync("RPA.PaymentDraft", cancellationToken: cancellationToken);
 
+            var cashier = await db.Cashiers.AsNoTracking()
+                .Where(f => f.UserId.ToString() == cash.UserCreatorID)
+                .Include(f => f.BankAccount)
+                .ThenInclude(f => f.BankAccountExternalSoftwares)
+                .FirstOrDefaultAsync();
+
+            var dlRef = cashier.BankAccount.BankAccountExternalSoftwares
+                .Where(f => f.ExSoftwareId == exSoftwareId)
+                .Select(f => f.RefId)
+                .FirstOrDefault();
+
+            var bankAccountRef = await s1Db.SepidarBankAccounts
+                .AsNoTracking()
+                .Where(f => f.DlRef == int.Parse(dlRef))
+                .Select(f => f.BankAccountId)
+                .FirstOrDefaultAsync();
+
 
             var paymentDraft = new PaymentDraft {
                 PaymentDraftId = paymentDraftId,
                 Number = "0", // فعلا (باید اصلاح شود)
                 Date = cash.CostDateMiladi,
                 Amount = cash.Amount,
-                BankAccountRef = 28, //bankAccountRef, (باید اصلاح شود)
+                BankAccountRef = bankAccountRef,
                 Description = cash.CostDescription,
                 Description_En = "",
                 Version = 1,

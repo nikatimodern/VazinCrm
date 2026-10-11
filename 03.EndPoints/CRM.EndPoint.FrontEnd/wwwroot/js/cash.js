@@ -81,12 +81,17 @@ async function showEditCashModal(id) {
     }
 }
 
-async function sendCashToSepidar(id) {
+async function sendCashToSepidar(btn, id) {
+    btn.disabled = true;
     await sendApiRequest({
         url: "/Cash/SendCashToSepidar",
         params: { id },
         successMsg: "عملیات انتقال با موفقیت انجام شد",
+        onSuccess: () => {
+            
+        },
     });
+    btn.disabled = false;
 }
 
 
@@ -248,7 +253,7 @@ const getAllCashesDt = () => {
             return: true,
         },
         ordering: true,
-        order: [[3, "desc"]],
+        order: [[2, "desc"]],
         scrollCollapse: true,
         scrollY: "70dvh",
         responsive: true,
@@ -269,25 +274,25 @@ const getAllCashesDt = () => {
         columnDefs: [
             { targets: "_all", defaultContent: "-" },
             {
-                targets: [12, 13],
+                targets: [11, 12],
                 orderable: false,
             },
             {
-                targets: [3],
+                targets: [2],
                 render: data => `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>`,
             },
             {
-                targets: [7, 8],
+                targets: [6, 7],
                 render: data => `<span dir="ltr">${data ? data.toLocaleString() : "-"}</span>`,
             },
             {
-                targets: [9],
+                targets: [8],
                 render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>`,
             },
         ],
         columns: [
             { data: "serial", responsivePriority: 1 },
-            { data: "paymentVoucherNumber", visible: window.isAdminOrFinancial, searchable: window.isAdminOrFinancial },
+            // { data: "paymentVoucherNumber", visible: window.isAdminOrFinancial, searchable: window.isAdminOrFinancial },
             { data: "cashGroup.groupNumber" },
             { data: "createDateTxt" },
             { data: "costTitleTxt", responsivePriority: 2 },
@@ -337,6 +342,9 @@ const getAllCashesDt = () => {
                 render: function (data, type, row) {
                     return `
                         <div class="inline-flex-center gap-1">
+                        ${row.status === 2 ? `
+                            <button type="button" class="buttonGray" onclick="sendCashToSepidar(this,'${row.id}')">ارسال به سپیدار</button>                       
+                        ` : ""}
                             <button type="button" class="icon-button icon-button--gray" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
                             ${row.status === 0 ? `
                                 <button type="button" class="icon-button icon-button--green" onclick="showEditCashModal('${row.id}')"><i class="fa fa-pencil"></i></button>
@@ -704,7 +712,7 @@ function getAllCashesModalDt() {
             return: true,
         },
         ordering: true,
-        order: [[3, "desc"]],
+        order: [[2, "desc"]],
         scrollCollapse: true,
         scrollY: "calc(100dvh - 400px)",
         responsive: true,
@@ -722,14 +730,14 @@ function getAllCashesModalDt() {
         language: languageDatatable,
         columnDefs: [
             { targets: "_all", defaultContent: "-" },
-            { targets: [12, 13], orderable: false },
-            { targets: [3], render: data => `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>` },
-            { targets: [7, 8], render: data => `<span dir="ltr">${data ? data.toLocaleString() : "-"}</span>` },
-            { targets: [9], render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>` },
+            { targets: [11, 12], orderable: false },
+            { targets: [2], render: data => `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>` },
+            { targets: [6, 7], render: data => `<span dir="ltr">${data ? data.toLocaleString() : "-"}</span>` },
+            { targets: [8], render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>` },
         ],
         columns: [
             { data: "serial", responsivePriority: 1 },
-            { data: "paymentVoucherNumber" },
+            // { data: "paymentVoucherNumber" },
             { data: "cashGroup.groupNumber", visible: false, searchable: false },
             { data: "createDateTxt" },
             { data: "costTitleTxt", responsivePriority: 2 },
@@ -779,7 +787,9 @@ function getAllCashesModalDt() {
                 render: function (data, type, row) {
                     return `
                         <div class="inline-flex-center gap-1">
-                            <button type="button" class="buttonGray" onclick="sendCashToSepidar('${row.id}')">ارسال به سپیدار</button>
+                        ${row.status === 2 ? `
+                            <button type="button" class="buttonGray" onclick="sendCashToSepidar(this,'${row.id}')">ارسال به سپیدار</button>                       
+                        ` : ""}
                             <button type="button" class="icon-button icon-button--gray" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
                             ${row.status === 0 ? `
                                 <button type="button" class="icon-button icon-button--green" onclick="showEditCashModal('${row.id}')"><i class="fa fa-pencil"></i></button>

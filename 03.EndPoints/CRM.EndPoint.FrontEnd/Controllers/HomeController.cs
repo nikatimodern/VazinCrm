@@ -80,6 +80,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
+                /*
                 var banks = await S1db.DLs
                     .Where(f => f.Type == 4)
                     .Include(f => f.SepidarBankAccount)
@@ -120,6 +121,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await db.BankAccounts.AddRangeAsync(listbanks);
 
                 await db.SaveChangesAsync();
+*/
 
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();
