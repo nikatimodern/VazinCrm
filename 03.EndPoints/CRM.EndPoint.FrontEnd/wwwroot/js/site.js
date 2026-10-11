@@ -1727,8 +1727,8 @@ const notification = (id, title, description, dateMiladi, entityType, entityId) 
 
 const activeNotifCall = {};
 function notificationIncomingCall(callerNumber, uniqueid, destNumber) {
-    if (!callerNumber || !uniqueid || !destNumber) return;
-    if (activeNotifCall[uniqueid]) return;
+    if (!callerNumber || !uniqueid || !destNumber) return false;
+    if (activeNotifCall[uniqueid]) return false;
     
     const callToast = Toastify({
         text: `
@@ -1780,11 +1780,13 @@ function notificationIncomingCall(callerNumber, uniqueid, destNumber) {
     });
     callToast.showToast();
     activeNotifCall[uniqueid] = callToast;
+    
+    return true;
 }
 
 function closeCallNotif(uniqueid) {
     const notif = activeNotifCall[uniqueid];
-    if (!notif) return;
+    if (!notif) return false;
     
     if (notif._interval) {
         clearInterval(notif._interval);
@@ -1800,11 +1802,13 @@ function closeCallNotif(uniqueid) {
         notif.hideToast();
         delete activeNotifCall[uniqueid];
     }, 2000);
+    
+    return true;
 }
 
 function answerCallNotif(uniqueid) {
     const notif = activeNotifCall[uniqueid];
-    if (!notif) return;
+    if (!notif) return false;
     
     if (!notif._interval) {
         notif.toastElement.style.background = "#1b4332";
@@ -1825,6 +1829,7 @@ function answerCallNotif(uniqueid) {
         }, 1000);
     }
     
+    return true;
 }
 
 function minimizeCallNotif(uniqueid) {

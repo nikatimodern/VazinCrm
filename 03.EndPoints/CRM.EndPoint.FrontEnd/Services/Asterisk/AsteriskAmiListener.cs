@@ -167,12 +167,12 @@ public class AsteriskAmiListener : BackgroundService {
             if (dest.StartsWith("1"))
             {
                 await _hubContext.Clients.User(userDest.Id)
-                    .SendAsync("IncomingCall", srcText, number, dest, !string.IsNullOrEmpty(destUid) ? destUid : uniqueId);
+                    .SendAsync("IncomingCall", srcText, number, dest, !string.IsNullOrEmpty(destUid) ? destUid : uniqueId, srcIsInternal);
             }
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, $"DialBegin Error: {ex.Message}");
+            logger.LogError(ex, "DialBegin Error: {Message}", ex.Message);
         }
     }
 

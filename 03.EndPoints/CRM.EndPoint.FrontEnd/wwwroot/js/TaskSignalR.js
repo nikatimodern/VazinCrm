@@ -96,23 +96,51 @@ connectionCall
     .start()
     .catch(err => console.error("SignalR Error:", err));
 
+connectionCall.on("IncomingCall", handleIncomingCall);
+connectionCall.on("CallAnswered", handleCallAnswered);
+connectionCall.on("CallEnded", handleCallEnded);
+
 const callHistoryBtn = document.getElementById("callHistoryReportBtn");
 
-connectionCall.on("IncomingCall", function (callerTextNumber, number, destNumber, uniqueid) {
-    // console.log("IncomingCall " + uniqueid);
-    notificationIncomingCall(callerTextNumber, uniqueid, destNumber);
+// Incoming call
+function handleIncomingCall(callerTextNumber, number, destNumber, uniqueid, srcIsInternal) {
+    if (!notificationIncomingCall(callerTextNumber, uniqueid, destNumber)) return;
+    if (srcIsInternal) return;
+    
     localStorage.setItem("callData", JSON.stringify(number));
     
     callHistoryBtn.classList.remove("is-answered", "is-open", "is-ended");
     callHistoryBtn.classList.add("is-visible", "is-ringing");
-});
+}
 
-
-async function showCallReport() {
-    callHistoryBtn.classList.remove("is-ringing", "is-answered");
-    callHistoryBtn.classList.add("is-open");
+// Call answered
+async function handleCallAnswered(uniqueid) {
+    if (!answerCallNotif(uniqueid)) return;
     
+    await showIncomingCallReport();
+    
+    callHistoryBtn.classList.remove("is-ringing");
+    callHistoryBtn.classList.add("is-answered");
+}
+
+// Call ended
+async function handleCallEnded(uniqueid) {
+    if (!closeCallNotif(uniqueid)) return;
+    
+    closeIncomingCallReport();
+}
+
+// Show call report
+async function showIncomingCallReport() {
+    if (isModalOpen("incomingCallReportModal")) {
+        ModalToggle("incomingCallReportModal", "hide");
+        return;
+    }
     const mobileNumber = JSON.parse(localStorage.getItem("callData"));
+    if (!mobileNumber) return;
+    
+    // callHistoryBtn.classList.remove("is-ringing", "is-answered");
+    callHistoryBtn.classList.add("is-open");
     
     ModalToggle("incomingCallReportModal", "show");
     
@@ -124,38 +152,18 @@ async function showCallReport() {
         },
     });
 }
-async function closeCallReport() {
-    
+
+// Close call report
+function closeIncomingCallReport() {
     callHistoryBtn.classList.add("is-ended");
+    
     setTimeout(() => {
         ModalToggle("incomingCallReportModal", "hide");
         localStorage.removeItem("callData");
+        
         callHistoryBtn.classList.remove("is-visible", "is-ringing", "is-answered", "is-open", "is-ended");
     }, 5000);
 }
-
-connectionCall.on("CallEnded", async function (uniqueid) {
-    //console.log("CallEnded " + uniqueid);
-    
-    const notif = activeNotifCall[uniqueid];
-    if (notif) {
-        await closeCallReport();
-    }
-    
-    closeCallNotif(uniqueid);
-});
-
-connectionCall.on("CallAnswered", async function (uniqueid) {
-    // console.log("CallAnswered " + uniqueid);
-    answerCallNotif(uniqueid);
-    
-    const notif = activeNotifCall[uniqueid];
-    if (notif) {
-        await showCallReport();
-        callHistoryBtn.classList.remove("is-ringing");
-        callHistoryBtn.classList.add("is-answered");
-    }
-});
 
 
 ////////// sms toastify ////////////
