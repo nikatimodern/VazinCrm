@@ -88,8 +88,135 @@
 </div>
 
 
+<div class="modal fade" id="externalSoftwareModal" tabindex="-1" aria-labelledby="externalSoftwareModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content external-software-modal">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="externalSoftwareModalLabel">انتخاب نرم‌افزار مقصد</h5>
+                    <small class="text-muted">نرم‌افزار موردنظر برای انتقال سند را انتخاب کنید.</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+
+            <div class="modal-body">
+                <div id="externalSoftwareList" class="external-software-list">
+                    <div class="text-muted text-center py-4">در حال دریافت نرم‌افزارها...</div>
+                </div>
+            </div>
+
+            <div class="modal-footer align-items-stretch">
+                <button type="button" class="buttonCancel-white" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" id="sendCashToSoftwareBtn" class="buttonGreen0" disabled>ارسال سند</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <partial name="Modals/_CashGroupDetailModal" model="Model" />
 <partial name="Modals/_CashModal" model="Model" />
+
+@section Styles {
+    <style>
+
+        .external-software-modal {
+            border: 0;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+
+        .external-software-modal .modal-header {
+            padding: 20px 22px;
+        }
+
+
+        .external-software-modal .modal-footer {
+            padding: 14px 22px;
+        }
+
+
+        .external-software-list {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+
+        .external-software-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 82px;
+            padding: 16px;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            background: #fff;
+            color: #343a40;
+            cursor: pointer;
+            text-align: right;
+            transition: border-color .15s ease, background-color .15s ease;
+        }
+
+
+        .external-software-card:hover {
+            border-color: #04857c;
+            background: #f6fbfa;
+        }
+
+
+        .external-software-card.is-selected {
+            border: 2px solid #04857c;
+            padding: 15px;
+            background: #edf8f6;
+        }
+
+
+        .external-software-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: #e7f3f1;
+            color: #02514c;
+        }
+
+
+        .external-software-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+
+        .external-software-title {
+            display: block;
+            font-family: IranSansBold;
+            overflow-wrap: anywhere;
+        }
+
+
+        .external-software-check {
+            color: #04857c;
+            visibility: hidden;
+        }
+
+
+        .external-software-card.is-selected .external-software-check {
+            visibility: visible;
+        }
+
+
+        @@media (max-width: 420px) {
+            .external-software-list {
+                grid-template-columns: 1fr;
+            }
+        }
+
+    </style>
+}
 
 @section Scripts {
     <script>

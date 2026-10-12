@@ -8,6 +8,7 @@ public class ExternalSoftwareConfigs : IEntityTypeConfiguration<ExternalSoftware
     public void Configure(EntityTypeBuilder<ExternalSoftware> builder)
     {
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Code).ValueGeneratedOnAdd();
 
         builder.HasMany(x => x.BankAccountExternalSoftwares)
             .WithOne()

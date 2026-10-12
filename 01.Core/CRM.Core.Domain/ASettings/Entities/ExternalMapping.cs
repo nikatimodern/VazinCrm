@@ -10,7 +10,7 @@ public class ExternalMapping {
     public Guid EntityId { get; set; }
     public Guid ExternalSoftwareId { get; set; }
     public ExternalSoftware ExternalSoftware { get; set; }
-    
+
     public ExternalMappingTypeEnum MapType { get; set; }
     public string MapTypeTxt { get; set; }
 

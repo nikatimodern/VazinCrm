@@ -1,3 +1,6 @@
+@model IList<CRM.EndPoint.FrontEnd.Models.Cash.CashierDto>
+
+
 <div class="w-100">
     <div class="row align-items-center justify-content-between flex-wrap mb-2 g-2">
         <div class="d-flex col-lg-3">
@@ -24,8 +27,10 @@
             <thead>
             <tr>
                 <th>کاربر</th>
+                <th>عنوان</th>
                 <th>ثبت توسط</th>
                 <th>تاریخ ثبت</th>
+                <th>تفصیلی نرم‌افزارها</th>
                 <th>موجودی شارژ</th>
                 <th>هزینه شده</th>
                 <th>مانده</th>
@@ -38,7 +43,7 @@
     </div>
 </div>
 
-<partial name="Modals/_CashierModal" />
+<partial name="Modals/_CashierModal" model="Model" />
 
 @section Scripts {
     <script>
@@ -61,6 +66,7 @@
 
         cashierModal.addEventListener("hidden.bs.modal", () => {
             cashierData = {};
+            toggleElementsDisabled(cashierModal.querySelector("#cashierUser"), false);
             mySer.emptyForm("cashierForm");
         });
 
@@ -69,87 +75,75 @@
             const users = await CrmSer.getUsers(1);
             new TomSelect("#cashierUser", {
                 options: users,
+                placeholder: "انتخاب کاربر",
                 valueField: "id",
                 maxItems: 1,
                 selectOnTab: true,
             });
 
-            const bankAccouts = await sendApiRequest({
-                url: "/Cash/GetAllBankAccountCashier",
-            });
-            console.log(bankAccouts);
-            new TomSelect("#bankAccountId", {
-                options: bankAccouts,
-                maxItems: 1,
-                selectOnTab: true,
+            document.querySelectorAll(".tafsili-code-select").forEach(select => {
+                new TomSelect(select, {
+                    placeholder: "انتخاب شماره تفصیلی",
+                    maxItems: 1,
+                    selectOnTab: true,
+                });
             });
         };
 
         async function showEditCashierModal(id) {
-            FLshowLoading();
             await showCashierModal();
 
-            try {
-                const res = await axios(`/Cash/GetCashier/${id}`);
-                if (res.status === 200) {
+            await sendApiRequest({
+                url: "/Cash/GetCashier",
+                params: { id },
+                onSuccess: (res) => {
                     cashierData = res.data;
-                    cashierModal.querySelector("#cashierUser").tomselect.setValue([...cashierData.cashierUsers.map(i => i.userId)]);
                     mySer.convertJsonToForm(cashierData, "cashierForm");
-                }
+                    @* toggleElementsDisabled(cashierModal.querySelector("#cashierUser")); *@;
 
-            } catch (err) {
-                console.log(err);
-            } finally {
-                FLshowLoading(false);
-            }
+                    cashierData.cashierExternalSoftwares?.forEach(mapping => {
+                        const select = cashierModal.querySelector(`select.tafsili-code-select[data-external-id="${mapping.externalSoftwareId}"]`);
+                        select?.tomselect?.setValue(mapping.tafsiliCode, true);
+                    });
+                },
+            });
+
         }
 
         const deleteCashier = async (id) => {
-            Swal.fire({
-                title: "حذف!",
-                text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
-                icon: "warning",
-                showCancelButton: true,
-                cancelButtonColor: "#adadad",
-                confirmButtonColor: "#e64942",
-                cancelButtonText: "انصراف",
-                confirmButtonText: "بله، حذف شود",
-            }).then(async (willDelete) => {
-                if (willDelete.isConfirmed) {
-                    FLshowLoading();
-                    const res = await axios(`/Cash/DeleteCashier/${id}`);
-                    if (res.status === 200) {
-                        toastifySuccess("با موفقیت حذف شد");
-                        cashierTbl.ajax.reload();
-                    }
-                    FLshowLoading(false);
-                }
+            await deleteItem({
+                url: `/Cash/DeleteCashier/${id}`,
+                callback: () => cashierTbl.ajax.reload(),
             });
         };
 
         async function submitCashierModal() {
             if (!await mySer.CheckValidForm("cashierForm")) return;
             const cashierUserElm = cashierModal.querySelector("#cashierUser");
+
+            const cashierExternalSoftwares = Array.from(cashierModal.querySelectorAll("select.tafsili-code-select")).map(select => ({
+                externalSoftwareId: select.dataset.externalId,
+                tafsiliCode: select.value,
+            }));
+
             const model = {
                 ...cashierData,
                 ...mySer.convertFormToJSON("cashierForm"),
                 userTxt: cashierUserElm.options[cashierUserElm.selectedIndex].text,
+                cashierExternalSoftwares,
             };
-            //model.cashierUsers = selectedUsers.map(i => ({ userId: i, cashierId: cashierData.id }));
 
-            try {
-                FLshowLoading();
-                const res = await axios.post("/Cash/AddCashier", model);
-                if (res.status === 200) {
-                    toastifySuccess("با موفقیت ثبت شد");
+            const url = model.id ? "/Cash/UpdateCashier" : "/Cash/AddCashier";
+
+            await sendApiRequest({
+                url,
+                method: "POST",
+                data: model,
+                onSuccess: () => {
                     cashierTbl.ajax.reload();
                     ModalToggle(cashierModal, "hide");
-                }
-            } catch (err) {
-                console.log(err);
-            } finally {
-                FLshowLoading(false);
-            }
+                },
+            });
         }
 
         const getAllCashiersDt = () => {
@@ -174,8 +168,27 @@
                 language: languageDatatable,
                 columns: [
                     { data: "cashier.userTxt" },
+                    { data: "cashier.title", defaultContent: "-" },
                     { data: "cashier.userCreator", orderable: false },
                     { data: "cashier.createDateTxt", render: data => renderDateTimeHtml(data) },
+                    {
+                        data: "cashierMappings",
+                        orderable: false,
+                        render: function (data) {
+                            if (!data?.length) return "-";
+
+                            return `
+                                <div class="d-inline-flex flex-column gap-1">
+                                    ${data.map(item => `
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="text-muted">${item.softwareTitle}:</span>
+                                            <span class="fbold">${item.tafsiliCode}</span>
+                                        </div>
+                                    `).join("")}
+                                </div>
+                            `;
+                        },
+                    },
                     { data: "totalCredit", render: data => renderMoneyHtml(data, { className: "fbold" }) },
                     {
                         data: "totalDebit",
@@ -208,6 +221,7 @@
                             return `
                                 <div class="inline-flex-center gap-1">
                                     <button type="button" class="icon-button icon-button--red" onclick="deleteCashier('${data}')"><i class="fa fa-trash"></i></button>
+                                    <button type="button" class="icon-button icon-button--green" " onclick="showEditCashierModal('${data}')"><i class="fa fa-pencil"></i></button>
                                 </div>
                             `;
                         },

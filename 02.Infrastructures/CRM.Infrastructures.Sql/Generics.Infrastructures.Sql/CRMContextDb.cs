@@ -109,6 +109,7 @@ namespace CRM.Infrastructures.Sql {
         public DbSet<BankAccountExternalSoftware> BankAccountExternalSoftwares { get; set; }
         public DbSet<ExternalMapping> ExternalMappings { get; set; }
         public DbSet<ExternalSoftware> ExternalSoftwares { get; set; }
+        public DbSet<CashierExternalSoftware> CashierExternalSoftwares { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

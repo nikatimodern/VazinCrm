@@ -208,6 +208,17 @@ namespace CRM.EndPoint.FrontEnd.Services {
             return input;
         }
 
+
+        public static string NormalizePersianText(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return string.Empty;
+
+            return text
+                .Replace('ي', 'ی')
+                .Replace('ى', 'ی')
+                .Replace('ك', 'ک');
+        }
+
         private static readonly HashSet<string> IranLandlineAreaCodes = [
             "11", "13", "17",
             "21", "23", "24", "25", "26", "28",

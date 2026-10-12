@@ -22,6 +22,7 @@ using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
@@ -35,9 +36,11 @@ public class CashController : Controller {
     private readonly LogSystemService logSystemService;
     private readonly FileSaver fileSaver;
     private readonly SepidarService sepidarService;
+    private readonly Sepidar1ContextDb s1Db;
+    private readonly Sepidar2ContextDb s2Db;
 
     public CashController(CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, DateTimeServices dtService,
-        LogSystemService logSystemService, FileSaver fileSaver, SepidarService sepidarService)
+        LogSystemService logSystemService, FileSaver fileSaver, SepidarService sepidarService, Sepidar1ContextDb s1Db, Sepidar2ContextDb s2Db)
     {
         this.db = db;
         this.udb = udb;
@@ -46,6 +49,8 @@ public class CashController : Controller {
         this.logSystemService = logSystemService;
         this.fileSaver = fileSaver;
         this.sepidarService = sepidarService;
+        this.s1Db = s1Db;
+        this.s2Db = s2Db;
     }
 
     [Authorize(Roles = "مدیر ارشد,تنخواه دار,مدیر مالی,کارشناس مالی")]
@@ -62,10 +67,46 @@ public class CashController : Controller {
 
 
     [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
-    public IActionResult Cashier()
+    public async Task<IActionResult> Cashier()
     {
-        return View();
+        var externalSoftwares = await db.ExternalSoftwares.Where(f => f.SoftwareType == SoftwareTypeEnum.حسابداری).ToListAsync();
+
+        var listCashierDtos = new List<CashierDto>();
+
+        foreach (var software in externalSoftwares)
+        {
+            var dto = new CashierDto {
+                ExternalSoftware = software,
+            };
+
+            if (software.Code == 1)
+            {
+                dto.SelectOptions = await s1Db.DLs
+                    .Where(f => f.Type == 4 || f.Type == 2)
+                    .OrderBy(f => f.Title)
+                    .Select(f => new SelectOptionDto<string> {
+                        Value = f.Code,
+                        Text = $"{TextService.NormalizePersianText(f.Title)} ({f.Code})",
+                    })
+                    .ToListAsync();
+            } else if (software.Code == 2)
+            {
+                dto.SelectOptions = await s2Db.DLs
+                    .Where(f => f.Type == 4 || f.Type == 2)
+                    .OrderBy(f => f.Title)
+                    .Select(f => new SelectOptionDto<string> {
+                        Value = f.Code,
+                        Text = $"{TextService.NormalizePersianText(f.Title)} ({f.Code})",
+                    })
+                    .ToListAsync();
+            }
+
+            listCashierDtos.Add(dto);
+        }
+
+        return View(listCashierDtos);
     }
+
 
     [Authorize(Roles = "مدیر ارشد,تنخواه دار,مدیر مالی,کارشناس مالی")]
     [HttpPost]
@@ -138,21 +179,10 @@ public class CashController : Controller {
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
 
-            if (model.Id == Guid.Empty)
-            {
-                model.UserCreator = user.FullName;
-                model.UserCreatorID = user.Id;
-                await db.Cashiers.AddAsync(model);
-            } else
-            {
-                var data = await db.Cashiers.Where(f => f.Id == model.Id).FirstOrDefaultAsync();
-                data.ModifyDate = DateTime.Now;
-                data.ModifyDateTxt = dtService.GetDateTimePersian();
-                data.UserModify = user.FullName;
-                data.UserModifyID = user.Id;
-                data.UserId = model.UserId;
-                data.UserTxt = model.UserTxt;
-            }
+            model.UserCreator = user.FullName;
+            model.UserCreatorID = user.Id;
+
+            await db.Cashiers.AddAsync(model);
 
             var usr = await udb.Users.Where(f => f.Id == model.UserId.ToString()).FirstOrDefaultAsync();
             await userManager.AddToRoleAsync(usr, "تنخواه دار");
@@ -162,12 +192,35 @@ public class CashController : Controller {
             await transaction.CommitAsync();
             return Ok();
         }
-        catch (Exception e)
+        catch (Exception)
         {
             await transaction.RollbackAsync();
             return BadRequest();
         }
     }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateCashier([FromBody] Cashier model)
+    {
+        if (model == null || model.Id == Guid.Empty)
+            return BadRequest("اطلاعات معتبر نیست.");
+
+        var cashier = await db.Cashiers.Include(f => f.CashierExternalSoftwares).FirstOrDefaultAsync(f => f.Id == model.Id);
+
+        if (cashier == null) return NotFound();
+
+
+        cashier.Title = model.Title?.Trim();
+        cashier.UserId = model.UserId;
+        cashier.UserTxt = model.UserTxt;
+
+        cashier.CashierExternalSoftwares = model.CashierExternalSoftwares;
+
+        await db.SaveChangesAsync();
+
+        return Ok();
+    }
+
 
     public async Task<IActionResult> GetCash(Guid id)
     {
@@ -436,7 +489,11 @@ public class CashController : Controller {
     {
         try
         {
-            var data = await db.Cashiers.Where(f => f.Id == id).AsNoTracking().FirstOrDefaultAsync();
+            var data = await db.Cashiers
+                .AsNoTracking()
+                .Where(f => f.Id == id)
+                .Include(f => f.CashierExternalSoftwares)
+                .FirstOrDefaultAsync();
             return Ok(data);
         }
         catch (Exception e)
@@ -482,20 +539,21 @@ public class CashController : Controller {
         try
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
-            var item = await db.Cashiers.Where(f => f.Id == id).FirstOrDefaultAsync();
+            var item = await db.Cashiers.Where(f => f.Id == id).Include(f => f.CashierExternalSoftwares).FirstOrDefaultAsync();
             if (item == null) return NotFound("رکوردی یافت نشد!");
 
             item.IsDeleted = true;
+
             item.ModifyDate = DateTime.Now;
             item.ModifyDateTxt = dtService.GetDateTimePersian();
             item.UserModify = user.FullName;
             item.UserModifyID = user.Id;
 
-
             var usr = await udb.Users.FirstOrDefaultAsync(f => f.Id == item.UserId.ToString());
             await userManager.RemoveFromRoleAsync(usr, "تنخواه دار");
 
 
+            db.CashierExternalSoftwares.RemoveRange(item.CashierExternalSoftwares);
             await logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
 
             await db.SaveChangesAsync();
@@ -907,6 +965,11 @@ public class CashController : Controller {
                     ac => ac.CashierId,
                     (c, ac) => new CashierVModel {
                         Cashier = c,
+                        CashierMappings = c.CashierExternalSoftwares.Select(m => new CashierMappingVModel {
+                            SoftwareTitle = m.ExternalSoftware.Title,
+                            TafsiliCode = m.TafsiliCode
+                        }).ToList(),
+
                         TotalCredit = ac.Sum(x => x.credit ?? 0),
                         TotalDebit = ac.Sum(x => x.debit ?? 0),
                         Balance = ac.Sum(x => (x.credit ?? 0) - (x.debit ?? 0)),
@@ -977,8 +1040,7 @@ public class CashController : Controller {
             return BadRequest();
         }
     }
-    
-    
+
 
     public async Task<IActionResult> GetAllBankAccountCashier()
     {
@@ -993,6 +1055,27 @@ public class CashController : Controller {
                     value = f.Id,
                     text = $"{f.BankName} {f.AccountName} {f.AccountNumber} " +
                            $"(کد تفضیلی {f.BankAccountExternalSoftwares.Where(f => f.ExSoftwareId == sepidar1Id).Select(f => f.RefCode).FirstOrDefault()})",
+                })
+                .ToListAsync();
+
+            return Ok(data);
+        }
+        catch (Exception)
+        {
+            return BadRequest();
+        }
+    }
+
+    public async Task<IActionResult> GetAllTafsiliCodes()
+    {
+        try
+        {
+            var data = await s1Db.DLs
+                .Where(f => f.Type == 4 || f.Type == 2)
+                .OrderBy(f => f.Title)
+                .Select(f => new SelectOptionDto<string> {
+                    Value = f.Code,
+                    Text = $"{f.Title} ({f.Code})",
                 })
                 .ToListAsync();
 
@@ -1271,4 +1354,15 @@ public class CashController : Controller {
         }
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetAllExternalSoftware()
+    {
+        var data = await db.ExternalSoftwares
+            .AsNoTracking()
+            .OrderBy(x => x.Title)
+            .Select(x => new { x.Id, x.Title })
+            .ToListAsync();
+
+        return Ok(data);
+    }
 }

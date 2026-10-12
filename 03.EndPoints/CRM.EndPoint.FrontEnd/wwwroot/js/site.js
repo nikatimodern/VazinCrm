@@ -2667,22 +2667,32 @@ function applyMinMaxValue(el) {
         .replace(/,/g, "")
         .trim();
     
-    if (value === "" || isNaN(value)) return;
+    if (value === "" || !/^-?\d*\.?\d*$/.test(value)) return;
+    
+    if (value === "-" || value.endsWith(".")) {
+        el.value = value;
+        return;
+    }
     
     let numValue = Number(value);
     
-    if (min !== null && !isNaN(min) && numValue < Number(min)) {
-        numValue = Number(min);
+    if (!Number.isFinite(numValue)) return;
+    
+    const minValue = min !== null && min.trim() !== "" ? Number(min) : null;
+    const maxValue = max !== null && max.trim() !== "" ? Number(max) : null;
+    
+    if (minValue !== null && Number.isFinite(minValue) && numValue < minValue) {
+        numValue = minValue;
     }
     
-    if (max !== null && !isNaN(max) && numValue > Number(max)) {
-        numValue = Number(max);
+    if (maxValue !== null && Number.isFinite(maxValue) && numValue > maxValue) {
+        numValue = maxValue;
     }
     
     if (el.classList.contains("currencyNumber")) {
         el.value = numValue.toLocaleString();
     } else {
-        el.value = numValue;
+        el.value = String(numValue);
     }
 }
 const getGeneralRef = () => {
@@ -3709,26 +3719,13 @@ function AlertFormStatus(status, Message, liss) {
 
 
 function ConvertToNumEnglishCharNoCallBack(value) {
-    if (value == null) return null;
+    if (value == null) return "";
     
-    return value.replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
-    
-    /*    if (value === null) {
-            return null;
-        } else {
-            
-            let s = value;
-            for (let i = 0; i < value.length; i++) {
-                
-                s = s.replace("۰", "0").replace("۱", "1")
-                     .replace("۲", "2").replace("۳", "3")
-                     .replace("۴", "4").replace("۵", "5")
-                     .replace("۶", "6").replace("۷", "7")
-                     .replace("۸", "8").replace("۹", "9");
-            }
-            
-            return s;
-        }*/
+    return value
+        .replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d))
+        .replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d))
+        .replace(/٫/g, ".")
+        .replace(/٬/g, ",");
 }
 
 function ConvertToNumEnglishChar(item, callback) {
@@ -4877,4 +4874,12 @@ function createInlineAlert({ type = "info", message, dismissible = false, icon }
     }
     
     return alert;
+}
+
+function normalizePersianText(text) {
+    if (!text) return "";
+    
+    return text
+        .replace(/[يى]/g, "ی")
+        .replace(/ك/g, "ک");
 }

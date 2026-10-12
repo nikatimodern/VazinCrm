@@ -81,6 +81,106 @@ async function showEditCashModal(id) {
     }
 }
 
+
+let externalSoftwares = [];
+let selectedExternalSoftwareId = null;
+let selectedCashId = null;
+let activeCashButton = null;
+
+const externalSoftwareModalElement = document.getElementById("externalSoftwareModal");
+
+
+const externalSoftwareList = document.getElementById("externalSoftwareList");
+
+const sendCashToSoftwareBtn = document.getElementById("sendCashToSoftwareBtn");
+
+async function sendCashToExternalSoftware(btn, id) {
+    selectedCashId = id;
+    activeCashButton = btn;
+    selectedExternalSoftwareId = null;
+    
+    sendCashToSoftwareBtn.disabled = true;
+    
+    externalSoftwares = await sendApiRequest({
+        url: "/Cash/GetAllExternalSoftware",
+    });
+    
+    ModalToggle(externalSoftwareModalElement);
+    
+    if (!externalSoftwares || externalSoftwares.length === 0) {
+        externalSoftwareList.innerHTML = `
+            <div class="text-muted text-center py-4">
+                نرم‌افزاری برای انتخاب وجود ندارد.
+            </div>`;
+        
+        return;
+    }
+    
+    renderExternalSoftwares();
+}
+
+function renderExternalSoftwares() {
+    externalSoftwareList.innerHTML = externalSoftwares.map(software => `
+        <button type="button" class="external-software-card" data-software-id="${software.id}">
+            <span class="external-software-icon">
+                <svg style="width: 24px" viewBox="0 0 640 640" fill="currentColor"><path d="M335.9 84.2C326.1 78.6 314 78.6 304.1 84.2L80.1 212.2C67.5 219.4 61.3 234.2 65 248.2C68.7 262.2 81.5 272 96 272L128 272L128 480L128 480L76.8 518.4C68.7 524.4 64 533.9 64 544C64 561.7 78.3 576 96 576L544 576C561.7 576 576 561.7 576 544C576 533.9 571.3 524.4 563.2 518.4L512 480L512 272L544 272C558.5 272 571.2 262.2 574.9 248.2C578.6 234.2 572.4 219.4 559.8 212.2L335.8 84.2zM464 272L464 480L400 480L400 272L464 272zM352 272L352 480L288 480L288 272L352 272zM240 272L240 480L176 480L176 272L240 272zM320 160C337.7 160 352 174.3 352 192C352 209.7 337.7 224 320 224C302.3 224 288 209.7 288 192C288 174.3 302.3 160 320 160z"/></svg>
+            </span>
+            <span class="external-software-info">
+                <span class="external-software-title">${software.title}</span>
+            </span>
+            <i class="fa-solid fa-circle-check external-software-check"></i>
+        </button>
+    `).join("");
+    
+    externalSoftwareList.querySelectorAll(".external-software-card").forEach(card => {
+        card.addEventListener("click", () => {
+            selectedExternalSoftwareId = card.dataset.softwareId;
+            
+            externalSoftwareList.querySelectorAll(".external-software-card").forEach(item => {
+                const selected = item === card;
+                item.classList.toggle("is-selected", selected);
+            });
+            
+            sendCashToSoftwareBtn.disabled = false;
+        });
+    });
+}
+
+
+sendCashToSoftwareBtn.addEventListener("click", async () => {
+    if (!selectedCashId || !selectedExternalSoftwareId) return;
+    
+    toggleElementsDisabled([sendCashToSoftwareBtn, activeCashButton]);
+    
+    console.log(selectedCashId, selectedExternalSoftwareId);
+    
+    /*    try {
+            await sendApiRequest({
+                url: "/Cash/SendCashToExternalSoftware",
+                params: {
+                    id: selectedCashId,
+                    externalSoftwareId: selectedExternalSoftwareId,
+                },
+                successMsg: "عملیات انتقال با موفقیت انجام شد",
+                onSuccess: () => ModalToggle(externalSoftwareModalElement, "hide"),
+            });
+        } finally {
+            if (activeCashButton) {
+                activeCashButton.disabled = false;
+            }
+            
+            sendCashToSoftwareBtn.disabled = !selectedExternalSoftwareId;
+        }*/
+});
+
+externalSoftwareModalElement.addEventListener("hidden.bs.modal", () => {
+    selectedExternalSoftwareId = null;
+    selectedCashId = null;
+    activeCashButton = null;
+    sendCashToSoftwareBtn.disabled = true;
+});
+
+
 async function sendCashToSepidar(btn, id) {
     btn.disabled = true;
     await sendApiRequest({
@@ -99,7 +199,6 @@ const addVoucherSepidar = async (cashId, paymentHeaderId) => {
     await sendApiRequest({
         url: "/Cash/AddVoucherSepidar",
         params: { cashId, paymentHeaderId },
-        
         successMsg: "سند حسابداری با موفقیت ساخته شد.",
     });
 };
@@ -343,7 +442,7 @@ const getAllCashesDt = () => {
                     return `
                         <div class="inline-flex-center gap-1">
                         ${row.status === 2 ? `
-                            <button type="button" class="buttonGray" onclick="sendCashToSepidar(this,'${row.id}')">ارسال به سپیدار</button>                       
+                            <button type="button" class="buttonGray" onclick="sendCashToExternalSoftware(this,'${row.id}')">ارسال به نرم‌افزار مالی</button>                       
                         ` : ""}
                             <button type="button" class="icon-button icon-button--gray" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
                             ${row.status === 0 ? `
@@ -788,7 +887,7 @@ function getAllCashesModalDt() {
                     return `
                         <div class="inline-flex-center gap-1">
                         ${row.status === 2 ? `
-                            <button type="button" class="buttonGray" onclick="sendCashToSepidar(this,'${row.id}')">ارسال به سپیدار</button>                       
+                            <button type="button" class="buttonGray" onclick="sendCashToExternalSoftware(this,'${row.id}')">ارسال به نرم‌افزار مالی</button>                       
                         ` : ""}
                             <button type="button" class="icon-button icon-button--gray" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
                             ${row.status === 0 ? `
