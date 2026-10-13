@@ -1,5 +1,4 @@
 using CRM.Core.Domain.AppUsers.Entities;
-using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.SaveChangeCustom;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.EndPoint.FrontEnd.Services;
@@ -10,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Services.Carizo;
+using CRM.EndPoint.FrontEnd.Services.SepidarServices;
 using CRM.EndPoint.FrontEnd.Services.Sms;
 using Microsoft.AspNetCore.Authorization;
 
@@ -19,7 +19,7 @@ public class TaminController : Controller
 {
     private readonly CRMContextDb db;
 
-    public TaminController(CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, SepidarService sps, SmsService SmsServ,
+    public TaminController(CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, SmsService SmsServ,
             UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager, Service GenService, FileSaver fileSaver,
             DateTimeServices dtService, CRMContextDb db, UserContextDb Udb, Sepidar1ContextDb S1db,
             IHubContext<TaskHub> hub)

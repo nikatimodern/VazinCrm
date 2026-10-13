@@ -10,7 +10,7 @@ public class CashierExternalSoftwareConfig : IEntityTypeConfiguration<CashierExt
         builder.HasKey(f => f.Id);
 
         builder.HasOne(f => f.ExternalSoftware)
-            .WithMany(f => f.CashierMappings)
+            .WithMany(f => f.CashierExternalSoftwares)
             .HasForeignKey(f => f.ExternalSoftwareId)
             .OnDelete(DeleteBehavior.NoAction);
     }

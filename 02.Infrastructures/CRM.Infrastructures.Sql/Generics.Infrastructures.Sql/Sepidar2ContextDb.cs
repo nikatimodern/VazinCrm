@@ -2,14 +2,8 @@
 using CRM.Core.Domain.Sepidar.Quotations.Entites;
 using Microsoft.EntityFrameworkCore;
 
-namespace CRM.Infrastructures.Sql
-{
-    public class Sepidar2ContextDb:Sepidar1ContextDb
-    {
-        public Sepidar2ContextDb(DbContextOptions<Sepidar1ContextDb> op) : base(op)
-        {
-
-
-        }
+namespace CRM.Infrastructures.Sql {
+    public class Sepidar2ContextDb : SepidarContextDbBase {
+        public Sepidar2ContextDb(DbContextOptions<Sepidar2ContextDb> op) : base(op) { }
     }
 }

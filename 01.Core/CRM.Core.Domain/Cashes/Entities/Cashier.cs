@@ -16,5 +16,6 @@ namespace CRM.Core.Domain.Cashes.Entities {
 
 
         public IList<CashierExternalSoftware> CashierExternalSoftwares { get; set; }
+        public IList<Cash> Cashes { get; set; }
     }
 }

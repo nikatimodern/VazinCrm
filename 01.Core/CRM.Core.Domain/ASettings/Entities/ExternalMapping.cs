@@ -16,4 +16,7 @@ public class ExternalMapping {
 
     public DateTime CreateDate { get; set; } = DateTime.Now;
     public string CreateDateTxt { get; set; } = BaseServices.GetDateTimePersian();
+
+    public string UserCreatorID { get; set; }
+    public string UserCreator { get; set; }
 }

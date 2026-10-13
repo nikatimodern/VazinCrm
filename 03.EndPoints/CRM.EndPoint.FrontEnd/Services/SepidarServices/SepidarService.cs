@@ -1,34 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using CRM.Infrastructures.Sql;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CRM.Core.Domain.ASettings.Entities;
-using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Cashes.Entities;
+using CRM.Core.Domain.Sepidar.DLs.Entites;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.Core.Domain.Sepidar.Payments.Entites;
 using CRM.Core.Domain.Sepidar.Vouchers.Entites;
 using CRM.EndPoint.FrontEnd.Models.Factor;
 using CRM.EndPoint.FrontEnd.Models.Sepidar;
+using CRM.Infrastructures.Sql;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
-namespace CRM.EndPoint.FrontEnd.Services.Factor {
-    public class SepidarService(Sepidar1ContextDb s1Db, CRMContextDb db) {
+namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
+    public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db) {
         public async Task<Invoice> GetInvoiceAsync(int? invoiceId)
         {
-            return await s1Db.vwInvoice
+            return await sepidarContext.vwInvoice
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.InvoiceId == invoiceId);
         }
 
         public async Task<Invoice> GetInvoiceWithItemsAsync(int invoiceId)
         {
-            return await s1Db.vwInvoice
+            return await sepidarContext.vwInvoice
                 .AsNoTracking()
                 .Include(x => x.InvoiceItems)
                 .FirstOrDefaultAsync(x => x.InvoiceId == invoiceId);
@@ -36,7 +34,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
         public async Task<List<Invoice>> GetInvoicesByQuotationNumberAsync(int? quotationNumber)
         {
-            return await s1Db.vwInvoice
+            return await sepidarContext.vwInvoice
                 .AsNoTracking()
                 .Where(x => x.QuotationNumber == quotationNumber)
                 .ToListAsync();
@@ -46,7 +44,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
         {
             try
             {
-                return await s1Db.vwInvoice
+                return await sepidarContext.vwInvoice
                     .AsNoTracking()
                     .Where(x => x.QuotationNumber.HasValue && Enumerable.Contains(serialNumbers, x.QuotationNumber.Value))
                     .Select(x => new SepidarInvoiceDto {
@@ -64,7 +62,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
         public async Task<SepidarInvoiceDto> GetInvoiceSummaryAsync(int invoiceId)
         {
-            return await s1Db.vwInvoice
+            return await sepidarContext.vwInvoice
                 .AsNoTracking()
                 .Where(x => x.InvoiceId == invoiceId)
                 .Select(x => new SepidarInvoiceDto {
@@ -81,7 +79,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
         public string GetNoteInvoice(int? refId)
         {
-            var note = s1Db.ExtraData
+            var note = sepidarContext.ExtraData
                 .Where(f => f.EntityTypeName == "SG.Sales.InvoiceManagement.Common.DsInvoice" && f.EntityRef == refId)
                 .FirstOrDefault().Note;
             return note;
@@ -89,9 +87,28 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
 
         //--------------------------------------------------------- TANKHAH ---------------------------------------------------------
+
+
+        public async Task<bool> SentCashToSepidar(Cash cash, string tafsiliCode)
+        {
+            var dl = await GetDlAsync(tafsiliCode);
+            switch (dl.Type)
+            {
+                case 4: // حساب بانكي
+                    return await AddPaymentHeaderAsync(cash, dl.DLId);
+
+                case 2: // طرف مقابل
+                    return await AddVoucherAsync2(cash, dl.DLId);
+
+                default:
+                    return false;
+            }
+        }
+
+
         private async Task<int> GetCostCenterDlIdAsync(string costCenterCode, CancellationToken cancellationToken = default)
         {
-            var dl = await s1Db.DLs.AsNoTracking().SingleOrDefaultAsync(x => x.Code == costCenterCode, cancellationToken);
+            var dl = await sepidarContext.DLs.AsNoTracking().SingleOrDefaultAsync(x => x.Code == costCenterCode, cancellationToken);
 
             if (dl == null)
             {
@@ -101,9 +118,21 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
             return dl.DLId;
         }
 
+        private async Task<DL> GetDlAsync(string code, CancellationToken cancellationToken = default)
+        {
+            var dl = await sepidarContext.DLs.AsNoTracking().SingleOrDefaultAsync(x => x.Code == code, cancellationToken);
+
+            if (dl == null)
+            {
+                throw new Exception($"حساب تفصیلی با کد {code} در سپیدار پیدا نشد.");
+            }
+
+            return dl;
+        }
+
         private async Task<int> GetFiscalYearIdAsync(DateTime date, CancellationToken cancellationToken = default)
         {
-            var fiscalYear = await s1Db.FiscalYears.AsNoTracking()
+            var fiscalYear = await sepidarContext.FiscalYears.AsNoTracking()
                 .Where(x => x.StartDate <= date && x.EndDate >= date)
                 .Select(x => new {
                     x.FiscalYearId,
@@ -124,7 +153,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
         private async Task<CurrentFinancialYearDto> GetCurrentFinancialYearSpidar()
         {
-            var currentYearSpidar = await s1Db.FiscalYears
+            var currentYearSpidar = await sepidarContext.FiscalYears
                 .AsNoTracking()
                 .OrderByDescending(f => f.StartDate)
                 .Select(f => new CurrentFinancialYearDto {
@@ -164,7 +193,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
             foreach (var code in parts)
             {
-                var accounts = await s1Db.Accounts
+                var accounts = await sepidarContext.Accounts
                     .Where(x => x.ParentAccountRef == parentId && x.Code == code)
                     .Select(x => new {
                         x.AccountId,
@@ -192,7 +221,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
         private async Task<int> GetNextIdAsync(string tableName, int incValue = 1, CancellationToken cancellationToken = default)
         {
-            var connection = s1Db.Database.GetDbConnection();
+            var connection = sepidarContext.Database.GetDbConnection();
 
             await using var command = connection.CreateCommand();
 
@@ -218,7 +247,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
             command.Parameters.Add(tableParameter);
             command.Parameters.Add(incParameter);
 
-            var transaction = s1Db.Database.CurrentTransaction;
+            var transaction = sepidarContext.Database.CurrentTransaction;
 
             if (transaction != null)
             {
@@ -227,6 +256,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
             var result = await command.ExecuteScalarAsync(cancellationToken);
 
+
             return Convert.ToInt32(result);
         }
 
@@ -234,17 +264,17 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
         //--------------------------------------------------------- PaymentHeader ---------------------------------------------------------
         public async Task<PaymentHeader> GetPaymentHeader(int id, CancellationToken cancellationToken = default)
         {
-            var paymentHeader = await s1Db.PaymentHeaders
+            var paymentHeader = await sepidarContext.PaymentHeaders
                 .AsNoTracking()
                 .Where(x => x.PaymentHeaderId == id)
-                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+                .FirstOrDefaultAsync(cancellationToken);
 
             return paymentHeader;
         }
 
         private async Task<int> GetNextPaymentHeaderNumberAsync(int fiscalYearId, CancellationToken cancellationToken = default)
         {
-            var lastNumber = await s1Db.PaymentHeaders
+            var lastNumber = await sepidarContext.PaymentHeaders
                 .AsNoTracking()
                 .Where(x => x.FiscalYearRef == fiscalYearId)
                 .MaxAsync(x => (int?)x.Number, cancellationToken) ?? 0;
@@ -252,9 +282,10 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
             return lastNumber + 1;
         }
 
-        public async Task<int> AddPaymentHeaderAsync(Cash cash, CancellationToken cancellationToken = default)
+
+        private async Task<bool> AddPaymentHeaderAsync(Cash cash, int tafsiliId, CancellationToken cancellationToken = default)
         {
-            await using var trans = await s1Db.Database.BeginTransactionAsync(cancellationToken);
+            await using var trans = await sepidarContext.Database.BeginTransactionAsync(cancellationToken);
 
             try
             {
@@ -270,13 +301,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                 //var fiscalYearRef = await GetFiscalYearIdAsync(cash.CostDateMiladi, cancellationToken);
                 var currentFinancialYear = await GetCurrentFinancialYearSpidar();
 
-                var cashYear = int.Parse(TextService.ToEnglishNumber(cash.CostDate?.Substring(0, 4)));
-                var sepidarYear = int.Parse(TextService.ToEnglishNumber(currentFinancialYear.Title));
-
-                if (cashYear != sepidarYear)
-                {
-                    throw new Exception("سال مالی با تاریخ پرداخت مغایرت دارد");
-                }
+                CheckFiscalYearByCash(cash, currentFinancialYear);
 
                 var fiscalYearId = currentFinancialYear.FiscalYearId;
 
@@ -324,22 +349,22 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
 
                 // Add PaymentDraft
-                var paymentDraft = await GeneratePaymentDraftAsync(cash, paymentHeader, cancellationToken);
+                var paymentDraft = await GeneratePaymentDraftAsync(cash, tafsiliId, paymentHeader, cancellationToken);
                 paymentHeader.PaymentDrafts = new List<PaymentDraft>();
                 paymentHeader.PaymentDrafts.Add(paymentDraft);
 
-                s1Db.PaymentHeaders.Add(paymentHeader);
-                await s1Db.SaveChangesAsync(cancellationToken);
+                sepidarContext.PaymentHeaders.Add(paymentHeader);
+                await sepidarContext.SaveChangesAsync(cancellationToken);
 
                 // Add Voucher & VoucherItem
                 var voucher = await AddVoucherAsync(cash, paymentHeader, cancellationToken);
                 paymentHeader.Voucher = voucher;
                 paymentHeader.Version = 2;
 
-                await s1Db.SaveChangesAsync(cancellationToken);
+                await sepidarContext.SaveChangesAsync(cancellationToken);
                 await trans.CommitAsync(cancellationToken);
 
-                return paymentHeaderId;
+                return true;
             }
             catch (Exception e)
             {
@@ -349,74 +374,46 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
             }
         }
 
+        private static bool CheckFiscalYearByCash(Cash cash, CurrentFinancialYearDto currentFinancialYear)
+        {
+            var cashYear = int.Parse(TextService.ToEnglishNumber(cash.CostDate?.Substring(0, 4)));
+            var sepidarYear = int.Parse(TextService.ToEnglishNumber(currentFinancialYear.Title));
+
+            if (cashYear != sepidarYear)
+            {
+                throw new Exception("سال مالی با تاریخ پرداخت مغایرت دارد");
+            }
+
+            return true;
+        }
+
         //--------------------------------------------------------- PaymentDraft ---------------------------------------------------------
 
-        /*private async Task<int> GetSepidarBankAccountIdAsync(Cash cash, CancellationToken cancellationToken = default)
+        private async Task<int> GetSepidarBankAccountIdAsync(int dlRef, CancellationToken cancellationToken = default)
         {
-            var accountCode = cash.BankAccount?.AccountCode.ToString();
-
-            if (string.IsNullOrWhiteSpace(accountCode))
-            {
-                throw new InvalidOperationException($"کد حساب بانکی برای رکورد {cash.Serial} مشخص نشده است.");
-            }
-
-            var bankAccounts = await s1Db.SepidarBankAccounts
+            var bankAccountRef = await sepidarContext.SepidarBankAccounts
                 .AsNoTracking()
-                .Where(x => x.AccountNo == accountCode)
-                .Select(x => new {
-                    x.BankAccountId,
-                    x.AccountNo,
-                    x.DlRef
-                })
-                .ToListAsync(cancellationToken);
-
-            if (bankAccounts.Count == 0)
-            {
-                throw new InvalidOperationException($"حساب بانکی با کد {accountCode} در سپیدار پیدا نشد.");
-            }
-
-            if (bankAccounts.Count > 1)
-            {
-                throw new InvalidOperationException($"چند حساب بانکی با کد {accountCode} در سپیدار پیدا شد.");
-            }
-
-            return bankAccounts[0].BankAccountId;
-        }*/
+                .Where(f => f.DlRef == dlRef)
+                .Select(f => f.BankAccountId)
+                .FirstOrDefaultAsync(cancellationToken);
 
 
-        private async Task<PaymentDraft> GeneratePaymentDraftAsync(Cash cash, PaymentHeader paymentHeader,
+            return bankAccountRef;
+        }
+
+
+        private async Task<PaymentDraft> GeneratePaymentDraftAsync(Cash cash, int dlRef, PaymentHeader paymentHeader,
             CancellationToken cancellationToken = default)
         {
-            var exSoftwareId = Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138"); // پارامتر ورودی
-
             // 1. پیدا کردن حساب بانکی سپیدار
-            //var bankAccountRef = await GetSepidarBankAccountIdAsync(cash, cancellationToken);
-
+            var bankAccountRef = await GetSepidarBankAccountIdAsync(dlRef, cancellationToken);
 
             // 2. ساخت PaymentDraft
             var paymentDraftId = await GetNextIdAsync("RPA.PaymentDraft", cancellationToken: cancellationToken);
 
-            var cashier = await db.Cashiers.AsNoTracking()
-                .Where(f => f.UserId.ToString() == cash.UserCreatorID)
-                .Include(f => f.BankAccount)
-                .ThenInclude(f => f.BankAccountExternalSoftwares)
-                .FirstOrDefaultAsync();
-
-            var dlRef = cashier.BankAccount.BankAccountExternalSoftwares
-                .Where(f => f.ExSoftwareId == exSoftwareId)
-                .Select(f => f.RefId)
-                .FirstOrDefault();
-
-            var bankAccountRef = await s1Db.SepidarBankAccounts
-                .AsNoTracking()
-                .Where(f => f.DlRef == int.Parse(dlRef))
-                .Select(f => f.BankAccountId)
-                .FirstOrDefaultAsync();
-
-
             var paymentDraft = new PaymentDraft {
                 PaymentDraftId = paymentDraftId,
-                Number = "0", // فعلا (باید اصلاح شود)
+                Number = "0", // شماره پیگیری پرداخت
                 Date = cash.CostDateMiladi,
                 Amount = cash.Amount,
                 BankAccountRef = bankAccountRef,
@@ -440,7 +437,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
         //--------------------------------------------------------- VOUCHER ---------------------------------------------------------
         private async Task<int> GetNextVoucherNumberAsync(int fiscalYearId, CancellationToken cancellationToken = default)
         {
-            var lastNumber = await s1Db.Vouchers
+            var lastNumber = await sepidarContext.Vouchers
                 .AsNoTracking()
                 .Where(x => x.FiscalYearRef == fiscalYearId)
                 .MaxAsync(x => (int?)x.Number, cancellationToken) ?? 0;
@@ -450,12 +447,222 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
         private async Task<int> GetNextVoucherDailyNumberAsync(DateTime date, int fiscalYearId, CancellationToken cancellationToken = default)
         {
-            var lastDailyNumber = await s1Db.Vouchers
+            var lastDailyNumber = await sepidarContext.Vouchers
                 .AsNoTracking()
                 .Where(x => x.FiscalYearRef == fiscalYearId && x.Date.Date == date.Date)
                 .MaxAsync(x => (int?)x.DailyNumber, cancellationToken) ?? 0;
 
             return lastDailyNumber + 1;
+        }
+
+        private const string PaymentIssuerEntityName2 =
+            "SG.Accounting.VoucherManagement.Common.DsVoucher, " +
+            "SG.Accounting.VoucherManagement.Common, " +
+            "Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
+
+        public async Task<bool> AddVoucherAsync2(Cash cash, int dlref, CancellationToken cancellationToken = default)
+        {
+            await using var trans = await sepidarContext.Database.BeginTransactionAsync(cancellationToken);
+
+            try
+            {
+                var voucherId = await GetNextIdAsync("ACC.Voucher", cancellationToken: cancellationToken);
+
+                var currentFinancialYear = await GetCurrentFinancialYearSpidar();
+                CheckFiscalYearByCash(cash, currentFinancialYear);
+                var fiscalYearId = currentFinancialYear.FiscalYearId;
+
+                var voucherNumber = await GetNextVoucherNumberAsync(fiscalYearId, cancellationToken);
+                var dailyNumber = await GetNextVoucherDailyNumberAsync(cash.CostDateMiladi, fiscalYearId, cancellationToken);
+
+                var voucher = new Voucher {
+                    VoucherId = voucherId,
+                    Number = voucherNumber,
+                    Date = cash.CostDateMiladi,
+                    ReferenceNumber = voucherNumber,
+                    State = 1,
+                    Type = 1,
+                    FiscalYearRef = fiscalYearId,
+                    Description = cash.CostDescription,
+                    Description_En = cash.CostDescription,
+                    Version = 1,
+                    Creator = 1,
+                    CreationDate = DateTime.Now,
+                    LastModifier = 1,
+                    LastModificationDate = DateTime.Now,
+                    DailyNumber = dailyNumber,
+                    IssuerSystem = 3,
+                    IsMerged = false,
+                    MergedIssuerSystem = null
+                };
+
+                var voucherItems = new List<VoucherItem>();
+
+
+                var voucherItemCount = cash.Fee > 0 ? 4 : 2;
+                var lastVoucherItemId = await GetNextIdAsync("ACC.VoucherItem", voucherItemCount, cancellationToken);
+                var firstVoucherItemId = lastVoucherItemId - voucherItemCount + 1;
+
+                // =========================================================
+                // Row 1 - بدهکار: حساب هزینه
+                // =========================================================
+
+                var moeinCode = cash.CostTitle.MoeinCode.ToString();
+                var accountSlRef = await GetAccountIdByMoeinCodeAsync(moeinCode, cancellationToken);
+
+                var debitDlRef = await GetVoucherItemDlRefAsync(accountSlRef, dlref, cancellationToken);
+
+                var debitItem = new VoucherItem {
+                    VoucherItemId = firstVoucherItemId,
+                    VoucherRef = voucher.VoucherId,
+                    RowNumber = 1,
+
+                    AccountSLRef = accountSlRef,
+
+                    DLRef = debitDlRef,
+
+                    Debit = cash.Amount,
+
+                    Credit = 0,
+
+                    CurrencyRef = null,
+                    CurrencyRate = null,
+                    CurrencyDebit = null,
+                    CurrencyCredit = null,
+
+                    TrackingNumber = null, // تفاوت بین دو فانکشن مشترک
+                    TrackingDate = null, // تفاوت بین دو فانکشن مشترک
+
+                    IssuerEntityName = PaymentIssuerEntityName2, //// تفاوت بین دو فانکشن مشترک
+                    IssuerEntityRef = firstVoucherItemId,
+                    Description = cash.CostDescription,
+                    Description_En = cash.CostDescription,
+                    Version = 1
+                };
+
+                voucherItems.Add(debitItem);
+
+
+                if (cash.Fee > 0)
+                {
+                    const string feeDescription = "بابت هزینه کارمزد خدمات بانکی";
+
+                    voucherItems.Add(new VoucherItem {
+                        VoucherItemId = firstVoucherItemId + 1,
+                        VoucherRef = voucher.VoucherId,
+
+                        RowNumber = voucherItems.Count + 1,
+
+                        AccountSLRef = await GetAccountIdByMoeinCodeAsync("7704", cancellationToken),
+
+                        DLRef = null,
+
+                        Debit = cash.Fee,
+                        Credit = 0,
+
+                        CurrencyRef = null,
+                        CurrencyRate = null,
+                        CurrencyDebit = null,
+                        CurrencyCredit = null,
+
+                        TrackingNumber = null,
+                        TrackingDate = null,
+
+                        IssuerEntityName = PaymentIssuerEntityName2,
+                        IssuerEntityRef = firstVoucherItemId + 1,
+
+                        Description = feeDescription,
+                        Description_En = feeDescription,
+
+                        Version = 1
+                    });
+                }
+
+
+                // =========================================================
+                // Row 2 - بستانکار: حساب بانکی
+                // =========================================================
+                const int bankAccountSlRef = 718; // تفاوت بین دو فانکشن مشترک
+                var creditItem = new VoucherItem {
+                    VoucherItemId = firstVoucherItemId + (cash.Fee > 0 ? 2 : 1),
+                    VoucherRef = voucher.VoucherId,
+
+                    RowNumber = voucherItems.Count + 1,
+
+                    AccountSLRef = bankAccountSlRef,
+
+                    DLRef = dlref,
+
+                    Debit = 0,
+                    Credit = cash.Amount,
+
+                    CurrencyRef = null,
+                    CurrencyRate = null,
+                    CurrencyDebit = null,
+                    CurrencyCredit = null,
+
+                    TrackingNumber = null,
+                    TrackingDate = null,
+
+                    IssuerEntityName = PaymentIssuerEntityName2,
+                    IssuerEntityRef = firstVoucherItemId + (cash.Fee > 0 ? 2 : 1),
+
+                    Description = cash.CostDescription,
+                    Description_En = cash.CostDescription,
+
+                    Version = 1
+                };
+
+                voucherItems.Add(creditItem);
+
+
+                if (cash.Fee > 0)
+                {
+                    voucherItems.Add(new VoucherItem {
+                        VoucherItemId = firstVoucherItemId + 3,
+                        VoucherRef = voucher.VoucherId,
+
+                        RowNumber = voucherItems.Count + 1,
+
+                        AccountSLRef = bankAccountSlRef,
+
+                        DLRef = dlref,
+
+                        Debit = 0,
+                        Credit = cash.Fee,
+
+                        CurrencyRef = null,
+                        CurrencyRate = null,
+                        CurrencyDebit = null,
+                        CurrencyCredit = null,
+
+                        TrackingNumber = null,
+                        TrackingDate = null,
+
+                        IssuerEntityName = PaymentIssuerEntityName,
+                        IssuerEntityRef = firstVoucherItemId + 3,
+
+                        Description = cash.CostDescription,
+                        Description_En = cash.CostDescription,
+
+                        Version = 1
+                    });
+                }
+
+                voucher.VoucherItems = voucherItems;
+
+                sepidarContext.Vouchers.Add(voucher);
+                await sepidarContext.SaveChangesAsync(cancellationToken);
+                await trans.CommitAsync(cancellationToken);
+                return true;
+            }
+            catch (Exception e)
+            {
+                await trans.RollbackAsync(cancellationToken);
+
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
 
@@ -512,7 +719,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                 // TODO:
                 // اگر PaymentDraft را قبلاً ذخیره کرده‌ای،
                 // بهتر است اینجا از همان رکورد موجود استفاده شود.
-                var paymentDraft = await s1Db.PaymentDrafts.AsNoTracking()
+                var paymentDraft = await sepidarContext.PaymentDrafts.AsNoTracking()
                     .FirstOrDefaultAsync(x => x.PaymentHeaderRef == paymentHeader.PaymentHeaderId, cancellationToken);
 
                 if (paymentDraft == null)
@@ -526,7 +733,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                 // 6. حساب بانکی را بررسی می‌کنیم
                 // ---------------------------------------------
 
-                var bankAccount = await s1Db.SepidarBankAccounts
+                var bankAccount = await sepidarContext.SepidarBankAccounts
                     .AsNoTracking()
                     .SingleOrDefaultAsync(x => x.BankAccountId == paymentDraft.BankAccountRef.Value, cancellationToken);
 
@@ -538,7 +745,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                 // 7. DL بانک
                 // ---------------------------------------------
 
-                var bankDlExists = await s1Db.DLs
+                var bankDlExists = await sepidarContext.DLs
                     .AsNoTracking()
                     .AnyAsync(x => x.DLId == bankAccount.DlRef, cancellationToken);
 
@@ -550,7 +757,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                 // 8. DL مربوط به PaymentHeader
                 // ---------------------------------------------
 
-                var paymentHeaderDlExists = await s1Db.DLs
+                var paymentHeaderDlExists = await sepidarContext.DLs
                     .AsNoTracking()
                     .AnyAsync(x => x.DLId == paymentHeader.DlRef, cancellationToken);
 
@@ -562,7 +769,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                 // 9. حساب هزینه
                 // ---------------------------------------------
 
-                var expenseAccount = await s1Db.Accounts
+                var expenseAccount = await sepidarContext.Accounts
                     .AsNoTracking()
                     .Where(x => x.AccountId == paymentHeader.AccountSlRef.Value)
                     .Select(x => new {
@@ -583,7 +790,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                 // TODO: Mapping واقعی BankAccount -> AccountSLRef
                 const int bankAccountSlRef = 717;
 
-                var bankAccountEntity = await s1Db.Accounts
+                var bankAccountEntity = await sepidarContext.Accounts
                     .AsNoTracking()
                     .Where(x => x.AccountId == bankAccountSlRef)
                     .Select(x => new { x.AccountId, x.HasTracking })
@@ -599,7 +806,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
                 if (cash.Fee > 0)
                 {
-                    var feeAccount = await s1Db.Accounts
+                    var feeAccount = await sepidarContext.Accounts
                         .AsNoTracking()
                         .Where(x => x.AccountId == paymentHeader.BankFeeSlRef!.Value)
                         .Select(x => x.AccountId)
@@ -663,7 +870,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
                 voucher.VoucherItems = await GenerateVoucherItemsAsync(cash, paymentHeader, paymentDraft, voucher, cancellationToken);
 
-                s1Db.Vouchers.Add(voucher);
+                sepidarContext.Vouchers.Add(voucher);
 
                 return voucher;
 
@@ -681,7 +888,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
         private async Task<int?> GetVoucherItemDlRefAsync(int accountSlRef, int dlRef, CancellationToken cancellationToken = default)
         {
-            var account = await s1Db.Accounts
+            var account = await sepidarContext.Accounts
                 .AsNoTracking()
                 .Where(x => x.AccountId == accountSlRef)
                 .Select(x => new {
@@ -698,7 +905,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
         private async Task<(string TrackingNumber, DateTime? TrackingDate)> GetTrackingAsync(int accountId, PaymentDraft paymentDraft,
             CancellationToken cancellationToken = default)
         {
-            var hasTracking = await s1Db.Accounts
+            var hasTracking = await sepidarContext.Accounts
                 .AsNoTracking()
                 .Where(x => x.AccountId == accountId)
                 .Select(x => x.HasTracking)
@@ -732,7 +939,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
             if (!paymentDraft.BankAccountRef.HasValue)
                 throw new InvalidOperationException("حساب بانکی PaymentDraft مشخص نشده است.");
 
-            var bankAccount = await s1Db.SepidarBankAccounts
+            var bankAccount = await sepidarContext.SepidarBankAccounts
                 .AsNoTracking()
                 .SingleOrDefaultAsync(x => x.BankAccountId == paymentDraft.BankAccountRef.Value, cancellationToken);
 
@@ -765,14 +972,14 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
             const int bankAccountSlRef = 717; // TODO: فعلاً مطابق داده واقعی؛ بعداً Mapping شود
 
-            var bankDl = await s1Db.DLs.AsNoTracking().SingleOrDefaultAsync(x => x.DLId == bankAccount.DlRef, cancellationToken);
+            var bankDl = await sepidarContext.DLs.AsNoTracking().SingleOrDefaultAsync(x => x.DLId == bankAccount.DlRef, cancellationToken);
 
             if (bankDl == null)
             {
                 throw new InvalidOperationException($"DL حساب بانکی با شناسه {bankAccount.DlRef} در سپیدار پیدا نشد.");
             }
 
-            var paymentHeaderDl = await s1Db.DLs.AsNoTracking().SingleOrDefaultAsync(x => x.DLId == paymentHeader.DlRef, cancellationToken);
+            var paymentHeaderDl = await sepidarContext.DLs.AsNoTracking().SingleOrDefaultAsync(x => x.DLId == paymentHeader.DlRef, cancellationToken);
 
             if (paymentHeaderDl == null)
             {
@@ -861,18 +1068,6 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
 
                 AccountSLRef = paymentHeader.AccountSlRef.Value,
 
-                /*
-                 * نکته:
-                 * در بیشتر نمونه‌ها PaymentHeader.DlRef به VoucherItem منتقل شده.
-                 *
-                 * ولی تست AccountSLRef=850 داشت:
-                 * PaymentHeader.DlRef = 5
-                 * VoucherItem.DLRef = NULL
-                 *
-                 * چون Account 850، HasDL = false بود.
-                 *
-                 * پس باید HasDL حساب را بررسی کنیم.
-                 */
                 DLRef = debitDlRef,
 
                 Debit = cash.Amount,
@@ -885,14 +1080,6 @@ namespace CRM.EndPoint.FrontEnd.Services.Factor {
                 CurrencyDebit = null,
                 CurrencyCredit = null,
 
-                /*
-                 * در تست مالی:
-                 * TrackingNumber = PaymentDraft.Number
-                 * TrackingDate = PaymentDraft.Date
-                 *
-                 * ولی در تمام حساب‌ها الزاماً Tracking فعال نیست.
-                 * TODO: بهتر است HasTracking حساب بررسی شود.
-                 */
                 TrackingNumber = debitTracking.TrackingNumber, // TODO
                 TrackingDate = debitTracking.TrackingDate, // TODO
 

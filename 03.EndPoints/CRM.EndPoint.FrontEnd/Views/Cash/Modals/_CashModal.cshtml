@@ -9,6 +9,15 @@
             <div class="modal-body pb-2">
                 <form id="cashForm" class="d-flex flex-column gap-2">
                     <div>
+                        <label for="cashierTitleId">عنوان تنخواه:</label>
+                        <select id="cashierTitleId" class="form-select form-select-sm" name="cashierId" required>
+                            <option value="">انتخاب</option>
+                            @foreach (var item in Model?.CashierTitles ?? []) {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
                         <label for="cashCostTitle">عنوان هزینه:</label>
                         <select id="cashCostTitle" class="form-select form-select-sm" name="costTitleId" required>
                             <option value="">انتخاب</option>

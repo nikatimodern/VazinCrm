@@ -15,8 +15,8 @@ using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Cash;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
-using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
+using CRM.EndPoint.FrontEnd.Services.SepidarServices;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
@@ -35,12 +35,14 @@ public class CashController : Controller {
     private readonly DateTimeServices dtService;
     private readonly LogSystemService logSystemService;
     private readonly FileSaver fileSaver;
-    private readonly SepidarService sepidarService;
+    private readonly Sepidar1Service sepidar1Service;
+    private readonly Sepidar2Service sepidar2Service;
     private readonly Sepidar1ContextDb s1Db;
     private readonly Sepidar2ContextDb s2Db;
 
     public CashController(CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, DateTimeServices dtService,
-        LogSystemService logSystemService, FileSaver fileSaver, SepidarService sepidarService, Sepidar1ContextDb s1Db, Sepidar2ContextDb s2Db)
+        LogSystemService logSystemService, FileSaver fileSaver, Sepidar1Service sepidar1Service, Sepidar2Service sepidar2Service,
+        Sepidar1ContextDb s1Db, Sepidar2ContextDb s2Db)
     {
         this.db = db;
         this.udb = udb;
@@ -48,7 +50,8 @@ public class CashController : Controller {
         this.dtService = dtService;
         this.logSystemService = logSystemService;
         this.fileSaver = fileSaver;
-        this.sepidarService = sepidarService;
+        this.sepidar1Service = sepidar1Service;
+        this.sepidar2Service = sepidar2Service;
         this.s1Db = s1Db;
         this.s2Db = s2Db;
     }
@@ -57,10 +60,19 @@ public class CashController : Controller {
     public async Task<IActionResult> Index()
     {
         var isTaminUser = User.IsTamin();
+
+        var cashierTitles = await db.Cashiers
+            .Where(f => f.UserId == Guid.Parse(User.GetUserId()))
+            .Select(f => new SelectOptionDto<Guid> {
+                Text = f.Title,
+                Value = f.Id,
+            }).ToListAsync();
+
         var model = new CashIndexVModel {
             IsTaminUser = isTaminUser,
             CashCenters = await GetAllCashCenters(),
-            CashTitles = await GetAllCashTitles(isTaminUser)
+            CashTitles = await GetAllCashTitles(isTaminUser),
+            CashierTitles = cashierTitles
         };
         return View(model);
     }
@@ -116,6 +128,16 @@ public class CashController : Controller {
 
         if (model.Amount <= 0) return BadRequest("مبلغ هزینه برای معتبر نیست.");
 
+        var cashier = await db.Cashiers.AsNoTracking().Include(f => f.CashierExternalSoftwares).FirstOrDefaultAsync(f => f.Id == model.CashierId);
+
+        model.CashExternalSoftwares = cashier.CashierExternalSoftwares
+            .Select(x => new CashExternalSoftware {
+                ExternalSoftwareId = x.ExternalSoftwareId,
+                TafsiliCode = x.TafsiliCode,
+            })
+            .ToList();
+
+
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
         {
@@ -128,6 +150,7 @@ public class CashController : Controller {
             {
                 model.UserCreator = user.FullName;
                 model.UserCreatorID = user.Id;
+
                 db.Cashes.Add(model);
 
                 await db.SaveChangesAsync();
@@ -1297,54 +1320,70 @@ public class CashController : Controller {
 
 
     [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
-    public async Task<IActionResult> SendCashToSepidar(Guid id)
+    public async Task<IActionResult> SendCashesToExternalSoftware([FromBody] SendCashesToExternalSoftwaresDto model)
     {
+        if (model == null) return BadRequest();
+
         try
         {
-            var isMapped = await db.ExternalMappings.AnyAsync(f => f.EntityId == id && f.MapType == ExternalMappingTypeEnum.تنخواه);
-            if (isMapped) return BadRequest("این تنخواه قبلا منتقل شده است");
-
-            var cash = await db.Cashes.Include(f => f.CostCenter).Include(f => f.CostTitle).FirstOrDefaultAsync(f => f.Id == id);
-            if (cash == null)
-                return NotFound("تنخواه مورد نظر یافت نشد.");
-            if (cash.CostCenter == null || cash.CostTitle == null)
-                return NotFound("اطلاعات ثبت‌شده در تنخواه ناقص می باشد");
-
-
-            var paymentHeaderId = await sepidarService.AddPaymentHeaderAsync(cash);
-
-
-            db.ExternalMappings.Add(new ExternalMapping {
-                ExternalSoftwareId = Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138"),
-                EntityName = "Cash",
-                EntityId = cash.Id,
-                MapType = ExternalMappingTypeEnum.تنخواه,
-                MapTypeTxt = nameof(ExternalMappingTypeEnum.تنخواه),
-            });
-            await db.SaveChangesAsync();
-
-            return Ok(paymentHeaderId);
-        }
-        catch (Exception e)
-        {
-            return BadRequest(e.Message);
-        }
-    }
+            foreach (var externalSoftwareId in model.ExternalSoftwareIds ?? [])
+            {
+                SepidarService sepidarService = null;
+                if (externalSoftwareId == Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138"))
+                {
+                    sepidarService = sepidar1Service;
+                } else if (externalSoftwareId == Guid.Parse("d6c3e8a7-1435-47d5-0489-08df26c5e2ca"))
+                {
+                    sepidarService = sepidar2Service;
+                } else
+                {
+                    return BadRequest();
+                }
 
 
-    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
-    public async Task<IActionResult> AddVoucherSepidar(Guid cashId, int paymentHeaderId)
-    {
-        try
-        {
-            var cash = await db.Cashes.Include(f => f.CostCenter).Include(f => f.CostTitle).FirstOrDefaultAsync(f => f.Id == cashId);
-            if (cash == null) return NotFound("تنخواه مورد نظر یافت نشد.");
+                foreach (var id in model.CashIds ?? [])
+                {
+                    var isMapped = await db.ExternalMappings.AnyAsync(f =>
+                        f.EntityId == id && 
+                        f.ExternalSoftwareId == externalSoftwareId && 
+                        f.MapType == ExternalMappingTypeEnum.تنخواه);
+                    if (isMapped) continue;
+
+                    var cash = await db.Cashes
+                        .Include(f => f.CostCenter)
+                        .Include(f => f.CostTitle)
+                        .Include(f => f.CashExternalSoftwares)
+                        .FirstOrDefaultAsync(f => f.Id == id);
+
+                    if (cash?.CostCenter == null || cash.CostTitle == null)
+                        continue;
 
 
-            var paymentHeader = await sepidarService.GetPaymentHeader(paymentHeaderId);
-            if (paymentHeader == null) return NotFound("");
+                    if (cash.Status != CashStatusEnum.تایید_شده)
+                        continue;
 
-            await sepidarService.AddVoucherAsync(cash, paymentHeader);
+                    var tafsiliCode = cash.CashExternalSoftwares
+                        .Where(f => f.ExternalSoftwareId == externalSoftwareId)
+                        .Select(f => f.TafsiliCode)
+                        .FirstOrDefault();
+
+                    var user = await userManager.GetUserAsync(HttpContext.User);
+
+                    if (await sepidarService.SentCashToSepidar(cash, tafsiliCode))
+                    {
+                        db.ExternalMappings.Add(new ExternalMapping {
+                            ExternalSoftwareId = externalSoftwareId,
+                            EntityName = nameof(cash),
+                            EntityId = cash.Id,
+                            MapType = ExternalMappingTypeEnum.تنخواه,
+                            MapTypeTxt = nameof(ExternalMappingTypeEnum.تنخواه),
+                            UserCreatorID = user.Id,
+                            UserCreator = user.FullName
+                        });
+                        await db.SaveChangesAsync();
+                    }
+                }
+            }
 
             return Ok();
         }
@@ -1353,6 +1392,7 @@ public class CashController : Controller {
             return BadRequest(e.Message);
         }
     }
+
 
     [HttpGet]
     public async Task<IActionResult> GetAllExternalSoftware()

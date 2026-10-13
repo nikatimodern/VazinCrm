@@ -26,7 +26,8 @@ public class ExternalSoftware {
 
     public IList<ExternalMapping> ExternalMappings { get; set; }
     public IList<BankAccountExternalSoftware> BankAccountExternalSoftwares { get; set; }
-    public IList<CashierExternalSoftware> CashierMappings { get; set; }
+    public IList<CashierExternalSoftware> CashierExternalSoftwares { get; set; }
+    public IList<CashExternalSoftware> CashExternalSoftwares { get; set; }
 }
 
 public enum SoftwareTypeEnum {

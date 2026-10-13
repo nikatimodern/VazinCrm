@@ -114,6 +114,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("MapTypeTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ExternalSoftwareId");
@@ -1079,6 +1085,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<Guid?>("CashGroupId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("CashierId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("CommentText")
                         .HasColumnType("nvarchar(max)");
 
@@ -1158,6 +1167,8 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.HasIndex("CashGroupId");
 
+                    b.HasIndex("CashierId");
+
                     b.HasIndex("CostCenterId");
 
                     b.HasIndex("CostTitleId");
@@ -1167,6 +1178,30 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasFilter("[PaymentVoucherNumber] IS NOT NULL");
 
                     b.ToTable("Cashes");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.CashExternalSoftware", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CashId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ExternalSoftwareId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TafsiliCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CashId");
+
+                    b.HasIndex("ExternalSoftwareId");
+
+                    b.ToTable("CashExternalSoftwares");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.CashGroup", b =>
@@ -5433,6 +5468,11 @@ namespace CRM.Infrastructures.Sql.Migrations
                         .HasForeignKey("CashGroupId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("CRM.Core.Domain.Cashes.Entities.Cashier", "Cashier")
+                        .WithMany("Cashes")
+                        .HasForeignKey("CashierId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("CRM.Core.Domain.Cashes.Entities.BaseCenterCash", "CostCenter")
                         .WithMany("Cashes")
                         .HasForeignKey("CostCenterId")
@@ -5449,9 +5489,30 @@ namespace CRM.Infrastructures.Sql.Migrations
 
                     b.Navigation("CashGroup");
 
+                    b.Navigation("Cashier");
+
                     b.Navigation("CostCenter");
 
                     b.Navigation("CostTitle");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.CashExternalSoftware", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Cashes.Entities.Cash", "Cash")
+                        .WithMany("CashExternalSoftwares")
+                        .HasForeignKey("CashId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CRM.Core.Domain.ASettings.Entities.ExternalSoftware", "ExternalSoftware")
+                        .WithMany("CashExternalSoftwares")
+                        .HasForeignKey("ExternalSoftwareId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Cash");
+
+                    b.Navigation("ExternalSoftware");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.CashOrderHead", b =>
@@ -5486,13 +5547,13 @@ namespace CRM.Infrastructures.Sql.Migrations
             modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.CashierExternalSoftware", b =>
                 {
                     b.HasOne("CRM.Core.Domain.Cashes.Entities.Cashier", "Cashier")
-                        .WithMany("CashierMappings")
+                        .WithMany("CashierExternalSoftwares")
                         .HasForeignKey("CashierId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("CRM.Core.Domain.ASettings.Entities.ExternalSoftware", "ExternalSoftware")
-                        .WithMany("CashierMappings")
+                        .WithMany("CashierExternalSoftwares")
                         .HasForeignKey("ExternalSoftwareId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -5980,7 +6041,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                 {
                     b.Navigation("BankAccountExternalSoftwares");
 
-                    b.Navigation("CashierMappings");
+                    b.Navigation("CashExternalSoftwares");
+
+                    b.Navigation("CashierExternalSoftwares");
 
                     b.Navigation("ExternalMappings");
                 });
@@ -6024,6 +6087,8 @@ namespace CRM.Infrastructures.Sql.Migrations
                 {
                     b.Navigation("Accountancy");
 
+                    b.Navigation("CashExternalSoftwares");
+
                     b.Navigation("CashOrderHeads");
                 });
 
@@ -6034,7 +6099,9 @@ namespace CRM.Infrastructures.Sql.Migrations
 
             modelBuilder.Entity("CRM.Core.Domain.Cashes.Entities.Cashier", b =>
                 {
-                    b.Navigation("CashierMappings");
+                    b.Navigation("Cashes");
+
+                    b.Navigation("CashierExternalSoftwares");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Chats.Entities.MainChat", b =>

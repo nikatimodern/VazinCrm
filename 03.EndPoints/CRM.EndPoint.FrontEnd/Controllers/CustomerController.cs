@@ -3,7 +3,6 @@ using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Customers.Enum;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.Services;
-using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
@@ -24,12 +23,13 @@ using CRM.EndPoint.FrontEnd.Models.PreFactor;
 using CRM.EndPoint.FrontEnd.Models.PushNotification;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
+using CRM.EndPoint.FrontEnd.Services.SepidarServices;
 
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
     public class CustomerController : Controller {
-        private readonly SepidarService sepidarService;
+        private readonly Sepidar1Service sepidar1Service;
         private readonly UserManager<AppUser> userManager;
         private readonly Service genService;
         private readonly DateTimeServices dtService;
@@ -41,12 +41,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly IPushQueue pushQueue;
         private readonly PreFactorService preFactorService;
 
-        public CustomerController(SepidarService sepidarService, UserManager<AppUser> userManager, Service GenService,
+        public CustomerController(Sepidar1Service sepidar1Service, UserManager<AppUser> userManager, Service GenService,
             DateTimeServices dtService, CRMContextDb db, UserContextDb udb,
             IHubContext<TaskHub> hub, IViewRenderService vrs, LogSystemService logSystemService, IPushQueue pushQueue,
             PreFactorService preFactorService)
         {
-            this.sepidarService = sepidarService;
+            this.sepidar1Service = sepidar1Service;
             this.userManager = userManager;
             genService = GenService;
             this.dtService = dtService;
@@ -933,13 +933,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (setting?.Sepidar != true) return NoContent();
 
-                var factors = await sepidarService.GetInvoicesByQuotationNumberAsync(pfSerialNumber);
+                var factors = await sepidar1Service.GetInvoicesByQuotationNumberAsync(pfSerialNumber);
 
                 if (passType == 1)
                 {
                     foreach (var factor in factors)
                     {
-                        factor.ExtraDescription = sepidarService.GetNoteInvoice(factor.InvoiceId);
+                        factor.ExtraDescription = sepidar1Service.GetNoteInvoice(factor.InvoiceId);
                     }
                 }
 

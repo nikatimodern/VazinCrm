@@ -16,6 +16,8 @@ let modelCash = {};
 let cashOrderHeadsSelectedIds = [];
 
 const cashModal = document.getElementById("cashModal");
+const cashGroupDetailModal = document.getElementById("cashGroupDetailModal");
+
 const costCenterElm = cashModal.querySelector("#cashCostCenter");
 document.addEventListener("DOMContentLoaded", async () => {
     
@@ -42,6 +44,11 @@ cashModal.addEventListener("hidden.bs.modal", () => {
     cashData = [];
     cashAttachments = [];
     cashOrderHeadsSelectedIds = [];
+});
+
+cashGroupDetailModal.addEventListener("hidden.bs.modal", () => {
+    cashModalSelection.hideSelectionMode();
+    cashIds = [];
 });
 
 async function initCashierSelectOpt() {
@@ -82,30 +89,21 @@ async function showEditCashModal(id) {
 }
 
 
-let externalSoftwares = [];
-let selectedExternalSoftwareId = null;
-let selectedCashId = null;
-let activeCashButton = null;
+const externalSoftwareModalElm = document.getElementById("chooseExternalSoftwareModal");
 
-const externalSoftwareModalElement = document.getElementById("externalSoftwareModal");
+const externalSoftwareList = externalSoftwareModalElm.querySelector("#externalSoftwareList");
+const sendCashToSoftwareBtn = externalSoftwareModalElm.querySelector("#sendCashToSoftwareBtn");
 
-
-const externalSoftwareList = document.getElementById("externalSoftwareList");
-
-const sendCashToSoftwareBtn = document.getElementById("sendCashToSoftwareBtn");
-
-async function sendCashToExternalSoftware(btn, id) {
-    selectedCashId = id;
-    activeCashButton = btn;
-    selectedExternalSoftwareId = null;
+async function showExternalSoftwareModal(id) {
+    cashIds = Array.isArray(id) ? id : [id];
     
-    sendCashToSoftwareBtn.disabled = true;
+    toggleElementsDisabled(sendCashToSoftwareBtn);
     
-    externalSoftwares = await sendApiRequest({
+    const externalSoftwares = await sendApiRequest({
         url: "/Cash/GetAllExternalSoftware",
     });
     
-    ModalToggle(externalSoftwareModalElement);
+    ModalToggle(externalSoftwareModalElm);
     
     if (!externalSoftwares || externalSoftwares.length === 0) {
         externalSoftwareList.innerHTML = `
@@ -116,12 +114,13 @@ async function sendCashToExternalSoftware(btn, id) {
         return;
     }
     
-    renderExternalSoftwares();
+    renderExternalSoftwares(externalSoftwares);
 }
 
-function renderExternalSoftwares() {
-    externalSoftwareList.innerHTML = externalSoftwares.map(software => `
-        <button type="button" class="external-software-card" data-software-id="${software.id}">
+function renderExternalSoftwares(softwares) {
+    externalSoftwareList.innerHTML = softwares.map(software => `
+        <label for="ex-software-${software.id}" type="button" class="external-software-card" data-software-id="${software.id}">
+            <input id="ex-software-${software.id}" type="checkbox" value="${software.id}" class="d-none">
             <span class="external-software-icon">
                 <svg style="width: 24px" viewBox="0 0 640 640" fill="currentColor"><path d="M335.9 84.2C326.1 78.6 314 78.6 304.1 84.2L80.1 212.2C67.5 219.4 61.3 234.2 65 248.2C68.7 262.2 81.5 272 96 272L128 272L128 480L128 480L76.8 518.4C68.7 524.4 64 533.9 64 544C64 561.7 78.3 576 96 576L544 576C561.7 576 576 561.7 576 544C576 533.9 571.3 524.4 563.2 518.4L512 480L512 272L544 272C558.5 272 571.2 262.2 574.9 248.2C578.6 234.2 572.4 219.4 559.8 212.2L335.8 84.2zM464 272L464 480L400 480L400 272L464 272zM352 272L352 480L288 480L288 272L352 272zM240 272L240 480L176 480L176 272L240 272zM320 160C337.7 160 352 174.3 352 192C352 209.7 337.7 224 320 224C302.3 224 288 209.7 288 192C288 174.3 302.3 160 320 160z"/></svg>
             </span>
@@ -129,69 +128,61 @@ function renderExternalSoftwares() {
                 <span class="external-software-title">${software.title}</span>
             </span>
             <i class="fa-solid fa-circle-check external-software-check"></i>
-        </button>
+        </label>
     `).join("");
     
     externalSoftwareList.querySelectorAll(".external-software-card").forEach(card => {
-        card.addEventListener("click", () => {
-            selectedExternalSoftwareId = card.dataset.softwareId;
+        const chkbox = card.querySelector("input[type='checkbox']");
+        
+        chkbox.addEventListener("change", () => {
+            if (chkbox.checked) {
+                card.classList.add("is-selected");
+            } else {
+                card.classList.remove("is-selected");
+            }
             
-            externalSoftwareList.querySelectorAll(".external-software-card").forEach(item => {
-                const selected = item === card;
-                item.classList.toggle("is-selected", selected);
-            });
-            
-            sendCashToSoftwareBtn.disabled = false;
+            const anyChecked = externalSoftwareList.querySelectorAll("input[type='checkbox']:checked").length > 0;
+            toggleElementsDisabled(sendCashToSoftwareBtn, !anyChecked);
         });
     });
 }
 
 
 sendCashToSoftwareBtn.addEventListener("click", async () => {
-    if (!selectedCashId || !selectedExternalSoftwareId) return;
     
-    toggleElementsDisabled([sendCashToSoftwareBtn, activeCashButton]);
+    toggleElementsDisabled(sendCashToSoftwareBtn);
     
-    console.log(selectedCashId, selectedExternalSoftwareId);
+    const selectedExternalSoftwareIds = Array.from(document.querySelectorAll(".external-software-card input[type='checkbox']:checked"))
+                                             .map(c => c.value);
     
-    /*    try {
-            await sendApiRequest({
-                url: "/Cash/SendCashToExternalSoftware",
-                params: {
-                    id: selectedCashId,
-                    externalSoftwareId: selectedExternalSoftwareId,
-                },
-                successMsg: "عملیات انتقال با موفقیت انجام شد",
-                onSuccess: () => ModalToggle(externalSoftwareModalElement, "hide"),
-            });
-        } finally {
-            if (activeCashButton) {
-                activeCashButton.disabled = false;
-            }
-            
-            sendCashToSoftwareBtn.disabled = !selectedExternalSoftwareId;
-        }*/
+    await sendCashesToExternalSoftware(selectedExternalSoftwareIds);
 });
 
-externalSoftwareModalElement.addEventListener("hidden.bs.modal", () => {
-    selectedExternalSoftwareId = null;
-    selectedCashId = null;
-    activeCashButton = null;
-    sendCashToSoftwareBtn.disabled = true;
+externalSoftwareModalElm.addEventListener("hidden.bs.modal", () => {
+    toggleElementsDisabled(sendCashToSoftwareBtn);
 });
 
-
-async function sendCashToSepidar(btn, id) {
-    btn.disabled = true;
+let cashIds = [];
+async function sendCashesToExternalSoftware(externalSoftwareIds) {
+    
+    const data = {
+        cashIds,
+        externalSoftwareIds,
+    };
+    
+    console.log(data);
+    
+    // return;
+    
     await sendApiRequest({
-        url: "/Cash/SendCashToSepidar",
-        params: { id },
+        url: "/Cash/SendCashesToExternalSoftware",
+        method: "POST",
+        data: data,
         successMsg: "عملیات انتقال با موفقیت انجام شد",
         onSuccess: () => {
-            
+            cashModalTbl?.ajax.reload(null, false);
         },
     });
-    btn.disabled = false;
 }
 
 
@@ -332,7 +323,7 @@ async function rejectCashGroup() {
                 params: { groupId: currentCashGroupId },
                 successMsg: "گروه با موفقیت برگشت داده شد",
                 onSuccess: () => {
-                    ModalToggle("cashGroupDetailModal", "hide");
+                    ModalToggle(cashGroupDetailModal, "hide");
                     cashGroupTbl?.ajax.reload(null, false);
                 },
             });
@@ -442,7 +433,7 @@ const getAllCashesDt = () => {
                     return `
                         <div class="inline-flex-center gap-1">
                         ${row.status === 2 ? `
-                            <button type="button" class="buttonGray" onclick="sendCashToExternalSoftware(this,'${row.id}')">ارسال به نرم‌افزار مالی</button>                       
+                            <button type="button" class="buttonGray" onclick="showExternalSoftwareModal('${row.id}')">ارسال به نرم‌افزار مالی</button>                       
                         ` : ""}
                             <button type="button" class="icon-button icon-button--gray" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
                             ${row.status === 0 ? `
@@ -783,13 +774,13 @@ function getAllCashesGroupDt() {
 function cashGroupModal(groupId, groupNumber, userCreator, sendDate, itemsCount, totalAmount) {
     currentCashGroupId = groupId;
     
-    document.getElementById("modalGroupNumber").textContent = groupNumber || "-";
-    document.getElementById("modalGroupUser").textContent = userCreator || "-";
-    document.getElementById("modalGroupDate").textContent = sendDate ? sendDate.split(" ")[0] : "-";
-    document.getElementById("modalGroupCount").textContent = itemsCount || "-";
-    document.getElementById("modalGroupTotal").textContent = totalAmount ? totalAmount.toLocaleString() : "0";
+    cashGroupDetailModal.querySelector("#modalGroupNumber").textContent = groupNumber || "-";
+    cashGroupDetailModal.querySelector("#modalGroupUser").textContent = userCreator || "-";
+    cashGroupDetailModal.querySelector("#modalGroupDate").textContent = sendDate ? sendDate.split(" ")[0] : "-";
+    cashGroupDetailModal.querySelector("#modalGroupCount").textContent = itemsCount || "-";
+    cashGroupDetailModal.querySelector("#modalGroupTotal").textContent = totalAmount ? totalAmount.toLocaleString() : "0";
     
-    ModalToggle("cashGroupDetailModal");
+    ModalToggle(cashGroupDetailModal);
     
     if (!cashModalTbl) {
         getAllCashesModalDt();
@@ -799,7 +790,7 @@ function cashGroupModal(groupId, groupNumber, userCreator, sendDate, itemsCount,
     }
 }
 
-
+let cashModalSelection;
 function getAllCashesModalDt() {
     cashModalTbl = $("#cashTableModal").DataTable({
         pageLength: 10,
@@ -887,7 +878,7 @@ function getAllCashesModalDt() {
                     return `
                         <div class="inline-flex-center gap-1">
                         ${row.status === 2 ? `
-                            <button type="button" class="buttonGray" onclick="sendCashToExternalSoftware(this,'${row.id}')">ارسال به نرم‌افزار مالی</button>                       
+                            <button type="button" class="buttonGray" onclick="showExternalSoftwareModal('${row.id}')">ارسال به نرم‌افزار مالی</button>                       
                         ` : ""}
                             <button type="button" class="icon-button icon-button--gray" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
                             ${row.status === 0 ? `
@@ -901,7 +892,7 @@ function getAllCashesModalDt() {
         ],
         layout: {
             ...layoutDatatable,
-            topEnd: {
+            /*topEnd: {
                 pageLength: true,
                 buttons: window.isAdminOrFinancial ? [
                     {
@@ -919,13 +910,50 @@ function getAllCashesModalDt() {
                         },
                     },
                 ] : [],
-            },
+            },*/
         },
         drawCallback: function () {
             const json = this.api()?.ajax.json();
             updateCashModalActionButtons(json?.data);
         },
     });
+    
+    
+    cashModalSelection = new SelectionManager({
+        container: "#cashTableModal tbody",
+        selectionBar: "#cashGroupDetailSelectionToolbar",
+        toggleBtn: "#sendGroupCashToExtrnalSoftwareBtn",
+        itemSelector: "tr:not(:has(td.dt-empty)):not(.child)",
+        selectedClass: "row-selected",
+        checkboxSelector: null,
+        
+        getItemKey: item => cashModalTbl.row(item).data()?.id,
+        
+        isSelectable: null, /*item => {
+            const data = cashModalTbl.row(item).data();
+            return data.status === 0;
+        },*/
+        
+        onAction: async (ids, selection) => {
+            await showExternalSoftwareModal(ids);
+            selection.hideSelectionMode();
+        },
+        
+        onSelectionModeEnter() {
+            cashGroupDetailModal.querySelector("#cashGroupDetailCard").classList.add("d-none");
+            /*cashGroupDetailModal.querySelector("#btnRejectGroup").classList.add("d-none");
+            cashGroupDetailModal.querySelector("#btnApproveGroup").classList.add("d-none");*/
+        },
+        
+        onSelectionModeExit() {
+            cashGroupDetailModal.querySelector("#cashGroupDetailCard").classList.remove("d-none");
+            /*cashGroupDetailModal.querySelector("#btnRejectGroup").classList.remove("d-none");
+            cashGroupDetailModal.querySelector("#btnApproveGroup").classList.remove("d-none");*/
+        },
+    });
+    
+    
+    cashModalTbl.on("draw.dt", () => cashModalSelection.refresh());
 }
 
 async function exportGroupCashToExcel() {
