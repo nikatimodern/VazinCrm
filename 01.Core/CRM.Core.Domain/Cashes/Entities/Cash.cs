@@ -44,7 +44,7 @@ namespace CRM.Core.Domain.Cashes.Entities {
         public IList<CashExternalSoftware> CashExternalSoftwares { get; set; }
         public ICollection<CashOrderHead> CashOrderHeads { get; set; }
 
-        public Cashier Cashier { get; set; } 
+//        public Cashier Cashier { get; set; } 
         public Guid? CashierId { get; set; }
         
         [NotMapped]

@@ -20,7 +20,7 @@ namespace CRM.Infrastructures.Sql.Cashes.Configs {
 
 
             builder.HasMany(f => f.Cashes)
-                .WithOne(f => f.Cashier)
+                .WithOne()
                 .HasForeignKey(f => f.CashierId)
                 .OnDelete(DeleteBehavior.NoAction);
         }
