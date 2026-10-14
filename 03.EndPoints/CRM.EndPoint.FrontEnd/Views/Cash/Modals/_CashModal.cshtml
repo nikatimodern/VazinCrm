@@ -9,6 +9,15 @@
             <div class="modal-body pb-2">
                 <form id="cashForm" class="d-flex flex-column gap-2">
                     <div>
+                        <label for="cashierTitleId">عنوان تنخواه:</label>
+                        <select id="cashierTitleId" class="form-select form-select-sm" name="cashierId" required>
+                            <option value="">انتخاب</option>
+                            @foreach (var item in Model?.CashierTitles ?? []) {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
                         <label for="cashCostTitle">عنوان هزینه:</label>
                         <select id="cashCostTitle" class="form-select form-select-sm" name="costTitleId" required>
                             <option value="">انتخاب</option>
@@ -49,15 +58,15 @@
                         <textarea id="cashDescription" class="form-control h-auto" name="costDescription" rows="3" required></textarea>
                     </div>
 
-                    @if (Model.IsTaminUser) {
-                        <div>
+                    @*@if (Model.IsTaminUser) {
+                        <div id="cashOrderHeadWrapper" class="d-none">
                             <label for="cashOrderHeadInp">بابت حواله تولید:</label>
                             <div class="input-group">
-                                <input id="cashOrderHeadInp" type="text" class="form-control direction-ltr" placeholder="حواله تولید.." disabled required readonly>
+                                <input id="cashOrderHeadInp" type="text" class="form-control direction-ltr" placeholder="حواله تولید.." disabled readonly>
                                 <button class="btn btn-sm btn-secondary" type="button" onclick="showAddCashOrderHeadModal()">انتخاب</button>
                             </div>
                         </div>
-                    }
+                    }*@
 
                     <div>
                         <label for="cashAtt">تصویر رسید:</label>

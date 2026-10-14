@@ -1187,12 +1187,17 @@ const dateTimePicker = (container = document) => {
             const positionY = datePicker.getAttribute("data-y") || "0";
             const instance = $(datePicker).persianDatepicker({
                 onSelect: function (dateText) {
+                    const $input = $(this.model.inputElement);
+                    $input.val(toEnglishDigits($input.val()));
+                    
                     const onSelectCallback = datePicker.getAttribute("data-onSelect");
                     const onSelectId = datePicker.getAttribute("data-id");
-                    if ($(this.model.inputElement).val().length > 0) {
-                        $(this.model.inputElement).removeClass("AlertReq");
+                    
+                    if ($input.val().length > 0) {
+                        $input.removeClass("AlertReq");
                     }
-                    if (onSelectCallback) {
+                    
+                    if (onSelectCallback && typeof window[onSelectCallback] === "function") {
                         if (onSelectId) {
                             window[onSelectCallback](this, onSelectId);
                         } else {
@@ -1722,8 +1727,8 @@ const notification = (id, title, description, dateMiladi, entityType, entityId) 
 
 const activeNotifCall = {};
 function notificationIncomingCall(callerNumber, uniqueid, destNumber) {
-    if (!callerNumber || !uniqueid || !destNumber) return;
-    if (activeNotifCall[uniqueid]) return;
+    if (!callerNumber || !uniqueid || !destNumber) return false;
+    if (activeNotifCall[uniqueid]) return false;
     
     const callToast = Toastify({
         text: `
@@ -1775,11 +1780,13 @@ function notificationIncomingCall(callerNumber, uniqueid, destNumber) {
     });
     callToast.showToast();
     activeNotifCall[uniqueid] = callToast;
+    
+    return true;
 }
 
 function closeCallNotif(uniqueid) {
     const notif = activeNotifCall[uniqueid];
-    if (!notif) return;
+    if (!notif) return false;
     
     if (notif._interval) {
         clearInterval(notif._interval);
@@ -1795,11 +1802,13 @@ function closeCallNotif(uniqueid) {
         notif.hideToast();
         delete activeNotifCall[uniqueid];
     }, 2000);
+    
+    return true;
 }
 
 function answerCallNotif(uniqueid) {
     const notif = activeNotifCall[uniqueid];
-    if (!notif) return;
+    if (!notif) return false;
     
     if (!notif._interval) {
         notif.toastElement.style.background = "#1b4332";
@@ -1820,6 +1829,7 @@ function answerCallNotif(uniqueid) {
         }, 1000);
     }
     
+    return true;
 }
 
 function minimizeCallNotif(uniqueid) {
@@ -2657,22 +2667,32 @@ function applyMinMaxValue(el) {
         .replace(/,/g, "")
         .trim();
     
-    if (value === "" || isNaN(value)) return;
+    if (value === "" || !/^-?\d*\.?\d*$/.test(value)) return;
+    
+    if (value === "-" || value.endsWith(".")) {
+        el.value = value;
+        return;
+    }
     
     let numValue = Number(value);
     
-    if (min !== null && !isNaN(min) && numValue < Number(min)) {
-        numValue = Number(min);
+    if (!Number.isFinite(numValue)) return;
+    
+    const minValue = min !== null && min.trim() !== "" ? Number(min) : null;
+    const maxValue = max !== null && max.trim() !== "" ? Number(max) : null;
+    
+    if (minValue !== null && Number.isFinite(minValue) && numValue < minValue) {
+        numValue = minValue;
     }
     
-    if (max !== null && !isNaN(max) && numValue > Number(max)) {
-        numValue = Number(max);
+    if (maxValue !== null && Number.isFinite(maxValue) && numValue > maxValue) {
+        numValue = maxValue;
     }
     
     if (el.classList.contains("currencyNumber")) {
         el.value = numValue.toLocaleString();
     } else {
-        el.value = numValue;
+        el.value = String(numValue);
     }
 }
 const getGeneralRef = () => {
@@ -3699,26 +3719,13 @@ function AlertFormStatus(status, Message, liss) {
 
 
 function ConvertToNumEnglishCharNoCallBack(value) {
-    if (value == null) return null;
+    if (value == null) return "";
     
-    return value.replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
-    
-    /*    if (value === null) {
-            return null;
-        } else {
-            
-            let s = value;
-            for (let i = 0; i < value.length; i++) {
-                
-                s = s.replace("۰", "0").replace("۱", "1")
-                     .replace("۲", "2").replace("۳", "3")
-                     .replace("۴", "4").replace("۵", "5")
-                     .replace("۶", "6").replace("۷", "7")
-                     .replace("۸", "8").replace("۹", "9");
-            }
-            
-            return s;
-        }*/
+    return value
+        .replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d))
+        .replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d))
+        .replace(/٫/g, ".")
+        .replace(/٬/g, ",");
 }
 
 function ConvertToNumEnglishChar(item, callback) {
@@ -4607,7 +4614,7 @@ function renderMoneyHtml(value, { currency = "ريال", empty = "-", className 
     return `
         <span class="d-inline-flex gap-1 align-items-baseline ${className}">
             <span dir="ltr">${Number(value).toLocaleString()}</span>
-            <span class="fs-small">${currency}</span>
+            ${currency ? `<span class="fs-small">${currency}</span>` : ""}
         </span>
     `;
 }
@@ -4867,4 +4874,12 @@ function createInlineAlert({ type = "info", message, dismissible = false, icon }
     }
     
     return alert;
+}
+
+function normalizePersianText(text) {
+    if (!text) return "";
+    
+    return text
+        .replace(/[يى]/g, "ی")
+        .replace(/ك/g, "ک");
 }

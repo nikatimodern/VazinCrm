@@ -7,8 +7,8 @@ using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
-using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
+using CRM.EndPoint.FrontEnd.Services.SepidarServices;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Infrastructures.Sql;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
@@ -19,7 +19,7 @@ namespace CRM.EndPoint.FrontEnd.Services;
 
 public class PreFactorService(
     CRMContextDb db,
-    SepidarService sepidarService,
+    Sepidar1Service sepidar1Service,
     DateTimeServices dtService,
     IHubContext<TaskHub> hub,
     LogSystemService logSystemService) {
@@ -79,7 +79,7 @@ public class PreFactorService(
                 .Select(x => x.SerialNumber)
                 .ToArray();
 
-            var invoices = await sepidarService.GetInvoicesByQuotationNumbersAsync(serialNumbers);
+            var invoices = await sepidar1Service.GetInvoicesByQuotationNumbersAsync(serialNumbers);
 
             if (invoices is not null)
             {

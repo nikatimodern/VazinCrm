@@ -2,7 +2,6 @@
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.CustomValidator;
-using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.SaveChangeCustom;
 using CRM.EndPoint.FrontEnd.Services.SetInterval;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
@@ -36,6 +35,7 @@ using CRM.EndPoint.FrontEnd.Services.DocumentRender;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.EndPoint.FrontEnd.Services.Menu;
 using CRM.EndPoint.FrontEnd.Services.PushNotification;
+using CRM.EndPoint.FrontEnd.Services.SepidarServices;
 using CRM.EndPoint.FrontEnd.Services.Sms;
 using CRM.EndPoint.FrontEnd.Services.ViewRender;
 using WebPush;
@@ -141,7 +141,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<Service>();
             services.AddTransient<SmsService>();
             services.AddHttpContextAccessor();
-            services.AddScoped<SepidarService>();
+//            services.AddScoped<SepidarService>();
             services.AddSignalR();
             services.AddTransient<ChatHub>();
             services.AddTransient<TaskServices>();
@@ -180,6 +180,9 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<ISmsIrService, SmsIrService>();
 
             services.AddHostedService<SmsSyncWorker>();
+
+            services.AddTransient<Sepidar1Service>();
+            services.AddTransient<Sepidar2Service>();
 
             services.AddSingleton<WebPushClient>(sp => {
                 var handler = new SocketsHttpHandler {

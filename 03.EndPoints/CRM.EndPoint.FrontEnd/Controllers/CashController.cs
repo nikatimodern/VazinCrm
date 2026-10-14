@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.AppUsers.Entities;
+using CRM.Core.Domain.ASettings.Entities;
+using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Cashes.Enums;
@@ -14,11 +16,13 @@ using CRM.EndPoint.FrontEnd.Models.Cash;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
+using CRM.EndPoint.FrontEnd.Services.SepidarServices;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
@@ -31,9 +35,14 @@ public class CashController : Controller {
     private readonly DateTimeServices dtService;
     private readonly LogSystemService logSystemService;
     private readonly FileSaver fileSaver;
+    private readonly Sepidar1Service sepidar1Service;
+    private readonly Sepidar2Service sepidar2Service;
+    private readonly Sepidar1ContextDb s1Db;
+    private readonly Sepidar2ContextDb s2Db;
 
     public CashController(CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, DateTimeServices dtService,
-        LogSystemService logSystemService, FileSaver fileSaver)
+        LogSystemService logSystemService, FileSaver fileSaver, Sepidar1Service sepidar1Service, Sepidar2Service sepidar2Service,
+        Sepidar1ContextDb s1Db, Sepidar2ContextDb s2Db)
     {
         this.db = db;
         this.udb = udb;
@@ -41,32 +50,93 @@ public class CashController : Controller {
         this.dtService = dtService;
         this.logSystemService = logSystemService;
         this.fileSaver = fileSaver;
+        this.sepidar1Service = sepidar1Service;
+        this.sepidar2Service = sepidar2Service;
+        this.s1Db = s1Db;
+        this.s2Db = s2Db;
     }
 
     [Authorize(Roles = "مدیر ارشد,تنخواه دار,مدیر مالی,کارشناس مالی")]
     public async Task<IActionResult> Index()
     {
         var isTaminUser = User.IsTamin();
+
+        var cashierTitles = await db.Cashiers
+            .Where(f => f.UserId == Guid.Parse(User.GetUserId()))
+            .Select(f => new SelectOptionDto<Guid> {
+                Text = f.Title,
+                Value = f.Id,
+            }).ToListAsync();
+
         var model = new CashIndexVModel {
             IsTaminUser = isTaminUser,
             CashCenters = await GetAllCashCenters(),
-            CashTitles = await GetAllCashTitles(isTaminUser)
+            CashTitles = await GetAllCashTitles(isTaminUser),
+            CashierTitles = cashierTitles
         };
         return View(model);
     }
 
 
     [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
-    public IActionResult Cashier()
+    public async Task<IActionResult> Cashier()
     {
-        return View();
+        var externalSoftwares = await db.ExternalSoftwares.Where(f => f.SoftwareType == SoftwareTypeEnum.حسابداری).ToListAsync();
+
+        var listCashierDtos = new List<CashierDto>();
+
+        foreach (var software in externalSoftwares)
+        {
+            var dto = new CashierDto {
+                ExternalSoftware = software,
+            };
+
+            if (software.Code == 1)
+            {
+                dto.SelectOptions = await s1Db.DLs
+                    .Where(f => f.Type == 4 || f.Type == 2)
+                    .OrderBy(f => f.Title)
+                    .Select(f => new SelectOptionDto<string> {
+                        Value = f.Code,
+                        Text = $"{TextService.NormalizePersianText(f.Title)} ({f.Code})",
+                    })
+                    .ToListAsync();
+            } else if (software.Code == 2)
+            {
+                dto.SelectOptions = await s2Db.DLs
+                    .Where(f => f.Type == 4 || f.Type == 2)
+                    .OrderBy(f => f.Title)
+                    .Select(f => new SelectOptionDto<string> {
+                        Value = f.Code,
+                        Text = $"{TextService.NormalizePersianText(f.Title)} ({f.Code})",
+                    })
+                    .ToListAsync();
+            }
+
+            listCashierDtos.Add(dto);
+        }
+
+        return View(listCashierDtos);
     }
+
 
     [Authorize(Roles = "مدیر ارشد,تنخواه دار,مدیر مالی,کارشناس مالی")]
     [HttpPost]
     public async Task<IActionResult> AddCash([FromBody] Cash model)
     {
         if (model == null) return BadRequest();
+
+        if (model.Amount <= 0) return BadRequest("مبلغ هزینه برای معتبر نیست.");
+
+        var cashier = await db.Cashiers.AsNoTracking().Include(f => f.CashierExternalSoftwares).FirstOrDefaultAsync(f => f.Id == model.CashierId);
+
+        model.CashExternalSoftwares = cashier.CashierExternalSoftwares
+            .Select(x => new CashExternalSoftware {
+                ExternalSoftwareId = x.ExternalSoftwareId,
+                TafsiliCode = x.TafsiliCode,
+            })
+            .ToList();
+
 
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
@@ -80,6 +150,7 @@ public class CashController : Controller {
             {
                 model.UserCreator = user.FullName;
                 model.UserCreatorID = user.Id;
+
                 db.Cashes.Add(model);
 
                 await db.SaveChangesAsync();
@@ -131,21 +202,10 @@ public class CashController : Controller {
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
 
-            if (model.Id == Guid.Empty)
-            {
-                model.UserCreator = user.FullName;
-                model.UserCreatorID = user.Id;
-                await db.Cashiers.AddAsync(model);
-            } else
-            {
-                var data = await db.Cashiers.Where(f => f.Id == model.Id).FirstOrDefaultAsync();
-                data.ModifyDate = DateTime.Now;
-                data.ModifyDateTxt = dtService.GetDateTimePersian();
-                data.UserModify = user.FullName;
-                data.UserModifyID = user.Id;
-                data.UserId = model.UserId;
-                data.UserTxt = model.UserTxt;
-            }
+            model.UserCreator = user.FullName;
+            model.UserCreatorID = user.Id;
+
+            await db.Cashiers.AddAsync(model);
 
             var usr = await udb.Users.Where(f => f.Id == model.UserId.ToString()).FirstOrDefaultAsync();
             await userManager.AddToRoleAsync(usr, "تنخواه دار");
@@ -155,12 +215,35 @@ public class CashController : Controller {
             await transaction.CommitAsync();
             return Ok();
         }
-        catch (Exception e)
+        catch (Exception)
         {
             await transaction.RollbackAsync();
             return BadRequest();
         }
     }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateCashier([FromBody] Cashier model)
+    {
+        if (model == null || model.Id == Guid.Empty)
+            return BadRequest("اطلاعات معتبر نیست.");
+
+        var cashier = await db.Cashiers.Include(f => f.CashierExternalSoftwares).FirstOrDefaultAsync(f => f.Id == model.Id);
+
+        if (cashier == null) return NotFound();
+
+
+        cashier.Title = model.Title?.Trim();
+        cashier.UserId = model.UserId;
+        cashier.UserTxt = model.UserTxt;
+
+        cashier.CashierExternalSoftwares = model.CashierExternalSoftwares;
+
+        await db.SaveChangesAsync();
+
+        return Ok();
+    }
+
 
     public async Task<IActionResult> GetCash(Guid id)
     {
@@ -429,7 +512,11 @@ public class CashController : Controller {
     {
         try
         {
-            var data = await db.Cashiers.Where(f => f.Id == id).AsNoTracking().FirstOrDefaultAsync();
+            var data = await db.Cashiers
+                .AsNoTracking()
+                .Where(f => f.Id == id)
+                .Include(f => f.CashierExternalSoftwares)
+                .FirstOrDefaultAsync();
             return Ok(data);
         }
         catch (Exception e)
@@ -475,20 +562,21 @@ public class CashController : Controller {
         try
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
-            var item = await db.Cashiers.Where(f => f.Id == id).FirstOrDefaultAsync();
+            var item = await db.Cashiers.Where(f => f.Id == id).Include(f => f.CashierExternalSoftwares).FirstOrDefaultAsync();
             if (item == null) return NotFound("رکوردی یافت نشد!");
 
             item.IsDeleted = true;
+
             item.ModifyDate = DateTime.Now;
             item.ModifyDateTxt = dtService.GetDateTimePersian();
             item.UserModify = user.FullName;
             item.UserModifyID = user.Id;
 
-
             var usr = await udb.Users.FirstOrDefaultAsync(f => f.Id == item.UserId.ToString());
             await userManager.RemoveFromRoleAsync(usr, "تنخواه دار");
 
 
+            db.CashierExternalSoftwares.RemoveRange(item.CashierExternalSoftwares);
             await logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
 
             await db.SaveChangesAsync();
@@ -513,12 +601,18 @@ public class CashController : Controller {
             var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
             var searchValue = Request.Form["search[value]"].FirstOrDefault()?.ToLower().Trim();
 
-            var user = await userManager.GetUserAsync(HttpContext.User);
-            var roles = await userManager.GetRolesAsync(user);
 
             var isExported = false;
 
             var query = db.Cashes.Include(f => f.CashGroup).AsQueryable();
+
+            var mappedCash = await db.ExternalMappings
+                .Where(f => f.MapType == ExternalMappingTypeEnum.تنخواه && f.EntityName == nameof(Cash))
+                .Select(f => new {
+                    f.EntityId,
+                    SoftwareTitle = f.ExternalSoftware.Title
+                })
+                .ToListAsync();
 
             if (Guid.TryParse(model?.EntityId, out var groupId))
             {
@@ -530,12 +624,12 @@ public class CashController : Controller {
             }
 
 
-            if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر مالی") && !roles.Contains("کارشناس مالی"))
+            if (!User.IsAdmin() && !User.IsFinancial())
             {
-                query = query.Where(f => f.UserCreatorID == user.Id);
+                query = query.Where(f => f.UserCreatorID == User.GetUserId());
             } else
             {
-                query = query.Where(f => f.Status != CashStatusEnum.ثبت_موقت || f.UserCreatorID == user.Id);
+                query = query.Where(f => f.Status != CashStatusEnum.ثبت_موقت || f.UserCreatorID == User.GetUserId());
             }
 
 
@@ -616,9 +710,9 @@ public class CashController : Controller {
 
 
             object cashierBalance = null;
-            if (roles.Contains("تنخواه دار"))
+            if (User.IsTanKhah())
             {
-                var cashierId = Guid.Parse(user.Id);
+                var cashierId = Guid.Parse(User.GetUserId());
                 var accS = await db.Accountancies
                     .Where(x => x.CashierId == cashierId)
                     .Select(x => new { x.debit, x.credit, x.Accepted })
@@ -634,6 +728,19 @@ public class CashController : Controller {
 
 
             var data = await query.ToListAsync();
+
+            var softwareTitles = mappedCash
+                .GroupBy(f => f.EntityId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(f => f.SoftwareTitle).Distinct().ToList()
+                );
+
+            foreach (var cash in data)
+            {
+                cash.ExternalSoftwareTitles = softwareTitles.GetValueOrDefault(cash.Id);
+            }
+
 
             await AppendOrderHeadNumbersToCashDescriptions(data);
 
@@ -829,7 +936,7 @@ public class CashController : Controller {
                 new() { Header = "اعلاميه برداشت حساب بانكي", ValueSelector = x => x.BankAccountTxt },
                 new() { Header = "اعلاميه برداشت شرح", ValueSelector = x => x.CostDescription },
                 new() { Header = "اعلاميه برداشت شرح(2)", ValueSelector = _ => "" },
-                new() { Header = "اعلاميه برداشت تفصيل حساب بانكي", ValueSelector = x => x.BankAccount?.AccountCode },
+                new() { Header = "اعلاميه برداشت تفصيل حساب بانكي", ValueSelector = _ => "" },
                 new() { Header = "اعلاميه برداشت نرخ كارمزد بانكي", ValueSelector = _ => 1 },
                 new() { Header = "اعلاميه برداشت كارمزد بانكي", ValueSelector = x => x.Fee == 0 ? "" : x.Fee },
                 new() { Header = "اعلاميه برداشت كارمزد بانكي به ارز پايه", ValueSelector = x => x.Fee == 0 ? "" : x.Fee },
@@ -900,6 +1007,11 @@ public class CashController : Controller {
                     ac => ac.CashierId,
                     (c, ac) => new CashierVModel {
                         Cashier = c,
+                        CashierMappings = c.CashierExternalSoftwares.Select(m => new CashierMappingVModel {
+                            SoftwareTitle = m.ExternalSoftware.Title,
+                            TafsiliCode = m.TafsiliCode
+                        }).ToList(),
+
                         TotalCredit = ac.Sum(x => x.credit ?? 0),
                         TotalDebit = ac.Sum(x => x.debit ?? 0),
                         Balance = ac.Sum(x => (x.credit ?? 0) - (x.debit ?? 0)),
@@ -966,6 +1078,52 @@ public class CashController : Controller {
             return Ok(data);
         }
         catch (Exception e)
+        {
+            return BadRequest();
+        }
+    }
+
+
+    public async Task<IActionResult> GetAllBankAccountCashier()
+    {
+        try
+        {
+            var sepidar1Id = Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138");
+
+            var data = await db.BankAccounts
+                .Where(f => f.BankAccountType == BankAccountTypeEnum.شرکت)
+                .OrderBy(f => f.AccountName)
+                .Select(f => new {
+                    value = f.Id,
+                    text = $"{f.BankName} {f.AccountName} {f.AccountNumber} " +
+                           $"(کد تفضیلی {f.BankAccountExternalSoftwares.Where(f => f.ExSoftwareId == sepidar1Id).Select(f => f.RefCode).FirstOrDefault()})",
+                })
+                .ToListAsync();
+
+            return Ok(data);
+        }
+        catch (Exception)
+        {
+            return BadRequest();
+        }
+    }
+
+    public async Task<IActionResult> GetAllTafsiliCodes()
+    {
+        try
+        {
+            var data = await s1Db.DLs
+                .Where(f => f.Type == 4 || f.Type == 2)
+                .OrderBy(f => f.Title)
+                .Select(f => new SelectOptionDto<string> {
+                    Value = f.Code,
+                    Text = $"{f.Title} ({f.Code})",
+                })
+                .ToListAsync();
+
+            return Ok(data);
+        }
+        catch (Exception)
         {
             return BadRequest();
         }
@@ -1177,5 +1335,126 @@ public class CashController : Controller {
         {
             return BadRequest();
         }
+    }
+
+
+    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+    public async Task<IActionResult> SendCashesToExternalSoftware([FromBody] SendCashesToExternalSoftwaresDto model)
+    {
+        if (model == null) return BadRequest();
+
+        try
+        {
+            foreach (var externalSoftwareId in model.ExternalSoftwareIds ?? [])
+            {
+                SepidarService sepidarService;
+                if (externalSoftwareId == Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138"))
+                {
+                    sepidarService = sepidar1Service;
+                } else if (externalSoftwareId == Guid.Parse("d6c3e8a7-1435-47d5-0489-08df26c5e2ca"))
+                {
+                    sepidarService = sepidar2Service;
+                } else
+                {
+                    return BadRequest();
+                }
+
+
+                foreach (var id in model.CashIds ?? [])
+                {
+                    var isMapped = await db.ExternalMappings.AnyAsync(f =>
+                        f.EntityId == id &&
+                        f.ExternalSoftwareId == externalSoftwareId &&
+                        f.MapType == ExternalMappingTypeEnum.تنخواه
+                    );
+
+                    if (isMapped) continue;
+
+                    var cash = await db.Cashes
+                        .Include(f => f.CostCenter)
+                        .Include(f => f.CostTitle)
+                        .Include(f => f.CashExternalSoftwares)
+                        .FirstOrDefaultAsync(f => f.Id == id);
+
+                    if (cash?.CostCenter == null || cash.CostTitle == null)
+                        continue;
+
+                    if (cash.Status != CashStatusEnum.تایید_شده)
+                        continue;
+
+                    var tafsiliCode = cash.CashExternalSoftwares
+                        .Where(f => f.ExternalSoftwareId == externalSoftwareId)
+                        .Select(f => f.TafsiliCode)
+                        .FirstOrDefault();
+
+                    var user = await userManager.GetUserAsync(HttpContext.User);
+
+                    var result = await sepidarService.SentCashToSepidar(cash, tafsiliCode);
+
+                    if (result.HasValue)
+                    {
+                        db.ExternalMappings.Add(new ExternalMapping {
+                            ExternalSoftwareId = externalSoftwareId,
+                            EntityName = nameof(cash),
+                            EntityId = cash.Id,
+                            MapType = ExternalMappingTypeEnum.تنخواه,
+                            MapTypeTxt = nameof(ExternalMappingTypeEnum.تنخواه),
+                            UserCreatorID = user.Id,
+                            UserCreator = user.FullName,
+                            ExEntityName = result.Value.entityName,
+                            ExEntityId = result.Value.entityId
+                        });
+
+                        await db.SaveChangesAsync();
+                    }
+                }
+            }
+
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+
+
+    [HttpGet]
+    public async Task<IActionResult> GetAllExternalSoftware()
+    {
+        var data = await db.ExternalSoftwares
+            .AsNoTracking()
+            .OrderBy(x => x.Title)
+            .Select(x => new { x.Id, x.Title })
+            .ToListAsync();
+
+        return Ok(data);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> GetAllExternalSoftware([FromBody] List<Guid> cashIds)
+    {
+        if (cashIds == null || cashIds.Count == 0 || cashIds.Any(id => id == Guid.Empty))
+            return BadRequest();
+
+        cashIds = cashIds.Distinct().ToList();
+
+        var softwares = await db.ExternalSoftwares
+            .AsNoTracking()
+            .OrderBy(x => x.Title)
+            .Select(x => new {
+                x.Id,
+                x.Title,
+                IsDisabled = cashIds.All(cashId =>
+                    db.ExternalMappings.Any(m =>
+                        m.EntityName == nameof(Cash) &&
+                        m.EntityId == cashId &&
+                        m.ExternalSoftwareId == x.Id &&
+                        m.MapType == ExternalMappingTypeEnum.تنخواه
+                    ))
+            })
+            .ToListAsync();
+
+        return Ok(softwares);
     }
 }

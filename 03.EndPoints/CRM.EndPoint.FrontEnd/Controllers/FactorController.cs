@@ -17,7 +17,6 @@ using CRM.Core.Domain.PreFactors.Enum;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Factor;
 using CRM.EndPoint.FrontEnd.Services;
-using CRM.EndPoint.FrontEnd.Services.Factor;
 using CRM.EndPoint.FrontEnd.Services.SaveChangeCustom;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Infrastructures.Sql;
@@ -47,6 +46,7 @@ using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Services.Carizo;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
+using CRM.EndPoint.FrontEnd.Services.SepidarServices;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Microsoft.Playwright;
 
@@ -65,11 +65,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly PreFactorService preFactorService;
         private readonly CrmSaveCahngeAsync crmSaveCahngeAsync;
         private readonly TaskServices ts;
-        private readonly SepidarService sepidarService;
+        private readonly Sepidar1Service sepidar1Service;
         private readonly UserManager<AppUser> userManager;
         private readonly SignInManager<AppUser> signInManager;
 
-        public FactorController(CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, SepidarService sepidarService,
+        public FactorController(CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, Sepidar1Service sepidar1Service,
             UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, Service GenService,
             FileSaver fileSaver,
             DateTimeServices dtService, CRMContextDb db, UserContextDb Udb,
@@ -78,7 +78,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             this.crmSaveCahngeAsync = crmSaveCahngeAsync;
             this.ts = ts;
-            this.sepidarService = sepidarService;
+            this.sepidar1Service = sepidar1Service;
             this.userManager = userManager;
             this.signInManager = signInManager;
             genService = GenService;
@@ -860,11 +860,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 //                    .Where(f => f.Id == id).FirstOrDefaultAsync();
                 //var customer = await db.Customers.Where(f => f.Id == factor.CustomerId).FirstOrDefaultAsync();
 
-                var s1 = await sepidarService.GetInvoiceWithItemsAsync(id);
+                var s1 = await sepidar1Service.GetInvoiceWithItemsAsync(id);
 
                 if (s1 == null) return NotFound();
 
-                s1.ExtraDescription = sepidarService.GetNoteInvoice(s1.InvoiceId);
+                s1.ExtraDescription = sepidar1Service.GetNoteInvoice(s1.InvoiceId);
 
                 var myCompany = await db.Companies.Include(f => f.CompanyFiles).FirstOrDefaultAsync();
                 SepidarFactorViewModel model = new SepidarFactorViewModel() {
@@ -2446,7 +2446,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                     if (setting.Sepidar == true && model.SepidarId != null)
                     {
-                        var sF = await sepidarService.GetInvoiceAsync(model.SepidarId);
+                        var sF = await sepidar1Service.GetInvoiceAsync(model.SepidarId);
                         if (sF == null) return Ok(new { status = 201 });
 
                         model.DateMiladi = sF.Date;
@@ -2863,7 +2863,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
 
-                var sepidar = await sepidarService.GetInvoiceSummaryAsync(model.SepidarId);
+                var sepidar = await sepidar1Service.GetInvoiceSummaryAsync(model.SepidarId);
                 var factor = await db.Factors.FirstOrDefaultAsync(f => f.Id == model.CrmFactorId);
 
                 factor.DateMiladi = sepidar.Date;

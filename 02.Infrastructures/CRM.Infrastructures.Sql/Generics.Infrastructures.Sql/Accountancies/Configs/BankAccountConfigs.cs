@@ -12,5 +12,6 @@ public class BankAccountConfigs : IEntityTypeConfiguration<BankAccount> {
             .WithOne()
             .HasForeignKey(f => f.BankAccountId)
             .OnDelete(DeleteBehavior.Restrict);
+        
     }
 }

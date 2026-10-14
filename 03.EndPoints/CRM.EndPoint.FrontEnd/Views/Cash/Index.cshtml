@@ -66,7 +66,25 @@
     </div>
 
     <div id="cashItemsContainer" class="@(isFinancial ? "d-none" : "")" style="width: 99%;">
-        <partial name="_CashTablePartial" model='"cashTable"' />
+        <table class="table table-striped table-bordered table-hover nowrap w-100" id="cashTable">
+            <thead>
+            <tr>
+                <th>شماره</th>
+                <th>گروه</th>
+                <th>تاریخ ثبت</th>
+                <th>عنوان هزینه</th>
+                <th>مرکز هزینه</th>
+                <th>تاریخ پرداخت</th>
+                <th>مبلغ</th>
+                <th>کارمزد</th>
+                <th>مبلغ نهایی</th>
+                <th>شرح هزینه</th>
+                <th>ثبت توسط</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+            </tr>
+            </thead>
+        </table>
     </div>
 
     <div id="cashGroupsContainer" class="@(!isFinancial ? "d-none" : "")" style="width: 99%;">
@@ -87,6 +105,31 @@
     </div>
 </div>
 
+
+<div class="modal fade" id="chooseExternalSoftwareModal" tabindex="-1" aria-labelledby="externalSoftwareModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content external-software-modal">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="externalSoftwareModalLabel">انتخاب نرم‌افزار مقصد</h5>
+                    <small class="text-muted">نرم‌افزار موردنظر برای انتقال سند را انتخاب کنید.</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+
+            <div class="modal-body">
+                <div id="externalSoftwareList" class="external-software-list">
+                    <div class="text-muted text-center py-4">در حال دریافت نرم‌افزارها...</div>
+                </div>
+            </div>
+
+            <div class="modal-footer align-items-stretch">
+                <button type="button" class="buttonCancel-white" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" id="sendCashToSoftwareBtn" class="buttonGreen0" disabled>ارسال سند</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <partial name="Modals/_CashGroupDetailModal" model="Model" />
 <partial name="Modals/_CashModal" model="Model" />

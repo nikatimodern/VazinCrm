@@ -87,28 +87,37 @@
             </label>
             <div class="InfoData" style="width:100%;">
                 <form style="display:flex; flex-flow:wrap; width:100%; " id="bankAccountForm">
-                    <div class="col-12 col-sm-6 col-lg-4 col-xl-2 form-group">
+                    <div class="col-12 col-sm-6 col-lg-4 col-xl-2 p-1">
                         <label>نام حساب</label>
                         <input class="form-control" name="accountName" type="text" required />
                     </div>
-                    <div class="col-12 col-sm-6 col-lg-4 col-xl-1 form-group">
+                    <div class="col-12 col-sm-6 col-lg-4 col-xl-1 p-1">
                         <label>نام بانک</label>
                         <input class="form-control" name="bankName" type="text" />
                     </div>
-                    <div class="col-12 col-sm-6 col-lg-4 col-xl-2 form-group">
+                    <div class="col-12 col-sm-6 col-lg-4 col-xl-2 p-1">
                         <label>شماره کارت</label>
                         <input class="form-control digitNumberString" name="cartNumber" type="text" />
                     </div>
-                    <div class="col-12 col-sm-6 col-lg-4 col-xl-2 form-group">
+                    <div class="col-12 col-sm-6 col-lg-4 col-xl-2 p-1">
                         <label>شماره حساب</label>
                         <input class="form-control digitNumberString" name="accountNumber" type="text" />
                     </div>
-                    <div class="col-12 col-sm form-group">
+                    <div class="col-12 col-sm p-1">
                         <label>شماره شبا</label>
                         <input class="form-control" name="shebaNumber" type="text" />
                     </div>
+                    <div class="col-12 col-lg-auto p-1">
+                        <label>مالک حساب</label>
+                        <select class="form-select form-select-sm valueNumber" name="bankAccountType" required>
+                            <option value="">انتخاب</option>
+                            <option value="1">شرکت</option>
+                            <option value="2">تامین کننده</option>
+                            <option value="3">تنخواه دار</option>
+                        </select>
+                    </div>
 
-                    <div class="col-12 col-xl-auto form-group d-flex flex-column justify-content-between">
+                    <div class="col-12 col-xl-auto p-2 d-flex flex-column justify-content-between">
                         <label>نوع حساب</label>
                         <div id="officialTypeBankAlert" class="d-flex align-items-center gap-3">
                             <div class="d-flex align-items-center gap-1">
@@ -603,7 +612,7 @@
 
                     columnDefs: [
                         {
-                            targets: [1,2, 3, 4, 5, 6, 7],
+                            targets: [1, 2, 3, 4, 5, 6, 7],
                             orderable: false,
                         },
                     ],
@@ -761,8 +770,8 @@
             }
 
             let model = mySer.convertFormToJSON("bankAccountForm");
-            const bankAccountTypeElm = document.getElementById("bankAccountTypeId");
-            model.bankAccountType = Number(bankAccountTypeElm.value);
+            @*const bankAccountTypeElm = document.getElementById("bankAccountTypeId");
+            model.bankAccountType = Number(bankAccountTypeElm.value);*@;
             try {
                 FLshowLoading();
                 const res = await axios.post("/Accountancy/AddBankAccount", model);
@@ -890,6 +899,6 @@
         document.getElementById("bankAccountTypeId").addEventListener("change", (e) => {
             modelGetBankAccounts._type = Number(e.target.value);
             AllBankAccountTbl.ajax.reload();
-        })
+        });
     </script>
 }

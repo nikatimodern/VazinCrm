@@ -96,20 +96,74 @@ connectionCall
     .start()
     .catch(err => console.error("SignalR Error:", err));
 
-connectionCall.on("IncomingCall", function (callerNumber, destNumber, uniqueid) {
-    // console.log("IncomingCall " + uniqueid);
-    notificationIncomingCall(callerNumber, uniqueid, destNumber);
-});
+connectionCall.on("IncomingCall", handleIncomingCall);
+connectionCall.on("CallAnswered", handleCallAnswered);
+connectionCall.on("CallEnded", handleCallEnded);
 
-connectionCall.on("CallEnded", function (uniqueid) {
-    // console.log("CallEnded " + uniqueid);
-    closeCallNotif(uniqueid);
-});
+const callHistoryBtn = document.getElementById("callHistoryReportBtn");
 
-connectionCall.on("CallAnswered", function (uniqueid) {
-    // console.log("CallAnswered " + uniqueid);
-    answerCallNotif(uniqueid);
-});
+// Incoming call
+function handleIncomingCall(callerTextNumber, number, destNumber, uniqueid, srcIsInternal) {
+    if (!notificationIncomingCall(callerTextNumber, uniqueid, destNumber)) return;
+    if (srcIsInternal) return;
+    
+    localStorage.setItem("callData", JSON.stringify(number));
+    
+    callHistoryBtn.classList.remove("is-answered", "is-open", "is-ended");
+    callHistoryBtn.classList.add("is-visible", "is-ringing");
+}
+
+// Call answered
+async function handleCallAnswered(uniqueid) {
+    if (!answerCallNotif(uniqueid)) return;
+    
+    await showIncomingCallReport();
+    
+    callHistoryBtn.classList.remove("is-ringing");
+    callHistoryBtn.classList.add("is-answered");
+}
+
+// Call ended
+async function handleCallEnded(uniqueid) {
+    if (!closeCallNotif(uniqueid)) return;
+    
+    closeIncomingCallReport();
+}
+
+// Show call report
+async function showIncomingCallReport() {
+    if (isModalOpen("incomingCallReportModal")) {
+        ModalToggle("incomingCallReportModal", "hide");
+        return;
+    }
+    const mobileNumber = JSON.parse(localStorage.getItem("callData"));
+    if (!mobileNumber) return;
+    
+    // callHistoryBtn.classList.remove("is-ringing", "is-answered");
+    callHistoryBtn.classList.add("is-open");
+    
+    ModalToggle("incomingCallReportModal", "show");
+    
+    await sendApiRequest({
+        url: "/Report/GetCallReport",
+        params: { mobileNumber },
+        onSuccess: (res) => {
+            document.getElementById("incomingCallReportContainer").innerHTML = res.data.html;
+        },
+    });
+}
+
+// Close call report
+function closeIncomingCallReport() {
+    callHistoryBtn.classList.add("is-ended");
+    
+    setTimeout(() => {
+        ModalToggle("incomingCallReportModal", "hide");
+        localStorage.removeItem("callData");
+        
+        callHistoryBtn.classList.remove("is-visible", "is-ringing", "is-answered", "is-open", "is-ended");
+    }, 5000);
+}
 
 
 ////////// sms toastify ////////////

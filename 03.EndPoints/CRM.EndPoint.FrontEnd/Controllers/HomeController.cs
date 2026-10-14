@@ -13,6 +13,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Accountancies.Entities;
+using CRM.Core.Domain.Accountancies.Enum;
+using CRM.Core.Domain.Cashes.Entities;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Services.AI;
 using CRM.EndPoint.FrontEnd.Services.Asterisk;
@@ -42,13 +45,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly LogSystemService logSystemService;
         private readonly TaskServices ts;
         private readonly SmsService smsService;
+        private readonly Sepidar2ContextDb s2Db;
         private readonly ISmsIrService smsIrService;
 
         public HomeController(IWebHostEnvironment appEnvironment,
             IConfiguration conf,
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
             Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue, IssabelService issabelService,
-            AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi, LogSystemService logSystemService, TaskServices ts, SmsService smsService)
+            AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi, LogSystemService logSystemService, TaskServices ts, SmsService smsService,
+            Sepidar2ContextDb s2db)
         {
             this.appEnvironment = appEnvironment;
             this.conf = conf;
@@ -63,6 +68,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.logSystemService = logSystemService;
             this.ts = ts;
             this.smsService = smsService;
+            s2Db = s2db;
             this.smsIrService = smsIrService;
             this.issabelService = issabelService;
             this.aiPrompts = aiPrompts;
@@ -74,29 +80,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [Authorize(Policy = "NotCustomerOnly")]
         public async Task<IActionResult> Index()
         {
-            await using var trans = await db.Database.BeginTransactionAsync();
             try
             {
-                /*var smses = await db.SentSmses.ToListAsync();
 
-                var contacts = await smsService.GetContactNamesAsync(smses.Select(x => x.Mobile));
-
-                foreach (var item in smses)
-                {
-                    item.ReceivedFullName = contacts.GetValueOrDefault(item.Mobile);
-                }
-
-                await db.SaveChangesAsync();*/
-
-
-                //await db.SaveChangesAsync();
-                await trans.CommitAsync();
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();
             }
             catch (Exception e)
             {
-                await trans.RollbackAsync();
                 return BadRequest(e.Message);
             }
         }

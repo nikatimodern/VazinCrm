@@ -8,4 +8,5 @@ public class CashIndexVModel {
     
     public List<SelectOptionDto<Guid>> CashCenters { get; set; } = [];
     public List<SelectOptionDto<Guid>> CashTitles { get; set; } = [];
+    public List<SelectOptionDto<Guid>> CashierTitles { get; set; } = [];
 }

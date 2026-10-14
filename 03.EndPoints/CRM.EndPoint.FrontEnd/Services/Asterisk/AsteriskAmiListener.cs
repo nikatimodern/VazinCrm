@@ -71,7 +71,7 @@ public class AsteriskAmiListener : BackgroundService {
 
                 await ami.ConnectAsync();
 
-                logger.LogInformation("[AMI] Connected successfully.");
+                logger.LogInformation("[AMI] Connected successfully");
 
                 while (!stoppingToken.IsCancellationRequested)
                 {
@@ -94,20 +94,16 @@ public class AsteriskAmiListener : BackgroundService {
             }
             catch (Exception ex)
             {
-                logger.LogError(ex,
-                    "[AMI] Connection failed/lost. Reconnecting in 5 seconds...");
+                logger.LogError(ex, "[AMI] Connection failed/lost. Reconnecting in 5 seconds...");
 
-                logger.LogError(
-                    $"[AMI] Connection failed/lost: {ex.Message}");
+                logger.LogError($"[AMI] Connection failed/lost: {ex.Message}");
             }
 
             if (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    await Task.Delay(
-                        TimeSpan.FromSeconds(5),
-                        stoppingToken);
+                    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
                 }
                 catch (OperationCanceledException)
                 {
@@ -116,7 +112,7 @@ public class AsteriskAmiListener : BackgroundService {
             }
         }
 
-        logger.LogInformation("[AMI] Listener stopped.");
+        logger.LogInformation("[AMI] Listener stopped");
     }
 
     private async Task HandleEvent(Dictionary<string, string> ev)
@@ -155,28 +151,28 @@ public class AsteriskAmiListener : BackgroundService {
 
             if (string.IsNullOrEmpty(uniqueId) && string.IsNullOrEmpty(destUid)) return;
 
-            var src = GetSrc(ev);
+            var number = TextService.NormalizeIranPhone(GetSrc(ev));
 
-            if (string.IsNullOrEmpty(src) || src == "unknown") return;
+            if (string.IsNullOrEmpty(number) || number == "unknown") return;
 
             var dest = Get(ev, "DestCallerIDNum"); //DestExten
 
-            var srcIsInternal = IsInternal(src);
+            var srcIsInternal = IsInternal(number);
 
             var userDest = await GetUsers(dest);
             if (userDest == null) return;
 
-            var srcText = await GetSrcText(srcIsInternal, src);
+            var srcText = await GetSrcText(srcIsInternal, number);
 
             if (dest.StartsWith("1"))
             {
                 await _hubContext.Clients.User(userDest.Id)
-                    .SendAsync("IncomingCall", srcText, dest, !string.IsNullOrEmpty(destUid) ? destUid : uniqueId);
+                    .SendAsync("IncomingCall", srcText, number, dest, !string.IsNullOrEmpty(destUid) ? destUid : uniqueId, srcIsInternal);
             }
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, $"DialBegin Error: {ex.Message}");
+            logger.LogError(ex, "DialBegin Error: {Message}", ex.Message);
         }
     }
 
@@ -255,7 +251,7 @@ public class AsteriskAmiListener : BackgroundService {
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, $"BridgeEnter Error: {ex.Message}");
+            logger.LogError(ex, "BridgeEnter Error: {ExMessage}", ex.Message);
             Console.WriteLine($"BridgeEnter Error: {ex.Message}");
         }
     }
@@ -271,7 +267,7 @@ public class AsteriskAmiListener : BackgroundService {
 
             if (string.IsNullOrEmpty(uniqueId) && string.IsNullOrEmpty(destUid))
             {
-                logger.LogWarning("hangup: uniqueId and destUid is null: uniqueId:{uniqueId}, destUid:{destUid}", uniqueId, destUid);
+                logger.LogWarning("hangup: uniqueId and destUid is null: uniqueId:{UniqueId}, destUid:{DestUid}", uniqueId, destUid);
                 return;
             }
 
@@ -297,7 +293,8 @@ public class AsteriskAmiListener : BackgroundService {
                 return;
             }
 
-            var src = GetSrc(ev);
+            var src = TextService.NormalizeIranPhone(GetSrc(ev));
+
             if (IsInternal(src))
             {
                 logger.LogInformation("hangup: the call is not external to internal: {FilePath}", call.RecordingPath.Split("/").Last());
@@ -322,6 +319,7 @@ public class AsteriskAmiListener : BackgroundService {
         {
             logger.LogWarning("hangup: user is null: {dest}", firstParticipant.Extension);
         }
+
 
         var callRecording = new CallRecording {
             CallerNumber = src,

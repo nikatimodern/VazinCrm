@@ -40,7 +40,14 @@ namespace CRM.Core.Domain.Cashes.Entities {
         public Guid? BankAccountId { get; set; }
         public string BankAccountTxt { get; set; }
 
+
+        public IList<CashExternalSoftware> CashExternalSoftwares { get; set; }
         public ICollection<CashOrderHead> CashOrderHeads { get; set; }
 
+//        public Cashier Cashier { get; set; } 
+        public Guid? CashierId { get; set; }
+        
+        [NotMapped]
+        public List<string> ExternalSoftwareTitles { get; set; }
     }
 }

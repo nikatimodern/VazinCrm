@@ -173,32 +173,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var data = await GetAllReports(model, dealId);
 
-                //var userIds = data.Select(r => r.UserCreatorID).Distinct().ToList();
-
-                var userIds = data.Select(r => r.UserCreatorID)
-                    .Union(data.Where(r => r.CallRecording != null).SelectMany(r => r.CallRecording.Participants.Select(p => p.UserId)))
-                    .Where(id => !string.IsNullOrEmpty(id))
-                    .ToList();
-
-                var userImages = await udb.Users
-                    .Where(u => userIds.Contains(u.Id))
-                    .ToDictionaryAsync(u => u.Id, u => u.PersonImageUrl);
-
-                foreach (var r in data)
-                {
-                    if (!string.IsNullOrEmpty(r.UserCreatorID) && userImages.TryGetValue(r.UserCreatorID, out var img))
-                    {
-                        r.UserImage = img;
-                    }
-
-                    foreach (var p in r.CallRecording?.Participants ?? [])
-                    {
-                        if (!string.IsNullOrEmpty(p.UserId) && userImages.TryGetValue(p.UserId, out var pImg))
-                        {
-                            p.UserImage = pImg;
-                        }
-                    }
-                }
+                data = await GenerateImage(data);
 
                 var html = await vrs.RenderToStringAsync("GetAllReportPartial", data,
                     new Dictionary<string, object> {
@@ -214,6 +189,71 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 Console.WriteLine(e);
                 throw;
             }
+        }
+
+
+        public async Task<IActionResult> GetCallReport(string mobileNumber)
+        {
+            try
+            {
+                var qData = db.Reports.AsNoTracking()
+                    .Where(f => f.RepTel == mobileNumber)
+                    .Include(r => r.CallRecording.Participants)
+                    .OrderByDescending(r => r.CreateDate)
+                    .AsQueryable();
+
+
+                var data = await qData.ToListAsync();
+
+                data = await GenerateImage(data);
+
+                var isManager = User.IsAdmin() || User.IsSalesAdmin() || User.IsManagingDirector() || User.IsExecutiveDirector();
+                var currentUserId = User.GetUserId();
+
+                var html = await vrs.RenderToStringAsync("GetAllReportPartial", data,
+                    new Dictionary<string, object> {
+                        { "PassType", 0 },
+                        { "IsManager", isManager },
+                        { "CurrentUserId", currentUserId },
+                    });
+
+                return Ok(new { count = data.Count, html });
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        private async Task<List<Report>> GenerateImage(List<Report> qData)
+        {
+            var userIds = qData.Select(r => r.UserCreatorID)
+                .Union(qData.Where(r => r.CallRecording != null).SelectMany(r => r.CallRecording.Participants.Select(p => p.UserId)))
+                .Where(id => !string.IsNullOrEmpty(id))
+                .ToList();
+
+            var userImages = await udb.Users
+                .Where(u => userIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u.PersonImageUrl);
+
+            foreach (var r in qData)
+            {
+                if (!string.IsNullOrEmpty(r.UserCreatorID) && userImages.TryGetValue(r.UserCreatorID, out var img))
+                {
+                    r.UserImage = img;
+                }
+
+                foreach (var p in r.CallRecording?.Participants ?? [])
+                {
+                    if (!string.IsNullOrEmpty(p.UserId) && userImages.TryGetValue(p.UserId, out var pImg))
+                    {
+                        p.UserImage = pImg;
+                    }
+                }
+            }
+
+            return qData;
         }
 
         private async Task<List<Report>> GetAllReports(ReportFilterVModel model, Guid? dealId = null)
