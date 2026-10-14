@@ -386,7 +386,7 @@ const getAllCashesDt = () => {
                 orderable: false,
                 className: "nowrap-text",
                 render: function (data, type, row) {
-                    const mappedInfo = row.externalSoftwareTitles?.length
+                    const mappedInfo = window.isAdminOrFinancial && row.externalSoftwareTitles?.length
                         ? `<div class="cash-map-softwares">
                                 ${(row.externalSoftwareTitles).map(title => `
                                 <span class="cash-map-software">
@@ -438,7 +438,7 @@ const getAllCashesDt = () => {
                 render: function (data, type, row) {
                     return `
                         <div class="inline-flex-center gap-1">
-                        ${row.status === 2 ? `
+                        ${window.isAdminOrFinancial && row.status === 2 ? `
                             <button type="button" class="buttonGray" onclick="showExternalSoftwareModal('${row.id}')">ارسال به نرم‌افزار مالی</button>                       
                         ` : ""}
                             <button type="button" class="icon-button icon-button--gray" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
@@ -809,7 +809,7 @@ function getAllCashesModalDt() {
             url: `/Cash/GetAllCashesDt`,
             type: "POST",
             data: (d) => {
-                d.model = JSON.stringify({ ...modelCash, entityId: currentCashGroupId });
+                d.model = JSON.stringify({ entityId: currentCashGroupId });
             },
             dataSrc: function (json) {
                 currentCashGroupExported = json.isExported;
@@ -835,7 +835,7 @@ function getAllCashesModalDt() {
                 orderable: false,
                 className: "nowrap-text",
                 render: function (data, type, row) {
-                    const mappedInfo = row.externalSoftwareTitles?.length
+                    const mappedInfo = window.isAdminOrFinancial && row.externalSoftwareTitles?.length
                         ? `<div class="cash-map-softwares">
                                 ${(row.externalSoftwareTitles).map(title => `
                                 <span class="cash-map-software">
@@ -889,7 +889,7 @@ function getAllCashesModalDt() {
                 render: function (data, type, row) {
                     return `
                         <div class="inline-flex-center gap-1">
-                        ${row.status === 2 ? `
+                        ${window.isAdminOrFinancial && row.status === 2 ? `
                             <button type="button" class="buttonGray" onclick="showExternalSoftwareModal('${row.id}')">ارسال به نرم‌افزار مالی</button>                       
                         ` : ""}
                             <button type="button" class="icon-button icon-button--gray" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>

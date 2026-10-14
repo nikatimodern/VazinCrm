@@ -601,8 +601,6 @@ public class CashController : Controller {
             var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
             var searchValue = Request.Form["search[value]"].FirstOrDefault()?.ToLower().Trim();
 
-            var user = await userManager.GetUserAsync(HttpContext.User);
-            var roles = await userManager.GetRolesAsync(user);
 
             var isExported = false;
 
@@ -626,12 +624,12 @@ public class CashController : Controller {
             }
 
 
-            if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر مالی") && !roles.Contains("کارشناس مالی"))
+            if (!User.IsAdmin() && !User.IsFinancial())
             {
-                query = query.Where(f => f.UserCreatorID == user.Id);
+                query = query.Where(f => f.UserCreatorID == User.GetUserId());
             } else
             {
-                query = query.Where(f => f.Status != CashStatusEnum.ثبت_موقت || f.UserCreatorID == user.Id);
+                query = query.Where(f => f.Status != CashStatusEnum.ثبت_موقت || f.UserCreatorID == User.GetUserId());
             }
 
 
@@ -712,9 +710,9 @@ public class CashController : Controller {
 
 
             object cashierBalance = null;
-            if (roles.Contains("تنخواه دار"))
+            if (User.IsTanKhah())
             {
-                var cashierId = Guid.Parse(user.Id);
+                var cashierId = Guid.Parse(User.GetUserId());
                 var accS = await db.Accountancies
                     .Where(x => x.CashierId == cashierId)
                     .Select(x => new { x.debit, x.credit, x.Accepted })
