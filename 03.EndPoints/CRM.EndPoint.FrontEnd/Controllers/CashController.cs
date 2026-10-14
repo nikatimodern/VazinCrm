@@ -1347,7 +1347,7 @@ public class CashController : Controller {
         {
             foreach (var externalSoftwareId in model.ExternalSoftwareIds ?? [])
             {
-                SepidarService sepidarService = null;
+                SepidarService sepidarService;
                 if (externalSoftwareId == Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138"))
                 {
                     sepidarService = sepidar1Service;
