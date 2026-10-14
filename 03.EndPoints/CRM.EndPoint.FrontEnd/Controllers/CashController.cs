@@ -606,7 +606,7 @@ public class CashController : Controller {
 
             var isExported = false;
 
-            var query = db.Cashes.Include(f => f.CashGroup).Include(f => f.CashExternalSoftwares).ThenInclude(f => f.ExternalSoftware).AsQueryable();
+            var query = db.Cashes.Include(f => f.CashGroup).AsQueryable();
 
             var mappedCash = await db.ExternalMappings
                 .Where(f => f.MapType == ExternalMappingTypeEnum.تنخواه && f.EntityName == nameof(Cash))
