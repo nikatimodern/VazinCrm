@@ -11,7 +11,7 @@
                                 <span style="color:white;font-size:clamp(12px,2vw,13px);">ريال</span>
                             </div>
                         </div>
-                        <div class="gap-1 gap-lg-2 flex-center">
+                        <div id="AllFacPayment" class="gap-1 gap-lg-2 flex-center cursor-pointer" onclick="ShowModalCustomerListInvoice()">
                             <label style="color:lightgray">پرداخت شده:</label>
                             <div class="fbold d-flex align-items-baseline gap-1" style="color:white;">
                                 <span id="AllFacPaymentId" style="font-size:clamp(14px,1.5vw,18px);">-</span>
@@ -37,7 +37,7 @@
                             </div>
                         </div>
                     } else {
-                        <div class="walledNotCredit cursor-pointer" id="wallet-balance" onclick="ShowModalInvoiceWallet(1)">
+                        <div class="walledNotCredit cursor-pointer" id="wallet-balance" onclick="ShowModalInvoiceWallet()">
                             <div class="d-flex align-items-center justify-content-around gap-1 gap-lg-2">
                                 <span class="fMedium" style="color:lightgray">اعتبار کیف پول: </span>
                                 <span class="fbold d-flex align-items-baseline gap-1 gap-xl-2" style="color:white;">

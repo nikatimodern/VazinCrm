@@ -67,10 +67,11 @@
                                 <label style="color:gray">وضعیت:</label>
                                 <label class="text-center" style="font-family:'IRANSansBold'">@item.PftypeTxt</label>
                             </div>
-
-                            <div class="d-none d-md-flex" style=" align-items:center; justify-content:center;gap:4px;max-width: 180px;width: 100%">
-                                <button class="buttonPurple p-0 flex-grow-1 fMedium" style="height:auto !important; border-radius:5px;font-size: 13px;max-width: 140px " onclick="ShowModalListInvoice('@item.Id', 1,'@item.SerialNumber', @passType, @hideAddInvoiceBtns.ToString().ToLower())">صورت حساب</button>
-                            </div>
+                            @if (item.CustomerId.HasValue) {
+                                <div class="d-none d-md-flex" style=" align-items:center; justify-content:center;gap:4px;max-width: 180px;width: 100%">
+                                    <button class="buttonPurple p-0 flex-grow-1 fMedium" style="height:auto !important; border-radius:5px;font-size: 13px;max-width: 140px " onclick="ShowModalListInvoice('@item.Id', 1,'@item.SerialNumber', @passType, @hideAddInvoiceBtns.ToString().ToLower())">صورت حساب</button>
+                                </div>
+                            }
                         </div>
                         <div class="d-md-none my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
 
@@ -79,11 +80,11 @@
                                 <label style="color:gray">وضعیت:</label>
                                 <label class="text-center fbold" style="font-size: 13px">@item.PftypeTxt </label>
                             </div>
-
-                            <div class="d-flex d-md-none" style=" align-items:center; justify-content:center;gap:4px">
-                                <button class="buttonPurple px-4" style="height:auto !important;border-radius:5px;cursor:pointer; font-family:'IRANSansBold'" onclick="ShowModalListInvoice('@item.Id', 1, '@item.SerialNumber', @passType, @hideAddInvoiceBtns.ToString().ToLower())">صورت حساب</button>
-                            </div>
-
+                            @if (item.CustomerId.HasValue) {
+                                <div class="d-flex d-md-none" style=" align-items:center; justify-content:center;gap:4px">
+                                    <button class="buttonPurple px-4" style="height:auto !important;border-radius:5px;cursor:pointer; font-family:'IRANSansBold'" onclick="ShowModalListInvoice('@item.Id', 1, '@item.SerialNumber', @passType, @hideAddInvoiceBtns.ToString().ToLower())">صورت حساب</button>
+                                </div>
+                            }
                             @switch (item.Pftype) {
                                 case (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین:
                                     if (hasAccess) {

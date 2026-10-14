@@ -1646,6 +1646,9 @@ const getAllPaymentPartial = async (id, type, invoicePassType) => {
     return res.data;
 };
 
+const ShowModalCustomerListInvoice = async () => {
+    await ShowModalListInvoice(customerId, 5, null, 1, false);
+};
 
 const ShowModalInvoiceWallet = async () => {
     await ShowModalListInvoice(customerId, 4, null, 1, true);
@@ -1719,6 +1722,9 @@ const ShowModalListInvoice = async (id, type, ser, passType, hideAddInvoiceBtns 
     } else if (type === 4) { //Wallet
         InvoiceType = 1;
         document.getElementById("TitleListInvoiceId").innerText = "کیف پول";
+    } else if (type === 5) { //Customer
+        InvoiceType = 1;
+        document.getElementById("TitleListInvoiceId").innerText = "صورت‌حساب های مشتری";
     }
     
     document.getElementById("addInvoiceBtns")?.classList.toggle("d-none", hideAddInvoiceBtns); // نمایش یا عدم نمایش دکمه های واریزی و برگشتی
@@ -1732,14 +1738,14 @@ const ShowModalListInvoice = async (id, type, ser, passType, hideAddInvoiceBtns 
 
 const ShowModalAddInvoice = async () => {
     const hasWallet = await CheckWallet();
+    
     if (hasWallet) {
-        
         const res = await axios(`/Accountancy/GetWalletPartialIfAny?cusId=${customerId}`);
         document.getElementById("WalletContentId").innerHTML = res.data;
         initWalletPartial();
+        
         ModalToggle("#WalletListModalId");
         return;
-        
     }
     
     
