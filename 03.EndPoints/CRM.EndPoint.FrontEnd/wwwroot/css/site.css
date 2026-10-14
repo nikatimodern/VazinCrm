@@ -7806,10 +7806,28 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	color: #04857c;
 	visibility: hidden;
 }
+.software-check-icon {
+	display: none;
+	font-size: 20px;
+}
 
+.external-software-card.is-selected .software-icon {
+	display: none;
+}
+
+.external-software-card.is-selected .software-check-icon {
+	display: inline-block;
+}
 
 .external-software-card.is-selected .external-software-check {
 	visibility: visible;
+}
+
+
+.external-software-card.is-disabled {
+	opacity: .5;
+	cursor: not-allowed;
+	background: #f3f4f6;
 }
 
 

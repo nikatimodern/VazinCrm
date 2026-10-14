@@ -102,8 +102,9 @@ async function showExternalSoftwareModal(id) {
     
     const externalSoftwares = await sendApiRequest({
         url: "/Cash/GetAllExternalSoftware",
-        /*method: "POST",
-        data: cashIds,*/
+        method: "POST",
+        successMsg: null,
+        data: cashIds,
     });
     
     ModalToggle(externalSoftwareModalElm);
@@ -122,13 +123,14 @@ async function showExternalSoftwareModal(id) {
 
 function renderExternalSoftwares(softwares) {
     externalSoftwareList.innerHTML = softwares.map(software => `
-        <label for="ex-software-${software.id}" type="button" class="external-software-card" data-software-id="${software.id}">
-            <input id="ex-software-${software.id}" type="checkbox" value="${software.id}" class="d-none">
+        <label for="ex-software-${software.id}" type="button" class="external-software-card ${software.isDisabled ? "is-disabled is-selected" : ""}"" data-software-id="${software.id}">
+                <input id="ex-software-${software.id}" type="checkbox" value="${software.id}" class="d-none"  ${software.isDisabled ? "disabled checked" : ""}>
             <span class="external-software-icon">
-                <svg style="width: 24px" viewBox="0 0 640 640" fill="currentColor"><path d="M335.9 84.2C326.1 78.6 314 78.6 304.1 84.2L80.1 212.2C67.5 219.4 61.3 234.2 65 248.2C68.7 262.2 81.5 272 96 272L128 272L128 480L128 480L76.8 518.4C68.7 524.4 64 533.9 64 544C64 561.7 78.3 576 96 576L544 576C561.7 576 576 561.7 576 544C576 533.9 571.3 524.4 563.2 518.4L512 480L512 272L544 272C558.5 272 571.2 262.2 574.9 248.2C578.6 234.2 572.4 219.4 559.8 212.2L335.8 84.2zM464 272L464 480L400 480L400 272L464 272zM352 272L352 480L288 480L288 272L352 272zM240 272L240 480L176 480L176 272L240 272zM320 160C337.7 160 352 174.3 352 192C352 209.7 337.7 224 320 224C302.3 224 288 209.7 288 192C288 174.3 302.3 160 320 160z"/></svg>
+               <i class="fas fa-check software-check-icon"></i>
             </span>
             <span class="external-software-info">
                 <span class="external-software-title">${software.title}</span>
+                ${software.isDisabled ? `<small class="text-muted">(قبلاً ارسال شده)</small>` : ""}
             </span>
             <i class="fa-solid fa-circle-check external-software-check"></i>
         </label>
@@ -155,7 +157,7 @@ sendCashToSoftwareBtn.addEventListener("click", async () => {
     
     toggleElementsDisabled(sendCashToSoftwareBtn);
     
-    const selectedExternalSoftwareIds = Array.from(document.querySelectorAll(".external-software-card input[type='checkbox']:checked"))
+    const selectedExternalSoftwareIds = Array.from(externalSoftwareList.querySelectorAll("input[type='checkbox']:checked:not(:disabled)"))
                                              .map(c => c.value);
     
     await sendCashesToExternalSoftware(selectedExternalSoftwareIds);
@@ -168,14 +170,14 @@ externalSoftwareModalElm.addEventListener("hidden.bs.modal", () => {
 let cashIds = [];
 async function sendCashesToExternalSoftware(externalSoftwareIds) {
     
+    if (!cashIds.length) return toastifyError("هیچ تنخواهی انتخاب نشده است.");
+    if (!externalSoftwareIds.length) return toastifyError("هیچ نرم افزاری انتخاب نشده است.");
+    
     const data = {
         cashIds,
         externalSoftwareIds,
     };
     
-    console.log(data);
-    
-    // return;
     
     await sendApiRequest({
         url: "/Cash/SendCashesToExternalSoftware",
@@ -374,44 +376,60 @@ const getAllCashesDt = () => {
             { data: "costTitleTxt", responsivePriority: 2 },
             { data: "costCenterTxt", responsivePriority: 3 },
             { data: "costDate" },
-            { data: "amount", render: data => `<span dir="ltr">${data ? data.toLocaleString() : "-"}</span>` },
-            { data: "fee", render: data => `<span dir="ltr">${data ? data.toLocaleString() : "-"}</span>` },
-            { data: "totalAmount", render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>` },
+            { data: "amount", render: data => renderMoneyHtml(data, { currency: null }) },
+            { data: "fee", render: data => renderMoneyHtml(data, { currency: null }) },
+            { data: "totalAmount", render: data => renderMoneyHtml(data, { currency: null, className: "fbold" }) },
             { data: "costDescription", className: "wrap-text-minw" },
             { data: "userCreator" },
             {
                 data: "status",
                 orderable: false,
+                className: "nowrap-text",
                 render: function (data, type, row) {
+                    const mappedInfo = row.externalSoftwareTitles?.length
+                        ? `<div class="cash-map-softwares">
+                                ${(row.externalSoftwareTitles).map(title => `
+                                <span class="cash-map-software">
+                                  <svg style="width: 13px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" /></svg>
+                                  ${title}
+                                </span>`).join("")}
+                            </div>`
+                        : "";
+                    
+                    
+                    let statusContent = "";
+                    
                     if (data === 0) { // ثبت موقت
                         //if (isManager) return `<span class="fMedium" style="color: #666">${row.statusTxt}</span>`;
-                        
-                        return `<button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>`;
+                        statusContent = `<button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>`;
                     } else if (data === 1) { // در دست تایید
-                        if (window.isAdminOrFinancial) return `
-                            <div class="inline-flex-center gap-1">
-                                <button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 2)">تایید</button>
-                                <button class="buttonCancel3" onclick="changeStatusCash('${row.id}', 0)">برگشت</button>
-                            </div>
-                        `;
+                        statusContent = window.isAdminOrFinancial
+                            ? `<div class="inline-flex-center gap-1">
+                                    <button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 2)">تایید</button>
+                                    <button class="buttonCancel3" onclick="changeStatusCash('${row.id}', 0)">برگشت</button>
+                                </div>`
+                            : `<span class="fMedium" style="color:#CC9900">${row.statusTxt}</span>`;
                         
-                        return `
-                            <div class="inline-flex-center gap-1">
-                                <span class="fMedium" style="color: #CC9900">${row.statusTxt}</span>
-                            </div>
-                        `;
-                    } else { // تایید شده
-                        if (window.isAdminOrFinancial) return `
-                            <div class="inline-flex-center gap-1">
-                                <span class="fMedium" style="color: darkgreen">${row.statusTxt}</span>
-                                <button style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
-                                    <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"></path></svg>
-                                </button>
-                            </div>
-                        `;
+                    } else {
+                        // تایید شده
                         
-                        return `<span class="fMedium" style="color: darkgreen">${row.statusTxt}</span>`;
+                        statusContent = `
+                            <div class="d-inline-flex flex-column align-items-center gap-1">
+                                <div class="inline-flex-center gap-1">
+                                    <span class="fMedium" style="color:darkgreen">${row.statusTxt}</span>
+                                    ${window.isAdminOrFinancial ? `
+                                        <button style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
+                                            <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"/></svg>
+                                        </button>` : ""}
+                                </div>
+                            </div>`
+                        ;
                     }
+                    
+                    return `<div class="d-inline-flex flex-column align-items-center gap-1">
+                        ${statusContent}
+                        ${mappedInfo}
+                    </div>`;
                 },
             },
             {
@@ -707,17 +725,10 @@ function getAllCashesGroupDt() {
         ],
         columns: [
             { data: "groupNumber", responsivePriority: 1 },
-            {
-                data: "createDateTxt",
-                responsivePriority: 2,
-                render: renderDateTimeHtml,
-            },
+            { data: "createDateTxt", responsivePriority: 2, render: renderDateTimeHtml },
             { data: "userCreator" },
             { data: "itemsCount" },
-            {
-                data: "totalAmount",
-                render: data => `<span class="fbold" dir="ltr">${data ? data.toLocaleString() : "0"}</span>`,
-            },
+            { data: "totalAmount", render: data => renderMoneyHtml(data, { currency: null, className: "fbold" }) },
             {
                 data: "status",
                 orderable: false,
@@ -815,58 +826,60 @@ function getAllCashesModalDt() {
             { data: "costTitleTxt", responsivePriority: 2 },
             { data: "costCenterTxt", responsivePriority: 3 },
             { data: "costDate" },
-            { data: "amount", render: data => `<span dir="ltr">${data ? data.toLocaleString() : "-"}</span>` },
-            { data: "fee", render: data => `<span dir="ltr">${data ? data.toLocaleString() : "-"}</span>` },
-            { data: "totalAmount", render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>` },
+            { data: "amount", render: data => renderMoneyHtml(data, { currency: null }) },
+            { data: "fee", render: data => renderMoneyHtml(data, { currency: null }) },
+            { data: "totalAmount", render: data => renderMoneyHtml(data, { currency: null, className: "fbold" }) },
             { data: "costDescription" },
             {
                 data: "status",
                 orderable: false,
                 className: "nowrap-text",
                 render: function (data, type, row) {
-                    
-                    if (data === 0) { // ثبت موقت
-                        //if (isManager) return `<span class="fMedium" style="color: #666">${row.statusTxt}</span>`;
-                        return `<button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>`;
-                    }
-                    
-                    if (data === 1) { // در دست تایید
-                        if (window.isAdminOrFinancial) {
-                            return `
-                                <div class="inline-flex-center gap-1">
-                                    <button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 2)">تایید</button>
-                                    <button class="buttonCancel3" onclick="changeStatusCash('${row.id}', 0)">برگشت</button>
-                                </div>
-                            `;
-                        }
-                        
-                        return `<span class="fMedium" style="color:#CC9900">${row.statusTxt}</span>`;
-                    }
-                    
-                    const transferInfo = row.externalSoftwareTitles?.length ? `
-                            <div class="cash-map-softwares">
+                    const mappedInfo = row.externalSoftwareTitles?.length
+                        ? `<div class="cash-map-softwares">
                                 ${(row.externalSoftwareTitles).map(title => `
                                 <span class="cash-map-software">
                                   <svg style="width: 13px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" /></svg>
                                   ${title}
                                 </span>`).join("")}
-                            </div>
-                        ` : "";
+                            </div>`
+                        : "";
                     
                     
-                    // تایید شده
-                    return `
-                        <div class="d-inline-flex flex-column align-items-center gap-1">
-                            <div class="inline-flex-center gap-1">
-                                <span class="fMedium" style="color:darkgreen">${row.statusTxt}</span>
-                                ${window.isAdminOrFinancial ? `
-                                    <button style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
-                                        <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"/></svg>
-                                    </button>` : ""}
-                            </div>
-                            ${transferInfo}
-<!--                             <span class="wrap-text fs-small">${row.externalSoftwareTitles || "-"}</span> -->
-                        </div>`;
+                    let statusContent = "";
+                    
+                    if (data === 0) {
+                        // ثبت موقت
+                        //if (isManager) return `<span class="fMedium" style="color: #666">${row.statusTxt}</span>`;
+                        statusContent = `<button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>`;
+                    } else if (data === 1) {
+                        // در دست تایید
+                        statusContent = window.isAdminOrFinancial
+                            ? `<div class="inline-flex-center gap-1">
+                                    <button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 2)">تایید</button>
+                                    <button class="buttonCancel3" onclick="changeStatusCash('${row.id}', 0)">برگشت</button>
+                                </div>`
+                            : `<span class="fMedium" style="color:#CC9900">${row.statusTxt}</span>`;
+                        
+                    } else {
+                        // تایید شده
+                        statusContent = `
+                            <div class="d-inline-flex flex-column align-items-center gap-1">
+                                <div class="inline-flex-center gap-1">
+                                    <span class="fMedium" style="color:darkgreen">${row.statusTxt}</span>
+                                    ${window.isAdminOrFinancial ? `
+                                        <button style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
+                                            <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"/></svg>
+                                        </button>` : ""}
+                                </div>
+                            </div>`
+                        ;
+                    }
+                    
+                    return `<div class="d-inline-flex flex-column align-items-center gap-1">
+                        ${statusContent}
+                        ${mappedInfo}
+                    </div>`;
                 },
             },
             {

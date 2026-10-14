@@ -4614,7 +4614,7 @@ function renderMoneyHtml(value, { currency = "ريال", empty = "-", className 
     return `
         <span class="d-inline-flex gap-1 align-items-baseline ${className}">
             <span dir="ltr">${Number(value).toLocaleString()}</span>
-            <span class="fs-small">${currency}</span>
+            ${currency ? `<span class="fs-small">${currency}</span>` : ""}
         </span>
     `;
 }
