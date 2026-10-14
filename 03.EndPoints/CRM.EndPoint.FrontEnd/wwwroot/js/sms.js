@@ -137,7 +137,7 @@ function initSmsReportsTable() {
             { data: "mobile", render: value => `<span class="sms-mobile">${value ?? "-"}</span>`, responsivePriority: 1 },
             {
                 data: "messageText",
-                // className: "wrap-text",
+                // className: "wrap-text-minw",
                 render: value => `<span class="sms-message">${escapeHtml(value ?? "-")}</span>`,
             },
             { data: "number", render: value => `<span class="sms-line">${value ?? "-"}</span>` },

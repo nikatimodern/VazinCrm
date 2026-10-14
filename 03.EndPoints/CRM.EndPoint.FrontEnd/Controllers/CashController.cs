@@ -606,7 +606,15 @@ public class CashController : Controller {
 
             var isExported = false;
 
-            var query = db.Cashes.Include(f => f.CashGroup).AsQueryable();
+            var query = db.Cashes.Include(f => f.CashGroup).Include(f => f.CashExternalSoftwares).ThenInclude(f => f.ExternalSoftware).AsQueryable();
+
+            var mappedCash = await db.ExternalMappings
+                .Where(f => f.MapType == ExternalMappingTypeEnum.تنخواه && f.EntityName == nameof(Cash))
+                .Select(f => new {
+                    f.EntityId,
+                    SoftwareTitle = f.ExternalSoftware.Title
+                })
+                .ToListAsync();
 
             if (Guid.TryParse(model?.EntityId, out var groupId))
             {
@@ -722,6 +730,19 @@ public class CashController : Controller {
 
 
             var data = await query.ToListAsync();
+
+            var softwareTitles = mappedCash
+                .GroupBy(f => f.EntityId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(f => f.SoftwareTitle).Distinct().ToList()
+                );
+
+            foreach (var cash in data)
+            {
+                cash.ExternalSoftwareTitles = softwareTitles.GetValueOrDefault(cash.Id);
+            }
+
 
             await AppendOrderHeadNumbersToCashDescriptions(data);
 
@@ -1344,9 +1365,11 @@ public class CashController : Controller {
                 foreach (var id in model.CashIds ?? [])
                 {
                     var isMapped = await db.ExternalMappings.AnyAsync(f =>
-                        f.EntityId == id && 
-                        f.ExternalSoftwareId == externalSoftwareId && 
-                        f.MapType == ExternalMappingTypeEnum.تنخواه);
+                        f.EntityId == id &&
+                        f.ExternalSoftwareId == externalSoftwareId &&
+                        f.MapType == ExternalMappingTypeEnum.تنخواه
+                    );
+
                     if (isMapped) continue;
 
                     var cash = await db.Cashes
@@ -1358,7 +1381,6 @@ public class CashController : Controller {
                     if (cash?.CostCenter == null || cash.CostTitle == null)
                         continue;
 
-
                     if (cash.Status != CashStatusEnum.تایید_شده)
                         continue;
 
@@ -1369,7 +1391,9 @@ public class CashController : Controller {
 
                     var user = await userManager.GetUserAsync(HttpContext.User);
 
-                    if (await sepidarService.SentCashToSepidar(cash, tafsiliCode))
+                    var result = await sepidarService.SentCashToSepidar(cash, tafsiliCode);
+
+                    if (result.HasValue)
                     {
                         db.ExternalMappings.Add(new ExternalMapping {
                             ExternalSoftwareId = externalSoftwareId,
@@ -1378,8 +1402,11 @@ public class CashController : Controller {
                             MapType = ExternalMappingTypeEnum.تنخواه,
                             MapTypeTxt = nameof(ExternalMappingTypeEnum.تنخواه),
                             UserCreatorID = user.Id,
-                            UserCreator = user.FullName
+                            UserCreator = user.FullName,
+                            ExEntityName = result.Value.entityName,
+                            ExEntityId = result.Value.entityId
                         });
+
                         await db.SaveChangesAsync();
                     }
                 }
@@ -1404,5 +1431,32 @@ public class CashController : Controller {
             .ToListAsync();
 
         return Ok(data);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> GetAllExternalSoftware([FromBody] List<Guid> cashIds)
+    {
+        if (cashIds == null || cashIds.Count == 0 || cashIds.Any(id => id == Guid.Empty))
+            return BadRequest();
+
+        cashIds = cashIds.Distinct().ToList();
+
+        var softwares = await db.ExternalSoftwares
+            .AsNoTracking()
+            .OrderBy(x => x.Title)
+            .Select(x => new {
+                x.Id,
+                x.Title,
+                IsDisabled = cashIds.All(cashId =>
+                    db.ExternalMappings.Any(m =>
+                        m.EntityName == nameof(Cash) &&
+                        m.EntityId == cashId &&
+                        m.ExternalSoftwareId == x.Id &&
+                        m.MapType == ExternalMappingTypeEnum.تنخواه
+                    ))
+            })
+            .ToListAsync();
+
+        return Ok(softwares);
     }
 }

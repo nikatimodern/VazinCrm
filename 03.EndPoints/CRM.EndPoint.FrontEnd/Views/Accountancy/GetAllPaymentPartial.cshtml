@@ -54,7 +54,7 @@
                 <td>@item.SerialNum</td>
                 <td>@string.Join(" | ", item.CreateDateTxt?.Substring(0, 16).Split(' ').Reverse())</td>
                 @if (fromCartableFinancial) {
-                    <td class="wrap-text">@item.CustomerName</td>
+                    <td class="wrap-text-minw">@item.CustomerName</td>
                     <td>@item.pfSerialNumber</td>
                 }
                 <td>

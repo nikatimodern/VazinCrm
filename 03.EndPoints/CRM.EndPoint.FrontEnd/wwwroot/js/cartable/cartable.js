@@ -583,12 +583,12 @@ function getAllDealsDt() {
         ],
         columns: [
             { data: "serialNumber", responsivePriority: 1 },
-            { data: "title", className: "wrap-text" },
+            { data: "title", className: "wrap-text-minw" },
             { data: "createDateTxt", name: "createDateTxt", render: data => renderDateTimeHtml(data) },
             { data: "userCreator" },
             {
                 data: "customerName",
-                className: "wrap-text",
+                className: "wrap-text-minw",
                 render: function (data, type, row) {
                     return `${data ?? ""}${row.customerCode ? " (کد مشتری: " + row.customerCode + ")" : ""}`;
                 },

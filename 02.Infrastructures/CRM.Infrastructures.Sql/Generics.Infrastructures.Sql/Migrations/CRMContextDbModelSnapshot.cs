@@ -105,6 +105,12 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("EntityName")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ExEntityId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExEntityName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid>("ExternalSoftwareId")
                         .HasColumnType("uniqueidentifier");
 

@@ -89,7 +89,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
         //--------------------------------------------------------- TANKHAH ---------------------------------------------------------
 
 
-        public async Task<bool> SentCashToSepidar(Cash cash, string tafsiliCode)
+        public async Task<(string entityName, string entityId)?> SentCashToSepidar(Cash cash, string tafsiliCode)
         {
             var dl = await GetDlAsync(tafsiliCode);
             switch (dl.Type)
@@ -101,7 +101,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
                     return await AddVoucherAsync2(cash, dl.DLId);
 
                 default:
-                    return false;
+                    return null;
             }
         }
 
@@ -283,7 +283,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
         }
 
 
-        private async Task<bool> AddPaymentHeaderAsync(Cash cash, int tafsiliId, CancellationToken cancellationToken = default)
+        private async Task<(string, string)> AddPaymentHeaderAsync(Cash cash, int tafsiliId, CancellationToken cancellationToken = default)
         {
             await using var trans = await sepidarContext.Database.BeginTransactionAsync(cancellationToken);
 
@@ -364,7 +364,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
                 await sepidarContext.SaveChangesAsync(cancellationToken);
                 await trans.CommitAsync(cancellationToken);
 
-                return true;
+                return (nameof(PaymentHeader), paymentHeader.PaymentHeaderId.ToString());
             }
             catch (Exception e)
             {
@@ -460,7 +460,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
             "SG.Accounting.VoucherManagement.Common, " +
             "Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
 
-        public async Task<bool> AddVoucherAsync2(Cash cash, int dlref, CancellationToken cancellationToken = default)
+        public async Task<(string, string)> AddVoucherAsync2(Cash cash, int dlref, CancellationToken cancellationToken = default)
         {
             await using var trans = await sepidarContext.Database.BeginTransactionAsync(cancellationToken);
 
@@ -654,7 +654,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
                 sepidarContext.Vouchers.Add(voucher);
                 await sepidarContext.SaveChangesAsync(cancellationToken);
                 await trans.CommitAsync(cancellationToken);
-                return true;
+                return (nameof(Voucher), voucher.VoucherId.ToString());
             }
             catch (Exception e)
             {

@@ -7719,3 +7719,124 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 		transition: none !important;
 	}
 }
+
+
+/* cash */
+
+.external-software-modal {
+	border: 0;
+	border-radius: 14px;
+	overflow: hidden;
+}
+
+
+.external-software-modal .modal-header {
+	padding: 20px 22px;
+}
+
+
+.external-software-modal .modal-footer {
+	padding: 14px 22px;
+}
+
+
+.external-software-list {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px;
+}
+
+
+.external-software-card {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-height: 82px;
+	padding: 16px;
+	border: 1px solid #dee2e6;
+	border-radius: 12px;
+	background: #fff;
+	color: #343a40;
+	cursor: pointer;
+	text-align: right;
+	transition: border-color .15s ease, background-color .15s ease;
+}
+
+
+.external-software-card:hover {
+	border-color: #04857c;
+	background: #f6fbfa;
+}
+
+
+.external-software-card.is-selected {
+	border: 2px solid #04857c;
+	padding: 15px;
+	background: #edf8f6;
+}
+
+
+.external-software-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 42px;
+	height: 42px;
+	border-radius: 10px;
+	background: #e7f3f1;
+	color: #02514c;
+}
+
+
+.external-software-info {
+	min-width: 0;
+	flex: 1;
+}
+
+
+.external-software-title {
+	display: block;
+	font-family: IranSansBold;
+	overflow-wrap: anywhere;
+}
+
+
+.external-software-check {
+	color: #04857c;
+	visibility: hidden;
+}
+
+
+.external-software-card.is-selected .external-software-check {
+	visibility: visible;
+}
+
+
+@media (max-width: 420px) {
+	.external-software-list {
+		grid-template-columns: 1fr;
+	}
+}
+
+
+.cash-map-softwares {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 4px;
+	max-width: 180px;
+}
+
+
+.cash-map-software {
+	display: inline-block;
+	padding: 2px 7px;
+	border-radius: 4px;
+	background: #e8f5ec;
+	border: 1px solid #cce9d4;
+	color: #237443;
+	font-size: 10px;
+	line-height: 1.6;
+	white-space: nowrap;
+}

@@ -1,163 +1,175 @@
 .table > :not(:last-child) > :last-child > * {
-  border-bottom-color: currentColor;
-  
+	border-bottom-color: currentColor;
+	
 }
 
 
 .table > :not(caption) > * > * {
-  padding: 10px 10px;
+	padding: 10px 10px;
 }
 
 
 div.dt-scroll-body {
-  border-bottom-color: currentColor;
-  border-bottom-width: 3px;
+	border-bottom-color: currentColor;
+	border-bottom-width: 3px;
 }
 
 
 .wrap-text {
-  white-space: pre-wrap !important;
-  min-width: 200px;
+	white-space: pre-wrap !important;
+	word-wrap: break-word;
+	overflow-wrap: anywhere;
+}
+
+
+.wrap-text-minw {
+	white-space: pre-wrap !important;
+	min-width: 200px;
+}
+
+
+.nowrap-text {
+	white-space: nowrap !important;
 }
 
 
 table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before,
 table.dataTable.dtr-inline.collapsed > tbody > tr > th.dtr-control:before {
-  margin-left: 0.5em;
-  margin-right: unset !important;
-  border-left: 0 solid transparent !important;
-  border-right: 10px solid rgba(0, 0, 0, 0.5) !important;
+	margin-left: 0.5em;
+	margin-right: unset !important;
+	border-left: 0 solid transparent !important;
+	border-right: 10px solid rgba(0, 0, 0, 0.5) !important;
 }
 
 
 table.dataTable.dtr-inline.collapsed > tbody > tr.dtr-expanded > td.dtr-control:before,
 table.dataTable.dtr-inline.collapsed > tbody > tr.dtr-expanded > th.dtr-control:before {
-  border-top: 10px solid rgba(0, 0, 0, 0.5) !important;
-  border-bottom: 0 solid transparent !important;
-  border-left: 5px solid transparent !important;
-  border-right: 5px solid transparent !important;
+	border-top: 10px solid rgba(0, 0, 0, 0.5) !important;
+	border-bottom: 0 solid transparent !important;
+	border-left: 5px solid transparent !important;
+	border-right: 5px solid transparent !important;
 }
 
 
 div.dt-processing > div:last-child > div {
-  background: #aaa !important;
+	background: #aaa !important;
 }
 
 
 .dtr-title {
-  font-family: "IRANSansBold";
+	font-family: "IRANSansBold";
 }
 
 
 .dtr-details li {
-  text-align: start;
+	text-align: start;
 }
 
 
 div.dt-container div.dt-processing {
-  /*    width: 140px;*/
-  border-radius: 100px
+	/*    width: 140px;*/
+	border-radius: 100px
 }
 
 
 div.dt-container tbody td, div.dt-container tbody th {
-  padding: 12px 10px !important;
-  vertical-align: middle;
+	padding: 12px 10px !important;
+	vertical-align: middle;
 }
 
 
 div.dt-container > div:first-child .dt-layout-start,
 div.dt-container > div:first-child {
-  margin-top: 0 !important
+	margin-top: 0 !important
 }
 
 
 div.dt-container .active {
-  border: none;
+	border: none;
 }
 
 
 div.dt-container .page-link {
-  color: #01504B
+	color: #01504B
 }
 
 
 div.dt-container .page-link:focus {
-  box-shadow: 0 0 0 .25rem rgba(1, 80, 75, .25);
+	box-shadow: 0 0 0 .25rem rgba(1, 80, 75, .25);
 }
 
 
 div.dt-container .page-item.active .page-link {
-  background-color: #01504B;
-  border-color: #01504B;
-  color: #fff
+	background-color: #01504B;
+	border-color: #01504B;
+	color: #fff
 }
 
 
 div.dt-container th, div.dt-container td {
-  text-align: center !important;
+	text-align: center !important;
 }
 
 
 #OrdersTable_wrapper table.table.dataTable.table-striped > tbody > tr:nth-of-type(2n+1) > * {
-  box-shadow: inset 0 0 0 9999px rgb(26 45 65 / 6%);
+	box-shadow: inset 0 0 0 9999px rgb(26 45 65 / 6%);
 }
 
 
 #OrdersTable_wrapper table.table.dataTable.table-hover > tbody > tr:hover > * {
-  box-shadow: inset 0 0 0 9999px rgb(26 45 65 / 8%);
+	box-shadow: inset 0 0 0 9999px rgb(26 45 65 / 8%);
 }
 
 
 #OrdersTable_wrapper th {
-  box-shadow: inset 0 0 0 9999px rgb(26 45 65 / 12%);
+	box-shadow: inset 0 0 0 9999px rgb(26 45 65 / 12%);
 }
 
 
 #AllItemsFactorDetailTable_wrapper .table > thead:not(caption) > * > *,
 #AllItemsFactorTable_wrapper .table > thead:not(caption) > * > *,
 .paymentTable.table > thead:not(caption) > * > * {
-  background-color: #c1c1c1;
+	background-color: #c1c1c1;
 }
 
 
 /* supplyPaymentTable */
 #supplyPaymentTable_wrapper .table > thead:not(caption) > * > * {
-  background-color: #d7cae3;
+	background-color: #d7cae3;
 }
 
 
 #supplyPaymentTable_wrapper table.table.dataTable.table-hover > tbody > tr:hover > * {
-  box-shadow: inset 0 0 0 9999px rgb(166 118 167 / 8%);
+	box-shadow: inset 0 0 0 9999px rgb(166 118 167 / 8%);
 }
 
 
 #supplyPaymentTable_wrapper table.table.dataTable.table-striped > tbody > tr:nth-of-type(2n+1) > * {
-  box-shadow: inset 0 0 0 9999px rgb(166 118 167 / 5%);
+	box-shadow: inset 0 0 0 9999px rgb(166 118 167 / 5%);
 }
 
 
 #supplyPaymentTable_wrapper .page-item.active .page-link {
-  background-color: rebeccapurple;
-  border-color: rebeccapurple;
-  color: #fff;
+	background-color: rebeccapurple;
+	border-color: rebeccapurple;
+	color: #fff;
 }
 
 
 #supplyPaymentTable_wrapper .page-link:focus {
-  box-shadow: 0 0 0 .25rem rgba(166, 118, 167, .25);
+	box-shadow: 0 0 0 .25rem rgba(166, 118, 167, .25);
 }
 
 
 /* --- */
 
 #OrdersTable_wrapper thead tr th:first-child {
-  border-top-right-radius: 6px;
+	border-top-right-radius: 6px;
 }
 
 
 #OrdersTable_wrapper thead tr th:last-child {
-  border-top-left-radius: 6px;
+	border-top-left-radius: 6px;
 }
 
 
@@ -165,166 +177,166 @@ div.dt-container th, div.dt-container td {
 #FamilyWayTable_wrapper div.dt-scroll-body,
 #ProductTable_wrapper div.dt-scroll-body,
 #bankAccountTable_wrapper div.dt-scroll-body {
-  border-bottom: none;
+	border-bottom: none;
 }
 
 
 #OrdersTable_wrapper div.dt-scroll-body .child {
-  border: none
+	border: none
 }
 
 
 div.dt-container table.dataTable > tbody > tr.child ul.dtr-details > li:not(:last-child) {
-  border-bottom: 1px solid #1a2d41;
+	border-bottom: 1px solid #1a2d41;
 }
 
 
 div.dt-container div.dt-search {
-  display: flex;
-  align-items: center;
-  flex-grow: 1;
+	display: flex;
+	align-items: center;
+	flex-grow: 1;
 }
 
 
 div.dt-container div.dt-length {
-  text-align: left !important;
-  display: flex;
-  align-content: center;
-  gap: 8px;
+	text-align: left !important;
+	display: flex;
+	align-content: center;
+	gap: 8px;
 }
 
 
 div.dt-container div.dt-search input {
-  width: 100%;
+	width: 100%;
 }
 
 
 body.dt-print-view {
-  direction: rtl;
+	direction: rtl;
 }
 
 
 body.dt-print-view h1 {
-  text-align: right;
-  margin: 1rem;
-  font-size: 1.5rem;
+	text-align: right;
+	margin: 1rem;
+	font-size: 1.5rem;
 }
 
 
 body.dt-print-view table thead tr th {
-  text-align: center;
+	text-align: center;
 }
 
 
 div.dt-container > div:first-child .dt-layout-end {
-  gap: 8px;
-  display: flex;
-  flex-wrap: wrap
+	gap: 8px;
+	display: flex;
+	flex-wrap: wrap
 }
 
 
 div.dt-container div.dt-layout-end > *:not(:first-child),
 div.dt-container div.dt-layout-start > *:not(:last-child) {
-  margin: 0
+	margin: 0
 }
 
 
 div.dt-container div.dt-buttons {
-  width: auto
+	width: auto
 }
 
 
 @media screen and (min-width: 576px) {
-  div.dt-container > div:first-child .dt-layout-start,
-  div.dt-container > div:first-child .dt-layout-end {
-    flex: 0 0 auto;
-    width: auto;
-  }
-  
-  div.dt-container div.dt-search input {
-    width: auto;
-  }
+	div.dt-container > div:first-child .dt-layout-start,
+	div.dt-container > div:first-child .dt-layout-end {
+		flex: 0 0 auto;
+		width: auto;
+	}
+	
+	div.dt-container div.dt-search input {
+		width: auto;
+	}
 }
 
 
 #allPaymentTable55_wrapper div.dt-scroll-body,
 #allPaymentTable56_wrapper div.dt-scroll-body {
-  max-height: clamp(150px, calc(100dvh - 280px), 100dvh) !important;
+	max-height: clamp(150px, calc(100dvh - 280px), 100dvh) !important;
 }
 
 
 @media screen and (max-width: 767px) {
-  #AcTable_wrapper div.dt-scroll-body,
-  #supplyProfitTable_wrapper div.dt-scroll-body,
-  #supplyDemandTable_wrapper div.dt-scroll-body,
-  #cashTable_wrapper div.dt-scroll-body {
-    max-height: none !important;
-  }
-  
-  #OrdersTable_wrapper div.dt-scroll-body {
-    max-height: clamp(150px, calc(100dvh - 560px), 100dvh) !important;
-  }
-  
-  #DealTable_wrapper div.dt-scroll-body,
-  #allPaymentTable55_wrapper div.dt-scroll-body,
-  #allPaymentTable56_wrapper div.dt-scroll-body {
-    max-height: calc(100dvh - 337px) !important;
-  }
-  
-  div.dt-container > div.dt-layout-table {
-    margin-top: 0 !important;
-  }
-  
-  div.dt-container > div.dt-layout-table > div {
-    margin-top: 2px !important;
-  }
-  
-  .paymentTable.table td.wrap-text {
-    min-width: 100px;
-  }
-  
-  .table .btn-accept {
-    min-width: 34px;
-    padding: 4px 15px !important;
-  }
-  
-  #allPaymentTable55_wrapper .paymentTable.table .buttonGray,
-  #allPaymentTable56_wrapper .paymentTable.table .buttonGray {
-    padding-block: 4px;
-  }
-  
-  #allPaymentTable55_wrapper .paymentTable-statusCol,
-  #allPaymentTable56_wrapper .paymentTable-statusCol {
-    gap: 10px !important;
-  }
-  
+	#AcTable_wrapper div.dt-scroll-body,
+	#supplyProfitTable_wrapper div.dt-scroll-body,
+	#supplyDemandTable_wrapper div.dt-scroll-body,
+	#cashTable_wrapper div.dt-scroll-body {
+		max-height: none !important;
+	}
+	
+	#OrdersTable_wrapper div.dt-scroll-body {
+		max-height: clamp(150px, calc(100dvh - 560px), 100dvh) !important;
+	}
+	
+	#DealTable_wrapper div.dt-scroll-body,
+	#allPaymentTable55_wrapper div.dt-scroll-body,
+	#allPaymentTable56_wrapper div.dt-scroll-body {
+		max-height: calc(100dvh - 337px) !important;
+	}
+	
+	div.dt-container > div.dt-layout-table {
+		margin-top: 0 !important;
+	}
+	
+	div.dt-container > div.dt-layout-table > div {
+		margin-top: 2px !important;
+	}
+	
+	.paymentTable.table td.wrap-text-minw {
+		min-width: 100px;
+	}
+	
+	.table .btn-accept {
+		min-width: 34px;
+		padding: 4px 15px !important;
+	}
+	
+	#allPaymentTable55_wrapper .paymentTable.table .buttonGray,
+	#allPaymentTable56_wrapper .paymentTable.table .buttonGray {
+		padding-block: 4px;
+	}
+	
+	#allPaymentTable55_wrapper .paymentTable-statusCol,
+	#allPaymentTable56_wrapper .paymentTable-statusCol {
+		gap: 10px !important;
+	}
+	
 }
 
 
 table.supplyItemsTable {
-  border-color: #ededed;
-  margin-block: 0;
+	border-color: #ededed;
+	margin-block: 0;
 }
 
 
 table.supplyItemsTable td, table.supplyItemsTable th {
-  background-color: transparent;
-  vertical-align: middle;
+	background-color: transparent;
+	vertical-align: middle;
 }
 
 
 table.supplyItemsTable.table > :not(caption) > * > * {
-  padding: 4px;
+	padding: 4px;
 }
 
 
 table tr.tableRow-bgRed td, table tr.tableRow-bgRed th {
-  background-color: #fef2f2 !important;
+	background-color: #fef2f2 !important;
 }
 
 
 table tr.tableRow-bgGreen td, table tr.tableRow-bgGreen th {
-  background-color: #f0fdf4 !important;
+	background-color: #f0fdf4 !important;
 }
 
 
@@ -335,45 +347,45 @@ table tr.tableRow-bgGreen td, table tr.tableRow-bgGreen th {
 
 
 table .selection-mode tr.selection-enabled {
-  border-right: 3px solid transparent;
-  position: relative;
-  cursor: pointer;
-  transition: .15s;
+	border-right: 3px solid transparent;
+	position: relative;
+	cursor: pointer;
+	transition: .15s;
 }
 
 
 table .selection-mode tr {
-  position: relative;
+	position: relative;
 }
 
 
 table .selection-mode tr.selection-enabled.row-selected,
 table .selection-mode tr.selection-enabled:hover {
-  border-right-color: #16a34a;
-  background: #f8f8f8 !important;
+	border-right-color: #16a34a;
+	background: #f8f8f8 !important;
 }
 
 
 table .selection-mode tr.row-selected td {
-  background: #e8f5e9 !important;
+	background: #e8f5e9 !important;
 }
 
 
 table .selection-mode tr::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, .75);
-  opacity: 1;
-  transition: .2s ease;
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: rgba(255, 255, 255, .75);
+	opacity: 1;
+	transition: .2s ease;
 }
 
 
 table .selection-mode tr.selection-enabled::after {
-  background: rgba(255, 255, 255, .3);
+	background: rgba(255, 255, 255, .3);
 }
 
 
 table .selection-mode tr.row-selected::after {
-  background: rgba(0, 0, 0, .05);
+	background: rgba(0, 0, 0, .05);
 }

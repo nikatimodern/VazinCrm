@@ -14,6 +14,10 @@ public class ExternalMapping {
     public ExternalMappingTypeEnum MapType { get; set; }
     public string MapTypeTxt { get; set; }
 
+    public string ExEntityName { get; set; } // نام انتیتی ثبت شده در نرم افزار خروجی
+    public string ExEntityId { get; set; } // ایدی ثبت شده در نرم افزار خروجی
+
+
     public DateTime CreateDate { get; set; } = DateTime.Now;
     public string CreateDateTxt { get; set; } = BaseServices.GetDateTimePersian();
 

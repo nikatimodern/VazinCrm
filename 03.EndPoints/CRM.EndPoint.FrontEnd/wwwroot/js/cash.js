@@ -96,16 +96,19 @@ const sendCashToSoftwareBtn = externalSoftwareModalElm.querySelector("#sendCashT
 
 async function showExternalSoftwareModal(id) {
     cashIds = Array.isArray(id) ? id : [id];
+    // cashIds = [...new Set(Array.isArray(id) ? id : [id])];
     
     toggleElementsDisabled(sendCashToSoftwareBtn);
     
     const externalSoftwares = await sendApiRequest({
         url: "/Cash/GetAllExternalSoftware",
+        /*method: "POST",
+        data: cashIds,*/
     });
     
     ModalToggle(externalSoftwareModalElm);
     
-    if (!externalSoftwares || externalSoftwares.length === 0) {
+    if (!externalSoftwares?.length) {
         externalSoftwareList.innerHTML = `
             <div class="text-muted text-center py-4">
                 نرم‌افزاری برای انتخاب وجود ندارد.
@@ -363,38 +366,22 @@ const getAllCashesDt = () => {
         language: languageDatatable,
         columnDefs: [
             { targets: "_all", defaultContent: "-" },
-            {
-                targets: [11, 12],
-                orderable: false,
-            },
-            {
-                targets: [2],
-                render: data => `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>`,
-            },
-            {
-                targets: [6, 7],
-                render: data => `<span dir="ltr">${data ? data.toLocaleString() : "-"}</span>`,
-            },
-            {
-                targets: [8],
-                render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>`,
-            },
         ],
         columns: [
             { data: "serial", responsivePriority: 1 },
-            // { data: "paymentVoucherNumber", visible: window.isAdminOrFinancial, searchable: window.isAdminOrFinancial },
             { data: "cashGroup.groupNumber" },
-            { data: "createDateTxt" },
+            { data: "createDateTxt", render: renderDateTimeHtml },
             { data: "costTitleTxt", responsivePriority: 2 },
             { data: "costCenterTxt", responsivePriority: 3 },
             { data: "costDate" },
-            { data: "amount" },
-            { data: "fee" },
-            { data: "totalAmount" },
-            { data: "costDescription", className: "wrap-text" },
+            { data: "amount", render: data => `<span dir="ltr">${data ? data.toLocaleString() : "-"}</span>` },
+            { data: "fee", render: data => `<span dir="ltr">${data ? data.toLocaleString() : "-"}</span>` },
+            { data: "totalAmount", render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>` },
+            { data: "costDescription", className: "wrap-text-minw" },
             { data: "userCreator" },
             {
                 data: "status",
+                orderable: false,
                 render: function (data, type, row) {
                     if (data === 0) { // ثبت موقت
                         //if (isManager) return `<span class="fMedium" style="color: #666">${row.statusTxt}</span>`;
@@ -429,6 +416,7 @@ const getAllCashesDt = () => {
             },
             {
                 data: null,
+                orderable: false,
                 render: function (data, type, row) {
                     return `
                         <div class="inline-flex-center gap-1">
@@ -722,7 +710,7 @@ function getAllCashesGroupDt() {
             {
                 data: "createDateTxt",
                 responsivePriority: 2,
-                render: data => data ? `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>` : "-",
+                render: renderDateTimeHtml,
             },
             { data: "userCreator" },
             { data: "itemsCount" },
@@ -802,9 +790,9 @@ function getAllCashesModalDt() {
             return: true,
         },
         ordering: true,
-        order: [[2, "desc"]],
+        order: [[1, "desc"]],
         scrollCollapse: true,
-        scrollY: "calc(100dvh - 400px)",
+        scrollY: "calc(100dvh - 430px)",
         responsive: true,
         ajax: {
             url: `/Cash/GetAllCashesDt`,
@@ -820,60 +808,71 @@ function getAllCashesModalDt() {
         language: languageDatatable,
         columnDefs: [
             { targets: "_all", defaultContent: "-" },
-            { targets: [11, 12], orderable: false },
-            { targets: [2], render: data => `<span dir="ltr">${data.slice(0, -3).split(" ").join(" | ")}</span>` },
-            { targets: [6, 7], render: data => `<span dir="ltr">${data ? data.toLocaleString() : "-"}</span>` },
-            { targets: [8], render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>` },
         ],
         columns: [
             { data: "serial", responsivePriority: 1 },
-            // { data: "paymentVoucherNumber" },
-            { data: "cashGroup.groupNumber", visible: false, searchable: false },
-            { data: "createDateTxt" },
+            { data: "createDateTxt", className: "nowrap-text", render: renderDateTimeHtml },
             { data: "costTitleTxt", responsivePriority: 2 },
             { data: "costCenterTxt", responsivePriority: 3 },
             { data: "costDate" },
-            { data: "amount" },
-            { data: "fee" },
-            { data: "totalAmount" },
-            { data: "costDescription", className: "wrap-text" },
-            { data: "userCreator", visible: false, searchable: false },
+            { data: "amount", render: data => `<span dir="ltr">${data ? data.toLocaleString() : "-"}</span>` },
+            { data: "fee", render: data => `<span dir="ltr">${data ? data.toLocaleString() : "-"}</span>` },
+            { data: "totalAmount", render: data => `<span dir="ltr" class="fbold">${data ? data.toLocaleString() : "-"}</span>` },
+            { data: "costDescription" },
             {
                 data: "status",
+                orderable: false,
+                className: "nowrap-text",
                 render: function (data, type, row) {
+                    
                     if (data === 0) { // ثبت موقت
                         //if (isManager) return `<span class="fMedium" style="color: #666">${row.statusTxt}</span>`;
-                        
                         return `<button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>`;
-                    } else if (data === 1) { // در دست تایید
-                        if (window.isAdminOrFinancial) return `
-                            <div class="inline-flex-center gap-1">
-                                <button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 2)">تایید</button>
-                                <button class="buttonCancel3" onclick="changeStatusCash('${row.id}', 0)">برگشت</button>
-                            </div>
-                        `;
-                        
-                        return `
-                            <div class="inline-flex-center gap-1">
-                                <span class="fMedium" style="color: #CC9900">${row.statusTxt}</span>
-                            </div>
-                        `;
-                    } else { // تایید شده
-                        if (window.isAdminOrFinancial) return `
-                            <div class="inline-flex-center gap-1">
-                                <span class="fMedium" style="color: darkgreen">${row.statusTxt}</span>
-                                <button style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
-                                    <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"></path></svg>
-                                </button>
-                            </div>
-                        `;
-                        
-                        return `<span class="fMedium" style="color: darkgreen">${row.statusTxt}</span>`;
                     }
+                    
+                    if (data === 1) { // در دست تایید
+                        if (window.isAdminOrFinancial) {
+                            return `
+                                <div class="inline-flex-center gap-1">
+                                    <button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 2)">تایید</button>
+                                    <button class="buttonCancel3" onclick="changeStatusCash('${row.id}', 0)">برگشت</button>
+                                </div>
+                            `;
+                        }
+                        
+                        return `<span class="fMedium" style="color:#CC9900">${row.statusTxt}</span>`;
+                    }
+                    
+                    const transferInfo = row.externalSoftwareTitles?.length ? `
+                            <div class="cash-map-softwares">
+                                ${(row.externalSoftwareTitles).map(title => `
+                                <span class="cash-map-software">
+                                  <svg style="width: 13px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" /></svg>
+                                  ${title}
+                                </span>`).join("")}
+                            </div>
+                        ` : "";
+                    
+                    
+                    // تایید شده
+                    return `
+                        <div class="d-inline-flex flex-column align-items-center gap-1">
+                            <div class="inline-flex-center gap-1">
+                                <span class="fMedium" style="color:darkgreen">${row.statusTxt}</span>
+                                ${window.isAdminOrFinancial ? `
+                                    <button style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
+                                        <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"/></svg>
+                                    </button>` : ""}
+                            </div>
+                            ${transferInfo}
+<!--                             <span class="wrap-text fs-small">${row.externalSoftwareTitles || "-"}</span> -->
+                        </div>`;
                 },
             },
             {
                 data: null,
+                orderable: false,
+                className: "nowrap-text",
                 render: function (data, type, row) {
                     return `
                         <div class="inline-flex-center gap-1">
@@ -929,10 +928,10 @@ function getAllCashesModalDt() {
         
         getItemKey: item => cashModalTbl.row(item).data()?.id,
         
-        isSelectable: null, /*item => {
+        isSelectable: item => {
             const data = cashModalTbl.row(item).data();
-            return data.status === 0;
-        },*/
+            return data.status === 2;
+        },
         
         onAction: async (ids, selection) => {
             await showExternalSoftwareModal(ids);
