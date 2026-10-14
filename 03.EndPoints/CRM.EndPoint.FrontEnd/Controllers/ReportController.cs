@@ -196,21 +196,25 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                IQueryable<Report> qData = db.Reports.AsNoTracking()
+                var qData = db.Reports.AsNoTracking()
                     .Where(f => f.RepTel == mobileNumber)
                     .Include(r => r.CallRecording.Participants)
                     .OrderByDescending(r => r.CreateDate)
                     .AsQueryable();
 
+
                 var data = await qData.ToListAsync();
 
                 data = await GenerateImage(data);
 
+                var isManager = User.IsAdmin() || User.IsSalesAdmin() || User.IsManagingDirector() || User.IsExecutiveDirector();
+                var currentUserId = User.GetUserId();
+
                 var html = await vrs.RenderToStringAsync("GetAllReportPartial", data,
                     new Dictionary<string, object> {
-                        { "PassType", ViewBag.PassType },
-                        { "IsManager", ViewBag.IsManager },
-                        { "CurrentUserId", ViewBag.CurrentUserId },
+                        { "PassType", 0 },
+                        { "IsManager", isManager },
+                        { "CurrentUserId", currentUserId },
                     });
 
                 return Ok(new { count = data.Count, html });
