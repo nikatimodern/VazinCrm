@@ -48,11 +48,7 @@
         document.querySelectorAll("#userRolesList .role-checkbox").forEach(input => input.checked = false);
 
         const modalElement = document.getElementById("ModalRols");
-        if (window.bootstrap && bootstrap.Modal) {
-            bootstrap.Modal.getOrCreateInstance(modalElement).show();
-        } else {
-            $("#ModalRols").modal("show");
-        }
+        bootstrap.Modal.getOrCreateInstance(modalElement).show();
 
         try {
             if (typeof axios === "undefined") {
@@ -110,8 +106,7 @@
             });
             if (!response.data || response.data.success !== true) throw new Error("ثبت نقش‌ها موفق نبود.");
             updateUserRolesTable(document.getElementById("userName").value, response.data.roles || []);
-            if (window.bootstrap && bootstrap.Modal) bootstrap.Modal.getOrCreateInstance(document.getElementById("ModalRols")).hide();
-            else $("#ModalRols").modal("hide");
+            bootstrap.Modal.getOrCreateInstance(document.getElementById("ModalRols")).hide();
         } catch (error) {
             errorBox.textContent = error.response?.data?.message || error.message || "ثبت نقش‌ها انجام نشد. دوباره تلاش کنید.";
             errorBox.style.display = "block";
@@ -122,27 +117,39 @@
     });
 
     function updateUserRolesTable(userName, roles) {
-        const row = Array.from(document.querySelectorAll("#usersTable tbody tr[data-user-name]"))
+        const card = Array.from(document.querySelectorAll("#usersCardList .user-card[data-user-name]"))
             .find(item => item.dataset.userName === userName);
-        const cell = row?.querySelector(".user-roles-cell");
+        const cell = card?.querySelector(".user-roles-cell");
         if (!cell) return;
 
         cell.replaceChildren();
-        const wrapper = document.createElement("span");
-        wrapper.className = "d-flex align-items-center flex-wrap gap-1";
-        roles.forEach(role => {
-            const badge = document.createElement("span");
-            badge.className = "buttonGray d-flex align-items-center gap-1";
-            const remove = document.createElement("span");
-            remove.className = "d-flex align-items-center justify-content-center border-0 cursor-pointer";
-            remove.title = "حذف نقش";
-            remove.style.cursor = "pointer";
-            remove.innerHTML = '<svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>';
-            remove.addEventListener("click", () => removeUserRoleWithoutReload(row.dataset.userId, role, userName));
-            badge.append(remove, document.createTextNode(role));
-            wrapper.appendChild(badge);
-        });
-        cell.appendChild(wrapper);
+        if (!roles.length) {
+            const empty = document.createElement("span");
+            empty.className = "user-no-roles";
+            empty.textContent = "بدون نقش";
+            cell.appendChild(empty);
+        } else {
+            roles.forEach(role => {
+                const chip = document.createElement("span");
+                chip.className = "user-role-chip";
+                const remove = document.createElement("button");
+                remove.type = "button";
+                remove.className = "role-remove-button";
+                remove.title = "حذف نقش";
+                remove.setAttribute("aria-label", "حذف نقش " + role);
+                remove.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>';
+                remove.addEventListener("click", () => DelUserRole(remove, card.dataset.userId, role, userName));
+                const label = document.createElement("span");
+                label.textContent = role;
+                chip.append(remove, label);
+                cell.appendChild(chip);
+            });
+        }
+
+        const searchable = [card.querySelector("h3")?.textContent, card.querySelector(".user-card-username")?.textContent,
+            ...Array.from(card.querySelectorAll(".user-detail strong")).map(item => item.textContent), ...roles].join(" ");
+        card.dataset.search = searchable;
+        if (typeof renderUserCards === "function") renderUserCards();
     }
 
     async function removeUserRoleWithoutReload(userId, role, userName) {
@@ -155,7 +162,7 @@
             await axios.post("/Admin/DelUserRol", payload, {
                 headers: { "Content-Type": "application/x-www-form-urlencoded", "X-Requested-With": "XMLHttpRequest" }
             });
-            const response = await axios.get("/Admin/GetUserRoles?userName=" + encodeURIComponent(userName));
+            const response = await axios.get("/Admin/GetUserRoles", { params: { userName }, timeout: 15000 });
             updateUserRolesTable(userName, response.data || []);
         } catch {
             window.alert("حذف نقش انجام نشد. دوباره تلاش کنید.");
