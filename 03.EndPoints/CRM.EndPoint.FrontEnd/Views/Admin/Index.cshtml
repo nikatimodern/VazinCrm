@@ -52,7 +52,7 @@
                     var isLock = user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow;
                     <article class="user-card @(isLock ? "user-card-locked" : user.IsEmployee ? "user-card-employee" : "")"
                              data-user-name="@user.UserName" data-user-id="@user.Id"
-                             data-search="@($"{user.FirstName} {user.LastName} {user.UserName} {user.PhoneNumber} {user.Email} {user.InternalTels} {string.Join(" ", user.RolsUsers ?? [])}")">
+                            >
                         <div class="user-card-top">
                             <div class="user-avatar" aria-hidden="true"><i class="fa fa-user"></i></div>
                             <div class="user-card-identity">
@@ -213,7 +213,7 @@
     function renderUserCards() {
         const cards = getAllUserCards();
         const filtered = cards.filter(card => {
-            const searchable = normalizeUserSearch(card.dataset.search || card.textContent);
+            const searchable = normalizeUserSearch(card.textContent);
             return !userSearchTerm || searchable.includes(userSearchTerm);
         });
 
@@ -231,7 +231,7 @@
             ? `نمایش ${(start + 1).toLocaleString("fa-IR")} تا ${Math.min(start + pageSize, filtered.length).toLocaleString("fa-IR")}`
             : "";
 
-        document.getElementById("userEmptySearch").style.display = filtered.length ? "none" : "flex";
+        document.getElementById("userEmptySearch").style.display = cards.length > 0 && filtered.length === 0 ? "flex" : "none";
         const initialEmpty = document.getElementById("initialNoUsers");
         if (initialEmpty) initialEmpty.style.display = cards.length ? "none" : "flex";
 
@@ -258,11 +258,22 @@
         };
 
         addButton("قبلی", Math.max(1, currentUserPage - 1), { disabled: currentUserPage === 1 });
-        const first = Math.max(1, Math.min(currentUserPage - 2, totalPages - 4));
-        const last = Math.min(totalPages, Math.max(5, currentUserPage + 2));
-        for (let page = first; page <= last; page++) {
-            addButton(page.toLocaleString("fa-IR"), page, { active: page === currentUserPage });
+        const pages = new Set([1, totalPages]);
+        for (let page = Math.max(1, currentUserPage - 2); page <= Math.min(totalPages, currentUserPage + 2); page++) {
+            pages.add(page);
         }
+        const sortedPages = Array.from(pages).sort((a, b) => a - b);
+        let previousPage = 0;
+        sortedPages.forEach(page => {
+            if (previousPage && page - previousPage > 1) {
+                const dots = document.createElement("span");
+                dots.textContent = "…";
+                dots.className = "px-1 text-muted";
+                container.appendChild(dots);
+            }
+            addButton(page.toLocaleString("fa-IR"), page, { active: page === currentUserPage });
+            previousPage = page;
+        });
         addButton("بعدی", Math.min(totalPages, currentUserPage + 1), { disabled: currentUserPage === totalPages });
     }
 
