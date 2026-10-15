@@ -139,7 +139,9 @@
     .user-empty-state > i { font-size:27px; color:#a8b6c1; margin-bottom:5px; }
     .user-empty-state strong { color:#516170; font-size:14px; }
     .user-empty-state span { font-size:12px; }
-    .user-load-error { grid-column:1/-1; display:flex; flex-direction:column; align-items:center; gap:10px; padding:32px 12px; color:#8a97a3; }\n    .user-load-error > i { color:#c78336; font-size:25px; }\n    .user-pagination { display:flex; align-items:center; justify-content:center; gap:5px; flex-wrap:wrap; padding-top:18px; }
+    .user-load-error { grid-column:1/-1; display:flex; flex-direction:column; align-items:center; gap:10px; padding:32px 12px; color:#8a97a3; }
+    .user-load-error > i { color:#c78336; font-size:25px; }
+    .user-pagination { display:flex; align-items:center; justify-content:center; gap:5px; flex-wrap:wrap; padding-top:18px; }
     .user-page-button { min-width:34px; height:34px; padding:0 10px; border:1px solid #e0e7ed; border-radius:8px; background:#fff; color:#536474; cursor:pointer; }
     .user-page-button:hover:not(:disabled), .user-page-button.is-active { border-color:#07877d; background:#07877d; color:#fff; }
     .user-page-button:disabled { opacity:.4; cursor:not-allowed; }
@@ -212,7 +214,9 @@
     }
 
     function renderUserCards() {
-        const loadingState = document.getElementById("usersLoadingState");\n        if (loadingState) return;\n        const cards = getAllUserCards();
+        const loadingState = document.getElementById("usersLoadingState");
+        if (loadingState) return;
+        const cards = getAllUserCards();
         const filtered = cards.filter(card => {
             const searchable = normalizeUserSearch(card.textContent);
             return !userSearchTerm || searchable.includes(userSearchTerm);
