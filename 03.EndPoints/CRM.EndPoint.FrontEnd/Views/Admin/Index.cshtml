@@ -24,6 +24,16 @@
                 <input id="userSearchInput" type="search" class="form-control" placeholder="جستجوی نام، نام کاربری، تلفن، ایمیل یا نقش..." autocomplete="off" />
                 <button type="button" id="clearUserSearch" class="user-clear-search" aria-label="پاک کردن جستجو" title="پاک کردن جستجو">×</button>
             </div>
+                <label class="user-page-size">
+                    <span>نمایش در هر صفحه</span>
+                    <select id="userPageSize" class="form-select form-select-sm">
+                        <option value="5" selected>۵</option>
+                        <option value="10">۱۰</option>
+                        <option value="20">۲۰</option>
+                        <option value="50">۵۰</option>
+                        <option value="all">همه</option>
+                    </select>
+                </label>
 
             </div>
             <div class="user-filter-group">
@@ -50,16 +60,7 @@
                         <i class="fa fa-filter"></i> انتخاب نقش‌ها
                     </button>
                 </div>
-                                <label class="user-page-size">
-                    <span>نمایش در هر صفحه</span>
-                    <select id="userPageSize" class="form-select form-select-sm">
-                        <option value="5" selected>۵</option>
-                        <option value="10">۱۰</option>
-                        <option value="20">۲۰</option>
-                        <option value="50">۵۰</option>
-                        <option value="all">همه</option>
-                    </select>
-                </label>
+                
                 </div>
             </div>
             <div class="user-role-filter-chips-row">
