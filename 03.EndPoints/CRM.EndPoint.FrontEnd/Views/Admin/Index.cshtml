@@ -26,8 +26,8 @@
             <label class="user-page-size">
                 <span>نمایش در هر صفحه</span>
                 <select id="userPageSize" class="form-select form-select-sm">
-                    <option value="5">۵</option>
-                    <option value="10" selected>۱۰</option>
+                    <option value="5" selected>۵</option>
+                    <option value="10">۱۰</option>
                     <option value="20">۲۰</option>
                     <option value="50">۵۰</option>
                     <option value="all">همه</option>
@@ -159,49 +159,85 @@
 @section Scripts {
 <script>
     let currentUserPage = 1;
-    let userPageSize = 10;
+    let userPageSize = 5;
     let userSearchTerm = "";
+    let userTotalCount = 0;
+    let userTotalPages = 1;
+    let userSearchDebounce = null;
+    let userLoadController = null;
 
     document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("userSearchInput").addEventListener("input", event => {
             userSearchTerm = normalizeUserSearch(event.target.value);
             currentUserPage = 1;
-            renderUserCards();
+            window.clearTimeout(userSearchDebounce);
+            userSearchDebounce = window.setTimeout(() => loadUsers(1), 300);
         });
         document.getElementById("clearUserSearch").addEventListener("click", () => {
             document.getElementById("userSearchInput").value = "";
             userSearchTerm = "";
             currentUserPage = 1;
-            renderUserCards();
+            window.clearTimeout(userSearchDebounce);
+            loadUsers(1);
         });
         document.getElementById("userPageSize").addEventListener("change", event => {
-            userPageSize = event.target.value === "all" ? Infinity : Number(event.target.value);
+            userPageSize = event.target.value === "all" ? 0 : Number(event.target.value);
             currentUserPage = 1;
-            renderUserCards();
+            loadUsers(1);
         });
-        loadUsers();
+        loadUsers(1);
     });
 
-    async function loadUsers() {
+    async function loadUsers(page = currentUserPage) {
         const list = document.getElementById("usersCardList");
+        if (userLoadController) userLoadController.abort();
+        userLoadController = new AbortController();
+        currentUserPage = Math.max(1, page);
+
         list.setAttribute("aria-busy", "true");
+        list.innerHTML = `
+            <div class="users-loading-state">
+                <div class="users-loading-orbit"><span></span><span></span><span></span><i class="fa fa-users"></i></div>
+                <strong>در حال بارگذاری کاربران</strong>
+                <span>در حال دریافت صفحه ${currentUserPage.toLocaleString("fa-IR")} از سرور...</span>
+                <div class="users-skeleton-grid" aria-hidden="true">
+                    <div class="user-skeleton"><div class="skeleton-heading"><i></i><b></b><em></em></div><div class="skeleton-line"></div><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-footer"></div></div>
+                    <div class="user-skeleton"><div class="skeleton-heading"><i></i><b></b><em></em></div><div class="skeleton-line"></div><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-footer"></div></div>
+                    <div class="user-skeleton"><div class="skeleton-heading"><i></i><b></b><em></em></div><div class="skeleton-line"></div><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-footer"></div></div>
+                </div>
+            </div>`;
         try {
-            const response = await fetch("/Admin/GetUsers", {
+            const params = new URLSearchParams({
+                page: String(currentUserPage),
+                pageSize: String(userPageSize),
+                search: userSearchTerm
+            });
+            const response = await fetch("/Admin/GetUsers?" + params.toString(), {
                 method: "GET",
                 headers: { "X-Requested-With": "XMLHttpRequest" },
                 credentials: "same-origin",
-                cache: "no-store"
+                cache: "no-store",
+                signal: userLoadController.signal
             });
             if (!response.ok) throw new Error("دریافت فهرست کاربران با خطا مواجه شد.");
-            list.innerHTML = await response.text();
+
+            const html = await response.text();
+            userTotalCount = Number(response.headers.get("X-Total-Count") || 0);
+            currentUserPage = Number(response.headers.get("X-Current-Page") || currentUserPage);
+            userPageSize = Number(response.headers.get("X-Page-Size") || userPageSize);
+            userTotalPages = Number(response.headers.get("X-Total-Pages") || 1);
+            list.innerHTML = html;
             list.setAttribute("aria-busy", "false");
             renderUserCards();
         } catch (error) {
+            if (error.name === "AbortError") return;
             list.setAttribute("aria-busy", "false");
             list.innerHTML = `<div class="user-load-error"><i class="fa fa-exclamation-triangle"></i><strong>بارگذاری کاربران انجام نشد</strong><span></span><button type="button" class="user-action user-action-roles" id="retryLoadUsers">تلاش مجدد</button></div>`;
             list.querySelector(".user-load-error span").textContent = error.message || "اتصال به سرور ناموفق بود.";
-            document.getElementById("retryLoadUsers").addEventListener("click", loadUsers);
+            document.getElementById("retryLoadUsers").addEventListener("click", () => loadUsers(currentUserPage));
             document.getElementById("userResultsCount").textContent = "دریافت اطلاعات ناموفق بود";
+            document.getElementById("userPageSummary").textContent = "";
+            document.getElementById("userPagination").replaceChildren();
         }
     }
 
@@ -214,42 +250,29 @@
     }
 
     function renderUserCards() {
-        const loadingState = document.getElementById("usersLoadingState");
-        if (loadingState) return;
         const cards = getAllUserCards();
-        const filtered = cards.filter(card => {
-            const searchable = normalizeUserSearch(card.textContent);
-            return !userSearchTerm || searchable.includes(userSearchTerm);
-        });
-
-        const pageSize = userPageSize === Infinity ? Math.max(filtered.length, 1) : userPageSize;
-        const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-        currentUserPage = Math.min(currentUserPage, totalPages);
-        const start = (currentUserPage - 1) * pageSize;
-        const visible = new Set(filtered.slice(start, start + pageSize));
-
-        cards.forEach(card => { card.style.display = visible.has(card) ? "" : "none"; });
-        document.getElementById("userResultsCount").textContent = filtered.length === cards.length
-            ? `تعداد کاربران: ${cards.length.toLocaleString("fa-IR")}`
-            : `نتیجه جستجو: ${filtered.length.toLocaleString("fa-IR")} از ${cards.length.toLocaleString("fa-IR")} کاربر`;
-        document.getElementById("userPageSummary").textContent = filtered.length
-            ? `نمایش ${(start + 1).toLocaleString("fa-IR")} تا ${Math.min(start + pageSize, filtered.length).toLocaleString("fa-IR")}`
+        const start = userTotalCount === 0 ? 0 : (currentUserPage - 1) * userPageSize;
+        document.getElementById("userResultsCount").textContent = userSearchTerm
+            ? `نتیجه جستجو: ${userTotalCount.toLocaleString("fa-IR")} کاربر`
+            : `تعداد کاربران: ${userTotalCount.toLocaleString("fa-IR")}`;
+        document.getElementById("userPageSummary").textContent = userTotalCount
+            ? `نمایش ${(start + 1).toLocaleString("fa-IR")} تا ${Math.min(start + cards.length, userTotalCount).toLocaleString("fa-IR")} از ${userTotalCount.toLocaleString("fa-IR")}`
             : "";
 
         const emptyState = document.getElementById("userEmptySearch");
-        emptyState.style.display = filtered.length === 0 ? "flex" : "none";
+        emptyState.style.display = cards.length === 0 ? "flex" : "none";
         const emptyTitle = emptyState.querySelector("strong");
         const emptyMessage = emptyState.querySelector("span");
-        if (emptyTitle) emptyTitle.textContent = cards.length === 0 ? "کاربری ثبت نشده است" : "نتیجه‌ای پیدا نشد";
-        if (emptyMessage) emptyMessage.textContent = cards.length === 0 ? "برای شروع، کاربر جدیدی ثبت کنید." : "عبارت جستجو را تغییر دهید یا آن را پاک کنید.";
+        if (emptyTitle) emptyTitle.textContent = userTotalCount === 0 && !userSearchTerm ? "کاربری ثبت نشده است" : "نتیجه‌ای پیدا نشد";
+        if (emptyMessage) emptyMessage.textContent = userTotalCount === 0 && !userSearchTerm ? "برای شروع، کاربر جدیدی ثبت کنید." : "عبارت جستجو را تغییر دهید یا آن را پاک کنید.";
 
-        renderUserPagination(totalPages);
+        renderUserPagination(userTotalPages);
     }
 
     function renderUserPagination(totalPages) {
         const container = document.getElementById("userPagination");
         container.replaceChildren();
-        if (totalPages <= 1 || userPageSize === Infinity) return;
+        if (totalPages <= 1 || userPageSize === 0) return;
 
         const addButton = (label, page, options = {}) => {
             const button = document.createElement("button");
@@ -258,10 +281,7 @@
             button.textContent = label;
             button.disabled = Boolean(options.disabled);
             if (options.active) button.setAttribute("aria-current", "page");
-            button.addEventListener("click", () => {
-                currentUserPage = page;
-                renderUserCards();
-            });
+            button.addEventListener("click", () => loadUsers(page));
             container.appendChild(button);
         };
 
@@ -403,8 +423,8 @@
                 headers: { "Content-Type": "application/x-www-form-urlencoded", "X-Requested-With": "XMLHttpRequest" }, timeout: 15000
             });
             if (!response.data?.success) throw new Error(response.data?.message || "حذف کاربر ناموفق بود.");
-            card.remove();
-            renderUserCards();
+            const deletedPage = currentUserPage;
+            await loadUsers(deletedPage > 1 && getAllUserCards().length === 1 ? deletedPage - 1 : deletedPage);
             await Swal.fire({ icon: "success", title: "حذف شد", text: "کاربر با موفقیت حذف شد.", timer: 1500, showConfirmButton: false });
         } catch (error) {
             card.style.opacity = "";
