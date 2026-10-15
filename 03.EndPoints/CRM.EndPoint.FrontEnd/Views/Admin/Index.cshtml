@@ -23,16 +23,34 @@
                 <input id="userSearchInput" type="search" class="form-control" placeholder="جستجوی نام، نام کاربری، تلفن، ایمیل یا نقش..." autocomplete="off" />
                 <button type="button" id="clearUserSearch" class="user-clear-search" aria-label="پاک کردن جستجو" title="پاک کردن جستجو">×</button>
             </div>
-            <label class="user-page-size">
-                <span>نمایش در هر صفحه</span>
-                <select id="userPageSize" class="form-select form-select-sm">
-                    <option value="5" selected>۵</option>
-                    <option value="10">۱۰</option>
-                    <option value="20">۲۰</option>
-                    <option value="50">۵۰</option>
-                    <option value="all">همه</option>
-                </select>
-            </label>
+            <div class="user-filter-group">
+                <label class="user-filter">
+                    <span><i class="fa fa-users"></i> نوع کاربر</span>
+                    <select id="userEmployeeFilter" class="form-select form-select-sm">
+                        <option value="all" selected>همه</option>
+                        <option value="employee">کارمندان</option>
+                        <option value="nonEmployee">غیرکارمندان</option>
+                    </select>
+                </label>
+                <label class="user-filter">
+                    <span><i class="fa fa-user-check"></i> وضعیت حساب</span>
+                    <select id="userAccountStatusFilter" class="form-select form-select-sm">
+                        <option value="all" selected>همه وضعیت‌ها</option>
+                        <option value="active">فعال</option>
+                        <option value="blocked">مسدود</option>
+                    </select>
+                </label>
+                <label class="user-page-size">
+                    <span>نمایش در هر صفحه</span>
+                    <select id="userPageSize" class="form-select form-select-sm">
+                        <option value="5" selected>۵</option>
+                        <option value="10">۱۰</option>
+                        <option value="20">۲۰</option>
+                        <option value="50">۵۰</option>
+                        <option value="all">همه</option>
+                    </select>
+                </label>
+            </div>
         </div>
 
         <div class="user-results-summary">
@@ -99,6 +117,11 @@
     .user-search-wrap input { border-radius:10px; min-height:42px; padding-right:38px; padding-left:38px; border-color:#dce4eb; }
     .user-search-wrap input:focus { border-color:#07877d; box-shadow:0 0 0 3px rgba(7,135,125,.12); }
     .user-clear-search { position:absolute; left:9px; top:50%; transform:translateY(-50%); border:0; background:transparent; color:#7b8794; font-size:22px; line-height:1; cursor:pointer; }
+    .user-filter-group { display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; }
+    .user-filter { display:flex; flex-direction:column; gap:6px; color:#667584; font-size:12px; min-width:145px; }
+    .user-filter > span { display:flex; align-items:center; gap:6px; }
+    .user-filter > span i { color:#07877d; }
+    .user-filter select { min-width:145px; border-radius:9px; min-height:36px; border-color:#dce4eb; }
     .user-page-size { display:flex; align-items:center; gap:8px; color:#667584; font-size:13px; }
     .user-page-size select { width:85px; border-radius:8px; }
     .user-results-summary { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; color:#7b8794; font-size:12px; padding:4px 2px 14px; }
@@ -188,6 +211,14 @@
             currentUserPage = 1;
             loadUsers(1);
         });
+        document.getElementById("userEmployeeFilter").addEventListener("change", () => {
+            currentUserPage = 1;
+            loadUsers(1);
+        });
+        document.getElementById("userAccountStatusFilter").addEventListener("change", () => {
+            currentUserPage = 1;
+            loadUsers(1);
+        });
         loadUsers(1);
     });
 
@@ -213,7 +244,9 @@
             const params = new URLSearchParams({
                 page: String(currentUserPage),
                 pageSize: String(userPageSize),
-                search: userSearchTerm
+                search: userSearchTerm,
+                employeeType: document.getElementById("userEmployeeFilter").value,
+                accountStatus: document.getElementById("userAccountStatusFilter").value
             });
             const response = await fetch("/Admin/GetUsers?" + params.toString(), {
                 method: "GET",
