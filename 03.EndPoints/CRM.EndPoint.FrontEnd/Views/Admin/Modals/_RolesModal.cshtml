@@ -8,6 +8,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form asp-action="UpdateUserRoles" method="post" id="userRolesForm">
+                @Html.AntiForgeryToken()
                 <div class="modal-body" dir="rtl">
                     <input type="hidden" name="userName" id="userName" />
                     <div class="mb-3">
@@ -24,6 +25,7 @@
                         }
                     </div>
                     <div id="rolesLoadError" class="text-danger mt-2" style="display:none">دریافت نقش‌های کاربر ناموفق بود. دوباره تلاش کنید.</div>
+                    <div id="rolesSaveError" class="text-danger mt-2" style="display:none"></div>
                 </div>
                 <div class="modal-footer d-flex justify-content-between">
                     <button type="button" class="buttonCancel2" data-bs-dismiss="modal">انصراف</button>
@@ -59,6 +61,86 @@
             });
         } catch (error) {
             document.getElementById("rolesLoadError").style.display = "block";
+        }
+    }
+
+    document.getElementById("userRolesForm").addEventListener("submit", async function (event) {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const button = document.getElementById("saveUserRolesButton");
+        const errorBox = document.getElementById("rolesSaveError");
+        errorBox.style.display = "none";
+
+        if (typeof axios === "undefined") {
+            errorBox.textContent = "کتابخانه Axios در صفحه بارگذاری نشده است.";
+            errorBox.style.display = "block";
+            return;
+        }
+
+        const payload = new URLSearchParams();
+        payload.append("userName", document.getElementById("userName").value);
+        const token = form.querySelector('input[name="__RequestVerificationToken"]');
+        if (token) payload.append("__RequestVerificationToken", token.value);
+        form.querySelectorAll('input[name="roleNames"]:checked').forEach(input => payload.append("roleNames", input.value));
+
+        const oldText = button.textContent;
+        button.disabled = true;
+        button.textContent = "در حال ثبت...";
+        try {
+            const response = await axios.post(form.action, payload, {
+                headers: { "Content-Type": "application/x-www-form-urlencoded", "X-Requested-With": "XMLHttpRequest" }
+            });
+            if (!response.data || response.data.success !== true) throw new Error("ثبت نقش‌ها موفق نبود.");
+            updateUserRolesTable(document.getElementById("userName").value, response.data.roles || []);
+            if (window.bootstrap && bootstrap.Modal) bootstrap.Modal.getOrCreateInstance(document.getElementById("ModalRols")).hide();
+            else $("#ModalRols").modal("hide");
+        } catch (error) {
+            errorBox.textContent = error.response?.data?.message || error.message || "ثبت نقش‌ها انجام نشد. دوباره تلاش کنید.";
+            errorBox.style.display = "block";
+        } finally {
+            button.disabled = false;
+            button.textContent = oldText;
+        }
+    });
+
+    function updateUserRolesTable(userName, roles) {
+        const row = Array.from(document.querySelectorAll("#usersTable tbody tr[data-user-name]"))
+            .find(item => item.dataset.userName === userName);
+        const cell = row?.querySelector(".user-roles-cell");
+        if (!cell) return;
+
+        cell.replaceChildren();
+        const wrapper = document.createElement("span");
+        wrapper.className = "d-flex align-items-center flex-wrap gap-1";
+        roles.forEach(role => {
+            const badge = document.createElement("span");
+            badge.className = "buttonGray d-flex align-items-center gap-1";
+            const remove = document.createElement("span");
+            remove.className = "d-flex align-items-center justify-content-center border-0 cursor-pointer";
+            remove.title = "حذف نقش";
+            remove.style.cursor = "pointer";
+            remove.innerHTML = '<svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>';
+            remove.addEventListener("click", () => removeUserRoleWithoutReload(row.dataset.userId, role, userName));
+            badge.append(remove, document.createTextNode(role));
+            wrapper.appendChild(badge);
+        });
+        cell.appendChild(wrapper);
+    }
+
+    async function removeUserRoleWithoutReload(userId, role, userName) {
+        const payload = new URLSearchParams();
+        payload.append("id", userId);
+        payload.append("role", role);
+        const token = document.querySelector('#userRolesForm input[name="__RequestVerificationToken"]');
+        if (token) payload.append("__RequestVerificationToken", token.value);
+        try {
+            await axios.post("/Admin/DelUserRol", payload, {
+                headers: { "Content-Type": "application/x-www-form-urlencoded", "X-Requested-With": "XMLHttpRequest" }
+            });
+            const response = await axios.get("/Admin/GetUserRoles?userName=" + encodeURIComponent(userName));
+            updateUserRolesTable(userName, response.data || []);
+        } catch {
+            window.alert("حذف نقش انجام نشد. دوباره تلاش کنید.");
         }
     }
 </script>
