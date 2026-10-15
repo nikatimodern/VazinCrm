@@ -115,31 +115,48 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [HttpPost]
-        public IActionResult Create(CreateModel model)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(CreateModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                AppUser user = new AppUser {
-                    UserName = model.UserName,
-                    PhoneNumber = model.PhoneNumber,
-                    FirstName = model.FirstName,
-                    LastName = model.LastName,
-                    IsEmployee = true
-                };
-                IdentityResult result = userManager.CreateAsync(user, model.Password).Result;
-                if (result.Succeeded)
-                {
-                    return RedirectToAction("Index");
-                } else
-                {
-                    foreach (IdentityError error in result.Errors)
-                    {
-                        ModelState.AddModelError("", error.Description);
-                    }
-                }
+                var validationErrors = ModelState
+                    .Where(x => x.Value.Errors.Count > 0)
+                    .SelectMany(x => x.Value.Errors.Select(e => e.ErrorMessage))
+                    .ToList();
+                return BadRequest(new { success = false, message = string.Join("، ", validationErrors) });
             }
 
-            return View(model);
+            var user = new AppUser
+            {
+                UserName = model.UserName,
+                PhoneNumber = model.PhoneNumber,
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                Email = model.Email,
+                IsEmployee = true
+            };
+
+            var result = await userManager.CreateAsync(user, model.Password);
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { success = false, message = string.Join("، ", result.Errors.Select(e => e.Description)) });
+            }
+
+            return Json(new
+            {
+                success = true,
+                user = new
+                {
+                    id = user.Id,
+                    userName = user.UserName,
+                    firstName = user.FirstName,
+                    lastName = user.LastName,
+                    phoneNumber = user.PhoneNumber,
+                    email = user.Email,
+                    internalTels = user.InternalTels
+                }
+            });
         }
 
         //[HttpPost]
