@@ -47,8 +47,7 @@
                         <i class="fa fa-filter"></i> انتخاب نقش‌ها
                     </button>
                 </div>
-                </div>
-                <label class="user-page-size">
+                                <label class="user-page-size">
                     <span>نمایش در هر صفحه</span>
                     <select id="userPageSize" class="form-select form-select-sm">
                         <option value="5" selected>۵</option>
@@ -58,6 +57,7 @@
                         <option value="all">همه</option>
                     </select>
                 </label>
+                </div>
             </div>
             <div class="user-role-filter-chips-row">
                 <div id="selectedUserRoleChips" class="selected-user-role-chips" aria-live="polite"></div>
@@ -186,6 +186,24 @@
     .user-clear-search { position:absolute; left:9px; top:50%; transform:translateY(-50%); border:0; background:transparent; color:#7b8794; font-size:22px; line-height:1; cursor:pointer; }
      .user-page-size { display:flex; flex-direction:column; align-items:stretch; gap:7px; color:#667584; font-size:12px; min-width:115px; flex:0 1 125px; }
     .user-page-size select { width:100%; min-height:38px; border-radius:9px; border-color:#dce4eb; }
+    /* Final toolbar layout: search/page size on row one, filters on row two, role chips on row three. */
+    .user-list-toolbar .user-filter-group { display:flex; flex-direction:column; align-items:stretch; gap:12px; }
+    .user-list-toolbar .user-filter-row { display:flex; align-items:flex-end; justify-content:space-around; gap:16px; width:100%; }
+    .user-list-toolbar .user-filter-row > .user-filter { flex:1 1 0; min-width:0; }
+    .user-list-toolbar .user-filter-row > .user-role-multi-filter { flex:1 1 0; min-width:145px; }
+    .user-list-toolbar .user-filter-row > .user-page-size { flex:0 0 145px; min-width:145px; }
+    .user-list-toolbar .user-page-size { display:flex; flex-direction:column; align-items:stretch; gap:7px; color:#667584; font-size:12px; }
+    .user-list-toolbar .user-page-size select { width:100%; min-height:38px; border-radius:9px; border-color:#dce4eb; }
+    .user-list-toolbar .user-role-filter-chips-row { grid-area:chips; min-width:0; }
+    .user-list-toolbar .user-role-filter-chips-row:has(.selected-user-role-chips:empty) { display:none; }
+    @@media (max-width:1000px) {
+        .user-list-toolbar .user-filter-row { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); justify-content:initial; }
+        .user-list-toolbar .user-filter-row > .user-page-size { flex:initial; min-width:0; }
+    }
+    @@media (max-width:600px) {
+        .user-list-toolbar .user-filter-row { grid-template-columns:minmax(0,1fr); }
+    }
+
     .user-results-summary { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; color:#7b8794; font-size:12px; padding:4px 2px 14px; }
     .users-card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr)); gap:14px; align-items:stretch; }
     .user-card { min-width:0; display:flex; flex-direction:column; background:#f7fafc; border:1px solid #e1e9ef; border-radius:14px; padding:15px; box-shadow:0 2px 8px rgba(27,43,58,.045); transition:box-shadow .2s ease,transform .2s ease,border-color .2s ease; }
