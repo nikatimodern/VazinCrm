@@ -47,10 +47,24 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetUsers(int page = 1, int pageSize = 5, string search = null)
+        public async Task<IActionResult> GetUsers(int page = 1, int pageSize = 5, string search = null, string employeeType = "all", string accountStatus = "all")
         {
             page = page < 1 ? 1 : page;
             var query = userManager.Users.Where(user => user.OrganAdmin == false);
+
+            // Filter by employee classification on the database server.
+            if (employeeType == "employee")
+                query = query.Where(user => user.IsEmployee);
+            else if (employeeType == "nonEmployee")
+                query = query.Where(user => !user.IsEmployee);
+
+            // Identity has no separate IsActive field in AppUser; account availability is
+            // determined by whether the LockoutEnd timestamp is currently in the future.
+            var utcNow = DateTimeOffset.UtcNow;
+            if (accountStatus == "active")
+                query = query.Where(user => !user.LockoutEnd.HasValue || user.LockoutEnd <= utcNow);
+            else if (accountStatus == "blocked")
+                query = query.Where(user => user.LockoutEnd.HasValue && user.LockoutEnd > utcNow);
 
             if (!string.IsNullOrWhiteSpace(search))
             {
