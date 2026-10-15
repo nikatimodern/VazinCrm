@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Threading.Tasks;\nusing Microsoft.EntityFrameworkCore;
 using CRM.EndPoint.FrontEnd.Models.Admin;
 using CRM.EndPoint.FrontEnd.Models.Login;
 
@@ -35,19 +35,29 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public IActionResult Index()
         {
             ViewBag.Head = "Users";
-            var users = userManager.Users.Where(f => f.OrganAdmin == false).ToList();
-            var rols = roleManager.Roles.ToList();
-            var model = new AdminViewModel() {
-                Roles = rols,
-                Users = users
+            var model = new AdminViewModel
+            {
+                Roles = roleManager.Roles.ToList(),
+                Users = new List<AppUser>()
             };
 
-            foreach (var item in model.Users)
-            {
-                item.RolsUsers = userManager.GetRolesAsync(item).Result;
-            }
-
             return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUsers()
+        {
+            var users = await userManager.Users
+                .Where(user => user.OrganAdmin == false)
+                .OrderBy(user => user.UserName)
+                .ToListAsync();
+
+            await Task.WhenAll(users.Select(async user =>
+            {
+                user.RolsUsers = await userManager.GetRolesAsync(user);
+            }));
+
+            return PartialView("_UserCardsPartial", users);
         }
 
         [HttpPost]
