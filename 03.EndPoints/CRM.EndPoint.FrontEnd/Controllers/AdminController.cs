@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;\nusing Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using CRM.EndPoint.FrontEnd.Models.Admin;
 using CRM.EndPoint.FrontEnd.Models.Login;
 
