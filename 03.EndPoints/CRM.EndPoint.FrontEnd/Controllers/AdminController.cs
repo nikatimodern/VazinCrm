@@ -1,4 +1,5 @@
-﻿using CRM.Core.Domain.AppUsers.Entities;
+﻿using System;
+using CRM.Core.Domain.AppUsers.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
