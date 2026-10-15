@@ -2656,7 +2656,6 @@ document.addEventListener("DOMContentLoaded", function () {
     
 });
 
-
 function applyMinMaxValue(el) {
     const min = el.getAttribute("min");
     const max = el.getAttribute("max");
@@ -2689,12 +2688,15 @@ function applyMinMaxValue(el) {
         numValue = maxValue;
     }
     
-    if (el.classList.contains("currencyNumber")) {
-        el.value = numValue.toLocaleString();
-    } else {
-        el.value = String(numValue);
+    const newValue = el.classList.contains("currencyNumber")
+        ? numValue.toLocaleString()
+        : String(numValue);
+    
+    if (el.value !== newValue) {
+        el.value = newValue;
     }
 }
+
 const getGeneralRef = () => {
     return new Promise(resolve => {
         $.get(baseUrl + "Person/_GeneralReferencePartial?FormName=Person", (res) => {
