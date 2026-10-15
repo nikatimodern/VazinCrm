@@ -42,15 +42,7 @@
             <partial name="_DashboardReportCountPartial" />
         </div>
 
-        <div class="dashGridItem gridItemFinancial">
-            @if (User.IsAdmin() || User.IsFinancial() || User.IsManagingDirector()) {
-                <partial name="_DashboardFinancialPartial" />
-            } else {
-                <partial name="_DashboardTargetPartial" />
-            }
-        </div>
-
-        <div class="dashGridItem gridItemReports">
+<div class="dashGridItem gridItemReports">
             <partial name="_DashboardReportPartial" />
         </div>
 
