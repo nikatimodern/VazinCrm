@@ -817,11 +817,12 @@ const AcceptSetting = async () => {
     }
     
     if (setting.setAmountByRoleType === 2) {
-        document.querySelectorAll(".unitAmountBoxPrefactorModal")?.forEach(elm => elm.style.display = "none");
-        document.querySelectorAll(".totalAmountBoxPrefactorModal")?.forEach(elm => elm.style.display = "none");
+        document.querySelectorAll(".unitAmountBoxPrefactorModal")?.forEach(elm => elm.classList.add("d-none"));
+        document.querySelectorAll(".totalAmountBoxPrefactorModal")?.forEach(elm => elm.classList.add("d-none"));
+        document.querySelectorAll(".discountBoxPrefactorModal")?.forEach(elm => elm.classList.add("d-none"));
         document.querySelectorAll(".unitAmountBoxPrefactorModal input[name='unitAmount']")?.forEach(elm => elm.removeAttribute("required"));
-        const PreFacItem = document.getElementById("PreFacItem");
-        if (PreFacItem) PreFacItem.style.gridTemplateColumns = "2.1fr 3.2fr 1fr 1fr 0.4fr";
+        const form = document.getElementById("PreFacItem");
+        if (form) form.classList.add("hide-amount-columns");
     }
 };
 
