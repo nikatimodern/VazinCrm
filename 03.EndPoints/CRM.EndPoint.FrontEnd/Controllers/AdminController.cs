@@ -143,25 +143,23 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         //[HttpPost]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(string id)
         {
-            AppUser user = await userManager.FindByIdAsync(id);
-            if (user != null)
+            var user = await userManager.FindByIdAsync(id);
+            if (user == null)
             {
-                IdentityResult result = await userManager.DeleteAsync(user);
-                if (result.Succeeded)
-                {
-                    return RedirectToAction("Index");
-                } else
-                {
-                    AddErrorsFromResult(result);
-                }
-            } else
-            {
-                ModelState.AddModelError("", "User Not Found");
+                return NotFound(new { success = false, message = "کاربر پیدا نشد." });
             }
 
-            return Ok();
+            var result = await userManager.DeleteAsync(user);
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { success = false, message = string.Join("، ", result.Errors.Select(e => e.Description)) });
+            }
+
+            return Json(new { success = true });
         }
 
         public async Task<IActionResult> Edit(string id)
