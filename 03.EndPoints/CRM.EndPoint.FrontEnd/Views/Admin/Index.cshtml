@@ -36,11 +36,11 @@
                 } else {
                     foreach (var user in Model.Users) {
                         var isLock = user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow;
-                        <tr class="@(isLock ? "tableRow-bgRed" : user.IsEmployee ? "tableRow-bgGreen" : "")">
+                        <tr data-user-name="@user.UserName" data-user-id="@user.Id" class="@(isLock ? "tableRow-bgRed" : user.IsEmployee ? "tableRow-bgGreen" : "")">
                             <td>@user.FirstName</td>
                             <td>@user.LastName</td>
                             <td>@user.UserName</td>
-                            <td>
+                            <td class="user-roles-cell">
                                 <span class="d-flex align-items-center flex-wrap gap-1">
                                     @if (user.RolsUsers.Any()) {
                                         foreach (var item in user.RolsUsers) {
