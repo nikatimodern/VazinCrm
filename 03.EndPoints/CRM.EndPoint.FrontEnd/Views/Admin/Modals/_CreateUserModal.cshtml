@@ -1,0 +1,106 @@
+@model CRM.EndPoint.FrontEnd.Models.Login.CreateModel
+
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="direction:rtl;background-color:lightgray">
+                <h5 class="modal-title" id="createUserModalTitle">افزودن کاربر جدید</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+            <form id="createUserForm" asp-controller="Admin" asp-action="Create" method="post" autocomplete="off">
+                @Html.AntiForgeryToken()
+                <div class="modal-body" dir="rtl">
+                    <div id="createUserError" class="alert alert-danger py-2" style="display:none" role="alert"></div>
+                    <div class="mb-2">
+                        <label asp-for="FirstName" class="form-label">نام <span class="text-danger">*</span></label>
+                        <input asp-for="FirstName" class="form-control" required />
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="LastName" class="form-label">نام خانوادگی <span class="text-danger">*</span></label>
+                        <input asp-for="LastName" class="form-control" required />
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="PhoneNumber" class="form-label">تلفن همراه <span class="text-danger">*</span></label>
+                        <input asp-for="PhoneNumber" class="form-control" required />
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="Email" class="form-label">پست الکترونیکی <span class="text-danger">*</span></label>
+                        <input asp-for="Email" type="email" class="form-control" required />
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="UserName" class="form-label">نام کاربری <span class="text-danger">*</span></label>
+                        <input asp-for="UserName" class="form-control" required autocomplete="new-username" />
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="Password" class="form-label">رمز عبور <span class="text-danger">*</span></label>
+                        <input asp-for="Password" type="password" class="form-control" required autocomplete="new-password" />
+                    </div>
+                    <div id="createUserLoading" class="text-center mt-3" style="display:none" aria-live="polite">
+                        <span class="spinner-border spinner-border-sm text-success" role="status" aria-hidden="true"></span>
+                        <span class="ms-2">در حال ثبت کاربر...</span>
+                    </div>
+                </div>
+                <div class="modal-footer d-flex justify-content-between">
+                    <button type="button" class="buttonCancel2" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="buttonGreen3" id="createUserSubmit"><span class="create-user-button-text">ثبت کاربر</span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById("createUserForm").addEventListener("submit", async function (event) {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const button = document.getElementById("createUserSubmit");
+        const loading = document.getElementById("createUserLoading");
+        const errorBox = document.getElementById("createUserError");
+        if (!form.reportValidity()) return;
+        errorBox.style.display = "none";
+
+        if (typeof axios === "undefined") {
+            errorBox.textContent = "کتابخانه Axios در صفحه بارگذاری نشده است.";
+            errorBox.style.display = "block";
+            return;
+        }
+
+        const payload = new URLSearchParams();
+        new FormData(form).forEach((value, key) => payload.append(key, value));
+        const textElement = button.querySelector(".create-user-button-text");
+        const oldText = textElement.textContent;
+        button.disabled = true;
+        loading.style.display = "block";
+        form.querySelectorAll("input, button").forEach(element => { if (element !== button) element.disabled = true; });
+        textElement.textContent = "در حال ثبت...";
+
+        try {
+            const response = await axios.post(form.action, payload, {
+                headers: { "Content-Type": "application/x-www-form-urlencoded", "X-Requested-With": "XMLHttpRequest" },
+                timeout: 20000
+            });
+            if (!response.data?.success || !response.data.user) {
+                throw new Error(response.data?.message || "ثبت کاربر انجام نشد.");
+            }
+
+            appendCreatedUserToTable(response.data.user);
+            form.reset();
+            bootstrap.Modal.getOrCreateInstance(document.getElementById("createUserModal")).hide();
+            await Swal.fire({ icon: "success", title: "ثبت شد", text: "کاربر جدید با موفقیت ثبت شد.", timer: 1500, showConfirmButton: false });
+        } catch (error) {
+            errorBox.textContent = error.response?.data?.message || error.message || "ثبت کاربر ناموفق بود. دوباره تلاش کنید.";
+            errorBox.style.display = "block";
+        } finally {
+            button.disabled = false;
+            loading.style.display = "none";
+            form.querySelectorAll("input, button").forEach(element => { if (element !== button) element.disabled = false; });
+            textElement.textContent = oldText;
+        }
+    });
+
+    document.getElementById("createUserModal").addEventListener("hidden.bs.modal", function () {
+        const form = document.getElementById("createUserForm");
+        form.reset();
+        document.getElementById("createUserError").style.display = "none";
+    });
+</script>

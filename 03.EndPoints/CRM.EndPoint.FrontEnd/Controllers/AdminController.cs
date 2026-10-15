@@ -115,53 +115,68 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [HttpPost]
-        public IActionResult Create(CreateModel model)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(CreateModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                AppUser user = new AppUser {
-                    UserName = model.UserName,
-                    PhoneNumber = model.PhoneNumber,
-                    FirstName = model.FirstName,
-                    LastName = model.LastName,
-                    IsEmployee = true
-                };
-                IdentityResult result = userManager.CreateAsync(user, model.Password).Result;
-                if (result.Succeeded)
-                {
-                    return RedirectToAction("Index");
-                } else
-                {
-                    foreach (IdentityError error in result.Errors)
-                    {
-                        ModelState.AddModelError("", error.Description);
-                    }
-                }
+                var validationErrors = ModelState
+                    .Where(x => x.Value.Errors.Count > 0)
+                    .SelectMany(x => x.Value.Errors.Select(e => e.ErrorMessage))
+                    .ToList();
+                return BadRequest(new { success = false, message = string.Join("، ", validationErrors) });
             }
 
-            return View(model);
+            var user = new AppUser
+            {
+                UserName = model.UserName,
+                PhoneNumber = model.PhoneNumber,
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                Email = model.Email,
+                IsEmployee = true
+            };
+
+            var result = await userManager.CreateAsync(user, model.Password);
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { success = false, message = string.Join("، ", result.Errors.Select(e => e.Description)) });
+            }
+
+            return Json(new
+            {
+                success = true,
+                user = new
+                {
+                    id = user.Id,
+                    userName = user.UserName,
+                    firstName = user.FirstName,
+                    lastName = user.LastName,
+                    phoneNumber = user.PhoneNumber,
+                    email = user.Email,
+                    internalTels = user.InternalTels
+                }
+            });
         }
 
         //[HttpPost]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(string id)
         {
-            AppUser user = await userManager.FindByIdAsync(id);
-            if (user != null)
+            var user = await userManager.FindByIdAsync(id);
+            if (user == null)
             {
-                IdentityResult result = await userManager.DeleteAsync(user);
-                if (result.Succeeded)
-                {
-                    return RedirectToAction("Index");
-                } else
-                {
-                    AddErrorsFromResult(result);
-                }
-            } else
-            {
-                ModelState.AddModelError("", "User Not Found");
+                return NotFound(new { success = false, message = "کاربر پیدا نشد." });
             }
 
-            return Ok();
+            var result = await userManager.DeleteAsync(user);
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { success = false, message = string.Join("، ", result.Errors.Select(e => e.Description)) });
+            }
+
+            return Json(new { success = true });
         }
 
         public async Task<IActionResult> Edit(string id)
@@ -246,31 +261,62 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             AppUser User = await userManager.FindByIdAsync(id);
 
-            await userManager.RemoveFromRoleAsync(User, role);
+            if (User == null)
+            {
+                return NotFound(new { success = false, message = "کاربر پیدا نشد." });
+            }
 
+            var result = await userManager.RemoveFromRoleAsync(User, role);
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { success = false, message = string.Join("، ", result.Errors.Select(e => e.Description)) });
+            }
 
-            return RedirectToAction("Index");
+            return Json(new { success = true });
         }
 
 
         [HttpPost]
-        public IActionResult AddUserToRole(string userName, string roleName)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateUserRoles(string userName, List<string> roleNames)
         {
-            var user = userManager.FindByNameAsync(userName).Result;
-            //var role = roleManager.FindByNameAsync(roleName).Result;
+            var user = await userManager.FindByNameAsync(userName);
+            if (user == null)
+                return NotFound(new { success = false, message = "کاربر پیدا نشد." });
 
-            var result = userManager.AddToRoleAsync(user, roleName).Result;
-            if (result.Succeeded)
+            var selectedRoles = roleNames ?? new List<string>();
+            foreach (var role in selectedRoles)
             {
-                return RedirectToAction("Index");
+                if (!await roleManager.RoleExistsAsync(role))
+                    return BadRequest(new { success = false, message = "یک یا چند نقش انتخاب‌شده معتبر نیست." });
             }
 
-            return BadRequest();
+            var currentRoles = await userManager.GetRolesAsync(user);
+            var rolesToRemove = currentRoles.Except(selectedRoles).ToList();
+            var rolesToAdd = selectedRoles.Except(currentRoles).ToList();
+
+            if (rolesToRemove.Count > 0)
+            {
+                var removeResult = await userManager.RemoveFromRolesAsync(user, rolesToRemove);
+                if (!removeResult.Succeeded)
+                    return BadRequest(new { success = false, message = string.Join("، ", removeResult.Errors.Select(e => e.Description)) });
+            }
+
+            if (rolesToAdd.Count > 0)
+            {
+                var addResult = await userManager.AddToRolesAsync(user, rolesToAdd);
+                if (!addResult.Succeeded)
+                    return BadRequest(new { success = false, message = string.Join("، ", addResult.Errors.Select(e => e.Description)) });
+            }
+
+            var updatedRoles = await userManager.GetRolesAsync(user);
+            return Json(new { success = true, roles = updatedRoles });
         }
 
         public IActionResult GetUserRoles(string userName)
         {
             var user = userManager.FindByNameAsync(userName).Result;
+            if (user == null) return NotFound();
             var roles = userManager.GetRolesAsync(user).Result;
             return Json(roles);
         }
