@@ -40,59 +40,17 @@
             <span id="userPageSummary"></span>
         </div>
 
-        <div id="usersCardList" class="users-card-grid">
-            @if (Model.Users == null || !Model.Users.Any()) {
-                <div id="initialNoUsers" class="user-empty-state">
-                    <i class="fa fa-users" aria-hidden="true"></i>
-                    <strong>کاربری پیدا نشد</strong>
-                    <span>برای شروع، کاربر جدیدی ثبت کنید.</span>
+        <div id="usersCardList" class="users-card-grid" aria-live="polite" aria-busy="true">
+            <div id="usersLoadingState" class="users-loading-state">
+                <div class="users-loading-orbit"><span></span><span></span><span></span><i class="fa fa-users"></i></div>
+                <strong>در حال بارگذاری کاربران</strong>
+                <span>لطفاً چند لحظه صبر کنید؛ اطلاعات در حال دریافت است.</span>
+                <div class="users-skeleton-grid" aria-hidden="true">
+                    <div class="user-skeleton"><div class="skeleton-heading"><i></i><b></b><em></em></div><div class="skeleton-line"></div><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-footer"></div></div>
+                    <div class="user-skeleton"><div class="skeleton-heading"><i></i><b></b><em></em></div><div class="skeleton-line"></div><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-footer"></div></div>
+                    <div class="user-skeleton"><div class="skeleton-heading"><i></i><b></b><em></em></div><div class="skeleton-line"></div><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-footer"></div></div>
                 </div>
-            } else {
-                foreach (var user in Model.Users) {
-                    var isLock = user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow;
-                    <article class="user-card @(isLock ? "user-card-locked" : user.IsEmployee ? "user-card-employee" : "")"
-                             data-user-name="@user.UserName" data-user-id="@user.Id"
-                            >
-                        <div class="user-card-top">
-                            <div class="user-avatar" aria-hidden="true"><i class="fa fa-user"></i></div>
-                            <div class="user-card-identity">
-                                <h3>@($"{user.FirstName} {user.LastName}".Trim())</h3>
-                                <span class="user-card-username">@@@user.UserName</span>
-                            </div>
-                            <span class="user-status @(isLock ? "user-status-locked" : user.IsEmployee ? "user-status-active" : "user-status-normal")">
-                                @(isLock ? "مسدود" : user.IsEmployee ? "کارمند" : "فعال")
-                            </span>
-                        </div>
-                        <div class="user-card-details">
-                            <div class="user-detail"><span><i class="fa fa-phone"></i> تلفن همراه</span><strong>@(string.IsNullOrWhiteSpace(user.PhoneNumber) ? "-" : user.PhoneNumber)</strong></div>
-                            <div class="user-detail"><span><i class="fa fa-envelope"></i> ایمیل</span><strong dir="ltr">@(string.IsNullOrWhiteSpace(user.Email) ? "-" : user.Email)</strong></div>
-                            <div class="user-detail"><span><i class="fa fa-phone-square"></i> شماره داخلی</span><strong>@(string.IsNullOrWhiteSpace(user.InternalTels) ? "-" : user.InternalTels)</strong></div>
-                        </div>
-                        <div class="user-card-roles">
-                            <span class="user-section-label">نقش‌ها</span>
-                            <div class="user-roles-cell">
-                                @if (user.RolsUsers != null && user.RolsUsers.Any()) {
-                                    foreach (var item in user.RolsUsers) {
-                                        <span class="user-role-chip">
-                                            <button type="button" class="role-remove-button" title="حذف نقش" aria-label="حذف نقش @item" onclick="DelUserRole(this, '@user.Id', '@item', '@user.UserName')">
-                                                <svg viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-                                            </button>
-                                            <span>@item</span>
-                                        </span>
-                                    }
-                                } else {
-                                    <span class="user-no-roles">بدون نقش</span>
-                                }
-                            </div>
-                        </div>
-                        <div class="user-card-actions">
-                            <a class="user-action user-action-edit" asp-action="Edit" asp-route-id="@user.Id"><i class="fa fa-pencil"></i> ویرایش</a>
-                            <button type="button" class="user-action user-action-roles" onclick="openUserRolesModal('@user.UserName')"><i class="fa fa-shield"></i> مدیریت نقش‌ها</button>
-                            <button type="button" class="user-action user-action-delete" onclick="deleteUser(this, '@user.Id')"><i class="fa fa-trash"></i> حذف</button>
-                        </div>
-                    </article>
-                }
-            }
+            </div>
         </div>
 
         <div id="userEmptySearch" class="user-empty-state" style="display:none">
@@ -109,6 +67,26 @@
 <partial name="Modals/_CreateUserModal" model="new CRM.EndPoint.FrontEnd.Models.Login.CreateModel()" />
 
 <style>
+    .users-loading-state { grid-column:1/-1; display:flex; flex-direction:column; align-items:center; gap:9px; padding:24px 8px 12px; text-align:center; color:#81909c; }
+    .users-loading-state > strong { font-size:15px; color:#344b59; }
+    .users-loading-state > span { font-size:12px; }
+    .users-loading-orbit { width:58px; height:58px; position:relative; display:grid; place-items:center; color:#07877d; margin-bottom:2px; }
+    .users-loading-orbit > i { font-size:23px; z-index:1; }
+    .users-loading-orbit > span { position:absolute; inset:1px; border:2px solid transparent; border-top-color:#07877d; border-left-color:#b4e3dc; border-radius:50%; animation: usersOrbit 1.1s linear infinite; }
+    .users-loading-orbit > span:nth-child(2) { inset:7px; border-top-color:#75c8bd; border-right-color:#d5efeb; animation-duration:1.7s; animation-direction:reverse; }
+    .users-loading-orbit > span:nth-child(3) { inset:-5px; border-bottom-color:#d4ebe7; border-right-color:#b5ded8; animation-duration:2.3s; }
+    .users-skeleton-grid { width:100%; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:14px; margin-top:12px; text-align:right; }
+    .user-skeleton { padding:15px; border:1px solid #e5edf1; border-radius:14px; background:#f7fafc; overflow:hidden; }
+    .skeleton-heading { display:flex; align-items:center; gap:10px; padding-bottom:15px; border-bottom:1px solid #e9eff3; }
+    .skeleton-heading i { width:40px; height:40px; border-radius:12px; }
+    .skeleton-heading b { width:36%; height:11px; border-radius:8px; }
+    .skeleton-heading em { width:18%; height:19px; border-radius:20px; margin-right:auto; }
+    .skeleton-line { height:9px; width:85%; border-radius:8px; margin-top:17px; }
+    .skeleton-line.short { width:55%; margin-top:12px; }
+    .skeleton-footer { height:30px; width:100%; border-radius:8px; margin-top:20px; }
+    .user-skeleton .skeleton-heading i, .user-skeleton .skeleton-heading b, .user-skeleton .skeleton-heading em, .user-skeleton .skeleton-line, .user-skeleton .skeleton-footer { background:linear-gradient(100deg,#e9eff3 20%,#f8fbfc 40%,#e9eff3 60%); background-size:200% 100%; animation: usersShimmer 1.35s ease-in-out infinite; }
+    @@keyframes usersOrbit { to { transform:rotate(360deg); } }
+    @@keyframes usersShimmer { to { background-position-x:-200%; } }
     .user-management-page { width:100%; color:#243342; }
     .user-page-header { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:18px; }
     .user-page-header h2 { font-size:20px; font-weight:700; margin:0 0 5px; }
@@ -161,7 +139,7 @@
     .user-empty-state > i { font-size:27px; color:#a8b6c1; margin-bottom:5px; }
     .user-empty-state strong { color:#516170; font-size:14px; }
     .user-empty-state span { font-size:12px; }
-    .user-pagination { display:flex; align-items:center; justify-content:center; gap:5px; flex-wrap:wrap; padding-top:18px; }
+    .user-load-error { grid-column:1/-1; display:flex; flex-direction:column; align-items:center; gap:10px; padding:32px 12px; color:#8a97a3; }\n    .user-load-error > i { color:#c78336; font-size:25px; }\n    .user-pagination { display:flex; align-items:center; justify-content:center; gap:5px; flex-wrap:wrap; padding-top:18px; }
     .user-page-button { min-width:34px; height:34px; padding:0 10px; border:1px solid #e0e7ed; border-radius:8px; background:#fff; color:#536474; cursor:pointer; }
     .user-page-button:hover:not(:disabled), .user-page-button.is-active { border-color:#07877d; background:#07877d; color:#fff; }
     .user-page-button:disabled { opacity:.4; cursor:not-allowed; }
@@ -199,8 +177,31 @@
             currentUserPage = 1;
             renderUserCards();
         });
-        renderUserCards();
+        loadUsers();
     });
+
+    async function loadUsers() {
+        const list = document.getElementById("usersCardList");
+        list.setAttribute("aria-busy", "true");
+        try {
+            const response = await fetch("/Admin/GetUsers", {
+                method: "GET",
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                credentials: "same-origin",
+                cache: "no-store"
+            });
+            if (!response.ok) throw new Error("دریافت فهرست کاربران با خطا مواجه شد.");
+            list.innerHTML = await response.text();
+            list.setAttribute("aria-busy", "false");
+            renderUserCards();
+        } catch (error) {
+            list.setAttribute("aria-busy", "false");
+            list.innerHTML = `<div class="user-load-error"><i class="fa fa-exclamation-triangle"></i><strong>بارگذاری کاربران انجام نشد</strong><span></span><button type="button" class="user-action user-action-roles" id="retryLoadUsers">تلاش مجدد</button></div>`;
+            list.querySelector(".user-load-error span").textContent = error.message || "اتصال به سرور ناموفق بود.";
+            document.getElementById("retryLoadUsers").addEventListener("click", loadUsers);
+            document.getElementById("userResultsCount").textContent = "دریافت اطلاعات ناموفق بود";
+        }
+    }
 
     function normalizeUserSearch(value) {
         return (value || "").toLocaleLowerCase("fa-IR").trim();
@@ -211,7 +212,7 @@
     }
 
     function renderUserCards() {
-        const cards = getAllUserCards();
+        const loadingState = document.getElementById("usersLoadingState");\n        if (loadingState) return;\n        const cards = getAllUserCards();
         const filtered = cards.filter(card => {
             const searchable = normalizeUserSearch(card.textContent);
             return !userSearchTerm || searchable.includes(userSearchTerm);
