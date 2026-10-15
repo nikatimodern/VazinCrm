@@ -24,6 +24,7 @@
                 <button type="button" id="clearUserSearch" class="user-clear-search" aria-label="پاک کردن جستجو" title="پاک کردن جستجو">×</button>
             </div>
             <div class="user-filter-group">
+                <div class="user-filter-row">
                 <label class="user-filter">
                     <span><i class="fa fa-users"></i> نوع کاربر</span>
                     <select id="userEmployeeFilter" class="form-select form-select-sm">
@@ -45,7 +46,7 @@
                     <button type="button" id="openUserRoleFilter" class="user-role-picker-button" data-bs-toggle="modal" data-bs-target="#userRoleFilterModal">
                         <i class="fa fa-filter"></i> انتخاب نقش‌ها
                     </button>
-                    <div id="selectedUserRoleChips" class="selected-user-role-chips" aria-live="polite"></div>
+                </div>
                 </div>
                 <label class="user-page-size">
                     <span>نمایش در هر صفحه</span>
@@ -57,6 +58,9 @@
                         <option value="all">همه</option>
                     </select>
                 </label>
+            </div>
+            <div class="user-role-filter-chips-row">
+                <div id="selectedUserRoleChips" class="selected-user-role-chips" aria-live="polite"></div>
             </div>
         </div>
 
@@ -147,6 +151,14 @@
     .user-page-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
     .user-list-panel { background:#fff; border:1px solid #e4eaf0; border-radius:16px; padding:16px; box-shadow:0 5px 24px rgba(28,45,64,.05); }
     .user-list-toolbar { display:grid; grid-template-columns:minmax(0,1fr); grid-template-areas:"search" "filters" "chips"; align-items:start; gap:14px; margin-bottom:14px; }
+    .user-search-wrap { grid-area:search; }
+    .user-filter-group { grid-area:filters; display:grid; grid-template-columns:minmax(0,1fr); align-items:end; gap:12px; }
+    .user-filter-row { display:grid; grid-template-columns:minmax(220px,1fr) minmax(220px,1fr) minmax(145px,auto); align-items:end; gap:14px; min-width:0; }
+    .user-filter-row .user-filter { min-width:0; width:100%; }
+    .user-filter-row .user-role-multi-filter { min-width:145px; width:100%; }
+    .user-filter-row .user-page-size { min-width:145px; width:100%; }
+    .user-role-filter-chips-row { grid-area:chips; min-width:0; }
+    .user-role-filter-chips-row:has(.selected-user-role-chips:empty) { display:none; }
     .user-search-wrap { grid-area:search; position:relative; width:100%; min-width:0; max-width:none; align-self:start; }
     .user-filter-group { grid-area:filters; display:flex; align-items:flex-end; justify-content:flex-start; gap:12px; flex-wrap:wrap; min-width:0; }
     .user-filter { display:flex; flex-direction:column; gap:7px; color:#667584; font-size:12px; min-width:130px; flex:1 1 130px; }
@@ -172,7 +184,7 @@
     .user-search-wrap input { border-radius:10px; min-height:42px; padding-right:38px; padding-left:38px; border-color:#dce4eb; }
     .user-search-wrap input:focus { border-color:#07877d; box-shadow:0 0 0 3px rgba(7,135,125,.12); }
     .user-clear-search { position:absolute; left:9px; top:50%; transform:translateY(-50%); border:0; background:transparent; color:#7b8794; font-size:22px; line-height:1; cursor:pointer; }
-    .user-page-size { display:flex; flex-direction:column; align-items:stretch; gap:7px; color:#667584; font-size:12px; min-width:115px; flex:0 1 125px; }
+     .user-page-size { display:flex; flex-direction:column; align-items:stretch; gap:7px; color:#667584; font-size:12px; min-width:115px; flex:0 1 125px; }
     .user-page-size select { width:100%; min-height:38px; border-radius:9px; border-color:#dce4eb; }
     .user-results-summary { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; color:#7b8794; font-size:12px; padding:4px 2px 14px; }
     .users-card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr)); gap:14px; align-items:stretch; }
@@ -224,13 +236,13 @@
     .user-card.newly-created-user-row { border-color:#0d9488; box-shadow:0 0 0 3px rgba(13,148,136,.16),0 8px 22px rgba(27,43,58,.08); animation: newUserHighlight 1s ease-in-out 3; }
     @@keyframes newUserHighlight { 0%,100% { background-color:#fff; } 50% { background-color:#d9fbeb; } }
     @@media (max-width:1000px) {
-        .user-filter-group { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:end; }
+        .user-filter-row { grid-template-columns:repeat(2,minmax(0,1fr)); }
         .user-filter, .user-role-multi-filter, .user-page-size { min-width:0; width:100%; }
         .selected-user-role-chips { padding-top:2px; }
     }
     @@media (max-width:600px) {
         .user-list-panel { padding:10px; }
-        .user-filter-group { grid-template-columns:minmax(0,1fr); }
+        .user-filter-row { grid-template-columns:minmax(0,1fr); }
         .user-page-size { max-width:none; }
         .user-page-header { align-items:flex-start; }
         .user-page-actions { width:100%; }
