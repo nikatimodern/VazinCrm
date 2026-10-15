@@ -16,6 +16,7 @@
                         <input type="text" id="rolesUserNameDisplay" class="form-control" readonly />
                     </div>
                     <p class="mb-2">نقش‌های موردنظر را انتخاب کنید. نقش‌های تیک‌خورده پس از ثبت برای کاربر باقی می‌مانند.</p>
+                    <div id="rolesLoading" class="text-center py-4" style="display:none" aria-live="polite"><span class="spinner-border spinner-border-sm text-success" role="status" aria-hidden="true"></span><div class="mt-2">در حال دریافت اطلاعات نقش‌ها...</div></div>
                     <div id="userRolesList" class="d-flex flex-column gap-2">
                         @foreach (var item in Model.Roles ?? []) {
                             <label class="form-check d-flex align-items-center gap-2 border rounded p-2" style="cursor:pointer">
@@ -26,6 +27,7 @@
                     </div>
                     <div id="rolesLoadError" class="text-danger mt-2" style="display:none">دریافت نقش‌های کاربر ناموفق بود. دوباره تلاش کنید.</div>
                     <div id="rolesSaveError" class="text-danger mt-2" style="display:none"></div>
+                    <div id="rolesSaving" class="text-center mt-3" style="display:none" aria-live="polite"><span class="spinner-border spinner-border-sm text-success" role="status" aria-hidden="true"></span><span class="ms-2">در حال ثبت تغییرات...</span></div>
                 </div>
                 <div class="modal-footer d-flex justify-content-between">
                     <button type="button" class="buttonCancel2" data-bs-dismiss="modal">انصراف</button>
@@ -41,6 +43,8 @@
         document.getElementById("userName").value = userName;
         document.getElementById("rolesUserNameDisplay").value = userName;
         document.getElementById("rolesLoadError").style.display = "none";
+        document.getElementById("rolesLoading").style.display = "block";
+        document.getElementById("userRolesList").style.opacity = "0.45";
         document.querySelectorAll("#userRolesList .role-checkbox").forEach(input => input.checked = false);
 
         const modalElement = document.getElementById("ModalRols");
