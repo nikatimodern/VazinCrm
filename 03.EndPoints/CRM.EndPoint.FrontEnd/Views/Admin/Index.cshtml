@@ -113,7 +113,10 @@
     .user-card-identity { min-width:0; flex:1; }
     .user-card-identity h3 { margin:0 0 4px; font-size:15px; font-weight:700; overflow-wrap:anywhere; }
     .user-card-username { color:#84919d; font-size:12px; direction:ltr; display:inline-block; }
-    .user-status { border-radius:20px; padding:4px 8px; font-size:10px; white-space:nowrap; background:#eef2f5; color:#687785; }
+    .user-status-group { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:5px; max-width:130px; }
+    .user-status { display:inline-flex; align-items:center; gap:4px; border-radius:20px; padding:5px 8px; font-size:10px; font-weight:600; white-space:nowrap; background:#eef2f5; color:#687785; }
+    .user-status-employee { background:#e2f4f1; color:#087e74; }
+    .user-status-standard { background:#edf1f5; color:#647383; }
     .user-status-active { background:#e3f7ee; color:#168458; }
     .user-status-locked { background:#ffe8e8; color:#bd3535; }
     .user-card-details { display:grid; gap:10px; padding:13px 0; }
@@ -332,7 +335,10 @@
             <div class="user-card-top">
                 <div class="user-avatar" aria-hidden="true"><i class="fa fa-user"></i></div>
                 <div class="user-card-identity"><h3></h3><span class="user-card-username"></span></div>
-                <span class="user-status user-status-active">فعال</span>
+                <div class="user-status-group">
+                    <span class="user-status user-status-employee">کارمند</span>
+                    <span class="user-status user-status-active">فعال</span>
+                </div>
             </div>
             <div class="user-card-details">
                 <div class="user-detail"><span><i class="fa fa-phone"></i> تلفن همراه</span><strong data-field="phone"></strong></div>
