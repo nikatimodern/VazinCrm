@@ -1630,7 +1630,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var accountancyId = await regAccountancy(acc, user);
                 if (accountancyId == null)
                 {
-                    throw new Exception();
+                    throw new Exception("خطا: صورتحساب ثبت نشد");
                 }
 
                 // فایل ها ذخیره میشود

@@ -1,5 +1,3 @@
-var AccParentId = null;
-
 var showFlag = 0;
 var customerIdUp = null;
 
@@ -1630,20 +1628,28 @@ const RefreshDataInvoice = async (id = Invo_id, type = Invo_type) => {
     
     initPaymentPartial(invoicePassType);
     
-    customerId = paymentData.data.customerId;
+    if (paymentData.data?.customerId) {
+        customerId = paymentData.data.customerId;
+    }
     document.getElementById("changeStatusAllAccBtn")?.classList.toggle("d-none", !paymentData.data.showChangeStatusAllBtn);
     document.getElementById("acceptFinancialBtn")?.classList.toggle("d-none", !paymentData.data.showAcceptPfBtn);
     FLshowLoading(false);
 };
 
 const getAllAmountPartial = async (id, type) => { //type{1=prefactor 2=Factor 3=deal 4=customer}
-    const res = await axios(`/Accountancy/GetAllAmountPartial?type=${type}&id=${id}`);
-    return res.data;
+    return await sendApiRequest({
+        url: "/Accountancy/GetAllAmountPartial",
+        params: { type, id },
+        showLoading: false,
+    });
 };
 
-const getAllPaymentPartial = async (id, type, invoicePassType) => {
-    const res = await axios(`/Accountancy/GetAllPaymentPartial?type=${type}&id=${id}&passType=${invoicePassType}`);
-    return res.data;
+const getAllPaymentPartial = async (id, type, passType) => {
+    return await sendApiRequest({
+        url: "/Accountancy/GetAllPaymentPartial",
+        params: { type, id, passType },
+        showLoading: false,
+    });
 };
 
 const ShowModalCustomerListInvoice = async () => {
@@ -1662,17 +1668,10 @@ const cancelModalWallet = async () => {
 
 
 const CheckWallet = async () => {
-    try {
-        FLshowLoading();
-        const res = await axios(`/Accountancy/CheckWallet?cusId=${customerId}`);
-        if (!res.data) return false;
-        return true;
-        
-    } catch (err) {
-        console.log(err);
-    } finally {
-        FLshowLoading(false);
-    }
+    return await sendApiRequest({
+        url: "/Accountancy/CheckWallet",
+        params: { cusId: customerId },
+    });
 };
 
 const addInvoiceWalletToPf = async (id) => {
@@ -1689,6 +1688,7 @@ const addInvoiceWalletToPf = async (id) => {
     }
 };
 
+let AccParentId = null;
 let isEditInvoiceModal = false;
 let invoiceItemId;
 const ShowVosolInvoiceModal = async (parentId, pfId, invoiceType) => {
@@ -1808,51 +1808,48 @@ const ShowEditModalInvoice = async (id) => {
 
 
 async function showPayment(id, parent = false) {
-    try {
-        FLshowLoading();
-        await getAllBankAccounts([{ element: "#ShowPaymentModal select[name='bankAccountId']", type: [1], isDisable: true }]);
-        const res = (await axios(`/Accountancy/getAccountancy/${id}?parent=${parent}`)).data;
-        let data = res.accData;
-        
-        const paymentModalElm = document.getElementById("ShowPaymentModal");
-        if (data.accType === 1) {
-            paymentModalElm.classList.add("deposit-mode");
-            paymentModalElm.classList.remove("backward-mode");
-            paymentModalElm.querySelector(".modalHeader-invoice").innerText = "واریزی " + data.payTypeTxt;
-        } else if (data.accType === 2) {
-            paymentModalElm.classList.add("backward-mode");
-            paymentModalElm.classList.remove("deposit-mode");
-            paymentModalElm.querySelector(".modalHeader-invoice").innerText = "برگشتی " + data.payTypeTxt;
-        }
-        
-        PayFormChange("ShowPaymentModal", data.payType);
-        
-        data.reciveAmount = data.accType === 2 ? data.backWard : data.credit;
-        mySer.convertJsonToForm(data, "ShowPaymentFormId");
-        
-        const attachList = res.listAttach;
-        
-        const containerUploader = paymentModalElm.querySelector(".sanadPayBox");
-        const divShow = containerUploader.querySelector(".image-display");
-        divShow.innerHTML = "";
-        if (attachList.length) {
-            containerUploader.classList.remove("d-none");
-            attachList.forEach(fileItem => {
-                const imageBox = createImageBox(fileItem);
-                divShow.appendChild(imageBox);
-            });
-        } else {
-            containerUploader.classList.add("d-none");
-        }
-        ModalToggle(paymentModalElm);
-        
-    } catch (err) {
-        if (err.status === 404) {
-            toastifyError(`خطا: ${err.response.data}`);
-        }
-        console.log(err);
+    const data = await sendApiRequest({
+        url: "/Accountancy/getAccountancy",
+        params: { id, parent },
+    });
+    if (!data) return;
+    
+    await getAllBankAccounts([{ element: "#ShowPaymentModal select[name='bankAccountId']", type: [1], isDisable: true }]);
+    
+    let accData = data.accData;
+    
+    const paymentModalElm = document.getElementById("ShowPaymentModal");
+    if (accData.accType === 1) {
+        paymentModalElm.classList.add("deposit-mode");
+        paymentModalElm.classList.remove("backward-mode");
+        paymentModalElm.querySelector(".modalHeader-invoice").innerText = "واریزی " + accData.payTypeTxt;
+    } else if (accData.accType === 2) {
+        paymentModalElm.classList.remove("deposit-mode");
+        paymentModalElm.classList.add("backward-mode");
+        paymentModalElm.querySelector(".modalHeader-invoice").innerText = "برگشتی " + accData.payTypeTxt;
     }
-    FLshowLoading(false);
+    
+    PayFormChange("ShowPaymentModal", accData.payType);
+    
+    accData.reciveAmount = accData.accType === 2 ? accData.backWard : accData.credit;
+    mySer.convertJsonToForm(accData, "ShowPaymentFormId");
+    
+    const attachList = data.listAttach;
+    
+    const containerUploader = paymentModalElm.querySelector(".sanadPayBox");
+    const divShow = containerUploader.querySelector(".image-display");
+    divShow.innerHTML = "";
+    if (attachList.length) {
+        containerUploader.classList.remove("d-none");
+        attachList.forEach(fileItem => {
+            const imageBox = createImageBox(fileItem);
+            divShow.appendChild(imageBox);
+        });
+    } else {
+        containerUploader.classList.add("d-none");
+    }
+    
+    ModalToggle(paymentModalElm);
 }
 
 async function checkEtebariWarning() {
@@ -1882,72 +1879,62 @@ async function checkEtebariWarning() {
 
 
 const submitInvoice = async () => {
-    if (await mySer.CheckValidForm("PayFactorFormId")) {
-        const accData = mySer.convertFormToJSON("PayFactorFormId");
-        if (setting.attPfPayment && (accData.payType !== 3 && accData.payType !== 6) && SanadPayList.every(item => item.isDeleted)) {
-            toastifyError("سند واریزی اجباریست");
-            document.getElementById("SanadParId").classList.add("AlertReqRadio");
-            return;
-        }
-        
-        if (accData.payType !== 3 && !await checkEtebariWarning()) {
-            return;
-        }
-        
-        if (isEditInvoiceModal) accData.id = invoiceItemId;
-        
-        accData.invoiceType = InvoiceType ?? 1;
-        accData.accType = AccType;
-        accData.parentId = AccParentId;
-        accData.customerId = customerId;
-        
-        if (InvoiceType === 1) {
-            accData.pfid = pfactorID;
-        } else if (InvoiceType === 2) {
-            accData.fid = factorID;
-        }
-        
-        if (accData.payType === 1) {
-            accData.bankAccountTxt = document.querySelector("#PayFactorFormId [name='bankAccountId']").selectedOptions[0].innerText;
-        } else if (accData.payType === 4) {
-            accData.bankAccountId = null;
-        } else {
-            accData.bankAccountId = null;
-            accData.bankAccountTxt = null;
-        }
-        
-        if (accData.payType !== 4 && accData.payType !== 6) {
-            accData.beneficiary = null;
-            accData.toName = null;
-        }
-        
-        try {
-            FLshowLoading();
-            const res = await axios.post(`/Factor/AddPayAttachment`, { accData, listAttach: SanadPayList });
-            if (res.status === 200) {
-                await refreshInvoiceSuccess();
-                toastifySuccess(isEditInvoiceModal ? "ویرایش انجام شد" : "ثبت انجام شد");
-                closeModalInvoice();
-                
-                const pfListModal = document.getElementById("preFactorListModal");
-                if (isModalOpen(pfListModal)) {
-                    ModalToggle(pfListModal, "hide");
-                }
-            } else {
-                toastifyError(res.error);
-            }
-            FLshowLoading(false);
-        } catch (err) {
-            console.log(err);
-            const message = err.response.data;
-            if (err.status === 409) {
-                toastifyError(message);
-                FLshowLoading(false);
-                return;
-            }
-            setTimeout(async () => await submitInvoice(), 3000);
-        }
+    if (!await mySer.CheckValidForm("PayFactorFormId")) return;
+    
+    const accData = mySer.convertFormToJSON("PayFactorFormId");
+    if (setting.attPfPayment && (accData.payType !== 3 && accData.payType !== 6) && SanadPayList.every(item => item.isDeleted)) {
+        toastifyError("سند واریزی اجباریست");
+        document.getElementById("SanadParId").classList.add("AlertReqRadio");
+        return;
     }
+    
+    if (accData.payType !== 3 && !await checkEtebariWarning()) {
+        return;
+    }
+    
+    if (isEditInvoiceModal) accData.id = invoiceItemId;
+    
+    accData.invoiceType = InvoiceType ?? 1;
+    accData.accType = AccType;
+    accData.parentId = AccParentId;
+    accData.customerId = customerId;
+    
+    if (InvoiceType === 1) {
+        accData.pfid = pfactorID;
+    } else if (InvoiceType === 2) {
+        accData.fid = factorID;
+    }
+    
+    if (accData.payType === 1) {
+        accData.bankAccountTxt = document.querySelector("#PayFactorFormId [name='bankAccountId']").selectedOptions[0].innerText;
+    } else if (accData.payType === 4) {
+        accData.bankAccountId = null;
+    } else {
+        accData.bankAccountId = null;
+        accData.bankAccountTxt = null;
+    }
+    
+    if (accData.payType !== 4 && accData.payType !== 6) {
+        accData.beneficiary = null;
+        accData.toName = null;
+    }
+    
+    
+    await sendApiRequest({
+        url: "/Factor/AddPayAttachment",
+        method: "POST",
+        data: { accData, listAttach: SanadPayList },
+        successMsg: isEditInvoiceModal ? "با موفقیت ویرایش شد" : "با موفقیت ثبت شد",
+        onSuccess: async () => {
+            await refreshInvoiceSuccess();
+            closeModalInvoice();
+            
+            const pfListModal = document.getElementById("preFactorListModal");
+            if (isModalOpen(pfListModal)) {
+                ModalToggle(pfListModal, "hide");
+            }
+        },
+    });
 };
 
 
