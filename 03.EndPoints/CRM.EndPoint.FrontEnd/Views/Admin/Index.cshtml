@@ -5,7 +5,7 @@
         <div class="mb-2 d-flex justify-content-between align-items-center">
             <p class="fmp" style="font-size:16px; font-family:'IRANSansBold'">لیست کاربران ثبت شده</p>
             <div class="d-flex align-items-center gap-2">
-                <button class="buttonGreen0 d-flex align-items-center gap-1" onclick="goTo('/Admin/create')">
+                <button class="buttonGreen0 d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#createUserModal">
                     <i class="fa fa-plus"></i> کاربر جدید
                 </button>
                 <button class="buttonGray2 d-flex align-items-center gap-1" onclick="goTo('/RoleManager/index')">
@@ -82,6 +82,7 @@
 
 
 <partial name="Modals/_RolesModal" model="Model" />
+<partial name="Modals/_CreateUserModal" />
 
 @section Scripts {
     <script defer>
@@ -103,6 +104,47 @@
                 ],
             });
         });
+
+        function appendCreatedUserToTable(user) {
+            const row = document.createElement("tr");
+            row.dataset.userName = user.userName;
+            row.dataset.userId = user.id;
+            [user.firstName, user.lastName, user.userName].forEach(value => {
+                const cell = document.createElement("td");
+                cell.textContent = value || "";
+                row.appendChild(cell);
+            });
+            const rolesCell = document.createElement("td");
+            rolesCell.className = "user-roles-cell";
+            rolesCell.innerHTML = '<span class="d-flex align-items-center flex-wrap gap-1"></span>';
+            row.appendChild(rolesCell);
+            [user.phoneNumber, user.email, user.internalTels || ""].forEach(value => {
+                const cell = document.createElement("td");
+                cell.textContent = value || "";
+                row.appendChild(cell);
+            });
+            const actions = document.createElement("td");
+            actions.style.color = "#02615a";
+            const edit = document.createElement("a");
+            edit.href = "/Admin/Edit?id=" + encodeURIComponent(user.id);
+            edit.style.cssText = "cursor:pointer;color:#04857c;margin-left:6px";
+            edit.innerHTML = '<i class="fa fa-pencil" style="font-size:16px"></i>';
+            const deleteWrap = document.createElement("span");
+            deleteWrap.style.cssText = "color:#631617;margin-left:6px";
+            const deleteButton = document.createElement("span");
+            deleteButton.className = "delete-user-button";
+            deleteButton.style.cssText = "color:#9d0000;cursor:pointer";
+            deleteButton.onclick = () => deleteUser(deleteButton, user.id);
+            deleteButton.innerHTML = '<i class="fa fa-trash" style="font-size:16px"></i>';
+            deleteWrap.appendChild(deleteButton);
+            const roleButton = document.createElement("span");
+            roleButton.style.cssText = "cursor:pointer;color:#04857c";
+            roleButton.onclick = () => openUserRolesModal(user.userName);
+            roleButton.innerHTML = '<i class="fa fa-user" style="font-size:16px"></i>';
+            actions.append(edit, deleteWrap, roleButton);
+            row.appendChild(actions);
+            $("#usersTable").DataTable().row.add(row).draw(false);
+        }
 
         async function DelUserRole(buttonElement, id, role, userName) {
             if (typeof axios === "undefined") {
