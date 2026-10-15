@@ -45,7 +45,7 @@
                                     @if (user.RolsUsers.Any()) {
                                         foreach (var item in user.RolsUsers) {
                                             <span class="buttonGray d-flex align-items-center gap-1">
-                                                <span class="d-flex align-items-center justify-content-center border-0 cursor-pointer" onclick="DelUserRole('@user.Id','@item')">
+                                                <span class="role-remove-button d-flex align-items-center justify-content-center border-0 cursor-pointer" role="button" title="حذف نقش" onclick="DelUserRole(this, '@user.Id', '@item', '@user.UserName')">
                                                     <svg style="width: 16px;height: 16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
                                                 </span>
                                                 @item
@@ -104,12 +104,57 @@
             });
         });
 
-        function DelUserRole(id, role) {
-            const txt = `<form action="DelUserRol" method="post">
-                            <input type="hidden" name="id" value="${id}"/>
-                            <input type="hidden" name="role" value="${role}"/>
-                          </form >`;
-            $(txt).appendTo("body").submit();
+        async function DelUserRole(buttonElement, id, role, userName) {
+            if (typeof axios === "undefined") {
+                Swal.fire({ icon: "error", text: "کتابخانه Axios در صفحه بارگذاری نشده است." });
+                return;
+            }
+
+            const badge = buttonElement.closest(".buttonGray");
+            if (!badge || badge.dataset.deleting === "true") return;
+
+            const originalContent = badge.innerHTML;
+            badge.dataset.deleting = "true";
+            badge.style.pointerEvents = "none";
+            badge.style.opacity = "0.65";
+            badge.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-label="در حال حذف"></span><span>در حال حذف...</span>';
+
+            try {
+                const payload = new URLSearchParams();
+                payload.append("id", id);
+                payload.append("role", role);
+                const token = document.querySelector('#userRolesForm input[name="__RequestVerificationToken"]');
+                if (token) payload.append("__RequestVerificationToken", token.value);
+
+                await axios.post("/Admin/DelUserRol", payload, {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    timeout: 15000
+                });
+
+                const rolesResponse = await axios.get("/Admin/GetUserRoles", {
+                    params: { userName: userName },
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    timeout: 15000
+                });
+
+                if (typeof updateUserRolesTable === "function") {
+                    updateUserRolesTable(userName, rolesResponse.data || []);
+                } else {
+                    badge.remove();
+                }
+            } catch (error) {
+                badge.innerHTML = originalContent;
+                badge.style.pointerEvents = "";
+                badge.style.opacity = "";
+                delete badge.dataset.deleting;
+                Swal.fire({
+                    icon: "error",
+                    text: error.response?.data?.message || "حذف نقش انجام نشد. دوباره تلاش کنید."
+                });
+            }
         }
         function deleteUser(id) {
             Swal.fire({
