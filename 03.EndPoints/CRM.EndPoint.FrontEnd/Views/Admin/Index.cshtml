@@ -19,11 +19,14 @@
     <section class="user-list-panel">
         <div class="user-list-toolbar">
             <div class="user-toolbar-top">
-            <div class="user-search-wrap">
-                <i class="fa fa-search" aria-hidden="true"></i>
-                <input id="userSearchInput" type="search" class="form-control" placeholder="جستجوی نام، نام کاربری، تلفن، ایمیل یا نقش..." autocomplete="off" />
-                <button type="button" id="clearUserSearch" class="user-clear-search" aria-label="پاک کردن جستجو" title="پاک کردن جستجو">×</button>
-            </div>
+            <label class="user-search-field">
+                <span><i class="fa fa-search"></i> جستجو</span>
+                <div class="user-search-wrap">
+                    <i class="fa fa-search" aria-hidden="true"></i>
+                    <input id="userSearchInput" type="search" class="form-control" placeholder="جستجوی نام، نام کاربری، تلفن، ایمیل یا نقش..." autocomplete="off" />
+                    <button type="button" id="clearUserSearch" class="user-clear-search" aria-label="پاک کردن جستجو" title="پاک کردن جستجو">×</button>
+                </div>
+            </label>
                 <label class="user-page-size">
                     <span>نمایش در هر صفحه</span>
                     <select id="userPageSize" class="form-select form-select-sm">
@@ -192,6 +195,9 @@
     .user-page-size select { width:100%; min-height:38px; border-radius:9px; border-color:#dce4eb; }
     /* Final toolbar layout: search/page size on row one, filters on row two, role chips on row three. */
      .user-list-toolbar .user-toolbar-top { grid-area:search; display:flex; align-items:flex-end; gap:16px; width:100%; min-width:0; }
+    .user-list-toolbar .user-toolbar-top .user-search-field { display:flex; flex:1 1 auto; flex-direction:column; gap:7px; min-width:0; margin:0; color:#667584; font-size:12px; }
+    .user-list-toolbar .user-toolbar-top .user-search-field > span { display:flex; align-items:center; gap:6px; min-height:18px; }
+    .user-list-toolbar .user-toolbar-top .user-search-field > span i { color:#07877d; }
     .user-list-toolbar .user-toolbar-top .user-search-wrap { flex:1 1 auto; min-width:0; }
     .user-list-toolbar .user-toolbar-top .user-page-size { flex:0 0 145px; width:145px; min-width:145px; }
     .user-list-toolbar .user-filter-group { display:flex; flex-direction:column; align-items:stretch; gap:12px; }
