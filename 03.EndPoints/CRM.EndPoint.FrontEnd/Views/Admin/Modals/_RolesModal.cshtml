@@ -55,16 +55,30 @@
         }
 
         try {
-            const response = await fetch("/Admin/GetUserRoles?userName=" + encodeURIComponent(userName), {
-                headers: { "X-Requested-With": "XMLHttpRequest" }
+            if (typeof axios === "undefined") {
+                throw new Error("کتابخانه Axios در صفحه بارگذاری نشده است.");
+            }
+
+            const response = await axios.get("/Admin/GetUserRoles", {
+                params: { userName: userName },
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                timeout: 15000
             });
-            if (!response.ok) throw new Error("Failed to load user roles");
-            const currentRoles = await response.json();
+            const currentRoles = response.data;
+            if (!Array.isArray(currentRoles)) {
+                throw new Error("پاسخ سرور برای نقش‌های کاربر معتبر نیست.");
+            }
+
             document.querySelectorAll("#userRolesList .role-checkbox").forEach(input => {
                 input.checked = currentRoles.includes(input.value);
             });
         } catch (error) {
-            document.getElementById("rolesLoadError").style.display = "block";
+            const errorBox = document.getElementById("rolesLoadError");
+            errorBox.textContent = error.response?.data?.message || error.message || "دریافت نقش‌های کاربر ناموفق بود. دوباره تلاش کنید.";
+            errorBox.style.display = "block";
+        } finally {
+            document.getElementById("rolesLoading").style.display = "none";
+            document.getElementById("userRolesList").style.opacity = "1";
         }
     }
 
