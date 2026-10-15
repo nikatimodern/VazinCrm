@@ -83,7 +83,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             Response.Headers["X-Total-Count"] = totalCount.ToString();
             Response.Headers["X-Current-Page"] = page.ToString();
-            Response.Headers["X-Page-Size"] = pageSize.ToString();
+            Response.Headers["X-Page-Size"] = (showAll ? 0 : pageSize).ToString();
             Response.Headers["X-Total-Pages"] = totalPages.ToString();
 
             return PartialView("_UserCardsPartial", users);
