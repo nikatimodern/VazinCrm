@@ -84,6 +84,19 @@
 <partial name="Modals/_RolesModal" model="Model" />
 <partial name="Modals/_CreateUserModal" model="new CRM.EndPoint.FrontEnd.Models.Login.CreateModel()" />
 
+<style>
+    #usersTable tbody tr.newly-created-user-row > td {
+        animation: newUserHighlight 1s ease-in-out 3;
+        outline: 2px solid #0d9488;
+        outline-offset: -2px;
+    }
+
+    @keyframes newUserHighlight {
+        0%, 100% { background-color: transparent; }
+        50% { background-color: #b7f7d8; }
+    }
+</style>
+
 @section Scripts {
     <script defer>
         document.addEventListener("DOMContentLoaded", function () {
@@ -143,7 +156,25 @@
             roleButton.innerHTML = '<i class="fa fa-user" style="font-size:16px"></i>';
             actions.append(edit, deleteWrap, roleButton);
             row.appendChild(actions);
-            $("#usersTable").DataTable().row.add(row).draw(false);
+
+            // Make the newly created user visible even if DataTables is on another page.
+            const table = $("#usersTable").DataTable();
+            table.row.add(row).draw(false);
+            table.search(user.userName).draw();
+
+            const createdRow = Array.from(document.querySelectorAll("#usersTable tbody tr"))
+                .find(item => item.dataset.userId === String(user.id));
+
+            if (createdRow) {
+                createdRow.tabIndex = -1;
+                createdRow.classList.add("newly-created-user-row");
+                createdRow.scrollIntoView({ behavior: "smooth", block: "center" });
+                createdRow.focus({ preventScroll: true });
+
+                window.setTimeout(() => {
+                    createdRow.classList.remove("newly-created-user-row");
+                }, 4000);
+            }
         }
 
         async function DelUserRole(buttonElement, id, role, userName) {
