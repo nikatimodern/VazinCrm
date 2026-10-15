@@ -232,9 +232,12 @@
             ? `نمایش ${(start + 1).toLocaleString("fa-IR")} تا ${Math.min(start + pageSize, filtered.length).toLocaleString("fa-IR")}`
             : "";
 
-        document.getElementById("userEmptySearch").style.display = cards.length > 0 && filtered.length === 0 ? "flex" : "none";
-        const initialEmpty = document.getElementById("initialNoUsers");
-        if (initialEmpty) initialEmpty.style.display = cards.length ? "none" : "flex";
+        const emptyState = document.getElementById("userEmptySearch");
+        emptyState.style.display = filtered.length === 0 ? "flex" : "none";
+        const emptyTitle = emptyState.querySelector("strong");
+        const emptyMessage = emptyState.querySelector("span");
+        if (emptyTitle) emptyTitle.textContent = cards.length === 0 ? "کاربری ثبت نشده است" : "نتیجه‌ای پیدا نشد";
+        if (emptyMessage) emptyMessage.textContent = cards.length === 0 ? "برای شروع، کاربر جدیدی ثبت کنید." : "عبارت جستجو را تغییر دهید یا آن را پاک کنید.";
 
         renderUserPagination(totalPages);
     }
