@@ -40,6 +40,16 @@
                         <option value="blocked">مسدود</option>
                     </select>
                 </label>
+                <label class="user-filter">
+                    <span><i class="fa fa-shield-alt"></i> نقش کاربر</span>
+                    <select id="userRoleFilter" class="form-select form-select-sm">
+                        <option value="all" selected>همه نقش‌ها</option>
+                        @foreach (var role in Model.Roles)
+                        {
+                            <option value="@role.Name">@role.Name</option>
+                        }
+                    </select>
+                </label>
                 <label class="user-page-size">
                     <span>نمایش در هر صفحه</span>
                     <select id="userPageSize" class="form-select form-select-sm">
@@ -219,6 +229,10 @@
             currentUserPage = 1;
             loadUsers(1);
         });
+        document.getElementById("userRoleFilter").addEventListener("change", () => {
+            currentUserPage = 1;
+            loadUsers(1);
+        });
         loadUsers(1);
     });
 
@@ -246,7 +260,8 @@
                 pageSize: String(userPageSize),
                 search: userSearchTerm,
                 employeeType: document.getElementById("userEmployeeFilter").value,
-                accountStatus: document.getElementById("userAccountStatusFilter").value
+                accountStatus: document.getElementById("userAccountStatusFilter").value,
+                role: document.getElementById("userRoleFilter").value
             });
             const response = await fetch("/Admin/GetUsers?" + params.toString(), {
                 method: "GET",
