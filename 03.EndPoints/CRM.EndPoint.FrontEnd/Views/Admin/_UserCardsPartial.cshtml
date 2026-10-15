@@ -11,9 +11,14 @@
                 <h3>@($"{user.FirstName} {user.LastName}".Trim())</h3>
                 <span class="user-card-username">@@@user.UserName</span>
             </div>
-            <span class="user-status @(isLock ? "user-status-locked" : user.IsEmployee ? "user-status-active" : "user-status-normal")">
-                @(isLock ? "مسدود" : user.IsEmployee ? "کارمند" : "فعال")
-            </span>
+            <div class="user-status-group" aria-label="وضعیت کاربر">
+                <span class="user-status @(user.IsEmployee ? "user-status-employee" : "user-status-standard")">
+                    @(user.IsEmployee ? "کارمند" : "کاربر عادی")
+                </span>
+                <span class="user-status @(isLock ? "user-status-locked" : "user-status-active")">
+                    @(isLock ? "مسدود" : "فعال")
+                </span>
+            </div>
         </div>
         <div class="user-card-details">
             <div class="user-detail"><span><i class="fa fa-phone"></i> تلفن همراه</span><strong>@(string.IsNullOrWhiteSpace(user.PhoneNumber) ? "-" : user.PhoneNumber)</strong></div>
