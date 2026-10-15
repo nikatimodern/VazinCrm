@@ -46,18 +46,45 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetUsers()
+        public async Task<IActionResult> GetUsers(int page = 1, int pageSize = 5, string search = null)
         {
-            var users = await userManager.Users
-                .Where(user => user.OrganAdmin == false)
+            page = page < 1 ? 1 : page;
+            var query = userManager.Users.Where(user => user.OrganAdmin == false);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                query = query.Where(user =>
+                    (user.UserName != null && user.UserName.Contains(term)) ||
+                    (user.FirstName != null && user.FirstName.Contains(term)) ||
+                    (user.LastName != null && user.LastName.Contains(term)) ||
+                    (user.PhoneNumber != null && user.PhoneNumber.Contains(term)) ||
+                    (user.Email != null && user.Email.Contains(term)) ||
+                    (user.InternalTels != null && user.InternalTels.Contains(term)));
+            }
+
+            var totalCount = await query.CountAsync();
+            var showAll = pageSize <= 0;
+            pageSize = showAll ? Math.Max(totalCount, 1) : Math.Clamp(pageSize, 5, 50);
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            page = Math.Min(page, totalPages);
+
+            var users = await query
                 .OrderBy(user => user.UserName)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
-            // Use the scoped Identity DbContext sequentially to avoid concurrent EF operations.
+            // Load roles only for the users on the requested page.
             foreach (var user in users)
             {
                 user.RolsUsers = await userManager.GetRolesAsync(user);
             }
+
+            Response.Headers["X-Total-Count"] = totalCount.ToString();
+            Response.Headers["X-Current-Page"] = page.ToString();
+            Response.Headers["X-Page-Size"] = pageSize.ToString();
+            Response.Headers["X-Total-Pages"] = totalPages.ToString();
 
             return PartialView("_UserCardsPartial", users);
         }
