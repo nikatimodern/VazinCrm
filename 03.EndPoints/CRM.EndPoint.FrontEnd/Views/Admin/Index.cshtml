@@ -40,15 +40,15 @@
                         <option value="blocked">مسدود</option>
                     </select>
                 </label>
-                <label class="user-filter">
-                    <span><i class="fa fa-shield-alt"></i> نقش کاربر</span>
-                    <select id="userRoleFilter" class="form-select form-select-sm">
-                        <option value="all" selected>همه نقش‌ها</option>
+                <label class="user-filter user-role-multi-filter">
+                    <span><i class="fa fa-shield-alt"></i> نقش کاربر (چندانتخابی)</span>
+                    <select id="userRoleFilter" class="form-select form-select-sm" multiple size="3" aria-describedby="userRoleFilterHint">
                         @foreach (var role in Model.Roles)
                         {
                             <option value="@role.Name">@role.Name</option>
                         }
                     </select>
+                    <small id="userRoleFilterHint">برای انتخاب چند نقش از Ctrl یا Shift استفاده کنید؛ انتخاب‌نکردن نقش یعنی نمایش همه.</small>
                 </label>
                 <label class="user-page-size">
                     <span>نمایش در هر صفحه</span>
@@ -132,6 +132,8 @@
     .user-filter > span { display:flex; align-items:center; gap:6px; }
     .user-filter > span i { color:#07877d; }
     .user-filter select { min-width:145px; border-radius:9px; min-height:36px; border-color:#dce4eb; }
+    .user-role-multi-filter select { min-height:76px; padding:5px 8px; }
+    .user-role-multi-filter small { max-width:220px; color:#84919d; font-size:10px; line-height:1.7; }
     .user-page-size { display:flex; align-items:center; gap:8px; color:#667584; font-size:13px; }
     .user-page-size select { width:85px; border-radius:8px; }
     .user-results-summary { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; color:#7b8794; font-size:12px; padding:4px 2px 14px; }
@@ -260,9 +262,11 @@
                 pageSize: String(userPageSize),
                 search: userSearchTerm,
                 employeeType: document.getElementById("userEmployeeFilter").value,
-                accountStatus: document.getElementById("userAccountStatusFilter").value,
-                role: document.getElementById("userRoleFilter").value
+                accountStatus: document.getElementById("userAccountStatusFilter").value
             });
+            const selectedRoles = Array.from(document.getElementById("userRoleFilter").selectedOptions)
+                .map(option => option.value);
+            selectedRoles.forEach(role => params.append("roles", role));
             const response = await fetch("/Admin/GetUsers?" + params.toString(), {
                 method: "GET",
                 headers: { "X-Requested-With": "XMLHttpRequest" },
