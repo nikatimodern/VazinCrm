@@ -1,301 +1,399 @@
-﻿@model CRM.EndPoint.FrontEnd.Models.Admin.AdminViewModel
+@model CRM.EndPoint.FrontEnd.Models.Admin.AdminViewModel
 
-<div class="col-md-12 d-flex flex-column align-items-center justify-content-center">
-    <div class="col-12 col-md-12">
-        <div class="mb-2 d-flex justify-content-between align-items-center">
-            <p class="fmp" style="font-size:16px; font-family:'IRANSansBold'">لیست کاربران ثبت شده</p>
-            <div class="d-flex align-items-center gap-2">
-                <button class="buttonGreen0 d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#createUserModal">
-                    <i class="fa fa-plus"></i> کاربر جدید
-                </button>
-                <button class="buttonGray2 d-flex align-items-center gap-1" onclick="goTo('/RoleManager/index')">
-                    <i class="fa fa-user"></i> نقش جدید
-                </button>
-            </div>
+<div class="user-management-page" dir="rtl">
+    <div class="user-page-header">
+        <div>
+            <h2>مدیریت کاربران</h2>
+            <p>جستجو، مشاهده و مدیریت کاربران سیستم</p>
         </div>
-
-        <div style="width: 99%">
-            <table id="usersTable" class="table-hover table table-bordered table-striped display responsive nowrap pt-2 w-100">
-                <thead>
-                <tr>
-                    <th>نام</th>
-                    <th>نام خانوادگی</th>
-                    <th>نام کاربری</th>
-                    <th>نقش ها</th>
-                    <th>تلفن همراه</th>
-                    <th>پست الکترونیکی</th>
-                    <th>شماره داخلی</th>
-                    <th>عملیات</th>
-                </tr>
-                </thead>
-                <tbody>
-                @if (!Model.Users.Any()) {
-                    <tr>
-                        <td colspan="6" class="text-center">کاریری بافت نشد</td>
-                    </tr>
-                } else {
-                    foreach (var user in Model.Users) {
-                        var isLock = user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow;
-                        <tr data-user-name="@user.UserName" data-user-id="@user.Id" class="@(isLock ? "tableRow-bgRed" : user.IsEmployee ? "tableRow-bgGreen" : "")">
-                            <td>@user.FirstName</td>
-                            <td>@user.LastName</td>
-                            <td>@user.UserName</td>
-                            <td class="user-roles-cell">
-                                <span class="d-flex align-items-center flex-wrap gap-1">
-                                    @if (user.RolsUsers.Any()) {
-                                        foreach (var item in user.RolsUsers) {
-                                            <span class="buttonGray d-flex align-items-center gap-1">
-                                                <span class="role-remove-button d-flex align-items-center justify-content-center border-0 cursor-pointer" role="button" title="حذف نقش" onclick="DelUserRole(this, '@user.Id', '@item', '@user.UserName')">
-                                                    <svg style="width: 16px;height: 16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-                                                </span>
-                                                @item
-                                            </span>
-                                        }
-                                    }
-                                </span>
-                            </td>
-                            <td>@user.PhoneNumber</td>
-                            <td>@user.Email</td>
-                            <td>@user.InternalTels</td>
-                            <td style="color:#02615a">
-
-                                <a style="cursor: pointer;color: #04857c" asp-action="Edit" asp-route-id="@user.Id">
-                                    <i class="fa fa-pencil" style="font-size: 16px;"></i>
-                                </a>
-                                <span style="color: #631617;">
-                                    <span class="delete-user-button" style="color: #9d0000;cursor: pointer" onclick="deleteUser(this, '@user.Id')">
-                                        <i class="fa fa-trash" style="font-size: 16px;"></i>
-                                    </span>
-                                </span>
-                                <span style="cursor: pointer;color: #04857c" onclick="openUserRolesModal('@user.UserName')">
-                                    <i class="fa fa-user" style="font-size: 16px"></i>
-                                </span>
-                            </td>
-                        </tr>
-                    }
-                }
-                </tbody>
-            </table>
+        <div class="user-page-actions">
+            <button class="buttonGreen0 d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                <i class="fa fa-plus"></i> کاربر جدید
+            </button>
+            <button class="buttonGray2 d-flex align-items-center gap-2" onclick="goTo('/RoleManager/index')">
+                <i class="fa fa-user"></i> نقش جدید
+            </button>
         </div>
     </div>
-</div>
 
+    <section class="user-list-panel">
+        <div class="user-list-toolbar">
+            <div class="user-search-wrap">
+                <i class="fa fa-search" aria-hidden="true"></i>
+                <input id="userSearchInput" type="search" class="form-control" placeholder="جستجوی نام، نام کاربری، تلفن، ایمیل یا نقش..." autocomplete="off" />
+                <button type="button" id="clearUserSearch" class="user-clear-search" aria-label="پاک کردن جستجو" title="پاک کردن جستجو">×</button>
+            </div>
+            <label class="user-page-size">
+                <span>نمایش در هر صفحه</span>
+                <select id="userPageSize" class="form-select form-select-sm">
+                    <option value="5">۵</option>
+                    <option value="10" selected>۱۰</option>
+                    <option value="20">۲۰</option>
+                    <option value="50">۵۰</option>
+                    <option value="all">همه</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="user-results-summary">
+            <span id="userResultsCount">در حال آماده‌سازی فهرست کاربران...</span>
+            <span id="userPageSummary"></span>
+        </div>
+
+        <div id="usersCardList" class="users-card-grid">
+            @if (Model.Users == null || !Model.Users.Any()) {
+                <div id="initialNoUsers" class="user-empty-state">
+                    <i class="fa fa-users" aria-hidden="true"></i>
+                    <strong>کاربری پیدا نشد</strong>
+                    <span>برای شروع، کاربر جدیدی ثبت کنید.</span>
+                </div>
+            } else {
+                foreach (var user in Model.Users) {
+                    var isLock = user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow;
+                    <article class="user-card @(isLock ? "user-card-locked" : user.IsEmployee ? "user-card-employee" : "")"
+                             data-user-name="@user.UserName" data-user-id="@user.Id"
+                             data-search="@($"{user.FirstName} {user.LastName} {user.UserName} {user.PhoneNumber} {user.Email} {user.InternalTels} {string.Join(" ", user.RolsUsers ?? [])}")">
+                        <div class="user-card-top">
+                            <div class="user-avatar" aria-hidden="true"><i class="fa fa-user"></i></div>
+                            <div class="user-card-identity">
+                                <h3>@($"{user.FirstName} {user.LastName}".Trim())</h3>
+                                <span class="user-card-username">@@@user.UserName</span>
+                            </div>
+                            <span class="user-status @(isLock ? "user-status-locked" : user.IsEmployee ? "user-status-active" : "user-status-normal")">
+                                @(isLock ? "مسدود" : user.IsEmployee ? "کارمند" : "فعال")
+                            </span>
+                        </div>
+                        <div class="user-card-details">
+                            <div class="user-detail"><span><i class="fa fa-phone"></i> تلفن همراه</span><strong>@(string.IsNullOrWhiteSpace(user.PhoneNumber) ? "-" : user.PhoneNumber)</strong></div>
+                            <div class="user-detail"><span><i class="fa fa-envelope"></i> ایمیل</span><strong dir="ltr">@(string.IsNullOrWhiteSpace(user.Email) ? "-" : user.Email)</strong></div>
+                            <div class="user-detail"><span><i class="fa fa-phone-square"></i> شماره داخلی</span><strong>@(string.IsNullOrWhiteSpace(user.InternalTels) ? "-" : user.InternalTels)</strong></div>
+                        </div>
+                        <div class="user-card-roles">
+                            <span class="user-section-label">نقش‌ها</span>
+                            <div class="user-roles-cell">
+                                @if (user.RolsUsers != null && user.RolsUsers.Any()) {
+                                    foreach (var item in user.RolsUsers) {
+                                        <span class="user-role-chip">
+                                            <button type="button" class="role-remove-button" title="حذف نقش" aria-label="حذف نقش @item" onclick="DelUserRole(this, '@user.Id', '@item', '@user.UserName')">
+                                                <svg viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                                            </button>
+                                            <span>@item</span>
+                                        </span>
+                                    }
+                                } else {
+                                    <span class="user-no-roles">بدون نقش</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="user-card-actions">
+                            <a class="user-action user-action-edit" asp-action="Edit" asp-route-id="@user.Id"><i class="fa fa-pencil"></i> ویرایش</a>
+                            <button type="button" class="user-action user-action-roles" onclick="openUserRolesModal('@user.UserName')"><i class="fa fa-shield"></i> مدیریت نقش‌ها</button>
+                            <button type="button" class="user-action user-action-delete" onclick="deleteUser(this, '@user.Id')"><i class="fa fa-trash"></i> حذف</button>
+                        </div>
+                    </article>
+                }
+            }
+        </div>
+
+        <div id="userEmptySearch" class="user-empty-state" style="display:none">
+            <i class="fa fa-search" aria-hidden="true"></i>
+            <strong>نتیجه‌ای پیدا نشد</strong>
+            <span>عبارت جستجو را تغییر دهید یا آن را پاک کنید.</span>
+        </div>
+
+        <nav id="userPagination" class="user-pagination" aria-label="صفحه‌بندی کاربران"></nav>
+    </section>
+</div>
 
 <partial name="Modals/_RolesModal" model="Model" />
 <partial name="Modals/_CreateUserModal" model="new CRM.EndPoint.FrontEnd.Models.Login.CreateModel()" />
 
 <style>
-    #usersTable tbody tr.newly-created-user-row > td {
-        animation: newUserHighlight 1s ease-in-out 3;
-        outline: 2px solid #0d9488;
-        outline-offset: -2px;
-    }
-
-    @@keyframes newUserHighlight {
-        0%, 100% { background-color: transparent; }
-        50% { background-color: #b7f7d8; }
+    .user-management-page { width:100%; color:#243342; }
+    .user-page-header { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:18px; }
+    .user-page-header h2 { font-size:20px; font-weight:700; margin:0 0 5px; }
+    .user-page-header p { margin:0; color:#7a8794; font-size:13px; }
+    .user-page-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .user-list-panel { background:#fff; border:1px solid #e4eaf0; border-radius:16px; padding:16px; box-shadow:0 5px 24px rgba(28,45,64,.05); }
+    .user-list-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+    .user-search-wrap { position:relative; flex:1 1 300px; max-width:560px; }
+    .user-search-wrap > .fa-search { position:absolute; right:13px; top:50%; transform:translateY(-50%); color:#8b98a5; pointer-events:none; }
+    .user-search-wrap input { border-radius:10px; min-height:42px; padding-right:38px; padding-left:38px; border-color:#dce4eb; }
+    .user-search-wrap input:focus { border-color:#07877d; box-shadow:0 0 0 3px rgba(7,135,125,.12); }
+    .user-clear-search { position:absolute; left:9px; top:50%; transform:translateY(-50%); border:0; background:transparent; color:#7b8794; font-size:22px; line-height:1; cursor:pointer; }
+    .user-page-size { display:flex; align-items:center; gap:8px; color:#667584; font-size:13px; }
+    .user-page-size select { width:85px; border-radius:8px; }
+    .user-results-summary { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; color:#7b8794; font-size:12px; padding:4px 2px 14px; }
+    .users-card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr)); gap:14px; align-items:stretch; }
+    .user-card { min-width:0; display:flex; flex-direction:column; background:#fff; border:1px solid #e4eaf0; border-radius:14px; padding:15px; box-shadow:0 2px 8px rgba(27,43,58,.035); transition:box-shadow .2s ease,transform .2s ease,border-color .2s ease; }
+    .user-card:hover { transform:translateY(-2px); border-color:#c7dcd9; box-shadow:0 8px 22px rgba(27,43,58,.08); }
+    .user-card-employee { border-right:3px solid #0b9385; }
+    .user-card-locked { border-right:3px solid #dc4c4c; background:#fffafa; }
+    .user-card-top { display:flex; align-items:center; gap:10px; min-width:0; padding-bottom:13px; border-bottom:1px solid #edf1f4; }
+    .user-avatar { width:42px; height:42px; flex:0 0 42px; display:grid; place-items:center; border-radius:12px; background:#e8f6f3; color:#07877d; font-size:18px; }
+    .user-card-locked .user-avatar { background:#ffeded; color:#c83c3c; }
+    .user-card-identity { min-width:0; flex:1; }
+    .user-card-identity h3 { margin:0 0 4px; font-size:15px; font-weight:700; overflow-wrap:anywhere; }
+    .user-card-username { color:#84919d; font-size:12px; direction:ltr; display:inline-block; }
+    .user-status { border-radius:20px; padding:4px 8px; font-size:10px; white-space:nowrap; background:#eef2f5; color:#687785; }
+    .user-status-active { background:#e3f7ee; color:#168458; }
+    .user-status-locked { background:#ffe8e8; color:#bd3535; }
+    .user-card-details { display:grid; gap:10px; padding:13px 0; }
+    .user-detail { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; font-size:12px; }
+    .user-detail > span { color:#85919d; flex:0 0 auto; }
+    .user-detail > span i { width:16px; color:#93a1ad; }
+    .user-detail > strong { min-width:0; text-align:left; overflow-wrap:anywhere; font-weight:500; color:#344554; }
+    .user-card-roles { padding-top:11px; border-top:1px solid #edf1f4; flex:1; }
+    .user-section-label { display:block; color:#84919d; font-size:11px; margin-bottom:8px; }
+    .user-roles-cell { display:flex; align-items:center; flex-wrap:wrap; gap:6px; min-height:25px; }
+    .user-role-chip { display:inline-flex; align-items:center; gap:5px; border:1px solid #dce9e7; border-radius:7px; background:#f0f8f7; color:#286f69; padding:4px 7px; font-size:11px; max-width:100%; }
+    .role-remove-button { display:inline-grid; place-items:center; border:0; background:transparent; color:#8b9a9a; padding:0; cursor:pointer; }
+    .role-remove-button:hover { color:#c53d3d; }
+    .role-remove-button svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.8; }
+    .user-no-roles { color:#a0aab4; font-size:12px; }
+    .user-card-actions { display:flex; gap:7px; flex-wrap:wrap; padding-top:14px; margin-top:12px; border-top:1px solid #edf1f4; }
+    .user-action { display:inline-flex; align-items:center; justify-content:center; gap:6px; border:1px solid #dfe6ec; border-radius:8px; padding:7px 10px; background:#fff; color:#526271; font-size:12px; text-decoration:none; cursor:pointer; transition:background .15s ease,border-color .15s ease; }
+    .user-action:hover { background:#f5f8fa; border-color:#c8d5df; color:#263d4d; }
+    .user-action-edit { color:#087e74; }
+    .user-action-roles { color:#4c6595; }
+    .user-action-delete { color:#bf3f3f; margin-right:auto; }
+    .user-empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; padding:38px 16px; text-align:center; color:#8a97a3; }
+    .user-empty-state > i { font-size:27px; color:#a8b6c1; margin-bottom:5px; }
+    .user-empty-state strong { color:#516170; font-size:14px; }
+    .user-empty-state span { font-size:12px; }
+    .user-pagination { display:flex; align-items:center; justify-content:center; gap:5px; flex-wrap:wrap; padding-top:18px; }
+    .user-page-button { min-width:34px; height:34px; padding:0 10px; border:1px solid #e0e7ed; border-radius:8px; background:#fff; color:#536474; cursor:pointer; }
+    .user-page-button:hover:not(:disabled), .user-page-button.is-active { border-color:#07877d; background:#07877d; color:#fff; }
+    .user-page-button:disabled { opacity:.4; cursor:not-allowed; }
+    .user-card.newly-created-user-row { border-color:#0d9488; box-shadow:0 0 0 3px rgba(13,148,136,.16),0 8px 22px rgba(27,43,58,.08); animation: newUserHighlight 1s ease-in-out 3; }
+    @@keyframes newUserHighlight { 0%,100% { background-color:#fff; } 50% { background-color:#d9fbeb; } }
+    @@media (max-width:600px) {
+        .user-list-panel { padding:10px; }
+        .user-page-header { align-items:flex-start; }
+        .user-page-actions { width:100%; }
+        .user-page-actions > button { flex:1; justify-content:center; }
+        .user-card { padding:12px; }
     }
 </style>
 
 @section Scripts {
-    <script defer>
-        document.addEventListener("DOMContentLoaded", function () {
-            $("#usersTable").DataTable({
-                pageLength: 10,
-                lengthMenu: [5, 10, 20, 50, { label: "همه", value: -1 }],
-                scrollCollapse: true,
-                scrollY: "70dvh",
-                responsive: true,
-                order: [[1, "asc"]],
-                language: languageDatatable,
-                layout: layoutDatatable,
-                columnDefs: [
-                    {
-                        targets: [4, 5, 3],
-                        orderable: false,
-                    },
-                ],
-            });
+<script>
+    let currentUserPage = 1;
+    let userPageSize = 10;
+    let userSearchTerm = "";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("userSearchInput").addEventListener("input", event => {
+            userSearchTerm = normalizeUserSearch(event.target.value);
+            currentUserPage = 1;
+            renderUserCards();
+        });
+        document.getElementById("clearUserSearch").addEventListener("click", () => {
+            document.getElementById("userSearchInput").value = "";
+            userSearchTerm = "";
+            currentUserPage = 1;
+            renderUserCards();
+        });
+        document.getElementById("userPageSize").addEventListener("change", event => {
+            userPageSize = event.target.value === "all" ? Infinity : Number(event.target.value);
+            currentUserPage = 1;
+            renderUserCards();
+        });
+        renderUserCards();
+    });
+
+    function normalizeUserSearch(value) {
+        return (value || "").toLocaleLowerCase("fa-IR").trim();
+    }
+
+    function getAllUserCards() {
+        return Array.from(document.querySelectorAll("#usersCardList .user-card"));
+    }
+
+    function renderUserCards() {
+        const cards = getAllUserCards();
+        const filtered = cards.filter(card => {
+            const searchable = normalizeUserSearch(card.dataset.search || card.textContent);
+            return !userSearchTerm || searchable.includes(userSearchTerm);
         });
 
-        function appendCreatedUserToTable(user) {
-            const row = document.createElement("tr");
-            row.dataset.userName = user.userName;
-            row.dataset.userId = user.id;
-            [user.firstName, user.lastName, user.userName].forEach(value => {
-                const cell = document.createElement("td");
-                cell.textContent = value || "";
-                row.appendChild(cell);
+        const pageSize = userPageSize === Infinity ? Math.max(filtered.length, 1) : userPageSize;
+        const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+        currentUserPage = Math.min(currentUserPage, totalPages);
+        const start = (currentUserPage - 1) * pageSize;
+        const visible = new Set(filtered.slice(start, start + pageSize));
+
+        cards.forEach(card => { card.style.display = visible.has(card) ? "" : "none"; });
+        document.getElementById("userResultsCount").textContent = filtered.length === cards.length
+            ? `تعداد کاربران: ${cards.length.toLocaleString("fa-IR")}`
+            : `نتیجه جستجو: ${filtered.length.toLocaleString("fa-IR")} از ${cards.length.toLocaleString("fa-IR")} کاربر`;
+        document.getElementById("userPageSummary").textContent = filtered.length
+            ? `نمایش ${(start + 1).toLocaleString("fa-IR")} تا ${Math.min(start + pageSize, filtered.length).toLocaleString("fa-IR")}`
+            : "";
+
+        document.getElementById("userEmptySearch").style.display = filtered.length ? "none" : "flex";
+        const initialEmpty = document.getElementById("initialNoUsers");
+        if (initialEmpty) initialEmpty.style.display = cards.length ? "none" : "flex";
+
+        renderUserPagination(totalPages);
+    }
+
+    function renderUserPagination(totalPages) {
+        const container = document.getElementById("userPagination");
+        container.replaceChildren();
+        if (totalPages <= 1 || userPageSize === Infinity) return;
+
+        const addButton = (label, page, options = {}) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "user-page-button" + (options.active ? " is-active" : "");
+            button.textContent = label;
+            button.disabled = Boolean(options.disabled);
+            if (options.active) button.setAttribute("aria-current", "page");
+            button.addEventListener("click", () => {
+                currentUserPage = page;
+                renderUserCards();
             });
-            const rolesCell = document.createElement("td");
-            rolesCell.className = "user-roles-cell";
-            rolesCell.innerHTML = '<span class="d-flex align-items-center flex-wrap gap-1"></span>';
-            row.appendChild(rolesCell);
-            [user.phoneNumber, user.email, user.internalTels || ""].forEach(value => {
-                const cell = document.createElement("td");
-                cell.textContent = value || "";
-                row.appendChild(cell);
+            container.appendChild(button);
+        };
+
+        addButton("قبلی", Math.max(1, currentUserPage - 1), { disabled: currentUserPage === 1 });
+        const first = Math.max(1, Math.min(currentUserPage - 2, totalPages - 4));
+        const last = Math.min(totalPages, Math.max(5, currentUserPage + 2));
+        for (let page = first; page <= last; page++) {
+            addButton(page.toLocaleString("fa-IR"), page, { active: page === currentUserPage });
+        }
+        addButton("بعدی", Math.min(totalPages, currentUserPage + 1), { disabled: currentUserPage === totalPages });
+    }
+
+    function createRoleChip(userId, userName, role) {
+        const chip = document.createElement("span");
+        chip.className = "user-role-chip";
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "role-remove-button";
+        remove.title = "حذف نقش";
+        remove.setAttribute("aria-label", "حذف نقش " + role);
+        remove.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>';
+        remove.addEventListener("click", () => DelUserRole(remove, userId, role, userName));
+        const label = document.createElement("span");
+        label.textContent = role;
+        chip.append(remove, label);
+        return chip;
+    }
+
+    function appendCreatedUserToTable(user) {
+        const card = document.createElement("article");
+        card.className = "user-card newly-created-user-row";
+        card.dataset.userName = user.userName;
+        card.dataset.userId = user.id;
+        card.dataset.search = [user.firstName, user.lastName, user.userName, user.phoneNumber, user.email, user.internalTels].filter(Boolean).join(" ");
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+        card.innerHTML = `
+            <div class="user-card-top">
+                <div class="user-avatar" aria-hidden="true"><i class="fa fa-user"></i></div>
+                <div class="user-card-identity"><h3></h3><span class="user-card-username"></span></div>
+                <span class="user-status user-status-active">فعال</span>
+            </div>
+            <div class="user-card-details">
+                <div class="user-detail"><span><i class="fa fa-phone"></i> تلفن همراه</span><strong data-field="phone"></strong></div>
+                <div class="user-detail"><span><i class="fa fa-envelope"></i> ایمیل</span><strong data-field="email" dir="ltr"></strong></div>
+                <div class="user-detail"><span><i class="fa fa-phone-square"></i> شماره داخلی</span><strong data-field="internal"></strong></div>
+            </div>
+            <div class="user-card-roles"><span class="user-section-label">نقش‌ها</span><div class="user-roles-cell"><span class="user-no-roles">بدون نقش</span></div></div>
+            <div class="user-card-actions">
+                <a class="user-action user-action-edit"><i class="fa fa-pencil"></i> ویرایش</a>
+                <button type="button" class="user-action user-action-roles"><i class="fa fa-shield"></i> مدیریت نقش‌ها</button>
+                <button type="button" class="user-action user-action-delete"><i class="fa fa-trash"></i> حذف</button>
+            </div>`;
+        card.querySelector("h3").textContent = fullName || user.userName || "کاربر جدید";
+        card.querySelector(".user-card-username").textContent = "@" + (user.userName || "");
+        card.querySelector('[data-field="phone"]').textContent = user.phoneNumber || "-";
+        card.querySelector('[data-field="email"]').textContent = user.email || "-";
+        card.querySelector('[data-field="internal"]').textContent = user.internalTels || "-";
+        const edit = card.querySelector(".user-action-edit");
+        edit.href = "/Admin/Edit?id=" + encodeURIComponent(user.id);
+        card.querySelector(".user-action-roles").addEventListener("click", () => openUserRolesModal(user.userName));
+        card.querySelector(".user-action-delete").addEventListener("click", event => deleteUser(event.currentTarget, user.id));
+        document.getElementById("usersCardList").appendChild(card);
+
+        document.getElementById("userSearchInput").value = "";
+        userSearchTerm = "";
+        currentUserPage = Math.ceil(getAllUserCards().length / (userPageSize === Infinity ? Math.max(getAllUserCards().length, 1) : userPageSize));
+        renderUserCards();
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+        card.focus({ preventScroll: true });
+        window.setTimeout(() => card.classList.remove("newly-created-user-row"), 4000);
+    }
+
+    async function DelUserRole(buttonElement, id, role, userName) {
+        if (typeof axios === "undefined") {
+            Swal.fire({ icon: "error", text: "کتابخانه Axios در صفحه بارگذاری نشده است." });
+            return;
+        }
+        const chip = buttonElement.closest(".user-role-chip");
+        if (!chip || chip.dataset.deleting === "true") return;
+        const original = chip.innerHTML;
+        chip.dataset.deleting = "true";
+        chip.style.opacity = ".55";
+        chip.style.pointerEvents = "none";
+        chip.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-label="در حال حذف"></span>';
+        try {
+            const payload = new URLSearchParams({ id, role });
+            const token = document.querySelector('#userRolesForm input[name="__RequestVerificationToken"]');
+            if (token) payload.append("__RequestVerificationToken", token.value);
+            await axios.post("/Admin/DelUserRol", payload, {
+                headers: { "Content-Type": "application/x-www-form-urlencoded", "X-Requested-With": "XMLHttpRequest" },
+                timeout: 15000
             });
-            const actions = document.createElement("td");
-            actions.style.color = "#02615a";
-            const edit = document.createElement("a");
-            edit.href = "/Admin/Edit?id=" + encodeURIComponent(user.id);
-            edit.style.cssText = "cursor:pointer;color:#04857c;margin-left:6px";
-            edit.innerHTML = '<i class="fa fa-pencil" style="font-size:16px"></i>';
-            const deleteWrap = document.createElement("span");
-            deleteWrap.style.cssText = "color:#631617;margin-left:6px";
-            const deleteButton = document.createElement("span");
-            deleteButton.className = "delete-user-button";
-            deleteButton.style.cssText = "color:#9d0000;cursor:pointer";
-            deleteButton.onclick = () => deleteUser(deleteButton, user.id);
-            deleteButton.innerHTML = '<i class="fa fa-trash" style="font-size:16px"></i>';
-            deleteWrap.appendChild(deleteButton);
-            const roleButton = document.createElement("span");
-            roleButton.style.cssText = "cursor:pointer;color:#04857c";
-            roleButton.onclick = () => openUserRolesModal(user.userName);
-            roleButton.innerHTML = '<i class="fa fa-user" style="font-size:16px"></i>';
-            actions.append(edit, deleteWrap, roleButton);
-            row.appendChild(actions);
-
-            // Make the newly created user visible even if DataTables is on another page.
-            const table = $("#usersTable").DataTable();
-            table.row.add(row).draw(false);
-            table.search(user.userName).draw();
-
-            const createdRow = Array.from(document.querySelectorAll("#usersTable tbody tr"))
-                .find(item => item.dataset.userId === String(user.id));
-
-            if (createdRow) {
-                createdRow.tabIndex = -1;
-                createdRow.classList.add("newly-created-user-row");
-                createdRow.scrollIntoView({ behavior: "smooth", block: "center" });
-                createdRow.focus({ preventScroll: true });
-
-                window.setTimeout(() => {
-                    createdRow.classList.remove("newly-created-user-row");
-                }, 4000);
-            }
+            const response = await axios.get("/Admin/GetUserRoles", { params: { userName }, timeout: 15000 });
+            updateUserRolesTable(userName, response.data || []);
+        } catch (error) {
+            chip.innerHTML = original;
+            chip.style.opacity = "";
+            chip.style.pointerEvents = "";
+            delete chip.dataset.deleting;
+            Swal.fire({ icon: "error", text: error.response?.data?.message || "حذف نقش انجام نشد. دوباره تلاش کنید." });
         }
+    }
 
-        async function DelUserRole(buttonElement, id, role, userName) {
-            if (typeof axios === "undefined") {
-                Swal.fire({ icon: "error", text: "کتابخانه Axios در صفحه بارگذاری نشده است." });
-                return;
-            }
-
-            const badge = buttonElement.closest(".buttonGray");
-            if (!badge || badge.dataset.deleting === "true") return;
-
-            const originalContent = badge.innerHTML;
-            badge.dataset.deleting = "true";
-            badge.style.pointerEvents = "none";
-            badge.style.opacity = "0.65";
-            badge.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-label="در حال حذف"></span><span>در حال حذف...</span>';
-
-            try {
-                const payload = new URLSearchParams();
-                payload.append("id", id);
-                payload.append("role", role);
-                const token = document.querySelector('#userRolesForm input[name="__RequestVerificationToken"]');
-                if (token) payload.append("__RequestVerificationToken", token.value);
-
-                await axios.post("/Admin/DelUserRol", payload, {
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded",
-                        "X-Requested-With": "XMLHttpRequest"
-                    },
-                    timeout: 15000
-                });
-
-                const rolesResponse = await axios.get("/Admin/GetUserRoles", {
-                    params: { userName: userName },
-                    headers: { "X-Requested-With": "XMLHttpRequest" },
-                    timeout: 15000
-                });
-
-                if (typeof updateUserRolesTable === "function") {
-                    updateUserRolesTable(userName, rolesResponse.data || []);
-                } else {
-                    badge.remove();
-                }
-            } catch (error) {
-                badge.innerHTML = originalContent;
-                badge.style.pointerEvents = "";
-                badge.style.opacity = "";
-                delete badge.dataset.deleting;
-                Swal.fire({
-                    icon: "error",
-                    text: error.response?.data?.message || "حذف نقش انجام نشد. دوباره تلاش کنید."
-                });
-            }
+    async function deleteUser(buttonElement, id) {
+        const confirmation = await Swal.fire({
+            title: "حذف دائمی!",
+            text: "آیا از حذف این کاربر مطمئن هستید؟ این عمل غیرقابل بازگشت است و کاربر برای همیشه پاک می‌شود.",
+            icon: "warning", showCancelButton: true, cancelButtonColor: "#adadad", confirmButtonColor: "#e64942",
+            cancelButtonText: "انصراف", confirmButtonText: "بله، حذف شود", theme: "dark"
+        });
+        if (!confirmation.isConfirmed) return;
+        if (typeof axios === "undefined") {
+            Swal.fire({ icon: "error", text: "کتابخانه Axios در صفحه بارگذاری نشده است." });
+            return;
         }
-        async function deleteUser(buttonElement, id) {
-            const confirmation = await Swal.fire({
-                title: "حذف دائمی!",
-                text: "آیا از حذف این کاربر مطمئن هستید؟ این عمل غیرقابل بازگشت است و کاربر برای همیشه پاک می‌شود.",
-                icon: "warning",
-                showCancelButton: true,
-                cancelButtonColor: "#adadad",
-                confirmButtonColor: "#e64942",
-                cancelButtonText: "انصراف",
-                confirmButtonText: "بله، حذف شود",
-                theme: "dark",
+        const card = buttonElement.closest(".user-card");
+        if (!card || card.dataset.deleting === "true") return;
+        const old = buttonElement.innerHTML;
+        card.dataset.deleting = "true";
+        card.style.opacity = ".6";
+        card.style.pointerEvents = "none";
+        buttonElement.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-label="در حال حذف"></span>';
+        try {
+            const payload = new URLSearchParams({ id });
+            const token = document.querySelector('#userRolesForm input[name="__RequestVerificationToken"]');
+            if (token) payload.append("__RequestVerificationToken", token.value);
+            const response = await axios.post("/Admin/Delete", payload, {
+                headers: { "Content-Type": "application/x-www-form-urlencoded", "X-Requested-With": "XMLHttpRequest" }, timeout: 15000
             });
-
-            if (!confirmation.isConfirmed) return;
-            if (typeof axios === "undefined") {
-                Swal.fire({ icon: "error", text: "کتابخانه Axios در صفحه بارگذاری نشده است." });
-                return;
-            }
-
-            const row = buttonElement.closest("tr");
-            if (!row || row.dataset.deleting === "true") return;
-
-            const originalContent = buttonElement.innerHTML;
-            row.dataset.deleting = "true";
-            row.style.opacity = "0.6";
-            row.style.pointerEvents = "none";
-            buttonElement.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-label="در حال حذف"></span>';
-            buttonElement.title = "در حال حذف کاربر...";
-
-            try {
-                const token = document.querySelector('#userRolesForm input[name="__RequestVerificationToken"]');
-                const payload = new URLSearchParams({ id: id });
-                if (token) payload.append("__RequestVerificationToken", token.value);
-
-                const response = await axios.post("/Admin/Delete", payload, {
-                    headers: { "Content-Type": "application/x-www-form-urlencoded", "X-Requested-With": "XMLHttpRequest" },
-                    timeout: 15000
-                });
-
-                if (!response.data || response.data.success !== true) {
-                    throw new Error(response.data?.message || "حذف کاربر ناموفق بود.");
-                }
-
-                $("#usersTable").DataTable().row(row).remove().draw(false);
-                await Swal.fire({
-                    icon: "success",
-                    title: "حذف شد",
-                    text: "کاربر با موفقیت حذف شد.",
-                    timer: 1500,
-                    showConfirmButton: false
-                });
-            } catch (error) {
-                row.style.opacity = "";
-                row.style.pointerEvents = "";
-                delete row.dataset.deleting;
-                buttonElement.innerHTML = originalContent;
-                buttonElement.title = "";
-                Swal.fire({
-                    icon: "error",
-                    title: "خطا در حذف",
-                    text: error.response?.data?.message || error.message || "حذف کاربر انجام نشد. دوباره تلاش کنید."
-                });
-            }
+            if (!response.data?.success) throw new Error(response.data?.message || "حذف کاربر ناموفق بود.");
+            card.remove();
+            renderUserCards();
+            await Swal.fire({ icon: "success", title: "حذف شد", text: "کاربر با موفقیت حذف شد.", timer: 1500, showConfirmButton: false });
+        } catch (error) {
+            card.style.opacity = "";
+            card.style.pointerEvents = "";
+            delete card.dataset.deleting;
+            buttonElement.innerHTML = old;
+            Swal.fire({ icon: "error", title: "خطا در حذف", text: error.response?.data?.message || error.message || "حذف کاربر انجام نشد. دوباره تلاش کنید." });
         }
-
-    </script>
-
-
+    }
+</script>
 }
-
