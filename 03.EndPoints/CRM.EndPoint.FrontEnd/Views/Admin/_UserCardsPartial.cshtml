@@ -1,0 +1,50 @@
+@model IEnumerable<CRM.Core.Domain.AppUsers.Entities.AppUser>
+
+@foreach (var user in Model)
+{
+    var isLock = user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow;
+    <article class="user-card @(isLock ? "user-card-locked" : user.IsEmployee ? "user-card-employee" : "")"
+             data-user-name="@user.UserName" data-user-id="@user.Id">
+        <div class="user-card-top">
+            <div class="user-avatar" aria-hidden="true"><i class="fa fa-user"></i></div>
+            <div class="user-card-identity">
+                <h3>@($"{user.FirstName} {user.LastName}".Trim())</h3>
+                <span class="user-card-username">@@@user.UserName</span>
+            </div>
+            <span class="user-status @(isLock ? "user-status-locked" : user.IsEmployee ? "user-status-active" : "user-status-normal")">
+                @(isLock ? "مسدود" : user.IsEmployee ? "کارمند" : "فعال")
+            </span>
+        </div>
+        <div class="user-card-details">
+            <div class="user-detail"><span><i class="fa fa-phone"></i> تلفن همراه</span><strong>@(string.IsNullOrWhiteSpace(user.PhoneNumber) ? "-" : user.PhoneNumber)</strong></div>
+            <div class="user-detail"><span><i class="fa fa-envelope"></i> ایمیل</span><strong dir="ltr">@(string.IsNullOrWhiteSpace(user.Email) ? "-" : user.Email)</strong></div>
+            <div class="user-detail"><span><i class="fa fa-phone-square"></i> شماره داخلی</span><strong>@(string.IsNullOrWhiteSpace(user.InternalTels) ? "-" : user.InternalTels)</strong></div>
+        </div>
+        <div class="user-card-roles">
+            <span class="user-section-label">نقش‌ها</span>
+            <div class="user-roles-cell">
+                @if (user.RolsUsers != null && user.RolsUsers.Any())
+                {
+                    foreach (var role in user.RolsUsers)
+                    {
+                        <span class="user-role-chip">
+                            <button type="button" class="role-remove-button" title="حذف نقش" aria-label="حذف نقش @role" onclick="DelUserRole(this, '@user.Id', '@role', '@user.UserName')">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                            </button>
+                            <span>@role</span>
+                        </span>
+                    }
+                }
+                else
+                {
+                    <span class="user-no-roles">بدون نقش</span>
+                }
+            </div>
+        </div>
+        <div class="user-card-actions">
+            <a class="user-action user-action-edit" href="@Url.Action("Edit", "Admin", new { id = user.Id })"><i class="fa fa-pencil"></i> ویرایش</a>
+            <button type="button" class="user-action user-action-roles" onclick="openUserRolesModal('@user.UserName')"><i class="fa fa-shield"></i> مدیریت نقش‌ها</button>
+            <button type="button" class="user-action user-action-delete" onclick="deleteUser(this, '@user.Id')"><i class="fa fa-trash"></i> حذف</button>
+        </div>
+    </article>
+}
