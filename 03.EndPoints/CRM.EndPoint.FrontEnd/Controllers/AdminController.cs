@@ -246,10 +246,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             AppUser User = await userManager.FindByIdAsync(id);
 
-            await userManager.RemoveFromRoleAsync(User, role);
+            if (User == null)
+            {
+                return NotFound(new { success = false, message = "کاربر پیدا نشد." });
+            }
 
+            var result = await userManager.RemoveFromRoleAsync(User, role);
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { success = false, message = string.Join("، ", result.Errors.Select(e => e.Description)) });
+            }
 
-            return RedirectToAction("Index");
+            return Json(new { success = true });
         }
 
 
