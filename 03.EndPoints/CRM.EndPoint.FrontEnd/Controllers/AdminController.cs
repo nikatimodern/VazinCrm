@@ -259,18 +259,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var user = await userManager.FindByNameAsync(userName);
             if (user == null)
-            {
-                return NotFound();
-            }
+                return NotFound(new { success = false, message = "کاربر پیدا نشد." });
 
             var selectedRoles = roleNames ?? new List<string>();
-            var invalidRoles = selectedRoles
-                .Where(role => !roleManager.RoleExistsAsync(role).GetAwaiter().GetResult())
-                .ToList();
-
-            if (invalidRoles.Count > 0)
+            foreach (var role in selectedRoles)
             {
-                return BadRequest("یک یا چند نقش انتخاب‌شده معتبر نیست.");
+                if (!await roleManager.RoleExistsAsync(role))
+                    return BadRequest(new { success = false, message = "یک یا چند نقش انتخاب‌شده معتبر نیست." });
             }
 
             var currentRoles = await userManager.GetRolesAsync(user);
@@ -281,26 +276,24 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var removeResult = await userManager.RemoveFromRolesAsync(user, rolesToRemove);
                 if (!removeResult.Succeeded)
-                {
-                    return BadRequest(removeResult.Errors);
-                }
+                    return BadRequest(new { success = false, message = string.Join("، ", removeResult.Errors.Select(e => e.Description)) });
             }
 
             if (rolesToAdd.Count > 0)
             {
                 var addResult = await userManager.AddToRolesAsync(user, rolesToAdd);
                 if (!addResult.Succeeded)
-                {
-                    return BadRequest(addResult.Errors);
-                }
+                    return BadRequest(new { success = false, message = string.Join("، ", addResult.Errors.Select(e => e.Description)) });
             }
 
-            return RedirectToAction("Index");
+            var updatedRoles = await userManager.GetRolesAsync(user);
+            return Json(new { success = true, roles = updatedRoles });
         }
 
         public IActionResult GetUserRoles(string userName)
         {
             var user = userManager.FindByNameAsync(userName).Result;
+            if (user == null) return NotFound();
             var roles = userManager.GetRolesAsync(user).Result;
             return Json(roles);
         }
