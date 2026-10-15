@@ -318,7 +318,7 @@
                 <button type="button" class="user-action user-action-delete"><i class="fa fa-trash"></i> حذف</button>
             </div>`;
         card.querySelector("h3").textContent = fullName || user.userName || "کاربر جدید";
-        card.querySelector(".user-card-username").textContent = "@" + (user.userName || "");
+        card.querySelector(".user-card-username").textContent = String.fromCharCode(64) + (user.userName || "");
         card.querySelector('[data-field="phone"]').textContent = user.phoneNumber || "-";
         card.querySelector('[data-field="email"]').textContent = user.email || "-";
         card.querySelector('[data-field="internal"]').textContent = user.internalTels || "-";
