@@ -47,7 +47,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetUsers(int page = 1, int pageSize = 5, string search = null, string employeeType = "all", string accountStatus = "all")
+        public async Task<IActionResult> GetUsers(int page = 1, int pageSize = 5, string search = null, string employeeType = "all", string accountStatus = "all", string role = "all")
         {
             page = page < 1 ? 1 : page;
             var query = userManager.Users.Where(user => user.OrganAdmin == false);
@@ -65,6 +65,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 query = query.Where(user => !user.LockoutEnd.HasValue || user.LockoutEnd <= utcNow);
             else if (accountStatus == "blocked")
                 query = query.Where(user => user.LockoutEnd.HasValue && user.LockoutEnd > utcNow);
+
+            if (!string.IsNullOrWhiteSpace(role) && role != "all")
+            {
+                var usersInRole = await userManager.GetUsersInRoleAsync(role);
+                var userIdsInRole = usersInRole.Select(user => user.Id).ToList();
+                query = query.Where(user => userIdsInRole.Contains(user.Id));
+            }
 
             if (!string.IsNullOrWhiteSpace(search))
             {
