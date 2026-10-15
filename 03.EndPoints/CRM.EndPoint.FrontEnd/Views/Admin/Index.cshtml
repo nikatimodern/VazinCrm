@@ -63,7 +63,7 @@
                                     <i class="fa fa-pencil" style="font-size: 16px;"></i>
                                 </a>
                                 <span style="color: #631617;">
-                                    <span style="color: #9d0000;cursor: pointer" onclick="deleteUser('@user.Id')">
+                                    <span class="delete-user-button" style="color: #9d0000;cursor: pointer" onclick="deleteUser(this, '@user.Id')">
                                         <i class="fa fa-trash" style="font-size: 16px;"></i>
                                     </span>
                                 </span>
@@ -156,8 +156,8 @@
                 });
             }
         }
-        function deleteUser(id) {
-            Swal.fire({
+        async function deleteUser(buttonElement, id) {
+            const confirmation = await Swal.fire({
                 title: "حذف دائمی!",
                 text: "آیا از حذف این کاربر مطمئن هستید؟ این عمل غیرقابل بازگشت است و کاربر برای همیشه پاک می‌شود.",
                 icon: "warning",
@@ -167,11 +167,58 @@
                 cancelButtonText: "انصراف",
                 confirmButtonText: "بله، حذف شود",
                 theme: "dark",
-            }).then((willDelete) => {
-                if (willDelete.isConfirmed) {
-                    window.location.href = `/Admin/Delete?id=${id}`;
-                }
             });
+
+            if (!confirmation.isConfirmed) return;
+            if (typeof axios === "undefined") {
+                Swal.fire({ icon: "error", text: "کتابخانه Axios در صفحه بارگذاری نشده است." });
+                return;
+            }
+
+            const row = buttonElement.closest("tr");
+            if (!row || row.dataset.deleting === "true") return;
+
+            const originalContent = buttonElement.innerHTML;
+            row.dataset.deleting = "true";
+            row.style.opacity = "0.6";
+            row.style.pointerEvents = "none";
+            buttonElement.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-label="در حال حذف"></span>';
+            buttonElement.title = "در حال حذف کاربر...";
+
+            try {
+                const token = document.querySelector('#userRolesForm input[name="__RequestVerificationToken"]');
+                const payload = new URLSearchParams({ id: id });
+                if (token) payload.append("__RequestVerificationToken", token.value);
+
+                const response = await axios.post("/Admin/Delete", payload, {
+                    headers: { "Content-Type": "application/x-www-form-urlencoded", "X-Requested-With": "XMLHttpRequest" },
+                    timeout: 15000
+                });
+
+                if (!response.data || response.data.success !== true) {
+                    throw new Error(response.data?.message || "حذف کاربر ناموفق بود.");
+                }
+
+                $("#usersTable").DataTable().row(row).remove().draw(false);
+                await Swal.fire({
+                    icon: "success",
+                    title: "حذف شد",
+                    text: "کاربر با موفقیت حذف شد.",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            } catch (error) {
+                row.style.opacity = "";
+                row.style.pointerEvents = "";
+                delete row.dataset.deleting;
+                buttonElement.innerHTML = originalContent;
+                buttonElement.title = "";
+                Swal.fire({
+                    icon: "error",
+                    title: "خطا در حذف",
+                    text: error.response?.data?.message || error.message || "حذف کاربر انجام نشد. دوباره تلاش کنید."
+                });
+            }
         }
 
     </script>
