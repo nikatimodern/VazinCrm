@@ -254,18 +254,48 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [HttpPost]
-        public IActionResult AddUserToRole(string userName, string roleName)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateUserRoles(string userName, List<string> roleNames)
         {
-            var user = userManager.FindByNameAsync(userName).Result;
-            //var role = roleManager.FindByNameAsync(roleName).Result;
-
-            var result = userManager.AddToRoleAsync(user, roleName).Result;
-            if (result.Succeeded)
+            var user = await userManager.FindByNameAsync(userName);
+            if (user == null)
             {
-                return RedirectToAction("Index");
+                return NotFound();
             }
 
-            return BadRequest();
+            var selectedRoles = roleNames ?? new List<string>();
+            var invalidRoles = selectedRoles
+                .Where(role => !roleManager.RoleExistsAsync(role).GetAwaiter().GetResult())
+                .ToList();
+
+            if (invalidRoles.Count > 0)
+            {
+                return BadRequest("یک یا چند نقش انتخاب‌شده معتبر نیست.");
+            }
+
+            var currentRoles = await userManager.GetRolesAsync(user);
+            var rolesToRemove = currentRoles.Except(selectedRoles).ToList();
+            var rolesToAdd = selectedRoles.Except(currentRoles).ToList();
+
+            if (rolesToRemove.Count > 0)
+            {
+                var removeResult = await userManager.RemoveFromRolesAsync(user, rolesToRemove);
+                if (!removeResult.Succeeded)
+                {
+                    return BadRequest(removeResult.Errors);
+                }
+            }
+
+            if (rolesToAdd.Count > 0)
+            {
+                var addResult = await userManager.AddToRolesAsync(user, rolesToAdd);
+                if (!addResult.Succeeded)
+                {
+                    return BadRequest(addResult.Errors);
+                }
+            }
+
+            return RedirectToAction("Index");
         }
 
         public IActionResult GetUserRoles(string userName)
