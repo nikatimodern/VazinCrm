@@ -52,10 +52,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 .OrderBy(user => user.UserName)
                 .ToListAsync();
 
-            await Task.WhenAll(users.Select(async user =>
+            // Use the scoped Identity DbContext sequentially to avoid concurrent EF operations.
+            foreach (var user in users)
             {
                 user.RolsUsers = await userManager.GetRolesAsync(user);
-            }));
+            }
 
             return PartialView("_UserCardsPartial", users);
         }
