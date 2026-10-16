@@ -104,7 +104,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             page = Math.Min(page, totalPages);
 
             var users = await query
-                .OrderBy(user => user.UserName)
+                .OrderByDescending(user => user.CreateDate)
+                .ThenByDescending(user => user.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
