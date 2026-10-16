@@ -33,6 +33,19 @@
     <div class="card border-0 shadow-sm mb-3">
         <div class="card-body">
             <div class="d-flex align-items-end flex-wrap gap-3">
+                <div class="d-flex flex-column gap-1" style="min-width: 220px;">
+                    <label for="overdueDealSearch" class="form-label small mb-0">جستجوی سفارش</label>
+                    <div class="d-flex align-items-center gap-2">
+                        <input type="search" id="overdueDealSearch" class="form-control form-control-sm" placeholder="شماره، عنوان یا مشتری..." />
+                        <button type="button" class="btnFilter" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;"
+                                data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterOverdueDeal"
+                                data-filterContentId="ContentOverdueDealFilterId" data-filterInpSearchId="overdueDealSearch"
+                                data-filterVarSearch="overdueDealSearchVal" onclick="ShowFilterPopup(this)" title="فیلترهای پیشرفته">
+                            <svg style="width:24px;color:#333" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="ContentOverdueDealFilterId" class="ContentFilter"></div>
                 <div class="d-flex flex-column gap-1">
                     <label for="overdueStartDate" class="form-label small mb-0">از تاریخ معوق‌شدن</label>
                     <input type="date" id="overdueStartDate" class="form-control form-control-sm" />
@@ -87,6 +100,22 @@
                     <tbody id="overdueDealsTableBody"></tbody>
                 </table>
             </div>
+            <div id="overdueDealsPagination" class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 border-top d-none">
+                <div class="d-flex align-items-center gap-2">
+                    <label for="overduePageSize" class="small text-muted mb-0">تعداد در صفحه</label>
+                    <select id="overduePageSize" class="form-select form-select-sm" style="width: auto;">
+                        <option value="10">۱۰</option>
+                        <option value="20" selected>۲۰</option>
+                        <option value="50">۵۰</option>
+                        <option value="100">۱۰۰</option>
+                        <option value="0">همه</option>
+                    </select>
+                    <span id="overduePaginationInfo" class="small text-muted"></span>
+                </div>
+                <nav aria-label="صفحه‌بندی سفارشات معوقه">
+                    <ul id="overduePaginationButtons" class="pagination pagination-sm mb-0"></ul>
+                </nav>
+            </div>
         </div>
     </div>
 </div>
@@ -128,6 +157,16 @@
             const dealDetailsModal = window.bootstrap?.Modal
                 ? new bootstrap.Modal(dealDetailsModalElement)
                 : null;
+            const pageSizeSelect = document.getElementById("overduePageSize");
+            const pagination = document.getElementById("overdueDealsPagination");
+            const paginationInfo = document.getElementById("overduePaginationInfo");
+            const paginationButtons = document.getElementById("overduePaginationButtons");
+            const searchInput = document.getElementById("overdueDealSearch");
+            let allDeals = [];
+            let currentPage = 1;
+            let pageSize = 20;
+            let overdueFilter = null;
+            let overdueSearchVal = "";
 
             const escapeHtml = (value) => String(value ?? "")
                 .replaceAll("&", "&amp;")
@@ -152,6 +191,93 @@
                 return Math.max(0, Math.floor((Date.now() - date.getTime()) / 86400000));
             };
 
+            const renderCurrentPage = () => {
+                const total = allDeals.length;
+                const effectivePageSize = pageSize === 0 ? Math.max(total, 1) : pageSize;
+                const totalPages = Math.max(1, Math.ceil(total / effectivePageSize));
+                currentPage = Math.min(currentPage, totalPages);
+                const startIndex = (currentPage - 1) * effectivePageSize;
+                const pageDeals = allDeals.slice(startIndex, startIndex + effectivePageSize);
+
+                tableBody.innerHTML = pageDeals.map(deal => {
+                    const customerName = deal.cusCompanyName || deal.customerName || "—";
+                    const waitingDays = getWaitingDays(deal.createDate);
+                    return `
+                        <tr>
+                            <td class="text-nowrap fw-semibold">
+                                <button type="button" class="btn btn-link p-0 text-decoration-none overdue-deal-number"
+                                        data-deal-id="${escapeHtml(deal.id)}" style="color: #6d28d9; font-weight: 700;">
+                                    ${escapeHtml(deal.serialNumber)}
+                                </button>
+                            </td>
+                            <td>${escapeHtml(deal.title || "—")}</td>
+                            <td>${escapeHtml(customerName)}</td>
+                            <td class="text-nowrap">${escapeHtml(deal.customerCode ?? "—")}</td>
+                            <td class="text-nowrap">${escapeHtml(formatDate(deal.createDate))}</td>
+                            <td class="text-nowrap"><span class="badge text-bg-danger">${escapeHtml(new Intl.NumberFormat("fa-IR").format(waitingDays))} روز</span></td>
+                            <td>${escapeHtml(deal.userCreator || "—")}</td>
+                            <td style="min-width: 220px; white-space: normal;">${escapeHtml(deal.commentText || "—")}</td>
+                        </tr>`;
+                }).join("");
+
+                tableWrap.classList.remove("d-none");
+                pagination.classList.remove("d-none");
+                paginationInfo.textContent = `${new Intl.NumberFormat("fa-IR").format(total ? startIndex + 1 : 0)} تا ${new Intl.NumberFormat("fa-IR").format(Math.min(startIndex + pageDeals.length, total))} از ${new Intl.NumberFormat("fa-IR").format(total)}`;
+
+                paginationButtons.innerHTML = "";
+                const addPageButton = (label, page, disabled = false, active = false) => {
+                    const li = document.createElement("li");
+                    li.className = "page-item" + (disabled ? " disabled" : "") + (active ? " active" : "");
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = "page-link";
+                    button.textContent = label;
+                    button.disabled = disabled;
+                    button.addEventListener("click", () => {
+                        currentPage = page;
+                        renderCurrentPage();
+                    });
+                    li.appendChild(button);
+                    paginationButtons.appendChild(li);
+                };
+
+                addPageButton("قبلی", Math.max(1, currentPage - 1), currentPage === 1);
+                const first = Math.max(1, currentPage - 2);
+                const last = Math.min(totalPages, currentPage + 2);
+                for (let page = first; page <= last; page++) {
+                    addPageButton(new Intl.NumberFormat("fa-IR").format(page), page, false, page === currentPage);
+                }
+                addPageButton("بعدی", Math.min(totalPages, currentPage + 1), currentPage === totalPages);
+
+                tableBody.querySelectorAll(".overdue-deal-number").forEach(button => {
+                    button.addEventListener("click", () => {
+                        const deal = pageDeals.find(item => String(item.id).toLowerCase() === button.dataset.dealId.toLowerCase());
+                        if (!deal) return;
+                        const details = [
+                            ["شماره سفارش", deal.serialNumber], ["عنوان سفارش", deal.title],
+                            ["نام مشتری", deal.customerName], ["نام شرکت", deal.cusCompanyName],
+                            ["کد مشتری", deal.customerCode], ["موبایل", deal.mobileNumber],
+                            ["تاریخ ثبت", formatDate(deal.createDate)],
+                            ["مدت انتظار", new Intl.NumberFormat("fa-IR").format(getWaitingDays(deal.createDate)) + " روز"],
+                            ["ثبت‌کننده", deal.userCreator], ["توضیحات", deal.commentText]
+                        ];
+                        dealDetailsContent.innerHTML = details.map(([label, value]) => `
+                            <div class="col-12 col-md-6"><div class="border rounded-3 p-3 h-100">
+                                <div class="small text-muted mb-1">${escapeHtml(label)}</div>
+                                <div class="fw-semibold text-break" style="white-space: pre-wrap;">${escapeHtml(value || "—")}</div>
+                            </div></div>`).join("");
+                        dealDetailsModal?.show();
+                    });
+                });
+            };
+
+            window.callbackFilterOverdueDeal = async () => {
+                overdueFilter = window.filterDealConfig?.filterVar ?? null;
+                overdueSearchVal = window.filterDealConfig?.varSearch ?? searchInput.value.trim();
+                currentPage = 1;
+                await loadOverdueDeals();
+            };
+
             const loadOverdueDeals = async () => {
                 loading.classList.remove("d-none");
                 error.classList.add("d-none");
@@ -169,78 +295,20 @@
                         throw new Error("تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد.");
                     }
 
-                    const response = await axios.get("/OverdueDeal/GetOverdueDeals", { params });
-                    const deals = response.data?.data ?? [];
-                    count.textContent = new Intl.NumberFormat("fa-IR").format(deals.length);
+                    const requestModel = { filt: overdueFilter, serVal: searchInput.value.trim() || overdueSearchVal || null };
+                    const response = await axios.post("/OverdueDeal/GetOverdueDeals" + (Object.keys(params).length ? "?" + new URLSearchParams(params).toString() : ""), requestModel);
+                    allDeals = response.data?.data ?? [];
+                    allDeals.sort((a, b) => new Date(b.createDate) - new Date(a.createDate));
+                    count.textContent = new Intl.NumberFormat("fa-IR").format(allDeals.length);
+                    currentPage = Math.min(currentPage, Math.max(1, Math.ceil(allDeals.length / (pageSize || Math.max(allDeals.length, 1)))));
 
-                    if (deals.length === 0) {
+                    if (allDeals.length === 0) {
+                        pagination.classList.add("d-none");
                         empty.classList.remove("d-none");
                         return;
                     }
 
-                    tableBody.innerHTML = deals.map(deal => {
-                        const customerName = deal.cusCompanyName || deal.customerName || "—";
-                        const waitingDays = getWaitingDays(deal.createDate);
-                        return `
-                            <tr>
-                                <td class="text-nowrap fw-semibold">
-                                    <button type="button" class="btn btn-link p-0 text-decoration-none overdue-deal-number"
-                                            data-deal-id="${escapeHtml(deal.id)}" style="color: #6d28d9; font-weight: 700;">
-                                        ${escapeHtml(deal.serialNumber)}
-                                    </button>
-                                </td>
-                                <td>${escapeHtml(deal.title || "—")}</td>
-                                <td>${escapeHtml(customerName)}</td>
-                                <td class="text-nowrap">${escapeHtml(deal.customerCode ?? "—")}</td>
-                                <td class="text-nowrap">${escapeHtml(formatDate(deal.createDate))}</td>
-                                <td class="text-nowrap">
-                                    <span class="badge text-bg-danger">${escapeHtml(new Intl.NumberFormat("fa-IR").format(waitingDays))} روز</span>
-                                </td>
-                                <td>${escapeHtml(deal.userCreator || "—")}</td>
-                                <td style="min-width: 220px; white-space: normal;">${escapeHtml(deal.commentText || "—")}</td>
-                            </tr>`;
-                    }).join("");
-
-                    tableWrap.classList.remove("d-none");
-
-                    tableBody.querySelectorAll(".overdue-deal-number").forEach(button => {
-                        button.addEventListener("click", () => {
-                            const deal = deals.find(item => String(item.id).toLowerCase() === button.dataset.dealId.toLowerCase());
-                            if (!deal) return;
-
-                            const customerName = deal.cusCompanyName || deal.customerName || "—";
-                            const details = [
-                                ["شماره سفارش", deal.serialNumber],
-                                ["عنوان سفارش", deal.title],
-                                ["نام مشتری", deal.customerName],
-                                ["نام شرکت", deal.cusCompanyName],
-                                ["کد مشتری", deal.customerCode],
-                                ["موبایل", deal.mobileNumber],
-                                ["تاریخ ثبت", formatDate(deal.createDate)],
-                                ["مدت انتظار", new Intl.NumberFormat("fa-IR").format(getWaitingDays(deal.createDate)) + " روز"],
-                                ["ثبت‌کننده", deal.userCreator],
-                                ["توضیحات", deal.commentText]
-                            ];
-
-                            dealDetailsContent.innerHTML = details.map(([label, value]) => `
-                                <div class="col-12 col-md-6">
-                                    <div class="border rounded-3 p-3 h-100">
-                                        <div class="small text-muted mb-1">${escapeHtml(label)}</div>
-                                        <div class="fw-semibold text-break" style="white-space: pre-wrap;">${escapeHtml(value || "—")}</div>
-                                    </div>
-                                </div>
-                            `).join("");
-
-                            if (dealDetailsModal) {
-                                dealDetailsModal.show();
-                            } else {
-                                dealDetailsModalElement.classList.add("show");
-                                dealDetailsModalElement.style.display = "block";
-                                dealDetailsModalElement.removeAttribute("aria-hidden");
-                                document.body.classList.add("modal-open");
-                            }
-                        });
-                    });
+                    renderCurrentPage();
                 } catch (err) {
                     console.error("Failed to load overdue deals:", err);
                     error.textContent = err.message === "تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد."
@@ -288,6 +356,18 @@
                 });
             });
 
+            pageSizeSelect.addEventListener("change", () => {
+                pageSize = Number(pageSizeSelect.value);
+                currentPage = 1;
+                if (allDeals.length) renderCurrentPage();
+            });
+            searchInput.addEventListener("keydown", event => {
+                if (event.key === "Enter") {
+                    overdueSearchVal = searchInput.value.trim();
+                    currentPage = 1;
+                    loadOverdueDeals();
+                }
+            });
             applyDateRangeButton.addEventListener("click", loadOverdueDeals);
             clearDateRangeButton.addEventListener("click", () => {
                 startDateInput.value = "";
