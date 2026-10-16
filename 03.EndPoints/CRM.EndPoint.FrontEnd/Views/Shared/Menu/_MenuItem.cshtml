@@ -22,7 +22,7 @@
     </div>
 } else if (string.IsNullOrEmpty(Model.Url)) {
     // Menu button
-    <button type="button" id="@Model.ElementId" class="menu-item @Model.ClassName" data-tooltip-left="@Model.Title" onclick="@Model.OnClick">
+    <button type="button" id="@Model.ElementId" class="menu-item @Model.ClassName @(Model.Title.Contains("هشدار") ? "menu-alert-live" : "")" data-tooltip-left="@Model.Title" onclick="@Model.OnClick">
         @Html.Raw(Model.IconHtml)
         <span class="menu-item-title">
             <span>@Model.Title</span>
@@ -33,7 +33,7 @@
     </button>
 } else {
     // Menu link
-    <a href="@Model.Url" id="@Model.ElementId" class="menu-item menu-link @Model.ClassName" data-tooltip-left="@Model.Title">
+    <a href="@Model.Url" id="@Model.ElementId" class="menu-item menu-link @Model.ClassName @(Model.Title.Contains("هشدار") ? "menu-alert-live" : "")" data-tooltip-left="@Model.Title">
         @Html.Raw(Model.IconHtml)
         <span class="menu-item-title">
             <span>@Model.Title</span>
