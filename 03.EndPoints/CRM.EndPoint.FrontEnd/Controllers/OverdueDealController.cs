@@ -1,7 +1,9 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Deals.Enums;
+using CRM.Core.Domain.PreFactors.Enum;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.Infrastructures.Sql;
@@ -82,7 +84,39 @@ public class OverdueDealController : Controller
                 deal.CommentText,
                 ReportCount = deal.Reports.Count(),
                 PreFactorCount = deal.PreFactors.Count(),
-                FactorCount = deal.Factors.Count()
+                FactorCount = deal.Factors.Count(),
+                HasCustomer = deal.CustomerCode.HasValue &&
+                    _db.Customers.Any(customer => customer.CustomerCode == deal.CustomerCode.Value),
+                AccountancyCount = _db.Accountancies.Count(accountancy =>
+                    deal.CustomerCode.HasValue &&
+                    accountancy.CustomerCode == deal.CustomerCode.Value &&
+                    accountancy.InvoiceType == InvoiceTypeEnum.مشتری &&
+                    !accountancy.IsDeleted),
+                DebtAmount = _db.Accountancies
+                    .Where(accountancy =>
+                        deal.CustomerCode.HasValue &&
+                        accountancy.CustomerCode == deal.CustomerCode.Value &&
+                        accountancy.InvoiceType == InvoiceTypeEnum.مشتری &&
+                        accountancy.AccType == AcEnum.بدهکاری &&
+                        !accountancy.IsDeleted)
+                    .Sum(accountancy => (decimal?)accountancy.debit) ?? 0m,
+                ReceivableAmount = _db.Accountancies
+                    .Where(accountancy =>
+                        deal.CustomerCode.HasValue &&
+                        accountancy.CustomerCode == deal.CustomerCode.Value &&
+                        accountancy.InvoiceType == InvoiceTypeEnum.مشتری &&
+                        accountancy.AccType == AcEnum.واریزی &&
+                        accountancy.PayType == PayTypeEnum.نقدی &&
+                        !accountancy.IsDeleted)
+                    .Sum(accountancy => (decimal?)accountancy.credit) ?? 0m,
+                ReturnedAmount = _db.Accountancies
+                    .Where(accountancy =>
+                        deal.CustomerCode.HasValue &&
+                        accountancy.CustomerCode == deal.CustomerCode.Value &&
+                        accountancy.InvoiceType == InvoiceTypeEnum.مشتری &&
+                        accountancy.AccType == AcEnum.برگشتی &&
+                        !accountancy.IsDeleted)
+                    .Sum(accountancy => (decimal?)accountancy.BackWard) ?? 0m
             })
             .ToListAsync();
 
