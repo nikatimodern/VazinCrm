@@ -551,18 +551,28 @@
                         const deal = pageDeals.find(item => String(item.id).toLowerCase() === button.dataset.dealId.toLowerCase());
                         if (!deal) return;
 
+                        const hasCustomer = deal.hasCustomer === true;
+                        const moneyFormat = value => new Intl.NumberFormat("fa-IR", {
+                            maximumFractionDigits: 0
+                        }).format(Number(value ?? 0));
+                        const debtAmount = Number(deal.debtAmount ?? 0) + Number(deal.returnedAmount ?? 0);
+                        const cashReceived = Number(deal.receivableAmount ?? 0);
+                        const remainingReceivable = Math.max(0, debtAmount - cashReceived);
                         const counts = [
                             { label: "گزارش‌های ثبت‌شده", value: deal.reportCount, color: "#4c1d95", icon: '<path d="M7 3h10a2 2 0 0 1 2 2v14l-7-3-7 3V5a2 2 0 0 1 2-2Z"/>' },
                             { label: "پیش‌فاکتورهای صادرشده", value: deal.preFactorCount, color: "#0f766e", icon: '<path d="M7 3h10a2 2 0 0 1 2 2v14l-7-3-7 3V5a2 2 0 0 1 2-2Z"/><path d="M9 8h6M9 11h6"/>' },
-                            { label: "فاکتورها", value: deal.factorCount, color: "#4c1d95", icon: '<path d="M6 2h9l4 4v16H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><path d="M14 2v5h5M8 12h8M8 16h8"/>' }
+                            { label: "فاکتورها", value: deal.factorCount, color: "#4c1d95", icon: '<path d="M6 2h9l4 4v16H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><path d="M14 2v5h5M8 12h8M8 16h8"/>' },
+                            { label: "صورت‌حساب‌های مشتری", value: hasCustomer ? deal.accountancyCount : "—", color: "#0f766e", icon: '<path d="M5 3h14v18H5z"/><path d="M8 7h8M8 11h8M8 15h5"/>' },
+                            { label: "مجموع بدهکاری", value: hasCustomer ? moneyFormat(debtAmount) + " ریال" : "بدون مشتری", color: "#b45309", icon: '<path d="M12 5v14M5 12h14"/>' },
+                            { label: "مانده طلب از مشتری", value: hasCustomer ? moneyFormat(remainingReceivable) + " ریال" : "بدون مشتری", color: "#be123c", icon: '<path d="M4 7h16M6 3h12v18H6z"/><path d="M9 12h6"/>' }
                         ];
                         dealCountsContent.innerHTML = counts.map(item => `
-                            <div class="col-12 col-md-4">
+                            <div class="col-12 col-md-4 col-xl-2">
                                 <div class="overdue-count-card">
                                     <div class="count-icon" style="color:${item.color}">
                                         <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${item.icon}</svg>
                                     </div>
-                                    <div class="count-value">${escapeHtml(new Intl.NumberFormat("fa-IR").format(item.value ?? 0))}</div>
+                                    <div class="count-value" style="font-size:1.25rem">${escapeHtml(item.value ?? 0)}</div>
                                     <div class="count-label">${escapeHtml(item.label)}</div>
                                 </div>
                             </div>`).join("");
