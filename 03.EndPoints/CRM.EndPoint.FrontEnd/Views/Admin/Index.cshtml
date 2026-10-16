@@ -257,6 +257,28 @@
     .user-action-edit { color:#087e74; }
     .user-action-roles { color:#4c6595; }
     .user-action-delete { color:#bf3f3f; margin-right:auto; }
+    /* Compact, higher-contrast user cards */
+    .users-card-grid { grid-template-columns:repeat(auto-fill,minmax(min(100%,285px),1fr)); gap:10px; }
+    .user-card { padding:11px; border:1px solid #cbd9e5; border-radius:12px; background:#edf4f8; box-shadow:0 3px 10px rgba(32,58,78,.09); }
+    .user-card-employee { border-right:3px solid #07877d; background:#e7f3f2; }
+    .user-card-locked { border-right:3px solid #d83f4b; background:#fff0f0; border-color:#e9c9cc; }
+    .user-card-top { gap:8px; padding-bottom:9px; border-bottom-color:#d7e3ea; }
+    .user-avatar { width:36px; height:36px; flex-basis:36px; border-radius:10px; font-size:16px; }
+    .user-card-identity h3 { font-size:14px; margin-bottom:2px; }
+    .user-card-username { font-size:11px; }
+    .user-status-group { gap:4px; max-width:112px; }
+    .user-status { padding:4px 6px; font-size:9px; }
+    .user-card-details { gap:7px; padding:9px 0; }
+    .user-detail { gap:8px; font-size:11px; }
+    .user-detail > span i { width:14px; }
+    .user-created-date strong { color:#087e74; font-weight:600; }
+    .user-card-roles { padding-top:8px; border-top-color:#d7e3ea; }
+    .user-section-label { font-size:10px; margin-bottom:5px; }
+    .user-roles-cell { gap:5px; min-height:20px; }
+    .user-role-chip { padding:3px 6px; font-size:10px; }
+    .user-role-chip svg { width:12px; height:12px; }
+    .user-card-actions { gap:5px; padding-top:9px; margin-top:8px; border-top-color:#d7e3ea; }
+    .user-action { gap:5px; padding:5px 8px; font-size:11px; border-radius:7px; }
     .user-empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; padding:38px 16px; text-align:center; color:#8a97a3; }
     .user-empty-state > i { font-size:27px; color:#a8b6c1; margin-bottom:5px; }
     .user-empty-state strong { color:#516170; font-size:14px; }
