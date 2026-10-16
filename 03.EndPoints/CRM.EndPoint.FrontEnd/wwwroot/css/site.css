@@ -7982,10 +7982,43 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
     margin-inline-start: 6px;
     border: 1px solid rgba(255, 255, 255, .9);
     border-radius: 999px;
-    background-color: #dc2626;
+    background-color: #6d28d9;
     color: #fff;
     font-weight: 800;
     font-size: 12px;
-    box-shadow: 0 0 8px rgba(220, 38, 38, .45);
+    box-shadow: 0 0 8px rgba(109, 40, 217, .45);
 }
 
+
+
+/* Overdue deals date filter and purple count badge */
+.overdue-count-badge {
+    background-color: #6d28d9 !important;
+    color: #fff !important;
+    box-shadow: 0 0 8px rgba(109, 40, 217, .35);
+}
+
+.btn-purple {
+    color: #fff;
+    background-color: #6d28d9;
+    border-color: #6d28d9;
+}
+
+.btn-purple:hover,
+.btn-purple:focus {
+    color: #fff;
+    background-color: #5b21b6;
+    border-color: #5b21b6;
+}
+
+.btn-outline-purple {
+    color: #6d28d9;
+    border-color: #c4b5fd;
+}
+
+.btn-outline-purple:hover,
+.btn-outline-purple:focus {
+    color: #fff;
+    background-color: #6d28d9;
+    border-color: #6d28d9;
+}
