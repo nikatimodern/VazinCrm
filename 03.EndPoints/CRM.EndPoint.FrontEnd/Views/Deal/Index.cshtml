@@ -102,75 +102,7 @@
 
 
 
-<div class="modal fade" id="dealOverviewModal" tabindex="-1" aria-labelledby="dealOverviewModalLabel" aria-hidden="true" dir="rtl">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header" style="background:linear-gradient(135deg,#4c1d95,#6d28d9);color:#fff;">
-                <div>
-                    <h5 class="modal-title mb-1" id="dealOverviewModalLabel">جزئیات سفارش</h5>
-                    <div id="dealOverviewSubtitle" class="small opacity-75"></div>
-                </div>
-                <button type="button" class="btn-close btn-close-white ms-0" data-bs-dismiss="modal" aria-label="بستن"></button>
-            </div>
-            <div class="modal-body">
-                <div id="dealOverviewContent" class="row g-3"></div>
-            </div>
-            <div class="modal-footer">
-                <small class="text-muted me-auto">برای مشاهده جزئیات بیشتر، روی هر بخش کلیک کنید.</small>
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">بستن</button>
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="modal fade" id="dealNestedDetailsModal" tabindex="-1" aria-labelledby="dealNestedDetailsModalLabel" aria-hidden="true" dir="rtl">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header" style="background:linear-gradient(135deg,#0f766e,#115e59);color:#fff;">
-                <h5 class="modal-title" id="dealNestedDetailsModalLabel">جزئیات بیشتر</h5>
-                <button type="button" class="btn-close btn-close-white ms-0" data-bs-dismiss="modal" aria-label="بستن"></button>
-            </div>
-            <div class="modal-body">
-                <div id="dealNestedDetailsContent" class="row g-3"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" id="dealNestedBackButton" class="btn btn-outline-success btn-sm">بازگشت به سفارش</button>
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">بستن</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<style>
-    #dealOverviewContent .deal-detail-item,
-    #dealNestedDetailsContent .deal-detail-item {
-        width: 100%;
-        min-height: 100%;
-        padding: .85rem 1rem;
-        border: 1px solid #e9e2ff;
-        border-radius: .8rem;
-        background: linear-gradient(135deg,#fff,#faf8ff);
-        text-align: right;
-        overflow-wrap: anywhere;
-    }
-    #dealOverviewContent button.deal-detail-item,
-    #dealNestedDetailsContent button.deal-detail-item {
-        color: #4c1d95;
-        cursor: pointer;
-        transition: .18s ease;
-    }
-    #dealOverviewContent button.deal-detail-item:hover,
-    #dealNestedDetailsContent button.deal-detail-item:hover {
-        border-color: #7c3aed;
-        background: #f3e8ff;
-        transform: translateY(-1px);
-    }
-    .deal-detail-label { color:#64748b; font-size:.78rem; margin-bottom:.35rem; }
-    .deal-detail-value { color:#1e293b; font-weight:600; white-space:pre-wrap; }
-    .deal-detail-open-hint { color:#0f766e; font-size:.75rem; margin-top:.45rem; }
-    .deal-card { cursor: pointer; }
-    .deal-card button, .deal-card .deal-dropdown__list, .deal-card .dropdown-item { cursor: pointer; }
-</style>
 
 <partial name="~/Views/PreFactor/Modals/_PreFactorModal.cshtml" />
 <partial name="~/Views/PreFactor/Modals/_DeliverModal.cshtml" />
