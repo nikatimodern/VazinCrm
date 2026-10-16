@@ -7929,3 +7929,24 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
         animation: none;
     }
 }
+
+/* Reusable blinking attention class */
+.blink-button {
+    animation: blinkButton 1.2s ease-in-out infinite;
+}
+
+@keyframes blinkButton {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: .35;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .blink-button {
+        animation: none;
+    }
+}
+
