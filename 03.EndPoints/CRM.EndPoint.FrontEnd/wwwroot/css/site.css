@@ -7954,7 +7954,6 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
     border-radius: 10px;
     pointer-events: none;
     background: conic-gradient(
-        from var(--alert-glow-angle, 0deg),
         transparent 0deg,
         transparent 245deg,
         rgba(139, 92, 246, .18) 275deg,
@@ -7966,7 +7965,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
-    animation: alertMenuOrbit 2.8s linear infinite;
+    animation: overdueDealsBorderSpin 2.8s linear infinite;
 }
 
 #desktopSidebar .overdue-deals-live:hover,
@@ -7979,6 +7978,10 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 @keyframes overdueDealsMenuBreath {
     0%, 100% { background-color: rgba(109, 40, 217, .08); }
     50% { background-color: rgba(109, 40, 217, .2); }
+}
+
+@keyframes overdueDealsBorderSpin {
+    to { transform: rotate(360deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
