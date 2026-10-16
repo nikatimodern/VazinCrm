@@ -502,7 +502,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                 Title = "هشدارها",
                 ElementId = "warningsMenuId",
                 OnClick = "showModalWarnings()",
-                ClassName = "warning",
+                ClassName = "warning blink-button blink-button-red",
                 IsStandalone = true,
                 HideWhenBadgeEmpty = true,
                 GetBadgeCountAsync = async sp => {
