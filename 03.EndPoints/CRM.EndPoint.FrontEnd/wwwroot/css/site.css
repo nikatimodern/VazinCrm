@@ -7973,3 +7973,19 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
         box-shadow: 0 0 12px rgba(139, 92, 246, .6);
     }
 }
+
+/* Count badge for overdue open deals */
+.badge-count-overdue {
+    min-width: 21px;
+    height: 21px;
+    padding: 0 5px;
+    margin-inline-start: 6px;
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 999px;
+    background-color: #dc2626;
+    color: #fff;
+    font-weight: 800;
+    font-size: 12px;
+    box-shadow: 0 0 8px rgba(220, 38, 38, .45);
+}
+
