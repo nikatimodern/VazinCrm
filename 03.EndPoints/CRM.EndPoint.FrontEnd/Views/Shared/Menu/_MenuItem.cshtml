@@ -27,7 +27,7 @@
         <span class="menu-item-title">
             <span>@Model.Title</span>
             @if (Model.BadgeCount > 0) {
-                <span class="badge-count badge-count-menuItem">@Model.BadgeCount</span>
+                <span class="badge-count badge-count-menuItem @(Model.Id == "overdueOpenDeals" ? "badge-count-overdue" : "")">@Model.BadgeCount</span>
             }
         </span>
     </button>
@@ -38,7 +38,7 @@
         <span class="menu-item-title">
             <span>@Model.Title</span>
             @if (Model.BadgeCount > 0) {
-                <span class="badge-count badge-count-menuItem">@Model.BadgeCount</span>
+                <span class="badge-count badge-count-menuItem @(Model.Id == "overdueOpenDeals" ? "badge-count-overdue" : "")">@Model.BadgeCount</span>
             }
         </span>
     </a>
