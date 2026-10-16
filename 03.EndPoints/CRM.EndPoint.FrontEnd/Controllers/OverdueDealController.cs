@@ -79,7 +79,10 @@ public class OverdueDealController : Controller
                 deal.MobileNumber,
                 deal.CreateDate,
                 deal.UserCreator,
-                deal.CommentText
+                deal.CommentText,
+                ReportCount = deal.Reports.Count(),
+                PreFactorCount = deal.PreFactors.Count(),
+                FactorCount = deal.Factors.Count()
             })
             .ToListAsync();
 
