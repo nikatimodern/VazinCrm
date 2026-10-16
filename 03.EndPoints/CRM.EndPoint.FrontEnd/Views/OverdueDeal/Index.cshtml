@@ -4,23 +4,155 @@
 }
 
 <div class="container-fluid py-3" dir="rtl">
-    <div class="d-flex align-items-center gap-2 mb-3">
-        <span class="d-inline-flex align-items-center justify-content-center rounded-3 p-2"
-              style="background: rgba(109, 40, 217, .12); color: #6d28d9;">
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M12 2.25a9.75 9.75 0 1 0 0 19.5 9.75 9.75 0 0 0 0-19.5ZM12 6a.75.75 0 0 1 .75.75v5.1l3.03 1.82a.75.75 0 1 1-.772 1.286l-3.375-2.025A.75.75 0 0 1 11.25 12V6.75A.75.75 0 0 1 12 6Z" clip-rule="evenodd" />
-            </svg>
-        </span>
-        <div>
-            <h1 class="h5 mb-1">سفارشات باز معوقه</h1>
-            <p class="text-muted mb-0">صفحه اولیه لایه نظارتی سفارش‌ها</p>
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+        <div class="d-flex align-items-center gap-2">
+            <span class="d-inline-flex align-items-center justify-content-center rounded-3 p-2"
+                  style="background: rgba(109, 40, 217, .12); color: #6d28d9;">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M12 2.25a9.75 9.75 0 1 0 0 19.5 9.75 9.75 0 0 0 0-19.5ZM12 6a.75.75 0 0 1 .75.75v5.1l3.03 1.82a.75.75 0 1 1-.772 1.286l-3.375-2.025A.75.75 0 0 1 11.25 12V6.75A.75.75 0 0 1 12 6Z" clip-rule="evenodd" />
+                </svg>
+            </span>
+            <div>
+                <h1 class="h5 mb-1">سفارشات باز معوقه</h1>
+                <p class="text-muted mb-0">سفارش‌های باز با بیش از ۱۴ روز از زمان ثبت</p>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-muted small">تعداد:</span>
+            <span id="overdueDealCount" class="badge rounded-pill text-bg-danger">۰</span>
+            <button type="button" id="refreshOverdueDeals" class="btn btn-outline-secondary btn-sm">
+                <span class="me-1">بروزرسانی</span>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M20 7v5h-5M4 17v-5h5" />
+                    <path d="M5.5 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.5-3" />
+                </svg>
+            </button>
         </div>
     </div>
 
     <div class="card border-0 shadow-sm">
-        <div class="card-body py-5 text-center">
-            <h2 class="h6 mb-2">لایه نظارتی سفارش‌ها</h2>
-            <p class="text-muted mb-0">ساختار اولیه صفحه آماده است. منطق شناسایی سفارش‌های معوقه در مرحله بعد اضافه خواهد شد.</p>
+        <div class="card-body p-0">
+            <div id="overdueDealsLoading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">در حال دریافت اطلاعات...</span>
+                </div>
+                <p class="text-muted mt-3 mb-0">در حال دریافت سفارشات معوقه...</p>
+            </div>
+
+            <div id="overdueDealsError" class="alert alert-danger m-3 d-none" role="alert"></div>
+
+            <div id="overdueDealsEmpty" class="text-center py-5 d-none">
+                <div class="mb-2" style="font-size: 2rem; color: #16a34a;">✓</div>
+                <h2 class="h6">سفارش معوقه‌ای وجود ندارد</h2>
+                <p class="text-muted mb-0">در حال حاضر سفارشی با وضعیت باز و بیش از ۱۴ روز از زمان ثبت پیدا نشد.</p>
+            </div>
+
+            <div id="overdueDealsTableWrap" class="table-responsive d-none">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-nowrap">شماره سفارش</th>
+                            <th>عنوان سفارش</th>
+                            <th>مشتری</th>
+                            <th class="text-nowrap">کد مشتری</th>
+                            <th class="text-nowrap">تاریخ ثبت</th>
+                            <th class="text-nowrap">مدت انتظار</th>
+                            <th>ثبت‌کننده</th>
+                            <th>توضیحات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="overdueDealsTableBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const loading = document.getElementById("overdueDealsLoading");
+            const error = document.getElementById("overdueDealsError");
+            const empty = document.getElementById("overdueDealsEmpty");
+            const tableWrap = document.getElementById("overdueDealsTableWrap");
+            const tableBody = document.getElementById("overdueDealsTableBody");
+            const count = document.getElementById("overdueDealCount");
+            const refreshButton = document.getElementById("refreshOverdueDeals");
+
+            const escapeHtml = (value) => String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#39;");
+
+            const formatDate = (value) => {
+                if (!value) return "—";
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) return "—";
+                return new Intl.DateTimeFormat("fa-IR", {
+                    year: "numeric", month: "2-digit", day: "2-digit"
+                }).format(date);
+            };
+
+            const getWaitingDays = (value) => {
+                if (!value) return 0;
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) return 0;
+                return Math.max(0, Math.floor((Date.now() - date.getTime()) / 86400000));
+            };
+
+            const loadOverdueDeals = async () => {
+                loading.classList.remove("d-none");
+                error.classList.add("d-none");
+                empty.classList.add("d-none");
+                tableWrap.classList.add("d-none");
+                tableBody.innerHTML = "";
+                refreshButton.disabled = true;
+
+                try {
+                    const response = await axios.get("/OverdueDeal/GetOverdueDeals");
+                    const deals = response.data?.data ?? [];
+                    count.textContent = new Intl.NumberFormat("fa-IR").format(deals.length);
+
+                    if (deals.length === 0) {
+                        empty.classList.remove("d-none");
+                        return;
+                    }
+
+                    tableBody.innerHTML = deals.map(deal => {
+                        const customerName = deal.cusCompanyName || deal.customerName || "—";
+                        const waitingDays = getWaitingDays(deal.createDate);
+                        return `
+                            <tr>
+                                <td class="text-nowrap fw-semibold">${escapeHtml(deal.serialNumber)}</td>
+                                <td>${escapeHtml(deal.title || "—")}</td>
+                                <td>${escapeHtml(customerName)}</td>
+                                <td class="text-nowrap">${escapeHtml(deal.customerCode ?? "—")}</td>
+                                <td class="text-nowrap">${escapeHtml(formatDate(deal.createDate))}</td>
+                                <td class="text-nowrap">
+                                    <span class="badge text-bg-danger">${escapeHtml(new Intl.NumberFormat("fa-IR").format(waitingDays))} روز</span>
+                                </td>
+                                <td>${escapeHtml(deal.userCreator || "—")}</td>
+                                <td style="min-width: 220px; white-space: normal;">${escapeHtml(deal.commentText || "—")}</td>
+                            </tr>`;
+                    }).join("");
+
+                    tableWrap.classList.remove("d-none");
+                } catch (err) {
+                    console.error("Failed to load overdue deals:", err);
+                    error.textContent = err.response?.status === 403
+                        ? "شما مجوز مشاهده این اطلاعات را ندارید."
+                        : "دریافت سفارشات معوقه با خطا مواجه شد. لطفاً دوباره تلاش کنید.";
+                    error.classList.remove("d-none");
+                } finally {
+                    loading.classList.add("d-none");
+                    refreshButton.disabled = false;
+                }
+            };
+
+            refreshButton.addEventListener("click", loadOverdueDeals);
+            loadOverdueDeals();
+        });
+    </script>
+}
