@@ -3,6 +3,220 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
+<style>
+    #overdueDealsTableWrap {
+        border-radius: 0;
+        scrollbar-width: thin;
+        scrollbar-color: #c4b5fd #f5f3ff;
+    }
+
+    #overdueDealsTableWrap .table {
+        --bs-table-bg: transparent;
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+        color: #334155;
+    }
+
+    #overdueDealsTableWrap thead th {
+        padding: 1rem .9rem;
+        background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+        color: #4c1d95;
+        font-size: .82rem;
+        font-weight: 800;
+        white-space: nowrap;
+        border-bottom: 1px solid #ddd6fe;
+    }
+
+    #overdueDealsTableWrap tbody td {
+        padding: .9rem;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+        transition: background-color .18s ease;
+    }
+
+    #overdueDealsTableWrap tbody tr:nth-child(even) {
+        background-color: #faf9ff;
+    }
+
+    #overdueDealsTableWrap tbody tr:hover td {
+        background-color: #f1edff;
+    }
+
+    #overdueDealsTableWrap tbody tr:last-child td {
+        border-bottom: 0;
+    }
+
+    #overdueDealsTableWrap .overdue-deal-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.5rem;
+        padding: .3rem .65rem !important;
+        border-radius: .6rem;
+        background: #f3e8ff;
+        color: #6d28d9 !important;
+        font-weight: 800 !important;
+        text-decoration: none;
+        transition: background-color .18s ease, color .18s ease, transform .18s ease;
+    }
+
+    #overdueDealsTableWrap .overdue-deal-number:hover {
+        background: #6d28d9;
+        color: #fff !important;
+        transform: translateY(-1px);
+    }
+
+    #overdueDealsTableWrap .badge.text-bg-danger {
+        padding: .45rem .65rem;
+        border: 1px solid #fecaca;
+        border-radius: 999px;
+        background: #fff1f2 !important;
+        color: #be123c !important;
+        font-size: .75rem;
+        font-weight: 800;
+    }
+
+    #overdueDealsPagination,
+    #overdueDealsPaginationTop {
+        background: linear-gradient(110deg, #fff, #faf8ff);
+    }
+
+    #overdueDealsPaginationTop {
+        border-bottom-color: #ede9fe !important;
+    }
+
+    #overdueDealsPagination {
+        border-top-color: #ede9fe !important;
+        border-radius: 0 0 .9rem .9rem;
+    }
+
+    #overdueDealsPagination label,
+    #overdueDealsPaginationTop label {
+        font-weight: 700;
+        color: #5b21b6 !important;
+        white-space: nowrap;
+    }
+
+    #overduePageSize,
+    #overduePageSizeTop {
+        min-width: 76px;
+        border-color: #ddd6fe;
+        border-radius: .65rem;
+        box-shadow: none;
+    }
+
+    #overduePageSize:focus,
+    #overduePageSizeTop:focus {
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 .2rem rgba(139, 92, 246, .14);
+    }
+
+    #overduePaginationInfo,
+    #overduePaginationInfoTop {
+        padding: .35rem .7rem;
+        border-radius: 999px;
+        background: #f3e8ff;
+        color: #6d28d9 !important;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    #overduePaginationButtons,
+    #overduePaginationButtonsTop {
+        gap: .3rem;
+        align-items: center;
+    }
+
+    #overduePaginationButtons .page-item,
+    #overduePaginationButtonsTop .page-item {
+        margin: 0;
+    }
+
+    #overduePaginationButtons .page-link,
+    #overduePaginationButtonsTop .page-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.25rem;
+        min-height: 2.25rem;
+        padding: .35rem .7rem;
+        border: 1px solid #e9e2ff;
+        border-radius: .65rem !important;
+        background: #fff;
+        color: #6d28d9;
+        font-size: .82rem;
+        font-weight: 700;
+        box-shadow: 0 2px 5px rgba(76, 29, 149, .04);
+        transition: all .18s ease;
+    }
+
+    #overduePaginationButtons .page-link:hover:not(:disabled),
+    #overduePaginationButtonsTop .page-link:hover:not(:disabled) {
+        border-color: #a78bfa;
+        background: #f3e8ff;
+        transform: translateY(-1px);
+    }
+
+    #overduePaginationButtons .page-item.active .page-link,
+    #overduePaginationButtonsTop .page-item.active .page-link {
+        border-color: #6d28d9;
+        background: linear-gradient(135deg, #7c3aed, #5b21b6);
+        color: #fff;
+        box-shadow: 0 4px 10px rgba(109, 40, 217, .22);
+    }
+
+    #overduePaginationButtons .page-item.disabled .page-link,
+    #overduePaginationButtonsTop .page-item.disabled .page-link {
+        border-color: #f1f5f9;
+        background: #f8fafc;
+        color: #cbd5e1;
+        box-shadow: none;
+    }
+
+    @media (max-width: 767.98px) {
+        #overdueDealsPagination,
+        #overdueDealsPaginationTop {
+            align-items: stretch !important;
+        }
+
+        #overdueDealsPagination > div,
+        #overdueDealsPaginationTop > div {
+            flex-wrap: wrap;
+        }
+
+        #overdueDealsPagination nav,
+        #overdueDealsPaginationTop nav {
+            width: 100%;
+            overflow-x: auto;
+            padding-bottom: .15rem;
+        }
+
+        #overduePaginationButtons,
+        #overduePaginationButtonsTop {
+            flex-wrap: nowrap;
+            width: max-content;
+        }
+
+        #overdueDealsTableWrap .table {
+            font-size: .86rem;
+        }
+
+        #overdueDealsTableWrap thead th,
+        #overdueDealsTableWrap tbody td {
+            padding: .75rem .65rem;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        #overdueDealsTableWrap *,
+        #overdueDealsPagination *,
+        #overdueDealsPaginationTop * {
+            transition: none !important;
+        }
+    }
+</style>
+
 <div class="container-fluid py-3" dir="rtl">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
         <div class="d-flex align-items-center gap-2">
