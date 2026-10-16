@@ -165,106 +165,6 @@ const getAllDeals = async () => {
 };
 
 
-const dealDetailLabels = {
-    id: "شناسه", serialNumber: "شماره سفارش", title: "عنوان سفارش", status: "وضعیت",
-    createDateTxt: "تاریخ ثبت", createDate: "تاریخ ثبت", commentText: "توضیحات",
-    customerName: "نام مشتری", customerCode: "کد مشتری", customerId: "شناسه مشتری",
-    mobileNumber: "موبایل", userCreator: "ثبت‌کننده", userCreatorID: "شناسه ثبت‌کننده",
-    cusCompanyName: "نام شرکت", customer: "اطلاعات مشتری", counts: "آمار و تعدادها",
-    preFactor: "تعداد پیش‌فاکتور", factor: "تعداد فاکتور", report: "تعداد گزارش",
-    orderHead: "تعداد حواله", invoices: "واریزی‌ها", financialStatus: "وضعیت مالی",
-    suspend: "در انتظار تصمیم مدیر فروش", userIdsForSuspend: "کارشناسان مرتبط",
-    customerAddress: "آدرس مشتری", address: "آدرس", tel: "تلفن", email: "ایمیل",
-    agentName: "نام رابط مشتری", companyName: "نام شرکت", mobile: "موبایل",
-    province: "استان", city: "شهر", postalCode: "کد پستی", juridical: "حقوقی",
-    workSenfTxt: "صنف کاری", acquaintanceWayTxt: "نحوه آشنایی"
-};
-
-const dealDetailEscape = value => String(value ?? "")
-    .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;").replaceAll("'", "&#39;");
-
-const dealDetailLabel = key => dealDetailLabels[key] || key;
-
-let activeDealOverview = null;
-let activeNestedDealModal = null;
-let activeDealOverviewModal = null;
-
-const renderDealDetailFields = (target, data, parentPath = "") => {
-    if (!target) return;
-    const entries = data && typeof data === "object"
-        ? Object.entries(data).filter(([key]) => !key.startsWith("__"))
-        : [["مقدار", data]];
-    if (!entries.length) {
-        target.innerHTML = '<div class="col-12 text-muted text-center py-4">اطلاعاتی برای نمایش وجود ندارد.</div>';
-        return;
-    }
-
-    target.innerHTML = entries.map(([key, value], index) => {
-        const label = dealDetailLabel(key);
-        const path = parentPath ? `${parentPath}.${key}` : key;
-        if (value !== null && typeof value === "object") {
-            const count = Array.isArray(value) ? value.length : Object.keys(value).length;
-            return `
-                <div class="col-12 col-md-6 col-xl-4">
-                    <button type="button" class="deal-detail-item" style="display:block;" data-detail-path="${dealDetailEscape(path)}">
-                        <div class="deal-detail-label">${dealDetailEscape(label)}</div>
-                        <div class="deal-detail-value">${Array.isArray(value) ? "فهرست اطلاعات" : "مجموعه اطلاعات"}</div>
-                        <div class="deal-detail-open-hint">مشاهده جزئیات · ${dealDetailEscape(count)} مورد ←</div>
-                    </button>
-                </div>`;
-        }
-
-        let displayValue = value;
-        if (typeof value === "boolean") displayValue = value ? "بله" : "خیر";
-        else if (value === null || value === undefined || value === "") displayValue = "—";
-        else if (key.toLowerCase().includes("status") && typeof value === "number") {
-            displayValue = ({1:"باز",2:"ناموفق",3:"موفق",4:"بسته"})[value] || value;
-        }
-        return `
-            <div class="col-12 col-md-6 col-xl-4">
-                <div class="deal-detail-item">
-                    <div class="deal-detail-label">${dealDetailEscape(label)}</div>
-                    <div class="deal-detail-value">${dealDetailEscape(displayValue)}</div>
-                </div>
-            </div>`;
-    }).join("");
-
-    target.querySelectorAll("[data-detail-path]").forEach(button => {
-        button.addEventListener("click", () => {
-            const path = button.dataset.detailPath.split(".");
-            let value = activeDealOverview;
-            for (const part of path) value = value?.[part];
-            const nestedContent = document.getElementById("dealNestedDetailsContent");
-            const nestedTitle = document.getElementById("dealNestedDetailsModalLabel");
-            nestedTitle.textContent = dealDetailLabel(path[path.length - 1]);
-            renderDealDetailFields(nestedContent, value, button.dataset.detailPath);
-            activeDealOverviewModal?.hide();
-            activeNestedDealModal?.show();
-        });
-    });
-};
-
-const openDealOverview = item => {
-    activeDealOverview = item;
-    const title = document.getElementById("dealOverviewModalLabel");
-    const subtitle = document.getElementById("dealOverviewSubtitle");
-    title.textContent = item.title || "جزئیات سفارش";
-    subtitle.textContent = item.serialNumber ? `شماره سفارش: ${item.serialNumber}` : "";
-    renderDealDetailFields(document.getElementById("dealOverviewContent"), item);
-    activeDealOverviewModal ||= new bootstrap.Modal(document.getElementById("dealOverviewModal"));
-    activeNestedDealModal ||= new bootstrap.Modal(document.getElementById("dealNestedDetailsModal"));
-    activeDealOverviewModal.show();
-};
-
-document.getElementById("dealNestedBackButton")?.addEventListener("click", () => {
-    activeNestedDealModal?.hide();
-    activeDealOverviewModal?.show();
-});
-document.getElementById("dealNestedDetailsModal")?.addEventListener("hidden.bs.modal", () => {
-    if (activeDealOverviewModal && document.getElementById("dealOverviewModal").classList.contains("show")) return;
-});
-
 const createDomAllDeals = (items, containersId, isAdmin) => {
     const countElm = document.querySelector(`${containersId} .countDeal`);
     const containerElm = document.querySelector(`${containersId} .deal-column-list`);
@@ -279,11 +179,6 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
         const card = document.createElement("div");
         card.dataset.id = item.id;
         card.className = "deal-card";
-        card.addEventListener("click", event => {
-            if (event.target.closest("button, a, input, select, textarea, .deal-dropdown__list, .dropdown-item, .addReport, .addPreFactor")) return;
-            if (event.target.closest("svg") && event.target.closest("svg").hasAttribute("onclick")) return;
-            if (typeof bootstrap !== "undefined" && bootstrap.Modal) openDealOverview(item);
-        });
         
         if (!item.counts.preFactor && !item.counts.report) {
             card.classList.add("deal-card--inactive");
