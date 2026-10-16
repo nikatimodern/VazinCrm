@@ -58,6 +58,22 @@
                 <p class="text-muted mb-0">در حال حاضر سفارشی با وضعیت باز و بیش از ۱۴ روز از زمان ثبت پیدا نشد.</p>
             </div>
 
+            <div id="overdueDealsPaginationTop" class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 border-bottom d-none">
+                <div class="d-flex align-items-center gap-2">
+                    <label for="overduePageSizeTop" class="small text-muted mb-0">تعداد در صفحه</label>
+                    <select id="overduePageSizeTop" class="form-select form-select-sm" style="width: auto;">
+                        <option value="10">۱۰</option>
+                        <option value="20" selected>۲۰</option>
+                        <option value="50">۵۰</option>
+                        <option value="100">۱۰۰</option>
+                        <option value="0">همه</option>
+                    </select>
+                    <span id="overduePaginationInfoTop" class="small text-muted"></span>
+                </div>
+                <nav aria-label="صفحه‌بندی بالای سفارشات معوقه">
+                    <ul id="overduePaginationButtonsTop" class="pagination pagination-sm mb-0"></ul>
+                </nav>
+            </div>
             <div id="overdueDealsTableWrap" class="table-responsive d-none">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
@@ -131,9 +147,13 @@
                 ? new bootstrap.Modal(dealDetailsModalElement)
                 : null;
             const pageSizeSelect = document.getElementById("overduePageSize");
+            const pageSizeSelectTop = document.getElementById("overduePageSizeTop");
             const pagination = document.getElementById("overdueDealsPagination");
+            const paginationTop = document.getElementById("overdueDealsPaginationTop");
             const paginationInfo = document.getElementById("overduePaginationInfo");
+            const paginationInfoTop = document.getElementById("overduePaginationInfoTop");
             const paginationButtons = document.getElementById("overduePaginationButtons");
+            const paginationButtonsTop = document.getElementById("overduePaginationButtonsTop");
             const searchInput = document.getElementById("overdueDealSearch");
             let allDeals = [];
             let currentPage = 1;
@@ -195,9 +215,15 @@
 
                 tableWrap.classList.remove("d-none");
                 pagination.classList.remove("d-none");
-                paginationInfo.textContent = `${new Intl.NumberFormat("fa-IR").format(total ? startIndex + 1 : 0)} تا ${new Intl.NumberFormat("fa-IR").format(Math.min(startIndex + pageDeals.length, total))} از ${new Intl.NumberFormat("fa-IR").format(total)}`;
+                const paginationText = `${new Intl.NumberFormat("fa-IR").format(total ? startIndex + 1 : 0)} تا ${new Intl.NumberFormat("fa-IR").format(Math.min(startIndex + pageDeals.length, total))} از ${new Intl.NumberFormat("fa-IR").format(total)}`;
+                paginationInfo.textContent = paginationText;
+                paginationInfoTop.textContent = paginationText;
+                pageSizeSelect.value = String(pageSize);
+                pageSizeSelectTop.value = String(pageSize);
+                paginationTop.classList.remove("d-none");
 
                 paginationButtons.innerHTML = "";
+                paginationButtonsTop.innerHTML = "";
                 const addPageButton = (label, page, disabled = false, active = false) => {
                     const li = document.createElement("li");
                     li.className = "page-item" + (disabled ? " disabled" : "") + (active ? " active" : "");
@@ -212,6 +238,13 @@
                     });
                     li.appendChild(button);
                     paginationButtons.appendChild(li);
+                    const topLi = li.cloneNode(true);
+                    const topButton = topLi.querySelector("button");
+                    topButton.addEventListener("click", () => {
+                        currentPage = page;
+                        renderCurrentPage();
+                    });
+                    paginationButtonsTop.appendChild(topLi);
                 };
 
                 addPageButton("قبلی", Math.max(1, currentPage - 1), currentPage === 1);
@@ -270,6 +303,7 @@
 
                     if (allDeals.length === 0) {
                         pagination.classList.add("d-none");
+                        paginationTop.classList.add("d-none");
                         empty.classList.remove("d-none");
                         return;
                     }
@@ -287,11 +321,13 @@
                 }
             };
 
-            pageSizeSelect.addEventListener("change", () => {
-                pageSize = Number(pageSizeSelect.value);
+            const onPageSizeChange = (value) => {
+                pageSize = Number(value);
                 currentPage = 1;
                 if (allDeals.length) renderCurrentPage();
-            });
+            };
+            pageSizeSelect.addEventListener("change", () => onPageSizeChange(pageSizeSelect.value));
+            pageSizeSelectTop.addEventListener("change", () => onPageSizeChange(pageSizeSelectTop.value));
             refreshButton.addEventListener("click", loadOverdueDeals);
             loadOverdueDeals();
         });
