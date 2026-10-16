@@ -7939,12 +7939,12 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
     isolation: isolate;
     overflow: visible;
     border-radius: 8px;
-    background: rgba(109, 40, 217, .12);
+    background: rgba(109, 40, 217, .075);
     color: #fff !important;
     animation: overdueDealsMenuBreath 2.4s ease-in-out infinite;
 }
 
-/* Keep the glow implementation identical to the working alerts animation */
+/* Same perimeter animation as warning; only the glow color differs */
 #desktopSidebar .overdue-deals-live::after,
 #mobileDrawer .overdue-deals-live::after,
 #mobileNavbar .overdue-deals-live::after {
@@ -7955,41 +7955,31 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
     border-radius: 10px;
     pointer-events: none;
     background: conic-gradient(
-        from var(--overdue-glow-angle, 0deg),
+        from var(--alert-glow-angle, 0deg),
         transparent 0deg,
         transparent 245deg,
-        rgba(139, 92, 246, .18) 275deg,
-        #6d28d9 320deg,
+        rgba(139, 92, 246, .12) 275deg,
+        #7c3aed 320deg,
         #ede9fe 338deg,
-        #6d28d9 350deg,
+        #7c3aed 350deg,
         transparent 360deg
     );
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
-    animation: overdueDealsBorderOrbit 2.8s linear infinite;
+    animation: alertMenuOrbit 2.8s linear infinite;
 }
 
 #desktopSidebar .overdue-deals-live:hover,
 #mobileDrawer .overdue-deals-live:hover,
 #mobileNavbar .overdue-deals-live:hover {
-    background: rgba(109, 40, 217, .2);
+    background: rgba(109, 40, 217, .14);
     color: #fff !important;
 }
 
 @keyframes overdueDealsMenuBreath {
-    0%, 100% { background-color: rgba(109, 40, 217, .08); }
-    50% { background-color: rgba(109, 40, 217, .2); }
-}
-
-@property --overdue-glow-angle {
-    syntax: "<angle>";
-    inherits: false;
-    initial-value: 0deg;
-}
-
-@keyframes overdueDealsBorderOrbit {
-    to { --overdue-glow-angle: 360deg; }
+    0%, 100% { background-color: rgba(109, 40, 217, .055); }
+    50% { background-color: rgba(109, 40, 217, .16); }
 }
 
 @media (prefers-reduced-motion: reduce) {
