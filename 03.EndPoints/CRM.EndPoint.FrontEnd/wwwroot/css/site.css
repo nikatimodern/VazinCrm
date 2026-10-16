@@ -7930,23 +7930,34 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
     }
 }
 
-/* Reusable blinking attention class */
+/* Reusable attention-grabbing class for buttons and menu items */
 .blink-button {
-    animation: blinkButton 1.2s ease-in-out infinite;
+    position: relative;
+    isolation: isolate;
+    border-radius: 8px;
+    animation: blinkButtonAttention 1.6s ease-in-out infinite;
+    will-change: transform, box-shadow, filter;
 }
 
-@keyframes blinkButton {
+@keyframes blinkButtonAttention {
     0%, 100% {
-        opacity: 1;
+        transform: scale(1);
+        filter: brightness(1);
+        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0),
+                    0 0 8px rgba(139, 92, 246, .28);
     }
     50% {
-        opacity: .35;
+        transform: scale(1.025);
+        filter: brightness(1.18);
+        box-shadow: 0 0 0 4px rgba(139, 92, 246, .16),
+                    0 0 18px rgba(139, 92, 246, .72);
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .blink-button {
         animation: none;
+        will-change: auto;
     }
 }
 
