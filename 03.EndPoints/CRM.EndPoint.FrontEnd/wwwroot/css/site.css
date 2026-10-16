@@ -7929,3 +7929,75 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
         animation: none;
     }
 }
+
+
+/* Purple live attention effect for overdue open deals menu */
+#desktopSidebar .overdue-deals-live,
+#mobileDrawer .overdue-deals-live,
+#mobileNavbar .overdue-deals-live {
+    position: relative;
+    isolation: isolate;
+    overflow: visible;
+    border-radius: 8px;
+    background: rgba(109, 40, 217, .12);
+    color: #7c3aed;
+    animation: overdueDealsMenuBreath 2.4s ease-in-out infinite;
+}
+
+#desktopSidebar .overdue-deals-live::after,
+#mobileDrawer .overdue-deals-live::after,
+#mobileNavbar .overdue-deals-live::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    padding: 2px;
+    border-radius: 10px;
+    pointer-events: none;
+    background: conic-gradient(
+        from var(--overdue-deals-glow-angle, 0deg),
+        transparent 0deg,
+        transparent 245deg,
+        rgba(139, 92, 246, .18) 275deg,
+        #6d28d9 320deg,
+        #ede9fe 338deg,
+        #6d28d9 350deg,
+        transparent 360deg
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: overdueDealsMenuOrbit 2.8s linear infinite;
+}
+
+#desktopSidebar .overdue-deals-live:hover,
+#mobileDrawer .overdue-deals-live:hover,
+#mobileNavbar .overdue-deals-live:hover {
+    background: rgba(109, 40, 217, .2);
+    color: #6d28d9;
+}
+
+@keyframes overdueDealsMenuBreath {
+    0%, 100% { background-color: rgba(109, 40, 217, .08); }
+    50% { background-color: rgba(109, 40, 217, .2); }
+}
+
+@property --overdue-deals-glow-angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
+}
+
+@keyframes overdueDealsMenuOrbit {
+    to { --overdue-deals-glow-angle: 360deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #desktopSidebar .overdue-deals-live,
+    #mobileDrawer .overdue-deals-live,
+    #mobileNavbar .overdue-deals-live,
+    #desktopSidebar .overdue-deals-live::after,
+    #mobileDrawer .overdue-deals-live::after,
+    #mobileNavbar .overdue-deals-live::after {
+        animation: none;
+    }
+}
