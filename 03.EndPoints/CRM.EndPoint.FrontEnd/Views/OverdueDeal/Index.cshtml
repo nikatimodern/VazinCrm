@@ -30,40 +30,15 @@
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm mb-3">
-        <div class="card-body">
-            <div class="d-flex align-items-end flex-wrap gap-3">
-                <div class="d-flex flex-column gap-1" style="min-width: 220px;">
-                    <label for="overdueDealSearch" class="form-label small mb-0">جستجوی سفارش</label>
-                    <div class="d-flex align-items-center gap-2">
-                        <input type="search" id="overdueDealSearch" class="form-control form-control-sm" placeholder="شماره، عنوان یا مشتری..." />
-                        <button type="button" class="btnFilter" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;"
-                                data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterOverdueDeal"
-                                data-filterContentId="ContentOverdueDealFilterId" data-filterInpSearchId="overdueDealSearch"
-                                data-filterVarSearch="overdueDealSearchVal" onclick="ShowFilterPopup(this)" title="فیلترهای پیشرفته">
-                            <svg style="width:24px;color:#333" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
-                        </button>
-                    </div>
-                </div>
-                <div id="ContentOverdueDealFilterId" class="ContentFilter"></div>
-                <div class="d-flex flex-column gap-1">
-                    <label for="overdueStartDate" class="form-label small mb-0">از تاریخ معوق‌شدن</label>
-                    <input type="date" id="overdueStartDate" class="form-control form-control-sm" />
-                </div>
-                <div class="d-flex flex-column gap-1">
-                    <label for="overdueEndDate" class="form-label small mb-0">تا تاریخ معوق‌شدن</label>
-                    <input type="date" id="overdueEndDate" class="form-control form-control-sm" />
-                </div>
-                <div class="d-flex flex-wrap gap-2">
-                    <button type="button" class="btn btn-sm btn-outline-purple overdue-date-preset" data-range="week">هفته جاری</button>
-                    <button type="button" class="btn btn-sm btn-outline-purple overdue-date-preset" data-range="month">ماه جاری</button>
-                    <button type="button" class="btn btn-sm btn-outline-purple overdue-date-preset" data-range="year">سال جاری</button>
-                    <button type="button" id="applyOverdueDateRange" class="btn btn-sm btn-purple">اعمال فیلتر</button>
-                    <button type="button" id="clearOverdueDateRange" class="btn btn-sm btn-outline-secondary">حذف فیلتر</button>
-                </div>
-            </div>
-            <small class="text-muted d-block mt-2">بازه بر اساس تاریخ معوق‌شدن سفارش محاسبه می‌شود (۱۴ روز پس از تاریخ ثبت).</small>
-        </div>
+    <div class="d-flex justify-content-end align-items-center mb-3">
+        <input type="hidden" id="overdueDealSearch" value="" />
+        <div id="ContentOverdueDealFilterId" class="ContentFilter"></div>
+        <button type="button" class="btnFilter" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;"
+                data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterOverdueDeal"
+                data-filterContentId="ContentOverdueDealFilterId" data-filterInpSearchId="overdueDealSearch"
+                data-filterVarSearch="overdueDealSearchVal" onclick="ShowFilterPopup(this)" title="فیلتر">
+            <svg style="width:24px;color:#333" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
+        </button>
     </div>
 
     <div class="card border-0 shadow-sm">
@@ -150,11 +125,6 @@
             const tableBody = document.getElementById("overdueDealsTableBody");
             const count = document.getElementById("overdueDealCount");
             const refreshButton = document.getElementById("refreshOverdueDeals");
-            const startDateInput = document.getElementById("overdueStartDate");
-            const endDateInput = document.getElementById("overdueEndDate");
-            const applyDateRangeButton = document.getElementById("applyOverdueDateRange");
-            const clearDateRangeButton = document.getElementById("clearOverdueDateRange");
-            const presetButtons = document.querySelectorAll(".overdue-date-preset");
             const dealDetailsModalElement = document.getElementById("overdueDealDetailsModal");
             const dealDetailsContent = document.getElementById("overdueDealDetailsContent");
             const dealDetailsModal = window.bootstrap?.Modal
@@ -291,16 +261,8 @@
                 refreshButton.disabled = true;
 
                 try {
-                    const params = {};
-                    if (startDateInput.value) params.startDate = startDateInput.value;
-                    if (endDateInput.value) params.endDate = endDateInput.value;
-
-                    if (params.startDate && params.endDate && params.startDate > params.endDate) {
-                        throw new Error("تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد.");
-                    }
-
                     const requestModel = { filt: overdueFilter, serVal: searchInput.value.trim() || null };
-                    const response = await axios.post("/OverdueDeal/GetOverdueDeals" + (Object.keys(params).length ? "?" + new URLSearchParams(params).toString() : ""), requestModel);
+                    const response = await axios.post("/OverdueDeal/GetOverdueDeals", requestModel);
                     allDeals = response.data?.data ?? [];
                     allDeals.sort((a, b) => new Date(b.createDate) - new Date(a.createDate));
                     count.textContent = new Intl.NumberFormat("fa-IR").format(allDeals.length);
@@ -315,11 +277,9 @@
                     renderCurrentPage();
                 } catch (err) {
                     console.error("Failed to load overdue deals:", err);
-                    error.textContent = err.message === "تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد."
-                        ? err.message
-                        : err.response?.status === 403
-                            ? "شما مجوز مشاهده این اطلاعات را ندارید."
-                            : "دریافت سفارشات معوقه با خطا مواجه شد. لطفاً دوباره تلاش کنید.";
+                    error.textContent = err.response?.status === 403
+                        ? "شما مجوز مشاهده این اطلاعات را ندارید."
+                        : "دریافت سفارشات معوقه با خطا مواجه شد. لطفاً دوباره تلاش کنید.";
                     error.classList.remove("d-none");
                 } finally {
                     loading.classList.add("d-none");
@@ -327,56 +287,10 @@
                 }
             };
 
-            const toInputDate = (date) => {
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, "0");
-                const day = String(date.getDate()).padStart(2, "0");
-                return `${year}-${month}-${day}`;
-            };
-
-            const setDateRange = (start, end) => {
-                startDateInput.value = toInputDate(start);
-                endDateInput.value = toInputDate(end);
-                loadOverdueDeals();
-            };
-
-            presetButtons.forEach(button => {
-                button.addEventListener("click", () => {
-                    const now = new Date();
-                    const range = button.dataset.range;
-                    let start;
-
-                    if (range === "week") {
-                        start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                        const daysSinceSaturday = (start.getDay() + 1) % 7;
-                        start.setDate(start.getDate() - daysSinceSaturday);
-                    } else if (range === "month") {
-                        start = new Date(now.getFullYear(), now.getMonth(), 1);
-                    } else {
-                        start = new Date(now.getFullYear(), 0, 1);
-                    }
-
-                    setDateRange(start, now);
-                });
-            });
-
             pageSizeSelect.addEventListener("change", () => {
                 pageSize = Number(pageSizeSelect.value);
                 currentPage = 1;
                 if (allDeals.length) renderCurrentPage();
-            });
-            searchInput.addEventListener("keydown", event => {
-                if (event.key === "Enter") {
-                    overdueSearchVal = searchInput.value.trim();
-                    currentPage = 1;
-                    loadOverdueDeals();
-                }
-            });
-            applyDateRangeButton.addEventListener("click", loadOverdueDeals);
-            clearDateRangeButton.addEventListener("click", () => {
-                startDateInput.value = "";
-                endDateInput.value = "";
-                loadOverdueDeals();
             });
             refreshButton.addEventListener("click", loadOverdueDeals);
             loadOverdueDeals();
