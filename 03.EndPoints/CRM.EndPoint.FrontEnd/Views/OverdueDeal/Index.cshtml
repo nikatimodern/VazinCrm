@@ -19,7 +19,7 @@
         </div>
         <div class="d-flex align-items-center gap-2">
             <span class="text-muted small">تعداد:</span>
-            <span id="overdueDealCount" class="badge rounded-pill text-bg-danger">۰</span>
+            <span id="overdueDealCount" class="badge rounded-pill overdue-count-badge">۰</span>
             <button type="button" id="refreshOverdueDeals" class="btn btn-outline-secondary btn-sm">
                 <span class="me-1">بروزرسانی</span>
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -27,6 +27,29 @@
                     <path d="M5.5 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.5-3" />
                 </svg>
             </button>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="d-flex align-items-end flex-wrap gap-3">
+                <div class="d-flex flex-column gap-1">
+                    <label for="overdueStartDate" class="form-label small mb-0">از تاریخ معوق‌شدن</label>
+                    <input type="date" id="overdueStartDate" class="form-control form-control-sm" />
+                </div>
+                <div class="d-flex flex-column gap-1">
+                    <label for="overdueEndDate" class="form-label small mb-0">تا تاریخ معوق‌شدن</label>
+                    <input type="date" id="overdueEndDate" class="form-control form-control-sm" />
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-purple overdue-date-preset" data-range="week">هفته جاری</button>
+                    <button type="button" class="btn btn-sm btn-outline-purple overdue-date-preset" data-range="month">ماه جاری</button>
+                    <button type="button" class="btn btn-sm btn-outline-purple overdue-date-preset" data-range="year">سال جاری</button>
+                    <button type="button" id="applyOverdueDateRange" class="btn btn-sm btn-purple">اعمال فیلتر</button>
+                    <button type="button" id="clearOverdueDateRange" class="btn btn-sm btn-outline-secondary">حذف فیلتر</button>
+                </div>
+            </div>
+            <small class="text-muted d-block mt-2">بازه بر اساس تاریخ معوق‌شدن سفارش محاسبه می‌شود (۱۴ روز پس از تاریخ ثبت).</small>
         </div>
     </div>
 
@@ -78,6 +101,11 @@
             const tableBody = document.getElementById("overdueDealsTableBody");
             const count = document.getElementById("overdueDealCount");
             const refreshButton = document.getElementById("refreshOverdueDeals");
+            const startDateInput = document.getElementById("overdueStartDate");
+            const endDateInput = document.getElementById("overdueEndDate");
+            const applyDateRangeButton = document.getElementById("applyOverdueDateRange");
+            const clearDateRangeButton = document.getElementById("clearOverdueDateRange");
+            const presetButtons = document.querySelectorAll(".overdue-date-preset");
 
             const escapeHtml = (value) => String(value ?? "")
                 .replaceAll("&", "&amp;")
@@ -111,7 +139,15 @@
                 refreshButton.disabled = true;
 
                 try {
-                    const response = await axios.get("/OverdueDeal/GetOverdueDeals");
+                    const params = {};
+                    if (startDateInput.value) params.startDate = startDateInput.value;
+                    if (endDateInput.value) params.endDate = endDateInput.value;
+
+                    if (params.startDate && params.endDate && params.startDate > params.endDate) {
+                        throw new Error("تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد.");
+                    }
+
+                    const response = await axios.get("/OverdueDeal/GetOverdueDeals", { params });
                     const deals = response.data?.data ?? [];
                     count.textContent = new Intl.NumberFormat("fa-IR").format(deals.length);
 
@@ -141,9 +177,11 @@
                     tableWrap.classList.remove("d-none");
                 } catch (err) {
                     console.error("Failed to load overdue deals:", err);
-                    error.textContent = err.response?.status === 403
-                        ? "شما مجوز مشاهده این اطلاعات را ندارید."
-                        : "دریافت سفارشات معوقه با خطا مواجه شد. لطفاً دوباره تلاش کنید.";
+                    error.textContent = err.message === "تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد."
+                        ? err.message
+                        : err.response?.status === 403
+                            ? "شما مجوز مشاهده این اطلاعات را ندارید."
+                            : "دریافت سفارشات معوقه با خطا مواجه شد. لطفاً دوباره تلاش کنید.";
                     error.classList.remove("d-none");
                 } finally {
                     loading.classList.add("d-none");
@@ -151,6 +189,45 @@
                 }
             };
 
+            const toInputDate = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, "0");
+                const day = String(date.getDate()).padStart(2, "0");
+                return `${year}-${month}-${day}`;
+            };
+
+            const setDateRange = (start, end) => {
+                startDateInput.value = toInputDate(start);
+                endDateInput.value = toInputDate(end);
+                loadOverdueDeals();
+            };
+
+            presetButtons.forEach(button => {
+                button.addEventListener("click", () => {
+                    const now = new Date();
+                    const range = button.dataset.range;
+                    let start;
+
+                    if (range === "week") {
+                        start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        const daysSinceSaturday = (start.getDay() + 1) % 7;
+                        start.setDate(start.getDate() - daysSinceSaturday);
+                    } else if (range === "month") {
+                        start = new Date(now.getFullYear(), now.getMonth(), 1);
+                    } else {
+                        start = new Date(now.getFullYear(), 0, 1);
+                    }
+
+                    setDateRange(start, now);
+                });
+            });
+
+            applyDateRangeButton.addEventListener("click", loadOverdueDeals);
+            clearDateRangeButton.addEventListener("click", () => {
+                startDateInput.value = "";
+                endDateInput.value = "";
+                loadOverdueDeals();
+            });
             refreshButton.addEventListener("click", loadOverdueDeals);
             loadOverdueDeals();
         });
