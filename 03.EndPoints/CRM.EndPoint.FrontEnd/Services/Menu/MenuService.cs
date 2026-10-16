@@ -480,7 +480,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
             new MenuItem {
                 Id = "overdueOpenDeals",
                 Title = "سفارشات باز معوقه",
-                Url = "/OverdueOrders/Index",
+                Url = "/OverdueDeal/Index",
                 ClassName = "overdue-deals-live",
                 IsStandalone = true,
                 IconHtml =
