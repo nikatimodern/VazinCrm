@@ -26,15 +26,28 @@ public class OverdueDealController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetOverdueDeals()
+    public async Task<IActionResult> GetOverdueDeals(DateTime? startDate, DateTime? endDate)
     {
         var overdueBefore = DateTime.Now.AddDays(-14);
 
-        var deals = await _db.Deals
+        var query = _db.Deals
             .AsNoTracking()
             .Where(deal =>
                 deal.Status == DealStatusEnum.باز &&
-                deal.CreateDate <= overdueBefore)
+                deal.CreateDate <= overdueBefore);
+
+        // بازه انتخابی مربوط به زمان معوق‌شدن سفارش است (۱۴ روز پس از ثبت).
+        if (startDate.HasValue)
+        {
+            query = query.Where(deal => deal.CreateDate >= startDate.Value.Date.AddDays(-14));
+        }
+
+        if (endDate.HasValue)
+        {
+            query = query.Where(deal => deal.CreateDate < endDate.Value.Date.AddDays(1).AddDays(-14));
+        }
+
+        var deals = await query
             .OrderBy(deal => deal.CreateDate)
             .Select(deal => new
             {
