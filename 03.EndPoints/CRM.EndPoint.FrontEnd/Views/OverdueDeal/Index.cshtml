@@ -91,6 +91,23 @@
     </div>
 </div>
 
+<div class="modal fade" id="overdueDealDetailsModal" tabindex="-1" aria-labelledby="overdueDealDetailsModalLabel" aria-hidden="true" dir="rtl">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title" id="overdueDealDetailsModalLabel">جزئیات سفارش</h5>
+                <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3" id="overdueDealDetailsContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">بستن</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         document.addEventListener("DOMContentLoaded", () => {
@@ -106,6 +123,11 @@
             const applyDateRangeButton = document.getElementById("applyOverdueDateRange");
             const clearDateRangeButton = document.getElementById("clearOverdueDateRange");
             const presetButtons = document.querySelectorAll(".overdue-date-preset");
+            const dealDetailsModalElement = document.getElementById("overdueDealDetailsModal");
+            const dealDetailsContent = document.getElementById("overdueDealDetailsContent");
+            const dealDetailsModal = window.bootstrap?.Modal
+                ? new bootstrap.Modal(dealDetailsModalElement)
+                : null;
 
             const escapeHtml = (value) => String(value ?? "")
                 .replaceAll("&", "&amp;")
@@ -161,7 +183,12 @@
                         const waitingDays = getWaitingDays(deal.createDate);
                         return `
                             <tr>
-                                <td class="text-nowrap fw-semibold">${escapeHtml(deal.serialNumber)}</td>
+                                <td class="text-nowrap fw-semibold">
+                                    <button type="button" class="btn btn-link p-0 text-decoration-none overdue-deal-number"
+                                            data-deal-id="${escapeHtml(deal.id)}" style="color: #6d28d9; font-weight: 700;">
+                                        ${escapeHtml(deal.serialNumber)}
+                                    </button>
+                                </td>
                                 <td>${escapeHtml(deal.title || "—")}</td>
                                 <td>${escapeHtml(customerName)}</td>
                                 <td class="text-nowrap">${escapeHtml(deal.customerCode ?? "—")}</td>
@@ -175,6 +202,45 @@
                     }).join("");
 
                     tableWrap.classList.remove("d-none");
+
+                    tableBody.querySelectorAll(".overdue-deal-number").forEach(button => {
+                        button.addEventListener("click", () => {
+                            const deal = deals.find(item => String(item.id).toLowerCase() === button.dataset.dealId.toLowerCase());
+                            if (!deal) return;
+
+                            const customerName = deal.cusCompanyName || deal.customerName || "—";
+                            const details = [
+                                ["شماره سفارش", deal.serialNumber],
+                                ["عنوان سفارش", deal.title],
+                                ["نام مشتری", deal.customerName],
+                                ["نام شرکت", deal.cusCompanyName],
+                                ["کد مشتری", deal.customerCode],
+                                ["موبایل", deal.mobileNumber],
+                                ["تاریخ ثبت", formatDate(deal.createDate)],
+                                ["مدت انتظار", new Intl.NumberFormat("fa-IR").format(getWaitingDays(deal.createDate)) + " روز"],
+                                ["ثبت‌کننده", deal.userCreator],
+                                ["توضیحات", deal.commentText]
+                            ];
+
+                            dealDetailsContent.innerHTML = details.map(([label, value]) => `
+                                <div class="col-12 col-md-6">
+                                    <div class="border rounded-3 p-3 h-100">
+                                        <div class="small text-muted mb-1">${escapeHtml(label)}</div>
+                                        <div class="fw-semibold text-break" style="white-space: pre-wrap;">${escapeHtml(value || "—")}</div>
+                                    </div>
+                                </div>
+                            `).join("");
+
+                            if (dealDetailsModal) {
+                                dealDetailsModal.show();
+                            } else {
+                                dealDetailsModalElement.classList.add("show");
+                                dealDetailsModalElement.style.display = "block";
+                                dealDetailsModalElement.removeAttribute("aria-hidden");
+                                document.body.classList.add("modal-open");
+                            }
+                        });
+                    });
                 } catch (err) {
                     console.error("Failed to load overdue deals:", err);
                     error.textContent = err.message === "تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد."
