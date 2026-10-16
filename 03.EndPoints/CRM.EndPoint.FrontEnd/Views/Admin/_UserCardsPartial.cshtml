@@ -24,6 +24,7 @@
             <div class="user-detail"><span><i class="fa fa-phone"></i> تلفن همراه</span><strong>@(string.IsNullOrWhiteSpace(user.PhoneNumber) ? "-" : user.PhoneNumber)</strong></div>
             <div class="user-detail"><span><i class="fa fa-envelope"></i> ایمیل</span><strong dir="ltr">@(string.IsNullOrWhiteSpace(user.Email) ? "-" : user.Email)</strong></div>
             <div class="user-detail"><span><i class="fa fa-phone-square"></i> شماره داخلی</span><strong>@(string.IsNullOrWhiteSpace(user.InternalTels) ? "-" : user.InternalTels)</strong></div>
+            <div class="user-detail user-created-date"><span><i class="fa fa-calendar"></i> تاریخ ثبت</span><strong>@(string.IsNullOrWhiteSpace(user.CreateDateTxt) ? user.CreateDate.ToString("yyyy/MM/dd") : user.CreateDateTxt)</strong></div>
         </div>
         <div class="user-card-roles">
             <span class="user-section-label">نقش‌ها</span>
