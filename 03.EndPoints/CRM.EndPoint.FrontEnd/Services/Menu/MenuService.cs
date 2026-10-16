@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Deals.Enums;
 using CRM.EndPoint.FrontEnd.IServices.Menu;
 using CRM.EndPoint.FrontEnd.Models.Menu;
+using CRM.Infrastructures.Sql;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CRM.EndPoint.FrontEnd.Services.Menu;
@@ -490,6 +493,17 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                     AppRoles.SalesAdmin,
                     AppRoles.ManagingDirector
                 ],
+                GetBadgeCountAsync = async sp => {
+                    var db = sp.GetRequiredService<CRMContextDb>();
+                    var overdueBefore = DateTime.Now.AddDays(-14);
+
+                    return await db.Deals
+                        .AsNoTracking()
+                        .CountAsync(deal =>
+                            deal.Status == DealStatusEnum.باز &&
+                            deal.CreateDate <= overdueBefore);
+                },
+                HideWhenBadgeEmpty = true,
                 DisplayOrder = 998
             },
 
