@@ -164,6 +164,77 @@
     }
 
 
+    /* Compact order metadata: five columns x two rows on desktop */
+    #overdueDealDetailsContent {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: .45rem;
+        margin: 0;
+    }
+
+    #overdueDealDetailsContent > .overdue-detail-cell {
+        min-width: 0;
+        padding: .55rem .65rem;
+        border: 1px solid #dbe2ea;
+        border-radius: .55rem;
+        background: #fff;
+        display: flex;
+        align-items: baseline;
+        gap: .35rem;
+        overflow: hidden;
+    }
+
+    .overdue-detail-label {
+        flex: 0 0 auto;
+        color: #64748b;
+        font-size: .72rem;
+        white-space: nowrap;
+    }
+
+    .overdue-detail-value {
+        min-width: 0;
+        color: #1f2937;
+        font-family: IranSansBold;
+        font-size: .8rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .overdue-detail-cell.overdue-detail-comment {
+        grid-column: span 2;
+    }
+
+    @@media (max-width: 991.98px) {
+        #overdueDealDetailsContent {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        #overdueDealDetailsContent {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        #overdueDealDetailsContent > .overdue-detail-cell {
+            padding: .45rem .5rem;
+            gap: .25rem;
+        }
+
+        .overdue-detail-label {
+            font-size: .68rem;
+        }
+
+        .overdue-detail-value {
+            font-size: .74rem;
+        }
+
+        .overdue-detail-cell.overdue-detail-comment {
+            grid-column: span 2;
+        }
+    }
+
+
     .overdue-count-card {
         border: 1px solid #e9d5ff;
         border-radius: .9rem;
@@ -705,10 +776,10 @@
                             ["ثبت‌کننده", deal.userCreator], ["توضیحات", deal.commentText],
                         ];
                         dealDetailsContent.innerHTML = details.map(([label, value]) => `
-                            <div class="col-12 col-md-6"><div class="border rounded-3 p-3 h-100">
-                                <div class="small text-muted mb-1">${escapeHtml(label)}</div>
-                                <div class="fbold text-break" style="white-space: pre-wrap;">${escapeHtml(value || "—")}</div>
-                            </div></div>`).join("");
+                            <div class="overdue-detail-cell ${label === "توضیحات" ? "overdue-detail-comment" : ""}" title="${escapeHtml(value || "—")}">
+                                <span class="overdue-detail-label">${escapeHtml(label)}:</span>
+                                <span class="overdue-detail-value">${escapeHtml(value || "—")}</span>
+                            </div>`).join("");
                         dealDetailsModal?.show();
                     });
                 });
