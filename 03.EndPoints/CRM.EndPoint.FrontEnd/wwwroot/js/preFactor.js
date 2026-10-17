@@ -947,7 +947,7 @@ async function openPaymentModal(fileItem) {
     const imageBox = createImageBox(fileItem);
     divShow.appendChild(imageBox);
     
-    SanadPayList = [fileItem]; // حذف
+    window.SanadPayList = [fileItem]; // حذف
     //await ShowModalInvoice(1);
 }
 async function acceptAcc(id, accepted, pfId) {

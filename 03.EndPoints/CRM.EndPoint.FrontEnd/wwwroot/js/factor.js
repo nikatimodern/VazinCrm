@@ -125,7 +125,6 @@ const upFactor = async (id, type = 1) => {
     
     if (!data) return;
     
-    factorID = data.id;
     factor = data;
     factorItems = data.factorItems;
     factorDescriptionItems = data.descriptions;

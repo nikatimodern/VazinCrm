@@ -957,12 +957,9 @@ justify-content: center;*/
 .buttonDivContent {
 	width: 100%;
 	padding: 6px 16px;
-	background-color: greenyellow;
 	border-radius: 8px;
-	/*    border-start-start-radius: 15px;*/
-	/*    border-start-end-radius: 15px;*/
-	/*background: linear-gradient(to bottom, #025751, #00302d);*/
 	background-color: #025751;
+	color: #fff;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;

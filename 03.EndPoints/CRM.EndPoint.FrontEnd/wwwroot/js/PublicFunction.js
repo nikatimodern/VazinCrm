@@ -1,5 +1,115 @@
 ﻿var customerId = null;
 
+if (window.innerWidth < 992) {
+    document.getElementById("PreFacItemContainer")?.remove();
+    document.getElementById("FacItemContainer")?.remove();
+    document.getElementById("supplyFactorContainer")?.remove();
+    document.getElementById("orderFormContainer")?.remove();
+    const descriptionOrder = document.getElementById("descriptionOrder");
+    if (descriptionOrder) descriptionOrder.rows = 3;
+}
+
+
+const Unit = (type, formId, defaultValueId) => {
+    
+    let unitItems = [
+        { id: 1, text: "گرم" },
+        { id: 2, text: "کیلوگرم" },
+        { id: 3, text: "عدد" },
+        { id: 4, text: "متر مربع" },
+        { id: 5, text: "متر طول" },
+        { id: 6, text: "شاخه" },
+        { id: 7, text: "رول" },
+    ];
+    
+    if (type === 1) {
+        const unitElm = document.querySelector("#PreFacItem select[name='unit']");
+        $(unitElm).select2({
+            data: unitItems,
+            dir: "rtl",
+            placeholder: "انتخاب",
+            minimumResultsForSearch: Infinity,
+            selectionCssClass: "form-control",
+            dropdownParent: window.innerWidth < 992 ? $("#ItemPreFactorModal") : $("#PreFactor"),
+        });
+        $(unitElm).val(null).trigger("change");
+    } else if (type === 2) {
+        const unitElm = document.querySelector("#FacItem select[name='unit']");
+        $(unitElm).select2({
+            data: unitItems,
+            dir: "rtl",
+            placeholder: "انتخاب",
+            selectionCssClass: "form-control",
+            dropdownParent: window.innerWidth < 992 ? $("#ItemFactorModal") : $("#Factor"),
+        });
+        $(unitElm).val(null).trigger("change");
+    } else if (type === 3) {
+        const unitInput = document.querySelector(`#${formId} select[name='unit']`);
+        unitInput.innerHTML = "";
+        
+        const fragment = document.createDocumentFragment();
+        if (!defaultValueId) {
+            const opt = document.createElement("option");
+            opt.innerText = "انتخاب";
+            opt.value = "";
+            fragment.appendChild(opt);
+        }
+        unitItems.forEach(unit => {
+            const opt = document.createElement("option");
+            opt.innerText = unit.text;
+            opt.value = unit.id;
+            if (defaultValueId && unit.id === defaultValueId) {
+                opt.setAttribute("selected", true);
+            }
+            fragment.appendChild(opt);
+        });
+        unitInput.appendChild(fragment);
+    } else if (type === 4) {
+        const unitElm = document.querySelector("#supplyFactorItem select[name='unit']");
+        $(unitElm).select2({
+            data: unitItems,
+            dir: "rtl",
+            placeholder: "انتخاب",
+            minimumResultsForSearch: Infinity,
+            selectionCssClass: "form-control",
+            dropdownParent: window.innerWidth < 992 ? $("#ItemSupplyFactorModal") : $("#supplyFactorModal"),
+        });
+        $(unitElm).val(null).trigger("change");
+    }
+};
+
+
+let allProductPromise = null;
+
+const getAllProductOp = async (form) => {
+    const formElement = resolveElement(form);
+    if (!formElement) return;
+    
+    const productCodeElement = formElement.querySelector("select[name='productCode']");
+    if (!productCodeElement) return;
+    
+    if (!allProductPromise) {
+        allProductPromise = axios("/Product/GetAllProduct").then(res => res.data);
+    }
+    
+    const products = await allProductPromise;
+    
+    if (productCodeElement.tomselect) {
+        return productCodeElement.tomselect;
+    }
+    
+    return new TomSelect(productCodeElement, {
+        options: products,
+        valueField: "id",
+        placeholder: "انتخاب",
+        maxItems: 1,
+        selectOnTab: true,
+        // dropdownParent
+    });
+};
+
+/* ----------------------------------------------------------------------------- */
+
 const getBaseDescription = async (type = null) => {  // 0: preFactor | 1: Factor | 2: termsPrefactor
     return await sendApiRequest({
         url: "/Factor/GetItemsDescription",
@@ -516,142 +626,99 @@ function getFieldRules(formId, customRules = {}) {
     return rules;
 }
 
+/* ----------------------------------------------------------------------------- */
 
-if (window.innerWidth < 992) {
-    document.getElementById("PreFacItemContainer")?.remove();
-    document.getElementById("FacItemContainer")?.remove();
-    document.getElementById("supplyFactorContainer")?.remove();
-    document.getElementById("orderFormContainer")?.remove();
-    const descriptionOrder = document.getElementById("descriptionOrder");
-    if (descriptionOrder) descriptionOrder.rows = 3;
+
+let idNotAccept;
+let typeNotAccept;
+const notAcceptCommentElm = document.getElementById("NotAcceptComment");
+
+async function showModalNotAccept(id, type) { // type: acc= 0 / pf= 12 financial | 13 tamin | 14: SaleAdmin
+    notAcceptCommentElm.value = "";
+    document.getElementById("NotAcceptHeader").textContent = type !== 0 ? "عدم تایید پیش‌فاکتور" : "عدم تایید واریزی";
+    idNotAccept = id;
+    typeNotAccept = type;
+    ModalToggle("#NotAcceptModal");
 }
 
-
-document.querySelectorAll("#InvoiceModalId input[type='radio'][name='payType']")?.forEach(radio => {
-    radio.addEventListener("change", (e) => {
-        const type = Number(e.target?.value);
-        if (type === 3) {
-            document.getElementById("SanadParId").classList.remove("AlertReqRadio");
+async function submitNotAccept() { // رد تایید و بازگشت | عدم تایید
+    try {
+        if (!notAcceptCommentElm.value.trim().length) {
+            toastifyError("دلیل عدم تایید اجباری است!");
+            return;
         }
-        PayFormChange("InvoiceModalId", type);
-    });
-});
-document.querySelectorAll("#AttachInvoiceModalId input[type='radio'][name='payTypeAttach']")?.forEach(radio => {
-    radio.addEventListener("change", (e) => {
-        const type = Number(e.target.value);
-        PayAttachFormChange(type);
-    });
-});
-
-
-const Unit = (type, formId, defaultValueId) => {
-    
-    let unitItems = [
-        { id: 1, text: "گرم" },
-        { id: 2, text: "کیلوگرم" },
-        { id: 3, text: "عدد" },
-        { id: 4, text: "متر مربع" },
-        { id: 5, text: "متر طول" },
-        { id: 6, text: "شاخه" },
-        { id: 7, text: "رول" },
-    ];
-    
-    if (type === 1) {
-        const unitElm = document.querySelector("#PreFacItem select[name='unit']");
-        $(unitElm).select2({
-            data: unitItems,
-            dir: "rtl",
-            placeholder: "انتخاب",
-            minimumResultsForSearch: Infinity,
-            selectionCssClass: "form-control",
-            dropdownParent: window.innerWidth < 992 ? $("#ItemPreFactorModal") : $("#PreFactor"),
-        });
-        $(unitElm).val(null).trigger("change");
-    } else if (type === 2) {
-        const unitElm = document.querySelector("#FacItem select[name='unit']");
-        $(unitElm).select2({
-            data: unitItems,
-            dir: "rtl",
-            placeholder: "انتخاب",
-            selectionCssClass: "form-control",
-            dropdownParent: window.innerWidth < 992 ? $("#ItemFactorModal") : $("#Factor"),
-        });
-        $(unitElm).val(null).trigger("change");
-    } else if (type === 3) {
-        const unitInput = document.querySelector(`#${formId} select[name='unit']`);
-        unitInput.innerHTML = "";
         
-        const fragment = document.createDocumentFragment();
-        if (!defaultValueId) {
-            const opt = document.createElement("option");
-            opt.innerText = "انتخاب";
-            opt.value = "";
-            fragment.appendChild(opt);
-        }
-        unitItems.forEach(unit => {
-            const opt = document.createElement("option");
-            opt.innerText = unit.text;
-            opt.value = unit.id;
-            if (defaultValueId && unit.id === defaultValueId) {
-                opt.setAttribute("selected", true);
+        const userFullName = document.getElementById("profileName")?.textContent || "";
+        const model = {
+            id: idNotAccept,
+            description: `${notAcceptCommentElm.value.trim()} (${userFullName})`,
+        };
+        
+        if (typeNotAccept === 0) { // acc
+            const result = await acceptAccountancy(model.id, 3, model.description);
+            if (!result) return;
+            
+        } else { // pf
+            FLshowLoading();
+            const urlMap = {
+                12: `/Factor/NotAcceptFinancial`,
+                13: `/Factor/NotAcceptTaminExpert`,
+                14: `/Factor/NotAcceptSalesAdmin`,
+            };
+            
+            const res = await axios.post(urlMap[typeNotAccept], model);
+            if (res.status === 200) {
+                switch (typeNotAccept) {
+                    case 12:
+                        await GetPreFactorFinancialExpert();
+                        ModalToggle("#InvoiceListModalId", "hide");
+                        break;
+                    case 13:
+                        await GetPreFactorTaminExpert();
+                        break;
+                    case 14:
+                        await GetPreFactorSalesAdmin();
+                        break;
+                }
+                toastifySuccess("عدم تایید با موفقیت انجام شد");
+            } else {
+                console.log(res);
+                toastifyError(res.data);
             }
-            fragment.appendChild(opt);
-        });
-        unitInput.appendChild(fragment);
-    } else if (type === 4) {
-        const unitElm = document.querySelector("#supplyFactorItem select[name='unit']");
-        $(unitElm).select2({
-            data: unitItems,
-            dir: "rtl",
-            placeholder: "انتخاب",
-            minimumResultsForSearch: Infinity,
-            selectionCssClass: "form-control",
-            dropdownParent: window.innerWidth < 992 ? $("#ItemSupplyFactorModal") : $("#supplyFactorModal"),
-        });
-        $(unitElm).val(null).trigger("change");
+            FLshowLoading(false);
+        }
+        notAcceptCommentElm.value = "";
+        ModalToggle("#NotAcceptModal");
+    } catch (err) {
+        console.log(err);
+        setTimeout(async () => await submitNotAccept(), 3000);
     }
-};
+}
 
-
-let allProductPromise = null;
-
-const getAllProductOp = async (form) => {
-    const formElement = resolveElement(form);
-    if (!formElement) return;
-    
-    const productCodeElement = formElement.querySelector("select[name='productCode']");
-    if (!productCodeElement) return;
-    
-    if (!allProductPromise) {
-        allProductPromise = axios("/Product/GetAllProduct").then(res => res.data);
+async function rejectPreFactor(id, type) { // رد تایید
+    try {
+        FLshowLoading();
+        const urlMap = {
+            12: `/Factor/RejectFinancial/${id}`,
+            13: `/Factor/RejectTaminExpert/${id}`,
+        };
+        
+        const res = await axios(urlMap[type]);
+        if (res.status === 200) {
+            switch (type) {
+                case 12:
+                    await GetPreFactorFinancialExpert();
+                    break;
+                case 13:
+                    await GetPreFactorTaminExpert();
+                    break;
+            }
+            FLshowLoading(false);
+            toastifySuccess("پیش‌فاکتور رد تایید شد و در انتظار تایید قرار گرفت", 5000);
+        }
+        
+    } catch (err) {
+        console.log(err);
+        setTimeout(async () => await rejectPreFactor(id, type), 3000);
     }
-    
-    const products = await allProductPromise;
-    
-    if (productCodeElement.tomselect) {
-        return productCodeElement.tomselect;
-    }
-    
-    return new TomSelect(productCodeElement, {
-        options: products,
-        valueField: "id",
-        placeholder: "انتخاب",
-        maxItems: 1,
-        selectOnTab: true,
-        // dropdownParent
-    });
-};
-
-
-async function acceptAccountancy(id, status, description = null) {
-    const result = await sendApiRequest({
-        url: `/Accountancy/AcceptAccountancy`,
-        method: "POST",
-        data: { id, description },
-        params: { status },
-        successMsg: status === 2 ? "تایید شد" : status === 3 ? "رد شد" : null,
-        onSuccess: async () => await refreshInvoiceSuccess(),
-    });
-    
-    return result !== null;
 }

@@ -1,31 +1,4 @@
-﻿// Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
-
-// Write your JavaScript code.
-
-
-var report = {};
-var oldReport = null;
-let dealIdReport = null;
-let dealSerialNumberReport = null;
-let typeReportSubmit = 0;
-var ser;
-var baseUrl;
-if ("@Url.Action(\"\", \"\")" == "/") {
-    
-    baseUrl = "@Url.Action(\"\", \"\")";
-} else {
-    
-    baseUrl = "@Url.Action(\"\", \"\")/";
-}
-
-
-document.addEventListener("DOMContentLoaded", () => {
-    Mask();
-    MaskDate();
-});
-
-/**
+﻿/**
  * Sends HTTP API requests with automatic loading management, toast notifications, and success callbacks.
  *
  * @async
@@ -106,6 +79,9 @@ async function sendApiRequest(
         }
         
     } catch (err) {
+        if (typeof FLshowLoading === "function") {
+            FLshowLoading(false);
+        }
         const response = err?.response;
         
         if (response?.status === 401 && response.headers?.["x-auth-expired"] === "true") {
@@ -2199,6 +2175,12 @@ const getAllProduct = async (searchValue = "", from) => {
         console.log(err);
     }
 };
+
+
+let oldReport = null;
+let dealIdReport = null;
+let dealSerialNumberReport = null;
+let typeReportSubmit = 0;
 
 const SubmitReportForm = async () => {
     if (await mySer.CheckValidForm("#ReportFormId")) {

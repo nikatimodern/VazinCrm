@@ -89,8 +89,7 @@ public class AccountancyController : Controller {
     }
 
 
-    [HttpPost]
-    public async Task<IActionResult> delAccountancy(Guid id)
+    public async Task<IActionResult> DelAccountancy(Guid id)
     {
         var user = userManager.GetUserAsync(HttpContext.User).Result;
         var acc = await db.Accountancies.Where(f => f.Id == id).FirstOrDefaultAsync();
@@ -124,32 +123,18 @@ public class AccountancyController : Controller {
             case 11:
             case 12:
             {
-                var item = await db.PreFactors.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
+                var item = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
                 if (item == null) return NotFound("پیش فاکتور یافت نشد");
 
+                var accQuery = db.Accountancies.AsNoTracking()
+                    .ForPreFactor(item.Id)
+                    .NotVosoled()
+                    .AsQueryable();
 
-                var ac = db.Accountancies.AsNoTracking()
-                    .Where(f =>
-                        f.pfid == item.Id
-                        && f.AccType == AcEnum.واریزی
-                        && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
-                        && (
-                            (f.PayType != PayTypeEnum.اعتباری && f.PayType != PayTypeEnum.چکی) ||
-                            ((f.PayType == PayTypeEnum.اعتباری || f.PayType == PayTypeEnum.چکی) && f.Vosoled == false)
-                        )
-                    ).Sum(f => f.credit) ?? 0;
+                var ac = await accQuery.Where(f => f.AccType == AcEnum.واریزی).SumAsync(f => f.credit) ?? 0;
+                var acReturn = await accQuery.Where(f => f.AccType == AcEnum.برگشتی).SumAsync(f => f.BackWard) ?? 0;
+
                 item.ReciveAmount = ac;
-
-                var acReturn = db.Accountancies.AsNoTracking()
-                    .Where(f =>
-                        f.pfid == item.Id
-                        && f.AccType == AcEnum.برگشتی
-                        && f.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
-                        && (
-                            (f.PayType != PayTypeEnum.اعتباری && f.PayType != PayTypeEnum.چکی) ||
-                            ((f.PayType == PayTypeEnum.اعتباری || f.PayType == PayTypeEnum.چکی) && f.Vosoled == false)
-                        )
-                    ).Sum(f => f.BackWard) ?? 0;
 
                 item.PaymentAmount = item.SumTotalAmount + item.TotalTax - item.Discount - (item.ReciveAmount - acReturn);
                 item.SumTotalAmountTax = item.SumTotalAmount + item.TotalTax - item.Discount;
@@ -238,6 +223,7 @@ public class AccountancyController : Controller {
                 return PartialView(model);
             }
             case 4:
+            case 5:
             {
                 var preFactors = await db.PreFactors.AsNoTracking().Where(f => f.CustomerId == id).ToListAsync();
 
@@ -395,9 +381,10 @@ public class AccountancyController : Controller {
             switch (type)
             {
                 case 1: // تمام صورتحساب های پیش فاکتور
-                    accQuery = accQuery.ForPreFactor(id);
+//                    accQuery = accQuery.ForPreFactor(id);
                     pf = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
                     customerId = pf?.CustomerId;
+                    accQuery = accQuery.ForCustomer(customerId);
                     break;
                 case 2: // تمام صورتحساب های فاکتور
                     accQuery = accQuery.ForFactor(id);
@@ -407,8 +394,11 @@ public class AccountancyController : Controller {
                     deal = await db.Deals.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
                     customerId = deal?.CustomerId;
                     break;
-                case 4: // تمام صورتحساب های مشتری
-                    accQuery = accQuery.ForCustomer(id).Where(f => f.Wallet == true);
+                case 4: // تمام صورتحساب های کیف پول مشتری
+                    accQuery = accQuery.ForCustomer(id).Where(f => f.Wallet);
+                    break;
+                case 5: // تمام صورتحساب های مشتری
+                    accQuery = accQuery.ForCustomer(id);
                     break;
             }
 
@@ -427,7 +417,7 @@ public class AccountancyController : Controller {
                     model.IsCreatorParent = pf?.UserCreatorID == user.Id;
 
                     showAcceptPfBtn =
-                        (roles.Contains("مدیر ارشد") || roles.Contains("کارشناس مالی") || roles.Contains("مدیر مالی"))
+                        (model.IsAdmin || model.IsFinancial)
                         && pf?.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی
                         && pf.AcceptedFinancial != true
                         && acc.All(f => f.Status == AccStatusEnum.تایید_شده);
