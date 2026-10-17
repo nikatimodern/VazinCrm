@@ -6030,7 +6030,7 @@ table tr.payment-vosoled > td {
 	top: 0;
 	bottom: 0;
 	color: darkred;
-	font-weight: bold;
+	font-family: IranSansBold;
 	line-height: normal;
 }
 
@@ -7551,7 +7551,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 
 .call-history-fab .tooltip-title {
 	font-size: 13px;
-	font-weight: 800;
+	font-family: IranSansBold;
 	white-space: nowrap;
 }
 
@@ -7984,7 +7984,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
     border-radius: 999px;
     background-color: #6d28d9;
     color: #fff;
-    font-weight: 800;
+	font-family: IranSansBold;
     font-size: 12px;
     box-shadow: 0 0 8px rgba(109, 40, 217, .45);
 }
