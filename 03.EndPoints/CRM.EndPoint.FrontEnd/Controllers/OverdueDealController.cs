@@ -78,7 +78,7 @@ public class OverdueDealController : Controller
         {
             ("serialnumber", true) => query.OrderByDescending(deal => deal.SerialNumber),
             ("serialnumber", false) => query.OrderBy(deal => deal.SerialNumber),
-            ("title", true) => query.OrderByDescending(deal => deal.Title),
+            ("title", true) => query.OrderByDescending(deal => deal.Title.Trim()),
             ("title", false) => query.OrderBy(deal => deal.Title),
             ("customer", true) => query.OrderByDescending(deal => deal.CusCompanyName ?? deal.CustomerName),
             ("customer", false) => query.OrderBy(deal => deal.CusCompanyName ?? deal.CustomerName),

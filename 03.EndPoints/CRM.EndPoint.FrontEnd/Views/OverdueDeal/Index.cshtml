@@ -18,6 +18,7 @@
         transition: all .18s ease;
     }
 
+
     .overdue-filter-button:hover,
     .overdue-filter-button:focus-visible {
         border-color: #7c3aed;
@@ -26,6 +27,7 @@
         box-shadow: 0 5px 13px rgba(109, 40, 217, .24);
         transform: translateY(-1px);
     }
+
 
     .overdue-sort-button {
         display: inline-flex;
@@ -41,11 +43,13 @@
         white-space: nowrap;
     }
 
+
     .overdue-sort-button:hover,
     .overdue-sort-button:focus-visible {
         color: #6d28d9;
         outline: none;
     }
+
 
     .overdue-sort-button .sort-indicator {
         color: #8b5cf6;
@@ -53,11 +57,13 @@
         opacity: .7;
     }
 
+
     .overdue-sort-button[aria-sort="ascending"] .sort-indicator,
     .overdue-sort-button[aria-sort="descending"] .sort-indicator {
         opacity: 1;
         color: #5b21b6;
     }
+
 
     .overdue-refresh-button {
         border-color: #0f766e;
@@ -67,11 +73,13 @@
         font-family: IranSansBold;
     }
 
+
     .overdue-refresh-button:hover {
         border-color: #14b8a6;
         background: #0d9488;
         color: #fff;
     }
+
 
     .overdue-count-badge {
         background: #0f766e !important;
@@ -82,11 +90,13 @@
         box-shadow: 0 3px 8px rgba(15, 118, 110, .3);
     }
 
+
     #overdueDealsTableWrap {
         border-radius: 0;
         scrollbar-width: thin;
         scrollbar-color: #c4b5fd #f5f3ff;
     }
+
 
     #overdueDealsTableWrap .table {
         --bs-table-bg: transparent;
@@ -95,6 +105,7 @@
         border-spacing: 0;
         color: #334155;
     }
+
 
     #overdueDealsTableWrap thead th {
         padding: 1rem .9rem;
@@ -106,6 +117,7 @@
         border-bottom: 1px solid #ddd6fe;
     }
 
+
     #overdueDealsTableWrap tbody td {
         padding: .9rem;
         border-bottom: 1px solid #f1f5f9;
@@ -113,17 +125,21 @@
         transition: background-color .18s ease;
     }
 
+
     #overdueDealsTableWrap tbody tr:nth-child(even) {
         background-color: #faf9ff;
     }
+
 
     #overdueDealsTableWrap tbody tr:hover td {
         background-color: #f1edff;
     }
 
+
     #overdueDealsTableWrap tbody tr:last-child td {
         border-bottom: 0;
     }
+
 
     .overdue-view-button {
         display: inline-flex;
@@ -138,6 +154,7 @@
         transition: all .18s ease;
     }
 
+
     .overdue-view-button:hover,
     .overdue-view-button:focus-visible {
         border-color: #4c1d95;
@@ -145,6 +162,7 @@
         color: #fff;
         transform: translateY(-1px);
     }
+
 
     .overdue-count-card {
         border: 1px solid #e9d5ff;
@@ -155,6 +173,7 @@
         height: 100%;
     }
 
+
     .overdue-count-card .count-value {
         color: #4c1d95;
         font-size: 1.7rem;
@@ -162,16 +181,19 @@
         font-family: IranSansBold;
     }
 
+
     .overdue-count-card .count-label {
         color: #475569;
         font-family: IranSansBold;
         margin-top: .35rem;
     }
 
+
     .overdue-count-card .count-icon {
         color: #0f766e;
         margin-bottom: .4rem;
     }
+
 
     #overdueDealsTableWrap .badge.text-bg-danger {
         padding: .45rem .65rem;
@@ -183,19 +205,23 @@
         font-family: IranSansBold;
     }
 
+
     #overdueDealsPagination,
     #overdueDealsPaginationTop {
         background: linear-gradient(110deg, #fff, #faf8ff);
     }
 
+
     #overdueDealsPaginationTop {
         border-bottom-color: #ede9fe !important;
     }
+
 
     #overdueDealsPagination {
         border-top-color: #ede9fe !important;
         border-radius: 0 0 .9rem .9rem;
     }
+
 
     #overdueDealsPagination label,
     #overdueDealsPaginationTop label {
@@ -203,6 +229,7 @@
         color: #5b21b6 !important;
         white-space: nowrap;
     }
+
 
     #overduePageSize,
     #overduePageSizeTop {
@@ -212,11 +239,13 @@
         box-shadow: none;
     }
 
+
     #overduePageSize:focus,
     #overduePageSizeTop:focus {
         border-color: #8b5cf6;
         box-shadow: 0 0 0 .2rem rgba(139, 92, 246, .14);
     }
+
 
     #overduePaginationInfo,
     #overduePaginationInfoTop {
@@ -228,16 +257,19 @@
         white-space: nowrap;
     }
 
+
     #overduePaginationButtons,
     #overduePaginationButtonsTop {
         gap: .3rem;
         align-items: center;
     }
 
+
     #overduePaginationButtons .page-item,
     #overduePaginationButtonsTop .page-item {
         margin: 0;
     }
+
 
     #overduePaginationButtons .page-link,
     #overduePaginationButtonsTop .page-link {
@@ -257,12 +289,14 @@
         transition: all .18s ease;
     }
 
+
     #overduePaginationButtons .page-link:hover:not(:disabled),
     #overduePaginationButtonsTop .page-link:hover:not(:disabled) {
         border-color: #a78bfa;
         background: #f3e8ff;
         transform: translateY(-1px);
     }
+
 
     #overduePaginationButtons .page-item.active .page-link,
     #overduePaginationButtonsTop .page-item.active .page-link {
@@ -272,6 +306,7 @@
         box-shadow: 0 4px 10px rgba(109, 40, 217, .22);
     }
 
+
     #overduePaginationButtons .page-item.disabled .page-link,
     #overduePaginationButtonsTop .page-item.disabled .page-link {
         border-color: #f1f5f9;
@@ -279,6 +314,7 @@
         color: #cbd5e1;
         box-shadow: none;
     }
+
 
     @@media (max-width: 767.98px) {
         #overdueDealsPagination,
@@ -314,6 +350,7 @@
         }
     }
 
+
     @@media (prefers-reduced-motion: reduce) {
         #overdueDealsTableWrap *,
         #overdueDealsPagination *,
@@ -340,20 +377,14 @@
         <div class="d-flex align-items-center gap-2">
             <input type="hidden" id="overdueDealSearch" value="" />
             <div id="ContentOverdueDealFilterId" class="ContentFilter"></div>
-            <button type="button" class="btnFilter overdue-filter-button"
-                data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterOverdueDeal"
-                data-filterContentId="ContentOverdueDealFilterId" data-filterInpSearchId="overdueDealSearch"
-                data-filterVarSearch="overdueDealSearchVal" onclick="ShowFilterPopup(this)" title="فیلتر">
+            <button type="button" class="btnFilter overdue-filter-button" data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterOverdueDeal" data-filterContentId="ContentOverdueDealFilterId" data-filterInpSearchId="overdueDealSearch" data-filterVarSearch="overdueDealSearchVal" onclick="ShowFilterPopup(this)" title="فیلتر">
                 <svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
             </button>
             <span class="text-muted small">تعداد:</span>
             <span id="overdueDealCount" class="badge rounded-pill overdue-count-badge">۰</span>
             <button type="button" id="refreshOverdueDeals" class="btn btn-outline-secondary btn-sm overdue-refresh-button">
                 <span class="me-1">بروزرسانی</span>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path d="M20 7v5h-5M4 17v-5h5" />
-                    <path d="M5.5 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.5-3" />
-                </svg>
+                <svg style="width: 16px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M13.836 2.477a.75.75 0 0 1 .75.75v3.182a.75.75 0 0 1-.75.75h-3.182a.75.75 0 0 1 0-1.5h1.37l-.84-.841a4.5 4.5 0 0 0-7.08.932.75.75 0 0 1-1.3-.75 6 6 0 0 1 9.44-1.242l.842.84V3.227a.75.75 0 0 1 .75-.75Zm-.911 7.5A.75.75 0 0 1 13.199 11a6 6 0 0 1-9.44 1.241l-.84-.84v1.371a.75.75 0 0 1-1.5 0V9.591a.75.75 0 0 1 .75-.75H5.35a.75.75 0 0 1 0 1.5H3.98l.841.841a4.5 4.5 0 0 0 7.08-.932.75.75 0 0 1 1.025-.273Z" clip-rule="evenodd" /></svg>
             </button>
         </div>
     </div>
@@ -394,17 +425,41 @@
             <div id="overdueDealsTableWrap" class="table-responsive d-none">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
-                        <tr>
-                            <th><button type="button" class="overdue-sort-button text-nowrap" data-sort-by="serialNumber">شماره سفارش <span class="sort-indicator">↕</span></button></th>
-                            <th><button type="button" class="overdue-sort-button" data-sort-by="title">عنوان سفارش <span class="sort-indicator">↕</span></button></th>
-                            <th><button type="button" class="overdue-sort-button" data-sort-by="customer">مشتری <span class="sort-indicator">↕</span></button></th>
-                            <th><button type="button" class="overdue-sort-button text-nowrap" data-sort-by="customerCode">کد مشتری <span class="sort-indicator">↕</span></button></th>
-                            <th><button type="button" class="overdue-sort-button text-nowrap" data-sort-by="createDate">تاریخ ثبت <span class="sort-indicator">↕</span></button></th>
-                            <th><button type="button" class="overdue-sort-button text-nowrap" data-sort-by="waitingDays">مدت انتظار <span class="sort-indicator">↕</span></button></th>
-                            <th><button type="button" class="overdue-sort-button" data-sort-by="userCreator">ثبت‌کننده <span class="sort-indicator">↕</span></button></th>
-                            <th><button type="button" class="overdue-sort-button" data-sort-by="commentText">توضیحات <span class="sort-indicator">↕</span></button></th>
-                            <th class="text-center text-nowrap">مشاهده</th>
-                        </tr>
+                    <tr>
+                        <th>
+                            <button type="button" class="overdue-sort-button text-nowrap" data-sort-by="serialNumber">شماره سفارش
+                                <span class="sort-indicator">↕</span></button>
+                        </th>
+                        <th>
+                            <button type="button" class="overdue-sort-button" data-sort-by="title">عنوان سفارش <span class="sort-indicator">↕</span>
+                            </button>
+                        </th>
+                        <th>
+                            <button type="button" class="overdue-sort-button" data-sort-by="customer">مشتری <span class="sort-indicator">↕</span>
+                            </button>
+                        </th>
+                        <th>
+                            <button type="button" class="overdue-sort-button text-nowrap" data-sort-by="customerCode">کد مشتری
+                                <span class="sort-indicator">↕</span></button>
+                        </th>
+                        <th>
+                            <button type="button" class="overdue-sort-button text-nowrap" data-sort-by="createDate">تاریخ ثبت
+                                <span class="sort-indicator">↕</span></button>
+                        </th>
+                        <th>
+                            <button type="button" class="overdue-sort-button text-nowrap" data-sort-by="waitingDays">مدت انتظار
+                                <span class="sort-indicator">↕</span></button>
+                        </th>
+                        <th>
+                            <button type="button" class="overdue-sort-button" data-sort-by="userCreator">ثبت‌کننده
+                                <span class="sort-indicator">↕</span></button>
+                        </th>
+                        <th>
+                            <button type="button" class="overdue-sort-button" data-sort-by="commentText">توضیحات <span class="sort-indicator">↕</span>
+                            </button>
+                        </th>
+                        <th class="text-center text-nowrap">مشاهده</th>
+                    </tr>
                     </thead>
                     <tbody id="overdueDealsTableBody"></tbody>
                 </table>
@@ -487,7 +542,7 @@
                 .replaceAll("&", "&amp;")
                 .replaceAll("<", "&lt;")
                 .replaceAll(">", "&gt;")
-                .replaceAll('"', "&quot;")
+                .replaceAll("\"", "&quot;")
                 .replaceAll("'", "&#39;");
 
             const formatDate = (value) => {
@@ -495,7 +550,7 @@
                 const date = new Date(value);
                 if (Number.isNaN(date.getTime())) return "—";
                 return new Intl.DateTimeFormat("fa-IR", {
-                    year: "numeric", month: "2-digit", day: "2-digit"
+                    year: "numeric", month: "2-digit", day: "2-digit",
                 }).format(date);
             };
 
@@ -519,7 +574,7 @@
                     const waitingDays = getWaitingDays(deal.createDate);
                     return `
                         <tr>
-                            <td class="text-nowrap fw-semibold">${escapeHtml(deal.serialNumber)}</td>
+                            <td class="text-nowrap fbold">${escapeHtml(deal.serialNumber)}</td>
                             <td>${escapeHtml(deal.title || "—")}</td>
                             <td>${escapeHtml(customerName)}</td>
                             <td class="text-nowrap">${escapeHtml(deal.customerCode ?? "—")}</td>
@@ -587,18 +642,48 @@
 
                         const hasCustomer = deal.hasCustomer === true;
                         const moneyFormat = value => new Intl.NumberFormat("fa-IR", {
-                            maximumFractionDigits: 0
+                            maximumFractionDigits: 0,
                         }).format(Number(value ?? 0));
                         const debtAmount = Number(deal.debtAmount ?? 0) + Number(deal.returnedAmount ?? 0);
                         const cashReceived = Number(deal.receivableAmount ?? 0);
                         const remainingReceivable = Math.max(0, debtAmount - cashReceived);
                         const counts = [
-                            { label: "گزارش‌های ثبت‌شده", value: deal.reportCount, color: "#4c1d95", icon: '<path d="M7 3h10a2 2 0 0 1 2 2v14l-7-3-7 3V5a2 2 0 0 1 2-2Z"/>' },
-                            { label: "پیش‌فاکتورهای صادرشده", value: deal.preFactorCount, color: "#0f766e", icon: '<path d="M7 3h10a2 2 0 0 1 2 2v14l-7-3-7 3V5a2 2 0 0 1 2-2Z"/><path d="M9 8h6M9 11h6"/>' },
-                            { label: "فاکتورها", value: deal.factorCount, color: "#4c1d95", icon: '<path d="M6 2h9l4 4v16H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><path d="M14 2v5h5M8 12h8M8 16h8"/>' },
-                            { label: "صورت‌حساب‌های مشتری", value: hasCustomer ? deal.accountancyCount : "—", color: "#0f766e", icon: '<path d="M5 3h14v18H5z"/><path d="M8 7h8M8 11h8M8 15h5"/>' },
-                            { label: "مجموع بدهکاری", value: hasCustomer ? moneyFormat(debtAmount) + " ریال" : "بدون مشتری", color: "#b45309", icon: '<path d="M12 5v14M5 12h14"/>' },
-                            { label: "مانده طلب از مشتری", value: hasCustomer ? moneyFormat(remainingReceivable) + " ریال" : "بدون مشتری", color: "#be123c", icon: '<path d="M4 7h16M6 3h12v18H6z"/><path d="M9 12h6"/>' }
+                            {
+                                label: "گزارش‌های ثبت‌شده",
+                                value: deal.reportCount,
+                                color: "#4c1d95",
+                                icon: "<path d=\"M7 3h10a2 2 0 0 1 2 2v14l-7-3-7 3V5a2 2 0 0 1 2-2Z\"/>",
+                            },
+                            {
+                                label: "پیش‌فاکتورهای صادرشده",
+                                value: deal.preFactorCount,
+                                color: "#0f766e",
+                                icon: "<path d=\"M7 3h10a2 2 0 0 1 2 2v14l-7-3-7 3V5a2 2 0 0 1 2-2Z\"/><path d=\"M9 8h6M9 11h6\"/>",
+                            },
+                            {
+                                label: "فاکتورها",
+                                value: deal.factorCount,
+                                color: "#4c1d95",
+                                icon: "<path d=\"M6 2h9l4 4v16H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z\"/><path d=\"M14 2v5h5M8 12h8M8 16h8\"/>",
+                            },
+                            {
+                                label: "صورت‌حساب‌های مشتری",
+                                value: hasCustomer ? deal.accountancyCount : "—",
+                                color: "#0f766e",
+                                icon: "<path d=\"M5 3h14v18H5z\"/><path d=\"M8 7h8M8 11h8M8 15h5\"/>",
+                            },
+                            {
+                                label: "مجموع بدهکاری",
+                                value: hasCustomer ? moneyFormat(debtAmount) + " ریال" : "بدون مشتری",
+                                color: "#b45309",
+                                icon: "<path d=\"M12 5v14M5 12h14\"/>",
+                            },
+                            {
+                                label: "مانده طلب از مشتری",
+                                value: hasCustomer ? moneyFormat(remainingReceivable) + " ریال" : "بدون مشتری",
+                                color: "#be123c",
+                                icon: "<path d=\"M4 7h16M6 3h12v18H6z\"/><path d=\"M9 12h6\"/>",
+                            },
                         ];
                         dealCountsContent.innerHTML = counts.map(item => `
                             <div class="col-12 col-md-4 col-xl-2">
@@ -617,12 +702,12 @@
                             ["کد مشتری", deal.customerCode], ["موبایل", deal.mobileNumber],
                             ["تاریخ ثبت", formatDate(deal.createDate)],
                             ["مدت انتظار", new Intl.NumberFormat("fa-IR").format(getWaitingDays(deal.createDate)) + " روز"],
-                            ["ثبت‌کننده", deal.userCreator], ["توضیحات", deal.commentText]
+                            ["ثبت‌کننده", deal.userCreator], ["توضیحات", deal.commentText],
                         ];
                         dealDetailsContent.innerHTML = details.map(([label, value]) => `
                             <div class="col-12 col-md-6"><div class="border rounded-3 p-3 h-100">
                                 <div class="small text-muted mb-1">${escapeHtml(label)}</div>
-                                <div class="fw-semibold text-break" style="white-space: pre-wrap;">${escapeHtml(value || "—")}</div>
+                                <div class="fbold text-break" style="white-space: pre-wrap;">${escapeHtml(value || "—")}</div>
                             </div></div>`).join("");
                         dealDetailsModal?.show();
                     });
@@ -648,7 +733,7 @@
                 try {
                     const requestModel = { filt: overdueFilter, serVal: searchInput.value.trim() || null };
                     const response = await axios.post("/OverdueDeal/GetOverdueDeals", requestModel, {
-                        params: { sortBy, sortDirection }
+                        params: { sortBy, sortDirection },
                     });
                     allDeals = response.data?.data ?? [];
                     updateSortIndicators();

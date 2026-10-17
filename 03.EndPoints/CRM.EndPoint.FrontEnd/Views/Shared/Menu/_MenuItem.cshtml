@@ -27,13 +27,13 @@
         <span class="menu-item-title">
             <span>@Model.Title</span>
             @if (Model.BadgeCount > 0) {
-                <span class="badge-count badge-count-menuItem @(Model.Id == "overdueOpenDeals" ? "badge-count-overdue" : "")">@Model.BadgeCount</span>
+                <span class="badge-count badge-count-menuItem">@Model.BadgeCount</span>
             }
         </span>
     </button>
 } else {
     // Menu link
-    <a href="@Model.Url" id="@Model.ElementId" class="menu-item menu-link @Model.ClassName @(Model.Title.Contains("هشدار") ? "menu-alert-live" : "")" data-tooltip-left="@Model.Title">
+    <a href="@Model.Url" id="@Model.ElementId" class="menu-item menu-link @Model.ClassName" data-tooltip-left="@Model.Title">
         @Html.Raw(Model.IconHtml)
         <span class="menu-item-title">
             <span>@Model.Title</span>
