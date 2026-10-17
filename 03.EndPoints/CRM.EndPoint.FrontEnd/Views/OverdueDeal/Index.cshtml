@@ -27,6 +27,38 @@
         transform: translateY(-1px);
     }
 
+    .overdue-sort-button {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .2rem .1rem;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .overdue-sort-button:hover,
+    .overdue-sort-button:focus-visible {
+        color: #6d28d9;
+        outline: none;
+    }
+
+    .overdue-sort-button .sort-indicator {
+        color: #8b5cf6;
+        font-size: .85rem;
+        opacity: .7;
+    }
+
+    .overdue-sort-button[aria-sort="ascending"] .sort-indicator,
+    .overdue-sort-button[aria-sort="descending"] .sort-indicator {
+        opacity: 1;
+        color: #5b21b6;
+    }
+
     .overdue-refresh-button {
         border-color: #0f766e;
         border-radius: .7rem;
@@ -363,14 +395,14 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th class="text-nowrap">شماره سفارش</th>
-                            <th>عنوان سفارش</th>
-                            <th>مشتری</th>
-                            <th class="text-nowrap">کد مشتری</th>
-                            <th class="text-nowrap">تاریخ ثبت</th>
-                            <th class="text-nowrap">مدت انتظار</th>
-                            <th>ثبت‌کننده</th>
-                            <th>توضیحات</th>
+                            <th><button type="button" class="overdue-sort-button text-nowrap" data-sort-by="serialNumber">شماره سفارش <span class="sort-indicator">↕</span></button></th>
+                            <th><button type="button" class="overdue-sort-button" data-sort-by="title">عنوان سفارش <span class="sort-indicator">↕</span></button></th>
+                            <th><button type="button" class="overdue-sort-button" data-sort-by="customer">مشتری <span class="sort-indicator">↕</span></button></th>
+                            <th><button type="button" class="overdue-sort-button text-nowrap" data-sort-by="customerCode">کد مشتری <span class="sort-indicator">↕</span></button></th>
+                            <th><button type="button" class="overdue-sort-button text-nowrap" data-sort-by="createDate">تاریخ ثبت <span class="sort-indicator">↕</span></button></th>
+                            <th><button type="button" class="overdue-sort-button text-nowrap" data-sort-by="waitingDays">مدت انتظار <span class="sort-indicator">↕</span></button></th>
+                            <th><button type="button" class="overdue-sort-button" data-sort-by="userCreator">ثبت‌کننده <span class="sort-indicator">↕</span></button></th>
+                            <th><button type="button" class="overdue-sort-button" data-sort-by="commentText">توضیحات <span class="sort-indicator">↕</span></button></th>
                             <th class="text-center text-nowrap">مشاهده</th>
                         </tr>
                     </thead>
@@ -448,6 +480,8 @@
             let pageSize = 20;
             let overdueFilter = null;
             let overdueSearchVal = "";
+            let sortBy = "createDate";
+            let sortDirection = "desc";
 
             const escapeHtml = (value) => String(value ?? "")
                 .replaceAll("&", "&amp;")
@@ -613,9 +647,11 @@
 
                 try {
                     const requestModel = { filt: overdueFilter, serVal: searchInput.value.trim() || null };
-                    const response = await axios.post("/OverdueDeal/GetOverdueDeals", requestModel);
+                    const response = await axios.post("/OverdueDeal/GetOverdueDeals", requestModel, {
+                        params: { sortBy, sortDirection }
+                    });
                     allDeals = response.data?.data ?? [];
-                    allDeals.sort((a, b) => new Date(b.createDate) - new Date(a.createDate));
+                    updateSortIndicators();
                     count.textContent = new Intl.NumberFormat("fa-IR").format(allDeals.length);
                     currentPage = Math.min(currentPage, Math.max(1, Math.ceil(allDeals.length / (pageSize || Math.max(allDeals.length, 1)))));
 
@@ -638,6 +674,33 @@
                     refreshButton.disabled = false;
                 }
             };
+
+            const updateSortIndicators = () => {
+                document.querySelectorAll(".overdue-sort-button").forEach(button => {
+                    const active = button.dataset.sortBy.toLowerCase() === sortBy.toLowerCase();
+                    button.setAttribute("aria-sort", active
+                        ? (sortDirection === "asc" ? "ascending" : "descending")
+                        : "none");
+                    const indicator = button.querySelector(".sort-indicator");
+                    if (indicator) indicator.textContent = active
+                        ? (sortDirection === "asc" ? "↑" : "↓")
+                        : "↕";
+                });
+            };
+
+            document.querySelectorAll(".overdue-sort-button").forEach(button => {
+                button.addEventListener("click", () => {
+                    const selectedSort = button.dataset.sortBy;
+                    if (sortBy.toLowerCase() === selectedSort.toLowerCase()) {
+                        sortDirection = sortDirection === "asc" ? "desc" : "asc";
+                    } else {
+                        sortBy = selectedSort;
+                        sortDirection = "asc";
+                    }
+                    currentPage = 1;
+                    loadOverdueDeals();
+                });
+            });
 
             const onPageSizeChange = (value) => {
                 pageSize = Number(value);
