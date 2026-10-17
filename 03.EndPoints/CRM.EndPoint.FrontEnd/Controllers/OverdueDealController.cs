@@ -78,20 +78,20 @@ public class OverdueDealController : Controller
         {
             ("serialnumber", true) => query.OrderByDescending(deal => deal.SerialNumber),
             ("serialnumber", false) => query.OrderBy(deal => deal.SerialNumber),
-            ("title", true) => query.OrderByDescending(deal => deal.Title),
-            ("title", false) => query.OrderBy(deal => deal.Title),
-            ("customer", true) => query.OrderByDescending(deal => deal.CusCompanyName ?? deal.CustomerName),
-            ("customer", false) => query.OrderBy(deal => deal.CusCompanyName ?? deal.CustomerName),
+            ("title", true) => query.OrderByDescending(deal => (deal.Title ?? "").Trim()),
+            ("title", false) => query.OrderBy(deal => (deal.Title ?? "").Trim()),
+            ("customer", true) => query.OrderByDescending(deal => ((deal.CusCompanyName ?? deal.CustomerName) ?? "").Trim()),
+            ("customer", false) => query.OrderBy(deal => ((deal.CusCompanyName ?? deal.CustomerName) ?? "").Trim()),
             ("customercode", true) => query.OrderByDescending(deal => deal.CustomerCode),
             ("customercode", false) => query.OrderBy(deal => deal.CustomerCode),
             ("createdate", true) => query.OrderByDescending(deal => deal.CreateDate),
             ("createdate", false) => query.OrderBy(deal => deal.CreateDate),
             ("waitingdays", true) => query.OrderBy(deal => deal.CreateDate),
             ("waitingdays", false) => query.OrderByDescending(deal => deal.CreateDate),
-            ("usercreator", true) => query.OrderByDescending(deal => deal.UserCreator),
-            ("usercreator", false) => query.OrderBy(deal => deal.UserCreator),
-            ("commenttext", true) => query.OrderByDescending(deal => deal.CommentText),
-            ("commenttext", false) => query.OrderBy(deal => deal.CommentText),
+            ("usercreator", true) => query.OrderByDescending(deal => (deal.UserCreator ?? "").Trim()),
+            ("usercreator", false) => query.OrderBy(deal => (deal.UserCreator ?? "").Trim()),
+            ("commenttext", true) => query.OrderByDescending(deal => (deal.CommentText ?? "").Trim()),
+            ("commenttext", false) => query.OrderBy(deal => (deal.CommentText ?? "").Trim()),
             _ => query.OrderByDescending(deal => deal.CreateDate)
         };
 
