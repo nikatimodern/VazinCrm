@@ -235,6 +235,19 @@
     }
 
 
+    .overdue-reports-card {
+        cursor: pointer;
+        transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+
+    .overdue-reports-card:hover,
+    .overdue-reports-card:focus-visible {
+        border-color: #a78bfa;
+        box-shadow: 0 5px 14px rgba(76, 29, 149, .14);
+        transform: translateY(-2px);
+        outline: none;
+    }
+
     .overdue-count-card {
         border: 1px solid #e9d5ff;
         border-radius: .9rem;
@@ -573,6 +586,28 @@
     </div>
 </div>
 
+<div class="modal fade" id="overdueDealReportsModal" tabindex="-1" aria-labelledby="overdueDealReportsModalLabel" aria-hidden="true" dir="rtl">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title" id="overdueDealReportsModalLabel">گزارش‌های ثبت‌شده سفارش</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+            <div class="modal-body">
+                <div id="overdueDealReportsLoading" class="text-center py-5 d-none">
+                    <div class="spinner-border text-primary" role="status"><span class="visually-hidden">در حال بارگذاری...</span></div>
+                    <div class="small text-muted mt-2">در حال دریافت گزارش‌های سفارش...</div>
+                </div>
+                <div id="overdueDealReportsError" class="alert alert-danger d-none" role="alert"></div>
+                <div id="overdueDealReportsContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">بستن گزارش‌ها</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         var filterDealConfig = window.filterDealConfig || {};
@@ -589,6 +624,20 @@
             const dealDetailsModalElement = document.getElementById("overdueDealDetailsModal");
             const dealDetailsContent = document.getElementById("overdueDealDetailsContent");
             const dealCountsContent = document.getElementById("overdueDealCountsContent");
+            const dealReportsModalElement = document.getElementById("overdueDealReportsModal");
+            const dealReportsContent = document.getElementById("overdueDealReportsContent");
+            const dealReportsLoading = document.getElementById("overdueDealReportsLoading");
+            const dealReportsError = document.getElementById("overdueDealReportsError");
+            const dealReportsModal = window.bootstrap?.Modal
+                ? new bootstrap.Modal(dealReportsModalElement)
+                : null;
+            let returnToDetailsAfterReports = false;
+            dealReportsModalElement.addEventListener("hidden.bs.modal", () => {
+                if (returnToDetailsAfterReports) {
+                    returnToDetailsAfterReports = false;
+                    dealDetailsModal?.show();
+                }
+            });
             const dealDetailsModal = window.bootstrap?.Modal
                 ? new bootstrap.Modal(dealDetailsModalElement)
                 : null;
@@ -758,7 +807,8 @@
                         ];
                         dealCountsContent.innerHTML = counts.map(item => `
                             <div class="col-12 col-md-4 col-xl-2">
-                                <div class="overdue-count-card">
+                                <div class="overdue-count-card ${item.label === "گزارش‌های ثبت‌شده" && Number(item.value) > 0 ? "overdue-reports-card" : ""}"
+                                     ${item.label === "گزارش‌های ثبت‌شده" && Number(item.value) > 0 ? 'role="button" tabindex="0" title="برای مشاهده گزارش‌ها کلیک کنید"' : ""}>
                                     <div class="count-icon" style="color:${item.color}">
                                         <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${item.icon}</svg>
                                     </div>
@@ -766,6 +816,42 @@
                                     <div class="count-label">${escapeHtml(item.label)}</div>
                                 </div>
                             </div>`).join("");
+
+                        const openDealReports = async () => {
+                            dealReportsContent.innerHTML = "";
+                            dealReportsError.classList.add("d-none");
+                            dealReportsLoading.classList.remove("d-none");
+                            returnToDetailsAfterReports = true;
+                            dealDetailsModalElement.addEventListener("hidden.bs.modal", () => dealReportsModal?.show(), { once: true });
+                            dealDetailsModal?.hide();
+                            try {
+                                const response = await axios.post(
+                                    `/Report/GetAllReportPartial?dealId=${encodeURIComponent(deal.id)}`,
+                                    { filt: null, serVal: null, _type: -1, Count: -1 }
+                                );
+                                dealReportsContent.innerHTML = response.data?.html || "";
+                                if (!response.data?.html) {
+                                    dealReportsContent.textContent = "گزارشی برای این سفارش ثبت نشده است.";
+                                }
+                            } catch (error) {
+                                console.error("Failed to load deal reports:", error);
+                                dealReportsError.textContent = "دریافت گزارش‌های این سفارش با خطا مواجه شد. لطفاً دوباره تلاش کنید.";
+                                dealReportsError.classList.remove("d-none");
+                            } finally {
+                                dealReportsLoading.classList.add("d-none");
+                            }
+                        };
+
+                        const reportsCard = dealCountsContent.querySelector(".overdue-reports-card");
+                        if (reportsCard) {
+                            reportsCard.addEventListener("click", openDealReports);
+                            reportsCard.addEventListener("keydown", event => {
+                                if (event.key === "Enter" || event.key === " ") {
+                                    event.preventDefault();
+                                    openDealReports();
+                                }
+                            });
+                        }
 
                         const details = [
                             ["شماره سفارش", deal.serialNumber], ["عنوان سفارش", deal.title],
