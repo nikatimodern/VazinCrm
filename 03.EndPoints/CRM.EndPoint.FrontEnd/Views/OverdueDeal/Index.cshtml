@@ -235,6 +235,25 @@
     }
 
 
+    .overdue-count-card-disabled {
+        opacity: .52;
+        cursor: not-allowed;
+        filter: grayscale(.25);
+    }
+
+    .overdue-document-card {
+        cursor: pointer;
+        transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+
+    .overdue-document-card:hover,
+    .overdue-document-card:focus-visible {
+        border-color: #a78bfa;
+        box-shadow: 0 5px 14px rgba(76, 29, 149, .14);
+        transform: translateY(-2px);
+        outline: none;
+    }
+
     .overdue-reports-card {
         cursor: pointer;
         transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
@@ -625,6 +644,7 @@
             const dealDetailsContent = document.getElementById("overdueDealDetailsContent");
             const dealCountsContent = document.getElementById("overdueDealCountsContent");
             const dealReportsModalElement = document.getElementById("overdueDealReportsModal");
+            const dealReportsTitle = document.getElementById("overdueDealReportsModalLabel");
             const dealReportsContent = document.getElementById("overdueDealReportsContent");
             const dealReportsLoading = document.getElementById("overdueDealReportsLoading");
             const dealReportsError = document.getElementById("overdueDealReportsError");
@@ -807,8 +827,9 @@
                         ];
                         dealCountsContent.innerHTML = counts.map(item => `
                             <div class="col-12 col-md-4 col-xl-2">
-                                <div class="overdue-count-card ${item.label === "گزارش‌های ثبت‌شده" && Number(item.value) > 0 ? "overdue-reports-card" : ""}"
-                                     ${item.label === "گزارش‌های ثبت‌شده" && Number(item.value) > 0 ? 'role="button" tabindex="0" title="برای مشاهده گزارش‌ها کلیک کنید"' : ""}>
+                                <div class="overdue-count-card ${Number(item.value) > 0 && ["گزارش‌های ثبت‌شده", "پیش‌فاکتورهای صادرشده", "فاکتورها"].includes(item.label) ? "overdue-document-card" : "overdue-count-card-disabled"}"
+                                     data-document-kind="${item.label === "گزارش‌های ثبت‌شده" ? "reports" : item.label === "پیش‌فاکتورهای صادرشده" ? "prefactors" : item.label === "فاکتورها" ? "factors" : ""}"
+                                     ${Number(item.value) > 0 && ["گزارش‌های ثبت‌شده", "پیش‌فاکتورهای صادرشده", "فاکتورها"].includes(item.label) ? 'role="button" tabindex="0" title="برای مشاهده موارد کلیک کنید"' : 'aria-disabled="true"'}>
                                     <div class="count-icon" style="color:${item.color}">
                                         <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${item.icon}</svg>
                                     </div>
@@ -817,41 +838,88 @@
                                 </div>
                             </div>`).join("");
 
-                        const openDealReports = async () => {
+                        const openDocumentModal = async (kind) => {
+                            const isReports = kind === "reports";
+                            const titleByKind = {
+                                reports: "گزارش‌های ثبت‌شده سفارش",
+                                prefactors: "پیش‌فاکتورهای سفارش",
+                                factors: "فاکتورهای سفارش"
+                            };
+                            dealReportsTitle.textContent = titleByKind[kind] || "جزئیات سفارش";
                             dealReportsContent.innerHTML = "";
                             dealReportsError.classList.add("d-none");
                             dealReportsLoading.classList.remove("d-none");
                             returnToDetailsAfterReports = true;
                             dealDetailsModalElement.addEventListener("hidden.bs.modal", () => dealReportsModal?.show(), { once: true });
                             dealDetailsModal?.hide();
+
                             try {
-                                const response = await axios.post(
-                                    `/Report/GetAllReportPartial?dealId=${encodeURIComponent(deal.id)}`,
-                                    { filt: null, serVal: null, _type: -1, Count: -1 }
-                                );
-                                dealReportsContent.innerHTML = response.data?.html || "";
-                                if (!response.data?.html) {
-                                    dealReportsContent.textContent = "گزارشی برای این سفارش ثبت نشده است.";
+                                if (isReports) {
+                                    const response = await axios.post(
+                                        `/Report/GetAllReportPartial?dealId=${encodeURIComponent(deal.id)}`,
+                                        { filt: null, serVal: null, _type: -1, Count: -1 }
+                                    );
+                                    dealReportsContent.innerHTML = response.data?.html || "";
+                                    if (!response.data?.html) {
+                                        dealReportsContent.textContent = "گزارشی برای این سفارش ثبت نشده است.";
+                                    }
+                                } else {
+                                    const endpoint = kind === "prefactors"
+                                        ? "/OverdueDeal/GetDealPreFactors"
+                                        : "/OverdueDeal/GetDealFactors";
+                                    const response = await axios.get(endpoint, { params: { dealId: deal.id } });
+                                    const items = response.data?.data || [];
+                                    if (!items.length) {
+                                        dealReportsContent.innerHTML = '<div class="text-center text-muted py-4">موردی برای این سفارش ثبت نشده است.</div>';
+                                    } else {
+                                        const money = value => new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(Number(value ?? 0));
+                                        dealReportsContent.innerHTML = `
+                                            <div class="d-flex flex-column gap-2">
+                                                ${items.map(item => {
+                                                    const serial = escapeHtml(item.serialNumber ?? "—");
+                                                    const date = escapeHtml(item.date ?? "—");
+                                                    const customer = escapeHtml([item.customer, item.agentName].filter(Boolean).join(" - ") || "—");
+                                                    const amount = money(item.sumTotalAmountTax ?? (Number(item.sumTotalAmount ?? 0) + Number(item.totalTax ?? 0)));
+                                                    const status = escapeHtml(kind === "prefactors" ? (item.pftypeTxt ?? "—") : (item.statusTxt ?? "—"));
+                                                    const currency = escapeHtml(item.currencyTypeTxt || "ریال");
+                                                    const badge = item.officialType === 1 ? "رسمی" : "غیررسمی";
+                                                    return `
+                                                        <article class="border rounded-3 p-3 bg-white">
+                                                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                                                                <strong>${kind === "prefactors" ? "پیش‌فاکتور" : "فاکتور"} شماره ${serial}</strong>
+                                                                <span class="badge ${item.officialType === 1 ? "text-bg-success" : "text-bg-secondary"}">${badge}</span>
+                                                            </div>
+                                                            <div class="row g-2 small">
+                                                                <div class="col-6 col-md-3"><span class="text-muted">تاریخ:</span> <strong>${date}</strong></div>
+                                                                <div class="col-6 col-md-3"><span class="text-muted">مشتری:</span> <strong>${customer}</strong></div>
+                                                                <div class="col-6 col-md-3"><span class="text-muted">مبلغ:</span> <strong>${amount} ${currency}</strong></div>
+                                                                <div class="col-6 col-md-3"><span class="text-muted">وضعیت:</span> <strong>${status}</strong></div>
+                                                            </div>
+                                                        </article>`;
+                                                }).join("")}
+                                            </div>`;
+                                    }
                                 }
                             } catch (error) {
-                                console.error("Failed to load deal reports:", error);
-                                dealReportsError.textContent = "دریافت گزارش‌های این سفارش با خطا مواجه شد. لطفاً دوباره تلاش کنید.";
+                                console.error("Failed to load order documents:", error);
+                                dealReportsError.textContent = "دریافت اطلاعات با خطا مواجه شد. لطفاً دوباره تلاش کنید.";
                                 dealReportsError.classList.remove("d-none");
                             } finally {
                                 dealReportsLoading.classList.add("d-none");
                             }
                         };
 
-                        const reportsCard = dealCountsContent.querySelector(".overdue-reports-card");
-                        if (reportsCard) {
-                            reportsCard.addEventListener("click", openDealReports);
-                            reportsCard.addEventListener("keydown", event => {
+                        dealCountsContent.querySelectorAll(".overdue-document-card").forEach(card => {
+                            const kind = card.dataset.documentKind;
+                            const activate = () => openDocumentModal(kind);
+                            card.addEventListener("click", activate);
+                            card.addEventListener("keydown", event => {
                                 if (event.key === "Enter" || event.key === " ") {
                                     event.preventDefault();
-                                    openDealReports();
+                                    activate();
                                 }
                             });
-                        }
+                        });
 
                         const details = [
                             ["شماره سفارش", deal.serialNumber], ["عنوان سفارش", deal.title],
