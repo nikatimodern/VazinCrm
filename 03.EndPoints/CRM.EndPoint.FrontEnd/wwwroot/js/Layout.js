@@ -87,6 +87,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     getRemind();
     setDateTime();
+    Mask();
+    MaskDate();
     //getAllWarnings();
 });
 
@@ -1672,6 +1674,7 @@ const CheckWallet = async () => {
     return await sendApiRequest({
         url: "/Accountancy/CheckWallet",
         params: { cusId: customerId },
+        showLoading: false
     });
 };
 
@@ -1738,6 +1741,7 @@ const ShowModalListInvoice = async (id, type, ser, passType, hideAddInvoiceBtns 
 
 
 const ShowModalAddInvoice = async () => {
+    FLshowLoading()
     const hasWallet = await CheckWallet();
     
     if (hasWallet) {
@@ -1749,8 +1753,8 @@ const ShowModalAddInvoice = async () => {
         return;
     }
     
-    
     await ShowModalInvoice(1);
+    FLshowLoading(false)
 };
 
 
