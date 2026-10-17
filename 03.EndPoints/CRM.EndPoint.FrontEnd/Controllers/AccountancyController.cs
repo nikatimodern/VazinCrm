@@ -89,8 +89,7 @@ public class AccountancyController : Controller {
     }
 
 
-    [HttpPost]
-    public async Task<IActionResult> delAccountancy(Guid id)
+    public async Task<IActionResult> DelAccountancy(Guid id)
     {
         var user = userManager.GetUserAsync(HttpContext.User).Result;
         var acc = await db.Accountancies.Where(f => f.Id == id).FirstOrDefaultAsync();

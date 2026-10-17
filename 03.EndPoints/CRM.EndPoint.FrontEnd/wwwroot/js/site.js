@@ -79,6 +79,9 @@ async function sendApiRequest(
         }
         
     } catch (err) {
+        if (typeof FLshowLoading === "function") {
+            FLshowLoading(false);
+        }
         const response = err?.response;
         
         if (response?.status === 401 && response.headers?.["x-auth-expired"] === "true") {
