@@ -30,7 +30,12 @@ public class OverdueDealController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> GetOverdueDeals([FromBody] FilterVModel model, DateTime? startDate, DateTime? endDate)
+    public async Task<IActionResult> GetOverdueDeals(
+        [FromBody] FilterVModel model,
+        DateTime? startDate,
+        DateTime? endDate,
+        string sortBy = "createDate",
+        string sortDirection = "desc")
     {
         var overdueBefore = DateTime.Now.AddDays(-14);
 
@@ -68,8 +73,29 @@ public class OverdueDealController : Controller
             query = query.Where(deal => deal.CreateDate < endDate.Value.Date.AddDays(1).AddDays(-14));
         }
 
+        var descending = !string.Equals(sortDirection, "asc", StringComparison.OrdinalIgnoreCase);
+        query = (sortBy?.Trim().ToLowerInvariant(), descending) switch
+        {
+            ("serialnumber", true) => query.OrderByDescending(deal => deal.SerialNumber),
+            ("serialnumber", false) => query.OrderBy(deal => deal.SerialNumber),
+            ("title", true) => query.OrderByDescending(deal => deal.Title),
+            ("title", false) => query.OrderBy(deal => deal.Title),
+            ("customer", true) => query.OrderByDescending(deal => deal.CusCompanyName ?? deal.CustomerName),
+            ("customer", false) => query.OrderBy(deal => deal.CusCompanyName ?? deal.CustomerName),
+            ("customercode", true) => query.OrderByDescending(deal => deal.CustomerCode),
+            ("customercode", false) => query.OrderBy(deal => deal.CustomerCode),
+            ("createdate", true) => query.OrderByDescending(deal => deal.CreateDate),
+            ("createdate", false) => query.OrderBy(deal => deal.CreateDate),
+            ("waitingdays", true) => query.OrderBy(deal => deal.CreateDate),
+            ("waitingdays", false) => query.OrderByDescending(deal => deal.CreateDate),
+            ("usercreator", true) => query.OrderByDescending(deal => deal.UserCreator),
+            ("usercreator", false) => query.OrderBy(deal => deal.UserCreator),
+            ("commenttext", true) => query.OrderByDescending(deal => deal.CommentText),
+            ("commenttext", false) => query.OrderBy(deal => deal.CommentText),
+            _ => query.OrderByDescending(deal => deal.CreateDate)
+        };
+
         var deals = await query
-            .OrderByDescending(deal => deal.CreateDate)
             .Select(deal => new
             {
                 deal.Id,
