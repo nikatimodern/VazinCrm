@@ -153,43 +153,5 @@ public class OverdueDealController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetDealFactors(Guid dealId)
-    {
-        var isOverdueDeal = await _db.Deals.AsNoTracking().AnyAsync(deal =>
-            deal.Id == dealId &&
-            deal.Status == DealStatusEnum.باز &&
-            deal.CreateDate <= DateTime.Now.AddDays(-14));
-
-        if (!isOverdueDeal)
-            return NotFound();
-
-        var factors = await _db.Factors
-            .AsNoTracking()
-            .Where(item => item.DealId == dealId)
-            .OrderByDescending(item => item.DateMiladi)
-            .Select(item => new
-            {
-                item.Id,
-                item.SerialNumber,
-                item.Date,
-                item.Customer,
-                item.AgentName,
-                item.SumTotalAmount,
-                item.SumTotalAmountTax,
-                item.TotalTax,
-                item.PaymentAmount,
-                item.ReciveAmount,
-                item.statusTxt,
-                item.SnFinancial,
-                item.PfactorSerialNumber,
-                item.CurrencyTypeTxt,
-                item.OfficialType,
-                item.Export,
-                item.Returned
-            })
-            .ToListAsync();
-
-        return Ok(new { count = factors.Count, data = factors });
-    }
 
 }
