@@ -152,6 +152,6 @@ public class OverdueDealController : Controller
         return Ok(new { data = deals });
     }
 
-    [HttpGet]
+
 
 }
