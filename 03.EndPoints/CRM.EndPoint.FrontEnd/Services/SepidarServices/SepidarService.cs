@@ -587,7 +587,8 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
                 // =========================================================
                 // Row 2 - بستانکار: حساب بانکی
                 // =========================================================
-                const int bankAccountSlRef = 718; // تفاوت بین دو فانکشن مشترک
+//                const int bankAccountSlRef = 718; // تفاوت بین دو فانکشن مشترک
+                var bankAccountSlRef = await GetAccountIdByMoeinCodeAsync("1002");
                 var creditItem = new VoucherItem {
                     VoucherItemId = firstVoucherItemId + (cash.Fee > 0 ? 2 : 1),
                     VoucherRef = voucher.VoucherId,
@@ -975,7 +976,8 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
              * باید با همان الگوریتم سلسله‌مراتبی Account پیدا شود.
              */
 
-            const int bankAccountSlRef = 717; // TODO: فعلاً مطابق داده واقعی؛ بعداً Mapping شود
+//            const int bankAccountSlRef = 717; // TODO: فعلاً مطابق داده واقعی؛ بعداً Mapping شود
+            var bankAccountSlRef = await GetAccountIdByMoeinCodeAsync("1001");
 
             var bankDl = await sepidarContext.DLs.AsNoTracking().SingleOrDefaultAsync(x => x.DLId == bankAccount.DlRef, cancellationToken);
 
