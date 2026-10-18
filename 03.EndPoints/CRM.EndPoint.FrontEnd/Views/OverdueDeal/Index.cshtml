@@ -383,6 +383,22 @@
             }
     }
 
+    .count-total-label {
+        margin-top: 7px;
+        color: #6b7280;
+        font-size: .76rem;
+        font-weight: 600;
+    }
+
+    .count-total-value {
+        color: #263449;
+        font-size: .82rem;
+        font-weight: 800;
+        line-height: 1.45;
+        direction: rtl;
+        overflow-wrap: anywhere;
+    }
+
     .overdue-count-card-disabled {
         opacity: .52;
         cursor: not-allowed;
@@ -972,12 +988,14 @@
                             {
                                 label: "پیش‌فاکتورهای صادرشده",
                                 value: deal.preFactorCount,
+                                totalAmount: deal.preFactorTotalAmount,
                                 color: "#0f766e",
                                 icon: "<path d=\"M7 3h10a2 2 0 0 1 2 2v14l-7-3-7 3V5a2 2 0 0 1 2-2Z\"/><path d=\"M9 8h6M9 11h6\"/>",
                             },
                             {
                                 label: "فاکتورها",
                                 value: deal.factorCount,
+                                totalAmount: deal.factorTotalAmount,
                                 color: "#4c1d95",
                                 icon: "<path d=\"M6 2h9l4 4v16H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z\"/><path d=\"M14 2v5h5M8 12h8M8 16h8\"/>",
                             },
@@ -1010,6 +1028,10 @@
                                     </div>
                                     <div class="count-value" style="font-size:1.25rem">${escapeHtml(item.value ?? 0)}</div>
                                     <div class="count-label">${escapeHtml(item.label)}</div>
+                                    ${["پیش‌فاکتورهای صادرشده", "فاکتورها"].includes(item.label) ? `
+                                        <div class="count-total-label">جمع کل</div>
+                                        <div class="count-total-value">${new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(Number(item.totalAmount ?? 0))} ریال</div>
+                                    ` : ""}
                                 </div>
                             </div>`).join("");
 
