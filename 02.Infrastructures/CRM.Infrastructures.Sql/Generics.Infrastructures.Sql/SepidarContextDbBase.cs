@@ -1,3 +1,4 @@
+using CRM.Core.Domain.Sepidar;
 using CRM.Core.Domain.Sepidar.Accounts.Entites;
 using CRM.Core.Domain.Sepidar.Banks.Entites;
 using CRM.Core.Domain.Sepidar.Currencies.Entites;
@@ -5,6 +6,7 @@ using CRM.Core.Domain.Sepidar.DLs.Entites;
 using CRM.Core.Domain.Sepidar.ExtraDataes;
 using CRM.Core.Domain.Sepidar.FiscalYears.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
+using CRM.Core.Domain.Sepidar.Parties;
 using CRM.Core.Domain.Sepidar.Payments.Entites;
 using CRM.Core.Domain.Sepidar.Quotations.Entites;
 using CRM.Core.Domain.Sepidar.Vouchers.Entites;
@@ -34,6 +36,14 @@ public abstract class SepidarContextDbBase : DbContext {
     public DbSet<SepidarBank> SepidarBanks { get; set; }
     public DbSet<SepidarBankBranch> SepidarBankBranches { get; set; }
 
+    public DbSet<Quotation> Quotations => Set<Quotation>();
+
+    public DbSet<QuotationItem> QuotationItems => Set<QuotationItem>();
+
+    public DbSet<Item> Items => Set<Item>();
+
+    public DbSet<Party> Parties => Set<Party>();
+    
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
