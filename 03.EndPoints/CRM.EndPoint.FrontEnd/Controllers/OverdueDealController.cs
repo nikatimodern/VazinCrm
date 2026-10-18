@@ -113,9 +113,11 @@ public class OverdueDealController : Controller
                 deal.CommentText,
                 ReportCount = deal.Reports.Count(),
                 PreFactorCount = deal.PreFactors.Count(),
-                PreFactorTotalAmount = deal.PreFactors.Sum(item => (decimal?)item.SumTotalAmountTax) ?? 0m,
+                PreFactorTotalAmount = deal.PreFactors.Sum(item =>
+                    (decimal?)(item.SumTotalAmount + item.TotalTax - item.Discount)) ?? 0m,
                 FactorCount = deal.Factors.Count(),
-                FactorTotalAmount = deal.Factors.Sum(item => (decimal?)item.SumTotalAmountTax) ?? 0m,
+                FactorTotalAmount = deal.Factors.Sum(item =>
+                    (decimal?)(item.SumTotalAmount + item.TotalTax - item.Discount)) ?? 0m,
                 HasCustomer = deal.CustomerCode.HasValue &&
                     _db.Customers.Any(customer => customer.CustomerCode == deal.CustomerCode.Value),
                 AccountancyCount = _db.Accountancies.Count(accountancy =>
