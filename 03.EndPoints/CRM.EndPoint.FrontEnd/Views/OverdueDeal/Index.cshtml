@@ -1002,6 +1002,7 @@
                             {
                                 label: "صورت‌حساب‌های مشتری",
                                 value: hasCustomer ? deal.accountancyCount : "—",
+                                totalAmount: hasCustomer ? deal.debtAmount : 0,
                                 color: "#0f766e",
                                 icon: "<path d=\"M5 3h14v18H5z\"/><path d=\"M8 7h8M8 11h8M8 15h5\"/>",
                             },
@@ -1028,7 +1029,7 @@
                                     </div>
                                     <div class="count-value" style="font-size:1.25rem">${escapeHtml(item.value ?? 0)}</div>
                                     <div class="count-label">${escapeHtml(item.label)}</div>
-                                    ${["پیش‌فاکتورهای صادرشده", "فاکتورها"].includes(item.label) ? `
+                                    ${["پیش‌فاکتورهای صادرشده", "فاکتورها", "صورت‌حساب‌های مشتری"].includes(item.label) && (item.label !== "صورت‌حساب‌های مشتری" || hasCustomer) ? `
                                         <div class="count-total-label">جمع کل</div>
                                         <div class="count-total-value">${new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(Number(item.totalAmount ?? 0))} ریال</div>
                                     ` : ""}
