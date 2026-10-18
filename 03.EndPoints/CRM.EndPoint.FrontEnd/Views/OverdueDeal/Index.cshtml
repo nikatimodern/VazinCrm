@@ -996,6 +996,24 @@
                             </div>`).join("");
 
                         const openDocumentModal = async (kind) => {
+                            if (kind === "prefactors") {
+                                const preFactorDeal = {
+                                    id: deal.id,
+                                    serialNumber: deal.serialNumber,
+                                    customerId: deal.customerId,
+                                    customerName: deal.customerName,
+                                    customerCode: deal.customerCode,
+                                    mobileNumber: deal.mobileNumber,
+                                    userCreatorID: deal.userCreatorID,
+                                    financialStatus: deal.financialStatus
+                                };
+                                dealDetailsModalElement.addEventListener("hidden.bs.modal", () => {
+                                    showModalDealPreFactors(preFactorDeal);
+                                }, { once: true });
+                                dealDetailsModal?.hide();
+                                return;
+                            }
+
                             const isReports = kind === "reports";
                             const titleByKind = {
                                 reports: "گزارش‌های ثبت‌شده سفارش",
@@ -1021,10 +1039,7 @@
                                         dealReportsContent.textContent = "گزارشی برای این سفارش ثبت نشده است.";
                                     }
                                 } else {
-                                    const endpoint = kind === "prefactors"
-                                        ? "/OverdueDeal/GetDealPreFactors"
-                                        : "/OverdueDeal/GetDealFactors";
-                                    const response = await axios.get(endpoint, { params: { dealId: deal.id } });
+                                    const response = await axios.get("/OverdueDeal/GetDealFactors", { params: { dealId: deal.id } });
                                     const items = response.data?.data || [];
                                     if (!items.length) {
                                         dealReportsContent.innerHTML = '<div class="text-center text-muted py-4">موردی برای این سفارش ثبت نشده است.</div>';
@@ -1037,7 +1052,7 @@
                                                     const date = escapeHtml(item.date ?? "—");
                                                     const customer = escapeHtml([item.customer, item.agentName].filter(Boolean).join(" - ") || "—");
                                                     const amount = money(item.sumTotalAmountTax ?? (Number(item.sumTotalAmount ?? 0) + Number(item.totalTax ?? 0)));
-                                                    const status = escapeHtml(kind === "prefactors" ? (item.pftypeTxt ?? "—") : (item.statusTxt ?? "—"));
+                                                    const status = escapeHtml(item.statusTxt ?? "—");
                                                     const currency = escapeHtml(item.currencyTypeTxt || "ریال");
                                                     const badge = item.officialType === 1 ? "رسمی" : "غیررسمی";
                                                     return `
@@ -1050,12 +1065,11 @@
                                                                     <div class="overdue-prefactor-meta">
                                                                         <div><span>سریال:</span><strong>${serial}</strong></div>
                                                                         <div><span>تاریخ:</span><strong>${date}</strong></div>
-                                                                        ${kind === "prefactors" && item.validityDade ? `<div><span>اعتبار:</span><strong>${escapeHtml(item.validityDade)}</strong></div>` : ""}
-                                                                        ${kind === "factors" && item.pfactorSerialNumber ? `<div><span>شماره پیش‌فاکتور:</span><strong>${escapeHtml(item.pfactorSerialNumber)}</strong></div>` : ""}
+                                                                        ${item.pfactorSerialNumber ? `<div><span>شماره پیش‌فاکتور:</span><strong>${escapeHtml(item.pfactorSerialNumber)}</strong></div>` : ""}
                                                                     </div>
                                                                     <div class="overdue-prefactor-financial">
                                                                         <div><span>مبلغ:</span><strong>${amount} <small>${currency}</small></strong></div>
-                                                                        ${kind === "factors" ? `<div><span>دریافتی:</span><strong>${money(item.reciveAmount)} <small>${currency}</small></strong></div>` : ""}
+                                                                        <div><span>دریافتی:</span><strong>${money(item.reciveAmount)} <small>${currency}</small></strong></div>
                                                                         <div><span>مانده:</span><strong>${money(item.paymentAmount)} <small>${currency}</small></strong></div>
                                                                     </div>
                                                                     <div class="overdue-prefactor-customer">
@@ -1065,11 +1079,11 @@
                                                                 </div>
                                                             </article>
                                                             <div class="overdue-prefactor-actions" aria-label="ابزارهای سند">
-                                                                <button type="button" title="نمایش" aria-label="نمایش" onclick="ShowPreviewPfactor('${escapeHtml(item.id)}')"><i class="fa fa-eye"></i></button>
-                                                                <button type="button" title="ویرایش" aria-label="ویرایش" onclick="upPfactor('${escapeHtml(item.id)}', 0)"><i class="fa fa-pencil"></i></button>
-                                                                <button type="button" title="حذف" aria-label="حذف" onclick="deletePreFactor('${escapeHtml(item.id)}', 0)"><i class="fa fa-trash"></i></button>
-                                                                <button type="button" title="پیوست‌ها" aria-label="پیوست‌ها" onclick="showAttachments('${escapeHtml(item.id)}', 2)"><i class="fa fa-paperclip"></i></button>
-                                                                <button type="button" title="تاریخچه" aria-label="تاریخچه" onclick="showLogEntity('PreFactor', '${escapeHtml(item.id)}')"><i class="fa fa-history"></i></button>
+                                                                <button type="button" title="نمایش" aria-label="نمایش" onclick="ShowPreviewFactor('${escapeHtml(item.id)}')"><i class="fa fa-eye"></i></button>
+                                                                <button type="button" title="ویرایش" aria-label="ویرایش" onclick="upFactor('${escapeHtml(item.id)}', 0)"><i class="fa fa-pencil"></i></button>
+                                                                <button type="button" title="حذف" aria-label="حذف" onclick="deleteFactor('${escapeHtml(item.id)}', 0)"><i class="fa fa-trash"></i></button>
+                                                                <button type="button" title="پیوست‌ها" aria-label="پیوست‌ها" onclick="showAttachments('${escapeHtml(item.id)}', 3)"><i class="fa fa-paperclip"></i></button>
+                                                                <button type="button" title="تاریخچه" aria-label="تاریخچه" onclick="showLogEntity('Factor', '${escapeHtml(item.id)}')"><i class="fa fa-history"></i></button>
                                                             </div>
                                                         </div>`;
                                                 }).join("")}
@@ -1199,4 +1213,5 @@
             loadOverdueDeals();
         });
     </script>
+    <script src="~/js/deal/deal-documents.js" asp-append-version="true"></script>
 }
