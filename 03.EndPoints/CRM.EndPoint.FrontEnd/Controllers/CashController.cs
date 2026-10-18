@@ -1387,10 +1387,23 @@ public class CashController : Controller {
                         .Select(f => f.TafsiliCode)
                         .FirstOrDefault();
 
+                    var costCenterIdStr = await db.ExternalMappings.Where(f =>
+                            f.MapType == ExternalMappingTypeEnum.مرکز_هزینه
+                            && f.EntityName == nameof(BaseCenterCash)
+                            && f.EntityId == cash.CostCenterId
+                            && f.ExternalSoftwareId == externalSoftwareId
+                        )
+                        .Select(f => f.ExEntityId)
+                        .FirstOrDefaultAsync();
+
+                    if (!int.TryParse(costCenterIdStr, out var costCenterId))
+                    {
+                        throw new Exception($"مرکز هزینه با عنوان ({cash.CostCenter.Title}) در سپیدار پیدا نشد.");
+                    }
+
+                    var result = await sepidarService.SentCashToSepidar(cash, tafsiliCode, costCenterId);
+
                     var user = await userManager.GetUserAsync(HttpContext.User);
-
-                    var result = await sepidarService.SentCashToSepidar(cash, tafsiliCode);
-
                     if (result.HasValue)
                     {
                         db.ExternalMappings.Add(new ExternalMapping {

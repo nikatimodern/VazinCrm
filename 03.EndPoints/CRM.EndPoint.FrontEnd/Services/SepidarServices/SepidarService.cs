@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Sepidar.DLs.Entites;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
@@ -89,16 +90,18 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
         //--------------------------------------------------------- TANKHAH ---------------------------------------------------------
 
 
-        public async Task<(string entityName, string entityId)?> SentCashToSepidar(Cash cash, string tafsiliCode)
+        public async Task<(string entityName, string entityId)?> SentCashToSepidar(Cash cash, string tafsiliCode, int costCenterId)
         {
             var dl = await GetDlAsync(tafsiliCode);
+            var tafsiliId = dl.DLId;
+
             switch (dl.Type)
             {
                 case 4: // حساب بانكي
-                    return await AddPaymentHeaderAsync(cash, dl.DLId);
+                    return await AddPaymentHeaderAsync(cash, tafsiliId, costCenterId);
 
                 case 2: // طرف مقابل
-                    return await AddVoucherAsync2(cash, dl.DLId);
+                    return await AddVoucherAsync2(cash, tafsiliId, costCenterId);
 
                 default:
                     return null;
@@ -283,15 +286,16 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
         }
 
 
-        private async Task<(string, string)> AddPaymentHeaderAsync(Cash cash, int tafsiliId, CancellationToken cancellationToken = default)
+        private async Task<(string, string)> AddPaymentHeaderAsync(Cash cash, int tafsiliId, int costCenterId,
+            CancellationToken cancellationToken = default)
         {
             await using var trans = await sepidarContext.Database.BeginTransactionAsync(cancellationToken);
 
             try
             {
                 // 1. مرکز هزینه
-                var costCenterCode = cash.CostCenter.Code;
-                var dlRef = await GetCostCenterDlIdAsync(costCenterCode, cancellationToken);
+//                var costCenterCode = cash.CostCenter.Code;
+                // var dlRef = await GetCostCenterDlIdAsync(costCenterCode, cancellationToken);
 
                 // 2. حساب معین
                 var moeinCode = cash.CostTitle.MoeinCode.ToString();
@@ -316,7 +320,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
                     PaymentHeaderId = paymentHeaderId,
                     Type = 2, // پرداخت به سایر // جدول FMK.lookup
                     AccountSlRef = accountSlRef,
-                    DlRef = dlRef,
+                    DlRef = costCenterId,
                     Number = paymentNumber,
                     Date = cash.CostDateMiladi,
                     CurrencyRef = 1, // فعلا
@@ -460,7 +464,8 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
             "SG.Accounting.VoucherManagement.Common, " +
             "Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
 
-        public async Task<(string, string)> AddVoucherAsync2(Cash cash, int dlref, CancellationToken cancellationToken = default)
+        private async Task<(string, string)> AddVoucherAsync2(Cash cash, int tafsiliId, int costCenterId,
+            CancellationToken cancellationToken = default)
         {
             await using var trans = await sepidarContext.Database.BeginTransactionAsync(cancellationToken);
 
@@ -510,7 +515,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
                 var moeinCode = cash.CostTitle.MoeinCode.ToString();
                 var accountSlRef = await GetAccountIdByMoeinCodeAsync(moeinCode, cancellationToken);
 
-                var debitDlRef = await GetVoucherItemDlRefAsync(accountSlRef, dlref, cancellationToken);
+                var debitDlRef = await GetVoucherItemDlRefAsync(accountSlRef, costCenterId, cancellationToken);
 
                 var debitItem = new VoucherItem {
                     VoucherItemId = firstVoucherItemId,
@@ -591,7 +596,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
 
                     AccountSLRef = bankAccountSlRef,
 
-                    DLRef = dlref,
+                    DLRef = tafsiliId,
 
                     Debit = 0,
                     Credit = cash.Amount,
@@ -626,7 +631,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
 
                         AccountSLRef = bankAccountSlRef,
 
-                        DLRef = dlref,
+                        DLRef = tafsiliId,
 
                         Debit = 0,
                         Credit = cash.Fee,
@@ -639,7 +644,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
                         TrackingNumber = null,
                         TrackingDate = null,
 
-                        IssuerEntityName = PaymentIssuerEntityName,
+                        IssuerEntityName = PaymentIssuerEntityName2,
                         IssuerEntityRef = firstVoucherItemId + 3,
 
                         Description = cash.CostDescription,
