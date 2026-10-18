@@ -996,8 +996,8 @@
                             </div>`).join("");
 
                         const openDocumentModal = async (kind) => {
-                            if (kind === "prefactors") {
-                                const preFactorDeal = {
+                            if (kind === "prefactors" || kind === "factors") {
+                                const dealDocument = {
                                     id: deal.id,
                                     serialNumber: deal.serialNumber,
                                     customerId: deal.customerId,
@@ -1007,8 +1007,12 @@
                                     userCreatorID: deal.userCreatorID,
                                     financialStatus: deal.financialStatus
                                 };
-                                dealDetailsModalElement.addEventListener("hidden.bs.modal", () => {
-                                    showModalDealPreFactors(preFactorDeal);
+                                dealDetailsModalElement.addEventListener("hidden.bs.modal", async () => {
+                                    if (kind === "prefactors") {
+                                        await showModalDealPreFactors(dealDocument);
+                                    } else {
+                                        await showModalDealFactors(dealDocument);
+                                    }
                                 }, { once: true });
                                 dealDetailsModal?.hide();
                                 return;
@@ -1029,66 +1033,13 @@
                             dealDetailsModal?.hide();
 
                             try {
-                                if (isReports) {
-                                    const response = await axios.post(
-                                        `/Report/GetAllReportPartial?dealId=${encodeURIComponent(deal.id)}`,
-                                        { filt: null, serVal: null, _type: -1, Count: -1 }
-                                    );
-                                    dealReportsContent.innerHTML = response.data?.html || "";
-                                    if (!response.data?.html) {
-                                        dealReportsContent.textContent = "گزارشی برای این سفارش ثبت نشده است.";
-                                    }
-                                } else {
-                                    const response = await axios.get("/OverdueDeal/GetDealFactors", { params: { dealId: deal.id } });
-                                    const items = response.data?.data || [];
-                                    if (!items.length) {
-                                        dealReportsContent.innerHTML = '<div class="text-center text-muted py-4">موردی برای این سفارش ثبت نشده است.</div>';
-                                    } else {
-                                        const money = value => new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(Number(value ?? 0));
-                                        dealReportsContent.innerHTML = `
-                                            <div class="d-flex flex-column gap-2">
-                                                ${items.map(item => {
-                                                    const serial = escapeHtml(item.serialNumber ?? "—");
-                                                    const date = escapeHtml(item.date ?? "—");
-                                                    const customer = escapeHtml([item.customer, item.agentName].filter(Boolean).join(" - ") || "—");
-                                                    const amount = money(item.sumTotalAmountTax ?? (Number(item.sumTotalAmount ?? 0) + Number(item.totalTax ?? 0)));
-                                                    const status = escapeHtml(item.statusTxt ?? "—");
-                                                    const currency = escapeHtml(item.currencyTypeTxt || "ریال");
-                                                    const badge = item.officialType === 1 ? "رسمی" : "غیررسمی";
-                                                    return `
-                                                        <div class="d-flex w-100 overdue-prefactor-row" dir="rtl">
-                                                            <div class="${item.officialType === 1 ? "InfoDataHead_PrefactorRasmi" : "InfoDataHead_PrefactorNonRasmi"} overdue-prefactor-side">
-                                                                <span class="overdue-prefactor-side-text">${badge}</span>
-                                                            </div>
-                                                            <article class="InfoDataItem_Prefactor overdue-prefactor-card flex-grow-1 w-100">
-                                                                <div class="overdue-prefactor-main">
-                                                                    <div class="overdue-prefactor-meta">
-                                                                        <div><span>سریال:</span><strong>${serial}</strong></div>
-                                                                        <div><span>تاریخ:</span><strong>${date}</strong></div>
-                                                                        ${item.pfactorSerialNumber ? `<div><span>شماره پیش‌فاکتور:</span><strong>${escapeHtml(item.pfactorSerialNumber)}</strong></div>` : ""}
-                                                                    </div>
-                                                                    <div class="overdue-prefactor-financial">
-                                                                        <div><span>مبلغ:</span><strong>${amount} <small>${currency}</small></strong></div>
-                                                                        <div><span>دریافتی:</span><strong>${money(item.reciveAmount)} <small>${currency}</small></strong></div>
-                                                                        <div><span>مانده:</span><strong>${money(item.paymentAmount)} <small>${currency}</small></strong></div>
-                                                                    </div>
-                                                                    <div class="overdue-prefactor-customer">
-                                                                        <div><span>مشتری:</span><strong>${customer}</strong></div>
-                                                                        <div><span>وضعیت:</span><strong>${status}</strong></div>
-                                                                    </div>
-                                                                </div>
-                                                            </article>
-                                                            <div class="overdue-prefactor-actions" aria-label="ابزارهای سند">
-                                                                <button type="button" title="نمایش" aria-label="نمایش" onclick="ShowPreviewFactor('${escapeHtml(item.id)}')"><i class="fa fa-eye"></i></button>
-                                                                <button type="button" title="ویرایش" aria-label="ویرایش" onclick="upFactor('${escapeHtml(item.id)}', 0)"><i class="fa fa-pencil"></i></button>
-                                                                <button type="button" title="حذف" aria-label="حذف" onclick="deleteFactor('${escapeHtml(item.id)}', 0)"><i class="fa fa-trash"></i></button>
-                                                                <button type="button" title="پیوست‌ها" aria-label="پیوست‌ها" onclick="showAttachments('${escapeHtml(item.id)}', 3)"><i class="fa fa-paperclip"></i></button>
-                                                                <button type="button" title="تاریخچه" aria-label="تاریخچه" onclick="showLogEntity('Factor', '${escapeHtml(item.id)}')"><i class="fa fa-history"></i></button>
-                                                            </div>
-                                                        </div>`;
-                                                }).join("")}
-                                            </div>`;
-                                    }
+                                const response = await axios.post(
+                                    `/Report/GetAllReportPartial?dealId=${encodeURIComponent(deal.id)}`,
+                                    { filt: null, serVal: null, _type: -1, Count: -1 }
+                                );
+                                dealReportsContent.innerHTML = response.data?.html || "";
+                                if (!response.data?.html) {
+                                    dealReportsContent.textContent = "گزارشی برای این سفارش ثبت نشده است.";
                                 }
                             } catch (error) {
                                 console.error("Failed to load order documents:", error);
