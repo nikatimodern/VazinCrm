@@ -240,6 +240,43 @@
         min-width: 0;
     }
 
+    .overdue-prefactor-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 7px;
+        flex: 0 0 28px;
+        padding: 8px 4px;
+        color: var(--DarkColor);
+    }
+
+    .overdue-prefactor-actions button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--DarkColor);
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background-color .15s ease, color .15s ease;
+    }
+
+    .overdue-prefactor-actions button:hover,
+    .overdue-prefactor-actions button:focus-visible {
+        background: #ede9fe;
+        color: #5b21b6;
+        outline: none;
+    }
+
+    .overdue-prefactor-actions button i {
+        font-size: 15px;
+    }
+
     .overdue-prefactor-side {
         flex: 0 0 24px;
         width: 24px;
@@ -1018,6 +1055,13 @@
                                                                     </div>
                                                                 </div>
                                                             </article>
+                                                            <div class="overdue-prefactor-actions" aria-label="ابزارهای سند">
+                                                                <button type="button" title="نمایش" aria-label="نمایش" onclick="ShowPreviewPfactor('${escapeHtml(item.id)}')"><i class="fa fa-eye"></i></button>
+                                                                <button type="button" title="ویرایش" aria-label="ویرایش" onclick="upPfactor('${escapeHtml(item.id)}', 0)"><i class="fa fa-pencil"></i></button>
+                                                                <button type="button" title="حذف" aria-label="حذف" onclick="deletePreFactor('${escapeHtml(item.id)}', 0)"><i class="fa fa-trash"></i></button>
+                                                                <button type="button" title="پیوست‌ها" aria-label="پیوست‌ها" onclick="showAttachments('${escapeHtml(item.id)}', 2)"><i class="fa fa-paperclip"></i></button>
+                                                                <button type="button" title="تاریخچه" aria-label="تاریخچه" onclick="showLogEntity('PreFactor', '${escapeHtml(item.id)}')"><i class="fa fa-history"></i></button>
+                                                            </div>
                                                         </div>`;
                                                 }).join("")}
                                             </div>`;
