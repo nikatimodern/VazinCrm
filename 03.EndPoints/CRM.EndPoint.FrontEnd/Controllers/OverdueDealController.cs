@@ -99,6 +99,9 @@ public class OverdueDealController : Controller
             .Select(deal => new
             {
                 deal.Id,
+                deal.CustomerId,
+                deal.UserCreatorID,
+                deal.FinancialStatus,
                 deal.SerialNumber,
                 deal.Title,
                 deal.CustomerName,
@@ -147,43 +150,6 @@ public class OverdueDealController : Controller
             .ToListAsync();
 
         return Ok(new { data = deals });
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> GetDealPreFactors(Guid dealId)
-    {
-        var isOverdueDeal = await _db.Deals.AsNoTracking().AnyAsync(deal =>
-            deal.Id == dealId &&
-            deal.Status == DealStatusEnum.باز &&
-            deal.CreateDate <= DateTime.Now.AddDays(-14));
-
-        if (!isOverdueDeal)
-            return NotFound();
-
-        var preFactors = await _db.PreFactors
-            .AsNoTracking()
-            .Where(item => item.DealId == dealId)
-            .OrderByDescending(item => item.DateMiladi)
-            .Select(item => new
-            {
-                item.Id,
-                item.SerialNumber,
-                item.Date,
-                item.ValidityDade,
-                item.Customer,
-                item.AgentName,
-                item.SumTotalAmount,
-                item.SumTotalAmountTax,
-                item.TotalTax,
-                item.PaymentAmount,
-                item.PftypeTxt,
-                item.CurrencyTypeTxt,
-                item.OfficialType,
-                item.Export
-            })
-            .ToListAsync();
-
-        return Ok(new { count = preFactors.Count, data = preFactors });
     }
 
     [HttpGet]
