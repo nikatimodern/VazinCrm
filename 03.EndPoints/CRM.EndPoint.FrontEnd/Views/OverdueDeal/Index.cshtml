@@ -783,6 +783,11 @@
 <partial name="~/Views/PreFactor/Modals/_PreFactorChangeUsersModal.cshtml" />
 <partial name="~/Views/PreFactor/Modals/_PreFactorContainerModal.cshtml" />
 <partial name="~/Views/Factor/Modals/_FactorContainerModal.cshtml" />
+<partial name="~/Views/Accountancy/Modals/_InvoiceListModal.cshtml" />
+
+
+
+
 
 @section Scripts {
     <script>
@@ -1007,10 +1012,11 @@
                                     userCreatorID: deal.userCreatorID,
                                     financialStatus: deal.financialStatus
                                 };
-                                dealDetailsModalElement.addEventListener("hidden.bs.modal", () => {
-                                    showModalDealPreFactors(preFactorDeal);
-                                }, { once: true });
-                                dealDetailsModal?.hide();
+                                showModalDealPreFactors(preFactorDeal);
+                                // dealDetailsModalElement.addEventListener("hidden.bs.modal", () => {
+                                    
+                                // }, { once: true });
+                                //dealDetailsModal?.hide();
                                 return;
                             }
 
