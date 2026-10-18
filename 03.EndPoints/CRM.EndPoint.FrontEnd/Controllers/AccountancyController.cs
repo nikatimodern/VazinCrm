@@ -653,7 +653,6 @@ public class AccountancyController : Controller {
 
 
             var items = await query
-                .Include(x => x.BankAccountExternalSoftwares)
                 .Select(f => new {
                     f.Id,
                     f.AccountName,
@@ -663,7 +662,6 @@ public class AccountancyController : Controller {
                     f.CartNumber,
                     f.BankAccountType,
                     f.OfficialType,
-                    f.BankAccountExternalSoftwares
                 })
                 .ToListAsync();
 
@@ -676,7 +674,6 @@ public class AccountancyController : Controller {
                 cartNumber = f.CartNumber,
                 officialType = f.OfficialType,
                 type = f.BankAccountType,
-                bankAccountExternalSoftwares = f.BankAccountExternalSoftwares
             });
 
 

@@ -90,15 +90,18 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
         //--------------------------------------------------------- TANKHAH ---------------------------------------------------------
 
 
-        public async Task<(string entityName, string entityId)?> SentCashToSepidar(Cash cash, string tafsiliCode, int costCenterId)
+        public async Task<(string entityName, string entityId)?> SentCashToSepidar(Cash cash, string tafsiliCode, int costCenterId,
+            string tafsiliCash)
         {
             var dl = await GetDlAsync(tafsiliCode);
             var tafsiliId = dl.DLId;
 
+            var sepidarCashId = await GetCashIdWithDlAsync(tafsiliCash);
+
             switch (dl.Type)
             {
                 case 4: // حساب بانكي
-                    return await AddPaymentHeaderAsync(cash, tafsiliId, costCenterId);
+                    return await AddPaymentHeaderAsync(cash, tafsiliId, costCenterId, sepidarCashId);
 
                 case 2: // طرف مقابل
                     return await AddVoucherAsync2(cash, tafsiliId, costCenterId);
@@ -108,18 +111,6 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
             }
         }
 
-
-        private async Task<int> GetCostCenterDlIdAsync(string costCenterCode, CancellationToken cancellationToken = default)
-        {
-            var dl = await sepidarContext.DLs.AsNoTracking().SingleOrDefaultAsync(x => x.Code == costCenterCode, cancellationToken);
-
-            if (dl == null)
-            {
-                throw new Exception($"مرکز هزینه با کد {costCenterCode} در سپیدار پیدا نشد.");
-            }
-
-            return dl.DLId;
-        }
 
         private async Task<DL> GetDlAsync(string code, CancellationToken cancellationToken = default)
         {
@@ -131,6 +122,20 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
             }
 
             return dl;
+        }
+
+        private async Task<int> GetCashIdWithDlAsync(string dlCode, CancellationToken cancellationToken = default)
+        {
+            var dl = await GetDlAsync(dlCode, cancellationToken);
+
+            var cash = await sepidarContext.SepidarCash.Where(x => x.DlRef == dl.DLId).SingleOrDefaultAsync(cancellationToken);
+
+            if (cash == null)
+            {
+                throw new Exception($"صندوق با کد تفصیلی {dlCode} در سپیدار پیدا نشد.");
+            }
+
+            return cash.CashId;
         }
 
         private async Task<int> GetFiscalYearIdAsync(DateTime date, CancellationToken cancellationToken = default)
@@ -286,7 +291,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
         }
 
 
-        private async Task<(string, string)> AddPaymentHeaderAsync(Cash cash, int tafsiliId, int costCenterId,
+        private async Task<(string, string)> AddPaymentHeaderAsync(Cash cash, int tafsiliId, int costCenterId, int sepidarCashId,
             CancellationToken cancellationToken = default)
         {
             await using var trans = await sepidarContext.Database.BeginTransactionAsync(cancellationToken);
@@ -337,7 +342,7 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices {
                     LastModificationDate = now,
                     Version = 1,
                     Rate = 1,
-                    CashRef = 2, // صندوق مرکزی: 2 | صندوق غير رسمي:17
+                    CashRef = sepidarCashId, // صندوق مرکزی: 2 | صندوق غير رسمي:17
                     Amount = 0,
                     AmountInBaseCurrency = 0,
                     ReceiptHeaderRef = null,

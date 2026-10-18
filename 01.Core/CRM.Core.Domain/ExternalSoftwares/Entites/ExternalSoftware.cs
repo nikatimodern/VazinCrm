@@ -2,9 +2,10 @@ using System;
 using System.Collections.Generic;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Cashes.Entities;
+using CRM.Core.Domain.ExternalSoftwares.Enums;
 using CRM.Framework;
 
-namespace CRM.Core.Domain.ASettings.Entities;
+namespace CRM.Core.Domain.ExternalSoftwares.Entites;
 
 public class ExternalSoftware {
     public Guid Id { get; set; }
@@ -25,12 +26,8 @@ public class ExternalSoftware {
     public string CreateDateTxt { get; set; } = BaseServices.GetDateTimePersian();
 
     public IList<ExternalMapping> ExternalMappings { get; set; }
-    public IList<BankAccountExternalSoftware> BankAccountExternalSoftwares { get; set; }
+    public IList<ExternalSoftwareSetting> ExternalSoftwareSettings { get; set; }
+    
     public IList<CashierExternalSoftware> CashierExternalSoftwares { get; set; }
     public IList<CashExternalSoftware> CashExternalSoftwares { get; set; }
-}
-
-public enum SoftwareTypeEnum {
-    حسابداری = 0,
-    پیامکی = 1
 }

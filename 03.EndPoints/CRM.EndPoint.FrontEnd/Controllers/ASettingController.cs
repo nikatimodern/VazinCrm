@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using CRM.Core.Domain;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Customers.Entities;
+using CRM.Core.Domain.ExternalSoftwares.Entites;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Setting;

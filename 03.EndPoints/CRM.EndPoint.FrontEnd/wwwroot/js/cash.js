@@ -39,6 +39,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 });
 
+
+function refreshCashView() {
+    cashTbl?.ajax.reload(null, false);
+    
+    getBalanceCashier().then(data => initCashierBalanceUI(data));
+}
+
+async function getBalanceCashier() {
+    return await sendApiRequest({
+        url: "/Cash/GetBalanceCashier",
+    });
+}
+
 cashModal.addEventListener("hidden.bs.modal", () => {
     mySer.emptyForm("cashForm");
     cashData = [];
@@ -216,7 +229,7 @@ const deleteCash = async (id) => {
             if (res.status === 200) {
                 toastifySuccess("با موفقیت حذف شد");
                 if (cashViewType === "cashes") {
-                    cashTbl?.ajax.reload(null, false);
+                    refreshCashView();
                 } else {
                     cashModalTbl?.ajax.reload(null, false);
                 }
@@ -249,7 +262,7 @@ async function submitCashModal() {
         const res = await axios.post("/Cash/AddCash", model);
         if (res.status === 200) {
             toastifySuccess("با موفقیت ثبت شد");
-            cashTbl?.ajax.reload(null, false);
+            refreshCashView();
             ModalToggle(cashModal);
         }
     } catch (err) {
@@ -271,7 +284,7 @@ async function changeStatusCash(id, status) {
         successMsg: status === 2 ? "تایید شد" : null,
         onSuccess: () => {
             if (cashViewType === "cashes") {
-                cashTbl?.ajax.reload(null, false);
+                refreshCashView();
             } else {
                 cashModalTbl?.ajax.reload(null, false);
                 cashGroupTbl?.ajax.reload(null, false);
@@ -361,7 +374,7 @@ const getAllCashesDt = () => {
             dataSrc: function (json) {
                 cashTbl.column(1).visible(window.isAdminOrFinancial);
                 cashTbl.settings()[0].aoColumns[1].bSearchable = window.isAdminOrFinancial;
-                initCashierBalanceUI(json.cashierBalance);
+                // initCashierBalanceUI(json.cashierBalance);
                 return json.data;
             },
         },
@@ -530,8 +543,6 @@ const getAllCashesDt = () => {
         onAction: async (ids, selection) => {
             await changeStatusGroupCashToPending(ids);
             selection.hideSelectionMode();
-            
-            cashTbl?.ajax.reload(null, false);
         },
         
         onSelectionModeEnter() {
@@ -662,8 +673,9 @@ function switchCashView(viewType) {
         document.querySelector("#cashModalBtn").classList.remove("d-none");
         if (!cashTbl) {
             getAllCashesDt();
+            getBalanceCashier().then(data => initCashierBalanceUI(data));
         } else {
-            cashTbl?.ajax.reload(null, false);
+            refreshCashView();
         }
         
     } else { // viewType === "groups"
