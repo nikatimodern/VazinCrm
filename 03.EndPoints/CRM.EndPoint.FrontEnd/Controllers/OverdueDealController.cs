@@ -118,8 +118,7 @@ public class OverdueDealController : Controller
                 FactorCount = deal.Factors.Count(),
                 FactorTotalAmount = deal.Factors.Sum(item =>
                     (decimal?)(item.SumTotalAmount + item.TotalTax - item.Discount)) ?? 0m,
-                HasCustomer = deal.CustomerCode.HasValue &&
-                    _db.Customers.Any(customer => customer.CustomerCode == deal.CustomerCode.Value),
+                HasCustomer = deal.CustomerCode.HasValue,
                 AccountancyCount = _db.Accountancies.Count(accountancy =>
                     deal.CustomerCode.HasValue &&
                     accountancy.CustomerCode == deal.CustomerCode.Value &&
