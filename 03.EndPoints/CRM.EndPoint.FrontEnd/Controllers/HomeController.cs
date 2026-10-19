@@ -18,8 +18,10 @@ using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.ASettings.Entities;
 using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Cashes.Entities;
+using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Sepidar.DLs.Entites;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
+using CRM.EndPoint.FrontEnd.Models.ExternalSoftwares;
 using CRM.EndPoint.FrontEnd.Services.AI;
 using CRM.EndPoint.FrontEnd.Services.Asterisk;
 using CRM.EndPoint.FrontEnd.Services.Carizo;
@@ -255,6 +257,42 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 return BadRequest();
             }
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> GetAllExternalSoftware([FromBody] ExternalSoftwareRequestDto request)
+        {
+            if (request.EntityIds.Count == 0 || request.EntityIds.Any(id => id == Guid.Empty))
+                return BadRequest();
+
+            var entityName = request.MapType switch {
+                ExternalMappingTypeEnum.تنخواه => nameof(Cash),
+                ExternalMappingTypeEnum.پیش_فاکتور => nameof(PreFactor),
+                _ => null
+            };
+
+            if (entityName == null)
+                return BadRequest();
+
+            var entityIds = request.EntityIds.Distinct().ToList();
+
+            var softwares = await db.ExternalSoftwares
+                .AsNoTracking()
+                .OrderBy(x => x.Title)
+                .Select(x => new {
+                    x.Id,
+                    x.Title,
+                    IsDisabled = entityIds.All(entityId =>
+                        db.ExternalMappings.Any(m =>
+                            m.EntityName == entityName &&
+                            m.EntityId == entityId &&
+                            m.ExternalSoftwareId == x.Id &&
+                            m.MapType == request.MapType))
+                })
+                .ToListAsync();
+
+            return Ok(softwares);
         }
     }
 }

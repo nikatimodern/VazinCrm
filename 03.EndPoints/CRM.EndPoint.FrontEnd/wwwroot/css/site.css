@@ -3749,6 +3749,7 @@ user-select: none;
 	max-width: 80px;
 	padding: 0 6px;
 	border-radius: 4px;
+	display: inline-flex;
 	flex-direction: column;
 }
 

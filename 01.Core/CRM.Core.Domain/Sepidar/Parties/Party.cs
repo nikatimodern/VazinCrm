@@ -53,6 +53,7 @@ public class Party {
     public int BrokerOpeningBalanceType { get; set; }
 
     public bool IsEmployee { get; set; }
+    public bool IsCustomer  { get; set; }
 
     public int? SalespersonPartyRef { get; set; }
 

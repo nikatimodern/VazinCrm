@@ -13,8 +13,10 @@ using CRM.Core.Domain.Cashes.Enums;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
 using CRM.Core.Domain.ExternalSoftwares.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
+using CRM.Core.Domain.PreFactors.Entities;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Cash;
+using CRM.EndPoint.FrontEnd.Models.ExternalSoftwares;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
@@ -1324,7 +1326,7 @@ public class CashController : Controller {
 
 
     [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
-    public async Task<IActionResult> SendCashesToExternalSoftware([FromBody] SendCashesToExternalSoftwaresDto model)
+    public async Task<IActionResult> SendCashesToExternalSoftware([FromBody] SendToExternalSoftwaresDto model)
     {
         if (model == null) return BadRequest();
 
@@ -1341,7 +1343,7 @@ public class CashController : Controller {
                     sepidarService = sepidar2Service;
                 } else
                 {
-                    return BadRequest();
+                    return BadRequest("شناسه نرم‌افزار نامعتبر است");
                 }
 
 
@@ -1357,7 +1359,7 @@ public class CashController : Controller {
                     throw new Exception("صندوق سپیدار تعریف نشده است");
                 }
 
-                foreach (var id in model.CashIds ?? [])
+                foreach (var id in model.Ids ?? [])
                 {
                     var isMapped = await db.ExternalMappings.AnyAsync(f =>
                         f.EntityId == id &&
@@ -1398,7 +1400,7 @@ public class CashController : Controller {
                         throw new Exception($"مرکز هزینه با عنوان ({cash.CostCenter.Title}) در سپیدار پیدا نشد.");
                     }
 
-                    var result = await sepidarService.SentCashToSepidar(cash, tafsiliCode, costCenterId, tafsiliCash);
+                    var result = await sepidarService.SendCashToSepidar(cash, tafsiliCode, costCenterId, tafsiliCash);
 
                     var user = await userManager.GetUserAsync(HttpContext.User);
                     if (result.HasValue)
@@ -1426,45 +1428,5 @@ public class CashController : Controller {
         {
             return BadRequest(e.Message);
         }
-    }
-
-
-    [HttpGet]
-    public async Task<IActionResult> GetAllExternalSoftware()
-    {
-        var data = await db.ExternalSoftwares
-            .AsNoTracking()
-            .OrderBy(x => x.Title)
-            .Select(x => new { x.Id, x.Title })
-            .ToListAsync();
-
-        return Ok(data);
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> GetAllExternalSoftware([FromBody] List<Guid> cashIds)
-    {
-        if (cashIds == null || cashIds.Count == 0 || cashIds.Any(id => id == Guid.Empty))
-            return BadRequest();
-
-        cashIds = cashIds.Distinct().ToList();
-
-        var softwares = await db.ExternalSoftwares
-            .AsNoTracking()
-            .OrderBy(x => x.Title)
-            .Select(x => new {
-                x.Id,
-                x.Title,
-                IsDisabled = cashIds.All(cashId =>
-                    db.ExternalMappings.Any(m =>
-                        m.EntityName == nameof(Cash) &&
-                        m.EntityId == cashId &&
-                        m.ExternalSoftwareId == x.Id &&
-                        m.MapType == ExternalMappingTypeEnum.تنخواه
-                    ))
-            })
-            .ToListAsync();
-
-        return Ok(softwares);
     }
 }

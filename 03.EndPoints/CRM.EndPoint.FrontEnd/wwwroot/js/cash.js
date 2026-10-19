@@ -101,116 +101,21 @@ async function showEditCashModal(id) {
     }
 }
 
-
-const externalSoftwareModalElm = document.getElementById("chooseExternalSoftwareModal");
-
-const externalSoftwareList = externalSoftwareModalElm.querySelector("#externalSoftwareList");
-const sendCashToSoftwareBtn = externalSoftwareModalElm.querySelector("#sendCashToSoftwareBtn");
-
-async function showExternalSoftwareModal(id) {
-    cashIds = Array.isArray(id) ? id : [id];
-    // cashIds = [...new Set(Array.isArray(id) ? id : [id])];
-    
-    toggleElementsDisabled(sendCashToSoftwareBtn);
-    
-    const externalSoftwares = await sendApiRequest({
-        url: "/Cash/GetAllExternalSoftware",
-        method: "POST",
-        successMsg: null,
-        data: cashIds,
-    });
-    
-    ModalToggle(externalSoftwareModalElm);
-    
-    if (!externalSoftwares?.length) {
-        externalSoftwareList.innerHTML = `
-            <div class="text-muted text-center py-4">
-                نرم‌افزاری برای انتخاب وجود ندارد.
-            </div>`;
-        
-        return;
-    }
-    
-    renderExternalSoftwares(externalSoftwares);
-}
-
-function renderExternalSoftwares(softwares) {
-    externalSoftwareList.innerHTML = softwares.map(software => `
-        <label for="ex-software-${software.id}" type="button" class="external-software-card ${software.isDisabled ? "is-disabled is-selected" : ""}"" data-software-id="${software.id}">
-                <input id="ex-software-${software.id}" type="checkbox" value="${software.id}" class="d-none"  ${software.isDisabled ? "disabled checked" : ""}>
-            <span class="external-software-icon">
-               <i class="fas fa-check software-check-icon"></i>
-            </span>
-            <span class="external-software-info">
-                <span class="external-software-title">${software.title}</span>
-                ${software.isDisabled ? `<small class="text-muted">(قبلاً ارسال شده)</small>` : ""}
-            </span>
-            <i class="fa-solid fa-circle-check external-software-check"></i>
-        </label>
-    `).join("");
-    
-    externalSoftwareList.querySelectorAll(".external-software-card").forEach(card => {
-        const chkbox = card.querySelector("input[type='checkbox']");
-        
-        chkbox.addEventListener("change", () => {
-            if (chkbox.checked) {
-                card.classList.add("is-selected");
-            } else {
-                card.classList.remove("is-selected");
-            }
-            
-            const anyChecked = externalSoftwareList.querySelectorAll("input[type='checkbox']:checked").length > 0;
-            toggleElementsDisabled(sendCashToSoftwareBtn, !anyChecked);
-        });
-    });
-}
-
-
-sendCashToSoftwareBtn.addEventListener("click", async () => {
-    
-    toggleElementsDisabled(sendCashToSoftwareBtn);
-    
-    const selectedExternalSoftwareIds = Array.from(externalSoftwareList.querySelectorAll("input[type='checkbox']:checked:not(:disabled)"))
-                                             .map(c => c.value);
-    
-    await sendCashesToExternalSoftware(selectedExternalSoftwareIds);
-});
-
-externalSoftwareModalElm.addEventListener("hidden.bs.modal", () => {
-    toggleElementsDisabled(sendCashToSoftwareBtn);
-});
-
-let cashIds = [];
-async function sendCashesToExternalSoftware(externalSoftwareIds) {
-    
-    if (!cashIds.length) return toastifyError("هیچ تنخواهی انتخاب نشده است.");
-    if (!externalSoftwareIds.length) return toastifyError("هیچ نرم افزاری انتخاب نشده است.");
-    
-    const data = {
-        cashIds,
-        externalSoftwareIds,
-    };
-    
-    
-    await sendApiRequest({
-        url: "/Cash/SendCashesToExternalSoftware",
-        method: "POST",
-        data: data,
-        successMsg: "عملیات انتقال با موفقیت انجام شد",
-        onSuccess: () => {
-            cashModalTbl?.ajax.reload(null, false);
+async function sendCashToExternalSoftwares(id) {
+    await showExternalSoftwareModal(id, {
+        mapType: 0,
+        onConfirm: async ({ entityIds, externalSoftwareIds }) => {
+            await sendApiRequest({
+                url: "/Cash/SendCashesToExternalSoftware",
+                method: "POST",
+                data: { ids: entityIds, externalSoftwareIds },
+                successMsg: "انتقال تنخواه با موفقیت انجام شد",
+                onSuccess: () => cashModalTbl?.ajax.reload(null, false),
+            });
         },
     });
 }
 
-
-const addVoucherSepidar = async (cashId, paymentHeaderId) => {
-    await sendApiRequest({
-        url: "/Cash/AddVoucherSepidar",
-        params: { cashId, paymentHeaderId },
-        successMsg: "سند حسابداری با موفقیت ساخته شد.",
-    });
-};
 
 const deleteCash = async (id) => {
     Swal.fire({
@@ -452,7 +357,7 @@ const getAllCashesDt = () => {
                     return `
                         <div class="inline-flex-center gap-1">
                         ${window.isAdminOrFinancial && row.status === 2 ? `
-                            <button type="button" class="buttonGray" onclick="showExternalSoftwareModal('${row.id}')">ارسال به نرم‌افزار مالی</button>                       
+                            <button type="button" class="buttonGray" onclick="sendCashToExternalSoftwares('${row.id}')">ارسال به نرم‌افزار مالی</button>                       
                         ` : ""}
                             <button type="button" class="icon-button icon-button--gray" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
                             ${row.status === 0 ? `
@@ -902,7 +807,7 @@ function getAllCashesModalDt() {
                     return `
                         <div class="inline-flex-center gap-1">
                         ${window.isAdminOrFinancial && row.status === 2 ? `
-                            <button type="button" class="buttonGray" onclick="showExternalSoftwareModal('${row.id}')">ارسال به نرم‌افزار مالی</button>                       
+                            <button type="button" class="buttonGray" onclick="sendCashToExternalSoftwares('${row.id}')">ارسال به نرم‌افزار مالی</button>                       
                         ` : ""}
                             <button type="button" class="icon-button icon-button--gray" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
                             ${row.status === 0 ? `
@@ -959,7 +864,7 @@ function getAllCashesModalDt() {
         },
         
         onAction: async (ids, selection) => {
-            await showExternalSoftwareModal(ids);
+            await sendCashToExternalSoftwares(ids);
             selection.hideSelectionMode();
         },
         

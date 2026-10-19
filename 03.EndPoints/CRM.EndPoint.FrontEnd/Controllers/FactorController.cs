@@ -29,9 +29,15 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.BaseItems.Enums;
+using CRM.Core.Domain.Cashes.Enums;
 using CRM.Core.Domain.Deals.Enums;
+using CRM.Core.Domain.ExternalSoftwares.Entites;
+using CRM.Core.Domain.ExternalSoftwares.Enums;
+using CRM.Core.Domain.Sepidar.Parties;
 using CRM.Core.Domain.Sms.Enums;
 using CRM.Core.Domain.Supplies.Enums;
 using CRM.Core.Domain.SystemWarnings.Enums;
@@ -39,9 +45,12 @@ using CRM.EndPoint.FrontEnd.IServices.DocumentRender;
 using CRM.EndPoint.FrontEnd.IServices.PushNotification;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models.Accountancy;
+using CRM.EndPoint.FrontEnd.Models.Cash;
 using CRM.EndPoint.FrontEnd.Models.DocumentRender;
+using CRM.EndPoint.FrontEnd.Models.ExternalSoftwares;
 using CRM.EndPoint.FrontEnd.Models.PreFactor;
 using CRM.EndPoint.FrontEnd.Models.PushNotification;
+using CRM.EndPoint.FrontEnd.Models.Sepidar;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.EndPoint.FrontEnd.Services.Carizo;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
@@ -66,10 +75,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly CrmSaveCahngeAsync crmSaveCahngeAsync;
         private readonly TaskServices ts;
         private readonly Sepidar1Service sepidar1Service;
+        private readonly Sepidar2Service sepidar2Service;
         private readonly UserManager<AppUser> userManager;
         private readonly SignInManager<AppUser> signInManager;
 
         public FactorController(CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, Sepidar1Service sepidar1Service,
+            Sepidar2Service sepidar2Service,
             UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, Service GenService,
             FileSaver fileSaver,
             DateTimeServices dtService, CRMContextDb db, UserContextDb Udb,
@@ -79,6 +90,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.crmSaveCahngeAsync = crmSaveCahngeAsync;
             this.ts = ts;
             this.sepidar1Service = sepidar1Service;
+            this.sepidar2Service = sepidar2Service;
             this.userManager = userManager;
             this.signInManager = signInManager;
             genService = GenService;
@@ -3106,6 +3118,257 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 return BadRequest();
             }
+        }
+
+        /* ------------------------------------------------ sendToExternalSoftware ------------------------------------------------ */
+        public async Task<IActionResult> GetSepidarCustomers()
+        {
+            var customers = await sepidar1Service.GetSepidarCustomersAsync();
+
+            return Ok(customers);
+        }
+
+        public async Task<IActionResult> GetSepidarItems()
+        {
+            var items = await sepidar1Service.GetSepidarItemsAsync();
+
+            return Ok(items);
+        }
+
+        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        public async Task<IActionResult> SendPreFactorsToExternalSoftware([FromBody] SendToExternalSoftwaresDto model)
+        {
+            if (model == null) return BadRequest();
+
+            try
+            {
+                foreach (var externalSoftwareId in model.ExternalSoftwareIds ?? [])
+                {
+                    SepidarService sepidarService;
+                    if (externalSoftwareId == Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138"))
+                    {
+                        sepidarService = sepidar1Service;
+                    } else if (externalSoftwareId == Guid.Parse("d6c3e8a7-1435-47d5-0489-08df26c5e2ca"))
+                    {
+                        sepidarService = sepidar2Service;
+                    } else
+                    {
+                        return BadRequest("شناسه نرم‌افزار نامعتبر است");
+                    }
+
+
+                    foreach (var id in model.Ids ?? [])
+                    {
+                        var isMapped = await db.ExternalMappings.AnyAsync(f =>
+                            f.EntityId == id &&
+                            f.ExternalSoftwareId == externalSoftwareId &&
+                            f.MapType == ExternalMappingTypeEnum.پیش_فاکتور
+                        );
+
+                        if (isMapped) continue;
+
+                        var pf = await db.PreFactors
+                            .Include(f => f.PreFactorItems)
+                            .FirstOrDefaultAsync(f => f.Id == id);
+
+                        if (pf?.PreFactorItems == null)
+                            continue;
+
+
+                        var result = await sepidarService.SendPreFactorToSepidar(pf);
+
+                        var user = await userManager.GetUserAsync(HttpContext.User);
+                        if (result.HasValue)
+                        {
+                            db.ExternalMappings.Add(new ExternalMapping {
+                                ExternalSoftwareId = externalSoftwareId,
+                                EntityName = nameof(PreFactor),
+                                EntityId = pf.Id,
+                                MapType = ExternalMappingTypeEnum.پیش_فاکتور,
+                                MapTypeTxt = nameof(ExternalMappingTypeEnum.پیش_فاکتور),
+                                UserCreatorID = user.Id,
+                                UserCreator = user.FullName,
+                                ExEntityName = result.Value.entityName,
+                                ExEntityId = result.Value.entityId
+                            });
+
+                            await db.SaveChangesAsync();
+                        }
+                    }
+                }
+
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> PrepareExternalCustomerMapping([FromBody] PrepareExternalCustomerMappingRequest request)
+        {
+            if (request.EntityIds == null || request.EntityIds.Count != 1)
+                return BadRequest("فعلاً فقط یک پیش‌فاکتور را می‌توان ارسال کرد.");
+
+            if (request.ExternalSoftwareIds == null || request.ExternalSoftwareIds.Count == 0)
+                return BadRequest("هیچ نرم‌افزاری انتخاب نشده است.");
+
+            var preFactorId = request.EntityIds[0];
+
+            var preFactor = await db.PreFactors
+                .AsNoTracking()
+                .Where(x => x.Id == preFactorId)
+                .Select(x => new {
+                    x.Id,
+                    x.CustomerId,
+                    CustomerTitle = x.CustomerEntity != null
+                        ? $"{x.CustomerEntity.CompanyName} {x.CustomerEntity.AgentName}"
+                        : $"{x.Customer} {x.AgentName}"
+                })
+                .SingleOrDefaultAsync();
+
+            if (preFactor == null)
+                return NotFound("پیش‌فاکتور CRM پیدا نشد.");
+
+            if (!preFactor.CustomerId.HasValue)
+                return BadRequest("برای این پیش‌فاکتور مشتری CRM ثبت نشده است.");
+
+            var result = new List<ExternalSoftwareCustomerSelectionDto>();
+
+            foreach (var softwareId in request.ExternalSoftwareIds.Distinct())
+            {
+                SepidarService sepidarService;
+                try
+                {
+                    sepidarService = GetSepidarService(softwareId);
+                }
+                catch (ArgumentException)
+                {
+                    return BadRequest("شناسه نرم‌افزار نامعتبر است.");
+                }
+
+
+                var customers = await sepidarService.GetSepidarCustomersAsync();
+
+                var mapping = await db.ExternalMappings
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.EntityId == preFactor.CustomerId.Value &&
+                        x.EntityName == nameof(Customer) &&
+                        x.ExternalSoftwareId == softwareId &&
+                        x.MapType == ExternalMappingTypeEnum.مشتری
+                    )
+                    .Select(x => x.ExEntityId)
+                    .FirstOrDefaultAsync();
+
+                int? mappedCustomerId = null;
+
+                if (!string.IsNullOrWhiteSpace(mapping) && int.TryParse(mapping, out var parsedId))
+                {
+                    mappedCustomerId = parsedId;
+                }
+
+                result.Add(new ExternalSoftwareCustomerSelectionDto {
+                    ExternalSoftwareId = softwareId,
+                    ExternalSoftwareTitle = softwareId.ToString(),
+                    CrmCustomerId = preFactor.CustomerId.Value,
+                    CrmCustomerTitle = preFactor.CustomerTitle ?? string.Empty,
+                    MappedExternalCustomerId = mappedCustomerId,
+                    Customers = customers
+                });
+            }
+
+            return Ok(result);
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> SaveExternalCustomerMapping([FromBody] SaveExternalCustomerMappingRequest request)
+        {
+            var preFactor = await db.PreFactors
+                .AsNoTracking()
+                .Where(x => x.Id == request.PreFactorId)
+                .Select(x => new {
+                    x.Id,
+                    x.CustomerId
+                })
+                .SingleOrDefaultAsync();
+
+            if (preFactor == null)
+                return NotFound("پیش‌فاکتور CRM پیدا نشد.");
+
+            if (!preFactor.CustomerId.HasValue)
+                return BadRequest("مشتری CRM مشخص نشده است.");
+
+            SepidarService service;
+
+            try
+            {
+                service = GetSepidarService(request.ExternalSoftwareId);
+            }
+            catch (ArgumentException)
+            {
+                return BadRequest("شناسه نرم‌افزار نامعتبر است.");
+            }
+
+            var customers = await service.GetSepidarCustomersAsync();
+
+            if (!customers.Any(x => x.Id == request.ExternalCustomerId))
+                return BadRequest("مشتری انتخاب‌شده در نرم‌افزار مالی پیدا نشد.");
+
+            var mapping = await db.ExternalMappings
+                .SingleOrDefaultAsync(x =>
+                    x.EntityId == preFactor.CustomerId.Value &&
+                    x.EntityName == nameof(Customer) &&
+                    x.ExternalSoftwareId == request.ExternalSoftwareId &&
+                    x.MapType == ExternalMappingTypeEnum.مشتری
+                );
+
+            if (mapping == null)
+            {
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                mapping = new ExternalMapping {
+                    EntityId = preFactor.CustomerId.Value,
+                    EntityName = nameof(Customer),
+                    ExternalSoftwareId = request.ExternalSoftwareId,
+                    ExEntityName = nameof(Party),
+                    ExEntityId = request.ExternalCustomerId.ToString(),
+                    MapType = ExternalMappingTypeEnum.مشتری,
+                    MapTypeTxt = nameof(ExternalMappingTypeEnum.مشتری),
+                    UserCreatorID = user.Id,
+                    UserCreator = user.FullName,
+                };
+
+                db.ExternalMappings.Add(mapping);
+            } else
+            {
+                mapping.ExEntityId = request.ExternalCustomerId.ToString();
+            }
+
+            await db.SaveChangesAsync();
+
+            return Ok(new {
+                success = true,
+                externalSoftwareId = request.ExternalSoftwareId,
+                externalCustomerId = request.ExternalCustomerId
+            });
+        }
+
+
+        private SepidarService GetSepidarService(Guid softwareId)
+        {
+            if (softwareId == Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138"))
+            {
+                return sepidar1Service;
+            }
+
+            if (softwareId == Guid.Parse("d6c3e8a7-1435-47d5-0489-08df26c5e2ca"))
+            {
+                return sepidar2Service;
+            }
+
+            throw new ArgumentException();
         }
     }
 }

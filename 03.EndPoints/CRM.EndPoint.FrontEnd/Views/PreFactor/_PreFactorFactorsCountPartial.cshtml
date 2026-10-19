@@ -41,12 +41,19 @@
             </button>
         } else {
             <button class="buttonPurple factorCount-btn" onclick="showSepidarFactors('@Model.SerialNumber', this, @passType)">
-                <span>فاکتور سپیدار </span>
+                <span>فاکتور سپیدار</span>
                 <span class="flex-center" style="gap: 2px">
                     <span>@Model.CountFactorSepidar</span>
                     <span>عدد</span>
                 </span>
             </button>
         }
+    }
+
+    @if (User.IsFinancial() || User.IsAdmin()) {
+        <button class="buttonBlue factorCount-btn" onclick="sendPreFactorToExternalSoftware('@Model.Id')">
+            <span>ارسال به</span>
+            <span>نرم‌افزار مالی</span>
+        </button>
     }
 </div>
