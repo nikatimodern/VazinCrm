@@ -247,8 +247,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        public async Task<IActionResult> GetPayment(Guid? paymentId)
-        {
+        public async Task<IActionResult> GetPayment(Guid? paymentId)        {
             try
             {
                 var query = db.Payments.AsNoTracking().Where(f => f.Id == paymentId);
@@ -497,7 +496,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 return BadRequest();
             }
         }
-
         public async Task<IActionResult> GetSupplyBaseData()
         {
             var extraBaseItems = await db.BaseItems
@@ -631,9 +629,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 var draw = Request.Form["draw"].FirstOrDefault();
+
                 var start = int.TryParse(Request.Form["start"].FirstOrDefault(), out var parsedStart)
                     ? Math.Max(0, parsedStart)
                     : 0;
+
                 var length = int.TryParse(Request.Form["length"].FirstOrDefault(), out var parsedLength)
                     ? parsedLength
                     : 10;
@@ -642,35 +642,38 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     Request.Form["model"].FirstOrDefault());
 
                 var sortColumnIndex = Request.Form["order[0][column]"].FirstOrDefault();
-                var sortColumn = string.IsNullOrEmpty(sortColumnIndex)
+                var sortColumn = string.IsNullOrWhiteSpace(sortColumnIndex)
                     ? null
                     : Request.Form[$"columns[{sortColumnIndex}][name]"].FirstOrDefault();
-                var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
-                var searchValue = Request.Form["search[value]"].FirstOrDefault()?.Trim().ToLowerInvariant();
 
-                // آماده‌سازی پارامترهای فیلتر برای اجرای Stored Procedure در SQL Server
+                var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
+                var searchValue = Request.Form["search[value]"].FirstOrDefault()?.Trim();
+
+                // پارامترهای فیلتر تاریخ و کاربر؛ فیلترها داخل Stored Procedure اعمال می‌شوند.
                 DateTime? fromDate = null;
                 DateTime? toDate = null;
                 string userCreatorDealId = null;
-                bool dateFilterChk = false;
-                bool userFilterChk = false;
+                var dateFilterChk = false;
+                var userFilterChk = false;
 
                 if (model?.filt != null)
                 {
                     dateFilterChk = model.filt.DateFilterChk;
                     userFilterChk = model.filt.SelFilterChd;
 
-                    fromDate = dtService.GetDateMiladi(model.filt.fromDate)
-                               ?? dtService.GetDateMiladi("1000/01/01");
+                    if (dateFilterChk)
+                    {
+                        fromDate = dtService.GetDateMiladi(model.filt.fromDate)
+                                   ?? dtService.GetDateMiladi("1000/01/01");
 
-                    toDate = (dtService.GetDateMiladi(model.filt.toDate) ?? DateTime.Today)
-                        .Date.AddDays(1).AddTicks(-1);
+                        toDate = (dtService.GetDateMiladi(model.filt.toDate) ?? DateTime.Today)
+                            .Date.AddDays(1).AddTicks(-1);
+                    }
 
                     if (userFilterChk)
                         userCreatorDealId = model.filt.selFilter?.ToString();
                 }
 
-                // این پارامترها باید با پارامترهای تعریف‌شده در dbo.Sp_GetSuppliesProfit هم‌نام باشند.
                 var procedureParameters = new
                 {
                     FromDate = fromDate,
@@ -679,107 +682,41 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     UserCreatorDealId = userCreatorDealId,
                     SelFilterChd = userFilterChk,
                     Type = model?._type,
-                    SearchValue = string.IsNullOrWhiteSpace(searchValue) ? null : searchValue
+                    SearchValue = string.IsNullOrWhiteSpace(searchValue) ? null : searchValue,
+                    Start = start,
+                    Length = length,
+                    SortColumn = string.IsNullOrWhiteSpace(sortColumn) ? "DealDate" : sortColumn,
+                    SortDirection = string.IsNullOrWhiteSpace(sortColumnDirection)
+                        ? "desc"
+                        : sortColumnDirection
                 };
 
                 await using var connection = new SqlConnection(
                     db.Database.GetDbConnection().ConnectionString);
 
-                var rows = (await connection.QueryAsync<SuppliesProfitDtVModel>(
+                // SP نتیجه اول را به‌صورت صفحه‌بندی‌شده و نتیجه دوم را به‌صورت مجموع‌ها برمی‌گرداند.
+                using var multi = await connection.QueryMultipleAsync(
                     "dbo.Sp_GetSuppliesProfit",
                     procedureParameters,
-                    commandType: CommandType.StoredProcedure
-                )).ToList();
+                    commandType: CommandType.StoredProcedure);
 
-                IEnumerable<SuppliesProfitDtVModel> query = rows;
+                var data = (await multi.ReadAsync<SuppliesProfitDtVModel>()).ToList();
+                var totalsRow = await multi.ReadSingleAsync();
 
-                // معادل فیلتر تاریخ و کاربر در ApplyFilter قبلی
-                if (model?.filt != null)
-                {
-                    var fd = dtService.GetDateMiladi(model.filt.fromDate)
-                             ?? dtService.GetDateMiladi("1000/01/01");
-                    var td = (dtService.GetDateMiladi(model.filt.toDate) ?? DateTime.Today)
-                        .Date.AddDays(1).AddTicks(-1);
-
-                    if (model.filt.DateFilterChk)
-                        query = query.Where(x => x.DealDateM >= fd && x.DealDateM <= td);
-
-                    if (model.filt.SelFilterChd)
-                        query = query.Where(x =>
-                            x.UserCreatorDealId == model.filt.selFilter.ToString());
-                }
-
-                if (!string.IsNullOrWhiteSpace(searchValue))
-                {
-                    query = query.Where(x =>
-                        x.DealSerialNumber?.ToString() == searchValue ||
-                        (!string.IsNullOrEmpty(x.UserCreatorDeal) &&
-                         x.UserCreatorDeal.Contains(searchValue, StringComparison.OrdinalIgnoreCase)) ||
-                        (!string.IsNullOrEmpty(x.UserTaminTxt) &&
-                         x.UserTaminTxt.Contains(searchValue, StringComparison.OrdinalIgnoreCase)) ||
-                        (!string.IsNullOrEmpty(x.DealTitle) &&
-                         x.DealTitle.Contains(searchValue, StringComparison.OrdinalIgnoreCase)));
-                }
-
-                query = model?._type switch
-                {
-                    1 => query.Where(x => x.Profit != -1),
-                    2 => query.Where(x => x.Profit == -1),
-                    _ => query
-                };
-
-                var filteredRows = query.ToList();
-                var recordsTotal = filteredRows.Count;
-
-                if (!string.IsNullOrEmpty(sortColumn) &&
-                    !string.IsNullOrEmpty(sortColumnDirection))
-                {
-                    var isAscending = sortColumnDirection == "asc";
-                    filteredRows = sortColumn switch
-                    {
-                        "DealDate" => isAscending
-                            ? filteredRows.OrderBy(x => x.TotalSuppliesAmount == 0).ThenBy(x => x.DealDateM).ToList()
-                            : filteredRows.OrderBy(x => x.TotalSuppliesAmount == 0).ThenByDescending(x => x.DealDateM).ToList(),
-                        "TotalSuppliesAmount" => isAscending
-                            ? filteredRows.OrderBy(x => x.TotalSuppliesAmount == 0).ThenBy(x => x.TotalSuppliesAmount).ToList()
-                            : filteredRows.OrderBy(x => x.TotalSuppliesAmount == 0).ThenByDescending(x => x.TotalSuppliesAmount).ToList(),
-                        "TotalFactorsAmount" => isAscending
-                            ? filteredRows.OrderBy(x => x.TotalFactorsAmount == 0).ThenBy(x => x.TotalFactorsAmount).ToList()
-                            : filteredRows.OrderBy(x => x.TotalFactorsAmount == 0).ThenByDescending(x => x.TotalFactorsAmount).ToList(),
-                        "Profit" => isAscending
-                            ? filteredRows.OrderBy(x => x.Profit == -1).ThenBy(x => x.Profit).ToList()
-                            : filteredRows.OrderBy(x => x.Profit == -1).ThenByDescending(x => x.Profit).ToList(),
-                        "ProfitPercent" => isAscending
-                            ? filteredRows.OrderBy(x => x.ProfitPercent == null).ThenBy(x => x.ProfitPercent).ToList()
-                            : filteredRows.OrderBy(x => x.ProfitPercent == null).ThenByDescending(x => x.ProfitPercent).ToList(),
-                        _ => filteredRows.OrderByDescending(x => x.DealDateM).ToList()
-                    };
-                }
-                else
-                {
-                    filteredRows = filteredRows.OrderByDescending(x => x.DealDateM).ToList();
-                }
-
-                // مجموع‌های فوتر روی کل نتایج فیلترشده و قبل از صفحه‌بندی
-                var totalSuppliesAmountAll = filteredRows.Sum(x => x.TotalSuppliesAmount);
-                var totalFactorsAmountAll = filteredRows.Sum(x => x.TotalFactorsAmount);
-                var profitAll = filteredRows.Where(x => x.Profit != -1).Sum(x => x.Profit);
-
-                var data = length == -1
-                    ? filteredRows
-                    : filteredRows.Skip(start).Take(Math.Max(0, length)).ToList();
+                var recordsFiltered = Convert.ToInt64(totalsRow.RecordsFiltered);
 
                 return Json(new
                 {
                     draw,
-                    recordsTotal,
-                    recordsFiltered = recordsTotal,
+                    recordsTotal = recordsFiltered,
+                    recordsFiltered,
                     data,
                     totals = new
                     {
-                        totalSuppliesAmountAll,
-                        totalFactorsAmountAll,
-                        profitAll                    }
+                        totalSuppliesAmountAll = Convert.ToDecimal(totalsRow.TotalSuppliesAmountAll),
+                        totalFactorsAmountAll = Convert.ToDecimal(totalsRow.TotalFactorsAmountAll),
+                        profitAll = Convert.ToDecimal(totalsRow.ProfitAll)
+                    }
                 });
             }
             catch (Exception)
@@ -788,7 +725,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        [HttpPost]
         public async Task<IActionResult> GetSuppliesDemandsDt() // مطالبات
         {
             try
