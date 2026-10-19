@@ -381,10 +381,10 @@ public class AccountancyController : Controller {
             switch (type)
             {
                 case 1: // تمام صورتحساب های پیش فاکتور
-//                    accQuery = accQuery.ForPreFactor(id);
+                    accQuery = accQuery.ForPreFactor(id);
                     pf = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
                     customerId = pf?.CustomerId;
-                    accQuery = accQuery.ForCustomer(customerId);
+//                    accQuery = accQuery.ForCustomer(customerId);
                     break;
                 case 2: // تمام صورتحساب های فاکتور
                     accQuery = accQuery.ForFactor(id);
