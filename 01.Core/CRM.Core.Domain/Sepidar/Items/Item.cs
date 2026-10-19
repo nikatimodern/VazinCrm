@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace CRM.Core.Domain.Sepidar;
+namespace CRM.Core.Domain.Sepidar.Items;
 
 [Table("Item", Schema = "INV")]
 public class Item {

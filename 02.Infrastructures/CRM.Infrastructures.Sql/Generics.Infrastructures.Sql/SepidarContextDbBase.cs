@@ -6,6 +6,7 @@ using CRM.Core.Domain.Sepidar.DLs.Entites;
 using CRM.Core.Domain.Sepidar.ExtraDataes;
 using CRM.Core.Domain.Sepidar.FiscalYears.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
+using CRM.Core.Domain.Sepidar.Items;
 using CRM.Core.Domain.Sepidar.Parties;
 using CRM.Core.Domain.Sepidar.Payments.Entites;
 using CRM.Core.Domain.Sepidar.Quotations.Entites;
@@ -15,9 +16,7 @@ using Microsoft.EntityFrameworkCore;
 namespace CRM.Infrastructures.Sql;
 
 public abstract class SepidarContextDbBase : DbContext {
-    protected SepidarContextDbBase(DbContextOptions options) : base(options)
-    {
-    }
+    protected SepidarContextDbBase(DbContextOptions options) : base(options) { }
 
 
     public DbSet<ExtraData> ExtraData { get; set; }
@@ -36,14 +35,11 @@ public abstract class SepidarContextDbBase : DbContext {
     public DbSet<SepidarBank> SepidarBanks { get; set; }
     public DbSet<SepidarBankBranch> SepidarBankBranches { get; set; }
 
-    public DbSet<Quotation> Quotations => Set<Quotation>();
+    public DbSet<Quotation> Quotations { get; set; }
+    public DbSet<QuotationItem> QuotationItems { get; set; }
+    public DbSet<Item> Items { get; set; }
+    public DbSet<Party> Parties { get; set; }
 
-    public DbSet<QuotationItem> QuotationItems => Set<QuotationItem>();
-
-    public DbSet<Item> Items => Set<Item>();
-
-    public DbSet<Party> Parties => Set<Party>();
-    
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -69,6 +65,11 @@ public abstract class SepidarContextDbBase : DbContext {
         modelBuilder.Entity<SepidarBank>().ToTable("Bank", "RPA");
         modelBuilder.Entity<SepidarBankBranch>().ToTable("BankBranch", "RPA");
         modelBuilder.Entity<SepidarBankAccount>().ToTable("BankAccount", "RPA");
+
+        modelBuilder.Entity<Quotation>().ToTable("Quotation", "SLS");
+        modelBuilder.Entity<QuotationItem>().ToTable("QuotationItem", "SLS");
+        modelBuilder.Entity<Item>().ToTable("Item", "INV");
+        modelBuilder.Entity<Party>().ToTable("Party", "GNR");
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
