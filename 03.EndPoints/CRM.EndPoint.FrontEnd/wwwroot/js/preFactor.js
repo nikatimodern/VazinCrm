@@ -1296,34 +1296,62 @@ async function sendPreFactorToExternalSoftware(id) {
     await showExternalSoftwareModal(id, {
         mapType: 2,
         onConfirm: async ({ entityIds, externalSoftwareIds }) => {
-            console.log(entityIds, externalSoftwareIds);
+            ModalToggle("chooseExternalSoftwareModal", "hide");
+            await prepareExternalSoftwareProcess({ entityIds, externalSoftwareIds });
         },
     });
 }
 
 
-const customerMappingModal = document.getElementById("externalCustomerMappingModal");
-const customerMappingList = customerMappingModal?.querySelector("#externalCustomerMappingList");
-const confirmCustomerMappingBtn = customerMappingModal?.querySelector("#confirmCustomerMappingBtn");
+const externalMappingModal = document.getElementById("externalMappingModal");
+const externalMappingList = externalMappingModal?.querySelector("#externalMappingList");
+const confirmExternalMappingBtn = externalMappingModal?.querySelector("#confirmExternalMappingBtn");
 
-const externalSoftwareProcess = {
+const initialExternalSoftwareProcess = () => ({
     preFactorId: null,
     softwareIds: [],
     currentIndex: 0,
     currentSoftware: null,
     customerSelect: null,
-};
+    itemSelections: {},
+    currentStep: "customer",
+    isProcessing: false,
+});
 
-async function prepareCustomerMapping({ entityIds, externalSoftwareIds }) {
-    if (!entityIds?.length || entityIds.length !== 1)
-        return toastifyError("فعلاً فقط یک پیش‌فاکتور قابل ارسال است.");
+let externalSoftwareProcess = initialExternalSoftwareProcess();
+
+function resetExternalSoftwareProcess() {
+    destroyExternalMappingSelects();
+    externalSoftwareProcess = initialExternalSoftwareProcess();
+}
+
+function destroyExternalMappingSelects() {
+    externalMappingList?.querySelectorAll("select").forEach(select => {
+        if (select.tomselect) select.tomselect.destroy();
+    });
+}
+
+externalMappingModal?.addEventListener("hidden.bs.modal", () => {
+    resetExternalSoftwareProcess();
+    ModalToggle("chooseExternalSoftwareModal", "hide");
+});
+
+
+async function prepareExternalSoftwareProcess({ entityIds, externalSoftwareIds }) {
+    if (!entityIds?.length || entityIds.length !== 1) {
+        toastifyError("فعلاً فقط یک پیش‌فاکتور قابل ارسال است.");
+        return;
+    }
     
-    if (!externalSoftwareIds?.length)
-        return toastifyError("هیچ نرم‌افزاری انتخاب نشده است.");
+    if (!externalSoftwareIds?.length) {
+        toastifyError("هیچ نرم‌افزاری انتخاب نشده است.");
+        return;
+    }
+    
+    resetExternalSoftwareProcess();
     
     externalSoftwareProcess.preFactorId = entityIds[0];
     externalSoftwareProcess.softwareIds = [...new Set(externalSoftwareIds)];
-    externalSoftwareProcess.currentIndex = 0;
     
     await startCurrentSoftware();
 }
@@ -1339,161 +1367,282 @@ async function startCurrentSoftware() {
     const softwareId = state.softwareIds[state.currentIndex];
     
     const result = await sendApiRequest({
-        url: "/Home/PrepareExternalCustomerMapping",
+        url: "/Factor/PrepareExternalCustomerMapping",
         method: "POST",
         successMsg: null,
         data: {
-            entityIds: [state.preFactorId],
+            ids: [state.preFactorId],
             externalSoftwareIds: [softwareId],
         },
     });
     
-    if (!result?.length)
-        return;
+    if (!result?.length) return;
     
     state.currentSoftware = result[0];
+    state.currentStep = "customer";
     
-    renderCurrentSoftwareCustomerStep(state.currentSoftware, {
-        current: state.currentIndex + 1,
-        total: state.softwareIds.length,
-    });
-    
-    ModalToggle(customerMappingModal);
+    renderCurrentSoftwareCustomerStep(state.currentSoftware);
+    ModalToggle(externalMappingModal);
 }
 
-
-function renderCurrentSoftwareCustomerStep(software, progress) {
-    customerMappingList.innerHTML = `
-        <div class="external-process-progress mb-4">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="fw-bold">${software.externalSoftwareTitle}</span>
-                <span class="text-muted">
-                    نرم‌افزار ${progress.current} از ${progress.total}
+function renderExternalMappingModal({ title, subtitle, icon, softwareTitle, stepText, content }) {
+    destroyExternalMappingSelects();
+    
+    document.getElementById("externalMappingTitle").textContent = title;
+    document.getElementById("externalMappingSubtitle").textContent = subtitle;
+    document.getElementById("externalMappingIcon").innerHTML = icon;
+    
+    externalMappingList.innerHTML = `
+        <div class="external-mapping-card">
+            <div class="external-mapping-software-info">
+                <span class="external-mapping-software-name">
+                    <i class="fas fa-desktop ms-1"></i>
+                    نرم‌افزار ${escapeHtml(softwareTitle)}
                 </span>
+                <span class="external-mapping-step">${stepText}</span>
             </div>
-
-            <div class="progress" style="height:6px">
-                <div class="progress-bar"
-                     style="width:${progress.current / progress.total * 100}%">
-                </div>
-            </div>
+            ${content}
         </div>
+    `;
+}
 
-        <div class="external-customer-mapping-card">
-            <div class="mb-3">
-                <label class="form-label">مشتری CRM</label>
-                <input class="form-control"
-                       value="${escapeHtml(software.crmCustomerTitle)}"
-                       readonly>
+function initializeExternalMappingSelect(select, placeholder) {
+}
+
+function renderCurrentSoftwareCustomerStep(software) {
+    const state = externalSoftwareProcess;
+    state.currentStep = "customer";
+    
+    renderExternalMappingModal({
+        title: "تطبیق مشتری",
+        subtitle: "اتصال مشتری CRM به نرم‌افزار مالی",
+        icon: `<i class="fas fa-users"></i>`,
+        softwareTitle: software.externalSoftwareTitle,
+        stepText: "مرحله 1 از 3",
+        content: `
+            <div class="external-mapping-entity">
+                <span class="external-mapping-label">مشتری در CRM</span>
+                <span class="external-mapping-entity-name">${escapeHtml(software.crmCustomerTitle)}</span>
             </div>
-
-            <div class="mb-2">
-                <label class="form-label">
-                    مشتری معادل در ${escapeHtml(software.externalSoftwareTitle)}
-                </label>
-
-                <select id="externalCustomerSelect"
-                        class="form-select">
+            <div>
+                <label for="externalMappingCustomerSelect" class="form-label mb-0">مشتری معادل در نرم‌افزار مالی</label>
+                <select id="externalMappingCustomerSelect">
                     <option value="">جستجو و انتخاب مشتری</option>
-
                     ${(software.customers ?? []).map(customer => `
-                        <option value="${customer.id}"
-                            ${Number(customer.id) === Number(software.mappedExternalCustomerId)
-        ? "selected"
-        : ""}>
-                            ${escapeHtml(customer.title)}
-                            ${customer.economicCode
-        ? ` - ${escapeHtml(customer.economicCode)}`
-        : ""}
+                        <option value="${escapeHtml(customer.id)}" ${String(customer.id) === String(software.mappedExternalCustomerId ?? "") ? "selected" : ""}>
+                            ${escapeHtml(customer.title)}${customer.economicCode ? ` - ${escapeHtml(customer.economicCode)}` : ""}
                         </option>
                     `).join("")}
                 </select>
             </div>
-        </div>
-    `;
-    
-    const select = customerMappingList.querySelector(
-        "#externalCustomerSelect",
-    );
-    
-    externalSoftwareProcess.customerSelect = select;
-    
-    if (typeof TomSelect !== "undefined") {
-        new TomSelect(select, {
-            create: false,
-            allowEmptyOption: true,
-            placeholder: "جستجو و انتخاب مشتری",
-        });
-    }
-    
-    toggleElementsDisabled(confirmCustomerMappingBtn, !select.value);
-    
-    confirmCustomerMappingBtn.textContent = "تأیید مشتری و ادامه";
-    
-    select.addEventListener("change", () => {
-        toggleElementsDisabled(
-            confirmCustomerMappingBtn,
-            !select.value,
-        );
+        `,
     });
+    
+    const select = externalMappingList.querySelector("#externalMappingCustomerSelect");
+    state.customerSelect = select;
+    
+    new TomSelect(select, {
+        placeholder: "جستجو و انتخاب مشتری",
+    });
+    
+    toggleElementsDisabled(confirmExternalMappingBtn, !select.value);
+    confirmExternalMappingBtn.textContent = "تأیید و ادامه";
+    select.addEventListener("change", () => toggleElementsDisabled(confirmExternalMappingBtn, !select.value));
 }
 
-confirmCustomerMappingBtn.onclick = async () => {
+async function confirmCurrentSoftwareCustomer() {
     const state = externalSoftwareProcess;
     const software = state.currentSoftware;
     const selectedCustomerId = state.customerSelect?.value;
     
-    if (!software || !selectedCustomerId)
-        return toastifyError("مشتری سپیدار را انتخاب کنید.");
-    
-    toggleElementsDisabled(confirmCustomerMappingBtn);
-    
-    try {
-        const response = await sendApiRequest({
-            url: "/Home/SaveExternalCustomerMapping",
-            method: "POST",
-            successMsg: null,
-            data: {
-                preFactorId: state.preFactorId,
-                externalSoftwareId: software.externalSoftwareId,
-                externalCustomerId: Number(selectedCustomerId),
-            },
-        });
-        
-        if (response?.success === false)
-            throw new Error("ذخیره نگاشت مشتری ناموفق بود.");
-        
-        ModalToggle(customerMappingModal);
-        
-        // مرحله بعدی: نگاشت کالاهای همین نرم‌افزار
-        await startCurrentSoftwareItemMapping();
-        
-    } catch (error) {
-        toastifyError(error.message || "خطا در ذخیره نگاشت مشتری.");
-    } finally {
-        toggleElementsDisabled(confirmCustomerMappingBtn, false);
+    if (!software || !selectedCustomerId) {
+        toastifyError("مشتری نرم‌افزار مالی را انتخاب کنید.");
+        return;
     }
-};
-
+    
+    const response = await sendApiRequest({
+        url: "/Factor/SaveExternalCustomerMapping",
+        method: "POST",
+        successMsg: null,
+        data: {
+            preFactorId: state.preFactorId,
+            externalSoftwareId: software.externalSoftwareId,
+            externalCustomerId: selectedCustomerId,
+        },
+    });
+    
+    if (response?.success === false) {
+        toastifyError("ذخیره نگاشت مشتری ناموفق بود.");
+        return;
+    }
+    
+    await startCurrentSoftwareItemMapping();
+}
 
 async function startCurrentSoftwareItemMapping() {
     const state = externalSoftwareProcess;
     
-    // TODO:
-    // 1. دریافت ردیف‌های پیش‌فاکتور CRM
-    // 2. انتخاب کالای متناظر در نرم‌افزار جاری
-    // 3. نمایش پیش‌فاکتور نهایی برای تأیید
-    // 4. ثبت پیش‌فاکتور در نرم‌افزار جاری
-    // 5. در صورت موفقیت، رفتن به نرم‌افزار بعدی
+    const result = await sendApiRequest({
+        url: "/Factor/PrepareExternalItemMapping",
+        method: "POST",
+        successMsg: null,
+        data: {
+            preFactorId: state.preFactorId,
+            externalSoftwareId: state.currentSoftware.externalSoftwareId,
+        },
+    });
     
-    console.log(
-        "آماده برای مرحله نگاشت کالا:",
-        state.currentSoftware.externalSoftwareTitle,
-    );
+    if (!result?.preFactorItems?.length) {
+        toastifyError("ردیفی برای تطبیق کالا پیدا نشد.");
+        return;
+    }
+    
+    state.itemSelections = {};
+    renderCurrentSoftwareItemStep(result);
 }
 
+function renderCurrentSoftwareItemStep(data) {
+    const state = externalSoftwareProcess;
+    state.currentStep = "items";
+    state.itemSelections = {};
+    
+    renderExternalMappingModal({
+        title: "تطبیق کالاها",
+        subtitle: "انتخاب کالای معادل برای ردیف‌های پیش‌فاکتور",
+        icon: `<i class="fas fa-boxes"></i>`,
+        softwareTitle: data.externalSoftwareTitle,
+        stepText: "مرحله 2 از 3",
+        content: `
+            <div class="external-item-mapping-list">
+                ${(data.preFactorItems ?? []).map(item => `
+                    <div class="external-mapping-entity external-item-mapping-row">
+                        <span class="external-mapping-label">محصول پیش‌فاکتور CRM</span>
+                        <span class="external-mapping-entity-name">${escapeHtml(item.productTitle)}</span>
+                        <label class="form-label mt-2 mb-0" for="externalMappingItem_${item.preFactorItemId}">کالای معادل در نرم‌افزار مالی</label>
+                        <select class="external-mapping-item-select" id="externalMappingItem_${item.preFactorItemId}" data-crm-item-id="${escapeHtml(item.preFactorItemId)}">
+                            <option value="">جستجو و انتخاب کالا</option>
+                            ${(data.sepidarItems ?? []).map(item => `
+                                <option value="${escapeHtml(item.id)}">${escapeHtml(item.code)} - ${escapeHtml(item.title)}</option>
+                            `).join("")}
+                        </select>
+                    </div>
+                `).join("")}
+            </div>
+        `,
+    });
+    
+    const selects = [...externalMappingList.querySelectorAll(".external-mapping-item-select")];
+    
+    selects.forEach(select => {
+        new TomSelect(select, {
+            placeholder: "جستجو و انتخاب کالا",
+        });
+        select.addEventListener("change", () => updateItemMappingButton());
+    });
+    
+    confirmExternalMappingBtn.textContent = "تأیید کالاها و ادامه";
+    updateItemMappingButton()
+}
+
+function updateItemMappingButton() {
+    const selects = [...externalMappingList.querySelectorAll(".external-mapping-item-select")];
+    toggleElementsDisabled(confirmExternalMappingBtn, selects.length === 0 || selects.some(select => !select.value));
+}
+
+async function confirmCurrentSoftwareItems() {
+    const state = externalSoftwareProcess;
+    const selects = [...externalMappingList.querySelectorAll(".external-mapping-item-select")];
+    
+    if (selects.length === 0) {
+        toastifyError("ردیفی برای تطبیق کالا وجود ندارد.");
+        return;
+    }
+    
+    // مقادیر را مستقیماً از همه Selectها می‌خوانیم؛ به رویداد change وابسته نیستیم.
+    const selections = {};
+    console.log(selects);
+    for (const select of selects) {
+        const crmItemId = select.dataset.crmItemId;
+        const sepidarItemId = select.value;
+        
+        console.log(crmItemId, sepidarItemId);
+        if (!crmItemId || !sepidarItemId) {
+            toastifyError("برای تمام ردیف‌های پیش‌فاکتور کالای معادل انتخاب کنید.");
+            return;
+        }
+        
+        if (Object.prototype.hasOwnProperty.call(selections, crmItemId)) {
+            toastifyError("شناسه ردیف تکراری است؛ لطفاً صفحه را بررسی کنید.");
+            return;
+        }
+        
+        selections[crmItemId] = Number(sepidarItemId);
+    }
+    
+    state.itemSelections = selections;
+    state.currentSoftwareItemMappings = { ...selections };
+    
+    await startCurrentSoftwareQuotationPreview();
+}
+
+async function startCurrentSoftwareQuotationPreview() {
+    const state = externalSoftwareProcess;
+    state.currentStep = "preview";
+    
+    // مرحله بعد: نمایش جزئیات پیش‌فاکتور و تأیید نهایی ثبت.
+    console.log("نگاشت کالاها:", state.currentSoftwareItemMappings);
+    
+    // تا زمان پیاده‌سازی پیش‌نمایش، دکمه نباید مسیر ثبت فرضی را اجرا کند.
+    toastifySuccess("تطبیق کالاها انجام شد.");
+}
+
+async function submitCurrentSoftwareQuotation() {
+    // پس از پیاده‌سازی API ثبت Quotation، این تابع تکمیل می‌شود.
+    toastifyError("مرحله ثبت پیش‌فاکتور هنوز پیاده‌سازی نشده است.");
+}
 
 async function finishCurrentSoftware() {
     externalSoftwareProcess.currentIndex++;
     await startCurrentSoftware();
 }
+
+confirmExternalMappingBtn?.addEventListener("click", async () => {
+    const state = externalSoftwareProcess;
+    
+    if (state.isProcessing) return;
+    
+    state.isProcessing = true;
+    toggleElementsDisabled(confirmExternalMappingBtn, true);
+    
+    try {
+        switch (state.currentStep) {
+            case "customer":
+                await confirmCurrentSoftwareCustomer();
+                break;
+            case "items":
+                await confirmCurrentSoftwareItems();
+                break;
+            case "preview":
+                await submitCurrentSoftwareQuotation();
+                break;
+            default:
+                toastifyError("مرحله فعلی معتبر نیست.");
+                break;
+        }
+    } catch (error) {
+        console.error(error);
+        toastifyError("در اجرای این مرحله خطایی رخ داد.");
+    } finally {
+        state.isProcessing = false;
+        
+        if (isModalOpen(externalMappingModal)) {
+            if (state.currentStep === "customer") {
+                toggleElementsDisabled(confirmExternalMappingBtn, !state.customerSelect?.value);
+            } else if (state.currentStep === "items") {
+                updateItemMappingButton();
+            } else {
+                toggleElementsDisabled(confirmExternalMappingBtn, false);
+            }
+        }
+    }
+});

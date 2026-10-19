@@ -8044,3 +8044,141 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	background-color: #6d28d9;
 	border-color: #6d28d9;
 }
+
+
+/* ---------------------------------------------------------- */
+
+
+.external-mapping-modal {
+	direction: rtl;
+	border: 0;
+	border-radius: 16px;
+	overflow: visible;
+	box-shadow: 0 18px 60px rgba(0, 0, 0, .18);
+}
+
+
+.external-mapping-heading {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+
+.external-mapping-icon {
+	width: 42px;
+	height: 42px;
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 12px;
+	background: rgba(4, 133, 124, .1);
+	color: #04857c;
+	font-size: 18px;
+}
+
+
+.external-mapping-subtitle {
+	color: #8490a0;
+	font-size: 12px;
+	line-height: 1.8;
+}
+
+
+.external-mapping-card {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
+
+.external-mapping-software-info {
+	padding: 11px 13px;
+	border-radius: 9px;
+	background: rgba(4, 133, 124, .06);
+	border: 1px solid rgba(4, 133, 124, .15);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+}
+
+
+.external-mapping-software-name {
+	display: inline-flex;
+	align-items: center;
+	gap: .5rem;
+	color: #04857c;
+	font-size: 12px;
+font-family: IRANSansBold;
+}
+
+
+.external-mapping-step, .external-mapping-label {
+	color: #8993a2;
+	font-size: 12px;
+}
+
+
+.external-mapping-entity {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+
+.external-mapping-entity-name {
+	color: #26364a;
+	font-size: 14px;
+	font-family: IRANSansBold;
+}
+
+
+.external-item-mapping-row {
+	padding-bottom: 18px;
+	margin-bottom: 18px;
+	border-bottom: 1px solid #e5e9ed;
+}
+
+
+.external-item-mapping-row:last-child {
+	padding-bottom: 0;
+	margin-bottom: 0;
+	border-bottom: none;
+}
+
+
+.external-mapping-modal #confirmExternalMappingBtn {
+	background-color: #04857c;
+	border-color: #04857c;
+}
+
+
+.external-mapping-modal #confirmExternalMappingBtn:hover:not(:disabled) {
+	background-color: #036e67;
+	border-color: #036e67;
+}
+
+
+.external-mapping-modal #confirmExternalMappingBtn:disabled {
+	opacity: .5;
+	cursor: not-allowed;
+}
+
+
+@media (max-width: 576px) {
+	.external-customer-modal .modal-header,
+	.external-customer-modal .modal-body {
+		padding: 16px;
+	}
+	
+	.external-customer-modal .modal-footer {
+		padding: 12px 16px;
+	}
+	
+	.external-customer-footer-hint {
+		max-width: 145px;
+		line-height: 1.8;
+	}
+}

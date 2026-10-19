@@ -136,6 +136,39 @@
 <partial name="Modals/_SelectorModal" />
 <partial name="Modals/_ExternalSoftwareModal" />
 
+
+<div class="modal fade" id="externalMappingModal" tabindex="-1" aria-labelledby="externalMappingTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content external-mapping-modal">
+            <div class="modal-header">
+                <div class="external-mapping-heading">
+                    <span class="external-mapping-icon" id="externalMappingIcon"></span>
+                    <div>
+                        <h5 class="modal-title" id="externalMappingTitle">
+                            تطبیق مشتری
+                        </h5>
+                        <div class="external-mapping-subtitle" id="externalMappingSubtitle">
+                            اتصال مشتری CRM به نرم‌افزار مالی
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+            <div class="modal-body">
+                <div id="externalMappingList"></div>
+            </div>
+            <div class="modal-footer justify-content-end">
+                <button type="button" class="buttonGreen0" id="confirmExternalMappingBtn">
+                    تأیید و ادامه
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
 <partial name="~/Views/Report/Modals/_ReportModal.cshtml" />
 <partial name="~/Views/Accountancy/Modals/_ShowPaymentModal.cshtml" />
 <partial name="~/Views/Amount/Modals/_ListAmountModal.cshtml" />

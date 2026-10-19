@@ -4,8 +4,7 @@ using CRM.EndPoint.FrontEnd.Models.Sepidar;
 
 namespace CRM.EndPoint.FrontEnd.Models.ExternalSoftwares;
 
-public sealed class ExternalSoftwareCustomerSelectionDto
-{
+public sealed class ExternalSoftwareCustomerSelectionDto {
     public Guid ExternalSoftwareId { get; set; }
     public string ExternalSoftwareTitle { get; set; } = string.Empty;
 
@@ -17,15 +16,7 @@ public sealed class ExternalSoftwareCustomerSelectionDto
     public List<SepidarPartyDto> Customers { get; set; } = new();
 }
 
-
-public sealed class PrepareExternalCustomerMappingRequest
-{
-    public List<Guid> EntityIds { get; set; }
-    public List<Guid> ExternalSoftwareIds { get; set; }
-}
-
-public sealed class SaveExternalCustomerMappingRequest
-{
+public sealed class SaveExternalCustomerMappingRequest {
     public Guid PreFactorId { get; set; }
     public Guid ExternalSoftwareId { get; set; }
     public int ExternalCustomerId { get; set; }

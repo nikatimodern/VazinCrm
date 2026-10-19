@@ -3135,6 +3135,22 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return Ok(items);
         }
 
+
+        private SepidarService GetSepidarService(Guid softwareId)
+        {
+            if (softwareId == Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138"))
+            {
+                return sepidar1Service;
+            }
+
+            if (softwareId == Guid.Parse("d6c3e8a7-1435-47d5-0489-08df26c5e2ca"))
+            {
+                return sepidar2Service;
+            }
+
+            return null;
+        }
+
         [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
         public async Task<IActionResult> SendPreFactorsToExternalSoftware([FromBody] SendToExternalSoftwaresDto model)
         {
@@ -3206,15 +3222,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [HttpPost]
-        public async Task<IActionResult> PrepareExternalCustomerMapping([FromBody] PrepareExternalCustomerMappingRequest request)
+        public async Task<IActionResult> PrepareExternalCustomerMapping([FromBody] SendToExternalSoftwaresDto request)
         {
-            if (request.EntityIds == null || request.EntityIds.Count != 1)
+            if (request.Ids == null || request.Ids.Count != 1)
                 return BadRequest("فعلاً فقط یک پیش‌فاکتور را می‌توان ارسال کرد.");
 
             if (request.ExternalSoftwareIds == null || request.ExternalSoftwareIds.Count == 0)
                 return BadRequest("هیچ نرم‌افزاری انتخاب نشده است.");
 
-            var preFactorId = request.EntityIds[0];
+            var preFactorId = request.Ids[0];
 
             var preFactor = await db.PreFactors
                 .AsNoTracking()
@@ -3238,16 +3254,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             foreach (var softwareId in request.ExternalSoftwareIds.Distinct())
             {
-                SepidarService sepidarService;
-                try
+                var software = await db.ExternalSoftwares.AsNoTracking().FirstOrDefaultAsync(f => f.Id == softwareId);
+                if (software == null)
                 {
-                    sepidarService = GetSepidarService(softwareId);
+                    return BadRequest("نرم‌افزاری انتخاب شده یافت نشد.");
                 }
-                catch (ArgumentException)
+
+                var sepidarService = GetSepidarService(softwareId);
+
+                if (sepidarService == null)
                 {
                     return BadRequest("شناسه نرم‌افزار نامعتبر است.");
                 }
-
 
                 var customers = await sepidarService.GetSepidarCustomersAsync();
 
@@ -3271,7 +3289,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 result.Add(new ExternalSoftwareCustomerSelectionDto {
                     ExternalSoftwareId = softwareId,
-                    ExternalSoftwareTitle = softwareId.ToString(),
+                    ExternalSoftwareTitle = software?.Title,
                     CrmCustomerId = preFactor.CustomerId.Value,
                     CrmCustomerTitle = preFactor.CustomerTitle ?? string.Empty,
                     MappedExternalCustomerId = mappedCustomerId,
@@ -3296,23 +3314,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 .SingleOrDefaultAsync();
 
             if (preFactor == null)
-                return NotFound("پیش‌فاکتور CRM پیدا نشد.");
+                return NotFound("پیش‌فاکتور یافت نشد.");
 
             if (!preFactor.CustomerId.HasValue)
                 return BadRequest("مشتری CRM مشخص نشده است.");
 
-            SepidarService service;
+            var sepidarService = GetSepidarService(request.ExternalSoftwareId);
 
-            try
-            {
-                service = GetSepidarService(request.ExternalSoftwareId);
-            }
-            catch (ArgumentException)
+            if (sepidarService == null)
             {
                 return BadRequest("شناسه نرم‌افزار نامعتبر است.");
             }
 
-            var customers = await service.GetSepidarCustomersAsync();
+            var customers = await sepidarService.GetSepidarCustomersAsync();
 
             if (!customers.Any(x => x.Id == request.ExternalCustomerId))
                 return BadRequest("مشتری انتخاب‌شده در نرم‌افزار مالی پیدا نشد.");
@@ -3346,29 +3360,64 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 mapping.ExEntityId = request.ExternalCustomerId.ToString();
             }
 
-            await db.SaveChangesAsync();
+//            await db.SaveChangesAsync();
 
             return Ok(new {
-                success = true,
                 externalSoftwareId = request.ExternalSoftwareId,
                 externalCustomerId = request.ExternalCustomerId
             });
         }
 
-
-        private SepidarService GetSepidarService(Guid softwareId)
+        [HttpPost]
+        public async Task<IActionResult> PrepareExternalItemMapping([FromBody] PrepareExternalItemMappingRequest request)
         {
-            if (softwareId == Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138"))
+            var preFactor = await db.PreFactors
+                .AsNoTracking()
+                .Where(x => x.Id == request.PreFactorId)
+                .Select(x => new {
+                    x.Id,
+                    Items = x.PreFactorItems.Select(item => new PreFactorItemSelectionDto {
+                        PreFactorItemId = item.Id,
+                        Row = item.Row,
+                        ProductTitle = $"{item.ProductSmallName} {item.Product}",
+                        WeightCount = item.WeightCount,
+                        Unit = item.Unit,
+                        UnitTitle = item.UnitTxt
+                    }).ToList()
+                })
+                .SingleOrDefaultAsync();
+
+            if (preFactor == null)
+                return NotFound("پیش‌فاکتور CRM پیدا نشد.");
+
+            if (preFactor.Items.Count == 0)
+                return BadRequest("این پیش‌فاکتور هیچ آیتمی ندارد.");
+
+
+            SepidarService service;
+            try
             {
-                return sepidar1Service;
+                service = GetSepidarService(request.ExternalSoftwareId);
+            }
+            catch (ArgumentException)
+            {
+                return BadRequest("شناسه نرم‌افزار نامعتبر است.");
             }
 
-            if (softwareId == Guid.Parse("d6c3e8a7-1435-47d5-0489-08df26c5e2ca"))
-            {
-                return sepidar2Service;
-            }
+            var sepidarItems = await service.GetSepidarItemsAsync();
 
-            throw new ArgumentException();
+            var softwareTitle = await db.ExternalSoftwares
+                .AsNoTracking()
+                .Where(x => x.Id == request.ExternalSoftwareId)
+                .Select(x => x.Title)
+                .FirstOrDefaultAsync();
+
+            return Ok(new ExternalItemMappingResponseDto {
+                ExternalSoftwareId = request.ExternalSoftwareId,
+                ExternalSoftwareTitle = softwareTitle ?? "نرم‌افزار مالی",
+                PreFactorItems = preFactor.Items,
+                SepidarItems = sepidarItems
+            });
         }
     }
 }
