@@ -43,14 +43,17 @@
         </div>
 
         <div class="dashGridItem gridItemFinancial">
-            @if (User.IsAdmin() || User.IsFinancial() || User.IsManagingDirector()) {
+            @if (User.IsAdmin() || User.IsFinancial() || User.IsManagingDirector())
+            {
                 <partial name="_DashboardFinancialPartial" />
-            } else {
+            }
+            else
+            {
                 <partial name="_DashboardTargetPartial" />
             }
         </div>
 
-        <div class="dashGridItem gridItemReports">
+<div class="dashGridItem gridItemReports">
             <partial name="_DashboardReportPartial" />
         </div>
 

@@ -6027,7 +6027,7 @@ table tr.payment-vosoled > td {
 	top: 0;
 	bottom: 0;
 	color: darkred;
-	font-weight: bold;
+	font-family: IranSansBold;
 	line-height: normal;
 }
 
@@ -7548,7 +7548,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 
 .call-history-fab .tooltip-title {
 	font-size: 13px;
-	font-weight: 800;
+	font-family: IranSansBold;
 	white-space: nowrap;
 }
 
@@ -7803,18 +7803,23 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	color: #04857c;
 	visibility: hidden;
 }
+
+
 .software-check-icon {
 	display: none;
 	font-size: 20px;
 }
 
+
 .external-software-card.is-selected .software-icon {
 	display: none;
 }
 
+
 .external-software-card.is-selected .software-check-icon {
 	display: inline-block;
 }
+
 
 .external-software-card.is-selected .external-software-check {
 	visibility: visible;
@@ -7854,4 +7859,187 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	font-size: 10px;
 	line-height: 1.6;
 	white-space: nowrap;
+}
+
+
+/* Reusable live attention effect */
+.menu-alert-live {
+	--alert-color: 255, 69, 72;
+	--alert-color-light: 255, 208, 208;
+	--alert-bg-opacity: .075;
+	--alert-bg-opacity-active: .16;
+	
+	position: relative;
+	isolation: isolate;
+	overflow: visible;
+	border-radius: 8px;
+	background: rgba(var(--alert-color), var(--alert-bg-opacity));
+	color: rgb(var(--alert-color));
+	animation: alertMenuBreath 2.4s ease-in-out infinite;
+}
+
+
+/* Animated perimeter glow */
+.menu-alert-live::after {
+	
+	content: "";
+	position: absolute;
+	inset: -2px;
+	padding: 2px;
+	border-radius: inherit;
+	pointer-events: none;
+	background: conic-gradient(
+			from var(--alert-glow-angle),
+			transparent 0deg,
+			transparent 245deg,
+			rgba(var(--alert-color), .12) 275deg,
+			rgb(var(--alert-color)) 320deg,
+			rgb(var(--alert-color-light)) 338deg,
+			rgb(var(--alert-color)) 350deg,
+			transparent 360deg
+	);
+	-webkit-mask: linear-gradient(#fff 0 0) content-box,
+	linear-gradient(#fff 0 0);
+	-webkit-mask-composite: xor;
+	mask-composite: exclude;
+	animation: alertMenuOrbit 2.8s linear infinite;
+}
+
+
+.menu-alert-live:hover {
+	background: rgba(var(--alert-color), var(--alert-bg-opacity-active));
+}
+
+
+@keyframes alertMenuBreath {
+	0%, 100% {
+		background-color: rgba(var(--alert-color), .055);
+	}
+	
+	50% {
+		background-color: rgba(var(--alert-color), var(--alert-bg-opacity-active));
+	}
+}
+
+
+@property --alert-glow-angle {
+	syntax: "<angle>";
+	inherits: false;
+	initial-value: 0deg;
+}
+
+
+@keyframes alertMenuOrbit {
+	to {
+		--alert-glow-angle: 360deg;
+	}
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+	.menu-alert-live,
+	.menu-alert-live::after {
+		animation: none;
+	}
+}
+
+
+/* Reusable, high-visibility attention effect for buttons and menu items */
+.blink-button {
+	position: relative;
+	isolation: isolate;
+	border-radius: 8px;
+	outline: 2px solid rgba(167, 139, 250, .75);
+	animation: blinkButtonAttention .95s ease-in-out infinite;
+	will-change: transform, box-shadow, filter;
+}
+
+
+@keyframes blinkButtonAttention {
+	0%, 100% {
+		transform: scale(1);
+		filter: brightness(1);
+		outline-color: rgba(167, 139, 250, .55);
+		box-shadow: 0 0 0 0 rgba(139, 92, 246, .2),
+		0 0 10px rgba(139, 92, 246, .45),
+		0 0 20px rgba(139, 92, 246, .2);
+		text-shadow: 0 0 0 transparent;
+	}
+	50% {
+		transform: scale(1.045);
+		filter: brightness(1.35);
+		outline-color: rgba(196, 181, 253, 1);
+		box-shadow: 0 0 0 5px rgba(139, 92, 246, .28),
+		0 0 22px rgba(139, 92, 246, .95),
+		0 0 34px rgba(139, 92, 246, .55);
+		text-shadow: 0 0 8px rgba(255, 255, 255, .75);
+	}
+}
+
+
+.blink-button:hover {
+	animation-duration: .65s;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+	.blink-button {
+		animation: none;
+		will-change: auto;
+		outline-color: rgba(167, 139, 250, .8);
+		box-shadow: 0 0 12px rgba(139, 92, 246, .6);
+	}
+}
+
+
+/* Count badge for overdue open deals */
+.badge-count-overdue {
+	min-width: 21px;
+	height: 21px;
+	padding: 0 5px;
+	margin-inline-start: 6px;
+	border: 1px solid rgba(255, 255, 255, .9);
+	border-radius: 999px;
+	background-color: #6d28d9;
+	color: #fff;
+	font-family: IranSansBold;
+	font-size: 12px;
+	box-shadow: 0 0 8px rgba(109, 40, 217, .45);
+}
+
+
+/* Overdue deals date filter and purple count badge */
+.overdue-count-badge {
+	background-color: #6d28d9 !important;
+	color: #fff !important;
+	box-shadow: 0 0 8px rgba(109, 40, 217, .35);
+}
+
+
+.btn-purple {
+	color: #fff;
+	background-color: #6d28d9;
+	border-color: #6d28d9;
+}
+
+
+.btn-purple:hover,
+.btn-purple:focus {
+	color: #fff;
+	background-color: #5b21b6;
+	border-color: #5b21b6;
+}
+
+
+.btn-outline-purple {
+	color: #6d28d9;
+	border-color: #c4b5fd;
+}
+
+
+.btn-outline-purple:hover,
+.btn-outline-purple:focus {
+	color: #fff;
+	background-color: #6d28d9;
+	border-color: #6d28d9;
 }

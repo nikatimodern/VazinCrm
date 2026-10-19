@@ -1,4 +1,5 @@
-﻿using CRM.Core.Domain.AppUsers.Entities;
+﻿using System;
+using CRM.Core.Domain.AppUsers.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -6,6 +7,7 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using CRM.EndPoint.FrontEnd.Models.Admin;
 using CRM.EndPoint.FrontEnd.Models.Login;
 
@@ -35,19 +37,91 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public IActionResult Index()
         {
             ViewBag.Head = "Users";
-            var users = userManager.Users.Where(f => f.OrganAdmin == false).ToList();
-            var rols = roleManager.Roles.ToList();
-            var model = new AdminViewModel() {
-                Roles = rols,
-                Users = users
+            var model = new AdminViewModel
+            {
+                Roles = roleManager.Roles.ToList(),
+                Users = new List<AppUser>()
             };
 
-            foreach (var item in model.Users)
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUsers(int page = 1, int pageSize = 5, string search = null, string employeeType = "all", string accountStatus = "all", List<string> roles = null)
+        {
+            page = page < 1 ? 1 : page;
+            var query = userManager.Users.Where(user => user.OrganAdmin == false);
+
+            // Filter by employee classification on the database server.
+            if (employeeType == "employee")
+                query = query.Where(user => user.IsEmployee);
+            else if (employeeType == "nonEmployee")
+                query = query.Where(user => !user.IsEmployee);
+
+            // Identity has no separate IsActive field in AppUser; account availability is
+            // determined by whether the LockoutEnd timestamp is currently in the future.
+            var utcNow = DateTimeOffset.UtcNow;
+            if (accountStatus == "active")
+                query = query.Where(user => !user.LockoutEnd.HasValue || user.LockoutEnd <= utcNow);
+            else if (accountStatus == "blocked")
+                query = query.Where(user => user.LockoutEnd.HasValue && user.LockoutEnd > utcNow);
+
+            // Match users assigned to ANY of the selected roles (OR semantics).
+            var selectedRoles = roles?
+                .Where(role => !string.IsNullOrWhiteSpace(role) && role != "all")
+                .Distinct()
+                .ToList() ?? new List<string>();
+
+            if (selectedRoles.Count > 0)
             {
-                item.RolsUsers = userManager.GetRolesAsync(item).Result;
+                var userIdsInSelectedRoles = new HashSet<string>();
+                foreach (var selectedRole in selectedRoles)
+                {
+                    var usersInRole = await userManager.GetUsersInRoleAsync(selectedRole);
+                    foreach (var userInRole in usersInRole)
+                        userIdsInSelectedRoles.Add(userInRole.Id);
+                }
+
+                query = query.Where(user => userIdsInSelectedRoles.Contains(user.Id));
             }
 
-            return View(model);
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                query = query.Where(user =>
+                    (user.UserName != null && user.UserName.Contains(term)) ||
+                    (user.FirstName != null && user.FirstName.Contains(term)) ||
+                    (user.LastName != null && user.LastName.Contains(term)) ||
+                    (user.PhoneNumber != null && user.PhoneNumber.Contains(term)) ||
+                    (user.Email != null && user.Email.Contains(term)) ||
+                    (user.InternalTels != null && user.InternalTels.Contains(term)));
+            }
+
+            var totalCount = await query.CountAsync();
+            var showAll = pageSize <= 0;
+            pageSize = showAll ? Math.Max(totalCount, 1) : Math.Clamp(pageSize, 5, 50);
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            page = Math.Min(page, totalPages);
+
+            var users = await query
+                .OrderByDescending(user => user.CreateDate)
+                .ThenByDescending(user => user.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Load roles only for the users on the requested page.
+            foreach (var user in users)
+            {
+                user.RolsUsers = await userManager.GetRolesAsync(user);
+            }
+
+            Response.Headers["X-Total-Count"] = totalCount.ToString();
+            Response.Headers["X-Current-Page"] = page.ToString();
+            Response.Headers["X-Page-Size"] = (showAll ? 0 : pageSize).ToString();
+            Response.Headers["X-Total-Pages"] = totalPages.ToString();
+
+            return PartialView("_UserCardsPartial", users);
         }
 
         [HttpPost]
@@ -115,53 +189,68 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [HttpPost]
-        public IActionResult Create(CreateModel model)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(CreateModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                AppUser user = new AppUser {
-                    UserName = model.UserName,
-                    PhoneNumber = model.PhoneNumber,
-                    FirstName = model.FirstName,
-                    LastName = model.LastName,
-                    IsEmployee = true
-                };
-                IdentityResult result = userManager.CreateAsync(user, model.Password).Result;
-                if (result.Succeeded)
-                {
-                    return RedirectToAction("Index");
-                } else
-                {
-                    foreach (IdentityError error in result.Errors)
-                    {
-                        ModelState.AddModelError("", error.Description);
-                    }
-                }
+                var validationErrors = ModelState
+                    .Where(x => x.Value.Errors.Count > 0)
+                    .SelectMany(x => x.Value.Errors.Select(e => e.ErrorMessage))
+                    .ToList();
+                return BadRequest(new { success = false, message = string.Join("، ", validationErrors) });
             }
 
-            return View(model);
+            var user = new AppUser
+            {
+                UserName = model.UserName,
+                PhoneNumber = model.PhoneNumber,
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                Email = model.Email,
+                IsEmployee = true
+            };
+
+            var result = await userManager.CreateAsync(user, model.Password);
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { success = false, message = string.Join("، ", result.Errors.Select(e => e.Description)) });
+            }
+
+            return Json(new
+            {
+                success = true,
+                user = new
+                {
+                    id = user.Id,
+                    userName = user.UserName,
+                    firstName = user.FirstName,
+                    lastName = user.LastName,
+                    phoneNumber = user.PhoneNumber,
+                    email = user.Email,
+                    internalTels = user.InternalTels
+                }
+            });
         }
 
         //[HttpPost]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(string id)
         {
-            AppUser user = await userManager.FindByIdAsync(id);
-            if (user != null)
+            var user = await userManager.FindByIdAsync(id);
+            if (user == null)
             {
-                IdentityResult result = await userManager.DeleteAsync(user);
-                if (result.Succeeded)
-                {
-                    return RedirectToAction("Index");
-                } else
-                {
-                    AddErrorsFromResult(result);
-                }
-            } else
-            {
-                ModelState.AddModelError("", "User Not Found");
+                return NotFound(new { success = false, message = "کاربر پیدا نشد." });
             }
 
-            return Ok();
+            var result = await userManager.DeleteAsync(user);
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { success = false, message = string.Join("، ", result.Errors.Select(e => e.Description)) });
+            }
+
+            return Json(new { success = true });
         }
 
         public async Task<IActionResult> Edit(string id)
@@ -246,31 +335,62 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             AppUser User = await userManager.FindByIdAsync(id);
 
-            await userManager.RemoveFromRoleAsync(User, role);
+            if (User == null)
+            {
+                return NotFound(new { success = false, message = "کاربر پیدا نشد." });
+            }
 
+            var result = await userManager.RemoveFromRoleAsync(User, role);
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { success = false, message = string.Join("، ", result.Errors.Select(e => e.Description)) });
+            }
 
-            return RedirectToAction("Index");
+            return Json(new { success = true });
         }
 
 
         [HttpPost]
-        public IActionResult AddUserToRole(string userName, string roleName)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateUserRoles(string userName, List<string> roleNames)
         {
-            var user = userManager.FindByNameAsync(userName).Result;
-            //var role = roleManager.FindByNameAsync(roleName).Result;
+            var user = await userManager.FindByNameAsync(userName);
+            if (user == null)
+                return NotFound(new { success = false, message = "کاربر پیدا نشد." });
 
-            var result = userManager.AddToRoleAsync(user, roleName).Result;
-            if (result.Succeeded)
+            var selectedRoles = roleNames ?? new List<string>();
+            foreach (var role in selectedRoles)
             {
-                return RedirectToAction("Index");
+                if (!await roleManager.RoleExistsAsync(role))
+                    return BadRequest(new { success = false, message = "یک یا چند نقش انتخاب‌شده معتبر نیست." });
             }
 
-            return BadRequest();
+            var currentRoles = await userManager.GetRolesAsync(user);
+            var rolesToRemove = currentRoles.Except(selectedRoles).ToList();
+            var rolesToAdd = selectedRoles.Except(currentRoles).ToList();
+
+            if (rolesToRemove.Count > 0)
+            {
+                var removeResult = await userManager.RemoveFromRolesAsync(user, rolesToRemove);
+                if (!removeResult.Succeeded)
+                    return BadRequest(new { success = false, message = string.Join("، ", removeResult.Errors.Select(e => e.Description)) });
+            }
+
+            if (rolesToAdd.Count > 0)
+            {
+                var addResult = await userManager.AddToRolesAsync(user, rolesToAdd);
+                if (!addResult.Succeeded)
+                    return BadRequest(new { success = false, message = string.Join("، ", addResult.Errors.Select(e => e.Description)) });
+            }
+
+            var updatedRoles = await userManager.GetRolesAsync(user);
+            return Json(new { success = true, roles = updatedRoles });
         }
 
         public IActionResult GetUserRoles(string userName)
         {
             var user = userManager.FindByNameAsync(userName).Result;
+            if (user == null) return NotFound();
             var roles = userManager.GetRolesAsync(user).Result;
             return Json(roles);
         }

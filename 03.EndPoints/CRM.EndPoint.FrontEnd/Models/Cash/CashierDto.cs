@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using CRM.Core.Domain.ASettings.Entities;
+using CRM.Core.Domain.ExternalSoftwares.Entites;
 
 namespace CRM.EndPoint.FrontEnd.Models.Cash;
 

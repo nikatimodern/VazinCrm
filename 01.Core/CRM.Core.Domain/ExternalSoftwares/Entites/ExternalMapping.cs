@@ -1,8 +1,9 @@
 using System;
+using CRM.Core.Domain.ASettings.Entities;
 using CRM.Core.Domain.ASettings.Enums;
 using CRM.Framework;
 
-namespace CRM.Core.Domain.ASettings.Entities;
+namespace CRM.Core.Domain.ExternalSoftwares.Entites;
 
 public class ExternalMapping {
     public Guid Id { get; set; }

@@ -22,7 +22,7 @@
     </div>
 } else if (string.IsNullOrEmpty(Model.Url)) {
     // Menu button
-    <button type="button" id="@Model.ElementId" class="menu-item @Model.ClassName" data-tooltip-left="@Model.Title" onclick="@Model.OnClick">
+    <button type="button" id="@Model.ElementId" class="menu-item @Model.ClassName @(Model.Title.Contains("هشدار") ? "menu-alert-live" : "")" data-tooltip-left="@Model.Title" onclick="@Model.OnClick">
         @Html.Raw(Model.IconHtml)
         <span class="menu-item-title">
             <span>@Model.Title</span>
@@ -38,7 +38,7 @@
         <span class="menu-item-title">
             <span>@Model.Title</span>
             @if (Model.BadgeCount > 0) {
-                <span class="badge-count badge-count-menuItem">@Model.BadgeCount</span>
+                <span class="badge-count badge-count-menuItem @(Model.Id == "overdueOpenDeals" ? "badge-count-overdue" : "")">@Model.BadgeCount</span>
             }
         </span>
     </a>

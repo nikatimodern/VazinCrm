@@ -1,0 +1,801 @@
+@{
+    ViewData["Title"] = "سفارشات باز معوقه";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .overdue-filter-button {
+        width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #5b21b6;
+        border-radius: .7rem;
+        background: linear-gradient(135deg, #7c3aed, #4c1d95);
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(76, 29, 149, .3);
+        transition: all .18s ease;
+    }
+
+
+    .overdue-filter-button:hover,
+    .overdue-filter-button:focus-visible {
+        border-color: #7c3aed;
+        background: linear-gradient(135deg, #7c3aed, #5b21b6);
+        color: #fff;
+        box-shadow: 0 5px 13px rgba(109, 40, 217, .24);
+        transform: translateY(-1px);
+    }
+
+
+    .overdue-sort-button {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .2rem .1rem;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        font-family: IranSansBold;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+
+    .overdue-sort-button:hover,
+    .overdue-sort-button:focus-visible {
+        color: #6d28d9;
+        outline: none;
+    }
+
+
+    .overdue-sort-button .sort-indicator {
+        color: #8b5cf6;
+        font-size: .85rem;
+        opacity: .7;
+    }
+
+
+    .overdue-sort-button[aria-sort="ascending"] .sort-indicator,
+    .overdue-sort-button[aria-sort="descending"] .sort-indicator {
+        opacity: 1;
+        color: #5b21b6;
+    }
+
+
+    .overdue-refresh-button {
+        border-color: #0f766e;
+        border-radius: .7rem;
+        background: #0f766e;
+        color: #fff;
+        font-family: IranSansBold;
+    }
+
+
+    .overdue-refresh-button:hover {
+        border-color: #14b8a6;
+        background: #0d9488;
+        color: #fff;
+    }
+
+
+    .overdue-count-badge {
+        background: #0f766e !important;
+        color: #fff !important;
+        min-width: 28px;
+        padding: .4rem .65rem;
+        font-family: IranSansBold;
+        box-shadow: 0 3px 8px rgba(15, 118, 110, .3);
+    }
+
+
+    #overdueDealsTableWrap {
+        border-radius: 0;
+        scrollbar-width: thin;
+        scrollbar-color: #c4b5fd #f5f3ff;
+    }
+
+
+    #overdueDealsTableWrap .table {
+        --bs-table-bg: transparent;
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+        color: #334155;
+    }
+
+
+    #overdueDealsTableWrap thead th {
+        padding: 1rem .9rem;
+        background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+        color: #4c1d95;
+        font-size: .82rem;
+        font-family: IranSansBold;
+        white-space: nowrap;
+        border-bottom: 1px solid #ddd6fe;
+    }
+
+
+    #overdueDealsTableWrap tbody td {
+        padding: .9rem;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+        transition: background-color .18s ease;
+    }
+
+
+    #overdueDealsTableWrap tbody tr:nth-child(even) {
+        background-color: #faf9ff;
+    }
+
+
+    #overdueDealsTableWrap tbody tr:hover td {
+        background-color: #f1edff;
+    }
+
+
+    #overdueDealsTableWrap tbody tr:last-child td {
+        border-bottom: 0;
+    }
+
+
+    .overdue-view-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 34px;
+        border: 1px solid #0f766e;
+        border-radius: .65rem;
+        background: #0f766e;
+        color: #fff;
+        transition: all .18s ease;
+    }
+
+
+    .overdue-view-button:hover,
+    .overdue-view-button:focus-visible {
+        border-color: #4c1d95;
+        background: #4c1d95;
+        color: #fff;
+        transform: translateY(-1px);
+    }
+
+
+    .overdue-count-card {
+        border: 1px solid #e9d5ff;
+        border-radius: .9rem;
+        background: linear-gradient(135deg, #faf5ff, #fff);
+        padding: 1rem;
+        text-align: center;
+        height: 100%;
+    }
+
+
+    .overdue-count-card .count-value {
+        color: #4c1d95;
+        font-size: 1.7rem;
+        line-height: 1.3;
+        font-family: IranSansBold;
+    }
+
+
+    .overdue-count-card .count-label {
+        color: #475569;
+        font-family: IranSansBold;
+        margin-top: .35rem;
+    }
+
+
+    .overdue-count-card .count-icon {
+        color: #0f766e;
+        margin-bottom: .4rem;
+    }
+
+
+    #overdueDealsTableWrap .badge.text-bg-danger {
+        padding: .45rem .65rem;
+        border: 1px solid #fecaca;
+        border-radius: 999px;
+        background: #fff1f2 !important;
+        color: #be123c !important;
+        font-size: .75rem;
+        font-family: IranSansBold;
+    }
+
+
+    #overdueDealsPagination,
+    #overdueDealsPaginationTop {
+        background: linear-gradient(110deg, #fff, #faf8ff);
+    }
+
+
+    #overdueDealsPaginationTop {
+        border-bottom-color: #ede9fe !important;
+    }
+
+
+    #overdueDealsPagination {
+        border-top-color: #ede9fe !important;
+        border-radius: 0 0 .9rem .9rem;
+    }
+
+
+    #overdueDealsPagination label,
+    #overdueDealsPaginationTop label {
+        font-family: IranSansBold;
+        color: #5b21b6 !important;
+        white-space: nowrap;
+    }
+
+
+    #overduePageSize,
+    #overduePageSizeTop {
+        min-width: 76px;
+        border-color: #ddd6fe;
+        border-radius: .65rem;
+        box-shadow: none;
+    }
+
+
+    #overduePageSize:focus,
+    #overduePageSizeTop:focus {
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 .2rem rgba(139, 92, 246, .14);
+    }
+
+
+    #overduePaginationInfo,
+    #overduePaginationInfoTop {
+        padding: .35rem .7rem;
+        border-radius: 999px;
+        background: #f3e8ff;
+        color: #6d28d9 !important;
+        font-family: IranSansBold;
+        white-space: nowrap;
+    }
+
+
+    #overduePaginationButtons,
+    #overduePaginationButtonsTop {
+        gap: .3rem;
+        align-items: center;
+    }
+
+
+    #overduePaginationButtons .page-item,
+    #overduePaginationButtonsTop .page-item {
+        margin: 0;
+    }
+
+
+    #overduePaginationButtons .page-link,
+    #overduePaginationButtonsTop .page-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.25rem;
+        min-height: 2.25rem;
+        padding: .35rem .7rem;
+        border: 1px solid #e9e2ff;
+        border-radius: .65rem !important;
+        background: #fff;
+        color: #6d28d9;
+        font-size: .82rem;
+        font-family: IranSansBold;
+        box-shadow: 0 2px 5px rgba(76, 29, 149, .04);
+        transition: all .18s ease;
+    }
+
+
+    #overduePaginationButtons .page-link:hover:not(:disabled),
+    #overduePaginationButtonsTop .page-link:hover:not(:disabled) {
+        border-color: #a78bfa;
+        background: #f3e8ff;
+        transform: translateY(-1px);
+    }
+
+
+    #overduePaginationButtons .page-item.active .page-link,
+    #overduePaginationButtonsTop .page-item.active .page-link {
+        border-color: #6d28d9;
+        background: linear-gradient(135deg, #7c3aed, #5b21b6);
+        color: #fff;
+        box-shadow: 0 4px 10px rgba(109, 40, 217, .22);
+    }
+
+
+    #overduePaginationButtons .page-item.disabled .page-link,
+    #overduePaginationButtonsTop .page-item.disabled .page-link {
+        border-color: #f1f5f9;
+        background: #f8fafc;
+        color: #cbd5e1;
+        box-shadow: none;
+    }
+
+
+    @@media (max-width: 767.98px) {
+        #overdueDealsPagination,
+        #overdueDealsPaginationTop {
+            align-items: stretch !important;
+        }
+
+        #overdueDealsPagination > div,
+        #overdueDealsPaginationTop > div {
+            flex-wrap: wrap;
+        }
+
+        #overdueDealsPagination nav,
+        #overdueDealsPaginationTop nav {
+            width: 100%;
+            overflow-x: auto;
+            padding-bottom: .15rem;
+        }
+
+        #overduePaginationButtons,
+        #overduePaginationButtonsTop {
+            flex-wrap: nowrap;
+            width: max-content;
+        }
+
+        #overdueDealsTableWrap .table {
+            font-size: .86rem;
+        }
+
+        #overdueDealsTableWrap thead th,
+        #overdueDealsTableWrap tbody td {
+            padding: .75rem .65rem;
+        }
+    }
+
+
+    @@media (prefers-reduced-motion: reduce) {
+        #overdueDealsTableWrap *,
+        #overdueDealsPagination *,
+        #overdueDealsPaginationTop * {
+            transition: none !important;
+        }
+    }
+</style>
+
+<div class="container-fluid py-3" dir="rtl">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+        <div class="d-flex align-items-center gap-2">
+            <span class="d-inline-flex align-items-center justify-content-center rounded-3 p-2"
+                  style="background: rgba(109, 40, 217, .12); color: #6d28d9;">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M12 2.25a9.75 9.75 0 1 0 0 19.5 9.75 9.75 0 0 0 0-19.5ZM12 6a.75.75 0 0 1 .75.75v5.1l3.03 1.82a.75.75 0 1 1-.772 1.286l-3.375-2.025A.75.75 0 0 1 11.25 12V6.75A.75.75 0 0 1 12 6Z" clip-rule="evenodd" />
+                </svg>
+            </span>
+            <div>
+                <h1 class="h5 mb-1">سفارشات باز معوقه</h1>
+                <p class="text-muted mb-0">سفارش‌های باز با بیش از ۱۴ روز از زمان ثبت</p>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <input type="hidden" id="overdueDealSearch" value="" />
+            <div id="ContentOverdueDealFilterId" class="ContentFilter"></div>
+            <button type="button" class="btnFilter overdue-filter-button" data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterOverdueDeal" data-filterContentId="ContentOverdueDealFilterId" data-filterInpSearchId="overdueDealSearch" data-filterVarSearch="overdueDealSearchVal" onclick="ShowFilterPopup(this)" title="فیلتر">
+                <svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
+            </button>
+            <span class="text-muted small">تعداد:</span>
+            <span id="overdueDealCount" class="badge rounded-pill overdue-count-badge">۰</span>
+            <button type="button" id="refreshOverdueDeals" class="btn btn-outline-secondary btn-sm overdue-refresh-button">
+                <span class="me-1">بروزرسانی</span>
+                <svg style="width: 16px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M13.836 2.477a.75.75 0 0 1 .75.75v3.182a.75.75 0 0 1-.75.75h-3.182a.75.75 0 0 1 0-1.5h1.37l-.84-.841a4.5 4.5 0 0 0-7.08.932.75.75 0 0 1-1.3-.75 6 6 0 0 1 9.44-1.242l.842.84V3.227a.75.75 0 0 1 .75-.75Zm-.911 7.5A.75.75 0 0 1 13.199 11a6 6 0 0 1-9.44 1.241l-.84-.84v1.371a.75.75 0 0 1-1.5 0V9.591a.75.75 0 0 1 .75-.75H5.35a.75.75 0 0 1 0 1.5H3.98l.841.841a4.5 4.5 0 0 0 7.08-.932.75.75 0 0 1 1.025-.273Z" clip-rule="evenodd" /></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div id="overdueDealsLoading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">در حال دریافت اطلاعات...</span>
+                </div>
+                <p class="text-muted mt-3 mb-0">در حال دریافت سفارشات معوقه...</p>
+            </div>
+
+            <div id="overdueDealsError" class="alert alert-danger m-3 d-none" role="alert"></div>
+
+            <div id="overdueDealsEmpty" class="text-center py-5 d-none">
+                <div class="mb-2" style="font-size: 2rem; color: #16a34a;">✓</div>
+                <h2 class="h6">سفارش معوقه‌ای وجود ندارد</h2>
+                <p class="text-muted mb-0">در حال حاضر سفارشی با وضعیت باز و بیش از ۱۴ روز از زمان ثبت پیدا نشد.</p>
+            </div>
+
+            <div id="overdueDealsPaginationTop" class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 border-bottom d-none">
+                <div class="d-flex align-items-center gap-2">
+                    <label for="overduePageSizeTop" class="small text-muted mb-0">تعداد در صفحه</label>
+                    <select id="overduePageSizeTop" class="form-select form-select-sm" style="width: auto;">
+                        <option value="10">۱۰</option>
+                        <option value="20" selected>۲۰</option>
+                        <option value="50">۵۰</option>
+                        <option value="100">۱۰۰</option>
+                        <option value="0">همه</option>
+                    </select>
+                    <span id="overduePaginationInfoTop" class="small text-muted"></span>
+                </div>
+                <nav aria-label="صفحه‌بندی بالای سفارشات معوقه">
+                    <ul id="overduePaginationButtonsTop" class="pagination pagination-sm mb-0"></ul>
+                </nav>
+            </div>
+            <div id="overdueDealsTableWrap" class="table-responsive d-none">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>
+                            <button type="button" class="overdue-sort-button text-nowrap" data-sort-by="serialNumber">شماره سفارش
+                                <span class="sort-indicator">↕</span></button>
+                        </th>
+                        <th>
+                            <button type="button" class="overdue-sort-button" data-sort-by="title">عنوان سفارش <span class="sort-indicator">↕</span>
+                            </button>
+                        </th>
+                        <th>
+                            <button type="button" class="overdue-sort-button" data-sort-by="customer">مشتری <span class="sort-indicator">↕</span>
+                            </button>
+                        </th>
+                        <th>
+                            <button type="button" class="overdue-sort-button text-nowrap" data-sort-by="customerCode">کد مشتری
+                                <span class="sort-indicator">↕</span></button>
+                        </th>
+                        <th>
+                            <button type="button" class="overdue-sort-button text-nowrap" data-sort-by="createDate">تاریخ ثبت
+                                <span class="sort-indicator">↕</span></button>
+                        </th>
+                        <th>
+                            <button type="button" class="overdue-sort-button text-nowrap" data-sort-by="waitingDays">مدت انتظار
+                                <span class="sort-indicator">↕</span></button>
+                        </th>
+                        <th>
+                            <button type="button" class="overdue-sort-button" data-sort-by="userCreator">ثبت‌کننده
+                                <span class="sort-indicator">↕</span></button>
+                        </th>
+                        <th>
+                            <button type="button" class="overdue-sort-button" data-sort-by="commentText">توضیحات <span class="sort-indicator">↕</span>
+                            </button>
+                        </th>
+                        <th class="text-center text-nowrap">مشاهده</th>
+                    </tr>
+                    </thead>
+                    <tbody id="overdueDealsTableBody"></tbody>
+                </table>
+            </div>
+            <div id="overdueDealsPagination" class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 border-top d-none">
+                <div class="d-flex align-items-center gap-2">
+                    <label for="overduePageSize" class="small text-muted mb-0">تعداد در صفحه</label>
+                    <select id="overduePageSize" class="form-select form-select-sm" style="width: auto;">
+                        <option value="10">۱۰</option>
+                        <option value="20" selected>۲۰</option>
+                        <option value="50">۵۰</option>
+                        <option value="100">۱۰۰</option>
+                        <option value="0">همه</option>
+                    </select>
+                    <span id="overduePaginationInfo" class="small text-muted"></span>
+                </div>
+                <nav aria-label="صفحه‌بندی سفارشات معوقه">
+                    <ul id="overduePaginationButtons" class="pagination pagination-sm mb-0"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="overdueDealDetailsModal" tabindex="-1" aria-labelledby="overdueDealDetailsModalLabel" aria-hidden="true" dir="rtl">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title" id="overdueDealDetailsModalLabel">جزئیات سفارش</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3 mb-4" id="overdueDealCountsContent"></div>
+                <div class="row g-3" id="overdueDealDetailsContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">بستن</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var filterDealConfig = window.filterDealConfig || {};
+        var overdueDealSearchVal = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const loading = document.getElementById("overdueDealsLoading");
+            const error = document.getElementById("overdueDealsError");
+            const empty = document.getElementById("overdueDealsEmpty");
+            const tableWrap = document.getElementById("overdueDealsTableWrap");
+            const tableBody = document.getElementById("overdueDealsTableBody");
+            const count = document.getElementById("overdueDealCount");
+            const refreshButton = document.getElementById("refreshOverdueDeals");
+            const dealDetailsModalElement = document.getElementById("overdueDealDetailsModal");
+            const dealDetailsContent = document.getElementById("overdueDealDetailsContent");
+            const dealCountsContent = document.getElementById("overdueDealCountsContent");
+            const dealDetailsModal = window.bootstrap?.Modal
+                ? new bootstrap.Modal(dealDetailsModalElement)
+                : null;
+            const pageSizeSelect = document.getElementById("overduePageSize");
+            const pageSizeSelectTop = document.getElementById("overduePageSizeTop");
+            const pagination = document.getElementById("overdueDealsPagination");
+            const paginationTop = document.getElementById("overdueDealsPaginationTop");
+            const paginationInfo = document.getElementById("overduePaginationInfo");
+            const paginationInfoTop = document.getElementById("overduePaginationInfoTop");
+            const paginationButtons = document.getElementById("overduePaginationButtons");
+            const paginationButtonsTop = document.getElementById("overduePaginationButtonsTop");
+            const searchInput = document.getElementById("overdueDealSearch");
+            let allDeals = [];
+            let currentPage = 1;
+            let pageSize = 20;
+            let overdueFilter = null;
+            let overdueSearchVal = "";
+            let sortBy = "createDate";
+            let sortDirection = "desc";
+
+            const escapeHtml = (value) => String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll("\"", "&quot;")
+                .replaceAll("'", "&#39;");
+
+            const formatDate = (value) => {
+                if (!value) return "—";
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) return "—";
+                return new Intl.DateTimeFormat("fa-IR", {
+                    year: "numeric", month: "2-digit", day: "2-digit",
+                }).format(date);
+            };
+
+            const getWaitingDays = (value) => {
+                if (!value) return 0;
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) return 0;
+                return Math.max(0, Math.floor((Date.now() - date.getTime()) / 86400000));
+            };
+
+            const renderCurrentPage = () => {
+                const total = allDeals.length;
+                const effectivePageSize = pageSize === 0 ? Math.max(total, 1) : pageSize;
+                const totalPages = Math.max(1, Math.ceil(total / effectivePageSize));
+                currentPage = Math.min(currentPage, totalPages);
+                const startIndex = (currentPage - 1) * effectivePageSize;
+                const pageDeals = allDeals.slice(startIndex, startIndex + effectivePageSize);
+
+                tableBody.innerHTML = pageDeals.map(deal => {
+                    const customerName = deal.cusCompanyName || deal.customerName || "—";
+                    const waitingDays = getWaitingDays(deal.createDate);
+                    return `
+                        <tr>
+                            <td class="text-nowrap fbold">${escapeHtml(deal.serialNumber)}</td>
+                            <td>${escapeHtml(deal.title || "—")}</td>
+                            <td>${escapeHtml(customerName)}</td>
+                            <td class="text-nowrap">${escapeHtml(deal.customerCode ?? "—")}</td>
+                            <td class="text-nowrap">${escapeHtml(formatDate(deal.createDate))}</td>
+                            <td class="text-nowrap"><span class="badge text-bg-danger">${escapeHtml(new Intl.NumberFormat("fa-IR").format(waitingDays))} روز</span></td>
+                            <td>${escapeHtml(deal.userCreator || "—")}</td>
+                            <td style="min-width: 220px; white-space: normal;">${escapeHtml(deal.commentText || "—")}</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm overdue-view-button" data-deal-id="${escapeHtml(deal.id)}" title="مشاهده جزئیات" aria-label="مشاهده جزئیات سفارش">
+                                    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </button>
+                            </td>
+                        </tr>`;
+                }).join("");
+
+                tableWrap.classList.remove("d-none");
+                pagination.classList.remove("d-none");
+                const paginationText = `${new Intl.NumberFormat("fa-IR").format(total ? startIndex + 1 : 0)} تا ${new Intl.NumberFormat("fa-IR").format(Math.min(startIndex + pageDeals.length, total))} از ${new Intl.NumberFormat("fa-IR").format(total)}`;
+                paginationInfo.textContent = paginationText;
+                paginationInfoTop.textContent = paginationText;
+                pageSizeSelect.value = String(pageSize);
+                pageSizeSelectTop.value = String(pageSize);
+                paginationTop.classList.remove("d-none");
+
+                paginationButtons.innerHTML = "";
+                paginationButtonsTop.innerHTML = "";
+                const addPageButton = (label, page, disabled = false, active = false) => {
+                    const li = document.createElement("li");
+                    li.className = "page-item" + (disabled ? " disabled" : "") + (active ? " active" : "");
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = "page-link";
+                    button.textContent = label;
+                    button.disabled = disabled;
+                    button.addEventListener("click", () => {
+                        currentPage = page;
+                        renderCurrentPage();
+                    });
+                    li.appendChild(button);
+                    paginationButtons.appendChild(li);
+                    const topLi = li.cloneNode(true);
+                    const topButton = topLi.querySelector("button");
+                    topButton.addEventListener("click", () => {
+                        currentPage = page;
+                        renderCurrentPage();
+                    });
+                    paginationButtonsTop.appendChild(topLi);
+                };
+
+                addPageButton("قبلی", Math.max(1, currentPage - 1), currentPage === 1);
+                const first = Math.max(1, currentPage - 2);
+                const last = Math.min(totalPages, currentPage + 2);
+                for (let page = first; page <= last; page++) {
+                    addPageButton(new Intl.NumberFormat("fa-IR").format(page), page, false, page === currentPage);
+                }
+                addPageButton("بعدی", Math.min(totalPages, currentPage + 1), currentPage === totalPages);
+
+                tableBody.querySelectorAll(".overdue-view-button").forEach(button => {
+                    button.addEventListener("click", () => {
+                        const deal = pageDeals.find(item => String(item.id).toLowerCase() === button.dataset.dealId.toLowerCase());
+                        if (!deal) return;
+
+                        const hasCustomer = deal.hasCustomer === true;
+                        const moneyFormat = value => new Intl.NumberFormat("fa-IR", {
+                            maximumFractionDigits: 0,
+                        }).format(Number(value ?? 0));
+                        const debtAmount = Number(deal.debtAmount ?? 0) + Number(deal.returnedAmount ?? 0);
+                        const cashReceived = Number(deal.receivableAmount ?? 0);
+                        const remainingReceivable = Math.max(0, debtAmount - cashReceived);
+                        const counts = [
+                            {
+                                label: "گزارش‌های ثبت‌شده",
+                                value: deal.reportCount,
+                                color: "#4c1d95",
+                                icon: "<path d=\"M7 3h10a2 2 0 0 1 2 2v14l-7-3-7 3V5a2 2 0 0 1 2-2Z\"/>",
+                            },
+                            {
+                                label: "پیش‌فاکتورهای صادرشده",
+                                value: deal.preFactorCount,
+                                color: "#0f766e",
+                                icon: "<path d=\"M7 3h10a2 2 0 0 1 2 2v14l-7-3-7 3V5a2 2 0 0 1 2-2Z\"/><path d=\"M9 8h6M9 11h6\"/>",
+                            },
+                            {
+                                label: "فاکتورها",
+                                value: deal.factorCount,
+                                color: "#4c1d95",
+                                icon: "<path d=\"M6 2h9l4 4v16H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z\"/><path d=\"M14 2v5h5M8 12h8M8 16h8\"/>",
+                            },
+                            {
+                                label: "صورت‌حساب‌های مشتری",
+                                value: hasCustomer ? deal.accountancyCount : "—",
+                                color: "#0f766e",
+                                icon: "<path d=\"M5 3h14v18H5z\"/><path d=\"M8 7h8M8 11h8M8 15h5\"/>",
+                            },
+                            {
+                                label: "مجموع بدهکاری",
+                                value: hasCustomer ? moneyFormat(debtAmount) + " ریال" : "بدون مشتری",
+                                color: "#b45309",
+                                icon: "<path d=\"M12 5v14M5 12h14\"/>",
+                            },
+                            {
+                                label: "مانده طلب از مشتری",
+                                value: hasCustomer ? moneyFormat(remainingReceivable) + " ریال" : "بدون مشتری",
+                                color: "#be123c",
+                                icon: "<path d=\"M4 7h16M6 3h12v18H6z\"/><path d=\"M9 12h6\"/>",
+                            },
+                        ];
+                        dealCountsContent.innerHTML = counts.map(item => `
+                            <div class="col-12 col-md-4 col-xl-2">
+                                <div class="overdue-count-card">
+                                    <div class="count-icon" style="color:${item.color}">
+                                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${item.icon}</svg>
+                                    </div>
+                                    <div class="count-value" style="font-size:1.25rem">${escapeHtml(item.value ?? 0)}</div>
+                                    <div class="count-label">${escapeHtml(item.label)}</div>
+                                </div>
+                            </div>`).join("");
+
+                        const details = [
+                            ["شماره سفارش", deal.serialNumber], ["عنوان سفارش", deal.title],
+                            ["نام مشتری", deal.customerName], ["نام شرکت", deal.cusCompanyName],
+                            ["کد مشتری", deal.customerCode], ["موبایل", deal.mobileNumber],
+                            ["تاریخ ثبت", formatDate(deal.createDate)],
+                            ["مدت انتظار", new Intl.NumberFormat("fa-IR").format(getWaitingDays(deal.createDate)) + " روز"],
+                            ["ثبت‌کننده", deal.userCreator], ["توضیحات", deal.commentText],
+                        ];
+                        dealDetailsContent.innerHTML = details.map(([label, value]) => `
+                            <div class="col-12 col-md-6"><div class="border rounded-3 p-3 h-100">
+                                <div class="small text-muted mb-1">${escapeHtml(label)}</div>
+                                <div class="fbold text-break" style="white-space: pre-wrap;">${escapeHtml(value || "—")}</div>
+                            </div></div>`).join("");
+                        dealDetailsModal?.show();
+                    });
+                });
+            };
+
+            window.callbackFilterOverdueDeal = async () => {
+                overdueFilter = window.filterDealConfig?.filterVar ?? null;
+                overdueSearchVal = window.filterDealConfig?.varSearch ?? searchInput.value.trim();
+                searchInput.value = overdueSearchVal || "";
+                currentPage = 1;
+                await loadOverdueDeals();
+            };
+
+            const loadOverdueDeals = async () => {
+                loading.classList.remove("d-none");
+                error.classList.add("d-none");
+                empty.classList.add("d-none");
+                tableWrap.classList.add("d-none");
+                tableBody.innerHTML = "";
+                refreshButton.disabled = true;
+
+                try {
+                    const requestModel = { filt: overdueFilter, serVal: searchInput.value.trim() || null };
+                    const response = await axios.post("/OverdueDeal/GetOverdueDeals", requestModel, {
+                        params: { sortBy, sortDirection },
+                    });
+                    allDeals = response.data?.data ?? [];
+                    updateSortIndicators();
+                    count.textContent = new Intl.NumberFormat("fa-IR").format(allDeals.length);
+                    currentPage = Math.min(currentPage, Math.max(1, Math.ceil(allDeals.length / (pageSize || Math.max(allDeals.length, 1)))));
+
+                    if (allDeals.length === 0) {
+                        pagination.classList.add("d-none");
+                        paginationTop.classList.add("d-none");
+                        empty.classList.remove("d-none");
+                        return;
+                    }
+
+                    renderCurrentPage();
+                } catch (err) {
+                    console.error("Failed to load overdue deals:", err);
+                    error.textContent = err.response?.status === 403
+                        ? "شما مجوز مشاهده این اطلاعات را ندارید."
+                        : "دریافت سفارشات معوقه با خطا مواجه شد. لطفاً دوباره تلاش کنید.";
+                    error.classList.remove("d-none");
+                } finally {
+                    loading.classList.add("d-none");
+                    refreshButton.disabled = false;
+                }
+            };
+
+            const updateSortIndicators = () => {
+                document.querySelectorAll(".overdue-sort-button").forEach(button => {
+                    const active = button.dataset.sortBy.toLowerCase() === sortBy.toLowerCase();
+                    button.setAttribute("aria-sort", active
+                        ? (sortDirection === "asc" ? "ascending" : "descending")
+                        : "none");
+                    const indicator = button.querySelector(".sort-indicator");
+                    if (indicator) indicator.textContent = active
+                        ? (sortDirection === "asc" ? "↑" : "↓")
+                        : "↕";
+                });
+            };
+
+            document.querySelectorAll(".overdue-sort-button").forEach(button => {
+                button.addEventListener("click", () => {
+                    const selectedSort = button.dataset.sortBy;
+                    if (sortBy.toLowerCase() === selectedSort.toLowerCase()) {
+                        sortDirection = sortDirection === "asc" ? "desc" : "asc";
+                    } else {
+                        sortBy = selectedSort;
+                        sortDirection = "asc";
+                    }
+                    currentPage = 1;
+                    loadOverdueDeals();
+                });
+            });
+
+            const onPageSizeChange = (value) => {
+                pageSize = Number(value);
+                currentPage = 1;
+                if (allDeals.length) renderCurrentPage();
+            };
+            pageSizeSelect.addEventListener("change", () => onPageSizeChange(pageSizeSelect.value));
+            pageSizeSelectTop.addEventListener("change", () => onPageSizeChange(pageSizeSelectTop.value));
+            refreshButton.addEventListener("click", loadOverdueDeals);
+            loadOverdueDeals();
+        });
+    </script>
+}

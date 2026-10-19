@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Deals.Enums;
 using CRM.EndPoint.FrontEnd.IServices.Menu;
 using CRM.EndPoint.FrontEnd.Models.Menu;
+using CRM.Infrastructures.Sql;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CRM.EndPoint.FrontEnd.Services.Menu;
@@ -471,6 +474,37 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                     AppRoles.FinancialExpert
                 ],
                 DisplayOrder = 13
+            },
+
+            #endregion
+
+            #region سفارشات باز معوقه
+
+            new MenuItem {
+                Id = "overdueOpenDeals",
+                Title = "سفارشات باز معوقه",
+                Url = "/OverdueDeal/Index",
+                ClassName = "blink-button",
+                IsStandalone = true,
+                IconHtml =
+                    """<svg class="menu-icon" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M12 2.25a9.75 9.75 0 1 0 0 19.5 9.75 9.75 0 0 0 0-19.5ZM12 6a.75.75 0 0 1 .75.75v5.1l3.03 1.82a.75.75 0 1 1-.772 1.286l-3.375-2.025A.75.75 0 0 1 11.25 12V6.75A.75.75 0 0 1 12 6Z" clip-rule="evenodd"/></svg>""",
+                Roles = [
+                    AppRoles.Admin,
+                    AppRoles.SalesAdmin,
+                    AppRoles.ManagingDirector
+                ],
+                GetBadgeCountAsync = async sp => {
+                    var db = sp.GetRequiredService<CRMContextDb>();
+                    var overdueBefore = DateTime.Now.AddDays(-14);
+
+                    return await db.Deals
+                        .AsNoTracking()
+                        .CountAsync(deal =>
+                            deal.Status == DealStatusEnum.باز &&
+                            deal.CreateDate <= overdueBefore);
+                },
+                HideWhenBadgeEmpty = true,
+                DisplayOrder = 998
             },
 
             #endregion

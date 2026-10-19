@@ -164,6 +164,7 @@ const getAllDeals = async () => {
     }
 };
 
+
 const createDomAllDeals = (items, containersId, isAdmin) => {
     const countElm = document.querySelector(`${containersId} .countDeal`);
     const containerElm = document.querySelector(`${containersId} .deal-column-list`);
