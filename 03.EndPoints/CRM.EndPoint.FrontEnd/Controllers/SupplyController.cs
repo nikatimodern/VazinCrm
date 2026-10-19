@@ -734,7 +734,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var profitAll = filteredRows.Where(x => x.Profit != -1).Sum(x => x.Profit);
 
                 var data = length == -1
-                    ? filteredRows.Skip(start).ToList()
+                    ? filteredRows
                     : filteredRows.Skip(start).Take(Math.Max(0, length)).ToList();
 
                 return Json(new
