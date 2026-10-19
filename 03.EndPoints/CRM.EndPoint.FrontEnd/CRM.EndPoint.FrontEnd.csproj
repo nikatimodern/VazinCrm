@@ -51,7 +51,6 @@
   </ItemGroup>
   
   <ItemGroup>
-    <Folder Include="Services\Factor\" />
     <Folder Include="wwwroot\Uploaded\CompanyImage\" />
     <Folder Include="wwwroot\Uploaded\LoginImg\" />
   </ItemGroup>
