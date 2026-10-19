@@ -893,6 +893,9 @@
             };
 
             const renderCurrentPage = () => {
+
+                console.log(allDeals)
+
                 const total = allDeals.length;
                 const effectivePageSize = pageSize === 0 ? Math.max(total, 1) : pageSize;
                 const totalPages = Math.max(1, Math.ceil(total / effectivePageSize));
@@ -969,6 +972,11 @@
                 tableBody.querySelectorAll(".overdue-view-button").forEach(button => {
                     button.addEventListener("click", () => {
                         const deal = pageDeals.find(item => String(item.id).toLowerCase() === button.dataset.dealId.toLowerCase());
+
+
+                        console.log(pageDeals);
+                        console.log(deal);
+
                         if (!deal) return;
 
                         const hasCustomer = deal.hasCustomer === true;
@@ -1037,6 +1045,10 @@
                             </div>`).join("");
 
                         const openDocumentModal = async (kind) => {
+
+                            console.log(kind)
+
+
                             if (kind === "prefactors" || kind === "factors") {
                                 const dealDocument = {
                                     id: deal.id,
@@ -1137,6 +1149,7 @@
             };
 
             const loadOverdueDeals = async () => {
+
                 loading.classList.remove("d-none");
                 error.classList.add("d-none");
                 empty.classList.add("d-none");

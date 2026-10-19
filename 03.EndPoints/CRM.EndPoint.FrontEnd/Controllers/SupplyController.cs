@@ -627,217 +627,298 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return Ok(data);
         }
 
+
         [HttpPost]
-        public async Task<IActionResult> GetSuppliesProfitDt() // بهای تمام شده
+        public async Task<IActionResult> GetSuppliesProfitDt()
         {
             try
             {
                 var draw = Request.Form["draw"].FirstOrDefault();
-                var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
-                var model = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["model"].FirstOrDefault());
-                var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
-                var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
-                var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
-                var searchValue = Request.Form["search[value]"].FirstOrDefault()?.ToLower().Trim();
 
+                var start = Math.Max(
+                    0,
+                    Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0"));
 
-                /*var suppliesQ = db.Supplies.AsNoTracking()
-                    .GroupBy(s => s.PfId)
-                    .Select(g => new {
-                        PfId = g.Key,
-                        TotalSuppliesAmount =
-                            g.Where(f => f.SupplyType != SupplyTypeEnum.ضایعات).Sum(f => f.TotalAmount)
-                            - g.Where(f => f.SupplyType == SupplyTypeEnum.ضایعات).Sum(f => f.TotalAmount),
-//                        SuppliersNameList = g.Where(f => f.SupplierTxt != null).Select(x => x.SupplierTxt).ToList()
-                    });*/
+                var length = Convert.ToInt32(
+                    Request.Form["length"].FirstOrDefault() ?? "10");
 
-                /*var query = from p in db.PreFactors.AsNoTracking()
-                    where p.Pftype != (int)PreFactorEnum.فاقد_اعتبار && p.Factors.Any(f => f.status == FactorStatus.تایید_شده)
-                    let totalFactors = p.Factors.Where(f => f.status == FactorStatus.تایید_شده).Sum(f => f.SumTotalAmount)
-                    let totalSupplies =
-                        db.Supplies.Where(s => s.PfId == p.Id && s.SupplyType != SupplyTypeEnum.ضایعات).Sum(s => s.TotalAmount)
-                        - db.Supplies.Where(s => s.PfId == p.Id && s.SupplyType == SupplyTypeEnum.ضایعات).Sum(s => s.TotalAmount)
-                    let profit = totalSupplies != 0 ? totalFactors - totalSupplies : -1
-                    select new SuppliesDtVModel {
-                        PfId = p.Id,
-                        CustomerId = p.CustomerId,
-                        CustomerCode = p.CustomerEntity.CustomerCode,
-                        CustomerName = $"{p.Customer ?? ""} {p.AgentName ?? ""}".Trim(),
-                        PfDate = p.Date,
-                        PfDateM = p.DateMiladi,
-                        PfSerialNumber = p.SerialNumber,
-                        DealSerialNumber = p.DealSerialNumber,
-                        UserCreator = p.UserCreator,
-                        UserCreatorId = p.UserCreatorID,
-                        UserTaminTxt = p.UserTaminTxt,
-                        TotalSuppliesAmount = totalSupplies,
-                        TotalFactorsAmount = totalFactors,
-                        Profit = profit,
-                        ProfitPercent = profit != -1 && totalFactors != 0 ? Math.Round(profit / totalFactors * 100, 2) : null
-                    };*/
+                var model = JsonConvert.DeserializeObject<FilterVModel>(
+                    Request.Form["model"].FirstOrDefault());
 
+                var searchValue = Request.Form["search[value]"]
+                    .FirstOrDefault()?.Trim().ToLowerInvariant();
 
-                /*var query = from deal in db.Deals.AsNoTracking()
-                    join pf in db.PreFactors.AsNoTracking()
-                        on deal.Id equals pf.DealId
-                    where pf.Pftype != (int)PreFactorEnum.فاقد_اعتبار
-//                          && pf.Factors.Any(f => f.status == FactorStatus.تایید_شده)
+                var orderColumnIndex =
+                    Request.Form["order[0][column]"].FirstOrDefault();
 
-                    group new { deal, pf } by deal.Id into g
+                var sortColumn = !string.IsNullOrEmpty(orderColumnIndex)
+                    ? Request.Form[$"columns[{orderColumnIndex}][name]"]
+                        .FirstOrDefault()
+                    : null;
 
-                    let totalFactors = g.SelectMany(x => x.pf.Factors).Where(f => f.status == FactorStatus.تایید_شده)
-                            .Sum(f => f.SumTotalAmount)
-/*
+                var sortDirection =
+                    Request.Form["order[0][dir]"].FirstOrDefault();
 
-                    let totalSupplies = g.SelectMany(x => db.Supplies.Where(s => s.PfId == x.pf.Id))
-                            .Sum(s => s.SupplyType == SupplyTypeEnum.ضایعات ? -s.TotalAmount :  s.TotalAmount)#1#
+                var isAscending = sortDirection == "asc";
 
-//                    let profit = totalSupplies != 0 ? totalFactors - totalSupplies : -1
+                // پیش‌فاکتورهای معتبر دارای حداقل یک فاکتور
+                var eligiblePreFactors = db.PreFactors
+                    .AsNoTracking()
+                    .Where(pf =>
+                        pf.Pftype != (int)PreFactorEnum.فاقد_اعتبار &&
+                        pf.Factors.Any());
 
-//                    let deal = g.Select(x => x.deal).FirstOrDefault()
-                    select new SuppliesDtVModel {
-                        DealId = g.Select(x => x.deal).FirstOrDefault().Id,
-                        DealTitle = g.Select(x => x.deal).FirstOrDefault().Title,
-                        DealDate = g.Select(x => x.deal).FirstOrDefault().CreateDateTxt.Substring(0, 10),
-                        DealDateM = g.Select(x => x.deal).FirstOrDefault().CreateDate,
-                        DealSerialNumber = g.Select(x => x.deal).FirstOrDefault().SerialNumber,
-                        UserCreatorDeal = g.Select(x => x.deal).FirstOrDefault().UserCreator,
-                        UserCreatorDealId = g.Select(x => x.deal).FirstOrDefault().UserCreatorID,
-                        UserTaminTxt = g.Select(x => x.pf.UserTaminTxt).FirstOrDefault(),
-//                        TotalSuppliesAmount = totalSupplies,
-                        TotalFactorsAmount = totalFactors,
-//                        Profit = profit,
-//                        ProfitPercent = profit != -1 && totalFactors != 0 ? Math.Round(profit / totalFactors * 100, 2) : null
-                    };*/
-
-                var dealQuery = db.Deals.AsNoTracking();
-                if (model?.filt != null)
-                {
-                    dealQuery = dealQuery.ApplyFilter(model, null, f => f.CreateDate, f => f.UserCreatorID);
-                }
-
-                var queryFirst = from deal in dealQuery
-                    join pf in db.PreFactors.AsNoTracking()
-                        on deal.Id equals pf.DealId
-                    where pf.Pftype != (int)PreFactorEnum.فاقد_اعتبار && pf.Factors.Any() //f => f.status == FactorStatus.تایید_شده
-                    group new { deal, pf } by deal.Id
-                    into g
-                    select new {
-                        PreFactor = g.Select(f => f.pf).FirstOrDefault(),
-                        Deal = g.Select(f => f.deal).FirstOrDefault(),
-                        totalFactors = g.Sum(x => x.pf.Factors.Sum(f => f.PaymentAmount)),
-                        totalSupplies = db.Supplies
-                            .Where(s => g.Select(x => x.pf.Id).Contains(s.PfId))
-                            .Sum(s => s.SupplyType == SupplyTypeEnum.ضایعات ? -s.TotalAmount : s.TotalAmount),
-                    };
-
-
-                var query = queryFirst.AsEnumerable().Select(q =>
-                    new SuppliesProfitDtVModel {
-                        DealId = q.Deal.Id,
-                        DealTitle = q.Deal.Title,
-                        DealDate = q.Deal.CreateDateTxt?.Substring(0, 10),
-                        DealDateM = q.Deal.CreateDate,
-                        DealSerialNumber = q.Deal.SerialNumber,
-                        UserCreatorDeal = q.Deal.UserCreator,
-                        UserCreatorDealId = q.Deal.UserCreatorID,
-                        UserTaminTxt = q.PreFactor.UserTaminTxt,
-                        TotalSuppliesAmount = q.totalSupplies,
-                        TotalFactorsAmount = q.totalFactors,
-                        Profit = q.totalSupplies != 0 ? q.totalFactors - q.totalSupplies : -1,
-                        ProfitPercent = q.totalSupplies != 0 && q.totalFactors != 0
-                            ? Math.Round((q.totalFactors - q.totalSupplies) / q.totalFactors * 100, 2)
-                            : null
+                // مجموع مبالغ فاکتورها به تفکیک معامله
+                var factorsByDeal = eligiblePreFactors
+                    .SelectMany(pf => pf.Factors.Select(f => new
+                    {
+                        pf.DealId,
+                        f.PaymentAmount
+                    }))
+                    .GroupBy(x => x.DealId)
+                    .Select(g => new
+                    {
+                        DealId = g.Key,
+                        TotalFactorsAmount =
+                            g.Sum(x => (decimal?)x.PaymentAmount) ?? 0m
                     });
 
-/*
+                // مجموع ملزومات و کسر مبالغ ضایعات
+                var suppliesByDeal =
+                    from pf in eligiblePreFactors
+                    join supply in db.Supplies.AsNoTracking()
+                        on pf.Id equals supply.PfId
+                    group supply by pf.DealId into g
+                    select new
+                    {
+                        DealId = g.Key,
+                        TotalSuppliesAmount =
+                            g.Sum(s =>
+                                (decimal?)(s.SupplyType == SupplyTypeEnum.ضایعات
+                                    ? -s.TotalAmount
+                                    : s.TotalAmount)) ?? 0m
+                    };
+
+                // اطلاعات نمایشی یک پیش‌فاکتور برای هر معامله
+                var preFactorInfo = eligiblePreFactors
+                    .GroupBy(pf => pf.DealId)
+                    .Select(g => new
+                    {
+                        DealId = g.Key,
+                        UserTaminTxt = g
+                            .OrderBy(pf => pf.Id)
+                            .Select(pf => pf.UserTaminTxt)
+                            .FirstOrDefault()
+                    });
+
+                // فیلتر معاملات
+                var dealQuery = db.Deals.AsNoTracking();
 
                 if (model?.filt != null)
                 {
-                    query = query.AsQueryable().ApplyFilter(model, null, f => f.DealDateM, f => f.UserCreatorDealId);
-                    /*var fd = dtService.GetDateMiladi(model.filt.fromDate) ?? dtService.GetDateMiladi("1000/01/01");
-                    var td = (dtService.GetDateMiladi(model.filt.toDate) ?? DateTime.Today).Date.AddDays(1).AddTicks(-1);
-
-                    if (model.filt.DateFilterChk)
-                        query = query.Where(f => f.DealDateM >= fd && f.DealDateM <= td);
-                    if (model.filt.SelFilterChd)
-                        query = query.Where(f => f.UserCreatorDealId == model.filt.selFilter.ToString());#1#
-                }*/
-
-
-                if (!string.IsNullOrEmpty(searchValue))
-                {
-                    query = query
-                        .Where(f =>
-//                            f.CustomerName.Contains(searchValue) ||
-//                            f.SuppliersNameList.Any(s => s.Contains(searchValue)) ||
-//                            f.CustomerCode.ToString() == searchValue ||
-//                            f.PfSerialNumber.ToString() == searchValue ||
-                            f.DealSerialNumber.ToString() == searchValue ||
-                            f.UserCreatorDeal.Contains(searchValue) ||
-                            f.UserTaminTxt.Contains(searchValue) ||
-                            f.DealTitle.Contains(searchValue)
-                        );
+                    dealQuery = dealQuery.ApplyFilter(
+                        model,
+                        null,
+                        f => f.CreateDate,
+                        f => f.UserCreatorID);
                 }
 
-                query = model?._type switch {
-                    1 => query.Where(f => f.Profit != -1),
-                    2 => query.Where(f => f.Profit == -1),
+                // اتصال اطلاعات و محاسبه مبالغ در SQL Server
+                var query =
+                    from deal in dealQuery
+
+                    join factors in factorsByDeal
+                        on deal.Id equals factors.DealId
+
+                    join pfInfo in preFactorInfo
+                        on deal.Id equals pfInfo.DealId
+
+                    join supplies in suppliesByDeal
+                        on deal.Id equals supplies.DealId into suppliesGroup
+
+                    from supplies in suppliesGroup.DefaultIfEmpty()
+
+                    let totalFactors = factors.TotalFactorsAmount
+                    let totalSupplies = supplies == null
+                        ? 0m
+                        : supplies.TotalSuppliesAmount
+
+                    let profit = totalFactors - totalSupplies
+
+                    select new SuppliesProfitDtVModel
+                    {
+                        DealId = deal.Id,
+                        DealTitle = deal.Title,
+
+                        DealDate = deal.CreateDateTxt == null
+                            ? null
+                            : deal.CreateDateTxt.Substring(0, 10),
+
+                        DealDateM = deal.CreateDate,
+                        DealSerialNumber = deal.SerialNumber,
+                        UserCreatorDeal = deal.UserCreator,
+                        UserCreatorDealId = deal.UserCreatorID,
+                        UserTaminTxt = pfInfo.UserTaminTxt,
+
+                        TotalSuppliesAmount = totalSupplies,
+                        TotalFactorsAmount = totalFactors,
+
+                        Profit = totalSupplies != 0m
+                            ? profit
+                            : -1m,
+
+                        ProfitPercent =
+                            totalSupplies != 0m && totalFactors != 0m
+                                ? Math.Round(
+                                    profit / totalFactors * 100m, 2)
+                                : null
+                    };
+
+                // جستجو
+                if (!string.IsNullOrWhiteSpace(searchValue))
+                {
+                    query = query.Where(f =>
+                        f.DealSerialNumber.ToString() == searchValue ||
+                        (f.UserCreatorDeal != null &&
+                            f.UserCreatorDeal.Contains(searchValue)) ||
+                        (f.UserTaminTxt != null &&
+                            f.UserTaminTxt.Contains(searchValue)) ||
+                        (f.DealTitle != null &&
+                            f.DealTitle.Contains(searchValue)));
+                }
+
+                // فیلتر نوع گزارش
+                query = model?._type switch
+                {
+                    1 => query.Where(f => f.Profit != -1m),
+                    2 => query.Where(f => f.Profit == -1m),
                     _ => query
                 };
 
-                var recordsTotal = query.Count();
+                // تعداد کل نتایج فیلترشده
+                var recordsTotal = await query.CountAsync();
 
+                // مجموع‌ها برای تمام نتایج فیلترشده
+                var totals = await query
+                    .GroupBy(_ => 1)
+                    .Select(g => new
+                    {
+                        TotalSuppliesAmountAll =
+                            g.Sum(f =>
+                                (decimal?)f.TotalSuppliesAmount) ?? 0m,
 
-                if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortColumnDirection))
+                        TotalFactorsAmountAll =
+                            g.Sum(f =>
+                                (decimal?)f.TotalFactorsAmount) ?? 0m,
+
+                        ProfitAll =
+                            g.Where(f => f.Profit != -1m)
+                                .Sum(f => (decimal?)f.Profit) ?? 0m
+                    })
+                    .FirstOrDefaultAsync();
+
+                // مرتب‌سازی
+                IOrderedQueryable<SuppliesProfitDtVModel> orderedQuery = null;
+
+                switch (sortColumn)
                 {
-                    var isAscending = sortColumnDirection == "asc";
-                    query = sortColumn switch {
-                        "DealDate" => isAscending
-                            ? query.OrderBy(f => f.TotalSuppliesAmount == 0).ThenBy(f => f.DealDateM)
-                            : query.OrderBy(f => f.TotalSuppliesAmount == 0).ThenByDescending(f => f.DealDateM),
-                        "TotalSuppliesAmount" => isAscending
-                            ? query.OrderBy(f => f.TotalSuppliesAmount == 0).ThenBy(f => f.TotalSuppliesAmount)
-                            : query.OrderBy(f => f.TotalSuppliesAmount == 0).ThenByDescending(f => f.TotalSuppliesAmount),
-                        "TotalFactorsAmount" => isAscending
-                            ? query.OrderBy(f => f.TotalFactorsAmount == 0).ThenBy(f => f.TotalFactorsAmount)
-                            : query.OrderBy(f => f.TotalFactorsAmount == 0).ThenByDescending(f => f.TotalFactorsAmount),
-                        "Profit" => isAscending
-                            ? query.OrderBy(f => f.Profit == -1).ThenBy(f => f.Profit)
-                            : query.OrderBy(f => f.Profit == -1).ThenByDescending(f => f.Profit),
-                        "ProfitPercent" => isAscending
-                            ? query.OrderBy(f => f.ProfitPercent == null).ThenBy(f => f.ProfitPercent)
-                            : query.OrderBy(f => f.ProfitPercent == null).ThenByDescending(f => f.ProfitPercent),
-                        _ => query
-                    };
+                    case "DealDate":
+                        orderedQuery = isAscending
+                            ? query
+                                .OrderBy(f => f.TotalSuppliesAmount == 0m)
+                                .ThenBy(f => f.DealDateM)
+                            : query
+                                .OrderBy(f => f.TotalSuppliesAmount == 0m)
+                                .ThenByDescending(f => f.DealDateM);
+                        break;
+
+                    case "TotalSuppliesAmount":
+                        orderedQuery = isAscending
+                            ? query
+                                .OrderBy(f => f.TotalSuppliesAmount == 0m)
+                                .ThenBy(f => f.TotalSuppliesAmount)
+                            : query
+                                .OrderBy(f => f.TotalSuppliesAmount == 0m)
+                                .ThenByDescending(f => f.TotalSuppliesAmount);
+                        break;
+
+                    case "TotalFactorsAmount":
+                        orderedQuery = isAscending
+                            ? query
+                                .OrderBy(f => f.TotalFactorsAmount == 0m)
+                                .ThenBy(f => f.TotalFactorsAmount)
+                            : query
+                                .OrderBy(f => f.TotalFactorsAmount == 0m)
+                                .ThenByDescending(f => f.TotalFactorsAmount);
+                        break;
+
+                    case "Profit":
+                        orderedQuery = isAscending
+                            ? query
+                                .OrderBy(f => f.Profit == -1m)
+                                .ThenBy(f => f.Profit)
+                            : query
+                                .OrderBy(f => f.Profit == -1m)
+                                .ThenByDescending(f => f.Profit);
+                        break;
+
+                    case "ProfitPercent":
+                        orderedQuery = isAscending
+                            ? query
+                                .OrderBy(f => f.ProfitPercent == null)
+                                .ThenBy(f => f.ProfitPercent)
+                            : query
+                                .OrderBy(f => f.ProfitPercent == null)
+                                .ThenByDescending(f => f.ProfitPercent);
+                        break;
                 }
 
-                var totalSuppliesAmountAll = query.Sum(f => f.TotalSuppliesAmount);
-                var totalFactorsAmountAll = query.Sum(f => f.TotalFactorsAmount);
-                var profitAll = query.Where(f => f.Profit != -1).Sum(f => f.Profit);
+                // مرتب‌سازی پایدار برای صفحه‌بندی
+                IQueryable<SuppliesProfitDtVModel> dataQuery =
+                    orderedQuery != null
+                        ? orderedQuery.ThenBy(f => f.DealId)
+                        : query.OrderBy(f => f.DealId);
 
+                // صفحه‌بندی در دیتابیس
                 if (length != -1)
-                    query = query.Skip(start).Take(length);
+                {
+                    dataQuery = dataQuery.Skip(start).Take(length);
+                }
 
-                var data = query.ToList();
+                var data = await dataQuery.ToListAsync();
 
-                return Json(new {
+                return Json(new
+                {
                     draw,
                     recordsTotal,
                     recordsFiltered = recordsTotal,
                     data,
-                    totals = new {
-                        totalSuppliesAmountAll,
-                        totalFactorsAmountAll,
-                        profitAll
+
+                    totals = new
+                    {
+                        totalSuppliesAmountAll =
+                            totals?.TotalSuppliesAmountAll ?? 0m,
+
+                        totalFactorsAmountAll =
+                            totals?.TotalFactorsAmountAll ?? 0m,
+
+                        profitAll =
+                            totals?.ProfitAll ?? 0m
                     }
                 });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                // در صورت وجود ILogger، خطا را ثبت کن.
+                // logger.LogError(ex, "Error in GetSuppliesProfitDt");
+
                 return BadRequest();
             }
         }
+
+
+
+
 
         [HttpPost]
         public async Task<IActionResult> GetSuppliesDemandsDt() // مطالبات
