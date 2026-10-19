@@ -27,7 +27,7 @@ public class ExternalSoftware {
 
     public IList<ExternalMapping> ExternalMappings { get; set; }
     public IList<ExternalSoftwareSetting> ExternalSoftwareSettings { get; set; }
-    
+
     public IList<CashierExternalSoftware> CashierExternalSoftwares { get; set; }
     public IList<CashExternalSoftware> CashExternalSoftwares { get; set; }
 }
