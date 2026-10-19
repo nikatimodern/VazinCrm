@@ -247,9 +247,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-
-        public async Task<IActionResult> GetPayment(Guid? paymentId)
-        {
+        public async Task<IActionResult> GetPayment(Guid? paymentId)        {
             try
             {
                 var query = db.Payments.AsNoTracking().Where(f => f.Id == paymentId);
@@ -498,8 +496,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 return BadRequest();
             }
         }
-
-
         public async Task<IActionResult> GetSupplyBaseData()
         {
             var extraBaseItems = await db.BaseItems
@@ -633,203 +629,93 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 var draw = Request.Form["draw"].FirstOrDefault();
-                var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
-                var model = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["model"].FirstOrDefault());
-                var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
-                var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
+
+                var start = int.TryParse(Request.Form["start"].FirstOrDefault(), out var parsedStart)
+                    ? Math.Max(0, parsedStart)
+                    : 0;
+
+                var length = int.TryParse(Request.Form["length"].FirstOrDefault(), out var parsedLength)
+                    ? parsedLength
+                    : 10;
+
+                var model = JsonConvert.DeserializeObject<FilterVModel>(
+                    Request.Form["model"].FirstOrDefault());
+
+                var sortColumnIndex = Request.Form["order[0][column]"].FirstOrDefault();
+                var sortColumn = string.IsNullOrWhiteSpace(sortColumnIndex)
+                    ? null
+                    : Request.Form[$"columns[{sortColumnIndex}][name]"].FirstOrDefault();
+
                 var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
-                var searchValue = Request.Form["search[value]"].FirstOrDefault()?.ToLower().Trim();
+                var searchValue = Request.Form["search[value]"].FirstOrDefault()?.Trim();
 
-
-                /*var suppliesQ = db.Supplies.AsNoTracking()
-                    .GroupBy(s => s.PfId)
-                    .Select(g => new {
-                        PfId = g.Key,
-                        TotalSuppliesAmount =
-                            g.Where(f => f.SupplyType != SupplyTypeEnum.ضایعات).Sum(f => f.TotalAmount)
-                            - g.Where(f => f.SupplyType == SupplyTypeEnum.ضایعات).Sum(f => f.TotalAmount),
-//                        SuppliersNameList = g.Where(f => f.SupplierTxt != null).Select(x => x.SupplierTxt).ToList()
-                    });*/
-
-                /*var query = from p in db.PreFactors.AsNoTracking()
-                    where p.Pftype != (int)PreFactorEnum.فاقد_اعتبار && p.Factors.Any(f => f.status == FactorStatus.تایید_شده)
-                    let totalFactors = p.Factors.Where(f => f.status == FactorStatus.تایید_شده).Sum(f => f.SumTotalAmount)
-                    let totalSupplies =
-                        db.Supplies.Where(s => s.PfId == p.Id && s.SupplyType != SupplyTypeEnum.ضایعات).Sum(s => s.TotalAmount)
-                        - db.Supplies.Where(s => s.PfId == p.Id && s.SupplyType == SupplyTypeEnum.ضایعات).Sum(s => s.TotalAmount)
-                    let profit = totalSupplies != 0 ? totalFactors - totalSupplies : -1
-                    select new SuppliesDtVModel {
-                        PfId = p.Id,
-                        CustomerId = p.CustomerId,
-                        CustomerCode = p.CustomerEntity.CustomerCode,
-                        CustomerName = $"{p.Customer ?? ""} {p.AgentName ?? ""}".Trim(),
-                        PfDate = p.Date,
-                        PfDateM = p.DateMiladi,
-                        PfSerialNumber = p.SerialNumber,
-                        DealSerialNumber = p.DealSerialNumber,
-                        UserCreator = p.UserCreator,
-                        UserCreatorId = p.UserCreatorID,
-                        UserTaminTxt = p.UserTaminTxt,
-                        TotalSuppliesAmount = totalSupplies,
-                        TotalFactorsAmount = totalFactors,
-                        Profit = profit,
-                        ProfitPercent = profit != -1 && totalFactors != 0 ? Math.Round(profit / totalFactors * 100, 2) : null
-                    };*/
-
-
-                /*var query = from deal in db.Deals.AsNoTracking()
-                    join pf in db.PreFactors.AsNoTracking()
-                        on deal.Id equals pf.DealId
-                    where pf.Pftype != (int)PreFactorEnum.فاقد_اعتبار
-//                          && pf.Factors.Any(f => f.status == FactorStatus.تایید_شده)
-
-                    group new { deal, pf } by deal.Id into g
-
-                    let totalFactors = g.SelectMany(x => x.pf.Factors).Where(f => f.status == FactorStatus.تایید_شده)
-                            .Sum(f => f.SumTotalAmount)
-/*
-
-                    let totalSupplies = g.SelectMany(x => db.Supplies.Where(s => s.PfId == x.pf.Id))
-                            .Sum(s => s.SupplyType == SupplyTypeEnum.ضایعات ? -s.TotalAmount :  s.TotalAmount)#1#
-
-//                    let profit = totalSupplies != 0 ? totalFactors - totalSupplies : -1
-
-//                    let deal = g.Select(x => x.deal).FirstOrDefault()
-                    select new SuppliesDtVModel {
-                        DealId = g.Select(x => x.deal).FirstOrDefault().Id,
-                        DealTitle = g.Select(x => x.deal).FirstOrDefault().Title,
-                        DealDate = g.Select(x => x.deal).FirstOrDefault().CreateDateTxt.Substring(0, 10),
-                        DealDateM = g.Select(x => x.deal).FirstOrDefault().CreateDate,
-                        DealSerialNumber = g.Select(x => x.deal).FirstOrDefault().SerialNumber,
-                        UserCreatorDeal = g.Select(x => x.deal).FirstOrDefault().UserCreator,
-                        UserCreatorDealId = g.Select(x => x.deal).FirstOrDefault().UserCreatorID,
-                        UserTaminTxt = g.Select(x => x.pf.UserTaminTxt).FirstOrDefault(),
-//                        TotalSuppliesAmount = totalSupplies,
-                        TotalFactorsAmount = totalFactors,
-//                        Profit = profit,
-//                        ProfitPercent = profit != -1 && totalFactors != 0 ? Math.Round(profit / totalFactors * 100, 2) : null
-                    };*/
-
-                var dealQuery = db.Deals.AsNoTracking();
-                if (model?.filt != null)
-                {
-                    dealQuery = dealQuery.ApplyFilter(model, null, f => f.CreateDate, f => f.UserCreatorID);
-                }
-
-                var queryFirst = from deal in dealQuery
-                    join pf in db.PreFactors.AsNoTracking()
-                        on deal.Id equals pf.DealId
-                    where pf.Pftype != (int)PreFactorEnum.فاقد_اعتبار && pf.Factors.Any() //f => f.status == FactorStatus.تایید_شده
-                    group new { deal, pf } by deal.Id
-                    into g
-                    select new {
-                        PreFactor = g.Select(f => f.pf).FirstOrDefault(),
-                        Deal = g.Select(f => f.deal).FirstOrDefault(),
-                        totalFactors = g.Sum(x => x.pf.Factors.Sum(f => f.PaymentAmount)),
-                        totalSupplies = db.Supplies
-                            .Where(s => g.Select(x => x.pf.Id).Contains(s.PfId))
-                            .Sum(s => s.SupplyType == SupplyTypeEnum.ضایعات ? -s.TotalAmount : s.TotalAmount),
-                    };
-
-
-                var query = queryFirst.AsEnumerable().Select(q =>
-                    new SuppliesProfitDtVModel {
-                        DealId = q.Deal.Id,
-                        DealTitle = q.Deal.Title,
-                        DealDate = q.Deal.CreateDateTxt?.Substring(0, 10),
-                        DealDateM = q.Deal.CreateDate,
-                        DealSerialNumber = q.Deal.SerialNumber,
-                        UserCreatorDeal = q.Deal.UserCreator,
-                        UserCreatorDealId = q.Deal.UserCreatorID,
-                        UserTaminTxt = q.PreFactor.UserTaminTxt,
-                        TotalSuppliesAmount = q.totalSupplies,
-                        TotalFactorsAmount = q.totalFactors,
-                        Profit = q.totalSupplies != 0 ? q.totalFactors - q.totalSupplies : -1,
-                        ProfitPercent = q.totalSupplies != 0 && q.totalFactors != 0
-                            ? Math.Round((q.totalFactors - q.totalSupplies) / q.totalFactors * 100, 2)
-                            : null
-                    });
-
-/*
+                // پارامترهای فیلتر تاریخ و کاربر؛ فیلترها داخل Stored Procedure اعمال می‌شوند.
+                DateTime? fromDate = null;
+                DateTime? toDate = null;
+                string userCreatorDealId = null;
+                var dateFilterChk = false;
+                var userFilterChk = false;
 
                 if (model?.filt != null)
                 {
-                    query = query.AsQueryable().ApplyFilter(model, null, f => f.DealDateM, f => f.UserCreatorDealId);
-                    /*var fd = dtService.GetDateMiladi(model.filt.fromDate) ?? dtService.GetDateMiladi("1000/01/01");
-                    var td = (dtService.GetDateMiladi(model.filt.toDate) ?? DateTime.Today).Date.AddDays(1).AddTicks(-1);
+                    dateFilterChk = model.filt.DateFilterChk;
+                    userFilterChk = model.filt.SelFilterChd;
 
-                    if (model.filt.DateFilterChk)
-                        query = query.Where(f => f.DealDateM >= fd && f.DealDateM <= td);
-                    if (model.filt.SelFilterChd)
-                        query = query.Where(f => f.UserCreatorDealId == model.filt.selFilter.ToString());#1#
-                }*/
+                    if (dateFilterChk)
+                    {
+                        fromDate = dtService.GetDateMiladi(model.filt.fromDate)
+                                   ?? dtService.GetDateMiladi("1000/01/01");
 
+                        toDate = (dtService.GetDateMiladi(model.filt.toDate) ?? DateTime.Today)
+                            .Date.AddDays(1).AddTicks(-1);
+                    }
 
-                if (!string.IsNullOrEmpty(searchValue))
-                {
-                    query = query
-                        .Where(f =>
-//                            f.CustomerName.Contains(searchValue) ||
-//                            f.SuppliersNameList.Any(s => s.Contains(searchValue)) ||
-//                            f.CustomerCode.ToString() == searchValue ||
-//                            f.PfSerialNumber.ToString() == searchValue ||
-                            f.DealSerialNumber.ToString() == searchValue ||
-                            f.UserCreatorDeal.Contains(searchValue) ||
-                            f.UserTaminTxt.Contains(searchValue) ||
-                            f.DealTitle.Contains(searchValue)
-                        );
+                    if (userFilterChk)
+                        userCreatorDealId = model.filt.selFilter?.ToString();
                 }
 
-                query = model?._type switch {
-                    1 => query.Where(f => f.Profit != -1),
-                    2 => query.Where(f => f.Profit == -1),
-                    _ => query
+                var procedureParameters = new
+                {
+                    FromDate = fromDate,
+                    ToDate = toDate,
+                    DateFilterChk = dateFilterChk,
+                    UserCreatorDealId = userCreatorDealId,
+                    SelFilterChd = userFilterChk,
+                    Type = model?._type,
+                    SearchValue = string.IsNullOrWhiteSpace(searchValue) ? null : searchValue,
+                    Start = start,
+                    Length = length,
+                    SortColumn = string.IsNullOrWhiteSpace(sortColumn) ? "DealDate" : sortColumn,
+                    SortDirection = string.IsNullOrWhiteSpace(sortColumnDirection)
+                        ? "desc"
+                        : sortColumnDirection
                 };
 
-                var recordsTotal = query.Count();
+                await using var connection = new SqlConnection(
+                    db.Database.GetDbConnection().ConnectionString);
 
+                // SP نتیجه اول را به‌صورت صفحه‌بندی‌شده و نتیجه دوم را به‌صورت مجموع‌ها برمی‌گرداند.
+                using var multi = await connection.QueryMultipleAsync(
+                    "dbo.Sp_GetSuppliesProfit",
+                    procedureParameters,
+                    commandType: CommandType.StoredProcedure);
 
-                if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortColumnDirection))
+                var data = (await multi.ReadAsync<SuppliesProfitDtVModel>()).ToList();
+                var totalsRow = await multi.ReadSingleAsync();
+
+                var recordsFiltered = Convert.ToInt64(totalsRow.RecordsFiltered);
+
+                return Json(new
                 {
-                    var isAscending = sortColumnDirection == "asc";
-                    query = sortColumn switch {
-                        "DealDate" => isAscending
-                            ? query.OrderBy(f => f.TotalSuppliesAmount == 0).ThenBy(f => f.DealDateM)
-                            : query.OrderBy(f => f.TotalSuppliesAmount == 0).ThenByDescending(f => f.DealDateM),
-                        "TotalSuppliesAmount" => isAscending
-                            ? query.OrderBy(f => f.TotalSuppliesAmount == 0).ThenBy(f => f.TotalSuppliesAmount)
-                            : query.OrderBy(f => f.TotalSuppliesAmount == 0).ThenByDescending(f => f.TotalSuppliesAmount),
-                        "TotalFactorsAmount" => isAscending
-                            ? query.OrderBy(f => f.TotalFactorsAmount == 0).ThenBy(f => f.TotalFactorsAmount)
-                            : query.OrderBy(f => f.TotalFactorsAmount == 0).ThenByDescending(f => f.TotalFactorsAmount),
-                        "Profit" => isAscending
-                            ? query.OrderBy(f => f.Profit == -1).ThenBy(f => f.Profit)
-                            : query.OrderBy(f => f.Profit == -1).ThenByDescending(f => f.Profit),
-                        "ProfitPercent" => isAscending
-                            ? query.OrderBy(f => f.ProfitPercent == null).ThenBy(f => f.ProfitPercent)
-                            : query.OrderBy(f => f.ProfitPercent == null).ThenByDescending(f => f.ProfitPercent),
-                        _ => query
-                    };
-                }
-
-                var totalSuppliesAmountAll = query.Sum(f => f.TotalSuppliesAmount);
-                var totalFactorsAmountAll = query.Sum(f => f.TotalFactorsAmount);
-                var profitAll = query.Where(f => f.Profit != -1).Sum(f => f.Profit);
-
-                if (length != -1)
-                    query = query.Skip(start).Take(length);
-
-                var data = query.ToList();
-
-                return Json(new {
                     draw,
-                    recordsTotal,
-                    recordsFiltered = recordsTotal,
+                    recordsTotal = recordsFiltered,
+                    recordsFiltered,
                     data,
-                    totals = new {
-                        totalSuppliesAmountAll,
-                        totalFactorsAmountAll,
-                        profitAll
+                    totals = new
+                    {
+                        totalSuppliesAmountAll = Convert.ToDecimal(totalsRow.TotalSuppliesAmountAll),
+                        totalFactorsAmountAll = Convert.ToDecimal(totalsRow.TotalFactorsAmountAll),
+                        profitAll = Convert.ToDecimal(totalsRow.ProfitAll)
                     }
                 });
             }
@@ -839,7 +725,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        [HttpPost]
         public async Task<IActionResult> GetSuppliesDemandsDt() // مطالبات
         {
             try
