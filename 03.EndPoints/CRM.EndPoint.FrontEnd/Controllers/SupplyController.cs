@@ -247,7 +247,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-
         public async Task<IActionResult> GetPayment(Guid? paymentId)
         {
             try
@@ -499,7 +498,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-
         public async Task<IActionResult> GetSupplyBaseData()
         {
             var extraBaseItems = await db.BaseItems
@@ -650,12 +648,46 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
                 var searchValue = Request.Form["search[value]"].FirstOrDefault()?.Trim().ToLowerInvariant();
 
-                // اجرای Stored Procedure و دریافت خروجی محاسبات از SQL Server
+                // آماده‌سازی پارامترهای فیلتر برای اجرای Stored Procedure در SQL Server
+                DateTime? fromDate = null;
+                DateTime? toDate = null;
+                string userCreatorDealId = null;
+                bool dateFilterChk = false;
+                bool userFilterChk = false;
+
+                if (model?.filt != null)
+                {
+                    dateFilterChk = model.filt.DateFilterChk;
+                    userFilterChk = model.filt.SelFilterChd;
+
+                    fromDate = dtService.GetDateMiladi(model.filt.fromDate)
+                               ?? dtService.GetDateMiladi("1000/01/01");
+
+                    toDate = (dtService.GetDateMiladi(model.filt.toDate) ?? DateTime.Today)
+                        .Date.AddDays(1).AddTicks(-1);
+
+                    if (userFilterChk)
+                        userCreatorDealId = model.filt.selFilter?.ToString();
+                }
+
+                // این پارامترها باید با پارامترهای تعریف‌شده در dbo.Sp_GetSuppliesProfit هم‌نام باشند.
+                var procedureParameters = new
+                {
+                    FromDate = fromDate,
+                    ToDate = toDate,
+                    DateFilterChk = dateFilterChk,
+                    UserCreatorDealId = userCreatorDealId,
+                    SelFilterChd = userFilterChk,
+                    Type = model?._type,
+                    SearchValue = string.IsNullOrWhiteSpace(searchValue) ? null : searchValue
+                };
+
                 await using var connection = new SqlConnection(
                     db.Database.GetDbConnection().ConnectionString);
 
                 var rows = (await connection.QueryAsync<SuppliesProfitDtVModel>(
-                    "Sp_GetSuppliesProfit",
+                    "dbo.Sp_GetSuppliesProfit",
+                    procedureParameters,
                     commandType: CommandType.StoredProcedure
                 )).ToList();
 
@@ -747,8 +779,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     {
                         totalSuppliesAmountAll,
                         totalFactorsAmountAll,
-                        profitAll
-                    }
+                        profitAll                    }
                 });
             }
             catch (Exception)
