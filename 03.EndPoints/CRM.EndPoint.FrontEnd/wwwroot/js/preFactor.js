@@ -1498,13 +1498,14 @@ async function startCurrentSoftwareItemMapping() {
     }
     
     state.itemSelections = {};
+    state.expectedItemIds = data.preFactorItems?.map(item => String(item.preFactorItemId));
     renderCurrentSoftwareItemStep(result);
 }
 
 function renderCurrentSoftwareItemStep(data) {
     const state = externalSoftwareProcess;
     state.currentStep = "items";
-    state.itemSelections = {};
+    
     
     renderExternalMappingModal({
         title: "تطبیق کالاها",
@@ -1537,20 +1538,36 @@ function renderCurrentSoftwareItemStep(data) {
         new TomSelect(select, {
             placeholder: "جستجو و انتخاب کالا",
         });
-        select.addEventListener("change", () => updateItemMappingButton());
+        select.addEventListener("change", () => updateItemMappingButton(select));
     });
     
     confirmExternalMappingBtn.textContent = "تأیید کالاها و ادامه";
-    updateItemMappingButton()
+    toggleElementsDisabled(confirmExternalMappingBtn);
 }
 
-function updateItemMappingButton() {
-    const selects = [...externalMappingList.querySelectorAll(".external-mapping-item-select")];
-    toggleElementsDisabled(confirmExternalMappingBtn, selects.length === 0 || selects.some(select => !select.value));
+function updateItemMappingButton(select) {
+    const crmItemId = String(select.dataset.crmItemId);
+    
+    if (select.value) {
+        externalSoftwareProcess.itemSelections[crmItemId] = select.value;
+    } else {
+        delete externalSoftwareProcess.itemSelections[crmItemId];
+    }
+    
+    const expectedIds = externalSoftwareProcess.expectedItemIds ?? [];
+    
+    const allSelected = expectedIds.length > 0 &&
+        expectedIds.every(id =>
+            externalSoftwareProcess.itemSelections[String(id)] != null &&
+            externalSoftwareProcess.itemSelections[String(id)] !== "",
+        );
+    
+    toggleElementsDisabled(confirmExternalMappingBtn, !allSelected);
 }
 
 async function confirmCurrentSoftwareItems() {
     const state = externalSoftwareProcess;
+    const expectedItemIds = state.expectedItemIds ?? [];
     const selects = [...externalMappingList.querySelectorAll(".external-mapping-item-select")];
     
     if (selects.length === 0) {
@@ -1558,29 +1575,18 @@ async function confirmCurrentSoftwareItems() {
         return;
     }
     
-    // مقادیر را مستقیماً از همه Selectها می‌خوانیم؛ به رویداد change وابسته نیستیم.
-    const selections = {};
-    console.log(selects);
-    for (const select of selects) {
-        const crmItemId = select.dataset.crmItemId;
-        const sepidarItemId = select.value;
+    for (const crmItemId of expectedItemIds) {
+        const selectedItemId = state.itemSelections[String(crmItemId)];
         
-        console.log(crmItemId, sepidarItemId);
-        if (!crmItemId || !sepidarItemId) {
+        if (selectedItemId == null || selectedItemId === "") {
             toastifyError("برای تمام ردیف‌های پیش‌فاکتور کالای معادل انتخاب کنید.");
             return;
         }
         
-        if (Object.prototype.hasOwnProperty.call(selections, crmItemId)) {
-            toastifyError("شناسه ردیف تکراری است؛ لطفاً صفحه را بررسی کنید.");
-            return;
-        }
-        
-        selections[crmItemId] = Number(sepidarItemId);
+        selections[String(crmItemId)] = Number(selectedItemId);
     }
     
-    state.itemSelections = selections;
-    state.currentSoftwareItemMappings = { ...selections };
+    state.currentSoftwareItemMappings = selections;
     
     await startCurrentSoftwareQuotationPreview();
 }
