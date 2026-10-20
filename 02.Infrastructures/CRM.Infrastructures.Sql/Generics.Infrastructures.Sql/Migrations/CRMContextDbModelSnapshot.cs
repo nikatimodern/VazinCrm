@@ -2043,6 +2043,9 @@ namespace CRM.Infrastructures.Sql.Migrations
                     b.Property<string>("CustomerName")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("FinancialStatus")
                         .HasColumnType("int");
 

@@ -224,7 +224,7 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
                              <span class="fbold">${item.userCreator}</span>
                         </span>` : ""}
                 </div>
-                <p style="font-size:clamp(12px, 2vw, 13px);color:gray;min-height:12px;">${item.commentText?.trim()}</p>
+                <p style="font-size:clamp(12px, 2vw, 13px);color:gray;min-height:12px;">${item.description?.trim()}</p>
                 <div class="d-flex w-100 justify-content-between align-items-end mt-2" style="column-gap:10px;row-gap:8px;color: #666">
                     <div class="d-flex gap-2 gap-lg-3 align-items-end justify-content-between flex-grow-1" style="font-size:clamp(10px, 2vw, 11px)">
                         <div class="d-flex gap-2 gap-lg-3 align-items-center flex-grow-1 flex-wrap" style="row-gap:.5rem !important">

@@ -15,6 +15,7 @@ using CRM.Framework.Domain;
 namespace CRM.Core.Domain.Deals.Entities;
 
 public class Deal : BaseEntity {
+    public string Description { get; set; }
     public string Title { get; set; }
     public Guid? CustomerId { get; set; }
     public Customer? Customer { get; set; }
