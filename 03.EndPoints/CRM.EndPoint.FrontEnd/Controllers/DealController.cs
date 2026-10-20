@@ -171,7 +171,7 @@ public class DealController : Controller {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var roles = await userManager.GetRolesAsync(user);
 
-            var query = db.Deals.Include(f => f.Customer).AsQueryable();
+            var query = db.Deals.Include(f => f.Customer).AsNoTracking().AsQueryable();
             var isAdmin = true;
 
             if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر فروش"))
@@ -230,6 +230,7 @@ public class DealController : Controller {
                         Id = f.UserId.ToString(),
                         FirstName = users.GetValueOrDefault(f.UserId)
                     })
+                    .AsNoTracking()
                     .ToListAsync();
 
                 userList.Add(new AppUser {
@@ -451,24 +452,42 @@ public class DealController : Controller {
     {
         try
         {
+
+
+
+
             var user = await userManager.GetUserAsync(HttpContext.User);
             var oldDeal = await db.Deals.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
-            var deal = await db.Deals.Where(f => f.Id == id).FirstOrDefaultAsync();
+            var deal = await db.Deals.Include(f=>f.Factors).Where(f => f.Id == id).FirstOrDefaultAsync();
             if (deal == null) return NotFound("رکوردی یافت نشد!");
 
-            deal.Status = status;
-            deal.UserModify = user.FullName;
-            deal.UserModifyID = user.Id;
-            deal.ModifyDate = DateTime.Now;
-            deal.ModifyDateTxt = dtService.GetDateTimePersian();
+            if (deal.Factors.Any() && (status == DealStatusEnum.باز || status == DealStatusEnum.بسته || status == DealStatusEnum.ناموفق))
+            {
 
-            await _logSystemService.LogChange(oldDeal, deal, LogActionEnum.تغییر_وضعیت, user);
-            await db.SaveChangesAsync();
-            return Ok();
+                return BadRequest(new {code=1, message = "مجاز به تغییر وضعیت این سفارش نیستید" });
+            
+
+            }
+            else
+            {
+                deal.Status = status;
+                deal.UserModify = user.FullName;
+                deal.UserModifyID = user.Id;
+                deal.ModifyDate = DateTime.Now;
+                deal.ModifyDateTxt = dtService.GetDateTimePersian();
+
+                await _logSystemService.LogChange(oldDeal, deal, LogActionEnum.تغییر_وضعیت, user);
+                await db.SaveChangesAsync();
+                return Ok();
+            }
+
+
+
+
         }
         catch
         {
-            return BadRequest();
+            return BadRequest(new { code = 2, message = "خطای سیستمی" });
         }
     }
 

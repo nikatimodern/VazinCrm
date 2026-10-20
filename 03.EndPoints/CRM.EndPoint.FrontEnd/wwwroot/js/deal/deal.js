@@ -12,15 +12,15 @@ const toggleExtraPanelBtn = dealModalElm.querySelector("#toggleExtraInfo");
 const extraCustomerPanel = document.getElementById("extraCustomerPanel");
 document.addEventListener("DOMContentLoaded", async () => {
     /* FLshowLoading(); */
-    
+
     removeDealsTabsDesktop();
     initSortableDeal();
-    
+
     showTaminDropdown();
     await getAllDeals();
-    
+
     /* FLshowLoading(false); */
-    
+
     const searchDealElm = document.getElementById("dealSearchId");
     searchDealElm?.addEventListener("keyup", async (e) => {
         if (e.key === "Enter") {
@@ -68,7 +68,7 @@ const deleteDeal = async (id) => {
 async function callbackFilterDeal() {
     modelDeal.filt = window[filterVarConfig].filterVar;
     modelDeal.serVal = window[filterVarConfig].varSearch;
-    
+
     await getAllDeals();
 }
 
@@ -169,25 +169,35 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
     const countElm = document.querySelector(`${containersId} .countDeal`);
     const containerElm = document.querySelector(`${containersId} .deal-column-list`);
     if (!containerElm) return;
-    
+
     if (countElm) countElm.textContent = `(${items.length})`;
     containerElm.innerHTML = "";
-    
+
     items.forEach((item, index) => {
+
+                  
+
+
         const isFinancialClosed = item.financialStatus === 1;
-        
+
         const card = document.createElement("div");
+
+
+
         card.dataset.id = item.id;
         card.className = "deal-card";
-        
+
+        if (item.counts.factor > 0)
+            card.classList.add("noDrag")
+
         if (!item.counts.preFactor && !item.counts.report) {
             card.classList.add("deal-card--inactive");
         }
-        
+
         if (isFinancialClosed) {
             card.classList.add("deal-card--locked");
         }
-        
+
         card.innerHTML = `
             <div class="position-relative w-100 h-100">
                 ${item.suspend ? `
@@ -315,13 +325,13 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
                 </div>
             </div>
         `;
-        
-        
+
+
         if (item.suspend) {
-            card.classList.add("suspend-deal");
+            card.classList.add("suspend-deal","noDrag");
             const text = isAdmin ? "مشتری این سفارش متعلق به کارشناس دیگری است، لطفاً مشخص کنید این سفارش باید به کدام کارشناس اختصاص یابد."
                 : "مشتری این سفارش متعلق به کارشناس دیگری است.";
-            
+
             const suspendElm = `
                 <div class="mt-3 p-2 text-center" style="background-color:rgb(216 219 231 / 78%);border-radius: 10px;">
                     <p class="fMedium" style="font-size: 12px; color: #333;">${text}</p>
@@ -335,9 +345,9 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
                     </div>` : ""}
                 </div>
             `;
-            
+
             card.insertAdjacentHTML("beforeend", suspendElm);
-            
+
             const suspendSelect = card.querySelector(`select.assignUser-suspendSelect`);
             if (isAdmin && suspendSelect) {
                 card.querySelector("#assignUserSuspendBtn")?.addEventListener("click", async () => {
@@ -345,9 +355,9 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
                     const userFullName = suspendSelect.selectedOptions[0].textContent;
                     await assignUserSuspendDeal(item.id, userId, userFullName);
                 });
-                
+
                 const options = item.userIdsForSuspend.map(u => ({ value: u.id, text: u.firstName }));
-                
+
                 new TomSelect(suspendSelect, {
                     options: options,
                     items: options[0].value,
@@ -368,10 +378,10 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
         });
         card.querySelector(".showOrders")?.addEventListener("click", () => showModalDealOrders(item));
         card.querySelector(".showInvoices")?.addEventListener("click", () => showModalDealInvoices(item));
-        
+
         card.querySelector(".editDeal")?.addEventListener("click", () => editDealModal(item.id, item.counts.preFactor));
         card.querySelector(".deleteDeal")?.addEventListener("click", () => deleteDeal(item.id));
-        
+
         containerElm.append(card);
     });
 };
@@ -384,7 +394,7 @@ const assignUserSuspendDeal = async (dealId, userId, userFullName) => {
             toastifySuccess("با موفقیت ثبت شد.");
             await getAllDeals();
         }
-        
+
     } catch (err) {
         console.log(err);
         toastifyError("خطای سرور");
@@ -402,19 +412,19 @@ const editDealModal = async (id, preFactorCount) => {
         currentDealData = res.data;
         isEditMode = true;
         mySer.convertJsonToForm(currentDealData, "formDeal");
-        
+
         canCreateCustomerTomSelect = currentDealData.customerId === null || preFactorCount === 0;
-        
+
         if (currentDealData.customerId === null) {
             const customId = `custom-${currentDealData.customerName}`;
             selectTomCustomers.addOption({ value: customId, text: currentDealData.customerName });
             selectTomCustomers.setValue(customId, true);
-            
+
             const mobileNumber = currentDealData.mobileNumber;
             dealMobileElm.tomselect.addOption({ value: mobileNumber });
             dealMobileElm.tomselect.setValue(mobileNumber, true);
         }
-        
+
     } catch (err) {
         console.log(err);
     }
@@ -427,7 +437,7 @@ const openDealModal = async () => {
         await initSelectTom();
         selectTomLoaded = true;
     }
-    
+
     ModalToggle(dealModalElm, "show");
 };
 
@@ -444,7 +454,7 @@ dealModalElm?.addEventListener("hidden.bs.modal", closeDealModal);
 
 const submitDeal = async () => {
     if (!await mySer.CheckValidForm("mainFormDeal")) return;
-    
+
     if (!await mySer.CheckValidForm("extraCustomerPanel")) {
         toastifyError("مشخصات حقوقی شرکت را کامل وارد کنید");
         toggleExtraPanel(true);
@@ -452,19 +462,19 @@ const submitDeal = async () => {
     }
     try {
         FLshowLoading();
-        
+
         const data = mySer.convertFormToJSON("formDeal");
         const model = { ...currentDealData, ...data };
         if (model.customerId.startsWith("custom")) model.customerId = null;
         if (!model.cusWorkSenf) model.cusWorkSenf = null;
         if (!model.cusAcquaintanceWay) model.cusAcquaintanceWay = null;
-        
+
         const res = await axios.post(`/Deal/AddDeal`, model);
         if (res.status === 200) {
             await getAllDeals();
             toastifySuccess(isEditMode ? "با موفقیت ویرایش شد" : "سفارش جدید ثبت شد");
             FLshowLoading(false);
-            
+
             closeDealModal();
         } else if (res.status === 201) {
             toastifyError(res.data);
@@ -490,45 +500,45 @@ const initSelectTom = async () => {
         createOnBlur: true,
         selectOnTab: true,
         placeholder: "نام سفارش دهنده ...",
-        
+
         createFilter: () => canCreateCustomerTomSelect,
         create: (input, callback) => callback({ value: `custom-${input}`, text: input }),
-        
+
         async onChange(value) {
             if (!value) return;
             if (!value.startsWith("custom")) {
                 toggleElementsDisabled(dealMobileElm, true);
                 selectTomCustomers.disable();
-                
+
                 const res = await axios(`/Customer/GetCustomer/${value}`);
                 setDealDataByCustomer(res.data);
-                
+
                 selectTomCustomers.enable();
                 toggleElementsDisabled(dealMobileElm, false);
             } else {
                 const opt = selectTomCustomers.options[value];
-                
+
                 currentDealData.customerCode = null;
                 currentDealData.customerName = opt.text.trim();
             }
         },
-        
+
         onDelete(values) {
             const value = values[0];
             if (value.startsWith("custom")) {
                 const opt = selectTomCustomers.options[value];
-                
+
                 selectTomCustomers.removeItem(value, true);
                 selectTomCustomers.setTextboxValue(opt.text.trim());
                 selectTomCustomers.refreshOptions(true);
                 return false;
             }
-            
-            
+
+
             mySer.emptyForm("extraCustomerPanel");
             currentDealData.cusWorkSenfTxt = "";
             currentDealData.cusAcquaintanceWayTxt = "";
-            
+
             currentDealData.customerCode = null;
             currentDealData.customerId = null;
             currentDealData.customerName = "";
@@ -536,7 +546,7 @@ const initSelectTom = async () => {
             return true;
         },
     });
-    
+
     new TomSelect(dealMobileElm, {
         options: customerRes.data.map(c => ({ text: `${c.customerName} (${c.mobile})`, value: c.mobile })),
         openOnFocus: false,
@@ -547,18 +557,18 @@ const initSelectTom = async () => {
         createOnBlur: true,
         selectOnTab: true,
         placeholder: "...شماره موبایل",
-        
+
         render: {
             item(data, escape) {
                 return `<div>${escape(data.value)}</div>`;
             },
         },
-        
+
         onChange(value) {
             if (!value) return;
             const customer = customerRes.data.find(x => x.mobile === value);
             if (!customer) return;
-            
+
             selectTomCustomers.setValue(customer.id);
             flashItem(selectTomCustomers.control);
         },
@@ -566,8 +576,8 @@ const initSelectTom = async () => {
     const dealMobileTsInput = document.getElementById("dealMobile-ts-control");
     dealMobileTsInput.setAttribute("inputmode", "numeric");
     dealMobileTsInput.addEventListener("input", handlerMobileInput);
-    
-    
+
+
     const selectTomWorkSenf = new TomSelect("#workSenfIDDeal", {
         options: workSenfRes.data,
         valueField: "id",
@@ -578,7 +588,7 @@ const initSelectTom = async () => {
             currentDealData.cusWorkSenfTxt = opt.text.trim();
         },
     });
-    
+
     const selectTomAcquaintanceWay = new TomSelect("#acquaintanceWayDeal", {
         options: acquaintanceWayRes.data,
         valueField: "id",
@@ -616,7 +626,7 @@ const setDealDataByCustomer = (data) => {
         //customerName: data.agentName?.trim(),
         customerId: data.id,
     };
-    
+
     //selectTomCustomers.setValue(data.id, true);
     mySer.convertJsonToForm(cusDealData, "formDeal");
     currentDealData = { ...currentDealData, ...cusDealData };
@@ -645,7 +655,7 @@ const setDealDataByCustomer = (data) => {
 function showExistingCustomerToast(cus) {
     const wrapper = document.createElement("div");
     const cusName = `مشتری ${cus.customerCode ?? ""} ${cus.companyName ?? ""} (${(cus.Sex === 1 ? "جناب آقای" : "سرکار خانم")} ${cus.agentName ?? ""})`;
-    
+
     wrapper.innerHTML = `
         <div class="text-center" style="line-height:1.8">
           <div class="fMedium" style="font-size: 16px">مشتری با این شماره موبایل قبلا در سیستم ثبت شده است!</div>
@@ -656,14 +666,14 @@ function showExistingCustomerToast(cus) {
           </div>
         </div>
     `;
-    
+
     const toast = toastifyError2("", { node: wrapper, duration: -1, style: { cursor: "auto" } });
-    
+
     wrapper.querySelector("#toastAddBtn").onclick = () => {
         setDealDataByCustomer(cus);
         toast.hideToast();
     };
-    
+
     wrapper.querySelector("#toastCancelBtn").onclick = () => {
         toast.hideToast();
     };
@@ -674,12 +684,12 @@ function initSortableDeal() {
     let tabSwitchTimer = null;
     let isDragging = false;
     const overlayElm = document.getElementById("overlay");
-    
+
     document.querySelectorAll(".deal-column-list").forEach(list => {
         new Sortable(list, {
             group: "sharedDeal",
             draggable: ".deal-card",
-            filter: ".suspend-deal",
+            filter: ".noDrag",
             sort: false,
             animation: 150,
             touchStartThreshold: 120,
@@ -712,10 +722,10 @@ function initSortableDeal() {
             },
         });
     });
-    
-    
+
+
     const tabs = document.querySelectorAll("[data-bs-toggle=\"tab\"]");
-    
+
     tabs.forEach(tab => {
         tab.addEventListener("dragover", (e) => {
             e.preventDefault();
@@ -732,7 +742,7 @@ function initSortableDeal() {
             tabSwitchTimer = null;
         });
     });
-    
+
     document.addEventListener("touchmove", (e) => {
         if (!isDragging) return;
         const touch = e.touches[0];
@@ -763,7 +773,22 @@ async function changeStatusDeal(id, targetStatus) {
             FLshowLoading(false);
         }
     } catch (err) {
-        setTimeout(async () => await changeStatusDeal(evt), 3000);
+        
+      
+      
+
+        if (err.response.data.code == 1) {
+
+            FLshowLoading(false);
+
+            toastifyError(err.response.data.message)
+
+        } else {
+
+            setTimeout(async () => await changeStatusDeal(evt), 3000);
+        }
+
+
     }
 }
 
@@ -789,7 +814,7 @@ toggleExtraPanelBtn?.addEventListener("click", () => {
 
 function toggleExtraPanel(show) {
     const modalDialog = dealModalElm.querySelector(".modal-dialog");
-    
+
     extraCustomerPanel.classList.toggle("d-none", !show);
     modalDialog.classList.toggle("modal-xl", show);
 }
@@ -799,7 +824,7 @@ dealModalElm.querySelectorAll("input[name='cusJuridical']").forEach((elm) => {
         const juridicalInfoElm = document.getElementById("juridicalInfoDeal");
         const showJuridicalInfo = Number(e.target.value) === 1;
         juridicalInfoElm.classList.toggle("d-none", !showJuridicalInfo);
-        
+
         toggleElementsRequired(juridicalInfoElm.querySelectorAll("input"), showJuridicalInfo);
     });
 });

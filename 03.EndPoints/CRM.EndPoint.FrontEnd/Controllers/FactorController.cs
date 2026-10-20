@@ -50,8 +50,10 @@ using CRM.EndPoint.FrontEnd.Services.SepidarServices;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Microsoft.Playwright;
 
-namespace CRM.EndPoint.FrontEnd.Controllers {
-    public class FactorController : Controller {
+namespace CRM.EndPoint.FrontEnd.Controllers
+{
+    public class FactorController : Controller
+    {
         private readonly Service genService;
         private readonly FileSaver fileSaver;
         private readonly DateTimeServices dtService;
@@ -115,14 +117,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                )
             {
                 pf = await (from items in db.PreFactors
-                    where (items.Pftype == (int)PreFactorEnum.در_انتظار_تولید || items.Pftype == (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد)
-                    select items.Id).ToListAsync();
-            } else
+                            where (items.Pftype == (int)PreFactorEnum.در_انتظار_تولید || items.Pftype == (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد)
+                            select items.Id).ToListAsync();
+            }
+            else
             {
                 pf = await (from items in db.PreFactors
-                    where (items.Pftype == (int)PreFactorEnum.در_انتظار_تولید || items.Pftype == (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد) &&
-                          items.UserCreatorID == user.Id
-                    select items.Id).ToListAsync();
+                            where (items.Pftype == (int)PreFactorEnum.در_انتظار_تولید || items.Pftype == (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد) &&
+                                  items.UserCreatorID == user.Id
+                            select items.Id).ToListAsync();
             }
 
             return Ok(10);
@@ -200,7 +203,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     cus.Export = await genService.IsCustomerExport(fac.CustomerId);
                 }
 
-                var action = fac.status switch {
+                var action = fac.status switch
+                {
                     FactorStatus.تایید_شده => LogActionEnum.تایید_و_تغییر_وضعیت,
                     FactorStatus.ابطال_شده => LogActionEnum.رد_و_تغییر_وضعیت,
                     _ => LogActionEnum.تغییر_وضعیت
@@ -263,14 +267,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var cus = await db.Customers.AsNoTracking().Where(f => f.Id == pf.CustomerId).FirstOrDefaultAsync();
                 cusMobile = cus.Mobile;
                 cusText = $"{cus.CustomerCode} {cus.CompanyName} ({cus.AgentName})".Trim();
-            } else
+            }
+            else
             {
                 cusMobile = pf.Cus_Mobile;
                 cusText = pf.AgentName;
             }
 
             //await smsServ.SendAcceptedSalesAdminToCustomer(cusMobile, pf.SerialNumber);
-            await smsQueue.QueueAsync(new SmsJob {
+            await smsQueue.QueueAsync(new SmsJob
+            {
                 PatternType = SmsPatternType.AcceptedSalesAdminToCustomer,
                 Mobile = cusMobile,
                 SerialNumber = pf.SerialNumber.ToString(),
@@ -280,7 +286,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 $"پیش‌فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusText} توسط <b>{user.FullName}</b> تایید شد و در انتظار تایید مالی قرار گرفت",
                 $"/Customer/CustomerProfile?Id={pf.CustomerId}");
 
-            pushQueue.Enqueue(new PushQueueItem {
+            pushQueue.Enqueue(new PushQueueItem
+            {
                 UserId = pf.UserCreatorID,
                 Title = "تایید پیش‌فاکتور",
                 Body = $"پیش‌فاکتور {pf.SerialNumber} توسط {user.FullName} تایید شد.",
@@ -291,7 +298,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await hub.Clients.Group("کارشناس مالی").SendAsync("notifActionRequired",
                 $"پیش‌فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusText} توسط <b>{user.FullName}</b> تایید شد و در کارتابل شما قرار گرفت.",
                 "/Cartable/Index?tab=TFinancialExpertId");
-            pushQueue.Enqueue(new PushQueueItem {
+            pushQueue.Enqueue(new PushQueueItem
+            {
                 RoleName = "کارشناس مالی",
                 Title = "تایید پیش‌فاکتور",
                 Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
@@ -350,7 +358,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     $"پیش فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusText} توسط <b>{user.FullName}</b>، <b style='font-size: 15px; color:darkred'>عدم تایید</b> خورد!",
                     $"/Customer/CustomerProfile?Id={pf.CustomerId}"
                 );
-                pushQueue.Enqueue(new PushQueueItem {
+                pushQueue.Enqueue(new PushQueueItem
+                {
                     UserId = pf.UserCreatorID,
                     Title = "عدم تایید پیش‌فاکتور",
                     Body = $"پیش فاکتور {pf.SerialNumber} توسط {user.FullName}، عدم تایید خورد!",
@@ -478,7 +487,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     }
                 }
 
-                model.Add(new AllItemsViewModel {
+                model.Add(new AllItemsViewModel
+                {
                     PfId = pfId,
                     PfItemid = item.Id,
                     Product = item.ProductSmallName + " " + item.Product,
@@ -509,7 +519,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     if (FItem.PfItemId == pfItemId)
                     {
-                        model.Add(new AllItemsDetailViewModel() {
+                        model.Add(new AllItemsDetailViewModel()
+                        {
                             facId = f.Id,
                             Product = FItem.ProductSmallName + " " + FItem.Product,
                             FserialNumber = f.SerialNumber,
@@ -542,7 +553,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var cus = await db.Customers.Where(f => f.Id == pf.CustomerId).FirstOrDefaultAsync();
                 cusMobile = cus.Mobile?.Split("\n")[0];
-            } else
+            }
+            else
             {
                 cusMobile = pf.Cus_Mobile?.Split("\n")[0];
             }
@@ -588,7 +600,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 pf.CustomerId != null ? $"/Customer/CustomerProfile?Id={pf.CustomerId}" : ""
             );
 
-            pushQueue.Enqueue(new PushQueueItem {
+            pushQueue.Enqueue(new PushQueueItem
+            {
                 UserId = pf.UserCreatorID,
                 Title = "تایید پیش‌فاکتور",
                 Body = $"پیش‌فاکتور {pf.SerialNumber} توسط {user.FullName} تایید شد",
@@ -660,7 +673,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     pf.CustomerId != null ? $"/Customer/CustomerProfile?Id={pf.CustomerId}" : ""
                 );
 
-                pushQueue.Enqueue(new PushQueueItem {
+                pushQueue.Enqueue(new PushQueueItem
+                {
                     UserId = pf.UserCreatorID,
                     Title = "عدم تایید پیش‌فاکتور",
                     Body = $"پیش فاکتور {pf.SerialNumber} توسط {user.FullName}، عدم تایید خورد!",
@@ -746,7 +760,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 $"پیش فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusText} توسط <b>{user.FullName}</b> تایید شد.",
                 $"/Customer/CustomerProfile?Id={pf.CustomerId}");
 
-            pushQueue.Enqueue(new PushQueueItem {
+            pushQueue.Enqueue(new PushQueueItem
+            {
                 UserId = pf.UserCreatorID,
                 Title = "تایید مالی پیش‌فاکتور",
                 Body = $"پیش‌فاکتور {pf.SerialNumber} توسط {user.FullName} تایید شد.",
@@ -791,14 +806,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await hub.Clients.User(pf.UserCreatorID).SendAsync("notifInfo", msg, "/Cartable/Index?tab=TSalesExpertId");
                 await hub.Clients.Group("مدیر فروش").SendAsync("notifInfo", msg, "/Cartable/Index?tab=TSalesAdminId");
 
-                pushQueue.Enqueue(new PushQueueItem {
+                pushQueue.Enqueue(new PushQueueItem
+                {
                     UserId = pf.UserCreatorID,
                     Title = "عدم تایید پیش‌فاکتور",
                     Body = $"پیش فاکتور {pf.SerialNumber} توسط {user.FullName}، عدم تایید خورد!",
                     Url = $"/Customer/CustomerProfile?Id={pf.CustomerId}",
                     Tag = "pf" + pf.SerialNumber
                 });
-                pushQueue.Enqueue(new PushQueueItem {
+                pushQueue.Enqueue(new PushQueueItem
+                {
                     RoleName = "مدیر فروش",
                     Title = "عدم تایید پیش‌فاکتور",
                     Body = $"پیش فاکتور {pf.SerialNumber} توسط {user.FullName}، عدم تایید خورد!",
@@ -867,7 +884,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 s1.ExtraDescription = sepidar1Service.GetNoteInvoice(s1.InvoiceId);
 
                 var myCompany = await db.Companies.Include(f => f.CompanyFiles).FirstOrDefaultAsync();
-                SepidarFactorViewModel model = new SepidarFactorViewModel() {
+                SepidarFactorViewModel model = new SepidarFactorViewModel()
+                {
                     invoice = s1,
                     Company = myCompany,
                     Siq = null,
@@ -907,7 +925,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var customer = await db.Customers.Where(f => f.Id == factor.CustomerId).FirstOrDefaultAsync();
                 var myCompany = await db.Companies.Include(f => f.CompanyFiles).FirstOrDefaultAsync();
-                PreviewFactorVModel model = new PreviewFactorVModel() {
+                PreviewFactorVModel model = new PreviewFactorVModel()
+                {
                     Factor = factor,
                     Company = myCompany,
                     _Customer = customer,
@@ -962,13 +981,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
                 var terms = //pfactor.Accepted &&
-                    //pfactor.AcceptedDate >= new DateTime(2026, 7, 11, 11, 0, 0) // تاریخی که شرایط پیش فاکتور قرار گرفته
+                            //pfactor.AcceptedDate >= new DateTime(2026, 7, 11, 11, 0, 0) // تاریخی که شرایط پیش فاکتور قرار گرفته
                     pfactor.AcceptedTerms != null
                         ? await GetBaseDescriptions(BaseDescriptionTypeEnum.PrefactorTerms)
                         : [];
 
 
-                var model = new PreviewPrePfactorVModel {
+                var model = new PreviewPrePfactorVModel
+                {
                     PreFactor = pfactor,
                     Company = myCompany,
                     TermsPreFactor = terms,
@@ -1007,11 +1027,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 var url = Url.Action(nameof(PreviewPfactorPrint), "Factor", new { id }, Request.Scheme);
-                var images = await documentRender.GenerateImagesAsync(Request, url, new DocumentRenderImageOptions {
-                        Viewport = ViewportPresets.A4Portrait,
-                        Selectors = [".sheet"],
-//                        LocatorOptions = new LocatorScreenshotOptions { Type = ScreenshotType.Jpeg, Quality = 100 }
-                    }
+                var images = await documentRender.GenerateImagesAsync(Request, url, new DocumentRenderImageOptions
+                {
+                    Viewport = ViewportPresets.A4Portrait,
+                    Selectors = [".sheet"],
+                    //                        LocatorOptions = new LocatorScreenshotOptions { Type = ScreenshotType.Jpeg, Quality = 100 }
+                }
                 );
 
                 var zip = await documentRender.CreateZipAsync(images, i => $"PreFactor-{i + 1}.png")!;
@@ -1044,10 +1065,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 var url = Url.Action(nameof(PreviewFactorPrint), "Factor", new { id }, Request.Scheme);
-                var image = await documentRender.GenerateImageAsync(Request, url, new DocumentRenderImageOptions {
-                        Viewport = ViewportPresets.A4Landscape,
-                        Selectors = [".sheet"]
-                    }
+                var image = await documentRender.GenerateImageAsync(Request, url, new DocumentRenderImageOptions
+                {
+                    Viewport = ViewportPresets.A4Landscape,
+                    Selectors = [".sheet"]
+                }
                 );
 
                 return File(image, "image/png", "Factor.png");
@@ -1091,7 +1113,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (ViewBag.isLogin == 0)
                 await signInManager.SignOutAsync();
 
-            return new UpdateCustomerVModel {
+            return new UpdateCustomerVModel
+            {
                 PreFactor = pf,
                 WorkSenf = workSenf,
                 Customer = cus,
@@ -1165,7 +1188,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         $"پیش فاکتور <b>{pf.SerialNumber}</b> توسط مشتری <b>{cusText}</b> تایید شد و در کارتابل شما قرار گرفت",
                         "/Cartable/Index?tab=TSalesAdminId"
                     );
-                    pushQueue.Enqueue(new PushQueueItem {
+                    pushQueue.Enqueue(new PushQueueItem
+                    {
                         RoleName = "مدیر فروش",
                         Title = "تایید پیش‌فاکتور",
                         Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
@@ -1177,7 +1201,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         $"پیش فاکتور <b>{pf.SerialNumber}</b> توسط مشتری <b>{cusText}</b> تایید شد و در انتظار تایید مدیر فروش قرار گرفت",
                         $"/Customer/CustomerProfile?Id={pf.CustomerId}"
                     );
-                    pushQueue.Enqueue(new PushQueueItem {
+                    pushQueue.Enqueue(new PushQueueItem
+                    {
                         UserId = pf.UserCreatorID,
                         Title = "تایید پیش‌فاکتور",
                         Body = $"پیش فاکتور {pf.SerialNumber} توسط مشتری {cusText} تایید شد.",
@@ -1227,7 +1252,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         $"پیش فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusText} توسط <b>{user.FullName}</b> به صورت دستی تایید و در کارتابل شما قرار گرفت",
                         "/Cartable/Index?tab=TSalesAdminId"
                     );
-                    pushQueue.Enqueue(new PushQueueItem {
+                    pushQueue.Enqueue(new PushQueueItem
+                    {
                         RoleName = "مدیر فروش",
                         Title = "تایید پیش‌فاکتور",
                         Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
@@ -1264,7 +1290,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 pf.CustomerId = cus.Id;
                 pf.CustomerCode = cus.CustomerCode;
-            } else if (cus.RoleType == RoleTypeEnum.تامین_کننده)
+            }
+            else if (cus.RoleType == RoleTypeEnum.تامین_کننده)
             {
                 cus.RoleType = RoleTypeEnum.تامین_کننده_مشتری;
                 cus.RoleTypeTxt = cus.RoleType.ToString().Replace("_", " ");
@@ -1286,7 +1313,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 pf.Pftype = (int)PreFactorEnum.در_انتظار_تولید;
                 pf.PftypeTxt = Service.GetTypeTxtPfactor(pf.Pftype);
                 pf.AcceptedFinancial = true;
-            } else
+            }
+            else
             {
                 pf = await preFactorService.AcceptOrRejectPreFactor(pf, 1);
             }
@@ -1301,7 +1329,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var user = await userManager.FindByNameAsync(mobile);
             if (user != null) return user;
 
-            user = new AppUser {
+            user = new AppUser
+            {
                 UserName = mobile,
                 PhoneNumber = mobile,
                 FirstName = cus.CompanyName,
@@ -1321,7 +1350,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         private async Task<Customer> CreateCustomer(PreFactor pf, Deal deal, bool isSmallOffice)
         {
-            var cus = new Customer {
+            var cus = new Customer
+            {
                 AgentName = pf.AgentName,
                 NormalizedAgentName = TextService.NormalizeText(pf.AgentName),
                 Mobile = pf.Cus_Mobile,
@@ -1354,7 +1384,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             db.Customers.Add(cus);
             await db.SaveChangesAsync();
 
-            var userCustomer = new UserCustomer {
+            var userCustomer = new UserCustomer
+            {
                 UserId = Guid.Parse(pf.UserCreatorID),
                 CustomerId = cus.Id
             };
@@ -1383,7 +1414,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await _logSystemService.LogChange(oldPfactor, pfactor, LogActionEnum.تغییر_وضعیت, user);
             await db.SaveChangesAsync();
             //var res = await smsServ.SendAcceptPfactorToCustomer(toNumber, pfactor.SerialNumber, id);
-            await smsQueue.QueueAsync(new SmsJob {
+            await smsQueue.QueueAsync(new SmsJob
+            {
                 PatternType = SmsPatternType.AcceptPfactorToCustomer,
                 Mobile = toNumber,
                 SerialNumber = pfactor.SerialNumber.ToString(),
@@ -1497,7 +1529,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     //pf.ReciveAmount += model.ReciveAmount;
 
                     fileN = pf.SerialNumber + "_BPayPrefactor_";
-                } else if (model.InvoiceType == InvoiceTypeEnum.فاکتور) // فاکتور
+                }
+                else if (model.InvoiceType == InvoiceTypeEnum.فاکتور) // فاکتور
                 {
                     var f = await db.Factors.Where(f => f.Id == model.fid).FirstOrDefaultAsync();
                     model.fSerialNumber = f.SerialNumber;
@@ -1518,7 +1551,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     if (item.IsDeleted)
                     {
                         fileSaver.DeleteFile(item.Url);
-                    } else
+                    }
+                    else
                     {
                         if (item.Id == Guid.Empty)
                         {
@@ -1601,14 +1635,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                         fileN = pf.SerialNumber + "_APayPrefactor_";
                     }
-                } else if (acc.InvoiceType == InvoiceTypeEnum.فاکتور)
+                }
+                else if (acc.InvoiceType == InvoiceTypeEnum.فاکتور)
                 {
                     var f = await db.Factors.Where(f => f.Id == acc.fid).FirstOrDefaultAsync();
                     acc.fSerialNumber = f.SerialNumber;
                     acc.CustomerId = f.CustomerId;
 
                     fileN = f.SerialNumber + "_APayfactor_";
-                } else if (acc.InvoiceType == InvoiceTypeEnum.مشتری)
+                }
+                else if (acc.InvoiceType == InvoiceTypeEnum.مشتری)
                 {
                     acc.fSerialNumber = null;
                     acc.pfSerialNumber = null;
@@ -1640,7 +1676,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     {
                         db.Attachments.Update(item);
                         fileSaver.DeleteFile(item.Url);
-                    } else
+                    }
+                    else
                     {
                         if (item.Id == Guid.Empty)
                         {
@@ -1665,7 +1702,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             item.UserCreator = user.FullName;
 
                             db.Attachments.Add(item);
-                        } else if (item._AttachType == _AttachType.UploadCustomerPf || item._AttachType == _AttachType.UploadSalesExpertPf)
+                        }
+                        else if (item._AttachType == _AttachType.UploadCustomerPf || item._AttachType == _AttachType.UploadSalesExpertPf)
                         {
                             item.EntityId = accountancyId;
                             item.ModifyDate = DateTime.Now;
@@ -1758,7 +1796,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             db.Attachments.Add(item);
                             await _logSystemService.LogChange(item, null, LogActionEnum.ثبت, user, null,
                                 $"پیوست تایید برای پیش‌فاکتور {pf.SerialNumber}");
-                        } else if (item.IsDeleted)
+                        }
+                        else if (item.IsDeleted)
                         {
                             await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user, null,
                                 $"پیوست تایید برای پیش‌فاکتور {pf.SerialNumber}");
@@ -2017,9 +2056,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     acou.ModifyDateTxt = dtService.GetDateTimePersian();
 
                     //                db.Accountancies.RemoveRange(acou);
-                } else
+                }
+                else
                 {
-                    Accountancy acD = new Accountancy() {
+                    Accountancy acD = new Accountancy()
+                    {
                         FirstAcc = true,
                         InvoiceType = InvoiceTypeEnum.پیش_فاکتور,
                         InvoiceTypeTxt = InvoiceTypeEnum.پیش_فاکتور.ToString(),
@@ -2068,9 +2109,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 acou.discount = model.Discount;
                 acou.ModifyDate = DateTime.Now.ToLocalTime();
                 acou.ModifyDateTxt = dtService.GetDateTimePersian();
-            } else
+            }
+            else
             {
-                var acD = new Accountancy() {
+                var acD = new Accountancy()
+                {
                     AccType = AcEnum.بدهکاری,
                     AccTypeTxt = AcEnum.بدهکاری.ToString(),
                     InvoiceType = InvoiceTypeEnum.فاکتور,
@@ -2115,22 +2158,22 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 switch (code)
                 {
                     case (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد: // 7
-                    {
-                        var orderHeads = await db.OrderHeads.Where(f => f.Prefactor == id && f.Status != OrderHeadStatusEnum.تحویل_شده).ToListAsync();
-                        foreach (var oh in orderHeads)
                         {
-                            var oldOh = await db.OrderHeads.AsNoTracking().Where(f => f.Id == oh.Id).FirstOrDefaultAsync();
-                            oh.Status = OrderHeadStatusEnum.تحویل_شده;
-                            oh.ModifyDate = DateTime.Now;
-                            oh.ModifyDateTxt = dtService.GetDateTimePersian();
-                            oh.UserModify = user.FullName;
-                            oh.UserModifyID = user.Id;
+                            var orderHeads = await db.OrderHeads.Where(f => f.Prefactor == id && f.Status != OrderHeadStatusEnum.تحویل_شده).ToListAsync();
+                            foreach (var oh in orderHeads)
+                            {
+                                var oldOh = await db.OrderHeads.AsNoTracking().Where(f => f.Id == oh.Id).FirstOrDefaultAsync();
+                                oh.Status = OrderHeadStatusEnum.تحویل_شده;
+                                oh.ModifyDate = DateTime.Now;
+                                oh.ModifyDateTxt = dtService.GetDateTimePersian();
+                                oh.UserModify = user.FullName;
+                                oh.UserModifyID = user.Id;
 
-                            await _logSystemService.LogChange(oldOh, oh, LogActionEnum.ویرایش, user);
+                                await _logSystemService.LogChange(oldOh, oh, LogActionEnum.ویرایش, user);
+                            }
+
+                            break;
                         }
-
-                        break;
-                    }
                 }
 
                 pf.PrePftype = pf.Pftype;
@@ -2194,7 +2237,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 model.Cus_Tel = cus.Tel;
                 model.Cus_Address = cus.Address;
                 model.Cus_Juridical = cus.Juridical;
-            } else
+            }
+            else
             {
                 var deal = await db.Deals.AsNoTracking().Where(f => f.Id == model.DealId).FirstOrDefaultAsync();
                 if (deal == null) return Ok();
@@ -2263,7 +2307,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                     if (model.PreFactorItems.Any(f => f.Printable == 1))
                     {
-                        model.Descriptions?.Add(new PreFactorDescription() {
+                        model.Descriptions?.Add(new PreFactorDescription()
+                        {
                             Text = "اختلاف رنگ 10 الی 15 درصدی در چاپ طبیعی می باشد.",
                             PrefactorId = model.Id
                         });
@@ -2283,7 +2328,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         model.Cus_Tel = cus.Tel;
                         model.Cus_Address = cus.Address;
                         model.Cus_Juridical = cus.Juridical;
-                    } else if (deal != null)
+                    }
+                    else if (deal != null)
                     {
                         model.AgentName = deal.CustomerName?.Trim();
                         model.AgentMeliCode = deal.CusMelliCode;
@@ -2297,7 +2343,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         model.Cus_Address = deal.CusAddress;
                         model.Cus_PostalCode = deal.CusPostalCode;
                     }
-                } else
+                }
+                else
                 {
                     oldModel = await db.PreFactors.AsNoTracking().Where(f => f.Id == model.Id)
                         .Include(f => f.PreFactorItems)
@@ -2346,7 +2393,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     await db.SaveChangesAsync();
                     await db.Entry(model).ReloadAsync();
                     await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
-                } else
+                }
+                else
                 {
                     await _logSystemService.LogChange(oldModel, model, LogActionEnum.ویرایش, user, ["Descriptions", "PreFactorItems"]);
                 }
@@ -2370,13 +2418,23 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (model == null) return BadRequest();
 
             await using var transAction = await db.Database.BeginTransactionAsync();
+
+
+
+
             try
             {
+
+
+
+
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
                 var cus = await db.Customers.AsTracking().FirstOrDefaultAsync(f => f.Id == model.CustomerId);
                 var pf = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.PfactorID);
-                var deal = await db.Deals.FirstOrDefaultAsync(f => f.Id == model.DealId);
+
+                //deal Not Tracking
+                var deal = await db.Deals.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.DealId);
 
                 bool isNewFactor;
                 Factor oldModel = null;
@@ -2421,12 +2479,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         model.Cus_Mobile = cus.Mobile;
                         model.Cus_Tel = cus.Tel;
                         model.Cus_Address = cus.Address;
-                    } else
+                    }
+                    else
                     {
                         model.AgentName = deal.CustomerName;
                         model.Cus_Mobile = deal.MobileNumber;
                     }
-                } else
+                }
+                else
                 {
                     isNewFactor = false;
                     oldModel = await db.Factors.AsNoTracking().Where(f => f.Id == model.Id)
@@ -2468,6 +2528,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 model = Service.UpdatePaymentAmount(model, setting.TaxPercent, setting.TaxAfterDiscount);
 
+                if (deal.Status == DealStatusEnum.باز || deal.Status==DealStatusEnum.بسته || deal.Status == DealStatusEnum.ناموفق ) 
+                {
+                    //deal Tracking
+                    deal = await db.Deals.FirstOrDefaultAsync(f => f.Id == model.DealId);
+                    deal.Status = DealStatusEnum.موفق;
+                    deal.ModifyDate = DateTime.Now;
+                    deal.ModifyDateTxt = dtService.GetDateTimePersian();
+                }
+
+
+
 
                 db.Factors.Update(model);
                 db.Entry(model).Property(f => f.SerialNumber).IsModified = false;
@@ -2499,14 +2570,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                     await hub.Clients.User(model.SelerId).SendAsync("notifInfo", message, "/Email/Index");
 
-                    pushQueue.Enqueue(new PushQueueItem {
+                    pushQueue.Enqueue(new PushQueueItem
+                    {
                         UserId = pf?.UserCreatorID ?? model.SelerId,
                         Title = title,
                         Body = $"{title} شماره {model.SerialNumber} برای مشتری {cusTxt} ثبت شد.",
                         Url = "/Email/Index",
                         Tag = "f" + model.SerialNumber
                     });
-                } else
+                }
+                else
                 {
                     await _logSystemService.LogChange(oldModel, model, LogActionEnum.ویرایش, user, ["Descriptions", "FactorItems"]);
                 }
@@ -2561,7 +2634,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             await db.SaveChangesAsync();
 
-            await smsQueue.QueueAsync(new SmsJob {
+            await smsQueue.QueueAsync(new SmsJob
+            {
                 PatternType = SmsPatternType.AcceptPfactorToTamin,
                 Mobile = userTamin.PhoneNumber,
                 SerialNumber = pf.SerialNumber.ToString(),
@@ -2577,7 +2651,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 "/Cartable/Index?tab=TTaminExpertId"
             );
 
-            pushQueue.Enqueue(new PushQueueItem {
+            pushQueue.Enqueue(new PushQueueItem
+            {
                 UserId = pf.UserTaminId.ToString(),
                 Title = "تایید پیش‌فاکتور",
                 Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
@@ -2596,7 +2671,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var userTamin = await udb.Users.AsNoTracking().Where(f => f.Id == usId.ToString()).FirstOrDefaultAsync();
 
                 //await smsServ.SendAcceptPfactorToTamin(userTamin.PhoneNumber, pf.SerialNumber);
-                await smsQueue.QueueAsync(new SmsJob {
+                await smsQueue.QueueAsync(new SmsJob
+                {
                     PatternType = SmsPatternType.AcceptPfactorToTamin,
                     Mobile = userTamin.PhoneNumber,
                     SerialNumber = pf.SerialNumber.ToString(),
@@ -2608,7 +2684,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     $"پیش فاکتور <b>{pf.SerialNumber}</b> برای مشتری {cusTxt} توسط <b>{pf.UserCreator}</b> جهت تایید در کارتابل شما قرار گرفت",
                     "/Cartable/Index?tab=TTaminExpertId"
                 );
-                pushQueue.Enqueue(new PushQueueItem {
+                pushQueue.Enqueue(new PushQueueItem
+                {
                     UserId = pf.UserTaminId.ToString(),
                     Title = "تایید پیش‌فاکتور",
                     Body = $"پیش‌فاکتور {pf.SerialNumber} برای تایید در کارتابل شما قرار گرفت.",
@@ -2634,7 +2711,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     model.PrePftype = (int)PreFactorEnum.در_انتظار_ارسال_به_مشتری;
                     model.Pftype = (int)PreFactorEnum.در_انتظار_ارسال_به_مشتری;
-                } else
+                }
+                else
                 {
                     model.PrePftype = (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین;
                     model.Pftype = (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین;
@@ -2699,7 +2777,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             var items = await query
                 .OrderBy(f => f.Order)
-                .Select(f => new BaseDescriptionVModel {
+                .Select(f => new BaseDescriptionVModel
+                {
                     Text = f.Text,
                     Official = f.Official,
                     Type = f.Type
@@ -2770,7 +2849,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             var data = await db.PreFactorItems.AsNoTracking()
                 .Where(f => f.PrefactorId == id && f.IsInProduction)
-                .Select(i => new {
+                .Select(i => new
+                {
                     preFactorItemId = i.Id,
                     i.Product,
                     i.ProductSmallName,
@@ -2783,7 +2863,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 })
                 .ToListAsync();
 
-            var model = new {
+            var model = new
+            {
                 Orders = data,
                 CustomerTxt = $"{preFactor.Customer} {preFactor.AgentName}".Trim(),
                 prefactorSer = preFactor.SerialNumber,
@@ -2821,7 +2902,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     where s.PfId == id && i.IsInProduction
                     group new { i, s } by new { s.SupplierId, s.SupplierTxt }
                     into g
-                    select new {
+                    select new
+                    {
                         g.Key.SupplierId,
                         g.Key.SupplierTxt,
                         CustomerTxt = customerTxt,
@@ -2831,7 +2913,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         UserTaminId = userTaminId,
                         CustomerCode = customerCode,
                         OrderDate = orderDate,
-                        Orders = g.Select(x => new {
+                        Orders = g.Select(x => new
+                        {
                             preFactorItemId = x.i.Id,
                             x.i.Product,
                             x.i.ProductSmallName,
@@ -2976,7 +3059,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             $"<b>واریزی</b> برای پیش‌فاکتور <b>{pf.SerialNumber}</b> توسط <b>{(type == 5 ? "مشتری" : pf.UserCreator)}</b> پیوست شد و جهت ثبت در کارتابل شما قرار گرفت",
                             "/Cartable/Index?tab=TFinancialExpertId"
                         );
-                    } else if (item.IsDeleted)
+                    }
+                    else if (item.IsDeleted)
                     {
                         await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user, null,
                             "پیوست ضمیمه پیش پرداخت از طرف " + (type == 5 ? "مشتری" : "کارشناس"));
@@ -3022,7 +3106,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (errorsDict == null || !errorsDict.TryGetValue(code, out var err))
                 return null;
 
-            return new ErrorVModel {
+            return new ErrorVModel
+            {
                 Code = code,
                 Title = err.Title,
                 Message = err.Message
@@ -3061,7 +3146,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (!hasAnyAcc)
             {
                 errorList.Add(MapError(31));
-            } else
+            }
+            else
             {
                 var hasAnyNotAcceptedAcc = await accS.AnyAsync(f => f.Status != AccStatusEnum.تایید_شده);
                 if (hasAnyNotAcceptedAcc)
@@ -3070,7 +3156,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
             }
 
-            return Ok(new ReturnVModel {
+            return Ok(new ReturnVModel
+            {
                 Status = errorList.Count == 0,
                 Errors = errorList
             });
@@ -3094,7 +3181,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         f.SerialNumber == TextService.convertToInt(search) ||
                         f.CustomerCode == TextService.convertToInt(search)
                     );
-                } else
+                }
+                else
                 {
                     query = query.Take(50);
                 }
