@@ -8182,3 +8182,132 @@ font-family: IRANSansBold;
 		line-height: 1.8;
 	}
 }
+
+.ex-preview-summary {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0;
+	margin: 12px 0 18px;
+	padding: 6px 16px;
+	background: #f7faf9;
+	border: 1px solid #e5eeeb;
+	border-radius: 12px;
+}
+
+.ex-preview-field {
+	display: flex;
+	align-items: center;
+	/* justify-content: space-between; */
+	gap: 12px;
+	min-width: 0;
+	padding: 12px 8px;
+	border-bottom: 1px solid #e8efed;
+}
+
+.ex-preview-field:nth-last-child(-n+2) {
+	border-bottom: none;
+}
+
+.ex-preview-label {
+	flex-shrink: 0;
+	color: #788781;
+	font-size: 12px;
+	font-weight: 400;
+}
+
+.ex-preview-field strong {
+	min-width: 0;
+	color: #263a35;
+	font-size: 13px;
+	font-weight: 600;
+	text-align: left;
+	overflow-wrap: anywhere;
+}
+
+.ex-preview-customer {
+	/* grid-column: span 2; */
+}
+
+.ex-preview-software {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: #04857c !important;
+}
+
+.ex-preview-software i {
+	font-size: 12px;
+}
+
+@media (max-width: 576px) {
+	.ex-preview-summary {
+		grid-template-columns: 1fr;
+		padding: 4px 12px;
+	}
+	
+	.ex-preview-field,
+	.ex-preview-field:nth-last-child(-n+2) {
+		border-bottom: 1px solid #e8efed;
+	}
+	
+	.ex-preview-field:last-child {
+		border-bottom: none;
+	}
+	
+	.ex-preview-customer {
+		grid-column: auto;
+	}
+}
+
+.external-prefactor-preview .table-responsive {
+	border: 1px solid #e6ecea;
+	border-radius: 10px;
+	overflow: auto;
+}
+
+.external-prefactor-preview .table {
+	margin: 0;
+	white-space: nowrap;
+	font-size: 12px;
+}
+
+.external-prefactor-preview .table thead th {
+	padding: 12px 10px;
+	background: #f3f7f6;
+	color: #52635e;
+	font-weight: 600;
+	border-color: #e6ecea;
+}
+
+.external-prefactor-preview .table tbody td {
+	padding: 11px 10px;
+	border-color: #edf1f0;
+	vertical-align: middle;
+}
+
+.external-prefactor-preview .table tbody tr:hover {
+	background: #f7fbfa;
+}
+
+.external-prefactor-preview .external-mapping-entity.mt-3 {
+	margin-top: 14px !important;
+	padding: 14px 16px;
+	background: #f8faf9;
+	border: 1px solid #e7eeeb;
+	border-radius: 10px;
+}
+
+.external-prefactor-preview .external-mapping-entity.mt-3 .d-flex {
+	align-items: center;
+	font-size: 13px;
+}
+
+.external-prefactor-preview .external-mapping-entity.mt-3 hr {
+	border-color: #e8efed;
+	margin: 8px 0;
+}
+
+.external-prefactor-preview .external-mapping-entity.mt-3 .d-flex:last-child {
+	color: #04796f;
+	font-size: 15px;
+}

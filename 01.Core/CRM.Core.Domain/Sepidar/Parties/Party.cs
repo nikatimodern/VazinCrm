@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using CRM.Core.Domain.Sepidar.DLs.Entites;
 
 namespace CRM.Core.Domain.Sepidar.Parties;
 
@@ -41,6 +42,7 @@ public class Party {
     public string Email { get; set; }
 
     public int DLRef { get; set; }
+    public DL Dl { get; set; }
 
     public bool IsInBlacklist { get; set; }
     public bool IsVendor { get; set; }
@@ -89,4 +91,5 @@ public class Party {
     public int MaximumQuantityCredit { get; set; }
     public bool HasQuantityCredit { get; set; }
     public int QuantityCreditCheckingType { get; set; }
+
 }

@@ -13,6 +13,7 @@ using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.Core.Domain.Sepidar.Items;
 using CRM.Core.Domain.Sepidar.Parties;
 using CRM.Core.Domain.Sepidar.Payments.Entites;
+using CRM.Core.Domain.Sepidar.Quotations.Entites;
 using CRM.Core.Domain.Sepidar.Vouchers.Entites;
 using CRM.EndPoint.FrontEnd.Models.Factor;
 using CRM.EndPoint.FrontEnd.Models.Sepidar;
@@ -197,9 +198,9 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
     }
 
 
-    private static void CheckFiscalYearWithCash(Cash cash, CurrentFinancialYearDto currentFinancialYear)
+    private static void CheckFiscalYearWithCRM(string crmDate, CurrentFinancialYearDto currentFinancialYear)
     {
-        var cashYear = int.Parse(TextService.ToEnglishNumber(cash?.CostDate?.Substring(0, 4)));
+        var cashYear = int.Parse(TextService.ToEnglishNumber(crmDate?.Substring(0, 4)));
         var sepidarYear = int.Parse(TextService.ToEnglishNumber(currentFinancialYear?.Title));
 
         if (cashYear != sepidarYear)
@@ -360,7 +361,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
 
             // سال مالی
             var currentFinancialYear = await GetCurrentFinancialYearSpidar();
-            CheckFiscalYearWithCash(cash, currentFinancialYear);
+            CheckFiscalYearWithCRM(cash.CostDate, currentFinancialYear);
             var fiscalYearId = currentFinancialYear.FiscalYearId;
 
             // شماره اعلامیه پرداخت
@@ -517,7 +518,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
             var voucherId = await GetNextIdAsync("ACC.Voucher", ct: ct);
 
             var currentFinancialYear = await GetCurrentFinancialYearSpidar();
-            CheckFiscalYearWithCash(cash, currentFinancialYear);
+            CheckFiscalYearWithCRM(cash.CostDate, currentFinancialYear);
             var fiscalYearId = currentFinancialYear.FiscalYearId;
 
             var voucherNumber = await GetNextVoucherNumberAsync(fiscalYearId, ct);
@@ -1029,11 +1030,26 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
             .OrderBy(x => x.Name)
             .Select(x => new SepidarPartyDto {
                 Id = x.PartyId,
+                DlCode = x.Dl.Code,
+                DlRef = x.DLRef,
                 Title = x.Name + " " + x.LastName,
-                EconomicCode = x.EconomicCode,
-                IdentificationCode = x.IdentificationCode
             })
             .ToListAsync(ct);
+    }
+
+    public async Task<SepidarPartyDto> GetSepidarCustomerByIdAsync(int id, CancellationToken ct = default)
+    {
+        return await sepidarContext.Parties
+            .AsNoTracking()
+            .Where(x => x.IsCustomer)
+            .Where(x => x.PartyId == id)
+            .Select(x => new SepidarPartyDto {
+                Id = x.PartyId,
+                DlCode = x.Dl.Code,
+                DlRef = x.DLRef,
+                Title = x.Name + " " + x.LastName,
+            })
+            .SingleOrDefaultAsync(ct);
     }
 
     public async Task<List<SepidarItemDto>> GetSepidarItemsAsync(CancellationToken ct = default)
@@ -1056,6 +1072,201 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
 
     public async Task<(string entityName, string entityId)?> SendPreFactorToSepidar(PreFactor preFactor, CancellationToken ct = default)
     {
+        await CreateQuotationAsync()
+
         return null;
+    }
+
+
+    public async Task<int> CreateQuotationAsync(SepidarQuotationRequest request, CancellationToken ct = default)
+    {
+        if (request.CustomerPartyRef <= 0)
+            throw new InvalidOperationException("مشتری پیش‌فاکتور معتبر نیست.");
+
+        if (request.Items == null || request.Items.Count == 0)
+            throw new InvalidOperationException("پیش‌فاکتور باید حداقل یک ردیف کالا داشته باشد.");
+
+
+        var numberExists = await sepidarContext.Quotations
+            .AsNoTracking()
+            .AnyAsync(x => x.Number == request.PreFactor.SerialNumber, ct);
+
+        if (numberExists)
+            throw new InvalidOperationException($"شماره پیش‌فاکتور {request.PreFactor?.SerialNumber} قبلاً در نرم‌افزار مالی ثبت شده است.");
+
+        // سال مالی
+        var currentFinancialYear = await GetCurrentFinancialYearSpidar();
+        CheckFiscalYearWithCRM(request.PreFactor.Date, currentFinancialYear);
+        var fiscalYearId = currentFinancialYear.FiscalYearId;
+
+        var quotationId = await GetNextIdAsync("INV.Quotation", ct: ct);
+
+        var price = request.Items.Sum(x => x.Quantity * x.Fee);
+        var discount = request.Items.Sum(x => x.Discount);
+        var addition = request.Items.Sum(x => x.Addition);
+        var tax = request.Items.Sum(x => x.Tax);
+        var duty = request.Items.Sum(x => x.Duty);
+
+        var netPrice = price - discount + addition + tax + duty;
+
+        var now = DateTime.Now;
+
+        var quotation = new Quotation {
+            QuotationId = quotationId,
+            CustomerPartyRef = request.CustomerPartyRef,
+
+            SaleTypeRef = 2, // عادی - خرده فروشی
+
+            PartyAddressRef = request.PartyAddressRef, // از جدول PartyAddress
+
+            Number = request.PreFactor.SerialNumber,
+            Date = request.PreFactor.DateMiladi.Value,
+
+            ExpirationDate = request.PreFactor.ValidityDateMiladi.Value, // فعلا
+
+            CurrencyRef = 1, // ریال
+            DeliveryLocationRef = 1, // فعلا
+
+            Price = request.PreFactor.SumTotalAmount,
+            PriceInBaseCurrency = request.PreFactor.SumTotalAmount,
+            Discount = request.PreFactor.Discount,
+            DiscountInBaseCurrency = request.PreFactor.Discount,
+            Addition = 0,
+            AdditionInBaseCurrency = 0,
+            Tax = request.PreFactor.TotalTax,
+            TaxInBaseCurrency = request.PreFactor.TotalTax,
+            Duty = 0, // فعلا
+            DutyInBaseCurrency = 0,
+            NetPriceInBaseCurrency = netPrice,
+
+            Rate = 1,
+            Version = 1,
+
+            Creator = 1,
+            CreationDate = now,
+            LastModifier = 1,
+            LastModificationDate = now,
+
+            Closed = false,
+            FiscalYearRef = fiscalYearId,
+
+            ReceiptRef = null,
+            PaymentRef = null,
+
+            CustomerRealName = request.CustomerName,
+            CustomerRealName_En = request.CustomerName,
+
+            Guid = null,
+
+            AdditionFactor_VatEffective = 0,
+            AdditionFactorInBaseCurrency_VatEffective = 0,
+            AdditionFactor_VatIneffective = 0,
+            AdditionFactorInBaseCurrency_VatIneffective = 0
+        };
+
+        await using var transaction = await sepidarContext.Database.BeginTransactionAsync(ct);
+
+        try
+        {
+            sepidarContext.Quotations.Add(quotation);
+            await sepidarContext.SaveChangesAsync(ct);
+
+//            quotation.QuotationItems = await CreateQuotationItemsAsync(quotationId, request.Items, ct);
+
+            await transaction.CommitAsync(ct);
+
+            return quotationId;
+        }
+        catch
+        {
+            await transaction.RollbackAsync(ct);
+            throw;
+        }
+    }
+
+    private async Task<List<QuotationItem>> CreateQuotationItemsAsync(int quotationId, List<PreFactorItem> items, CancellationToken ct = default)
+    {
+        if (items == null || items.Count == 0)
+            throw new InvalidOperationException("ردیف کالایی برای ثبت وجود ندارد.");
+
+        var quotationItems = new List<QuotationItem>();
+
+
+        var itemCount = items.Count;
+        var lastItemId = await GetNextIdAsync("INV.QuotationItem", itemCount, ct);
+        var firstItemId = lastItemId - itemCount + 1;
+
+
+        var index = 0;
+        foreach (var item in items)
+        {
+            if (item.ItemRef <= 0)
+                throw new InvalidOperationException($"کالای مقصد برای ردیف {index} معتبر نیست.");
+
+            if (!int.TryParse(item.WeightCount, out var weight) || weight <= 0)
+                throw new InvalidOperationException($"تعداد کالا در ردیف {index} باید بیشتر از صفر باشد.");
+
+
+            quotationItems.Add(new QuotationItem {
+                QuotationItemID = firstItemId + index,
+                QuotationRef = quotationId,
+                RowID = index + 1,
+                ItemRef = item.ItemRef,
+
+                TracingRef = null,
+
+                StockRef = 2, // محصولات خريداري شده // TODO
+
+                Quantity = weight,
+                SecondaryQuantity = null,
+                Fee = item.UnitAmount,
+
+                Price = item.TotalAmount,
+                PriceInBaseCurrency = item.TotalAmount,
+
+                Discount = item.Discount,
+                DiscountInBaseCurrency = item.Discount,
+
+                PriceInfoDiscountRate = 0,
+                PriceInfoPriceDiscount = 0,
+                PriceInfoPercentDiscount = 0,
+                CustomerDiscount = 0,
+                CustomerDiscountRate = 0,
+
+                Addition = 0,
+                AdditionInBaseCurrency = 0,
+                Tax = item.TaxAmount,
+                TaxInBaseCurrency = item.TaxAmount,
+                Duty = 0, // فعلا
+                DutyInBaseCurrency = 0,
+
+                NetPriceInBaseCurrency = item.TotalAmount,
+                Rate = 1,
+                UsedQuantity = 0, // TODO احتمالا مقدار فاکتور شده
+
+                Description = null, // فعلا
+                DiscountQuotationItemRef = null,
+                Description_En = null,
+
+                ProductPackRef = null,
+                ProductPackQuantity = null,
+
+                AggregateAmountDiscountRate = 0,
+                AggregateAmountPriceDiscount = 0,
+                AggregateAmountPercentDiscount = 0,
+
+                AdditionFactor_VatEffective = 0,
+                AdditionFactorInBaseCurrency_VatEffective = 0,
+                AdditionFactor_VatIneffective = 0,
+                AdditionFactorInBaseCurrency_VatIneffective = 0,
+
+                IsAggregateDiscountInvoiceItem = false,
+                IsReadyForProductOrder = true,
+            });
+
+            index++;
+        }
+
+        return quotationItems;
     }
 }

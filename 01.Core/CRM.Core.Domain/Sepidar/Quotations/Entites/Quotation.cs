@@ -15,7 +15,7 @@ namespace CRM.Core.Domain.Sepidar.Quotations.Entites {
 
 
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-        public decimal? NetPrice { get; set; }
+        public decimal? NetPrice { get; private set; }
 
         public int SaleTypeRef { get; set; }
         public int? PartyAddressRef { get; set; }
@@ -40,7 +40,7 @@ namespace CRM.Core.Domain.Sepidar.Quotations.Entites {
         public decimal? Duty { get; set; }
         public decimal? DutyInBaseCurrency { get; set; }
 
-        public decimal NetPriceInBaseCurrency { get; private set; }
+        public decimal NetPriceInBaseCurrency { get;  set; }
 
         public decimal Rate { get; set; }
 

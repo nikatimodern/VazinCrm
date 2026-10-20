@@ -4,7 +4,7 @@ using CRM.Core.Domain.Company.Entities;
 using CRM.EndPoint.FrontEnd.Models.Factor;
 using PreFactorEntity = CRM.Core.Domain.PreFactors.Entities.PreFactor;
 
-namespace CRM.EndPoint.FrontEnd.Models.PreFactor
+namespace CRM.EndPoint.FrontEnd.Models.PreFactors
 {
     public class PreviewPrePfactorVModel
     {

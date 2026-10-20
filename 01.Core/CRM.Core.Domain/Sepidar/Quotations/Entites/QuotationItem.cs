@@ -42,7 +42,7 @@ public class QuotationItem {
     public decimal? Duty { get; set; }
     public decimal? DutyInBaseCurrency { get; set; }
 
-    public decimal NetPriceInBaseCurrency { get; private set; }
+    public decimal NetPriceInBaseCurrency { get; set; }
 
     public decimal Rate { get; set; }
 

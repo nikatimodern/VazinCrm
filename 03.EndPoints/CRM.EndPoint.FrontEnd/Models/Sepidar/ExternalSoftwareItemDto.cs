@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using CRM.EndPoint.FrontEnd.Models.Sepidar;
 
-namespace CRM.EndPoint.FrontEnd.Models.ExternalSoftwares;
+namespace CRM.EndPoint.FrontEnd.Models.Sepidar;
 
 public sealed class PrepareExternalItemMappingRequest
 {

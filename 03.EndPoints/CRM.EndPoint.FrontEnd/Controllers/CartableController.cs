@@ -19,7 +19,7 @@ using CRM.Core.Domain.Supplies.Enums;
 using CRM.EndPoint.FrontEnd.IServices.ViewRender;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Cartable;
-using CRM.EndPoint.FrontEnd.Models.PreFactor;
+using CRM.EndPoint.FrontEnd.Models.PreFactors;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 
