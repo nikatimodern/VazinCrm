@@ -40,6 +40,7 @@ public abstract class SepidarContextDbBase : DbContext {
     public DbSet<QuotationItem> QuotationItems { get; set; }
     public DbSet<Item> Items { get; set; }
     public DbSet<Party> Parties { get; set; }
+    public DbSet<PartyAddress> PartyAddresses { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -72,6 +73,7 @@ public abstract class SepidarContextDbBase : DbContext {
         modelBuilder.Entity<QuotationItem>().ToTable("QuotationItem", "SLS");
         modelBuilder.Entity<Item>().ToTable("Item", "INV");
         modelBuilder.Entity<Party>().ToTable("Party", "GNR");
+        modelBuilder.Entity<PartyAddress>().ToTable("PartyAddress", "GNR");
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

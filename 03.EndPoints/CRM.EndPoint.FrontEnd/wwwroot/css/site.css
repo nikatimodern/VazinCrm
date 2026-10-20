@@ -8212,15 +8212,12 @@ font-family: IRANSansBold;
 	flex-shrink: 0;
 	color: #788781;
 	font-size: 12px;
-	font-weight: 400;
 }
 
 .ex-preview-field strong {
 	min-width: 0;
 	color: #263a35;
 	font-size: 13px;
-	font-weight: 600;
-	text-align: left;
 	overflow-wrap: anywhere;
 }
 
@@ -8275,7 +8272,6 @@ font-family: IRANSansBold;
 	padding: 12px 10px;
 	background: #f3f7f6;
 	color: #52635e;
-	font-weight: 600;
 	border-color: #e6ecea;
 }
 

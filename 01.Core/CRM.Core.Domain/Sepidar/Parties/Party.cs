@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using CRM.Core.Domain.Sepidar.DLs.Entites;
@@ -92,4 +93,6 @@ public class Party {
     public bool HasQuantityCredit { get; set; }
     public int QuantityCreditCheckingType { get; set; }
 
+
+    public IList<PartyAddress> PartyAddresses { get; set; }
 }

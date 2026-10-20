@@ -1417,7 +1417,7 @@ function exSoftwarePreFactorRenderCustomer(software) {
                     <option value="">جستجو و انتخاب مشتری</option>
                     ${(software.customers ?? []).map(customer => `
                         <option value="${escapeHtml(customer.id)}" ${String(customer.id) === String(software.mappedExternalCustomerId ?? "") ? "selected" : ""}>
-                            ${customer.dlCode ? `${escapeHtml(customer.dlCode)} - ` : ""}${escapeHtml(customer.title)}
+                            ${customer.dlCode ? `${escapeHtml(customer.dlCode)} - ` : ""}${escapeHtml(customer.fullName)}
                         </option>
                     `).join("")}
                 </select>
@@ -1652,7 +1652,7 @@ function exSoftwarePreFactorRenderPreview(data) {
                                     <td>${money(item.unitAmount)}</td>
                                     <td>${money(item.discount)}</td>
                                     <td>${money(item.taxAmount)}</td>
-                                    <td>${money(item.totalAmount)}</td>
+                                    <td class="fbold">${money(item.totalAmount)}</td>
                                 </tr>
                             `).join("")}
                         </tbody>
@@ -1689,27 +1689,22 @@ function exSoftwarePreFactorRenderPreview(data) {
 async function exSoftwarePreFactorSubmit() {
     const state = externalSoftwareProcess;
     
-    console.log({
+    const model = {
         preFactorId: state.preFactorId,
         externalSoftwareId: state.currentSoftware.externalSoftwareId,
         customerId: state.selectedCustomerId ?? state.currentSoftware.mappedExternalCustomerId,
         itemMappings: state.currentSoftwareItemMappings ?? {},
-    });
-    toastifySuccess("انتقال پیش‌فاکتور با موفقیت انجام شد");
-    await exSoftwarePreFactorFinish();
+    };
     
-    /*    await sendApiRequest({
-            url: "/Factor/SubmitExternalPreFactor",
-            method: "POST",
-            successMsg: "انتقال پیش‌فاکتور با موفقیت انجام شد",
-            data: {
-                preFactorId: state.preFactorId,
-                externalSoftwareId: state.currentSoftware.externalSoftwareId,
-                customerId: state.selectedCustomerId ?? state.currentSoftware.mappedExternalCustomerId,
-                itemMappings: state.currentSoftwareItemMappings ?? {},
-            },
-            onSuccess: exSoftwarePreFactorFinish,
-        });*/
+    console.log(model);
+    
+    await sendApiRequest({
+        url: "/Factor/SendPreFactorsToExternalSoftware",
+        method: "POST",
+        successMsg: "انتقال پیش‌فاکتور با موفقیت انجام شد",
+        data: model,
+        onSuccess: exSoftwarePreFactorFinish,
+    });
 }
 
 async function exSoftwarePreFactorFinish() {
@@ -1721,13 +1716,6 @@ async function exSoftwarePreFactorFinish() {
         
         ModalToggle(externalMappingModal, "hide");
         exSoftwarePreFactorReset();
-        await Swal.fire({
-            icon: "success",
-            title: "ثبت شد",
-            text: "پیش‌فاکتور برای تمام نرم‌افزارهای انتخاب‌شده ارسال شد.",
-            timer: 3500,
-            showConfirmButton: false,
-        });
         return;
     }
     

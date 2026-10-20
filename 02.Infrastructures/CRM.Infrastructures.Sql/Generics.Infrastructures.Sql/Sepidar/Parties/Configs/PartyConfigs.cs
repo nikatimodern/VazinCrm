@@ -11,5 +11,10 @@ public class PartyConfigs : IEntityTypeConfiguration<Party> {
             .WithOne()
             .HasForeignKey<Party>(f => f.DLRef)
             .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasMany(f => f.PartyAddresses)
+            .WithOne()
+            .HasForeignKey(f => f.PartyRef)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

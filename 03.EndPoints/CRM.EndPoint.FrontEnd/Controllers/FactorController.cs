@@ -3159,7 +3159,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 );
 
                 if (isMapped)
-                    return Conflict("این پیش‌فاکتور قبلا در سپیدار ثبت شده است.");
+                    return Conflict("این پیش‌فاکتور قبلا در این نرم‌افزار ثبت شده است.");
+
+
+                if (string.IsNullOrEmpty(model.CustomerId) || !int.TryParse(model.CustomerId, out var partyRef) || partyRef <= 0)
+                    throw new InvalidOperationException("مشتری سپیدار معتبر نیست.");
+
+                if (model.ItemMappings == null)
+                    throw new InvalidOperationException("نگاشت کالاهای سپیدار ارسال نشده است.");
 
                 var pf = await db.PreFactors
                     .Include(f => f.PreFactorItems)
@@ -3168,7 +3175,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (pf?.PreFactorItems == null)
                     return BadRequest("پیش‌فاکتور یافت نشد!");
 
-                var result = await sepidarService.SendPreFactorToSepidar(pf);
+                if (pf.PreFactorItems.Count == 0)
+                    return BadRequest("پیش‌فاکتور باید حداقل یک ردیف کالا داشته باشد.");
+
+
+                var result = await sepidarService.SendPreFactorToSepidar(pf, partyRef, model.ItemMappings);
 
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 if (result.HasValue)
@@ -3337,7 +3348,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 mapping.ExEntityId = request.ExternalCustomerId.ToString();
             }
 
-//            await db.SaveChangesAsync();
+            await db.SaveChangesAsync();
 
             return Ok();
         }
@@ -3521,7 +3532,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     serialNumber = preFactor.SerialNumber,
                     date = preFactor.Date,
                     CustomerId = customer.Id.ToString(),
-                    customerName = $"{customer.Title}{(!string.IsNullOrEmpty(customer.DlCode) ? $" (کد: {customer.DlCode})" : "")}",
+                    customerName = $"{customer.FullName}{(!string.IsNullOrEmpty(customer.DlCode) ? $" (کد: {customer.DlCode})" : "")}",
                     items,
                     totalAmount = preFactor.SumTotalAmount,
                     totalDiscount = preFactor.Discount,
