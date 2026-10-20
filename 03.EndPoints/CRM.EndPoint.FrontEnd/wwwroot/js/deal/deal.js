@@ -187,7 +187,7 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
         card.dataset.id = item.id;
         card.className = "deal-card";
 
-        if (item.counts.factor > 0)
+        if (item.counts.factor > 0 && item.status==3)
             card.classList.add("noDrag")
 
         if (!item.counts.preFactor && !item.counts.report) {
@@ -197,6 +197,8 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
         if (isFinancialClosed) {
             card.classList.add("deal-card--locked");
         }
+
+    
 
         card.innerHTML = `
             <div class="position-relative w-100 h-100">
@@ -234,7 +236,7 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
                              <span class="fbold">${item.userCreator}</span>
                         </span>` : ""}
                 </div>
-                <p style="font-size:clamp(12px, 2vw, 13px);color:gray;min-height:12px;">${item.description?.trim()}</p>
+                <p style="font-size:clamp(12px, 2vw, 13px);color:gray;min-height:12px;">${item.description?.trim() ?? "" }</p>
                 <div class="d-flex w-100 justify-content-between align-items-end mt-2" style="column-gap:10px;row-gap:8px;color: #666">
                     <div class="d-flex gap-2 gap-lg-3 align-items-end justify-content-between flex-grow-1" style="font-size:clamp(10px, 2vw, 11px)">
                         <div class="d-flex gap-2 gap-lg-3 align-items-center flex-grow-1 flex-wrap" style="row-gap:.5rem !important">
