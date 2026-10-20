@@ -1,8 +1,8 @@
-using CRM.Core.Domain.ASettings.Entities;
+using CRM.Core.Domain.ExternalSoftwares.Entites;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace CRM.Infrastructures.Sql.ASettings.Configs;
+namespace CRM.Infrastructures.Sql.ExternalSoftwares.Configs;
 
 public class ExternalMappingConfigs : IEntityTypeConfiguration<ExternalMapping> {
     public void Configure(EntityTypeBuilder<ExternalMapping> builder)

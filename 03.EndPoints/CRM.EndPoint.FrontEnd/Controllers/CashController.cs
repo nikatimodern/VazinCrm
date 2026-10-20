@@ -10,6 +10,8 @@ using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Cashes.Enums;
+using CRM.Core.Domain.ExternalSoftwares.Entites;
+using CRM.Core.Domain.ExternalSoftwares.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Cash;
@@ -604,9 +606,11 @@ public class CashController : Controller {
 
             var isExported = false;
 
-            var query = db.Cashes.Include(f => f.CashGroup).AsQueryable();
+            var query = db.Cashes.AsNoTracking()
+//                .Include(f => f.CashGroup)
+                .AsQueryable();
 
-            var mappedCash = await db.ExternalMappings
+            var mappedCash = await db.ExternalMappings.AsNoTracking()
                 .Where(f => f.MapType == ExternalMappingTypeEnum.تنخواه && f.EntityName == nameof(Cash))
                 .Select(f => new {
                     f.EntityId,
@@ -616,11 +620,12 @@ public class CashController : Controller {
 
             if (Guid.TryParse(model?.EntityId, out var groupId))
             {
-                query = query.Where(f => f.CashGroupId == Guid.Parse(model.EntityId));
-                isExported = await db.CashGroups
+                query = query.Where(f => f.CashGroupId == groupId);
+/*                isExported = await db.CashGroups
+                    .AsNoTracking()
                     .Where(g => g.Id == groupId)
                     .Select(g => g.IsExported)
-                    .FirstOrDefaultAsync();
+                    .FirstOrDefaultAsync();*/
             }
 
 
@@ -638,7 +643,7 @@ public class CashController : Controller {
                 var searchNumber = TextService.convertToInt(searchValue);
                 query = query.Where(f =>
                     f.Amount == searchNumber ||
-                    f.CashGroup.GroupNumber == searchNumber ||
+//                    f.CashGroup.GroupNumber == searchNumber ||
                     f.Serial == searchNumber ||
                     f.CostDescription.Contains(searchValue) ||
                     f.CostCenterTxt.Contains(searchValue) ||
@@ -657,7 +662,7 @@ public class CashController : Controller {
                 _ => query
             };
 
-            var recordsTotal = query.Count();
+            var recordsTotal = await query.CountAsync();
 
 
             if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortColumnDirection))
@@ -694,9 +699,9 @@ public class CashController : Controller {
                     "userCreator" => isAscending
                         ? query.OrderBy(f => f.UserCreator)
                         : query.OrderByDescending(f => f.UserCreator),
-                    "cashGroup.groupNumber" => isAscending
+                    /*"cashGroup.groupNumber" => isAscending
                         ? query.OrderBy(f => f.CashGroup == null).ThenBy(f => f.CashGroup.GroupNumber)
-                        : query.OrderBy(f => f.CashGroup == null).ThenByDescending(f => f.CashGroup.GroupNumber),
+                        : query.OrderBy(f => f.CashGroup == null).ThenByDescending(f => f.CashGroup.GroupNumber),*/
                     "paymentVoucherNumber" => isAscending
                         ? query.OrderBy(f => f.CashGroup == null).ThenBy(f => f.PaymentVoucherNumber)
                         : query.OrderBy(f => f.CashGroup == null).ThenByDescending(f => f.PaymentVoucherNumber),
@@ -710,22 +715,6 @@ public class CashController : Controller {
 
 
             object cashierBalance = null;
-            if (User.IsTanKhah())
-            {
-                var cashierId = Guid.Parse(User.GetUserId());
-                var accS = await db.Accountancies
-                    .Where(x => x.CashierId == cashierId)
-                    .Select(x => new { x.debit, x.credit, x.Accepted })
-                    .ToListAsync();
-
-                cashierBalance = new {
-                    CashierId = cashierId,
-                    TotalCredit = accS.Sum(a => a.credit),
-                    TotalDebit = accS.Sum(a => a.debit),
-                    isAccepted = accS.All(a => a.Accepted == true)
-                };
-            }
-
 
             var data = await query.ToListAsync();
 
@@ -757,6 +746,26 @@ public class CashController : Controller {
         {
             return BadRequest();
         }
+    }
+
+    public async Task<IActionResult> GetBalanceCashier()
+    {
+        if (!User.IsTanKhah()) return Ok(null);
+
+        var cashierId = Guid.Parse(User.GetUserId());
+        var accS = await db.Accountancies.AsNoTracking()
+            .Where(x => x.CashierId == cashierId)
+            .Select(x => new { x.debit, x.credit, x.Accepted })
+            .ToListAsync();
+
+        var cashierBalance = new CashierBalanceDto {
+            CashierId = cashierId,
+            TotalCredit = accS.Sum(a => a.credit),
+            TotalDebit = accS.Sum(a => a.debit),
+            isAccepted = accS.All(a => a.Accepted == true)
+        };
+
+        return Ok(cashierBalance);
     }
 
     private async Task AppendOrderHeadNumbersToCashDescriptions(List<Cash> cashes)
@@ -1084,30 +1093,6 @@ public class CashController : Controller {
     }
 
 
-    public async Task<IActionResult> GetAllBankAccountCashier()
-    {
-        try
-        {
-            var sepidar1Id = Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138");
-
-            var data = await db.BankAccounts
-                .Where(f => f.BankAccountType == BankAccountTypeEnum.شرکت)
-                .OrderBy(f => f.AccountName)
-                .Select(f => new {
-                    value = f.Id,
-                    text = $"{f.BankName} {f.AccountName} {f.AccountNumber} " +
-                           $"(کد تفضیلی {f.BankAccountExternalSoftwares.Where(f => f.ExSoftwareId == sepidar1Id).Select(f => f.RefCode).FirstOrDefault()})",
-                })
-                .ToListAsync();
-
-            return Ok(data);
-        }
-        catch (Exception)
-        {
-            return BadRequest();
-        }
-    }
-
     public async Task<IActionResult> GetAllTafsiliCodes()
     {
         try
@@ -1360,6 +1345,18 @@ public class CashController : Controller {
                 }
 
 
+                var tafsiliCash = await db.ExternalSoftwareSettings.Where(f =>
+                        f.SettingNameCode == ExternalSoftwareSettingTypeEnum.کد_تفصیلی_صندوق
+                        && f.ExternalSoftwareId == externalSoftwareId
+                    )
+                    .Select(f => f.SettingValue)
+                    .FirstOrDefaultAsync();
+
+                if (tafsiliCash == null)
+                {
+                    throw new Exception("صندوق سپیدار تعریف نشده است");
+                }
+
                 foreach (var id in model.CashIds ?? [])
                 {
                     var isMapped = await db.ExternalMappings.AnyAsync(f =>
@@ -1387,10 +1384,23 @@ public class CashController : Controller {
                         .Select(f => f.TafsiliCode)
                         .FirstOrDefault();
 
+                    var costCenterIdStr = await db.ExternalMappings.Where(f =>
+                            f.MapType == ExternalMappingTypeEnum.مرکز_هزینه
+                            && f.EntityName == nameof(BaseCenterCash)
+                            && f.EntityId == cash.CostCenterId
+                            && f.ExternalSoftwareId == externalSoftwareId
+                        )
+                        .Select(f => f.ExEntityId)
+                        .FirstOrDefaultAsync();
+
+                    if (!int.TryParse(costCenterIdStr, out var costCenterId))
+                    {
+                        throw new Exception($"مرکز هزینه با عنوان ({cash.CostCenter.Title}) در سپیدار پیدا نشد.");
+                    }
+
+                    var result = await sepidarService.SentCashToSepidar(cash, tafsiliCode, costCenterId, tafsiliCash);
+
                     var user = await userManager.GetUserAsync(HttpContext.User);
-
-                    var result = await sepidarService.SentCashToSepidar(cash, tafsiliCode);
-
                     if (result.HasValue)
                     {
                         db.ExternalMappings.Add(new ExternalMapping {

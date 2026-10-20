@@ -381,10 +381,10 @@ public class AccountancyController : Controller {
             switch (type)
             {
                 case 1: // تمام صورتحساب های پیش فاکتور
-//                    accQuery = accQuery.ForPreFactor(id);
+                    accQuery = accQuery.ForPreFactor(id);
                     pf = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
                     customerId = pf?.CustomerId;
-                    accQuery = accQuery.ForCustomer(customerId);
+//                    accQuery = accQuery.ForCustomer(customerId);
                     break;
                 case 2: // تمام صورتحساب های فاکتور
                     accQuery = accQuery.ForFactor(id);
@@ -653,7 +653,6 @@ public class AccountancyController : Controller {
 
 
             var items = await query
-                .Include(x => x.BankAccountExternalSoftwares)
                 .Select(f => new {
                     f.Id,
                     f.AccountName,
@@ -663,7 +662,6 @@ public class AccountancyController : Controller {
                     f.CartNumber,
                     f.BankAccountType,
                     f.OfficialType,
-                    f.BankAccountExternalSoftwares
                 })
                 .ToListAsync();
 
@@ -676,7 +674,6 @@ public class AccountancyController : Controller {
                 cartNumber = f.CartNumber,
                 officialType = f.OfficialType,
                 type = f.BankAccountType,
-                bankAccountExternalSoftwares = f.BankAccountExternalSoftwares
             });
 
 

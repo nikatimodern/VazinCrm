@@ -27,7 +27,6 @@ namespace CRM.Core.Domain.Accountancies.Entities {
         public List<Checkbook> Checkbooks { get; set; }
         public List<Cash> Cashes { get; set; }
 
-        public List<BankAccountExternalSoftware> BankAccountExternalSoftwares { get; set; }
         public List<Cashier> Cashiers { get; set; }
     }
 }

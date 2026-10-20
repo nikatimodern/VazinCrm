@@ -15,7 +15,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Enum;
+using CRM.Core.Domain.ASettings.Entities;
+using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Cashes.Entities;
+using CRM.Core.Domain.Sepidar.DLs.Entites;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Services.AI;
 using CRM.EndPoint.FrontEnd.Services.Asterisk;
@@ -82,6 +85,67 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
+                /*var softs = await db.ExternalSoftwares.AsNoTracking().ToListAsync();
+                var baseCenters = await db.BaseCenterCashes.AsNoTracking().ToListAsync();
+
+                var mappings = new List<ExternalMapping>();
+
+                foreach (var soft in softs)
+                {
+                    if (soft.Code == 1)
+                    {
+                        var dls = await S1db.DLs.AsNoTracking()
+                            .Where(f => f.Type == 3)
+                            .ToListAsync();
+
+                        foreach (var center in baseCenters)
+                        {
+                            var dl = dls.FirstOrDefault(f => f.Code == center.Code);
+
+                            if (dl != null)
+                            {
+                                mappings.Add(new ExternalMapping {
+                                    EntityName = nameof(BaseCenterCash),
+                                    EntityId = center.Id,
+                                    MapType = ExternalMappingTypeEnum.مرکز_هزینه,
+                                    MapTypeTxt = nameof(ExternalMappingTypeEnum.مرکز_هزینه),
+                                    ExternalSoftwareId = soft.Id,
+                                    ExEntityName = nameof(DL),
+                                    ExEntityId = dl.DLId.ToString()
+                                });
+                            }
+                        }
+                    } else
+                    {
+                        var dls = await s2Db.DLs.AsNoTracking()
+                            .Where(f => f.Type == 3)
+                            .ToListAsync();
+
+                        foreach (var center in baseCenters)
+                        {
+                            var code = center.Code.StartsWith('0') ? center.Code[1..] : center.Code;
+                            var dl = dls.FirstOrDefault(f => f.Code == code);
+
+                            if (dl != null)
+                            {
+                                mappings.Add(new ExternalMapping {
+                                    EntityName = nameof(BaseCenterCash),
+                                    EntityId = center.Id,
+                                    MapType = ExternalMappingTypeEnum.مرکز_هزینه,
+                                    MapTypeTxt = nameof(ExternalMappingTypeEnum.مرکز_هزینه),
+                                    ExternalSoftwareId = soft.Id,
+                                    ExEntityName = nameof(DL),
+                                    ExEntityId = dl.DLId.ToString()
+                                });
+                            }
+                        }
+                    }
+                }
+
+                db.ExternalMappings.AddRange(mappings);
+                await db.SaveChangesAsync();
+*/
+
 
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();

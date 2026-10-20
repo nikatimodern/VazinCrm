@@ -1,5 +1,6 @@
 using CRM.Core.Domain.Sepidar.Accounts.Entites;
 using CRM.Core.Domain.Sepidar.Banks.Entites;
+using CRM.Core.Domain.Sepidar.Cashes;
 using CRM.Core.Domain.Sepidar.Currencies.Entites;
 using CRM.Core.Domain.Sepidar.DLs.Entites;
 using CRM.Core.Domain.Sepidar.ExtraDataes;
@@ -33,6 +34,7 @@ public abstract class SepidarContextDbBase : DbContext {
     public DbSet<VoucherItem> VoucherItems { get; set; }
     public DbSet<SepidarBank> SepidarBanks { get; set; }
     public DbSet<SepidarBankBranch> SepidarBankBranches { get; set; }
+    public DbSet<SepidarCash> SepidarCash { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -59,6 +61,7 @@ public abstract class SepidarContextDbBase : DbContext {
         modelBuilder.Entity<SepidarBank>().ToTable("Bank", "RPA");
         modelBuilder.Entity<SepidarBankBranch>().ToTable("BankBranch", "RPA");
         modelBuilder.Entity<SepidarBankAccount>().ToTable("BankAccount", "RPA");
+        modelBuilder.Entity<SepidarCash>().ToTable("Cash", "RPA");
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

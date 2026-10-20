@@ -14,6 +14,7 @@ using CRM.Core.Domain.Checks.Entities;
 using CRM.Core.Domain.Contracts.Entities;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Deals.Entities;
+using CRM.Core.Domain.Factors.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Entities;
 using CRM.Core.Domain.Payments.Entities;
@@ -284,7 +285,7 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
                 }
 
                 break;
-            case Core.Domain.Factors.Entities.Factor f:
+            case Factor f:
                 var title = f.ParentReturnedId != null ? "فاکتور برگشتی" : "فاکتور";
                 switch (action)
                 {
@@ -653,7 +654,7 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
         return entity switch {
             Deal deal => deal.SerialNumber,
             PreFactor pf => pf.SerialNumber,
-            Core.Domain.Factors.Entities.Factor f => f.SerialNumber,
+            Factor f => f.SerialNumber,
             Accountancy a => a.SerialNum,
             OrderHead o => o.OrderNumber,
             Customer c => c.CustomerCode,
@@ -841,7 +842,7 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
                 parentIdValue = pf.DealId?.ToString();
                 break;
 
-            case Core.Domain.Factors.Entities.Factor fac:
+            case Factor fac:
                 parentNameValue = nameof(PreFactor);
                 parentIdValue = fac.PfactorID.ToString();
                 break;
@@ -851,18 +852,23 @@ public class LogSystemService(CRMContextDb db, DateTimeServices dtService) {
                 parentIdValue = oh.Prefactor?.ToString();
                 break;
 
+            case Supply supply:
+                parentNameValue = nameof(PreFactor);
+                parentIdValue = supply.PfId.ToString();
+                break;
+
             case Report r:
-                if (r.DealSerialNumber != null)
+                if (r.DealId != null)
                 {
                     parentNameValue = nameof(Deal);
-                    parentIdValue = r.DealId?.ToString();
+                    parentIdValue = r.DealId.ToString();
                 }
 
                 break;
 
             case Attachment att:
                 parentNameValue = att._AttachType switch {
-                    _AttachType.DocPayFactor => nameof(Core.Domain.Factors.Entities.Factor),
+                    _AttachType.DocPayFactor => nameof(Factor),
                     _AttachType.AcceptedCusPreFactor => nameof(PreFactor),
                     _AttachType.UploadCustomerPf => nameof(PreFactor),
                     _AttachType.UploadSalesExpertPf => nameof(PreFactor),
