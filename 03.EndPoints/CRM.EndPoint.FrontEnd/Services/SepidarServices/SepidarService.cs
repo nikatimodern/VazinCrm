@@ -1256,7 +1256,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
         }
     }
 
-    private async Task<List<QuotationItem>> CreateQuotationItemsAsync(int quotationId, List<SepidarQuotationItemRequest> items, 
+    private async Task<List<QuotationItem>> CreateQuotationItemsAsync(int quotationId, List<SepidarQuotationItemRequest> items,
         CancellationToken ct = default)
     {
         if (items == null || items.Count == 0)
@@ -1340,5 +1340,30 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
         }
 
         return quotationItems;
+    }
+
+    public async Task<bool?> EntityExistsAsync(string entityName, string entityId)
+    {
+        if (string.IsNullOrWhiteSpace(entityName) || string.IsNullOrWhiteSpace(entityId))
+            return null;
+
+        if (!int.TryParse(entityId, out var id))
+            return false;
+
+        return entityName switch {
+            nameof(Voucher) => await sepidarContext.Vouchers
+                .AsNoTracking()
+                .AnyAsync(x => x.VoucherId == id),
+
+            nameof(PaymentHeader) => await sepidarContext.PaymentHeaders
+                .AsNoTracking()
+                .AnyAsync(x => x.PaymentHeaderId == id),
+
+            nameof(Quotation) => await sepidarContext.Quotations
+                .AsNoTracking()
+                .AnyAsync(x => x.QuotationId == id),
+
+            _ => null
+        };
     }
 }

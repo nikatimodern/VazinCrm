@@ -1715,15 +1715,18 @@ function exSoftwarePreFactorRenderStock(data) {
             <div class="external-item-mapping-list">
                 ${(data.preFactorItems ?? []).map(item => `
                     <div class="external-mapping-entity external-item-mapping-row">
-                        <span class="external-mapping-label">محصول پیش‌فاکتور CRM</span>
-                        <span class="external-mapping-entity-name">
-                            ${escapeHtml(item.productTitle)}
-                        </span>
-                        
-                        <span class="external-mapping-label mt-2">محصول معادل سپیدار</span>
-                        <span class="external-mapping-entity-name">
-                            ${escapeHtml((data.sepidarItems ?? []).find(product => String(product.id) === String(state.currentSoftwareItemMappings?.[String(item.preFactorItemId)]))?.title ?? "-")}
-                        </span>
+                        <div class="d-flex gap-2 align-items-baseline">
+                            <span class="external-mapping-label">محصول پیش‌فاکتور CRM:</span>
+                            <span class="external-mapping-entity-name">
+                                ${escapeHtml(item.productTitle)}
+                            </span>
+                        </div>
+                        <div class="d-flex gap-2 align-items-baseline">
+                            <span class="external-mapping-label">محصول معادل سپیدار:</span>
+                            <span class="external-mapping-entity-name">
+                                ${escapeHtml((data.sepidarItems ?? []).find(product => String(product.id) === String(state.currentSoftwareItemMappings?.[String(item.preFactorItemId)]))?.title ?? "-")}
+                            </span>
+                        </div>
 
                         <label class="form-label mt-2 mb-0" for="externalMappingStock_${item.preFactorItemId}">
                             انبار

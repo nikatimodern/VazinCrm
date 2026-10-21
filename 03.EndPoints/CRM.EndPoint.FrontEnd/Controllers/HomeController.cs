@@ -27,6 +27,7 @@ using CRM.EndPoint.FrontEnd.Services.Asterisk;
 using CRM.EndPoint.FrontEnd.Services.Carizo;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
+using CRM.EndPoint.FrontEnd.Services.SepidarServices;
 using CRM.EndPoint.FrontEnd.Services.Sms;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
@@ -51,6 +52,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly TaskServices ts;
         private readonly SmsService smsService;
         private readonly Sepidar2ContextDb s2Db;
+        private readonly Sepidar1Service sepidar1Service;
+        private readonly Sepidar2Service sepidar2Service;
         private readonly ISmsIrService smsIrService;
 
         public HomeController(IWebHostEnvironment appEnvironment,
@@ -58,7 +61,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
             Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue, IssabelService issabelService,
             AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi, LogSystemService logSystemService, TaskServices ts, SmsService smsService,
-            Sepidar2ContextDb s2db)
+            Sepidar2ContextDb s2db, Sepidar1Service sepidar1Service, Sepidar2Service sepidar2Service)
         {
             this.appEnvironment = appEnvironment;
             this.conf = conf;
@@ -74,6 +77,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.ts = ts;
             this.smsService = smsService;
             s2Db = s2db;
+            this.sepidar1Service = sepidar1Service;
+            this.sepidar2Service = sepidar2Service;
             this.smsIrService = smsIrService;
             this.issabelService = issabelService;
             this.aiPrompts = aiPrompts;
@@ -277,6 +282,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             var entityIds = request.EntityIds.Distinct().ToList();
 
+            await ValidateExternalMappingsAsync(entityIds, entityName, request.MapType);
+
             var softwares = await db.ExternalSoftwares
                 .AsNoTracking()
                 .OrderBy(x => x.Title)
@@ -293,6 +300,56 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 .ToListAsync();
 
             return Ok(softwares);
+        }
+
+        private async Task ValidateExternalMappingsAsync(List<Guid> entityIds, string entityName, ExternalMappingTypeEnum mapType)
+        {
+            var mappings = await db.ExternalMappings
+                .Where(x =>
+                    entityIds.Contains(x.EntityId) &&
+                    x.EntityName == entityName &&
+                    x.MapType == mapType)
+                .ToListAsync();
+
+
+            var hasChanges = false;
+            foreach (var mapping in mappings)
+            {
+                var exists = await CheckExternalEntityExistsAsync(mapping.ExternalSoftwareId, mapping.ExEntityId, mapping.ExEntityName);
+
+                if (exists == false)
+                {
+                    db.ExternalMappings.Remove(mapping);
+                    hasChanges = true;
+                }
+            }
+
+            if (hasChanges)
+                await db.SaveChangesAsync();
+        }
+
+        private async Task<bool?> CheckExternalEntityExistsAsync(Guid externalSoftwareId, string exEntityId, string exEntityName)
+        {
+            var service = GetSepidarService(externalSoftwareId);
+
+            if (service == null)
+                return null;
+
+            return await service.EntityExistsAsync(exEntityName, exEntityId);
+        }
+
+        private static readonly Guid Sepidar1SoftwareId = Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138");
+        private static readonly Guid Sepidar2SoftwareId = Guid.Parse("d6c3e8a7-1435-47d5-0489-08df26c5e2ca");
+
+        private SepidarService GetSepidarService(Guid softwareId)
+        {
+            if (softwareId == Sepidar1SoftwareId)
+                return sepidar1Service;
+
+            if (softwareId == Sepidar2SoftwareId)
+                return sepidar2Service;
+
+            return null;
         }
     }
 }

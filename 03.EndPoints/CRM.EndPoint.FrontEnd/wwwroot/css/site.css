@@ -8111,7 +8111,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	gap: .5rem;
 	color: #04857c;
 	font-size: 12px;
-font-family: IRANSansBold;
+	font-family: IRANSansBold;
 }
 
 
@@ -8130,8 +8130,8 @@ font-family: IRANSansBold;
 
 .external-mapping-entity-name {
 	color: #26364a;
-	font-size: 14px;
-	font-family: IRANSansBold;
+	font-size: 13px;
+	font-family: IRANSansMedium;
 }
 
 
@@ -8183,6 +8183,7 @@ font-family: IRANSansBold;
 	}
 }
 
+
 .ex-preview-summary {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -8194,6 +8195,7 @@ font-family: IRANSansBold;
 	border-radius: 12px;
 }
 
+
 .ex-preview-field {
 	display: flex;
 	align-items: center;
@@ -8204,15 +8206,18 @@ font-family: IRANSansBold;
 	border-bottom: 1px solid #e8efed;
 }
 
+
 .ex-preview-field:nth-last-child(-n+2) {
 	border-bottom: none;
 }
+
 
 .ex-preview-label {
 	flex-shrink: 0;
 	color: #788781;
 	font-size: 12px;
 }
+
 
 .ex-preview-field strong {
 	min-width: 0;
@@ -8221,9 +8226,11 @@ font-family: IRANSansBold;
 	overflow-wrap: anywhere;
 }
 
+
 .ex-preview-customer {
 	grid-column: span 2;
 }
+
 
 .ex-preview-software {
 	display: inline-flex;
@@ -8232,9 +8239,11 @@ font-family: IRANSansBold;
 	color: #04857c !important;
 }
 
+
 .ex-preview-software i {
 	font-size: 12px;
 }
+
 
 @media (max-width: 576px) {
 	.ex-preview-summary {
@@ -8256,17 +8265,20 @@ font-family: IRANSansBold;
 	}
 }
 
+
 .external-prefactor-preview .table-responsive {
 	border: 1px solid #e6ecea;
 	border-radius: 10px;
 	overflow: auto;
 }
 
+
 .external-prefactor-preview .table {
 	margin: 0;
 	white-space: nowrap;
 	font-size: 12px;
 }
+
 
 .external-prefactor-preview .table thead th {
 	padding: 12px 10px;
@@ -8275,15 +8287,18 @@ font-family: IRANSansBold;
 	border-color: #e6ecea;
 }
 
+
 .external-prefactor-preview .table tbody td {
 	padding: 11px 10px;
 	border-color: #edf1f0;
 	vertical-align: middle;
 }
 
+
 .external-prefactor-preview .table tbody tr:hover {
 	background: #f7fbfa;
 }
+
 
 .external-prefactor-preview .external-mapping-entity.mt-3 {
 	margin-top: 14px !important;
@@ -8293,15 +8308,18 @@ font-family: IRANSansBold;
 	border-radius: 10px;
 }
 
+
 .external-prefactor-preview .external-mapping-entity.mt-3 .d-flex {
 	align-items: center;
 	font-size: 13px;
 }
 
+
 .external-prefactor-preview .external-mapping-entity.mt-3 hr {
 	border-color: #c7cdcc;
 	margin: 8px 0;
 }
+
 
 .external-prefactor-preview .external-mapping-entity.mt-3 .d-flex:last-child {
 	color: #04796f;
