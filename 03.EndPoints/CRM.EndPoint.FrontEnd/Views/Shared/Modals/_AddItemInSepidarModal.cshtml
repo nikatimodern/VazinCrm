@@ -1,0 +1,26 @@
+<!-- Modal addItemInSepidar -->
+<div class="modal fade" id="addItemInSepidarModal" tabindex="-1" role="dialog" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content col-12 p-2">
+            <div class="text-center text-white rounded py-1 fbold" style="background-color: #04857c">افزودن محصول در سپیدار</div>
+            <div class="modal-body pb-2">
+                <form id="ddItemInSepidarForm" class="d-flex flex-column gap-2">
+                    <div>
+                        <label for="sepidarItemTitleId">محصول:</label>
+                        <input id="sepidarItemTitleId" class="form-control" name="itemTitle" type="text" />
+                    </div>
+                    <div>
+                        <label for="sepidarStockId">انبار: </label>
+                        <select class="form-select form-select-sm valueNumber" name="stock" id="sepidarStockId" required>
+                            <option value="">انتخاب کنید</option>
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-center gap-1 mt-3">
+                        <button type="button" class="buttonCancel2" style="padding-block: 4px" data-bs-dismiss="modal">انصراف</button>
+                        <button type="button" class="buttonGreen0" style="padding-block: 4px" onclick="submitItemInSepidar()">ثبت</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

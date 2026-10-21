@@ -1303,9 +1303,9 @@ async function sendPreFactorToExternalSoftware(id) {
 }
 
 
-const externalMappingModal = document.getElementById("externalMappingModal");
-const externalMappingList = externalMappingModal?.querySelector("#externalMappingList");
-const confirmExternalMappingBtn = externalMappingModal?.querySelector("#confirmExternalMappingBtn");
+const externalSoftwarePreFactorModal = document.getElementById("externalSoftwarePreFactorModal");
+const externalMappingList = externalSoftwarePreFactorModal?.querySelector("#externalMappingList");
+const confirmExternalMappingBtn = externalSoftwarePreFactorModal?.querySelector("#confirmExternalMappingBtn");
 
 const initialExternalSoftwareProcess = () => ({
     preFactorId: null,
@@ -1337,9 +1337,9 @@ function exSoftwarePreFactorDestroySelects() {
     });
 }
 
-externalMappingModal?.addEventListener("hidden.bs.modal", () => {
+externalSoftwarePreFactorModal?.addEventListener("hidden.bs.modal", () => {
     exSoftwarePreFactorReset();
-    externalMappingModal.querySelector(".modal-dialog").classList.remove("modal-lg");
+    externalSoftwarePreFactorModal.querySelector(".modal-dialog").classList.remove("modal-lg");
 });
 
 
@@ -1365,7 +1365,7 @@ async function exSoftwarePreFactorNext() {
     };
     
     await exSoftwarePreFactorLoadSaleTypes();
-    ModalToggle(externalMappingModal, "show");
+    ModalToggle(externalSoftwarePreFactorModal, "show");
 }
 
 async function exSoftwarePreFactorLoadSaleTypes() {
@@ -1595,6 +1595,9 @@ function exSoftwarePreFactorRenderItems(data) {
         stepText: "مرحله 3 از 5",
         content: `
             <div class="external-item-mapping-list">
+                <div class="text-end" style="line-height: 1;font-size: 12px">
+                    <button class="link-green text-decoration-none" disabled type="button" onclick="showAddItemInSepidarModal()">افزودن محصول جدید</button>
+                </div>
                 ${(data.preFactorItems ?? []).map(item => `
                     <div class="external-mapping-entity external-item-mapping-row">
                         <span class="external-mapping-label">محصول پیش‌فاکتور CRM</span>
@@ -1623,6 +1626,10 @@ function exSoftwarePreFactorRenderItems(data) {
     
     confirmExternalMappingBtn.textContent = "تأیید کالاها و ادامه";
     exSoftwarePreFactorUpdateButton();
+}
+
+function showAddItemInSepidarModal() {
+    ModalToggle("addItemInSepidarModal");
 }
 
 function exSoftwarePreFactorUpdateButton(select = null) {
@@ -1805,7 +1812,7 @@ function exSoftwarePreFactorRenderPreview(data) {
     const money = value => Number(value ?? 0).toLocaleString();
     const items = data.items ?? [];
     
-    externalMappingModal.querySelector(".modal-dialog").classList.add("modal-lg");
+    externalSoftwarePreFactorModal.querySelector(".modal-dialog").classList.add("modal-lg");
     
     exSoftwarePreFactorRenderStep({
         title: "بررسی نهایی پیش‌فاکتور",
@@ -1927,7 +1934,7 @@ async function exSoftwarePreFactorFinish() {
     
     if (state.currentIndex >= state.softwareIds.length) {
         
-        ModalToggle(externalMappingModal, "hide");
+        ModalToggle(externalSoftwarePreFactorModal, "hide");
         exSoftwarePreFactorReset();
         return;
     }
@@ -1944,7 +1951,7 @@ async function exSoftwarePreFactorFinish() {
     state.stockSelections = {};
     state.stockOptions = [];
     
-    externalMappingModal.querySelector(".modal-dialog").classList.remove("modal-lg");
+    externalSoftwarePreFactorModal.querySelector(".modal-dialog").classList.remove("modal-lg");
     
     await exSoftwarePreFactorNext();
 }
@@ -1984,7 +1991,7 @@ confirmExternalMappingBtn?.addEventListener("click", async () => {
     } finally {
         state.isProcessing = false;
         
-        if (isModalOpen(externalMappingModal)) {
+        if (isModalOpen(externalSoftwarePreFactorModal)) {
             if (state.currentStep === "saleType") {
                 toggleElementsDisabled(confirmExternalMappingBtn, !state.saleTypeSelect?.value);
             } else if (state.currentStep === "customer") {
