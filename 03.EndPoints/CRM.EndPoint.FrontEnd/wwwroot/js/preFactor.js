@@ -1767,11 +1767,8 @@ function exSoftwarePreFactorAreAllItemsMapped() {
 
 
 async function exSoftwarePreFactorConfirmItems() {
-    const state = externalSoftwareProcess;
-    
     if (!exSoftwarePreFactorAreAllItemsMapped()) {
-        toastifyError("برای تمام ردیف‌های پیش‌فاکتور کالای معادل انتخاب کنید.",
-        );
+        toastifyError("برای تمام ردیف‌های پیش‌فاکتور کالای معادل انتخاب کنید.");
         return;
     }
     
@@ -1821,121 +1818,81 @@ function exSoftwarePreFactorRenderStock() {
             <div class="external-item-mapping-list">
                 ${(software.preFactorItems ?? []).map(item => {
             
-            const mapping =
-                state.mappings.items[
-                    String(item.preFactorItemId)
-                    ];
+            const mapping = state.mappings.items[String(item.preFactorItemId)];
+            const externalProduct = (software.sepidarItems ?? []).find(product => String(product.id) === String(mapping?.externalItemId));
             
-            const externalProduct =
-                (software.sepidarItems ?? [])
-                    .find(product =>
-                        String(product.id) ===
-                        String(mapping?.externalItemId),
-                    );
-            
-            return `
-                        <div class="external-mapping-entity external-item-mapping-row">
+            return `<div class="external-mapping-entity external-item-mapping-row">
 
-                            <div class="d-flex gap-2 align-items-baseline">
-                                <span class="external-mapping-label">
-                                    محصول پیش‌فاکتور CRM:
-                                </span>
-
-                                <span class="external-mapping-entity-name">
-                                    ${escapeHtml(item.productTitle)}
-                                </span>
-                            </div>
-
-                            <div class="d-flex gap-2 align-items-baseline">
-                                <span class="external-mapping-label">
-                                    محصول معادل سپیدار:
-                                </span>
-
-                                <span class="external-mapping-entity-name">
-                                    ${escapeHtml(
-                externalProduct?.title ?? "-",
-            )}
-                                </span>
-                            </div>
-
-                            <label
-                                class="form-label mt-2 mb-0"
-                                for="externalMappingStock_${item.preFactorItemId}">
-                                انبار
-                            </label>
-
-                            <select
-                                class="external-mapping-stock-select"
-                                id="externalMappingStock_${item.preFactorItemId}"
-                                data-crm-item-id="${escapeHtml(item.preFactorItemId)}">
-
-                                <option value="">
-                                    جستجو و انتخاب انبار
-                                </option>
-
-                                ${(software.stocks ?? []).map(stock => `
-                                    <option value="${escapeHtml(stock.id)}">
-                                        ${escapeHtml(stock.code)}
-                                        -
-                                        ${escapeHtml(stock.title)}
-                                    </option>
-                                `).join("")}
-
-                            </select>
+                        <div class="d-flex gap-2 align-items-baseline">
+                            <span class="external-mapping-label">
+                                محصول پیش‌فاکتور CRM:
+                            </span>
+    
+                            <span class="external-mapping-entity-name">
+                                ${escapeHtml(item.productTitle)}
+                            </span>
                         </div>
-                    `;
+    
+                        <div class="d-flex gap-2 align-items-baseline">
+                            <span class="external-mapping-label">
+                                محصول معادل سپیدار:
+                            </span>
+    
+                            <span class="external-mapping-entity-name">
+                                ${escapeHtml(externalProduct?.title ?? "-")}
+                            </span>
+                        </div>
+    
+                        <label class="form-label mt-2 mb-0" for="externalMappingStock_${item.preFactorItemId}">
+                            انبار
+                        </label>
+    
+                        <select class="external-mapping-stock-select" id="externalMappingStock_${item.preFactorItemId}" data-crm-item-id="${escapeHtml(item.preFactorItemId)}">
+                            <option value="">جستجو و انتخاب انبار</option>
+                            ${(software.stocks ?? []).map(stock => `
+                                <option value="${escapeHtml(stock.id)}">
+                                    ${escapeHtml(stock.code)} - ${escapeHtml(stock.title)}
+                                </option>
+                            `).join("")}
+                        </select>
+                    </div>`;
         }).join("")}
             </div>
         `,
     });
     
-    externalMappingList
-        .querySelectorAll(".external-mapping-stock-select")
-        .forEach(select => {
-            new TomSelect(select, {
-                placeholder: "جستجو و انتخاب انبار",
+    externalMappingList.querySelectorAll(".external-mapping-stock-select").forEach(select => {
+        new TomSelect(select, {
+            placeholder: "جستجو و انتخاب انبار",
+            
+            onChange: value => {
+                const itemId = String(select.dataset.crmItemId);
+                const mapping = state.mappings.items[itemId];
                 
-                onChange: value => {
-                    const itemId =
-                        String(select.dataset.crmItemId);
-                    
-                    const mapping =
-                        state.mappings.items[itemId];
-                    
-                    if (!mapping) return;
-                    
-                    if (value) {
-                        mapping.stockId = Number(value);
-                    } else {
-                        delete mapping.stockId;
-                    }
-                    
-                    exSoftwarePreFactorUpdateConfirmButton();
-                },
-            });
+                if (!mapping) return;
+                
+                if (value) {
+                    mapping.stockId = Number(value);
+                } else {
+                    delete mapping.stockId;
+                }
+                
+                exSoftwarePreFactorUpdateConfirmButton();
+            },
         });
+    });
     
-    exSoftwarePreFactorSetConfirmButton(
-        "تأیید انبارها و ادامه",
-        !exSoftwarePreFactorAreAllItemsMappedWithStock(),
-    );
+    exSoftwarePreFactorSetConfirmButton("تأیید انبارها و ادامه", !exSoftwarePreFactorAreAllItemsMappedWithStock());
 }
 
 
 function exSoftwarePreFactorAreAllItemsMappedWithStock() {
-    const items =
-        externalSoftwareProcess.software?.preFactorItems ?? [];
+    const items = externalSoftwareProcess.software?.preFactorItems ?? [];
     
-    return items.length > 0 &&
-        items.every(item => {
-            const mapping =
-                externalSoftwareProcess.mappings.items[
-                    String(item.preFactorItemId)
-                    ];
-            
-            return mapping?.externalItemId &&
-                mapping?.stockId;
-        });
+    return items.length > 0 && items.every(item => {
+        const mapping = externalSoftwareProcess.mappings.items[String(item.preFactorItemId)];
+        return mapping?.externalItemId && mapping?.stockId;
+    });
 }
 
 
@@ -1947,9 +1904,7 @@ async function exSoftwarePreFactorPreview() {
     const state = externalSoftwareProcess;
     
     if (!exSoftwarePreFactorAreAllItemsMappedWithStock()) {
-        toastifyError(
-            "برای تمام ردیف‌های پیش‌فاکتور کالا و انبار را انتخاب کنید.",
-        );
+        toastifyError("برای تمام ردیف‌های پیش‌فاکتور کالا و انبار را انتخاب کنید.");
         return;
     }
     
@@ -1976,32 +1931,23 @@ function exSoftwarePreFactorBuildRequest() {
     
     return {
         preFactorId: state.preFactorId,
+        externalSoftwareId: state.software.externalSoftwareId,
+        externalCustomerId: state.mappings.customerId ?? state.software.mappedExternalCustomerId,
+        saleTypeId: state.mappings.saleTypeId,
         
-        externalSoftwareId:
-        state.software.externalSoftwareId,
-        
-        externalCustomerId:
-            state.mappings.customerId ??
-            state.software.mappedExternalCustomerId,
-        
-        saleTypeId:
-        state.mappings.saleTypeId,
-        
-        itemMappings:
-            Object.entries(state.mappings.items).map(
-                ([preFactorItemId, mapping]) => ({
-                    preFactorItemId: Number(preFactorItemId),
-                    externalItemId: Number(mapping.externalItemId),
-                    stockId: Number(mapping.stockId),
-                }),
-            ),
+        itemMappings: Object.entries(state.mappings.items).map(
+            ([preFactorItemId, mapping]) => ({
+                preFactorItemId: Number(preFactorItemId),
+                externalItemId: Number(mapping.externalItemId),
+                stockId: Number(mapping.stockId),
+            }),
+        ),
     };
 }
 
 
 function exSoftwarePreFactorRenderPreview(data) {
-    const money = value =>
-        Number(value ?? 0).toLocaleString();
+    const money = value => Number(value ?? 0).toLocaleString();
     
     const items = data.items ?? [];
     
@@ -2018,55 +1964,28 @@ function exSoftwarePreFactorRenderPreview(data) {
                 <div class="ex-preview-summary">
 
                     <div class="ex-preview-field">
-                        <span class="ex-preview-label">
-                            نوع فروش:
-                        </span>
-
-                        <strong>
-                            ${escapeHtml(data.saleTypeTitle ?? "-")}
-                        </strong>
+                        <span class="ex-preview-label">نوع فروش:</span>
+                        <strong>${escapeHtml(data.saleTypeTitle ?? "-")}</strong>
                     </div>
 
                     <div class="ex-preview-field">
-                        <span class="ex-preview-label">
-                            شماره پیش‌فاکتور:
-                        </span>
-
-                        <strong>
-                            ${escapeHtml(data.serialNumber ?? "-")}
-                        </strong>
+                        <span class="ex-preview-label">شماره پیش‌فاکتور:</span>
+                        <strong>${escapeHtml(data.serialNumber ?? "-")}</strong>
                     </div>
 
                     <div class="ex-preview-field">
-                        <span class="ex-preview-label">
-                            تاریخ:
-                        </span>
-
-                        <strong>
-                            ${escapeHtml(data.date ?? "-")}
-                        </strong>
+                        <span class="ex-preview-label">تاریخ:</span>
+                        <strong>${escapeHtml(data.date ?? "-")}</strong>
                     </div>
 
                     <div class="ex-preview-field ex-preview-customer">
-                        <span class="ex-preview-label">
-                            مشتری:
-                        </span>
-
-                        <strong>
-                            ${escapeHtml(data.customerName ?? "-")}
-                        </strong>
+                        <span class="ex-preview-label">مشتری:</span>
+                        <strong>${escapeHtml(data.customerName ?? "-")}</strong>
                     </div>
 
                     <div class="ex-preview-field">
-                        <span class="ex-preview-label">
-                            نرم‌افزار مقصد:
-                        </span>
-
-                        <strong class="ex-preview-software">
-                            ${escapeHtml(
-            data.externalSoftwareTitle ?? "-",
-        )}
-                        </strong>
+                        <span class="ex-preview-label">نرم‌افزار مقصد:</span>
+                        <strong class="ex-preview-software">${escapeHtml(data.externalSoftwareTitle ?? "-")}</strong>
                     </div>
 
                 </div>
@@ -2091,36 +2010,14 @@ function exSoftwarePreFactorRenderPreview(data) {
                             ${items.map((item, index) => `
                                 <tr>
                                     <td>${index + 1}</td>
-
-                                    <td>
-                                        ${escapeHtml(
-            item.productTitle ?? "-",
-        )}
-                                    </td>
-
-                                    <td>
-                                        ${escapeHtml(
-            item.externalItemTitle ?? "-",
-        )}
-                                    </td>
-
-                                    <td>
-                                        ${escapeHtml(
-            item.externalStockTitle ?? "-",
-        )}
-                                    </td>
-
+                                    <td>${escapeHtml(item.productTitle ?? "-")}</td>
+                                    <td>${escapeHtml(item.externalItemTitle ?? "-")}</td>
+                                    <td>${escapeHtml(item.externalStockTitle ?? "-")}</td>
                                     <td>${money(item.weight)}</td>
-
                                     <td>${money(item.unitAmount)}</td>
-
                                     <td>${money(item.discount)}</td>
-
                                     <td>${money(item.taxAmount)}</td>
-
-                                    <td class="fbold">
-                                        ${money(item.totalAmount)}
-                                    </td>
+                                    <td class="fbold">${money(item.totalAmount)}</td>
                                 </tr>
                             `).join("")}
                         </tbody>
@@ -2128,47 +2025,29 @@ function exSoftwarePreFactorRenderPreview(data) {
                 </div>
 
                 <div class="external-mapping-entity mt-3">
-
                     <div class="d-flex justify-content-between mb-1">
                         <span>جمع مبلغ کالاها</span>
-                        <strong>
-                            ${renderMoneyHtml(data.totalAmount)}
-                        </strong>
+                        <strong>${renderMoneyHtml(data.totalAmount)}</strong>
                     </div>
-
                     <div class="d-flex justify-content-between mb-1">
                         <span>تخفیف کل</span>
-                        <strong>
-                            ${renderMoneyHtml(data.totalDiscount)}
-                        </strong>
+                        <strong>${renderMoneyHtml(data.totalDiscount)}</strong>
                     </div>
-
                     <div class="d-flex justify-content-between mb-1">
                         <span>مالیات کل</span>
-                        <strong>
-                            ${renderMoneyHtml(data.totalTax)}
-                        </strong>
+                        <strong>${renderMoneyHtml(data.totalTax)}</strong>
                     </div>
-
                     <hr>
-
                     <div class="d-flex justify-content-between">
                         <strong>مبلغ نهایی</strong>
-
-                        <strong>
-                            ${renderMoneyHtml(data.paymentAmount)}
-                        </strong>
+                        <strong>${renderMoneyHtml(data.paymentAmount)}</strong>
                     </div>
-
                 </div>
             </div>
         `,
     });
     
-    exSoftwarePreFactorSetConfirmButton(
-        "تأیید و ثبت در نرم‌افزار",
-        items.length === 0,
-    );
+    exSoftwarePreFactorSetConfirmButton("تأیید و ثبت در نرم‌افزار", items.length === 0);
 }
 
 
@@ -2177,8 +2056,6 @@ function exSoftwarePreFactorRenderPreview(data) {
 ------------------------------------------------------- */
 
 async function exSoftwarePreFactorSubmit() {
-    const state = externalSoftwareProcess;
-    
     const request = exSoftwarePreFactorBuildRequest();
     
     await sendApiRequest({
@@ -2201,53 +2078,30 @@ function exSoftwarePreFactorUpdateConfirmButton() {
     if (state.processing) return;
     
     switch (state.step) {
-        
         case "saleType":
-            toggleElementsDisabled(
-                confirmExternalMappingBtn,
-                !state.mappings.saleTypeId,
-            );
+            toggleElementsDisabled(confirmExternalMappingBtn, !state.mappings.saleTypeId);
             break;
         
         case "customer": {
-            const selected =
-                externalMappingList
-                    ?.querySelector("#externalMappingCustomerSelect")
-                    ?.value;
-            
-            toggleElementsDisabled(
-                confirmExternalMappingBtn,
-                !selected,
-            );
+            const selected = externalMappingList?.querySelector("#externalMappingCustomerSelect")?.value;
+            toggleElementsDisabled(confirmExternalMappingBtn, !selected);
             break;
         }
         
         case "items":
-            toggleElementsDisabled(
-                confirmExternalMappingBtn,
-                !exSoftwarePreFactorAreAllItemsMapped(),
-            );
+            toggleElementsDisabled(confirmExternalMappingBtn, !exSoftwarePreFactorAreAllItemsMapped());
             break;
         
         case "stock":
-            toggleElementsDisabled(
-                confirmExternalMappingBtn,
-                !exSoftwarePreFactorAreAllItemsMappedWithStock(),
-            );
+            toggleElementsDisabled(confirmExternalMappingBtn, !exSoftwarePreFactorAreAllItemsMappedWithStock());
             break;
         
         case "preview":
-            toggleElementsDisabled(
-                confirmExternalMappingBtn,
-                false,
-            );
+            toggleElementsDisabled(confirmExternalMappingBtn, false);
             break;
         
         default:
-            toggleElementsDisabled(
-                confirmExternalMappingBtn,
-                true,
-            );
+            toggleElementsDisabled(confirmExternalMappingBtn, true);
     }
 }
 
@@ -2265,15 +2119,12 @@ const externalSoftwareStepHandlers = {
 };
 
 
-confirmExternalMappingBtn?.addEventListener(
-    "click",
-    async () => {
+confirmExternalMappingBtn?.addEventListener("click", async () => {
         const state = externalSoftwareProcess;
         
         if (state.processing) return;
         
-        const handler =
-            externalSoftwareStepHandlers[state.step];
+        const handler = externalSoftwareStepHandlers[state.step];
         
         if (!handler) {
             toastifyError("مرحله فعلی معتبر نیست.");
@@ -2282,10 +2133,7 @@ confirmExternalMappingBtn?.addEventListener(
         
         state.processing = true;
         
-        toggleElementsDisabled(
-            confirmExternalMappingBtn,
-            true,
-        );
+        toggleElementsDisabled(confirmExternalMappingBtn, true);
         
         try {
             await handler();

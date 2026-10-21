@@ -5,10 +5,20 @@ namespace CRM.EndPoint.FrontEnd.Models.Sepidar;
 
 public class ExternalSoftwarePreFactorRequest {
     public Guid PreFactorId { get; set; }
+
     public Guid ExternalSoftwareId { get; set; }
-    public string CustomerId { get; set; }
-    public Dictionary<string, int> ItemMappings { get; set; } = new();
+
+    public int ExternalCustomerId { get; set; }
 
     public int SaleTypeId { get; set; }
-    public Dictionary<string, int> StockMappings { get; set; } = new();
+
+    public List<ExternalPreFactorItemMapping> ItemMappings { get; set; } = [];
+}
+
+public class ExternalPreFactorItemMapping {
+    public Guid PreFactorItemId { get; set; }
+
+    public int ExternalItemId { get; set; }
+
+    public int ExternalStockId { get; set; }
 }
