@@ -8185,7 +8185,7 @@ font-family: IRANSansBold;
 
 .ex-preview-summary {
 	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 0;
 	margin: 12px 0 18px;
 	padding: 6px 16px;
@@ -8222,7 +8222,7 @@ font-family: IRANSansBold;
 }
 
 .ex-preview-customer {
-	/* grid-column: span 2; */
+	grid-column: span 2;
 }
 
 .ex-preview-software {
@@ -8299,7 +8299,7 @@ font-family: IRANSansBold;
 }
 
 .external-prefactor-preview .external-mapping-entity.mt-3 hr {
-	border-color: #e8efed;
+	border-color: #c7cdcc;
 	margin: 8px 0;
 }
 

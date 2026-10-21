@@ -48,11 +48,13 @@ public class QuotationItem {
 
     public decimal? UsedQuantity { get; set; }
 
-    [MaxLength(255)] public string? Description { get; set; }
+    [MaxLength(255)] 
+    public string Description { get; set; }
 
     public int? DiscountQuotationItemRef { get; set; }
 
-    [MaxLength(255)] public string? Description_En { get; set; }
+    [MaxLength(255)] 
+    public string Description_En { get; set; }
 
     public int? ProductPackRef { get; set; }
     public decimal? ProductPackQuantity { get; set; }
@@ -70,7 +72,7 @@ public class QuotationItem {
     public bool IsAggregateDiscountInvoiceItem { get; set; }
     public bool IsReadyForProductOrder { get; set; }
 
+    [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
     public decimal? NetPrice { get; private set; }
 
-    public Quotation Quotation { get; set; }
 }

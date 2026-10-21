@@ -8,7 +8,6 @@ namespace CRM.Core.Domain.Sepidar.Quotations.Entites {
     public class Quotation {
         [Key] public int QuotationId { get; set; }
         public int CustomerPartyRef { get; set; }
-        public string CustomerPartyName { get; set; }
         public int Number { get; set; }
         public decimal Price { get; set; }
         public decimal? Tax { get; set; }
@@ -70,6 +69,6 @@ namespace CRM.Core.Domain.Sepidar.Quotations.Entites {
         public decimal? AdditionFactorInBaseCurrency_VatIneffective { get; set; }
 
 
-        public ICollection<QuotationItem> QuotationItems { get; set; } = new List<QuotationItem>();
+        public IList<QuotationItem> QuotationItems { get; set; } = new List<QuotationItem>();
     }
 }

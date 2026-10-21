@@ -10,6 +10,8 @@ using CRM.Core.Domain.Sepidar.Items;
 using CRM.Core.Domain.Sepidar.Parties;
 using CRM.Core.Domain.Sepidar.Payments.Entites;
 using CRM.Core.Domain.Sepidar.Quotations.Entites;
+using CRM.Core.Domain.Sepidar.SaleTypes;
+using CRM.Core.Domain.Sepidar.Stocks;
 using CRM.Core.Domain.Sepidar.Vouchers.Entites;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,7 +22,6 @@ public abstract class SepidarContextDbBase : DbContext {
 
 
     public DbSet<ExtraData> ExtraData { get; set; }
-    public DbSet<Quotation> vwQuotation { get; set; }
     public DbSet<Invoice> vwInvoice { get; set; }
     public DbSet<InvoiceItem> vwInvoiceItem { get; set; }
     public DbSet<PaymentHeader> PaymentHeaders { get; set; }
@@ -41,6 +42,8 @@ public abstract class SepidarContextDbBase : DbContext {
     public DbSet<Item> Items { get; set; }
     public DbSet<Party> Parties { get; set; }
     public DbSet<PartyAddress> PartyAddresses { get; set; }
+    public DbSet<SaleType> SaleTypes { get; set; }
+    public DbSet<Stock> Stocks { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -48,7 +51,6 @@ public abstract class SepidarContextDbBase : DbContext {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(this.GetType().Assembly);
 
-        modelBuilder.Entity<Quotation>().ToView("vwQuotation", "SLS");
         modelBuilder.Entity<Invoice>().ToView("vwInvoice", "SLS").Ignore(f => f.DateTXT);
         modelBuilder.Entity<InvoiceItem>().ToView("vwInvoiceItem", "SLS");
         modelBuilder.Entity<ExtraData>().ToTable("ExtraData", "FMK");
@@ -74,6 +76,8 @@ public abstract class SepidarContextDbBase : DbContext {
         modelBuilder.Entity<Item>().ToTable("Item", "INV");
         modelBuilder.Entity<Party>().ToTable("Party", "GNR");
         modelBuilder.Entity<PartyAddress>().ToTable("PartyAddress", "GNR");
+        modelBuilder.Entity<SaleType>().ToTable("SaleType", "SLS");
+        modelBuilder.Entity<Stock>().ToTable("Stock", "INV");
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

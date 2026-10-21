@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using CRM.Core.Domain.Sepidar.SaleTypes;
 
 namespace CRM.EndPoint.FrontEnd.Models.Sepidar;
 

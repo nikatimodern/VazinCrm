@@ -14,6 +14,8 @@ using CRM.Core.Domain.Sepidar.Items;
 using CRM.Core.Domain.Sepidar.Parties;
 using CRM.Core.Domain.Sepidar.Payments.Entites;
 using CRM.Core.Domain.Sepidar.Quotations.Entites;
+using CRM.Core.Domain.Sepidar.SaleTypes;
+using CRM.Core.Domain.Sepidar.Stocks;
 using CRM.Core.Domain.Sepidar.Vouchers.Entites;
 using CRM.EndPoint.FrontEnd.Models.Factor;
 using CRM.EndPoint.FrontEnd.Models.Sepidar;
@@ -1048,7 +1050,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
                 DlCode = x.Dl.Code,
                 DlRef = x.DLRef,
                 FullName = x.Name + " " + x.LastName,
-                PartyMainAddressRef = x.PartyAddresses.Where(p => p.IsMain == 1).Select(p => p.PartyAddressId).FirstOrDefault()
+                PartyMainAddressRef = x.PartyAddresses.Where(p => p.IsMain == 1).Select(p => (int?)p.PartyAddressId).FirstOrDefault()
             })
             .SingleOrDefaultAsync(ct);
     }
@@ -1068,9 +1070,47 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
             .ToListAsync(ct);
     }
 
-    public async Task<(string entityName, string entityId)?> SendPreFactorToSepidar(PreFactor preFactor, int partyRef,
-        Dictionary<string, int> itemMappings,
-        CancellationToken ct = default)
+    public async Task<List<SaleType>> GetSaleTypes(CancellationToken ct = default)
+    {
+        return await sepidarContext.SaleTypes
+            .AsNoTracking()
+            .OrderBy(x => x.Number)
+            .Select(x => new SaleType {
+                SaleTypeId = x.SaleTypeId,
+                Number = x.Number,
+                Title = TextService.NormalizePersianText(x.Title),
+            })
+            .ToListAsync(ct);
+    }
+
+    public async Task<SaleType> GetSaleTypeByIdAsync(int id, CancellationToken ct = default)
+    {
+        return await sepidarContext.SaleTypes
+            .AsNoTracking()
+            .Where(x => x.SaleTypeId == id)
+            .Select(x => new SaleType {
+                SaleTypeId = x.SaleTypeId,
+                Number = x.Number,
+                Title = TextService.NormalizePersianText(x.Title),
+            })
+            .SingleOrDefaultAsync(ct);
+    }
+
+    public async Task<List<SepidarStockDto>> GetStocks(CancellationToken ct = default)
+    {
+        return await sepidarContext.Stocks
+            .AsNoTracking()
+            .Where(f => f.IsActive)
+            .Select(x => new SepidarStockDto {
+                Id = x.StockID,
+                Code = x.Code,
+                Title = TextService.NormalizePersianText(x.Title),
+            })
+            .ToListAsync(ct);
+    }
+
+    public async Task<(string entityName, string entityId)?> SendPreFactorToSepidar(PreFactor preFactor, int partyRef, int saleTypeRef,
+        Dictionary<string, int> itemMappings, Dictionary<string, int> stockMappings, CancellationToken ct = default)
     {
         var items = new List<SepidarQuotationItemRequest>();
 
@@ -1079,9 +1119,13 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
             if (!itemMappings.TryGetValue(item.Id.ToString(), out var itemRef) || itemRef <= 0)
                 throw new InvalidOperationException($"نگاشت کالای سپیدار برای کالای ({item.Product}) مشخص نشده است.");
 
+            if (!stockMappings.TryGetValue(item.Id.ToString(), out var stockRef) || stockRef <= 0)
+                throw new InvalidOperationException($"انبار برای کالای ({item.Product}) مشخص نشده است.");
+
             items.Add(new SepidarQuotationItemRequest {
                 PreFactorItem = item,
-                ItemRef = itemRef
+                ItemRef = itemRef,
+                StockRef = stockRef
             });
         }
 
@@ -1094,6 +1138,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
             PreFactor = preFactor,
             Party = customer,
             Items = items,
+            SaleTypeRef = saleTypeRef
         };
 
         var quotationId = await CreateQuotationAsync(request, ct);
@@ -1140,7 +1185,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
                 QuotationId = quotationId,
                 CustomerPartyRef = request.Party.Id,
 
-                SaleTypeRef = 2, // عادی - خرده فروشی
+                SaleTypeRef = request.SaleTypeRef, // عادی - خرده فروشی
 
                 PartyAddressRef = request.Party.PartyMainAddressRef,
 
@@ -1199,6 +1244,11 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
 
             return quotationId;
         }
+        catch (DbUpdateException)
+        {
+            await transaction.RollbackAsync(ct);
+            throw new DbUpdateException("ذخیره اطلاعات در دیتابیس با خطا مواجه شد.");
+        }
         catch
         {
             await transaction.RollbackAsync(ct);
@@ -1206,7 +1256,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
         }
     }
 
-    private async Task<List<QuotationItem>> CreateQuotationItemsAsync(int quotationId, List<SepidarQuotationItemRequest> items,
+    private async Task<List<QuotationItem>> CreateQuotationItemsAsync(int quotationId, List<SepidarQuotationItemRequest> items, 
         CancellationToken ct = default)
     {
         if (items == null || items.Count == 0)
@@ -1239,7 +1289,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
 
                 TracingRef = null,
 
-                StockRef = 2, // محصولات خريداري شده (انبار) // TODO
+                StockRef = mappedItem.StockRef, // محصولات خريداري شده (انبار)
 
                 Quantity = weight,
                 SecondaryQuantity = null,

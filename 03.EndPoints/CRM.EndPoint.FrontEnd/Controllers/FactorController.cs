@@ -3137,74 +3137,38 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return null;
         }
 
-        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
-        public async Task<IActionResult> SendPreFactorsToExternalSoftware([FromBody] ExternalSoftwarePreFactorRequest model)
+
+        [HttpPost]
+        public async Task<IActionResult> PrepareExternalSaleType([FromBody] SendToExternalSoftwaresDto request)
         {
-            if (model == null) return BadRequest();
+            if (request.ExternalSoftwareIds == null || request.ExternalSoftwareIds.Count == 0)
+                return BadRequest("هیچ نرم‌افزاری انتخاب نشده است.");
 
-            try
+            var softwareId = request.ExternalSoftwareIds[0];
+
+            var software = await db.ExternalSoftwares.AsNoTracking().FirstOrDefaultAsync(f => f.Id == softwareId);
+            if (software == null)
             {
-                var sepidarService = GetSepidarService(model.ExternalSoftwareId);
-
-                if (sepidarService == null)
-                {
-                    return BadRequest("شناسه نرم‌افزار نامعتبر است.");
-                }
-
-
-                var isMapped = await db.ExternalMappings.AnyAsync(f =>
-                    f.EntityId == model.PreFactorId &&
-                    f.ExternalSoftwareId == model.ExternalSoftwareId &&
-                    f.MapType == ExternalMappingTypeEnum.پیش_فاکتور
-                );
-
-                if (isMapped)
-                    return Conflict("این پیش‌فاکتور قبلا در این نرم‌افزار ثبت شده است.");
-
-
-                if (string.IsNullOrEmpty(model.CustomerId) || !int.TryParse(model.CustomerId, out var partyRef) || partyRef <= 0)
-                    throw new InvalidOperationException("مشتری سپیدار معتبر نیست.");
-
-                if (model.ItemMappings == null)
-                    throw new InvalidOperationException("نگاشت کالاهای سپیدار ارسال نشده است.");
-
-                var pf = await db.PreFactors
-                    .Include(f => f.PreFactorItems)
-                    .FirstOrDefaultAsync(f => f.Id == model.PreFactorId);
-
-                if (pf?.PreFactorItems == null)
-                    return BadRequest("پیش‌فاکتور یافت نشد!");
-
-                if (pf.PreFactorItems.Count == 0)
-                    return BadRequest("پیش‌فاکتور باید حداقل یک ردیف کالا داشته باشد.");
-
-
-                var result = await sepidarService.SendPreFactorToSepidar(pf, partyRef, model.ItemMappings);
-
-                var user = await userManager.GetUserAsync(HttpContext.User);
-                if (result.HasValue)
-                {
-                    db.ExternalMappings.Add(new ExternalMapping {
-                        ExternalSoftwareId = model.ExternalSoftwareId,
-                        EntityName = nameof(PreFactor),
-                        EntityId = pf.Id,
-                        MapType = ExternalMappingTypeEnum.پیش_فاکتور,
-                        MapTypeTxt = nameof(ExternalMappingTypeEnum.پیش_فاکتور),
-                        UserCreatorID = user.Id,
-                        UserCreator = user.FullName,
-                        ExEntityName = result.Value.entityName,
-                        ExEntityId = result.Value.entityId
-                    });
-
-                    await db.SaveChangesAsync();
-                }
-
-                return Ok();
+                return BadRequest("نرم‌افزار انتخاب شده یافت نشد.");
             }
-            catch (Exception e)
+
+            var sepidarService = GetSepidarService(softwareId);
+
+            if (sepidarService == null)
             {
-                return BadRequest(e.Message);
+                return BadRequest("شناسه نرم‌افزار نامعتبر است.");
             }
+
+            var saleTypes = await sepidarService.GetSaleTypes();
+
+
+            var result = new {
+                ExternalSoftwareId = softwareId,
+                ExternalSoftwareTitle = software.Title,
+                SaleTypes = saleTypes
+            };
+
+            return Ok(result);
         }
 
         [HttpPost]
@@ -3404,6 +3368,24 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [HttpPost]
+        public async Task<IActionResult> PrepareExternalStockMapping([FromBody] PrepareExternalItemMappingRequest request)
+        {
+            var service = GetSepidarService(request.ExternalSoftwareId);
+
+            if (service == null)
+            {
+                return BadRequest("شناسه نرم‌افزار نامعتبر است.");
+            }
+
+            var stocks = await service.GetStocks();
+
+            return Ok(new {
+                stocks
+            });
+        }
+
+
+        [HttpPost]
         public async Task<IActionResult> PrepareExternalPreFactorPreview([FromBody] ExternalSoftwarePreFactorRequest request)
         {
             try
@@ -3476,6 +3458,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (customer == null)
                     return BadRequest("مشتری انتخاب‌شده در نرم‌افزار مالی پیدا نشد.");
 
+                // اعتبارسنجی نوع فروش انتخاب‌شده
+                var saleType = await service.GetSaleTypeByIdAsync(request.SaleTypeId);
+
+                if (saleType == null)
+                    return BadRequest("نوع فروش انتخاب‌شده در نرم‌افزار مالی پیدا نشد.");
+
                 // تمام ردیف‌های CRM باید دقیقاً یک کالای مقصد داشته باشند.
                 var expectedItemIds = preFactorItems
                     .Select(x => x.Id.ToString())
@@ -3496,19 +3484,32 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     .Where(x => selectedItemIds.Contains(x.Id))
                     .ToDictionary(x => x.Id);
 
-                if (selectedItems.Count != selectedItemIds.Count)
-                    return BadRequest("یک یا چند کالای انتخاب‌شده در نرم‌افزار مقصد معتبر نیست.");
+
+
+                var stocks = await service.GetStocks();
+
+                var selectedStocksIds = request.StockMappings.Values.ToHashSet();
+
+                var selectedStocks = stocks
+                    .Where(x => selectedStocksIds.Contains(x.Id))
+                    .ToDictionary(x => x.Id);
+
 
 
                 var items = preFactorItems.Select(item => {
                     var externalItemId = request.ItemMappings[item.Id.ToString()];
                     var externalItem = selectedItems[externalItemId];
 
+                    var externalStockId = request.StockMappings[item.Id.ToString()];
+                    var externalStock = selectedStocks[externalStockId];
+
                     return new {
                         preFactorItemId = item.Id,
                         productTitle = $"{item.ProductSmallName} {item.Product}",
                         externalItemId = externalItem.Id,
                         externalItemTitle = $"{externalItem.Code} - {externalItem.Title}",
+                        externalStockId = externalStock.Id,
+                        externalStockTitle = $"{externalStock.Code} - {externalStock.Title}",
                         weight = item.WeightCount,
                         unit = item.Unit,
                         unitTxt = item.UnitTxt,
@@ -3531,7 +3532,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     externalSoftwareTitle = softwareTitle ?? "نرم‌افزار مالی",
                     serialNumber = preFactor.SerialNumber,
                     date = preFactor.Date,
-                    CustomerId = customer.Id.ToString(),
+                    saleTypeId = saleType.SaleTypeId.ToString(),
+                    saleTypeTitle = $"{saleType.Title} (کد: {saleType.Number})",
+                    customerId = customer.Id.ToString(),
                     customerName = $"{customer.FullName}{(!string.IsNullOrEmpty(customer.DlCode) ? $" (کد: {customer.DlCode})" : "")}",
                     items,
                     totalAmount = preFactor.SumTotalAmount,
@@ -3543,6 +3546,77 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (Exception)
             {
                 return BadRequest();
+            }
+        }
+
+
+        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        public async Task<IActionResult> SendPreFactorsToExternalSoftware([FromBody] ExternalSoftwarePreFactorRequest model)
+        {
+            if (model == null) return BadRequest();
+
+            try
+            {
+                var sepidarService = GetSepidarService(model.ExternalSoftwareId);
+
+                if (sepidarService == null)
+                {
+                    return BadRequest("شناسه نرم‌افزار نامعتبر است.");
+                }
+
+
+                var isMapped = await db.ExternalMappings.AnyAsync(f =>
+                    f.EntityId == model.PreFactorId &&
+                    f.ExternalSoftwareId == model.ExternalSoftwareId &&
+                    f.MapType == ExternalMappingTypeEnum.پیش_فاکتور
+                );
+
+                if (isMapped)
+                    return Conflict("این پیش‌فاکتور قبلا در این نرم‌افزار ثبت شده است.");
+
+
+                if (string.IsNullOrEmpty(model.CustomerId) || !int.TryParse(model.CustomerId, out var partyRef) || partyRef <= 0)
+                    throw new InvalidOperationException("مشتری سپیدار معتبر نیست.");
+
+                if (model.ItemMappings == null)
+                    throw new InvalidOperationException("نگاشت کالاهای سپیدار ارسال نشده است.");
+
+                var pf = await db.PreFactors
+                    .Include(f => f.PreFactorItems)
+                    .FirstOrDefaultAsync(f => f.Id == model.PreFactorId);
+
+                if (pf?.PreFactorItems == null)
+                    return BadRequest("پیش‌فاکتور یافت نشد!");
+
+                if (pf.PreFactorItems.Count == 0)
+                    return BadRequest("پیش‌فاکتور باید حداقل یک ردیف کالا داشته باشد.");
+
+
+                var result = await sepidarService.SendPreFactorToSepidar(pf, partyRef, model.SaleTypeId, model.ItemMappings, model.StockMappings);
+
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                if (result.HasValue)
+                {
+                    db.ExternalMappings.Add(new ExternalMapping {
+                        ExternalSoftwareId = model.ExternalSoftwareId,
+                        EntityName = nameof(PreFactor),
+                        EntityId = pf.Id,
+                        MapType = ExternalMappingTypeEnum.پیش_فاکتور,
+                        MapTypeTxt = nameof(ExternalMappingTypeEnum.پیش_فاکتور),
+                        UserCreatorID = user.Id,
+                        UserCreator = user.FullName,
+                        ExEntityName = result.Value.entityName,
+                        ExEntityId = result.Value.entityId
+                    });
+
+                    await db.SaveChangesAsync();
+                }
+
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
             }
         }
     }
