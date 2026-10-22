@@ -1269,9 +1269,9 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
 
             quotation.QuotationItems = await CreateQuotationItemsAsync(quotationId, request.Items, ct);
 
-/*            sepidarContext.Quotations.Add(quotation);
+            sepidarContext.Quotations.Add(quotation);
 
-            await sepidarContext.SaveChangesAsync(ct);*/
+            await sepidarContext.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
 
             return quotationId;

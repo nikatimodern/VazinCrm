@@ -3450,7 +3450,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
 
 
-                return Ok();
                 // Send
                 var result = await service.SendPreFactorToSepidar(pf, request.ExternalCustomerId, request.SaleTypeId, request.ItemMappings, ct);
 
@@ -3473,6 +3472,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 });
 
                 await db.SaveChangesAsync(ct);
+                return Ok();
             }
             catch (Exception e)
             {

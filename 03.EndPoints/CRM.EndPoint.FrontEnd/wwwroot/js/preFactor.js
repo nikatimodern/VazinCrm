@@ -1307,9 +1307,10 @@ async function sendPreFactorToExternalSoftware(id) {
 }
 
 
-const externalMappingModal = document.getElementById("externalMappingModal");
+const externalMappingModal = document.getElementById("externalSoftwarePreFactorModal");
 const externalMappingList = externalMappingModal?.querySelector("#externalMappingList");
 const confirmExternalMappingBtn = externalMappingModal?.querySelector("#confirmExternalMappingBtn");
+const backExternalMappingBtn = externalMappingModal?.querySelector("#backExternalMappingBtn");
 
 
 /* -------------------------------------------------------
@@ -1420,19 +1421,32 @@ async function exSoftwarePreFactorFinish() {
 function exSoftwarePreFactorRenderStep({ title, subtitle, icon, step, content, large = false }) {
     exSoftwarePreFactorDestroySelects();
     
-    document.getElementById("externalMappingTitle").textContent = title;
-    document.getElementById("externalMappingSubtitle").textContent = subtitle;
-    document.getElementById("externalMappingIcon").innerHTML = icon;
+    const state = externalSoftwareProcess;
+    const software = state.software;
+    
+    const softwareIndex = state.softwareIndex + 1;
+    const softwareCount = state.softwareIds.length;
+    
+    document.getElementById("externalMappingTitle").textContent = software?.externalSoftwareTitle ?? "نرم‌افزار مقصد";
+    document.getElementById("externalMappingSubtitle").textContent = `نرم‌افزار ${softwareIndex} از ${softwareCount}`;
     
     externalMappingModal.querySelector(".modal-dialog").classList.toggle("modal-lg", large);
     
     externalMappingList.innerHTML = `
         <div class="external-mapping-card">
-            <div class="external-mapping-software-info">
-                <span class="external-mapping-software-name">
-                    <i class="fas fa-desktop ms-1"></i>
-                    نرم‌افزار ${escapeHtml(externalSoftwareProcess.software?.externalSoftwareTitle ?? "")}
-                </span>
+            <div class="external-mapping-stage-info">
+                <div class="external-mapping-stage-icon">
+                    ${icon}
+                </div>
+                <div class="external-mapping-stage-content">
+                    <div class="external-mapping-stage-title">
+                        ${title}
+                    </div>
+
+                    <div class="external-mapping-stage-subtitle">
+                        ${subtitle}
+                    </div>
+                </div>
 
                 <span class="external-mapping-step">
                     ${step}
@@ -1457,6 +1471,12 @@ function exSoftwarePreFactorSetConfirmButton(text, disabled = false) {
 
 async function exSoftwarePreFactorLoadSaleTypes() {
     const state = externalSoftwareProcess;
+    
+    if (state.software?.saleTypes?.length) {
+        state.step = "saleType";
+        exSoftwarePreFactorRenderSaleType();
+        return;
+    }
     
     const result = await sendApiRequest({
         url: "/Factor/PrepareExternalSaleType",
@@ -1497,7 +1517,7 @@ function exSoftwarePreFactorRenderSaleType() {
 
                 <select id="externalMappingSaleTypeSelect">
                     ${(state.software.saleTypes ?? []).map(item => `
-                        <option value="${escapeHtml(item.saleTypeId)}" ${item.saleTypeId === 2 ? "selected" : ""}>
+                        <option value="${escapeHtml(item.saleTypeId)}" ${String(item.saleTypeId) === String(state.mappings.saleTypeId ?? "2") ? "selected" : ""}>
                             ${escapeHtml(item.title)}
                         </option>
                     `).join("")}
@@ -1539,6 +1559,12 @@ async function exSoftwarePreFactorConfirmSaleType() {
 async function exSoftwarePreFactorLoadCustomer() {
     const state = externalSoftwareProcess;
     
+    if (state.software?.customers?.length) {
+        state.step = "customer";
+        exSoftwarePreFactorRenderCustomer();
+        return;
+    }
+    
     const result = await sendApiRequest({
         url: "/Factor/PrepareExternalCustomerMapping",
         method: "POST",
@@ -1556,8 +1582,8 @@ async function exSoftwarePreFactorLoadCustomer() {
         ...result[0],
     };
     
-    state.step = "customer";
     
+    state.step = "customer";
     exSoftwarePreFactorRenderCustomer();
 }
 
@@ -1566,7 +1592,7 @@ function exSoftwarePreFactorRenderCustomer() {
     const state = externalSoftwareProcess;
     const software = state.software;
     
-    const mappedCustomerId = software.mappedExternalCustomerId;
+    const mappedCustomerId = state.mappings.customerId ?? software.mappedExternalCustomerId;
     
     exSoftwarePreFactorRenderStep({
         title: "تطبیق مشتری",
@@ -1576,11 +1602,11 @@ function exSoftwarePreFactorRenderCustomer() {
         
         content: `
             <div class="external-mapping-entity">
-                <span class="external-mapping-label fbold">
+                <span class="external-mapping-label">
                     مشتری در CRM
                 </span>
 
-                <span class="external-mapping-entity-name">
+                <span class="external-mapping-entity-name fbold">
                     ${escapeHtml(software.crmCustomerTitle ?? "-")}
                 </span>
             </div>
@@ -1648,6 +1674,12 @@ async function exSoftwarePreFactorConfirmCustomer() {
 async function exSoftwarePreFactorLoadItems() {
     const state = externalSoftwareProcess;
     
+    if (state.preFactor?.items?.length && state.software?.sepidarItems?.length) {
+        state.step = "items";
+        exSoftwarePreFactorRenderItems();
+        return;
+    }
+    
     const result = await sendApiRequest({
         url: "/Factor/PrepareExternalItemMapping",
         method: "POST",
@@ -1683,6 +1715,7 @@ function exSoftwarePreFactorRenderItems() {
     const software = state.software;
     const preFactor = state.preFactor;
     
+    
     exSoftwarePreFactorRenderStep({
         title: "تطبیق کالاها",
         subtitle: "انتخاب کالای معادل برای ردیف‌های پیش‌فاکتور",
@@ -1694,25 +1727,30 @@ function exSoftwarePreFactorRenderItems() {
                 <div class="text-end" style="line-height: 1;font-size: 12px">
                     <button class="link-green text-decoration-none" disabled type="button" onclick="showAddItemInSepidarModal()">افزودن محصول جدید</button>
                 </div>
-                ${(preFactor.items ?? []).map(item => `
-                    <div class="external-mapping-entity external-item-mapping-row">
-
+                ${(preFactor.items ?? []).map(item => {
+            const mapping = state.mappings.items[String(item.preFactorItemId)];
+            return `
+                <div class="external-mapping-entity external-item-mapping-row">
+                    <div class="d-flex flex-column gap-1">
                         <span class="external-mapping-label">محصول پیش‌فاکتور CRM</span>
-                        <span class="external-mapping-entity-name">${escapeHtml(item.productTitle)}</span>
-
+                        <span class="external-mapping-entity-name fbold">${escapeHtml(item.productTitle)}</span>
+                    </div>
+                    <div>
                         <label class="form-label mt-2 mb-0" for="externalMappingItem_${item.preFactorItemId}">کالای معادل در نرم‌افزار مالی</label>
-
+    
                         <select class="external-mapping-item-select" id="externalMappingItem_${item.preFactorItemId}" data-crm-item-id="${escapeHtml(item.preFactorItemId)}">
                             <option value="">جستجو و انتخاب کالا</option>
-
+    
                             ${(software.sepidarItems ?? []).map(product => `
-                                <option value="${escapeHtml(product.id)}">
+                                <option value="${escapeHtml(product.id)}" ${String(product.id) === String(mapping?.externalItemId ?? "") ? "selected" : ""}>
                                     ${escapeHtml(product.code)} - ${escapeHtml(product.title)}
                                 </option>
                             `).join("")}
                         </select>
                     </div>
-                `).join("")}
+                </div>
+            `;
+        }).join("")}
             </div>
         `,
     });
@@ -1771,6 +1809,13 @@ async function exSoftwarePreFactorConfirmItems() {
 
 async function exSoftwarePreFactorLoadStock() {
     const state = externalSoftwareProcess;
+    
+    if (state.software?.stocks?.length) {
+        state.step = "stock";
+        exSoftwarePreFactorRenderStock();
+        return;
+    }
+    
     
     const result = await sendApiRequest({
         url: "/Factor/PrepareExternalStockMapping",
@@ -1842,7 +1887,7 @@ function exSoftwarePreFactorRenderStock() {
                         <select class="external-mapping-stock-select" id="externalMappingStock_${item.preFactorItemId}" data-crm-item-id="${escapeHtml(item.preFactorItemId)}">
                             <option value="">جستجو و انتخاب انبار</option>
                             ${(software.stocks ?? []).map(stock => `
-                                <option value="${escapeHtml(stock.id)}">
+                                <option value="${escapeHtml(stock.id)}" ${String(stock.id) === String(mapping?.externalStockId ?? "") ? "selected" : ""}>
                                     ${escapeHtml(stock.code)} - ${escapeHtml(stock.title)}
                                 </option>
                             `).join("")}
@@ -2074,10 +2119,31 @@ async function exSoftwarePreFactorSubmit() {
    Button State
 ------------------------------------------------------- */
 
+function exSoftwarePreFactorUpdateButtons() {
+    exSoftwarePreFactorUpdateConfirmButton();
+    exSoftwarePreFactorUpdateBackButton();
+}
+function exSoftwarePreFactorUpdateBackButton() {
+    const state = externalSoftwareProcess;
+    
+    const canGoBack = [
+        "customer",
+        "items",
+        "stock",
+        "preview",
+    ].includes(state.step);
+    
+    toggleElementsDisabled(backExternalMappingBtn, !canGoBack || state.processing);
+}
+
+
 function exSoftwarePreFactorUpdateConfirmButton() {
     const state = externalSoftwareProcess;
     
-    if (state.processing) return;
+    if (state.processing) {
+        toggleElementsDisabled(confirmExternalMappingBtn, true);
+        return;
+    }
     
     switch (state.step) {
         case "saleType": {
@@ -2109,6 +2175,37 @@ function exSoftwarePreFactorUpdateConfirmButton() {
     }
 }
 
+
+function exSoftwarePreFactorGoBack() {
+    const state = externalSoftwareProcess;
+    
+    switch (state.step) {
+        case "customer":
+            state.step = "saleType";
+            exSoftwarePreFactorRenderSaleType();
+            break;
+        
+        case "items":
+            state.step = "customer";
+            exSoftwarePreFactorRenderCustomer();
+            break;
+        
+        case "stock":
+            state.step = "items";
+            exSoftwarePreFactorRenderItems();
+            break;
+        
+        case "preview":
+            state.step = "stock";
+            exSoftwarePreFactorRenderStock();
+            break;
+        
+        default:
+            return;
+    }
+    
+    return true;
+}
 
 /* -------------------------------------------------------
    Main Step Handler
@@ -2148,8 +2245,24 @@ confirmExternalMappingBtn?.addEventListener("click", async () => {
             state.processing = false;
             
             if (isModalOpen(externalMappingModal)) {
-                exSoftwarePreFactorUpdateConfirmButton();
+                exSoftwarePreFactorUpdateButtons();
             }
         }
     },
 );
+
+backExternalMappingBtn?.addEventListener("click", () => {
+    const state = externalSoftwareProcess;
+    if (state.processing) return;
+    
+    state.processing = true;
+    
+    toggleElementsDisabled(backExternalMappingBtn, true);
+    
+    exSoftwarePreFactorGoBack();
+    state.processing = false;
+    
+    if (isModalOpen(externalMappingModal)) {
+        exSoftwarePreFactorUpdateButtons();
+    }
+});

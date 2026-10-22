@@ -4,9 +4,11 @@
         <div class="modal-content external-mapping-modal">
             <div class="modal-header">
                 <div class="external-mapping-heading">
-                    <span class="external-mapping-icon" id="externalMappingIcon"></span>
+                    <span class="external-mapping-icon" id="externalMappingIcon">
+                        <i class="fas fa-desktop"></i>
+                    </span>
                     <div>
-                        <h5 class="modal-title" id="externalMappingTitle"></h5>
+                        <h5 class="modal-title external-mapping-title" id="externalMappingTitle"></h5>
                         <div class="external-mapping-subtitle" id="externalMappingSubtitle"></div>
                     </div>
                 </div>
@@ -16,6 +18,11 @@
                 <div id="externalMappingList"></div>
             </div>
             <div class="modal-footer justify-content-end">
+                <button type="button" class="buttonCancel-white" id="backExternalMappingBtn">
+                    @* <i class="fas fa-arrow-right"></i> *@
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    برگشت
+                </button>
                 <button type="button" class="buttonGreen0" id="confirmExternalMappingBtn">
                     تأیید و ادامه
                 </button>

@@ -4395,7 +4395,12 @@ width: 100% !important;
 }
 
 
-.buttonCancel-white:hover {
+.buttonCancel-white:disabled {
+	opacity: .6;
+}
+
+
+.buttonCancel-white:not(:disabled):hover {
 	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
 	/* transform: translateY(-1px); */
 	background-color: #f9f9f9;
@@ -8084,10 +8089,16 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 }
 
 
+.external-mapping-title {
+	color: #26364a;
+	font-size: 16px;
+	margin-bottom: .25rem;
+}
+
 .external-mapping-subtitle {
 	color: #8490a0;
-	font-size: 12px;
-	line-height: 1.8;
+	font-size: 11px;
+	/* line-height: 1.8; */
 }
 
 
@@ -8098,7 +8109,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 }
 
 
-.external-mapping-software-info {
+/* .external-mapping-software-info {
 	padding: 11px 13px;
 	border-radius: 9px;
 	background: rgba(4, 133, 124, .06);
@@ -8117,10 +8128,66 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	color: #04857c;
 	font-size: 12px;
 	font-family: IRANSansBold;
+} */
+
+
+.external-mapping-stage-info {
+	padding: 12px 14px;
+	border-radius: 10px;
+	background: rgba(4, 133, 124, .06);
+	border: 1px solid rgba(4, 133, 124, .15);
+	
+	display: flex;
+	align-items: center;
+	gap: 11px;
+}
+
+.external-mapping-stage-icon {
+	width: 34px;
+	height: 34px;
+	flex-shrink: 0;
+	
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	
+	border-radius: 9px;
+	background: rgba(4, 133, 124, .1);
+	color: #04857c;
+	font-size: 14px;
+}
+
+.external-mapping-stage-content {
+	flex: 1;
+	min-width: 0;
+}
+
+.external-mapping-stage-title {
+	color: #26364a;
+	font-size: 14px;
+	font-family: IRANSansBold;
+}
+
+.external-mapping-stage-subtitle {
+	margin-top: 1px;
+	color: #8993a2;
+	font-size: 12px;
+}
+
+.external-mapping-step {
+	flex-shrink: 0;
+	color: #04857c;
+	font-size: 11px;
+	font-family: IRANSansMedium;
+	white-space: nowrap;
+	
+	padding: 5px 9px;
+	border-radius: 7px;
+	background: rgba(4, 133, 124, .08);
 }
 
 
-.external-mapping-step, .external-mapping-label {
+.external-mapping-label {
 	color: #8993a2;
 	font-size: 12px;
 }
@@ -8129,7 +8196,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 .external-mapping-entity {
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
+	gap: .25rem;
 }
 
 
@@ -8185,6 +8252,14 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	.external-customer-footer-hint {
 		max-width: 145px;
 		line-height: 1.8;
+	}
+	
+	.external-mapping-stage-info {
+		align-items: flex-start;
+	}
+	
+	.external-mapping-step {
+		white-space: nowrap;
 	}
 }
 
