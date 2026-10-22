@@ -1290,7 +1290,7 @@ const initDeliverDataTable = (tableId) => {
     });
 };
 
-/* ------------------------------------------------------------------------------------------- */
+/* ----------------------------------------------- sendPreFactorToExternalSoftware ----------------------------------------------- */
 
 async function sendPreFactorToExternalSoftware(id) {
     await showExternalSoftwareModal(id, {
@@ -1318,9 +1318,10 @@ const confirmExternalMappingBtn = externalMappingModal?.querySelector("#confirmE
 
 const createExternalSoftwareState = () => ({
     preFactorId: null,
+    preFactor: null,
+    
     softwareIds: [],
     softwareIndex: 0,
-    
     software: null,
     
     step: "saleType",
@@ -1377,7 +1378,6 @@ async function exSoftwarePreFactorNext() {
     const state = externalSoftwareProcess;
     
     if (state.softwareIndex >= state.softwareIds.length) {
-        toastifySuccess("فرایند ارسال به تمام نرم‌افزارها به پایان رسید.");
         return;
     }
     
@@ -1410,20 +1410,6 @@ async function exSoftwarePreFactorFinish() {
     state.step = "saleType";
     
     await exSoftwarePreFactorNext();
-}
-
-
-/* -------------------------------------------------------
-   API
-------------------------------------------------------- */
-
-async function externalSoftwareRequest(url, data) {
-    return await sendApiRequest({
-        url,
-        method: "POST",
-        successMsg: null,
-        data,
-    });
 }
 
 
@@ -1466,34 +1452,20 @@ function exSoftwarePreFactorSetConfirmButton(text, disabled = false) {
 
 
 /* -------------------------------------------------------
-   TomSelect
-------------------------------------------------------- */
-
-function initExternalMappingSelect(selector, { placeholder, onChange }) {
-    const select = externalMappingList.querySelector(selector);
-    
-    if (!select) return null;
-    
-    new TomSelect(select, {
-        placeholder,
-        onChange,
-    });
-    
-    return select;
-}
-
-
-/* -------------------------------------------------------
    Sale Type
 ------------------------------------------------------- */
 
 async function exSoftwarePreFactorLoadSaleTypes() {
     const state = externalSoftwareProcess;
     
-    const result = await externalSoftwareRequest(
-        "/Factor/PrepareExternalSaleType",
-        { externalSoftwareIds: [state.software.externalSoftwareId] },
-    );
+    const result = await sendApiRequest({
+        url: "/Factor/PrepareExternalSaleType",
+        method: "POST",
+        successMsg: null,
+        data: {
+            externalSoftwareIds: [state.software.externalSoftwareId],
+        },
+    });
     
     if (!result) return;
     
@@ -1510,7 +1482,6 @@ async function exSoftwarePreFactorLoadSaleTypes() {
 
 function exSoftwarePreFactorRenderSaleType() {
     const state = externalSoftwareProcess;
-    const software = state.software;
     
     exSoftwarePreFactorRenderStep({
         title: "انتخاب نوع فروش",
@@ -1525,7 +1496,7 @@ function exSoftwarePreFactorRenderSaleType() {
                 </label>
 
                 <select id="externalMappingSaleTypeSelect">
-                    ${(software.saleTypes ?? []).map(item => `
+                    ${(state.software.saleTypes ?? []).map(item => `
                         <option value="${escapeHtml(item.saleTypeId)}" ${item.saleTypeId === 2 ? "selected" : ""}>
                             ${escapeHtml(item.title)}
                         </option>
@@ -1535,28 +1506,28 @@ function exSoftwarePreFactorRenderSaleType() {
         `,
     });
     
-    initExternalMappingSelect("#externalMappingSaleTypeSelect", {
+    const select = externalMappingList.querySelector("#externalMappingSaleTypeSelect");
+    
+    new TomSelect(select, {
         placeholder: "جستجو و انتخاب نوع فروش",
-        
-        onChange: value => {
-            state.mappings.saleTypeId = value ? Number(value) : null;
-            
-            exSoftwarePreFactorUpdateConfirmButton();
-        },
+        onChange: exSoftwarePreFactorUpdateConfirmButton,
     });
     
-    state.mappings.saleTypeId = Number(externalMappingList.querySelector("#externalMappingSaleTypeSelect")?.value) || null;
-    
-    exSoftwarePreFactorSetConfirmButton("تأیید و ادامه", !state.mappings.saleTypeId);
+    exSoftwarePreFactorSetConfirmButton("تأیید و ادامه", !select?.value);
 }
 
 
 async function exSoftwarePreFactorConfirmSaleType() {
-    if (!externalSoftwareProcess.mappings.saleTypeId) {
+    const state = externalSoftwareProcess;
+    
+    const saleTypeId = externalMappingList.querySelector("#externalMappingSaleTypeSelect")?.value;
+    
+    if (!saleTypeId) {
         toastifyError("نوع فروش را انتخاب کنید.");
         return;
     }
     
+    state.mappings.saleTypeId = saleTypeId;
     await exSoftwarePreFactorLoadCustomer();
 }
 
@@ -1568,10 +1539,15 @@ async function exSoftwarePreFactorConfirmSaleType() {
 async function exSoftwarePreFactorLoadCustomer() {
     const state = externalSoftwareProcess;
     
-    const result = await externalSoftwareRequest(
-        "/Factor/PrepareExternalCustomerMapping",
-        { ids: [state.preFactorId], externalSoftwareIds: [state.software.externalSoftwareId] },
-    );
+    const result = await sendApiRequest({
+        url: "/Factor/PrepareExternalCustomerMapping",
+        method: "POST",
+        successMsg: null,
+        data: {
+            ids: [state.preFactorId],
+            externalSoftwareIds: [state.software.externalSoftwareId],
+        },
+    });
     
     if (!result?.length) return;
     
@@ -1590,7 +1566,7 @@ function exSoftwarePreFactorRenderCustomer() {
     const state = externalSoftwareProcess;
     const software = state.software;
     
-    const mappedCustomerId = state.mappings.customerId ?? software.mappedExternalCustomerId;
+    const mappedCustomerId = software.mappedExternalCustomerId;
     
     exSoftwarePreFactorRenderStep({
         title: "تطبیق مشتری",
@@ -1600,7 +1576,7 @@ function exSoftwarePreFactorRenderCustomer() {
         
         content: `
             <div class="external-mapping-entity">
-                <span class="external-mapping-label">
+                <span class="external-mapping-label fbold">
                     مشتری در CRM
                 </span>
 
@@ -1619,8 +1595,7 @@ function exSoftwarePreFactorRenderCustomer() {
 
                     ${(software.customers ?? []).map(customer => `
                         <option value="${escapeHtml(customer.id)}" ${String(customer.id) === String(mappedCustomerId ?? "") ? "selected" : ""}>
-                            ${customer.dlCode ? `${escapeHtml(customer.dlCode)} - ` : ""}
-                            ${escapeHtml(customer.fullName)}
+                            ${customer.dlCode ? `${escapeHtml(customer.dlCode)} - ` : ""}${escapeHtml(customer.fullName)}
                         </option>
                     `).join("")}
                 </select>
@@ -1628,16 +1603,14 @@ function exSoftwarePreFactorRenderCustomer() {
         `,
     });
     
-    initExternalMappingSelect("#externalMappingCustomerSelect", {
+    const select = externalMappingList.querySelector("#externalMappingCustomerSelect");
+    
+    new TomSelect(select, {
         placeholder: "جستجو و انتخاب مشتری",
-        
-        onChange: value => {
-            state.mappings.customerId = value || null;
-            exSoftwarePreFactorUpdateConfirmButton();
-        },
+        onChange: exSoftwarePreFactorUpdateConfirmButton,
     });
     
-    exSoftwarePreFactorSetConfirmButton("تأیید و ادامه", !externalMappingList.querySelector("#externalMappingCustomerSelect")?.value);
+    exSoftwarePreFactorSetConfirmButton("تأیید و ادامه", !select?.value);
 }
 
 
@@ -1650,18 +1623,21 @@ async function exSoftwarePreFactorConfirmCustomer() {
         return;
     }
     
-    await externalSoftwareRequest(
-        "/Factor/SaveExternalCustomerMapping",
-        {
+    await sendApiRequest({
+        url: "/Factor/SaveExternalCustomerMapping",
+        method: "POST",
+        successMsg: null,
+        data: {
             preFactorId: state.preFactorId,
             externalSoftwareId: state.software.externalSoftwareId,
             externalCustomerId: customerId,
         },
-    ).then(async () => {
-        state.mappings.customerId = customerId;
-        
-        await exSoftwarePreFactorLoadItems();
+        onSuccess: async () => {
+            state.mappings.customerId = customerId;
+            await exSoftwarePreFactorLoadItems();
+        },
     });
+    
 }
 
 
@@ -1672,22 +1648,27 @@ async function exSoftwarePreFactorConfirmCustomer() {
 async function exSoftwarePreFactorLoadItems() {
     const state = externalSoftwareProcess;
     
-    const result = await externalSoftwareRequest(
-        "/Factor/PrepareExternalItemMapping",
-        {
+    const result = await sendApiRequest({
+        url: "/Factor/PrepareExternalItemMapping",
+        method: "POST",
+        successMsg: null,
+        data: {
             preFactorId: state.preFactorId,
             externalSoftwareId: state.software.externalSoftwareId,
         },
-    );
+    });
     
-    if (!result?.preFactorItems?.length) {
+    if (!result?.preFactor.items?.length) {
         toastifyError("ردیفی برای تطبیق کالا پیدا نشد.");
         return;
     }
     
+    
+    state.preFactor = result.preFactor;
+    
     state.software = {
         ...state.software,
-        ...result,
+        sepidarItems: result.sepidarItems,
     };
     
     state.mappings.items = {};
@@ -1700,6 +1681,7 @@ async function exSoftwarePreFactorLoadItems() {
 function exSoftwarePreFactorRenderItems() {
     const state = externalSoftwareProcess;
     const software = state.software;
+    const preFactor = state.preFactor;
     
     exSoftwarePreFactorRenderStep({
         title: "تطبیق کالاها",
@@ -1709,7 +1691,7 @@ function exSoftwarePreFactorRenderItems() {
         
         content: `
             <div class="external-item-mapping-list">
-                ${(software.preFactorItems ?? []).map(item => `
+                ${(preFactor.items ?? []).map(item => `
                     <div class="external-mapping-entity external-item-mapping-row">
 
                         <span class="external-mapping-label">محصول پیش‌فاکتور CRM</span>
@@ -1742,9 +1724,9 @@ function exSoftwarePreFactorRenderItems() {
                 const mapping = state.mappings.items[itemId] ?? {};
                 
                 if (value) {
-                    mapping.externalItemId = Number(value);
+                    mapping.externalItemId = value;
                     state.mappings.items[itemId] = mapping;
-                } else if (mapping.stockId) {
+                } else if (mapping.externalStockId) {
                     delete mapping.externalItemId;
                 } else {
                     delete state.mappings.items[itemId];
@@ -1760,9 +1742,10 @@ function exSoftwarePreFactorRenderItems() {
 
 
 function exSoftwarePreFactorAreAllItemsMapped() {
-    const items = externalSoftwareProcess.software?.preFactorItems ?? [];
+    const state = externalSoftwareProcess;
+    const items = state.preFactor?.items ?? [];
     
-    return items.length > 0 && items.every(item => externalSoftwareProcess.mappings.items[String(item.preFactorItemId)]?.externalItemId);
+    return items.length > 0 && items.every(item => state.mappings.items[String(item.preFactorItemId)]?.externalItemId);
 }
 
 
@@ -1783,13 +1766,15 @@ async function exSoftwarePreFactorConfirmItems() {
 async function exSoftwarePreFactorLoadStock() {
     const state = externalSoftwareProcess;
     
-    const result = await externalSoftwareRequest(
-        "/Factor/PrepareExternalStockMapping",
-        {
+    const result = await sendApiRequest({
+        url: "/Factor/PrepareExternalStockMapping",
+        method: "POST",
+        successMsg: null,
+        data: {
             preFactorId: state.preFactorId,
             externalSoftwareId: state.software.externalSoftwareId,
         },
-    );
+    });
     
     if (!result) return;
     
@@ -1807,6 +1792,7 @@ async function exSoftwarePreFactorLoadStock() {
 function exSoftwarePreFactorRenderStock() {
     const state = externalSoftwareProcess;
     const software = state.software;
+    const preFactor = state.preFactor;
     
     exSoftwarePreFactorRenderStep({
         title: "انتخاب انبار کالاها",
@@ -1816,13 +1802,13 @@ function exSoftwarePreFactorRenderStock() {
         
         content: `
             <div class="external-item-mapping-list">
-                ${(software.preFactorItems ?? []).map(item => {
+                ${(preFactor.items ?? []).map(item => {
             
             const mapping = state.mappings.items[String(item.preFactorItemId)];
             const externalProduct = (software.sepidarItems ?? []).find(product => String(product.id) === String(mapping?.externalItemId));
             
-            return `<div class="external-mapping-entity external-item-mapping-row">
-
+            return `
+                    <div class="external-mapping-entity external-item-mapping-row">
                         <div class="d-flex gap-2 align-items-baseline">
                             <span class="external-mapping-label">
                                 محصول پیش‌فاکتور CRM:
@@ -1872,9 +1858,9 @@ function exSoftwarePreFactorRenderStock() {
                 if (!mapping) return;
                 
                 if (value) {
-                    mapping.stockId = Number(value);
+                    mapping.externalStockId = value;
                 } else {
-                    delete mapping.stockId;
+                    delete mapping.externalStockId;
                 }
                 
                 exSoftwarePreFactorUpdateConfirmButton();
@@ -1887,11 +1873,11 @@ function exSoftwarePreFactorRenderStock() {
 
 
 function exSoftwarePreFactorAreAllItemsMappedWithStock() {
-    const items = externalSoftwareProcess.software?.preFactorItems ?? [];
+    const items = externalSoftwareProcess.preFactor?.items ?? [];
     
     return items.length > 0 && items.every(item => {
         const mapping = externalSoftwareProcess.mappings.items[String(item.preFactorItemId)];
-        return mapping?.externalItemId && mapping?.stockId;
+        return mapping?.externalItemId && mapping?.externalStockId;
     });
 }
 
@@ -1900,7 +1886,7 @@ function exSoftwarePreFactorAreAllItemsMappedWithStock() {
    Preview
 ------------------------------------------------------- */
 
-async function exSoftwarePreFactorPreview() {
+function exSoftwarePreFactorPreview() {
     const state = externalSoftwareProcess;
     
     if (!exSoftwarePreFactorAreAllItemsMappedWithStock()) {
@@ -1908,21 +1894,9 @@ async function exSoftwarePreFactorPreview() {
         return;
     }
     
-    const result = await externalSoftwareRequest(
-        "/Factor/PrepareExternalPreFactorPreview",
-        exSoftwarePreFactorBuildRequest(),
-    );
-    
-    if (!result) return;
-    
-    state.software = {
-        ...state.software,
-        ...result,
-    };
-    
     state.step = "preview";
     
-    exSoftwarePreFactorRenderPreview(result);
+    exSoftwarePreFactorRenderPreview();
 }
 
 
@@ -1932,14 +1906,14 @@ function exSoftwarePreFactorBuildRequest() {
     return {
         preFactorId: state.preFactorId,
         externalSoftwareId: state.software.externalSoftwareId,
-        externalCustomerId: state.mappings.customerId ?? state.software.mappedExternalCustomerId,
+        externalCustomerId: Number(state.mappings.customerId ?? state.software.mappedExternalCustomerId),
         saleTypeId: state.mappings.saleTypeId,
         
         itemMappings: Object.entries(state.mappings.items).map(
             ([preFactorItemId, mapping]) => ({
-                preFactorItemId: Number(preFactorItemId),
+                preFactorItemId: preFactorItemId,
                 externalItemId: Number(mapping.externalItemId),
-                stockId: Number(mapping.stockId),
+                externalStockId: Number(mapping.externalStockId),
             }),
         ),
     };
@@ -1947,9 +1921,31 @@ function exSoftwarePreFactorBuildRequest() {
 
 
 function exSoftwarePreFactorRenderPreview(data) {
+    const state = externalSoftwareProcess;
+    const preFactor = state.preFactor;
+    const software = state.software;
+    const mappings = state.mappings;
+    
     const money = value => Number(value ?? 0).toLocaleString();
     
-    const items = data.items ?? [];
+    const items = (preFactor.items ?? []).map(item => {
+        const mapping = mappings.items[String(item.preFactorItemId)];
+        const externalItem = (software.sepidarItems ?? []).find(x => String(x.id) === String(mapping?.externalItemId));
+        const externalStock = (software.stocks ?? []).find(x => String(x.id) === String(mapping?.externalStockId));
+        
+        return {
+            ...item,
+            productTitle: item.productTitle,
+            externalItemTitle: externalItem ? `${externalItem.code} - ${externalItem.title}` : "-",
+            externalStockTitle: externalStock ? `${externalStock.code} - ${externalStock.title}` : "-",
+        };
+    });
+    
+    const saleType = (software.saleTypes ?? []).find(x => String(x.saleTypeId) === String(mappings.saleTypeId));
+    const saleTypeTitle = saleType ? `${saleType.number} - ${saleType.title}` : "-";
+    
+    const customer = (software.customers ?? []).find(x => String(x.id) === String(mappings.customerId));
+    const customerTitle = customer ? `${customer.dlCode} - ${customer.fullName}` : "-";
     
     exSoftwarePreFactorRenderStep({
         title: "بررسی نهایی پیش‌فاکتور",
@@ -1965,27 +1961,27 @@ function exSoftwarePreFactorRenderPreview(data) {
 
                     <div class="ex-preview-field">
                         <span class="ex-preview-label">نوع فروش:</span>
-                        <strong>${escapeHtml(data.saleTypeTitle ?? "-")}</strong>
+                        <strong>${escapeHtml(saleTypeTitle)}</strong>
                     </div>
 
                     <div class="ex-preview-field">
                         <span class="ex-preview-label">شماره پیش‌فاکتور:</span>
-                        <strong>${escapeHtml(data.serialNumber ?? "-")}</strong>
+                        <strong>${escapeHtml(preFactor?.serialNumber ?? "-")}</strong>
                     </div>
 
                     <div class="ex-preview-field">
                         <span class="ex-preview-label">تاریخ:</span>
-                        <strong>${escapeHtml(data.date ?? "-")}</strong>
+                        <strong>${escapeHtml(preFactor?.date ?? "-")}</strong>
                     </div>
 
                     <div class="ex-preview-field ex-preview-customer">
                         <span class="ex-preview-label">مشتری:</span>
-                        <strong>${escapeHtml(data.customerName ?? "-")}</strong>
+                        <strong>${escapeHtml(customerTitle)}</strong>
                     </div>
 
                     <div class="ex-preview-field">
                         <span class="ex-preview-label">نرم‌افزار مقصد:</span>
-                        <strong class="ex-preview-software">${escapeHtml(data.externalSoftwareTitle ?? "-")}</strong>
+                        <strong class="ex-preview-software">${escapeHtml(software.externalSoftwareTitle ?? "-")}</strong>
                     </div>
 
                 </div>
@@ -2011,9 +2007,9 @@ function exSoftwarePreFactorRenderPreview(data) {
                                 <tr>
                                     <td>${index + 1}</td>
                                     <td>${escapeHtml(item.productTitle ?? "-")}</td>
-                                    <td>${escapeHtml(item.externalItemTitle ?? "-")}</td>
-                                    <td>${escapeHtml(item.externalStockTitle ?? "-")}</td>
-                                    <td>${money(item.weight)}</td>
+                                    <td>${escapeHtml(item.externalItemTitle)}</td>
+                                    <td>${escapeHtml(item.externalStockTitle)}</td>
+                                    <td>${money(item.weightCount)}</td>
                                     <td>${money(item.unitAmount)}</td>
                                     <td>${money(item.discount)}</td>
                                     <td>${money(item.taxAmount)}</td>
@@ -2025,22 +2021,22 @@ function exSoftwarePreFactorRenderPreview(data) {
                 </div>
 
                 <div class="external-mapping-entity mt-3">
-                    <div class="d-flex justify-content-between mb-1">
+                     <div class="d-flex justify-content-between mb-1">
                         <span>جمع مبلغ کالاها</span>
-                        <strong>${renderMoneyHtml(data.totalAmount)}</strong>
+                        <strong>${renderMoneyHtml(preFactor?.sumTotalAmount)}</strong>
                     </div>
                     <div class="d-flex justify-content-between mb-1">
                         <span>تخفیف کل</span>
-                        <strong>${renderMoneyHtml(data.totalDiscount)}</strong>
+                        <strong>${renderMoneyHtml(preFactor?.discount)}</strong>
                     </div>
                     <div class="d-flex justify-content-between mb-1">
                         <span>مالیات کل</span>
-                        <strong>${renderMoneyHtml(data.totalTax)}</strong>
+                        <strong>${renderMoneyHtml(preFactor?.totalTax)}</strong>
                     </div>
                     <hr>
                     <div class="d-flex justify-content-between">
                         <strong>مبلغ نهایی</strong>
-                        <strong>${renderMoneyHtml(data.paymentAmount)}</strong>
+                        <strong>${renderMoneyHtml(preFactor?.paymentAmount)}</strong>
                     </div>
                 </div>
             </div>
@@ -2078,9 +2074,11 @@ function exSoftwarePreFactorUpdateConfirmButton() {
     if (state.processing) return;
     
     switch (state.step) {
-        case "saleType":
-            toggleElementsDisabled(confirmExternalMappingBtn, !state.mappings.saleTypeId);
+        case "saleType": {
+            const selected = externalMappingList?.querySelector("#externalMappingSaleTypeSelect")?.value;
+            toggleElementsDisabled(confirmExternalMappingBtn, !selected);
             break;
+        }
         
         case "customer": {
             const selected = externalMappingList?.querySelector("#externalMappingCustomerSelect")?.value;

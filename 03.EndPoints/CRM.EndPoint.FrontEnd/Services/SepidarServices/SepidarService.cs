@@ -1109,36 +1109,68 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
             .ToListAsync(ct);
     }
 
-    public async Task<(string entityName, string entityId)?> SendPreFactorToSepidar(PreFactor preFactor, int partyRef, int saleTypeRef,
-        Dictionary<string, int> itemMappings, Dictionary<string, int> stockMappings, CancellationToken ct = default)
+    public async Task<(string entityName, string entityId)?> SendPreFactorToSepidar(PreFactor preFactor, int externalCustomerId, int saleTypeId,
+        List<ExternalPreFactorItemMapping> itemMappings, CancellationToken ct = default)
     {
-        var items = new List<SepidarQuotationItemRequest>();
-
-        foreach (var item in preFactor?.PreFactorItems ?? [])
-        {
-            if (!itemMappings.TryGetValue(item.Id.ToString(), out var itemRef) || itemRef <= 0)
-                throw new InvalidOperationException($"نگاشت کالای سپیدار برای کالای ({item.Product}) مشخص نشده است.");
-
-            if (!stockMappings.TryGetValue(item.Id.ToString(), out var stockRef) || stockRef <= 0)
-                throw new InvalidOperationException($"انبار برای کالای ({item.Product}) مشخص نشده است.");
-
-            items.Add(new SepidarQuotationItemRequest {
-                PreFactorItem = item,
-                ItemRef = itemRef,
-                StockRef = stockRef
-            });
-        }
-
-        var customer = await GetSepidarCustomerByIdAsync(partyRef, ct);
+        // Customer validation
+        var customer = await GetSepidarCustomerByIdAsync(externalCustomerId, ct);
 
         if (customer == null)
             throw new InvalidOperationException("مشتری انتخاب‌شده در نرم‌افزار مالی پیدا نشد.");
+
+        // SaleType validation
+        var saleType = await GetSaleTypeByIdAsync(saleTypeId, ct);
+
+        if (saleType == null)
+            throw new InvalidOperationException("نوع فروش انتخاب‌شده در نرم‌افزار مالی پیدا نشد.");
+
+
+        // stocks validation
+        var stocks = await GetStocks(ct);
+
+        var selectedStockIds = itemMappings.Select(x => x.ExternalStockId).ToHashSet();
+        var validStockIds = stocks.Where(x => selectedStockIds.Contains(x.Id)).Select(x => x.Id).ToHashSet();
+
+        if (validStockIds.Count != selectedStockIds.Count)
+            throw new InvalidOperationException("یک یا چند انبار انتخاب‌شده در نرم‌افزار مالی پیدا نشد.");
+
+
+        // items validation
+        var externalItems = await GetSepidarItemsAsync(ct);
+
+        var selectedItemIds = itemMappings.Select(x => x.ExternalItemId).ToHashSet();
+        var validItemIds = externalItems.Where(x => selectedItemIds.Contains(x.Id)).Select(x => x.Id).ToHashSet();
+
+        if (validItemIds.Count != selectedItemIds.Count)
+            throw new InvalidOperationException("یک یا چند کالای انتخاب‌شده در نرم‌افزار مالی پیدا نشد.");
+
+
+        var mappingByItemId = itemMappings.ToDictionary(x => x.PreFactorItemId);
+
+        var items = new List<SepidarQuotationItemRequest>();
+        foreach (var item in preFactor?.PreFactorItems ?? [])
+        {
+            if (!mappingByItemId.TryGetValue(item.Id, out var mapping))
+                throw new InvalidOperationException($"نگاشت کالای سپیدار برای کالای ({item.Product}) مشخص نشده است.");
+
+            if (mapping.ExternalItemId <= 0)
+                throw new InvalidOperationException($"کالای سپیدار برای کالای ({item.Product}) مشخص نشده است.");
+
+            if (mapping.ExternalStockId <= 0)
+                throw new InvalidOperationException($"انبار سپیدار برای کالای ({item.Product}) مشخص نشده است.");
+
+            items.Add(new SepidarQuotationItemRequest {
+                PreFactorItem = item,
+                ItemRef = mapping.ExternalItemId,
+                StockRef = mapping.ExternalStockId
+            });
+        }
 
         var request = new SepidarQuotationRequest {
             PreFactor = preFactor,
             Party = customer,
             Items = items,
-            SaleTypeRef = saleTypeRef
+            SaleTypeRef = saleTypeId
         };
 
         var quotationId = await CreateQuotationAsync(request, ct);
@@ -1237,9 +1269,9 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
 
             quotation.QuotationItems = await CreateQuotationItemsAsync(quotationId, request.Items, ct);
 
-            sepidarContext.Quotations.Add(quotation);
+/*            sepidarContext.Quotations.Add(quotation);
 
-            await sepidarContext.SaveChangesAsync(ct);
+            await sepidarContext.SaveChangesAsync(ct);*/
             await transaction.CommitAsync(ct);
 
             return quotationId;

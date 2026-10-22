@@ -8275,7 +8275,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 
 .external-prefactor-preview .table {
 	margin: 0;
-	white-space: nowrap;
+	/* white-space: nowrap; */
 	font-size: 12px;
 }
 
