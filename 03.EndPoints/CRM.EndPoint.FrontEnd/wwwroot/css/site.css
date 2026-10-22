@@ -393,6 +393,11 @@ button {
 }
 
 
+.link-green:disabled {
+	opacity: .6;
+}
+
+
 @media (max-width: 767px) {
 	.link-gray, .link-purple {
 		text-decoration: underline;
@@ -406,8 +411,8 @@ button {
 }
 
 
-.link-green:hover {
-	text-decoration: underline;
+.link-green:not(:disabled):hover {
+	text-decoration: underline !important;
 	color: #02615a;
 }
 

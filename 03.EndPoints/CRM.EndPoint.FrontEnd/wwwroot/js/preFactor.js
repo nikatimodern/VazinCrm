@@ -1691,6 +1691,9 @@ function exSoftwarePreFactorRenderItems() {
         
         content: `
             <div class="external-item-mapping-list">
+                <div class="text-end" style="line-height: 1;font-size: 12px">
+                    <button class="link-green text-decoration-none" disabled type="button" onclick="showAddItemInSepidarModal()">افزودن محصول جدید</button>
+                </div>
                 ${(preFactor.items ?? []).map(item => `
                     <div class="external-mapping-entity external-item-mapping-row">
 
@@ -1740,6 +1743,9 @@ function exSoftwarePreFactorRenderItems() {
     exSoftwarePreFactorSetConfirmButton("تأیید کالاها و ادامه", !exSoftwarePreFactorAreAllItemsMapped());
 }
 
+function showAddItemInSepidarModal() {
+    ModalToggle("addItemInSepidarModal");
+}
 
 function exSoftwarePreFactorAreAllItemsMapped() {
     const state = externalSoftwareProcess;
