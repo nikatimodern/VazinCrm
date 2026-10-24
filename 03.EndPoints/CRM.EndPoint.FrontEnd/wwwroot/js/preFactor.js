@@ -1308,7 +1308,7 @@ const createExternalSoftwareState = () => ({
     
     softwareIds: [],
     softwareIndex: 0,
-    software: null,
+    software: null, // دیتاهای مربوط به هر نرم‌افزار داخل این ابجکت نگه داری می شود
     
     step: "saleType",
     
