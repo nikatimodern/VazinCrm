@@ -394,7 +394,7 @@ public class RequestAmountController : Controller {
                     model.PaymentMode = PaymentModeEnum.تکی;
 
                 await db.Payments.AddAsync(model);
-                await db.SaveChangesAsync();
+                //await db.SaveChangesAsync();
 
                 await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
             } else
@@ -727,9 +727,20 @@ public class RequestAmountController : Controller {
     {
         try
         {
-            var data = await db.RequestAmounts.AsNoTracking()
-                .Where(f => model.FilterIds.Contains(f.Id))
-                .ToListAsync();
+            var data = await db.RequestAmounts.Include(f=>f.RequestAmountPayments).AsNoTracking()
+                    .Where(f => model.FilterIds.Contains(f.Id))
+                    .ToListAsync();
+
+            var SuCount = data.Select(f => f.SupplierId).Distinct().Count();
+            if (SuCount > 1)
+            {
+
+                return BadRequest("در واریزی گروهی تمام درخواست ها باید برای یک تامیین کننده باشد ");
+            }
+
+
+            
+
 
             return Ok(data);
         }
@@ -744,22 +755,43 @@ public class RequestAmountController : Controller {
     {
         try
         {
-            var data = await db.RequestAmountPayments
-                .AsNoTracking()
-                .Where(x => x.PaymentId == paymentId)
-                .Select(x => new {
-                    Id = x.RequestAmountId,
 
-                    PaidAmount = x.Amount,
+            //var rqAm =await db.RequestAmountPayments.AsNoTracking()
+            //    .Where(f => f.PaymentId == paymentId).Select(f => f.RequestAmountId).ToListAsync();
 
-                    x.RequestAmount.RequestNumber,
-                    x.RequestAmount.Amount,
-                    x.RequestAmount.AcceptedAmount,
-                    x.RequestAmount.AcceptedAmountPercent
-                })
-                .ToListAsync();
+            //var dataa =await db.RequestAmounts.Include(f => f.RequestAmountPayments)
+            //    .Where(f => rqAm.Contains(f.Id)).ToListAsync();
 
-            return Ok(data);
+
+            var dataa = await db.RequestAmounts
+    .AsNoTracking()
+    .Include(f => f.RequestAmountPayments)
+    .Where(f => f.RequestAmountPayments
+        .Any(p => p.PaymentId == paymentId))
+    .ToListAsync();
+
+
+
+
+
+
+            //var data = await db.RequestAmountPayments.Include(f=>f.RequestAmount)
+            //    .AsNoTracking()
+            //    .Where(x => x.PaymentId == paymentId)
+            //    .Select(x => new {
+            //        Id = x.RequestAmountId,
+
+            //        PaidAmount = x.Amount,
+
+            //        x.RequestAmount.RequestNumber,
+            //        x.RequestAmount.Amount,
+            //        x.RequestAmount.AcceptedAmount,
+            //        x.RequestAmount.AcceptedAmountPercent,
+            //        x.RequestAmount
+            //    })
+            //    .ToListAsync();
+
+            return Ok(dataa);
         }
         catch (Exception e)
         {

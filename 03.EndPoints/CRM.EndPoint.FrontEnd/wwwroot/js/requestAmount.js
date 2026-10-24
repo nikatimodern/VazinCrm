@@ -199,7 +199,9 @@ async function showSetAmountPaymentItemModal(filterIds) {
         successMsg: null,
         onSuccess: (res) => {
             requestAmountListData = res.data;
-            
+
+            console.log(res.data)
+
             createSetAmountPaymentItem();
             ModalToggle(reqAmountPaymentModal);
         },
@@ -239,22 +241,27 @@ function createSetAmountPaymentItem() {
                         <span class="fMedium text-center">${item.requestNumber ?? ""}</span>
                     </div>
                     <div class="d-flex align-items-center justify-content-center gap-1">
-                        <span class="flex-shrink-0" style="color: #e1e1e1">مبلغ درخواست: </span>
+                        <span class="flex-shrink-0" style="color: #e1e1e1">مبلغ تایید شده: </span>
                         <span class="fMedium text-center" style="white-space: nowrap">
-                            <span>${item.amount.toLocaleString()}</span>
+                            <span>${item.acceptedAmount.toLocaleString() }</span>
                             <span style="font-size: 11px">ریال</span>
+                            <span style="font-size: 16px;color:#ccc">${item.acceptedAmountPercent ? item.acceptedAmountPercent + "%" : ""}</span>
                         </span>
                     </div>
                 </div>
 
                 <div class="d-flex flex-wrap col-12 justify-content-around p-2 row-gap-2">
                     <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto pe-xl-2">
-                        <span class="flex-shrink-0" style="color: #535353">مبلغ تایید شده: </span>
+                        <span class="flex-shrink-0" style="color: #535353">مبلغ پرداخت شده: </span>
 
                         <div class="fbold column-gap-1 badge badge-outline-green" style="color: #333">
-                            <span style="font-size: 16px;">${item.acceptedAmount.toLocaleString()}</span>
+                            <span style="font-size: 16px;">${item.requestAmountPayments.reduce((sum,i) => {
+
+                                return i.amount + sum;
+
+                            },0).toLocaleString()}</span>
                             <span style="font-size: 11px;">ريال</span>
-                            <span style="font-size: 16px; color:#888">${item.acceptedAmountPercent ? item.acceptedAmountPercent + "%" : ""}</span>
+                            
                         </div>
                     </div>
                     <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto">
