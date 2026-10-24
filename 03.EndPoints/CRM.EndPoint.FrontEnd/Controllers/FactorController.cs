@@ -38,6 +38,7 @@ using CRM.Core.Domain.Deals.Enums;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
 using CRM.Core.Domain.ExternalSoftwares.Enums;
 using CRM.Core.Domain.Sepidar.Parties;
+using CRM.Core.Domain.Sepidar.Parties.Entities;
 using CRM.Core.Domain.Sms.Enums;
 using CRM.Core.Domain.Supplies.Enums;
 using CRM.Core.Domain.SystemWarnings.Enums;
@@ -52,6 +53,7 @@ using CRM.EndPoint.FrontEnd.Models.PreFactors;
 using CRM.EndPoint.FrontEnd.Models.PushNotification;
 using CRM.EndPoint.FrontEnd.Models.Sepidar;
 using CRM.EndPoint.FrontEnd.Models.Sms;
+using CRM.EndPoint.FrontEnd.Models.Supply;
 using CRM.EndPoint.FrontEnd.Services.Carizo;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
@@ -3137,6 +3139,56 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [HttpPost]
+        public async Task<IActionResult> PrepareExternalUnits([FromBody] SendToExternalSoftwaresDto request)
+        {
+            if (request.ExternalSoftwareIds == null || request.ExternalSoftwareIds.Count == 0)
+                return BadRequest("هیچ نرم‌افزاری انتخاب نشده است.");
+
+            var softwareId = request.ExternalSoftwareIds[0];
+
+            var sepidarService = GetSepidarService(softwareId);
+
+            if (sepidarService == null)
+            {
+                return BadRequest("شناسه نرم‌افزار نامعتبر است.");
+            }
+
+            var units = await sepidarService.GetSepidarUnitsAsync();
+
+            return Ok(units);
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> GetAllSepidarStocksPartial([FromBody] SendToExternalSoftwaresDto request)
+        {
+            try
+            {
+                if (request.ExternalSoftwareIds == null || request.ExternalSoftwareIds.Count == 0)
+                    return BadRequest("هیچ نرم‌افزاری انتخاب نشده است.");
+
+                var softwareId = request.ExternalSoftwareIds[0];
+
+                var sepidarService = GetSepidarService(softwareId);
+
+                if (sepidarService == null)
+                {
+                    return BadRequest("شناسه نرم‌افزار نامعتبر است.");
+                }
+
+
+                var stocks = await sepidarService.GetStocks();
+
+                return PartialView(stocks);
+            }
+            catch (Exception)
+            {
+                return BadRequest();
+            }
+        }
+
+
+        [HttpPost]
         public async Task<IActionResult> PrepareExternalSaleType([FromBody] SendToExternalSoftwaresDto request)
         {
             if (request.ExternalSoftwareIds == null || request.ExternalSoftwareIds.Count == 0)
@@ -3469,6 +3521,42 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 });
 
                 await db.SaveChangesAsync(ct);
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+
+        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [HttpPost]
+        public async Task<IActionResult> SendItemToExternalSoftware([FromBody] ExternalSoftwareAddItemRequest request, CancellationToken ct)
+        {
+            if (request == null)
+                return BadRequest("اطلاعات ارسال نشده است.");
+
+            try
+            {
+                if (request.itemUnit < 0)
+                    return BadRequest("واحد محصول معتبر نیست.");
+
+                if (string.IsNullOrEmpty(request.itemTitle))
+                    return BadRequest("عنوان محصول معتبر نیست.");
+
+                if (request.stockIds == null || request.stockIds.Count == 0)
+                    return BadRequest("انباری ارسال نشده است.");
+
+
+                var service = GetSepidarService(request.ExternalSoftwareId);
+
+                if (service == null)
+                    return BadRequest("شناسه نرم‌افزار نامعتبر است.");
+
+                // Send
+                await service.SendItemToSepidar(request, ct);
+
                 return Ok();
             }
             catch (Exception e)

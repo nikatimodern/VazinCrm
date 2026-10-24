@@ -2904,32 +2904,31 @@ async function showExternalSoftwareModal(ids, config) {
         entityIds,
     };
     
+    
     externalSoftwareList.innerHTML = "";
     toggleElementsDisabled(sendToSoftwareBtn);
     
-    const softwares = await sendApiRequest({
+    await sendApiRequest({
         url: "/Home/GetAllExternalSoftware",
         method: "POST",
         successMsg: null,
-        data: {
-            entityIds,
-            mapType: config.mapType,
+        data: { entityIds, mapType: config.mapType },
+        onSuccess: (res) => {
+            const softwares = res.data;
+            ModalToggle(externalSoftwareModalElm);
+            
+            if (!softwares?.length) {
+                externalSoftwareList.innerHTML = `
+                    <div class="text-muted text-center py-4" style="grid-column: 1 / -1">
+                        نرم‌افزاری برای انتخاب وجود ندارد.
+                    </div>
+                `;
+                return;
+            }
+            
+            renderExternalSoftwares(softwares);
         },
     });
-    
-    if (!externalSoftwareConfig) return;
-    
-    ModalToggle(externalSoftwareModalElm);
-    
-    if (!softwares?.length) {
-        externalSoftwareList.innerHTML = `
-            <div class="text-muted text-center py-4" style="grid-column: 1 / -1">
-                نرم‌افزاری برای انتخاب وجود ندارد.
-            </div>`;
-        return;
-    }
-    
-    renderExternalSoftwares(softwares);
 }
 
 function renderExternalSoftwares(softwares) {

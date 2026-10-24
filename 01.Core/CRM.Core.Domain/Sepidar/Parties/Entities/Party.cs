@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using CRM.Core.Domain.Sepidar.DLs.Entites;
 
-namespace CRM.Core.Domain.Sepidar.Parties;
+namespace CRM.Core.Domain.Sepidar.Parties.Entities;
 
 
 [Table("Party", Schema = "GNR")]

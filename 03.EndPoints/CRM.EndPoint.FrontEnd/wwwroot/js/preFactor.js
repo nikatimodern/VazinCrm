@@ -1710,7 +1710,7 @@ function exSoftwarePreFactorRenderItems() {
         content: `
             <div class="external-item-mapping-list">
                 <div class="text-end" style="line-height: 1;font-size: 12px">
-                    <button class="link-green text-decoration-none" disabled type="button" onclick="showAddItemInSepidarModal()">افزودن محصول جدید</button>
+                    <button class="link-green text-decoration-none" type="button" onclick="showAddItemInSepidarModal()">افزودن محصول جدید</button>
                 </div>
                 ${(preFactor.items ?? []).map(item => {
             const mapping = state.mappings.items[String(item.preFactorItemId)];
@@ -1766,9 +1766,6 @@ function exSoftwarePreFactorRenderItems() {
     exSoftwarePreFactorSetConfirmButton("تأیید کالاها و ادامه", !exSoftwarePreFactorAreAllItemsMapped());
 }
 
-function showAddItemInSepidarModal() {
-    ModalToggle("addItemInSepidarModal");
-}
 
 function exSoftwarePreFactorAreAllItemsMapped() {
     const state = externalSoftwareProcess;
@@ -2251,3 +2248,93 @@ backExternalMappingBtn?.addEventListener("click", () => {
         exSoftwarePreFactorUpdateButtons();
     }
 });
+
+
+/* --------------------------------------------------- Add Item In Sepidar --------------------------------------------------- */
+
+const addItemInSepidarModal = document.getElementById("addItemInSepidarModal");
+async function showAddItemInSepidarModal() {
+    await initSepidarUnitsOp();
+    
+    ModalToggle(addItemInSepidarModal);
+}
+
+let allSepidarUnitsPromise = null;
+const initSepidarUnitsOp = async () => {
+    const state = externalSoftwareProcess;
+    
+    const select = addItemInSepidarModal.querySelector("#sepidarItemUnitId");
+    if (!select) return;
+    
+    if (!allSepidarUnitsPromise) {
+        allSepidarUnitsPromise = sendApiRequest({
+            url: "/Factor/PrepareExternalUnits",
+            method: "POST",
+            successMsg: null,
+            data: {
+                externalSoftwareIds: [state.software.externalSoftwareId],
+            },
+        });
+    }
+    
+    if (select.tomselect) {
+        return select.tomselect;
+    }
+    
+    const units = await allSepidarUnitsPromise;
+    
+    return new TomSelect(select, {
+        options: units,
+        placeholder: "جستجو و انتخاب واحد",
+        maxItems: 1,
+        selectOnTab: true,
+    });
+};
+
+
+let sepidarStocksSelectedIds = [];
+async function showAddStocksModal() {
+    const state = externalSoftwareProcess;
+    
+    await modalSelector.open({
+        title: "انتخاب انبار",
+        selectedIds: sepidarStocksSelectedIds,
+        size: "sm",
+        showSearch: false,
+        
+        load: async () => {
+            return await sendApiRequest({
+                url: "/Factor/GetAllSepidarStocksPartial",
+                method: "POST",
+                successMsg: null,
+                data: {
+                    ExternalSoftwareIds: [state.software.externalSoftwareId],
+                },
+            });
+        },
+        
+        onSubmit: ({ ids, numbers }) => {
+            sepidarStocksSelectedIds = ids;
+            const input = addItemInSepidarModal.querySelector("#sepidarStockId");
+            input.value = numbers.join(", ");
+            
+            input.classList.remove("AlertReq");
+            
+            console.log(ids);
+        },
+    });
+}
+
+
+addItemInSepidarModal.addEventListener("hidden.bs.modal", () => {
+    mySer.emptyForm("addItemInSepidarForm");
+    modalSelector.reset();
+    sepidarStocksSelectedIds = [];
+});
+
+async function submitItemInSepidar() {
+    if (!await mySer.CheckValidForm("addItemInSepidarForm")) return;
+    const model = mySer.convertFormToJSON("addItemInSepidarForm");
+    
+    console.log(model);
+}

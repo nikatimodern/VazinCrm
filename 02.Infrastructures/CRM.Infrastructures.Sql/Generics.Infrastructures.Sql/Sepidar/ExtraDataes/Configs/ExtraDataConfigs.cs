@@ -1,4 +1,5 @@
 ﻿using CRM.Core.Domain.Sepidar.ExtraDataes;
+using CRM.Core.Domain.Sepidar.ExtraDataes.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

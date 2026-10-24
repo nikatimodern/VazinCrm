@@ -11,12 +11,16 @@ using CRM.Core.Domain.Sepidar.Banks.Entites;
 using CRM.Core.Domain.Sepidar.DLs.Entites;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.Core.Domain.Sepidar.Items;
+using CRM.Core.Domain.Sepidar.Items.Entities;
 using CRM.Core.Domain.Sepidar.Parties;
 using CRM.Core.Domain.Sepidar.Payments.Entites;
 using CRM.Core.Domain.Sepidar.Quotations.Entites;
 using CRM.Core.Domain.Sepidar.SaleTypes;
+using CRM.Core.Domain.Sepidar.SaleTypes.Entities;
 using CRM.Core.Domain.Sepidar.Stocks;
+using CRM.Core.Domain.Sepidar.Units.Entities;
 using CRM.Core.Domain.Sepidar.Vouchers.Entites;
+using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Factor;
 using CRM.EndPoint.FrontEnd.Models.Sepidar;
 using CRM.Infrastructures.Sql;
@@ -632,7 +636,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             // =========================================================
             // Row 2 - بستانکار: حساب بانکی
             // =========================================================
-            
+
             var bankAccountSlRef = await GetAccountIdByMoeinCodeAsync("1002", ct); // تفاوت بین دو فانکشن مشترک
             var creditItem = new VoucherItem {
                 VoucherItemId = firstVoucherItemId + (cash.Fee > 0 ? 2 : 1),
@@ -1069,6 +1073,18 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             .ToListAsync(ct);
     }
 
+    public async Task<List<SelectOptionDto<int>>> GetSepidarUnitsAsync(CancellationToken ct = default)
+    {
+        return await sepidarContext.Units
+            .AsNoTracking()
+            .Select(x => new SelectOptionDto<int> {
+                Text = TextService.NormalizePersianText(x.Title),
+                Value = x.UnitID
+            })
+            .ToListAsync(ct);
+    }
+
+
     public async Task<List<SaleType>> GetSaleTypes(CancellationToken ct = default)
     {
         return await sepidarContext.SaleTypes
@@ -1104,8 +1120,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 Id = x.StockID,
                 Code = x.Code,
                 Title = TextService.NormalizePersianText(x.Title),
-            })
-            .ToListAsync(ct);
+            }).ToListAsync(ct);
     }
 
     public async Task<(string entityName, string entityId)?> SendPreFactorToSepidar(PreFactor preFactor, int externalCustomerId, int saleTypeId,
@@ -1395,6 +1410,14 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 .AnyAsync(x => x.QuotationId == id),
 
             _ => null
+        };
+    }
+
+    public async Task SendItemToSepidar(ExternalSoftwareAddItemRequest request, CancellationToken ct = default)
+    {
+        var item = new Item {
+            Title = request.itemTitle,
+            UnitRef = request.itemUnit
         };
     }
 }

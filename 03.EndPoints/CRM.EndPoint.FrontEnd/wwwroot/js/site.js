@@ -197,13 +197,17 @@ class ModalSelector {
         this.config = config;
         
         this.tempSelectedIds = [...(config.selectedIds ?? [])].map(String);
-        
         this.tempSelectedMap.clear();
+        
         if (this.titleElement)
             this.titleElement.textContent = config.title ?? "";
         
-        if (config.clearSearch !== false)
+        this.searchInput?.classList.toggle("d-none", config.showSearch === false);
+        
+        if (config.clearSearch !== false && this.searchInput)
             this.searchInput.value = "";
+        
+        this.setModalSize(config.size);
         
         this.updateSubmitButton();
         
@@ -212,6 +216,17 @@ class ModalSelector {
         ModalToggle(this.modal);
     }
     
+    /**
+     * Sets the modal dialog size.
+     * @param {string} [size="lg"] Modal size.
+     * @returns {void}
+     */
+    setModalSize(size = "lg") {
+        const dialog = this.modal.querySelector(".modal-dialog");
+        
+        dialog.classList.remove("modal-sm", "modal-lg", "modal-xl", "modal-xxl");
+        dialog.classList.add(`modal-${size}`);
+    }
     
     /**
      * Loads selector content using the configured load callback.
@@ -276,6 +291,10 @@ class ModalSelector {
         
         this.submitButton.addEventListener("click", () => this.submit());
         this.cancelButton.addEventListener("click", () => this.cancel());
+        
+        this.modal.addEventListener("hidden.bs.modal", () => {
+            this.setModalSize();
+        });
     }
     
     

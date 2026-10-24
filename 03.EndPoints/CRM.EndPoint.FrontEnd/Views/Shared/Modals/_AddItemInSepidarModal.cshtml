@@ -4,16 +4,29 @@
         <div class="modal-content col-12 p-2">
             <div class="text-center text-white rounded py-1 fbold" style="background-color: #04857c">افزودن محصول در سپیدار</div>
             <div class="modal-body pb-2">
-                <form id="ddItemInSepidarForm" class="d-flex flex-column gap-2">
+                <form id="addItemInSepidarForm" class="d-flex flex-column gap-2">
                     <div>
                         <label for="sepidarItemTitleId">محصول:</label>
-                        <input id="sepidarItemTitleId" class="form-control" name="itemTitle" type="text" />
+                        <input id="sepidarItemTitleId" class="form-control" name="itemTitle" type="text" required/>
                     </div>
                     <div>
+                        <label for="sepidarItemUnitId">واحد:</label>
+                        <select class="show-dropdown-arrow" name="itemUnit" id="sepidarItemUnitId" required>
+                            <option value="">انتخاب کنید</option>
+                        </select>
+                    </div>
+                    @*<div>
                         <label for="sepidarStockId">انبار: </label>
                         <select class="form-select form-select-sm valueNumber" name="stock" id="sepidarStockId" required>
                             <option value="">انتخاب کنید</option>
                         </select>
+                    </div>*@
+                    <div id="sepidarStockWrapper">
+                        <label for="sepidarStockId">انبار: </label>
+                        <div class="input-group">
+                            <input id="sepidarStockId" type="text" class="form-control direction-ltr" placeholder="انبار.." disabled>
+                            <button class="btn btn-sm btn-secondary" type="button" onclick="showAddStocksModal()">انتخاب</button>
+                        </div>
                     </div>
                     <div class="d-flex justify-content-center gap-1 mt-3">
                         <button type="button" class="buttonCancel2" style="padding-block: 4px" data-bs-dismiss="modal">انصراف</button>

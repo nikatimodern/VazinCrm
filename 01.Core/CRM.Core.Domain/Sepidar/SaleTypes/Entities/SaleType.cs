@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace CRM.Core.Domain.Sepidar.SaleTypes;
+namespace CRM.Core.Domain.Sepidar.SaleTypes.Entities;
 
 [Table("SaleType", Schema = "SLS")]
 public class SaleType {

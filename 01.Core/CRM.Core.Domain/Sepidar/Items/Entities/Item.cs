@@ -1,27 +1,23 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace CRM.Core.Domain.Sepidar.Items;
+namespace CRM.Core.Domain.Sepidar.Items.Entities;
 
 [Table("Item", Schema = "INV")]
 public class Item {
-    [Key]
-    public int ItemID { get; set; }
+    [Key] public int ItemID { get; set; }
 
     public int Type { get; set; }
 
-    [MaxLength(250)]
-    public string Code { get; set; } = null!;
+    [MaxLength(250)] public string Code { get; set; } = null!;
 
-    [MaxLength(250)]
-    public string Title { get; set; } = null!;
+    [MaxLength(250)] public string Title { get; set; } = null!;
 
-    [MaxLength(250)]
-    public string Title_En { get; set; } = null!;
+    [MaxLength(250)] public string Title_En { get; set; } = null!;
 
-    [MaxLength(250)]
-    public string BarCode { get; set; }
+    [MaxLength(250)] public string BarCode { get; set; }
 
     public int UnitRef { get; set; }
     public int? SecondaryUnitRef { get; set; }
@@ -62,8 +58,7 @@ public class Item {
     public decimal TaxRate { get; set; }
     public decimal DutyRate { get; set; }
 
-    [MaxLength(250)]
-    public string IranCode { get; set; }
+    [MaxLength(250)] public string IranCode { get; set; }
 
     public int? CodingGroupRef { get; set; }
 
@@ -72,4 +67,6 @@ public class Item {
     public decimal Weight { get; set; }
     public decimal Volume { get; set; }
     public decimal ConsumerFee { get; set; }
+
+    public IList<ItemStock> ItemStocks { get; set; }
 }
