@@ -607,7 +607,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
 
                 await db.SaveChangesAsync();
-                return Ok();
+                return Ok(true);
             }
             catch (Exception)
             {

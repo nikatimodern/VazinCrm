@@ -246,7 +246,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (set.AccountancyRequired == true)
             {
                 var isAnyAcc = db.Accountancies.Any(f => f.pfid == id && f.AccType == AcEnum.واریزی);
-                if (!isAnyAcc) return StatusCode(201, "برای این پیش فاکتور هنوز پرداختی ثبت نشده است!");
+                if (!isAnyAcc) return BadRequest("برای این پیش فاکتور هنوز پرداختی ثبت نشده است!");
             }
 
             var accS = await db.Accountancies.ForPreFactor(pf.Id).Where(acc => acc.Status != AccStatusEnum.تایید_شده).ToListAsync();
@@ -325,7 +325,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var oldPf = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
                 var pf = await db.PreFactors.Include(f => f.CustomerEntity).FirstOrDefaultAsync(f => f.Id == model.Id);
 
-                if (pf == null) return StatusCode(201, "خطا! پیش فاکتور یافت نشد.");
+                if (pf == null) return NotFound("خطا! پیش فاکتور یافت نشد.");
 
                 pf.CommentText = string.IsNullOrWhiteSpace(pf.CommentText)
                     ? model.Description?.Trim()
@@ -607,7 +607,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 Url = pf.CustomerId != null ? $"/Customer/CustomerProfile?Id={pf.CustomerId}" : "/Deal/Index",
                 Tag = "pf" + pf.SerialNumber
             });
-            return Ok();
+            return Ok(true);
         }
 
         [Authorize]
@@ -681,10 +681,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 });
                 return Ok();
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Console.WriteLine(e);
-                throw;
+                return BadRequest();
             }
         }
 
@@ -726,7 +725,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> AcceptFinancial(Guid id)
         {
-            if (id == Guid.Empty) return null;
+            if (id == Guid.Empty) return BadRequest();
 
             var user = await userManager.GetUserAsync(HttpContext.User);
             var oldPf = await db.PreFactors.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
@@ -734,7 +733,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             var hasNotAcceptedAcc = await db.Accountancies.ForPreFactor(id).AnyAsync(f => f.Status != AccStatusEnum.تایید_شده);
             if (hasNotAcceptedAcc)
-                return StatusCode(201, "ابتدا واریزی های این پیش فاکتور را تایید نمایید");
+                return BadRequest("ابتدا واریزی های این پیش فاکتور را تایید نمایید");
 
 
             pf.AcceptedFinancial = true;
@@ -1728,7 +1727,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 && a.Vosoled == false
             );
 
-            return hasAnyEtebari ? StatusCode(201) : Ok();
+            return Ok(hasAnyEtebari);
         }
 
         private async Task CheckPayment(Guid preFactor)
@@ -2948,7 +2947,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await db.SaveChangesAsync();
 
             //var updatedPreFactor = await db.PreFactors.Include(f => f.PreFactorItems).FirstOrDefaultAsync(f => f.Id == preFactorId);
-            return Ok();
+            return Ok(true);
         }
 
 
@@ -3122,17 +3121,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         /* ------------------------------------------------ sendToExternalSoftware ------------------------------------------------ */
 
+        private static readonly Guid Sepidar1SoftwareId = Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138");
+        private static readonly Guid Sepidar2SoftwareId = Guid.Parse("d6c3e8a7-1435-47d5-0489-08df26c5e2ca");
+
         private SepidarService GetSepidarService(Guid softwareId)
         {
-            if (softwareId == Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138"))
-            {
+            if (softwareId == Sepidar1SoftwareId)
                 return sepidar1Service;
-            }
 
-            if (softwareId == Guid.Parse("d6c3e8a7-1435-47d5-0489-08df26c5e2ca"))
-            {
+            if (softwareId == Sepidar2SoftwareId)
                 return sepidar2Service;
-            }
 
             return null;
         }
@@ -3211,7 +3209,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
 
                 var sepidarService = GetSepidarService(softwareId);
-
                 if (sepidarService == null)
                 {
                     return BadRequest("شناسه نرم‌افزار نامعتبر است.");

@@ -125,12 +125,13 @@ const upPfactor = async (id, type) => {
     showPfDescriptionItems();
     ModalToggle("#PreFactor");
 };
-const getPreFactor = async (id) => {
+
+async function getPreFactor(id) {
     return await sendApiRequest({
         url: "/Factor/GetPFactor",
         params: { id },
     });
-};
+}
 
 const cancelPreFactor = () => {
     ModalToggle("#PreFactor", "hide");
@@ -1046,76 +1047,58 @@ const cancelAttachment = () => {
 const regUtamin = async (pfId, type) => {
     if (!await mySer.CheckValidForm(pfId)) return;
     
-    try {
-        FLshowLoading();
-        const el = document.getElementById("S_" + pfId);
-        const res = await axios(`/Factor/UtaminReg?pfId=${pfId}&usId=${el.value}`);
-        if (res.status === 200) {
+    const el = document.getElementById("S_" + pfId);
+    
+    await sendApiRequest({
+        url: "/Factor/UtaminReg",
+        params: { pfId, usId: el.value },
+        onSuccess: async () => {
             if (type === 1) {
                 await getAllPreFactor();
             } else if (type === 4) {
                 await refreshDealPreFactors();
             }
-            
-            FLshowLoading(false);
-            // showSmsSendingToast();
-            //toastifySuccess("به مسئول تامین واگذار شد");
-        }
-    } catch (err) {
-        console.log(err);
-        toastifyError("خطای سرور");
-        //setTimeout(async () => await regUtamin(id), 3000);
-    } finally {
-        FLshowLoading(false);
-    }
+        },
+    });
 };
 
 const resendRegUtamin = async (pfId, userTaminId, type) => {
-    try {
-        FLshowLoading();
-        const res = await axios(`/Factor/ResendRegUtamin?pfId=${pfId}&usId=${userTaminId}`);
-        if (res.status === 200) {
+    await sendApiRequest({
+        url: "/Factor/ResendRegUtamin",
+        params: { pfId, usId: userTaminId },
+        onSuccess: async () => {
             if (type === 1) {
                 await getAllPreFactor();
             } else if (type === 4) {
                 await refreshDealPreFactors();
             }
-            //showSmsSendingToast();
-            // toastifyInfo("پیامک در صف ارسال قرار گرفت");
-            //toastifySuccess("ارسال مجدد انجام شد");
-        }
-    } catch (err) {
-        console.log(err);
-        //setTimeout(async () => await resendRegUtamin(pfId, userTaminId), 3000);
-    } finally {
-        FLshowLoading(false);
-    }
+        },
+    });
 };
 
 let smsSendedPfId;
 let typeSubmitSmsSendPf;
 const showMobileModal = async (id, type) => {
     typeSubmitSmsSendPf = type;
-    try {
-        ModalToggle("MobileModal");
-        smsSendedPfId = id;
-        const res = await axios(`/factor/GetCustomerPhone/${id}`);
-        if (res.status === 200) {
+    smsSendedPfId = id;
+    
+    ModalToggle("MobileModal");
+    
+    await sendApiRequest({
+        url: "/Factor/GetCustomerPhone",
+        params: { id },
+        onSuccess: async (res) => {
             document.getElementById("mobileid").value = res.data;
-        }
-        
-    } catch (err) {
-        console.log(err);
-        setTimeout(async () => await showMobileModal(id, type), 3000);
-    }
+        },
+    });
 };
 
 const SendToCustomer = async () => {
-    try {
-        FLshowLoading();
-        const toNumber = document.getElementById("mobileid").value;
-        const res = await axios(`/Factor/SendToCustomer?id=${smsSendedPfId}&toNumber=${toNumber}`);
-        if (res.status === 200) {
+    const toNumber = document.getElementById("mobileid").value;
+    await sendApiRequest({
+        url: "/Factor/SendToCustomer",
+        params: { id: smsSendedPfId, toNumber },
+        onSuccess: async () => {
             if (typeSubmitSmsSendPf === 1) {
                 await getAllPreFactor();
             } else if (typeSubmitSmsSendPf === 3) {
@@ -1124,42 +1107,22 @@ const SendToCustomer = async () => {
                 await refreshDealPreFactors();
             }
             
-            // showSmsSendingToast();
-            //toastifySuccess("ارسال انجام شد");
-            $("#MobileModal").modal("toggle");
-        }
-    } catch (err) {
-        console.log(err);
-        toastifyError("خطای سرور");
-        /*CounterSmsSend = CounterSmsSend + 1;
-        if (CounterSmsSend < 3) {
-            toastifyError("ارسال با خطا روبرو شد");
-            setTimeout(async () => await SendToCustomer(), 3000);
-        } else {
-            CounterSmsSend = 0;
-            document.getElementById("FLshowLoading").style.display = "none";
-            $("#MobileModal").modal("toggle");
-            if (typeSubmitSmsSendPf === 1) {
-                await getAllPreFactor();
-            } else if (typeSubmitSmsSendPf === 4) {
-                await refreshDealPreFactors();
-            }
-            Swal.fire({
-                title: "خطا!", text: "لینک تایید ارسال نشد", icon: "error", confirmButtonText: "بستن",
-            });
-            
-        }*/
-    } finally {
-        FLshowLoading(false);
-    }
+            ModalToggle("MobileModal", "hide");
+        },
+    });
 };
 
 
 let deliveredPfId;
 let deliveredType;
 const getUndeliveredOrderHeads = async () => {
-    const res = await axios(`/Order/GetUndeliveredOrderHeads?pfId=${deliveredPfId}`);
-    const data = res.data.trim();
+    const result = await sendApiRequest({
+        url: "/Order/GetUndeliveredOrderHeads",
+        params: { pfId: deliveredPfId },
+    });
+    if (result == null) return;
+    
+    const data = result.trim();
     document.getElementById("UndeliveredOrderHeads").innerHTML = data;
     const deliveredOkBtn = document.getElementById("UndeliveredOrderHeadsModalOkBtn");
     if (data.includes("empty-msg")) {
@@ -1174,9 +1137,9 @@ const getUndeliveredOrderHeads = async () => {
 const delivered = async (id, type) => {
     deliveredPfId = id;
     deliveredType = type;
-    FLshowLoading();
+    
     const hasUndelivered = await getUndeliveredOrderHeads();
-    FLshowLoading(false);
+    
     if (hasUndelivered) {
         ModalToggle("UndeliveredOrderHeadsModal", "show");
     } else {
@@ -1247,6 +1210,28 @@ const Backward = async (id, type) => {
         },
     });
 };
+
+async function rejectPreFactor(id, type) { // رد تایید
+    const urlMap = {
+        12: `/Factor/RejectFinancial/${id}`,
+        13: `/Factor/RejectTaminExpert/${id}`,
+    };
+    
+    await sendApiRequest({
+        url: urlMap[type],
+        successMsg: "پیش‌فاکتور رد تایید شد و در انتظار تایید قرار گرفت",
+        onSuccess: async () => {
+            switch (type) {
+                case 12:
+                    await GetPreFactorFinancialExpert();
+                    break;
+                case 13:
+                    await GetPreFactorTaminExpert();
+                    break;
+            }
+        },
+    });
+}
 
 
 const showModalDeliverItem = async (pfId, pfItemId) => {
@@ -1515,7 +1500,7 @@ function exSoftwarePreFactorRenderSaleType() {
                     نوع فروش
                 </label>
 
-                <select id="externalMappingSaleTypeSelect">
+                <select id="externalMappingSaleTypeSelect" class="show-dropdown-arrow">
                     ${(state.software.saleTypes ?? []).map(item => `
                         <option value="${escapeHtml(item.saleTypeId)}" ${String(item.saleTypeId) === String(state.mappings.saleTypeId ?? "2") ? "selected" : ""}>
                             ${escapeHtml(item.title)}
@@ -1616,7 +1601,7 @@ function exSoftwarePreFactorRenderCustomer() {
                     مشتری معادل در نرم‌افزار مالی
                 </label>
 
-                <select id="externalMappingCustomerSelect">
+                <select id="externalMappingCustomerSelect" class="show-dropdown-arrow">
                     <option value="">جستجو و انتخاب مشتری</option>
 
                     ${(software.customers ?? []).map(customer => `
@@ -1738,7 +1723,7 @@ function exSoftwarePreFactorRenderItems() {
                     <div>
                         <label class="form-label mt-2 mb-0" for="externalMappingItem_${item.preFactorItemId}">کالای معادل در نرم‌افزار مالی</label>
     
-                        <select class="external-mapping-item-select" id="externalMappingItem_${item.preFactorItemId}" data-crm-item-id="${escapeHtml(item.preFactorItemId)}">
+                        <select class="external-mapping-item-select show-dropdown-arrow" id="externalMappingItem_${item.preFactorItemId}" data-crm-item-id="${escapeHtml(item.preFactorItemId)}">
                             <option value="">جستجو و انتخاب کالا</option>
     
                             ${(software.sepidarItems ?? []).map(product => `
@@ -1884,7 +1869,7 @@ function exSoftwarePreFactorRenderStock() {
                             انبار
                         </label>
     
-                        <select class="external-mapping-stock-select" id="externalMappingStock_${item.preFactorItemId}" data-crm-item-id="${escapeHtml(item.preFactorItemId)}">
+                        <select class="external-mapping-stock-select show-dropdown-arrow" id="externalMappingStock_${item.preFactorItemId}" data-crm-item-id="${escapeHtml(item.preFactorItemId)}">
                             <option value="">جستجو و انتخاب انبار</option>
                             ${(software.stocks ?? []).map(stock => `
                                 <option value="${escapeHtml(stock.id)}" ${String(stock.id) === String(mapping?.externalStockId ?? "") ? "selected" : ""}>

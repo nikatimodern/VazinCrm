@@ -177,13 +177,17 @@ function closeNotification() {
 
 /////////////////////////////
 
+const getAllProduct = async (searchValue = "", from) => {
+    return await sendApiRequest({
+        url: "/Amount/ListProduct",
+        params: { searchValue, from },
+    });
+};
 
 const getAndSetAllProduct = async (from, searchValue = "") => {
-    FLshowLoading();
     const AllProduct = await getAllProduct(searchValue, from);
     const containerId = from === "amountIndex" ? "ListProductId" : "ListAmountBodyId";
     document.getElementById(containerId).innerHTML = AllProduct;
-    FLshowLoading(false);
 };
 
 

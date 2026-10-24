@@ -214,14 +214,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [HttpGet]
-        public async Task<IActionResult> GetAllSystemWarnings(bool isRefresh = false)
-        {
-            var warnings = await genService.GetAllWarnings(User, isRefresh);
-
-            return Ok(warnings);
-        }
-
-        [HttpGet]
         public async Task<IActionResult> GetEntityLogSystem(string entityName, string entityId)
         {
             try
@@ -238,6 +230,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+
+        /* ----------------------------------------------- System Warnings ----------------------------------------------- */
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllSystemWarnings(bool isRefresh = false)
+        {
+            var warnings = await genService.GetAllWarnings(User, isRefresh);
+
+            return Ok(warnings);
+        }
 
         [HttpGet]
         public async Task<IActionResult> DeleteSystemWarning(Guid id)
@@ -264,6 +266,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+
+        /* ----------------------------------------------- External Softwares ----------------------------------------------- */
 
         [HttpPost]
         public async Task<IActionResult> GetAllExternalSoftware([FromBody] ExternalSoftwareRequestDto request)
@@ -311,6 +315,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     x.MapType == mapType)
                 .ToListAsync();
 
+            if (mappings.Count == 0) return;
 
             var hasChanges = false;
             foreach (var mapping in mappings)

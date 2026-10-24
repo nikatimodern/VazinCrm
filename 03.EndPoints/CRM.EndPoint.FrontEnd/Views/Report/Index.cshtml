@@ -149,6 +149,7 @@
 
         async function initReportHeader() {
             const baseItem = await getBaseItemsReport();
+            
             createOption("resultCallFilter", baseItem.resultCall, true, "همه");
             createOption("finalResultCallFilter", baseItem.finalResultCall, true, "همه");
             createOption("reasonCancelFilter", baseItem.reasonCancel, true, "همه");

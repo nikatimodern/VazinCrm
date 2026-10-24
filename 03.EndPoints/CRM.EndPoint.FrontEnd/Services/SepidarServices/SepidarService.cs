@@ -26,7 +26,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CRM.EndPoint.FrontEnd.Services.SepidarServices;
 
-public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db) {
+public class SepidarService(SepidarContextDbBase sepidarContext) {
     public async Task<Invoice> GetInvoiceAsync(int? invoiceId)
     {
         return await sepidarContext.vwInvoice
@@ -510,8 +510,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
         "SG.Accounting.VoucherManagement.Common, " +
         "Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
 
-    private async Task<(string, string)> AddVoucherAsync2(Cash cash, int tafsiliId, int costCenterId,
-        CancellationToken ct = default)
+    private async Task<(string, string)> AddVoucherAsync2(Cash cash, int tafsiliId, int costCenterId, CancellationToken ct = default)
     {
         await using var trans = await sepidarContext.Database.BeginTransactionAsync(ct);
 
@@ -633,8 +632,8 @@ public class SepidarService(SepidarContextDbBase sepidarContext, CRMContextDb db
             // =========================================================
             // Row 2 - بستانکار: حساب بانکی
             // =========================================================
-//                const int bankAccountSlRef = 718; // تفاوت بین دو فانکشن مشترک
-            var bankAccountSlRef = await GetAccountIdByMoeinCodeAsync("1002", ct);
+            
+            var bankAccountSlRef = await GetAccountIdByMoeinCodeAsync("1002", ct); // تفاوت بین دو فانکشن مشترک
             var creditItem = new VoucherItem {
                 VoucherItemId = firstVoucherItemId + (cash.Fee > 0 ? 2 : 1),
                 VoucherRef = voucher.VoucherId,
