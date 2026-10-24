@@ -297,7 +297,7 @@ namespace CRM.EndPoint.FrontEnd {
 
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{controller=Account}/{action=OtpLogin}/{id?}"
+                    pattern: "{controller=Account}/{action=Login}/{id?}"
                 );
                 endpoints.MapHub<ChatHub>("/ChatHub");
                 endpoints.MapHub<TaskHub>("/TaskHub");
