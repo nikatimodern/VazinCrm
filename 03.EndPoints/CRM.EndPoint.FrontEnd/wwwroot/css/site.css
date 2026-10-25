@@ -3634,12 +3634,12 @@ user-select: none;
 }
 
 
-.buttonBlue:hover {
+.buttonBlue2:hover {
 	background-color: #1f4e82;
 }
 
 
-.buttonBlue:active {
+.buttonBlue2:active {
 	background-color: #1f4e82;
 }
 
