@@ -1,4 +1,3 @@
-using CRM.Core.Domain.Sepidar.Parties;
 using CRM.Core.Domain.Sepidar.Parties.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

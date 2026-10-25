@@ -3,21 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Cashes.Entities;
-using CRM.Core.Domain.ExternalSoftwares.Entites;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Sepidar.Banks.Entites;
 using CRM.Core.Domain.Sepidar.DLs.Entites;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
-using CRM.Core.Domain.Sepidar.Items;
 using CRM.Core.Domain.Sepidar.Items.Entities;
-using CRM.Core.Domain.Sepidar.Parties;
 using CRM.Core.Domain.Sepidar.Payments.Entites;
 using CRM.Core.Domain.Sepidar.Quotations.Entites;
-using CRM.Core.Domain.Sepidar.SaleTypes;
 using CRM.Core.Domain.Sepidar.SaleTypes.Entities;
-using CRM.Core.Domain.Sepidar.Stocks;
 using CRM.Core.Domain.Sepidar.Units.Entities;
 using CRM.Core.Domain.Sepidar.Vouchers.Entites;
 using CRM.EndPoint.FrontEnd.Models;
@@ -271,15 +265,15 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         await using var command = connection.CreateCommand();
 
         command.CommandText = @"
-                DECLARE @Id INT;
+            DECLARE @Id INT;
 
-                EXEC FMK.spGetNextId
-                    @TableName = @TableName,
-                    @Id = @Id OUTPUT,
-                    @IncValue = @IncValue;
+            EXEC FMK.spGetNextId
+                @TableName = @TableName,
+                @Id = @Id OUTPUT,
+                @IncValue = @IncValue;
 
-                SELECT @Id;
-            ";
+            SELECT @Id;
+        ";
 
         var tableParameter = command.CreateParameter();
         tableParameter.ParameterName = "@TableName";
@@ -430,6 +424,11 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             await trans.CommitAsync(ct);
 
             return (nameof(PaymentHeader), paymentHeader.PaymentHeaderId.ToString());
+        }
+        catch (DbUpdateException)
+        {
+            await trans.RollbackAsync(ct);
+            throw new DbUpdateException("ذخیره اطلاعات در دیتابیس با خطا مواجه شد.");
         }
         catch (Exception e)
         {
@@ -710,6 +709,11 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             await sepidarContext.SaveChangesAsync(ct);
             await trans.CommitAsync(ct);
             return (nameof(Voucher), voucher.VoucherId.ToString());
+        }
+        catch (DbUpdateException)
+        {
+            await trans.RollbackAsync(ct);
+            throw new DbUpdateException("ذخیره اطلاعات در دیتابیس با خطا مواجه شد.");
         }
         catch (Exception e)
         {
@@ -1084,6 +1088,14 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             .ToListAsync(ct);
     }
 
+    private async Task<Unit> GetSepidarUnitByIdAsync(int id, CancellationToken ct = default)
+    {
+        return await sepidarContext.Units
+            .AsNoTracking()
+            .Where(x => x.UnitID == id)
+            .SingleOrDefaultAsync(ct);
+    }
+
 
     public async Task<List<SaleType>> GetSaleTypes(CancellationToken ct = default)
     {
@@ -1098,7 +1110,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             .ToListAsync(ct);
     }
 
-    public async Task<SaleType> GetSaleTypeByIdAsync(int id, CancellationToken ct = default)
+    private async Task<SaleType> GetSaleTypeByIdAsync(int id, CancellationToken ct = default)
     {
         return await sepidarContext.SaleTypes
             .AsNoTracking()
@@ -1120,6 +1132,22 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 Id = x.StockID,
                 Code = x.Code,
                 Title = TextService.NormalizePersianText(x.Title),
+            }).ToListAsync(ct);
+    }
+
+    public async Task<List<SepidarStockItemDto>> GetStocksByItemIds(List<int> refIds, CancellationToken ct = default)
+    {
+        return await sepidarContext.ItemStocks
+            .AsNoTracking()
+            .Where(x => refIds.Contains(x.ItemRef) && x.Stock.IsActive)
+            .GroupBy(x => x.ItemRef)
+            .Select(g => new SepidarStockItemDto {
+                ItemRef = g.Key,
+                Stocks = g.Select(x => new SepidarStockDto {
+                    Id = x.Stock.StockID,
+                    Code = x.Stock.Code,
+                    Title = TextService.NormalizePersianText(x.Stock.Title),
+                }).Distinct().ToList()
             }).ToListAsync(ct);
     }
 
@@ -1187,7 +1215,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             SaleTypeRef = saleTypeId
         };
 
-        var quotationId = await CreateQuotationAsync(request, ct);
+        var quotationId = await AddQuotationAsync(request, ct);
 
         return (nameof(Quotation), quotationId.ToString());
     }
@@ -1203,7 +1231,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             throw new InvalidOperationException($"شماره پیش‌فاکتور {serialNumber} قبلاً در نرم‌افزار مالی ثبت شده است.");
     }
 
-    private async Task<int> CreateQuotationAsync(SepidarQuotationRequest request, CancellationToken ct = default)
+    private async Task<int> AddQuotationAsync(SepidarQuotationRequest request, CancellationToken ct = default)
     {
         if (request.Items == null || request.Items.Count == 0)
             throw new InvalidOperationException("پیش‌فاکتور باید حداقل یک ردیف کالا داشته باشد.");
@@ -1281,7 +1309,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             };
 
 
-            quotation.QuotationItems = await CreateQuotationItemsAsync(quotationId, request.Items, ct);
+            quotation.QuotationItems = await GenerateQuotationItemsAsync(quotationId, request.Items, ct);
 
             sepidarContext.Quotations.Add(quotation);
 
@@ -1302,7 +1330,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         }
     }
 
-    private async Task<List<QuotationItem>> CreateQuotationItemsAsync(int quotationId, List<SepidarQuotationItemRequest> items,
+    private async Task<List<QuotationItem>> GenerateQuotationItemsAsync(int quotationId, List<SepidarQuotationItemRequest> items,
         CancellationToken ct = default)
     {
         if (items == null || items.Count == 0)
@@ -1413,11 +1441,121 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         };
     }
 
+
+    //--------------------------------------------------------- Item ---------------------------------------------------------
+
     public async Task SendItemToSepidar(ExternalSoftwareAddItemRequest request, CancellationToken ct = default)
     {
-        var item = new Item {
-            Title = request.itemTitle,
-            UnitRef = request.itemUnit
-        };
+        // unit validation
+        var unit = await GetSepidarUnitByIdAsync(request.ItemUnit, ct);
+        if (unit == null)
+            throw new InvalidOperationException("واحد انتخاب‌شده در نرم‌افزار مالی پیدا نشد.");
+
+        // code validation
+        await CheckItemCodeAsync(request.ItemCode, ct);
+
+
+        // stocks validation
+        var stocks = await GetStocks(ct);
+
+        var selectedStockIds = request.StockIds.ToHashSet();
+        var validStockIds = stocks.Where(x => request.StockIds.Contains(x.Id)).Select(x => x.Id).ToHashSet();
+
+        if (validStockIds.Count != selectedStockIds.Count)
+            throw new InvalidOperationException("یک یا چند انبار انتخاب‌شده در نرم‌افزار مالی پیدا نشد.");
+
+        await AddItamAsync(request, ct);
+    }
+
+    private async Task CheckItemCodeAsync(string code, CancellationToken ct = default)
+    {
+        var codeExists = await sepidarContext.Items
+            .AsNoTracking()
+            .Where(x => x.Code == code)
+            .AnyAsync(ct);
+
+        if (codeExists)
+            throw new InvalidOperationException($"کد محصول {code} قبلاً در نرم‌افزار مالی ثبت شده است.");
+    }
+
+    private async Task AddItamAsync(ExternalSoftwareAddItemRequest request, CancellationToken ct)
+    {
+        await using var trans = await sepidarContext.Database.BeginTransactionAsync(ct);
+
+        try
+        {
+            var itemId = await GetNextIdAsync("INV.Item", ct: ct);
+
+            var now = DateTime.Now;
+
+            var item = new Item {
+                ItemID = itemId,
+                Type = 1, // کالا: 1 | خدمت: 2 | کالای دارایی: 3
+                Code = request.ItemCode,
+                Title = request.ItemTitle,
+                Title_En = request.ItemTitle,
+                UnitRef = request.ItemUnit,
+                DefaultStockRef = null, // فعلا
+                Creator = 1,
+                CreationDate = now,
+                LastModifier = 1,
+                LastModificationDate = now,
+                Version = 0,
+                IsActive = true,
+                TaxRate = request.ItemTaxRate!.Value,
+            };
+
+            item.ItemStocks = await GenerateItemStocks(request.StockIds, ct);
+
+
+            sepidarContext.Items.Add(item);
+            await sepidarContext.SaveChangesAsync(ct);
+            await trans.CommitAsync(ct);
+        }
+        catch (DbUpdateException)
+        {
+            await trans.RollbackAsync(ct);
+            throw new DbUpdateException("ذخیره اطلاعات در دیتابیس با خطا مواجه شد.");
+        }
+        catch (Exception e)
+        {
+            await trans.RollbackAsync(ct);
+            Console.WriteLine(e);
+            throw;
+        }
+    }
+
+    private async Task<List<ItemStock>> GenerateItemStocks(List<int> stockIds, CancellationToken ct)
+    {
+        var itemStockCount = stockIds.Count;
+        var lastItemStockId = await GetNextIdAsync("INV.ItemStock", itemStockCount, ct);
+        var firstItemStockId = lastItemStockId - itemStockCount + 1;
+
+        var itemStocks = new List<ItemStock>();
+        for (var index = 0; index < itemStockCount; index++)
+        {
+            var stockId = stockIds[index];
+
+            itemStocks.Add(new ItemStock {
+                ItemStockID = firstItemStockId + index,
+                StockRef = stockId,
+                Version = 1
+            });
+        }
+
+        return itemStocks;
+    }
+
+
+    public async Task<string> GetLastItemCodeAsync(CancellationToken ct = default)
+    {
+        var lastCode = await sepidarContext.Items
+            .AsNoTracking()
+            .OrderByDescending(x => x.CreationDate)
+            .Select(x => x.Code)
+            .FirstOrDefaultAsync(cancellationToken: ct);
+
+
+        return lastCode;
     }
 }

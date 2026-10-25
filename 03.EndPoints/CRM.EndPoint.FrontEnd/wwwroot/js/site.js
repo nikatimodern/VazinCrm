@@ -382,7 +382,8 @@ class ModalSelector {
      * @returns {void}
      */
     updateSubmitButton() {
-        this.submitButton.classList.toggle("d-none", this.tempSelectedIds.length === 0);
+        // this.submitButton.classList.toggle("d-none", this.tempSelectedIds.length === 0);
+        this.submitButton.disabled = this.tempSelectedIds.length === 0;
     }
     
     

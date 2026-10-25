@@ -1656,10 +1656,10 @@ async function exSoftwarePreFactorConfirmCustomer() {
    Items
 ------------------------------------------------------- */
 
-async function exSoftwarePreFactorLoadItems() {
+async function exSoftwarePreFactorLoadItems(reload = false) {
     const state = externalSoftwareProcess;
     
-    if (state.preFactor?.items?.length && state.software?.sepidarItems?.length) {
+    if (!reload && state.preFactor?.items?.length && state.software?.sepidarItems?.length) {
         state.step = "items";
         exSoftwarePreFactorRenderItems();
         return;
@@ -1792,7 +1792,7 @@ async function exSoftwarePreFactorConfirmItems() {
 async function exSoftwarePreFactorLoadStock() {
     const state = externalSoftwareProcess;
     
-    if (state.software?.stocks?.length) {
+    if (state.software?.stocksByItem?.length) {
         state.step = "stock";
         exSoftwarePreFactorRenderStock();
         return;
@@ -1804,6 +1804,7 @@ async function exSoftwarePreFactorLoadStock() {
         method: "POST",
         successMsg: null,
         data: {
+            itemIds: Object.values(state.mappings.items).map(item => item.externalItemId),
             preFactorId: state.preFactorId,
             externalSoftwareId: state.software.externalSoftwareId,
         },
@@ -1840,6 +1841,8 @@ function exSoftwarePreFactorRenderStock() {
             const mapping = state.mappings.items[String(item.preFactorItemId)];
             const externalProduct = (software.sepidarItems ?? []).find(product => String(product.id) === String(mapping?.externalItemId));
             
+            const itemStocks = (software.stocksByItem ?? []).find(x => String(x.itemRef) === String(mapping?.externalItemId))?.stocks ?? [];
+            
             return `
                     <div class="external-mapping-entity external-item-mapping-row">
                         <div class="d-flex gap-2 align-items-baseline">
@@ -1868,7 +1871,7 @@ function exSoftwarePreFactorRenderStock() {
     
                         <select class="external-mapping-stock-select show-dropdown-arrow" id="externalMappingStock_${item.preFactorItemId}" data-crm-item-id="${escapeHtml(item.preFactorItemId)}">
                             <option value="">جستجو و انتخاب انبار</option>
-                            ${(software.stocks ?? []).map(stock => `
+                            ${itemStocks.map(stock => `
                                 <option value="${escapeHtml(stock.id)}" ${String(stock.id) === String(mapping?.externalStockId ?? "") ? "selected" : ""}>
                                     ${escapeHtml(stock.code)} - ${escapeHtml(stock.title)}
                                 </option>
@@ -1964,7 +1967,10 @@ function exSoftwarePreFactorRenderPreview(data) {
     const items = (preFactor.items ?? []).map(item => {
         const mapping = mappings.items[String(item.preFactorItemId)];
         const externalItem = (software.sepidarItems ?? []).find(x => String(x.id) === String(mapping?.externalItemId));
-        const externalStock = (software.stocks ?? []).find(x => String(x.id) === String(mapping?.externalStockId));
+        
+        const itemStocks = (software.stocksByItem ?? []).find(x => String(x.itemRef) === String(mapping?.externalItemId))?.stocks ?? [];
+        const externalStock = itemStocks.find(x => String(x.id) === String(mapping?.externalStockId));
+        
         
         return {
             ...item,
@@ -2254,7 +2260,7 @@ backExternalMappingBtn?.addEventListener("click", () => {
 
 const addItemInSepidarModal = document.getElementById("addItemInSepidarModal");
 async function showAddItemInSepidarModal() {
-    await initSepidarUnitsOp();
+    await Promise.all([initSepidarUnitsOp(), initSepidarLastItemCode()]);
     
     ModalToggle(addItemInSepidarModal);
 }
@@ -2288,6 +2294,23 @@ const initSepidarUnitsOp = async () => {
         placeholder: "جستجو و انتخاب واحد",
         maxItems: 1,
         selectOnTab: true,
+    });
+};
+
+const initSepidarLastItemCode = async () => {
+    const state = externalSoftwareProcess;
+    
+    await sendApiRequest({
+        url: "/Factor/GetLastSepidarItemCode",
+        method: "POST",
+        successMsg: null,
+        data: {
+            externalSoftwareIds: [state.software.externalSoftwareId],
+        },
+        onSuccess: async (res) => {
+            console.log(res);
+            addItemInSepidarModal.querySelector("#lastSepidarItemCode").innerHTML = `کد آخرین محصول: <b style="font-size: 12px">${res.data}</b>`;
+        },
     });
 };
 
@@ -2333,8 +2356,28 @@ addItemInSepidarModal.addEventListener("hidden.bs.modal", () => {
 });
 
 async function submitItemInSepidar() {
+    const state = externalSoftwareProcess;
+    
     if (!await mySer.CheckValidForm("addItemInSepidarForm")) return;
-    const model = mySer.convertFormToJSON("addItemInSepidarForm");
+    if (!sepidarStocksSelectedIds.length) return toastifyError("حداقل یک انبار باید انتخاب شود.");
+    
+    
+    const model = {
+        ...mySer.convertFormToJSON("addItemInSepidarForm"),
+        stockIds: sepidarStocksSelectedIds.map(Number),
+        externalSoftwareId: state.software.externalSoftwareId,
+    };
     
     console.log(model);
+    
+    await sendApiRequest({
+        url: "/Factor/SendItemToExternalSoftware",
+        method: "POST",
+        data: model,
+        successMsg: "ثبت محصول با موفقیت انجام شد",
+        onSuccess: async () => {
+            ModalToggle(addItemInSepidarModal, "hide");
+            await exSoftwarePreFactorLoadItems(true);
+        },
+    });
 }

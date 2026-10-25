@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Services.Carizo;
-using CRM.EndPoint.FrontEnd.Services.SepidarServices;
 using CRM.EndPoint.FrontEnd.Services.Sms;
 using Microsoft.AspNetCore.Authorization;
 

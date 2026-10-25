@@ -1,5 +1,4 @@
 using System;
-using CRM.Core.Domain.ASettings.Entities;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
 
 namespace CRM.Core.Domain.Cashes.Entities;

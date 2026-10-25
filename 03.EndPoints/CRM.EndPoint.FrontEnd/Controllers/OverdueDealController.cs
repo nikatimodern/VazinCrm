@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Deals.Enums;
-using CRM.Core.Domain.PreFactors.Enum;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.Infrastructures.Sql;

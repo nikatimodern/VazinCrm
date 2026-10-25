@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.ExternalSoftwares.Enums;
 using CRM.Framework;

@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using CRM.Core.Domain.PreFactors.Entities;
-using CRM.Core.Domain.Sepidar.Parties;
 
 namespace CRM.EndPoint.FrontEnd.Models.Sepidar;
 

@@ -1,5 +1,4 @@
 using System;
-using CRM.Framework.Domain;
 
 namespace CRM.Core.Domain.Accountancies.Entities;
 

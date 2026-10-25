@@ -33,11 +33,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.BaseItems.Enums;
-using CRM.Core.Domain.Cashes.Enums;
 using CRM.Core.Domain.Deals.Enums;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
-using CRM.Core.Domain.ExternalSoftwares.Enums;
-using CRM.Core.Domain.Sepidar.Parties;
 using CRM.Core.Domain.Sepidar.Parties.Entities;
 using CRM.Core.Domain.Sms.Enums;
 using CRM.Core.Domain.Supplies.Enums;
@@ -46,14 +43,12 @@ using CRM.EndPoint.FrontEnd.IServices.DocumentRender;
 using CRM.EndPoint.FrontEnd.IServices.PushNotification;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models.Accountancy;
-using CRM.EndPoint.FrontEnd.Models.Cash;
 using CRM.EndPoint.FrontEnd.Models.DocumentRender;
 using CRM.EndPoint.FrontEnd.Models.ExternalSoftwares;
 using CRM.EndPoint.FrontEnd.Models.PreFactors;
 using CRM.EndPoint.FrontEnd.Models.PushNotification;
 using CRM.EndPoint.FrontEnd.Models.Sepidar;
 using CRM.EndPoint.FrontEnd.Models.Sms;
-using CRM.EndPoint.FrontEnd.Models.Supply;
 using CRM.EndPoint.FrontEnd.Services.Carizo;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
@@ -3138,26 +3133,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        [HttpPost]
-        public async Task<IActionResult> PrepareExternalUnits([FromBody] SendToExternalSoftwaresDto request)
-        {
-            if (request.ExternalSoftwareIds == null || request.ExternalSoftwareIds.Count == 0)
-                return BadRequest("هیچ نرم‌افزاری انتخاب نشده است.");
-
-            var softwareId = request.ExternalSoftwareIds[0];
-
-            var sepidarService = GetSepidarService(softwareId);
-
-            if (sepidarService == null)
-            {
-                return BadRequest("شناسه نرم‌افزار نامعتبر است.");
-            }
-
-            var units = await sepidarService.GetSepidarUnitsAsync();
-
-            return Ok(units);
-        }
-
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> GetAllSepidarStocksPartial([FromBody] SendToExternalSoftwaresDto request)
@@ -3424,10 +3399,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 return BadRequest("شناسه نرم‌افزار نامعتبر است.");
             }
 
-            var stocks = await service.GetStocks();
+            var stocksByItem = await service.GetStocksByItemIds(request.ItemIds);
 
             return Ok(new {
-                stocks
+                stocksByItem
             });
         }
 
@@ -3530,6 +3505,65 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
+        /* ---------------------------------------------------- Add Item In Sepidar ---------------------------------------------------- */
+
+        [HttpPost]
+        public async Task<IActionResult> PrepareExternalUnits([FromBody] SendToExternalSoftwaresDto request)
+        {
+            try
+            {
+                if (request.ExternalSoftwareIds == null || request.ExternalSoftwareIds.Count == 0)
+                    return BadRequest("هیچ نرم‌افزاری انتخاب نشده است.");
+
+                var softwareId = request.ExternalSoftwareIds[0];
+
+                var sepidarService = GetSepidarService(softwareId);
+
+                if (sepidarService == null)
+                {
+                    return BadRequest("شناسه نرم‌افزار نامعتبر است.");
+                }
+
+                var units = await sepidarService.GetSepidarUnitsAsync();
+
+                return Ok(units);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> GetLastSepidarItemCode([FromBody] SendToExternalSoftwaresDto request)
+        {
+            try
+            {
+                if (request.ExternalSoftwareIds == null || request.ExternalSoftwareIds.Count == 0)
+                    return BadRequest("هیچ نرم‌افزاری انتخاب نشده است.");
+
+                var softwareId = request.ExternalSoftwareIds[0];
+
+                var sepidarService = GetSepidarService(softwareId);
+
+                if (sepidarService == null)
+                {
+                    return BadRequest("شناسه نرم‌افزار نامعتبر است.");
+                }
+
+                var code = await sepidarService.GetLastItemCodeAsync();
+
+                return Ok(code);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+
         [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
         [HttpPost]
         public async Task<IActionResult> SendItemToExternalSoftware([FromBody] ExternalSoftwareAddItemRequest request, CancellationToken ct)
@@ -3539,13 +3573,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             try
             {
-                if (request.itemUnit < 0)
+                if (request.ItemUnit < 0)
                     return BadRequest("واحد محصول معتبر نیست.");
 
-                if (string.IsNullOrEmpty(request.itemTitle))
+                if (string.IsNullOrEmpty(request.ItemTitle))
                     return BadRequest("عنوان محصول معتبر نیست.");
 
-                if (request.stockIds == null || request.stockIds.Count == 0)
+                if (string.IsNullOrEmpty(request.ItemCode))
+                    return BadRequest("کد محصول معتبر نیست.");
+
+                if (request.ItemTaxRate is null or < 0)
+                    return BadRequest("نرخ مالیات معتبر نیست.");
+
+                if (request.StockIds == null || request.StockIds.Count == 0)
                     return BadRequest("انباری ارسال نشده است.");
 
 
