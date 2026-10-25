@@ -682,7 +682,7 @@ async function submitNotAccept() { // رد تایید و بازگشت | عدم �
                 }
                 toastifySuccess("عدم تایید با موفقیت انجام شد");
             } else {
-                console.log(res);
+              
                 toastifyError(res.data);
             }
             FLshowLoading(false);

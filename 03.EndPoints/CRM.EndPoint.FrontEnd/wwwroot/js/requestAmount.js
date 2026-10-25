@@ -72,7 +72,7 @@ async function changeStatusReqAmount(id, status) {
 
 const ShowModalListPayment = async (id, rqNumber) => {
 
-    console.log(rqNumber)
+    
     getAllPaymentsList(id);
     ModalToggle("paymentListModalId", "show");
   
@@ -204,7 +204,7 @@ async function showSetAmountPaymentItemModal(filterIds) {
         onSuccess: (res) => {
             requestAmountListData = res.data;
 
-            console.log(res.data)
+    
 
             createSetAmountPaymentItem(false);
             ModalToggle(reqAmountPaymentModal);

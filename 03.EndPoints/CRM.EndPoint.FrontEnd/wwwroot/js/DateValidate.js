@@ -3,18 +3,7 @@
 //WebSite www.natix.ir
 
 const CheckAllDate = async (_form = null) => {
-    
-    //if (_form != null) {
-    
-    //    var inDa = Array.from(document.getElementById(_form).elements).filter(f => f.getAttribute("data-slots")=="ymd");
-    //    console.log(inDa)
-    
-    //    inDa.map((item, index) => {
-    //        console.log(item)
-    
-    //    })
-    
-    //}
+
     return new Promise(async (resolve, reject) => {
         
         var flag = true;

@@ -2438,13 +2438,6 @@ mobileDrawerOverlay?.addEventListener("click", () => {
     toggleMobileDrawer(false);
 });
 
-/*document.querySelectorAll("#mobileDrawer .has-submenu > .menu-item").forEach(el => {
-    el.addEventListener("click", () => {
-        const parent = el.closest(".has-submenu");
-        console.log(parent);
-        parent.classList.add("open");
-    });
-});*/
 
 
 function sortableMobileMenu() {
