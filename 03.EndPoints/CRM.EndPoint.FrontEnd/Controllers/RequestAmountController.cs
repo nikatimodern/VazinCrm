@@ -29,7 +29,8 @@ using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
-public class RequestAmountController : Controller {
+public class RequestAmountController : Controller
+{
     private readonly UserManager<AppUser> userManager;
     private readonly FileSaver fileSaver;
     private readonly DateTimeServices dtService;
@@ -336,7 +337,8 @@ public class RequestAmountController : Controller {
                 var totalPaid = await db.RequestAmountPayments.Where(x => x.RequestAmountId == requestAmount.Id).SumAsync(x => x.Amount);
                 if (acc == null)
                 {
-                    acc = new Accountancy {
+                    acc = new Accountancy
+                    {
                         CashierId = requestAmount.CashierId,
                         RequestAmountId = requestAmount.Id,
                         InvoiceType = InvoiceTypeEnum.تنخواه,
@@ -355,7 +357,8 @@ public class RequestAmountController : Controller {
                     };
 
                     await db.Accountancies.AddAsync(acc);
-                } else
+                }
+                else
                 {
                     acc.credit = totalPaid;
                     acc.UserModifyID = user.Id;
@@ -363,7 +366,8 @@ public class RequestAmountController : Controller {
                     acc.ModifyDate = DateTime.Now;
                     acc.ModifyDateTxt = dtService.GetDateTimePersian();
                 }
-            } else
+            }
+            else
             {
                 if (acc != null)
                 {
@@ -397,7 +401,8 @@ public class RequestAmountController : Controller {
                 //await db.SaveChangesAsync();
 
                 await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
-            } else
+            }
+            else
             {
                 var oldModel = await db.Payments.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id);
 
@@ -436,7 +441,8 @@ public class RequestAmountController : Controller {
         var requestAmounts = await db.RequestAmounts
             .AsNoTracking()
             .Where(x => requestAmountIds.Contains(x.Id))
-            .Select(x => new {
+            .Select(x => new
+            {
                 x.Id,
                 x.AcceptedAmount,
                 PaidAmount = x.RequestAmountPayments.Where(p => p.PaymentId != model.Id).Sum(p => p.Amount)
@@ -531,7 +537,8 @@ public class RequestAmountController : Controller {
 
             var query = db.Payments
                 .Where(p => p.RequestAmountPayments.Any(x => x.RequestAmountId == id))
-                .Select(p => new {
+                .Select(p => new
+                {
                     payment = p,
                     RequestPaymentAmount = p.RequestAmountPayments
                         .Where(x => x.RequestAmountId == id)
@@ -548,7 +555,8 @@ public class RequestAmountController : Controller {
             if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortColumnDirection))
             {
                 var isAscending = sortColumnDirection == "asc";
-                query = sortColumn switch {
+                query = sortColumn switch
+                {
                     "PaymentNumber" => isAscending
                         ? query.OrderBy(f => f.payment.PaymentNumber)
                         : query.OrderByDescending(f => f.payment.PaymentNumber),
@@ -570,7 +578,8 @@ public class RequestAmountController : Controller {
 
             var data = await query.ToListAsync();
 
-            return Json(new {
+            return Json(new
+            {
                 draw,
                 recordsTotal,
                 recordsFiltered = recordsTotal,
@@ -620,7 +629,8 @@ public class RequestAmountController : Controller {
                 );
             }
 
-            var filterCounts = new Dictionary<int, int> {
+            var filterCounts = new Dictionary<int, int>
+            {
                 [-1] = await baseQuery.CountAsync(),
                 [1] = await baseQuery.Where(f =>
                     f.RequestStatus == RequestStatusEnum.در_انتظار_تایید_مدیرعامل ||
@@ -631,7 +641,8 @@ public class RequestAmountController : Controller {
             };
 
 
-            var query = type switch {
+            var query = type switch
+            {
                 1 => baseQuery.Where(f =>
                     f.RequestStatus == RequestStatusEnum.در_انتظار_تایید_مدیرعامل ||
                     f.RequestStatus == RequestStatusEnum.در_انتظار_ارسال_به_مالی
@@ -648,12 +659,14 @@ public class RequestAmountController : Controller {
                 .GroupJoin(supplierFinancials,
                     ra => ra.SupplierId,
                     sf => sf.SupplierId,
-                    (ra, financials) => new {
+                    (ra, financials) => new
+                    {
                         RequestAmount = ra,
                         Financial = financials.FirstOrDefault()
                     }
                 )
-                .Select(x => new RequestAmountVModel {
+                .Select(x => new RequestAmountVModel
+                {
                     RequestAmount = x.RequestAmount,
                     SupplyFactorSerials = x.RequestAmount.RequestAmountSupplyFactor.Select(x => x.SupplyFactor.SerialNumber).ToList(),
                     OrderHeadSerials = x.RequestAmount.RequestAmountOrderHeads.Select(x => x.OrderHead.OrderNumber).ToList(),
@@ -695,7 +708,8 @@ public class RequestAmountController : Controller {
                 .Where(f => f.Id == id)
                 .Include(f => f.RequestAmountOrderHeads)
                 .Include(f => f.RequestAmountSupplyFactor)
-                .Select(ra => new RequestAmountVModel {
+                .Select(ra => new RequestAmountVModel
+                {
                     RequestAmount = ra,
                     SupplyFactorSerials = ra.RequestAmountSupplyFactor
                         .Join(db.SupplyFactors,
@@ -727,7 +741,7 @@ public class RequestAmountController : Controller {
     {
         try
         {
-            var data = await db.RequestAmounts.Include(f=>f.RequestAmountPayments).AsNoTracking()
+            var data = await db.RequestAmounts.Include(f => f.RequestAmountPayments).AsNoTracking()
                     .Where(f => model.FilterIds.Contains(f.Id))
                     .ToListAsync();
 
@@ -739,7 +753,7 @@ public class RequestAmountController : Controller {
             }
 
 
-            
+
 
 
             return Ok(data);
@@ -764,15 +778,11 @@ public class RequestAmountController : Controller {
 
 
             var dataa = await db.RequestAmounts
-    .AsNoTracking()
-    .Include(f => f.RequestAmountPayments)
-    .Where(f => f.RequestAmountPayments
-        .Any(p => p.PaymentId == paymentId))
-    .ToListAsync();
-
-
-
-
+                        .AsNoTracking()
+                        .Include(f => f.RequestAmountPayments.Where(f=>f.PaymentId==paymentId))
+                        .Where(f => f.RequestAmountPayments
+                        .Any(p => p.PaymentId == paymentId) )
+                        .ToListAsync();
 
 
             //var data = await db.RequestAmountPayments.Include(f=>f.RequestAmount)
@@ -866,7 +876,8 @@ public class RequestAmountController : Controller {
             if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortColumnDirection))
             {
                 var isAscending = sortColumnDirection == "asc";
-                query = sortColumn switch {
+                query = sortColumn switch
+                {
                     "Amount" => isAscending
                         ? query.OrderBy(f => f.Amount)
                         : query.OrderByDescending(f => f.Amount),
@@ -886,7 +897,8 @@ public class RequestAmountController : Controller {
 
             var data = await query.ToListAsync();
 
-            return Json(new {
+            return Json(new
+            {
                 draw,
                 recordsTotal,
                 recordsFiltered = recordsTotal,

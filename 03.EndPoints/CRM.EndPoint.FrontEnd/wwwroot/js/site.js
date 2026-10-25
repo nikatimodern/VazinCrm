@@ -1157,7 +1157,7 @@ class Dropdown {
 
 const dateTimePicker = (container = document) => {
     container.querySelectorAll(".sdate").forEach((datePicker) => {
-        //console.log($(datePicker).data('myPersianDatepicker'))
+
         if (!$(datePicker).data("myPersianDatepicker")) {
             const positionX = datePicker.getAttribute("data-x") || "28";
             const positionY = datePicker.getAttribute("data-y") || "0";
@@ -1206,8 +1206,7 @@ const dateTimePicker = (container = document) => {
                     },
                 },
             });
-            
-            //console.log(instance)
+
             $(datePicker).data("myPersianDatepicker", instance);
         }
     });
@@ -1291,164 +1290,6 @@ const dateTimePicker = (container = document) => {
 };
 
 
-/*const dateTimePicker = () => {
-
-    document.querySelectorAll('.sdate').forEach((datePicker) => {
-        const positionX = datePicker.getAttribute('data-x') || '28';
-        const positionY = datePicker.getAttribute('data-y') || '0';
-
-
-        $(datePicker).persianDatepicker({
-            onSelect: function (dateText) {
-                const onSelectCallback = datePicker.getAttribute('data-onSelect')
-                const onSelectId = datePicker.getAttribute('data-id');
-                if ($(this.model.inputElement).val().length > 0) {
-                    $(this.model.inputElement).removeClass("AlertReq")
-                }
-
-                if (onSelectCallback) {
-                    if (onSelectId) {
-                        window[onSelectCallback](this, onSelectId);
-                    }
-                    window[onSelectCallback](this);
-                }
-                //console.log("Selected date: " + dateText + "; input's current value: " + this.value);
-            },
-            initialValueType: 'persian',
-            position: [Number(positionX), Number(positionY)],
-            initialValue: false,
-            responsive: true,
-            observer: false,
-            format: 'YYYY/MM/DD',
-            autoClose: true,
-            "calendar": {
-                "persian": {
-                    "locale": "fa",
-                    "showHint": false,
-                    "leapYearMode": "algorithmic"
-                },
-                "gregorian": {
-                    "locale": "en",
-                    "showHint": false
-                }
-            },
-            "toolbox": {
-                "enabled": false,
-                "calendarSwitch": {
-                    "enabled": false
-                }
-            },
-
-        });
-    })
-
-    $('.sdateTime').persianDatepicker({
-        onSelect: function (dateText) {
-
-            if ($(this.model.inputElement).val().length > 0) {
-                $(this.model.inputElement).removeClass("AlertReq")
-            }
-
-            //console.log("Selected date: " + dateText + "; input's current value: " + this.value);
-        },
-        initialValueType: 'persian',
-        initialValue: false,
-        responsive: true,
-        observer: false,
-        format: 'YYYY/MM/DD, HH:mm',
-        autoClose: true,
-        "calendar": {
-            "persian": {
-                "locale": "fa",
-                "showHint": false,
-                "leapYearMode": "algorithmic"
-            },
-            "gregorian": {
-                "locale": "en",
-                "showHint": false
-            }
-        },
-        "toolbox": {
-            "enabled": false,
-            "calendarSwitch": {
-                "enabled": false
-            }
-        },
-        "timePicker": {
-            enabled: true,
-            minute: {
-                step: 5
-            },
-            second: {
-                enabled: false
-            },
-            meridiem: {
-                enabled: true
-            }
-        }
-
-    });
-
-    document.querySelectorAll('.stime').forEach((timePicker) => {
-        const positionX = timePicker.getAttribute('data-x') || '28';
-        const positionY = timePicker.getAttribute('data-y') || '0';
-
-        $(timePicker).persianDatepicker({
-            onSelect: function () {
-                const onSelectCallback = timePicker.getAttribute('data-onSelect')
-                if (onSelectCallback) {
-                    window[onSelectCallback](this);
-                }
-            },
-            onlyTimePicker: true,
-            initialValue: true,
-            initialValueType: 'persian',
-            autoClose: true,
-            position: [Number(positionX), Number(positionY)],
-            format: 'HH:mm',
-            "timePicker": {
-                "enabled": true,
-                "hour": {
-                    "enabled": true,
-                },
-                "minute": {
-                    "enabled": true,
-                },
-                "second": {
-                    "enabled": false,
-                },
-                "meridian": {
-                    "enabled": false
-                }
-            }
-        });
-    });
-
-}
-*/
-
-//function initTooltips()     {
-//    const elementsWithTitle = document.querySelectorAll('[title]');
-//    elementsWithTitle.forEach((elm) => {
-//        elm.setAttribute('data-bs-toggle', "tooltip");
-//        elm.setAttribute('data-bs-title', elm.title);
-//        elm.setAttribute('data-bs-custom-class', "customFontTooltip");
-//        elm.removeAttribute('title');
-//    });
-//}
-
-//setTimeout(() => {
-//    initTooltips();
-//},1000)
-
-//Object.defineProperty(Element.prototype, 'setInnerHTML', {
-//    set(value) {
-//        this.innerHTML = value;
-
-//        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-//        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-//    }
-//});
 
 
 function getRelativeTime(dateTimeStr) {

@@ -70,9 +70,13 @@ async function changeStatusReqAmount(id, status) {
     });
 }
 
-const ShowModalListPayment = async (id) => {
+const ShowModalListPayment = async (id, rqNumber) => {
+
+    console.log(rqNumber)
     getAllPaymentsList(id);
     ModalToggle("paymentListModalId", "show");
+  
+    document.getElementById('titlePaymentListModalId').textContent = `لیست پرداختی ها مربط به درخواست شماره ${rqNumber}`;
 };
 const initPaymentTable = () => {
     paymentTable = $("#paymentListTable").DataTable({
@@ -202,7 +206,7 @@ async function showSetAmountPaymentItemModal(filterIds) {
 
             console.log(res.data)
 
-            createSetAmountPaymentItem();
+            createSetAmountPaymentItem(false);
             ModalToggle(reqAmountPaymentModal);
         },
     });
@@ -220,12 +224,12 @@ async function showEditAmountPaymentItemModal() {
     
     requestAmountListData = data;
     
-    createSetAmountPaymentItem();
+    createSetAmountPaymentItem(true);
     ModalToggle(reqAmountPaymentModal);
 }
 
 
-function createSetAmountPaymentItem() {
+function createSetAmountPaymentItem(isEdit) {
     const container = reqAmountPaymentModal.querySelector("#setAmountPaymentForm");
     container.innerHTML = "";
     
@@ -266,7 +270,7 @@ function createSetAmountPaymentItem() {
                     </div>
                     <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto">
                         <span class="flex-shrink-0" style="color: #535353">مبلغ پرداختی: </span>
-                        <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="amount"  value="${item.paidAmount ? item.paidAmount.toLocaleString() : ""}" required>
+                        <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="amount"  value="  ${ isEdit && item.requestAmountPayments[0].amount ? item.requestAmountPayments[0].amount.toLocaleString() : ""}" required>
                     </div>
                 </div>
             </div>
