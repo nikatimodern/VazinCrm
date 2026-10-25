@@ -8,7 +8,10 @@ namespace CRM.Infrastructures.Sql.Sepidar.Quotations.Configs
     {
         public void Configure(EntityTypeBuilder<Quotation> builder)
         {
-            builder.HasKey(f => f.QuotationId);
+            builder.HasMany(f => f.QuotationItems)
+                .WithOne()
+                .HasForeignKey(f => f.QuotationRef)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

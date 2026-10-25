@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Framework.Domain;
 

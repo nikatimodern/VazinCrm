@@ -35,11 +35,9 @@ const AddFactor = async (pfId, type = 1) => {
     const baseDesFactor = await getBaseDescription(1);
     const pfData = await getPreFactor(pfId);
     
-    FLshowLoading();
-    supplyData = (await axios(`/Supply/GetSupplies?pfId=${pfId}`)).data;
+    supplyData = await getSuppliesByPfId(pfId);
     if (!supplyData?.length) {
         toastifyError("بهای تامینی ثبت نشده است!");
-        FLshowLoading(false);
         return;
     }
     

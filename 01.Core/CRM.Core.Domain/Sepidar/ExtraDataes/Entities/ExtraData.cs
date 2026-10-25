@@ -1,4 +1,4 @@
-﻿namespace CRM.Core.Domain.Sepidar.ExtraDataes
+﻿namespace CRM.Core.Domain.Sepidar.ExtraDataes.Entities
 {
     public class ExtraData
     {

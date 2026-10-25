@@ -1,0 +1,26 @@
+@model List<CRM.EndPoint.FrontEnd.Models.Sepidar.SepidarStockDto>
+
+
+@if (Model.Any()) {
+    <div class="order-table-grid" style="--order-table-col: 3">
+        <div class="order-row order-header">
+            <div class="order-cell"></div>
+            <div class="order-cell">کد انبار</div>
+            <div class="order-cell">عنوان</div>
+        </div>
+
+        @foreach (var item in Model) {
+            <label class="order-row" for="stockCheck-@item.Code">
+                <div class="order-cell">
+                    <input id="stockCheck-@item.Code" data-number="@item.Code" value="@item.Id" type="checkbox" class="form-check-input">
+                </div>
+                <div class="order-cell">@item.Code</div>
+                <div class="order-cell">@item.Title</div>
+            </label>
+        }
+    </div>
+} else {
+    <p class="empty-msg">انباری ثبت نشده است!</p>
+}
+
+

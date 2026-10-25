@@ -274,28 +274,24 @@ const GetPreFactorPartial = async (showLoading = true) => {
 };
 
 const GetSelesExpertPartial = async () => {
-    try {
-        FLshowLoading();
-        const res = await axios(`/Cartable/GetSelesExpertPartial`);
-        if (res.status === 200) {
+    await sendApiRequest({
+        url: "/Cartable/GetSelesExpertPartial",
+        onSuccess: (res) => {
             document.getElementById("CSalesExpertId").innerHTML = res.data;
             removeSalesExpertsTabsDesktop();
-            FLshowLoading(false);
-        }
-        
-    } catch (err) {
-        console.log(err);
-    }
+        },
+    });
 };
 
 const GetPreFactorSalesAdmin = async () => {
     const val = document.getElementById("SalesAdminSearchId").value.trim() ?? "";
     const type = document.querySelector("input[type='radio'][name='SalesAdminFilter']:checked").value;
     if (type === undefined) return;
-    try {
-        FLshowLoading();
-        const res = await axios(`/Cartable/GetPreFactorSalesAdmin?serVal=${val}&type=${type}`);
-        if (res.status === 200) {
+    
+    await sendApiRequest({
+        url: "/Cartable/GetPreFactorSalesAdmin",
+        params: { serVal: val, type },
+        onSuccess: (res) => {
             document.getElementById("SalesAdminPfactorContentId").innerHTML = res.data.html;
             document.getElementById("S_CountId").textContent = res.data.count;
             document.getElementById("SalesAdminFooterId").classList.toggle("d-none", !res.data.count);
@@ -308,12 +304,8 @@ const GetPreFactorSalesAdmin = async () => {
                     await GetPreFactorSalesAdmin();
                 },
             });
-            FLshowLoading(false);
-        }
-        
-    } catch (err) {
-        console.log(err);
-    }
+        },
+    });
 };
 
 
@@ -324,10 +316,11 @@ const GetPreFactorTaminExpert = async () => {
     
     setUrlParams({ sub: "TaminPrefactorTab" });
     ShowTab("#TaminPrefactorTab");
-    try {
-        FLshowLoading();
-        const res = await axios(`/Cartable/GetPreFactorTaminExpert?serVal=${val}&type=${type}`);
-        if (res.status === 200) {
+    
+    await sendApiRequest({
+        url: "/Cartable/GetPreFactorTaminExpert",
+        params: { serVal: val, type },
+        onSuccess: (res) => {
             document.getElementById("TContentId").innerHTML = res.data.html;
             document.getElementById("T_CountId").textContent = res.data.count;
             updateFilterSwitchState({
@@ -339,12 +332,8 @@ const GetPreFactorTaminExpert = async () => {
                     await GetPreFactorTaminExpert();
                 },
             });
-            FLshowLoading(false);
-        }
-        
-    } catch (err) {
-        console.log(err);
-    }
+        },
+    });
 };
 
 
@@ -355,26 +344,27 @@ const GetInvoicesTaminExpert = async () => {
     
     setUrlParams({ sub: "TaminInvoiceTab" });
     ShowTab("#TaminInvoiceTab");
-    try {
-        FLshowLoading();
-        const res = await axios(`/Accountancy/GetAllPaymentCartablePartial?serVal=${val}&type=${type}&cartable=3`);
-        const data = res.data;
-        document.getElementById("taminInvoiceContentId").innerHTML = data.html;
-        document.getElementById("taminInvoiceCount").textContent = data.count;
-        updateFilterSwitchState({
-            wrapperSelector: "#TaminInvoiceTab-pane",
-            filterData: res.data.filterCounts,
-            currentFilterValue: type,
-            searchValue: val,
-            onChange: async () => {
-                await GetInvoicesTaminExpert();
-            },
-        });
-        initPaymentPartial(56);
-        FLshowLoading(false);
-    } catch (err) {
-        console.log(err);
-    }
+    
+    
+    await sendApiRequest({
+        url: "/Accountancy/GetAllPaymentCartablePartial",
+        params: { serVal: val, type, cartable: 3 },
+        onSuccess: (res) => {
+            const data = res.data;
+            document.getElementById("taminInvoiceContentId").innerHTML = data.html;
+            document.getElementById("taminInvoiceCount").textContent = data.count;
+            updateFilterSwitchState({
+                wrapperSelector: "#TaminInvoiceTab-pane",
+                filterData: res.data.filterCounts,
+                currentFilterValue: type,
+                searchValue: val,
+                onChange: async () => {
+                    await GetInvoicesTaminExpert();
+                },
+            });
+            initPaymentPartial(56);
+        },
+    });
 };
 
 
@@ -385,10 +375,11 @@ const GetRequestManagingDirector = async () => {
     
     setUrlParams({ sub: "MDRequestAmountTab" });
     ShowTab("#MDRequestAmountTab");
-    try {
-        FLshowLoading();
-        const res = await axios(`/RequestAmount/GetAllRequestAmountsPartial?search=${val}&type=${type}`);
-        if (res.status === 200) {
+    
+    await sendApiRequest({
+        url: "/RequestAmount/GetAllRequestAmountsPartial",
+        params: { serVal: val, type },
+        onSuccess: (res) => {
             const data = res.data;
             document.getElementById("MDRequestAmountContentId").innerHTML = data.html;
             document.getElementById("MDRequestAmountCount").textContent = data.count;
@@ -401,15 +392,8 @@ const GetRequestManagingDirector = async () => {
                     await GetRequestManagingDirector();
                 },
             });
-            
-        } else if (res.status === 204) {
-            toastifyError("شما به این بخش دسترسی ندارید");
-        }
-    } catch (err) {
-        console.log(err);
-    } finally {
-        FLshowLoading(false);
-    }
+        },
+    });
 };
 
 
@@ -439,10 +423,11 @@ const GetPreFactorFinancialExpert = async () => {
     
     setUrlParams({ sub: "FinancialPrefactorTab" });
     ShowTab("#FinancialPrefactorTab");
-    try {
-        FLshowLoading();
-        const res = await axios(`/Cartable/GetPreFactorFinancialExpert?serVal=${val}&type=${type}`);
-        if (res.status === 200) {
+    
+    await sendApiRequest({
+        url: "/Cartable/GetPreFactorFinancialExpert",
+        params: { serVal: val, type },
+        onSuccess: (res) => {
             document.getElementById("FinancialExpertPfContentId").innerHTML = res.data.html || "";
             document.getElementById("FinancialExpertCount").textContent = res.data.count;
             updateFilterSwitchState({
@@ -454,11 +439,8 @@ const GetPreFactorFinancialExpert = async () => {
                     await GetPreFactorFinancialExpert();
                 },
             });
-            FLshowLoading(false);
-        }
-    } catch (err) {
-        console.log(err);
-    }
+        },
+    });
 };
 
 
@@ -469,27 +451,26 @@ const GetInvoicesFinancialExpert = async () => {
     
     setUrlParams({ sub: "FinancialInvoiceTab" });
     ShowTab("#FinancialInvoiceTab");
-    try {
-        FLshowLoading();
-        
-        const res = await axios(`/Accountancy/GetAllPaymentCartablePartial?serVal=${val}&type=${type}&cartable=7`);
-        const data = res.data;
-        document.getElementById("FinancialExpertInvoiceContentId").innerHTML = data.html;
-        document.getElementById("FinancialExpertInvoiceCount").textContent = data.count;
-        updateFilterSwitchState({
-            wrapperSelector: "#FinancialInvoiceTab-pane",
-            filterData: res.data.filterCounts,
-            currentFilterValue: type,
-            searchValue: val,
-            onChange: async () => {
-                await GetInvoicesFinancialExpert();
-            },
-        });
-        initPaymentPartial(55);
-        FLshowLoading(false);
-    } catch (err) {
-        console.log(err);
-    }
+    
+    await sendApiRequest({
+        url: "/Accountancy/GetAllPaymentCartablePartial",
+        params: { serVal: val, type, cartable: 7 },
+        onSuccess: (res) => {
+            const data = res.data;
+            document.getElementById("FinancialExpertInvoiceContentId").innerHTML = data.html;
+            document.getElementById("FinancialExpertInvoiceCount").textContent = data.count;
+            updateFilterSwitchState({
+                wrapperSelector: "#FinancialInvoiceTab-pane",
+                filterData: res.data.filterCounts,
+                currentFilterValue: type,
+                searchValue: val,
+                onChange: async () => {
+                    await GetInvoicesFinancialExpert();
+                },
+            });
+            initPaymentPartial(55);
+        },
+    });
 };
 
 const financialRequestContentElm = document.getElementById("FinancialRequestContentId");
@@ -501,26 +482,26 @@ const GetRequestFinancialExpert = async () => {
     
     setUrlParams({ sub: "FinancialRequestTab" });
     ShowTab("#FinancialRequestTab");
-    try {
-        FLshowLoading();
-        const res = await axios(`/RequestAmount/GetAllRequestAmountsPartial?search=${val}&type=${type}`);
-        const data = res.data;
-        financialRequestContentElm.innerHTML = data.html;
-        document.getElementById("FinancialRequestCount").textContent = data.count;
-        updateFilterSwitchState({
-            wrapperSelector: "#FinancialRequestTab-pane",
-            filterData: res.data.filterCounts,
-            currentFilterValue: type,
-            searchValue: val,
-            onChange: async () => {
-                await GetRequestFinancialExpert();
-            },
-        });
-        requestSelection?.restoreSelection();
-        FLshowLoading(false);
-    } catch (err) {
-        console.log(err);
-    }
+    
+    await sendApiRequest({
+        url: "/RequestAmount/GetAllRequestAmountsPartial",
+        params: { search: val, type },
+        onSuccess: (res) => {
+            const data = res.data;
+            financialRequestContentElm.innerHTML = data.html;
+            document.getElementById("FinancialRequestCount").textContent = data.count;
+            updateFilterSwitchState({
+                wrapperSelector: "#FinancialRequestTab-pane",
+                filterData: res.data.filterCounts,
+                currentFilterValue: type,
+                searchValue: val,
+                onChange: async () => {
+                    await GetRequestFinancialExpert();
+                },
+            });
+            requestSelection?.restoreSelection();
+        },
+    });
 };
 
 let dealTbl;
@@ -849,21 +830,12 @@ if (financialRequestContentElm) {
 
 
 const acceptSalesAdmin = async (id) => {
-    try {
-        FLshowLoading();
-        const res = await axios(`/Factor/AcceptSalesAdmin/${id}`);
-        if (res.status === 200) {
-            toastifySuccess("پیش فاکتور تایید شد");
-            await GetPreFactorSalesAdmin();
-            
-        } else if (res.status === 201) {
-            toastifyError(res.data);
-        }
-        FLshowLoading(false);
-    } catch (err) {
-        console.log(err);
-        setTimeout(async () => await acceptSalesAdmin(id), 3000);
-    }
+    await sendApiRequest({
+        url: "/Factor/AcceptSalesAdmin",
+        params: { id },
+        successMsg: "پیش فاکتور تایید شد",
+        onSuccess: GetPreFactorSalesAdmin,
+    });
 };
 
 const showPrefac = async (pfNumber) => {

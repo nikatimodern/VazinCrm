@@ -1,0 +1,35 @@
+<!-- Modal externalSoftwarePreFactor -->
+<div class="modal fade" id="externalSoftwarePreFactorModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="externalMappingTitle" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content external-mapping-modal">
+            <div class="modal-header">
+                <div class="external-mapping-heading">
+                    <span class="external-mapping-icon" id="externalMappingIcon">
+                        <i class="fas fa-desktop"></i>
+                    </span>
+                    <div>
+                        <h5 class="modal-title external-mapping-title" id="externalMappingTitle"></h5>
+                        <div class="external-mapping-subtitle" id="externalMappingSubtitle"></div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+            <div class="modal-body">
+                <div id="externalMappingList"></div>
+            </div>
+            <div class="modal-footer justify-content-end">
+                <button type="button" class="buttonCancel-white" id="backExternalMappingBtn">
+                    @* <i class="fas fa-arrow-right"></i> *@
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    برگشت
+                </button>
+                <button type="button" class="buttonGreen0" id="confirmExternalMappingBtn">
+                    تأیید و ادامه
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<partial name="Modals/_AddItemInSepidarModal" />

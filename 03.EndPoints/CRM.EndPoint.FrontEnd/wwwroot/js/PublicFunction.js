@@ -89,7 +89,7 @@ const getAllProductOp = async (form) => {
     if (!productCodeElement) return;
     
     if (!allProductPromise) {
-        allProductPromise = axios("/Product/GetAllProduct").then(res => res.data);
+        allProductPromise = sendApiRequest({ url: "/Product/GetAllProduct" });
     }
     
     const products = await allProductPromise;
@@ -642,32 +642,35 @@ async function showModalNotAccept(id, type) { // type: acc= 0 / pf= 12 financial
 }
 
 async function submitNotAccept() { // رد تایید و بازگشت | عدم تایید
-    try {
-        if (!notAcceptCommentElm.value.trim().length) {
-            toastifyError("دلیل عدم تایید اجباری است!");
-            return;
-        }
+    
+    if (!notAcceptCommentElm.value.trim().length) {
+        toastifyError("دلیل عدم تایید اجباری است!");
+        return;
+    }
+    
+    const userFullName = document.getElementById("profileName")?.textContent || "";
+    const model = {
+        id: idNotAccept,
+        description: `${notAcceptCommentElm.value.trim()} (${userFullName})`,
+    };
+    
+    if (typeNotAccept === 0) { // acc
+        const result = await acceptAccountancy(model.id, 3, model.description);
+        if (!result) return;
         
-        const userFullName = document.getElementById("profileName")?.textContent || "";
-        const model = {
-            id: idNotAccept,
-            description: `${notAcceptCommentElm.value.trim()} (${userFullName})`,
+    } else { // pf
+        const urlMap = {
+            12: `/Factor/NotAcceptFinancial`,
+            13: `/Factor/NotAcceptTaminExpert`,
+            14: `/Factor/NotAcceptSalesAdmin`,
         };
         
-        if (typeNotAccept === 0) { // acc
-            const result = await acceptAccountancy(model.id, 3, model.description);
-            if (!result) return;
-            
-        } else { // pf
-            FLshowLoading();
-            const urlMap = {
-                12: `/Factor/NotAcceptFinancial`,
-                13: `/Factor/NotAcceptTaminExpert`,
-                14: `/Factor/NotAcceptSalesAdmin`,
-            };
-            
-            const res = await axios.post(urlMap[typeNotAccept], model);
-            if (res.status === 200) {
+        await sendApiRequest({
+            url: urlMap[typeNotAccept],
+            method: "POST",
+            data: model,
+            successMsg: "عدم تایید با موفقیت ثبت شد",
+            onSuccess: async () => {
                 switch (typeNotAccept) {
                     case 12:
                         await GetPreFactorFinancialExpert();
@@ -680,45 +683,9 @@ async function submitNotAccept() { // رد تایید و بازگشت | عدم �
                         await GetPreFactorSalesAdmin();
                         break;
                 }
-                toastifySuccess("عدم تایید با موفقیت انجام شد");
-            } else {
-              
-                toastifyError(res.data);
-            }
-            FLshowLoading(false);
-        }
-        notAcceptCommentElm.value = "";
-        ModalToggle("#NotAcceptModal");
-    } catch (err) {
-        console.log(err);
-        setTimeout(async () => await submitNotAccept(), 3000);
+            },
+        });
     }
-}
-
-async function rejectPreFactor(id, type) { // رد تایید
-    try {
-        FLshowLoading();
-        const urlMap = {
-            12: `/Factor/RejectFinancial/${id}`,
-            13: `/Factor/RejectTaminExpert/${id}`,
-        };
-        
-        const res = await axios(urlMap[type]);
-        if (res.status === 200) {
-            switch (type) {
-                case 12:
-                    await GetPreFactorFinancialExpert();
-                    break;
-                case 13:
-                    await GetPreFactorTaminExpert();
-                    break;
-            }
-            FLshowLoading(false);
-            toastifySuccess("پیش‌فاکتور رد تایید شد و در انتظار تایید قرار گرفت", 5000);
-        }
-        
-    } catch (err) {
-        console.log(err);
-        setTimeout(async () => await rejectPreFactor(id, type), 3000);
-    }
+    notAcceptCommentElm.value = "";
+    ModalToggle("#NotAcceptModal");
 }

@@ -43,13 +43,13 @@ let taminPreFac;
 let submitSalesModalWithAcceptPf;
 const showModalSetAmount = async (pfId, withAcceptPf = true) => {
     submitSalesModalWithAcceptPf = withAcceptPf;
-    FLshowLoading();
-    taminPreFac = (await axios(`/Factor/GetPFactor?id=${pfId}`)).data;
+    
+    taminPreFac = await getPreFactor(pfId);
+    if (!taminPreFac) return;
     
     createSetAmountSalesItem();
     initSalesModal();
     
-    FLshowLoading(false);
     toggleSalesModal();
 };
 
@@ -132,34 +132,30 @@ const submitSalesModal = async () => {
 
 async function submitAmountSalesModal() {
     if (!await mySer.CheckValidForm("setAmountSalesForm")) return false;
-    try {
-        const model = [];
-        let hasChange = false;
-        for (let i = 0; i < taminPreFac.preFactorItems.length; i++) {
-            const json = mySer.convertFormToJSON(`setAmountSalesForm-${i}`);
-            const item = { ...taminPreFac.preFactorItems[i], ...json };
-            const original = taminPreFac.preFactorItems[i];
-            for (const key in json) {
-                if (json[key] !== original[key]) {
-                    hasChange = true;
-                    break;
-                }
+    
+    const model = [];
+    let hasChange = false;
+    for (let i = 0; i < taminPreFac.preFactorItems.length; i++) {
+        const json = mySer.convertFormToJSON(`setAmountSalesForm-${i}`);
+        const item = { ...taminPreFac.preFactorItems[i], ...json };
+        const original = taminPreFac.preFactorItems[i];
+        for (const key in json) {
+            if (json[key] !== original[key]) {
+                hasChange = true;
+                break;
             }
-            model.push(item);
         }
-        
-        if (!hasChange) return true;
-        
-        FLshowLoading();
-        const res = await axios.post(`/Factor/UpdatePrefactorItems`, model);
-        if (res.status === 200) {
-            FLshowLoading(false);
-            return true;
-        }
-    } catch (err) {
-        console.log(err);
-        setTimeout(async () => await submitAmountSalesModal(), 3000);
+        model.push(item);
     }
+    
+    if (!hasChange) return true;
+    
+    return await sendApiRequest({
+        url: "/Factor/UpdatePrefactorItems",
+        method: "POST",
+        successMsg: null,
+        data: model,
+    });
 }
 
 
@@ -183,16 +179,19 @@ const submitSupplyModal = async () => {
     toggleSupplyModal();
 };*/
 
+async function getSuppliesByPfId(pfId) {
+    return await sendApiRequest({
+        url: "/Supply/GetSupplies",
+        params: { pfId },
+    });
+}
 
 let hasSupplyAmountSetting;
 let hasSupplySetting;
 async function showSetSupplyModal(pfId, hasSupplyAmount = true, hasSupply = true) {
     hasSupplyAmountSetting = hasSupplyAmount;
     hasSupplySetting = hasSupply;
-    const [{ data: pFactorData }, { data: supplyData }] = await Promise.all([
-        axios(`/Factor/GetPFactor?id=${pfId}`),
-        axios(`/Supply/GetSupplies?pfId=${pfId}`),
-    ]);
+    const [pFactorData, supplyData] = await Promise.all([getPreFactor(pfId), getSuppliesByPfId(pfId)]);
     taminPreFac = pFactorData;
     
     const normalItems = supplyData.filter(x => x.supplyType === 1);
@@ -236,8 +235,7 @@ function setupSupplyItemModal() {
     if (isSetupSupplyModal) return;
     
     function setupSelectOptions() {
-        axios("/Supply/GetSupplyBaseData").then(res => {
-            const data = res.data;
+        sendApiRequest({ url: "/Supply/GetSupplyBaseData" }).then((data) => {
             ["#supplierIdMobile", "#addExtraItemSupplierId"].forEach(id => {
                 new TomSelect(id, {
                     options: data.suppliers,
@@ -761,34 +759,21 @@ const submitAmountTaminModal = async () => {
         toastifyError("لطفا اطلاعات همه آیتم‌ها را وارد کنید.");
         return false;
     }*/
-    try {
-        FLshowLoading();
-        const res = await axios.post(`/Supply/AddSupply`, model);
-        if (res.status === 200) {
-            toastifySuccess("بهای تامین با موفقیت ثبت شد");
-            GetPreFactorTaminExpert();
-            FLshowLoading(false);
-            return true;
-        }
-    } catch (err) {
-        console.log(err);
-        setTimeout(async () => await submitAmountTaminModal(), 3000);
-        return false;
-    }
     
+    return await sendApiRequest({
+        url: "/Supply/AddSupply",
+        method: "POST",
+        data: model,
+        successMsg: "بهای تامین با موفقیت ثبت شد",
+        onSuccess: GetPreFactorTaminExpert,
+    });
 };
 
 const acceptTaminExpert = async (id) => {
-    try {
-        FLshowLoading();
-        const res = await axios(`/Factor/AcceptTaminExpert/${id}`);
-        if (res.status === 200) {
-            toastifySuccess("پیش فاکتور تایید شد.");
-            FLshowLoading(false);
-            return true;
-        }
-    } catch (e) {
-        setTimeout(async () => await acceptTaminExpert(id), 3000);
-        return false;
-    }
+    return await sendApiRequest({
+        url: "/Factor/AcceptTaminExpert",
+        params: { id },
+        successMsg: "پیش فاکتور تایید شد.",
+        onSuccess: GetPreFactorTaminExpert,
+    });
 };

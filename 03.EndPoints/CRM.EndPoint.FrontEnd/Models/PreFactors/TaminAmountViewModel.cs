@@ -1,4 +1,4 @@
-namespace CRM.EndPoint.FrontEnd.Models.PreFactor;
+namespace CRM.EndPoint.FrontEnd.Models.PreFactors;
 
 public class TaminAmountViewModel {
     public string Id { get; set; }

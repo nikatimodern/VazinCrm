@@ -1,4 +1,3 @@
-
 let modelDeal = { filt: null, serVal: null };
 var filterDealConfig = {};
 var dealSearchVal = null;
@@ -48,19 +47,9 @@ const dealDropdown = Dropdown.setupDelegate({
 
 const deleteDeal = async (id) => {
     dealDropdown.close();
-    await confirmAlert({
-        title: "حذف!",
-        text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
-        confirmText: "بله، حذف شود",
-        // theme: "dark",
-        onConfirm: async () => {
-            await sendApiRequest({
-                url: "/Deal/DeleteDeal",
-                method: "DELETE",
-                params: { id },
-                onSuccess: getAllDeals,
-            });
-        },
+    await deleteItem({
+        url: `/Deal/DeleteDeal/${id}`,
+        callback: getAllDeals,
     });
 };
 

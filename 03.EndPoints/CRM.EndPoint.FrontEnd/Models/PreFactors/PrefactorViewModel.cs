@@ -3,7 +3,7 @@ using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.ASettings.Entities;
 using PreFactorEntity = CRM.Core.Domain.PreFactors.Entities.PreFactor;
 
-namespace CRM.EndPoint.FrontEnd.Models.PreFactor
+namespace CRM.EndPoint.FrontEnd.Models.PreFactors
 {
     public class PrefactorViewModel
     {

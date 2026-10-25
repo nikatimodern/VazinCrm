@@ -177,13 +177,17 @@ function closeNotification() {
 
 /////////////////////////////
 
+const getAllProduct = async (searchValue = "", from) => {
+    return await sendApiRequest({
+        url: "/Amount/ListProduct",
+        params: { searchValue, from },
+    });
+};
 
 const getAndSetAllProduct = async (from, searchValue = "") => {
-    FLshowLoading();
     const AllProduct = await getAllProduct(searchValue, from);
     const containerId = from === "amountIndex" ? "ListProductId" : "ListAmountBodyId";
     document.getElementById(containerId).innerHTML = AllProduct;
-    FLshowLoading(false);
 };
 
 
@@ -1339,7 +1343,6 @@ const setDateTime = async () => {
 };
 
 
-
 /*const submitAttachInvoice = async () => {
     const patType = Number(document.querySelector("#AttachInvoiceModalId input[type='radio'][name='payTypeAttach']:checked").value);
     if (patType !== 3 && !attachInvoiceList.length) {
@@ -1420,8 +1423,6 @@ const closeModalAttachInvoice = () => {
     const attachInvoice = document.getElementById("AttachInvoice");
     if (attachInvoice) attachInvoice.value = "";
 };*/
-
-
 
 
 const openCustomerProfile = (id, pfSerialNum) => {
@@ -2874,3 +2875,117 @@ function createDomLogSystem(data) {
 function showAgentReviewText(btn) {
     btn.closest(".agent-review-box")?.classList.toggle("open");
 }
+
+
+/*--------------------------------------------------------------------*/
+
+
+const externalSoftwareModalElm = document.getElementById("chooseExternalSoftwareModal");
+const externalSoftwareList = externalSoftwareModalElm?.querySelector("#externalSoftwareList");
+const sendToSoftwareBtn = externalSoftwareModalElm?.querySelector("#sendToSoftwareBtn");
+
+let externalSoftwareConfig = null;
+
+async function showExternalSoftwareModal(ids, config) {
+    const entityIds = [...new Set((Array.isArray(ids) ? ids : [ids]))];
+    
+    if (!entityIds.length || entityIds.some(id => !id))
+        return toastifyError("هیچ موردی انتخاب نشده است.");
+    
+    externalSoftwareConfig = {
+        ...config,
+        entityIds,
+    };
+    
+    
+    externalSoftwareList.innerHTML = "";
+    toggleElementsDisabled(sendToSoftwareBtn);
+    
+    await sendApiRequest({
+        url: "/Home/GetAllExternalSoftware",
+        method: "POST",
+        successMsg: null,
+        data: { entityIds, mapType: config.mapType },
+        onSuccess: (res) => {
+            const softwares = res.data;
+            ModalToggle(externalSoftwareModalElm);
+            
+            if (!softwares?.length) {
+                externalSoftwareList.innerHTML = `
+                    <div class="text-muted text-center py-4" style="grid-column: 1 / -1">
+                        نرم‌افزاری برای انتخاب وجود ندارد.
+                    </div>
+                `;
+                return;
+            }
+            
+            renderExternalSoftwares(softwares);
+        },
+    });
+}
+
+function renderExternalSoftwares(softwares) {
+    externalSoftwareList.innerHTML = softwares.map(software => `
+        <label for="ex-software-${software.id}" class="external-software-card ${software.isDisabled ? "is-disabled is-selected" : ""}" data-software-id="${software.id}">
+            <input id="ex-software-${software.id}" type="checkbox" value="${software.id}" class="d-none" ${software.isDisabled ? "disabled checked" : ""}>
+
+            <span class="external-software-icon">
+                <i class="fas fa-check software-check-icon"></i>
+            </span>
+
+            <span class="external-software-info">
+                <span class="external-software-title">${software.title}</span>
+                ${software.isDisabled ? `<small class="text-muted">(قبلاً ارسال شده)</small>` : ""}
+            </span>
+
+            <i class="fa-solid fa-circle-check external-software-check"></i>
+        </label>
+    `).join("");
+    
+    externalSoftwareList.querySelectorAll(".external-software-card").forEach(card => {
+        const checkbox = card.querySelector("input[type='checkbox']");
+        
+        checkbox.addEventListener("change", () => {
+            card.classList.toggle("is-selected", checkbox.checked);
+            
+            const hasSelection = externalSoftwareList.querySelector("input[type='checkbox']:checked:not(:disabled)");
+            
+            toggleElementsDisabled(sendToSoftwareBtn, !hasSelection);
+        });
+    });
+    
+    toggleElementsDisabled(sendToSoftwareBtn, !externalSoftwareList.querySelector("input[type='checkbox']:checked:not(:disabled)"));
+}
+
+
+sendToSoftwareBtn?.addEventListener("click", async () => {
+    const config = externalSoftwareConfig;
+    if (!config?.onConfirm) return;
+    
+    const externalSoftwareIds = Array.from(
+        externalSoftwareList.querySelectorAll("input[type='checkbox']:checked:not(:disabled)"),
+    ).map(checkbox => checkbox.value);
+    
+    if (!config.entityIds.length)
+        return toastifyError("هیچ موردی انتخاب نشده است.");
+    
+    if (!externalSoftwareIds.length)
+        return toastifyError("هیچ نرم‌افزاری انتخاب نشده است.");
+    
+    toggleElementsDisabled(sendToSoftwareBtn);
+    
+    await config.onConfirm({
+        entityIds: config.entityIds,
+        externalSoftwareIds,
+    });
+});
+
+
+externalSoftwareModalElm?.addEventListener("hidden.bs.modal", () => {
+    externalSoftwareConfig = null;
+    externalSoftwareList.innerHTML = "";
+    toggleElementsDisabled(sendToSoftwareBtn);
+});
+
+
+

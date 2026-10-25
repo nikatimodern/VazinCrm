@@ -1,5 +1,4 @@
 using System;
-using CRM.Core.Domain.ASettings.Entities;
 using CRM.Core.Domain.ASettings.Enums;
 using CRM.Framework;
 

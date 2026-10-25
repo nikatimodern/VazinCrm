@@ -156,25 +156,27 @@ const CheckWallet = async () => {
 };
 
 const getAndShowWalletModal = async () => {
-    const res = await axios(`/Accountancy/GetWalletPartialIfAny?cusId=${customerId}`);
-    document.getElementById("WalletContentId").innerHTML = res.data;
-    initWalletPartial();
-    
-    ModalToggle("#WalletListModalId");
+    await sendApiRequest({
+        url: "/Accountancy/GetWalletPartialIfAny",
+        params: { cusId: customerId },
+        onSuccess: (res) => {
+            document.getElementById("WalletContentId").innerHTML = res.data;
+            initWalletPartial();
+            
+            ModalToggle("#WalletListModalId");
+        },
+    });
 };
 
 const addInvoiceWalletToPf = async (id) => {
-    try {
-        FLshowLoading();
-        const res = await axios(`/Accountancy/AddInvoiceWalletToPf?id=${id}&pfId=${pfactorID}`);
-        if (res.status === 200) {
+    await sendApiRequest({
+        url: "/Accountancy/AddInvoiceWalletToPf",
+        params: { id, pfId: pfactorID },
+        onSuccess: async () => {
             await refreshInvoiceSuccess();
-            FLshowLoading(false);
             ModalToggle("#WalletListModalId", "hide");
-        }
-    } catch (err) {
-        console.log(err);
-    }
+        },
+    });
 };
 
 
@@ -259,10 +261,17 @@ const ShowModalInvoice = async (acType = 1) => {
     ModalToggle(invoiceModalElm);
 };
 
+async function getAccountancy(id, parent) {
+    return await sendApiRequest({
+        url: "/Accountancy/getAccountancy",
+        params: { id, parent },
+    });
+}
+
 const ShowEditModalInvoice = async (id) => {
     FLshowLoading();
-    const res = await axios(`/Accountancy/getAccountancy/${id}`);
-    const data = res.data.accData;
+    const result = await getAccountancy(id);
+    const data = result.accData;
     
     isEditInvoiceModal = true;
     invoiceItemId = id;
@@ -286,17 +295,14 @@ const ShowEditModalInvoice = async (id) => {
     PayFormChange("InvoiceModalId", data.payType);
     
     document.getElementById("DivShowSanadPar").innerHTML = "";
-    window.SanadPayList = res.data.listAttach;
+    window.SanadPayList = result.listAttach;
     FileUpReload("upSanadPay");
     FLshowLoading(false);
 };
 
 
 async function showPayment(id, parent = false) {
-    const data = await sendApiRequest({
-        url: "/Accountancy/getAccountancy",
-        params: { id, parent },
-    });
+    const data = await getAccountancy(id, parent);
     if (!data) return;
     
     await getAllBankAccounts([{ element: "#ShowPaymentModal select[name='bankAccountId']", type: [1], isDisable: true }]);
@@ -342,24 +348,22 @@ async function checkEtebariWarning() {
         return true;
     }
     
-    const res = await axios(`/Factor/HasAnyEtebari?pfId=${pfactorID}`);
-    
-    if (res.status !== 201) {
-        return true;
-    }
-    
-    const result = await Swal.fire({
-        title: "هشدار!",
-        text: "برای این پیش‌فاکتور قبلا یک واریزی اعتباری ثبت شده است. اگر این واریزی مربوط به آن مورد اعتباری نیست، تایید کنید تا ثبت شود.",
-        icon: "warning",
-        showCancelButton: true,
-        cancelButtonColor: "#adadad",
-        confirmButtonColor: "#0d6efd",
-        cancelButtonText: "انصراف",
-        confirmButtonText: "تایید",
+    const hasAnyEtebari = await sendApiRequest({
+        url: "/Factor/HasAnyEtebari",
+        params: { pfId: pfactorID },
     });
     
-    return result.isConfirmed;
+    if (hasAnyEtebari === true) {
+        return await confirmAlert({
+            title: "هشدار!",
+            text: "برای این پیش‌فاکتور قبلا یک واریزی اعتباری ثبت شده است. اگر این واریزی مربوط به آن مورد اعتباری نیست، تایید کنید تا ثبت شود.",
+            icon: "warning",
+            confirmButtonColor: "#0d6efd",
+            confirmText: "تایید",
+        });
+    }
+    
+    return true;
 }
 
 
@@ -490,9 +494,11 @@ async function showModalPreFactorList(accType) {
 }
 
 const getAllPreFactorList = async (search = "") => {
-    const res = await axios(`/Factor/GetAllPreFactorList?search=${search}`);
-    
-    preFactorListModal.querySelector("#preFactorListContainer").innerHTML = res.data;
+    await sendApiRequest({
+        url: "/Factor/GetAllPreFactorList",
+        params: { search },
+        onSuccess: (res) => preFactorListModal.querySelector("#preFactorListContainer").innerHTML = res.data,
+    });
 };
 
 preFactorListModal?.querySelector("#preFactorListSearch")?.addEventListener("keyup", async (e) => {
@@ -513,55 +519,41 @@ async function selectPfFromPfListModal(pfId) {
 
 
 async function changeStatusAllAcc() {
-    try {
-        FLshowLoading();
-        const res = await axios(`/Accountancy/ChangeStatusAllAcc?pfId=${pfactorID}`);
-        if (res.status === 200) {
+    await sendApiRequest({
+        url: "/Accountancy/ChangeStatusAllAcc",
+        params: { pfId: pfactorID },
+        successMsg: "به مالی ارسال شد.",
+        onSuccess: async () => {
             await refreshInvoiceSuccess();
-            FLshowLoading(false);
-            toastifySuccess("به مالی ارسال شد.");
-            $("#InvoiceListModalId").modal("toggle");
-        }
-    } catch (err) {
-        console.log(err);
-    }
+            ModalToggle("#InvoiceListModalId");
+        },
+    });
 }
 
 async function changeStatusAcc(id) {
-    try {
-        FLshowLoading();
-        const res = await axios(`/Accountancy/ChangeStatusAcc/${id}`);
-        if (res.status === 200) {
-            await refreshInvoiceSuccess();
-            FLshowLoading(false);
-            toastifySuccess("به مالی ارسال شد.");
-        }
-    } catch (err) {
-        console.log(err);
-    }
+    await sendApiRequest({
+        url: "/Accountancy/ChangeStatusAcc",
+        params: { id },
+        successMsg: "به مالی ارسال شد.",
+        onSuccess: refreshInvoiceSuccess,
+    });
 }
 
 document.getElementById("acceptFinancialBtn")?.addEventListener("click", async () => {
     await acceptFinancial(pfactorID);
-    $("#InvoiceListModalId").modal("toggle");
+    ModalToggle("#InvoiceListModalId");
 });
 
 
 async function acceptFinancial(pfId) {
-    try {
-        FLshowLoading();
-        const res = await axios(`/Factor/AcceptFinancial/${pfId}`);
-        if (res.status === 200) {
+    await sendApiRequest({
+        url: `/Factor/AcceptFinancial`,
+        params: { id: pfId },
+        onSuccess: async () => {
             await GetPreFactorFinancialExpert();
-            Swal.fire({ icon: "success", title: "پیش‌فاکتور تایید شد.", confirmButtonText: "باشه", confirmButtonColor: "#0d6efd" });
-        } else {
-            toastifyError(res.data);
-        }
-        FLshowLoading(false);
-    } catch (err) {
-        console.log(err);
-        setTimeout(async () => await acceptFinancial(pfId), 3000);
-    }
+            showAlert({ icon: "success", title: "پیش‌فاکتور تایید شد." });
+        },
+    });
 }
 
 async function acceptAccountancy(id, status, description = null) {
@@ -571,7 +563,7 @@ async function acceptAccountancy(id, status, description = null) {
         data: { id, description },
         params: { status },
         successMsg: status === 2 ? "تایید شد" : status === 3 ? "رد شد" : null,
-        onSuccess: async () => await refreshInvoiceSuccess(),
+        onSuccess: refreshInvoiceSuccess,
     });
     
     return result !== null;

@@ -49,7 +49,7 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
 
         try
         {
-            var response = await httpClient.PostAsJsonAsync("chat/completions", requestBody, cancellationToken: ct);
+           var response = await httpClient.PostAsJsonAsync("chat/completions", requestBody, cancellationToken: ct);
 
             if (!response.IsSuccessStatusCode)
             {

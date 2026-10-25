@@ -127,7 +127,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        [HttpGet]
         public async Task<IActionResult> DelReport(Guid id)
         {
             try
@@ -146,10 +145,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                     await db.SaveChangesAsync();
                     await hub.Clients.AllExcept(TaskHub.GetConnectionId(user.Id)).SendAsync("ShowReport");
-                    return Ok(new { status = 200, message = "با موفقیت حذف شد!", data = "" });
+                    return Ok();
                 }
 
-                return Ok(new { status = 201, message = "شما مجاز به حذف این گزارش نیستید!", data = "" });
+                return BadRequest("شما مجاز به حذف این گزارش نیستید!");
             }
             catch
             {

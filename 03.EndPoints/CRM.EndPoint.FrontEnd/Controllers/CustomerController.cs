@@ -19,7 +19,7 @@ using CRM.EndPoint.FrontEnd.IServices.PushNotification;
 using CRM.EndPoint.FrontEnd.IServices.ViewRender;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Customer;
-using CRM.EndPoint.FrontEnd.Models.PreFactor;
+using CRM.EndPoint.FrontEnd.Models.PreFactors;
 using CRM.EndPoint.FrontEnd.Models.PushNotification;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;

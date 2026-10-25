@@ -87,20 +87,16 @@ async function submitTransferModal() {
         toAccountTxt: formData.toAccountTxt || toAccountElm.selectedOptions[0]?.innerText,
         fromAccountTxt: formData.fromAccountTxt || fromAccountElm.selectedOptions[0]?.innerText,
     };
-    try {
-        FLshowLoading();
-        const res = await axios.post(`/Transfer/AddTransfer`, model);
-        if (res.status === 200) {
-            toastifySuccess("با موفقیت ثبت شد");
+    
+    await sendApiRequest({
+        url: "/Transfer/AddTransfer",
+        method: "POST",
+        data: model,
+        onSuccess: () => {
             cancelTransferModal();
             transferTbl.ajax.reload();
-        }
-    } catch (err) {
-        console.log(err);
-        toastifyError("خطای سرور");
-    } finally {
-        FLshowLoading(false);
-    }
+        },
+    });
 }
 
 function getAllTransfersDt(selector, isMdCartable = false) {
@@ -231,7 +227,10 @@ function getAllTransfersDt(selector, isMdCartable = false) {
 
 
 const editTransfer = async (id) => {
-    const data = await getData(`/Transfer/GetTransfer/${id}`);
+    const data = await sendApiRequest({
+        url: `/Transfer/GetTransfer`,
+        params: { id },
+    });
     if (!data) return;
     
     transferData = data.transfer;
@@ -256,17 +255,14 @@ const deleteTransfer = async (id) => {
 };
 
 async function changeStatusTransfer(id, status) {
-    try {
-        FLshowLoading();
-        await axios.patch(`/Transfer/ChangeTransferStatus/${id}`, status);
-        
-        transferTbl.ajax.reload(null, false);
-        
-    } catch (err) {
-        console.log(err);
-        const errorMessage = err.response?.data?.message || err.response?.data || "خطای سرور";
-        toastifyError(errorMessage);
-    } finally {
-        FLshowLoading(false);
-    }
+    await sendApiRequest({
+        url: "/Transfer/ChangeTransferStatus",
+        method: "PATCH",
+        params: { id },
+        data: status,
+        successMsg: status === 2 ? "با موفقیت تایید شد." : null,
+        onSuccess: () => {
+            transferTbl.ajax.reload(null, false);
+        },
+    });
 }
