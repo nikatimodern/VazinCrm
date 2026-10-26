@@ -1,4 +1,5 @@
-﻿using CRM.Core.Domain.Supplies.Entities;
+using CRM.Core.Domain.Supplies.Entities;
+using CRM.Core.Domain.Warehouses.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Enum;
@@ -42,9 +44,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly LogSystemService _logSystemService;
         private readonly FileSaver fileSaver;
         private readonly AiService aiService;
+        private readonly SupplyFactorWarehouseService supplyWarehouse;
 
         public SupplyController(CRMContextDb db, UserManager<AppUser> userManager, DateTimeServices dtService, Service genService,
-            LogSystemService logSystemService, FileSaver fileSaver, AiService aiService)
+            LogSystemService logSystemService, FileSaver fileSaver, AiService aiService, SupplyFactorWarehouseService supplyWarehouse)
         {
             this.db = db;
             this.dtService = dtService;
@@ -53,6 +56,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             _logSystemService = logSystemService;
             this.fileSaver = fileSaver;
             this.aiService = aiService;
+            this.supplyWarehouse = supplyWarehouse;
         }
 
         [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
@@ -79,10 +83,218 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return View();
         }
 
+        [HttpGet]
+        [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
+        public async Task<IActionResult> GetSupplyFactorAllocations(Guid id)
+        {
+            var factor = await db.SupplyFactors.AsNoTracking()
+                .Where(x => x.Id == id).Select(x => new { x.Id, x.SerialNumber }).FirstOrDefaultAsync();
+            if (factor == null) return NotFound("فاکتور تامین یافت نشد.");
+            var items = await db.SupplyFactorItems.AsNoTracking()
+                .Where(x => x.SupplyFactorId == id)
+                .OrderBy(x => x.CreateDate).ThenBy(x => x.Id)
+                .Select(x => new {
+                    x.Id, x.Product, x.ProductSmallName, x.WeightCount, x.UnitTxt,
+                    Allocated = x.Allocations.Sum(a => (decimal?)a.Weight) ?? 0
+                }).ToListAsync();
+            // Keep historical allocations visible even if the sales invoice was soft-deleted.
+            var allocations = await (
+                from a in db.SupplyFactorItemAllocations.AsNoTracking()
+                join si in db.SupplyFactorItems on a.SupplyFactorItemId equals si.Id
+                from fi in db.FactorItems.IgnoreQueryFilters().Where(fi => fi.Id == a.FactorItemId).DefaultIfEmpty()
+                from f in db.Factors.IgnoreQueryFilters().Where(f => fi != null && f.Id == fi.factorId).DefaultIfEmpty()
+                from w in db.Warehouses.IgnoreQueryFilters().Where(w => w.Id == a.WarehouseId).DefaultIfEmpty()
+                where si.SupplyFactorId == id && !si.IsDeleted
+                orderby a.Id
+                select new { a.Id, a.SupplyFactorItemId, a.FactorItemId, a.WarehouseId, a.Weight,
+                    Customer = f != null ? f.Customer : w.Title,
+                    SerialNumber = f != null ? (int?)f.SerialNumber : null,
+                    Product = fi != null ? fi.Product : si.Product,
+                    ProductSmallName = fi != null ? fi.ProductSmallName : si.ProductSmallName,
+                    FactorItemWeightCount = fi != null ? fi.WeightCount : null,
+                    FactorItemUnitTxt = fi != null ? fi.UnitTxt : si.UnitTxt,
+                    WarehouseTitle = w != null ? w.Title : null,
+                    FactorItemAllocated = db.SupplyFactorItemAllocations
+                        .Where(other => a.FactorItemId != null && other.FactorItemId == a.FactorItemId)
+                        .Sum(other => (decimal?)other.Weight) ?? 0 }).ToListAsync();
+            return Ok(new { factor, items, allocations,
+                isAllocationComplete = items.Count > 0 && items.All(x => x.Allocated >= x.WeightCount) });
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
+        public async Task<IActionResult> SearchAllocationFactorItems(string search, Guid supplyFactorItemId, Guid? allocationId = null)
+        {
+            search = search?.Trim();
+            var excludedAllocationId = allocationId ?? Guid.Empty;
+            var query = from i in db.FactorItems.AsNoTracking()
+                        join f in db.Factors.AsNoTracking() on i.factorId equals f.Id
+                        select new { i.Id, i.Product, i.ProductSmallName, i.WeightCount, i.UnitTxt,
+                            f.Customer, f.SerialNumber, f.Date, i.CreateDate, i.Row,
+                            Allocated = db.SupplyFactorItemAllocations.Where(a => a.FactorItemId == i.Id)
+                                .Sum(a => (decimal?)a.Weight) ?? 0,
+                            EditingWeight = db.SupplyFactorItemAllocations.Where(a => a.FactorItemId == i.Id
+                                && a.Id == excludedAllocationId && a.SupplyFactorItemId == supplyFactorItemId)
+                                .Sum(a => (decimal?)a.Weight) ?? 0 };
+            query = query.Where(x => !db.SupplyFactorItemAllocations.Any(a =>
+                a.SupplyFactorItemId == supplyFactorItemId && a.FactorItemId == x.Id && a.Id != excludedAllocationId));
+            if (!string.IsNullOrWhiteSpace(search))
+                query = query.Where(x => x.Customer.Contains(search) || x.Product.Contains(search)
+                    || x.ProductSmallName.Contains(search) || x.SerialNumber.ToString().Contains(search));
+            var items = await query.OrderByDescending(x => x.CreateDate).ThenByDescending(x => x.Id)
+                .Take(201).ToListAsync();
+            var warehouses = await db.Warehouses.AsNoTracking()
+                .Where(w => (w.Id == SupplyFactorWarehouseService.WasteId && w.WarehouseType == WarehouseType.انبار_ضایعات)
+                    || (w.Id == SupplyFactorWarehouseService.StorageId && w.WarehouseType == WarehouseType.انبار_ذخیره))
+                .Select(w => new { w.Id, w.Title, w.WarehouseType }).ToListAsync();
+            return Ok(new { warehouses, items = items.Take(200).Select(i => new {
+                i.Id, i.Product, i.ProductSmallName, i.WeightCount, i.UnitTxt, i.Customer, i.SerialNumber, i.Date,
+                i.Allocated,
+                Remaining = AllocationSalesCapacity(i.WeightCount, i.Allocated),
+                Available = AllocationSalesCapacity(i.WeightCount, i.Allocated, i.EditingWeight)
+            }), hasMore = items.Count > 200 });
+        }
+
+        private static decimal AllocationSalesCapacity(string total, decimal allocated, decimal restored = 0)
+            => TryParseAllocationSalesWeight(total, out var weight) ? Math.Max(0, weight - allocated + restored) : 0;
+
+        private static bool TryParseAllocationSalesWeight(string value, out decimal weight)
+        {
+            var normalized = (value ?? "").Trim().Replace(",", "").Replace("٬", "")
+                .Replace("٫", ".").Replace(" ", "").Replace("\u00a0", "");
+            for (var i = 0; i <= 9; i++)
+                normalized = normalized.Replace((char)('۰' + i), (char)('0' + i))
+                    .Replace((char)('٠' + i), (char)('0' + i));
+            return decimal.TryParse(normalized, NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign,
+                CultureInfo.InvariantCulture, out weight);
+        }
+
+        public class SupplyFactorAllocationRequest {
+            public Guid Id { get; set; }
+            public Guid SupplyFactorItemId { get; set; }
+            public Guid? FactorItemId { get; set; }
+            public Guid? WarehouseId { get; set; }
+            public decimal Weight { get; set; }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
+        public Task<IActionResult> AddSupplyFactorAllocation([FromBody] SupplyFactorAllocationRequest model)
+            => SaveSupplyFactorAllocation(model, null);
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
+        public Task<IActionResult> UpdateSupplyFactorAllocation([FromBody] SupplyFactorAllocationRequest model)
+            => SaveSupplyFactorAllocation(model, model?.Id ?? Guid.Empty);
+
+        private async Task<IActionResult> SaveSupplyFactorAllocation(SupplyFactorAllocationRequest model, Guid? allocationId)
+        {
+            try { return await SaveSupplyFactorAllocationCore(model, allocationId); }
+            catch (InvalidOperationException e) { return BadRequest(e.Message); }
+        }
+
+        private async Task<IActionResult> SaveSupplyFactorAllocationCore(SupplyFactorAllocationRequest model, Guid? allocationId)
+        {
+            if (!ModelState.IsValid || model == null || model.Weight <= 0
+                || decimal.Round(model.Weight, 2) != model.Weight)
+                return BadRequest("مقدار تخصیص باید مثبت و حداکثر دارای دو رقم اعشار باشد.");
+
+            var toWarehouse = model.WarehouseId.HasValue;
+            if (toWarehouse == model.FactorItemId.HasValue || model.FactorItemId == Guid.Empty
+                || toWarehouse && !SupplyFactorWarehouseService.IsAllocationDestination(model.WarehouseId))
+                return BadRequest("فقط یک مقصد معتبر (آیتم فروش، انبار ضایعات یا انبار ذخیره) انتخاب کنید.");
+            if (toWarehouse && !await db.Warehouses.AnyAsync(w => w.Id == model.WarehouseId
+                && ((w.Id == SupplyFactorWarehouseService.WasteId && w.WarehouseType == WarehouseType.انبار_ضایعات)
+                    || (w.Id == SupplyFactorWarehouseService.StorageId && w.WarehouseType == WarehouseType.انبار_ذخیره))))
+                return BadRequest("انبار مقصد معتبر نیست.");
+            await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            // Serialize allocations for the same supply item, including concurrent requests.
+            var item = await db.SupplyFactorItems.FromSqlInterpolated(
+                $"SELECT * FROM [SupplyFactorItems] WITH (UPDLOCK, HOLDLOCK) WHERE [Id] = {model.SupplyFactorItemId}")
+                .FirstOrDefaultAsync();
+            if (item == null || !await db.SupplyFactors.AnyAsync(x => x.Id == item.SupplyFactorId))
+                return NotFound("آیتم تامین یافت نشد.");
+            decimal salesWeight = 0;
+            if (!toWarehouse) {
+                // Serialize requests from different supply items targeting the same sales item.
+                var salesItem = await db.FactorItems.FromSqlInterpolated(
+                    $"SELECT * FROM [FactorItems] WITH (UPDLOCK, HOLDLOCK) WHERE [Id] = {model.FactorItemId}")
+                    .FirstOrDefaultAsync();
+                if (salesItem == null || !await db.Factors.AnyAsync(f => f.Id == salesItem.factorId))
+                    return BadRequest("آیتم فاکتور فروش یافت نشد.");
+                if (!TryParseAllocationSalesWeight(salesItem.WeightCount, out salesWeight) || salesWeight <= 0)
+                    return BadRequest("مقدار آیتم فاکتور فروش معتبر نیست؛ ابتدا فاکتور فروش را اصلاح کنید.");
+            }
+            SupplyFactorItemAllocation allocation = null;
+            if (allocationId.HasValue) {
+                allocation = await db.SupplyFactorItemAllocations
+                    .FirstOrDefaultAsync(x => x.Id == allocationId.Value && x.SupplyFactorItemId == item.Id);
+                if (allocation == null) return NotFound("تخصیص یافت نشد؛ ممکن است قبلاً حذف شده باشد.");
+            }
+            var excludedId = allocationId ?? Guid.Empty;
+            if (!toWarehouse) {
+                var salesAllocated = await db.SupplyFactorItemAllocations
+                    .Where(x => x.FactorItemId == model.FactorItemId && x.Id != excludedId)
+                    .SumAsync(x => (decimal?)x.Weight) ?? 0;
+                if (model.Weight > salesWeight - salesAllocated)
+                    return BadRequest("مقدار تخصیص از باقی‌مانده آیتم فروش در مجموع تمام فاکتورهای تامین بیشتر است.");
+            }
+            if (await db.SupplyFactorItemAllocations.AnyAsync(x => x.SupplyFactorItemId == item.Id
+                && x.FactorItemId == model.FactorItemId && x.WarehouseId == model.WarehouseId && x.Id != excludedId))
+                return BadRequest("این مقصد قبلاً به همین آیتم تامین تخصیص داده شده است؛ تخصیص قبلی را ویرایش کنید.");
+            var allocated = await db.SupplyFactorItemAllocations
+                .Where(x => x.SupplyFactorItemId == item.Id && x.Id != excludedId)
+                .SumAsync(x => (decimal?)x.Weight) ?? 0;
+            if (model.Weight > item.WeightCount - allocated)
+                return BadRequest("مقدار تخصیص از مقدار باقی‌مانده آیتم تامین بیشتر است.");
+            if (allocation == null) {
+                db.SupplyFactorItemAllocations.Add(new SupplyFactorItemAllocation {
+                    SupplyFactorItemId = item.Id, FactorItemId = model.FactorItemId, WarehouseId = model.WarehouseId, Weight = model.Weight
+                });
+            } else {
+                allocation.FactorItemId = model.FactorItemId;
+                allocation.WarehouseId = model.WarehouseId;
+                allocation.Weight = model.Weight;
+            }
+            await db.SaveChangesAsync();
+            try {
+                await supplyWarehouse.SynchronizeAsync(item, await userManager.GetUserAsync(HttpContext.User));
+            } catch (InvalidOperationException e) { return BadRequest(e.Message); }
+            await transaction.CommitAsync();
+            return Ok(new { supplyFactorId = item.SupplyFactorId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
+        public async Task<IActionResult> DeleteSupplyFactorAllocation([FromBody] SupplyFactorAllocationRequest model)
+        {
+            if (!ModelState.IsValid || model == null) return BadRequest();
+            await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            var item = await db.SupplyFactorItems.FromSqlInterpolated(
+                $"SELECT * FROM [SupplyFactorItems] WITH (UPDLOCK, HOLDLOCK) WHERE [Id] = {model.SupplyFactorItemId}")
+                .FirstOrDefaultAsync();
+            if (item == null || !await db.SupplyFactors.AnyAsync(x => x.Id == item.SupplyFactorId))
+                return NotFound("آیتم تامین یافت نشد.");
+            var allocation = await db.SupplyFactorItemAllocations
+                .FirstOrDefaultAsync(x => x.Id == model.Id && x.SupplyFactorItemId == item.Id);
+            if (allocation == null) return NotFound("تخصیص یافت نشد؛ ممکن است قبلاً حذف شده باشد.");
+            db.SupplyFactorItemAllocations.Remove(allocation);
+            await db.SaveChangesAsync();
+            try {
+                await supplyWarehouse.SynchronizeAsync(item, await userManager.GetUserAsync(HttpContext.User));
+            } catch (InvalidOperationException e) { return BadRequest(e.Message); }
+            await transaction.CommitAsync();
+            return Ok(new { supplyFactorId = item.SupplyFactorId });
+        }
+
         [HttpPost]
         public async Task<IActionResult> AddSupplyFactor([FromBody] SupplyFactor model)
         {
-            if (model == null) return BadRequest();
+            if (model?.Items == null || !model.Items.Any() || model.Items.Any(i => i.WeightCount <= 0 || i.IsDeleted))
+                return BadRequest("آیتم‌های تامین و مقدار مثبت آن‌ها الزامی است.");
             await using var transaction = await db.Database.BeginTransactionAsync();
             try
             {
@@ -105,13 +317,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
 
                 await db.SaveChangesAsync();
+                foreach (var supplyItem in model.Items.OrderBy(i => i.Id))
+                    await supplyWarehouse.SynchronizeAsync(supplyItem, user);
                 await transaction.CommitAsync();
                 return Ok();
             }
             catch (Exception e)
             {
                 await transaction.RollbackAsync();
-                return BadRequest();
+                return BadRequest(e is InvalidOperationException ? e.Message : "ثبت فاکتور تامین انجام نشد.");
             }
         }
 
@@ -137,11 +351,41 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (entity == null) return NotFound("رکوردی یافت نشد!");
 
+                foreach (var existingItem in entity.Items.OrderBy(x => x.Id)) {
+                    await db.SupplyFactorItems.FromSqlInterpolated(
+                        $"SELECT * FROM [SupplyFactorItems] WITH (UPDLOCK, HOLDLOCK) WHERE [Id] = {existingItem.Id}")
+                        .LoadAsync();
+                    var allocated = await db.SupplyFactorItemAllocations
+                        .Where(x => x.SupplyFactorItemId == existingItem.Id).SumAsync(x => (decimal?)x.Weight) ?? 0;
+                    var replacement = model.Items?.FirstOrDefault(x => x.Id == existingItem.Id && !x.IsDeleted);
+                    if (allocated > 0 && (replacement == null || replacement.WeightCount < allocated))
+                        return BadRequest("آیتم دارای تخصیص را نمی‌توان حذف کرد یا مقدار آن را کمتر از مجموع تخصیص‌ها قرار داد.");
+                    if (allocated > 0 && (replacement.ProductCode != existingItem.ProductCode
+                        || replacement.Product != existingItem.Product || replacement.Unit != existingItem.Unit))
+                        return BadRequest("برای تغییر محصول یا واحد آیتم، ابتدا تخصیص‌های آن را حذف کنید.");
+                }
+
                 await _logSystemService.LogChange(entity, model, LogActionEnum.ویرایش, user, ["SupplyFactorOrderHeads", "Items"]);
                 db.Entry(entity).CurrentValues.SetValues(model);
 
                 entity.SupplyFactorOrderHeads = model.SupplyFactorOrderHeads;
-                entity.Items = model.Items;
+                var incomingItems = model.Items ?? [];
+                if (incomingItems.Any(i => i.Id != Guid.Empty && !entity.Items.Any(existing => existing.Id == i.Id)))
+                    return BadRequest("آیتم ارسالی متعلق به این فاکتور تامین نیست.");
+                if (incomingItems.Any(i => !i.IsDeleted && i.WeightCount <= 0))
+                    return BadRequest("مقدار آیتم تامین باید مثبت باشد.");
+                foreach (var existingItem in entity.Items.ToList()) {
+                    var replacement = incomingItems.FirstOrDefault(i => i.Id == existingItem.Id && !i.IsDeleted);
+                    if (replacement == null) existingItem.IsDeleted = true;
+                    else {
+                        db.Entry(existingItem).CurrentValues.SetValues(replacement);
+                        existingItem.SupplyFactorId = entity.Id;
+                    }
+                }
+                foreach (var added in incomingItems.Where(i => i.Id == Guid.Empty && !i.IsDeleted)) {
+                    added.SupplyFactorId = entity.Id;
+                    entity.Items.Add(added);
+                }
 
 
                 var attach = fileSaver.SaveAttachments(model.Attachments, _AttachType.SupplyFactor, null, false);
@@ -153,13 +397,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 db.Attachments.UpdateRange(attach);
 
                 await db.SaveChangesAsync();
+                foreach (var supplyItem in entity.Items.OrderBy(i => i.Id))
+                    await supplyWarehouse.SynchronizeAsync(supplyItem, user);
                 await transaction.CommitAsync();
                 return Ok();
             }
             catch (Exception e)
             {
                 await transaction.RollbackAsync();
-                return BadRequest();
+                return BadRequest(e is InvalidOperationException ? e.Message : "ویرایش فاکتور تامین انجام نشد.");
             }
         }
 
@@ -375,17 +621,29 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         public async Task<IActionResult> DeleteSupplyFactor(Guid id)
         {
+            await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             var user = await userManager.GetUserAsync(HttpContext.User);
-            var item = await db.SupplyFactors.Where(f => f.Id == id).FirstOrDefaultAsync();
-
+            var item = await db.SupplyFactors.Include(f => f.Items).FirstOrDefaultAsync(f => f.Id == id);
+            if (item == null) return NotFound();
+            foreach (var supplyItem in item.Items.OrderBy(i => i.Id)) {
+                await db.SupplyFactorItems.FromSqlInterpolated(
+                    $"SELECT * FROM [SupplyFactorItems] WITH (UPDLOCK, HOLDLOCK) WHERE [Id] = {supplyItem.Id}").LoadAsync();
+                if (await db.SupplyFactorItemAllocations.AnyAsync(a => a.SupplyFactorItemId == supplyItem.Id))
+                    return BadRequest("برای حذف فاکتور تامین، ابتدا تخصیص‌های آن را حذف کنید.");
+                supplyItem.IsDeleted = true;
+            }
             item.IsDeleted = true;
             item.ModifyDate = DateTime.Now;
             item.ModifyDateTxt = dtService.GetDateTimePersian();
             item.UserModify = user.FullName;
             item.UserModifyID = user.Id;
-
             await _logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
             await db.SaveChangesAsync();
+            try {
+                foreach (var supplyItem in item.Items.OrderBy(i => i.Id))
+                    await supplyWarehouse.SynchronizeAsync(supplyItem, user);
+            } catch (InvalidOperationException e) { return BadRequest(e.Message); }
+            await transaction.CommitAsync();
             return Ok();
         }
 
@@ -414,6 +672,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var data = await query.OrderByDescending(f => f.CreateDate)
                     .Select(sf => new SupplyFactorVModel {
+                        IsAllocationComplete = sf.Items.Any() && sf.Items.All(i =>
+                            (i.Allocations.Sum(a => (decimal?)a.Weight) ?? 0) >= i.WeightCount),
                         SupplyFactor = sf,
                         OrderSerials = sf.SupplyFactorOrderHeads
                             .Join(db.OrderHeads,

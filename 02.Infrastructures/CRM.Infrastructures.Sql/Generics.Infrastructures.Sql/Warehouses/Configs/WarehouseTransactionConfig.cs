@@ -8,8 +8,10 @@ public class WarehouseTransactionConfig : IEntityTypeConfiguration<WarehouseTran
     public void Configure(EntityTypeBuilder<WarehouseTransaction> builder)
     {
         builder.HasKey(x => x.Id);
+        builder.HasOne(x => x.SupplyFactorItem).WithMany().HasForeignKey(x => x.SupplyFactorItemId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-        builder.Property(x => x.Weight).HasPrecision(20, 0);
+        builder.Property(x => x.Weight).HasPrecision(20, 2);
 
         builder.HasOne(x => x.WarehouseProduct)
             .WithMany(x => x.Transactions)

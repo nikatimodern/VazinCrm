@@ -1,4 +1,4 @@
-﻿using CRM.Core.Domain;
+using CRM.Core.Domain;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.CustomValidator;
@@ -139,6 +139,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<DateTimeServices>();
             services.AddTransient<FileSaver>();
             services.AddScoped<Service>();
+            services.AddScoped<SupplyFactorWarehouseService>();
             services.AddTransient<SmsService>();
             services.AddHttpContextAccessor();
 //            services.AddScoped<SepidarService>();

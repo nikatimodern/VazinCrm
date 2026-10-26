@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System;
 using CRM.Core.Domain.Warehouses.Enums;
 using CRM.Framework.Domain;
@@ -5,6 +6,9 @@ using CRM.Framework.Domain;
 namespace CRM.Core.Domain.Supplies.Entities;
 
 public class SupplyFactorItem : BaseEntity {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public ICollection<SupplyFactorItemAllocation> Allocations { get; set; } = new List<SupplyFactorItemAllocation>();
+
     public string Product { get; set; }
 
     public Guid? ProductCode { get; set; }

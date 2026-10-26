@@ -10,6 +10,7 @@ using CRM.EndPoint.FrontEnd.IServices.ViewRender;
 using CRM.EndPoint.FrontEnd.Models.Supply;
 using CRM.EndPoint.FrontEnd.Models.Warehouse;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
+using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.Framework;
 using CRM.Infrastructures.Sql;
@@ -146,6 +147,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     {
         if (id == Guid.Empty) return BadRequest();
 
+        if (SupplyFactorWarehouseService.IsSystemWarehouse(id))
+            return BadRequest("انبار سیستمی تامین قابل حذف نیست.");
         var warehouse = await db.Warehouses.FindAsync(id);
         if (warehouse == null) return NotFound("رکوردی یافت نشد!");
 
@@ -323,6 +326,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
 
             var oldData = await db.WarehouseProducts.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id);
+            if (oldData?.SupplyFactorItemId != null)
+                return BadRequest("محصول مرتبط با تامین فقط از فاکتور تامین قابل ویرایش است.");
             await logSystemService.LogChange(oldData, model, LogActionEnum.ویرایش, user);
 
 
@@ -346,6 +351,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
         var warehouseProduct = await db.WarehouseProducts.FindAsync(id);
         if (warehouseProduct == null) return NotFound("رکوردی یافت نشد!");
+        if (warehouseProduct.SupplyFactorItemId != null)
+            return BadRequest("محصول مرتبط با تامین قابل حذف مستقیم نیست.");
 
 
         var hasVoucher = await db.WarehouseProductVouchers.AnyAsync(f => f.WarehouseProductId == id);
@@ -450,6 +457,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             throw new ArgumentException("مقدار باید بیشتر از صفر باشد.");
 
         var warehouseProduct = await GetOrCreateWarehouseProduct(model, user);
+        if (warehouseProduct.WarehouseId == SupplyFactorWarehouseService.CirculationId)
+            throw new InvalidOperationException("گردش این انبار به‌صورت خودکار از فاکتور تامین ثبت می‌شود.");
 
 /*        if (model.TransactionType == WarehouseTransactionTypeEnum.خروج)
             await ValidateStock(warehouseProduct, model.Weight, model.Id);*/
@@ -563,6 +572,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         {
             var data = await db.WarehouseTransactions.FirstOrDefaultAsync(x => x.Id == model.Id);
             if (data == null) return NotFound();
+            if (data.SupplyFactorItemId != null)
+                return BadRequest("تراکنش خودکار تامین فقط از تخصیص یا فاکتور تامین قابل اصلاح است.");
 
             var user = await userManager.GetUserAsync(HttpContext.User);
 
@@ -608,6 +619,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
             if (warehouseTransaction == null)
                 return NotFound("رکوردی یافت نشد!");
+            if (warehouseTransaction.SupplyFactorItemId != null)
+                return BadRequest("تراکنش خودکار تامین قابل حذف مستقیم نیست.");
 
             var availableStock = await db.GetWarehouseProductAvailableStockAsync(warehouseTransaction.WarehouseProductId,
                 excludedTransactionId: warehouseTransaction.Id);
@@ -818,6 +831,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             return BadRequest("محصولات حواله باید متعلق به یک انبار باشند.");
 
         var warehouseId = warehouseIds[0];
+        if (warehouseId == SupplyFactorWarehouseService.CirculationId)
+            return BadRequest("خروج انبار گردشی از طریق تخصیص فاکتور تامین ثبت می‌شود.");
 
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
@@ -893,6 +908,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
                 if (warehouseProduct == null)
                     return NotFound("محصول مورد نظر یافت نشد.");
 
+                if (warehouseProduct.WarehouseId == SupplyFactorWarehouseService.CirculationId)
+                    return BadRequest("خروج انبار گردشی از طریق تخصیص فاکتور تامین ثبت می‌شود.");
                 await ValidateStock(warehouseProduct, item.Weight, voucher.Id);
             }
 

@@ -1,4 +1,4 @@
-﻿using CRM.Core.Domain.Accountancies.Entities;
+using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.ASettings.Entities;
 using CRM.Core.Domain.Attachments.Entities;
 using CRM.Core.Domain.BaseItems.Entities;
@@ -104,6 +104,7 @@ namespace CRM.Infrastructures.Sql {
         public DbSet<WarehouseUser> WarehouseUsers { get; set; }
         public DbSet<WarehouseVoucher> WarehouseVouchers { get; set; }
         public DbSet<WarehouseProductVoucher> WarehouseProductVouchers { get; set; }
+        public DbSet<SupplyFactorItemAllocation> SupplyFactorItemAllocations { get; set; }
         public DbSet<SupplyFactorItem> SupplyFactorItems { get; set; }
         public DbSet<ReceivedSms> ReceivedSmses { get; set; }
         public DbSet<SentSms> SentSmses { get; set; }

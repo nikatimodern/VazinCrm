@@ -1,0 +1,35 @@
+
+/* Post-registration supply allocations */
+.sf-allocations .modal-content { border-radius: 14px; }
+.sf-allocation-item { border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+.sf-allocation-totals { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; }
+.sf-allocation-target { flex: 1 1 260px; min-width: 0; }
+.sf-allocation-target button { white-space: normal; }
+.sf-allocation-form { border-top: 1px solid #eee; padding-top: 12px; }
+.sf-allocation-picker { max-height: 55vh; }
+.sf-allocation-picker thead th { position: sticky; top: 0; background: #f8f9fa; z-index: 1; }
+.sf-allocation-picker td { vertical-align: middle; }
+
+.sf-supply-card { background-color: #fff; border: 1px solid #ccc; }
+.sf-supply-card.sf-supply-card-complete {
+    background-color: #f6fffb;
+    border-color: #198754;
+    --layer-bg-1: #eaf7f1;
+    --layer-bg-2: #f2fbf7;
+    --layer-bg-3: #e3f3ec;
+    --layer-bg-4: #f6fffb;
+    --layer-bg-5: #dff0e8;
+}
+.sf-supply-complete-badge { font-size: 11px; font-weight: normal; }
+
+.sf-allocation-picker .sf-allocation-sale-selectable { cursor: pointer; }
+.sf-allocation-picker .sf-allocation-sale-complete > td {
+    --bs-table-bg: #eaf7f1;
+    --bs-table-striped-bg: #eaf7f1;
+    --bs-table-hover-bg: #def0e5;
+    background-color: #eaf7f1;
+}
+
+.sf-allocation-warehouse-options { background: #f7faf8; border-bottom: 1px solid #dee2e6; }
+.sf-allocation-radio-cell { width: 44px; }
+.sf-allocation-warehouse-options .sf-allocation-sale-selectable { cursor: pointer; }

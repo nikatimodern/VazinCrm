@@ -7,6 +7,10 @@ using CRM.Framework.Domain;
 namespace CRM.Core.Domain.Warehouses.Entities;
 
 public class WarehouseProduct : BaseEntity {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public Guid? SupplyFactorItemId { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore]
+    public CRM.Core.Domain.Supplies.Entities.SupplyFactorItem SupplyFactorItem { get; set; }
     public Guid WarehouseId { get; set; }
     public Warehouse Warehouse { get; set; }
 

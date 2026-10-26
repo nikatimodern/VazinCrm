@@ -238,3 +238,21 @@
 @* <partial name="_PreFactorDescriptionModal.cshtml" /> *@
 @* <partial name="_PreFactorItemModal.cshtml" /> *@
 
+
+<div class="modal fade sf-allocations" id="sfAllocationsModal" tabindex="-1" aria-labelledby="sfAllocationsTitle" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sfAllocationsTitle">تخصیص آیتم‌های تامین به فروش یا انبار</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+            <div class="modal-body">
+                @Html.AntiForgeryToken()
+                <input id="sfAllocationSearch" class="form-control mb-3" placeholder="جست‌وجوی محصول در آیتم‌های این فاکتور" aria-label="جست‌وجوی آیتم تامین" />
+                <div id="sfAllocationFeedback" role="status" aria-live="polite"></div>
+                <div id="sfAllocationItems"></div>
+            </div>
+            <div class="modal-footer"><button type="button" class="buttonCancel2" data-bs-dismiss="modal">بستن</button></div>
+        </div>
+    </div>
+</div>

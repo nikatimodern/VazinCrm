@@ -1,10 +1,15 @@
-﻿using CRM.Framework.Domain;
+using System.Collections.Generic;
+using CRM.Core.Domain.Supplies.Entities;
+using CRM.Framework.Domain;
 using System;
 
 namespace CRM.Core.Domain.Factors.Entities
 {
     public class FactorItem : BaseEntity
     {
+        [System.Text.Json.Serialization.JsonIgnore]
+        public ICollection<SupplyFactorItemAllocation> Allocations { get; set; } = new List<SupplyFactorItemAllocation>();
+
         public int Row { get; set; }
         public string Product { get; set; }
         public string WeightCount { get; set; }

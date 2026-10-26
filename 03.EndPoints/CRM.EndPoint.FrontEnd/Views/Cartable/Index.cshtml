@@ -1,4 +1,4 @@
-﻿@{
+@{
     var canAccessFinancialExpert = User.IsAdmin() || User.IsFinancialExpert();
     var canAccessFinancialAdmin = false; //User.IsAdmin() || User.IsFinancialAdmin();
     var canAccessSalesExpert = User.IsAdmin() || User.IsSalesExpert();
@@ -114,3 +114,5 @@
     <script src="~/js/requestAmount.js" asp-append-version="true"></script>
     <script src="~/js/supplyFactor.js" asp-append-version="true"></script>
 }
+
+<link rel="stylesheet" href="~/css/supplyFactor.css" asp-append-version="true" />
