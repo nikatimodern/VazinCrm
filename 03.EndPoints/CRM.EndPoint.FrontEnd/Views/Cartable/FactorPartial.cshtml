@@ -86,9 +86,10 @@
 
 
                                         <div class="buttonGroup">
-                                            <button type="button" class=" buttonBlue2  " onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @passType)"><i style="font-size:10px" class="fa fa-pencil"></i></button>
-                                            <button type="button" class=" buttonBlue2 " onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
-
+                                            <button type="button" class="buttonBlue2" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @passType)">
+                                                <i style="font-size:10px" class="fa fa-pencil"></i>
+                                            </button>
+                                            <button type="button" class="buttonBlue2" onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
                                         </div>
 
 
@@ -96,7 +97,7 @@
                                     else
                                     {
                                         @*  <label class="fbold">@item.SnFinancial</label> *@
-                                        <button type="button" class=" buttonBlue2 " onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
+                                        <button type="button" class="buttonBlue2" onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
 
                                     }
                                 }

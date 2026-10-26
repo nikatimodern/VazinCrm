@@ -1031,6 +1031,14 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
     //--------------------------------------------------------- QUOTATION ---------------------------------------------------------
 
+    public async Task<Quotation> GetQuotationAsync(int id ,CancellationToken ct = default)
+    {
+        return await sepidarContext.Quotations
+            .AsNoTracking()
+            .Where(x => x.QuotationId == id)
+            .SingleOrDefaultAsync(ct);
+    }
+    
     public async Task<List<SepidarPartyDto>> GetSepidarCustomersAsync(CancellationToken ct = default)
     {
         return await sepidarContext.Parties
