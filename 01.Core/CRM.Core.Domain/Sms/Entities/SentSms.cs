@@ -8,6 +8,7 @@ public class SentSms : BaseEntity {
     public long FarazId { get; set; }
 
     public string Mobile { get; set; }
+    public string ReceivedFullName { get; set; }
     public string Number { get; set; }
 
     public string Type { get; set; }

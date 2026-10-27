@@ -9,10 +9,16 @@ using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models.Configuration;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.Infrastructures.Sql;
+using Generics.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.EndPoint.FrontEnd.Services.Sms {
-    public class SmsService(CRMContextDb db, FarazSmsService farazSmsService, ISmsIrService smsIrService, DateTimeServices dtService) {
+    public class SmsService(
+        CRMContextDb db,
+        UserContextDb udb,
+        FarazSmsService farazSmsService,
+        ISmsIrService smsIrService,
+        DateTimeServices dtService) {
         private const string FarazSmsCode = "cdde93d8-0522-4370-a734-008265e10245";
         private const string SmsIrCode = "c02f8771-cf60-4891-84cb-a21de966b3fc";
 
@@ -130,6 +136,8 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
             if (items.Count == 0)
                 return;
 
+            var contacts = await GetContactNamesAsync(items.Select(x => x.Mobile), cancellationToken);
+
             var farazIds = items
                 .Select(x => x.MessageId)
                 .Distinct()
@@ -150,6 +158,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
                 db.ReceivedSmses.Add(new ReceivedSms {
                     FarazId = item.MessageId,
                     Mobile = item.Mobile,
+                    SenderFullName = contacts.GetValueOrDefault(item.Mobile),
                     MessageText = item.MessageText,
                     Number = item.Number,
                     ReceivedDateTime = item.ReceivedDateTime,
@@ -209,6 +218,8 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
             if (items.Count == 0)
                 return;
 
+            var contacts = await GetContactNamesAsync(items.Select(x => x.Mobile), cancellationToken);
+
             var farazIds = items
                 .Select(x => x.MessageId)
                 .Distinct()
@@ -231,6 +242,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
                     FarazId = item.MessageId,
                     Mobile = item.Mobile,
                     Number = item.Number,
+                    ReceivedFullName = contacts.GetValueOrDefault(item.Mobile),
 
                     Type = item.Type,
                     TypeTxt = item.TypeTxt,
@@ -251,6 +263,62 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
             }
 
             await db.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task<Dictionary<string, string>> GetContactNamesAsync(IEnumerable<string> mobiles, CancellationToken ct = default)
+        {
+            var numbers = mobiles
+                .Select(TextService.NormalizeIranMobile)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .ToList();
+
+            if (numbers.Count == 0)
+                return [];
+
+            var contacts = new Dictionary<string, string>();
+
+            var users = await udb.Users
+                .AsNoTracking()
+                .Where(x => x.PhoneNumber != null && x.FullName != null)
+                .Select(x => new { x.PhoneNumber, x.FirstName, x.LastName, x.FullName })
+                .ToListAsync(ct);
+
+            foreach (var user in users)
+            {
+                var mobile = TextService.NormalizeIranMobile(user.PhoneNumber);
+
+                if (!numbers.Contains(mobile) || string.IsNullOrWhiteSpace(user.FullName) || TextService.NormalizeIranMobile(user.FullName) == mobile)
+                    continue;
+
+                contacts.TryAdd(mobile, user.FullName);
+            }
+
+            var missingNumbers = numbers.Except(contacts.Keys).ToList();
+
+            if (missingNumbers.Count == 0)
+                return contacts;
+
+            var customers = await db.Customers
+                .AsNoTracking()
+                .Where(x => x.Mobile != null)
+                .Select(x => new {
+                    x.Mobile,
+                    Name = $"{x.CompanyName ?? ""} {x.AgentName ?? ""}".Trim()
+                })
+                .ToListAsync(ct);
+
+            foreach (var customer in customers)
+            {
+                var mobile = TextService.NormalizeIranMobile(customer.Mobile);
+
+                if (!missingNumbers.Contains(mobile) || string.IsNullOrWhiteSpace(customer.Name))
+                    continue;
+
+                contacts.TryAdd(mobile, customer.Name);
+            }
+
+            return contacts;
         }
 
 

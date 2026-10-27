@@ -5123,6 +5123,9 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Property<bool>("Seen")
                         .HasColumnType("bit");
 
+                    b.Property<string>("SenderFullName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("UserCreator")
                         .HasColumnType("nvarchar(max)");
 
@@ -5192,6 +5195,9 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasColumnType("int");
 
                     b.Property<string>("PatternTypeTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReceivedFullName")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("SendDateTime")
