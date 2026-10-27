@@ -141,7 +141,6 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<DateTimeServices>();
             services.AddTransient<FileSaver>();
             services.AddScoped<Service>();
-            services.AddScoped<SupplyFactorWarehouseService>();
             services.AddTransient<SmsService>();
             services.AddHttpContextAccessor();
 //            services.AddScoped<SepidarService>();

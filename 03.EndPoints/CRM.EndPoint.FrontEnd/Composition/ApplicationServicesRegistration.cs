@@ -1,16 +1,49 @@
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Reports.Commands.AddReport;
-using CRM.Core.Domain.Deals.Repositories;
-using CRM.Infrastructures.Sql.Deals.Repositories;
-using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.Core.ApplicationServices.Reports.Queries.GetReport;
+using CRM.Core.ApplicationServices.Supplies.Commands.AddPayment;
+using CRM.Core.ApplicationServices.Supplies.Commands.AddSupply;
+using CRM.Core.ApplicationServices.Supplies.Commands.AddSupplyFactor;
+using CRM.Core.ApplicationServices.Supplies.Commands.DeleteSalesAllocation;
+using CRM.Core.ApplicationServices.Supplies.Commands.DeleteSupplyAllocation;
+using CRM.Core.ApplicationServices.Supplies.Commands.DeleteSupplyFactor;
+using CRM.Core.ApplicationServices.Supplies.Commands.ProcessSupplyInvoice;
+using CRM.Core.ApplicationServices.Supplies.Commands.SaveSalesAllocation;
+using CRM.Core.ApplicationServices.Supplies.Commands.SaveSupplyAllocation;
+using CRM.Core.ApplicationServices.Supplies.Commands.UpdatePayment;
+using CRM.Core.ApplicationServices.Supplies.Commands.UpdateSupplyFactor;
+using CRM.Core.ApplicationServices.Supplies.Dtos;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetDealSupplies;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetOrderHeadsBySupplier;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetPayment;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetReceivables;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetSalesFactorAllocations;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetSupplierFinancialSummary;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetSupplierOrders;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetSupplies;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetSupplyBaseData;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetSupplyDemands;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetSupplyFactor;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetSupplyFactorAllocations;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetSupplyFactors;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetSupplyPayments;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetSupplyProfit;
+using CRM.Core.ApplicationServices.Supplies.Queries.SearchAllocationFactorItems;
+using CRM.Core.ApplicationServices.Supplies.Queries.SearchAllocationSupplyItems;
+using CRM.Core.ApplicationServices.Supplies.Queries.SearchSupplyFactors;
+using CRM.Core.Domain.Deals.Repositories;
 using CRM.Core.Domain.Reports.Entities;
 using CRM.Core.Domain.Reports.Repositories;
+using CRM.Core.Domain.Supplies.Models;
+using CRM.Core.Domain.Supplies.Repositories;
+using CRM.EndPoint.FrontEnd.Services;
+using CRM.EndPoint.FrontEnd.Services.LogSystem;
+using CRM.Infrastructures.Sql.Deals.Repositories;
 using CRM.Infrastructures.Sql.Reports.Repositories;
+using CRM.Infrastructures.Sql.Supplies.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CRM.EndPoint.FrontEnd.Composition;
-
 public static class ApplicationServicesRegistration
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
@@ -20,6 +53,40 @@ public static class ApplicationServicesRegistration
         services.AddScoped<ICommandHandler<AddReportCommand, AddReportResult>, AddReportCommandHandler>();
         services.AddScoped<IDealRepository, DealRepository>();
         services.AddScoped<IReportAuditLogger, ReportAuditLogger>();
+        services.AddScoped<ISupplyQueryRepository, SupplyQueryRepository>();
+        services.AddScoped<ISupplyWriteRepository, SupplyWriteRepository>();
+        services.AddScoped<ISupplyInventoryRepository, SupplyInventoryRepository>();
+        services.AddScoped<ISupplyIntegrationServices, SupplyIntegrationServices>();
+        services.AddScoped<ISupplyRequestDispatcher, SupplyRequestDispatcher>();
+        services.AddScoped<IQueryHandler<GetSupplyFactorAllocationsQuery, SupplyResult>, GetSupplyFactorAllocationsQueryHandler>();
+        services.AddScoped<IQueryHandler<SearchAllocationFactorItemsQuery, SupplyResult>, SearchAllocationFactorItemsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetSalesFactorAllocationsQuery, SupplyResult>, GetSalesFactorAllocationsQueryHandler>();
+        services.AddScoped<IQueryHandler<SearchAllocationSupplyItemsQuery, SupplyResult>, SearchAllocationSupplyItemsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetPaymentQuery, SupplyResult>, GetPaymentQueryHandler>();
+        services.AddScoped<IQueryHandler<GetSupplyPaymentsQuery, SupplyResult>, GetSupplyPaymentsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetSupplierFinancialSummaryQuery, SupplyResult>, GetSupplierFinancialSummaryQueryHandler>();
+        services.AddScoped<IQueryHandler<GetSupplyFactorsQuery, SupplyResult>, GetSupplyFactorsQueryHandler>();
+        services.AddScoped<IQueryHandler<SearchSupplyFactorsQuery, SupplyResult>, SearchSupplyFactorsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetSupplyFactorQuery, SupplyResult>, GetSupplyFactorQueryHandler>();
+        services.AddScoped<IQueryHandler<GetSupplyBaseDataQuery, SupplyResult>, GetSupplyBaseDataQueryHandler>();
+        services.AddScoped<IQueryHandler<GetSupplierOrdersQuery, SupplyResult>, GetSupplierOrdersQueryHandler>();
+        services.AddScoped<IQueryHandler<GetSuppliesQuery, SupplyResult>, GetSuppliesQueryHandler>();
+        services.AddScoped<IQueryHandler<GetSupplyProfitQuery, SupplyResult>, GetSupplyProfitQueryHandler>();
+        services.AddScoped<IQueryHandler<GetSupplyDemandsQuery, SupplyResult>, GetSupplyDemandsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetReceivablesQuery, SupplyResult>, GetReceivablesQueryHandler>();
+        services.AddScoped<IQueryHandler<GetDealSuppliesQuery, SupplyResult>, GetDealSuppliesQueryHandler>();
+        services.AddScoped<IQueryHandler<GetOrderHeadsBySupplierQuery, SupplyResult>, GetOrderHeadsBySupplierQueryHandler>();
+        services.AddScoped<ICommandHandler<SaveSupplyAllocationCommand, SupplyResult>, SaveSupplyAllocationCommandHandler>();
+        services.AddScoped<ICommandHandler<SaveSalesAllocationCommand, SupplyResult>, SaveSalesAllocationCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteSupplyAllocationCommand, SupplyResult>, DeleteSupplyAllocationCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteSalesAllocationCommand, SupplyResult>, DeleteSalesAllocationCommandHandler>();
+        services.AddScoped<ICommandHandler<AddSupplyFactorCommand, SupplyResult>, AddSupplyFactorCommandHandler>();
+        services.AddScoped<ICommandHandler<UpdateSupplyFactorCommand, SupplyResult>, UpdateSupplyFactorCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteSupplyFactorCommand, SupplyResult>, DeleteSupplyFactorCommandHandler>();
+        services.AddScoped<ICommandHandler<AddPaymentCommand, SupplyResult>, AddPaymentCommandHandler>();
+        services.AddScoped<ICommandHandler<UpdatePaymentCommand, SupplyResult>, UpdatePaymentCommandHandler>();
+        services.AddScoped<ICommandHandler<AddSupplyCommand, SupplyResult>, AddSupplyCommandHandler>();
+        services.AddScoped<ICommandHandler<ProcessSupplyInvoiceCommand, SupplyResult>, ProcessSupplyInvoiceCommandHandler>();
         return services;
     }
 }
