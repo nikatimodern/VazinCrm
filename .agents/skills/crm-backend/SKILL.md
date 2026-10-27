@@ -17,7 +17,10 @@ Use for controllers, endpoints, business logic, repository contracts, and CQRS-r
 Dependencies point inward. Do not reference SQL, EF Core or MVC from Domain. Keep controllers thin. Use Domain repository interfaces in application code rather than concrete SQL implementations.
 
 ## Workflow
-- Place application modules directly under the `CRM.Core.ApplicationServices` project root (for example, `Reports/Queries`, `Reports/Commands`, `Reports/Handlers`, and `Reports/Dtos` as needed). Do not introduce a `Features` wrapper folder. Match namespaces to these paths (for example, `CRM.Core.ApplicationServices.Reports.Queries`); keep shared CQRS contracts in `Abstractions/Cqrs`.
+- Use Feature-Based / Vertical Slice organization by default for every new Command and Query across all features, not only Reports. Place features directly under `CRM.Core.ApplicationServices`, without a `Features` wrapper folder.
+- Give each operation a separate `<Feature>/Commands/<Operation>/` or `<Feature>/Queries/<Operation>/` folder. Keep its request, handler, and operation-specific DTO/result together; never use a feature-wide `Handlers` folder. Put only models shared by multiple operations in `<Feature>/Dtos/`.
+- Match namespaces to these folders (for example, `CRM.Core.ApplicationServices.Reports.Commands.AddReport`). Name requests, handlers, and results after actual behavior: `GetAllReportsQuery` retrieves all reports, while `GetReportQuery` retrieves one. Keep generic CQRS contracts in `Abstractions/Cqrs`.
+- Preserve existing CQRS contracts, DI lifetimes, HTTP responses, authorization, and business logic. Update namespaces, usings, registrations, and callers when moving files. Do not add unnecessary files, interfaces, abstractions, or packages; new packages require approval.
 1. Trace the existing request path, DI registrations, and domain behavior.
 2. Choose the correct layer for each responsibility before editing.
 3. For every new feature, evaluate CQRS suitability and propose it briefly before implementation where useful. The `CRM.Core.ApplicationServices` project already exists. Inspect its actual structure and dependencies, and obtain approval before introducing a new CQRS pattern or package.

@@ -1,7 +1,7 @@
 #nullable enable
 using System.Threading;
 using System.Threading.Tasks;
-using CRM.Core.ApplicationServices.Reports.Abstractions;
+using CRM.Core.ApplicationServices.Reports.Commands.AddReport;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Reports.Entities;

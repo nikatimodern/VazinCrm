@@ -1,12 +1,9 @@
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
-using CRM.Core.ApplicationServices.Reports.Abstractions;
-using CRM.Core.ApplicationServices.Reports.Commands;
-using CRM.Core.ApplicationServices.Reports.Dtos;
+using CRM.Core.ApplicationServices.Reports.Commands.AddReport;
 using CRM.Core.Domain.Deals.Repositories;
 using CRM.Infrastructures.Sql.Deals.Repositories;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
-using CRM.Core.ApplicationServices.Reports.Handlers;
-using CRM.Core.ApplicationServices.Reports.Queries;
+using CRM.Core.ApplicationServices.Reports.Queries.GetReport;
 using CRM.Core.Domain.Reports.Entities;
 using CRM.Core.Domain.Reports.Repositories;
 using CRM.Infrastructures.Sql.Reports.Repositories;

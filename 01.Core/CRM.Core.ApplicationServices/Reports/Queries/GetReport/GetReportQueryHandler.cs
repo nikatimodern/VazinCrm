@@ -1,9 +1,8 @@
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
-using CRM.Core.ApplicationServices.Reports.Queries;
 using CRM.Core.Domain.Reports.Entities;
 using CRM.Core.Domain.Reports.Repositories;
 
-namespace CRM.Core.ApplicationServices.Reports.Handlers;
+namespace CRM.Core.ApplicationServices.Reports.Queries.GetReport;
 
 public sealed class GetReportQueryHandler : IQueryHandler<GetReportQuery, Report?>
 {

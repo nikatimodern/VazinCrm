@@ -1,7 +1,7 @@
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Reports.Entities;
 
-namespace CRM.Core.ApplicationServices.Reports.Abstractions;
+namespace CRM.Core.ApplicationServices.Reports.Commands.AddReport;
 
 public interface IReportAuditLogger
 {

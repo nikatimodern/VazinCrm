@@ -1,4 +1,4 @@
-namespace CRM.Core.ApplicationServices.Reports.Dtos;
+namespace CRM.Core.ApplicationServices.Reports.Commands.AddReport;
 
 public enum AddReportResult
 {

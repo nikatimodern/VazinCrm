@@ -34,6 +34,13 @@ For new features, prefer the intended architecture. Do not add business rules to
 - Respect ASP.NET Core Identity, `[Authorize]` roles, server-side validation, and HTTP response contracts.
 - Distinguish page navigation from AJAX/API responses; preserve cookie-expiry and error-handling behavior.
 
+## CQRS organization: Feature-Based / Vertical Slice
+- Use this structure by default for every new Command and Query across all features, not only Reports. Place each feature directly under `CRM.Core.ApplicationServices` without a `Features` wrapper folder.
+- Give each operation its own folder: `<Feature>/Commands/<Operation>/` or `<Feature>/Queries/<Operation>/`. Keep its request, handler, and operation-specific DTO/result together. Do not create a feature-wide `Handlers` folder. Use `<Feature>/Dtos/` only for models actually shared by multiple operations.
+- Match namespaces to the operation folders. Name requests, handlers, and results according to actual behavior; for example, use `GetAllReportsQuery` for retrieving all reports and `GetReportQuery` for retrieving one report. Do not change behavior merely to match an example name.
+- Keep generic CQRS contracts in `Abstractions/Cqrs`. Repository interfaces remain in Domain and implementations in SQL Infrastructure; handlers depend on Domain contracts, never directly on DbContext.
+- Reuse the current CQRS contracts and DI approach. When moving files, update namespaces, usings, DI registrations, and callers while preserving HTTP responses, authorization, and business behavior. Add no unnecessary files or abstractions, and obtain approval before adding packages.
+
 ## EF Core and SQL Server
 - Inspect entity configuration and actual schema before assuming column or relationship names.
 - Prefer server-translatable LINQ, focused projection, and `AsNoTracking()` for read-only operations. Avoid N+1 queries and unnecessary materialization.

@@ -1,9 +1,8 @@
 ﻿using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Reports.Entities;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
-using CRM.Core.ApplicationServices.Reports.Queries;
-using CRM.Core.ApplicationServices.Reports.Commands;
-using CRM.Core.ApplicationServices.Reports.Dtos;
+using CRM.Core.ApplicationServices.Reports.Queries.GetReport;
+using CRM.Core.ApplicationServices.Reports.Commands.AddReport;
 using System.Threading;
 using CRM.EndPoint.FrontEnd.Services;
 using Generics.Infrastructures.Sql;

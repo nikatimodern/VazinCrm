@@ -1,13 +1,10 @@
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
-using CRM.Core.ApplicationServices.Reports.Abstractions;
-using CRM.Core.ApplicationServices.Reports.Commands;
-using CRM.Core.ApplicationServices.Reports.Dtos;
 using CRM.Core.Domain.Deals.Repositories;
 using CRM.Core.Domain.Reports.Enum;
 using CRM.Core.Domain.Reports.Repositories;
 using CRM.Framework;
 
-namespace CRM.Core.ApplicationServices.Reports.Handlers;
+namespace CRM.Core.ApplicationServices.Reports.Commands.AddReport;
 
 public sealed class AddReportCommandHandler(
     IReportRepository reports,

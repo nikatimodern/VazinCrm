@@ -21,7 +21,7 @@ Use for any transfer, mapping, or lookup involving Sepidar or ExternalSoftware.
 Never run destructive or production writes without approval. Do not invent accounting codes, stock references, or SQL columns. Never bypass duplicate checks to make a transfer succeed.
 
 ## Project-wide architecture and change policy
-- Place application modules directly under the `CRM.Core.ApplicationServices` project root (for example, `Reports/Queries`, `Reports/Commands`, `Reports/Handlers`, and `Reports/Dtos` as needed). Do not introduce a `Features` wrapper folder. Match namespaces to these paths (for example, `CRM.Core.ApplicationServices.Reports.Queries`); keep shared CQRS contracts in `Abstractions/Cqrs`.
+- Follow the Feature-Based / Vertical Slice CQRS organization defined in `AGENTS.md` for all features: place each request, handler, and operation-specific DTO/result together under `<Feature>/Commands/<Operation>/` or `<Feature>/Queries/<Operation>/`. Do not introduce a `Features` wrapper or a feature-wide `Handlers` folder. Keep shared models in `<Feature>/Dtos` and generic CQRS contracts in `Abstractions/Cqrs`; match namespaces to paths.
 - For any new feature that persists data, define its repository interface in `CRM.Core.Domain` and implementation in `CRM.Infrastructures.Sql`; avoid direct DbContext access from new controllers or handlers.
 - For new features, consider and suggest CQRS where beneficial, but use the existing `CRM.Core.ApplicationServices` layer; suggest CQRS where beneficial and obtain approval before introducing new CQRS patterns or dependencies.
 - Improve code within the requested scope. For broader refactoring, propose affected files, benefits, risks, and a verification plan; wait for explicit approval before proceeding.
