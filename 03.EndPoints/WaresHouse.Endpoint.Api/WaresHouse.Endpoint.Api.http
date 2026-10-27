@@ -1,6 +1,0 @@
-@WaresHouse.Endpoint.Api_HostAddress = http://localhost:5233
-
-GET {{WaresHouse.Endpoint.Api_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
