@@ -17,6 +17,7 @@ Use for controllers, endpoints, business logic, repository contracts, and CQRS-r
 Dependencies point inward. Do not reference SQL, EF Core or MVC from Domain. Keep controllers thin. Use Domain repository interfaces in application code rather than concrete SQL implementations.
 
 ## Workflow
+- Place application modules directly under the `CRM.Core.ApplicationServices` project root (for example, `Reports/Queries`, `Reports/Commands`, `Reports/Handlers`, and `Reports/Dtos` as needed). Do not introduce a `Features` wrapper folder. Match namespaces to these paths (for example, `CRM.Core.ApplicationServices.Reports.Queries`); keep shared CQRS contracts in `Abstractions/Cqrs`.
 1. Trace the existing request path, DI registrations, and domain behavior.
 2. Choose the correct layer for each responsibility before editing.
 3. For every new feature, evaluate CQRS suitability and propose it briefly before implementation where useful. The `CRM.Core.ApplicationServices` project already exists. Inspect its actual structure and dependencies, and obtain approval before introducing a new CQRS pattern or package.

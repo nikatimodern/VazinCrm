@@ -1,5 +1,10 @@
 ﻿using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Reports.Entities;
+using CRM.Core.ApplicationServices.Abstractions.Cqrs;
+using CRM.Core.ApplicationServices.Reports.Queries;
+using CRM.Core.ApplicationServices.Reports.Commands;
+using CRM.Core.ApplicationServices.Reports.Dtos;
+using System.Threading;
 using CRM.EndPoint.FrontEnd.Services;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
@@ -29,24 +34,27 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly IHubContext<TaskHub> hub;
         private readonly UserManager<AppUser> userManager;
         private readonly CRMContextDb db;
-        private readonly DateTimeServices dts;
         private readonly UserContextDb udb;
         private readonly IViewRenderService vrs;
         private readonly LogSystemService _logSystemService;
         private readonly IssabelService issabelService;
+        private readonly IQueryHandler<GetReportQuery, Report> getReportHandler;
+        private readonly ICommandHandler<AddReportCommand, AddReportResult> addReportHandler;
 
         public ReportController(IHubContext<TaskHub> hub, UserManager<AppUser> userManager, CRMContextDb db,
-            DateTimeServices dts, UserContextDb udb, IViewRenderService vrs, LogSystemService logSystemService,
-            IssabelService issabelService)
+            UserContextDb udb, IViewRenderService vrs, LogSystemService logSystemService,
+            IssabelService issabelService, IQueryHandler<GetReportQuery, Report> getReportHandler,
+            ICommandHandler<AddReportCommand, AddReportResult> addReportHandler)
         {
             this.hub = hub;
             this.userManager = userManager;
             this.db = db;
-            this.dts = dts;
             this.udb = udb;
             this.vrs = vrs;
             _logSystemService = logSystemService;
             this.issabelService = issabelService;
+            this.getReportHandler = getReportHandler;
+            this.addReportHandler = addReportHandler;
         }
 
         public IActionResult Index()
@@ -158,9 +166,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [HttpGet]
-        public async Task<IActionResult> GetReport(Guid Id)
+        public async Task<IActionResult> GetReport(Guid Id, CancellationToken cancellationToken)
         {
-            var rep = await db.Reports.Where(f => f.Id == Id).FirstOrDefaultAsync();
+            var rep = await getReportHandler.HandleAsync(new GetReportQuery(Id), cancellationToken);
             return Ok(rep);
         }
 
@@ -334,74 +342,39 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [HttpPost]
-        public async Task<IActionResult> AddReport(Report model)
+        public async Task<IActionResult> AddReport(Report model, CancellationToken cancellationToken)
         {
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
-                var rols = await userManager.GetRolesAsync(user);
-                var deal = await db.Deals.Where(f => f.Id == model.DealId).FirstOrDefaultAsync();
+                if (user == null) return BadRequest();
 
-                if (deal != null)
-                {
-                    deal.ModifyDate = DateTime.Now;
-                    deal.ModifyDateTxt = dts.GetDateTimePersian();
-                }
+                var roles = await userManager.GetRolesAsync(user);
+                var result = await addReportHandler.HandleAsync(
+                    new AddReportCommand(model, user, roles.Contains("مدیر فروش") || roles.Contains("مدیر ارشد")),
+                    cancellationToken);
 
-                if (model.Id == Guid.Empty)
-                {
-                    model.ReportTypeTxt = Service.getTypetxtReportType((int)model.ReportType);
-                    model.UserCreator = user.FullName;
-                    model.UserCreatorID = user.Id;
-
-                    model.RegDate = DateTime.Now;
-                    model.RegDateTxt = dts.GetDatePersian();
-                    model.RegTimeTxt = dts.GetNowTime("HH:mm:ss");
-
-                    db.Reports.Add(model);
-
-                    await _logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
-                    await db.SaveChangesAsync();
-                    await hub.Clients.AllExcept(TaskHub.GetConnectionId(user.Id)).SendAsync("ShowReport");
-                    return Ok(new { status = 200, message = "گزارش جدید ثبت شد", data = "" });
-                } else
-                {
-                    var oldModel = await db.Reports.Where(f => f.Id == model.Id).FirstOrDefaultAsync();
-                    if (rols.Contains("مدیر فروش") || rols.Contains("مدیر ارشد") || oldModel.UserCreatorID == user.Id)
-                    {
-                        model.ReportTypeTxt = Service.getTypetxtReportType((int)model.ReportType);
-                        model.UserModify = user.FullName;
-                        model.UserModifyID = user.Id;
-
-
-                        await _logSystemService.LogChange(oldModel, model, LogActionEnum.ویرایش, user);
-
-                        db.Entry(oldModel).CurrentValues.SetValues(model);
-
-
-                        db.Entry(model).Property(f => f.CreateDate).IsModified = false;
-                        db.Entry(model).Property(f => f.CreateDateTxt).IsModified = false;
-                        db.Entry(model).Property(f => f.UserCreator).IsModified = false;
-                        db.Entry(model).Property(f => f.UserCreatorID).IsModified = false;
-
-                        await db.SaveChangesAsync();
-                        await hub.Clients.AllExcept(TaskHub.GetConnectionId(user.Id)).SendAsync("ShowReport");
-
-
-                        return Ok(new { status = 200, message = "گزارش ویرایش شد", data = "" });
-                    }
-
-                    //await hub.Clients.All.SendAsync("ShowReport");
-
+                if (result == AddReportResult.NotFound) return BadRequest();
+                if (result == AddReportResult.Forbidden)
                     return Ok(new { status = 201, message = "شما مجاز به ویرایش این گزارش نیستید", data = "" });
-                }
+
+                await hub.Clients.AllExcept(TaskHub.GetConnectionId(user.Id))
+                    .SendAsync("ShowReport", cancellationToken);
+                return Ok(new {
+                    status = 200,
+                    message = result == AddReportResult.Created ? "گزارش جدید ثبت شد" : "گزارش ویرایش شد",
+                    data = ""
+                });
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch
             {
                 return BadRequest();
             }
         }
-
 
         [HttpGet]
         public async Task<IActionResult> GetCallAudio(Guid callId)

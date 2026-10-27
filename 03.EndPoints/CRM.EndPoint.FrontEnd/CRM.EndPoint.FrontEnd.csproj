@@ -59,6 +59,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\00.Framework\CRM.Framework\CRM.Framework.csproj" />
     <ProjectReference Include="..\..\01.Core\CRM.Core.Domain\CRM.Core.Domain.csproj" />
+    <ProjectReference Include="..\..\01.Core\CRM.Core.ApplicationServices\CRM.Core.ApplicationServices.csproj" />
     <ProjectReference Include="..\..\02.Infrastructures\CRM.Infrastructures.Sql\Generics.Infrastructures.Sql\CRM.Infrastructures.Sql.csproj" />
   </ItemGroup>
   

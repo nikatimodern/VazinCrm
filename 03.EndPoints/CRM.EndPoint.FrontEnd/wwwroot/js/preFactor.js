@@ -2482,7 +2482,7 @@ async function showAddStocksModal() {
 }
 
 
-addItemInSepidarModal.addEventListener("hidden.bs.modal", () => {
+addItemInSepidarModal?.addEventListener("hidden.bs.modal", () => {
     mySer.emptyForm("addItemInSepidarForm");
     modalSelector.reset();
     sepidarStocksSelectedIds = [];

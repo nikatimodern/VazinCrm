@@ -1,5 +1,6 @@
 using CRM.Core.Domain;
 using CRM.Core.Domain.AppUsers.Entities;
+using CRM.EndPoint.FrontEnd.Composition;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.CustomValidator;
 using CRM.EndPoint.FrontEnd.Services.SaveChangeCustom;
@@ -58,6 +59,7 @@ namespace CRM.EndPoint.FrontEnd {
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddApplicationServices();
             services.AddControllers()
                 .AddJsonOptions(opt => {
                     opt.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
