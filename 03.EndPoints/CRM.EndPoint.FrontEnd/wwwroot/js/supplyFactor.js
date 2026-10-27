@@ -506,7 +506,7 @@ const sfAllocationText = (value, fallback = "") => {
     return !text || /^(null|undefined|nan)$/i.test(text) ? fallback : text;
 };
 const sfAllocationEscape = value => sfAllocationText(value).replace(/[&<>"']/g, c =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[c]);
 const sfAllocationNumber = value => Number.isFinite(Number(value))
     ? Number(value).toLocaleString("fa-IR", { maximumFractionDigits: 2 }) : "—";
 const sfAllocationRemaining = item => (Math.round(Number(item.weightCount) * 100) - Math.round(Number(item.allocated) * 100)) / 100;
@@ -528,9 +528,9 @@ function sfAllocationIcon(name) {
 
 function sfAllocationSalesWeight(value) {
     const normalized = String(value ?? "").trim()
-        .replace(/[۰-۹]/g, d => String(d.charCodeAt(0) - "۰".charCodeAt(0)))
-        .replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - "٠".charCodeAt(0)))
-        .replace(/[,٬\s]/g, "").replace(/٫/g, ".");
+                                          .replace(/[۰-۹]/g, d => String(d.charCodeAt(0) - "۰".charCodeAt(0)))
+                                          .replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - "٠".charCodeAt(0)))
+                                          .replace(/[,٬\s]/g, "").replace(/٫/g, ".");
     if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized)) return 0;
     const weight = Number(normalized);
     return Number.isFinite(weight) && weight > 0 ? weight : 0;
@@ -542,7 +542,8 @@ function sfAllocationDisplayRecord(record) {
         "warehouseTitle", "sourceWarehouseTitle", "factorItemWeightCount", "factorItemUnitTxt"]) {
         if (key in copy) copy[key] = sfAllocationText(copy[key]);
     }
-    if (copy.sourceWarehouseProductId) copy.sourceWarehouseAvailable = Math.max(0,
+    if (copy.sourceWarehouseProductId) copy.sourceWarehouseAvailable = Math.max(
+        0,
         Math.min(Number(copy.sourceWarehouseStock) - Number(copy.sourceWarehouseReserved), Number(copy.sourceWarehouseRemainder)));
     return copy;
 }
@@ -562,7 +563,8 @@ function sfAllocationSalesCapacity(a) {
 }
 function sfAllocationSkeleton(count = 2) {
     return `<div class="sf-item-list" role="status" aria-label="در حال دریافت اطلاعات">${Array.from({ length: count }, () =>
-        '<div class="sf-skeleton" aria-hidden="true"><div class="sf-skeleton-line"></div><div class="sf-skeleton-line"></div><div class="sf-skeleton-line"></div></div>').join("")}</div>`;
+        `<div class="sf-skeleton" aria-hidden="true"><div class="sf-skeleton-line"></div><div class="sf-skeleton-line"></div><div class="sf-skeleton-line"></div></div>`)
+                                                                                              .join("")}</div>`;
 }
 function sfAllocationEmpty(title, text, icon = "search") {
     return `<div class="sf-empty"><span class="sf-empty-symbol">${sfAllocationIcon(icon)}</span><strong>${sfAllocationEscape(title)}</strong><p>${sfAllocationEscape(text)}</p></div>`;
@@ -571,9 +573,12 @@ function sfAllocationEmpty(title, text, icon = "search") {
 function ensureSupplyAllocationUI() {
     if (document.getElementById("sfAllocationsModal")?.classList.contains("sf-allocation-modal")) return;
     const old = document.getElementById("sfAllocationsModal");
-    const token = old?.querySelector('[name="__RequestVerificationToken"]')?.value
-        || document.querySelector('[name="__RequestVerificationToken"]')?.value || "";
-    if (old) { bootstrap.Modal.getInstance(old)?.dispose(); old.remove(); }
+    const token = old?.querySelector(`[name="__RequestVerificationToken"]`)?.value
+        || document.querySelector(`[name="__RequestVerificationToken"]`)?.value || "";
+    if (old) {
+        bootstrap.Modal.getInstance(old)?.dispose();
+        old.remove();
+    }
     document.body.insertAdjacentHTML("beforeend", `
         <div id="sfAllocationsModal" class="modal fade sf-ui sf-allocation-modal" dir="rtl" tabindex="-1" role="dialog" aria-labelledby="sfAllocationsTitle" aria-hidden="true" data-bs-backdrop="static">
           <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable sf-dialog">
@@ -609,9 +614,15 @@ function ensureSupplyAllocationUI() {
           </div>
         </div>`);
     const modal = document.getElementById("sfAllocationsModal");
-    modal.addEventListener("hide.bs.modal", event => { if (sfAllocationSaving || sfAllocationChoosing) event.preventDefault(); });
+    modal.addEventListener("hide.bs.modal", event => {
+        if (sfAllocationSaving || sfAllocationChoosing) event.preventDefault();
+    });
     modal.addEventListener("hidden.bs.modal", () => {
-        if (!sfAllocationChoosing) { sfAllocationAbort?.abort(); sfAllocationRequest++; sfAllocationOrigin?.focus(); }
+        if (!sfAllocationChoosing) {
+            sfAllocationAbort?.abort();
+            sfAllocationRequest++;
+            sfAllocationOrigin?.focus();
+        }
     });
     modal.addEventListener("toggle", event => {
         if (event.target.matches(".sf-item")) {
@@ -619,30 +630,39 @@ function ensureSupplyAllocationUI() {
             event.target.open ? sfAllocationOpen.add(id) : sfAllocationOpen.delete(id);
         }
     }, true);
-    sfAllocationSelector = new ModalSelector({ modal: "#sfAllocationPickerModal", title: "#sfPickerTitle",
-        search: "#sfPickerSearch", container: "#sfPickerContent", submit: "#sfPickerSubmit", cancel: "#sfPickerCancel" });
+    sfAllocationSelector = new ModalSelector({
+        modal: "#sfAllocationPickerModal", title: "#sfPickerTitle",
+        search: "#sfPickerSearch", container: "#sfPickerContent", submit: "#sfPickerSubmit", cancel: "#sfPickerCancel",
+    });
     // The existing selector supplies selection semantics; all sizing is custom CSS.
-    sfAllocationSelector.setModalSize = () => {};
+    sfAllocationSelector.setModalSize = () => {
+    };
     sfAllocationSelector.load = loadSupplyAllocationPicker;
     document.getElementById("sfPickerSearch").addEventListener("keyup", event => {
         if (event.key !== "Enter") return;
-        event.stopImmediatePropagation(); clearTimeout(sfPickerTimer);
+        event.stopImmediatePropagation();
+        clearTimeout(sfPickerTimer);
         sfAllocationSelector.load(event.target.value.trim());
     }, true);
     document.getElementById("sfAllocationPickerModal").addEventListener("shown.bs.modal", () => {
-        modal.removeAttribute("aria-modal"); modal.setAttribute("aria-hidden", "true");
+        modal.removeAttribute("aria-modal");
+        modal.setAttribute("aria-hidden", "true");
         if (sfPickerTab === "sales") document.getElementById("sfPickerSearch").focus();
     });
     document.getElementById("sfAllocationPickerModal").addEventListener("hidden.bs.modal", () => {
-        sfPickerAbort?.abort(); sfPickerRequest++; clearTimeout(sfPickerTimer);
+        sfPickerAbort?.abort();
+        sfPickerRequest++;
+        clearTimeout(sfPickerTimer);
         sfAllocationChoosing = false;
         if (modal.classList.contains("show")) {
             document.body.classList.add("modal-open");
             // Bootstrap activates only the top focus trap. Restore its parent after the child closes.
-            modal.removeAttribute("aria-hidden"); modal.setAttribute("aria-modal", "true");
+            modal.removeAttribute("aria-hidden");
+            modal.setAttribute("aria-modal", "true");
             const parentFocusTrap = bootstrap.Modal.getInstance(modal)?._focustrap;
-            parentFocusTrap?.deactivate(); parentFocusTrap?.activate();
-            const weightInput = sfPickerForm?.querySelector('[name="weight"]:not(:disabled)');
+            parentFocusTrap?.deactivate();
+            parentFocusTrap?.activate();
+            const weightInput = sfPickerForm?.querySelector("[name=\"weight\"]:not(:disabled)");
             (weightInput || sfPickerForm?.querySelector(".sf-allocation-select"))?.focus();
         }
     });
@@ -658,10 +678,13 @@ function sfAllocationFeedback(message, type = "success", retry = false) {
     if (!box) return;
     const persistent = !!text && (type === "loading" || retry);
     box.hidden = !persistent;
-    if (!persistent) { box.replaceChildren(); return; }
+    if (!persistent) {
+        box.replaceChildren();
+        return;
+    }
     box.className = `sf-feedback${type === "error" ? " sf-feedback-error" : " sf-feedback-loading"}`;
     box.setAttribute("role", type === "error" ? "alert" : "status");
-    box.innerHTML = `${type === "loading" ? '<span class="sf-spinner" aria-hidden="true"></span>' : sfAllocationIcon("info")}<span class="sf-feedback-text">${sfAllocationEscape(text)}</span>${retry ? '<button type="button" class="sf-button" data-sf-retry>تلاش دوباره</button>' : ""}`;
+    box.innerHTML = `${type === "loading" ? "<span class=\"sf-spinner\" aria-hidden=\"true\"></span>" : sfAllocationIcon("info")}<span class="sf-feedback-text">${sfAllocationEscape(text)}</span>${retry ? "<button type=\"button\" class=\"sf-button\" data-sf-retry>تلاش دوباره</button>" : ""}`;
 }
 function showSalesFactorAllocations(id) {
     return showSupplyAllocations(id, "sales");
@@ -670,17 +693,24 @@ async function showSupplyAllocations(id, perspective = "supply") {
     ensureSupplyAllocationUI();
     if (sfAllocationSaving || sfAllocationChoosing) return;
     sfAllocationPerspective = perspective;
-    document.getElementById("sfAllocationPagination").setAttribute("aria-label", sfAllocationIsSales() ? "پیمایش آیتم‌های فروش" : "پیمایش آیتم‌های تامین");
-    document.getElementById("sfAllocationSearch").setAttribute("aria-label", sfAllocationIsSales() ? "جست‌وجو در آیتم‌های فروش" : "جست‌وجو در آیتم‌های تامین");
-    document.querySelector('[data-sf-tab="sales"]').textContent = sfAllocationIsSales() ? "فاکتورهای تامین" : "فاکتورهای فروش";
-    document.querySelector('[data-sf-tab="warehouses"]').textContent = sfAllocationIsSales() ? "موجودی انبارها" : "انبارها";
+    document.getElementById("sfAllocationPagination")
+            .setAttribute("aria-label", sfAllocationIsSales() ? "پیمایش آیتم‌های فروش" : "پیمایش آیتم‌های تامین");
+    document.getElementById("sfAllocationSearch")
+            .setAttribute("aria-label", sfAllocationIsSales() ? "جست‌وجو در آیتم‌های فروش" : "جست‌وجو در آیتم‌های تامین");
+    document.querySelector(`[data-sf-tab="sales"]`).textContent = sfAllocationIsSales() ? "فاکتورهای تامین" : "فاکتورهای فروش";
+    document.querySelector(`[data-sf-tab="warehouses"]`).textContent = sfAllocationIsSales() ? "موجودی انبارها" : "انبارها";
     document.getElementById("sfPickerTitle").textContent = sfAllocationIsSales() ? "انتخاب آیتم تامین یا انبار" : "انتخاب آیتم فروش یا انبار";
     const pickerSearch = document.getElementById("sfPickerSearch");
     pickerSearch.placeholder = sfAllocationIsSales() ? "تامین‌کننده، شماره فاکتور یا محصول…" : "مشتری، شماره فاکتور یا محصول…";
     pickerSearch.setAttribute("aria-label", sfAllocationIsSales() ? "جست‌وجوی آیتم فاکتور تامین" : "جست‌وجوی آیتم فاکتور فروش");
     sfAllocationOrigin = document.activeElement;
-    sfAllocationInvoiceId = id; sfAllocationState = null; sfAllocationFilter = "all"; sfAllocationCurrentItemId = null;
-    sfAllocationOpen.clear(); sfAllocationDrafts.clear(); sfAllocationRefreshNeeded = false;
+    sfAllocationInvoiceId = id;
+    sfAllocationState = null;
+    sfAllocationFilter = "all";
+    sfAllocationCurrentItemId = null;
+    sfAllocationOpen.clear();
+    sfAllocationDrafts.clear();
+    sfAllocationRefreshNeeded = false;
     document.getElementById("sfAllocationSearch").value = "";
     document.getElementById("sfAllocationPagination").hidden = true;
     document.getElementById("sfAllocationEmpty").hidden = true;
@@ -688,31 +718,39 @@ async function showSupplyAllocations(id, perspective = "supply") {
     document.getElementById("sfAllocationsTitle").textContent = "تخصیص آیتم‌های فاکتور";
     sfAllocationFeedback("");
     ModalToggle("#sfAllocationsModal", "show");
-    try { await loadSupplyAllocations(id); }
-    catch (error) {
+    try {
+        await loadSupplyAllocations(id);
+    } catch (error) {
         if (error.code === "ERR_CANCELED") return;
         document.getElementById("sfAllocationItems").innerHTML = sfAllocationEmpty("اطلاعات دریافت نشد", "اتصال را بررسی کنید و دوباره تلاش کنید.", "info");
         sfAllocationFeedback("دریافت آیتم‌های فاکتور انجام نشد.", "error", true);
     }
 }
 async function loadSupplyAllocations(id) {
-    sfAllocationAbort?.abort(); sfAllocationAbort = new AbortController();
+    sfAllocationAbort?.abort();
+    sfAllocationAbort = new AbortController();
     const request = ++sfAllocationRequest;
-    const { data } = await axios.get(sfAllocationIsSales() ? "/Supply/GetSalesFactorAllocations" : "/Supply/GetSupplyFactorAllocations", { params: { id }, signal: sfAllocationAbort.signal });
+    const { data } = await axios.get(sfAllocationIsSales() ? "/Supply/GetSalesFactorAllocations" : "/Supply/GetSupplyFactorAllocations", {
+        params: { id },
+        signal: sfAllocationAbort.signal,
+    });
     if (request !== sfAllocationRequest) return;
     if (sfAllocationIsSales()) {
         // Adapt only the view model: both perspectives still edit the same persisted junction rows.
-        data.allocations = data.allocations.map(a => ({ ...a, supplyFactorItemId: a.factorItemId,
+        data.allocations = data.allocations.map(a => ({
+            ...a, supplyFactorItemId: a.factorItemId,
             factorItemId: a.supplyFactorItemId, customer: a.supplier,
             warehouseId: a.sourceWarehouseId || a.warehouseId, warehouseTitle: a.sourceWarehouseTitle || a.warehouseTitle,
             factorItemWeightCount: a.supplyItemWeightCount, factorItemUnitTxt: a.supplyItemUnitTxt,
-            factorItemAllocated: a.supplyItemAllocated }));
+            factorItemAllocated: a.supplyItemAllocated,
+        }));
     }
     data.factor = sfAllocationDisplayRecord(data.factor);
     data.items = data.items.map(sfAllocationDisplayRecord);
     data.allocations = data.allocations.map(sfAllocationDisplayRecord);
     captureSupplyAllocationDrafts();
-    sfAllocationState = data; sfAllocationRefreshNeeded = false;
+    sfAllocationState = data;
+    sfAllocationRefreshNeeded = false;
     document.querySelectorAll("[data-supply-factor-id]").forEach(card => {
         if (sfAllocationIsSales() || card.dataset.supplyFactorId !== data.factor.id) return;
         card.classList.toggle("sf-supply-card-complete", data.isAllocationComplete);
@@ -744,23 +782,32 @@ function updateSupplyAllocationLimit(form) {
     const supplyCapacity = sfAllocationCapacity(item, previous);
     const capacity = target.dataset.warehouseId && !sfAllocationIsSales() ? supplyCapacity : Math.min(supplyCapacity, sfAllocationSalesWeight(target.dataset.salesWeight));
     const weight = form.elements.weight;
-    weight.max = capacity; weight.disabled = !target.value;
+    weight.max = capacity;
+    weight.disabled = !target.value;
     weight.placeholder = target.value ? `حداکثر ${sfAllocationNumber(capacity)}` : "ابتدا مقصد را انتخاب کنید";
     form.querySelector(".sf-limit-note").textContent = target.value ? `حداکثر قابل تخصیص: ${sfAllocationNumber(capacity)} ${item.unitTxt ?? ""}` : "پس از انتخاب مقصد، سقف مجاز نمایش داده می‌شود.";
-    form.querySelector('[type="submit"]').disabled = !target.value || capacity <= 0;
-    form.querySelector(".sf-fill-max").disabled = !target.value || capacity <= 0;
+    form.querySelector(`[type="submit"]`).disabled = !target.value || capacity <= 0;
     form.querySelector(".sf-allocation-select").classList.toggle("sf-has-target", !!target.value);
 }
 function captureSupplyAllocationDrafts() {
     document.querySelectorAll("#sfAllocationItems .sf-allocation-form").forEach(form => {
         const key = `${form.closest("[data-item-id]").dataset.itemId}:${form.dataset.allocationId || "new"}`;
-        if (form.dataset.saved) { sfAllocationDrafts.delete(key); return; }
+        if (form.dataset.saved) {
+            sfAllocationDrafts.delete(key);
+            return;
+        }
         const target = form.elements.factorItemId;
         if (form.closest(".sf-allocation-edit-row")?.hidden) return;
         if (!target.value && !form.elements.weight.value) return;
-        sfAllocationDrafts.set(key, { id: target.value, warehouse: target.dataset.warehouseId || "",
-            capacity: target.dataset.salesWeight || "", sourceProduct: target.dataset.sourceWarehouseProductId || "", label: form.querySelector(".sf-target-label").textContent,
-            weight: form.elements.weight.value, editing: !form.closest(".sf-allocation-edit-row")?.hidden });
+        sfAllocationDrafts.set(key, {
+            id: target.value,
+            warehouse: target.dataset.warehouseId || "",
+            capacity: target.dataset.salesWeight || "",
+            sourceProduct: target.dataset.sourceWarehouseProductId || "",
+            label: form.querySelector(".sf-target-label").textContent,
+            weight: form.elements.weight.value,
+            editing: !form.closest(".sf-allocation-edit-row")?.hidden,
+        });
     });
 }
 function sfAllocationForm(item, allocation = null) {
@@ -773,11 +820,11 @@ function sfAllocationForm(item, allocation = null) {
         <button type="button" class="sf-target-button sf-allocation-select" aria-labelledby="sfTargetLabel-${suffix} sfTargetText-${suffix}"><span id="sfTargetText-${suffix}" class="sf-target-label">${allocation ? escape(sfAllocationTargetLabel(allocation)) : sfAllocationIsSales() ? "انتخاب آیتم تامین یا انبار" : "انتخاب آیتم فروش یا انبار"} </span>${sfAllocationIcon("plus")}</button>
         <input type="hidden" name="factorItemId" value="${escape(target)}" data-warehouse-id="${escape(allocation?.warehouseId)}" data-source-warehouse-product-id="${escape(allocation?.sourceWarehouseProductId)}" data-sales-weight="${allocation && (!allocation.warehouseId || sfAllocationIsSales()) ? sfAllocationSalesCapacity(allocation) : 0}"/>
       </div>
-      <div class="sf-field"><label for="sfWeight-${suffix}">مقدار / وزن <span class="sf-unit">${escape(item.unitTxt)}</span><button type="button" class="sf-fill-max" title="وارد کردن حداکثر مقدار مجاز">حداکثر</button></label>
-        <input id="sfWeight-${suffix}" class="sf-input" name="weight" type="number" min="0.01" step="0.01" value="${allocation?.weight ?? ""}" inputmode="decimal" required aria-describedby="sfLimit-${suffix}"/>
+      <div class="sf-field"><label for="sfWeight-${suffix}">مقدار / وزن</label>
+        <input id="sfWeight-${suffix}" class="sf-input" name="weight" type="number" min="0" step="1" value="${allocation?.weight ?? ""}" inputmode="decimal" required aria-describedby="sfLimit-${suffix}"/>
         <span id="sfLimit-${suffix}" class="sf-limit-note"></span>
       </div>
-      <div class="sf-form-actions"><button type="submit" class="sf-button sf-button-primary">${sfAllocationIcon("check")}${allocation ? "ذخیره ویرایش" : "ثبت تخصیص"}</button>${allocation ? '<button type="button" class="sf-button sf-button-quiet sf-allocation-cancel-edit">انصراف</button>' : ""}</div>
+      <div class="sf-form-actions"><button type="submit" class="sf-button sf-button-primary">${sfAllocationIcon("check")}${allocation ? "ذخیره ویرایش" : "ثبت تخصیص"}</button>${allocation ? "<button type=\"button\" class=\"sf-button sf-button-quiet sf-allocation-cancel-edit\">انصراف</button>" : ""}</div>
       <p class="sf-form-error" role="alert" hidden></p>
     </form>`;
 }
@@ -791,7 +838,8 @@ function renderSupplyAllocations() {
         const tone = done ? "green" : Number(item.allocated) > 0 ? "violet" : "gray";
         return `<details class="sf-item sf-item-tone-${tone}${done ? " sf-item-complete" : ""}" data-item-id="${sfAllocationEscape(item.id)}" data-complete="${done}" ${sfAllocationOpen.has(item.id) ? "open" : ""}>
           <summary class="sf-item-summary"><div class="sf-item-heading"><span class="sf-item-index">${sfAllocationNumber(index + 1)}</span><div class="sf-item-title"><h3>${sfAllocationEscape(title)}</h3>${item.product && item.product !== title ? `<p>${sfAllocationEscape(item.product)}</p>` : ""}</div><span class="sf-status ${done ? "sf-status-complete" : records.length ? "sf-status-recorded" : "sf-status-pending"}">${done ? sfAllocationIcon("check") + "تخصیص کامل" : records.length ? sfAllocationNumber(records.length) + " تخصیص ثبت‌شده" : "بدون تخصیص"}</span><span class="sf-item-toggle-hint"><span class="sf-item-expand-label">مشاهده جزئیات</span><span class="sf-item-collapse-label">بستن جزئیات</span><span class="sf-item-chevron">${sfAllocationIcon("chevron")}</span></span></div>
-          <div class="sf-item-metrics">${[["مقدار کل", item.weightCount], ["تخصیص‌یافته", item.allocated], ["باقی‌مانده", remaining]].map(([label, value]) => `<div class="sf-item-metric"><span>${label}</span><strong>${sfAllocationNumber(value)}</strong><small class="sf-unit">${sfAllocationEscape(item.unitTxt)}</small></div>`).join("")}</div>
+          <div class="sf-item-metrics">${[["مقدار کل", item.weightCount], ["تخصیص‌یافته", item.allocated], ["باقی‌مانده", remaining]].map(([label, value]) => `<div class="sf-item-metric"><span>${label}</span><strong>${sfAllocationNumber(value)}</strong><small class="sf-unit">${sfAllocationEscape(item.unitTxt)}</small></div>`)
+                                                                                                                                     .join("")}</div>
           <progress max="${Math.max(Number(item.weightCount), .01)}" value="${Math.max(0, Number(item.allocated))}" aria-label="مقدار تخصیص‌یافته این آیتم"></progress></summary>
           <div class="sf-item-body">
           ${done ? `<div class="sf-completion-note">${sfAllocationIcon("check")}تمام مقدار این آیتم تخصیص داده شده است. تخصیص‌های قبلی قابل ویرایش‌اند.</div>`
@@ -802,7 +850,7 @@ function renderSupplyAllocations() {
               <span class="sf-records-count">${sfAllocationNumber(records.length)} مورد</span>
             </header>
             ${renderSupplyAllocationRecords(item, records)}
-          </section>` : '<div class="sf-inline-empty">هنوز تخصیصی ثبت نشده است؛ آیتم یا انبار و مقدار را در فرم بالا انتخاب کنید.</div>'}
+          </section>` : "<div class=\"sf-inline-empty\">هنوز تخصیصی ثبت نشده است؛ آیتم یا انبار و مقدار را در فرم بالا انتخاب کنید.</div>"}
           </div></details>`;
     }).join("");
     document.querySelectorAll("#sfAllocationItems .sf-allocation-form").forEach(form => {
@@ -810,7 +858,8 @@ function renderSupplyAllocations() {
         const draft = sfAllocationDrafts.get(key);
         if (draft) {
             const target = form.elements.factorItemId;
-            target.value = draft.id; target.dataset.warehouseId = draft.warehouse;
+            target.value = draft.id;
+            target.dataset.warehouseId = draft.warehouse;
             target.dataset.sourceWarehouseProductId = draft.sourceProduct || "";
             const latestSale = !draft.warehouse && data.allocations.find(a => a.factorItemId === draft.id);
             const ownAllocation = data.allocations.find(a => a.id === form.dataset.allocationId);
@@ -819,7 +868,8 @@ function renderSupplyAllocations() {
                 ? data.allocations.find(a => a.sourceWarehouseProductId === draft.sourceProduct) : null;
             target.dataset.salesWeight = latestWarehouse ? Number(latestWarehouse.sourceWarehouseAvailable) + Number(restored) : latestSale ? Math.max(0, (Math.round(sfAllocationSalesWeight(latestSale.factorItemWeightCount) * 100)
                 - Math.round(Number(latestSale.factorItemAllocated) * 100) + Math.round(restored * 100)) / 100) : draft.capacity;
-            form.elements.weight.value = draft.weight; form.querySelector(".sf-target-label").textContent = draft.label;
+            form.elements.weight.value = draft.weight;
+            form.querySelector(".sf-target-label").textContent = draft.label;
             if (form.dataset.allocationId && draft.editing) form.closest(".sf-allocation-edit-row").hidden = false;
         }
         updateSupplyAllocationLimit(form);
@@ -838,7 +888,8 @@ function renderSupplyAllocationRecords(item, records) {
         <td data-label="تخصیص‌یافته"><span class="sf-record-weight"><strong class="sf-record-amount">${sfAllocationNumber(a.weight)}</strong> <span class="sf-unit">${escape(item.unitTxt)}</span></span></td>
         <td><div class="sf-record-actions"><button type="button" class="sf-icon-button sf-allocation-edit" data-allocation-id="${escape(a.id)}" title="ویرایش تخصیص" aria-label="ویرایش تخصیص ${escape(a.warehouseTitle || a.customer)}">${sfAllocationIcon("edit")}</button><button type="button" class="sf-icon-button sf-action-danger sf-allocation-delete" data-allocation-id="${escape(a.id)}" title="حذف تخصیص" aria-label="حذف تخصیص ${escape(a.warehouseTitle || a.customer)}">${sfAllocationIcon("trash")}</button></div></td>
       </tr>
-      <tr class="sf-allocation-edit-row" data-edit-allocation-id="${escape(a.id)}" hidden><td class="sf-editor-cell" colspan="6">${sfAllocationForm(item, a)}</td></tr>`).join("")}
+      <tr class="sf-allocation-edit-row" data-edit-allocation-id="${escape(a.id)}" hidden><td class="sf-editor-cell" colspan="6">${sfAllocationForm(item, a)}</td></tr>`)
+               .join("")}
     </tbody></table></div>`;
 }
 function filterSupplyAllocationItems() {
@@ -877,15 +928,16 @@ function filterSupplyAllocationItems() {
     pagination.innerHTML = matching.length ? `
       <div class="sf-page-counter" role="status" aria-live="polite">آیتم <strong>${sfAllocationNumber(originalIndex + 1)}</strong> از <strong>${sfAllocationNumber(items.length)}</strong></div>
       <div class="sf-page-numbers">${matching.map(item => {
-          const index = items.indexOf(item), done = sfAllocationRemaining(item) <= 0;
-          const tone = done ? "green" : Number(item.allocated) > 0 ? "violet" : "gray";
-          const status = done ? "تکمیل‌شده" : Number(item.allocated) > 0 ? "نیمه‌تکمیل" : "بدون تخصیص";
-          return `<button type="button" class="sf-page-number sf-page-${tone}" data-sf-page-id="${sfAllocationEscape(item.id)}" ${item.id === sfAllocationCurrentItemId ? 'aria-current="page"' : ""} aria-label="آیتم ${sfAllocationNumber(index + 1)}؛ ${sfAllocationEscape(item.productSmallName || item.product)}؛ ${status}" title="${status}">${sfAllocationNumber(index + 1)}</button>`;
-      }).join("")}</div>
+        const index = items.indexOf(item), done = sfAllocationRemaining(item) <= 0;
+        const tone = done ? "green" : Number(item.allocated) > 0 ? "violet" : "gray";
+        const status = done ? "تکمیل‌شده" : Number(item.allocated) > 0 ? "نیمه‌تکمیل" : "بدون تخصیص";
+        return `<button type="button" class="sf-page-number sf-page-${tone}" data-sf-page-id="${sfAllocationEscape(item.id)}" ${item.id === sfAllocationCurrentItemId ? "aria-current=\"page\"" : ""} aria-label="آیتم ${sfAllocationNumber(index + 1)}؛ ${sfAllocationEscape(item.productSmallName || item.product)}؛ ${status}" title="${status}">${sfAllocationNumber(index + 1)}</button>`;
+    }).join("")}</div>
       <div class="sf-page-actions"><button type="button" class="sf-button" data-sf-page-step="-1" ${current === 0 ? "disabled" : ""}>قبلی</button><button type="button" class="sf-button" data-sf-page-step="1" ${current === matching.length - 1 ? "disabled" : ""}>بعدی</button></div>` : "";
     const empty = document.getElementById("sfAllocationEmpty");
     empty.hidden = matching.length > 0;
-    empty.innerHTML = sfAllocationEmpty(counts.all ? "آیتمی با این فیلتر پیدا نشد" : "این فاکتور آیتمی ندارد",
+    empty.innerHTML = sfAllocationEmpty(
+        counts.all ? "آیتمی با این فیلتر پیدا نشد" : "این فاکتور آیتمی ندارد",
         counts.all ? "عبارت جست‌وجو یا فیلتر وضعیت را تغییر دهید." : `ابتدا آیتم‌های فاکتور ${sfAllocationIsSales() ? "فروش" : "تامین"} را ثبت کنید.`, "search");
     document.querySelector("[data-sf-clear-search]").hidden = !query;
     document.getElementById("sfAllocationVisibleCount").textContent = matching.length === counts.all
@@ -905,7 +957,7 @@ function navigateSupplyAllocationItem(button) {
     const focusTarget = button.dataset.sfPageId
         ? [...document.querySelectorAll("[data-sf-page-id]")].find(page => page.dataset.sfPageId === target)
         : document.querySelector(`[data-sf-page-step="${button.dataset.sfPageStep}"]:not(:disabled)`)
-            || document.querySelector('[data-sf-page-id][aria-current="page"]');
+        || document.querySelector("[data-sf-page-id][aria-current=\"page\"]");
     focusTarget?.focus({ preventScroll: true });
 }
 
@@ -913,12 +965,13 @@ async function loadSupplyAllocationPicker(search = "") {
     const selector = sfAllocationSelector;
     if (!selector?.config) return;
     const request = ++sfPickerRequest;
-    sfPickerAbort?.abort(); sfPickerAbort = new AbortController();
+    sfPickerAbort?.abort();
+    sfPickerAbort = new AbortController();
     sfPickerLoading = true;
     selector.submitButton.disabled = true;
     selector.container.setAttribute("aria-busy", "true");
     selector.container.innerHTML = sfAllocationSkeleton(2);
-    document.getElementById("sfPickerInfo").innerHTML = '<span class="sf-spinner" aria-hidden="true"></span><span>در حال جست‌وجوی مقصدها…</span>';
+    document.getElementById("sfPickerInfo").innerHTML = "<span class=\"sf-spinner\" aria-hidden=\"true\"></span><span>در حال جست‌وجوی مقصدها…</span>";
     try {
         const data = await selector.config.load({ search, selectedIds: [...selector.tempSelectedIds], signal: sfPickerAbort.signal });
         if (request !== sfPickerRequest || data === null) return;
@@ -928,16 +981,21 @@ async function loadSupplyAllocationPicker(search = "") {
         sfPickerData = data;
         const usedWarehouses = new Set(sfAllocationState.allocations.filter(a =>
             a.supplyFactorItemId === sfPickerForm.closest("[data-item-id]").dataset.itemId
-            && a.id !== sfPickerForm.dataset.allocationId && a.warehouseId).map(a => sfAllocationIsSales() ? a.sourceWarehouseProductId : a.warehouseId));
-        data.items.forEach(i => sfPickerTargets.set(i.id, { id: i.id, label: sfAllocationTargetLabel(i),
-            capacity: Number(i.available), warehouse: false, blocked: Number(i.available) <= 0 }));
+            && a.id !== sfPickerForm.dataset.allocationId && a.warehouseId)
+                                                        .map(a => sfAllocationIsSales() ? a.sourceWarehouseProductId : a.warehouseId));
+        data.items.forEach(i => sfPickerTargets.set(i.id, {
+            id: i.id, label: sfAllocationTargetLabel(i),
+            capacity: Number(i.available), warehouse: false, blocked: Number(i.available) <= 0,
+        }));
         if (sfAllocationIsSales()) data.warehouseItems.forEach(i => sfPickerTargets.set(i.id, {
             id: i.id, warehouseId: i.warehouseId,
             label: [i.warehouseTitle, sfAllocationTargetLabel({ ...i, warehouseId: null })].filter(Boolean).join(" | "),
-            capacity: Number(i.available), warehouse: true, blocked: usedWarehouses.has(i.id) || Number(i.available) <= 0
+            capacity: Number(i.available), warehouse: true, blocked: usedWarehouses.has(i.id) || Number(i.available) <= 0,
         }));
-        else (data.warehouses ?? []).forEach(w => sfPickerTargets.set(w.id, { id: w.id, label: w.title,
-            warehouse: true, blocked: usedWarehouses.has(w.id) }));
+        else (data.warehouses ?? []).forEach(w => sfPickerTargets.set(w.id, {
+            id: w.id, label: w.title,
+            warehouse: true, blocked: usedWarehouses.has(w.id),
+        }));
         renderSupplyAllocationPicker();
     } catch (error) {
         if (request !== sfPickerRequest || error.code === "ERR_CANCELED") return;
@@ -947,7 +1005,8 @@ async function loadSupplyAllocationPicker(search = "") {
         document.getElementById("sfPickerInfo").textContent = "دریافت مقصدهای تخصیص ناموفق بود.";
     } finally {
         if (request === sfPickerRequest) {
-            sfPickerLoading = false; selector.container.setAttribute("aria-busy", "false");
+            sfPickerLoading = false;
+            selector.container.setAttribute("aria-busy", "false");
             updateSupplyPickerSelection();
         }
     }
@@ -957,7 +1016,8 @@ function renderSupplyAllocationPicker() {
     const selector = sfAllocationSelector, escape = sfAllocationEscape, data = sfPickerData;
     document.querySelectorAll("[data-sf-tab]").forEach(button => {
         const selected = button.dataset.sfTab === sfPickerTab;
-        button.setAttribute("aria-selected", String(selected)); button.tabIndex = selected ? 0 : -1;
+        button.setAttribute("aria-selected", String(selected));
+        button.tabIndex = selected ? 0 : -1;
     });
     selector.container.setAttribute("aria-labelledby", sfPickerTab === "sales" ? "sfPickerSalesTab" : "sfPickerWarehousesTab");
     document.querySelector(".sf-picker-search").hidden = sfPickerTab === "warehouses" && !sfAllocationIsSales();
@@ -967,7 +1027,7 @@ function renderSupplyAllocationPicker() {
     if (sfPickerTab === "warehouses" && !sfAllocationIsSales()) {
         selector.container.innerHTML = (data.warehouses ?? []).length ? `<div class="sf-warehouse-grid">${data.warehouses.map(w => {
             const target = sfPickerTargets.get(w.id);
-            return `<div class="sf-warehouse-option sf-allocation-sale-row ${target.blocked ? "" : "sf-allocation-sale-selectable"}" ${target.blocked ? "" : 'tabindex="0"'} aria-label="${escape(w.title)}" aria-disabled="${target.blocked}">
+            return `<div class="sf-warehouse-option sf-allocation-sale-row ${target.blocked ? "" : "sf-allocation-sale-selectable"}" ${target.blocked ? "" : "tabindex=\"0\""} aria-label="${escape(w.title)}" aria-disabled="${target.blocked}">
                 <input class="sf-radio" type="radio" name="sfAllocationFactorItem" value="${escape(w.id)}" data-number="${escape(w.title)}" aria-label="${escape(w.title)}" ${target.blocked ? "disabled" : ""}/>
                 <span class="sf-header-symbol">${sfAllocationIcon("warehouse")}</span><div class="sf-warehouse-copy"><h3>${escape(w.title)}</h3><p>تخصیص بدون اتصال به فاکتور فروش</p></div>
                 <p class="sf-warehouse-note">${target.blocked ? "قبلاً برای این آیتم ثبت شده است؛ تخصیص قبلی را ویرایش کنید." : "مقدار انتخاب‌شده از انبار گردشی خارج و به این انبار وارد می‌شود."}</p></div>`;
@@ -975,20 +1035,24 @@ function renderSupplyAllocationPicker() {
         document.getElementById("sfPickerInfo").textContent = "مقدار انتقال به انبار از باقی‌مانده آیتم تامین کم می‌شود.";
     } else {
         selector.container.innerHTML = rows.length ? `<table class="sf-table sf-picker-table"><thead><tr><th>انتخاب</th><th>${warehouseStock ? "انبار / تامین‌کننده" : sfAllocationIsSales() ? "تامین‌کننده" : "مشتری"}</th><th>فاکتور / تاریخ</th><th>محصول / شرح</th><th>${warehouseStock ? "موجودی انبار" : "مقدار کل"}</th><th>${warehouseStock ? "برداشت فروش" : "تخصیص‌یافته"}</th><th>${warehouseStock ? "قابل برداشت" : "باقی‌مانده"}</th></tr></thead><tbody>
-            ${rows.map(i => `<tr class="sf-allocation-sale-row ${i.remaining <= 0 ? "sf-allocation-sale-complete" : ""} ${i.available > 0 ? "sf-allocation-sale-selectable" : ""}" ${i.available > 0 ? 'tabindex="0"' : ""} aria-disabled="${i.available <= 0}" aria-label="${escape(`انتخاب ${sfAllocationTargetLabel(i)}`)}">
+            ${rows.map(i => `<tr class="sf-allocation-sale-row ${i.remaining <= 0 ? "sf-allocation-sale-complete" : ""} ${i.available > 0 ? "sf-allocation-sale-selectable" : ""}" ${i.available > 0 ? "tabindex=\"0\"" : ""} aria-disabled="${i.available <= 0}" aria-label="${escape(`انتخاب ${sfAllocationTargetLabel(i)}`)}">
               <td class="sf-picker-radio-cell"><input class="sf-radio" type="radio" name="sfAllocationFactorItem" value="${escape(i.id)}" data-number="${escape(sfPickerTargets.get(i.id).label)}" aria-label="انتخاب ${escape(sfAllocationTargetLabel(i))}" ${i.available > 0 ? "" : "disabled"}/></td>
               <td class="sf-picker-customer"><strong class="sf-cell-title">${escape(warehouseStock ? i.warehouseTitle : i.customer || "—")}</strong>${warehouseStock ? `<small class="sf-cell-description">${escape(i.customer)}</small>` : ""}</td>
               <td class="sf-picker-factor"><bdi class="sf-cell-title">${escape(i.serialNumber)}</bdi><small class="sf-cell-description">${escape(i.date)}</small></td>
               <td class="sf-picker-product"><strong class="sf-cell-title">${escape(i.productSmallName || i.product)}</strong><small class="sf-cell-description">${escape(i.product)}</small></td>
               <td class="sf-picker-total" data-label="کل"><span class="sf-numeric">${escape(i.weightCount)}</span> <small class="sf-unit">${escape(i.unitTxt)}</small></td>
               <td class="sf-picker-allocated" data-label="تخصیص‌یافته">${sfAllocationNumber(i.allocated)} <small class="sf-unit">${escape(i.unitTxt)}</small></td>
-              <td class="sf-picker-remaining" data-label="باقی‌مانده"><strong class="sf-available">${sfAllocationNumber(i.remaining)}</strong> <small class="sf-unit">${escape(i.unitTxt)}</small>${i.remaining <= 0 ? `<span class="sf-status sf-status-complete sf-sales-complete-badge">${warehouseStock ? "موجودی قابل برداشت ندارد" : "تخصیص کامل"}</span>` : ""}</td></tr>`).join("")}</tbody></table>`
+              <td class="sf-picker-remaining" data-label="باقی‌مانده"><strong class="sf-available">${sfAllocationNumber(i.remaining)}</strong> <small class="sf-unit">${escape(i.unitTxt)}</small>${i.remaining <= 0 ? `<span class="sf-status sf-status-complete sf-sales-complete-badge">${warehouseStock ? "موجودی قابل برداشت ندارد" : "تخصیص کامل"}</span>` : ""}</td></tr>`)
+                  .join("")}</tbody></table>`
             : sfAllocationEmpty(warehouseStock ? "موجودی مرتبط با تامین پیدا نشد" : `آیتم ${sfAllocationIsSales() ? "تامین" : "فروش"} پیدا نشد`, "شماره فاکتور، محصول یا نام طرف حساب را جست‌وجو کنید.");
         document.getElementById("sfPickerInfo").innerHTML = `<span>${sfAllocationNumber(rows.length)} نتیجه <span class="sf-muted">· انتخاب با کلیک روی ردیف</span></span><span class="sf-picker-result-note">${(warehouseStock ? data.warehouseHasMore : data.hasMore) ? "۲۰۰ نتیجه آخر؛ جست‌وجوی دقیق‌تر برای نتایج بیشتر" : warehouseStock ? "برداشت از موجودی انبار؛ ارتباط فروش با آیتم تامین همین موجودی ثبت می‌شود" : "باقی‌مانده بر اساس تمام تخصیص‌ها محاسبه می‌شود"}</span>`;
     }
     selector.restoreSelected();
     const invalid = selector.tempSelectedIds.some(id => sfPickerTargets.get(id)?.blocked);
-    if (invalid) { selector.tempSelectedIds = []; selector.tempSelectedMap.clear(); }
+    if (invalid) {
+        selector.tempSelectedIds = [];
+        selector.tempSelectedMap.clear();
+    }
     updateSupplyPickerSelection();
 }
 function updateSupplyPickerSelection() {
@@ -999,13 +1063,17 @@ function updateSupplyPickerSelection() {
 
 async function selectSupplyAllocationFactor(form) {
     if (sfAllocationSaving || sfAllocationRefreshNeeded) return;
-    sfPickerForm = form; sfPickerData = null; sfPickerTargets.clear();
+    sfPickerForm = form;
+    sfPickerData = null;
+    sfPickerTargets.clear();
     const field = form.elements.factorItemId;
     const item = sfAllocationState.items.find(i => i.id === form.closest("[data-item-id]").dataset.itemId);
     sfPickerTab = field.dataset.warehouseId ? "warehouses" : "sales";
-    if (field.value) sfPickerTargets.set(field.value, { id: field.value,
+    if (field.value) sfPickerTargets.set(field.value, {
+        id: field.value,
         label: form.querySelector(".sf-target-label").textContent, warehouse: !!field.dataset.warehouseId, warehouseId: field.dataset.warehouseId,
-        capacity: Number(field.dataset.salesWeight), blocked: false });
+        capacity: Number(field.dataset.salesWeight), blocked: false,
+    });
     document.getElementById("sfPickerContext").textContent = `${item.productSmallName || item.product} · باقی‌مانده ${sfAllocationIsSales() ? "فروش" : "تامین"}: ${sfAllocationNumber(sfAllocationRemaining(item))} ${item.unitTxt ?? ""}`;
     sfAllocationChoosing = true;
     let firstLoad = true;
@@ -1014,10 +1082,16 @@ async function selectSupplyAllocationFactor(form) {
             title: sfAllocationIsSales() ? "انتخاب آیتم تامین یا انبار" : "انتخاب مقصد تخصیص",
             selectedIds: field.value ? [field.value] : [],
             load: async ({ search, signal }) => {
-                if (firstLoad) { firstLoad = false; return null; }
-                const { data } = await axios.get(sfAllocationIsSales() ? "/Supply/SearchAllocationSupplyItems" : "/Supply/SearchAllocationFactorItems", { params: {
-                    search, ...(sfAllocationIsSales() ? { factorItemId: item.id } : { supplyFactorItemId: item.id }), allocationId: form.dataset.allocationId
-                }, signal });
+                if (firstLoad) {
+                    firstLoad = false;
+                    return null;
+                }
+                const { data } = await axios.get(sfAllocationIsSales() ? "/Supply/SearchAllocationSupplyItems" : "/Supply/SearchAllocationFactorItems", {
+                    params: {
+                        search, ...(sfAllocationIsSales() ? { factorItemId: item.id } : { supplyFactorItemId: item.id }),
+                        allocationId: form.dataset.allocationId,
+                    }, signal,
+                });
                 return data;
             },
             onSelectionChange: updateSupplyPickerSelection,
@@ -1031,13 +1105,14 @@ async function selectSupplyAllocationFactor(form) {
                 form.querySelector(".sf-target-label").textContent = target.label;
                 clearSupplyAllocationFormError(form);
                 updateSupplyAllocationLimit(form);
-            }
+            },
         });
         await sfAllocationSelector.load("");
         if ((sfPickerTab === "sales" || sfAllocationIsSales()) && sfAllocationSelector.modal.classList.contains("show"))
             document.getElementById("sfPickerSearch").focus();
     } catch (error) {
-        sfAllocationChoosing = false; ModalToggle("#sfAllocationPickerModal", "hide");
+        sfAllocationChoosing = false;
+        ModalToggle("#sfAllocationPickerModal", "hide");
         sfAllocationFeedback("انتخابگر باز نشد؛ دوباره تلاش کنید.", "error");
     }
 }
@@ -1050,11 +1125,15 @@ function supplyAllocationFormError(form, message, field = "weight", notify = tru
     message = sfAllocationText(message, "مقدار واردشده معتبر نیست.");
     if (notify) toastifyError(message);
     const box = form.querySelector(".sf-form-error");
-    box.textContent = message; box.hidden = false;
+    box.textContent = message;
+    box.hidden = false;
     const target = field === "target" ? form.querySelector(".sf-allocation-select") : form.elements.weight;
     target.closest(".sf-field").classList.add("sf-field-error");
-    target.setAttribute("aria-invalid", "true"); target.focus();
-    requestAnimationFrame(() => { if (target.isConnected && !target.disabled) target.focus(); });
+    target.setAttribute("aria-invalid", "true");
+    target.focus();
+    requestAnimationFrame(() => {
+        if (target.isConnected && !target.disabled) target.focus();
+    });
 }
 async function submitSupplyAllocation(form) {
     if (sfAllocationSaving || sfAllocationRefreshNeeded) return;
@@ -1066,34 +1145,43 @@ async function submitSupplyAllocation(form) {
     const factorItemId = warehouseId ? null : selectedId;
     const allocationId = form.dataset.allocationId;
     const weight = Number(form.elements.weight.value);
-    if (!selectedId) { supplyAllocationFormError(form, sfAllocationIsSales() ? "ابتدا آیتم تامین یا انبار را انتخاب کنید." : "ابتدا آیتم فروش یا انبار مقصد را انتخاب کنید.", "target"); return; }
+    if (!selectedId) {
+        supplyAllocationFormError(form, sfAllocationIsSales() ? "ابتدا آیتم تامین یا انبار را انتخاب کنید." : "ابتدا آیتم فروش یا انبار مقصد را انتخاب کنید.", "target");
+        return;
+    }
     if (!Number.isFinite(weight) || weight <= 0 || Math.abs(weight * 100 - Math.round(weight * 100)) > .000001) {
-        supplyAllocationFormError(form, "مقدار باید مثبت و حداکثر دارای دو رقم اعشار باشد."); return;
+        supplyAllocationFormError(form, "مقدار باید مثبت و حداکثر دارای دو رقم اعشار باشد.");
+        return;
     }
     if (sfAllocationState.allocations.some(a => a.supplyFactorItemId === itemId && a.id !== allocationId
         && (warehouseId ? sfAllocationIsSales() ? a.sourceWarehouseProductId === selectedId : a.warehouseId === warehouseId
-                : a.factorItemId === factorItemId && (sfAllocationIsSales() ? !a.sourceWarehouseProductId
-                    : (a.sourceWarehouseProductId || null) === (form.elements.factorItemId.dataset.sourceWarehouseProductId || null))))) {
-        supplyAllocationFormError(form, "این آیتم یا انبار قبلاً ثبت شده است؛ تخصیص قبلی را ویرایش کنید.", "target"); return;
+            : a.factorItemId === factorItemId && (sfAllocationIsSales() ? !a.sourceWarehouseProductId
+            : (a.sourceWarehouseProductId || null) === (form.elements.factorItemId.dataset.sourceWarehouseProductId || null))))) {
+        supplyAllocationFormError(form, "این آیتم یا انبار قبلاً ثبت شده است؛ تخصیص قبلی را ویرایش کنید.", "target");
+        return;
     }
     const previous = sfAllocationState.allocations.find(a => a.id === allocationId);
     if (weight > sfAllocationCapacity(item, previous)) {
-        supplyAllocationFormError(form, `مقدار از باقی‌مانده آیتم ${sfAllocationIsSales() ? "فروش" : "تامین"} بیشتر است.`); return;
+        supplyAllocationFormError(form, `مقدار از باقی‌مانده آیتم ${sfAllocationIsSales() ? "فروش" : "تامین"} بیشتر است.`);
+        return;
     }
     const salesCapacity = sfAllocationSalesWeight(form.elements.factorItemId.dataset.salesWeight);
     if ((!warehouseId || sfAllocationIsSales()) && (!salesCapacity || weight > salesCapacity)) {
         supplyAllocationFormError(form, sfAllocationIsSales() && warehouseId ? "مقدار از موجودی قابل برداشت این آیتم در انبار بیشتر است."
-            : `مقدار از باقی‌مانده آیتم ${sfAllocationIsSales() ? "تامین" : "فروش"} در مجموع تمام تخصیص‌ها بیشتر است.`); return;
+            : `مقدار از باقی‌مانده آیتم ${sfAllocationIsSales() ? "تامین" : "فروش"} در مجموع تمام تخصیص‌ها بیشتر است.`);
+        return;
     }
     await persistSupplyAllocation({
         url: `/Supply/${allocationId ? "Update" : "Add"}${sfAllocationIsSales() ? "Sales" : "Supply"}FactorAllocation`,
         itemId,
         data: sfAllocationIsSales()
-            ? { id: allocationId, factorItemId: itemId, supplyFactorItemId: warehouseId ? undefined : selectedId,
-                sourceWarehouseProductId: warehouseId ? selectedId : null, warehouseId, weight }
+            ? {
+                id: allocationId, factorItemId: itemId, supplyFactorItemId: warehouseId ? undefined : selectedId,
+                sourceWarehouseProductId: warehouseId ? selectedId : null, warehouseId, weight,
+            }
             : { id: allocationId, supplyFactorItemId: itemId, factorItemId, warehouseId, weight },
-        form, trigger: form.querySelector('[type="submit"]'),
-        success: allocationId ? "تخصیص ویرایش شد؛ مقدارهای باقی‌مانده به‌روز شدند." : "تخصیص ثبت شد. می‌توانید مقصد دیگری انتخاب کنید."
+        form, trigger: form.querySelector("[type=\"submit\"]"),
+        success: allocationId ? "تخصیص ویرایش شد؛ مقدارهای باقی‌مانده به‌روز شدند." : "تخصیص ثبت شد. می‌توانید مقصد دیگری انتخاب کنید.",
     });
 }
 async function persistSupplyAllocation({ url, data, itemId = data.supplyFactorItemId, form, trigger, success }) {
@@ -1106,12 +1194,14 @@ async function persistSupplyAllocation({ url, data, itemId = data.supplyFactorIt
     const triggerHtml = trigger.innerHTML;
     controls.forEach(c => c.disabled = true);
     modal.setAttribute("aria-busy", "true");
-    trigger.innerHTML = '<span class="sf-spinner" aria-hidden="true"></span> در حال ثبت…';
+    trigger.innerHTML = `<span class="sf-spinner" aria-hidden="true"></span> در حال ثبت…`;
     sfAllocationFeedback(url.includes("Delete") ? "در حال حذف و اصلاح موجودی…" : "در حال ثبت تخصیص…", "loading");
     try {
-        await axios.post(url, data, { headers: {
-            RequestVerificationToken: modal.querySelector('[name="__RequestVerificationToken"]').value
-        } });
+        await axios.post(url, data, {
+            headers: {
+                RequestVerificationToken: modal.querySelector("[name=\"__RequestVerificationToken\"]").value,
+            },
+        });
         if (form) form.dataset.saved = "true";
         sfAllocationDrafts.delete(`${itemId}:${data.id || "new"}`);
         const deletedEditor = [...modal.querySelectorAll(".sf-allocation-edit-form")].find(f => f.dataset.allocationId === data.id);
@@ -1156,7 +1246,7 @@ async function deleteSupplyAllocation(button) {
         confirmed = await confirmAlert({
             title: "حذف تخصیص؟",
             text: `تخصیص ${sfAllocationNumber(allocation.weight)} به ${sfAllocationText(allocation.warehouseTitle || allocation.customer, "این مقصد")} حذف شود؟ مقدار آن به باقی‌مانده آیتم ${sfAllocationIsSales() ? "فروش" : "تامین"} برمی‌گردد.`,
-            icon: "warning", confirmText: "حذف تخصیص"
+            icon: "warning", confirmText: "حذف تخصیص",
         });
     } catch {
         toastifyError("نمایش تایید حذف انجام نشد؛ دوباره تلاش کنید.");
@@ -1168,16 +1258,22 @@ async function deleteSupplyAllocation(button) {
         }
     }
     if (!confirmed) return;
-    await persistSupplyAllocation({ url: sfAllocationIsSales() ? "/Supply/DeleteSalesFactorAllocation" : "/Supply/DeleteSupplyFactorAllocation",
+    await persistSupplyAllocation({
+        url: sfAllocationIsSales() ? "/Supply/DeleteSalesFactorAllocation" : "/Supply/DeleteSupplyFactorAllocation",
         itemId: section.dataset.itemId,
         data: sfAllocationIsSales() ? { id, factorItemId: section.dataset.itemId } : { id, supplyFactorItemId: section.dataset.itemId },
-        trigger: button, success: "تخصیص حذف شد؛ باقی‌مانده و وضعیت فاکتور به‌روز شدند." });
+        trigger: button, success: "تخصیص حذف شد؛ باقی‌مانده و وضعیت فاکتور به‌روز شدند.",
+    });
 }
 async function retrySupplyAllocations() {
     if (sfAllocationSaving) return;
     sfAllocationFeedback("در حال دریافت آخرین وضعیت…", "loading");
-    try { await loadSupplyAllocations(sfAllocationInvoiceId); sfAllocationFeedback(""); }
-    catch (error) { if (error.code !== "ERR_CANCELED") sfAllocationFeedback("دریافت اطلاعات انجام نشد؛ دوباره تلاش کنید.", "error", true); }
+    try {
+        await loadSupplyAllocations(sfAllocationInvoiceId);
+        sfAllocationFeedback("");
+    } catch (error) {
+        if (error.code !== "ERR_CANCELED") sfAllocationFeedback("دریافت اطلاعات انجام نشد؛ دوباره تلاش کنید.", "error", true);
+    }
 }
 
 document.addEventListener("input", event => {
@@ -1193,65 +1289,95 @@ document.addEventListener("input", event => {
 document.addEventListener("submit", event => {
     const form = event.target.closest(".sf-allocation-form");
     if (!form) return;
-    event.preventDefault(); submitSupplyAllocation(form);
+    event.preventDefault();
+    submitSupplyAllocation(form);
 });
 document.addEventListener("click", event => {
     const open = event.target.closest("[data-sf-open]");
-    if (open) { showSupplyAllocations(open.dataset.sfOpen); return; }
-    if (event.target.closest("[data-sf-close]")) { ModalToggle("#sfAllocationsModal", "hide"); return; }
-    if (event.target.closest("[data-sf-picker-close]")) { sfAllocationSelector.cancel(); return; }
-    if (event.target.closest("[data-sf-retry]")) { retrySupplyAllocations(); return; }
+    if (open) {
+        showSupplyAllocations(open.dataset.sfOpen);
+        return;
+    }
+    if (event.target.closest("[data-sf-close]")) {
+        ModalToggle("#sfAllocationsModal", "hide");
+        return;
+    }
+    if (event.target.closest("[data-sf-picker-close]")) {
+        sfAllocationSelector.cancel();
+        return;
+    }
+    if (event.target.closest("[data-sf-retry]")) {
+        retrySupplyAllocations();
+        return;
+    }
     if (event.target.closest("[data-sf-clear-search]")) {
-        document.getElementById("sfAllocationSearch").value = ""; filterSupplyAllocationItems();
-        document.getElementById("sfAllocationSearch").focus(); return;
+        document.getElementById("sfAllocationSearch").value = "";
+        filterSupplyAllocationItems();
+        document.getElementById("sfAllocationSearch").focus();
+        return;
     }
     const page = event.target.closest("[data-sf-page-id], [data-sf-page-step]");
-    if (page) { navigateSupplyAllocationItem(page); return; }
+    if (page) {
+        navigateSupplyAllocationItem(page);
+        return;
+    }
     const filter = event.target.closest("[data-sf-filter]");
-    if (filter) { sfAllocationFilter = filter.dataset.sfFilter; filterSupplyAllocationItems(); return; }
+    if (filter) {
+        sfAllocationFilter = filter.dataset.sfFilter;
+        filterSupplyAllocationItems();
+        return;
+    }
     const tab = event.target.closest("[data-sf-tab]");
     if (tab) {
         sfPickerTab = tab.dataset.sfTab;
         document.querySelectorAll("[data-sf-tab]").forEach(b => b.setAttribute("aria-selected", String(b === tab)));
-        renderSupplyAllocationPicker(); return;
+        renderSupplyAllocationPicker();
+        return;
     }
     if (event.target.closest("[data-sf-picker-search]")) {
-        clearTimeout(sfPickerTimer); sfAllocationSelector.load(document.getElementById("sfPickerSearch").value.trim()); return;
+        clearTimeout(sfPickerTimer);
+        sfAllocationSelector.load(document.getElementById("sfPickerSearch").value.trim());
+        return;
     }
     if (event.target.closest("[data-sf-picker-clear]")) {
         document.getElementById("sfPickerSearch").value = "";
-        clearTimeout(sfPickerTimer); sfAllocationSelector.load(""); document.getElementById("sfPickerSearch").focus(); return;
+        clearTimeout(sfPickerTimer);
+        sfAllocationSelector.load("");
+        document.getElementById("sfPickerSearch").focus();
+        return;
     }
     const row = event.target.closest(".sf-allocation-sale-row");
     if (row && !event.target.closest("input, button, a, label")) {
-        const radio = row.querySelector('input[name="sfAllocationFactorItem"]');
+        const radio = row.querySelector("input[name=\"sfAllocationFactorItem\"]");
         if (radio && !radio.disabled) radio.click();
     }
     if (sfAllocationSaving || sfAllocationRefreshNeeded) return;
     const select = event.target.closest(".sf-allocation-select");
-    if (select) { selectSupplyAllocationFactor(select.closest("form")); return; }
-    const max = event.target.closest(".sf-fill-max");
-    if (max) {
-        const input = max.closest("form").elements.weight;
-        input.value = input.max; clearSupplyAllocationFormError(max.closest("form")); input.focus(); return;
+    if (select) {
+        selectSupplyAllocationFactor(select.closest("form"));
+        return;
     }
     const edit = event.target.closest(".sf-allocation-edit");
     if (edit) {
         const section = edit.closest("[data-item-id]");
         const editor = [...section.querySelectorAll(".sf-allocation-edit-row")].find(r => r.dataset.editAllocationId === edit.dataset.allocationId);
-        editor.hidden = false; updateSupplyAllocationLimit(editor.querySelector("form"));
-        editor.querySelector('[name="weight"]').focus(); return;
+        editor.hidden = false;
+        updateSupplyAllocationLimit(editor.querySelector("form"));
+        editor.querySelector(`[name="weight"]`).focus();
+        return;
     }
     const cancelEdit = event.target.closest(".sf-allocation-cancel-edit");
     if (cancelEdit) {
         const form = cancelEdit.closest("form");
         const allocation = sfAllocationState.allocations.find(a => a.id === form.dataset.allocationId);
         const target = form.elements.factorItemId;
-        form.reset(); target.value = allocation.warehouseId || allocation.factorItemId;
+        form.reset();
+        target.value = allocation.warehouseId || allocation.factorItemId;
         target.dataset.warehouseId = allocation.warehouseId || "";
         target.dataset.salesWeight = allocation.warehouseId ? 0 : sfAllocationSalesCapacity(allocation);
         form.querySelector(".sf-target-label").textContent = sfAllocationTargetLabel(allocation);
-        clearSupplyAllocationFormError(form); updateSupplyAllocationLimit(form);
+        clearSupplyAllocationFormError(form);
+        updateSupplyAllocationLimit(form);
         sfAllocationDrafts.delete(`${allocation.supplyFactorItemId}:${allocation.id}`);
         form.closest(".sf-allocation-edit-row").hidden = true;
         [...form.closest("[data-item-id]").querySelectorAll(".sf-allocation-edit")].find(b => b.dataset.allocationId === allocation.id)?.focus();
@@ -1264,13 +1390,14 @@ document.addEventListener("keydown", event => {
     const row = event.target.closest(".sf-allocation-sale-row");
     if (row && event.target === row && ["Enter", " "].includes(event.key)) {
         event.preventDefault();
-        const radio = row.querySelector('input[name="sfAllocationFactorItem"]');
+        const radio = row.querySelector(`input[name="sfAllocationFactorItem"]`);
         if (radio && !radio.disabled) radio.click();
     }
     const tab = event.target.closest("[data-sf-tab]");
     if (tab && ["ArrowLeft", "ArrowRight"].includes(event.key)) {
         event.preventDefault();
         const next = [...document.querySelectorAll("[data-sf-tab]")].find(b => b !== tab);
-        next.click(); next.focus();
+        next.click();
+        next.focus();
     }
 });

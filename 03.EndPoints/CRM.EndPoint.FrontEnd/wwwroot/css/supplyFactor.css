@@ -784,14 +784,6 @@
     border-color:#e0e6e7;
 }
 
-.sf-fill-max {
-    padding:0;
-    background:transparent;
-    border:0;
-    color:var(--sf-accent);
-    font-size:10px;
-}
-
 .sf-form-actions {
     padding-top:25px;
     display:flex;
@@ -1686,15 +1678,6 @@
 .sf-allocation-modal .sf-dialog-footer > * {
     margin: 0;
 }
-.sf-item-summary {
-    transition: background-color .15s;
-}
-.sf-item-summary:hover, .sf-item-summary:focus-visible {
-    background-color: #f1f8f6;
-}
-.sf-item-summary:hover .sf-item-toggle-hint, .sf-item-summary:focus-visible .sf-item-toggle-hint {
-    color: var(--sf-accent);
-}
 .sf-item-toggle-hint {
     display: inline-flex;
     align-items: center;
@@ -1731,24 +1714,7 @@
     min-height: 0;
 }
 
-/* Clear visual hierarchy: the whole supply item responds, recorded allocations come first. */
-.sf-item {
-    transition: background-color .16s, border-color .16s, box-shadow .16s;
-}
-.sf-item:is(:hover, :focus-within) {
-    background-color: #f0f8f5;
-    border-color: #78b7a9;
-    box-shadow: 0 0 0 3px #04857c12;
-}
-.sf-item:is(:hover, :focus-within) > .sf-item-summary {
-    background-color: transparent;
-}
-.sf-item:is(:hover, :focus-within) > .sf-item-body {
-    background-color: #f0f8f5;
-}
-.sf-item:is(:hover, :focus-within) .sf-item-toggle-hint {
-    color: var(--sf-accent);
-}
+/* Recorded allocations retain their visual hierarchy without card hover effects. */
 .sf-status-recorded {
     color: #076c61;
     background: #e0f1eb;
@@ -1817,9 +1783,6 @@
 }
 .sf-ui .sf-records-panel .sf-record-row:nth-child(4n + 3) > td {
     background: #f5faf7;
-}
-.sf-ui .sf-records-panel .sf-record-row:hover > td {
-    background: #ebf6f0;
 }
 .sf-records-panel .sf-record-destination .sf-cell-title {
     font-size: 13px;
@@ -1898,7 +1861,6 @@
     --sf-soft: #eef0f2;
     --sf-item-border: #d8dde1;
     --sf-item-base: #f6f7f8;
-    --sf-item-hover: #eef0f2;
     --sf-item-panel: #eceff1;
     --sf-item-stripe: #fafbfc;
     --sf-item-emphasis: #e2e6e9;
@@ -1914,7 +1876,6 @@
     --sf-soft: #edf7f5;
     --sf-item-border: #b9d8cd;
     --sf-item-base: #f8fcfa;
-    --sf-item-hover: #edf7f2;
     --sf-item-panel: #e8f3ed;
     --sf-item-stripe: #f6fbf8;
     --sf-item-emphasis: #dff0e6;
@@ -1928,21 +1889,12 @@
     --sf-soft: #f3edf9;
     --sf-item-border: #d5c2e7;
     --sf-item-base: #faf7fd;
-    --sf-item-hover: #f2eafa;
     --sf-item-panel: #eee3f7;
     --sf-item-stripe: #faf6fd;
     --sf-item-emphasis: #e5d5f2;
     --sf-item-ink: #663399;
     --sf-item-muted: #7a648e;
     --sf-item-focus: #66339922;
-}
-.sf-item:is(:hover, :focus-within),
-.sf-item:is(:hover, :focus-within) > .sf-item-body {
-    background-color: var(--sf-item-hover);
-    border-color: var(--sf-item-border);
-}
-.sf-item:is(:hover, :focus-within) {
-    box-shadow: 0 0 0 2px var(--sf-item-focus);
 }
 .sf-item-list { gap: 10px; }
 .sf-item-summary { padding: 11px 14px; }
@@ -1998,7 +1950,9 @@
 .sf-ui .sf-item .sf-record-row:nth-child(4n + 3) > td {
     background: var(--sf-item-stripe);
 }
-.sf-ui .sf-item .sf-record-row:hover > td { background: var(--sf-item-panel); }
+.sf-ui .sf-item .sf-record-row:hover > td {
+    background: color-mix(in srgb, var(--sf-accent) 3%, #fff);
+}
 .sf-item .sf-record-destination .sf-cell-title { font-size: 12px; }
 .sf-item .sf-cell-description { margin-top: 0; line-height: 1.6; }
 .sf-item .sf-record-weight { padding: 3px 8px; background: var(--sf-item-emphasis); }
@@ -2067,7 +2021,7 @@
     .sf-page-numbers { max-height: 104px; }
 }
 
-/* The separate header and shared controls together use at most one fifth of the modal. */
+/* Desktop controls stay compact; mobile controls use their natural height. */
 #sfAllocationsModal .sf-modal-content { --sf-workspace-header-height: 58px; }
 #sfAllocationsModal .sf-workspace-top {
     flex: 0 0 auto; min-height: 0; max-height: max(0px, calc(20% - var(--sf-workspace-header-height))); overflow: auto;
@@ -2127,9 +2081,13 @@
 #sfAllocationsModal .sf-record-table td { padding: 6px 7px; }
 #sfAllocationsModal .sf-inline-empty { padding: 7px; margin-top: 7px; }
 @media (max-width: 720px) {
-    #sfAllocationsModal .sf-workspace-top { padding: 5px 8px; }
+    #sfAllocationsModal .sf-workspace-top {
+        padding: 5px 8px;
+        max-height: none;
+        overflow: visible;
+    }
     #sfAllocationsModal .sf-modal-content { --sf-workspace-header-height: 52px; }
-    #sfAllocationsModal .sf-dialog-header { padding: 9px 12px; }
+    #sfAllocationsModal .sf-dialog-header { padding: 9px 12px; flex: 0 0 auto; }
     #sfAllocationsModal .sf-header-title h2 { font-size: 15px; }
     #sfAllocationsModal .sf-filter { padding-inline: 6px; font-size: 10px; }
     #sfAllocationsModal .sf-filter span { display: none; }
