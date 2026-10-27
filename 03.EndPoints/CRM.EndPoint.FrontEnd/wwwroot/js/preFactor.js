@@ -1276,6 +1276,138 @@ const initDeliverDataTable = (tableId) => {
 };
 
 /* ----------------------------------------------- sendPreFactorToExternalSoftware ----------------------------------------------- */
+let externalSotwarePfId;
+
+const externalSoftwarePreFactorsModal = document.getElementById("externalSoftwarePreFactorsModal");
+const externalPreFactorsContainer = document.getElementById("externalSoftwarePreFactors");
+const sendExternalPreFactorBtn = document.getElementById("sendExternalPreFactorBtn");
+
+/*renderExternalSoftwarePreFactors([
+    {
+        externalSoftwareId: 1,
+        externalSoftwareTitle: "سپیدار پلی اتیلن",
+        preFactorNumber: "140536",
+        externalPreFactorNumber: "140536",
+        creationDate: "1405/08/04",
+        customerName: "شرکت وزین",
+        invoicesCount: 2,
+        viewUrl: "/Factor/ExternalDetails/123",
+    },
+]);*/
+async function showPreFactorExternalSotwaresModal(id, serialNumber) {
+    externalSotwarePfId = id;
+    externalSoftwarePreFactorsModal.querySelector(".modal-title").textContent = `مدیریت ارسال پیش‌فاکتور ${serialNumber}`;
+    
+    ModalToggle("externalSoftwarePreFactorsModal", "show");
+    
+    await getPreFactorExternalSotwares(id);
+    
+}
+async function getPreFactorExternalSotwares(id) {
+    await sendApiRequest({
+        url: "/Factor/GetExternalSoftwarePreFactors",
+        params: { preFactorId: id },
+        onSuccess: (res) => {
+            renderExternalSoftwarePreFactors(res.data);
+        },
+    });
+}
+
+
+
+sendExternalPreFactorBtn?.addEventListener("click", async () => {
+    await sendPreFactorToExternalSoftware(externalSotwarePfId);
+});
+
+externalPreFactorsContainer?.addEventListener("click", event => {
+    return;
+    
+    const button = event.target.closest("[data-action]");
+    if (!button) return;
+    
+    const { action } = button.dataset;
+    
+    if (action === "view") {
+        const url = button.dataset.url;
+        if (url) window.open(url, "_blank", "noopener,noreferrer");
+        return;
+    }
+    
+    if (action === "invoices") {
+        const externalSoftwareId = button.dataset.softwareId;
+        
+        // اتصال به مودال فاکتورهای مرتبط در مرحله بعد
+        console.log("External software:", externalSoftwareId);
+    }
+});
+
+
+/**
+ * Renders external software pre-factor records.
+ */
+
+function renderExternalSoftwarePreFactors(items = []) {
+    const container = document.getElementById("externalSoftwarePreFactors");
+    if (!container) return;
+    
+    if (!items.length) {
+        container.innerHTML = `
+            <div class="external-pf-empty">
+                این پیش‌فاکتور هنوز در نرم‌افزار مالی ثبت نشده است.
+            </div>`;
+        return;
+    }
+    
+    
+    container.innerHTML = items.map(item => `
+        <div class="external-pf-card">
+            <div class="external-pf-info">
+                <div class="external-pf-field">
+                    <span class="external-pf-label">نرم‌افزار:</span>
+                    <span class="external-pf-value external-pf-software">
+                        ${escapeHtml(item.externalSoftwareTitle)}
+                    </span>
+                </div>
+
+                <div class="external-pf-field">
+                    <span class="external-pf-label">تاریخ ثبت:</span>
+                    <span class="external-pf-value">
+                        ${renderDateTimeHtml(item.creationDate) || "—"}<!--${renderDateTimeHtml(item.creationDate) || "—"}-->
+                    </span>
+                </div>
+
+                <div class="external-pf-field">
+                    <span class="external-pf-label">شماره پیش‌فاکتور:</span>
+                    <span class="external-pf-value">
+                        ${escapeHtml(item.externalPreFactorNumber || "—")}
+                    </span>
+                </div>
+
+                <div class="external-pf-field">
+                    <span class="external-pf-label">مشتری:</span>
+                    <span class="external-pf-value" title="${escapeHtml(item.customerName)}">
+                        ${escapeHtml(item.customerName || "—")}
+                    </span>
+                </div>
+            </div>
+
+            <div class="external-pf-actions">
+                <button type="button" class="external-pf-action external-pf-view" data-action="view" data-url="${escapeHtml(item.viewUrl || "")}">
+                    <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg> 
+                    مشاهده
+                </button>
+
+                <button type="button" class="external-pf-action external-pf-invoices" data-action="invoices" data-software-id="${escapeHtml(item.externalSoftwareId)}">
+                    <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12h-5"></path><path d="M15 8h-5"></path><path d="M19 17V5a2 2 0 0 0-2-2H4"></path><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"></path></svg>
+                     فاکتورها
+                </button>
+            </div>
+        </div>
+    `).join("");
+}
+
+
+/* ----------------------------------------------------------------------------------------------------------- */
 
 async function sendPreFactorToExternalSoftware(id) {
     await showExternalSoftwareModal(id, {
@@ -1292,7 +1424,7 @@ async function sendPreFactorToExternalSoftware(id) {
 }
 
 
-const externalMappingModal = document.getElementById("externalSoftwarePreFactorModal");
+const externalMappingModal = document.getElementById("sendPreFactorToExternalSoftwareModal");
 const externalMappingList = externalMappingModal?.querySelector("#externalMappingList");
 const confirmExternalMappingBtn = externalMappingModal?.querySelector("#confirmExternalMappingBtn");
 const backExternalMappingBtn = externalMappingModal?.querySelector("#backExternalMappingBtn");
@@ -1384,6 +1516,7 @@ async function exSoftwarePreFactorFinish() {
     
     if (state.softwareIndex >= state.softwareIds.length) {
         ModalToggle(externalMappingModal, "hide");
+        await getPreFactorExternalSotwares(externalSotwarePfId);
         return;
     }
     

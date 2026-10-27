@@ -8095,6 +8095,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	margin-bottom: .25rem;
 }
 
+
 .external-mapping-subtitle {
 	color: #8490a0;
 	font-size: 11px;
@@ -8142,6 +8143,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	gap: 11px;
 }
 
+
 .external-mapping-stage-icon {
 	width: 34px;
 	height: 34px;
@@ -8157,10 +8159,12 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	font-size: 14px;
 }
 
+
 .external-mapping-stage-content {
 	flex: 1;
 	min-width: 0;
 }
+
 
 .external-mapping-stage-title {
 	color: #26364a;
@@ -8168,11 +8172,13 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	font-family: IRANSansBold;
 }
 
+
 .external-mapping-stage-subtitle {
 	margin-top: 1px;
 	color: #8993a2;
 	font-size: 12px;
 }
+
 
 .external-mapping-step {
 	flex-shrink: 0;
@@ -8404,4 +8410,174 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 .external-prefactor-preview .external-mapping-entity.mt-3 .d-flex:last-child {
 	color: #04796f;
 	font-size: 15px;
+}
+
+
+/* -------------------------------------------------- */
+
+
+.external-pf-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 12px;
+	color: #344b48;
+	font-size: 13px;
+	font-family: IRANSansBold;
+}
+
+
+.external-pf-send {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 7px 10px;
+	color: #fff;
+	background: #05665e;
+	border: 0;
+	border-radius: 6px;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+
+.external-pf-send:hover {
+	color: #fff;
+	background: #034f49;
+}
+
+
+.external-pf-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+
+.external-pf-card {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	min-height: 88px;
+	padding: 10px 14px;
+	background: #fff;
+	border: 1px solid #e0e9e7;
+	border-right: 3px solid #078078;
+	border-radius: 8px;
+}
+
+
+.external-pf-info {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(130px, 1fr));
+	gap: 7px 20px;
+	flex: 1;
+	min-width: 0;
+}
+
+
+.external-pf-field {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+	font-size: 12px;
+}
+
+
+.external-pf-label {
+	flex-shrink: 0;
+	color: #8a9693;
+}
+
+
+.external-pf-value {
+	overflow: hidden;
+	color: #263e3b;
+	font-family: IRANSansBold;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+
+.external-pf-software {
+	color: #05665e;
+	font-family: IRANSansBold;
+}
+
+
+.external-pf-actions {
+	display: flex;
+	flex-shrink: 0;
+	flex-direction: column;
+	gap: 5px;
+}
+
+
+.external-pf-action {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	min-width: 88px;
+	padding: 5px 9px;
+	border: 1px solid #dce6e4;
+	border-radius: 5px;
+	font-size: 11px;
+	font-family: IRANSansBold;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+
+.external-pf-view {
+	color: #05665e;
+	background: #fff;
+}
+
+
+.external-pf-invoices {
+	color: #fff;
+	background: #05665e;
+	border-color: #05665e;
+}
+
+
+.external-pf-view:hover {
+	background: #edf8f5;
+}
+
+
+.external-pf-invoices:hover {
+	background: #034f49;
+}
+
+
+.external-pf-empty {
+	padding: 25px 12px;
+	color: #84918e;
+	text-align: center;
+	font-size: 12px;
+	border: 1px dashed #d5e1de;
+	border-radius: 8px;
+}
+
+
+@media (max-width: 576px) {
+	.external-pf-card {
+		gap: 8px;
+		padding: 9px;
+	}
+	
+	.external-pf-info {
+		grid-template-columns: 1fr;
+		gap: 6px;
+	}
+	
+	.external-pf-action {
+		min-width: 75px;
+		padding: 5px;
+	}
 }
