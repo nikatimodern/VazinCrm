@@ -147,6 +147,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
         public async Task<IActionResult> SearchAllocationFactorItems(string search, Guid supplyFactorItemId, Guid? allocationId = null)
         {
+            var source = await db.SupplyFactorItems.AsNoTracking().Where(i => i.Id == supplyFactorItemId
+                && db.SupplyFactors.Any(f => f.Id == i.SupplyFactorId)).Select(i => new { i.Unit }).FirstOrDefaultAsync();
+            if (source == null) return NotFound("آیتم تامین یافت نشد.");
+            var unit = (int)source.Unit;
             search = search?.Trim();
             var excludedAllocationId = allocationId ?? Guid.Empty;
             var sourceProductId = await db.SupplyFactorItemAllocations.Where(a => a.Id == excludedAllocationId
@@ -154,6 +158,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 .Select(a => a.SourceWarehouseProductId).FirstOrDefaultAsync();
             var query = from i in db.FactorItems.AsNoTracking()
                 join f in db.Factors.AsNoTracking() on i.factorId equals f.Id
+                where i.Unit == unit
                 select new {
                     i.Id, i.Product, i.ProductSmallName, i.WeightCount, i.UnitTxt,
                     f.Customer, f.SerialNumber, f.Date, i.CreateDate, i.Row,
@@ -255,13 +260,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [Authorize(Roles = SalesAllocationRoles)]
         public async Task<IActionResult> SearchAllocationSupplyItems(string search, Guid factorItemId, Guid? allocationId = null)
         {
-            if (!await db.FactorItems.AnyAsync(i => i.Id == factorItemId
-                                                    && db.Factors.Any(f => f.Id == i.factorId))) return NotFound("آیتم فروش یافت نشد.");
+            var sales = await db.FactorItems.AsNoTracking().Where(i => i.Id == factorItemId
+                && db.Factors.Any(f => f.Id == i.factorId)).Select(i => new { i.Unit }).FirstOrDefaultAsync();
+            if (sales == null) return NotFound("آیتم فروش یافت نشد.");
+            var unit = (UnitTypeEnums)sales.Unit;
             search = search?.Trim();
             var excludedId = allocationId ?? Guid.Empty;
             var query = from i in db.SupplyFactorItems.AsNoTracking()
                 join f in db.SupplyFactors.AsNoTracking() on i.SupplyFactorId equals f.Id
-                where !db.SupplyFactorItemAllocations.Any(a => a.FactorItemId == factorItemId
+                where i.Unit == unit && !db.SupplyFactorItemAllocations.Any(a => a.FactorItemId == factorItemId
                                                                && a.SupplyFactorItemId == i.Id && a.SourceWarehouseProductId == null &&
                                                                a.Id != excludedId)
                 select new {
@@ -284,7 +291,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 join si in db.SupplyFactorItems on p.SupplyFactorItemId equals si.Id
                 join sf in db.SupplyFactors on si.SupplyFactorId equals sf.Id
                 join w in db.Warehouses on p.WarehouseId equals w.Id
-                where ((w.Id == SupplyFactorWarehouseService.WasteId && w.WarehouseType == WarehouseType.انبار_ضایعات)
+                where p.Unit == unit && si.Unit == unit && ((w.Id == SupplyFactorWarehouseService.WasteId && w.WarehouseType == WarehouseType.انبار_ضایعات)
                        || (w.Id == SupplyFactorWarehouseService.StorageId && w.WarehouseType == WarehouseType.انبار_ذخیره))
                       && !db.SupplyFactorItemAllocations.Any(a => a.SourceWarehouseProductId == p.Id
                                                                   && a.FactorItemId == factorItemId && a.Id != excludedId)
@@ -417,6 +424,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     .FirstOrDefaultAsync();
                 if (salesItem == null || !await db.Factors.AnyAsync(f => f.Id == salesItem.factorId))
                     return BadRequest("آیتم فاکتور فروش یافت نشد.");
+                if (salesItem.Unit != (int)item.Unit)
+                    return BadRequest("واحد آیتم فروش و آیتم تامین باید یکسان باشد.");
                 if (!TryParseAllocationSalesWeight(salesItem.WeightCount, out salesWeight) || salesWeight <= 0)
                     return BadRequest("مقدار آیتم فاکتور فروش معتبر نیست؛ ابتدا فاکتور فروش را اصلاح کنید.");
             }
@@ -571,6 +580,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var sales = await db.FactorItems.FromSqlInterpolated(
                 $"SELECT * FROM [FactorItems] WITH (UPDLOCK, HOLDLOCK) WHERE [Id] = {model.FactorItemId}").FirstOrDefaultAsync();
             if (sales == null || !await db.Factors.AnyAsync(f => f.Id == sales.factorId)) return NotFound("آیتم فروش یافت نشد.");
+            if (sources.Single(i => i.Id == targetSourceId).Unit != (UnitTypeEnums)sales.Unit
+                || warehouseProduct != null && warehouseProduct.Unit != (UnitTypeEnums)sales.Unit)
+                return BadRequest("واحد آیتم فروش باید با واحد آیتم تامین و موجودی انبار انتخاب‌شده یکسان باشد.");
             if (!TryParseAllocationSalesWeight(sales.WeightCount, out var total) || total <= 0)
                 return BadRequest("مقدار آیتم فروش معتبر نیست؛ ابتدا فاکتور فروش را اصلاح کنید.");
             var excluded = allocationId ?? Guid.Empty;
