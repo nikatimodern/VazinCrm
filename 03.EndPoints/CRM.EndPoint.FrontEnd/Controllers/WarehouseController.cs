@@ -326,8 +326,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
 
             var oldData = await db.WarehouseProducts.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id);
-            if (oldData?.SupplyFactorItemId != null)
-                return BadRequest("محصول مرتبط با تامین فقط از فاکتور تامین قابل ویرایش است.");
+            if (oldData?.SupplyFactorItemId != null || oldData?.FactorItemId != null)
+                return BadRequest("محصول مرتبط با تخصیص فقط از فاکتور مربوط قابل ویرایش است.");
             await logSystemService.LogChange(oldData, model, LogActionEnum.ویرایش, user);
 
 
@@ -351,8 +351,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
         var warehouseProduct = await db.WarehouseProducts.FindAsync(id);
         if (warehouseProduct == null) return NotFound("رکوردی یافت نشد!");
-        if (warehouseProduct.SupplyFactorItemId != null)
-            return BadRequest("محصول مرتبط با تامین قابل حذف مستقیم نیست.");
+        if (warehouseProduct.SupplyFactorItemId != null || warehouseProduct.FactorItemId != null)
+            return BadRequest("محصول مرتبط با تخصیص قابل حذف مستقیم نیست.");
 
 
         var hasVoucher = await db.WarehouseProductVouchers.AnyAsync(f => f.WarehouseProductId == id);
@@ -572,8 +572,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         {
             var data = await db.WarehouseTransactions.FirstOrDefaultAsync(x => x.Id == model.Id);
             if (data == null) return NotFound();
-            if (data.SupplyFactorItemId != null)
-                return BadRequest("تراکنش خودکار تامین فقط از تخصیص یا فاکتور تامین قابل اصلاح است.");
+            if (data.SupplyFactorItemId != null || data.FactorItemId != null)
+                return BadRequest("تراکنش خودکار تخصیص فقط از فاکتور مربوط قابل اصلاح است.");
 
             var user = await userManager.GetUserAsync(HttpContext.User);
 
@@ -619,8 +619,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
             if (warehouseTransaction == null)
                 return NotFound("رکوردی یافت نشد!");
-            if (warehouseTransaction.SupplyFactorItemId != null)
-                return BadRequest("تراکنش خودکار تامین قابل حذف مستقیم نیست.");
+            if (warehouseTransaction.SupplyFactorItemId != null || warehouseTransaction.FactorItemId != null)
+                return BadRequest("تراکنش خودکار تخصیص قابل حذف مستقیم نیست.");
 
             var availableStock = await db.GetWarehouseProductAvailableStockAsync(warehouseTransaction.WarehouseProductId,
                 excludedTransactionId: warehouseTransaction.Id);

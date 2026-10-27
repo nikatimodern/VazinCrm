@@ -870,3 +870,30 @@ const acceptFactor = async (id, type, passType) => {
         },
     });
 };
+// FactorPartial is also used outside Cartable; load the shared allocation workspace once when needed.
+let salesFactorAllocationAssets = null;
+async function openSalesFactorAllocationWorkspace(button, id) {
+    if (button.disabled) return;
+    const label = button.innerHTML;
+    button.disabled = true; button.setAttribute("aria-busy", "true");
+    try {
+        if (typeof showSalesFactorAllocations !== "function") {
+            if (!salesFactorAllocationAssets) {
+                salesFactorAllocationAssets = new Promise((resolve, reject) => {
+                    const script = document.createElement("script");
+                    script.src = button.dataset.allocationScript;
+                    script.onload = resolve;
+                    script.onerror = () => { script.remove(); salesFactorAllocationAssets = null; reject(new Error("allocation-assets")); };
+                    document.head.append(script);
+                });
+            }
+            button.querySelector("span").textContent = "در حال دریافت…";
+            await salesFactorAllocationAssets;
+        }
+        await showSalesFactorAllocations(id);
+    } catch {
+        toastifyError("پنجره تخصیص باز نشد؛ دوباره تلاش کنید.");
+    } finally {
+        button.innerHTML = label; button.disabled = false; button.removeAttribute("aria-busy");
+    }
+}

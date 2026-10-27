@@ -83,6 +83,75 @@ public class SupplyFactorWarehouseService(CRMContextDb db) {
         await db.SaveChangesAsync();
     }
 
+    // Move weight between the warehouse remainder and its sales allocation. The supply total
+    // is unchanged: the same weight is never counted twice as both warehouse stock and a sale.
+    public async Task ChangeWarehouseSourceAsync(Guid? previousProductId, decimal previousWeight,
+        Guid? targetProductId, decimal targetWeight) {
+        if (db.Database.CurrentTransaction == null)
+            throw new InvalidOperationException("برداشت انبار باید داخل تراکنش ثبت شود.");
+        var products = new Dictionary<Guid, WarehouseProduct>();
+        foreach (var id in new[] { previousProductId, targetProductId }.Where(id => id.HasValue).Distinct().OrderBy(id => id)) {
+            var product = await db.WarehouseProducts.FromSqlInterpolated(
+                $"SELECT * FROM [WarehouseProducts] WITH (UPDLOCK, HOLDLOCK) WHERE [Id] = {id}").FirstOrDefaultAsync();
+            if (product == null || !product.SupplyFactorItemId.HasValue || !IsAllocationDestination(product.WarehouseId)
+                || !await db.Warehouses.AnyAsync(w => w.Id == product.WarehouseId
+                    && ((w.Id == WasteId && w.WarehouseType == WarehouseType.انبار_ضایعات)
+                        || (w.Id == StorageId && w.WarehouseType == WarehouseType.انبار_ذخیره))))
+                throw new InvalidOperationException("موجودی انبار مرتبط با آیتم تامین یافت نشد.");
+            products.Add(product.Id, product);
+        }
+        if (targetProductId.HasValue) {
+            var product = products[targetProductId.Value];
+            var restored = targetProductId == previousProductId ? previousWeight : 0;
+            var available = await db.GetWarehouseProductAvailableStockAsync(product.Id) + restored;
+            var remainder = await db.SupplyFactorItemAllocations.Where(a => a.SupplyFactorItemId == product.SupplyFactorItemId
+                && a.WarehouseId == product.WarehouseId && a.FactorItemId == null)
+                .SumAsync(a => (decimal?)a.Weight) ?? 0;
+            if (targetWeight > Math.Min(available, remainder + restored))
+                throw new InvalidOperationException("مقدار از موجودی آزاد و قابل تخصیص این آیتم در انبار بیشتر است.");
+        }
+        foreach (var product in products.Values) {
+            var difference = (product.Id == previousProductId ? previousWeight : 0)
+                - (product.Id == targetProductId ? targetWeight : 0);
+            if (difference == 0) continue;
+            var transfer = await db.SupplyFactorItemAllocations.FirstOrDefaultAsync(a =>
+                a.SupplyFactorItemId == product.SupplyFactorItemId && a.WarehouseId == product.WarehouseId && a.FactorItemId == null);
+            var weight = (transfer?.Weight ?? 0) + difference;
+            if (weight < 0) throw new InvalidOperationException("باقی‌مانده تخصیص انبار کافی نیست.");
+            if (weight == 0) { if (transfer != null) db.SupplyFactorItemAllocations.Remove(transfer); }
+            else if (transfer != null) transfer.Weight = weight;
+            else db.SupplyFactorItemAllocations.Add(new SupplyFactorItemAllocation {
+                SupplyFactorItemId = product.SupplyFactorItemId, WarehouseId = product.WarehouseId, Weight = weight
+            });
+        }
+    }
+
+    // Reverse historical sales receipts only after their unlinked allocation is corrected/deleted.
+    // New sales allocations never create stock or a product owned by the sales item.
+    public async Task ReverseLegacySalesReceiptsAsync(CRM.Core.Domain.Factors.Entities.FactorItem item, AppUser user) {
+        if (db.Database.CurrentTransaction == null)
+            throw new InvalidOperationException("اصلاح گردش انبار باید داخل تراکنش ثبت شود.");
+        var pending = await db.SupplyFactorItemAllocations.Where(a => a.FactorItemId == item.Id
+            && a.SupplyFactorItemId == null && a.WarehouseId != null).Select(a => a.WarehouseId).ToListAsync();
+        var products = await db.WarehouseProducts.IgnoreQueryFilters().Where(p => p.FactorItemId == item.Id).ToListAsync();
+        foreach (var product in products) {
+            if (pending.Contains(product.WarehouseId)) continue;
+            await db.WarehouseProducts.FromSqlInterpolated(
+                $"SELECT * FROM [WarehouseProducts] WITH (UPDLOCK, HOLDLOCK) WHERE [Id] = {product.Id}").IgnoreQueryFilters().LoadAsync();
+            var net = await db.WarehouseTransactions.Where(t => t.WarehouseProductId == product.Id && t.FactorItemId == item.Id)
+                .SumAsync(WarehouseExtensions.StockValueExpression);
+            if (net == 0) continue;
+            if (product.IsDeleted || net < 0 || await db.GetWarehouseProductAvailableStockAsync(product.Id) < net)
+                throw new InvalidOperationException("موجودی آزاد برای اصلاح ورود اشتباه قبلی کافی نیست.");
+            db.WarehouseTransactions.Add(new WarehouseTransaction {
+                Id = Guid.NewGuid(), WarehouseProductId = product.Id, FactorItemId = item.Id,
+                Weight = net, TransactionType = WarehouseTransactionTypeEnum.خروج,
+                UserCreatorID = user.Id, UserCreator = user.FullName, CommentText = "اصلاح ورود اشتباه تخصیص فروش"
+            });
+        }
+        await db.SaveChangesAsync();
+    }
+
     private void AddEntry(WarehouseProduct product, SupplyFactorItem item, decimal signedWeight, AppUser user, string description) {
         db.WarehouseTransactions.Add(new WarehouseTransaction {
             Id = Guid.NewGuid(), WarehouseProductId = product.Id, SupplyFactorItemId = item.Id,

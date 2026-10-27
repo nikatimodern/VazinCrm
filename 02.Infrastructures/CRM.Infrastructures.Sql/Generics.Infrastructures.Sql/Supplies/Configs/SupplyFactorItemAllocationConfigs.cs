@@ -8,10 +8,16 @@ public class SupplyFactorItemAllocationConfigs : IEntityTypeConfiguration<Supply
     public void Configure(EntityTypeBuilder<SupplyFactorItemAllocation> builder) {
         builder.ToTable("SupplyFactorItemAllocations", t => {
             t.HasCheckConstraint("CK_SupplyFactorItemAllocations_Weight", "[Weight] > 0");
+            t.HasCheckConstraint("CK_SupplyFactorItemAllocations_WarehouseSource",
+                "[SourceWarehouseProductId] IS NULL OR ([SupplyFactorItemId] IS NOT NULL AND [FactorItemId] IS NOT NULL AND [WarehouseId] IS NULL)");
             t.HasCheckConstraint("CK_SupplyFactorItemAllocations_Destination",
-                "([FactorItemId] IS NOT NULL AND [WarehouseId] IS NULL) OR ([FactorItemId] IS NULL AND [WarehouseId] IS NOT NULL)");
+                "([SupplyFactorItemId] IS NOT NULL AND [FactorItemId] IS NOT NULL AND [WarehouseId] IS NULL) OR "
+                + "([SupplyFactorItemId] IS NOT NULL AND [FactorItemId] IS NULL AND [WarehouseId] IS NOT NULL) OR "
+                + "([SupplyFactorItemId] IS NULL AND [FactorItemId] IS NOT NULL AND [WarehouseId] IS NOT NULL)");
         });
         builder.HasOne(x => x.Warehouse).WithMany().HasForeignKey(x => x.WarehouseId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.SourceWarehouseProduct).WithMany().HasForeignKey(x => x.SourceWarehouseProductId)
+            .OnDelete(DeleteBehavior.Restrict);
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Weight).HasPrecision(18, 2);
         builder.HasIndex(x => new { x.SupplyFactorItemId, x.FactorItemId });

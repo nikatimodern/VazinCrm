@@ -8,6 +8,11 @@ namespace CRM.Core.Domain.Warehouses.Entities;
 
 public class WarehouseProduct : BaseEntity {
     [System.Text.Json.Serialization.JsonIgnore]
+    public Guid? FactorItemId { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore]
+    public CRM.Core.Domain.Factors.Entities.FactorItem FactorItem { get; set; }
+
+    [System.Text.Json.Serialization.JsonIgnore]
     public Guid? SupplyFactorItemId { get; set; }
     [System.Text.Json.Serialization.JsonIgnore]
     public CRM.Core.Domain.Supplies.Entities.SupplyFactorItem SupplyFactorItem { get; set; }

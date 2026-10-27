@@ -14,7 +14,7 @@
                     @(supplyFactor.OfficialType == 1 ? "رسمی" : "غیررسمی")
                 </div>
                 <div class="d-flex flex-column justify-content-center flex-grow-1 px-3 py-2">
-                    <span class="sf-supply-complete-badge badge bg-success align-self-start mb-2 @(item.IsAllocationComplete ? "" : "d-none")">
+                    <span class="sf-supply-complete-badge badge bg-success align-self-start mb-2" hidden="@(!item.IsAllocationComplete)">
                         <i class="fa fa-check" aria-hidden="true"></i> تخصیص تکمیل شده
                     </span>
                     <div class="d-flex justify-content-between align-items-baseline mb-1">
@@ -59,6 +59,10 @@
                         <span class="fbold direction-ltr" style="font-size: 13px">@supplyFactor.Description</span>
                     </div>
                 }
+                <button type="button" class="sf-manage-allocations" data-sf-open="@supplyFactor.Id">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h5v5H5zM14 14h5v5h-5zM8 10v7h6M14 7h5M17 4l3 3-3 3"/></svg>
+                    <span>مدیریت تخصیص‌ها</span>
+                </button>
             </div>
 
             <div class="layered-card__layer col-12 col-lg-2 d-flex flex-row flex-lg-column justify-content-between justify-content-lg-center align-items-center px-3 py-2">
@@ -70,9 +74,6 @@
             </div>
 
             <div class="layered-card__layer col-12 col-lg-1 d-flex flex-row flex-lg-column justify-content-center align-items-center px-2 py-2 gap-4 gap-lg-3">
-                <button type="button" class="btn btn-sm btn-outline-primary" title="تخصیص آیتم‌های تامین به فروش" onclick="showSupplyAllocations('@supplyFactor.Id')">
-                    <i class="fa fa-link" aria-hidden="true"></i><span class="fs-small">تخصیص</span>
-                </button>
                 <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="showAttachments('@supplyFactor.Id', 8)">
                     <i class="fa fa-paperclip"></i>
                 </button>

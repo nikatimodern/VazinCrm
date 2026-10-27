@@ -1,11 +1,19 @@
 ﻿@using CRM.Core.Domain.Factors.Enum
+@inject IFileVersionProvider AllocationFileVersions
 @model CRM.EndPoint.FrontEnd.Models.Factor.FactorsViewModel ;
 
 @{
     Layout = null;
 
     var isAdminOrFinancial = User.IsAdmin() || User.IsFinancial();
+    var canManageAllocations = isAdminOrFinancial;
+    var allocationScript = AllocationFileVersions.AddFileVersionToPath(Context.Request.PathBase, Url.Content("~/js/supplyFactor.js"));
     var passType = ViewBag.PassType; // passType: (0:PreFactor,Factor | 1:CustomerProfile | 5:Supply | 4:Deal | 6:Email)
+}
+
+@if (canManageAllocations)
+{
+    @Html.AntiForgeryToken()
 }
 
 <div class="d-flex flex-column w-100" style="gap: 5px">
@@ -212,7 +220,16 @@
                                     برگشت خورده
                                 </div>
                             }
+
                         </div>
+                        @if (canManageAllocations)
+                        {
+                            <button type="button" class="sf-sales-manage-allocations" data-allocation-script="@allocationScript"
+                                    onclick="openSalesFactorAllocationWorkspace(this, '@item.Id')" title="مدیریت تخصیص آیتم‌های فروش">
+                                <i class="fa fa-exchange-alt" aria-hidden="true"></i><span>تخصیص‌ها</span>
+                            </button>
+                        }
+
                     </div>
                     <div class="d-sm-none mt-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
                 </div>
@@ -231,6 +248,7 @@
                             <i class="fa fa-pencil"></i>
                         </button>
                     }
+
 
                     <button class="flex-center" data-title-right="نمایش فاکتور" style="color:var(--DarkColor);" onclick="ShowPreviewFactor('@item.Id')">
                         <i class="fa fa-eye"></i>
