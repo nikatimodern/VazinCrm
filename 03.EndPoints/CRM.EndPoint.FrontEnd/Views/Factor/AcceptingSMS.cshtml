@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="~/lib/toastify/toastify.min.css" />
     <link rel="stylesheet" href="~/lib/viewerJs/css/viewer.min.css" />
 
-    <link rel="stylesheet" href="~/css/site.css?v=6.8.9" />
+    <link rel="stylesheet" href="~/css/site.css?v=6.9.3" />
     <link rel="stylesheet" href="~/css/acceptingSms.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/bottom-sheet.css" asp-append-version="true" />
 
@@ -189,8 +189,8 @@
 @* <script src="~/lib/lightBox2/js/lightbox.min.js"></script> *@
 <script src="~/lib/viewerJs/js/viewer.min.js"></script>
 
-<script src="~/js/File.js?v=6.8.9"></script>
-<script src="~/js/site.js?v=6.8.9"></script>
+<script src="~/js/File.js?v=6.9.3"></script>
+<script src="~/js/site.js?v=6.9.3"></script>
 <script src="~/js/bottom-sheet.js" asp-append-version="true"></script>
 
 
@@ -539,7 +539,11 @@
 
                             if (targetAfterLogin === "panel") {
                                 goTo(data.url, true);
+                            } else if (targetAfterLogin === "chat") {
+                                goTo(`/Chat/Main`, true);
                             }
+                            
+                            
                             if (showLoginCustomerModalBtn && paymentReceiptContainer) {
                                 showLoginCustomerModalBtn.style.display = "none";
                                 paymentReceiptContainer.style.display = "flex";
@@ -591,6 +595,10 @@
         document.getElementById("clearBtn").addEventListener("click", () => signaturePad.clear());
     }
 
+
+    const ShowPreviewPfactor = (id) => {
+        window.open("/factor/PreviewPfactorPrint/" + id, "_blank", "noopener,noreferrer");
+    };
 
 </script>
 

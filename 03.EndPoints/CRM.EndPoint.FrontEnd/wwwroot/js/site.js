@@ -1635,6 +1635,10 @@ const SeparatedNumberRemove = (val) => {
 
 //////////////////////////////////////////////////
 
+const fLshowLoadingElm = document.getElementById("FLshowLoading");
+function FLshowLoading(show = true) {
+    fLshowLoadingElm.style.display = show ? "" : "none";
+}
 
 function PublicConvertToTable(Selector, _data, SelectFunction, RemoveFunction, UpdateFunction) {
     

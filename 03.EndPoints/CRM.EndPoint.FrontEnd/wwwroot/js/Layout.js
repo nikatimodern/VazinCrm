@@ -179,10 +179,7 @@ const checkAccess = async (elId) => {
     return hasAccess;
 };
 
-const fLshowLoadingElm = document.getElementById("FLshowLoading");
-function FLshowLoading(show = true) {
-    fLshowLoadingElm.style.display = show ? "" : "none";
-}
+
 
 
 (function () {
