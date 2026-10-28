@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Deals.Enums;
+using CRM.Core.Domain.Deals;
 using CRM.EndPoint.FrontEnd.IServices.Menu;
 using CRM.EndPoint.FrontEnd.Models.Menu;
 using CRM.Infrastructures.Sql;
@@ -491,19 +492,28 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                 Roles = [
                     AppRoles.Admin,
                     AppRoles.SalesAdmin,
-                    AppRoles.ManagingDirector
+                    AppRoles.ManagingDirector,
+                    AppRoles.SalesExpert
                 ],
                 GetBadgeCountAsync = async sp => {
                     var db = sp.GetRequiredService<CRMContextDb>();
-                    var overdueBefore = DateTime.Now.AddDays(-14);
+                    var now = DateTime.Now;
+                    var overdueBefore = now.AddDays(-OverdueDealRules.OverdueAfterDays);
+                    var restrictToOwnDeals = user.IsInRole(AppRoles.SalesExpert) &&
+                        !user.IsInRole(AppRoles.SalesAdmin) && !user.IsInRole(AppRoles.Admin) &&
+                        !user.IsInRole(AppRoles.ManagingDirector);
+                    var creatorId = user.FindFirstValue(ClaimTypes.NameIdentifier);
 
                     return await db.Deals
                         .AsNoTracking()
                         .CountAsync(deal =>
                             deal.Status == DealStatusEnum.باز &&
-                            deal.CreateDate <= overdueBefore);
+                            deal.CreateDate >= OverdueDealRules.StartDate &&
+                            deal.CreateDate <= overdueBefore &&
+                            (!deal.OverdueFollowUpAt.HasValue || deal.OverdueFollowUpAt <= now) &&
+                            (!restrictToOwnDeals || deal.UserCreatorID == creatorId));
                 },
-                HideWhenBadgeEmpty = true,
+                HideWhenBadgeEmpty = false,
                 DisplayOrder = 998
             },
 

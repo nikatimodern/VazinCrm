@@ -2061,6 +2061,12 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Property<string>("ModifyDateTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("OverdueFollowUpAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("OverdueFollowUpNote")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("SerialNumber")
                         .HasColumnType("int");
 
@@ -5726,6 +5732,9 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsMain")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("ModifyDate")

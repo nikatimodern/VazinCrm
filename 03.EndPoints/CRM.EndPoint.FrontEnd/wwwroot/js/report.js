@@ -3,6 +3,8 @@ let dealIdReport = null;
 let dealSerialNumberReport = null;
 let typeReportSubmit = 0;
 
+var filterReportConfig = {};
+
 const SubmitReportForm = async () => {
     if (await mySer.CheckValidForm("#ReportFormId")) {
         let data = mySer.convertFormToJSON("#ReportFormId");
@@ -24,6 +26,7 @@ const SubmitReportForm = async () => {
         data.resultCallTxt = resultCall.value ? resultCall.options[resultCall.selectedIndex].text : "";
         data.finalResultCallTxt = finalResultCall.value ? finalResultCall.options[finalResultCall.selectedIndex].text : "";
         data.reasonCancelTxt = reasonCancel.value ? reasonCancel.options[reasonCancel.selectedIndex].text : "";
+
         
         FLshowLoading();
         $.post(`/Report/AddReport`, data, async (res) => {

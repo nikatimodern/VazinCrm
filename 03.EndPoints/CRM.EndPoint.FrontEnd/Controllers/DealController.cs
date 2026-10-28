@@ -174,10 +174,18 @@ public class DealController : Controller {
             var query = db.Deals.Include(f => f.Customer).AsNoTracking().AsQueryable();
             var isAdmin = true;
 
-            if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر فروش"))
+            if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر فروش") && !roles.Contains("مدیر عامل"))
             {
                 query = query.Where(f => f.UserCreatorID == user.Id);
                 isAdmin = false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(model?.EntityId))
+            {
+                if (!Guid.TryParse(model.EntityId, out var dealId))
+                    return BadRequest();
+
+                query = query.Where(f => f.Id == dealId);
             }
 
             if (!string.IsNullOrWhiteSpace(model?.serVal))
@@ -186,7 +194,7 @@ public class DealController : Controller {
                 query = query.Where(f =>
                     f.SerialNumber.ToString() == serVal ||
                     f.CustomerCode.ToString() == serVal ||
-                    f.CommentText.Contains(serVal) ||
+                    f.Description.Contains(serVal) ||
                     f.CustomerName.Contains(serVal) ||
                     f.CusCompanyName.Contains(serVal) ||
                     f.Title.Contains(serVal)

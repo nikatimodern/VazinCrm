@@ -6,6 +6,7 @@ using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Warehouses.Entities;
 using CRM.Core.Domain.Warehouses.Enums;
+using CRM.Core.Domain.Warehouses.Repositories;
 using CRM.EndPoint.FrontEnd.IServices.ViewRender;
 using CRM.EndPoint.FrontEnd.Models.Supply;
 using CRM.EndPoint.FrontEnd.Models.Warehouse;
@@ -22,8 +23,19 @@ using Microsoft.EntityFrameworkCore;
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
 [Authorize(Policy = "NotCustomerOnly")]
-public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManager, LogSystemService logSystemService, IViewRenderService vrs)
+public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManager, LogSystemService logSystemService, IViewRenderService vrs, IWarehouseRepository warehouseRepository)
     : Controller {
+    private bool CanManageWarehouses() =>
+        User.IsAdmin() || User.IsManagingDirector() || User.IsTaminAdmin() || User.IsSalesAdmin();
+
+    private const string SystemWarehouseMessage = "عملیات دستی انبار اصلی فقط برای مدیر ارشد مجاز است.";
+
+    private Task<bool> IsManualWriteBlockedAsync(Guid? warehouseId = null, Guid[] productIds = null,
+        Guid? voucherId = null, Guid? transactionId = null) =>
+        User.IsAdmin() ? Task.FromResult(false) :
+            warehouseRepository.IsManualWriteBlockedAsync(warehouseId, productIds ?? [],
+                voucherId, transactionId, HttpContext.RequestAborted);
+
     /*--------------------------------- warehouse ----------------------------------*/
 
     public async Task<IActionResult> Index()
@@ -81,26 +93,34 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     public async Task<IActionResult> AddWarehouse([FromBody] WarehouseVModel model)
     {
         if (model == null) return BadRequest();
+        if (!CanManageWarehouses()) return Forbid();
+        if (model.IsMain && !User.IsAdmin()) return Forbid();
+
+        Warehouse warehouse = null;
+        if (model.Id != Guid.Empty) {
+            warehouse = await warehouseRepository.FindAsync(model.Id, HttpContext.RequestAborted);
+            if (warehouse == null) return NotFound();
+            if (!warehouse.CanManage(User.IsAdmin())) return Forbid();
+        }
 
         var user = await userManager.GetUserAsync(HttpContext.User);
+        if (user == null) return Unauthorized();
 
-        Warehouse warehouse;
         if (model.Id == Guid.Empty)
         {
             warehouse = new Warehouse {
                 Title = model.Title,
+                IsMain = model.IsMain,
                 UserCreator = user.FullName,
                 UserCreatorID = user.Id,
                 WarehouseUsers = model.UserIds?.ConvertAll(userId => new WarehouseUser { UserId = userId })
             };
 
-            db.Warehouses.Add(warehouse);
+            warehouseRepository.Add(warehouse);
             await logSystemService.LogChange(warehouse, null, LogActionEnum.ثبت, user);
         } else
         {
-            warehouse = await db.Warehouses.Include(w => w.WarehouseUsers).FirstOrDefaultAsync(x => x.Id == model.Id);
-            if (warehouse == null) return NotFound();
-
+            warehouse.IsMain = model.IsMain;
             warehouse.Title = model.Title;
             warehouse.ModifyDate = DateTime.Now;
             warehouse.ModifyDateTxt = BaseServices.GetDateTimePersian();
@@ -113,7 +133,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             await logSystemService.LogChange(oldWarehouse, warehouse, LogActionEnum.ویرایش, user, ["WarehouseUsers"]);
         }
 
-        await db.SaveChangesAsync();
+        await warehouseRepository.SaveChangesAsync(HttpContext.RequestAborted);
         return Ok();
     }
 
@@ -127,6 +147,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
                 .Select(f => new WarehouseVModel {
                     Id = f.Id,
                     Title = f.Title,
+                    IsMain = f.IsMain,
                     UserIds = f.WarehouseUsers.Select(f => f.UserId).ToList()
                 })
                 .FirstOrDefaultAsync(f => f.Id == id);
@@ -147,10 +168,11 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     {
         if (id == Guid.Empty) return BadRequest();
 
-        if (SupplyFactorWarehouseService.IsSystemWarehouse(id))
-            return BadRequest("انبار سیستمی تامین قابل حذف نیست.");
-        var warehouse = await db.Warehouses.FindAsync(id);
+        if (!CanManageWarehouses()) return Forbid();
+        var warehouse = await warehouseRepository.FindAsync(id, HttpContext.RequestAborted);
         if (warehouse == null) return NotFound("رکوردی یافت نشد!");
+
+        if (!warehouse.CanManage(User.IsAdmin())) return Forbid();
 
         var user = await userManager.GetUserAsync(HttpContext.User);
 
@@ -161,7 +183,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         warehouse.ModifyDateTxt = BaseServices.GetDateTimePersian();
 
         await logSystemService.LogChange(warehouse, null, LogActionEnum.حذف, user);
-        await db.SaveChangesAsync();
+        await warehouseRepository.SaveChangesAsync(HttpContext.RequestAborted);
         return Ok();
     }
 
@@ -312,6 +334,10 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     public async Task<IActionResult> UpdateWarehouseProduct([FromBody] WarehouseProduct model)
     {
         if (model == null) return BadRequest();
+        if (await IsManualWriteBlockedAsync(model.WarehouseId, [model.Id]))
+            return BadRequest(SystemWarehouseMessage);
+
+        if (model == null) return BadRequest();
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
         {
@@ -326,6 +352,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
 
             var oldData = await db.WarehouseProducts.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id);
+            if (oldData == null) return NotFound();
             if (oldData?.SupplyFactorItemId != null || oldData?.FactorItemId != null)
                 return BadRequest("محصول مرتبط با تخصیص فقط از فاکتور مربوط قابل ویرایش است.");
             await logSystemService.LogChange(oldData, model, LogActionEnum.ویرایش, user);
@@ -347,6 +374,9 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpDelete]
     public async Task<IActionResult> DeleteWarehouseProduct(Guid id)
     {
+        if (await IsManualWriteBlockedAsync(productIds: [id]))
+            return BadRequest(SystemWarehouseMessage);
+
         if (id == Guid.Empty) return BadRequest();
 
         var warehouseProduct = await db.WarehouseProducts.FindAsync(id);
@@ -453,11 +483,15 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
     private async Task AddTransaction(WarehouseTransactionVModel model, AppUser user)
     {
+        if (await IsManualWriteBlockedAsync(model.WarehouseId,
+                model.WarehouseProductId.HasValue ? [model.WarehouseProductId.Value] : [], model.WarehouseVoucherId))
+            throw new InvalidOperationException(SystemWarehouseMessage);
+
         if (model.Weight <= 0)
             throw new ArgumentException("مقدار باید بیشتر از صفر باشد.");
 
         var warehouseProduct = await GetOrCreateWarehouseProduct(model, user);
-        if (warehouseProduct.WarehouseId == SupplyFactorWarehouseService.CirculationId)
+        if (!User.IsAdmin() && warehouseProduct.WarehouseId == SupplyFactorWarehouseService.CirculationId)
             throw new InvalidOperationException("گردش این انبار به‌صورت خودکار از فاکتور تامین ثبت می‌شود.");
 
 /*        if (model.TransactionType == WarehouseTransactionTypeEnum.خروج)
@@ -531,6 +565,12 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     public async Task<IActionResult> AddWarehouseTransaction([FromBody] WarehouseTransactionVModel model)
     {
         if (model == null) return BadRequest();
+        if (await IsManualWriteBlockedAsync(model.WarehouseId,
+                model.WarehouseProductId.HasValue ? [model.WarehouseProductId.Value] : [],
+                model.WarehouseVoucherId))
+            return BadRequest(SystemWarehouseMessage);
+
+        if (model == null) return BadRequest();
 
         var user = await userManager.GetUserAsync(HttpContext.User);
         await using var transaction = await db.Database.BeginTransactionAsync();
@@ -565,6 +605,11 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpPost]
     public async Task<IActionResult> UpdateWarehouseTransaction([FromBody] WarehouseTransaction model)
     {
+        if (model == null) return BadRequest();
+        if (await IsManualWriteBlockedAsync(productIds: [model.WarehouseProductId],
+                voucherId: model.WarehouseVoucherId, transactionId: model.Id))
+            return BadRequest(SystemWarehouseMessage);
+
         if (model == null) return BadRequest();
         if (model.Weight <= 0) return BadRequest("مقدار باید بیشتر از صفر باشد.");
         await using var transaction = await db.Database.BeginTransactionAsync();
@@ -610,6 +655,9 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpDelete]
     public async Task<IActionResult> DeleteWarehouseTransaction(Guid id)
     {
+        if (await IsManualWriteBlockedAsync(transactionId: id))
+            return BadRequest(SystemWarehouseMessage);
+
         if (id == Guid.Empty) return BadRequest();
 
         await using var transaction = await db.Database.BeginTransactionAsync();
@@ -796,6 +844,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         if (id == Guid.Empty) return BadRequest();
 
         var voucher = await db.WarehouseVouchers
+            .Include(x => x.Warehouse)
             .Include(x => x.WarehouseProductVouchers)
             .ThenInclude(x => x.WarehouseProduct)
             .FirstOrDefaultAsync(x => x.Id == id);
@@ -808,6 +857,11 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpPost]
     public async Task<IActionResult> AddWarehouseVoucher([FromBody] WarehouseVoucher model)
     {
+        if (model == null) return BadRequest();
+        if (await IsManualWriteBlockedAsync(model.WarehouseId,
+                model.WarehouseProductVouchers?.Select(p => p.WarehouseProductId).Distinct().ToArray() ?? []))
+            return BadRequest(SystemWarehouseMessage);
+
         if (model?.WarehouseProductVouchers == null || model.WarehouseProductVouchers.Count == 0)
             return BadRequest("حداقل یک محصول باید در حواله وجود داشته باشد.");
 
@@ -831,7 +885,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             return BadRequest("محصولات حواله باید متعلق به یک انبار باشند.");
 
         var warehouseId = warehouseIds[0];
-        if (warehouseId == SupplyFactorWarehouseService.CirculationId)
+        if (!User.IsAdmin() && warehouseId == SupplyFactorWarehouseService.CirculationId)
             return BadRequest("خروج انبار گردشی از طریق تخصیص فاکتور تامین ثبت می‌شود.");
 
         await using var transaction = await db.Database.BeginTransactionAsync();
@@ -873,10 +927,15 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpPost]
     public async Task<IActionResult> EditWarehouseVoucher([FromBody] WarehouseVoucher model)
     {
+        if (model == null) return BadRequest();
+        if (await IsManualWriteBlockedAsync(model.WarehouseId,
+                model.WarehouseProductVouchers?.Select(p => p.WarehouseProductId).Distinct().ToArray() ?? [], model.Id))
+            return BadRequest(SystemWarehouseMessage);
+
         if (model == null || model.Id == Guid.Empty)
             return BadRequest();
 
-        if (model.WarehouseProductVouchers?.Count == 0)
+        if (model.WarehouseProductVouchers == null || model.WarehouseProductVouchers.Count == 0)
             return BadRequest("حداقل یک محصول باید در حواله وجود داشته باشد.");
 
         if (model.WarehouseProductVouchers.Any(x => x.Weight <= 0))
@@ -908,7 +967,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
                 if (warehouseProduct == null)
                     return NotFound("محصول مورد نظر یافت نشد.");
 
-                if (warehouseProduct.WarehouseId == SupplyFactorWarehouseService.CirculationId)
+                if (!User.IsAdmin() && warehouseProduct.WarehouseId == SupplyFactorWarehouseService.CirculationId)
                     return BadRequest("خروج انبار گردشی از طریق تخصیص فاکتور تامین ثبت می‌شود.");
                 await ValidateStock(warehouseProduct, item.Weight, voucher.Id);
             }
@@ -942,6 +1001,9 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpPost]
     public async Task<IActionResult> ConfirmWarehouseVoucher(Guid id)
     {
+        if (await IsManualWriteBlockedAsync(voucherId: id))
+            return BadRequest(SystemWarehouseMessage);
+
         var voucher = await db.WarehouseVouchers.FindAsync(id);
         if (voucher is null) return NotFound();
 
@@ -968,6 +1030,9 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpPost]
     public async Task<IActionResult> DeliverWarehouseVoucher(Guid id)
     {
+        if (await IsManualWriteBlockedAsync(voucherId: id))
+            return BadRequest(SystemWarehouseMessage);
+
         var voucher = await db.WarehouseVouchers
             .Include(x => x.WarehouseProductVouchers)
             .ThenInclude(x => x.WarehouseProduct)
@@ -1036,6 +1101,9 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpDelete]
     public async Task<IActionResult> DeleteWarehouseVoucher(Guid id)
     {
+        if (await IsManualWriteBlockedAsync(voucherId: id))
+            return BadRequest(SystemWarehouseMessage);
+
         if (id == Guid.Empty) return BadRequest();
 
         await using var transaction = await db.Database.BeginTransactionAsync();

@@ -546,6 +546,20 @@ async function setupSelectOptionsReqAmount() {
 }
 
 
+async function getSupplierFinancialSummary(supplierId) {
+    try {
+        const res = await axios(`/Supply/GetSupplierFinancialSummary?supplierId=${supplierId}`);
+        if (res.status === 200) {
+            return res.data;
+        }
+        return null;
+    } catch (err) {
+        console.log(err);
+        return null;
+    }
+}
+
+
 async function submitRequestAmountModal() {
     if (!await mySer.CheckValidForm("requestAmountForm")) return;
     const supplierSelect = addReqAmountModal.querySelector("#reqAmountSupplierId");

@@ -20,6 +20,7 @@ public static class ApplicationServicesRegistration
         services.AddScoped<ICommandHandler<AddReportCommand, AddReportResult>, AddReportCommandHandler>();
         services.AddScoped<IDealRepository, DealRepository>();
         services.AddScoped<IReportAuditLogger, ReportAuditLogger>();
+        services.AddScoped<CRM.Core.Domain.Warehouses.Repositories.IWarehouseRepository, CRM.Infrastructures.Sql.Warehouses.Repositories.WarehouseRepository>();
         return services;
     }
 }

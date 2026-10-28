@@ -346,6 +346,19 @@ async function showAddOrderHeadSfModal() {
     });
 }
 
+async function getOrderHeadIdsBySupplier(supplierId) {
+    try {
+        const res = await axios(`/Supply/GetOrderHeadsBySupplier?supplierId=${supplierId}`);
+        if (res.status === 200) {
+            return res.data;
+        }
+        return [];
+    } catch (err) {
+        console.log(err);
+        return [];
+    }
+}
+
 
 let isSetupSupplyTomSelect = false;
 async function setupSelectOptions() {
