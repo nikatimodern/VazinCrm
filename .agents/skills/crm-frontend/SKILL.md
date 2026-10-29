@@ -1,11 +1,15 @@
 ---
 name: crm-frontend
-description: Build, improve, and refactor Vazin CRM Razor views, RTL UI, vanilla JavaScript, TomSelect, DataTables, scoped CSS, and reusable frontend components.
+description: Build and improve Vazin CRM Razor and RTL interfaces, JavaScript components, and React interfaces for the gradual API migration.
 ---
 
 # CRM Frontend
 
 Use for Razor, JavaScript, CSS, modal, select, table, form, and frontend refactoring work.
+
+## API and React migration
+- Every migrated feature must have CQRS-backed API operations before the migration is considered complete. Follow the mandatory migration requirements in [CRM Backend](../crm-backend/SKILL.md#mandatory-cqrs-for-api-and-react-migration), including login and user-session operations.
+- React consumes API contracts; keep business rules, authorization enforcement, and persistence orchestration in the appropriate backend layers. Reuse the existing CQRS pattern without asking for approval per migrated feature; new dependencies still require approval.
 
 ## Workflow
 1. Inspect the affected view/partial, JS, CSS, and relevant public helpers in `03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/site.js`.
@@ -29,5 +33,5 @@ Do not introduce new frontend dependencies or rewrite global styles without a co
 ## Project-wide architecture and change policy
 - Follow the Feature-Based / Vertical Slice CQRS organization defined in `AGENTS.md` for all features: place each request, handler, and operation-specific DTO/result together under `<Feature>/Commands/<Operation>/` or `<Feature>/Queries/<Operation>/`. Do not introduce a `Features` wrapper or a feature-wide `Handlers` folder. Keep shared models in `<Feature>/Dtos` and generic CQRS contracts in `Abstractions/Cqrs`; match namespaces to paths.
 - For any new feature that persists data, define its repository interface in `CRM.Core.Domain` and implementation in `CRM.Infrastructures.Sql`; avoid direct DbContext access from new controllers or handlers.
-- For new features, consider and suggest CQRS where beneficial, but use the existing `CRM.Core.ApplicationServices` layer; suggest CQRS where beneficial and obtain approval before introducing new CQRS patterns or dependencies.
+- For migrated API and React features, CQRS is mandatory as described above. Outside that migration, consider and suggest CQRS where beneficial using the existing `CRM.Core.ApplicationServices` layer. Obtain approval before introducing a different CQRS pattern or new dependencies.
 - Improve code within the requested scope. For broader refactoring, propose affected files, benefits, risks, and a verification plan; wait for explicit approval before proceeding.
