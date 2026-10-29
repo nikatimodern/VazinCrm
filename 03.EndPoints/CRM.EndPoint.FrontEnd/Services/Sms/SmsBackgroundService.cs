@@ -20,9 +20,20 @@ public class SmsBackgroundService(
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            var job = await smsQueue.DequeueAsync(stoppingToken);
+            try
+            {
+                var job = await smsQueue.DequeueAsync(stoppingToken);
 
-            await ProcessSms(job, stoppingToken);
+                await ProcessSms(job, stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error processing SMS queue job");
+            }
         }
     }
 

@@ -283,7 +283,6 @@ async function submitWarehouseTransactionModal() {
             }
         },
         onError: async (err) => {
-            FLshowLoading(false);
             const status = err.response?.status;
             
             if (status === 409) {
@@ -296,6 +295,7 @@ async function submitWarehouseTransactionModal() {
             }
             await handleApiError(err);
         },
+        showError: false,
     });
 }
 

@@ -689,3 +689,10 @@ async function submitNotAccept() { // رد تایید و بازگشت | عدم �
     notAcceptCommentElm.value = "";
     ModalToggle("#NotAcceptModal");
 }
+
+async function getSuppliesByPfId(pfId) {
+    return await sendApiRequest({
+        url: "/Supply/GetSupplies",
+        params: { pfId },
+    });
+}

@@ -1,4 +1,4 @@
-﻿html {
+html {
 	font-size: 14px;
 }
 
@@ -2455,6 +2455,7 @@ input[type=checkbox], input[type=radio] {
 
 
 #mainWrapper {
+	min-width: 0;
 	container-type: inline-size;
 	container-name: mainWrapper;
 	min-height: 100dvh;

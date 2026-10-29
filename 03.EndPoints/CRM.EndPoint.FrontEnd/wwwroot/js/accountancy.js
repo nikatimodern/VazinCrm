@@ -377,7 +377,7 @@ const submitInvoice = async () => {
         return;
     }
     
-    if (accData.payType !== 3 && !await checkEtebariWarning()) {
+    if (Invo_type !== 5 && accData.payType !== 3 && !await checkEtebariWarning()) {
         return;
     }
     
@@ -388,10 +388,12 @@ const submitInvoice = async () => {
     accData.parentId = AccParentId;
     accData.customerId = customerId;
     
-    if (InvoiceType === 1) {
-        accData.pfid = pfactorID;
-    } else if (InvoiceType === 2) {
-        accData.fid = factorID;
+    if (Invo_type !== 5) { // مشتری نبود
+        if (InvoiceType === 1) {
+            accData.pfid = pfactorID;
+        } else if (InvoiceType === 2) {
+            accData.fid = factorID;
+        }
     }
     
     if (accData.payType === 1) {

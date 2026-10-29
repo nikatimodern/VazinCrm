@@ -26,7 +26,7 @@ const SubmitReportForm = async () => {
         data.resultCallTxt = resultCall.value ? resultCall.options[resultCall.selectedIndex].text : "";
         data.finalResultCallTxt = finalResultCall.value ? finalResultCall.options[finalResultCall.selectedIndex].text : "";
         data.reasonCancelTxt = reasonCancel.value ? reasonCancel.options[reasonCancel.selectedIndex].text : "";
-
+        
         
         FLshowLoading();
         $.post(`/Report/AddReport`, data, async (res) => {
@@ -300,7 +300,7 @@ async function getAllReports(showLoading = true) {
             }
         },
         onError: (err) => {
-            containerReport.innerHTML = err.response.data; // "خطا در دریافت گزارش ها :(";
+            containerReport.innerHTML = err.response?.data ?? "خطا در دریافت گزارش‌ها!";
         },
     });
 }

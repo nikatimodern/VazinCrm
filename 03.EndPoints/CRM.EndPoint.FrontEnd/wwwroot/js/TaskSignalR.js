@@ -3,23 +3,25 @@
 // اتصال به SignalR Hub
 const connection = new signalR.HubConnectionBuilder()
     .withUrl("/taskHub") // آدرس SignalR Hub
+    .withAutomaticReconnect()
     .build();
 
-connection
-    .start()
-    .then(() => {
-        window.signalRConnectionId = connection.connectionId;
-    })
-    .catch(err => console.error("SignalR Error:", err));
-
-
-////////// Set ConnectionId in Header Axios ////////////
-axios.interceptors.request.use(config => {
-    if (window.signalRConnectionId) {
-        config.headers["X-SignalR-ConnectionId"] = window.signalRConnectionId;
-    }
-    return config;
+connection.onreconnected(connectionId => {
+    window.signalRConnectionId = connectionId;
 });
+
+connection.onclose(() => {
+    window.signalRConnectionId = null;
+});
+
+(async function startSignalR() {
+    try {
+        await connection.start();
+        window.signalRConnectionId = connection.connectionId;
+    } catch (err) {
+        console.error("SignalR Error:", err);
+    }
+})();
 
 
 ////////// Carizo notification ////////////
@@ -183,14 +185,19 @@ connection.on("SmsSending", () => {
 
 
 let smsToast = null;
+let smsToastTimer = null;
+
 function showSmsSendingToast() {
+    clearTimeout(smsToastTimer);
+    
     if (smsToast) {
         smsToast.hideToast();
+        smsToast = null;
     }
     
     const notifDiv = document.createElement("div");
-    
     notifDiv.className = "flex-center gap-3";
+    
     notifDiv.innerHTML = `
         در حال ارسال پیامک
         <span class="spinner-border spinner-border-sm"></span>
@@ -206,24 +213,32 @@ function showSmsSendingToast() {
     });
 }
 
-
 function updateSmsToast(text, type) {
-    if (!smsToast) return;
-    const smsToastElement = smsToast.toastElement;
+    clearTimeout(smsToastTimer);
     
-    smsToastElement.textContent = text;
-    
-    
-    if (type === "success" || type === "error") {
+    if (!smsToast) {
+        smsToast = createToast(type, text, {
+            duration: -1,
+            stopOnFocus: false,
+        });
+    } else {
+        const element = smsToast.toastElement;
         
-        smsToastElement.style.background =
+        element.textContent = text;
+        
+        element.style.background =
             type === "success"
                 ? "linear-gradient(135deg, rgba(2,81,75,1) 21%, rgba(0,59,54,1) 100%)"
                 : "linear-gradient(135deg, rgba(121,9,9,1) 21%, rgba(78,0,0,0.9) 100%)";
-        
-        setTimeout(() => {
-            smsToast?.hideToast();
-            smsToast = null;
-        }, type === "success" ? 3000 : 5000);
     }
+    
+    const currentToast = smsToast;
+    
+    smsToastTimer = setTimeout(() => {
+        currentToast?.hideToast();
+        
+        if (smsToast === currentToast) {
+            smsToast = null;
+        }
+    }, type === "success" ? 3000 : 5000);
 }

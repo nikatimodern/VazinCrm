@@ -46,10 +46,6 @@ const layoutDatatable = {
 };
 
 
-////////// Set defaults patch in Header Axios ////////////
-axios.defaults.headers.patch["Content-Type"] = "application/json";
-
-
 var currentDateTypeFilter = 2;
 var currentMonthArr;
 let mySer = new MyService();
@@ -178,8 +174,6 @@ const checkAccess = async (elId) => {
     });
     return hasAccess;
 };
-
-
 
 
 (function () {
@@ -1700,10 +1694,13 @@ const checkRoles = (roles) => {
 
 
 function refreshCounterCartable() {
-    axios("/Cartable/GetCountEnvelope").then(res => {
-        setCountEnvelope(res.data.countObj);
-        setCountEmail(res.data.emailsCount);
-        setCountChat(res.data.chatsCount);
+    sendApiRequest({
+        url: `/Cartable/GetCountEnvelope`,
+        showLoading: false,
+    }).then((data) => {
+        setCountEnvelope(data.countObj);
+        setCountEmail(data.emailsCount);
+        setCountChat(data.chatsCount);
     });
 }
 
@@ -1795,7 +1792,11 @@ const getAllBankAccountsJson = async (rerender, type) => {
     
     try {
         if (rerender || !bankAccountsCache[key]) {
-            bankAccountsCache[key] = axios(`/Accountancy/GetAllBankAccountJson?type=${type}`).then(res => res.data);
+            bankAccountsCache[key] = sendApiRequest({
+                url: `/Accountancy/GetAllBankAccountJson`,
+                params: { type },
+                showLoading: false,
+            });
         }
         return await bankAccountsCache[key];
     } catch (err) {
@@ -2000,9 +2001,12 @@ function showTaminDropdown() {
         },
         
         async onOpen({ toggle, content }) {
-            const pfId = toggle.dataset.pfid;
-            const res = await axios(`/order/GetOrderHead?pfId=${pfId}`);
-            content.innerHTML = res.data;
+            await sendApiRequest({
+                url: `/order/GetOrderHead`,
+                params: { pfId: toggle.dataset.pfid },
+                showLoading: false,
+                onSuccess: (res) => content.innerHTML = res.data,
+            });
         },
     });
 }
@@ -2650,95 +2654,100 @@ async function showDetailsWarning(id, type) {
     }
 }
 
+async function loadPhonebook(search = "") {
+    const data = await sendApiRequest({
+        url: "/Customer/GetPhonebook",
+        params: { search },
+    });
+    
+    if (!data) return;
+    
+    const phonebookList = document.getElementById("phonebookList");
+    phonebookList.innerHTML = "";
+    if (data.length > 0) {
+        data.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "box-phoneBook";
+            div.innerHTML = `
+                <div class="d-flex flex-column gap-2 py-1">
+                    <div class="fbold" style="color: #333">
+                      <svg style="width: 18px" fill="currentColor" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>
+                      <span class="hoverLink" onclick="openCustomerProfile('${item.id}')">
+                        ${item.name} (${item.customerCode})
+                      </span>
+                    </div>
+                    <div class="text-muted small d-flex align-items-center">
+                        ${item.mobile ? `
+                        <span class="d-flex align-items-center gap-1">
+                            <svg style="width: 18px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" /></svg>
+                            <a href="tel:${item.mobile}" class="text-muted" target="_self">${item.mobile}</a>
+                        </span>
+                      ` : ""}
+                        ${item.phone ? `
+                        <span class="d-flex align-items-center gap-1 ms-2">
+                            <svg style="width: 18px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
+                            <a href="tel:${item.phone}" class="text-muted" target="_self">${item.phone}</a>
+                        </span>
+                      ` : ""}
+                    </div>
+                </div>
+            `;
+            phonebookList.appendChild(div);
+        });
+        
+    } else {
+        phonebookList.innerHTML = `<div class="p-3 text-muted text-center">هیچ نتیجه‌ای یافت نشد.</div>`;
+    }
+}
+
+
 async function showModalPhonebook() {
     ModalToggle("phoneBookModal");
-    async function loadPhonebook(search = "") {
-        try {
-            document.getElementById("FLshowLoading").style.display = "";
-            const res = await axios(`/Customer/GetPhonebook?search=${search}`);
-            
-            const phonebookList = document.getElementById("phonebookList");
-            phonebookList.innerHTML = "";
-            if (res.data.length > 0) {
-                res.data.forEach(item => {
-                    const div = document.createElement("div");
-                    div.className = "box-phoneBook";
-                    div.innerHTML = `
-                        <div class="d-flex flex-column gap-2 py-1">
-                            <div class="fbold" style="color: #333">
-                              <svg style="width: 18px" fill="currentColor" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>
-                              <span class="hoverLink" onclick="openCustomerProfile('${item.id}')">
-                                ${item.name} (${item.customerCode})
-                              </span>
-                            </div>
-                            <div class="text-muted small d-flex align-items-center">
-                                ${item.mobile ? `
-                                <span class="d-flex align-items-center gap-1">
-                                    <svg style="width: 18px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" /></svg>
-                                    <a href="tel:${item.mobile}" class="text-muted" target="_self">${item.mobile}</a>
-                                </span>
-                              ` : ""}
-                                ${item.phone ? `
-                                <span class="d-flex align-items-center gap-1 ms-2">
-                                    <svg style="width: 18px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
-                                    <a href="tel:${item.phone}" class="text-muted" target="_self">${item.phone}</a>
-                                </span>
-                              ` : ""}
-                            </div>
-                        </div>
-                    `;
-                    phonebookList.appendChild(div);
-                });
-                
-            } else {
-                phonebookList.innerHTML = `<div class="p-3 text-muted text-center">هیچ نتیجه‌ای یافت نشد.</div>`;
-            }
-            document.getElementById("FLshowLoading").style.display = "none";
-        } catch (err) {
-            console.log(err);
-        }
-    }
-    document.getElementById("PhoneBookSearchInp").addEventListener("keyup", async (e) => {
-        if (e.key === "Enter") {
-            await loadPhonebook(e.target.value);
-        }
-    });
     
     await loadPhonebook();
 }
+
+document.getElementById("PhoneBookSearchInp")?.addEventListener("keyup", async (e) => {
+    if (e.key === "Enter") {
+        await loadPhonebook(e.target.value);
+    }
+});
 
 const showAttachments = async (id, typeAtt) => {
     const showAttModal = document.getElementById("showAttachmentsModal");
     const containerPreview = showAttModal.querySelector(".image-display");
     if (!containerPreview) return;
     containerPreview.innerHTML = "";
-    try {
-        FLshowLoading();
-        const files = (await axios(`/Factor/GetAttachment/${id}?type=${typeAtt}`)).data;
-        
-        if (files.length) {
-            files.forEach(fileItem => {
-                const imageBox = createImageBox(fileItem);
-                containerPreview.appendChild(imageBox);
-            });
-            containerPreview.parentElement.style.backgroundColor = "#fafafa";
-        } else {
-            containerPreview.innerHTML = `
-                <div class="d-flex flex-column align-items-center pb-4">
-                    <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
-                    <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ پیوستی برای نمایش وجود ندارد!</div>
-                </div>
-            `;
-            containerPreview.parentElement.style.backgroundColor = "#fff";
+    
+    await sendApiRequest({
+        url: "/Factor/GetAttachment",
+        params: { id, type: typeAtt },
+        onSuccess: (res) => {
+            const files = res.data;
+            
+            if (files.length) {
+                files.forEach(fileItem => {
+                    const imageBox = createImageBox(fileItem);
+                    containerPreview.appendChild(imageBox);
+                });
+                containerPreview.parentElement.style.backgroundColor = "#fafafa";
+            } else {
+                containerPreview.innerHTML = `
+                    <div class="d-flex flex-column align-items-center pb-4">
+                        <img src="/Img/no-data.jpg" style="width: clamp(120px, 20vw, 180px)" alt="">
+                        <div style="color: #506a77;font-size: clamp(13px, 2.5vw, 15px)">هیچ پیوستی برای نمایش وجود ندارد!</div>
+                    </div>
+                `;
+                containerPreview.parentElement.style.backgroundColor = "#fff";
+            }
+        },
+        onError: () => {
+            containerPreview.innerHTML = "خطای دریافت اطلاعات!";
         }
-        
-    } catch (err) {
-        containerPreview.innerHTML = "خطای دریافت اطلاعات!";
-        console.log(err);
-    } finally {
-        FLshowLoading(false);
-        ModalToggle(showAttModal);
-    }
+    });
+    
+    
+    ModalToggle(showAttModal);
 };
 
 
@@ -2810,20 +2819,10 @@ async function showLogEntity(entityName, entityId) {
 }
 
 async function getLogEntity(entityName, entityId) {
-    try {
-        FLshowLoading();
-        const res = await axios(`/Home/GetEntityLogSystem?entityName=${entityName}&entityId=${entityId}`);
-        if (res.status === 200) {
-            return res.data;
-        }
-        return false;
-    } catch (err) {
-        console.log(err);
-        toastifyError("خطای سرور");
-        return false;
-    } finally {
-        FLshowLoading(false);
-    }
+    return await sendApiRequest({
+        url: "/Home/GetEntityLogSystem",
+        params: { entityName, entityId },
+    });
 }
 
 function createDomLogSystem(data) {
@@ -2957,7 +2956,6 @@ const Skeleton = (() => {
 })();
 
 
-
 /*--------------------------------------------------------------------*/
 
 
@@ -3067,3 +3065,56 @@ externalSoftwareModalElm?.addEventListener("hidden.bs.modal", () => {
     externalSoftwareList.innerHTML = "";
     toggleElementsDisabled(sendToSoftwareBtn);
 });
+
+
+// Re-measure scrolling tables after fonts and hidden containers settle.
+(() => {
+    if (!window.jQuery?.fn.dataTable) return;
+    const pending = new Set();
+    let frame = 0;
+    let adjusting = false;
+    
+    function schedule(table) {
+        if (adjusting || !table?.isConnected) return;
+        pending.add(table);
+        if (frame) return;
+        frame = requestAnimationFrame(() => {
+            frame = 0;
+            const tables = [...pending];
+            pending.clear();
+            adjusting = true;
+            try {
+                for (const element of tables) {
+                    if (!element.isConnected || !element.getClientRects().length ||
+                        !jQuery.fn.dataTable.isDataTable(element)) continue;
+                    const api = new jQuery.fn.dataTable.Api(element);
+                    api.columns.adjust();
+                    api.responsive?.recalc();
+                }
+            } finally {
+                adjusting = false;
+            }
+        });
+    }
+    
+    function scheduleVisibleTables() {
+        for (const table of jQuery.fn.dataTable.tables({ visible: true })) schedule(table);
+    }
+    
+    jQuery(document).on("init.dt.crmSizing draw.dt.crmSizing", (event, settings) => {
+        if (event.namespace?.split(".").includes("dt") && settings?.nTable) {
+            schedule(settings.nTable);
+        }
+    });
+    jQuery(document).on(
+        "shown.bs.modal.crmSizing shown.bs.tab.crmSizing shown.bs.collapse.crmSizing",
+        scheduleVisibleTables);
+    document.fonts?.ready.then(scheduleVisibleTables);
+    document.fonts?.addEventListener("loadingdone", scheduleVisibleTables);
+    window.addEventListener("load", scheduleVisibleTables, { once: true });
+    document.addEventListener("transitionend", event => {
+        if (event.target.id === "mainWrapper" && event.propertyName === "margin-right") {
+            scheduleVisibleTables();
+        }
+    });
+})();

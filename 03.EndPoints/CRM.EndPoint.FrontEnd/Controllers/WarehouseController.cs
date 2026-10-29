@@ -492,7 +492,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             throw new ArgumentException("مقدار باید بیشتر از صفر باشد.");
 
         var warehouseProduct = await GetOrCreateWarehouseProduct(model, user);
-        if (!User.IsAdmin() && warehouseProduct.WarehouseId == SupplyFactorWarehouseService.CirculationId)
+        if (!User.IsAdmin() && warehouseProduct.WarehouseId == SupplyAllocationRules.CirculationId)
             throw new InvalidOperationException("گردش این انبار به‌صورت خودکار از فاکتور تامین ثبت می‌شود.");
 
 /*        if (model.TransactionType == WarehouseTransactionTypeEnum.خروج)
@@ -886,7 +886,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             return BadRequest("محصولات حواله باید متعلق به یک انبار باشند.");
 
         var warehouseId = warehouseIds[0];
-        if (!User.IsAdmin() && warehouseId == SupplyFactorWarehouseService.CirculationId)
+        if (!User.IsAdmin() && warehouseId == SupplyAllocationRules.CirculationId)
             return BadRequest("خروج انبار گردشی از طریق تخصیص فاکتور تامین ثبت می‌شود.");
 
         await using var transaction = await db.Database.BeginTransactionAsync();
@@ -968,7 +968,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
                 if (warehouseProduct == null)
                     return NotFound("محصول مورد نظر یافت نشد.");
 
-                if (!User.IsAdmin() && warehouseProduct.WarehouseId == SupplyFactorWarehouseService.CirculationId)
+                if (!User.IsAdmin() && warehouseProduct.WarehouseId == SupplyAllocationRules.CirculationId)
                     return BadRequest("خروج انبار گردشی از طریق تخصیص فاکتور تامین ثبت می‌شود.");
                 await ValidateStock(warehouseProduct, item.Weight, voucher.Id);
             }

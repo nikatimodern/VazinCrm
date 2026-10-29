@@ -71,12 +71,12 @@ async function changeStatusReqAmount(id, status) {
 }
 
 const ShowModalListPayment = async (id, rqNumber) => {
-
+    
     
     getAllPaymentsList(id);
     ModalToggle("paymentListModalId", "show");
-  
-    document.getElementById('titlePaymentListModalId').textContent = `لیست پرداختی ها مربط به درخواست شماره ${rqNumber}`;
+    
+    document.getElementById("titlePaymentListModalId").textContent = `لیست پرداختی ها مربط به درخواست شماره ${rqNumber}`;
 };
 const initPaymentTable = () => {
     paymentTable = $("#paymentListTable").DataTable({
@@ -203,9 +203,8 @@ async function showSetAmountPaymentItemModal(filterIds) {
         successMsg: null,
         onSuccess: (res) => {
             requestAmountListData = res.data;
-
-    
-
+            
+            
             createSetAmountPaymentItem(false);
             ModalToggle(reqAmountPaymentModal);
         },
@@ -247,7 +246,7 @@ function createSetAmountPaymentItem(isEdit) {
                     <div class="d-flex align-items-center justify-content-center gap-1">
                         <span class="flex-shrink-0" style="color: #e1e1e1">مبلغ تایید شده: </span>
                         <span class="fMedium text-center" style="white-space: nowrap">
-                            <span>${item.acceptedAmount.toLocaleString() }</span>
+                            <span>${item.acceptedAmount.toLocaleString()}</span>
                             <span style="font-size: 11px">ریال</span>
                             <span style="font-size: 16px;color:#ccc">${item.acceptedAmountPercent ? item.acceptedAmountPercent + "%" : ""}</span>
                         </span>
@@ -259,18 +258,18 @@ function createSetAmountPaymentItem(isEdit) {
                         <span class="flex-shrink-0" style="color: #535353">مبلغ پرداخت شده: </span>
 
                         <div class="fbold column-gap-1 badge badge-outline-green" style="color: #333">
-                            <span style="font-size: 16px;">${item.requestAmountPayments.reduce((sum,i) => {
-
-                                return i.amount + sum;
-
-                            },0).toLocaleString()}</span>
+                            <span style="font-size: 16px;">${item.requestAmountPayments.reduce((sum, i) => {
+            
+            return i.amount + sum;
+            
+        }, 0).toLocaleString()}</span>
                             <span style="font-size: 11px;">ريال</span>
                             
                         </div>
                     </div>
                     <div class="d-flex align-items-center justify-content-between gap-3 gap-lg-2 col-12 col-lg-auto">
                         <span class="flex-shrink-0" style="color: #535353">مبلغ پرداختی: </span>
-                        <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="amount"  value="  ${ isEdit && item.requestAmountPayments[0].amount ? item.requestAmountPayments[0].amount.toLocaleString() : ""}" required>
+                        <input type="text" inputmode="numeric" class="currencyNumber form-control inpAmount fbold" style="border: 1px solid #b5b3b3;height: 26px;" name="amount"  value="  ${isEdit && item.requestAmountPayments[0].amount ? item.requestAmountPayments[0].amount.toLocaleString() : ""}" required>
                     </div>
                 </div>
             </div>
@@ -484,10 +483,10 @@ async function setupSelectOptionsReqAmount() {
     if (isSetupReqAmountModal) return;
     const totalAmountSupFactorElm = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
     
-    const [resSuppliers, resCashiers] = await Promise.all([axios("/Supply/GetSupplyBaseData"), axios("/Cash/GetAllCashiers")]);
+    const [suppliersData, cashiersData] = await Promise.all([getSupplyBaseData(), getAllCashiers()]);
     
     const selectSupplier = new TomSelect("#reqAmountSupplierId", {
-        options: resSuppliers.data.suppliers,
+        options: suppliersData.suppliers,
         placeholder: "انتخاب تامین کننده",
         maxItems: 1,
         selectOnTab: true,
@@ -495,6 +494,7 @@ async function setupSelectOptionsReqAmount() {
         async onItemAdd(supplierId) {
             selectSupplier.disable();
             const supplierSummary = await getSupplierFinancialSummary(supplierId);
+            console.log(supplierSummary);
             if (supplierSummary !== null) {
                 const debt = supplierSummary.supplierDebt;
                 const debtColor = debt < 0 ? "#b42318" : debt > 0 ? "#16803c" : "#666";
@@ -505,7 +505,7 @@ async function setupSelectOptionsReqAmount() {
                         <div class="d-flex flex-column flex-sm-row align-items-end justify-content-end column-gap-3 me-1">
                             <span>
                                 جمع فاکتورها:
-                                <b dir="ltr" style="color: #333">${supplierSummary.totalSupplyAmount?.toLocaleString()}</b>
+                                <b dir="ltr" style="color: #333">${(supplierSummary.totalSupplyAmount ?? 0)?.toLocaleString()}</b>
                                 <span class="fs-small">ریال</span>
                             </span>
                 
@@ -513,14 +513,14 @@ async function setupSelectOptionsReqAmount() {
                 
                             <span>
                                 جمع پرداختی‌ها:
-                                <b dir="ltr" style="color: #333">${supplierSummary.totalPaidAmount?.toLocaleString()}</b>
+                                <b dir="ltr" style="color: #333">${(supplierSummary.totalPaidAmount ?? 0)?.toLocaleString()}</b>
                                 <span class="fs-small">ریال</span>
                             </span>
                         </div>
                 
                         <div class="px-2 py-1 rounded" style="background: ${debtBackground};color: ${debtColor}">
                             مانده بدهی:
-                            <b dir="ltr">${debt?.toLocaleString()}</b>
+                            <b dir="ltr">${(debt ?? 0)?.toLocaleString()}</b>
                             <span class="fs-small">ریال</span>
                         </div>
                     </div>
@@ -535,8 +535,8 @@ async function setupSelectOptionsReqAmount() {
     });
     
     new TomSelect("#reqAmountCashierId", {
-        options: resCashiers.data,
-        items: resCashiers.data.find(i => i.target)?.value,
+        options: cashiersData,
+        items: cashiersData.find(i => i.target)?.value,
         placeholder: "انتخاب تنخواه دار",
         maxItems: 1,
         selectOnTab: true,
@@ -546,17 +546,27 @@ async function setupSelectOptionsReqAmount() {
 }
 
 
+async function getAllCashiers() {
+    return await sendApiRequest({
+        url: "/Cash/GetAllCashiers",
+        showLoading: false,
+    });
+}
+
+
+async function getSupplyBaseData() {
+    return await sendApiRequest({
+        url: "/Supply/GetSupplyBaseData",
+        showLoading: false,
+    });
+}
+
 async function getSupplierFinancialSummary(supplierId) {
-    try {
-        const res = await axios(`/Supply/GetSupplierFinancialSummary?supplierId=${supplierId}`);
-        if (res.status === 200) {
-            return res.data;
-        }
-        return null;
-    } catch (err) {
-        console.log(err);
-        return null;
-    }
+    return await sendApiRequest({
+        url: "/Supply/GetSupplierFinancialSummary",
+        params: { supplierId },
+        showLoading: false,
+    });
 }
 
 

@@ -1,18 +1,26 @@
-﻿/**
- * Sends HTTP API requests with automatic loading management, toast notifications, and success callbacks.
+/**
+ * Sends HTTP requests with loading management,
+ * toast notifications and callbacks.
  *
- * @async
- * @param {Object} options - Request configurations.
- * @param {string} options.url - Target API endpoint URL.
- * @param {"GET"|"POST"|"PUT"|"DELETE"|"PATCH"} [options.method='GET'] - HTTP method.
- * @param {Object|Array|FormData|null} [options.data=null] - Request body payload (for POST, PUT, PATCH).
- * @param {Object|null} [options.params=null] - URL query parameters (`?key=value`) for any HTTP method.
- * @param {Object|null} [options.headers=null] - Custom HTTP request headers.
- * @param {"json"|"blob"|"arraybuffer"|"text"|"document"|"stream"} [options.responseType="json"] - Expected response type.
- * @param {Function|null} [options.onSuccess=null] - Success callback function `(response) => {}`.
- * @param {string|null} [options.successMsg=undefined] - Success toast message (set empty string "" or null to disable).
- * @param {boolean} [options.showLoading=true] - Toggle loading indicator display.
- * @returns {Promise<Object|null>} Returns response data on success, or null on failure.
+ * @param {Object} options
+ * @param {string} options.url
+ * @param {"GET"|"POST"|"PUT"|"DELETE"|"PATCH"} [options.method="GET"]
+ * @param {Object|Array|FormData|null} [options.data=null]
+ * @param {Object|null} [options.params=null]
+ * @param {Object|null} [options.headers=null]
+ * @param {string} [options.responseType="json"]
+ * @param {Function|null} [options.onSuccess=null]
+ * @param {Function|null} [options.onError=null]
+ * @param {string|null} [options.successMsg]
+ * @param {boolean} [options.showLoading=true]
+ * @param {boolean} [options.showError=true]
+ * @param {number} [options.timeout=30000]
+ * @param {AbortSignal|null} [options.signal=null]
+ * @param {boolean} [options.returnFullResponse=false]
+ * @param {Function|null} [options.onUploadProgress=null]
+ * @param {Function|null} [options.onDownloadProgress=null]
+ * @param {boolean} [options.withCredentials=false]
+ * @returns {Promise<any|null>}
  */
 async function sendApiRequest(
     {
@@ -26,111 +34,171 @@ async function sendApiRequest(
         onError = null,
         successMsg = undefined,
         showLoading = true,
+        showError = true,
+        timeout = 30000,
+        signal = null,
+        returnFullResponse = false,
+        onUploadProgress = null,
+        onDownloadProgress = null,
+        withCredentials = false,
     }) {
+    method = method.toUpperCase();
+    
+    if (successMsg === undefined) {
+        successMsg = {
+            GET: null,
+            POST: "با موفقیت ثبت شد",
+            PUT: "با موفقیت ویرایش شد",
+            DELETE: "با موفقیت حذف شد",
+            PATCH: "با موفقیت ویرایش شد",
+        }[method] ?? null;
+    }
+    
+    const config = {
+        url,
+        method,
+        responseType,
+        timeout,
+        signal,
+        withCredentials,
+        headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "X-Current-Page": window.location.pathname + window.location.search,
+            ...(window.signalRConnectionId && { "X-SignalR-ConnectionId": window.signalRConnectionId }),
+            ...(headers ?? {}),
+        },
+    };
+    
+    if (params !== null) config.params = params;
+    if (data !== null) config.data = data;
+    
+    if (typeof onUploadProgress === "function") {
+        config.onUploadProgress = onUploadProgress;
+    }
+    
+    if (typeof onDownloadProgress === "function") {
+        config.onDownloadProgress = onDownloadProgress;
+    }
+    
+    let response = null;
+    let requestError = null;
+    
+    if (showLoading) {
+        updateApiLoading(true);
+    }
+    
     try {
-        
-        method = method.toUpperCase();
-        
-        if (successMsg === undefined) {
-            successMsg = {
-                GET: null,
-                POST: "با موفقیت ثبت شد",
-                PUT: "با موفقیت ویرایش شد",
-                DELETE: "با موفقیت حذف شد",
-                PATCH: "با موفقیت ویرایش شد",
-            }[method] ?? null;
-        }
-        
-        if (showLoading && typeof FLshowLoading === "function") {
-            FLshowLoading(true);
-        }
-        
-        const config = {
-            url,
-            method,
-            responseType,
-            headers: {
-                "X-Requested-With": "XMLHttpRequest",
-                "X-Current-Page": window.location.pathname + window.location.search,
-                ...(headers ?? {}),
-            },
-        };
-        
-        if (params !== null) {
-            config.params = params;
-        }
-        
-        if (data !== null) {
-            config.data = data;
-        }
-        
-        const response = await axios(config);
-        
-        if (response.status >= 200 && response.status < 300) {
-            if (successMsg && typeof toastifySuccess === "function") {
-                toastifySuccess(successMsg);
-            }
-            
-            if (typeof onSuccess === "function") {
-                await onSuccess(response);
-            }
-            
-            return response.data;
-        }
-        
+        response = await axios(config);
     } catch (err) {
-        if (typeof FLshowLoading === "function") {
-            FLshowLoading(false);
+        requestError = err;
+    } finally {
+        if (showLoading) {
+            updateApiLoading(false);
         }
-        const response = err?.response;
+    }
+    
+    // Handle request errors after closing loading.
+    if (requestError) {
+        if (axios.isCancel(requestError) || requestError.code === "ERR_CANCELED") {
+            return null;
+        }
         
-        if (response?.status === 401 && response.headers?.["x-auth-expired"] === "true") {
-            const loginUrl = response?.headers?.["x-login-url"];
-            location.href = loginUrl || "/Account/Login";
+        console.error("API Error:", requestError);
+        
+        const errorResponse = requestError.response;
+        
+        if (errorResponse?.status === 401 && errorResponse.headers?.["x-auth-expired"] === "true") {
+            const loginUrl = errorResponse.headers?.["x-login-url"];
+            window.location.href = loginUrl || "/Account/Login";
             return null;
         }
         
         if (typeof onError === "function") {
-            await onError(err);
-        } else {
-            await handleApiError(err);
+            try {
+                await onError(requestError);
+            } catch (callbackError) {
+                console.error("API Error Callback Error:", callbackError);
+            }
+        } else if (showError) {
+            await handleApiError(requestError);
         }
         
         return null;
-    } finally {
-        if (showLoading && typeof FLshowLoading === "function") {
-            FLshowLoading(false);
-        }
+    }
+    
+    // Handle successful response.
+    if (successMsg && typeof toastifySuccess === "function") {
+        toastifySuccess(successMsg);
+    }
+    
+    if (typeof onSuccess === "function") {
+        await onSuccess(response);
+    }
+    
+    return returnFullResponse ? response : response?.data;
+}
+
+let activeApiLoadingCount = 0;
+
+function updateApiLoading(show) {
+    if (show) {
+        activeApiLoadingCount++;
+    } else {
+        activeApiLoadingCount = Math.max(0, activeApiLoadingCount - 1);
+    }
+    
+    if (typeof FLshowLoading === "function") {
+        FLshowLoading(activeApiLoadingCount > 0);
     }
 }
 
 async function handleApiError(err) {
-    console.error("API Error:", err);
     const response = err?.response;
-    const status = err?.status || response?.status || "";
+    const status = response?.status ?? err?.status ?? null;
     
+    let data = response?.data;
     const contentType = response?.headers?.["content-type"] ?? "";
     
-    let errorMessage;
+    if (data instanceof Blob) {
+        try {
+            const text = await data.text();
+            
+            data = contentType.includes("json") ? JSON.parse(text) : text;
+        } catch {
+            data = null;
+        }
+    }
+    
+    let errorMessage = null;
     
     if (status >= 500 || contentType.includes("text/html")) {
         errorMessage = null;
-    } else if (response?.data instanceof Blob) {
-        errorMessage = await response.data.text();
-    } else if (typeof response?.data === "string") {
-        errorMessage = response.data;
-    } else if (response?.data?.message) {
-        errorMessage = response.data.message;
-    } else if (err?.responseText) {
-        errorMessage = err.responseText;
+    } else if (typeof data === "string") {
+        errorMessage = data;
+    } else if (data && typeof data === "object") {
+        if (data.errors && typeof data.errors === "object") {
+            errorMessage = Object.values(data.errors).flat().filter(Boolean).join("\n");
+        }
+        
+        errorMessage ??= data.detail ?? data.message ?? data.title ?? null;
     }
     
-    errorMessage = errorMessage || `خطایی در ارتباط با سرور رخ داده است${status ? ` (${status})` : ""}`;
+    if (!errorMessage) {
+        if (err?.code === "ECONNABORTED" || err?.code === "ETIMEDOUT"
+        ) {
+            errorMessage = "زمان انتظار پاسخ سرور به پایان رسید.";
+        } else if (!response) {
+            errorMessage = "ارتباط با سرور برقرار نشد.";
+        } else {
+            errorMessage = `خطایی در ارتباط با سرور رخ داده است (${status})`;
+        }
+    }
     
     if (typeof toastifyError === "function") {
         toastifyError(errorMessage);
     }
 }
+
 
 /**
  * Provides a reusable modal-based selector component for loading,

@@ -70,7 +70,7 @@ async function callbackFilterDeal() {
     await getAllDeals();
 }
 
-const dealCardSkeletonTemplate = `
+/*const dealCardSkeletonTemplate = `
     <div class="deal-card" style="border-right-color: #ddd; pointer-events: none;">
         <div class="position-relative w-100 h-100">
             <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
@@ -106,7 +106,7 @@ Skeleton.register("deal-card", () => `
             </div>
         </div>
     </div>`,
-);
+);*/
 const getAllDeals = async () => {
     /*const openSkeleton = new DynamicSkeleton({ container: "#openDealsContainerId .deal-column-list", template: dealCardSkeletonTemplate, count: 4 });
     const successSkeleton = new DynamicSkeleton({
