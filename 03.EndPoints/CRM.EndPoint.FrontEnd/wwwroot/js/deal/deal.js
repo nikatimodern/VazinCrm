@@ -22,10 +22,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     initSortableDeal();
     
     showTaminDropdown();
-    await getAllDeals();
-    
-    /* FLshowLoading(false); */
-    
     const searchDealElm = document.getElementById("dealSearchId");
     searchDealElm?.addEventListener("keyup", async (e) => {
         if (e.key === "Enter") {
@@ -39,6 +35,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         modelDeal.serVal = searchDealElm.value.trim();
         await getAllDeals();
     });
+
+    await getAllDeals();
 });
 
 
@@ -70,101 +68,97 @@ async function callbackFilterDeal() {
     await getAllDeals();
 }
 
-/*const dealCardSkeletonTemplate = `
-    <div class="deal-card" style="border-right-color: #ddd; pointer-events: none;">
-        <div class="position-relative w-100 h-100">
-            <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
-                <div class="skel-base skel-title"></div>
-                <div class="d-flex gap-2">
-                    <div class="skel-base skel-circle" style="width: 20px; height: 20px;"></div>
-                    <div class="skel-base skel-circle" style="width: 20px; height: 20px;"></div>
-                </div>
-            </div>
-            <div class="skel-base skel-line-short"></div>
-            <div class="skel-base skel-line mt-2" style="height: 25px;"></div>
-            <div class="d-flex justify-content-between align-items-end mt-3 gap-2">
-                <div class="w-100">
-                    <div class="skel-base skel-line" style="width: 70%;"></div>
-                    <div class="skel-base skel-line" style="width: 50%;"></div>
-                </div>
-                <div class="skel-base skel-circle" style="width: 24px; height: 24px;"></div>
-            </div>
-        </div>
-    </div>
-`;
-Skeleton.register("deal-card", () => `
-    <div class="deal-card">
-        <div class="sk sk-line mb-2" style="width:45%;height:16px"></div>
-        <div class="sk sk-line mb-3" style="width:70%"></div>
-        <div class="sk-gap">
-            <div class="sk sk-line"></div>
-            <div class="sk sk-line" style="width:80%"></div>
-            <div class="d-flex justify-content-between">
-                <div class="sk sk-pill" style="width:90px;height:14px"></div>
-                <div class="sk sk-pill" style="width:70px;height:14px"></div>
-                <div class="sk sk-pill" style="width:110px;height:14px"></div>
-            </div>
-        </div>
-    </div>`,
-);*/
+let dealListRequest = null;
+
+function cancelDealListRequest() {
+    dealListRequest?.abort();
+}
+
+// Release the pending read as soon as the user leaves through navigation.
+document.querySelectorAll("#desktopNavbar, #mobileNavbar, #mobileDrawerNavbar").forEach(nav => {
+    nav.addEventListener("click", event => {
+        if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        const link = event.target.closest("a[href]");
+        if (!link || link.hasAttribute("download") || (link.target && link.target !== "_self")) return;
+        const destination = new URL(link.href, window.location.href);
+        if (destination.origin === window.location.origin &&
+            (destination.pathname !== window.location.pathname || destination.search !== window.location.search)) {
+            cancelDealListRequest();
+        }
+    });
+});
+window.addEventListener("pagehide", cancelDealListRequest);
+
+function showDealListError() {
+    document.querySelectorAll("#allDealsContainer .deal-column-list").forEach(list => {
+        list.replaceChildren();
+        const feedback = document.createElement("div");
+        feedback.className = "deal-load-error";
+        feedback.setAttribute("role", "status");
+        const message = document.createElement("p");
+        message.textContent = "دریافت سفارشات انجام نشد.";
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.textContent = "تلاش دوباره";
+        retry.addEventListener("click", getAllDeals);
+        feedback.append(message, retry);
+        list.appendChild(feedback);
+    });
+}
+
 const getAllDeals = async () => {
-    /*const openSkeleton = new DynamicSkeleton({ container: "#openDealsContainerId .deal-column-list", template: dealCardSkeletonTemplate, count: 4 });
-    const successSkeleton = new DynamicSkeleton({
-        container: "#successDealsContainerId .deal-column-list",
-        template: dealCardSkeletonTemplate,
-        count: 4,
+    dealListRequest?.abort();
+    const request = new AbortController();
+    dealListRequest = request;
+    const lists = document.querySelectorAll("#allDealsContainer .deal-column-list");
+    const template = document.getElementById("dealSkeletonTemplate").innerHTML;
+    lists.forEach(list => {
+        list.setAttribute("aria-busy", "true");
+        list.closest(".deal-column").querySelector(".countDeal").textContent = "";
+        Skeleton.show({ container: list, count: 3, template: () => template });
     });
-    const failedSkeleton = new DynamicSkeleton({
-        container: "#failedDealsContainerId .deal-column-list",
-        template: dealCardSkeletonTemplate,
-        count: 4,
-    });
-    
-     openSkeleton.render();
-    successSkeleton.render();
-     failedSkeleton.render();
-    Skeleton.show({
-            container:"#openDealsContainerId .deal-column-list",
-            count:6,
-            template:"deal-card"
+    try {
+        await sendApiRequest({
+            url: "/Deal/GetAllDeals",
+            method: "POST",
+            successMsg: null,
+            showLoading: false,
+            signal: request.signal,
+            data: structuredClone(modelDeal),
+            onError: () => {
+                if (dealListRequest === request && !request.signal.aborted) showDealListError();
+            },
+            onSuccess: async (res) => {
+                if (dealListRequest !== request || request.signal.aborted) return;
+                const items = res.data.items;
+                if (window.innerWidth < 1200) {
+                    updateTabSwitchState({
+                        wrapperSelector: "#dealTabs",
+                        tabData: items,
+                        searchValue: modelDeal.serVal,
+                        filter: modelDeal.filt,
+                    });
+                }
+                createDomAllDeals(items.open, "#openDealsContainerId", res.data.isAdmin);
+                createDomAllDeals(items.success, "#successDealsContainerId", res.data.isAdmin);
+                createDomAllDeals(items.failed, "#failedDealsContainerId", res.data.isAdmin);
+            },
         });
-        
-        Skeleton.show({
-            container:"#successDealsContainerId .deal-column-list",
-            count:6,
-            template:"deal-card"
-        });
-        
-        Skeleton.show({
-            container:"#failedDealsContainerId .deal-column-list",
-            count:6,
-            template:"deal-card"
-        });*/
-    
-    await sendApiRequest({
-        url: "/Deal/GetAllDeals",
-        method: "POST",
-        successMsg: null,
-        data: modelDeal,
-        onSuccess: async (res) => {
-            const items = res.data.items;
-            if (window.innerWidth < 1200) {
-                updateTabSwitchState({
-                    wrapperSelector: "#dealTabs",
-                    tabData: items,
-                    searchValue: modelDeal.serVal,
-                    filter: modelDeal.filt,
-                });
-            }
-            createDomAllDeals(items.open, "#openDealsContainerId", res.data.isAdmin);
-            createDomAllDeals(items.success, "#successDealsContainerId", res.data.isAdmin);
-            createDomAllDeals(items.failed, "#failedDealsContainerId", res.data.isAdmin);
-        },
-    });
-    
+    } catch (error) {
+        if (dealListRequest === request && !request.signal.aborted) {
+            console.error("Deal list rendering failed:", error);
+            showDealListError();
+        }
+    } finally {
+        if (dealListRequest === request) {
+            lists.forEach(list => {
+                list.setAttribute("aria-busy", "false");
+                delete list.dataset.skeleton;
+            });
+            dealListRequest = null;
+        }
+    }
 };
-
-
 const createDomAllDeals = (items, containersId, isAdmin) => {
     const countElm = document.querySelector(`${containersId} .countDeal`);
     const containerElm = document.querySelector(`${containersId} .deal-column-list`);

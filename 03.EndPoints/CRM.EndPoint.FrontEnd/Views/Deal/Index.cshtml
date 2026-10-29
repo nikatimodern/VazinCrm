@@ -69,7 +69,11 @@
                         سفارشات باز
                         <span class="countDeal"></span>
                     </div>
-                    <div class="deal-column-list" data-status="1"></div>
+                    <div class="deal-column-list" aria-busy="true" data-status="1">
+                        @for (var card = 0; card < 3; card++) {
+                            <partial name="_DealSkeleton" />
+                        }
+                    </div>
                 </div>
             </div>
         </div>
@@ -81,7 +85,11 @@
                         سفارشات موفق
                         <span class="countDeal"></span>
                     </div>
-                    <div class="deal-column-list" data-status="3"></div>
+                    <div class="deal-column-list" aria-busy="true" data-status="3">
+                        @for (var card = 0; card < 3; card++) {
+                            <partial name="_DealSkeleton" />
+                        }
+                    </div>
                 </div>
             </div>
         </div>
@@ -93,7 +101,11 @@
                         سفارشات ناموفق
                         <span class="countDeal"></span>
                     </div>
-                    <div class="deal-column-list" data-status="2"></div>
+                    <div class="deal-column-list" aria-busy="true" data-status="2">
+                        @for (var card = 0; card < 3; card++) {
+                            <partial name="_DealSkeleton" />
+                        }
+                    </div>
                 </div>
             </div>
         </div>
@@ -125,6 +137,10 @@
 <partial name="~/Views/Report/Modals/_ReportContainerModal.cshtml" />
 
 <partial name="Modals/_DealModal" />
+
+<template id="dealSkeletonTemplate">
+    <partial name="_DealSkeleton" />
+</template>
 
 @section Scripts {
     <script src="~/js/deal/deal.js" asp-append-version="true"></script>

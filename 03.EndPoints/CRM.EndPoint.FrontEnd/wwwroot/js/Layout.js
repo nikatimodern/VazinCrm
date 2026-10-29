@@ -2375,20 +2375,26 @@ async function getAllTask(type, systematic = 0, loc = 1) {
     const containerElm = document.getElementById(containerName + "Id");
     const countElm = document.getElementById(containerName + "Count");
     const noTaskImgDash = document.getElementById("noTaskImg");
-    try {
-        const res = await axios.get(`/Carizo/GetAllTask?type=${type}&loc=${loc}&systematic=${systematic}`);
-        if (res.status === 200) {
-            containerElm && (containerElm.innerHTML = res.data.html);
-            countElm && (countElm.innerHTML = res.data.count);
-            noTaskImgDash && loc === 2 && (noTaskImgDash.style.display = res.data.count ? "none" : "flex");
-        } else {
-            throw new Error();
+    const load = async () => {
+        try {
+            const res = await axios.get(`/Carizo/GetAllTask?type=${type}&loc=${loc}&systematic=${systematic}`);
+            if (res.status === 200) {
+                containerElm && (containerElm.innerHTML = res.data.html);
+                countElm && (countElm.innerHTML = res.data.count);
+                noTaskImgDash && loc === 2 && (noTaskImgDash.style.display = res.data.count ? "none" : "flex");
+            } else {
+                throw new Error();
+            }
+        } catch (err) {
+            console.error(err);
+            containerElm && (containerElm.innerHTML = "خطا در بارگذاری فعالیت ها :(!");
+            if (loc === 2 && typeof dashboardLoading !== "undefined") throw err;
         }
-    } catch (err) {
-        console.error(err);
-        containerElm && (containerElm.innerHTML = "خطا در بارگذاری فعالیت ها :(!");
-        // toastifyError("خطا در بارگذاری اطلاعات!");
+    };
+    if (loc === 2 && typeof dashboardLoading !== "undefined") {
+        return dashboardLoading.run("todayTaskDashId", load);
     }
+    return load();
 }
 
 async function finishTask(id, type, thisBtn, loc = 1) {

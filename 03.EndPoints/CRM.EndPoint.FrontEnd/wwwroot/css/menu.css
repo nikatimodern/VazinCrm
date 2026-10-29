@@ -25,6 +25,33 @@
 }
 .menu-nav .menu-item-title { font-size: 14px; gap: 8px; }
 .menu-nav .menu-icon { flex-shrink: 0; }
+.menu-icon-frame {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.menu-nav .menu-icon-frame {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: rgba(197, 242, 227, .04);
+    transition: background-color .2s, transform .2s;
+}
+.menu-nav .menu-icon-frame .menu-icon {
+    width: 20px !important;
+    height: 20px;
+    transform-origin: center;
+    transform-box: fill-box;
+}
+.menu-nav .menu-item:has(> .menu-icon-frame) { padding-block: 4px; }
+.menu-nav .menu-item:hover > .menu-icon-frame,
+.menu-nav .menu-item:focus-visible > .menu-icon-frame {
+    background: rgba(180, 242, 223, .1);
+    transform: translateY(-1px);
+}
+.menu-nav .menu-item.active-menu > .menu-icon-frame { background: rgba(255, 255, 255, .3); }
+html.sidebar-collapsed #desktopNavbar .menu-item:has(> .menu-icon-frame) { padding-inline: 0; }
 .menu-nav .menu-item:hover { background: rgba(143, 231, 211, .12); }
 .menu-nav .menu-item:focus-visible { outline: 2px solid #a8f0dd; outline-offset: -2px; }
 .menu-nav .has-submenu { border-radius: 10px; }
@@ -111,4 +138,5 @@ html #mobileDrawerNavbar .has-submenu::before { content: none; }
 
 @media (prefers-reduced-motion: reduce) {
     .menu-nav .submenu, .menu-nav .submenu-arrow, .menu-nav .menu-item { transition: none !important; }
+    .menu-nav .menu-icon-frame { transition: none; transform: none !important; }
 }

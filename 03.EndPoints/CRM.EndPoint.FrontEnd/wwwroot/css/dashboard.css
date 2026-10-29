@@ -186,7 +186,66 @@
 
 
 /*@media (max-width: 1399px) {
-    .dashGridContainer {
+/* Data placeholders keep the real dashboard structure visible while requests run. */
+.dashGridContainer .dashboard-value:empty,
+.dashGridContainer .dashboard-loading .dashboard-value,
+.dashboard-skeleton-row span,
+.dashboard-skeleton-lines span {
+  background: linear-gradient(100deg, #e7ebef 25%, #f5f7f9 45%, #e7ebef 65%);
+  background-size: 240% 100%;
+  animation: dashboard-shimmer 1.6s ease-in-out infinite;
+  border-radius: 5px;
+}
+
+.dashGridContainer .dashboard-value:empty,
+.dashGridContainer .dashboard-loading .dashboard-value {
+  display: inline-block;
+  min-width: 3.5em;
+  height: 1.1em;
+  vertical-align: middle;
+  color: transparent;
+  user-select: none;
+}
+
+.dashGridContainer .dashboard-loading #infoFactors-icon,
+.dashGridContainer .dashboard-loading .financialInfoIcon {
+  visibility: hidden;
+}
+
+.dashboard-skeleton-list { width: 100%; }
+.dashboard-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  min-height: 66px;
+  border-bottom: 1px solid #f0f2f5;
+}
+.dashboard-skeleton-row:last-child { border-bottom: 0; }
+.dashboard-skeleton-row .dashboard-skeleton-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+#todayTaskDashId .dashboard-skeleton-avatar { width: 18px; height: 18px; border-radius: 4px; }
+.dashboard-skeleton-lines { display: flex; flex-direction: column; gap: 9px; flex: 1; }
+.dashboard-skeleton-lines span { display: block; height: 12px; width: 90%; }
+.dashboard-skeleton-lines span:last-child { width: 60%; height: 9px; }
+.dashboard-skeleton-row:nth-child(even) .dashboard-skeleton-lines span:first-child { width: 75%; }
+.dashboard-skeleton-date { width: 38px; height: 10px; flex-shrink: 0; }
+.dashboard-load-error { padding: 10px 0; color: #8b3333; font-size: 12px; }
+.dashboard-load-error button { background: none; border: 0; color: #006b60; text-decoration: underline; padding: 4px; }
+@keyframes dashboard-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dashGridContainer .dashboard-value,
+  .dashboard-skeleton-row span { animation: none !important; }
+}
+
+.dashGridContainer {
         grid-template-columns: repeat(4, 1fr);
     }
     .dashGridItem.gridItemReports,
