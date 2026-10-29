@@ -79,6 +79,7 @@
 
     <link rel="stylesheet" href="~/css/preFactor.css?v=6.9.3" />
     <link rel="stylesheet" href="~/css/supplyFactor.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/menu.css" asp-append-version="true" />
 
     @await RenderSectionAsync("Styles", required: false)
 </head>
@@ -162,22 +163,36 @@
             if (linkPath !== currentPath) return;
 
             link.classList.add("active-menu");
+            link.setAttribute("aria-current", "page");
 
             let parent = link.closest(".has-submenu");
             while (parent) {
                 parent.classList.add("open");
                 const parentMenuItem = parent.querySelector(":scope > .menu-item");
-                parentMenuItem?.classList.add("active-menu");
+                parentMenuItem?.classList.add("active-ancestor");
+                parentMenuItem?.setAttribute("aria-expanded", "true");
                 parent = parent.parentElement?.closest(".has-submenu");
             }
         });
 
 
         // باز و بسته کردن submenu
-        document.querySelectorAll(".has-submenu > .menu-item").forEach(menu => {
+        document.querySelectorAll(".menu-nav .submenu-toggle").forEach((menu, index) => {
+            const wrapper = menu.parentElement;
+            const submenu = wrapper.querySelector(":scope > .submenu");
+            submenu.id = `navigation-submenu-${index}`;
+            menu.setAttribute("aria-controls", submenu.id);
             menu.addEventListener("click", function () {
-                const wrapper = menu.closest(".has-submenu");
-                wrapper?.classList.toggle("open");
+                const open = wrapper.classList.toggle("open");
+                menu.setAttribute("aria-expanded", String(open));
+                if (!open && submenu.contains(document.activeElement)) menu.focus();
+            });
+            wrapper.addEventListener("keydown", event => {
+                if (event.key !== "Escape" || !wrapper.classList.contains("open")) return;
+                event.stopPropagation();
+                wrapper.classList.remove("open");
+                menu.setAttribute("aria-expanded", "false");
+                menu.focus();
             });
         });
     })();
