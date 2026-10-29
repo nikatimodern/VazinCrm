@@ -1214,172 +1214,6 @@ function toastifyInfo(text, duration = 3000) {
     return createToast("info", text, { duration });
 }
 
-let smsToast = null;
-function showSmsSendingToast() {
-    if (smsToast) {
-        smsToast.hideToast();
-    }
-    
-    const notifDiv = document.createElement("div");
-    
-    notifDiv.className = "flex-center gap-3";
-    notifDiv.innerHTML = `
-        در حال ارسال پیامک
-        <span class="spinner-border spinner-border-sm"></span>
-    `;
-    
-    smsToast = createToast("info", "", {
-        node: notifDiv,
-        duration: -1,
-        stopOnFocus: false,
-        style: {
-            cursor: "auto",
-        },
-    });
-}
-
-
-function updateSmsToast(text, type) {
-    if (!smsToast) return;
-    const smsToastElement = smsToast.toastElement;
-    
-    smsToastElement.textContent = text;
-    
-    
-    if (type === "success" || type === "error") {
-        
-        smsToastElement.style.background =
-            type === "success"
-                ? "linear-gradient(135deg, rgba(2,81,75,1) 21%, rgba(0,59,54,1) 100%)"
-                : "linear-gradient(135deg, rgba(121,9,9,1) 21%, rgba(78,0,0,0.9) 100%)";
-        
-        setTimeout(() => {
-            smsToast?.hideToast();
-            smsToast = null;
-        }, type === "success" ? 3000 : 5000);
-    }
-}
-
-
-// بهینه شده
-
-/*const Mask = () => {
-    for (const el of document.querySelectorAll("[placeholder][data-slots]")) {
-
-        el.addEventListener('focusout', () => {
-            el.value = el.value.replace(/_/g, '').replace(/y/g, '').replace(/m/g, '').replace(/d/g, '');
-            el.value = el.value.replace(/\/?mm\/?dd/g, '').replace(/\/?mm/g, '').replace(/\/?dd/g, '');
-        });
-
-        const pattern = el.getAttribute("placeholder"),
-            slots = new Set(el.dataset.slots || "_"),
-            prev = (j => Array.from(pattern, (c, i) => slots.has(c) ? j = i + 1 : j))(0),
-            first = [...pattern].findIndex(c => slots.has(c)),
-            accept = new RegExp(el.dataset.accept || "\\d", "g"),
-            clean = input => {
-                input = input.match(accept) || [];
-                return Array.from(pattern, c =>
-                    input[0] === c || slots.has(c) ? input.shift() || c : c
-                );
-            },
-            format = () => {
-                const [i, j] = [el.selectionStart, el.selectionEnd].map(i => {
-                    i = clean(el.value.slice(0, i)).findIndex(c => slots.has(c));
-                    return i < 0 ? prev[prev.length - 1] : back ? prev[i - 1] || first : i;
-                });
-                el.value = clean(el.value).join``;
-                el.setSelectionRange(i, j);
-                back = false;
-            };
-
-        let back = false;
-
-        el.addEventListener("keydown", (e) => {
-            back = e.key === "Backspace";
-        });
-
-        el.addEventListener("keyup", () => {
-            back = false;
-        });
-
-        el.addEventListener("input", format);
-        // el.addEventListener("focus", format);
-
-        el.addEventListener("blur", () => {
-            if (el.value.replace(/_/g, '') === '') {
-                el.value = "";
-            }
-        });
-    }
-};*/
-
-
-const Mask = () => {
-    for (const el of document.querySelectorAll("[placeholder][data-slots]")) {
-        el.addEventListener("focusout", () => {
-            
-            if (el.value.includes("_")) {
-                el.value = el.value.replaceAll("_", "");
-            }
-            
-            
-            if (el.value.includes("y")) {
-                el.value = el.value.replaceAll("y", "");
-            }
-            
-            if (el.value.includes("mm") && el.value.includes("dd")) {
-                el.value = el.value.replace("/mm/dd", "");
-            }
-            if (el.value.includes("mm") || el.value.includes("m")) {
-                el.value = el.value.replace("/mm", "");
-                el.value = el.value.replace("m", "");
-            }
-            if (el.value.includes("dd") || el.value.includes("d")) {
-                el.value = el.value.replace("/dd", "");
-                el.value = el.value.replace("d", "");
-            }
-            
-            
-        });
-        
-        const pattern = el.getAttribute("placeholder"),
-            slots = new Set(el.dataset.slots || "_"),
-            prev = (j => Array.from(pattern, (c, i) => slots.has(c) ? j = i + 1 : j))(0),
-            first = [...pattern].findIndex(c => slots.has(c)),
-            accept = new RegExp(el.dataset.accept || "\\d", "g"),
-            clean = input => {
-                
-                input = input.match(accept) || [];
-                
-                
-                return Array.from(pattern, c =>
-                    input[0] === c || slots.has(c) ? input.shift() || c : c,
-                );
-            },
-            format = () => {
-                
-                const [i, j] = [el.selectionStart, el.selectionEnd].map(i => {
-                    
-                    i = clean(el.value.slice(0, i)).findIndex(c => slots.has(c));
-                    return i < 0 ? prev[prev.length - 1] : back ? prev[i - 1] || first : i;
-                });
-                el.value = clean(el.value).join``;
-                el.setSelectionRange(i, j);
-                back = false;
-            };
-        let back = false;
-        
-        el.addEventListener("keydown", (e) => {
-            back = e.key === "Backspace";
-        });
-        el.addEventListener("input", format);
-        //el.addEventListener("focus", format);
-        el.addEventListener("blur", () => {
-            el.value === pattern && (el.value = "");
-        });
-    }
-};
-
 
 const MaskDate = () => {
     document.addEventListener("input", function (e) {
@@ -1411,34 +1245,6 @@ const goTo = (url, blank = false) => {
     }
 };
 
-
-function generateCodePColor(PCode) {
-    let res = "";
-    PCode.forEach(function (item) {
-        if (item == "I" || item == "V" || item == "X") {
-            res = res + "<spam style='color:darkred'>" + item + "</spam>";
-        } else {
-            res = res + "<spam>" + item + "</spam>";
-        }
-    });
-    return res;
-}
-
-const getGeneralRef = () => {
-    return new Promise(resolve => {
-        $.get(baseUrl + "Person/_GeneralReferencePartial?FormName=Person", (res) => {
-            $("#GeneralRefId").children().remove();
-            $("#GeneralRefId").append(res);
-            if ($("#PId").val().length > 0)
-                getallPersonAction();
-            resolve();
-        });
-    });
-};
-
-
-//جداکردن اعداد در
-//////////////////////////////////////////////////
 
 document.addEventListener("DOMContentLoaded", function () {
     document.addEventListener("input", function (e) {
@@ -1603,31 +1409,6 @@ function formatAmountHint(rialAmount) {
     return parts.join(" و ") + " تومان";
 }
 
-function funcReverseString(str) {
-    return str.split("").reverse().join("");
-}
-const SeperatedNumberGenerate = (val) => {
-    let seperatedNumber = SeparatedNumberRemove(val.toString());
-    seperatedNumber = funcReverseString(seperatedNumber);
-    seperatedNumber = seperatedNumber.split("");
-    let tmpSeperatedNumber = "";
-    j = 0;
-    for (let i = 0; i < seperatedNumber.length; i++) {
-        tmpSeperatedNumber += seperatedNumber[i];
-        j++;
-        if (j == 3) {
-            tmpSeperatedNumber += ",";
-            j = 0;
-        }
-    }
-    seperatedNumber = funcReverseString(tmpSeperatedNumber);
-    if (seperatedNumber[0] === ",") seperatedNumber = seperatedNumber.replace(",", "");
-    
-    return seperatedNumber;
-    
-};
-
-
 const SeparatedNumberRemove = (val) => {
     if (typeof val !== "string") return val;
     return val.replace(/[,\u066C\u060C]/g, "").trim();
@@ -1639,197 +1420,6 @@ const fLshowLoadingElm = document.getElementById("FLshowLoading");
 function FLshowLoading(show = true) {
     fLshowLoadingElm.style.display = show ? "" : "none";
 }
-
-function PublicConvertToTable(Selector, _data, SelectFunction, RemoveFunction, UpdateFunction) {
-    
-    var tb = "<tr class=mp>";
-    $.each(_data, function (Key, Val) {
-        $.each(Val, function (k, v) {
-            if (k !== "Id") {
-                tb = tb + "<td class=mp>" + v + "</td>";
-            }
-        });
-        tb = tb + "<td class='mp '>";
-        if ((SelectFunction !== null))
-            tb = tb + "<button title='انتخاب'  class='mp btn btn-success' onclick='" + SelectFunction + "(\"" + Val.Id + "\")' ><i class='mp fas fa-check'></i></button>";
-        if ((RemoveFunction !== null))
-            tb = tb + "<button title='حذف' class='mp btn btn-danger' onclick='" + RemoveFunction + "(\"" + Val.Id + "\")' ><i class='mp fas fa-trash-alt'></i></button>";
-        if ((UpdateFunction !== null))
-            tb = tb + "<button title='ویرایش' class='mp btn btn-warning' onclick='" + UpdateFunction + "(\"" + Val.Id + "\")' ><i class='mp fas fa-pencil-alt'></i></button>";
-        tb = tb + "</td></tr>";
-    });
-    var _Selector = "#" + Selector;
-    $(_Selector + " tr").remove();
-    $(_Selector).append(tb);
-}
-function PublicConvertToTableNoID(Selector, _data, SelectFunction, RemoveFunction, UpdateFunction, FildAbort) {
-    
-    var tb = "<tr class=mp>";
-    $.each(_data, function (Key, Val) {
-        
-        if (!Val.isDeleted) {
-            $.each(Val, function (k, v) {
-                var flag = true;
-                var items = FildAbort;
-                
-                items.map((item) => {
-                    if (k == item)
-                        flag = false;
-                });
-                if (flag) {
-                    if (k == "phones") {
-                        var phonestr = "";
-                        if (v.length > 0) {
-                            $.each(v, (code, data) => {
-                                phonestr = phonestr + "&nbsp; (" + data.proviceCode + "-" + data.number + ") ";
-                                
-                            });
-                        }
-                        tb = tb + "<td class=mp>" + phonestr + "</td>";
-                    } else {
-                        tb = tb + "<td class=mp>" + v + "</td>";
-                    }
-                }
-            });
-            tb = tb + "<td class='mp '>";
-            if ((SelectFunction !== null))
-                tb = tb + "<button title='انتخاب' style='height: 100%; width: 20%;'  class='buttonGreen' onclick='" + SelectFunction + "(\"" + Key + "\")' ><i class='mp fas fa-check'></i></button>";
-            if ((UpdateFunction !== null))
-                tb = tb + "<button title='ویرایش' style='height: 100%; width: 20%;' class='buttonGreen' onclick='" + UpdateFunction + "(\"" + Key + "\")' ><i class='mp fa fa-pencil'></i></button>";
-            if ((RemoveFunction !== null))
-                tb = tb + "<button title='حذف' style='height: 100%; width: 20%;' class='buttonGreen' onclick='" + RemoveFunction + "(\"" + Key + "\")' ><i class='mp fa fa-trash'></i></button>";
-            
-            tb = tb + "</td></tr>";
-        }
-    });
-    var _Selector = "#" + Selector;
-    $(_Selector + " tr").remove();
-    $(_Selector).append(tb);
-}
-
-
-/////////
-
-var AddItem = (_grCode, _grTxt, _parentCode, _Target, _type) => {
-    Swal.fire({
-        title: "اضافه کردن آیتم جدید",
-        input: "text",
-        inputPlaceholder: _grTxt,
-        confirmButtonText: "ثبت",
-    }).then((result) => {
-        if (result.isConfirmed && result.value) {
-            var model = {
-                grCode: _grCode,
-                grTxt: _grTxt,
-                itemText: result.value,
-                parentCode: _parentCode,
-            };
-            
-            $.post(baseUrl + "TreeRegister/AddItem", model, function () {
-                toastifySuccess("عملیات با موفقیت انجام شد.");
-                getOpItem(_grCode, _Target, _type);
-            });
-        }
-    });
-};
-
-
-var getOpItem = (grCode, _target, _type) => {
-    
-    
-    $.get(baseUrl + "TreeRegister/getItems?groupCode=" + grCode, function (result) {
-        $("#" + _target).children().remove();
-        
-        switch (_type) {
-            case 1:
-                $("#" + _target).select2({
-                    data: result,
-                    dir: "rtl",
-                    placeholder: "انتخاب",
-                    selectionCssClass: "form-control",
-                });
-                
-                
-                $("#" + _target).val(null).trigger("change");
-                
-                break;
-            case 2:
-                
-                
-                var arr = [];
-                if (grCode == 6) {
-                    AllPhenotip = result;
-                    if (CheckedPhenotips != null) {
-                        CheckedPhenotips.forEach
-                                        ((item) => {
-                                                arr.push(item.phenoCode);
-                                            },
-                                        );
-                    }
-                    
-                }
-                
-                var ul = [];
-                result.forEach((item, key) => {
-                    const inpEl = $(document.createElement("input"));
-                    if (arr == null) {
-                        inpEl.attr
-                             ({
-                                 id: `checkBox${item.id}`,
-                                 name: item.text,
-                                 value: item.id,
-                                 type: "checkbox",
-                                 class: " form-check-input",
-                                 style: "cursor:pointer",
-                                 onchange: "AddOrRemovePhenotip(\"checkBox" + item.id + "\")",
-                                 checked: false,
-                             });
-                    } else {
-                        const found = arr.find(element => element == item.id);
-                        const flag = found ? true : false;
-                        
-                        if (flag) {
-                            inpEl.attr
-                                 ({
-                                     id: `checkBox${item.id}`,
-                                     name: item.text,
-                                     value: item.id,
-                                     type: "checkbox",
-                                     class: " form-check-input",
-                                     style: "cursor:pointer",
-                                     onchange: "AddOrRemovePhenotip(\"checkBox" + item.id + "\")",
-                                     checked: true,
-                                 });
-                        } else {
-                            inpEl.attr
-                                 ({
-                                     id: `checkBox${item.id}`,
-                                     name: item.text,
-                                     value: item.id,
-                                     type: "checkbox",
-                                     class: " form-check-input",
-                                     style: "cursor:pointer",
-                                     onchange: "AddOrRemovePhenotip(\"checkBox" + item.id + "\")",
-                                     checked: false,
-                                 });
-                        }
-                    }
-                    
-                    
-                    ul.push(inpEl);
-                    const labelEl = "<label class=' phenotic' for='checkBox" + item.id + "'  >" + item.text + "</label>";
-                    ul.push(labelEl);
-                });
-                
-                $("#" + _target).children().remove();
-                $("#" + _target).append(ul);
-                break;
-            default:
-                
-                break;
-        }
-    });
-};
 
 
 const getTodayDateTime = () => {
@@ -1857,70 +1447,62 @@ const tomorrowDate = () => {
 };
 
 class GetDate {
-    getTodayDateTime = () => this.#getDate(5);
-    
-    getTodayDate = () => this.#getDate(4);
-    
-    getTomorrowDate = () => this.#getDate(6);
-    
-    getCurrentWeek = () => this.#getDate(1);
-    
-    getCurrentMonth = () => this.#getDate(2);
-    
-    getCurrentYear = () => this.#getDate(3);
-    
-    #getDate(type) {
-        return new Promise(resolve => {
-            $.get(baseUrl + `home/GetDate?type=${type}`, (res) => {
-                if ([1, 2, 3].includes(type)) {
-                    res = res.split("_");
-                    if (type === 2) {
-                        res.push(this.#getMonthName(res[0].slice(5, 7)), res[0].slice(0, 4));
-                    } else if (type === 3) {
-                        res.push(res[0].slice(0, 4));
-                    }
-                }
-                resolve(res);
-            });
-        });
-    }
-    
-    #getMonthName = (monthNum) => {
-        const monthName = {
-            "01": "فروردین",
-            "02": "اردیبهشت",
-            "03": "خرداد",
-            "04": "تیر",
-            "05": "مرداد",
-            "06": "شهریور",
-            "07": "مهر",
-            "08": "آبان",
-            "09": "آذر",
-            "10": "دی",
-            "11": "بهمن",
-            "12": "اسفند",
-        };
-        return monthName[monthNum];
+    static #monthNames = {
+        "01": "فروردین",
+        "02": "اردیبهشت",
+        "03": "خرداد",
+        "04": "تیر",
+        "05": "مرداد",
+        "06": "شهریور",
+        "07": "مهر",
+        "08": "آبان",
+        "09": "آذر",
+        "10": "دی",
+        "11": "بهمن",
+        "12": "اسفند",
     };
     
+    getCurrentWeek = async () => {
+        const data = await this.#fetchDate(1);
+        return data.split("_");
+    };
     
-    toNetDateTimeString(raw) {
-        const pad = (n) => (n < 10 ? "0" + n : n);
-        const date = new Date(raw);
-        return (
-            date.getFullYear() +
-            "-" +
-            pad(date.getMonth() + 1) +
-            "-" +
-            pad(date.getDate()) +
-            "T" +
-            pad(date.getHours()) +
-            ":" +
-            pad(date.getMinutes()) +
-            ":" +
-            pad(date.getSeconds())
+    getCurrentMonth = async () => {
+        const data = await this.#fetchDate(2);
+        const result = data.split("_");
+        
+        result.push(
+            GetDate.#monthNames[result[0].slice(5, 7)],
+            result[0].slice(0, 4),
         );
-    }
+        
+        return result;
+    };
+    
+    getCurrentYear = async () => {
+        const data = await this.#fetchDate(3);
+        const result = data.split("_");
+        
+        result.push(result[0].slice(0, 4));
+        
+        return result;
+    };
+    
+    getTodayDate = () => this.#fetchDate(4);
+    
+    getTodayDateTime = () => this.#fetchDate(5);
+    
+    getTomorrowDate = () => this.#fetchDate(6);
+    
+    #fetchDate = async (type) => {
+        const response = await fetch(`/Home/GetDate?type=${type}`);
+        
+        if (!response.ok) {
+            throw new Error(`GetDate failed: ${response.status}`);
+        }
+        
+        return await response.text();
+    };
 }
 
 
@@ -2399,9 +1981,13 @@ const toPersianDigits = (val) => {
         .replace(/[٠-٩]/g, d => "۰۱۲۳۴۵۶۷۸۹"["٠١٢٣٤٥٦٧٨٩".indexOf(d)]);
 };
 
-
-
-
+function normalizePersianText(text) {
+    if (!text) return "";
+    
+    return text
+        .replace(/[يى]/g, "ی")
+        .replace(/ك/g, "ک");
+}
 
 const toggleElementsDisabled = (elms, isDisabled = true) => {
     if (!elms) return;
@@ -3233,100 +2819,6 @@ function initChangeRadio(name, callback, delegation = false) {
     });
 }
 
-
-class DynamicSkeleton {
-    /**
-     * @param {Object} options
-     * @param {string|HTMLElement} options.container - سلکتور یا المنت والد که اسکلتون ها در آن قرار میگیرند
-     * @param {string} options.template - ساختار HTML یک آیتم اسکلتون
-     * @param {number} options.count - تعداد اسکلتون‌هایی که باید ساخته شود (پیش‌فرض 3)
-     */
-    constructor(options) {
-        this.container = typeof options.container === "string"
-            ? document.querySelector(options.container)
-            : options.container;
-        this.template = options.template;
-        this.count = options.count || 3;
-    }
-    
-    // متد نمایش لودینگ
-    render() {
-        if (!this.container) return;
-        
-        let skeletonsHTML = "";
-        for (let i = 0; i < this.count; i++) {
-            skeletonsHTML += this.template;
-        }
-        
-        this.container.innerHTML = skeletonsHTML;
-    }
-    
-    // متد پاک کردن لودینگ (البته وقتی دیتای واقعی رو innerHTML کنید خود به خود پاک میشه)
-    clear() {
-        if (this.container) {
-            this.container.innerHTML = "";
-        }
-    }
-}
-
-const Skeleton = (() => {
-    
-    const templates = {};
-    
-    function register(name, builder) {
-        templates[name] = builder;
-    }
-    
-    function show({
-                      container,
-                      count = 1,
-                      template,
-                  }) {
-        
-        const el = typeof container === "string"
-            ? document.querySelector(container)
-            : container;
-        
-        if (!el) return;
-        
-        el.dataset.skeleton = "true";
-        
-        const html = [];
-        
-        const builder =
-            typeof template === "function"
-                ? template
-                : templates[template];
-        
-        for (let i = 0; i < count; i++) {
-            
-            html.push(builder(i));
-            
-        }
-        
-        el.innerHTML = html.join("");
-        
-    }
-    
-    function hide(container) {
-        
-        const el = typeof container === "string"
-            ? document.querySelector(container)
-            : container;
-        
-        if (el)
-            el.innerHTML = "";
-        
-    }
-    
-    return {
-        show,
-        hide,
-        register,
-    };
-    
-})();
-
 /**
  * Creates a reusable inline alert message.
  * @param {Object} options
@@ -3366,13 +2858,6 @@ function createInlineAlert({ type = "info", message, dismissible = false, icon }
     return alert;
 }
 
-function normalizePersianText(text) {
-    if (!text) return "";
-    
-    return text
-        .replace(/[يى]/g, "ی")
-        .replace(/ك/g, "ک");
-}
 
 function escapeHtml(value) {
     return String(value)
