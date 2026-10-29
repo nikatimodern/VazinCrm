@@ -17,6 +17,13 @@
 
                         <small class="text-muted">کاربرانی که به این انبار دسترسی دارند را انتخاب کنید.</small>
                     </div>
+                    @if (User.IsAdmin()) {
+                        <label class="d-flex align-items-center gap-2" for="warehouseIsMain">
+                            <input type="checkbox" id="warehouseIsMain" name="isMain" />
+                            انبار اصلی
+                        </label>
+                        <small class="text-muted">ویرایش و حذف انبار اصلی فقط برای مدیر ارشد امکان‌پذیر است.</small>
+                    }
                     <div class="d-flex justify-content-center gap-1 mt-2">
                         <button type="reset" class="buttonCancel2" style="padding-block: 4px" data-bs-dismiss="modal">انصراف</button>
                         <button type="submit" class="buttonGreen3" style="padding-block: 4px">ثبت</button>

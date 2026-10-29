@@ -33,7 +33,7 @@
     </button>
 } else {
     // Menu link
-    <a href="@Model.Url" id="@Model.ElementId" class="menu-item menu-link @Model.ClassName" data-tooltip-left="@Model.Title">
+    <a href="@Model.Url" id="@Model.ElementId" class="menu-item menu-link @(Model.Id == "overdueOpenDeals" && Model.BadgeCount.GetValueOrDefault() <= 0 ? "" : Model.ClassName)" data-tooltip-left="@Model.Title">
         @Html.Raw(Model.IconHtml)
         <span class="menu-item-title">
             <span>@Model.Title</span>

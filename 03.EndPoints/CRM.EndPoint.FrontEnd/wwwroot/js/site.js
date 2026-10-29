@@ -1143,302 +1143,9 @@ class Dropdown {
     destroy() {
         //console.log("پاک شد");
     }
-    
-    
 }
 
-//////////////////CSS////////////////
 
-//.dropdown-content {
-//    position: absolute;
-//    opacity: 0;
-//    transition-property: transform, opacity;
-//  }
-
-//  .dropdown-content.fade.show {
-//    opacity: 1;
-//  }
-
-//  .dropdown-content.slide {
-//    transform: translateY(1rem);
-//  }
-//  .dropdown-content.slide.show {
-//    transform: translateY(0);
-//    opacity: 1;
-//  }
-
-//  .dropdown-content.zoom {
-//    transform: scale(0.8);
-//  }
-//  .dropdown-content.zoom.show {
-//    transform: scale(1);
-//    opacity: 1;
-//  }
-
-const dateTimePicker = (container = document) => {
-    container.querySelectorAll(".sdate").forEach((datePicker) => {
-
-        if (!$(datePicker).data("myPersianDatepicker")) {
-            const positionX = datePicker.getAttribute("data-x") || "28";
-            const positionY = datePicker.getAttribute("data-y") || "0";
-            const instance = $(datePicker).persianDatepicker({
-                onSelect: function (dateText) {
-                    const $input = $(this.model.inputElement);
-                    $input.val(toEnglishDigits($input.val()));
-                    
-                    const onSelectCallback = datePicker.getAttribute("data-onSelect");
-                    const onSelectId = datePicker.getAttribute("data-id");
-                    
-                    if ($input.val().length > 0) {
-                        $input.removeClass("AlertReq");
-                    }
-                    
-                    if (onSelectCallback && typeof window[onSelectCallback] === "function") {
-                        if (onSelectId) {
-                            window[onSelectCallback](this, onSelectId);
-                        } else {
-                            window[onSelectCallback](this);
-                        }
-                    }
-                },
-                initialValueType: "persian",
-                position: [Number(positionX), Number(positionY)],
-                initialValue: false,
-                responsive: true,
-                observer: false,
-                format: "YYYY/MM/DD",
-                autoClose: true,
-                calendar: {
-                    persian: {
-                        locale: "fa",
-                        showHint: false,
-                        leapYearMode: "astronomical",
-                    },
-                    gregorian: {
-                        locale: "en",
-                        showHint: false,
-                    },
-                },
-                toolbox: {
-                    enabled: false,
-                    calendarSwitch: {
-                        enabled: false,
-                    },
-                },
-            });
-
-            $(datePicker).data("myPersianDatepicker", instance);
-        }
-    });
-    
-    container.querySelectorAll(".sdateTime").forEach((dateTimePickerElem) => {
-        if (!$(dateTimePickerElem).data("myPersianDatepicker")) {
-            const instance = $(dateTimePickerElem).persianDatepicker({
-                onSelect: function (dateText) {
-                    if ($(this.model.inputElement).val().length > 0) {
-                        $(this.model.inputElement).removeClass("AlertReq");
-                    }
-                },
-                initialValueType: "persian",
-                initialValue: false,
-                responsive: true,
-                observer: false,
-                format: "YYYY/MM/DD, HH:mm",
-                autoClose: true,
-                calendar: {
-                    persian: {
-                        locale: "fa",
-                        showHint: false,
-                        leapYearMode: "algorithmic",
-                    },
-                    gregorian: {
-                        locale: "en",
-                        showHint: false,
-                    },
-                },
-                toolbox: {
-                    enabled: false,
-                    calendarSwitch: {
-                        enabled: false,
-                    },
-                },
-                timePicker: {
-                    enabled: true,
-                    minute: {
-                        step: 5,
-                    },
-                    second: {
-                        enabled: false,
-                    },
-                    meridiem: {
-                        enabled: true,
-                    },
-                },
-            });
-            $(dateTimePickerElem).data("myPersianDatepicker", instance);
-        }
-    });
-    
-    container.querySelectorAll(".stime").forEach((timePickerElem) => {
-        if (!$(timePickerElem).data("myPersianDatepicker")) {
-            const positionX = timePickerElem.getAttribute("data-x") || "28";
-            const positionY = timePickerElem.getAttribute("data-y") || "0";
-            const instance = $(timePickerElem).persianDatepicker({
-                onSelect: function () {
-                    const onSelectCallback = timePickerElem.getAttribute("data-onSelect");
-                    if (onSelectCallback) {
-                        window[onSelectCallback](this);
-                    }
-                },
-                onlyTimePicker: true,
-                initialValue: true,
-                initialValueType: "persian",
-                autoClose: true,
-                position: [Number(positionX), Number(positionY)],
-                format: "HH:mm",
-                timePicker: {
-                    enabled: true,
-                    hour: { enabled: true },
-                    minute: { enabled: true },
-                    second: { enabled: false },
-                    meridian: { enabled: false },
-                },
-            });
-            $(timePickerElem).data("myPersianDatepicker", instance);
-        }
-    });
-};
-
-
-
-
-function getRelativeTime(dateTimeStr) {
-    const inputDate = new Date(dateTimeStr);
-    const now = new Date();
-    let diffMs = now - inputDate;
-    
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
-    if (diffMinutes < 1) {
-        return "لحظاتی پیش";
-    }
-    
-    if (diffHours < 24) {
-        const hours = Math.floor(diffMinutes / 60);
-        const minutes = diffMinutes % 60;
-        if (hours > 0 && minutes > 0) {
-            return `${hours} ساعت و ${minutes} دقیقه پیش`;
-        } else if (hours > 0) {
-            return `${hours} ساعت پیش`;
-        } else {
-            return `${minutes} دقیقه پیش`;
-        }
-    } else {
-        const days = diffDays;
-        const remainingHours = diffHours - days * 24;
-        if (remainingHours > 0) {
-            return `${days} روز و ${remainingHours} ساعت پیش`;
-        } else {
-            return `${days} روز پیش`;
-        }
-    }
-}
-
-const notificationChange = (text, { link, isBlank = true }, category) => {
-    const notifStyles = {
-        actionRequired: { bg: "#e3f2fd", color: "#1565c0", iconSrc: "activate.gif", title: "نیاز به تایید" },
-        info: { bg: "#e8f5e9", color: "#2e7d32", iconSrc: "information.gif", title: "اطلاع رسانی" },
-        task: { bg: "#f3e5f5", color: "#6a1b9a", iconSrc: "toDo.gif", title: "کاربان" },
-        chat: { bg: "#d9eceb", color: "#008077", iconSrc: "notification.gif", title: "پیام رسان" },
-        default: { bg: "#eceff1", color: "#37474f", iconSrc: "notification.gif", title: "اعلان سیستم" },
-    };
-    
-    const { bg, color, iconSrc, title } = notifStyles[category] || notifStyles.default;
-    
-    const notifDiv = document.createElement("div");
-    notifDiv.style.display = "flex";
-    notifDiv.style.alignItems = "flex-start";
-    notifDiv.style.gap = "6px";
-    notifDiv.style.width = "100%";
-    
-    notifDiv.innerHTML = `
-        <div style="width: clamp(32px, 4vw, 44px); color: ${color}; margin-top: -3px">
-          <img src="/Img/${iconSrc}" style="width: 100%" alt="">
-        </div>
-        <div style="flex: 1; display: flex; flex-direction: column; gap: clamp(5px, 0.6vw, 6px);">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span class="fbold" style="font-size: clamp(12px, 1.2vw, 14px); color: ${color}">${title}</span>
-               
-                <div class="d-flex align-items-center gap-1" style="color: ${color};">
-                  <span id="counterNotif" style="line-height: 1; font-size: 12px;"></span>
-                  <span class="d-flex align-items-center justify-content-center" style="cursor:pointer;" onclick="dismissNotif(null, this)">
-                     <svg style="width: 16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                     </svg>
-                  </span>
-                </div>
-            </div>
-            <div  style="font-size: clamp(11px, 1.1vw, 13px); color: #212529;">${text}</div>
-            ${link ? `
-                <div class="text-end">
-                    <button onclick="goToLink('${link}', this, ${isBlank})" style="font-size: clamp(10px, 1vw, 12px); padding: clamp(3px, 0.5vw, 4px) clamp(6px, 1vw, 8px);background: ${color}; color: #fff; border: none; border-radius: 4px; cursor: pointer;">
-                        مشاهده
-                    </button>
-                </div>
-            ` : ""}
-        </div>
-    `;
-    
-    
-    let i = 7;
-    let paused = false;
-    notifDiv.querySelector("#counterNotif").innerText = i;
-    const counterNotifId = setInterval(() => {
-        if (!paused) {
-            i--;
-            notifDiv.querySelector("#counterNotif").innerText = i;
-            if (i <= 0) {
-                clearInterval(counterNotifId);
-                toastInstance.hideToast();
-            }
-        }
-    }, 1000);
-    
-    notifDiv.addEventListener("mouseenter", () => paused = true);
-    notifDiv.addEventListener("mouseleave", () => paused = false);
-    
-    const isMobile = window.innerWidth <= 768;
-    
-    const toastInstance = Toastify({
-        node: notifDiv,
-        duration: i * 1000,
-        close: true,
-        gravity: isMobile ? "top" : "bottom",
-        position: isMobile ? "center" : "left",
-        style: {
-            background: bg,
-            borderLeft: `5px solid ${color}`,
-            boxShadow: `0 6px 18px rgba(0, 0, 0, 0.2)`,
-            color: "#212529",
-            padding: "clamp(8px, 1.2vw, 12px) clamp(10px, 1.5vw, 14px)",
-            cursor: "auto",
-            borderRadius: "8px",
-            width: "450px",
-            minWidth: "280px",
-            maxWidth: isMobile ? "90%" : "450px",
-        },
-        callback: () => clearInterval(counterNotifId),
-    });
-    
-    toastInstance.showToast();
-    
-    /*if (Notification.permission === "granted") {
-        sendBrowserNotification(title, text, `/Img/${iconSrc}`, link);
-    }*/
-    
-};
 async function requestNotificationPermission() {
     if (!("Notification" in window)) {
         console.log("مرورگر از نوتیفیکیشن پشتیبانی نمی‌کند");
@@ -1464,535 +1171,48 @@ function sendBrowserNotification(title, body, icon, link) {
 }
 
 
-const notification = (id, title, description, dateMiladi, entityType, entityId) => {
-    
-    const notifDiv = document.createElement("div");
-    notifDiv.className = "d-flex flex-column p-0 justify-content-evenly h-100 w-100";
-    notifDiv.style.position = "relative";
-    notifDiv.id = id;
-    
-    notifDiv.innerHTML = `
-        <div style="display:flex;align-items:flex-start;gap:6px;width:100%;padding:8px 12px;">
-            <div style="width: clamp(32px, 4vw, 44px); color: #6a1b9a; margin-top: -3px">
-                <img src="/Img/toDo.gif" style="width: 100%" alt="">
-            </div>
-            <div style="flex: 1; display: flex; flex-direction: column; gap: clamp(5px, 0.6vw, 6px);">
-                <div style="display: flex; justify-content: space-between; align-items: start;">
-                    <span class="fbold" style="font-size: clamp(12px, 1.2vw, 14px); color: #3a005d">${title}</span>
-                    <div class="d-flex align-items-center gap-1" style="color: #6a1b9a;">
-                        <span id="counterNotif" style="line-height: 1; font-size: 12px;"></span>
-                        <span class="d-flex align-items-center justify-content-center" style="cursor:pointer;" onclick="dismissNotif('${id}', this)">
-                            <svg style="width: 16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-                <div style="font-size: clamp(11px, 1.1vw, 13px); color: #212529; white-space: pre-line;">${description}</div>
-                <div class="d-flex align-items-start justify-content-between gap-2 w-100">
-                    <div class="d-flex align-items-center" style="gap: 4px">
-                        <span style="font-size:clamp(9px, 2vw, 10px);color:#8f8f8f" id="relativeTime"></span>
-                        <span class="d-flex align-items-end gap-1 snooze-notification" style="font-size:clamp(9px, 2vw, 10px);cursor:pointer;color:#000" onclick="snoozeNotif('${id}', this)">
-                            <svg style="width:19px;height:19px" fill="none" viewBox="0 0 24 24"><g fill="currentColor"><path d="m19.6916 7.34849c-.25-.33-.72-.4-1.05-.15s-.4.72-.15 1.05c1.08 1.44 1.65 3.12001 1.65 4.86001 0 4.49-3.65 8.14-8.14 8.14-4.49004 0-8.14004-3.65-8.14004-8.14 0-4.49001 3.65-8.13001 8.14004-8.13001.58 0 1.17.07 1.81.22.03.01.06 0 .1 0 .02 0 .05.02.07.02.03 0 .05-.01.08-.01.04 0 .07-.01.1-.02.05-.01.1-.03.15-.06.03-.02.07-.03.1-.05.01-.01.03-.01.04-.02.03-.02.04-.05.06-.07.04-.04.07-.07.1-.12.03-.04.04-.09.06-.13.01-.03.03-.06.04-.09 0-.02 0-.03 0-.05.01-.05.01-.1 0-.15 0-.05 0-.09-.01-.14-.01-.04-.03-.08-.05-.13s-.04-.1-.07-.14c-.01-.02-.01-.03-.02-.04l-1.98-2.47c-.26-.32-.73-.37-1.05-.12-.32.26-.37.73-.12 1.05l.82 1.02c-.08 0-.16-.01-.24-.01-5.31004 0-9.64004 4.32-9.64004 9.64001 0 5.32 4.32 9.64 9.64004 9.64 5.32 0 9.64-4.32 9.64-9.64.01-2.07-.67-4.06001-1.94-5.76001z" /><path d="m9.5415 16.6708c-.41 0-.75-.34-.75-.75v-3.39l-.19.22c-.28.31-.75.33-1.06.06-.31-.28-.33-.75-.06-1.06l1.5-1.67c.21-.22999.54-.30999.83-.19999s.48.38999.48.69999v5.35c0 .41-.33.74-.75.74z" /><path d="m14 16.6703c-1.52 0-2.75-1.23-2.75-2.75v-1.35c0-1.52 1.23-2.74999 2.75-2.74999s2.75 1.22999 2.75 2.74999v1.35c0 1.52-1.23 2.75-2.75 2.75zm0-5.34c-.69 0-1.25.56-1.25 1.25v1.35c0 .69.56 1.25 1.25 1.25s1.25-.56 1.25-1.25v-1.35c0-.69-.56-1.25-1.25-1.25z" /></g></svg>
-                            <span>تعویق</span>
-                        </span>
-                    </div>
-                    <div class="d-flex align-items-center justify-content-center" style="cursor:pointer">
-                        <button onclick="readNotifAction('${id}', this, '${entityType}', '${entityId}')" style="font-size: clamp(10px, 1vw, 12px); padding: clamp(3px, 0.5vw, 4px) clamp(6px, 1vw, 8px);background: #6a1b9a; color: #fff; border: none; border-radius: 4px; cursor: pointer;">
-                          مشاهده
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    notifDiv.querySelector("#relativeTime").innerHTML = getRelativeTime(dateMiladi);
-    /*const updateTimeId = setInterval(() => {
-        notifDiv.querySelector("#relativeTime").innerHTML = getRelativeTime(dateMiladi);
-    }, 60000);*/
-    
-    
-    let i = 7;
-    let paused = false;
-    notifDiv.querySelector("#counterNotif").innerText = i;
-    const counterNotifId = setInterval(() => {
-        if (!paused) {
-            i--;
-            notifDiv.querySelector("#counterNotif").innerText = i;
-            if (i <= 0) {
-                //clearAllInterval();
-                toastInstance.hideToast();
-            }
-        }
-    }, 1000);
-    
-    notifDiv.addEventListener("mouseenter", () => paused = true);
-    notifDiv.addEventListener("mouseleave", () => paused = false);
-    
-    const clearAllInterval = () => {
-        clearInterval(counterNotifId);
-        handleNotifAction(id, false);
-        //clearInterval(updateTimeId);
-    };
-    
-    const isMobile = window.innerWidth <= 768;
-    
-    const toastInstance = Toastify({
-        node: notifDiv,
-        duration: i * 1000,
-        close: true,
-        gravity: isMobile ? "top" : "bottom",
-        position: isMobile ? "center" : "left",
-        style: {
-            background: "#f3e5f5",
-            //border: "1px solid #6a1b9a1a",
-            borderLeft: `5px solid #6a1b9a`,
-            boxShadow: `0 6px 18px rgba(0, 0, 0, 0.2)`,
-            color: "#212529",
-            padding: "0",
-            cursor: "auto",
-            borderRadius: "8px",
-            width: "450px",
-            maxWidth: isMobile ? "90%" : "450px",
-        },
-        callback: () => clearAllInterval(),
-    });
-    
-    toastInstance.showToast();
-};
-
-const activeNotifCall = {};
-function notificationIncomingCall(callerNumber, uniqueid, destNumber) {
-    if (!callerNumber || !uniqueid || !destNumber) return false;
-    if (activeNotifCall[uniqueid]) return false;
-    
-    const callToast = Toastify({
-        text: `
-            <div style="display: flex; align-items: center; gap: 14px;">
-                <img id="incomingCallIcon" class="notifCallImg" src="/Img/Calling.gif" style="width: 42px;" alt=""/>
-                <img id="endedCallIcon" class="notifCallImg" src="/Img/Call_ended.gif" style="width: 42px;display: none" alt=""/>
-                <img id="answeredCallIcon" class="notifCallImg" src="/Img/Calling_answergif.gif" style="width: 42px;display: none" alt=""/>
-                
-                <div class="d-flex align-items-start justify-content-between w-100">
-                    <div class="d-flex flex-grow-1 notifCallText" style="gap:6px;flex-direction: column">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="fbold notifCallTitle" style="font-size: 16px">تماس ورودی</div>
-                        </div>
-                        
-                        <div class="notifCallDetail d-flex align-items-center gap-1" style="font-size: 14px;">
-                             <span>${callerNumber}</span>
-                        </div>
-                    </div>
-                    <div class="notifCallTimer" style="font-size: 13px; color: #f1f1f1;">
-                        <span id="callTimer"></span>
-                    </div>
-                </div>
-                <div class="d-flex align-items-center" style="align-self: start;position: absolute;bottom: -2px;left: 4px;gap:2px">
-                    <button class="minimize-btn" onclick="minimizeCallNotif('${uniqueid}')">
-                          <svg style="width: 12px;height: 12px" viewBox="0 0 16 16" fill="currentColor"><path d="M3.75 7.25a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5h-8.5Z" /></svg>
-                    </button>
-                    <button class="dismissNotif-btn" onclick="dismissCallNotif(this,'${uniqueid}')">
-                          <svg style="width: 12px;height: 12px" viewBox="0 0 16 16" fill="currentColor"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>
-                    </button>
-                </div>
-            </div>
-        `,
-        duration: -1,
-        gravity: "top",
-        position: "center",
-        escapeMarkup: false,
-        stopOnFocus: false,
-        close: true,
-        style: {
-            background: "#2f3e46",
-            color: "#fff",
-            borderRadius: "10px",
-            padding: "14px 16px",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
-            width: "310px",
-            maxWidth: "90%",
-            cursor: "auto",
-        },
-    });
-    callToast.showToast();
-    activeNotifCall[uniqueid] = callToast;
-    
-    return true;
-}
-
-function closeCallNotif(uniqueid) {
-    const notif = activeNotifCall[uniqueid];
-    if (!notif) return false;
-    
-    if (notif._interval) {
-        clearInterval(notif._interval);
-        delete notif._interval;
-    }
-    
-    notif.toastElement.style.background = "darkred";
-    notif.toastElement.querySelector("#incomingCallIcon").style.display = "none";
-    notif.toastElement.querySelector("#answeredCallIcon").style.display = "none";
-    notif.toastElement.querySelector("#endedCallIcon").style.display = "";
-    
-    setTimeout(() => {
-        notif.hideToast();
-        delete activeNotifCall[uniqueid];
-    }, 2000);
-    
-    return true;
-}
-
-function answerCallNotif(uniqueid) {
-    const notif = activeNotifCall[uniqueid];
-    if (!notif) return false;
-    
-    if (!notif._interval) {
-        notif.toastElement.style.background = "#1b4332";
-        notif.toastElement.querySelector("#incomingCallIcon").style.display = "none";
-        notif.toastElement.querySelector("#endedCallIcon").style.display = "none";
-        notif.toastElement.querySelector("#answeredCallIcon").style.display = "";
-        
-        let seconds = 0;
-        const timerSpan = notif.toastElement.querySelector(`#callTimer`);
-        if (!timerSpan) return;
-        
-        timerSpan.textContent = "00:00";
-        notif._interval = setInterval(() => {
-            seconds++;
-            const min = Math.floor(seconds / 60);
-            const sec = seconds % 60;
-            timerSpan.textContent = `${min.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
-        }, 1000);
-    }
-    
-    return true;
-}
-
-function minimizeCallNotif(uniqueid) {
-    const notif = activeNotifCall[uniqueid];
-    if (!notif) return;
-    
-    notif.toastElement.classList.toggle("minimized-bar");
-}
-function dismissCallNotif(btn, uniqueid) {
-    /*  const notif = activeNotifCall[uniqueid];
-      if (!notif) return;*/
-    
-    // notif.hideToast();
-    // delete activeNotifCall[uniqueid];
-    
-    if (btn) {
-        const closeBtn = btn.closest(".toastify").querySelector(".toast-close");
-        closeBtn.click();
-    }
-}
-
-
-const toastifyError = (text, duration = 5000) => {
-    Toastify({
-        text,
-        duration,
-        close: false,
-        gravity: "top",
-        position: "center",
-        stopOnFocus: false,
-        style: {
-            background: "linear-gradient(135deg, rgba(121,9,9,1) 21%, rgba(78,0,0,0.9) 100%)",
-            borderRadius: "8px",
-        },
-    }).showToast();
-};
-
-const toastifySuccess = (text, duration = 3000) => {
-    Toastify({
-        text,
-        duration,
-        close: false,
-        gravity: "top",
-        position: "center",
-        escapeMarkup: false,
-        stopOnFocus: false,
-        style: {
-            background: "linear-gradient(135deg, rgba(2,81,75,1) 21%, rgba(0,59,54,1) 100%)",
-            borderRadius: "8px",
-        },
-    }).showToast();
-};
-
-const toastifyInfo = (text, duration = 3000) => {
-    Toastify({
-        text,
-        duration,
-        close: false,
-        gravity: "top",
-        position: "center",
-        stopOnFocus: false,
-        style: {
-            background: "linear-gradient(135deg, rgba(110,73,0,1) 18%,  rgba(185,124,0,1) 100%",
-            borderRadius: "8px",
-        },
-    }).showToast();
-};
-
-const toastifyInfo2 = (text, options = {}) => {
-    const defaultStyle = {
-        background: "linear-gradient(135deg, rgba(110,73,0,1) 18%, rgba(185,124,0,1) 100%)",
-        borderRadius: "8px",
+function createToast(type, text, options = {}) {
+    const styles = {
+        success: "linear-gradient(135deg, rgba(2,81,75,1) 21%, rgba(0,59,54,1) 100%)",
+        error: "linear-gradient(135deg, rgba(121,9,9,1) 21%, rgba(78,0,0,0.9) 100%)",
+        info: "linear-gradient(135deg, rgba(110,73,0,1) 18%, rgba(185,124,0,1) 100%)",
     };
     
     const toast = Toastify({
-        text: text,
+        text,
         node: options.node,
-        duration: options.duration ?? 5000,
+        duration: options.duration ?? (type === "error" ? 5000 : 3000),
         close: options.close ?? false,
         gravity: options.gravity ?? "top",
         position: options.position ?? "center",
-        stopOnFocus: options.stopOnFocus ?? true,
-        style: { ...defaultStyle, ...(options.style || {}) },
-    });
-    
-    toast.showToast();
-    return toast;
-};
-
-const toastifyError2 = (text, options = {}) => {
-    const defaultStyle = {
-        background: "linear-gradient(135deg, rgba(121,9,9,1) 21%, rgba(78,0,0,0.9) 100%)",
-        borderRadius: "8px",
-    };
-    
-    const toast = Toastify({
-        text: text,
-        node: options.node,
-        duration: options.duration ?? 5000,
-        close: options.close ?? false,
-        gravity: options.gravity ?? "top",
-        position: options.position ?? "center",
-        stopOnFocus: options.stopOnFocus ?? true,
-        style: { ...defaultStyle, ...(options.style || {}) },
-    });
-    
-    toast.showToast();
-    return toast;
-};
-
-
-let smsToast = null;
-function showSmsSendingToast() {
-    
-    if (smsToast) {
-        smsToast.hideToast();
-    }
-    const notifDiv = document.createElement("div");
-    notifDiv.className = "flex-center gap-3";
-    notifDiv.innerHTML = `
-        در حال ارسال پیامک
-        <span class="spinner-border spinner-border-sm"></span>
-    `;
-    
-    smsToast = Toastify({
-        //text: "در حال ارسال پیامک...",
-        node: notifDiv,
-        duration: -1,
-        close: false,
-        gravity: "top",
-        position: "center",
-        stopOnFocus: false,
+        stopOnFocus: options.stopOnFocus ?? false,
+        escapeMarkup: options.escapeMarkup ?? true,
         style: {
-            background: "linear-gradient(135deg, rgba(110,73,0,1) 18%, rgba(185,124,0,1) 100%)",
+            background: styles[type] ?? styles.info,
             borderRadius: "8px",
-            cursor: "auto",
+            ...(options.style || {}),
         },
-    }).showToast();
-    
-}
-
-function updateSmsToast(text, type) {
-    if (!smsToast) return;
-    const smsToastElement = smsToast.toastElement;
-    
-    smsToastElement.textContent = text;
-    
-    switch (type) {
-        case "success":
-            smsToastElement.style.background = "linear-gradient(135deg, rgba(2,81,75,1) 21%, rgba(0,59,54,1) 100%)";
-            setTimeout(() => {
-                smsToast?.hideToast();
-                smsToast = null;
-            }, 3000);
-            
-            break;
-        
-        case "error":
-            smsToastElement.style.background = "linear-gradient(135deg, rgba(121,9,9,1) 21%, rgba(78,0,0,0.9) 100%)";
-            setTimeout(() => {
-                smsToast?.hideToast();
-                smsToast = null;
-            }, 5000);
-            
-            break;
-    }
-}
-
-
-const checkAccess = async (elId) => {
-    let rols = JSON.parse(sessionStorage.getItem("Rols"));
-    let hasAccess = false;
-    
-    rols.forEach((rol) => {
-        if (document.getElementById(elId) && document.getElementById(elId).classList.contains(rol?.name)) {
-            hasAccess = true;
-            return hasAccess;
-        }
-        
     });
-    return hasAccess;
-};
+    
+    toast.showToast();
+    
+    return toast;
+}
 
+function toastifySuccess(text, duration = 3000) {
+    return createToast("success", text, {
+        duration,
+        escapeMarkup: false,
+    });
+}
 
-// بهینه شده
+function toastifyError(text, duration = 5000) {
+    return createToast("error", text, { duration });
+}
 
-/*const Mask = () => {
-    for (const el of document.querySelectorAll("[placeholder][data-slots]")) {
-
-        el.addEventListener('focusout', () => {
-            el.value = el.value.replace(/_/g, '').replace(/y/g, '').replace(/m/g, '').replace(/d/g, '');
-            el.value = el.value.replace(/\/?mm\/?dd/g, '').replace(/\/?mm/g, '').replace(/\/?dd/g, '');
-        });
-
-        const pattern = el.getAttribute("placeholder"),
-            slots = new Set(el.dataset.slots || "_"),
-            prev = (j => Array.from(pattern, (c, i) => slots.has(c) ? j = i + 1 : j))(0),
-            first = [...pattern].findIndex(c => slots.has(c)),
-            accept = new RegExp(el.dataset.accept || "\\d", "g"),
-            clean = input => {
-                input = input.match(accept) || [];
-                return Array.from(pattern, c =>
-                    input[0] === c || slots.has(c) ? input.shift() || c : c
-                );
-            },
-            format = () => {
-                const [i, j] = [el.selectionStart, el.selectionEnd].map(i => {
-                    i = clean(el.value.slice(0, i)).findIndex(c => slots.has(c));
-                    return i < 0 ? prev[prev.length - 1] : back ? prev[i - 1] || first : i;
-                });
-                el.value = clean(el.value).join``;
-                el.setSelectionRange(i, j);
-                back = false;
-            };
-
-        let back = false;
-
-        el.addEventListener("keydown", (e) => {
-            back = e.key === "Backspace";
-        });
-
-        el.addEventListener("keyup", () => {
-            back = false;
-        });
-
-        el.addEventListener("input", format);
-        // el.addEventListener("focus", format);
-
-        el.addEventListener("blur", () => {
-            if (el.value.replace(/_/g, '') === '') {
-                el.value = "";
-            }
-        });
-    }
-};*/
-
-
-const Mask = () => {
-    for (const el of document.querySelectorAll("[placeholder][data-slots]")) {
-        el.addEventListener("focusout", () => {
-            
-            if (el.value.includes("_")) {
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-                el.value = el.value.replace("_", "");
-            }
-            
-            
-            if (el.value.includes("y")) {
-                el.value = el.value.replace("y", "");
-                el.value = el.value.replace("y", "");
-                el.value = el.value.replace("y", "");
-                el.value = el.value.replace("y", "");
-            }
-            
-            if (el.value.includes("mm") && el.value.includes("dd")) {
-                el.value = el.value.replace("/mm/dd", "");
-            }
-            if (el.value.includes("mm") || el.value.includes("m")) {
-                el.value = el.value.replace("/mm", "");
-                el.value = el.value.replace("m", "");
-            }
-            if (el.value.includes("dd") || el.value.includes("d")) {
-                el.value = el.value.replace("/dd", "");
-                el.value = el.value.replace("d", "");
-            }
-            
-            
-        });
-        
-        const pattern = el.getAttribute("placeholder"),
-            slots = new Set(el.dataset.slots || "_"),
-            prev = (j => Array.from(pattern, (c, i) => slots.has(c) ? j = i + 1 : j))(0),
-            first = [...pattern].findIndex(c => slots.has(c)),
-            accept = new RegExp(el.dataset.accept || "\\d", "g"),
-            clean = input => {
-                
-                input = input.match(accept) || [];
-                
-                
-                return Array.from(pattern, c =>
-                    input[0] === c || slots.has(c) ? input.shift() || c : c,
-                );
-            },
-            format = () => {
-                
-                const [i, j] = [el.selectionStart, el.selectionEnd].map(i => {
-                    
-                    i = clean(el.value.slice(0, i)).findIndex(c => slots.has(c));
-                    return i < 0 ? prev[prev.length - 1] : back ? prev[i - 1] || first : i;
-                });
-                el.value = clean(el.value).join``;
-                el.setSelectionRange(i, j);
-                back = false;
-            };
-        let back = false;
-        
-        el.addEventListener("keydown", (e) => {
-            back = e.key === "Backspace";
-        });
-        el.addEventListener("input", format);
-        //el.addEventListener("focus", format);
-        el.addEventListener("blur", () => {
-            el.value === pattern && (el.value = "");
-        });
-    }
-};
+function toastifyInfo(text, duration = 3000) {
+    return createToast("info", text, { duration });
+}
 
 
 const MaskDate = () => {
@@ -2017,17 +1237,6 @@ const MaskDate = () => {
 };
 
 
-const ShowPreviewPfactor = (id) => {
-    window.open("/factor/PreviewPfactorPrint/" + id, "_blank", "noopener,noreferrer");
-};
-const ShowPreviewFactor = (id) => {
-    window.open("/factor/PreviewFactorPrint/" + id, "_blank", "noopener,noreferrer");
-};
-const ShowPreviewFactorSepidar = (id) => {
-    window.open("/factor/PreviewFactorSepidarPrint/" + id, "_blank", "noopener,noreferrer");
-};
-
-
 const goTo = (url, blank = false) => {
     if (blank) {
         window.open(url);
@@ -2036,23 +1245,6 @@ const goTo = (url, blank = false) => {
     }
 };
 
-var GotoTimeLine = (id) => {
-    //window.location.href = '/TimeLine/Index?Id=' + id;
-    window.open("/TimeLine/Index?Id=" + id);
-};
-function generateCodePColor(PCode) {
-    let res = "";
-    PCode.forEach(function (item) {
-        if (item == "I" || item == "V" || item == "X") {
-            res = res + "<spam style='color:darkred'>" + item + "</spam>";
-        } else {
-            res = res + "<spam>" + item + "</spam>";
-        }
-    });
-    return res;
-}
-//جداکردن اعداد در
-//////////////////////////////////////////////////
 
 document.addEventListener("DOMContentLoaded", function () {
     document.addEventListener("input", function (e) {
@@ -2081,8 +1273,9 @@ function applyMinMaxValue(el) {
     
     if (min === null && max === null) return;
     
-    let value = ConvertToNumEnglishCharNoCallBack(el.value)
-        .replace(/,/g, "")
+    let value = toEnglishDigits(el.value)
+        .replace(/[٬,]/g, "")
+        .replace(/٫/g, ".")
         .trim();
     
     if (value === "" || !/^-?\d*\.?\d*$/.test(value)) return;
@@ -2116,23 +1309,6 @@ function applyMinMaxValue(el) {
     }
 }
 
-const getGeneralRef = () => {
-    return new Promise(resolve => {
-        $.get(baseUrl + "Person/_GeneralReferencePartial?FormName=Person", (res) => {
-            $("#GeneralRefId").children().remove();
-            $("#GeneralRefId").append(res);
-            if ($("#PId").val().length > 0)
-                getallPersonAction();
-            resolve();
-        });
-    });
-};
-
-
-// functions
-function funcReverseString(str) {
-    return str.split("").reverse().join("");
-}
 
 // event handlers
 function handlerSeparateDigitNumbers(e) {
@@ -2182,54 +1358,15 @@ function handlerSeparateCurrencyNumbers(el) {
     el.value = numericValue
         ? Number(numericValue).toLocaleString()
         : "";
-    
-    /*const thisElement = e.target;
-    
-    let thisElementValue = ConvertToNumEnglishCharNoCallBack(thisElement.value);
-    
-    thisElementValue = thisElementValue.replace(/\D/g, "");
-    thisElementValue = thisElementValue.replace(/,/g, "");
-    if (isNaN(Number(thisElementValue))) {
-        alert("لطفا از وارد کردن حروف خودداری فرمایید !");
-        return false;
-    }
-    let seperatedNumber = thisElementValue.toString();
-    seperatedNumber = funcReverseString(seperatedNumber);
-    seperatedNumber = seperatedNumber.split("");
-    let tmpSeperatedNumber = "";
-    j = 0;
-    for (let i = 0; i < seperatedNumber.length; i++) {
-        tmpSeperatedNumber += seperatedNumber[i];
-        j++;
-        if (j === 3) {
-            tmpSeperatedNumber += ",";
-            j = 0;
-        }
-    }
-    seperatedNumber = funcReverseString(tmpSeperatedNumber);
-    if (seperatedNumber[0] === ",") seperatedNumber = seperatedNumber.replace(",", "");
-    thisElement.value = seperatedNumber;*/
 }
 
 function getNumericValue(value) {
     if (!value) return "";
     
-    return ConvertToNumEnglishCharNoCallBack(value).replace(/\D/g, "");
+    return toEnglishDigits(value)
+        .replace(/\D/g, "");
 }
 
-
-function getPriceTextElement(input) {
-    
-    const selector = input.dataset.priceText;
-    
-    if (!selector)
-        return null;
-    
-    if (selector === "next")
-        return input.nextElementSibling;
-    
-    return document.querySelector(selector);
-}
 
 function updateCurrencyHint(input) {
     const targetSelector = input.dataset.currencyHint;
@@ -2272,29 +1409,6 @@ function formatAmountHint(rialAmount) {
     return parts.join(" و ") + " تومان";
 }
 
-
-const SeperatedNumberGenerate = (val) => {
-    let seperatedNumber = SeparatedNumberRemove(val.toString());
-    seperatedNumber = funcReverseString(seperatedNumber);
-    seperatedNumber = seperatedNumber.split("");
-    let tmpSeperatedNumber = "";
-    j = 0;
-    for (let i = 0; i < seperatedNumber.length; i++) {
-        tmpSeperatedNumber += seperatedNumber[i];
-        j++;
-        if (j == 3) {
-            tmpSeperatedNumber += ",";
-            j = 0;
-        }
-    }
-    seperatedNumber = funcReverseString(tmpSeperatedNumber);
-    if (seperatedNumber[0] === ",") seperatedNumber = seperatedNumber.replace(",", "");
-    
-    return seperatedNumber;
-    
-};
-
-
 const SeparatedNumberRemove = (val) => {
     if (typeof val !== "string") return val;
     return val.replace(/[,\u066C\u060C]/g, "").trim();
@@ -2302,248 +1416,9 @@ const SeparatedNumberRemove = (val) => {
 
 //////////////////////////////////////////////////
 
-
-function PublicConvertToTable(Selector, _data, SelectFunction, RemoveFunction, UpdateFunction) {
-    
-    var tb = "<tr class=mp>";
-    $.each(_data, function (Key, Val) {
-        $.each(Val, function (k, v) {
-            if (k !== "Id") {
-                tb = tb + "<td class=mp>" + v + "</td>";
-            }
-        });
-        tb = tb + "<td class='mp '>";
-        if ((SelectFunction !== null))
-            tb = tb + "<button title='انتخاب'  class='mp btn btn-success' onclick='" + SelectFunction + "(\"" + Val.Id + "\")' ><i class='mp fas fa-check'></i></button>";
-        if ((RemoveFunction !== null))
-            tb = tb + "<button title='حذف' class='mp btn btn-danger' onclick='" + RemoveFunction + "(\"" + Val.Id + "\")' ><i class='mp fas fa-trash-alt'></i></button>";
-        if ((UpdateFunction !== null))
-            tb = tb + "<button title='ویرایش' class='mp btn btn-warning' onclick='" + UpdateFunction + "(\"" + Val.Id + "\")' ><i class='mp fas fa-pencil-alt'></i></button>";
-        tb = tb + "</td></tr>";
-    });
-    var _Selector = "#" + Selector;
-    $(_Selector + " tr").remove();
-    $(_Selector).append(tb);
-}
-function PublicConvertToTableNoID(Selector, _data, SelectFunction, RemoveFunction, UpdateFunction, FildAbort) {
-    
-    var tb = "<tr class=mp>";
-    $.each(_data, function (Key, Val) {
-        
-        if (!Val.isDeleted) {
-            $.each(Val, function (k, v) {
-                var flag = true;
-                var items = FildAbort;
-                
-                items.map((item) => {
-                    if (k == item)
-                        flag = false;
-                });
-                if (flag) {
-                    if (k == "phones") {
-                        var phonestr = "";
-                        if (v.length > 0) {
-                            $.each(v, (code, data) => {
-                                phonestr = phonestr + "&nbsp; (" + data.proviceCode + "-" + data.number + ") ";
-                                
-                            });
-                        }
-                        tb = tb + "<td class=mp>" + phonestr + "</td>";
-                    } else {
-                        tb = tb + "<td class=mp>" + v + "</td>";
-                    }
-                }
-            });
-            tb = tb + "<td class='mp '>";
-            if ((SelectFunction !== null))
-                tb = tb + "<button title='انتخاب' style='height: 100%; width: 20%;'  class='buttonGreen' onclick='" + SelectFunction + "(\"" + Key + "\")' ><i class='mp fas fa-check'></i></button>";
-            if ((UpdateFunction !== null))
-                tb = tb + "<button title='ویرایش' style='height: 100%; width: 20%;' class='buttonGreen' onclick='" + UpdateFunction + "(\"" + Key + "\")' ><i class='mp fa fa-pencil'></i></button>";
-            if ((RemoveFunction !== null))
-                tb = tb + "<button title='حذف' style='height: 100%; width: 20%;' class='buttonGreen' onclick='" + RemoveFunction + "(\"" + Key + "\")' ><i class='mp fa fa-trash'></i></button>";
-            
-            tb = tb + "</td></tr>";
-        }
-    });
-    var _Selector = "#" + Selector;
-    $(_Selector + " tr").remove();
-    $(_Selector).append(tb);
-}
-
-
-/////////
-
-var AddItem = (_grCode, _grTxt, _parentCode, _Target, _type) => {
-    Swal.fire({
-        title: "اضافه کردن آیتم جدید",
-        input: "text",
-        inputPlaceholder: _grTxt,
-        confirmButtonText: "ثبت",
-    }).then((result) => {
-        if (result.isConfirmed && result.value) {
-            var model = {
-                grCode: _grCode,
-                grTxt: _grTxt,
-                itemText: result.value,
-                parentCode: _parentCode,
-            };
-            
-            $.post(baseUrl + "TreeRegister/AddItem", model, function () {
-                toastifySuccess("عملیات با موفقیت انجام شد.");
-                getOpItem(_grCode, _Target, _type);
-            });
-        }
-    });
-    /*
-        swal("اضافه کردن آیتم جدید", {
-            content: "input",
-            title: _grTxt,
-            button: "ثبت"
-        })
-            .then((value) => {
-    
-                var model = {
-                    grCode: _grCode,
-                    grTxt: _grTxt,
-                    itemText: value,
-                    parentCode: _parentCode
-                }
-    
-                if (value != null) {
-                    $.post(baseUrl + "TreeRegister/AddItem", model, function () {
-    
-                        toastifySuccess('عملیات با موفقیت انجام شد. ');
-                        getOpItem(_grCode, _Target, _type);
-                    })
-                }
-            });*/
-};
-
-
-var getOpItem = (grCode, _target, _type) => {
-    
-    
-    $.get(baseUrl + "TreeRegister/getItems?groupCode=" + grCode, function (result) {
-        $("#" + _target).children().remove();
-        
-        switch (_type) {
-            case 1:
-                $("#" + _target).select2({
-                    data: result,
-                    dir: "rtl",
-                    placeholder: "انتخاب",
-                    selectionCssClass: "form-control",
-                });
-                
-                
-                $("#" + _target).val(null).trigger("change");
-                
-                break;
-            case 2:
-                
-                
-                var arr = [];
-                if (grCode == 6) {
-                    AllPhenotip = result;
-                    if (CheckedPhenotips != null) {
-                        CheckedPhenotips.forEach
-                                        ((item) => {
-                                                arr.push(item.phenoCode);
-                                            },
-                                        );
-                    }
-                    
-                }
-                
-                var ul = [];
-                result.forEach((item, key) => {
-                    const inpEl = $(document.createElement("input"));
-                    if (arr == null) {
-                        inpEl.attr
-                             ({
-                                 id: `checkBox${item.id}`,
-                                 name: item.text,
-                                 value: item.id,
-                                 type: "checkbox",
-                                 class: " form-check-input",
-                                 style: "cursor:pointer",
-                                 onchange: "AddOrRemovePhenotip(\"checkBox" + item.id + "\")",
-                                 checked: false,
-                             });
-                    } else {
-                        const found = arr.find(element => element == item.id);
-                        const flag = found ? true : false;
-                        
-                        if (flag) {
-                            inpEl.attr
-                                 ({
-                                     id: `checkBox${item.id}`,
-                                     name: item.text,
-                                     value: item.id,
-                                     type: "checkbox",
-                                     class: " form-check-input",
-                                     style: "cursor:pointer",
-                                     onchange: "AddOrRemovePhenotip(\"checkBox" + item.id + "\")",
-                                     checked: true,
-                                 });
-                        } else {
-                            inpEl.attr
-                                 ({
-                                     id: `checkBox${item.id}`,
-                                     name: item.text,
-                                     value: item.id,
-                                     type: "checkbox",
-                                     class: " form-check-input",
-                                     style: "cursor:pointer",
-                                     onchange: "AddOrRemovePhenotip(\"checkBox" + item.id + "\")",
-                                     checked: false,
-                                 });
-                        }
-                    }
-                    
-                    
-                    ul.push(inpEl);
-                    const labelEl = "<label class=' phenotic' for='checkBox" + item.id + "'  >" + item.text + "</label>";
-                    ul.push(labelEl);
-                });
-                
-                $("#" + _target).children().remove();
-                $("#" + _target).append(ul);
-                break;
-            default:
-                
-                break;
-        }
-    });
-};
-
-
-function insertParam(key, value) {
-    key = encodeURIComponent(key);
-    value = encodeURIComponent(value);
-    
-    // kvp looks like ['key1=value1', 'key2=value2', ...]
-    var kvp = document.location.search.substr(1).split("&");
-    let i = 0;
-    
-    for (; i < kvp.length; i++) {
-        if (kvp[i].startsWith(key + "=")) {
-            let pair = kvp[i].split("=");
-            pair[1] = value;
-            kvp[i] = pair.join("=");
-            break;
-        }
-    }
-    
-    if (i >= kvp.length) {
-        kvp[kvp.length] = [key, value].join("=");
-    }
-    
-    // can return this or...
-    let params = kvp.join("&");
-    
-    // reload page with new params
-    document.location.search = params;
+const fLshowLoadingElm = document.getElementById("FLshowLoading");
+function FLshowLoading(show = true) {
+    fLshowLoadingElm.style.display = show ? "" : "none";
 }
 
 
@@ -2572,52 +1447,62 @@ const tomorrowDate = () => {
 };
 
 class GetDate {
-    getTodayDateTime = () => this.#getDate(5);
-    
-    getTodayDate = () => this.#getDate(4);
-    
-    getTomorrowDate = () => this.#getDate(6);
-    
-    getCurrentWeek = () => this.#getDate(1);
-    
-    getCurrentMonth = () => this.#getDate(2);
-    
-    getCurrentYear = () => this.#getDate(3);
-    
-    #getDate(type) {
-        return new Promise(resolve => {
-            $.get(baseUrl + `home/GetDate?type=${type}`, (res) => {
-                if ([1, 2, 3].includes(type)) {
-                    res = res.split("_");
-                    if (type === 2) {
-                        res.push(this.#getMonthName(res[0].slice(5, 7)), res[0].slice(0, 4));
-                    } else if (type === 3) {
-                        res.push(res[0].slice(0, 4));
-                    }
-                }
-                resolve(res);
-            });
-        });
-    }
-    
-    #getMonthName = (monthNum) => {
-        const monthName = {
-            "01": "فروردین",
-            "02": "اردیبهشت",
-            "03": "خرداد",
-            "04": "تیر",
-            "05": "مرداد",
-            "06": "شهریور",
-            "07": "مهر",
-            "08": "آبان",
-            "09": "آذر",
-            "10": "دی",
-            "11": "بهمن",
-            "12": "اسفند",
-        };
-        return monthName[monthNum];
+    static #monthNames = {
+        "01": "فروردین",
+        "02": "اردیبهشت",
+        "03": "خرداد",
+        "04": "تیر",
+        "05": "مرداد",
+        "06": "شهریور",
+        "07": "مهر",
+        "08": "آبان",
+        "09": "آذر",
+        "10": "دی",
+        "11": "بهمن",
+        "12": "اسفند",
     };
     
+    getCurrentWeek = async () => {
+        const data = await this.#fetchDate(1);
+        return data.split("_");
+    };
+    
+    getCurrentMonth = async () => {
+        const data = await this.#fetchDate(2);
+        const result = data.split("_");
+        
+        result.push(
+            GetDate.#monthNames[result[0].slice(5, 7)],
+            result[0].slice(0, 4),
+        );
+        
+        return result;
+    };
+    
+    getCurrentYear = async () => {
+        const data = await this.#fetchDate(3);
+        const result = data.split("_");
+        
+        result.push(result[0].slice(0, 4));
+        
+        return result;
+    };
+    
+    getTodayDate = () => this.#fetchDate(4);
+    
+    getTodayDateTime = () => this.#fetchDate(5);
+    
+    getTomorrowDate = () => this.#fetchDate(6);
+    
+    #fetchDate = async (type) => {
+        const response = await fetch(`/Home/GetDate?type=${type}`);
+        
+        if (!response.ok) {
+            throw new Error(`GetDate failed: ${response.status}`);
+        }
+        
+        return await response.text();
+    };
 }
 
 
@@ -3077,137 +1962,32 @@ class MyService {
 
 
 ////////////////////
-const combineJson = (js1, js2) => {
-    for (var i in js2) {
-        js1[i] = js2[i];
-    }
+
+
+const toEnglishDigits = (val) => {
+    if (val === null || val === undefined) return val;
     
-    return js1;
-    
+    return String(val)
+        .replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d))
+        .replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
 };
 
-function toNetDateTimeString(raw) {
-    const pad = (n) => (n < 10 ? "0" + n : n);
-    const date = new Date(raw);
-    return (
-        date.getFullYear() +
-        "-" +
-        pad(date.getMonth() + 1) +
-        "-" +
-        pad(date.getDate()) +
-        "T" +
-        pad(date.getHours()) +
-        ":" +
-        pad(date.getMinutes()) +
-        ":" +
-        pad(date.getSeconds())
-    );
+
+const toPersianDigits = (val) => {
+    if (val === null || val === undefined) return val;
+    
+    return String(val)
+        .replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d])
+        .replace(/[٠-٩]/g, d => "۰۱۲۳۴۵۶۷۸۹"["٠١٢٣٤٥٦٧٨٩".indexOf(d)]);
+};
+
+function normalizePersianText(text) {
+    if (!text) return "";
+    
+    return text
+        .replace(/[يى]/g, "ی")
+        .replace(/ك/g, "ک");
 }
-
-
-/*$.MypostAjax = function (url, data, callbackSucces, callBackError) {
-    return jQuery.ajax({
-        type: "POST",
-        url: url,
-        contentType: "application/json",
-        data: data,
-        success: callbackSucces,
-        error: callBackError,
-    });
-};*/
-
-
-function AlertFormStatus(status, Message, liss) {
-    
-    
-    if (status == 0) {
-        $("#" + liss).text(Message);
-        $("#" + liss).removeClass("bg-success text-white");
-        $("#" + liss).addClass("bg-danger text-white");
-        
-        return false;
-        
-    } else {
-        
-        $("#" + liss).text("");
-        $("#" + liss).removeClass("bg-danger text-white");
-        $("#" + liss).addClass("bg-success text-white");
-        
-        return true;
-    }
-    
-}
-
-
-function ConvertToNumEnglishCharNoCallBack(value) {
-    if (value == null) return "";
-    
-    return value
-        .replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d))
-        .replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d))
-        .replace(/٫/g, ".")
-        .replace(/٬/g, ",");
-}
-
-function ConvertToNumEnglishChar(item, callback) {
-    if (item != null) {
-        var j = item.length;
-        var s = item;
-        for (i = 0; i < j; i++) {
-            
-            s = s.replace("۰", "0").replace("۱", "1")
-                 .replace("۲", "2").replace("۳", "3")
-                 .replace("۴", "4").replace("۵", "5")
-                 .replace("۶", "6").replace("۷", "7")
-                 .replace("۸", "8").replace("۹", "9");
-        }
-        
-        
-        var detail = callback(s);
-        
-        return detail;
-    }
-}
-
-
-function ConvertToNumPersianChar(item) {
-    
-    
-    if (item === null) {
-        return item;
-    } else {
-        
-        var j = item.length;
-        
-        var s = item;
-        for (i = 0; i < j; i++) {
-            
-            s = s.replace("0", "۰").replace("1", "۱")
-                 .replace("2", "۲").replace("3", "۳")
-                 .replace("4", "۴").replace("5", "۵")
-                 .replace("6", "۶").replace("7", "۷")
-                 .replace("8", "۸").replace("9", "۹");
-        }
-        
-        return s;
-    }
-    
-    
-}
-
-
-document.querySelectorAll(".chip").forEach(chip => {
-    chip.addEventListener("click", () => {
-        //const group = chip.dataset.group;
-        const value = chip.dataset.value;
-        
-        /*document.querySelectorAll(`.chip[data-group='${group}']`)
-                .forEach(c => c.classList.remove("active"));*/
-        
-        chip.classList.toggle("active");
-    });
-});
-
 
 const toggleElementsDisabled = (elms, isDisabled = true) => {
     if (!elms) return;
@@ -3227,89 +2007,6 @@ const toggleElementsRequired = (elms, isRequired) => {
     items.forEach(el => el.toggleAttribute("required", isRequired));
 };
 
-(function () {
-    const baseZ = 1060;
-    const step = 10;
-    const stack = [];
-    let preventBackHandler = null;
-    
-    document.addEventListener("show.bs.modal", (e) => {
-        const modal = e.target;
-        
-        if (!stack.includes(modal)) {
-            stack.push(modal);
-        }
-        
-        if (window.innerWidth <= 768 && stack.length === 1) {// وقتی اولین مودال باز میشه، بک رو ببند
-            history.pushState(null, "", location.href);
-            
-            preventBackHandler = () => history.go(1);
-            window.addEventListener("popstate", preventBackHandler);
-        }
-        
-        setTimeout(() => updateZIndex(), 200);
-    });
-    
-    document.addEventListener("hidden.bs.modal", (e) => {
-        const modal = e.target;
-        
-        const idx = stack.indexOf(modal);
-        if (idx > -1) stack.splice(idx, 1);
-        
-        if (stack.length === 0 && preventBackHandler) { // وقتی آخرین مودال بسته شد، بک رو آزاد کن
-            window.removeEventListener("popstate", preventBackHandler);
-            preventBackHandler = null;
-        }
-        
-        updateZIndex();
-    });
-    
-    function updateZIndex() {
-        stack.forEach((m, i) => {
-            const z = baseZ + i * step;
-            m.style.zIndex = z;
-            
-            const backdrop = document.querySelectorAll(".modal-backdrop")[i];
-            if (backdrop) backdrop.style.zIndex = z - 5;
-        });
-        
-        document.body.classList.toggle("modal-open", stack.length > 0);
-    }
-})();
-
-
-/*(function () {
-    document.addEventListener("show.bs.modal", (e) => {
-        const modal = e.target;
-        if (!modal.classList.contains("modal")) return;
-        
-        const visible = document.querySelectorAll(".modal.show").length;
-        const zIndex = 1060 + (10 * visible);
-        modal.style.zIndex = zIndex;
-        
-        setTimeout(() => {
-            const backdrops = Array.from(document.querySelectorAll(".modal-backdrop:not(.stacked)"));
-            if (backdrops.length > 0) {
-                const lastBackdrop = backdrops[backdrops.length - 1];
-                lastBackdrop.style.zIndex = (zIndex - 5);
-                lastBackdrop.classList.add("stacked");
-            }
-        });
-    });
-    
-    document.addEventListener("hidden.bs.modal", () => {
-        if (document.querySelectorAll(".modal.show").length > 0) {
-            document.body.classList.add("modal-open");
-        } else {
-            document.body.classList.remove("modal-open");
-        }
-    });
-})();*/
-
-const fLshowLoadingElm = document.getElementById("FLshowLoading");
-function FLshowLoading(show = true) {
-    fLshowLoadingElm.style.display = show ? "" : "none";
-}
 
 function toBoolean(str) {
     const v = str?.trim().toLowerCase();
@@ -3391,7 +2088,6 @@ function createRating(containerId, options = {}) {
 }
 
 
-// document.getElementById("InvoiceListModalId")?.addEventListener("click", function (e) {
 document.addEventListener("click", function (e) {
     const target = e.target.closest("[data-bs-toggle='popover']");
     
@@ -3555,15 +2251,6 @@ function createOption(targetSelect, optionItems, addDefault = true, defaultText 
 }
 
 
-const toEnglishDigits = (val) => {
-    if (val === null || val === undefined) return val;
-    
-    return String(val)
-        .replace(/[۰-۹]/g, d => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))) // Persian
-        .replace(/[٠-٩]/g, d => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));// Arabic
-};
-
-
 function calculateTotalPrice(weight, unitPrice) {
     const w = parseFloat(SeparatedNumberRemove(weight)) || 0;
     const u = parseFloat(SeparatedNumberRemove(unitPrice)) || 0;
@@ -3625,22 +2312,6 @@ function flashItem(el, options = {}) {
     
     setTimeout(() => el.classList.remove(className), duration);
 }
-
-
-/*
-function flashItem(el) {
-    console.log(el);
-    if (!el) return;
-    el.classList.remove('highlight','fadeout'); // reset
-    void el.offsetWidth; // force reflow to restart animation
-    el.classList.add('highlight','fadeout');
-}
-
-document.addEventListener("click", e => {
-    if (e.target.closest(".InfoDataItem_Prefactor")) {
-        flashItem(e.currentTarget)
-    }
-})*/
 
 
 const updateFilterSwitchState = ({ wrapperSelector, filterData, currentFilterValue, searchValue, onChange }) => {
@@ -4148,100 +2819,6 @@ function initChangeRadio(name, callback, delegation = false) {
     });
 }
 
-
-class DynamicSkeleton {
-    /**
-     * @param {Object} options
-     * @param {string|HTMLElement} options.container - سلکتور یا المنت والد که اسکلتون ها در آن قرار میگیرند
-     * @param {string} options.template - ساختار HTML یک آیتم اسکلتون
-     * @param {number} options.count - تعداد اسکلتون‌هایی که باید ساخته شود (پیش‌فرض 3)
-     */
-    constructor(options) {
-        this.container = typeof options.container === "string"
-            ? document.querySelector(options.container)
-            : options.container;
-        this.template = options.template;
-        this.count = options.count || 3;
-    }
-    
-    // متد نمایش لودینگ
-    render() {
-        if (!this.container) return;
-        
-        let skeletonsHTML = "";
-        for (let i = 0; i < this.count; i++) {
-            skeletonsHTML += this.template;
-        }
-        
-        this.container.innerHTML = skeletonsHTML;
-    }
-    
-    // متد پاک کردن لودینگ (البته وقتی دیتای واقعی رو innerHTML کنید خود به خود پاک میشه)
-    clear() {
-        if (this.container) {
-            this.container.innerHTML = "";
-        }
-    }
-}
-
-const Skeleton = (() => {
-    
-    const templates = {};
-    
-    function register(name, builder) {
-        templates[name] = builder;
-    }
-    
-    function show({
-                      container,
-                      count = 1,
-                      template,
-                  }) {
-        
-        const el = typeof container === "string"
-            ? document.querySelector(container)
-            : container;
-        
-        if (!el) return;
-        
-        el.dataset.skeleton = "true";
-        
-        const html = [];
-        
-        const builder =
-            typeof template === "function"
-                ? template
-                : templates[template];
-        
-        for (let i = 0; i < count; i++) {
-            
-            html.push(builder(i));
-            
-        }
-        
-        el.innerHTML = html.join("");
-        
-    }
-    
-    function hide(container) {
-        
-        const el = typeof container === "string"
-            ? document.querySelector(container)
-            : container;
-        
-        if (el)
-            el.innerHTML = "";
-        
-    }
-    
-    return {
-        show,
-        hide,
-        register,
-    };
-    
-})();
-
 /**
  * Creates a reusable inline alert message.
  * @param {Object} options
@@ -4281,13 +2858,6 @@ function createInlineAlert({ type = "info", message, dismissible = false, icon }
     return alert;
 }
 
-function normalizePersianText(text) {
-    if (!text) return "";
-    
-    return text
-        .replace(/[يى]/g, "ی")
-        .replace(/ك/g, "ک");
-}
 
 function escapeHtml(value) {
     return String(value)

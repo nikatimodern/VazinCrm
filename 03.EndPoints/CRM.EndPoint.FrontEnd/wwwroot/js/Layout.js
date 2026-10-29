@@ -13,8 +13,6 @@ var setting = null;
 var varList = {};//موارد فیلترینگ
 var varList2 = {};//موارد فیلترینگ
 
-var filterReportConfig = {};
-
 
 const languageDatatable = {
     emptyTable: "هیچ رکوردی موجود نمی باشد.",
@@ -52,12 +50,6 @@ const layoutDatatable = {
 axios.defaults.headers.patch["Content-Type"] = "application/json";
 
 
-//
-// var mySer = null;
-// var CrmSer = null;
-
-var CounterSmsSend = 0;
-
 var currentDateTypeFilter = 2;
 var currentMonthArr;
 let mySer = new MyService();
@@ -65,8 +57,6 @@ let CrmSer = new CrmService();
 let myDate = new GetDate();
 document.addEventListener("DOMContentLoaded", async () => {
     await GetUserLogin();
-    
-    // initLightbox();
     
     setting = await GetSetting();
     
@@ -175,6 +165,687 @@ function closeNotification() {
 // }
 
 
+const checkAccess = async (elId) => {
+    let rols = JSON.parse(sessionStorage.getItem("Rols"));
+    let hasAccess = false;
+    
+    rols.forEach((rol) => {
+        if (document.getElementById(elId) && document.getElementById(elId).classList.contains(rol?.name)) {
+            hasAccess = true;
+            return hasAccess;
+        }
+        
+    });
+    return hasAccess;
+};
+
+
+
+
+(function () {
+    const baseZ = 1060;
+    const step = 10;
+    const stack = [];
+    let preventBackHandler = null;
+    
+    document.addEventListener("show.bs.modal", (e) => {
+        const modal = e.target;
+        
+        if (!stack.includes(modal)) {
+            stack.push(modal);
+        }
+        
+        if (window.innerWidth <= 768 && stack.length === 1) {// وقتی اولین مودال باز میشه، بک رو ببند
+            history.pushState(null, "", location.href);
+            
+            preventBackHandler = () => history.go(1);
+            window.addEventListener("popstate", preventBackHandler);
+        }
+        
+        setTimeout(() => updateZIndex(), 200);
+    });
+    
+    document.addEventListener("hidden.bs.modal", (e) => {
+        const modal = e.target;
+        
+        const idx = stack.indexOf(modal);
+        if (idx > -1) stack.splice(idx, 1);
+        
+        if (stack.length === 0 && preventBackHandler) { // وقتی آخرین مودال بسته شد، بک رو آزاد کن
+            window.removeEventListener("popstate", preventBackHandler);
+            preventBackHandler = null;
+        }
+        
+        updateZIndex();
+    });
+    
+    function updateZIndex() {
+        stack.forEach((m, i) => {
+            const z = baseZ + i * step;
+            m.style.zIndex = z;
+            
+            const backdrop = document.querySelectorAll(".modal-backdrop")[i];
+            if (backdrop) backdrop.style.zIndex = z - 5;
+        });
+        
+        document.body.classList.toggle("modal-open", stack.length > 0);
+    }
+})();
+
+//////////////notification///////////////
+
+function notification(id, title, description, dateMiladi, entityType, entityId) {
+    
+    const notifDiv = document.createElement("div");
+    notifDiv.className = "d-flex flex-column p-0 justify-content-evenly h-100 w-100";
+    notifDiv.style.position = "relative";
+    notifDiv.id = id;
+    
+    notifDiv.innerHTML = `
+        <div style="display:flex;align-items:flex-start;gap:6px;width:100%;padding:8px 12px;">
+            <div style="width: clamp(32px, 4vw, 44px); color: #6a1b9a; margin-top: -3px">
+                <img src="/Img/toDo.gif" style="width: 100%" alt="">
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: clamp(5px, 0.6vw, 6px);">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <span class="fbold" style="font-size: clamp(12px, 1.2vw, 14px); color: #3a005d">${title}</span>
+                    <div class="d-flex align-items-center gap-1" style="color: #6a1b9a;">
+                        <span id="counterNotif" style="line-height: 1; font-size: 12px;"></span>
+                        <span class="d-flex align-items-center justify-content-center" style="cursor:pointer;" onclick="dismissNotif('${id}', this)">
+                            <svg style="width: 16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+                <div style="font-size: clamp(11px, 1.1vw, 13px); color: #212529; white-space: pre-line;">${description}</div>
+                <div class="d-flex align-items-start justify-content-between gap-2 w-100">
+                    <div class="d-flex align-items-center" style="gap: 4px">
+                        <span style="font-size:clamp(9px, 2vw, 10px);color:#8f8f8f" id="relativeTime"></span>
+                        <span class="d-flex align-items-end gap-1 snooze-notification" style="font-size:clamp(9px, 2vw, 10px);cursor:pointer;color:#000" onclick="snoozeNotif('${id}', this)">
+                            <svg style="width:19px;height:19px" fill="none" viewBox="0 0 24 24"><g fill="currentColor"><path d="m19.6916 7.34849c-.25-.33-.72-.4-1.05-.15s-.4.72-.15 1.05c1.08 1.44 1.65 3.12001 1.65 4.86001 0 4.49-3.65 8.14-8.14 8.14-4.49004 0-8.14004-3.65-8.14004-8.14 0-4.49001 3.65-8.13001 8.14004-8.13001.58 0 1.17.07 1.81.22.03.01.06 0 .1 0 .02 0 .05.02.07.02.03 0 .05-.01.08-.01.04 0 .07-.01.1-.02.05-.01.1-.03.15-.06.03-.02.07-.03.1-.05.01-.01.03-.01.04-.02.03-.02.04-.05.06-.07.04-.04.07-.07.1-.12.03-.04.04-.09.06-.13.01-.03.03-.06.04-.09 0-.02 0-.03 0-.05.01-.05.01-.1 0-.15 0-.05 0-.09-.01-.14-.01-.04-.03-.08-.05-.13s-.04-.1-.07-.14c-.01-.02-.01-.03-.02-.04l-1.98-2.47c-.26-.32-.73-.37-1.05-.12-.32.26-.37.73-.12 1.05l.82 1.02c-.08 0-.16-.01-.24-.01-5.31004 0-9.64004 4.32-9.64004 9.64001 0 5.32 4.32 9.64 9.64004 9.64 5.32 0 9.64-4.32 9.64-9.64.01-2.07-.67-4.06001-1.94-5.76001z" /><path d="m9.5415 16.6708c-.41 0-.75-.34-.75-.75v-3.39l-.19.22c-.28.31-.75.33-1.06.06-.31-.28-.33-.75-.06-1.06l1.5-1.67c.21-.22999.54-.30999.83-.19999s.48.38999.48.69999v5.35c0 .41-.33.74-.75.74z" /><path d="m14 16.6703c-1.52 0-2.75-1.23-2.75-2.75v-1.35c0-1.52 1.23-2.74999 2.75-2.74999s2.75 1.22999 2.75 2.74999v1.35c0 1.52-1.23 2.75-2.75 2.75zm0-5.34c-.69 0-1.25.56-1.25 1.25v1.35c0 .69.56 1.25 1.25 1.25s1.25-.56 1.25-1.25v-1.35c0-.69-.56-1.25-1.25-1.25z" /></g></svg>
+                            <span>تعویق</span>
+                        </span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-center" style="cursor:pointer">
+                        <button onclick="readNotifAction('${id}', this, '${entityType}', '${entityId}')" style="font-size: clamp(10px, 1vw, 12px); padding: clamp(3px, 0.5vw, 4px) clamp(6px, 1vw, 8px);background: #6a1b9a; color: #fff; border: none; border-radius: 4px; cursor: pointer;">
+                          مشاهده
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    notifDiv.querySelector("#relativeTime").innerHTML = getRelativeTime(dateMiladi);
+    /*const updateTimeId = setInterval(() => {
+        notifDiv.querySelector("#relativeTime").innerHTML = getRelativeTime(dateMiladi);
+    }, 60000);*/
+    
+    
+    let i = 7;
+    let paused = false;
+    notifDiv.querySelector("#counterNotif").innerText = i;
+    const counterNotifId = setInterval(() => {
+        if (!paused) {
+            i--;
+            notifDiv.querySelector("#counterNotif").innerText = i;
+            if (i <= 0) {
+                //clearAllInterval();
+                toastInstance.hideToast();
+            }
+        }
+    }, 1000);
+    
+    notifDiv.addEventListener("mouseenter", () => paused = true);
+    notifDiv.addEventListener("mouseleave", () => paused = false);
+    
+    const clearAllInterval = () => {
+        clearInterval(counterNotifId);
+        handleNotifAction(id, false);
+        //clearInterval(updateTimeId);
+    };
+    
+    const isMobile = window.innerWidth <= 768;
+    
+    const toastInstance = Toastify({
+        node: notifDiv,
+        duration: i * 1000,
+        close: true,
+        gravity: isMobile ? "top" : "bottom",
+        position: isMobile ? "center" : "left",
+        style: {
+            background: "#f3e5f5",
+            //border: "1px solid #6a1b9a1a",
+            borderLeft: `5px solid #6a1b9a`,
+            boxShadow: `0 6px 18px rgba(0, 0, 0, 0.2)`,
+            color: "#212529",
+            padding: "0",
+            cursor: "auto",
+            borderRadius: "8px",
+            width: "450px",
+            maxWidth: isMobile ? "90%" : "450px",
+        },
+        callback: () => clearAllInterval(),
+    });
+    
+    toastInstance.showToast();
+}
+
+const activeNotifCall = {};
+function notificationIncomingCall(callerNumber, uniqueid, destNumber) {
+    if (!callerNumber || !uniqueid || !destNumber) return false;
+    if (activeNotifCall[uniqueid]) return false;
+    
+    const callToast = Toastify({
+        text: `
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <img id="incomingCallIcon" class="notifCallImg" src="/Img/Calling.gif" style="width: 42px;" alt=""/>
+                <img id="endedCallIcon" class="notifCallImg" src="/Img/Call_ended.gif" style="width: 42px;display: none" alt=""/>
+                <img id="answeredCallIcon" class="notifCallImg" src="/Img/Calling_answergif.gif" style="width: 42px;display: none" alt=""/>
+                
+                <div class="d-flex align-items-start justify-content-between w-100">
+                    <div class="d-flex flex-grow-1 notifCallText" style="gap:6px;flex-direction: column">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="fbold notifCallTitle" style="font-size: 16px">تماس ورودی</div>
+                        </div>
+                        
+                        <div class="notifCallDetail d-flex align-items-center gap-1" style="font-size: 14px;">
+                             <span>${callerNumber}</span>
+                        </div>
+                    </div>
+                    <div class="notifCallTimer" style="font-size: 13px; color: #f1f1f1;">
+                        <span id="callTimer"></span>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center" style="align-self: start;position: absolute;bottom: -2px;left: 4px;gap:2px">
+                    <button class="minimize-btn" onclick="minimizeCallNotif('${uniqueid}')">
+                          <svg style="width: 12px;height: 12px" viewBox="0 0 16 16" fill="currentColor"><path d="M3.75 7.25a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5h-8.5Z" /></svg>
+                    </button>
+                    <button class="dismissNotif-btn" onclick="dismissCallNotif(this,'${uniqueid}')">
+                          <svg style="width: 12px;height: 12px" viewBox="0 0 16 16" fill="currentColor"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>
+                    </button>
+                </div>
+            </div>
+        `,
+        duration: -1,
+        gravity: "top",
+        position: "center",
+        escapeMarkup: false,
+        stopOnFocus: false,
+        close: true,
+        style: {
+            background: "#2f3e46",
+            color: "#fff",
+            borderRadius: "10px",
+            padding: "14px 16px",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+            width: "310px",
+            maxWidth: "90%",
+            cursor: "auto",
+        },
+    });
+    callToast.showToast();
+    activeNotifCall[uniqueid] = callToast;
+    
+    return true;
+}
+
+function closeCallNotif(uniqueid) {
+    const notif = activeNotifCall[uniqueid];
+    if (!notif) return false;
+    
+    if (notif._interval) {
+        clearInterval(notif._interval);
+        delete notif._interval;
+    }
+    
+    notif.toastElement.style.background = "darkred";
+    notif.toastElement.querySelector("#incomingCallIcon").style.display = "none";
+    notif.toastElement.querySelector("#answeredCallIcon").style.display = "none";
+    notif.toastElement.querySelector("#endedCallIcon").style.display = "";
+    
+    setTimeout(() => {
+        notif.hideToast();
+        delete activeNotifCall[uniqueid];
+    }, 2000);
+    
+    return true;
+}
+
+function answerCallNotif(uniqueid) {
+    const notif = activeNotifCall[uniqueid];
+    if (!notif) return false;
+    
+    if (!notif._interval) {
+        notif.toastElement.style.background = "#1b4332";
+        notif.toastElement.querySelector("#incomingCallIcon").style.display = "none";
+        notif.toastElement.querySelector("#endedCallIcon").style.display = "none";
+        notif.toastElement.querySelector("#answeredCallIcon").style.display = "";
+        
+        let seconds = 0;
+        const timerSpan = notif.toastElement.querySelector(`#callTimer`);
+        if (!timerSpan) return;
+        
+        timerSpan.textContent = "00:00";
+        notif._interval = setInterval(() => {
+            seconds++;
+            const min = Math.floor(seconds / 60);
+            const sec = seconds % 60;
+            timerSpan.textContent = `${min.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
+        }, 1000);
+    }
+    
+    return true;
+}
+
+function minimizeCallNotif(uniqueid) {
+    const notif = activeNotifCall[uniqueid];
+    if (!notif) return;
+    
+    notif.toastElement.classList.toggle("minimized-bar");
+}
+
+function dismissCallNotif(btn, uniqueid) {
+    /*  const notif = activeNotifCall[uniqueid];
+      if (!notif) return;*/
+    
+    // notif.hideToast();
+    // delete activeNotifCall[uniqueid];
+    
+    if (btn) {
+        const closeBtn = btn.closest(".toastify").querySelector(".toast-close");
+        closeBtn.click();
+    }
+}
+
+
+function getRelativeTime(dateTimeStr) {
+    const inputDate = new Date(dateTimeStr);
+    const now = new Date();
+    let diffMs = now - inputDate;
+    
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffMinutes < 1) {
+        return "لحظاتی پیش";
+    }
+    
+    if (diffHours < 24) {
+        const hours = Math.floor(diffMinutes / 60);
+        const minutes = diffMinutes % 60;
+        if (hours > 0 && minutes > 0) {
+            return `${hours} ساعت و ${minutes} دقیقه پیش`;
+        } else if (hours > 0) {
+            return `${hours} ساعت پیش`;
+        } else {
+            return `${minutes} دقیقه پیش`;
+        }
+    } else {
+        const days = diffDays;
+        const remainingHours = diffHours - days * 24;
+        if (remainingHours > 0) {
+            return `${days} روز و ${remainingHours} ساعت پیش`;
+        } else {
+            return `${days} روز پیش`;
+        }
+    }
+}
+
+function notificationChange(text, { link, isBlank = true }, category) {
+    const notifStyles = {
+        actionRequired: { bg: "#e3f2fd", color: "#1565c0", iconSrc: "activate.gif", title: "نیاز به تایید" },
+        info: { bg: "#e8f5e9", color: "#2e7d32", iconSrc: "information.gif", title: "اطلاع رسانی" },
+        task: { bg: "#f3e5f5", color: "#6a1b9a", iconSrc: "toDo.gif", title: "کاربان" },
+        chat: { bg: "#d9eceb", color: "#008077", iconSrc: "notification.gif", title: "پیام رسان" },
+        default: { bg: "#eceff1", color: "#37474f", iconSrc: "notification.gif", title: "اعلان سیستم" },
+    };
+    
+    const { bg, color, iconSrc, title } = notifStyles[category] || notifStyles.default;
+    
+    const notifDiv = document.createElement("div");
+    notifDiv.style.display = "flex";
+    notifDiv.style.alignItems = "flex-start";
+    notifDiv.style.gap = "6px";
+    notifDiv.style.width = "100%";
+    
+    notifDiv.innerHTML = `
+        <div style="width: clamp(32px, 4vw, 44px); color: ${color}; margin-top: -3px">
+          <img src="/Img/${iconSrc}" style="width: 100%" alt="">
+        </div>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: clamp(5px, 0.6vw, 6px);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="fbold" style="font-size: clamp(12px, 1.2vw, 14px); color: ${color}">${title}</span>
+               
+                <div class="d-flex align-items-center gap-1" style="color: ${color};">
+                  <span id="counterNotif" style="line-height: 1; font-size: 12px;"></span>
+                  <span class="d-flex align-items-center justify-content-center" style="cursor:pointer;" onclick="dismissNotif(null, this)">
+                     <svg style="width: 16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                     </svg>
+                  </span>
+                </div>
+            </div>
+            <div  style="font-size: clamp(11px, 1.1vw, 13px); color: #212529;">${text}</div>
+            ${link ? `
+                <div class="text-end">
+                    <button onclick="goToLink('${link}', this, ${isBlank})" style="font-size: clamp(10px, 1vw, 12px); padding: clamp(3px, 0.5vw, 4px) clamp(6px, 1vw, 8px);background: ${color}; color: #fff; border: none; border-radius: 4px; cursor: pointer;">
+                        مشاهده
+                    </button>
+                </div>
+            ` : ""}
+        </div>
+    `;
+    
+    
+    let i = 7;
+    let paused = false;
+    notifDiv.querySelector("#counterNotif").innerText = i;
+    const counterNotifId = setInterval(() => {
+        if (!paused) {
+            i--;
+            notifDiv.querySelector("#counterNotif").innerText = i;
+            if (i <= 0) {
+                clearInterval(counterNotifId);
+                toastInstance.hideToast();
+            }
+        }
+    }, 1000);
+    
+    notifDiv.addEventListener("mouseenter", () => paused = true);
+    notifDiv.addEventListener("mouseleave", () => paused = false);
+    
+    const isMobile = window.innerWidth <= 768;
+    
+    const toastInstance = Toastify({
+        node: notifDiv,
+        duration: i * 1000,
+        close: true,
+        gravity: isMobile ? "top" : "bottom",
+        position: isMobile ? "center" : "left",
+        style: {
+            background: bg,
+            borderLeft: `5px solid ${color}`,
+            boxShadow: `0 6px 18px rgba(0, 0, 0, 0.2)`,
+            color: "#212529",
+            padding: "clamp(8px, 1.2vw, 12px) clamp(10px, 1.5vw, 14px)",
+            cursor: "auto",
+            borderRadius: "8px",
+            width: "450px",
+            minWidth: "280px",
+            maxWidth: isMobile ? "90%" : "450px",
+        },
+        callback: () => clearInterval(counterNotifId),
+    });
+    
+    toastInstance.showToast();
+    
+    /*if (Notification.permission === "granted") {
+        sendBrowserNotification(title, text, `/Img/${iconSrc}`, link);
+    }*/
+    
+}
+
+
+/////////////////////////////
+
+function dateTimePicker(container = document) {
+    container.querySelectorAll(".sdate").forEach((datePicker) => {
+        
+        if (!$(datePicker).data("myPersianDatepicker")) {
+            const positionX = datePicker.getAttribute("data-x") || "28";
+            const positionY = datePicker.getAttribute("data-y") || "0";
+            const instance = $(datePicker).persianDatepicker({
+                onSelect: function (dateText) {
+                    const $input = $(this.model.inputElement);
+                    $input.val(toEnglishDigits($input.val()));
+                    
+                    const onSelectCallback = datePicker.getAttribute("data-onSelect");
+                    const onSelectId = datePicker.getAttribute("data-id");
+                    
+                    if ($input.val().length > 0) {
+                        $input.removeClass("AlertReq");
+                    }
+                    
+                    if (onSelectCallback && typeof window[onSelectCallback] === "function") {
+                        if (onSelectId) {
+                            window[onSelectCallback](this, onSelectId);
+                        } else {
+                            window[onSelectCallback](this);
+                        }
+                    }
+                },
+                initialValueType: "persian",
+                position: [Number(positionX), Number(positionY)],
+                initialValue: false,
+                responsive: true,
+                observer: false,
+                format: "YYYY/MM/DD",
+                autoClose: true,
+                calendar: {
+                    persian: {
+                        locale: "fa",
+                        showHint: false,
+                        leapYearMode: "astronomical",
+                    },
+                    gregorian: {
+                        locale: "en",
+                        showHint: false,
+                    },
+                },
+                toolbox: {
+                    enabled: false,
+                    calendarSwitch: {
+                        enabled: false,
+                    },
+                },
+            });
+            
+            $(datePicker).data("myPersianDatepicker", instance);
+        }
+    });
+    
+    container.querySelectorAll(".sdateTime").forEach((dateTimePickerElem) => {
+        if (!$(dateTimePickerElem).data("myPersianDatepicker")) {
+            const instance = $(dateTimePickerElem).persianDatepicker({
+                onSelect: function (dateText) {
+                    if ($(this.model.inputElement).val().length > 0) {
+                        $(this.model.inputElement).removeClass("AlertReq");
+                    }
+                },
+                initialValueType: "persian",
+                initialValue: false,
+                responsive: true,
+                observer: false,
+                format: "YYYY/MM/DD, HH:mm",
+                autoClose: true,
+                calendar: {
+                    persian: {
+                        locale: "fa",
+                        showHint: false,
+                        leapYearMode: "algorithmic",
+                    },
+                    gregorian: {
+                        locale: "en",
+                        showHint: false,
+                    },
+                },
+                toolbox: {
+                    enabled: false,
+                    calendarSwitch: {
+                        enabled: false,
+                    },
+                },
+                timePicker: {
+                    enabled: true,
+                    minute: {
+                        step: 5,
+                    },
+                    second: {
+                        enabled: false,
+                    },
+                    meridiem: {
+                        enabled: true,
+                    },
+                },
+            });
+            $(dateTimePickerElem).data("myPersianDatepicker", instance);
+        }
+    });
+    
+    container.querySelectorAll(".stime").forEach((timePickerElem) => {
+        if (!$(timePickerElem).data("myPersianDatepicker")) {
+            const positionX = timePickerElem.getAttribute("data-x") || "28";
+            const positionY = timePickerElem.getAttribute("data-y") || "0";
+            const instance = $(timePickerElem).persianDatepicker({
+                onSelect: function () {
+                    const onSelectCallback = timePickerElem.getAttribute("data-onSelect");
+                    if (onSelectCallback) {
+                        window[onSelectCallback](this);
+                    }
+                },
+                onlyTimePicker: true,
+                initialValue: true,
+                initialValueType: "persian",
+                autoClose: true,
+                position: [Number(positionX), Number(positionY)],
+                format: "HH:mm",
+                timePicker: {
+                    enabled: true,
+                    hour: { enabled: true },
+                    minute: { enabled: true },
+                    second: { enabled: false },
+                    meridian: { enabled: false },
+                },
+            });
+            $(timePickerElem).data("myPersianDatepicker", instance);
+        }
+    });
+}
+
+
+/////////////////////////////
+
+// بهینه شده
+
+/*const Mask = () => {
+    for (const el of document.querySelectorAll("[placeholder][data-slots]")) {
+
+        el.addEventListener('focusout', () => {
+            el.value = el.value.replace(/_/g, '').replace(/y/g, '').replace(/m/g, '').replace(/d/g, '');
+            el.value = el.value.replace(/\/?mm\/?dd/g, '').replace(/\/?mm/g, '').replace(/\/?dd/g, '');
+        });
+
+        const pattern = el.getAttribute("placeholder"),
+            slots = new Set(el.dataset.slots || "_"),
+            prev = (j => Array.from(pattern, (c, i) => slots.has(c) ? j = i + 1 : j))(0),
+            first = [...pattern].findIndex(c => slots.has(c)),
+            accept = new RegExp(el.dataset.accept || "\\d", "g"),
+            clean = input => {
+                input = input.match(accept) || [];
+                return Array.from(pattern, c =>
+                    input[0] === c || slots.has(c) ? input.shift() || c : c
+                );
+            },
+            format = () => {
+                const [i, j] = [el.selectionStart, el.selectionEnd].map(i => {
+                    i = clean(el.value.slice(0, i)).findIndex(c => slots.has(c));
+                    return i < 0 ? prev[prev.length - 1] : back ? prev[i - 1] || first : i;
+                });
+                el.value = clean(el.value).join``;
+                el.setSelectionRange(i, j);
+                back = false;
+            };
+
+        let back = false;
+
+        el.addEventListener("keydown", (e) => {
+            back = e.key === "Backspace";
+        });
+
+        el.addEventListener("keyup", () => {
+            back = false;
+        });
+
+        el.addEventListener("input", format);
+        // el.addEventListener("focus", format);
+
+        el.addEventListener("blur", () => {
+            if (el.value.replace(/_/g, '') === '') {
+                el.value = "";
+            }
+        });
+    }
+};*/
+const Mask = () => {
+    for (const el of document.querySelectorAll("[placeholder][data-slots]")) {
+        el.addEventListener("focusout", () => {
+            
+            if (el.value.includes("_")) {
+                el.value = el.value.replaceAll("_", "");
+            }
+            
+            
+            if (el.value.includes("y")) {
+                el.value = el.value.replaceAll("y", "");
+            }
+            
+            if (el.value.includes("mm") && el.value.includes("dd")) {
+                el.value = el.value.replace("/mm/dd", "");
+            }
+            if (el.value.includes("mm") || el.value.includes("m")) {
+                el.value = el.value.replace("/mm", "");
+                el.value = el.value.replace("m", "");
+            }
+            if (el.value.includes("dd") || el.value.includes("d")) {
+                el.value = el.value.replace("/dd", "");
+                el.value = el.value.replace("d", "");
+            }
+            
+            
+        });
+        
+        const pattern = el.getAttribute("placeholder"),
+            slots = new Set(el.dataset.slots || "_"),
+            prev = (j => Array.from(pattern, (c, i) => slots.has(c) ? j = i + 1 : j))(0),
+            first = [...pattern].findIndex(c => slots.has(c)),
+            accept = new RegExp(el.dataset.accept || "\\d", "g"),
+            clean = input => {
+                
+                input = input.match(accept) || [];
+                
+                
+                return Array.from(pattern, c =>
+                    input[0] === c || slots.has(c) ? input.shift() || c : c,
+                );
+            },
+            format = () => {
+                
+                const [i, j] = [el.selectionStart, el.selectionEnd].map(i => {
+                    
+                    i = clean(el.value.slice(0, i)).findIndex(c => slots.has(c));
+                    return i < 0 ? prev[prev.length - 1] : back ? prev[i - 1] || first : i;
+                });
+                el.value = clean(el.value).join``;
+                el.setSelectionRange(i, j);
+                back = false;
+            };
+        let back = false;
+        
+        el.addEventListener("keydown", (e) => {
+            back = e.key === "Backspace";
+        });
+        el.addEventListener("input", format);
+        //el.addEventListener("focus", format);
+        el.addEventListener("blur", () => {
+            el.value === pattern && (el.value = "");
+        });
+    }
+};
+
+
 /////////////////////////////
 
 const getAllProduct = async (searchValue = "", from) => {
@@ -259,9 +930,6 @@ document.getElementById("DateFilterChk")?.addEventListener("change", () => {
 
 
 let filterVarConfig = null;
-const getFilterElement = (id) => document.getElementById(id);
-
-const getFilterInput = (name) => document.querySelector(`#FilterModal [name="${name}"]`);
 
 const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
     if (!filterBtn) return;
@@ -278,10 +946,10 @@ const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
         return;
     }
     
-    const selLabelElm = getFilterElement("SelFilterLabel");
-    const selChkElm = getFilterElement("SelFilterChd");
-    const cusChkElm = getFilterElement("CusFilterChd");
-    const dateChkElm = getFilterElement("DateFilterChk");
+    const selLabelElm = document.getElementById("SelFilterLabel");
+    const selChkElm = document.getElementById("SelFilterChd");
+    const cusChkElm = document.getElementById("CusFilterChd");
+    const dateChkElm = document.getElementById("DateFilterChk");
     
     // Customer
     if (cusChkElm) {
@@ -301,7 +969,7 @@ const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
     
     // Blacklist
     filterItemBlackList.forEach(id => {
-        const elm = getFilterElement(id);
+        const elm = document.getElementById(id);
         if (elm) {
             elm.style.display = "none";
         }
@@ -331,7 +999,7 @@ const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
     
     // Customer filter
     if (cusChkElm) {
-        const customerFilter = getFilterElement("customerFilter");
+        const customerFilter = document.getElementById("customerFilter");
         
         if (list?.CusFilterChd) {
             cusChkElm.checked = true;
@@ -354,7 +1022,7 @@ const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
     
     // Seller filter
     if (selChkElm) {
-        const selFilter = getFilterElement("selFilter");
+        const selFilter = document.getElementById("selFilter");
         
         if (list?.SelFilterChd) {
             selChkElm.checked = true;
@@ -377,8 +1045,8 @@ const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
     
     // Date filter
     if (dateChkElm) {
-        const toDate = getFilterInput("toDate");
-        const fromDate = getFilterInput("fromDate");
+        const toDate = document.querySelector(`#FilterModal [name="toDate"]`);
+        const fromDate = document.querySelector(`#FilterModal [name="fromDate"]`);
         
         if (list?.DateFilterChk) {
             dateChkElm.checked = true;
@@ -463,16 +1131,16 @@ const FilterAccepted = async (filConfig = null) => {
 const getFilterData = () => {
     const data = mySer.convertFormToJSON("#FilterFormId");
     
-    const cusChk = getFilterElement("CusFilterChd");
-    const selChk = getFilterElement("SelFilterChd");
-    const dateChk = getFilterElement("DateFilterChk");
+    const cusChk = document.getElementById("CusFilterChd");
+    const selChk = document.getElementById("SelFilterChd");
+    const dateChk = document.getElementById("DateFilterChk");
     
     data.CusFilterChd = cusChk?.checked ?? false;
     data.SelFilterChd = selChk?.checked ?? false;
     data.DateFilterChk = dateChk?.checked ?? false;
     
-    const customer = getFilterElement("customerFilter");
-    const seller = getFilterElement("selFilter");
+    const customer = document.getElementById("customerFilter");
+    const seller = document.getElementById("selFilter");
     
     if (data.CusFilterChd && customer) {
         data.customerFilterTxt = customer.options[customer.selectedIndex]?.text ?? "";
@@ -654,663 +1322,6 @@ const AcceptSetting = async () => {
 };
 
 
-let submitOrderPfId;
-let submitOrderCusId;
-let submitOrderDealId;
-let submitOrderDealSerialNumber;
-let submitOrderType;
-let pfItemsGroupedData = [];
-let totalStepCreateOrderModal;
-let currentStepCreateOrderModal = 1;
-let newTabCount = 1;
-const showModalCreateOrder = async (type, pfId, cusId, dealId, dealSerialNumber) => {
-    submitOrderPfId = pfId;
-    submitOrderCusId = cusId;
-    submitOrderDealId = dealId;
-    submitOrderDealSerialNumber = dealSerialNumber;
-    submitOrderType = type;
-    
-    FLshowLoading();
-    const data = (await axios(`/Order/GetHeadOrdersByPfId?pfId=${pfId}`)).data;
-    
-    pfItemsGroupedData = data.orderHeads;
-    pfItemsNotInOrders = data.pfItemsNotInOrders;
-    
-    totalStepCreateOrderModal = pfItemsGroupedData.length;
-    newTabCount = 1;
-    generateCreateOrderTabs();
-    await goToStepCreateOrderModal(1);
-    
-    document.querySelectorAll(".addFromPreFactorBtn").forEach(elm => elm.style.display = pfItemsNotInOrders.length ? "flex" : "none");
-    FLshowLoading(false);
-    
-    $("#CreateOrderModal").modal("show");
-};
-
-const cancelModalCreateOrder = () => {
-    pfItemsGroupedData = [];
-    $("#CreateOrderModal").modal("hide");
-};
-
-const nextStepCreateOrderModal = async () => {
-    if (currentStepCreateOrderModal === totalStepCreateOrderModal) {
-        await submitOrder();
-        return;
-    }
-    
-    await goToStepCreateOrderModal(currentStepCreateOrderModal + 1);
-    /*const nextTab = new bootstrap.Tab(document.getElementById(`CreateOrderTabs${currentStepCreateOrderModal}`));
-    nextTab.show();*/
-};
-
-const prevStepCreateOrderModal = async () => {
-    cancelModalCreateOrder();
-    /* if (currentStepCreateOrderModal === 1) {
-         cancelModalCreateOrder();
-     } else {
-         await goToStepCreateOrderModal(currentStepCreateOrderModal - 1);
-         const prevTab = new bootstrap.Tab(document.getElementById(`CreateOrderTabs${currentStepCreateOrderModal}`));
-         prevTab.show();
-     }*/
-};
-
-const goToStepCreateOrderModal = async (step) => {
-    currentStepCreateOrderModal = step;
-    const submitOrderBtn = document.getElementById("submitOrder");
-    const cancelModalOrder = document.getElementById("cancelModalOrder");
-    
-    
-    if (currentStepCreateOrderModal === 1) {
-        cancelModalOrder.className = "btnGroupBase btnRight btnRightRed";
-        cancelModalOrder.textContent = "انصراف";
-    } /*else {
-        cancelModalOrder.className = "btnGroupBase btnRight";
-        cancelModalOrder.textContent = "قبلی";
-    }*/
-    
-    if (totalStepCreateOrderModal === 0) {
-        await createOrderNewTab(false);
-    }
-    
-    if (currentStepCreateOrderModal < totalStepCreateOrderModal) {
-        submitOrderBtn.className = "btnGroupBase btnLeft";
-        submitOrderBtn.textContent = "بعدی";
-    } else if (currentStepCreateOrderModal === totalStepCreateOrderModal) {
-        submitOrderBtn.className = "btnGroupBase btnLeft btnLeftGreen";
-        submitOrderBtn.textContent = "ثبت";
-    } else {
-        submitOrderBtn.classList.add("d-none");
-        cancelModalOrder.className = "buttonCancel2";
-    }
-    
-    const navTabs = document.getElementById("CreateOrderTabs");
-    const divider = document.getElementById("dividerCreateOrderModal");
-    const currentPane = document.getElementById(`CreateOrderTabs${step}-pane`);
-    
-    if (step % 2) {
-        navTabs.style.borderBottomColor = "#00766e";
-        divider.style.backgroundColor = "#00766e";
-        currentPane?.classList.remove("scrollbar-purple");
-    } else {
-        navTabs.style.borderBottomColor = "#7740ab";
-        divider.style.backgroundColor = "#7740ab";
-        currentPane?.classList.add("scrollbar-purple");
-    }
-    
-    const targetTab = document.getElementById(`CreateOrderTabs${currentStepCreateOrderModal}`);
-    if (targetTab) new bootstrap.Tab(targetTab).show();
-};
-
-
-const generateCreateOrderTabs = (singleEdit = false) => {
-    const tabsElm = document.getElementById("CreateOrderTabs");
-    const panesElm = document.getElementById("CreateOrderTabPanes");
-    tabsElm.innerHTML = "";
-    panesElm.innerHTML = "";
-    
-    pfItemsGroupedData.forEach((item, index) => {
-        const { tab, pane } = createSingleOrderTab(item, index);
-        tabsElm.appendChild(tab);
-        panesElm.appendChild(pane);
-    });
-    
-    if (!singleEdit) {
-        tabsElm.insertAdjacentHTML("beforeend", `
-            <li class="nav-item" role="presentation" id="AddCreateOrderTab">
-                <button class="nav-link" onclick="createOrderNewTab()" type="button" tabindex="-1">
-                    <svg style="width: 19px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z"/></svg>
-                </button>
-            </li>
-        `);
-    }
-};
-
-
-const createSingleOrderTab = (item, index, isNew = false, uniqueId = null, fromPlusTab = false) => {
-    const tabId = `CreateOrderTabs${index + 1}`;
-    const tabPaneId = `${tabId}-pane`;
-    const customerValue = item.customerTxt.trim() + " - کد مشتری: " + (item.customerCode ?? "-");
-    
-    
-    const tab = document.createElement("li");
-    tab.className = "nav-item";
-    if (isNew) tab.dataset.tabid = uniqueId;
-    tab.innerHTML = `
-        <button class="nav-link ${index === 0 ? "active" : ""} d-flex align-items-center gap-3" id="${tabId}" data-step="${index + 1}" data-bs-target="#${tabPaneId}" type="button" role="tab">
-            <span>${isNew ? `حواله جدید ${newTabCount++}` : `حواله ${index + 1}`}</span>
-            ${fromPlusTab && totalStepCreateOrderModal !== 1 ? `<svg style="width: 16px" viewBox="0 0 16 16" fill="currentColor"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>` : ""}
-        </button>
-    `;
-    const button = tab.querySelector("button");
-    button.addEventListener("click", () => {
-        const step = Number(button.dataset.step);
-        goToStepCreateOrderModal(step);
-    });
-    
-    button.querySelector("svg")?.addEventListener("click", (e) => {
-        e.stopPropagation();
-        closeNewTabOrder(uniqueId);
-    });
-    
-    
-    const pane = document.createElement("div");
-    pane.className = `tab-pane flex-column ${index === 0 ? "active" : ""}`;
-    pane.id = tabPaneId;
-    pane.role = "tabpanel";
-    if (isNew) pane.dataset.tabidPane = uniqueId;
-    pane.tabIndex = 0;
-    
-    pane.innerHTML = `
-        <form class="headOrderForm pt-2 pb-3">
-            <div class="row flex-column flex-lg-row justify-content-between w-100 g-2 px-xl-2">
-                <div class="col-12 col-lg col-xl-4 gap-1 d-grid align-items-center align-content-start" style="grid-template-columns:auto 1fr;">
-                    <label style="white-space:nowrap;text-align:center">شماره حواله:</label>
-                    <input class="form-control" style="height: 24px;" type="text" name="orderNumber" value="${item.orderNumber ?? "-"}" disabled />
-                    <label style="white-space:nowrap;text-align:center">مشتری:</label>
-                    <input class="form-control" style="height: 24px;" type="text" name="customerTxt" value="${customerValue}" disabled />
-                    ${item.supplierTxt ? `
-                    <label style="white-space:nowrap;text-align:center">تامین کننده:</label>
-                    <input class="form-control" style="height: 24px;" type="text" name="supplierTxt" value="${item.supplierTxt}" disabled />` : ""}
-                </div>
-                <div class="col-12 col-lg-4 col-xl-3 gap-1 d-grid align-items-center align-content-start" style="grid-template-columns:auto 1fr;">
-                    <label style="white-space:nowrap;text-align:center">کارشناس فروش:</label>
-                    <input class="form-control" style="height: 24px;" type="text" name="userCreator" value="${item.userCreator || ""}" disabled />
-                    <label style="white-space:nowrap;text-align:center">کارشناس تامین:</label>
-                    <input class="form-control" style="height: 24px;" type="text" name="userTaminTxt" value="${item.userTaminTxt || ""}" disabled />
-                </div>
-                <div class="col-12 col-lg-3 col-xl-2 gap-1 d-grid align-items-center align-content-start" style="grid-template-columns:auto 1fr">
-                    <label style="white-space:nowrap;text-align:center">تاریخ:</label>
-                    <input class="sdate form-control" style="height: 24px;" type="text" name="orderDate" value="${item.orderDate || ""}" placeholder="yyyy/mm/dd" />
-                    <label style="white-space:nowrap;text-align:center">تلفن:</label>
-                    <input class="form-control" style="height: 24px;" type="text" name="tel" />
-                    ${!fromPlusTab ? `
-                    <button type="button" class="addFromPreFactorBtn buttonGreen2 align-items-center justify-content-center gap-2 mt-2" style="display: none;grid-column: 2 / -1;width: 140px;justify-self: end" onclick="AddFromPreFactorModal()" tabindex="0">
-                        افزودن از پیش‌فاکتور
-                        <i class="mp fa fa-plus"></i>
-                    </button>` : ""}
-                </div>
-            </div>
-        </form>
-        <div class="mx-auto" style="width:100%; height:2px; background-color:${(index + 1) % 2 ? "#00766e" : "#7740ab"};"></div>
-        <div class="orderBody"></div>
-    `;
-    
-    const generatedDom = generateCreateOrderDom(item.orders, item.description, item.supplierId);
-    pane.querySelector(".orderBody").appendChild(generatedDom);
-    
-    return { tab, pane };
-};
-
-
-const createOrderNewTab = async (fromPlusTab = true) => {
-    try {
-        const apiUrl = submitOrderType === 1 || fromPlusTab
-            ? `/Factor/GetPFactorItems?id=${submitOrderPfId}`
-            : `/Factor/GetPFactorItemsGroupBySuppliers?id=${submitOrderPfId}`;
-        
-        
-        FLshowLoading();
-        const data = (await axios(apiUrl)).data;
-        data.forEach(newData => {
-            const uniqueId = `tab-${Date.now()}`;
-            newData._tabid = uniqueId;
-            const newIndex = totalStepCreateOrderModal++;
-            pfItemsGroupedData.push(newData);
-            const panesElm = document.getElementById("CreateOrderTabPanes");
-            const addTabBtn = document.getElementById("AddCreateOrderTab");
-            
-            const { tab, pane } = createSingleOrderTab(newData, newIndex, true, uniqueId, fromPlusTab);
-            addTabBtn.insertAdjacentElement("beforebegin", tab);
-            panesElm.appendChild(pane);
-            
-            fromPlusTab && tab.firstElementChild.click();
-        });
-        
-        
-        FLshowLoading(false);
-    } catch (err) {
-        console.log(err);
-    }
-};
-
-const closeNewTabOrder = (uniqueId) => {
-    pfItemsGroupedData = pfItemsGroupedData.filter(item => item._tabid !== uniqueId);
-    totalStepCreateOrderModal--;
-    newTabCount--;
-    
-    const navTabs = document.getElementById("CreateOrderTabs");
-    const tab = navTabs.querySelector(`[data-tabid=${uniqueId}]`);
-    const pane = document.querySelector(`[data-tabid-pane=${uniqueId}]`);
-    
-    const tabIsActive = tab.firstElementChild.classList.contains("active");
-    
-    tab?.remove();
-    pane?.remove();
-    
-    renumberTabsAndPanes();
-    if (tabIsActive) {
-        const remainingTabs = navTabs.querySelectorAll(".nav-item:not(#AddCreateOrderTab) .nav-link");
-        remainingTabs[remainingTabs.length - 1]?.click();
-    } else {
-        navTabs.querySelector(".nav-link.active").click();
-    }
-};
-
-const renumberTabsAndPanes = () => {
-    const navTabs = document.getElementById("CreateOrderTabs");
-    const newBtnsTabs = navTabs.querySelectorAll(".nav-item[data-tabid] .nav-link span");
-    const allBtnTabs = navTabs.querySelectorAll(".nav-item:not(#AddCreateOrderTab) .nav-link");
-    
-    newBtnsTabs.forEach((btn, idx) => btn.textContent = `حواله جدید ${idx + 1}`);
-    allBtnTabs.forEach((btn, idx) => {
-        const newIndex = idx + 1;
-        
-        const oldBtnId = btn.id;
-        const newBtnId = `CreateOrderTabs${newIndex}`;
-        btn.id = newBtnId;
-        btn.dataset.step = newIndex.toString();
-        btn.setAttribute("data-bs-target", `#${newBtnId}-pane`);
-        
-        const pane = document.getElementById(`${oldBtnId}-pane`);
-        pane.id = `${newBtnId}-pane`;
-    });
-};
-
-
-const generateCreateOrderDom = (items, description = "", supplierId) => {
-    const container = document.createElement("div");
-    container.className = "col-12 d-flex flex-column gap-2 px-2 pt-2";
-    container.style.fontSize = "clamp(12px,2vw,14px)";
-    container.innerHTML = `
-        <div class="py-2 gap-2" style="display:flex;width:100%;overflow: auto;">
-            <form class="createOrderForm flex-grow-1">
-                <div class="flex-column" style="display:flex;justify-content:space-between;width:100%;">
-                    <div class="gap-1 fbold" style="display: grid;grid-template-columns: 20px 123px 1fr 1fr 100px repeat(3, 1fr) repeat(3, 100px) 1fr 20px;margin-bottom:10px;">
-                        <label class="text-center">#</label>
-                        <label class="text-center">نوع جنس</label>
-                        <label class="text-center">شرح کالا</label>
-                        <label class="text-center">ابعاد</label>
-                        <label class="text-center">نوع دسته</label>
-                        <label class="text-center">کاست</label>
-                        <label class="text-center">رنگ زمینه</label>
-                        <label class="text-center">رنگ چاپ</label>
-                        <label class="text-center">تعداد رنگ</label>
-                        <label class="text-center">نام طرح</label>
-                        <label class="text-center">مقدار</label>
-                        <label class="text-center">ضخامت</label>
-                        <label class="text-center"></label>
-                    </div>
-                    <div class="createOrderItems"></div>
-                </div>
-            </form>
-        </div>
-        <div class="my-2 w-100" style="background-color: rgba(0, 0, 0, 0.15);height:1px;"></div>
-        <div>
-            <label>توضیحات:</label>
-            <textarea class="form-control" name="Description" style="text-align:start; padding:10px !important; height:auto !important;" rows="4">${description}</textarea>
-        </div>
-    `;
-    
-    const fieldsName = [
-        "productSmallName",
-        "product",
-        "dimensions",
-        "categoryType",
-        "caset",
-        "backgroundColor",
-        "printColor",
-        "countColor",
-        "designName",
-        "weight",
-        "thickness",
-        "unit",
-        "productCode",
-        /* "productGroup",
-         "productGroupTxt",*/
-    ];
-    const containerItems = container.querySelector(".createOrderItems");
-    containerItems.innerHTML = "";
-    
-    const filteredItems = items.filter(i => !i.isDeleted);
-    filteredItems.forEach((item, index) => {
-        const row = document.createElement("fieldset");
-        row.className = "grid-row";
-        row.dataset.preFactorItemId = item.preFactorItemId;
-        
-        const numberCell = document.createElement("div");
-        numberCell.className = "divInp";
-        numberCell.style.width = "auto";
-        numberCell.innerHTML = `<span>${index + 1}</span>`;
-        
-        row.appendChild(numberCell);
-        fieldsName.forEach((fieldName, i) => {
-            const cell = document.createElement("div");
-            cell.className = "divInp";
-            
-            const input = document.createElement("input");
-            input.type = "text";
-            input.name = fieldName;
-            input.placeholder = "-";
-            input.tabIndex = i + 1;
-            input.className = `inpTlab w-100 ${fieldName === "weight" ? "digitNumberString" : ""}`;
-            input.value = item[fieldName] ?? "";
-            if (fieldName === "productSmallName") {
-                input.disabled = true;
-                cell.style.width = "123px";
-            } else if (fieldName === "weight") {
-                const unitInputTxt = document.createElement("input");
-                unitInputTxt.classList.add("inputGroupText");
-                unitInputTxt.name = "unitTxt";
-                unitInputTxt.value = item.unitTxt;
-                unitInputTxt.disabled = true;
-                
-                cell.appendChild(unitInputTxt);
-                cell.style.width = "100px";
-                
-                input.disabled = Boolean(supplierId);
-                input.style.borderBottomLeftRadius = "0";
-                input.style.borderTopLeftRadius = "0";
-                input.style.direction = "ltr";
-            } else if (fieldName === "unit" || fieldName === "productCode") {
-                input.type = "hidden";
-                cell.style.display = "none";
-                if (fieldName === "unit") input.classList.add("digitNumber");
-            } else if (fieldName === "countColor" || fieldName === "designName" || fieldName === "categoryType") {
-                cell.style.width = "100px";
-            } else if (fieldName === "thickness") {
-                //cell.style.paddingInlineEnd = "2px";
-            }
-            
-            
-            cell.appendChild(input);
-            row.appendChild(cell);
-        });
-        
-        // if (filteredItems.length > 1) {
-        const deleteElm = document.createElement("div");
-        deleteElm.className = "divInp";
-        deleteElm.style.width = "auto";
-        deleteElm.innerHTML = `
-            <span class="d-flex align-items-center justify-content-center" style="cursor: pointer"">
-                <svg style="width: 18px;color: darkred" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" /></svg>
-            </span>`;
-        
-        deleteElm.addEventListener("click", () => deleteItemOrder(item));
-        
-        row.appendChild(deleteElm);
-        // }
-        
-        containerItems.appendChild(row);
-        
-    });
-    
-    return container;
-};
-
-const deleteItemOrder = (item) => {
-    const dataCurrentTab = pfItemsGroupedData[currentStepCreateOrderModal - 1];
-    const idx = dataCurrentTab.orders.findIndex(o => o.preFactorItemId === item.preFactorItemId);
-    if (idx === -1) return;
-    
-    if (item.id) {
-        dataCurrentTab.orders[idx].isDeleted = true;
-    } else {
-        dataCurrentTab.orders.splice(idx, 1);
-    }
-    
-    const currentOrderBody = document.querySelector("#CreateOrderTabPanes .tab-pane.active .orderBody");
-    const generatedDom = generateCreateOrderDom(dataCurrentTab.orders, dataCurrentTab.description, dataCurrentTab.supplierId);
-    currentOrderBody.innerHTML = "";
-    currentOrderBody.appendChild(generatedDom);
-};
-
-
-const submitOrder = async () => {
-    FLshowLoading();
-    let model = [];
-    
-    const getJsonOrdersFrom = (paneSelector, oldOrders) => {
-        const orders = [];
-        const fieldsets = Array.from(document.querySelectorAll(`${paneSelector} .createOrderItems > fieldset`));
-        
-        oldOrders.forEach(oldItem => {
-            const fieldset = fieldsets.find(el => el.dataset.preFactorItemId === oldItem.preFactorItemId);
-            if (fieldset) {
-                const json = mySer.convertFormToJSON(null, [], fieldset);
-                orders.push({ ...oldItem, ...json });
-            } else { //isDeleted = true
-                orders.push({ ...oldItem });
-            }
-        });
-        
-        return {
-            orders: orders,
-            prefactor: submitOrderPfId,
-            dealId: submitOrderDealId || null, // TODO
-            dealSerialNumber: submitOrderDealSerialNumber || null,
-            customer: submitOrderCusId || null,
-            description: document.querySelector(`${paneSelector} textarea`)?.value || "",
-            tel: document.querySelector(`${paneSelector} input[name='tel']`)?.value || "",
-            orderDate: document.querySelector(`${paneSelector} input[name='orderDate']`)?.value || "",
-        };
-    };
-    
-    pfItemsGroupedData.forEach((item, index) => {
-        const data = { ...item, ...getJsonOrdersFrom(`#CreateOrderTabs${index + 1}-pane`, item.orders) };
-        model.push(data);
-    });
-    
-    axios.post(`/Order/AddHeadOrder`, model).then((res) => {
-        if (res.status === 200) {
-            toastifySuccess("حواله تولید با موفقیت ثبت شد");
-            cancelModalCreateOrder();
-            FLshowLoading(false);
-        }
-    }).catch((err) => {
-        console.log(err);
-        setTimeout(async () => await submitOrder(), 3000);
-    });
-};
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-let pfItemsNotInOrders;
-const ShowUpdateHeadOrder = async (id, passType, dealId) => {
-    submitOrderDealId = dealId;
-    FLshowLoading();
-    const data = (await axios(`/Order/GetHeadOrder/${id}`)).data;
-    
-    pfItemsGroupedData[0] = data.orderHead;
-    pfItemsNotInOrders = data.pfItemsNotInOrders;
-    submitOrderPfId = pfItemsGroupedData[0].prefactor;
-    submitOrderDealSerialNumber = pfItemsGroupedData[0].dealSerialNumber;
-    submitOrderCusId = pfItemsGroupedData[0].customer;
-    
-    totalStepCreateOrderModal = pfItemsGroupedData.length;
-    
-    generateCreateOrderTabs(true);
-    await goToStepCreateOrderModal(1);
-    document.querySelector(".addFromPreFactorBtn").style.display = pfItemsNotInOrders.length ? "flex" : "none";
-    
-    FLshowLoading(false);
-    $("#CreateOrderModal").modal("show");
-};
-
-
-const AddFromPreFactorModal = () => {
-    document.querySelector("#AddFromPreFactorModal .modal-title").textContent = `آیتم های اضافه نشده از پیش‌فاکتور ${pfItemsGroupedData[0].prefactorSer}`;
-    
-    document.getElementById("AddFromPreFactor").replaceChildren(
-        generateInvoiceItemDom(pfItemsNotInOrders, { type: "select", onSelect: (index, id) => selectPfactorItem(id) }),
-    );
-    
-    $("#AddFromPreFactorModal").modal("toggle");
-};
-
-let tempPfItemsNotInOrders = [];
-const selectPfactorItem = (id) => {
-    if (!id) return;
-    const index = pfItemsNotInOrders.findIndex(i => i.id === id);
-    let selectedItem = pfItemsNotInOrders.splice(index, 1)[0];
-    tempPfItemsNotInOrders.push(selectedItem);
-    
-    const newOrder = {
-        dimensions: "", categoryType: "", caset: "", backgroundColor: "", printColor: "", countColor: "", designName: "", thickness: "",
-        productSmallName: selectedItem.productSmallName,
-        product: selectedItem.product,
-        weight: selectedItem.weightCount,
-        unit: selectedItem.unit,
-        unitTxt: selectedItem.unitTxt,
-        preFactorItemId: selectedItem.id,
-        productCode: selectedItem.productCode,
-        OrderHeadId: pfItemsGroupedData[currentStepCreateOrderModal - 1].id,
-    };
-    
-    
-    pfItemsGroupedData[currentStepCreateOrderModal - 1].orders.push(newOrder);
-    const currentOrderBody = document.querySelector("#CreateOrderTabPanes .tab-pane.active .orderBody");
-    const generatedDom = generateCreateOrderDom(pfItemsGroupedData[currentStepCreateOrderModal - 1].orders, pfItemsGroupedData[currentStepCreateOrderModal - 1].description, pfItemsGroupedData[currentStepCreateOrderModal - 1].supplierId);
-    currentOrderBody.innerHTML = "";
-    currentOrderBody.appendChild(generatedDom);
-    
-    document.querySelectorAll(".addFromPreFactorBtn").forEach(i => i.style.display = pfItemsNotInOrders.length ? "flex" : "none");
-    $("#AddFromPreFactorModal").modal("toggle");
-};
-
-
-async function isSMSNotificationConfirmed() {
-    const result = await Swal.fire({
-        title: "اطلاع‌رسانی تحویل جنس به مشتری",
-        text: "آیا به مشتری از طریق پیامک اطلاع رسانی شود؟",
-        icon: "question",
-        showDenyButton: true,
-        denyButtonColor: "#dd6b55",
-        confirmButtonColor: "#3085d6",
-        denyButtonText: "خیر",
-        confirmButtonText: "بله، ارسال شود",
-        allowOutsideClick: false,
-    });
-    return result.isConfirmed;
-}
-
-async function changeStatusHd(id, status, sourceStatus, passType, fromDrop = false, draggedItem = null, sourceColumn = null) {
-    let sendSms = false;
-    if (status === 3 && sourceStatus !== 4) {
-        sendSms = await isSMSNotificationConfirmed();
-    }
-    
-    FLshowLoading();
-    axios(`/order/ChangeStatusHd?id=${id}&status=${status}&sendSms=${sendSms}`).then(async (res) => {
-        if (res.status === 200) {
-            if (status === 3) {
-                if (fromDrop) {
-                    if (finishedOrderToggleIcon) {
-                        finishedOrderToggleIcon.isVisible = false;
-                    }
-                    /*openIcon.style.display = "none";
-                    closedIcon.style.display = "block";
-                    document.getElementById("showFinishedOrderIcon").setAttribute("data-title", "نمایش تحویل شده ها");*/
-                    //showHidden = false;
-                }
-                if (sendSms) {
-                    toastifySuccess("اطلاع رسانی از طریق پیامک انجام شد");
-                }
-            }
-            if (passType === 1) {
-                await refreshOrders();
-            } else if (passType === 4) {
-                await refreshDealOrders();
-            } else if (passType === 2) {
-                await getUndeliveredOrderHeads();
-            }
-            FLshowLoading(false);
-        } else if (res.status === 204) {
-            FLshowLoading(false);
-            toastifyError("شما مجاز به انجام این کار نیستید!");
-            if (fromDrop && draggedItem && sourceColumn) {
-                sourceColumn.appendChild(draggedItem);
-            }
-        }
-        
-    }).catch((err) => {
-        console.log(err);
-        setTimeout(async () => await changeStatusHd(id, status, sourceStatus, passType, fromDrop, draggedItem, sourceColumn), 3000);
-    });
-    
-}
-
-
-const DelHeadOrderItem = (id, passType) => {
-    Swal.fire({
-        title: "حذف!",
-        text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
-        icon: "warning",
-        showCancelButton: true,
-        cancelButtonColor: "#adadad",
-        confirmButtonColor: "#e64942",
-        cancelButtonText: "انصراف",
-        confirmButtonText: "بله، حذف شود",
-    })
-        .then(async (willDelete) => {
-            if (willDelete.isConfirmed) {
-                await DelHeadOrderItemOk(id, passType);
-            }
-        });
-};
-
-const DelHeadOrderItemOk = async (id, passType) => {
-    $("#FLshowLoading").css("display", "");
-    axios(`/Order/DelOrderHead/${id}`).then(async (res) => {
-        if (res.status === 200) {
-            if (passType === 1) {
-                await refreshOrders();
-            } else if (passType === 4) {
-                await refreshDealOrders();
-            }
-            
-            toastifySuccess("با موفقیت حذف شد!");
-        } else if (res.status === 204) {
-            toastifyError("شما مجاز به انجام این کار نیستید!");
-        }
-        $("#FLshowLoading").css("display", "none");
-        
-    }).catch(() => {
-        setTimeout(async () => await DelHeadOrderItemOk(id, passType), 3000);
-    });
-};
-
-const PreviewOrderPrint = (id) => {
-    window.open("/order/PreviewPrint/" + id);
-};
-
-
-/*const CreateOrder = async (PfId, CuId, type) => {
-sessionStorage.setItem("CuId", CuId);
-sessionStorage.setItem("PfId", PfId);
-sessionStorage.setItem("OfficialType", type);
-window.open(`/Order/Index`);
-};*/
-
-
 const GetSetting = async () => {
     return new Promise((resolve) => {
         $.get("/ASetting/GetSetting", (res) => {
@@ -1328,17 +1339,15 @@ const GetSetting = async () => {
 const setDateTime = async () => {
     const el = document.getElementById("dateTimeNowId");
     if (!el) return;
-    var dt = await getTodayDateTime();
-    var time = dt.split(" ");
-    // el.innerHTML = `<span>${time[1]}</span> <span>${time[0]}</span> <span>ساعت:</span> <span>${time[2]}</span>`;
+    
+    let dt = await getTodayDateTime();
+    let time = dt.split(" ");
     el.innerHTML = `${dt}`;
     
     setInterval(async () => {
         dt = await getTodayDateTime();
         time = dt.split(" ");
-        // el.innerHTML = `<span>${time[1]}</span> <span>${time[0]}</span> <span>ساعت:</span> <span>${time[2]}</span>`;
         el.innerHTML = `${dt}`;
-        
     }, 30000);
 };
 
@@ -1434,20 +1443,28 @@ const openCustomerProfile = (id, pfSerialNum) => {
 };
 
 
-const removeReqUp = () => {
-    var items = document.getElementsByClassName("Uhog");
-    
-    $.each(items, (index, item) => {
-        item.removeAttribute("required");
-    });
+const ShowPreviewPfactor = (id) => {
+    window.open("/factor/PreviewPfactorPrint/" + id, "_blank", "noopener,noreferrer");
+};
+const ShowPreviewFactor = (id) => {
+    window.open("/factor/PreviewFactorPrint/" + id, "_blank", "noopener,noreferrer");
+};
+const ShowPreviewFactorSepidar = (id) => {
+    window.open("/factor/PreviewFactorSepidarPrint/" + id, "_blank", "noopener,noreferrer");
 };
 
-const addReqUp = () => {
-    var items = document.getElementsByClassName("Uhog");
-    $.each(items, (index, item) => {
-        item.setAttribute("required", "");
+
+/*document.querySelectorAll(".chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+        //const group = chip.dataset.group;
+        const value = chip.dataset.value;
+        
+        /!*document.querySelectorAll(`.chip[data-group='${group}']`)
+                .forEach(c => c.classList.remove("active"));*!/
+        
+        chip.classList.toggle("active");
     });
-};
+});*/
 
 
 const changeJur = (val) => {
@@ -1456,12 +1473,14 @@ const changeJur = (val) => {
         $("#UpJuridicalA").prop("checked", true);
         $("#UpJuridicalB").prop("checked", false);
         $("#JuridicalUpDiv").css("display", "none");
-        removeReqUp();
+        
+        document.querySelectorAll(".Uhog").forEach(item => item.removeAttribute("required"));
     } else {
         $("#UpJuridicalA").prop("checked", false);
         $("#UpJuridicalB").prop("checked", true);
         $("#JuridicalUpDiv").css("display", "flex");
-        addReqUp();
+        
+        document.querySelectorAll(".Uhog").forEach(item => item.setAttribute("required"));
     }
 };
 
@@ -1469,8 +1488,6 @@ const changeJur = (val) => {
 const cancelUpCustomer = () => {
     mySer.emptyForm("CuInfoUpFormId");
     changeJur(0);
-    
-    
 };
 
 
@@ -2440,7 +2457,6 @@ mobileDrawerOverlay?.addEventListener("click", () => {
 });
 
 
-
 function sortableMobileMenu() {
     const navMenu = document.getElementById("navMenuBar");
     const moreMenu = document.getElementById("moreMenuDropdown");
@@ -2728,39 +2744,6 @@ const showAttachments = async (id, typeAtt) => {
 
 /*--------------------------------------------------------------------------------*/
 
-async function getOrderHeadIdsBySupplier(supplierId) {
-    try {
-        const res = await axios(`/Supply/GetOrderHeadsBySupplier?supplierId=${supplierId}`);
-        if (res.status === 200) {
-            return res.data;
-        }
-        return [];
-    } catch (err) {
-        console.log(err);
-        return [];
-    }
-}
-
-async function getSupplierFinancialSummary(supplierId) {
-    try {
-        const res = await axios(`/Supply/GetSupplierFinancialSummary?supplierId=${supplierId}`);
-        if (res.status === 200) {
-            return res.data;
-        }
-        return null;
-    } catch (err) {
-        console.log(err);
-        return null;
-    }
-}
-
-/*--------------------------------------------------------------------------------*/
-
-/*document.addEventListener("input", (e) => {
-    if (e.target.matches("input, textarea")) {
-        e.target.value = toEnglishDigits(e.target.value);
-    }
-});*/
 
 document.addEventListener("input", (e) => {
     const el = e.target;
@@ -2880,6 +2863,104 @@ function showAgentReviewText(btn) {
 /*--------------------------------------------------------------------*/
 
 
+class DynamicSkeleton {
+    /**
+     * @param {Object} options
+     * @param {string|HTMLElement} options.container - سلکتور یا المنت والد که اسکلتون ها در آن قرار میگیرند
+     * @param {string} options.template - ساختار HTML یک آیتم اسکلتون
+     * @param {number} options.count - تعداد اسکلتون‌هایی که باید ساخته شود (پیش‌فرض 3)
+     */
+    constructor(options) {
+        this.container = typeof options.container === "string"
+            ? document.querySelector(options.container)
+            : options.container;
+        this.template = options.template;
+        this.count = options.count || 3;
+    }
+    
+    // متد نمایش لودینگ
+    render() {
+        if (!this.container) return;
+        
+        let skeletonsHTML = "";
+        for (let i = 0; i < this.count; i++) {
+            skeletonsHTML += this.template;
+        }
+        
+        this.container.innerHTML = skeletonsHTML;
+    }
+    
+    // متد پاک کردن لودینگ (البته وقتی دیتای واقعی رو innerHTML کنید خود به خود پاک میشه)
+    clear() {
+        if (this.container) {
+            this.container.innerHTML = "";
+        }
+    }
+}
+
+const Skeleton = (() => {
+    
+    const templates = {};
+    
+    function register(name, builder) {
+        templates[name] = builder;
+    }
+    
+    function show({
+                      container,
+                      count = 1,
+                      template,
+                  }) {
+        
+        const el = typeof container === "string"
+            ? document.querySelector(container)
+            : container;
+        
+        if (!el) return;
+        
+        el.dataset.skeleton = "true";
+        
+        const html = [];
+        
+        const builder =
+            typeof template === "function"
+                ? template
+                : templates[template];
+        
+        for (let i = 0; i < count; i++) {
+            
+            html.push(builder(i));
+            
+        }
+        
+        el.innerHTML = html.join("");
+        
+    }
+    
+    function hide(container) {
+        
+        const el = typeof container === "string"
+            ? document.querySelector(container)
+            : container;
+        
+        if (el)
+            el.innerHTML = "";
+        
+    }
+    
+    return {
+        show,
+        hide,
+        register,
+    };
+    
+})();
+
+
+
+/*--------------------------------------------------------------------*/
+
+
 const externalSoftwareModalElm = document.getElementById("chooseExternalSoftwareModal");
 const externalSoftwareList = externalSoftwareModalElm?.querySelector("#externalSoftwareList");
 const sendToSoftwareBtn = externalSoftwareModalElm?.querySelector("#sendToSoftwareBtn");
@@ -2986,6 +3067,3 @@ externalSoftwareModalElm?.addEventListener("hidden.bs.modal", () => {
     externalSoftwareList.innerHTML = "";
     toggleElementsDisabled(sendToSoftwareBtn);
 });
-
-
-

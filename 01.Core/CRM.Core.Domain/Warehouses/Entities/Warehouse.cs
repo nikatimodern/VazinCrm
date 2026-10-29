@@ -5,6 +5,9 @@ namespace CRM.Core.Domain.Warehouses.Entities;
 
 public class Warehouse : BaseEntity {
     public string Title { get; set; }
+    public bool IsMain { get; set; }
+
+    public bool CanManage(bool isSeniorManager) => !IsMain || isSeniorManager;
     public WarehouseType WarehouseType { get; set; }
     public ICollection<WarehouseProduct> WarehouseProducts { get; set; }
     public ICollection<WarehouseUser> WarehouseUsers { get; set; }

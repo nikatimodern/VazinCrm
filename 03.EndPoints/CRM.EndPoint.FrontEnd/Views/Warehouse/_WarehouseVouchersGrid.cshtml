@@ -69,7 +69,7 @@
                 <footer class="voucher-footer">
                     <div class="footer-management-actions">
                         @* <span class="items-count">@voucher.WarehouseProductVouchers?.Count قلم</span> *@
-                        @if (voucher.Status != WarehouseVoucherStatusEnum.تحویل_شده) {
+                        @if ((User.IsAdmin() || voucher.Warehouse?.IsMain == false) && voucher.Status != WarehouseVoucherStatusEnum.تحویل_شده) {
                             <button type="button" class="btn-icon btn-icon-danger" data-title="حذف" onclick="deleteWarehouseVoucher('@voucher.Id')">
                                 <svg style="width: 14px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z" clip-rule="evenodd" /></svg>
                             </button>
@@ -81,14 +81,14 @@
                     </div>
                     <div class="footer-actions">
 
-                        @if ((User.IsAdmin() || User.IsTaminAdmin()) && voucher.Status == WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین) {
+                        @if ((User.IsAdmin() || voucher.Warehouse?.IsMain == false) && (User.IsAdmin() || User.IsTaminAdmin()) && voucher.Status == WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین) {
                             <button type="button" class="btn-action btn-confirm" onclick="confirmWarehouseVoucher('@voucher.Id')">
                                 <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" /></svg>
                                 تایید حواله
                             </button>
                         }
 
-                        @if (voucher.Status == WarehouseVoucherStatusEnum.در_انتظار_تحویل) {
+                        @if ((User.IsAdmin() || voucher.Warehouse?.IsMain == false) && voucher.Status == WarehouseVoucherStatusEnum.در_انتظار_تحویل) {
                             <button type="button" class="btn-action btn-deliver" onclick="deliverWarehouseVoucher('@voucher.Id')">
                                 <i class="fas fa-box-check"></i>
                                 @* <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 8.5 12 4 4 8.5v7L12 20l8-4.5v-7ZM12 6.3l5.8 3.2L12 12.7 6.2 9.5 12 6.3Zm-6 4.9 5 2.8v3.7l-5-2.8v-3.7Zm7 6.5V14l5-2.8v3.7l-5 2.8Z" /></svg> *@

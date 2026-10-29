@@ -25,7 +25,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/logo-180x180.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
-    <link rel="manifest" href="/manifest.json?v=6.8.8">
+    <link rel="manifest" href="/manifest.json?v=6.9.3">
 
     <meta name="apple-mobile-web-app-title" content="VazinCRM">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -36,16 +36,16 @@
 
 
     <script>
-            if (sessionStorage.getItem("sidebar-collapsed") === "true") {
-                document.documentElement.classList.add("sidebar-collapsed");
-            }
+        if (sessionStorage.getItem("sidebar-collapsed") === "true") {
+            document.documentElement.classList.add("sidebar-collapsed");
+        }
 
-            // Override toLocaleString
-            Number.prototype.toLocaleString = (function(originalFunc) {
-                return function(locales, options) {
-                    return originalFunc.call(this, "en-US", options);
-                };
-            })(Number.prototype.toLocaleString);
+        // Override toLocaleString
+        Number.prototype.toLocaleString = (function (originalFunc) {
+            return function (locales, options) {
+                return originalFunc.call(this, "en-US", options);
+            };
+        })(Number.prototype.toLocaleString);
 
     </script>
 
@@ -64,174 +64,175 @@
     <link rel="stylesheet" href="~/lib/TomSelect/tom-select.min.css" />
 
 
-    <link rel="stylesheet" href="~/css/site.css?v=6.8.8" />
-    <link rel="stylesheet" href="~/css/table.css?v=6.8.8" />
-    <link rel="stylesheet" href="~/css/layoutResponsive.css?v=6.8.8" />
-    <link rel="stylesheet" href="~/css/customerProfileResponsive.css?v=6.8.8" />
-    <link rel="stylesheet" href="~/css/listProduct.css?v=6.8.8" />
-    <link rel="stylesheet" href="~/css/carizo.css?v=6.8.8" />
-    <link rel="stylesheet" href="~/css/reports.css?v=6.8.8" />
-    <link rel="stylesheet" href="~/css/dashboard.css?v=6.8.8" />
-    <link rel="stylesheet" href="~/css/order.css?v=6.8.8" />
-    <link rel="stylesheet" href="~/css/deal.css?v=6.8.8" />
-    <link rel="stylesheet" href="~/css/cartableStyle.css?v=6.8.8" />
-    <link rel="stylesheet" href="~/css/email.css?v=6.8.8" />
+    <link rel="stylesheet" href="~/css/site.css?v=6.9.3" />
+    <link rel="stylesheet" href="~/css/table.css?v=6.9.3" />
+    <link rel="stylesheet" href="~/css/layoutResponsive.css?v=6.9.3" />
+    <link rel="stylesheet" href="~/css/customerProfileResponsive.css?v=6.9.3" />
+    <link rel="stylesheet" href="~/css/listProduct.css?v=6.9.3" />
+    <link rel="stylesheet" href="~/css/carizo.css?v=6.9.3" />
+    <link rel="stylesheet" href="~/css/reports.css?v=6.9.3" />
+    <link rel="stylesheet" href="~/css/dashboard.css?v=6.9.3" />
+    <link rel="stylesheet" href="~/css/order.css?v=6.9.3" />
+    <link rel="stylesheet" href="~/css/deal.css?v=6.9.3" />
+    <link rel="stylesheet" href="~/css/cartableStyle.css?v=6.9.3" />
+    <link rel="stylesheet" href="~/css/email.css?v=6.9.3" />
 
-    <link rel="stylesheet" href="~/css/preFactor.css?v=6.8.8" />
+    <link rel="stylesheet" href="~/css/preFactor.css?v=6.9.3" />
+    <link rel="stylesheet" href="~/css/supplyFactor.css" asp-append-version="true" />
 
     @await RenderSectionAsync("Styles", required: false)
-    <link rel="stylesheet" href="~/css/supplyFactor.css" asp-append-version="true" />
 </head>
 
 
 <body dir="rtl">
 
-    <div id="FLshowLoading" style="display: none">
-        <div>
-            <div class="loader"></div>
-        </div>
+<div id="FLshowLoading" style="display: none">
+    <div>
+        <div class="loader"></div>
     </div>
+</div>
 
 
-    <div class="d-flex">
-        <partial name="Menu/_Menu" />
+<div class="d-flex">
+    <partial name="Menu/_Menu" />
 
-        <div id="mainWrapper">
-            <partial name="Header/_Header" />
+    <div id="mainWrapper">
+        <partial name="Header/_Header" />
 
-            <main id="mainContent" role="main">
-                @RenderBody()
-            </main>
-        </div>
+        <main id="mainContent" role="main">
+            @RenderBody()
+        </main>
     </div>
+</div>
 
 
 
-    <!-- Call History Floating Button -->
-    <button id="callHistoryReportBtn" class="call-history-fab" onclick="showIncomingCallReport()" type="button" aria-label="مشاهده سوابق تماس" title="مشاهده سوابق تماس">
-        <span class="fab-halo" aria-hidden="true"></span>
+<!-- Call History Floating Button -->
+<button id="callHistoryReportBtn" class="call-history-fab" onclick="showIncomingCallReport()" type="button" aria-label="مشاهده سوابق تماس" title="مشاهده سوابق تماس">
+    <span class="fab-halo" aria-hidden="true"></span>
 
-        <span class="fab-icon-wrap">
+    <span class="fab-icon-wrap">
             <svg class="fab-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 15.5V19a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 A19.8 19.8 0 0 1 1.12 3.27 2 2 0 0 1 3.11 1h3.5 a2 2 0 0 1 2 1.72 c.12.96.35 1.9.69 2.79 a2 2 0 0 1-.45 2.11L7.37 9.1 a16 16 0 0 0 6 6l1.48-1.48 a2 2 0 0 1 2.11-.45 c.89.34 1.83.57 2.79.69 A2 2 0 0 1 21 15.5Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /><path d="M15 3h6v6M21 3l-7 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" lass="history-mark" /></svg>
         </span>
 
-        <span class="fab-status" aria-hidden="true"></span>
+    <span class="fab-status" aria-hidden="true"></span>
 
-        <span class="fab-tooltip">
-            <span class="tooltip-title">سوابق تماس</span>
-            <span class="tooltip-subtitle">مشاهده گزارشات تماس‌گیرنده</span>
-        </span>
-    </button>
-
-
-    <partial name="Modals/_IncomingCallReport" />
-    <partial name="Modals/_PhoneBookModal" />
-    <partial name="Modals/_ErrorModal" />
-    <partial name="Modals/_FilterModal" />
-    <partial name="Modals/_LogModal" />
-
-    <partial name="Modals/_PwaInstallModal" />
-    <partial name="Modals/_AudioModal" />
-    <partial name="Modals/_DocumentViewerModal" />
-    <partial name="Modals/_AttachmentsModal" />
-    <partial name="Modals/_SelectorModal" />
-    <partial name="Modals/_ExternalSoftwareModal" />
-    <partial name="~/Views/PreFactor/Modals/_ExternalSoftwarePreFactorsModal.cshtml" />
+    <span class="fab-tooltip">
+        <span class="tooltip-title">سوابق تماس</span>
+        <span class="tooltip-subtitle">مشاهده گزارشات تماس‌گیرنده</span>
+    </span>
+</button>
 
 
-    <partial name="~/Views/Report/Modals/_ReportModal.cshtml" />
-    <partial name="~/Views/Accountancy/Modals/_ShowPaymentModal.cshtml" />
-    <partial name="~/Views/Amount/Modals/_ListAmountModal.cshtml" />
+<partial name="Modals/_IncomingCallReport" />
+<partial name="Modals/_PhoneBookModal" />
+<partial name="Modals/_ErrorModal" />
+<partial name="Modals/_FilterModal" />
+<partial name="Modals/_LogModal" />
+
+<partial name="Modals/_PwaInstallModal" />
+<partial name="Modals/_AudioModal" />
+<partial name="Modals/_DocumentViewerModal" />
+<partial name="Modals/_AttachmentsModal" />
+<partial name="Modals/_SelectorModal" />
+<partial name="Modals/_ExternalSoftwareModal" />
 
 
-    <div id="overlay"></div>
-    <div id="toastOverlay"></div>
-    <div id="dropdown-portal"></div>
-    <div id="layoutPortal"></div>
-
-    <script>
-            (function setActiveMenu() {
-                const currentPath = window.location.pathname.toLowerCase().replace(/\/$/, "");
-
-                // Active کردن لینک فعلی
-                document.querySelectorAll(".menu-link").forEach(link => {
-                    const href = link.getAttribute("href");
-                    if (!href || href === "#") return;
-                    const linkUrl = new URL(href, window.location.origin);
-                    const linkPath = linkUrl.pathname.toLowerCase().replace(/\/$/, "");
-                    if (linkPath !== currentPath) return;
-
-                    link.classList.add("active-menu");
-
-                    let parent = link.closest(".has-submenu");
-                    while (parent) {
-                        parent.classList.add("open");
-                        const parentMenuItem = parent.querySelector(":scope > .menu-item");
-                        parentMenuItem?.classList.add("active-menu");
-                        parent = parent.parentElement?.closest(".has-submenu");
-                    }
-                });
+<partial name="~/Views/PreFactor/Modals/_ExternalSoftwarePreFactorsModal.cshtml" />
+<partial name="~/Views/Report/Modals/_ReportModal.cshtml" />
+<partial name="~/Views/Accountancy/Modals/_ShowPaymentModal.cshtml" />
+<partial name="~/Views/Amount/Modals/_ListAmountModal.cshtml" />
 
 
-                // باز و بسته کردن submenu
-                document.querySelectorAll(".has-submenu > .menu-item").forEach(menu => {
-                    menu.addEventListener("click", function() {
-                        const wrapper = menu.closest(".has-submenu");
-                        wrapper?.classList.toggle("open");
-                    });
-                });
-            })();
-    </script>
+<div id="overlay"></div>
+<div id="toastOverlay"></div>
+<div id="dropdown-portal"></div>
+<div id="layoutPortal"></div>
 
-    <script>
-            Object.defineProperty(window, "userContext", {
-                value: Object.freeze({
-                    id: @Html.Raw(Json.Serialize(User.GetUserId())),
-                    roles: Object.freeze(@Html.Raw(Json.Serialize(User.GetRoleNames()))),
-                }),
-                writable: false,
-                configurable: false,
-                enumerable: false,
+<script>
+    (function setActiveMenu() {
+        const currentPath = window.location.pathname.toLowerCase().replace(/\/$/, "");
+
+        // Active کردن لینک فعلی
+        document.querySelectorAll(".menu-link").forEach(link => {
+            const href = link.getAttribute("href");
+            if (!href || href === "#") return;
+            const linkUrl = new URL(href, window.location.origin);
+            const linkPath = linkUrl.pathname.toLowerCase().replace(/\/$/, "");
+            if (linkPath !== currentPath) return;
+
+            link.classList.add("active-menu");
+
+            let parent = link.closest(".has-submenu");
+            while (parent) {
+                parent.classList.add("open");
+                const parentMenuItem = parent.querySelector(":scope > .menu-item");
+                parentMenuItem?.classList.add("active-menu");
+                parent = parent.parentElement?.closest(".has-submenu");
+            }
+        });
+
+
+        // باز و بسته کردن submenu
+        document.querySelectorAll(".has-submenu > .menu-item").forEach(menu => {
+            menu.addEventListener("click", function () {
+                const wrapper = menu.closest(".has-submenu");
+                wrapper?.classList.toggle("open");
             });
-    </script>
+        });
+    })();
+</script>
 
-    <script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js"></script>
-    <script src="~/lib/jquery/jquery.min.js"></script>
-    <script src="~/lib/axios/axios.min.js"></script>
-    <script src="~/lib/FontAwesome.Pro.5.15.1.Web/js/fontawesome.min.js"></script>
-    <script src="~/lib/FontAwesome.Pro.5.15.1.Web/js/solid.min.js"></script>
-    <script src="~/lib/SweetAlert/sweetalert2.all.min.js"></script>
-    <script src="~/lib/toastify/toastify-js.js"></script>
-    <script src="~/lib/DatePickers/persian-date.min.js"></script>
-    <script src="~/lib/DatePickers/persian-datepicker.min.js"></script>
-    <script src="~/lib/timepicker/bootstrap-timepicker.min.js"></script>
-    <script src="~/lib/select2/js/select2.full.min.js"></script>
-    <script src="~/lib/CropperJs/cropper.min.js"></script>
-    <script src="~/lib/jQuery-Datatable/datatablesB.min.js"></script>
-    <script src="~/lib/viewerJs/js/viewer.min.js"></script>
-    <script src="~/lib/Signalr/signalr.min.js"></script>
-    <script src="~/lib/Sortable/Sortable.min.js"></script>
-    <script src="~/lib/Awesomplete/awesomplete.min.js"></script>
-    <script src="~/lib/TomSelect/tom-select.complete.min.js"></script>
+<script>
+    Object.defineProperty(window, "userContext", {
+        value: Object.freeze({
+            id: @Html.Raw(Json.Serialize(User.GetUserId())),
+            roles: Object.freeze(@Html.Raw(Json.Serialize(User.GetRoleNames()))),
+        }),
+        writable: false,
+        configurable: false,
+        enumerable: false,
+    });
+</script>
 
-    <script src="~/js/TaskSignalR.js?v=6.8.8"></script>
-    <script src="~/js/pwa.js?v=6.8.8"></script>
-    <script src="~/js/site.js?v=6.8.8"></script>
-    <script src="~/js/File.js?v=6.8.8"></script>
-    <script src="~/js/PublicFunction.js?v=6.8.8"></script>
-    <script src="~/js/DateValidate.js?v=6.8.8"></script>
-    <script src="~/js/preFactor.js?v=6.8.8"></script>
-    <script src="~/js/factor.js?v=6.8.8"></script>
-    <script src="~/js/accountancy.js?v=6.8.8"></script>
-    <script src="~/js/report.js?v=6.8.8"></script>
-    <script src="~/js/Layout.js?v=6.8.8" defer></script>
+<script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js"></script>
+<script src="~/lib/jquery/jquery.min.js"></script>
+<script src="~/lib/axios/axios.min.js"></script>
+<script src="~/lib/FontAwesome.Pro.5.15.1.Web/js/fontawesome.min.js"></script>
+<script src="~/lib/FontAwesome.Pro.5.15.1.Web/js/solid.min.js"></script>
+<script src="~/lib/SweetAlert/sweetalert2.all.min.js"></script>
+<script src="~/lib/toastify/toastify-js.js"></script>
+<script src="~/lib/DatePickers/persian-date.min.js"></script>
+<script src="~/lib/DatePickers/persian-datepicker.min.js"></script>
+<script src="~/lib/timepicker/bootstrap-timepicker.min.js"></script>
+<script src="~/lib/select2/js/select2.full.min.js"></script>
+<script src="~/lib/CropperJs/cropper.min.js"></script>
+<script src="~/lib/jQuery-Datatable/datatablesB.min.js"></script>
+<script src="~/lib/viewerJs/js/viewer.min.js"></script>
+<script src="~/lib/Signalr/signalr.min.js"></script>
+<script src="~/lib/Sortable/Sortable.min.js"></script>
+<script src="~/lib/Awesomplete/awesomplete.min.js"></script>
+<script src="~/lib/TomSelect/tom-select.complete.min.js"></script>
 
-    <script>
-            const basePath = '@Url.Action("", "")';
-            var baseUrl = basePath === "/" ? basePath : `${basePath}/`;
-    </script>
+<script src="~/js/TaskSignalR.js?v=6.9.3"></script>
+<script src="~/js/pwa.js?v=6.9.3"></script>
+<script src="~/js/site.js?v=6.9.3"></script>
+<script src="~/js/File.js?v=6.9.3"></script>
+<script src="~/js/PublicFunction.js?v=6.9.3"></script>
+<script src="~/js/DateValidate.js?v=6.9.3"></script>
+<script src="~/js/preFactor.js?v=6.9.3"></script>
+<script src="~/js/factor.js?v=6.9.3"></script>
+<script src="~/js/accountancy.js?v=6.9.3"></script>
+<script src="~/js/report.js?v=6.9.3"></script>
+<script src="~/js/order.js?v=6.9.3"></script>
+<script src="~/js/Layout.js?v=6.9.3" defer></script>
 
-    @await RenderSectionAsync("Scripts", required: false)
+<script>
+    const basePath = '@Url.Action("", "")';
+    var baseUrl = basePath === "/" ? basePath : `${basePath}/`;
+</script>
+
+@await RenderSectionAsync("Scripts", required: false)
 
 </body>
 </html>

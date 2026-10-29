@@ -87,6 +87,7 @@ public static class ApplicationServicesRegistration
         services.AddScoped<ICommandHandler<UpdatePaymentCommand, SupplyResult>, UpdatePaymentCommandHandler>();
         services.AddScoped<ICommandHandler<AddSupplyCommand, SupplyResult>, AddSupplyCommandHandler>();
         services.AddScoped<ICommandHandler<ProcessSupplyInvoiceCommand, SupplyResult>, ProcessSupplyInvoiceCommandHandler>();
+        services.AddScoped<CRM.Core.Domain.Warehouses.Repositories.IWarehouseRepository, CRM.Infrastructures.Sql.Warehouses.Repositories.WarehouseRepository>();
         return services;
     }
 }

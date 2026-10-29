@@ -181,3 +181,49 @@ connection.on("SmsSending", () => {
     showSmsSendingToast();
 });
 
+
+let smsToast = null;
+function showSmsSendingToast() {
+    if (smsToast) {
+        smsToast.hideToast();
+    }
+    
+    const notifDiv = document.createElement("div");
+    
+    notifDiv.className = "flex-center gap-3";
+    notifDiv.innerHTML = `
+        در حال ارسال پیامک
+        <span class="spinner-border spinner-border-sm"></span>
+    `;
+    
+    smsToast = createToast("info", "", {
+        node: notifDiv,
+        duration: -1,
+        stopOnFocus: false,
+        style: {
+            cursor: "auto",
+        },
+    });
+}
+
+
+function updateSmsToast(text, type) {
+    if (!smsToast) return;
+    const smsToastElement = smsToast.toastElement;
+    
+    smsToastElement.textContent = text;
+    
+    
+    if (type === "success" || type === "error") {
+        
+        smsToastElement.style.background =
+            type === "success"
+                ? "linear-gradient(135deg, rgba(2,81,75,1) 21%, rgba(0,59,54,1) 100%)"
+                : "linear-gradient(135deg, rgba(121,9,9,1) 21%, rgba(78,0,0,0.9) 100%)";
+        
+        setTimeout(() => {
+            smsToast?.hideToast();
+            smsToast = null;
+        }, type === "success" ? 3000 : 5000);
+    }
+}

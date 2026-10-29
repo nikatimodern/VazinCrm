@@ -8,6 +8,9 @@
         var warehouse = item.Warehouse;
         <div class="clickable-card warehouse-card" data-id="@warehouse.Id" data-warehouse-title="@warehouse.Title">
             <h5 class="clickable-card__title">@warehouse.Title</h5>
+            @if (warehouse.IsMain) {
+                <span class="clickable-card__badge">انبار اصلی</span>
+            }
             @if (isManager && item.UserNames.Any()) {
                 <p class="text-muted small mb-3">
                     کاربران: @string.Join("، ", item.UserNames)
@@ -15,7 +18,7 @@
             }
             <span class="clickable-card__badge">@item.WarehouseProductsCount محصول ثبت شده</span>
 
-            @if (isManager) {
+            @if (isManager && warehouse.CanManage(User.IsAdmin())) {
                 <div class="position-absolute" style="bottom: 4px;right: auto;left: 4px">
                     <div class="d-flex align-items-center gap-2 align-self-end" style="position:relative">
                         <div class="clickable-card__toggle ellipsis-icon" tabindex="0">

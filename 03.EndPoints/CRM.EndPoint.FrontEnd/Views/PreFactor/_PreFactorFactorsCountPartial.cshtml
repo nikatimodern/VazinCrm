@@ -19,7 +19,7 @@
                 </span>
             </button>
         } else {
-            <button class="buttonGreen2 factorCount-btn"
+            <button class="buttonGreen0 factorCount-btn"
                     onclick="GetFactorPartial({id: '@Model.Id', element: this, serialNumber: '@Model.SerialNumber', passType: @passType })">
                 <span>فاکتور ها</span>
                 <span class="flex-center" style="gap: 2px">
@@ -51,7 +51,7 @@
     }
 
     @if (User.IsFinancial() || User.IsAdmin()) {
-        <button class="buttonGreen2 factorCount-btn" onclick="showPreFactorExternalSotwaresModal('@Model.Id', '@Model.SerialNumber')">
+        <button class="buttonBlue2 factorCount-btn" onclick="showPreFactorExternalSotwaresModal('@Model.Id', '@Model.SerialNumber')">
             @* <span>ارتباط با</span> *@
             <span>ارتباط مالی</span>
         </button>

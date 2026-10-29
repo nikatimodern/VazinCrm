@@ -23,6 +23,8 @@ public class Deal : BaseEntity {
     public int? CustomerCode { get; set; }
     public string MobileNumber { get; set; }
     public DealStatusEnum Status { get; set; } = DealStatusEnum.باز;
+    public DateTime? OverdueFollowUpAt { get; set; }
+    public string OverdueFollowUpNote { get; set; }
     public int SerialNumber { get; set; }
     public int CountNum { get; set; } = 0;
     public byte CusSex { get; set; } = 1;
