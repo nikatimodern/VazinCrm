@@ -3,6 +3,7 @@ using CRM.Core.Domain.Deals.Repositories;
 using CRM.Core.Domain.Reports.Enum;
 using CRM.Core.Domain.Reports.Repositories;
 using CRM.Framework;
+using CRM.Core.ApplicationServices.Reports.Abstractions;
 
 namespace CRM.Core.ApplicationServices.Reports.Commands.AddReport;
 

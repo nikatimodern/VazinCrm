@@ -16,6 +16,13 @@ Use for controllers, endpoints, business logic, repository contracts, and CQRS-r
 
 Dependencies point inward. Do not reference SQL, EF Core or MVC from Domain. Keep controllers thin. Use Domain repository interfaces in application code rather than concrete SQL implementations.
 
+## Mandatory Dispatcher for CQRS
+- Whenever an operation uses CQRS, controllers and other entry points must send its Command or Query through the existing `ICqrsDispatcher`. Do not inject `ICommandHandler<,>` or `IQueryHandler<,>` into controllers or call their `HandleAsync` methods directly.
+- For a controller requested to be fully converted to CQRS, `ICqrsDispatcher` must be its only injected dependency and every action must dispatch its application operation. Page initialization such as `Index` should dispatch a meaningful page-data Query and pass the result to the view; do not add empty handlers just to satisfy this rule.
+- Keep only HTTP binding, request/result mapping, MVC rendering or file responses, and HTTP error mapping in controllers. Move user lookup, role-dependent business decisions, persistence, auditing, integration calls, and notifications into handlers and the appropriate application contracts. Preserve endpoint authorization attributes and enforce business permissions server-side.
+- Place the Dispatcher contract in `ApplicationServices/Abstractions/Cqrs` and keep DI-based handler resolution in the composition layer. Reuse the shared Dispatcher rather than introducing a feature-specific one. Forward `CancellationToken` and preserve scoped handler lifetimes.
+- Verify that each converted action uses the Dispatcher and that no business helper methods or direct DbContext/service dependencies remain in a fully converted controller.
+
 ## Mandatory CQRS for API and React migration
 - Every feature migrated from the existing MVC/Razor application to API and React must use CQRS for its backend application operations. This is a migration requirement, not an optional suitability assessment, including authentication, dashboard, reports, and financial features.
 - Model reads as Queries and state-changing operations as Commands, each with its handler in the existing `CRM.Core.ApplicationServices` project. Reuse existing handlers when their behavior matches; do not create duplicate handlers or empty pass-through operations for presentation-only changes.

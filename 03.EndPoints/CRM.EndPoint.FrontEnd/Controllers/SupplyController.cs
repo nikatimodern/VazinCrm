@@ -14,7 +14,7 @@ using CRM.Core.ApplicationServices.Supplies.Commands.SaveSalesAllocation;
 using CRM.Core.ApplicationServices.Supplies.Commands.SaveSupplyAllocation;
 using CRM.Core.ApplicationServices.Supplies.Commands.UpdatePayment;
 using CRM.Core.ApplicationServices.Supplies.Commands.UpdateSupplyFactor;
-using CRM.Core.ApplicationServices.Supplies.Dtos;
+using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Supplies.Queries.GetDealSupplies;
 using CRM.Core.ApplicationServices.Supplies.Queries.GetOrderHeadsBySupplier;
 using CRM.Core.ApplicationServices.Supplies.Queries.GetPayment;
@@ -48,7 +48,7 @@ using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 [Authorize(Policy = "NotCustomerOnly")]
-public class SupplyController(ISupplyRequestDispatcher requests, UserManager<AppUser> users, DateTimeServices dates) : Controller
+public class SupplyController(ICqrsDispatcher requests, UserManager<AppUser> users, DateTimeServices dates) : Controller
 {
     private const string SalesAllocationRoles = "مدیر تامین,کارشناس تامین,مدیر ارشد,مدیر اجرایی,مدیر عامل,مدیر مالی,کارشناس مالی,مدیر فروش,کارشناس فروش";
     public class SupplyFactorAllocationRequest : CRM.Core.Domain.Supplies.Models.SupplyFactorAllocationRequest

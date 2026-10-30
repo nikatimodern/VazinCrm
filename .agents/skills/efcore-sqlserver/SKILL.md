@@ -20,6 +20,7 @@ Use for queries, schema mapping, performance, concurrency, and persistence bugs.
 Never execute SQL writes, migrations, or schema changes without explicit authorization. Do not assume CRM and Sepidar share an atomic transaction. Never guess external table columns.
 
 ## Project-wide architecture and change policy
+- Whenever CQRS is used, route Commands and Queries through the shared `ICqrsDispatcher`; controllers must not inject or invoke handlers directly. For fully converted controllers, every action must dispatch its operation and the Dispatcher must be the only injected dependency. Follow [the Dispatcher requirement](../crm-backend/SKILL.md#mandatory-dispatcher-for-cqrs).
 - Follow the Feature-Based / Vertical Slice CQRS organization defined in `AGENTS.md` for all features: place each request, handler, and operation-specific DTO/result together under `<Feature>/Commands/<Operation>/` or `<Feature>/Queries/<Operation>/`. Do not introduce a `Features` wrapper or a feature-wide `Handlers` folder. Keep shared models in `<Feature>/Dtos` and generic CQRS contracts in `Abstractions/Cqrs`; match namespaces to paths.
 - For any new feature that persists data, define its repository interface in `CRM.Core.Domain` and implementation in `CRM.Infrastructures.Sql`; avoid direct DbContext access from new controllers or handlers.
 - For new features, consider and suggest CQRS where beneficial, but use the existing `CRM.Core.ApplicationServices` layer; suggest CQRS where beneficial and obtain approval before introducing new CQRS patterns or dependencies.

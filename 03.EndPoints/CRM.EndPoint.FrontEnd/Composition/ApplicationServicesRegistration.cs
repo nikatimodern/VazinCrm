@@ -1,3 +1,15 @@
+using CRM.Core.ApplicationServices.Reports.Abstractions;
+using CRM.Core.ApplicationServices.Reports.Commands.SaveReport;
+using CRM.Core.ApplicationServices.Reports.Dtos;
+using CRM.Core.Domain.Reports.Models;
+using CRM.EndPoint.FrontEnd.Services.Reports;
+using CRM.Core.ApplicationServices.Reports.Commands.DeleteReport;
+using CRM.Core.ApplicationServices.Reports.Queries.GetCallAudio;
+using CRM.Core.ApplicationServices.Reports.Queries.ExportReports;
+using CRM.Core.ApplicationServices.Reports.Queries.GetReportBaseItems;
+using CRM.Core.ApplicationServices.Reports.Queries.GetCallReports;
+using CRM.Core.ApplicationServices.Reports.Queries.GetReportPartial;
+using CRM.Core.ApplicationServices.Reports.Queries.GetAllReports;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Reports.Commands.AddReport;
 using CRM.Core.ApplicationServices.Reports.Queries.GetReport;
@@ -50,6 +62,19 @@ public static class ApplicationServicesRegistration
     {
         services.AddScoped<IQueryHandler<GetReportQuery, Report>, GetReportQueryHandler>();
         services.AddScoped<IReportRepository, ReportRepository>();
+        services.AddHttpContextAccessor();
+        services.AddScoped<IQueryHandler<GetAllReportsQuery, ReportListResult>, GetAllReportsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetReportPartialQuery, ReportPartialResult>, GetReportPartialQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCallReportsQuery, ReportPartialResult>, GetCallReportsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetReportBaseItemsQuery, ReportBaseItems>, GetReportBaseItemsQueryHandler>();
+        services.AddScoped<IQueryHandler<ExportReportsQuery, ReportExportFile>, ExportReportsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCallAudioQuery, GetCallAudioResult>, GetCallAudioQueryHandler>();
+        services.AddScoped<ICommandHandler<DeleteReportCommand, DeleteReportResult>, DeleteReportCommandHandler>();
+        services.AddScoped<ICommandHandler<SaveReportCommand, AddReportResult>, SaveReportCommandHandler>();
+        services.AddScoped<IReportUserContext, ReportUserContext>();
+        services.AddScoped<IReportNotifications, ReportNotifications>();
+        services.AddScoped<IReportPresentation, ReportPresentation>();
+        services.AddScoped<IReportCallAudio, ReportCallAudio>();
         services.AddScoped<ICommandHandler<AddReportCommand, AddReportResult>, AddReportCommandHandler>();
         services.AddScoped<IDealRepository, DealRepository>();
         services.AddScoped<IReportAuditLogger, ReportAuditLogger>();
@@ -57,7 +82,7 @@ public static class ApplicationServicesRegistration
         services.AddScoped<ISupplyWriteRepository, SupplyWriteRepository>();
         services.AddScoped<ISupplyInventoryRepository, SupplyInventoryRepository>();
         services.AddScoped<ISupplyIntegrationServices, SupplyIntegrationServices>();
-        services.AddScoped<ISupplyRequestDispatcher, SupplyRequestDispatcher>();
+        services.AddScoped<ICqrsDispatcher, CqrsDispatcher>();
         services.AddScoped<IQueryHandler<GetSupplyFactorAllocationsQuery, SupplyResult>, GetSupplyFactorAllocationsQueryHandler>();
         services.AddScoped<IQueryHandler<SearchAllocationFactorItemsQuery, SupplyResult>, SearchAllocationFactorItemsQueryHandler>();
         services.AddScoped<IQueryHandler<GetSalesFactorAllocationsQuery, SupplyResult>, GetSalesFactorAllocationsQueryHandler>();

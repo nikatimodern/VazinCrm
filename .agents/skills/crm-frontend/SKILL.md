@@ -31,6 +31,7 @@ Use for Razor, JavaScript, CSS, modal, select, table, form, and frontend refacto
 Do not introduce new frontend dependencies or rewrite global styles without a concrete need and approval.
 
 ## Project-wide architecture and change policy
+- Whenever CQRS is used, route Commands and Queries through the shared `ICqrsDispatcher`; controllers must not inject or invoke handlers directly. For fully converted controllers, every action must dispatch its operation and the Dispatcher must be the only injected dependency. Follow [the Dispatcher requirement](../crm-backend/SKILL.md#mandatory-dispatcher-for-cqrs).
 - Follow the Feature-Based / Vertical Slice CQRS organization defined in `AGENTS.md` for all features: place each request, handler, and operation-specific DTO/result together under `<Feature>/Commands/<Operation>/` or `<Feature>/Queries/<Operation>/`. Do not introduce a `Features` wrapper or a feature-wide `Handlers` folder. Keep shared models in `<Feature>/Dtos` and generic CQRS contracts in `Abstractions/Cqrs`; match namespaces to paths.
 - For any new feature that persists data, define its repository interface in `CRM.Core.Domain` and implementation in `CRM.Infrastructures.Sql`; avoid direct DbContext access from new controllers or handlers.
 - For migrated API and React features, CQRS is mandatory as described above. Outside that migration, consider and suggest CQRS where beneficial using the existing `CRM.Core.ApplicationServices` layer. Obtain approval before introducing a different CQRS pattern or new dependencies.
