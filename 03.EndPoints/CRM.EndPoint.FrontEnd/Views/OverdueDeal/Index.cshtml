@@ -771,12 +771,7 @@
 
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <div id="overdueDealsLoading" class="text-center py-5">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">در حال دریافت اطلاعات...</span>
-                </div>
-                <p class="text-muted mt-3 mb-0">در حال دریافت سفارشات معوقه...</p>
-            </div>
+            <div id="overdueDealsLoading" class="p-2" role="status" aria-label="در حال دریافت سفارشات معوقه"><partial name="_PageSkeleton" /></div>
 
             <div id="overdueDealsError" class="alert alert-danger m-3 d-none" role="alert"></div>
 
@@ -986,7 +981,7 @@
 
 
 @section Scripts {
-    <script>
+    <script data-page-bindings="filterDealConfig,overdueDealSearchVal">
         var filterDealConfig = window.filterDealConfig || {};
         var overdueDealSearchVal = null;
 
@@ -1586,5 +1581,5 @@
             loadOverdueDeals();
         });
     </script>
-    <script src="~/js/deal/deal-documents.js" asp-append-version="true"></script>
+    <script src="~/js/deal/deal-documents.js" asp-append-version="true" data-page-bindings="currentDealDocumentData,showModalDealPreFactors,showModalDealFactors,showModalDealReports,showModalDealOrders,showModalDealSupplyFactors,showModalDealInvoices,getPreFactorFromDeal,getReportFromDeal,getSupplyFactorsFromDeal,getOrdersFromDeal,getInvoicesFromDeal,refreshDealPreFactors,refreshDealFactors,refreshDealReports,refreshDealOrders,refreshDealSupplyFactors,deletedPrefactorToggle"></script>
 }

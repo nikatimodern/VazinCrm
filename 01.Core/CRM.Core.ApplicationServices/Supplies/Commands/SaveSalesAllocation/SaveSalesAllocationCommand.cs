@@ -1,3 +1,4 @@
+using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Supplies.Entities;
@@ -6,14 +7,17 @@ using CRM.Core.Domain.Supplies.Repositories;
 using CRM.Core.Domain.Supplies.Rules;
 
 namespace CRM.Core.ApplicationServices.Supplies.Commands.SaveSalesAllocation;
-public sealed record SaveSalesAllocationCommand(SupplyFactorAllocationRequest Model, Guid? AllocationId, AppUser User) : ICommand<SupplyResult>;
-public sealed class SaveSalesAllocationCommandHandler(ISupplyWriteRepository repository, ISupplyInventoryRepository supplyWarehouse) : ICommandHandler<SaveSalesAllocationCommand, SupplyResult>
+public sealed record SaveSalesAllocationCommand(SupplyFactorAllocationRequest Model, Guid? AllocationId) : ICommand<SupplyResult>;
+public sealed class SaveSalesAllocationCommandHandler(ISupplyWriteRepository repository, ISupplyInventoryRepository supplyWarehouse, CurrentActor actor) : ICommandHandler<SaveSalesAllocationCommand, SupplyResult>
 {
     public async Task<SupplyResult> HandleAsync(SaveSalesAllocationCommand command, CancellationToken cancellationToken)
     {
         var model = command.Model;
         var allocationId = command.AllocationId;
-        var user = command.User;
+        var current = await actor.FindAsync(cancellationToken);
+        if (current == null)
+            return SupplyResult.Unauthenticated();
+        var user = current.User;
         if (model == null || !SupplyAllocationRules.IsValidWeight(model.Weight))
             return SupplyResult.Invalid("مقدار تخصیص باید مثبت و حداکثر دارای دو رقم اعشار باشد.");
         if (!model.FactorItemId.HasValue || model.FactorItemId == Guid.Empty)

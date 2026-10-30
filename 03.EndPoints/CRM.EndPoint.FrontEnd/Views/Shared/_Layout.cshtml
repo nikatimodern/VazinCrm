@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fa">
 
 <head>
@@ -64,7 +64,8 @@
     <link rel="stylesheet" href="~/lib/TomSelect/tom-select.min.css" />
 
 
-    <link rel="stylesheet" href="~/css/site.css?v=6.9.3" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/pageSkeleton.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/table.css?v=6.9.3" />
     <link rel="stylesheet" href="~/css/layoutResponsive.css?v=6.9.3" />
     <link rel="stylesheet" href="~/css/customerProfileResponsive.css?v=6.9.3" />
@@ -80,8 +81,9 @@
     <link rel="stylesheet" href="~/css/preFactor.css?v=6.9.3" />
     <link rel="stylesheet" href="~/css/supplyFactor.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/menu.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/pageNavigation.css" asp-append-version="true" />
 
-    @await RenderSectionAsync("Styles", required: false)
+    <template data-page-styles>@await RenderSectionAsync("Styles", required: false)</template>
 </head>
 
 
@@ -101,7 +103,7 @@
         <partial name="Header/_Header" />
 
         <main id="mainContent" role="main">
-            @RenderBody()
+            <template data-page-body>@RenderBody()</template>
         </main>
     </div>
 </div>
@@ -198,7 +200,8 @@
 
         // Animate only intentional interaction, including keyboard and touch input.
         const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-        function animateMenuIcon(item) {
+        const hoveredMenuAnimations = new WeakMap();
+        function animateMenuIcon(item, repeat = false) {
             if (reducedMotion.matches) return;
             const icon = item.querySelector(":scope > .menu-icon-frame > .menu-icon");
             if (!icon?.animate) return;
@@ -208,16 +211,41 @@
                 : icon.dataset.menuIcon === "bell-ring"
                     ? ["rotate(0deg)", "rotate(12deg)", "rotate(-10deg)", "rotate(5deg)", "rotate(0deg)"]
                     : ["translateY(0)", "translateY(-3px) rotate(-5deg)", "translateY(0) rotate(2deg)", "translateY(0)"];
-            icon.animate(transforms.map(transform => ({ transform })), { duration: 400, easing: "ease-out" });
+            const frames = transforms.map((transform, index) => ({
+                transform,
+                offset: index / (transforms.length - 1) * (repeat ? 4 / 7 : 1)
+            }));
+            if (repeat) frames.push({ transform: transforms.at(-1), offset: 1 });
+            const animation = icon.animate(frames, {
+                duration: repeat ? 700 : 400,
+                iterations: repeat ? Infinity : 1,
+                easing: "ease-out"
+            });
+            if (repeat) hoveredMenuAnimations.set(item, animation);
         }
+        document.querySelectorAll(".menu-nav .menu-item.active-menu").forEach(item => item.classList.add("menu-click-orbit"));
         document.querySelectorAll(".menu-nav, #mobileNavbar").forEach(nav => {
             ["pointerover", "focusin", "click"].forEach(eventName => {
                 nav.addEventListener(eventName, event => {
                     const item = event.target.closest(".menu-item");
                     if (!item || !nav.contains(item)) return;
                     if (eventName === "pointerover" && item.contains(event.relatedTarget)) return;
-                    animateMenuIcon(item);
+                    if (eventName === "click" && nav.matches(".menu-nav")) {
+                        document.querySelectorAll(".menu-nav .menu-click-orbit").forEach(previous => {
+                            if (previous !== item) previous.classList.remove("menu-click-orbit");
+                        });
+                        item.classList.add("menu-click-orbit");
+                    }
+                    animateMenuIcon(item, eventName === "pointerover"
+                        ? event.pointerType !== "touch"
+                        : hoveredMenuAnimations.has(item));
                 });
+            });
+            nav.addEventListener("pointerout", event => {
+                const item = event.target.closest(".menu-item");
+                if (!item || !nav.contains(item) || item.contains(event.relatedTarget)) return;
+                hoveredMenuAnimations.get(item)?.cancel();
+                hoveredMenuAnimations.delete(item);
             });
         });
         reducedMotion.addEventListener("change", event => {
@@ -249,7 +277,7 @@
 <script src="~/lib/SweetAlert/sweetalert2.all.min.js"></script>
 <script src="~/lib/toastify/toastify-js.js"></script>
 <script src="~/lib/DatePickers/persian-date.min.js"></script>
-<script src="~/lib/DatePickers/persian-datepicker.min.js"></script>
+<script src="~/lib/DatePickers/persian-datepicker.min.js" asp-append-version="true"></script>
 <script src="~/lib/timepicker/bootstrap-timepicker.min.js"></script>
 <script src="~/lib/select2/js/select2.full.min.js"></script>
 <script src="~/lib/CropperJs/cropper.min.js"></script>
@@ -260,25 +288,29 @@
 <script src="~/lib/Awesomplete/awesomplete.min.js"></script>
 <script src="~/lib/TomSelect/tom-select.complete.min.js"></script>
 
-<script src="~/js/TaskSignalR.js?v=6.9.3"></script>
+<script src="~/js/TaskSignalR.js" asp-append-version="true"></script>
 <script src="~/js/pwa.js?v=6.9.3"></script>
-<script src="~/js/site.js?v=6.9.3"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+<script src="~/js/pageSkeleton.js" asp-append-version="true"></script>
 <script src="~/js/File.js?v=6.9.3"></script>
 <script src="~/js/PublicFunction.js?v=6.9.3"></script>
 <script src="~/js/DateValidate.js?v=6.9.3"></script>
 <script src="~/js/preFactor.js?v=6.9.3"></script>
-<script src="~/js/factor.js?v=6.9.3"></script>
+<script src="~/js/factor.js" asp-append-version="true"></script>
 <script src="~/js/accountancy.js?v=6.9.3"></script>
-<script src="~/js/report.js?v=6.9.3"></script>
+<script src="~/js/report.js" asp-append-version="true"></script>
 <script src="~/js/order.js?v=6.9.3"></script>
-<script src="~/js/Layout.js?v=6.9.3" defer></script>
+<script src="~/js/Layout.js" asp-append-version="true" defer></script>
 
 <script>
     const basePath = '@Url.Action("", "")';
     var baseUrl = basePath === "/" ? basePath : `${basePath}/`;
 </script>
 
-@await RenderSectionAsync("Scripts", required: false)
+<template data-page-scripts>@await RenderSectionAsync("Scripts", required: false)</template>
+<script src="~/js/pageDom.js" asp-append-version="true" defer></script>
+<script src="~/js/pageRuntime.js" asp-append-version="true" defer></script>
+<script src="~/js/pageNavigation.js" asp-append-version="true" defer></script>
 
 </body>
 </html>

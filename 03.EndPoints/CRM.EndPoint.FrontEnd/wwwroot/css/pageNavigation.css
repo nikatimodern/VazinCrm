@@ -1,0 +1,13 @@
+#mainContent > [data-page-root] { display: contents; }
+.workspace-navigation-status {
+    position: fixed;
+    inset-block-start: 65px;
+    inset-inline-start: 50%;
+    z-index: 1060;
+    padding: 9px 18px;
+    border-radius: 8px;
+    background: #004944;
+    color: #fff;
+    box-shadow: 0 3px 14px #0002;
+    pointer-events: none;
+}

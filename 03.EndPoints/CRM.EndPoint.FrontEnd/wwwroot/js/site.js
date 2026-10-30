@@ -16,126 +16,66 @@
  * @param {boolean} [options.showError=true]
  * @param {number} [options.timeout=30000]
  * @param {AbortSignal|null} [options.signal=null]
+ * @param {Object|string|null} [options.skeleton=null] Local read-only content loading target.
  * @param {boolean} [options.returnFullResponse=false]
  * @param {Function|null} [options.onUploadProgress=null]
  * @param {Function|null} [options.onDownloadProgress=null]
  * @param {boolean} [options.withCredentials=false]
  * @returns {Promise<any|null>}
  */
-async function sendApiRequest(
-    {
-        url,
-        method = "GET",
-        data = null,
-        params = null,
-        headers = null,
-        responseType = "json",
-        onSuccess = null,
-        onError = null,
-        successMsg = undefined,
-        showLoading = true,
-        showError = true,
-        timeout = 30000,
-        signal = null,
-        returnFullResponse = false,
-        onUploadProgress = null,
-        onDownloadProgress = null,
-        withCredentials = false,
-    }) {
+async function sendApiRequest({
+    url, method = "GET", data = null, params = null, headers = null, responseType = "json",
+    onSuccess = null, onError = null, successMsg = undefined, showLoading = true, showError = true,
+    timeout = 30000, signal = null, skeleton = null, returnFullResponse = false,
+    onUploadProgress = null, onDownloadProgress = null, withCredentials = false,
+}) {
+    const originalOptions = arguments[0];
+    const localLoading = skeleton && typeof PageSkeleton !== "undefined" ? PageSkeleton.begin(skeleton) : null;
+    const retry = typeof skeleton?.retry === "function" ? skeleton.retry : () => sendApiRequest({ ...originalOptions, signal: null });
+    const globalLoading = showLoading && !skeleton;
     method = method.toUpperCase();
-    
-    if (successMsg === undefined) {
-        successMsg = {
-            GET: null,
-            POST: "با موفقیت ثبت شد",
-            PUT: "با موفقیت ویرایش شد",
-            DELETE: "با موفقیت حذف شد",
-            PATCH: "با موفقیت ویرایش شد",
-        }[method] ?? null;
-    }
-    
+    if (successMsg === undefined) successMsg = { GET: null, POST: "با موفقیت ثبت شد", PUT: "با موفقیت ویرایش شد", DELETE: "با موفقیت حذف شد", PATCH: "با موفقیت ویرایش شد" }[method] ?? null;
     const config = {
-        url,
-        method,
-        responseType,
-        timeout,
-        signal,
-        withCredentials,
-        headers: {
-            "X-Requested-With": "XMLHttpRequest",
-            "X-Current-Page": window.location.pathname + window.location.search,
-            ...(window.signalRConnectionId && { "X-SignalR-ConnectionId": window.signalRConnectionId }),
-            ...(headers ?? {}),
-        },
+        url, method, responseType, timeout, withCredentials,
+        signal: localLoading ? (signal ? AbortSignal.any([signal, localLoading.signal]) : localLoading.signal) : signal,
+        headers: { "X-Requested-With": "XMLHttpRequest", "X-Current-Page": window.location.pathname + window.location.search,
+            ...(window.signalRConnectionId && { "X-SignalR-ConnectionId": window.signalRConnectionId }), ...(headers ?? {}) },
     };
-    
     if (params !== null) config.params = params;
     if (data !== null) config.data = data;
-    
-    if (typeof onUploadProgress === "function") {
-        config.onUploadProgress = onUploadProgress;
+    if (typeof onUploadProgress === "function") config.onUploadProgress = onUploadProgress;
+    if (typeof onDownloadProgress === "function") config.onDownloadProgress = onDownloadProgress;
+    const navigationPage = typeof PageRuntime !== "undefined" ? PageRuntime.current : null;
+    if (navigationPage && /^(GET|HEAD)$/.test(method)) {
+        config.signal = config.signal ? AbortSignal.any([config.signal, navigationPage.signal]) : navigationPage.signal;
     }
-    
-    if (typeof onDownloadProgress === "function") {
-        config.onDownloadProgress = onDownloadProgress;
-    }
-    
-    let response = null;
-    let requestError = null;
-    
-    if (showLoading) {
-        updateApiLoading(true);
-    }
-    
-    try {
-        response = await axios(config);
-    } catch (err) {
-        requestError = err;
-    } finally {
-        if (showLoading) {
-            updateApiLoading(false);
-        }
-    }
-    
-    // Handle request errors after closing loading.
+    let response = null, requestError = null;
+    if (globalLoading) updateApiLoading(true);
+    try { response = await axios(config); }
+    catch (error) { requestError = error; }
+    finally { if (globalLoading) updateApiLoading(false); }
+    if (navigationPage && !navigationPage.isActive && /^(GET|HEAD)$/.test(method)) return null;
+    if (localLoading && !localLoading.isCurrent()) return null;
     if (requestError) {
-        if (axios.isCancel(requestError) || requestError.code === "ERR_CANCELED") {
-            return null;
-        }
-        
+        if (axios.isCancel(requestError) || requestError.code === "ERR_CANCELED") { localLoading?.cancel(); return null; }
         console.error("API Error:", requestError);
-        
         const errorResponse = requestError.response;
-        
         if (errorResponse?.status === 401 && errorResponse.headers?.["x-auth-expired"] === "true") {
-            const loginUrl = errorResponse.headers?.["x-login-url"];
-            window.location.href = loginUrl || "/Account/Login";
-            return null;
+            localLoading?.finish(); window.location.href = errorResponse.headers?.["x-login-url"] || "/Account/Login"; return null;
         }
-        
-        if (typeof onError === "function") {
-            try {
-                await onError(requestError);
-            } catch (callbackError) {
-                console.error("API Error Callback Error:", callbackError);
-            }
-        } else if (showError) {
-            await handleApiError(requestError);
-        }
-        
+        try {
+            if (typeof onError === "function") await onError(requestError);
+            else if (showError && !localLoading) await handleApiError(requestError);
+        } catch (callbackError) { console.error("API Error Callback Error:", callbackError); }
+        localLoading?.fail(retry);
         return null;
     }
-    
-    // Handle successful response.
-    if (successMsg && typeof toastifySuccess === "function") {
-        toastifySuccess(successMsg);
-    }
-    
-    if (typeof onSuccess === "function") {
-        await onSuccess(response);
-    }
-    
-    return returnFullResponse ? response : response?.data;
+    try {
+        if (successMsg) toastifySuccess(successMsg);
+        if (typeof onSuccess === "function") await onSuccess(response);
+        localLoading?.finish();
+        return returnFullResponse ? response : response?.data;
+    } catch (error) { localLoading?.fail(retry); throw error; }
 }
 
 let activeApiLoadingCount = 0;

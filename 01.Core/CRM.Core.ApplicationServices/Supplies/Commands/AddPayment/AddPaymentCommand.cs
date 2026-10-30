@@ -1,3 +1,4 @@
+using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Supplies.Dtos;
 using CRM.Core.Domain.AppUsers.Entities;
@@ -8,13 +9,16 @@ using CRM.Core.Domain.Supplies.Models;
 using CRM.Core.Domain.Supplies.Repositories;
 
 namespace CRM.Core.ApplicationServices.Supplies.Commands.AddPayment;
-public sealed record AddPaymentCommand(Payment Model, AppUser User) : ICommand<SupplyResult>;
-public sealed class AddPaymentCommandHandler(ISupplyWriteRepository repository, ISupplyIntegrationServices integrations) : ICommandHandler<AddPaymentCommand, SupplyResult>
+public sealed record AddPaymentCommand(Payment Model) : ICommand<SupplyResult>;
+public sealed class AddPaymentCommandHandler(ISupplyWriteRepository repository, ISupplyIntegrationServices integrations, CurrentActor actor) : ICommandHandler<AddPaymentCommand, SupplyResult>
 {
     public async Task<SupplyResult> HandleAsync(AddPaymentCommand command, CancellationToken cancellationToken)
     {
         var model = command.Model;
-        var user = command.User;
+        var current = await actor.FindAsync(cancellationToken);
+        if (current == null)
+            return SupplyResult.Unauthenticated();
+        var user = current.User;
         if (model == null)
             return SupplyResult.Invalid();
         await using var transaction = await repository.BeginTransactionAsync(false, cancellationToken);
@@ -38,7 +42,7 @@ public sealed class AddPaymentCommandHandler(ISupplyWriteRepository repository, 
             await transaction.CommitAsync(cancellationToken);
             return SupplyResult.Success();
         }
-        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        catch (Exception)when (!cancellationToken.IsCancellationRequested)
         {
             await transaction.RollbackAsync(CancellationToken.None);
             return SupplyResult.Invalid();

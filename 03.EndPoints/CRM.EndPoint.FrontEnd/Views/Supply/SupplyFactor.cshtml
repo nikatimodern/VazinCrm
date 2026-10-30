@@ -29,8 +29,8 @@
 <partial name="Modals/_SupplyFactorItemModal" />
 
 @section Scripts {
-    <script src="~/js/supplyFactor.js" asp-append-version="true"></script>
-    <script>
+    <script src="~/js/supplyFactor.js" asp-append-version="true" data-page-bindings="orderHeadsSupFactorSelectedIds,supplyFactorData,sfItemIndex,incompleteSfItemsCount,supplyFactorDiscountInp,supplyFactorAttInpId,showSupplyFactorModal,initSupplyFactorModal,cancelSupplyFactorModal,addSfItem,calculateSupplyFactorTotals,sfFieldRules,showSupplyFactorItems,deleteSfItem,showUpdateSfItem,updateSfItem,cancelUpdateSfItem,addItemSupplyFactor,canselModalItemSupplyFactor,proccessSupplyFactorWithAi,updateSupplyFactorValidationState,showAddOrderHeadSfModal,getOrderHeadIdsBySupplier,isSetupSupplyTomSelect,setupSelectOptions,submitSupplyFactorModal,getSupplyFactor,showEditSupplyFactorModal,deleteSupplyFactor,sfAllocationState,sfAllocationPerspective,sfAllocationIsSales,sfAllocationSaving,sfAllocationChoosing,sfAllocationSelector,sfAllocationRequest,sfAllocationAbort,sfAllocationOrigin,sfAllocationInvoiceId,sfAllocationFilter,sfAllocationCurrentItemId,sfAllocationOpen,sfAllocationDrafts,sfPickerTab,sfPickerData,sfPickerTargets,sfPickerForm,sfPickerAbort,sfPickerRequest,sfPickerTimer,sfPickerLoading,sfAllocationText,sfAllocationEscape,sfAllocationNumber,sfAllocationRemaining,sfAllocationNormalize,sfAllocationIcon,sfAllocationSalesWeight,sfAllocationDisplayRecord,sfAllocationTargetLabel,sfAllocationSalesCapacity,sfAllocationSkeleton,sfAllocationEmpty,ensureSupplyAllocationUI,sfAllocationRefreshNeeded,sfAllocationFeedback,showSalesFactorAllocations,showSupplyAllocations,loadSupplyAllocations,sfAllocationCapacity,updateSupplyAllocationLimit,captureSupplyAllocationDrafts,sfAllocationForm,renderSupplyAllocations,renderSupplyAllocationRecords,filterSupplyAllocationItems,navigateSupplyAllocationItem,loadSupplyAllocationPicker,renderSupplyAllocationPicker,updateSupplyPickerSelection,selectSupplyAllocationFactor,clearSupplyAllocationFormError,supplyAllocationFormError,submitSupplyAllocation,persistSupplyAllocation,deleteSupplyAllocation,retrySupplyAllocations"></script>
+    <script data-page-bindings="getAllSupplyFactors">
         document.addEventListener("DOMContentLoaded", async () => {
             await getAllSupplyFactors();
 
@@ -39,10 +39,10 @@
 
         const getAllSupplyFactors = async () => {
             const val = document.getElementById("supplyFactorSearch")?.value.trim() ?? "";
-            FLshowLoading();
-            const res = await axios(`/Supply/GetAllSupplyFactorsPartial?search=${val}`);
+            const res = await sendApiRequest({ url: "/Supply/GetAllSupplyFactorsPartial", params: { search: val }, returnFullResponse: true, skeleton: { target: "#supplyFactorsContainer", retry: getAllSupplyFactors } });
+            if (!res) return;
             document.getElementById("supplyFactorsContainer").innerHTML = res.data;
-            FLshowLoading(false);
+
         };
     </script>
 }

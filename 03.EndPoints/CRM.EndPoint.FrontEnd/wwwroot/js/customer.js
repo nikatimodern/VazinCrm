@@ -54,81 +54,89 @@ const getCountOfCustomerPartialTop = () => {
 };
 
 
-let skipCus;
-let takeCus;
-const ShowAllCustomer = () => {
-    loadCustomers(skipCus, takeCus);
-    skipCus += takeCus;
-};
+let skipCus = 0;
+let takeCus = 0;
+let customerListRequest = null;
 
-let isLoading = false;
-function loadCustomers(skip = 0, take) {
-    if (isLoading) return;
-    if (take === undefined) {
-        take = getCountOfCustomerPartialTop();
-        takeCus = take * 12;
-        skipCus = 0;
-    }
-    isLoading = true;
-    LoadingCustomer.style.display = "flex";
-    
-    const { juridicalType = -1, roleType = -1 } = getUrlParams();
-    
-    sendApiRequest({
-        url: "/Customer/GetAllCustomerPartial",
-        params: { skip, take, roleType, juridical: juridicalType },
-        onSuccess: (res) => {
-            const trimmed = res.data.trim();
-            if (trimmed.includes("no-customer-found")) {
-                ShowAllBtn.style.display = "none";
-                if (skip === 0) {
-                    document.getElementById("CustomerPartial").innerHTML = trimmed;
-                }
-                return;
-            }
-            
-            const container = document.getElementById("CustomerPartial");
-            if (skip === 0) {
-                container.innerHTML = trimmed;
-            } else {
-                const temp = document.createElement("div");
-                temp.innerHTML = trimmed;
-                
-                Array.from(temp.children).forEach(el => container.appendChild(el));
-            }
-        },
-    });
-    
-    isLoading = false;
-    LoadingCustomer.style.display = "none";
-    ShowAllBtn.style.display = "flex";
+async function ShowAllCustomer() {
+    if (customerListRequest) return;
+    await loadCustomers(skipCus, takeCus);
 }
 
-
-const SearchAllCustomer = (search) => {
-    LoadingCustomer.style.display = "flex";
+async function readCustomerCards({ search = null, skip = 0, take = getCountOfCustomerPartialTop() } = {}) {
+    customerListRequest?.abort();
+    const request = new AbortController();
+    customerListRequest = request;
     const container = document.getElementById("CustomerPartial");
-    
+    const append = search === null && skip > 0;
+    container.querySelectorAll(".customer-skeleton, .customer-load-error").forEach(element => element.remove());
+    const template = document.getElementById("customerSkeletonTemplate").innerHTML;
+    if (append) {
+        for (let i = 0; i < getCountOfCustomerPartialTop(); i++) container.insertAdjacentHTML("beforeend", template);
+    } else {
+        Skeleton.show({ container, count: getCountOfCustomerPartialTop(), template: () => template });
+    }
+    container.setAttribute("aria-busy", "true");
+    LoadingCustomer.hidden = false;
+    ShowAllBtn.style.display = "none";
     const { juridicalType = -1, roleType = -1 } = getUrlParams();
-    sendApiRequest({
-        url: "/Customer/SearchAllCustomerPartial",
-        params: { val: search, juridical: juridicalType, roleType },
-        onSuccess: (res) => {
-            LoadingCustomer.style.display = "none";
-            ShowAllBtn.style.display = "none";
-            container.innerHTML = res.data;
-        },
-    });
-};
-
+    let succeeded = false;
+    function showError() {
+        if (customerListRequest !== request || request.signal.aborted || container.querySelector(".customer-load-error")) return;
+        container.querySelectorAll(".customer-skeleton").forEach(element => element.remove());
+        const feedback = document.createElement("div");
+        feedback.className = "customer-load-error";
+        const text = document.createElement("p");
+        text.setAttribute("role", "alert");
+        text.textContent = "دریافت مشتریان انجام نشد.";
+        const retry = document.createElement("button");
+        retry.textContent = "تلاش دوباره";
+        retry.addEventListener("click", () => readCustomerCards({ search, skip, take }));
+        feedback.append(text, retry);
+        container.append(feedback);
+    }
+    try {
+        await sendApiRequest({
+            url: search === null ? "/Customer/GetAllCustomerPartial" : "/Customer/SearchAllCustomerPartial",
+            params: search === null ? { skip, take, roleType, juridical: juridicalType } : { val: search, roleType, juridical: juridicalType },
+            showLoading: false,
+            signal: request.signal,
+            onSuccess: res => {
+                if (customerListRequest !== request || request.signal.aborted) return;
+                const html = res.data.trim();
+                container.querySelectorAll(".customer-skeleton").forEach(element => element.remove());
+                const empty = html.includes("no-customer-found");
+                if (!append) container.innerHTML = html;
+                else if (!empty) container.insertAdjacentHTML("beforeend", html);
+                succeeded = true;
+                if (search === null && !empty) {
+                    skipCus = skip + take;
+                    takeCus = getCountOfCustomerPartialTop() * 12;
+                    ShowAllBtn.style.display = "flex";
+                }
+            },
+            onError: showError,
+        });
+    } catch {
+        showError();
+    } finally {
+        if (customerListRequest === request) {
+            if (!succeeded) showError();
+            customerListRequest = null;
+            container.setAttribute("aria-busy", "false");
+            delete container.dataset.skeleton;
+            LoadingCustomer.hidden = true;
+            if (!succeeded) container.querySelectorAll(".customer-skeleton").forEach(element => element.remove());
+        }
+    }
+}
+const loadCustomers = (skip = 0, take) => readCustomerCards({ skip, take });
+const SearchAllCustomer = search => readCustomerCards({ search });
 function getAllCustomers() {
     const { search = "" } = getUrlParams();
-    if (search.length !== 0)
-        SearchAllCustomer(search);
-    else {
-        loadCustomers();
-    }
+    return search.length ? SearchAllCustomer(search) : loadCustomers();
 }
+window.addEventListener("pagehide", () => customerListRequest?.abort());
 
 
 const addToMyCustomer = async (id) => {

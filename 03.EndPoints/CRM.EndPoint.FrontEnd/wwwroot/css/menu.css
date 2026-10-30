@@ -32,11 +32,53 @@
     flex-shrink: 0;
 }
 .menu-nav .menu-icon-frame {
+    position: relative;
     width: 30px;
     height: 30px;
     border-radius: 8px;
     background: rgba(197, 242, 227, .04);
     transition: background-color .2s, transform .2s;
+}
+@property --menu-button-orbit-angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
+}
+.menu-nav .menu-item::after,
+.menu-nav .menu-icon-frame::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .3s ease, transform .4s cubic-bezier(.2, .7, .2, 1);
+    background: conic-gradient(from var(--menu-button-orbit-angle), transparent 0deg 245deg, currentColor 320deg, #fff 338deg, currentColor 350deg, transparent 360deg);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+}
+.menu-nav .menu-item::after {
+    transform: scale(.94, .8);
+}
+.menu-nav .menu-item:hover > .menu-icon-frame::after,
+.menu-nav .menu-item:focus-visible > .menu-icon-frame::after {
+    opacity: 1;
+    animation: menuButtonOrbit 1.8s linear infinite;
+}
+.menu-nav .menu-item.menu-click-orbit::after {
+    opacity: 1;
+    transform: scale(1);
+    animation: menuButtonOrbit 1.8s linear infinite;
+}
+.menu-nav .menu-item.menu-click-orbit > .menu-icon-frame::after {
+    opacity: 0;
+    transform: scale(1.2);
+    animation: none;
+}
+@keyframes menuButtonOrbit {
+    to { --menu-button-orbit-angle: 360deg; }
 }
 .menu-nav .menu-icon-frame .menu-icon {
     width: 20px !important;
@@ -50,18 +92,15 @@
     background: rgba(180, 242, 223, .1);
     transform: translateY(-1px);
 }
-.menu-nav .menu-item.active-menu > .menu-icon-frame { background: rgba(255, 255, 255, .3); }
 html.sidebar-collapsed #desktopNavbar .menu-item:has(> .menu-icon-frame) { padding-inline: 0; }
 .menu-nav .menu-item:hover { background: rgba(143, 231, 211, .12); }
 .menu-nav .menu-item:focus-visible { outline: 2px solid #a8f0dd; outline-offset: -2px; }
 .menu-nav .has-submenu { border-radius: 10px; }
-.menu-nav .has-submenu.open { background: rgba(170, 237, 223, .07); }
 .menu-nav .menu-item.active-ancestor { color: #bcf5e5; font-family: IRANSansBold; }
 .menu-nav .menu-item.active-menu {
-    background: #b1f3e1;
-    color: #003e38;
+    color: #bcf5e5;
     font-family: IRANSansBold;
-    box-shadow: inset -3px 0 #55d4b1;
+    box-shadow: none;
 }
 .menu-nav .submenu { padding: 0; margin: 0; }
 .menu-nav .submenu-content { margin: 0; padding: 0; list-style: none; }
@@ -96,7 +135,7 @@ html.sidebar-collapsed #desktopNavbar .menu-item:has(> .menu-icon-frame) { paddi
 }
 .menu-nav .submenu .menu-item-title { font-size: 13px; white-space: normal; line-height: 1.65; }
 .menu-nav .submenu .menu-item::before { content: none; }
-.menu-nav .submenu .menu-item.active-menu { color: #003e38; font-family: IRANSansBold; }
+.menu-nav .submenu .menu-item.active-menu { color: #bcf5e5; font-family: IRANSansBold; }
 .menu-nav .submenu .menu-item.active-ancestor { color: #bcf5e5; font-family: IRANSansBold; }
 .menu-nav .submenu-arrow { flex-shrink: 0; }
 
@@ -137,6 +176,8 @@ html #mobileDrawerNavbar .submenu-content { min-height: 0; overflow: hidden; }
 html #mobileDrawerNavbar .has-submenu::before { content: none; }
 
 @media (prefers-reduced-motion: reduce) {
+    .menu-nav .menu-item::after,
+    .menu-nav .menu-item > .menu-icon-frame::after { animation: none; transition: none; }
     .menu-nav .submenu, .menu-nav .submenu-arrow, .menu-nav .menu-item { transition: none !important; }
     .menu-nav .menu-icon-frame { transition: none; transform: none !important; }
 }

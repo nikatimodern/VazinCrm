@@ -690,6 +690,7 @@ const GetFactorPartial = async ({ id, element, serialNumber, passType = 0, showL
     
     await sendApiRequest({
         url: "/Cartable/FactorPartial",
+        skeleton: passType === 0 ? { target: "#fAcceptedList" } : null,
         method: "POST",
         showLoading,
         data: model,

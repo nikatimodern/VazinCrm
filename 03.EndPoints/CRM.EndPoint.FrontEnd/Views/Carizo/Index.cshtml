@@ -131,7 +131,7 @@
 @section Scripts {
 
 
-    <script>
+    <script data-page-bindings="selectedCustomRepeat,editSelectedUsers,selectedUsers,users,systematicTask,handleNotifAndBellIcon,saveTaskCardTime,setupPlaceholderEditableElems,addTaskPlusIcon,taskTitleInput,taskDescriptionInput,schedulerTask,taskFormContainer,actionTaskButtons,resetAndCloseFormTask,handleTaskAction,handleRepeatDropdown,handleRepeatSubDropdown,showAssigmentUser,createAssigmentUserElm,openTaskDropdownToggle,showTaskDropdown,showEditTaskModal,handleFocusEditable,handleBlurEditable,submitTask,unCheckTask,delTask,delTaskOk,MaskTime,removeTasksTabsDesktop">
         let selectedCustomRepeat = [];
 
         let editSelectedUsers = [];
@@ -141,14 +141,14 @@
 
         document.addEventListener("DOMContentLoaded", async () => {
             removeTasksTabsDesktop();
-            document.getElementById("FLshowLoading").style.display = "";
             await Promise.all([getAllTask(0, systematicTask), getAllTask(1, systematicTask), getAllTask(2, systematicTask)]);
+            if (!__page.isActive) return;
 
             users = await CrmSer.getUsers(1);
+            if (!__page.isActive) return;
             users = users.filter(u => !u.target && u.text !== "مدیر ارشد");
 
             showAssigmentUser();
-            document.getElementById("FLshowLoading").style.display = "none";
             handleTaskAction();
             handleRepeatDropdown();
             handleRepeatSubDropdown();
@@ -162,11 +162,12 @@
             const indexId = taskList.findIndex(f => f === id);
             if (indexId !== -1) taskList.splice(indexId, 1);
 
+            const finishProgress = beginTaskCardUpdate(id);
             try {
                 const res = await axios(`/Carizo/TaskToggle?id=${id}&btnC=${typeToggle}`);
 
                 if (res.status === 200) {
-                    await getAllTask(Number(type), systematicTask);
+                    await refreshTaskCards(id);
                     await getRemind();
 
                 }
@@ -174,6 +175,8 @@
             } catch (err) {
                 console.log(err);
                 toastifyError("خطا: لطفا مجددا تلاش کنید!");
+            } finally {
+                finishProgress();
             }
         }
 
@@ -182,6 +185,7 @@
             const newDate = pickerInstance.model.inputElement.value;
 
             if (pickerInstance && id) {
+                const finishProgress = beginTaskCardUpdate(id);
                 try {
                     const model = await getTask(id);
                     if (model.date === newDate) return;
@@ -205,6 +209,8 @@
                 } catch (error) {
                     toastifyError("خطا در ویرایش تسک");
                     console.log(error);
+                } finally {
+                    finishProgress();
                 }
             }
         };
@@ -213,6 +219,35 @@
             document.getElementById("taskDate").value = pickerInstance.model.inputElement.value;
             document.getElementById("taskDate").parentElement.style.display = "inline-block";
         };
+
+        async function saveTaskCardTime(id, input) {
+            const value = toEnglishDigits(input.value).trim();
+            input.value = value;
+            if (value === (input.dataset.originalText ?? "") || input.dataset.savingTaskTime === "true") return;
+            if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) {
+                toastifyError("ساعت را به صورت ساعت:دقیقه وارد کنید؛ مثلاً ۱۴:۳۰.");
+                return;
+            }
+            input.dataset.savingTaskTime = "true";
+            const finishProgress = beginTaskCardUpdate(id);
+            try {
+                const params = new URLSearchParams({ id, _Time: value });
+                const response = await fetch(baseUrl + "Carizo/UpdateTaskTime?" + params);
+                if (!response.ok) throw new Error("Task time update failed.");
+                input.dataset.originalText = value;
+                if (connection.state !== "Connected") await refreshTaskCards(id);
+                await getRemind();
+                toastifySuccess("زمان تسک ویرایش شد.");
+            } catch (error) {
+                console.error(error);
+                toastifyError("خطا در ویرایش زمان تسک");
+            } finally {
+                delete input.dataset.savingTaskTime;
+                finishProgress();
+            }
+        }
+
+        window.onSelectEditTaskTime = input => saveTaskCardTime(input.dataset.id, input);
 
         window.onSelectTimeRemind = function (pickerInstance) {
             document.getElementById("timeRemind").parentElement.style.display = "inline-block";
@@ -619,81 +654,71 @@
         }
 
         function handleFocusEditable(elm, updatedFieldName) {
+            if (updatedFieldName === "remindTime" && elm.dataset.taskTimePickerOpen === "true") return;
             elm.dataset.originalText = (updatedFieldName === "remindTime" || updatedFieldName === "date") ? elm.value : elm.innerText.trim();
         }
 
         async function handleBlurEditable(id, elm, updatedFieldName, type = "") {
+            if (updatedFieldName === "remindTime") return;
             const originalText = elm.dataset.originalText;
             const currentText = (updatedFieldName === "remindTime" || updatedFieldName === "date") ? elm.value : elm.innerText.trim();
 
             if (currentText !== originalText) {
-                if (updatedFieldName === "title" || updatedFieldName === "description") {
-                    try {
-                        if (updatedFieldName === "title" && !elm.innerText) {
-                            toastifyError("خطا! فیلد عنوان نمی تواند خالی باشد");
-                            await getAllTask(0, systematicTask);
-                            await getAllTask(1, systematicTask);
-                            return;
-                        }
-                        const model = await getTask(id);
-                        model[updatedFieldName] = elm.innerText;
+                const finishProgress = beginTaskCardUpdate(id);
+                try {
+                    if (updatedFieldName === "title" || updatedFieldName === "description") {
+                        try {
+                            if (updatedFieldName === "title" && !elm.innerText) {
+                                toastifyError("خطا! فیلد عنوان نمی تواند خالی باشد");
+                                await refreshTaskCards(id);
+                                return;
+                            }
+                            const model = await getTask(id);
+                            model[updatedFieldName] = elm.innerText;
 
-                        const res = await fetch(baseUrl + "Carizo/AddTask", {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                            },
-                            body: JSON.stringify(model),
-                        });
+                            const res = await fetch(baseUrl + "Carizo/AddTask", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify(model),
+                            });
 
-                        if (res.ok) {
-                            toastifySuccess(`${updatedFieldName === "description" ? "توضیحات" : "عنوان"} تسک ویرایش شد.`);
-                        } else {
-                            throw new Error();
+                            if (res.ok) {
+                                toastifySuccess(`${updatedFieldName === "description" ? "توضیحات" : "عنوان"} تسک ویرایش شد.`);
+                            } else {
+                                throw new Error();
+                            }
+                        } catch (error) {
+                            toastifyError("خطا در ویرایش تسک");
+                            console.log(error);
                         }
-                    } catch (error) {
-                        toastifyError("خطا در ویرایش تسک");
-                        console.log(error);
+                    } else if (updatedFieldName === "date" && elm.value.length === 10) {
+                        try {
+                            const model = await getTask(id);
+                            if (model.date === elm.value) return;
+                            model.date = elm.value;
+
+                            const res = await fetch(baseUrl + "Carizo/AddTask", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify(model),
+                            });
+
+                            if (res.ok) {
+                                toastifySuccess(` تاریخ تسک ویرایش شد.`);
+                            } else {
+                                throw new Error();
+                            }
+                        } catch (error) {
+                            toastifyError("خطا در ویرایش تسک");
+                            console.log(error);
+                        }
                     }
-                } else if (updatedFieldName === "remindTime" && elm.value.length === 5) {
-                    try {
-                        const res = await fetch(baseUrl + `Carizo/UpdateTaskTime?id=${id}&_Time=${elm.value}`);
-
-                        if (res.status === 200) {
-                            await getRemind();
-
-                            // await getAllTask(Number(type))
-                            toastifySuccess(`زمان تسک ویرایش شد.`);
-                        } else {
-                            throw new Error();
-                        }
-                    } catch (error) {
-                        toastifyError("خطا در ویرایش تسک");
-                        console.log(error);
-                    }
-                } else if (updatedFieldName === "date" && elm.value.length === 10) {
-                    try {
-                        const model = await getTask(id);
-                        if (model.date === elm.value) return;
-                        model.date = elm.value;
-
-                        const res = await fetch(baseUrl + "Carizo/AddTask", {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                            },
-                            body: JSON.stringify(model),
-                        });
-
-                        if (res.ok) {
-                            toastifySuccess(` تاریخ تسک ویرایش شد.`);
-                        } else {
-                            throw new Error();
-                        }
-                    } catch (error) {
-                        toastifyError("خطا در ویرایش تسک");
-                        console.log(error);
-                    }
+                } finally {
+                    finishProgress();
                 }
             }
         }
@@ -777,25 +802,24 @@
 
 
         async function unCheckTask(id, button) {
-            document.querySelectorAll("#allCarizoContainer button").forEach(btn => btn.setAttribute("disabled", "true"));
-
+            if (button.disabled) return;
+            button.disabled = true;
+            const finishProgress = beginTaskCardUpdate(id);
             try {
                 const res = await axios(`/Carizo/unCheckTask/${id}`);
                 if (res.data.status === 200) {
-                    document.querySelectorAll("#allCarizoContainer button").forEach(btn => btn.removeAttribute("disabled"));
                     toastifySuccess("تسک به انجام نشده ها منتقل شد!");
+                    if (connection.state !== "Connected") await refreshTaskCards(id);
+                    await getRemind();
                 } else if (res.data.status === 201) {
-                    document.querySelectorAll("#allCarizoContainer button").forEach(btn => btn.removeAttribute("disabled"));
                     toastifyError(res.data.error);
                 }
-
-                await getRemind();
-
-
             } catch (error) {
-                console.log(error);
-                document.querySelectorAll("#allCarizoContainer button").forEach(btn => btn.removeAttribute("disabled"));
+                console.error(error);
                 toastifyError("خطا: تسک به انجام شده ها منتقل نشد!");
+            } finally {
+                finishProgress();
+                button.disabled = false;
             }
         }
 
@@ -843,7 +867,7 @@
             document.getElementById("allCarizoContainer").addEventListener("input", function (e) {
 
                 if (e.target.matches("input[placeholder='--:--'][data-slots]")) {
-                    let value = e.target.value.replace(/\D/g, "");
+                    let value = toEnglishDigits(e.target.value).replace(/\D/g, "");
 
                     let hours = value.slice(0, 2);
                     let minutes = value.slice(2, 4);

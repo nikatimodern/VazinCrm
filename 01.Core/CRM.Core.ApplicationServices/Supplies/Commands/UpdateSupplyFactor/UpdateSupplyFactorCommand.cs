@@ -1,3 +1,4 @@
+using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Supplies.Dtos;
 using CRM.Core.Domain.AppUsers.Entities;
@@ -8,13 +9,16 @@ using CRM.Core.Domain.Supplies.Models;
 using CRM.Core.Domain.Supplies.Repositories;
 
 namespace CRM.Core.ApplicationServices.Supplies.Commands.UpdateSupplyFactor;
-public sealed record UpdateSupplyFactorCommand(SupplyFactor Model, AppUser User) : ICommand<SupplyResult>;
-public sealed class UpdateSupplyFactorCommandHandler(ISupplyWriteRepository repository, ISupplyInventoryRepository supplyWarehouse, ISupplyIntegrationServices integrations) : ICommandHandler<UpdateSupplyFactorCommand, SupplyResult>
+public sealed record UpdateSupplyFactorCommand(SupplyFactor Model) : ICommand<SupplyResult>;
+public sealed class UpdateSupplyFactorCommandHandler(ISupplyWriteRepository repository, ISupplyInventoryRepository supplyWarehouse, ISupplyIntegrationServices integrations, CurrentActor actor) : ICommandHandler<UpdateSupplyFactorCommand, SupplyResult>
 {
     public async Task<SupplyResult> HandleAsync(UpdateSupplyFactorCommand command, CancellationToken cancellationToken)
     {
         var model = command.Model;
-        var user = command.User;
+        var current = await actor.FindAsync(cancellationToken);
+        if (current == null)
+            return SupplyResult.Unauthenticated();
+        var user = current.User;
         if (model == null)
             return SupplyResult.Invalid();
         await using var transaction = await repository.BeginTransactionAsync(false, cancellationToken);
@@ -78,7 +82,7 @@ public sealed class UpdateSupplyFactorCommandHandler(ISupplyWriteRepository repo
             await transaction.CommitAsync(cancellationToken);
             return SupplyResult.Success();
         }
-        catch (Exception e) when (!cancellationToken.IsCancellationRequested)
+        catch (Exception e)when (!cancellationToken.IsCancellationRequested)
         {
             await transaction.RollbackAsync(CancellationToken.None);
             return SupplyResult.Invalid(e is InvalidOperationException ? e.Message : "ویرایش فاکتور تامین انجام نشد.");

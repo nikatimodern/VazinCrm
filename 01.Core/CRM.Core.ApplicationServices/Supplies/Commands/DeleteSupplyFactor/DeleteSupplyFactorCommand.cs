@@ -1,3 +1,4 @@
+using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Supplies.Dtos;
 using CRM.Core.Domain.AppUsers.Entities;
@@ -6,13 +7,16 @@ using CRM.Core.Domain.Supplies.Models;
 using CRM.Core.Domain.Supplies.Repositories;
 
 namespace CRM.Core.ApplicationServices.Supplies.Commands.DeleteSupplyFactor;
-public sealed record DeleteSupplyFactorCommand(Guid Id, AppUser User) : ICommand<SupplyResult>;
-public sealed class DeleteSupplyFactorCommandHandler(ISupplyWriteRepository repository, ISupplyInventoryRepository supplyWarehouse, ISupplyIntegrationServices integrations) : ICommandHandler<DeleteSupplyFactorCommand, SupplyResult>
+public sealed record DeleteSupplyFactorCommand(Guid Id) : ICommand<SupplyResult>;
+public sealed class DeleteSupplyFactorCommandHandler(ISupplyWriteRepository repository, ISupplyInventoryRepository supplyWarehouse, ISupplyIntegrationServices integrations, CurrentActor actor) : ICommandHandler<DeleteSupplyFactorCommand, SupplyResult>
 {
     public async Task<SupplyResult> HandleAsync(DeleteSupplyFactorCommand command, CancellationToken cancellationToken)
     {
         var id = command.Id;
-        var user = command.User;
+        var current = await actor.FindAsync(cancellationToken);
+        if (current == null)
+            return SupplyResult.Unauthenticated();
+        var user = current.User;
         await using var transaction = await repository.BeginTransactionAsync(true, cancellationToken);
         var item = await repository.GetSupplyFactorForUpdateAsync(id, cancellationToken);
         if (item == null)
