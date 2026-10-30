@@ -1,3 +1,26 @@
+using CRM.Core.ApplicationServices.Accounts.Abstractions;
+using CRM.Core.ApplicationServices.Accounts.Dtos;
+using CRM.Core.ApplicationServices.Accounts.Services;
+using CRM.Core.Domain.AppUsers.Repositories;
+using CRM.Infrastructures.Sql.AppUsers.Repositories;
+using CRM.EndPoint.FrontEnd.Services.Accounts;
+using System.Collections.Generic;
+using CRM.Core.ApplicationServices.Accounts.Queries.GetLoginPage;
+using CRM.Core.ApplicationServices.Accounts.Queries.GetOtpLoginPage;
+using CRM.Core.ApplicationServices.Accounts.Queries.GetAccountHome;
+using CRM.Core.ApplicationServices.Accounts.Queries.GetResetPasswordPage;
+using CRM.Core.ApplicationServices.Accounts.Commands.PasswordLogin;
+using CRM.Core.ApplicationServices.Accounts.Commands.RequestOtp;
+using CRM.Core.ApplicationServices.Accounts.Commands.SelectAccount;
+using CRM.Core.ApplicationServices.Accounts.Commands.VerifyOtp;
+using CRM.Core.ApplicationServices.Accounts.Commands.CheckOtpTimer;
+using CRM.Core.ApplicationServices.Accounts.Commands.ResetAccountPassword;
+using CRM.Core.ApplicationServices.Accounts.Queries.GetCurrentAccount;
+using CRM.Core.ApplicationServices.Accounts.Commands.UpdateAccountProfile;
+using CRM.Core.ApplicationServices.Accounts.Queries.GetAccountUsers;
+using CRM.Core.ApplicationServices.Accounts.Commands.LogoutAccount;
+using CRM.Core.ApplicationServices.Accounts.Commands.HandleAccountAccessDenied;
+using CRM.Core.ApplicationServices.Accounts.Commands.ToggleAccountLockout;
 using CRM.Core.ApplicationServices.Reports.Abstractions;
 using CRM.Core.ApplicationServices.Reports.Commands.SaveReport;
 using CRM.Core.ApplicationServices.Reports.Dtos;
@@ -56,6 +79,7 @@ using CRM.Infrastructures.Sql.Supplies.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CRM.EndPoint.FrontEnd.Composition;
+
 public static class ApplicationServicesRegistration
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
@@ -63,6 +87,31 @@ public static class ApplicationServicesRegistration
         services.AddScoped<IQueryHandler<GetReportQuery, Report>, GetReportQueryHandler>();
         services.AddScoped<IReportRepository, ReportRepository>();
         services.AddHttpContextAccessor();
+        services.AddScoped<IQueryHandler<GetLoginPageQuery, bool>, GetLoginPageQueryHandler>();
+        services.AddScoped<IQueryHandler<GetOtpLoginPageQuery, AccountRedirect>, GetOtpLoginPageQueryHandler>();
+        services.AddScoped<IQueryHandler<GetAccountHomeQuery, GetAccountHomeResult>, GetAccountHomeQueryHandler>();
+        services.AddScoped<IQueryHandler<GetResetPasswordPageQuery, GetResetPasswordPageResult>, GetResetPasswordPageQueryHandler>();
+        services.AddScoped<ICommandHandler<PasswordLoginCommand, AccountOutcome>, PasswordLoginCommandHandler>();
+        services.AddScoped<ICommandHandler<RequestOtpCommand, AccountOutcome>, RequestOtpCommandHandler>();
+        services.AddScoped<ICommandHandler<SelectAccountCommand, AccountOutcome>, SelectAccountCommandHandler>();
+        services.AddScoped<ICommandHandler<VerifyOtpCommand, AccountOutcome>, VerifyOtpCommandHandler>();
+        services.AddScoped<ICommandHandler<CheckOtpTimerCommand, CheckOtpTimerResult>, CheckOtpTimerCommandHandler>();
+        services.AddScoped<ICommandHandler<ResetAccountPasswordCommand, AccountOutcome>, ResetAccountPasswordCommandHandler>();
+        services.AddScoped<IQueryHandler<GetCurrentAccountQuery, GetCurrentAccountResult>, GetCurrentAccountQueryHandler>();
+        services.AddScoped<ICommandHandler<UpdateAccountProfileCommand, bool>, UpdateAccountProfileCommandHandler>();
+        services.AddScoped<IQueryHandler<GetAccountUsersQuery, List<AccountUserOption>>, GetAccountUsersQueryHandler>();
+        services.AddScoped<ICommandHandler<LogoutAccountCommand, AccountRedirect>, LogoutAccountCommandHandler>();
+        services.AddScoped<ICommandHandler<HandleAccountAccessDeniedCommand, bool>, HandleAccountAccessDeniedCommandHandler>();
+        services.AddScoped<ICommandHandler<ToggleAccountLockoutCommand, AccountIdentityResult>, ToggleAccountLockoutCommandHandler>();
+        services.AddScoped<IAccountRepository, AccountRepository>();
+        services.AddScoped<IAccountUserRepository, AccountUserRepository>();
+        services.AddScoped<IAccountRequestContext, AccountRequestContext>();
+        services.AddScoped<IAccountAuthentication, AccountAuthentication>();
+        services.AddScoped<IAccountAudit, AccountAudit>();
+        services.AddScoped<IAccountOtpDelivery, AccountOtpDelivery>();
+        services.AddScoped<IAccountImages, AccountImages>();
+        services.AddScoped<IAccountNotifications, AccountNotifications>();
+        services.AddScoped<AccountSignInFlow>();
         services.AddScoped<IQueryHandler<GetAllReportsQuery, ReportListResult>, GetAllReportsQueryHandler>();
         services.AddScoped<IQueryHandler<GetReportPartialQuery, ReportPartialResult>, GetReportPartialQueryHandler>();
         services.AddScoped<IQueryHandler<GetCallReportsQuery, ReportPartialResult>, GetCallReportsQueryHandler>();
