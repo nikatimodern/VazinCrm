@@ -7925,24 +7925,24 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 .menu-overdue-attention .badge-count-overdue,
 .menu-warning-attention .badge-count-warning {
     --menu-badge-glow: 139, 92, 246;
-    min-width: 24px;
-    height: 24px;
+    min-width: 18px;
+    height: 18px;
     padding: 0 4px;
     margin-inline-start: 6px;
-    border: 1px solid rgba(255, 255, 255, .65);
+    /* border: 1px solid rgba(255, 255, 255, .65); */
     border-radius: 6px;
     background: #6d28d9;
     color: #fff;
-    font-family: IranSansBold;
-    font-size: 15px;
+    font-family: IRANSansBold;
+    font-size: 14px;
     line-height: 1;
     flex-shrink: 0;
     animation: menuBadgePulse .9s ease-in-out infinite;
 }
 .menu-warning-attention .badge-count-warning {
     --menu-badge-glow: 239, 68, 68;
-    background: #dc2626;
-    color: #fff;
+    background: #EF5350;
+    color: #003734;
 }
 .menu-warning-attention .badge-count-warning:empty { display: none; }
 .menu-overdue-attention:hover .badge-count-overdue,
