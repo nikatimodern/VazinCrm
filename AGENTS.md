@@ -76,3 +76,4 @@ For new features, prefer the intended architecture. Do not add business rules to
 
 ## Skills
 Use relevant skills in `.agents/skills/` when the task matches their descriptions. The repository's actual code and explicit user instructions take precedence over examples in skills.
+For every frontend task in any module (including Razor, JavaScript, CSS, and frontend components), load `.agents/skills/crm-frontend-reusables/SKILL.md`. Follow that skill for shared utility reuse and maintenance.

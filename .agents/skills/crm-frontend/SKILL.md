@@ -12,15 +12,13 @@ Use for Razor, JavaScript, CSS, modal, select, table, form, and frontend refacto
 - React consumes API contracts; keep business rules, authorization enforcement, and persistence orchestration in the appropriate backend layers. Reuse the existing CQRS pattern without asking for approval per migrated feature; new dependencies still require approval.
 
 ## Workflow
-1. Inspect the affected view/partial, JS, CSS, and relevant public helpers in `03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/site.js`.
-2. Search for reusable JavaScript classes and utilities already implemented. Reuse them only when they simplify the task; avoid unnecessary abstraction.
-3. Prefer native JavaScript and DOM APIs. Use jQuery for genuine plugin interoperability, especially DataTables, not ordinary event handling or selectors.
-4. Use TomSelect for enhanced selects. Never add new Select2 integrations; consider migrating existing Select2 controls when touching them if practical and scoped.
-5. Prefer `sendApiRequest` for application HTTP calls, and reuse actual existing Toastify notification, loading, validation, and formatting helpers where appropriate. Confirm exact names and signatures instead of guessing.
-6. Write scoped, component-specific CSS using existing design tokens and RTL conventions. Use Bootstrap's interactive JavaScript components, such as modals, and suitable lightweight utility classes; prefer custom visual styling over default Bootstrap component appearance.
-7. Check TomSelect lifecycle, dropdown positioning, modal overflow/scroll, focus, cleanup, and repeated modal opening.
-8. Prevent duplicate listeners, repeated submissions, stale state, excessive DOM updates, and unnecessary allocations.
-9. Favor concise, readable, performant implementations. Refactor related touched code when it improves clarity, reuse, or efficiency without broad unrelated changes.
+1. Inspect the affected view/partial, JS, CSS, and page layout. Follow [CRM Frontend Reusables](../crm-frontend-reusables/SKILL.md) for shared utilities and HTTP requests.
+2. Prefer native JavaScript and DOM APIs. Use jQuery for genuine plugin interoperability, especially DataTables, not ordinary event handling or selectors.
+3. Use TomSelect for enhanced selects. Never add new Select2 integrations; consider migrating existing Select2 controls when touching them if practical and scoped.
+4. Write scoped, component-specific CSS using existing design tokens and RTL conventions. Use Bootstrap's interactive JavaScript components, such as modals, and suitable lightweight utility classes; prefer custom visual styling over default Bootstrap component appearance.
+5. Check TomSelect lifecycle, dropdown positioning, modal overflow/scroll, focus, cleanup, and repeated modal opening.
+6. Prevent duplicate listeners, repeated submissions, stale state, excessive DOM updates, and unnecessary allocations.
+7. Favor concise, readable, performant implementations. Refactor related touched code when it improves clarity, reuse, or efficiency without broad unrelated changes.
 
 ## Verification
 - Check Persian RTL, mobile layout, keyboard interaction, loading/errors, empty states, and repeated use when practical.

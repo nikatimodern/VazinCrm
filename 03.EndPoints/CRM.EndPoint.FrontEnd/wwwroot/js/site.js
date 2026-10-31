@@ -184,8 +184,7 @@ async function handleApiError(err) {
     }
     
     if (!errorMessage) {
-        if (err?.code === "ECONNABORTED" || err?.code === "ETIMEDOUT"
-        ) {
+        if (err?.code === "ECONNABORTED" || err?.code === "ETIMEDOUT") {
             errorMessage = "زمان انتظار پاسخ سرور به پایان رسید.";
         } else if (!response) {
             errorMessage = "ارتباط با سرور برقرار نشد.";
