@@ -309,14 +309,14 @@
             HeadAccouTBL.ajax.reload();
         };
 
-        document.body.addEventListener("change", async (e) => {
+        __page.listen(document.body, "change", async (e) => {
             if (e.target.matches("input[name='acc_type']")) {
                 modelAcc.AccType = Number(e.target.value);
                 HeadAccouTBL.ajax.reload();
             }
         });
 
-        document.body.addEventListener("change", async (e) => {
+        __page.listen(document.body, "change", async (e) => {
             if (e.target.matches("input[name='pay_type']")) {
                 modelAcc.PayType = Number(e.target.value);
                 HeadAccouTBL.ajax.reload();
