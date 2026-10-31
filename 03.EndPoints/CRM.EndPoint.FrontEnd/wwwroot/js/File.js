@@ -427,21 +427,25 @@ const toBase64 = file => new Promise((resolve, reject) => {
     reader.onerror = error => reject(error);
 });
 
-const documentViewer = document.getElementById("documentViewer");
-const documentViewerFrame = document.getElementById("documentViewerFrame");
-
 function openDocumentViewer(url) {
+    const documentViewer = document.getElementById("documentViewer");
+    const documentViewerFrame = document.getElementById("documentViewerFrame");
+    if (!documentViewer || !documentViewerFrame) return;
     documentViewerFrame.src = url;
     documentViewer.hidden = false;
 }
 
 function closeDocumentViewer() {
+    const documentViewer = document.getElementById("documentViewer");
+    const documentViewerFrame = document.getElementById("documentViewerFrame");
+    if (!documentViewer || !documentViewerFrame) return;
     documentViewer.hidden = true;
     documentViewerFrame.src = "";
 }
 
 document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !documentViewer.hidden) {
+    const documentViewer = document.getElementById("documentViewer");
+    if (e.key === "Escape" && documentViewer && !documentViewer.hidden) {
         closeDocumentViewer();
     }
 }, true);

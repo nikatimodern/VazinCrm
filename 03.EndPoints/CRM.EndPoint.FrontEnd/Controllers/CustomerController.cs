@@ -144,7 +144,7 @@ public sealed class CustomerController(ICqrsDispatcher requests) : Controller
         return PartialView("GetAllCustomerPartial", result.Customers);
     }
     [Authorize(Policy = "NotCustomerOnly")]
-    public async Task<IActionResult> GetAllCustomers(CancellationToken cancellationToken) =>
+    public async Task<IActionResult> GetCustomersList(CancellationToken cancellationToken) =>
         Ok(await requests.QueryAsync(new GetCustomerSummariesQuery(), cancellationToken));
     [Authorize(Policy = "NotCustomerOnly")]
     public async Task<IActionResult> GetCustomer(Guid id, CancellationToken cancellationToken) =>

@@ -665,7 +665,7 @@ function getAllDealsDt() {
                     `;
                 },
             },*/
-            {
+            /*{
                 data: "counts.supplyFactor",
                 responsivePriority: 6,
                 orderable: false,
@@ -686,7 +686,7 @@ function getAllDealsDt() {
                         </span>
                     `;
                 },
-            },
+            },*/
             {
                 data: "id",
                 responsivePriority: 7,

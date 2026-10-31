@@ -216,7 +216,6 @@ async function showEditAmountPaymentItemModal() {
     const data = await sendApiRequest({
         url: "/RequestAmount/GetRequestAmountsWithPaidAmountByPayment",
         params: { paymentId: paymentData.id },
-        onSuccess: refreshRequestAmountDom,
     });
     
     if (!data) return;

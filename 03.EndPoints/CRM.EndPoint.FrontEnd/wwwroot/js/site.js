@@ -23,23 +23,52 @@
  * @param {boolean} [options.withCredentials=false]
  * @returns {Promise<any|null>}
  */
-async function sendApiRequest({
-    url, method = "GET", data = null, params = null, headers = null, responseType = "json",
-    onSuccess = null, onError = null, successMsg = undefined, showLoading = true, showError = true,
-    timeout = 30000, signal = null, skeleton = null, returnFullResponse = false,
-    onUploadProgress = null, onDownloadProgress = null, withCredentials = false,
-}) {
+async function sendApiRequest(
+    {
+        url,
+        method = "GET",
+        data = null,
+        params = null,
+        headers = null,
+        responseType = "json",
+        onSuccess = null,
+        onError = null,
+        successMsg = undefined,
+        showLoading = true,
+        showError = true,
+        timeout = 30000,
+        signal = null,
+        skeleton = null,
+        returnFullResponse = false,
+        onUploadProgress = null,
+        onDownloadProgress = null,
+        withCredentials = false,
+    }) {
     const originalOptions = arguments[0];
     const localLoading = skeleton && typeof PageSkeleton !== "undefined" ? PageSkeleton.begin(skeleton) : null;
     const retry = typeof skeleton?.retry === "function" ? skeleton.retry : () => sendApiRequest({ ...originalOptions, signal: null });
     const globalLoading = showLoading && !skeleton;
     method = method.toUpperCase();
-    if (successMsg === undefined) successMsg = { GET: null, POST: "با موفقیت ثبت شد", PUT: "با موفقیت ویرایش شد", DELETE: "با موفقیت حذف شد", PATCH: "با موفقیت ویرایش شد" }[method] ?? null;
+    if (successMsg === undefined) successMsg = {
+        GET: null,
+        POST: "با موفقیت ثبت شد",
+        PUT: "با موفقیت ویرایش شد",
+        DELETE: "با موفقیت حذف شد",
+        PATCH: "با موفقیت ویرایش شد",
+    }[method] ?? null;
     const config = {
-        url, method, responseType, timeout, withCredentials,
+        url,
+        method, 
+        responseType,
+        timeout, 
+        withCredentials,
         signal: localLoading ? (signal ? AbortSignal.any([signal, localLoading.signal]) : localLoading.signal) : signal,
-        headers: { "X-Requested-With": "XMLHttpRequest", "X-Current-Page": window.location.pathname + window.location.search,
-            ...(window.signalRConnectionId && { "X-SignalR-ConnectionId": window.signalRConnectionId }), ...(headers ?? {}) },
+        headers: {
+            "X-Requested-With": "XMLHttpRequest", 
+            "X-Current-Page": window.location.pathname + window.location.search,
+            ...(window.signalRConnectionId && { "X-SignalR-ConnectionId": window.signalRConnectionId }),
+            ...(headers ?? {}),
+        },
     };
     if (params !== null) config.params = params;
     if (data !== null) config.data = data;
@@ -51,22 +80,33 @@ async function sendApiRequest({
     }
     let response = null, requestError = null;
     if (globalLoading) updateApiLoading(true);
-    try { response = await axios(config); }
-    catch (error) { requestError = error; }
-    finally { if (globalLoading) updateApiLoading(false); }
+    try {
+        response = await axios(config);
+    } catch (error) {
+        requestError = error;
+    } finally {
+        if (globalLoading) updateApiLoading(false);
+    }
     if (navigationPage && !navigationPage.isActive && /^(GET|HEAD)$/.test(method)) return null;
     if (localLoading && !localLoading.isCurrent()) return null;
     if (requestError) {
-        if (axios.isCancel(requestError) || requestError.code === "ERR_CANCELED") { localLoading?.cancel(); return null; }
+        if (axios.isCancel(requestError) || requestError.code === "ERR_CANCELED") {
+            localLoading?.cancel();
+            return null;
+        }
         console.error("API Error:", requestError);
         const errorResponse = requestError.response;
         if (errorResponse?.status === 401 && errorResponse.headers?.["x-auth-expired"] === "true") {
-            localLoading?.finish(); window.location.href = errorResponse.headers?.["x-login-url"] || "/Account/Login"; return null;
+            localLoading?.finish();
+            window.location.href = errorResponse.headers?.["x-login-url"] || "/Account/Login";
+            return null;
         }
         try {
             if (typeof onError === "function") await onError(requestError);
             else if (showError && !localLoading) await handleApiError(requestError);
-        } catch (callbackError) { console.error("API Error Callback Error:", callbackError); }
+        } catch (callbackError) {
+            console.error("API Error Callback Error:", callbackError);
+        }
         localLoading?.fail(retry);
         return null;
     }
@@ -75,7 +115,10 @@ async function sendApiRequest({
         if (typeof onSuccess === "function") await onSuccess(response);
         localLoading?.finish();
         return returnFullResponse ? response : response?.data;
-    } catch (error) { localLoading?.fail(retry); throw error; }
+    } catch (error) {
+        localLoading?.fail(retry);
+        throw error;
+    }
 }
 
 let activeApiLoadingCount = 0;

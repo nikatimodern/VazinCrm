@@ -81,7 +81,7 @@ function cancelWarehouseVoucherModal() {
     warehouseVoucherId = undefined;
 }
 
-document.getElementById("warehouseVoucherForm").addEventListener("keydown", function (e) {
+document.getElementById("warehouseVoucherForm")?.addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
         e.preventDefault();
     }

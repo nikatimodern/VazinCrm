@@ -6,17 +6,19 @@ let typeSubmitFactor;
 
 let supplyData = [];
 
-document.querySelectorAll("#Factor input[type='radio'][name='f_official']")?.forEach(radio => {
-    const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
-    radio.addEventListener("change", async (e) => {
+document.addEventListener("change", async (e) => {
+    if (e.target.matches("#Factor input[type='radio'][name='f_official']")) {
+        const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
+        if (!currencyTypeElm) return;
         factor.officialType = Number(e.target.value);
         currencyTypeElm.toggleAttribute("disabled", factor.officialType === 1);
         await calculateFactorTotals();
         showFactorItems();
-    });
+    }
 });
 
-document.querySelector("#FacItem")?.addEventListener("input", (e) => {
+document.addEventListener("input", (e) => {
+    if (!e.target.closest("#FacItem")) return;
     if (e.target.matches("[name='weightCount']") || e.target.matches("[name='unitAmount']") || e.target.matches("[name='discount']")) {
         calculateItem("FacItem");
     }
@@ -233,7 +235,8 @@ const showFactorItems = () => {
 };
 
 
-document.getElementById("f_discount")?.addEventListener("input", async () => {
+document.addEventListener("input", async (event) => {
+    if (!event.target.matches("#Factor #f_discount")) return;
     await calculateFactorTotals(true);
     
     showFactorItems();

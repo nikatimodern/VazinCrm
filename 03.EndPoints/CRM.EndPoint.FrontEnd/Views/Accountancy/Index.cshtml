@@ -37,8 +37,8 @@
     </div>
 </div>
 
-<partial name="Modals/_InvoiceModal.cshtml" />
 <partial name="Modals/_ShowPreFactorsListModal.cshtml" />
+<partial name="Modals/_InvoiceListModal" />
 
 @section Scripts {
     <script defer data-page-bindings="accConfigFilter,modelAcc,searchVarAcc,HeadAccouTBL,Ac_GetCustomersOpId,getAllAccount,callBackAccFilter">
@@ -53,7 +53,7 @@
         });
 
         const Ac_GetCustomersOpId = async () => {
-            $.get(`${baseUrl}order/GetCustomersOpId`, (res) => {
+            $.get(`/order/GetCustomersOpId`, (res) => {
                 $("#customerId").select2({
                     data: res,
                     dir: "rtl",

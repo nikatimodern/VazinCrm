@@ -18,18 +18,19 @@ if (window.innerWidth >= 992 && window.innerWidth < 1400) {
 }
 
 
-document.querySelector("#supplyFactorItem")?.addEventListener("input", (e) => {
+document.addEventListener("input", (e) => {
+    if (!e.target.closest("#supplyFactorItem")) return;
     if (e.target.matches("[name='weightCount']") || e.target.matches("[name='unitAmount']") || e.target.matches("[name='discount']")) {
         calculateItem("supplyFactorItem");
     }
 });
 
-document.querySelectorAll("#supplyFactorModal input[type='radio'][name='officialType']")?.forEach(radio => {
-    radio.addEventListener("change", async (e) => {
+document.addEventListener("change", async (e) => {
+    if (e.target.matches("#supplyFactorModal input[type='radio'][name='officialType']")) {
         supplyFactorData.officialType = Number(e.target.value);
         calculateSupplyFactorTotals();
         showSupplyFactorItems();
-    });
+    }
 });
 
 async function showSupplyFactorModal(dealId = null) {
@@ -216,7 +217,8 @@ const canselModalItemSupplyFactor = () => {
 };
 
 
-supplyFactorDiscountInp?.addEventListener("input", () => {
+document.addEventListener("input", (e) => {
+    if (!e.target.matches("#supplyFactorModal #sf-discount")) return;
     calculateSupplyFactorTotals(true);
     showSupplyFactorItems();
 });
@@ -236,7 +238,7 @@ async function proccessSupplyFactorWithAi(btn) {
         ...Array.from(document.getElementById("supplyFactorItem").elements),
         document.getElementById("cancelSupplyFactorBtn"),
         document.getElementById("submitSupplyFactorBtn"),
-        supplyFactorDiscountInp,
+        document.getElementById("sf-discount"),
     ];
     
     toggleElementsDisabled(elementsToDisable);

@@ -77,9 +77,13 @@ public sealed class TransferController(ICqrsDispatcher requests) : Controller
     }
 
     [HttpPatch]
-    public async Task<IActionResult> ChangeTransferStatus(Guid id, [FromBody] TransferStatusEnum newStatus, CancellationToken ct)
+    public async Task<IActionResult> ChangeTransferStatus(Guid id, [FromBody] ChangeTransferStatusRequest request, CancellationToken ct)
     {
-        var status = await requests.CommandAsync(new ChangeTransferStatusCommand(id, newStatus), ct);
+        if (request is null)
+            return BadRequest();
+        var status = await requests.CommandAsync(new ChangeTransferStatusCommand(id, request.Status), ct);
         return status == 404 ? NotFound("نقل و انتقال مورد نظر یافت نشد.") : StatusCode(status);
     }
 }
+
+public sealed record ChangeTransferStatusRequest(TransferStatusEnum Status);
