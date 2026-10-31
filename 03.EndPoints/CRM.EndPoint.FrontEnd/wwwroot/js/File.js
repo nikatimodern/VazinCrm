@@ -4,57 +4,62 @@ const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp", "jfif"];
 
 let uploadButtons = document.getElementsByClassName("uploadBtn");
 let imageViewer = null;
-//Upload Button
-Array.from(uploadButtons).forEach((item, index) => {
-    const listName = item.getAttribute("data-varList");
-    
-    item.addEventListener("change", async () => {
-        await processUploadFiles(item.files, listName, index, containerUploader);
+const initializedUploadInputs = new WeakSet();
+function initializeUploadInputs(root = document) {
+    root.querySelectorAll(".uploadBtn").forEach(item => {
+        if (initializedUploadInputs.has(item)) return;
+        initializedUploadInputs.add(item);
+        const listName = item.getAttribute("data-varList");
+
+        item.addEventListener("change", async () => {
+            await processUploadFiles(item.files, listName, Array.from(uploadButtons).indexOf(item), containerUploader);
+        });
+
+
+        // Drag & Drop
+        const containerUploader = item.closest(".container-uploader") || item.parentElement;
+
+        if (containerUploader) {
+            let isInternalDrag = false;
+
+            containerUploader.addEventListener("dragstart", (e) => {
+                if (e.target.closest(".container-uploader")) {
+                    isInternalDrag = true;
+                }
+            });
+
+            containerUploader.addEventListener("dragend", () => {
+                isInternalDrag = false;
+            });
+
+            containerUploader.addEventListener("dragenter", (e) => {
+                if (isInternalDrag) return;
+                e.preventDefault();
+            });
+
+            containerUploader.addEventListener("dragover", (e) => {
+                if (isInternalDrag) return;
+                e.preventDefault();
+                containerUploader.classList.add("dragover");
+            });
+
+            containerUploader.addEventListener("dragleave", () => {
+                if (isInternalDrag) return;
+                containerUploader.classList.remove("dragover");
+            });
+
+            containerUploader.addEventListener("drop", async (e) => {
+                if (isInternalDrag) return;
+                e.preventDefault();
+
+                containerUploader.classList.remove("dragover");
+
+                await processUploadFiles(e.dataTransfer.files, listName, Array.from(uploadButtons).indexOf(item), containerUploader);
+            });
+        }
     });
-    
-    
-    // Drag & Drop
-    const containerUploader = item.closest(".container-uploader") || item.parentElement;
-    
-    if (containerUploader) {
-        let isInternalDrag = false;
-        
-        containerUploader.addEventListener("dragstart", (e) => {
-            if (e.target.closest(".container-uploader")) {
-                isInternalDrag = true;
-            }
-        });
-        
-        containerUploader.addEventListener("dragend", () => {
-            isInternalDrag = false;
-        });
-        
-        containerUploader.addEventListener("dragenter", (e) => {
-            if (isInternalDrag) return;
-            e.preventDefault();
-        });
-        
-        containerUploader.addEventListener("dragover", (e) => {
-            if (isInternalDrag) return;
-            e.preventDefault();
-            containerUploader.classList.add("dragover");
-        });
-        
-        containerUploader.addEventListener("dragleave", () => {
-            if (isInternalDrag) return;
-            containerUploader.classList.remove("dragover");
-        });
-        
-        containerUploader.addEventListener("drop", async (e) => {
-            if (isInternalDrag) return;
-            e.preventDefault();
-            
-            containerUploader.classList.remove("dragover");
-            
-            await processUploadFiles(e.dataTransfer.files, listName, index, containerUploader);
-        });
-    }
-});
+}
+initializeUploadInputs();
 
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));

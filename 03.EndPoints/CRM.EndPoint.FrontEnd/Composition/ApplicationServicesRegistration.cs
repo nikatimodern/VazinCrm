@@ -79,11 +79,20 @@ using CRM.Infrastructures.Sql.Supplies.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CRM.EndPoint.FrontEnd.Composition;
-
 public static class ApplicationServicesRegistration
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
+        services.AddCustomerServices();
+        services.AddWorkspaceServices();
+        services.AddPageModules();
+        services.AddOrderServices();
+        services.AddCartableServices();
+        services.AddCarizoServices();
+        services.AddRequestAmountServices();
+        services.AddAccountancyServices();
+        services.AddCashServices();
+        services.AddAdminServices();
         services.AddScoped<IQueryHandler<GetReportQuery, Report>, GetReportQueryHandler>();
         services.AddScoped<IReportRepository, ReportRepository>();
         services.AddHttpContextAccessor();

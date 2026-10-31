@@ -4,7 +4,7 @@
     Layout = null;
 }
 @foreach (var item in Model.Data) {
-    <div class="w-100 py-2 px-lg-3" style="padding-inline:10px;border-radius:8px;background-color:@(Model._Type < 2 ? "rgba(128,128,255,.15)" : Model._Type == 2 ? "rgba(0,0,0,.10)" : "rgba(0,0,0,.20)") ;border:1px solid @(Model._Type < 2 ? "rgba(128,128,255,.2)" : Model._Type == 2 ? "rgba(0,0,0,.08)" : "rgba(0,0,0,.18)");border-right:4px solid @(Model._Type < 2 ? "rgb(128,128,255)" : Model._Type == 2 ? "rgb(140,140,140)" : "rgb(70,70,70)"); box-shadow:-1px 2px 8px rgba(10, 10, 10, .1);">
+    <div data-task-id="@item.Id" data-task-group="@(item.ShareTaskId.HasValue && item.ShareTaskId != Guid.Empty ? item.ShareTaskId : item.Id)" data-task-date="@(item.DateMiladi?.ToString("O"))" data-task-created="@item.CreateDate.ToString("O")" class="w-100 py-2 px-lg-3" style="padding-inline:10px;border-radius:8px;background-color:@(Model._Type < 2 ? "rgba(128,128,255,.15)" : Model._Type == 2 ? "rgba(0,0,0,.10)" : "rgba(0,0,0,.20)") ;border:1px solid @(Model._Type < 2 ? "rgba(128,128,255,.2)" : Model._Type == 2 ? "rgba(0,0,0,.08)" : "rgba(0,0,0,.18)");border-right:4px solid @(Model._Type < 2 ? "rgb(128,128,255)" : Model._Type == 2 ? "rgb(140,140,140)" : "rgb(70,70,70)"); box-shadow:-1px 2px 8px rgba(10, 10, 10, .1);">
         <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
 
             @if (item.UserCreatorID == Model.CurrentUser.Id && Model._Type < 2 && Model.loc != 2 && !item.Systematic) {
@@ -21,7 +21,7 @@
 								<svg style="width: 18px; height: 18px" viewBox="0 0 24 24" fill=@(!item.RemindDismiss ? "gold" : "rgba(0,0,0,.15)") onclick="handleNotifAndBellIcon('@item.Id', '@Model._Type', '2')" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M12 13m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M12 10l0 3l2 0" /><path d="M7 4l-2.75 2" /><path d="M17 4l2.75 2" /></svg>
 							</span>
                         }
-                        <input class="input-time" value="@(item.RemindTime?.Length > 0 ? item.RemindTime : "")" placeholder="--:--" data-slots onfocus="handleFocusEditable(this, from = 'remindTime')" onblur="handleBlurEditable('@item.Id',this,'remindTime', '@Model._Type')">
+                        <input class="input-time stime" data-task-time data-id="@item.Id" data-on-confirm="onSelectEditTaskTime" inputmode="numeric" autocomplete="off" aria-label="ساعت یادآوری" value="@(item.RemindTime?.Length > 0 ? item.RemindTime : "")" placeholder="--:--" data-slots onfocus="handleFocusEditable(this, from = 'remindTime')">
                         @if (item.RemindTime?.Length > 0) {
                             <span class="d-flex align-items-center justify-content-center">
 								<svg style="width: 16px; height: 16px" fill=@(Model._Type < 2 && item.Remind == true ? "gold" : "rgba(0,0,0,.15)") onclick="handleNotifAndBellIcon('@item.Id', '@Model._Type', '1')" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" ><path d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0M3.124 7.5A8.969 8.969 0 0 1 5.292 3m13.416 0a8.969 8.969 0 0 1 2.168 4.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>

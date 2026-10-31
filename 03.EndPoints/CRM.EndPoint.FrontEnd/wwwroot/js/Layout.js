@@ -104,6 +104,12 @@ function toggleMenu() {
     if (collapsed) initTooltipsIfCollapsed();
 }
 
+connection.on("TaskChanged", id => {
+    if (document.getElementById("allCarizoContainer") || document.getElementById("todayTaskDashId")) {
+        refreshTaskCards(id);
+    }
+});
+
 connection.on("RefreshTasks", async () => {
     if (typeof systematicTask !== "undefined") {
         await Promise.all([getAllTask(0, systematicTask), getAllTask(1, systematicTask), getAllTask(1, systematicTask, 2), getAllTask(2, systematicTask)]);
@@ -693,17 +699,51 @@ function dateTimePicker(container = document) {
         if (!$(timePickerElem).data("myPersianDatepicker")) {
             const positionX = timePickerElem.getAttribute("data-x") || "28";
             const positionY = timePickerElem.getAttribute("data-y") || "0";
+            const isTaskTime = timePickerElem.hasAttribute("data-task-time");
+            let timeConfirmed = false;
+            const confirmTaskTime = () => {
+                if (!isTaskTime) return;
+                const value = toEnglishDigits(timePickerElem.value).trim();
+                if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) return;
+                timeConfirmed = true;
+                const callback = timePickerElem.getAttribute("data-on-confirm");
+                if (typeof window[callback] === "function") window[callback](timePickerElem);
+            };
             const instance = $(timePickerElem).persianDatepicker({
+                onShow: function () {
+                    if (!isTaskTime) return;
+                    timeConfirmed = false;
+                    timePickerElem.dataset.taskTimePickerOpen = "true";
+                    const value = toEnglishDigits(timePickerElem.value).trim();
+                    if (/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) {
+                        const [hours, minutes] = value.split(":").map(Number);
+                        instance.setDate(new Date().setHours(hours, minutes, 0, 0));
+                        timePickerElem.value = value;
+                    }
+                },
+                onHide: function () {
+                    if (!isTaskTime || timePickerElem.dataset.taskTimePickerOpen !== "true") return;
+                    delete timePickerElem.dataset.taskTimePickerOpen;
+                    if (!timeConfirmed) timePickerElem.value = timePickerElem.dataset.originalText ?? "";
+                },
+                ...(isTaskTime ? { toolbox: {
+                    enabled: true,
+                    todayButton: { enabled: false },
+                    calendarSwitch: { enabled: false },
+                    submitButton: { enabled: true, text: { fa: "تأیید", en: "Confirm" }, onSubmit: confirmTaskTime }
+                } } : {}),
                 onSelect: function () {
+                    if (isTaskTime) timePickerElem.value = toEnglishDigits(timePickerElem.value);
                     const onSelectCallback = timePickerElem.getAttribute("data-onSelect");
                     if (onSelectCallback) {
                         window[onSelectCallback](this);
                     }
                 },
                 onlyTimePicker: true,
-                initialValue: true,
+                initialValue: !isTaskTime,
                 initialValueType: "persian",
-                autoClose: true,
+                autoClose: !isTaskTime,
+                observer: !isTaskTime,
                 position: [Number(positionX), Number(positionY)],
                 format: "HH:mm",
                 timePicker: {
@@ -715,6 +755,13 @@ function dateTimePicker(container = document) {
                 },
             });
             $(timePickerElem).data("myPersianDatepicker", instance);
+            if (isTaskTime) timePickerElem.addEventListener("keydown", event => {
+                if (event.key !== "Enter" || event.isComposing) return;
+                event.preventDefault();
+                confirmTaskTime();
+                instance.hide();
+                timePickerElem.blur();
+            });
         }
     });
 }
@@ -845,12 +892,14 @@ const Mask = () => {
 const getAllProduct = async (searchValue = "", from) => {
     return await sendApiRequest({
         url: "/Amount/ListProduct",
+        skeleton: from === "amountIndex" ? { target: "#ListProductId", retry: () => getAndSetAllProduct(from, searchValue) } : null,
         params: { searchValue, from },
     });
 };
 
 const getAndSetAllProduct = async (from, searchValue = "") => {
     const AllProduct = await getAllProduct(searchValue, from);
+    if (AllProduct == null) return;
     const containerId = from === "amountIndex" ? "ListProductId" : "ListAmountBodyId";
     document.getElementById(containerId).innerHTML = AllProduct;
 };
@@ -2370,6 +2419,132 @@ function removeSchedulerItem(from) {
     }
 }
 
+const taskCardProgress = new WeakMap();
+
+function beginTaskCardUpdate(id) {
+    const cards = [...document.querySelectorAll("[data-task-id]")].filter(card => card.dataset.taskId === String(id) || card.dataset.taskGroup === String(id));
+    const active = cards.map(card => {
+        let state = taskCardProgress.get(card);
+        if (!state) {
+            const feedback = document.createElement("div");
+            feedback.className = "task-card-progress";
+            feedback.setAttribute("role", "status");
+            const spinner = document.createElement("span");
+            spinner.className = "task-card-progress__spinner";
+            spinner.setAttribute("aria-hidden", "true");
+            const label = document.createElement("span");
+            label.textContent = "در حال به‌روزرسانی…";
+            feedback.append(spinner, label);
+            state = { count: 0, feedback, busy: card.getAttribute("aria-busy") };
+            taskCardProgress.set(card, state);
+            card.classList.add("task-card-updating");
+            card.setAttribute("aria-busy", "true");
+            card.append(feedback);
+        }
+        state.count++;
+        return { card, state };
+    });
+    let released = false;
+    return () => {
+        if (released) return;
+        released = true;
+        active.forEach(({ card, state }) => {
+            if (--state.count > 0) return;
+            state.feedback.remove();
+            card.classList.remove("task-card-updating");
+            if (state.busy === null) card.removeAttribute("aria-busy");
+            else card.setAttribute("aria-busy", state.busy);
+            taskCardProgress.delete(card);
+        });
+    };
+}
+
+const carizoListReads = new Map();
+const carizoCardReads = new Map();
+const carizoAppliedGroups = new Map();
+let carizoCardVersion = 0;
+
+function disposeTaskCardPickers(container) {
+    container.querySelectorAll(".sdate,.sdateTime,.stime").forEach(input => {
+        $(input).data("myPersianDatepicker")?.destroy();
+        $(input).removeData("myPersianDatepicker");
+    });
+}
+
+function taskCardComesBefore(left, right) {
+    const date = card => card.dataset.taskDate ? Date.parse(card.dataset.taskDate) : -Infinity;
+    const difference = date(left) - date(right);
+    return difference > 0 || (date(left) === date(right) && Date.parse(left.dataset.taskCreated) > Date.parse(right.dataset.taskCreated));
+}
+
+async function refreshTaskCards(id) {
+    if (!id) return;
+    carizoCardReads.get(id)?.abort();
+    const request = new AbortController();
+    const version = ++carizoCardVersion;
+    carizoCardReads.set(id, request);
+    const finishProgress = beginTaskCardUpdate(id);
+    try {
+        await Promise.allSettled([...carizoListReads.values()]);
+        if (request.signal.aborted) return;
+        const systematic = typeof systematicTask === "undefined" ? 0 : systematicTask;
+        const targets = [
+            { name: "todoTask", column: 0, loc: 1 },
+            { name: "todayTask", column: 1, loc: 1 },
+            { name: "finishedTask", column: 2, loc: 1 },
+            { name: "todayTaskDash", column: 1, loc: 2 },
+        ].filter(target => document.getElementById(target.name + "Id"));
+        const locations = [...new Set(targets.map(target => target.loc))];
+        const updates = await Promise.all(locations.map(loc => sendApiRequest({
+            url: "/Carizo/GetTaskCards", params: { id, systematic, loc },
+            signal: request.signal, showLoading: false,
+        })));
+        await Promise.allSettled([...carizoListReads.values()]);
+        if (carizoCardReads.get(id) !== request || request.signal.aborted || systematic !== (typeof systematicTask === "undefined" ? 0 : systematicTask)) return;
+        locations.forEach((loc, index) => {
+            const update = updates[index];
+            if (!update) return;
+            const groupKey = `${loc}:${update.groupId}`;
+            if ((carizoAppliedGroups.get(groupKey) ?? 0) > version) return;
+            carizoAppliedGroups.set(groupKey, version);
+            targets.filter(target => target.loc === loc).forEach(target => {
+                const container = document.getElementById(target.name + "Id");
+                const column = Number(container.dataset.taskColumn ?? target.column);
+                [...container.children].filter(card => card.dataset.taskId === update.id || card.dataset.taskGroup === update.groupId).forEach(card => {
+                    disposeTaskCardPickers(card);
+                    card.remove();
+                });
+                update.cards.filter(card => card.column === column).forEach(card => {
+                    const template = document.createElement("template");
+                    template.innerHTML = card.html.trim();
+                    const node = template.content.firstElementChild;
+                    if (!node) return;
+                    const next = [...container.children].find(existing => existing.dataset.taskId && taskCardComesBefore(node, existing));
+                    container.insertBefore(node, next ?? null);
+                    dateTimePicker(node);
+                });
+                const count = container.querySelectorAll(":scope > [data-task-id]").length;
+                const counter = document.getElementById(target.name + "Count");
+                if (counter) counter.textContent = count;
+                if (loc === 2) {
+                    const empty = document.getElementById("noTaskImg");
+                    if (empty) empty.style.display = count ? "none" : "flex";
+                }
+            });
+        });
+    } catch (error) {
+        if (!request.signal.aborted) {
+            console.error("Task card refresh failed:", error);
+            toastifyError("به‌روزرسانی فعالیت انجام نشد؛ دوباره تلاش کنید.");
+        }
+    } finally {
+        if (carizoCardReads.get(id) === request) carizoCardReads.delete(id);
+        finishProgress();
+    }
+}
+
+window.addEventListener("pagehide", () => carizoCardReads.forEach(request => request.abort()));
+
 async function getAllTask(type, systematic = 0, loc = 1) {
     const containerName = type === 0 ? "todoTask" : type === 1 ? (loc === 1 ? "todayTask" : "todayTaskDash") : "finishedTask";
     const containerElm = document.getElementById(containerName + "Id");
@@ -2377,9 +2552,18 @@ async function getAllTask(type, systematic = 0, loc = 1) {
     const noTaskImgDash = document.getElementById("noTaskImg");
     const load = async () => {
         try {
-            const res = await axios.get(`/Carizo/GetAllTask?type=${type}&loc=${loc}&systematic=${systematic}`);
+            const res = await sendApiRequest({
+                url: "/Carizo/GetAllTask", params: { type, loc, systematic }, returnFullResponse: true,
+                skeleton: loc === 1 && containerElm ? { target: containerElm, retry: () => getAllTask(type, systematic, loc) } : null, showLoading: false,
+            });
+            if (!res) { if (loc === 2) throw new Error("Task read failed"); return; }
             if (res.status === 200) {
-                containerElm && (containerElm.innerHTML = res.data.html);
+                if (containerElm) {
+                    disposeTaskCardPickers(containerElm);
+                    containerElm.innerHTML = res.data.html;
+                    containerElm.dataset.taskColumn = String(type);
+                    dateTimePicker(containerElm);
+                }
                 countElm && (countElm.innerHTML = res.data.count);
                 noTaskImgDash && loc === 2 && (noTaskImgDash.style.display = res.data.count ? "none" : "flex");
             } else {
@@ -2391,35 +2575,35 @@ async function getAllTask(type, systematic = 0, loc = 1) {
             if (loc === 2 && typeof dashboardLoading !== "undefined") throw err;
         }
     };
-    if (loc === 2 && typeof dashboardLoading !== "undefined") {
-        return dashboardLoading.run("todayTaskDashId", load);
-    }
-    return load();
+    const read = loc === 2 && typeof dashboardLoading !== "undefined" ? dashboardLoading.run("todayTaskDashId", load) : load();
+    carizoListReads.set(containerName, read);
+    try { return await read; }
+    finally { if (carizoListReads.get(containerName) === read) carizoListReads.delete(containerName); }
 }
 
 async function finishTask(id, type, thisBtn, loc = 1) {
-    const buttons = loc == 1 ? "#allCarizoContainer button" : "#todayTaskDashId button";
-    document.querySelectorAll(buttons).forEach(btn => btn.setAttribute("disabled", "true"));
-    thisBtn.querySelector(".spinner-border").style.display = "inline-block";
-    
+    if (thisBtn.disabled) return;
+    thisBtn.disabled = true;
+    const finishProgress = beginTaskCardUpdate(id);
+    const spinner = thisBtn.querySelector(".spinner-border");
+    if (spinner) spinner.style.display = "inline-block";
     try {
         const res = await axios(`/Carizo/finishTask/${id}`);
-        if (res.status === 200) {
-            res.data.status === 201 ? toastifyError(res.data.error) : toastifySuccess("تسک انجام شد!");
-            
-            document.querySelectorAll(buttons).forEach(btn => btn.removeAttribute("disabled"));
-            thisBtn.querySelector(".spinner-border").style.display = "none";
+        if (res.status !== 200) throw new Error("Task completion failed.");
+        if (res.data?.status === 201) {
+            toastifyError(res.data.error);
+            return;
         }
-        
-        if (Number(type) === 1) {
-            await getRemind();
-        }
-        
-    } catch (err) {
-        console.log(err);
-        document.querySelectorAll(buttons).forEach(btn => btn.removeAttribute("disabled"));
-        thisBtn.querySelector(".spinner-border").style.display = "none";
+        toastifySuccess("تسک انجام شد!");
+        if (connection.state !== "Connected") await refreshTaskCards(id);
+        if (Number(type) === 1) await getRemind();
+    } catch (error) {
+        console.error(error);
         toastifyError("خطای سرور!");
+    } finally {
+        finishProgress();
+        thisBtn.disabled = false;
+        if (spinner) spinner.style.display = "none";
     }
 }
 
@@ -2571,6 +2755,25 @@ async function showModalWarnings() {
 
 
 const warningContainer = document.getElementById("warningContainer");
+let knownMenuWarningIds = null;
+function updateWarningMenu(warnings) {
+    const ids = new Set(warnings.map(warning => warning.id));
+    const hasNewWarning = knownMenuWarningIds !== null && warnings.some(warning => !knownMenuWarningIds.has(warning.id));
+    document.querySelectorAll(".menu-item.warning").forEach(button => {
+        const badge = button.querySelector(".badge-count");
+        const previousCount = Number(badge?.textContent) || 0;
+        button.classList.toggle("d-none", warnings.length === 0);
+        if (badge) badge.textContent = warnings.length || "";
+        if (hasNewWarning || (knownMenuWarningIds === null && warnings.length > previousCount)) {
+            button.classList.remove("menu-warning-new");
+            void button.offsetWidth;
+            button.classList.add("menu-warning-new");
+        } else if (!warnings.length) {
+            button.classList.remove("menu-warning-new");
+        }
+    });
+    knownMenuWarningIds = ids;
+}
 async function getAllWarnings(isRefresh = false) {
     const warningElmBtns = document.querySelectorAll(".menu-item.warning");
     if (!warningElmBtns.length) return;
@@ -2585,11 +2788,7 @@ async function getAllWarnings(isRefresh = false) {
         onSuccess: (res) => {
             warningData = res.data;
             
-            warningElmBtns.forEach(elm => {
-                elm.classList.toggle("d-none", warningData.length === 0);
-                const badgeWarningCount = elm.querySelector(".badge-count");
-                badgeWarningCount.innerText = warningData.length || "";
-            });
+            updateWarningMenu(warningData);
             
             initDomWarningsModal();
         },

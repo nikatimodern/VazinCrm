@@ -1,16 +1,20 @@
+using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Supplies.Models;
 using CRM.Core.Domain.Supplies.Repositories;
 
 namespace CRM.Core.ApplicationServices.Supplies.Commands.DeleteSupplyAllocation;
-public sealed record DeleteSupplyAllocationCommand(SupplyFactorAllocationRequest Model, AppUser User) : ICommand<SupplyResult>;
-public sealed class DeleteSupplyAllocationCommandHandler(ISupplyWriteRepository repository, ISupplyInventoryRepository supplyWarehouse) : ICommandHandler<DeleteSupplyAllocationCommand, SupplyResult>
+public sealed record DeleteSupplyAllocationCommand(SupplyFactorAllocationRequest Model) : ICommand<SupplyResult>;
+public sealed class DeleteSupplyAllocationCommandHandler(ISupplyWriteRepository repository, ISupplyInventoryRepository supplyWarehouse, CurrentActor actor) : ICommandHandler<DeleteSupplyAllocationCommand, SupplyResult>
 {
     public async Task<SupplyResult> HandleAsync(DeleteSupplyAllocationCommand command, CancellationToken cancellationToken)
     {
         var model = command.Model;
-        var user = command.User;
+        var current = await actor.FindAsync(cancellationToken);
+        if (current == null)
+            return SupplyResult.Unauthenticated();
+        var user = current.User;
         if (model == null)
             return SupplyResult.Invalid();
         await using var transaction = await repository.BeginTransactionAsync(true, cancellationToken);

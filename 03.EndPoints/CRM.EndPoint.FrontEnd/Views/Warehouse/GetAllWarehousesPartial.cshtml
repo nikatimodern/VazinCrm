@@ -6,7 +6,7 @@
 <div class="cards-grid">
     @foreach (var item in Model.Warehouses ?? []) {
         var warehouse = item.Warehouse;
-        <div class="clickable-card warehouse-card" data-id="@warehouse.Id" data-warehouse-title="@warehouse.Title">
+        <div class="clickable-card warehouse-card @(warehouse.IsMain ? "warehouse-card--main" : "")" data-id="@warehouse.Id" data-warehouse-title="@warehouse.Title">
             <h5 class="clickable-card__title">@warehouse.Title</h5>
             @if (warehouse.IsMain) {
                 <span class="clickable-card__badge">انبار اصلی</span>

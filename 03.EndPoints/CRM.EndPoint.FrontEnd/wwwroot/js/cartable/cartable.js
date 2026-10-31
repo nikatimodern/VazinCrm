@@ -180,6 +180,8 @@ const GetCartable = (tabId, subId) => {
             item.classList.add("TCarActive");
             switch (tabId) {
                 case "TPrefactorFactorId":
+                    document.getElementById("CPrefactorFactorId")?.classList.remove("d-none");
+                    removeTabAllFactorsDesktop();
                     const promises = [];
                     if (filConfigSession?.filterVar) {
                         promises.push(FilterAccepted(filConfigSession));
@@ -194,11 +196,8 @@ const GetCartable = (tabId, subId) => {
                         promises.push(GetPreFactorPartial(false));
                     }
                     
-                    FLshowLoading();
+
                     await Promise.all(promises);
-                    FLshowLoading(false);
-                    document.getElementById("CPrefactorFactorId")?.classList.remove("d-none");
-                    removeTabAllFactorsDesktop();
                     break;
                 
                 case "TFinancialExpertId":
@@ -261,6 +260,7 @@ const GetPreFactorPartial = async (showLoading = true) => {
     
     await sendApiRequest({
         url: "/Cartable/PreFactorAcceptedPartial",
+        skeleton: { target: "#PfAcceptedList" },
         method: "POST",
         data: model,
         successMsg: null,
@@ -276,6 +276,7 @@ const GetPreFactorPartial = async (showLoading = true) => {
 const GetSelesExpertPartial = async () => {
     await sendApiRequest({
         url: "/Cartable/GetSelesExpertPartial",
+        skeleton: { target: "#CSalesExpertId" },
         onSuccess: (res) => {
             document.getElementById("CSalesExpertId").innerHTML = res.data;
             removeSalesExpertsTabsDesktop();
@@ -290,6 +291,7 @@ const GetPreFactorSalesAdmin = async () => {
     
     await sendApiRequest({
         url: "/Cartable/GetPreFactorSalesAdmin",
+        skeleton: { target: "#SalesAdminPfactorContentId" },
         params: { serVal: val, type },
         onSuccess: (res) => {
             document.getElementById("SalesAdminPfactorContentId").innerHTML = res.data.html;
@@ -319,6 +321,7 @@ const GetPreFactorTaminExpert = async () => {
     
     await sendApiRequest({
         url: "/Cartable/GetPreFactorTaminExpert",
+        skeleton: { target: "#TContentId" },
         params: { serVal: val, type },
         onSuccess: (res) => {
             document.getElementById("TContentId").innerHTML = res.data.html;
@@ -347,6 +350,7 @@ const GetInvoicesTaminExpert = async () => {
     
     
     await sendApiRequest({
+        skeleton: { target: "#taminInvoiceContentId" },
         url: "/Accountancy/GetAllPaymentCartablePartial",
         params: { serVal: val, type, cartable: 3 },
         onSuccess: (res) => {
@@ -377,6 +381,7 @@ const GetRequestManagingDirector = async () => {
     ShowTab("#MDRequestAmountTab");
     
     await sendApiRequest({
+        skeleton: { target: "#MDRequestAmountContentId" },
         url: "/RequestAmount/GetAllRequestAmountsPartial",
         params: { serVal: val, type },
         onSuccess: (res) => {
@@ -426,6 +431,7 @@ const GetPreFactorFinancialExpert = async () => {
     
     await sendApiRequest({
         url: "/Cartable/GetPreFactorFinancialExpert",
+        skeleton: { target: "#FinancialExpertPfContentId" },
         params: { serVal: val, type },
         onSuccess: (res) => {
             document.getElementById("FinancialExpertPfContentId").innerHTML = res.data.html || "";
@@ -453,6 +459,7 @@ const GetInvoicesFinancialExpert = async () => {
     ShowTab("#FinancialInvoiceTab");
     
     await sendApiRequest({
+        skeleton: { target: "#FinancialExpertInvoiceContentId" },
         url: "/Accountancy/GetAllPaymentCartablePartial",
         params: { serVal: val, type, cartable: 7 },
         onSuccess: (res) => {
@@ -484,6 +491,7 @@ const GetRequestFinancialExpert = async () => {
     ShowTab("#FinancialRequestTab");
     
     await sendApiRequest({
+        skeleton: { target: "#FinancialRequestContentId" },
         url: "/RequestAmount/GetAllRequestAmountsPartial",
         params: { search: val, type },
         onSuccess: (res) => {

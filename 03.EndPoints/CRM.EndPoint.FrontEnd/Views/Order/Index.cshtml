@@ -130,7 +130,7 @@
 
 
 @section scripts {
-    <script>
+    <script data-page-bindings="modelOrder,fStatus,showHidden,orderSearchVal,filterOrderConfig,filConfigSession,openIcon,closedIcon,getAllHeadOrders,showHiddenOrdersCount,callbackFilterOrder,removeOrdersTabsDesktop,refreshOrders,initSortableOrders,finishedOrderToggleIcon">
         var modelOrder = { filt: null, serVal: null, _type: 1 };
         let fStatus = -1;
 
@@ -187,7 +187,9 @@
         async function getAllHeadOrders(type = 0) {
             modelOrder._type = type;
             try {
-                const res = await axios.post(`/order/GetAllHeadOrdersPartial?fStatus=${fStatus}`, modelOrder);
+                const target = type === 0 ? "#registeredOrderId,#producingOrderId,#finishedOrderId" : type === 1 ? "#registeredOrderId" : type === 2 ? "#producingOrderId" : "#finishedOrderId";
+                const res = await sendApiRequest({ url: "/order/GetAllHeadOrdersPartial", method: "POST", params: { fStatus }, data: modelOrder, successMsg: null, returnFullResponse: true, skeleton: { target, retry: () => getAllHeadOrders(type) } });
+                if (!res) return;
                 if (res.status !== 200) return;
 
                 // multi mode
@@ -216,7 +218,7 @@
 
                 return { [containerName]: res.data.count };
             } catch (e) {
-               
+
                 toastifyError("خطا در دریافت اطلاعات!");
             }
         }
@@ -258,7 +260,7 @@
 
         const refreshOrders = async () => {
             document.getElementById("hiddenOrdersCount").style.display = "none";
-            FLshowLoading();
+
 
             const tabData = await getAllHeadOrders();
             if (window.innerWidth < 1200 && tabData) {
@@ -269,7 +271,7 @@
                     filter: modelOrder.filt,
                 });
             }
-            FLshowLoading(false);
+
         };
 
         function initSortableOrders() {
@@ -308,20 +310,20 @@
             showTitle: "نمایش تحویل شده",
             hideTitle: "نمایش آماده تحویل",
             onShow: async () => {
-                FLshowLoading();
+
                 await getAllHeadOrders(4);
-                FLshowLoading(false);
+
                 document.querySelectorAll(".finishedOrder-title").forEach(el => el.innerText = "تحویل شده");
             },
             onHide: async () => {
-                FLshowLoading();
+
                 await getAllHeadOrders(3);
-                FLshowLoading(false);
+
                 document.querySelectorAll(".finishedOrder-title").forEach(el => el.innerText = "آماده تحویل");
             },
         });
 
     </script>
 
-    <script src="~/js/requestAmount.js" asp-append-version="true"></script>
+    <script src="~/js/requestAmount.js?release=6.9.3" data-page-bindings="showAddOrderHeadRaModal,supplyFactorsSelectedIds,showAddSupplyFactorModal,paymentData,reqAmountAttachment,reqAmountId,paymentTable,canEditPaymentTable,reqAmountAttachModal,changeStatusReqAmount,ShowModalListPayment,initPaymentTable,getAllPaymentsList,deletePayment,showEditPaymentModal,requestAmountListData,reqAmountPaymentModal,isGroupPayment,showSetAmountPaymentItemModal,showEditAmountPaymentItemModal,createSetAmountPaymentItem,requestAmountPaymentMap,goToStepAttachReqAmount,cancelRequestAmountPaymentModal,isLoadedBankAccounts,showAttachReqAmount,cancelReqAmountAttach,submitReqAmountAttach,addBankAccountModal,toggleAddBankAccountModal,submitAddBankAccount,addReqAmountModal,orderHeadsSelectedIds,requestAmountData,isFromOrderHead,ohReqAmountId,showAddRequestAmountModal,showAllRequestAmountModal,getAllRequestAmountByOrderHead,isSetupReqAmountModal,setupSelectOptionsReqAmount,getAllCashiers,getSupplyBaseData,getSupplierFinancialSummary,submitRequestAmountModal,cancelRequestAmountModal,showEditRequestAmountModal,deleteRequestAmount,closeDocTypeSelect,changePercentAcceptedRequestAmount,changeAcceptedRequestAmount,toggleAcceptBtn,submitAcceptedRequestAmount,refreshRequestAmountDom" asp-append-version="true"></script>
 }

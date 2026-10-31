@@ -1,398 +1,112 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using CRM.Core.ApplicationServices.Abstractions.Cqrs;
+using CRM.Core.ApplicationServices.Administration.Dtos;
 using CRM.Core.Domain.AppUsers.Entities;
+using CRM.EndPoint.FrontEnd.Models.Admin;
+using CRM.EndPoint.FrontEnd.Models.Login;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using CRM.EndPoint.FrontEnd.Models.Admin;
-using CRM.EndPoint.FrontEnd.Models.Login;
+using CRM.Core.ApplicationServices.Administration.Queries.GetAdminPage;
+using CRM.Core.ApplicationServices.Administration.Queries.GetAdminUsers;
+using CRM.Core.ApplicationServices.Administration.Queries.GetAdminUser;
+using CRM.Core.ApplicationServices.Administration.Queries.GetAdminUserRoles;
+using CRM.Core.ApplicationServices.Administration.Commands.CreateAdminUser;
+using CRM.Core.ApplicationServices.Administration.Commands.CreateLegacyAdminUser;
+using CRM.Core.ApplicationServices.Administration.Commands.DeleteAdminUser;
+using CRM.Core.ApplicationServices.Administration.Commands.UpdateAdminUser;
+using CRM.Core.ApplicationServices.Administration.Commands.RemoveAdminUserRole;
+using CRM.Core.ApplicationServices.Administration.Commands.UpdateAdminUserRoles;
 
-namespace CRM.EndPoint.FrontEnd.Controllers {
-    [Authorize(Roles = "مدیر ارشد")]
-    public class AdminController : Controller {
-        private readonly UserManager<AppUser> userManager;
-
-        private readonly IUserValidator<AppUser> userValidator;
-        private readonly IPasswordValidator<AppUser> passwordValidator;
-        private readonly IPasswordHasher<AppUser> passwordHasher;
-        private readonly RoleManager<IdentityRole> roleManager;
-
-        public AdminController(UserManager<AppUser> userManager,
-            IUserValidator<AppUser> userValid,
-            IPasswordValidator<AppUser> passValid,
-            IPasswordHasher<AppUser> passwordHash,
-            RoleManager<IdentityRole> roleManager)
-        {
-            this.userManager = userManager;
-            userValidator = userValid;
-            passwordValidator = passValid;
-            passwordHasher = passwordHash;
-            this.roleManager = roleManager;
-        }
-
-        public IActionResult Index()
-        {
-            ViewBag.Head = "Users";
-            var model = new AdminViewModel
-            {
-                Roles = roleManager.Roles.ToList(),
-                Users = new List<AppUser>()
-            };
-
-            return View(model);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetUsers(int page = 1, int pageSize = 5, string search = null, string employeeType = "all", string accountStatus = "all", List<string> roles = null)
-        {
-            page = page < 1 ? 1 : page;
-            var query = userManager.Users.Where(user => user.OrganAdmin == false);
-
-            // Filter by employee classification on the database server.
-            if (employeeType == "employee")
-                query = query.Where(user => user.IsEmployee);
-            else if (employeeType == "nonEmployee")
-                query = query.Where(user => !user.IsEmployee);
-
-            // Identity has no separate IsActive field in AppUser; account availability is
-            // determined by whether the LockoutEnd timestamp is currently in the future.
-            var utcNow = DateTimeOffset.UtcNow;
-            if (accountStatus == "active")
-                query = query.Where(user => !user.LockoutEnd.HasValue || user.LockoutEnd <= utcNow);
-            else if (accountStatus == "blocked")
-                query = query.Where(user => user.LockoutEnd.HasValue && user.LockoutEnd > utcNow);
-
-            // Match users assigned to ANY of the selected roles (OR semantics).
-            var selectedRoles = roles?
-                .Where(role => !string.IsNullOrWhiteSpace(role) && role != "all")
-                .Distinct()
-                .ToList() ?? new List<string>();
-
-            if (selectedRoles.Count > 0)
-            {
-                var userIdsInSelectedRoles = new HashSet<string>();
-                foreach (var selectedRole in selectedRoles)
-                {
-                    var usersInRole = await userManager.GetUsersInRoleAsync(selectedRole);
-                    foreach (var userInRole in usersInRole)
-                        userIdsInSelectedRoles.Add(userInRole.Id);
-                }
-
-                query = query.Where(user => userIdsInSelectedRoles.Contains(user.Id));
-            }
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                var term = search.Trim();
-                query = query.Where(user =>
-                    (user.UserName != null && user.UserName.Contains(term)) ||
-                    (user.FirstName != null && user.FirstName.Contains(term)) ||
-                    (user.LastName != null && user.LastName.Contains(term)) ||
-                    (user.PhoneNumber != null && user.PhoneNumber.Contains(term)) ||
-                    (user.Email != null && user.Email.Contains(term)) ||
-                    (user.InternalTels != null && user.InternalTels.Contains(term)));
-            }
-
-            var totalCount = await query.CountAsync();
-            var showAll = pageSize <= 0;
-            pageSize = showAll ? Math.Max(totalCount, 1) : Math.Clamp(pageSize, 5, 50);
-            var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
-            page = Math.Min(page, totalPages);
-
-            var users = await query
-                .OrderByDescending(user => user.CreateDate)
-                .ThenByDescending(user => user.Id)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            // Load roles only for the users on the requested page.
-            foreach (var user in users)
-            {
-                user.RolsUsers = await userManager.GetRolesAsync(user);
-            }
-
-            Response.Headers["X-Total-Count"] = totalCount.ToString();
-            Response.Headers["X-Current-Page"] = page.ToString();
-            Response.Headers["X-Page-Size"] = (showAll ? 0 : pageSize).ToString();
-            Response.Headers["X-Total-Pages"] = totalPages.ToString();
-
-            return PartialView("_UserCardsPartial", users);
-        }
-
-        [HttpPost]
-        public string CreateOrUpUserSportMan(AppUser model)
-        {
-            ViewBag.Head = "Users";
-            List<IdentityError> identityErrors = new List<IdentityError>();
-            if (model.UserName == null)
-            {
-                identityErrors.Add(
-                    new IdentityError() {
-                        Code = "501",
-                        Description = "نام کاربری اجباریست"
-                    }
-                );
-            }
-
-            if (model.PasswordHash == null)
-            {
-                identityErrors.Add(
-                    new IdentityError() {
-                        Code = "502",
-                        Description = "کلمه عبور اجباریست"
-                    }
-                );
-            }
-
-            if (identityErrors.Count > 0)
-            {
-                return JsonConvert.SerializeObject(identityErrors.ToList());
-            } else
-            {
-                IdentityResult result = userManager.CreateAsync(model, model.PasswordHash).Result;
-                if (result.Succeeded)
-                {
-                    var user = userManager.FindByNameAsync(model.UserName).Result;
-                    var resultAddRol = userManager.AddToRoleAsync(user, "User").Result;
-                    List<IdentityError> _IdentityError = new List<IdentityError>();
-                    _IdentityError.Add(new IdentityError() { Code = "200", Description = "حسابت کاربری با موفقیت ساخته شد" });
-                    return JsonConvert.SerializeObject(_IdentityError);
-                } else
-                {
-                    return JsonConvert.SerializeObject(result.Errors.ToList());
-                }
-            }
-
-            //if (ModelState.IsValid)
-            //{
-            //}
-            //else
-            //{
-            //    var errors = ModelState.Select(x => x.Value.Errors)
-            //           .Where(y => y.Count > 0)
-            //           .ToList();
-            //}
-            //return null;
-        }
-
-        //public ViewResult Create() => View();
-        [HttpGet]
-        public IActionResult Create()
-        {
-            ViewBag.Head = "CreateUser";
-            return View();
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(CreateModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                var validationErrors = ModelState
-                    .Where(x => x.Value.Errors.Count > 0)
-                    .SelectMany(x => x.Value.Errors.Select(e => e.ErrorMessage))
-                    .ToList();
-                return BadRequest(new { success = false, message = string.Join("، ", validationErrors) });
-            }
-
-            var user = new AppUser
-            {
-                UserName = model.UserName,
-                PhoneNumber = model.PhoneNumber,
-                FirstName = model.FirstName,
-                LastName = model.LastName,
-                Email = model.Email,
-                IsEmployee = true
-            };
-
-            var result = await userManager.CreateAsync(user, model.Password);
-            if (!result.Succeeded)
-            {
-                return BadRequest(new { success = false, message = string.Join("، ", result.Errors.Select(e => e.Description)) });
-            }
-
-            return Json(new
-            {
-                success = true,
-                user = new
-                {
-                    id = user.Id,
-                    userName = user.UserName,
-                    firstName = user.FirstName,
-                    lastName = user.LastName,
-                    phoneNumber = user.PhoneNumber,
-                    email = user.Email,
-                    internalTels = user.InternalTels
-                }
-            });
-        }
-
-        //[HttpPost]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(string id)
-        {
-            var user = await userManager.FindByIdAsync(id);
-            if (user == null)
-            {
-                return NotFound(new { success = false, message = "کاربر پیدا نشد." });
-            }
-
-            var result = await userManager.DeleteAsync(user);
-            if (!result.Succeeded)
-            {
-                return BadRequest(new { success = false, message = string.Join("، ", result.Errors.Select(e => e.Description)) });
-            }
-
-            return Json(new { success = true });
-        }
-
-        public async Task<IActionResult> Edit(string id)
-        {
-            AppUser user = await userManager.FindByIdAsync(id);
-            if (user != null)
-            {
-                user.PasswordHash = "";
-                return View(user);
-            } else
-            {
-                return RedirectToAction("Index");
-            }
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Edit(AppUser model, List<string> InternalTelsArray)
-        {
-            var user = await userManager.FindByIdAsync(model.Id);
-            if (user != null)
-            {
-                user.Email = model.Email;
-                user.UserName = model.UserName;
-                user.FirstName = model.FirstName;
-                user.LastName = model.LastName;
-                user.PhoneNumber = model.PhoneNumber;
-
-                user.InternalTels = InternalTelsArray != null
-                    ? string.Join(",", InternalTelsArray.Where(x => !string.IsNullOrWhiteSpace(x)))
-                    : null;
-
-                IdentityResult validEmail = await userValidator.ValidateAsync(userManager, user);
-                if (!validEmail.Succeeded)
-                {
-                    AddErrorsFromResult(validEmail);
-                }
-
-                IdentityResult validPass = null;
-                if (!string.IsNullOrEmpty(model.PasswordHash))
-                {
-                    validPass = await passwordValidator.ValidateAsync(userManager, user, model.PasswordHash);
-
-                    if (validPass.Succeeded)
-                    {
-                        user.PasswordHash = passwordHasher.HashPassword(user, model.PasswordHash);
-                    } else
-                    {
-                        AddErrorsFromResult(validPass);
-                    }
-                }
-
-                if (validEmail.Succeeded && validPass == null || validEmail.Succeeded && model.PasswordHash != string.Empty && validPass.Succeeded)
-                {
-                    IdentityResult result = await userManager.UpdateAsync(user);
-                    if (result.Succeeded)
-                    {
-                        return RedirectToAction("Index");
-                    } else
-                    {
-                        AddErrorsFromResult(result);
-                    }
-                }
-            } else
-            {
-                ModelState.AddModelError("", "نام کاربری یافت نشد");
-            }
-
-            return View(user);
-        }
-
-
-        private void AddErrorsFromResult(IdentityResult result)
-        {
-            foreach (IdentityError error in result.Errors)
-            {
-                ModelState.AddModelError("", error.Description);
-            }
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> DelUserRol(string id, string role)
-        {
-            AppUser User = await userManager.FindByIdAsync(id);
-
-            if (User == null)
-            {
-                return NotFound(new { success = false, message = "کاربر پیدا نشد." });
-            }
-
-            var result = await userManager.RemoveFromRoleAsync(User, role);
-            if (!result.Succeeded)
-            {
-                return BadRequest(new { success = false, message = string.Join("، ", result.Errors.Select(e => e.Description)) });
-            }
-
-            return Json(new { success = true });
-        }
-
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateUserRoles(string userName, List<string> roleNames)
-        {
-            var user = await userManager.FindByNameAsync(userName);
-            if (user == null)
-                return NotFound(new { success = false, message = "کاربر پیدا نشد." });
-
-            var selectedRoles = roleNames ?? new List<string>();
-            foreach (var role in selectedRoles)
-            {
-                if (!await roleManager.RoleExistsAsync(role))
-                    return BadRequest(new { success = false, message = "یک یا چند نقش انتخاب‌شده معتبر نیست." });
-            }
-
-            var currentRoles = await userManager.GetRolesAsync(user);
-            var rolesToRemove = currentRoles.Except(selectedRoles).ToList();
-            var rolesToAdd = selectedRoles.Except(currentRoles).ToList();
-
-            if (rolesToRemove.Count > 0)
-            {
-                var removeResult = await userManager.RemoveFromRolesAsync(user, rolesToRemove);
-                if (!removeResult.Succeeded)
-                    return BadRequest(new { success = false, message = string.Join("، ", removeResult.Errors.Select(e => e.Description)) });
-            }
-
-            if (rolesToAdd.Count > 0)
-            {
-                var addResult = await userManager.AddToRolesAsync(user, rolesToAdd);
-                if (!addResult.Succeeded)
-                    return BadRequest(new { success = false, message = string.Join("، ", addResult.Errors.Select(e => e.Description)) });
-            }
-
-            var updatedRoles = await userManager.GetRolesAsync(user);
-            return Json(new { success = true, roles = updatedRoles });
-        }
-
-        public IActionResult GetUserRoles(string userName)
-        {
-            var user = userManager.FindByNameAsync(userName).Result;
-            if (user == null) return NotFound();
-            var roles = userManager.GetRolesAsync(user).Result;
-            return Json(roles);
-        }
+namespace CRM.EndPoint.FrontEnd.Controllers;
+[Authorize(Roles = "مدیر ارشد")]
+public class AdminController(ICqrsDispatcher dispatcher) : Controller
+{
+    public async Task<IActionResult> Index(CancellationToken ct)
+    {
+        ViewBag.Head = "Users";
+        var roles = await dispatcher.QueryAsync(new GetAdminPageQuery(), ct);
+        return View(new AdminViewModel { Users = [], Roles = roles.Select(r => new IdentityRole { Id = r.Id, Name = r.Name }).ToList() });
     }
+
+    [HttpGet]
+    public async Task<IActionResult> GetUsers(int page = 1, int pageSize = 5, string search = null, string employeeType = "all", string accountStatus = "all", List<string> roles = null, CancellationToken ct = default)
+    {
+        var result = await dispatcher.QueryAsync(new GetAdminUsersQuery(page, pageSize, search, employeeType, accountStatus, roles), ct);
+        Response.Headers["X-Total-Count"] = result.TotalCount.ToString();
+        Response.Headers["X-Current-Page"] = result.Page.ToString();
+        Response.Headers["X-Page-Size"] = result.PageSize.ToString();
+        Response.Headers["X-Total-Pages"] = result.TotalPages.ToString();
+        return PartialView("_UserCardsPartial", result.Users);
+    }
+
+    [HttpPost]
+    public async Task<string> CreateOrUpUserSportMan(AppUser model, CancellationToken ct)
+    {
+        ViewBag.Head = "Users";
+        return JsonConvert.SerializeObject(await dispatcher.CommandAsync(new CreateLegacyAdminUserCommand(model), ct));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Create(CancellationToken ct)
+    {
+        ViewBag.Head = "CreateUser";
+        ViewData["Roles"] = await dispatcher.QueryAsync(new GetAdminPageQuery(), ct);
+        return View(new CreateModel());
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(CreateModel model, CancellationToken ct)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(new { success = false, message = string.Join("، ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)) });
+        var result = await dispatcher.CommandAsync(new CreateAdminUserCommand(model.UserName, model.PhoneNumber, model.FirstName, model.LastName, model.Email, model.Password), ct);
+        if (result.Status != 200)
+            return Map(result);
+        var user = result.User!;
+        return Json(new { success = true, user = new { id = user.Id, userName = user.UserName, firstName = user.FirstName, lastName = user.LastName, phoneNumber = user.PhoneNumber, email = user.Email, internalTels = user.InternalTels } });
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(string id, CancellationToken ct) => Map(await dispatcher.CommandAsync(new DeleteAdminUserCommand(id), ct));
+    public async Task<IActionResult> Edit(string id, CancellationToken ct)
+    {
+        var user = await dispatcher.QueryAsync(new GetAdminUserQuery(id), ct);
+        return user == null ? RedirectToAction("Index") : View(user);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Edit(AppUser model, List<string> InternalTelsArray, CancellationToken ct)
+    {
+        var result = await dispatcher.CommandAsync(new UpdateAdminUserCommand(model.Id, model.Email, model.UserName, model.FirstName, model.LastName, model.PhoneNumber, model.PasswordHash, InternalTelsArray), ct);
+        if (result.Saved)
+            return RedirectToAction("Index");
+        foreach (var error in result.Errors)
+            ModelState.AddModelError("", error);
+        // Prevent a submitted password from being rendered back into the form.
+        ModelState.Remove(nameof(AppUser.PasswordHash));
+        return View(result.User);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DelUserRol(string id, string role, CancellationToken ct) => Map(await dispatcher.CommandAsync(new RemoveAdminUserRoleCommand(id, role), ct));
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateUserRoles(string userName, List<string> roleNames, CancellationToken ct)
+    {
+        var result = await dispatcher.CommandAsync(new UpdateAdminUserRolesCommand(userName, roleNames), ct);
+        return result.Status == 200 ? Json(new { success = true, roles = result.Roles }) : Map(result);
+    }
+
+    public async Task<IActionResult> GetUserRoles(string userName, CancellationToken ct)
+    {
+        var roles = await dispatcher.QueryAsync(new GetAdminUserRolesQuery(userName), ct);
+        return roles == null ? NotFound() : Json(roles);
+    }
+
+    private IActionResult Map(AdminMutationResult result) => result.Status == 200 ? Json(new { success = true }) : StatusCode(result.Status, new { success = false, message = result.Message });
 }

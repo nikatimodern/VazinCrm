@@ -1,0 +1,80 @@
+using System;
+using System.Collections.Generic;
+using CRM.Core.ApplicationServices.Abstractions.Cqrs;
+using CRM.Core.ApplicationServices.Cashes.Abstractions;
+using CRM.Core.ApplicationServices.Cashes.Services;
+using CRM.Core.ApplicationServices.Cashes.Dtos;
+using CRM.Core.Domain.Cashes.Repositories;
+using CRM.Core.Domain.Cashes.Entities;
+using CRM.EndPoint.FrontEnd.Services.Cashes;
+using CRM.Infrastructures.Sql.Cashes.Repositories;
+using Microsoft.Extensions.DependencyInjection;
+using CRM.Core.ApplicationServices.Cashes.Commands.AddCash;
+using CRM.Core.ApplicationServices.Cashes.Commands.AddCashier;
+using CRM.Core.ApplicationServices.Cashes.Commands.UpdateCashier;
+using CRM.Core.ApplicationServices.Cashes.Commands.ChangeStatusCash;
+using CRM.Core.ApplicationServices.Cashes.Commands.ChangeStatusAllCashToPending;
+using CRM.Core.ApplicationServices.Cashes.Commands.ChangeStatusGroupCashToPending;
+using CRM.Core.ApplicationServices.Cashes.Commands.ApproveCashGroup;
+using CRM.Core.ApplicationServices.Cashes.Commands.RejectCashGroup;
+using CRM.Core.ApplicationServices.Cashes.Commands.DeleteCash;
+using CRM.Core.ApplicationServices.Cashes.Commands.DeleteCashier;
+using CRM.Core.ApplicationServices.Cashes.Commands.AddBaseCash;
+using CRM.Core.ApplicationServices.Cashes.Commands.DeleteBaseCash;
+using CRM.Core.ApplicationServices.Cashes.Commands.PrepareCashGroupExport;
+using CRM.Core.ApplicationServices.Cashes.Commands.SendCashesToSoftware;
+using CRM.Core.ApplicationServices.Cashes.Queries.GetCashDetail;
+using CRM.Core.ApplicationServices.Cashes.Queries.GetCashierDetail;
+using CRM.Core.ApplicationServices.Cashes.Queries.GetBaseCashDetail;
+using CRM.Core.ApplicationServices.Cashes.Queries.GetCashCenters;
+using CRM.Core.ApplicationServices.Cashes.Queries.GetCashTitles;
+using CRM.Core.ApplicationServices.Cashes.Queries.GetCashierOptions;
+using CRM.Core.ApplicationServices.Cashes.Queries.GetCashierBalance;
+using CRM.Core.ApplicationServices.Cashes.Queries.GetCashTable;
+using CRM.Core.ApplicationServices.Cashes.Queries.GetCashGroupTable;
+using CRM.Core.ApplicationServices.Cashes.Queries.GetCashierTable;
+using CRM.Core.ApplicationServices.Cashes.Queries.GetBaseCashTable;
+using CRM.Core.ApplicationServices.Cashes.Queries.GetCashDetailedAccounts;
+using CRM.Core.ApplicationServices.Cashes.Queries.GetCashPage;
+using CRM.Core.ApplicationServices.Cashes.Queries.GetCashierPage;
+
+namespace CRM.EndPoint.FrontEnd.Composition;
+public static class CashServicesRegistration
+{
+    public static IServiceCollection AddCashServices(this IServiceCollection services)
+    {
+        services.AddScoped<ICashRepository, CashRepository>();
+        services.AddScoped<ICashExternalRepository, CashExternalRepository>();
+        services.AddScoped<ICashEffects, CashEffects>();
+        services.AddScoped<CashWorkflow>();
+        services.AddScoped<ICommandHandler<AddCashCommand, CashOutcome>, AddCashCommandHandler>();
+        services.AddScoped<ICommandHandler<AddCashierCommand, CashOutcome>, AddCashierCommandHandler>();
+        services.AddScoped<ICommandHandler<UpdateCashierCommand, CashOutcome>, UpdateCashierCommandHandler>();
+        services.AddScoped<ICommandHandler<ChangeStatusCashCommand, CashOutcome>, ChangeStatusCashCommandHandler>();
+        services.AddScoped<ICommandHandler<ChangeStatusAllCashToPendingCommand, CashOutcome>, ChangeStatusAllCashToPendingCommandHandler>();
+        services.AddScoped<ICommandHandler<ChangeStatusGroupCashToPendingCommand, CashOutcome>, ChangeStatusGroupCashToPendingCommandHandler>();
+        services.AddScoped<ICommandHandler<ApproveCashGroupCommand, CashOutcome>, ApproveCashGroupCommandHandler>();
+        services.AddScoped<ICommandHandler<RejectCashGroupCommand, CashOutcome>, RejectCashGroupCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteCashCommand, CashOutcome>, DeleteCashCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteCashierCommand, CashOutcome>, DeleteCashierCommandHandler>();
+        services.AddScoped<ICommandHandler<AddBaseCashCommand, CashOutcome>, AddBaseCashCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteBaseCashCommand, CashOutcome>, DeleteBaseCashCommandHandler>();
+        services.AddScoped<ICommandHandler<PrepareCashGroupExportCommand, CashExportData>, PrepareCashGroupExportCommandHandler>();
+        services.AddScoped<ICommandHandler<SendCashesToSoftwareCommand, CashOutcome>, SendCashesToSoftwareCommandHandler>();
+        services.AddScoped<IQueryHandler<GetCashDetailQuery, CashDetail?>, GetCashDetailQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCashierDetailQuery, Cashier?>, GetCashierDetailQueryHandler>();
+        services.AddScoped<IQueryHandler<GetBaseCashDetailQuery, BaseCash?>, GetBaseCashDetailQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCashCentersQuery, List<CashOption<Guid>>>, GetCashCentersQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCashTitlesQuery, List<CashOption<Guid>>>, GetCashTitlesQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCashierOptionsQuery, List<CashierOption>>, GetCashierOptionsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCashierBalanceQuery, CashierBalanceDto?>, GetCashierBalanceQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCashTableQuery, CashListTable>, GetCashTableQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCashGroupTableQuery, CashTable<CashGroupRow>>, GetCashGroupTableQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCashierTableQuery, CashTable<CashierRow>>, GetCashierTableQueryHandler>();
+        services.AddScoped<IQueryHandler<GetBaseCashTableQuery, CashTable<BaseCash>>, GetBaseCashTableQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCashDetailedAccountsQuery, List<CashOption<string>>>, GetCashDetailedAccountsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCashPageQuery, CashPageData>, GetCashPageQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCashierPageQuery, List<CashierSoftwareData>>, GetCashierPageQueryHandler>();
+        return services;
+    }
+}

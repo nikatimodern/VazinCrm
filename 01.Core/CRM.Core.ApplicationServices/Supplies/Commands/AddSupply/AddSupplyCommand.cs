@@ -1,3 +1,4 @@
+using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Supplies.Dtos;
 using CRM.Core.Domain.ASettings.Entities;
@@ -9,13 +10,16 @@ using CRM.Core.Domain.Supplies.Models;
 using CRM.Core.Domain.Supplies.Repositories;
 
 namespace CRM.Core.ApplicationServices.Supplies.Commands.AddSupply;
-public sealed record AddSupplyCommand(List<Supply> Model, AppUser User) : ICommand<SupplyResult>;
-public sealed class AddSupplyCommandHandler(ISupplyWriteRepository repository, ISupplyIntegrationServices integrations) : ICommandHandler<AddSupplyCommand, SupplyResult>
+public sealed record AddSupplyCommand(List<Supply> Model) : ICommand<SupplyResult>;
+public sealed class AddSupplyCommandHandler(ISupplyWriteRepository repository, ISupplyIntegrationServices integrations, CurrentActor actor) : ICommandHandler<AddSupplyCommand, SupplyResult>
 {
     public async Task<SupplyResult> HandleAsync(AddSupplyCommand command, CancellationToken cancellationToken)
     {
         var model = command.Model;
-        var user = command.User;
+        var current = await actor.FindAsync(cancellationToken);
+        if (current == null)
+            return SupplyResult.Unauthenticated();
+        var user = current.User;
         if (model == null)
             return SupplyResult.Invalid();
         try
@@ -60,7 +64,7 @@ public sealed class AddSupplyCommandHandler(ISupplyWriteRepository repository, I
             await repository.SaveChangesAsync(cancellationToken);
             return SupplyResult.Success(true);
         }
-        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        catch (Exception)when (!cancellationToken.IsCancellationRequested)
         {
             return SupplyResult.Invalid();
         }

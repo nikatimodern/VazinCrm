@@ -106,17 +106,21 @@ function showDealListError() {
     });
 }
 
-const getAllDeals = async () => {
+const getAllDeals = async ({ showSkeleton = true } = {}) => {
     dealListRequest?.abort();
     const request = new AbortController();
     dealListRequest = request;
     const lists = document.querySelectorAll("#allDealsContainer .deal-column-list");
     const template = document.getElementById("dealSkeletonTemplate").innerHTML;
-    lists.forEach(list => {
+    if (showSkeleton) lists.forEach(list => {
         list.setAttribute("aria-busy", "true");
         list.closest(".deal-column").querySelector(".countDeal").textContent = "";
         Skeleton.show({ container: list, count: 3, template: () => template });
     });
+    const showReadError = () => {
+        if (showSkeleton) showDealListError();
+        else toastifyError("به‌روزرسانی سفارشات انجام نشد؛ دوباره تلاش کنید.");
+    };
     try {
         await sendApiRequest({
             url: "/Deal/GetAllDeals",
@@ -126,7 +130,7 @@ const getAllDeals = async () => {
             signal: request.signal,
             data: structuredClone(modelDeal),
             onError: () => {
-                if (dealListRequest === request && !request.signal.aborted) showDealListError();
+                if (dealListRequest === request && !request.signal.aborted) showReadError();
             },
             onSuccess: async (res) => {
                 if (dealListRequest !== request || request.signal.aborted) return;
@@ -147,7 +151,7 @@ const getAllDeals = async () => {
     } catch (error) {
         if (dealListRequest === request && !request.signal.aborted) {
             console.error("Deal list rendering failed:", error);
-            showDealListError();
+            showReadError();
         }
     } finally {
         if (dealListRequest === request) {
@@ -678,7 +682,7 @@ function initSortableDeal() {
             delayOnTouchOnly: true,
             ghostClass: "lightGray-background-class",
             //disabled: window.innerWidth < 1200,
-            onAdd: async (evt) => await changeStatusDeal(evt.item.dataset.id, Number(evt.to.dataset.status)),
+            onAdd: async (evt) => await changeStatusDeal(evt.item.dataset.id, Number(evt.to.dataset.status), evt),
             onChange: (evt) => {
                 document.querySelectorAll(".deal-column-list").forEach(c => c.classList.remove("drop-target"));
                 evt.to.classList.add("drop-target");
@@ -744,12 +748,38 @@ function initSortableDeal() {
     });
 }
 
-async function changeStatusDeal(id, targetStatus) {
-    await sendApiRequest({
+const pendingDealStatusChanges = new Set();
+
+async function changeStatusDeal(id, targetStatus, dragEvent = null) {
+    const restorePosition = () => {
+        if (!dragEvent) return;
+        const { item, from, oldIndex } = dragEvent;
+        from.insertBefore(item, from.children[oldIndex] ?? null);
+    };
+    if (pendingDealStatusChanges.has(id)) {
+        restorePosition();
+        return;
+    }
+    pendingDealStatusChanges.add(id);
+    try {
+        const res = await axios(`/Deal/ChangeStatusDeal?id=${id}&status=${targetStatus}`);
+        if (res.status !== 200) throw new Error("Deal status was not saved.");
+    } catch (error) {
+        restorePosition();
+        toastifyError(error.response?.data?.message || "تغییر وضعیت سفارش انجام نشد؛ دوباره تلاش کنید.");
+        return;
+    } finally {
+        pendingDealStatusChanges.delete(id);
+    }
+    
+    /*await sendApiRequest({
         url: "/Deal/ChangeStatusDeal",
         params: { id, status: targetStatus },
-    });
-    await getAllDeals();
+    });*/
+    
+    
+    // Keep the board visible while reconciling server data after a status change.
+    await getAllDeals({ showSkeleton: false });
 }
 
 function removeDealsTabsDesktop() {

@@ -24,17 +24,11 @@ function syncCheckViewWithUrl() {
 }
 
 const GetAllCheckbooks = async () => {
-    try {
-        FLshowLoading();
-        const res = await axios(`/Check/GetAllCheckbooksPartial`);
-        document.getElementById("checkbooksContainer").innerHTML = res.data;
-        
-    } catch (err) {
-        console.log(err);
-        document.getElementById("checkbooksContainer").innerHTML = "خطای دریافت اطلاعات";
-    } finally {
-        FLshowLoading(false);
-    }
+    await sendApiRequest({
+        url: "/Check/GetAllCheckbooksPartial",
+        skeleton: { target: "#checkbooksContainer" },
+        onSuccess: response => { document.getElementById("checkbooksContainer").innerHTML = response.data; },
+    });
 };
 
 async function showNewCheckbookModal() {

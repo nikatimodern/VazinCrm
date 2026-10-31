@@ -275,6 +275,7 @@ async function getAllReports(showLoading = true) {
     
     await sendApiRequest({
         url: "/Report/GetAllReportPartial",
+        skeleton: { target: containerReport },
         method: "POST",
         successMsg: null,
         data: model,

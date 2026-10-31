@@ -1,0 +1,85 @@
+using Microsoft.Extensions.DependencyInjection;
+using CRM.Core.ApplicationServices.Abstractions.Cqrs;
+using CRM.Core.ApplicationServices.Customers.Abstractions;
+using CRM.Core.ApplicationServices.Customers.Dtos;
+using CRM.Core.ApplicationServices.Customers.Services;
+using CRM.Core.Domain.AppUsers.Entities;
+using CRM.Core.Domain.Customers.Entities;
+using CRM.Core.Domain.Customers.Repositories;
+using CRM.Infrastructures.Sql.Customers.Repositories;
+using CRM.EndPoint.FrontEnd.Services.Customers;
+using System.Collections.Generic;
+using CRM.Core.ApplicationServices.Customers.Queries.GetCustomersPage;
+using CRM.Core.ApplicationServices.Customers.Queries.SearchCustomerOptions;
+using CRM.Core.ApplicationServices.Customers.Queries.GetCustomerSuppliers;
+using CRM.Core.ApplicationServices.Customers.Queries.GetRelatedCustomers;
+using CRM.Core.ApplicationServices.Customers.Queries.GetCustomerProfile;
+using CRM.Core.ApplicationServices.Customers.Queries.GetCustomerDetail;
+using CRM.Core.ApplicationServices.Customers.Queries.CheckCustomerRegistration;
+using CRM.Core.ApplicationServices.Customers.Queries.FindDuplicateCustomers;
+using CRM.Core.ApplicationServices.Customers.Queries.GetJuridicalCustomerTable;
+using CRM.Core.ApplicationServices.Customers.Queries.GetIndividualCustomerTable;
+using CRM.Core.ApplicationServices.Customers.Queries.GetCustomerCards;
+using CRM.Core.ApplicationServices.Customers.Queries.SearchCustomerCards;
+using CRM.Core.ApplicationServices.Customers.Queries.GetCustomerUserNames;
+using CRM.Core.ApplicationServices.Customers.Queries.GetCustomerSummaries;
+using CRM.Core.ApplicationServices.Customers.Queries.GetCustomer;
+using CRM.Core.ApplicationServices.Customers.Queries.GetCustomerByMobile;
+using CRM.Core.ApplicationServices.Customers.Queries.GetCustomerExperts;
+using CRM.Core.ApplicationServices.Customers.Queries.GetCustomerPhonebook;
+using CRM.Core.ApplicationServices.Customers.Queries.GetCustomerSepidarInvoices;
+using CRM.Core.ApplicationServices.Customers.Queries.GetCustomerPreFactors;
+using CRM.Core.ApplicationServices.Customers.Queries.GetPreFactorUsers;
+using CRM.Core.ApplicationServices.Customers.Commands.RemoveCustomerExpert;
+using CRM.Core.ApplicationServices.Customers.Commands.AssignCustomerExperts;
+using CRM.Core.ApplicationServices.Customers.Commands.DeleteCustomer;
+using CRM.Core.ApplicationServices.Customers.Commands.AcceptCustomer;
+using CRM.Core.ApplicationServices.Customers.Commands.AddCustomerToCurrentUser;
+using CRM.Core.ApplicationServices.Customers.Commands.UpdateCustomer;
+using CRM.Core.ApplicationServices.Customers.Commands.CreateCustomer;
+using CRM.Core.ApplicationServices.Customers.Commands.NormalizeCustomers;
+using CRM.Core.ApplicationServices.Customers.Commands.ChangePreFactorUsers;
+namespace CRM.EndPoint.FrontEnd.Composition;
+
+public static class CustomerServicesRegistration
+{
+    public static IServiceCollection AddCustomerServices(this IServiceCollection services)
+    {
+        services.AddScoped<CustomerAccess>();
+        services.AddScoped<ICustomerRepository, CustomerRepository>();
+        services.AddScoped<ICustomerExternalRepository, CustomerExternalRepository>();
+        services.AddScoped<ICustomerEffects, CustomerEffects>();
+        services.AddScoped<ICustomerPresentation, CustomerPresentation>();
+        services.AddScoped<IQueryHandler<GetCustomersPageQuery, AppUser>, GetCustomersPageQueryHandler>();
+        services.AddScoped<IQueryHandler<SearchCustomerOptionsQuery, List<CustomerOption>>, SearchCustomerOptionsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCustomerSuppliersQuery, List<CustomerSupplier>>, GetCustomerSuppliersQueryHandler>();
+        services.AddScoped<IQueryHandler<GetRelatedCustomersQuery, List<Customer>>, GetRelatedCustomersQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCustomerProfileQuery, CustomerProfileResult>, GetCustomerProfileQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCustomerDetailQuery, Customer>, GetCustomerDetailQueryHandler>();
+        services.AddScoped<IQueryHandler<CheckCustomerRegistrationQuery, bool?>, CheckCustomerRegistrationQueryHandler>();
+        services.AddScoped<IQueryHandler<FindDuplicateCustomersQuery, List<Customer>>, FindDuplicateCustomersQueryHandler>();
+        services.AddScoped<IQueryHandler<GetJuridicalCustomerTableQuery, CustomerTableResult>, GetJuridicalCustomerTableQueryHandler>();
+        services.AddScoped<IQueryHandler<GetIndividualCustomerTableQuery, CustomerTableResult>, GetIndividualCustomerTableQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCustomerCardsQuery, CustomerListResult>, GetCustomerCardsQueryHandler>();
+        services.AddScoped<IQueryHandler<SearchCustomerCardsQuery, CustomerListResult>, SearchCustomerCardsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCustomerUserNamesQuery, string>, GetCustomerUserNamesQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCustomerSummariesQuery, List<CustomerSummary>>, GetCustomerSummariesQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCustomerQuery, Customer>, GetCustomerQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCustomerByMobileQuery, Customer>, GetCustomerByMobileQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCustomerExpertsQuery, List<AppUser>>, GetCustomerExpertsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCustomerPhonebookQuery, List<CustomerPhone>>, GetCustomerPhonebookQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCustomerSepidarInvoicesQuery, CustomerHtmlResult>, GetCustomerSepidarInvoicesQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCustomerPreFactorsQuery, CustomerHtmlResult>, GetCustomerPreFactorsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetPreFactorUsersQuery, PreFactorUsersResult>, GetPreFactorUsersQueryHandler>();
+        services.AddScoped<ICommandHandler<RemoveCustomerExpertCommand, CustomerMutationResult>, RemoveCustomerExpertCommandHandler>();
+        services.AddScoped<ICommandHandler<AssignCustomerExpertsCommand, CustomerMutationResult>, AssignCustomerExpertsCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteCustomerCommand, CustomerMutationResult>, DeleteCustomerCommandHandler>();
+        services.AddScoped<ICommandHandler<AcceptCustomerCommand, CustomerMutationResult>, AcceptCustomerCommandHandler>();
+        services.AddScoped<ICommandHandler<AddCustomerToCurrentUserCommand, CustomerMutationResult>, AddCustomerToCurrentUserCommandHandler>();
+        services.AddScoped<ICommandHandler<UpdateCustomerCommand, CustomerMutationResult>, UpdateCustomerCommandHandler>();
+        services.AddScoped<ICommandHandler<CreateCustomerCommand, CustomerMutationResult>, CreateCustomerCommandHandler>();
+        services.AddScoped<ICommandHandler<NormalizeCustomersCommand, int>, NormalizeCustomersCommandHandler>();
+        services.AddScoped<ICommandHandler<ChangePreFactorUsersCommand, CustomerMutationResult>, ChangePreFactorUsersCommandHandler>();
+        return services;
+    }
+}

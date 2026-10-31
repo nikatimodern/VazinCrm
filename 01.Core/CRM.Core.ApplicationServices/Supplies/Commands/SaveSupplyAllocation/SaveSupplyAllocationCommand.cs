@@ -1,3 +1,4 @@
+using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Supplies.Entities;
@@ -6,14 +7,17 @@ using CRM.Core.Domain.Supplies.Repositories;
 using CRM.Core.Domain.Supplies.Rules;
 
 namespace CRM.Core.ApplicationServices.Supplies.Commands.SaveSupplyAllocation;
-public sealed record SaveSupplyAllocationCommand(SupplyFactorAllocationRequest Model, Guid? AllocationId, AppUser User) : ICommand<SupplyResult>;
-public sealed class SaveSupplyAllocationCommandHandler(ISupplyWriteRepository repository, ISupplyInventoryRepository supplyWarehouse) : ICommandHandler<SaveSupplyAllocationCommand, SupplyResult>
+public sealed record SaveSupplyAllocationCommand(SupplyFactorAllocationRequest Model, Guid? AllocationId) : ICommand<SupplyResult>;
+public sealed class SaveSupplyAllocationCommandHandler(ISupplyWriteRepository repository, ISupplyInventoryRepository supplyWarehouse, CurrentActor actor) : ICommandHandler<SaveSupplyAllocationCommand, SupplyResult>
 {
     public async Task<SupplyResult> HandleAsync(SaveSupplyAllocationCommand command, CancellationToken cancellationToken)
     {
         var model = command.Model;
         var allocationId = command.AllocationId;
-        var user = command.User;
+        var current = await actor.FindAsync(cancellationToken);
+        if (current == null)
+            return SupplyResult.Unauthenticated();
+        var user = current.User;
         try
         {
             if (model == null || !SupplyAllocationRules.IsValidWeight(model.Weight))
