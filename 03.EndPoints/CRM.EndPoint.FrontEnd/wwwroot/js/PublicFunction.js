@@ -696,3 +696,26 @@ async function getSuppliesByPfId(pfId) {
         params: { pfId },
     });
 }
+
+async function getBaseItemOp(typeCode, showLoading = false) {
+    return await sendApiRequest({
+        url: "/BaseItem/GetItemsOp",
+        params: { typeCode },
+        showLoading,
+    });
+}
+
+async function getCustomersList(showLoading = false) {
+    return await sendApiRequest({
+        url: "/Customer/GetCustomersList",
+        showLoading,
+    });
+}
+
+async function getCustomer(id, showLoading = false) {
+    return await sendApiRequest({
+        url: "/Customer/GetCustomer",
+        params: { id },
+        showLoading,
+    });
+}

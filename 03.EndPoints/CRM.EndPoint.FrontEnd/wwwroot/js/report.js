@@ -125,7 +125,7 @@ async function initReportModal() {
 
 
 const initCustomerOpReport = async () => {
-    const customerData = await sendApiRequest({ url: "/Customer/GetAllCustomers" });
+    const customerData = await getCustomersList();
     const repTelElm = document.getElementById("repTel");
     
     const cusTomSelect = new TomSelect("#repCustomerTxt", {
@@ -145,7 +145,7 @@ const initCustomerOpReport = async () => {
                 toggleElementsDisabled(repTelElm, true);
                 cusTomSelect.disable();
                 
-                const data = await sendApiRequest({ url: "/Customer/GetCustomer", params: { id: value } });
+                const data = await getCustomer(value);
                 // repTelElm.tomselect.setValue(res.data.mobile, true);
                 repTelElm.value = data.mobile;
                 flashItem(repTelElm);

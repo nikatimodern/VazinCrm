@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         modelDeal.serVal = searchDealElm.value.trim();
         await getAllDeals();
     });
-
+    
     await getAllDeals();
 });
 
@@ -377,48 +377,42 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
 };
 
 const assignUserSuspendDeal = async (dealId, userId, userFullName) => {
-    try {
-        FLshowLoading();
-        const res = await axios(`/Deal/AssignUserSuspendDeal?dealId=${dealId}&userId=${userId}&userFullName=${userFullName}`);
-        if (res.status === 200) {
-            toastifySuccess("با موفقیت ثبت شد.");
-            await getAllDeals();
-        }
-        
-    } catch (err) {
-        console.log(err);
-        toastifyError("خطای سرور");
-    } finally {
-        FLshowLoading(false);
-    }
+    await sendApiRequest({
+        url: "/Deal/AssignUserSuspendDeal",
+        params: { dealId, userId, userFullName },
+        successMsg: "با موفقیت ثبت شد.",
+        onSuccess: getAllDeals,
+    });
 };
 
+async function getDeal(id) {
+    return await sendApiRequest({
+        url: "/Deal/GetDeal",
+        params: { id },
+    });
+}
 
 const editDealModal = async (id, preFactorCount) => {
-    FLshowLoading();
     await openDealModal();
-    try {
-        const res = await axios(`/Deal/GetDeal/${id}`);
-        currentDealData = res.data;
-        isEditMode = true;
-        mySer.convertJsonToForm(currentDealData, "formDeal");
+    
+    const data = await getDeal(id);
+    if (!data) return;
+    
+    currentDealData = data;
+    isEditMode = true;
+    mySer.convertJsonToForm(currentDealData, "formDeal");
+    
+    canCreateCustomerTomSelect = currentDealData.customerId === null || preFactorCount === 0;
+    
+    if (currentDealData.customerId === null) {
+        const customId = `custom-${currentDealData.customerName}`;
+        selectTomCustomers.addOption({ value: customId, text: currentDealData.customerName });
+        selectTomCustomers.setValue(customId, true);
         
-        canCreateCustomerTomSelect = currentDealData.customerId === null || preFactorCount === 0;
-        
-        if (currentDealData.customerId === null) {
-            const customId = `custom-${currentDealData.customerName}`;
-            selectTomCustomers.addOption({ value: customId, text: currentDealData.customerName });
-            selectTomCustomers.setValue(customId, true);
-            
-            const mobileNumber = currentDealData.mobileNumber;
-            dealMobileElm.tomselect.addOption({ value: mobileNumber });
-            dealMobileElm.tomselect.setValue(mobileNumber, true);
-        }
-        
-    } catch (err) {
-        console.log(err);
+        const mobileNumber = currentDealData.mobileNumber;
+        dealMobileElm.tomselect.addOption({ value: mobileNumber });
+        dealMobileElm.tomselect.setValue(mobileNumber, true);
     }
-    FLshowLoading(false);
 };
 
 let selectTomLoaded = false;
@@ -450,40 +444,35 @@ const submitDeal = async () => {
         toggleExtraPanel(true);
         return;
     }
-    try {
-        FLshowLoading();
-        
-        const data = mySer.convertFormToJSON("formDeal");
-        const model = { ...currentDealData, ...data };
-        if (model.customerId.startsWith("custom")) model.customerId = null;
-        if (!model.cusWorkSenf) model.cusWorkSenf = null;
-        if (!model.cusAcquaintanceWay) model.cusAcquaintanceWay = null;
-        
-        const res = await axios.post(`/Deal/AddDeal`, model);
-        if (res.status === 200) {
+    
+    const data = mySer.convertFormToJSON("formDeal");
+    const model = { ...currentDealData, ...data };
+    if (model.customerId.startsWith("custom")) model.customerId = null;
+    if (!model.cusWorkSenf) model.cusWorkSenf = null;
+    if (!model.cusAcquaintanceWay) model.cusAcquaintanceWay = null;
+    
+    await sendApiRequest({
+        url: "/Deal/AddDeal",
+        method: "POST",
+        data: model,
+        successMsg: isEditMode ? "با موفقیت ویرایش شد" : "سفارش جدید ثبت شد",
+        onSuccess: async () => {
             await getAllDeals();
-            toastifySuccess(isEditMode ? "با موفقیت ویرایش شد" : "سفارش جدید ثبت شد");
-            FLshowLoading(false);
-            
             closeDealModal();
-        } else if (res.status === 201) {
-            toastifyError(res.data);
-            FLshowLoading(false);
-        }
-    } catch {
-        setTimeout(async () => await submitDeal(), 3000);
-    }
+        },
+    });
 };
 
 const dealMobileElm = document.getElementById("dealMobile");
 const initSelectTom = async () => {
-    const [customerRes, workSenfRes, acquaintanceWayRes] = await Promise.all([
-        axios("/Customer/GetAllCustomers"),
-        axios("/BaseItem/GetItemsOp?typeCode=1"),
-        axios("/BaseItem/GetItemsOp?typeCode=2"),
+    const [customersData, workSenfData, acquaintanceWayData] = await Promise.all([
+        getCustomersList(),
+        getBaseItemOp(1),
+        getBaseItemOp(2),
     ]);
+    
     selectTomCustomers = new TomSelect("#dealCustomersTomSelect", {
-        options: customerRes.data.map(c => ({ text: `${c.customerName} (کد مشتری: ${c.customerCode})`, value: c.id })),
+        options: customersData.map(c => ({ text: `${c.customerName} (کد مشتری: ${c.customerCode})`, value: c.id })),
         maxItems: 1,
         persist: false,
         openOnFocus: false,
@@ -500,8 +489,9 @@ const initSelectTom = async () => {
                 toggleElementsDisabled(dealMobileElm, true);
                 selectTomCustomers.disable();
                 
-                const res = await axios(`/Customer/GetCustomer/${value}`);
-                setDealDataByCustomer(res.data);
+                const customerData = await getCustomer(value);
+                
+                setDealDataByCustomer(customerData);
                 
                 selectTomCustomers.enable();
                 toggleElementsDisabled(dealMobileElm, false);
@@ -538,7 +528,7 @@ const initSelectTom = async () => {
     });
     
     new TomSelect(dealMobileElm, {
-        options: customerRes.data.map(c => ({ text: `${c.customerName} (${c.mobile})`, value: c.mobile })),
+        options: customersData.map(c => ({ text: `${c.customerName} (${c.mobile})`, value: c.mobile })),
         openOnFocus: false,
         searchField: ["value"],
         maxItems: 1,
@@ -556,7 +546,7 @@ const initSelectTom = async () => {
         
         onChange(value) {
             if (!value) return;
-            const customer = customerRes.data.find(x => x.mobile === value);
+            const customer = customersData.find(x => x.mobile === value);
             if (!customer) return;
             
             selectTomCustomers.setValue(customer.id);
@@ -569,7 +559,7 @@ const initSelectTom = async () => {
     
     
     const selectTomWorkSenf = new TomSelect("#workSenfIDDeal", {
-        options: workSenfRes.data,
+        options: workSenfData,
         valueField: "id",
         maxItems: 1,
         selectOnTab: true,
@@ -580,7 +570,7 @@ const initSelectTom = async () => {
     });
     
     const selectTomAcquaintanceWay = new TomSelect("#acquaintanceWayDeal", {
-        options: acquaintanceWayRes.data,
+        options: acquaintanceWayData,
         valueField: "id",
         maxItems: 1,
         selectOnTab: true,
@@ -755,29 +745,11 @@ function initSortableDeal() {
 }
 
 async function changeStatusDeal(id, targetStatus) {
-    try {
-        FLshowLoading();
-        const res = await axios(`/Deal/ChangeStatusDeal?id=${id}&status=${targetStatus}`);
-        if (res.status === 200) {
-            await getAllDeals();
-            FLshowLoading(false);
-        }
-    } catch (err) {
-        
-        
-        if (err.response.data.code == 1) {
-            
-            FLshowLoading(false);
-            
-            toastifyError(err.response.data.message);
-            
-        } else {
-            
-            setTimeout(async () => await changeStatusDeal(evt), 3000);
-        }
-        
-        
-    }
+    await sendApiRequest({
+        url: "/Deal/ChangeStatusDeal",
+        params: { id, status: targetStatus },
+    });
+    await getAllDeals();
 }
 
 function removeDealsTabsDesktop() {

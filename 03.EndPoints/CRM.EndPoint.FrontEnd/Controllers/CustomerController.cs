@@ -870,7 +870,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [Authorize(Policy = "NotCustomerOnly")]
-        public async Task<IActionResult> GetAllCustomers()
+        public async Task<IActionResult> GetCustomersList()
         {
             var data = await db.Customers
 //                .Where(f => f.RoleType == RoleTypeEnum.مشتری || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری)

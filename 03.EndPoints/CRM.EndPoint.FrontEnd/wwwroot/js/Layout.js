@@ -1,5 +1,5 @@
 var showFlag = 0;
-var customerIdUp = null;
+
 
 // var userRol = null;
 // var rol;

@@ -340,7 +340,7 @@ public class DealController : Controller {
         {
             if (model.CustomerId == null && db.Customers.Any(f => f.Mobile == model.MobileNumber))
             {
-                return StatusCode(201, "مشتری با این شماره موبایل قبلا در سیستم ثبت شده است!");
+                return Conflict("مشتری با این شماره موبایل قبلا در سیستم ثبت شده است!");
             }
 
             var user = await userManager.GetUserAsync(HttpContext.User);
@@ -460,23 +460,15 @@ public class DealController : Controller {
     {
         try
         {
-
-
-
-
             var user = await userManager.GetUserAsync(HttpContext.User);
             var oldDeal = await db.Deals.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
-            var deal = await db.Deals.Include(f=>f.Factors).Where(f => f.Id == id).FirstOrDefaultAsync();
+            var deal = await db.Deals.Include(f => f.Factors).Where(f => f.Id == id).FirstOrDefaultAsync();
             if (deal == null) return NotFound("رکوردی یافت نشد!");
 
             if (deal.Factors.Any() && (status == DealStatusEnum.باز || status == DealStatusEnum.بسته || status == DealStatusEnum.ناموفق))
             {
-
-                return BadRequest(new {code=1, message = "مجاز به تغییر وضعیت این سفارش نیستید" });
-            
-
-            }
-            else
+                return BadRequest("مجاز به تغییر وضعیت این سفارش نیستید");
+            } else
             {
                 deal.Status = status;
                 deal.UserModify = user.FullName;
@@ -488,14 +480,10 @@ public class DealController : Controller {
                 await db.SaveChangesAsync();
                 return Ok();
             }
-
-
-
-
         }
         catch
         {
-            return BadRequest(new { code = 2, message = "خطای سیستمی" });
+            return BadRequest();
         }
     }
 

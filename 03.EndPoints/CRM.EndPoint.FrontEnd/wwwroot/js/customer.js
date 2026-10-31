@@ -1,3 +1,5 @@
+let customerIdUp = null;
+
 let JuridicalFlag = false;
 let CurrentStep = 1;
 let allStep = 3;
@@ -363,18 +365,14 @@ const ShowModalUpCustomer = async (id) => {
     }
     customerIdUp = id;
     
-    await sendApiRequest({
-        url: `/Customer/GetCustomer`,
-        params: { id },
-        onSuccess: (res) => {
-            const data = res.data;
-            
-            changeJur(data.juridical);
-            mySer.convertJsonToForm(data, "CuInfoUpFormId");
-            
-            ModalToggle("updateCustomerModal");
-        },
-    });
+    const data = await getCustomer(id);
+    if (!data) return;
+    
+    
+    changeJur(data.juridical);
+    mySer.convertJsonToForm(data, "CuInfoUpFormId");
+    
+    ModalToggle("updateCustomerModal");
 };
 
 const SubmitUpFormCustomer = async () => {
