@@ -1,13 +1,15 @@
 ﻿var customerId = null;
 
-if (window.innerWidth < 992) {
+const prepareResponsiveForms = () => {
+    if (window.innerWidth >= 992) return;
     document.getElementById("PreFacItemContainer")?.remove();
     document.getElementById("FacItemContainer")?.remove();
     document.getElementById("supplyFactorContainer")?.remove();
     document.getElementById("orderFormContainer")?.remove();
     const descriptionOrder = document.getElementById("descriptionOrder");
     if (descriptionOrder) descriptionOrder.rows = 3;
-}
+};
+prepareResponsiveForms();
 
 
 const Unit = (type, formId, defaultValueId) => {
@@ -23,7 +25,8 @@ const Unit = (type, formId, defaultValueId) => {
     ];
     
     if (type === 1) {
-        const unitElm = document.querySelector("#PreFacItem select[name='unit']");
+        const unitElm = document.querySelector(`${window.innerWidth < 992 ? "#ItemPreFactorModal" : "#PreFactor"} #PreFacItem select[name='unit']`);
+        if (!unitElm) return;
         $(unitElm).select2({
             data: unitItems,
             dir: "rtl",
@@ -34,7 +37,8 @@ const Unit = (type, formId, defaultValueId) => {
         });
         $(unitElm).val(null).trigger("change");
     } else if (type === 2) {
-        const unitElm = document.querySelector("#FacItem select[name='unit']");
+        const unitElm = document.querySelector(`${window.innerWidth < 992 ? "#ItemFactorModal" : "#Factor"} #FacItem select[name='unit']`);
+        if (!unitElm) return;
         $(unitElm).select2({
             data: unitItems,
             dir: "rtl",
@@ -45,6 +49,7 @@ const Unit = (type, formId, defaultValueId) => {
         $(unitElm).val(null).trigger("change");
     } else if (type === 3) {
         const unitInput = document.querySelector(`#${formId} select[name='unit']`);
+        if (!unitInput) return;
         unitInput.innerHTML = "";
         
         const fragment = document.createDocumentFragment();
@@ -65,7 +70,8 @@ const Unit = (type, formId, defaultValueId) => {
         });
         unitInput.appendChild(fragment);
     } else if (type === 4) {
-        const unitElm = document.querySelector("#supplyFactorItem select[name='unit']");
+        const unitElm = document.querySelector(`${window.innerWidth < 992 ? "#ItemSupplyFactorModal" : "#supplyFactorModal"} #supplyFactorItem select[name='unit']`);
+        if (!unitElm) return;
         $(unitElm).select2({
             data: unitItems,
             dir: "rtl",
@@ -89,10 +95,14 @@ const getAllProductOp = async (form) => {
     if (!productCodeElement) return;
     
     if (!allProductPromise) {
-        allProductPromise = sendApiRequest({ url: "/Product/GetAllProduct" });
+        allProductPromise = sendApiRequest({ url: "/Product/GetAllProduct" }).then(products => {
+            if (!products) allProductPromise = null;
+            return products;
+        });
     }
     
     const products = await allProductPromise;
+    if (!products || !productCodeElement.isConnected) return;
     
     if (productCodeElement.tomselect) {
         return productCodeElement.tomselect;
@@ -631,9 +641,9 @@ function getFieldRules(formId, customRules = {}) {
 
 let idNotAccept;
 let typeNotAccept;
-const notAcceptCommentElm = document.getElementById("NotAcceptComment");
-
 async function showModalNotAccept(id, type) { // type: acc= 0 / pf= 12 financial | 13 tamin | 14: SaleAdmin
+    const notAcceptCommentElm = document.getElementById("NotAcceptComment");
+    if (!notAcceptCommentElm) return;
     notAcceptCommentElm.value = "";
     document.getElementById("NotAcceptHeader").textContent = type !== 0 ? "عدم تایید پیش‌فاکتور" : "عدم تایید واریزی";
     idNotAccept = id;
@@ -642,6 +652,8 @@ async function showModalNotAccept(id, type) { // type: acc= 0 / pf= 12 financial
 }
 
 async function submitNotAccept() { // رد تایید و بازگشت | عدم تایید
+    const notAcceptCommentElm = document.getElementById("NotAcceptComment");
+    if (!notAcceptCommentElm) return;
     
     if (!notAcceptCommentElm.value.trim().length) {
         toastifyError("دلیل عدم تایید اجباری است!");
@@ -688,4 +700,34 @@ async function submitNotAccept() { // رد تایید و بازگشت | عدم �
     }
     notAcceptCommentElm.value = "";
     ModalToggle("#NotAcceptModal");
+}
+
+async function getSuppliesByPfId(pfId) {
+    return await sendApiRequest({
+        url: "/Supply/GetSupplies",
+        params: { pfId },
+    });
+}
+
+async function getBaseItemOp(typeCode, showLoading = false) {
+    return await sendApiRequest({
+        url: "/BaseItem/GetItemsOp",
+        params: { typeCode },
+        showLoading,
+    });
+}
+
+async function getCustomersList(showLoading = false) {
+    return await sendApiRequest({
+        url: "/Customer/GetCustomersList",
+        showLoading,
+    });
+}
+
+async function getCustomer(id, showLoading = false) {
+    return await sendApiRequest({
+        url: "/Customer/GetCustomer",
+        params: { id },
+        showLoading,
+    });
 }

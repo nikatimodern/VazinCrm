@@ -16,7 +16,7 @@
         </div>
     </div>
 
-    <div id="warehouseProducts-section" class="@(hasWarehouseId ? "" : "d-none")">
+    <div id="warehouseProducts-section" data-is-senior-manager="@User.IsAdmin().ToString().ToLowerInvariant()" class="@(hasWarehouseId ? "" : "d-none")">
 
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
             <div class="d-flex align-items-center gap-2">
@@ -25,12 +25,12 @@
             </div>
 
             <div class="section-actions d-flex gap-2 flex-grow-1 justify-content-end">
-                <button id="warehouseProductBtn" class="buttonGreen0" onclick="showWarehouseTransactionModal(1)">
+                <button id="warehouseProductBtn" class="buttonGreen0 d-none" onclick="showWarehouseTransactionModal(1)">
                     ثبت محصول جدید
                     <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
                 </button>
 
-                <button id="groupSelectWarehouseProductBtn" class="buttonBlue">
+                <button id="groupSelectWarehouseProductBtn" class="buttonBlue d-none">
                     ثبت حواله انبار
                     <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 1 0 1.09 1.03L9.25 4.636v8.614Z"></path><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z"></path></svg>
                 </button>
@@ -41,6 +41,7 @@
                 </button>
             </div>
         </div>
+        <p id="warehouseSystemNotice" class="text-muted small d-none">گردش این انبار سیستمی است؛ عملیات دستی فقط برای مدیر ارشد مجاز است.</p>
         <div id="warehouseSelectionToolbar" class="selection-bar d-none mb-2">
             <div class="d-none d-lg-flex align-items-center gap-3">
                 <label class="d-flex align-items-center gap-3">
@@ -123,11 +124,11 @@
 <partial name="Modals/_WarehouseVoucherModal" />
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/warehouse.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/warehouse.css?release=6.9.4" asp-append-version="true" />
 }
 
 @section Scripts {
-    <script src="~/js/warehouse/warehouse.js" asp-append-version="true"></script>
-    <script src="~/js/warehouse/warehouse-voucher.js" asp-append-version="true"></script>
+    <script src="~/js/warehouse/warehouse.js?release=6.9.4" data-page-bindings="warehouseData,warehouseTransactionsData,warehouseProductsData,warehouseTransactionTbl,warehouseProductTbl,warehouseProductSelection,warehouseModal,warehouseTransactionModal,warehouseTransactionHistoryModal,warehouseFormElm,warehousesSection,warehouseProductsSection,syncWarehouseViewWithUrl,canManuallyManageWarehouse,setWarehouseManualActions,backToWarehouses,showWarehouseModal,cancelWarehouseModal,warehouseUsersPromise,initWarehouseUsers,GetAllWarehouses,deleteWarehouse,editWarehouse,warehouseDropdown,showWarehouseProducts,configWarehouseTransactionModal,setWarehouseTransactionModal,openWarehouseTransactionModal,showWarehouseTransactionModal,editWarehouseTransaction,getWarehouseTransaction,cancelWarehouseTransactionModal,submitWarehouseTransactionModal,initWarehouseProductsTable,showLastWarehouseVouchers,showWarehouseVouchersPage,showWarehouseTransactionHistory,editWarehouseProduct,deleteWarehouseProduct,submitWarehouseProductModal,initWarehouseTransaction,deleteWarehouseTransaction,setWarehouseTransactionHistoryHeader" asp-append-version="true"></script>
+    <script src="~/js/warehouse/warehouse-voucher.js?release=6.9.4" data-page-bindings="warehouseVoucherState,warehouseVoucherId,warehouseVoucherModal,loadWarehouseVouchers,refreshWarehouseVouchers,warehouseProductListData,showWarehouseVoucherModal,editWarehouseVoucher,cancelWarehouseVoucherModal,createSetVoucherItem,submitWarehouseVoucherModal,confirmWarehouseVoucher,deliverWarehouseVoucher,deleteWarehouseVoucher" asp-append-version="true"></script>
 }
 

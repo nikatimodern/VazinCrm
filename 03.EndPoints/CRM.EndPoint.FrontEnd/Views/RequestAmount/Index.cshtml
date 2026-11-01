@@ -102,7 +102,7 @@
 
 
 @section Scripts {
-    <script>
+    <script data-page-bindings="modelRequestAmount,filterRequestAmountConfig,requestAmountSearchVal,requestContainer,callbackFilterRequestAmount,getAllRequestAmount,requestSelection">
         let modelRequestAmount = { filt: null, serVal: null };
         var filterRequestAmountConfig = {};
         var requestAmountSearchVal = null;
@@ -130,8 +130,8 @@
             const val = document.getElementById("requestAmountSearchId")?.value.trim() ?? "";
             const type = document.querySelector("input[type='radio'][name='requestAmountFilter']:checked")?.value;
             if (type === undefined) return;
-            FLshowLoading();
-            const res = await axios(`/RequestAmount/GetAllRequestAmountsPartial?search=${val}&type=${type}`);
+            const res = await sendApiRequest({ url: "/RequestAmount/GetAllRequestAmountsPartial", params: { search: val, type }, returnFullResponse: true, skeleton: { target: requestContainer, retry: getAllRequestAmount } });
+            if (!res) return;
             requestContainer.innerHTML = res.data.html;
             updateFilterSwitchState({
                 wrapperSelector: ".filter-switch",
@@ -143,7 +143,7 @@
                 },
             });
             requestSelection.restoreSelection();
-            FLshowLoading(false);
+
         };
 
 
@@ -161,5 +161,5 @@
         });
     </script>
 
-    <script src="~/js/requestAmount.js" asp-append-version="true"></script>
+    <script src="~/js/requestAmount.js?release=6.9.4" data-page-bindings="showAddOrderHeadRaModal,supplyFactorsSelectedIds,showAddSupplyFactorModal,paymentData,reqAmountAttachment,reqAmountId,paymentTable,canEditPaymentTable,reqAmountAttachModal,changeStatusReqAmount,ShowModalListPayment,initPaymentTable,getAllPaymentsList,deletePayment,showEditPaymentModal,requestAmountListData,reqAmountPaymentModal,isGroupPayment,showSetAmountPaymentItemModal,showEditAmountPaymentItemModal,createSetAmountPaymentItem,requestAmountPaymentMap,goToStepAttachReqAmount,cancelRequestAmountPaymentModal,isLoadedBankAccounts,showAttachReqAmount,cancelReqAmountAttach,submitReqAmountAttach,addBankAccountModal,toggleAddBankAccountModal,submitAddBankAccount,addReqAmountModal,orderHeadsSelectedIds,requestAmountData,isFromOrderHead,ohReqAmountId,showAddRequestAmountModal,showAllRequestAmountModal,getAllRequestAmountByOrderHead,isSetupReqAmountModal,setupSelectOptionsReqAmount,getAllCashiers,getSupplyBaseData,getSupplierFinancialSummary,submitRequestAmountModal,cancelRequestAmountModal,showEditRequestAmountModal,deleteRequestAmount,closeDocTypeSelect,changePercentAcceptedRequestAmount,changeAcceptedRequestAmount,toggleAcceptBtn,submitAcceptedRequestAmount,refreshRequestAmountDom" asp-append-version="true"></script>
 }

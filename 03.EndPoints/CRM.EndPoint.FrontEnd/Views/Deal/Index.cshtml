@@ -69,7 +69,11 @@
                         سفارشات باز
                         <span class="countDeal"></span>
                     </div>
-                    <div class="deal-column-list" data-status="1"></div>
+                    <div class="deal-column-list" aria-busy="true" data-status="1">
+                        @for (var card = 0; card < 3; card++) {
+                            <partial name="_DealSkeleton" />
+                        }
+                    </div>
                 </div>
             </div>
         </div>
@@ -81,7 +85,11 @@
                         سفارشات موفق
                         <span class="countDeal"></span>
                     </div>
-                    <div class="deal-column-list" data-status="3"></div>
+                    <div class="deal-column-list" aria-busy="true" data-status="3">
+                        @for (var card = 0; card < 3; card++) {
+                            <partial name="_DealSkeleton" />
+                        }
+                    </div>
                 </div>
             </div>
         </div>
@@ -93,7 +101,11 @@
                         سفارشات ناموفق
                         <span class="countDeal"></span>
                     </div>
-                    <div class="deal-column-list" data-status="2"></div>
+                    <div class="deal-column-list" aria-busy="true" data-status="2">
+                        @for (var card = 0; card < 3; card++) {
+                            <partial name="_DealSkeleton" />
+                        }
+                    </div>
                 </div>
             </div>
         </div>
@@ -126,7 +138,11 @@
 
 <partial name="Modals/_DealModal" />
 
+<template id="dealSkeletonTemplate">
+    <partial name="_DealSkeleton" />
+</template>
+
 @section Scripts {
-    <script src="~/js/deal/deal.js" asp-append-version="true"></script>
-    <script src="~/js/deal/deal-documents.js" asp-append-version="true"></script>
+    <script src="~/js/deal/deal.js?release=6.9.4" data-page-bindings="modelDeal,filterDealConfig,dealSearchVal,currentDealData,isEditMode,canCreateCustomerTomSelect,selectTomCustomers,dealModalElm,toggleExtraPanelBtn,extraCustomerPanel,dealDropdown,deleteDeal,callbackFilterDeal,dealListRequest,cancelDealListRequest,showDealListError,getAllDeals,createDomAllDeals,assignUserSuspendDeal,editDealModal,selectTomLoaded,openDealModal,closeDealModal,submitDeal,dealMobileElm,initSelectTom,setDealDataByCustomer,showExistingCustomerToast,initSortableDeal,pendingDealStatusChanges,changeStatusDeal,removeDealsTabsDesktop,toggleExtraPanel" asp-append-version="true"></script>
+    <script src="~/js/deal/deal-documents.js?release=6.9.4" data-page-bindings="currentDealDocumentData,showModalDealPreFactors,showModalDealFactors,showModalDealReports,showModalDealOrders,showModalDealSupplyFactors,showModalDealInvoices,getPreFactorFromDeal,getReportFromDeal,getSupplyFactorsFromDeal,getOrdersFromDeal,getInvoicesFromDeal,refreshDealPreFactors,refreshDealFactors,refreshDealReports,refreshDealOrders,refreshDealSupplyFactors,deletedPrefactorToggle" asp-append-version="true"></script>
 }

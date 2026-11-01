@@ -2455,6 +2455,7 @@ input[type=checkbox], input[type=radio] {
 
 
 #mainWrapper {
+	min-width: 0;
 	container-type: inline-size;
 	container-name: mainWrapper;
 	min-height: 100dvh;
@@ -3150,28 +3151,6 @@ html.sidebar-collapsed .has-submenu:hover > .menu-item > .menu-item-title .subme
 
 .menufix {
 	width: 11%;
-}
-
-
-.openMenu {
-	width: 11%;
-	height: 100% !important;
-	/*    animation-name: _openMenu;
-animation-duration: 0.3s;
-animation-iteration-count: 1;
-animation-timing-function: ease;
-animation-fill-mode: forwards;*/
-}
-
-
-.closeMenu {
-	width: 3%;
-	height: 100% !important;
-	/*    animation-name: _closeMenu;
-animation-duration: 0.3s;
-animation-iteration-count: 1;
-animation-timing-function: ease;
-animation-fill-mode: forwards;*/
 }
 
 
@@ -7873,88 +7852,6 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 }
 
 
-/* Reusable live attention effect */
-.menu-alert-live {
-	--alert-color: 255, 69, 72;
-	--alert-color-light: 255, 208, 208;
-	--alert-bg-opacity: .075;
-	--alert-bg-opacity-active: .16;
-	
-	position: relative;
-	isolation: isolate;
-	overflow: visible;
-	border-radius: 8px;
-	background: rgba(var(--alert-color), var(--alert-bg-opacity));
-	color: rgb(var(--alert-color));
-	animation: alertMenuBreath 2.4s ease-in-out infinite;
-}
-
-
-/* Animated perimeter glow */
-.menu-alert-live::after {
-	
-	content: "";
-	position: absolute;
-	inset: -2px;
-	padding: 2px;
-	border-radius: inherit;
-	pointer-events: none;
-	background: conic-gradient(
-			from var(--alert-glow-angle),
-			transparent 0deg,
-			transparent 245deg,
-			rgba(var(--alert-color), .12) 275deg,
-			rgb(var(--alert-color)) 320deg,
-			rgb(var(--alert-color-light)) 338deg,
-			rgb(var(--alert-color)) 350deg,
-			transparent 360deg
-	);
-	-webkit-mask: linear-gradient(#fff 0 0) content-box,
-	linear-gradient(#fff 0 0);
-	-webkit-mask-composite: xor;
-	mask-composite: exclude;
-	animation: alertMenuOrbit 2.8s linear infinite;
-}
-
-
-.menu-alert-live:hover {
-	background: rgba(var(--alert-color), var(--alert-bg-opacity-active));
-}
-
-
-@keyframes alertMenuBreath {
-	0%, 100% {
-		background-color: rgba(var(--alert-color), .055);
-	}
-	
-	50% {
-		background-color: rgba(var(--alert-color), var(--alert-bg-opacity-active));
-	}
-}
-
-
-@property --alert-glow-angle {
-	syntax: "<angle>";
-	inherits: false;
-	initial-value: 0deg;
-}
-
-
-@keyframes alertMenuOrbit {
-	to {
-		--alert-glow-angle: 360deg;
-	}
-}
-
-
-@media (prefers-reduced-motion: reduce) {
-	.menu-alert-live,
-	.menu-alert-live::after {
-		animation: none;
-	}
-}
-
-
 /* Reusable, high-visibility attention effect for buttons and menu items */
 .blink-button {
 	position: relative;
@@ -7992,7 +7889,6 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	animation-duration: .65s;
 }
 
-
 @media (prefers-reduced-motion: reduce) {
 	.blink-button {
 		animation: none;
@@ -8003,19 +7899,51 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 }
 
 
-/* Count badge for overdue open deals */
-.badge-count-overdue {
-	min-width: 21px;
-	height: 21px;
-	padding: 0 5px;
-	margin-inline-start: 6px;
-	border: 1px solid rgba(255, 255, 255, .9);
-	border-radius: 999px;
-	background-color: #6d28d9;
-	color: #fff;
-	font-family: IranSansBold;
-	font-size: 12px;
-	box-shadow: 0 0 8px rgba(109, 40, 217, .45);
+/* Menu attention is confined to the count badge. */
+.menu-overdue-attention .badge-count-overdue,
+.menu-warning-attention .badge-count-warning {
+    --menu-badge-glow: 139, 92, 246;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    margin-inline-start: 6px;
+    /* border: 1px solid rgba(255, 255, 255, .65); */
+    border-radius: 6px;
+    background: #6d28d9;
+    color: #fff;
+    font-family: IRANSansBold;
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
+    animation: menuBadgePulse .9s ease-in-out infinite;
+}
+.menu-warning-attention .badge-count-warning {
+    --menu-badge-glow: 239, 68, 68;
+    background: #EF5350;
+    color: #003734;
+}
+.menu-warning-attention .badge-count-warning:empty { display: none; }
+.menu-overdue-attention:hover .badge-count-overdue,
+.menu-warning-attention:hover .badge-count-warning {
+    animation-duration: .7s;
+}
+@keyframes menuBadgePulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(var(--menu-badge-glow), .2); }
+    50% { transform: scale(1.06); box-shadow: 0 0 0 4px rgba(var(--menu-badge-glow), .3), 0 0 14px rgba(var(--menu-badge-glow), .65); }
+}
+.menu-warning-attention.menu-warning-new > .menu-icon-frame .menu-icon {
+    transform-origin: 50% 15%;
+    animation: menuWarningRing .65s ease-in-out;
+}
+@keyframes menuWarningRing {
+    0%, 100% { transform: rotate(0); }
+    20%, 60% { transform: rotate(12deg); }
+    40%, 80% { transform: rotate(-12deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .menu-overdue-attention .badge-count-overdue,
+    .menu-warning-attention .badge-count-warning,
+    .menu-warning-attention.menu-warning-new > .menu-icon-frame .menu-icon { animation: none; }
 }
 
 

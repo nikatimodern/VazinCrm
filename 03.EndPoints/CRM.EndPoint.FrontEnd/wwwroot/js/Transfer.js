@@ -259,7 +259,7 @@ async function changeStatusTransfer(id, status) {
         url: "/Transfer/ChangeTransferStatus",
         method: "PATCH",
         params: { id },
-        data: status,
+        data: { status },
         successMsg: status === 2 ? "با موفقیت تایید شد." : null,
         onSuccess: () => {
             transferTbl.ajax.reload(null, false);

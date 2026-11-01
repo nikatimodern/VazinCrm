@@ -25,6 +25,7 @@ using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.EndPoint.FrontEnd.Services.SepidarServices;
 using CRM.EndPoint.FrontEnd.Services.Sms;
+using CRM.Core.Domain.Deals.Enums;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
@@ -88,6 +89,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
+
+                //var de = db.Deals.ToList();
+                //foreach(var item in de)
+                //{
+                //    item.CreateDate = DateTime.Now.AddDays(-20);
+                //    item.CreateDateTxt = dts.GetDatePersian( DateTime.Now.AddDays(-20));
+                //    item.Status = DealStatusEnum.باز;
+                    
+                //}
+                //db.SaveChanges();
+
                 /*var softs = await db.ExternalSoftwares.AsNoTracking().ToListAsync();
                 var baseCenters = await db.BaseCenterCashes.AsNoTracking().ToListAsync();
 

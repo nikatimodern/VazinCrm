@@ -26,6 +26,22 @@
 	}
 }
 
+.customer-loading-status { position:absolute; width:1px; height:1px; padding:0; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+#CustomerPartial .customer-skeleton { height:230px; box-sizing:border-box; display:flex; flex-direction:column; border-radius:24px 24px 10px 10px; background:#fff; overflow:hidden; border:1px solid #e7ebed; }
+.customer-skeleton-cover { height:92px; flex-shrink:0; background:#edf2f3; display:grid; place-items:center; }
+.customer-skeleton-cover span { width:60px; height:60px; border-radius:50%; }
+.customer-skeleton-body { display:flex; flex:1; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:12px 18px 6px; }
+.customer-skeleton-body span { height:8px; width:80%; border-radius:5px; }
+.customer-skeleton-body span:first-child { width:45%; }
+.customer-skeleton-body span:last-child { width:60%; }
+.customer-skeleton-actions { display:flex; justify-content:center; gap:12px; padding:8px; }
+.customer-skeleton-actions span { width:65px; height:20px; border-radius:5px; }
+.customer-skeleton span { background:linear-gradient(100deg,#e3e9eb 25%,#f7f9fa 45%,#e3e9eb 65%); background-size:240% 100%; animation:customer-skeleton-shimmer 1.5s ease-in-out infinite; }
+.customer-load-error { grid-column:1/-1; text-align:center; padding:20px; color:#77575a; }
+.customer-load-error button { padding:6px 14px; color:#00766e; border:1px solid #bcd7d1; border-radius:6px; background:white; }
+@keyframes customer-skeleton-shimmer { to { background-position:-240% 0; } }
+@media(prefers-reduced-motion:reduce) { .customer-skeleton span { animation:none; } }
+
 
 @media all and (min-width: 992px) {
 	.parent {

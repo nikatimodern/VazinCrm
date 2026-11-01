@@ -5,18 +5,21 @@
 
 <style>
     .overdue-filter-button {
-        width: 38px;
-        height: 38px;
+        width: 28px;
+        height: 28px;
+        flex: 0 0 28px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         border: 1px solid #5b21b6;
-        border-radius: .7rem;
+        border-radius: .55rem;
         background: linear-gradient(135deg, #7c3aed, #4c1d95);
         color: #fff;
-        box-shadow: 0 4px 12px rgba(76, 29, 149, .3);
+        box-shadow: 0 2px 7px rgba(76, 29, 149, .2);
         transition: all .18s ease;
     }
+
+    .overdue-filter-button svg { width: 16px; height: 16px; }
 
 
         .overdue-filter-button:hover,
@@ -24,8 +27,7 @@
             border-color: #7c3aed;
             background: linear-gradient(135deg, #7c3aed, #5b21b6);
             color: #fff;
-            box-shadow: 0 5px 13px rgba(109, 40, 217, .24);
-            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(109, 40, 217, .22);
         }
 
 
@@ -66,8 +68,14 @@
 
 
     .overdue-refresh-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .35rem;
+        min-height: 28px;
+        padding: 0 .65rem;
         border-color: #0f766e;
-        border-radius: .7rem;
+        border-radius: .55rem;
         background: #0f766e;
         color: #fff;
         font-family: IranSansBold;
@@ -440,6 +448,101 @@
         height: 100%;
     }
 
+    .overdue-follow-up-modal {
+        border: 0;
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+
+    .overdue-follow-up-modal .modal-header {
+        background: #f7faf9;
+        border-bottom: 1px solid #dcebe7;
+    }
+
+    .overdue-follow-up-options {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: .75rem;
+    }
+
+    .overdue-follow-up-option {
+        display: flex;
+        align-items: flex-start;
+        gap: .75rem;
+        padding: 1rem;
+        border: 1px solid #d5e4e1;
+        border-radius: .8rem;
+        background: #fff;
+        cursor: pointer;
+    }
+
+    .overdue-follow-up-option:has(input:checked) {
+        border-color: #0f766e;
+        background: #f0fdfa;
+        box-shadow: 0 0 0 2px #ccfbf1;
+    }
+
+    .overdue-follow-up-option:has(input:disabled) {
+        background: #f8fafc;
+        color: #64748b;
+        cursor: not-allowed;
+    }
+
+    .overdue-follow-up-option input { margin-top: .3rem; accent-color: #0f766e; }
+    .overdue-follow-up-option span { display: flex; flex-direction: column; gap: .25rem; }
+    .overdue-follow-up-option small { color: #64748b; line-height: 1.7; }
+    .overdue-date-expired { border-color: #dc2626 !important; color: #b91c1c !important; background: #fef2f2 !important; }
+    .overdue-date-expired-note { color: #b91c1c; }
+
+    .overdue-date-clear {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        border-color: #ddd6fe;
+        background: #f5f3ff;
+        color: #6d28d9;
+    }
+
+    .overdue-date-clear:hover,
+    .overdue-date-clear:focus-visible {
+        border-color: #a78bfa;
+        background: #ede9fe;
+        color: #4c1d95;
+    }
+
+    .overdue-date-clear:disabled { opacity: .45; }
+
+    .overdue-mode-filter.filter-switch {
+        flex-wrap: nowrap;
+        align-items: center;
+        /* height: 32px; */
+        padding: 2px;
+        border: 1px solid #ddd6fe;
+        border-radius: .55rem;
+        background: #f5f3ff;
+    }
+
+    .overdue-mode-filter.filter-switch label {
+        color: #6d28d9;
+        font-size: 12px;
+    }
+
+    .overdue-mode-filter .filter-switch-item input:checked + label {
+        background: #6d28d9;
+        color: #fff;
+        box-shadow: 0 2px 6px rgba(76, 29, 149, .2);
+    }
+
+    .overdue-mode-filter .filter-switch-item input:focus-visible + label {
+        outline: 2px solid #a78bfa;
+        outline-offset: 2px;
+    }
+
+    @@media (max-width: 575px) {
+        .overdue-follow-up-options { grid-template-columns: 1fr; }
+    }
+
 
         .overdue-count-card .count-value {
             color: #4c1d95;
@@ -638,19 +741,29 @@
             </span>
             <div>
                 <h1 class="h5 mb-1">سفارشات باز معوقه</h1>
-                <p class="text-muted mb-0">سفارش‌های باز با بیش از ۱۴ روز از زمان ثبت</p>
+                <p class="text-muted mb-0" id="overdueDealsSubtitle">سفارش‌های ثبت‌شده از ۵ شهریور ۱۴۰۵ با بیش از ۱۴ روز انتظار</p>
             </div>
         </div>
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center flex-wrap gap-2 overdue-toolbar">
             <input type="hidden" id="overdueDealSearch" value="" />
             <div id="ContentOverdueDealFilterId" class="ContentFilter"></div>
+            <ul class="filter-switch overdue-mode-filter" aria-label="نوع سفارش‌های نمایش داده‌شده">
+                <li class="filter-switch-item">
+                    <input type="radio" name="overdueFollowUpFilter" id="overdueFilterCurrent" value="overdue" checked />
+                    <label for="overdueFilterCurrent">معوقه‌های فعلی</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="overdueFollowUpFilter" id="overdueFilterActive" value="active" />
+                    <label for="overdueFilterActive">دارای فرصت پیگیری</label>
+                </li>
+            </ul>
             <button type="button" class="btnFilter overdue-filter-button" data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterOverdueDeal" data-filterContentId="ContentOverdueDealFilterId" data-filterInpSearchId="overdueDealSearch" data-filterVarSearch="overdueDealSearchVal" onclick="ShowFilterPopup(this)" title="فیلتر">
                 <svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
             </button>
             <span class="text-muted small">تعداد:</span>
             <span id="overdueDealCount" class="badge rounded-pill overdue-count-badge">۰</span>
             <button type="button" id="refreshOverdueDeals" class="btn btn-outline-secondary btn-sm overdue-refresh-button">
-                <span class="me-1">بروزرسانی</span>
+                <span>بروزرسانی</span>
                 <svg style="width: 16px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M13.836 2.477a.75.75 0 0 1 .75.75v3.182a.75.75 0 0 1-.75.75h-3.182a.75.75 0 0 1 0-1.5h1.37l-.84-.841a4.5 4.5 0 0 0-7.08.932.75.75 0 0 1-1.3-.75 6 6 0 0 1 9.44-1.242l.842.84V3.227a.75.75 0 0 1 .75-.75Zm-.911 7.5A.75.75 0 0 1 13.199 11a6 6 0 0 1-9.44 1.241l-.84-.84v1.371a.75.75 0 0 1-1.5 0V9.591a.75.75 0 0 1 .75-.75H5.35a.75.75 0 0 1 0 1.5H3.98l.841.841a4.5 4.5 0 0 0 7.08-.932.75.75 0 0 1 1.025-.273Z" clip-rule="evenodd" /></svg>
             </button>
         </div>
@@ -658,19 +771,14 @@
 
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <div id="overdueDealsLoading" class="text-center py-5">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">در حال دریافت اطلاعات...</span>
-                </div>
-                <p class="text-muted mt-3 mb-0">در حال دریافت سفارشات معوقه...</p>
-            </div>
+            <div id="overdueDealsLoading" class="p-2" role="status" aria-label="در حال دریافت سفارشات معوقه"><partial name="_PageSkeleton" /></div>
 
             <div id="overdueDealsError" class="alert alert-danger m-3 d-none" role="alert"></div>
 
             <div id="overdueDealsEmpty" class="text-center py-5 d-none">
                 <div class="mb-2" style="font-size: 2rem; color: #16a34a;">✓</div>
-                <h2 class="h6">سفارش معوقه‌ای وجود ندارد</h2>
-                <p class="text-muted mb-0">در حال حاضر سفارشی با وضعیت باز و بیش از ۱۴ روز از زمان ثبت پیدا نشد.</p>
+                <h2 class="h6" id="overdueDealsEmptyTitle">سفارش معوقه‌ای وجود ندارد</h2>
+                <p class="text-muted mb-0" id="overdueDealsEmptyText">سفارش باز معوقه‌ای در این بازه زمانی پیدا نشد.</p>
             </div>
 
             <div id="overdueDealsPaginationTop" class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 border-bottom d-none">
@@ -721,6 +829,7 @@
                                     <span class="sort-indicator">↕</span>
                                 </button>
                             </th>
+                            <th class="text-nowrap">تاریخ پیگیری مجدد</th>
                             <th>
                                 <button type="button" class="overdue-sort-button text-nowrap" data-sort-by="waitingDays">
                                     مدت انتظار
@@ -782,6 +891,59 @@
     </div>
 </div>
 
+@if (User.IsInRole("مدیر فروش") || User.IsInRole("مدیر ارشد")) {
+    <div class="modal fade" id="overdueFollowUpModal" tabindex="-1" aria-labelledby="overdueFollowUpModalLabel" aria-hidden="true" dir="rtl">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content overdue-follow-up-modal">
+                <div class="modal-header">
+                    <div>
+                        <div class="small text-muted">پیگیری سفارش معوقه</div>
+                        <h5 class="modal-title" id="overdueFollowUpModalLabel"></h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-label fw-bold">وضعیت سفارش</div>
+                    <div class="overdue-follow-up-options">
+                        <label class="overdue-follow-up-option">
+                            <input type="radio" name="overdueFollowUpStatus" value="1" checked />
+                            <span><strong>باز</strong><small>پیگیری سفارش ادامه دارد.</small></span>
+                        </label>
+                        <label class="overdue-follow-up-option">
+                            <input type="radio" name="overdueFollowUpStatus" value="3" />
+                            <span><strong>موفق</strong><small>سفارش با نتیجه موفق بسته می‌شود.</small></span>
+                        </label>
+                        <label class="overdue-follow-up-option">
+                            <input type="radio" name="overdueFollowUpStatus" value="2" />
+                            <span><strong>ناموفق</strong><small id="overdueFailedStatusHint">سفارش با نتیجه ناموفق بسته می‌شود.</small></span>
+                        </label>
+                    </div>
+                    <div class="mt-3" id="overdueFollowUpDateSection">
+                        <label class="form-label" for="overdueFollowUpDate">تاریخ پیگیری مجدد</label>
+                        <div class="input-group">
+                            <input class="form-control sdate h-auto" id="overdueFollowUpDate" type="text" data-onSelect="overdueFollowUpDateSelected" autocomplete="off" placeholder="تاریخ شمسی را انتخاب کنید" readonly />
+                            <button type="button" class="btn overdue-date-clear" id="overdueFollowUpDateClear" title="پاک کردن تاریخ" aria-label="پاک کردن تاریخ">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+                            </button>
+                        </div>
+                        <div class="form-text overdue-date-expired-note d-none" id="overdueFollowUpExpiredNote">تاریخ پیگیری قبلی گذشته است.</div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label" for="overdueFollowUpNote">توضیحات پیگیری</label>
+                        <textarea class="form-control h-auto" id="overdueFollowUpNote" rows="4" maxlength="4000" placeholder="دلیل نتیجه یا فرصت پیگیری مجدد را بنویسید"></textarea>
+                        @* <div class="form-text">این توضیحات در سفارش ذخیره می‌شود.</div> *@
+                    </div>
+                    <div id="overdueFollowUpError" class="alert alert-danger mt-3 d-none" role="alert"></div>
+                </div>
+                <div class="modal-footer align-items-stretch">
+                    <button type="button" class="buttonCancel-white" data-bs-dismiss="modal">انصراف</button>
+                    <button type="button" class="buttonGreen0" id="overdueFollowUpContinue">ثبت</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 <div class="modal fade" id="overdueDealReportsModal" tabindex="-1" aria-labelledby="overdueDealReportsModalLabel" aria-hidden="true" dir="rtl">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow">
@@ -819,7 +981,7 @@
 
 
 @section Scripts {
-    <script>
+    <script data-page-bindings="filterDealConfig,overdueDealSearchVal">
         var filterDealConfig = window.filterDealConfig || {};
         var overdueDealSearchVal = null;
 
@@ -827,6 +989,9 @@
             const loading = document.getElementById("overdueDealsLoading");
             const error = document.getElementById("overdueDealsError");
             const empty = document.getElementById("overdueDealsEmpty");
+            const emptyTitle = document.getElementById("overdueDealsEmptyTitle");
+            const emptyText = document.getElementById("overdueDealsEmptyText");
+            const followUpFilter = document.querySelectorAll('input[name="overdueFollowUpFilter"]');
             const tableWrap = document.getElementById("overdueDealsTableWrap");
             const tableBody = document.getElementById("overdueDealsTableBody");
             const count = document.getElementById("overdueDealCount");
@@ -842,10 +1007,18 @@
             const dealReportsModal = window.bootstrap?.Modal
                 ? new bootstrap.Modal(dealReportsModalElement)
                 : null;
+            const dealPaymentsModalElement = document.getElementById("InvoiceListModalId");
             let returnToDetailsAfterReports = false;
+            let returnToDetailsAfterPayments = false;
             dealReportsModalElement.addEventListener("hidden.bs.modal", () => {
                 if (returnToDetailsAfterReports) {
                     returnToDetailsAfterReports = false;
+                    dealDetailsModal?.show();
+                }
+            });
+            dealPaymentsModalElement.addEventListener("hidden.bs.modal", () => {
+                if (returnToDetailsAfterPayments) {
+                    returnToDetailsAfterPayments = false;
                     dealDetailsModal?.show();
                 }
             });
@@ -868,6 +1041,73 @@
             let overdueSearchVal = "";
             let sortBy = "createDate";
             let sortDirection = "desc";
+            let listRequestId = 0;
+            let detailsRequestId = 0;
+            let followUpDeal = null;
+            let followUpRequestId = 0;
+            const followUpModalElement = document.getElementById("overdueFollowUpModal");
+            const followUpModal = followUpModalElement && window.bootstrap?.Modal
+                ? new bootstrap.Modal(followUpModalElement) : null;
+            const followUpDate = document.getElementById("overdueFollowUpDate");
+            const followUpNote = document.getElementById("overdueFollowUpNote");
+            const followUpError = document.getElementById("overdueFollowUpError");
+            const expiredDateNote = document.getElementById("overdueFollowUpExpiredNote");
+            window.overdueFollowUpDateSelected = () => {
+                followUpDate.classList.remove("overdue-date-expired");
+                expiredDateNote.classList.add("d-none");
+            };
+            dealDetailsModalElement.addEventListener("hidden.bs.modal", () => { detailsRequestId++; });
+
+            followUpModalElement?.querySelectorAll('input[name="overdueFollowUpStatus"]').forEach(input => {
+                input.addEventListener("change", () => {
+                    const isOpen = input.value === "1";
+                    followUpDate.disabled = !isOpen;
+                    document.getElementById("overdueFollowUpDateSection").classList.toggle("d-none", !isOpen);
+                    document.getElementById("overdueFollowUpDateClear").disabled = followUpDate.disabled;
+                    followUpError.classList.add("d-none");
+                });
+            });
+            document.getElementById("overdueFollowUpDateClear")?.addEventListener("click", () => {
+                followUpDate.value = "";
+                followUpDate.classList.remove("overdue-date-expired");
+                expiredDateNote.classList.add("d-none");
+            });
+            followUpDate?.addEventListener("input", () => {
+                followUpDate.classList.remove("overdue-date-expired");
+                expiredDateNote.classList.add("d-none");
+            });
+            followUpModalElement?.addEventListener("hidden.bs.modal", () => {
+                followUpRequestId++;
+                followUpDeal = null;
+            });
+
+            document.getElementById("overdueFollowUpContinue")?.addEventListener("click", async event => {
+                if (!followUpDeal) return;
+                const status = Number(followUpModalElement.querySelector('input[name="overdueFollowUpStatus"]:checked')?.value);
+                const followUpDateValue = status === 1 ? followUpDate.value.trim() || null : null;
+                const note = followUpNote.value.trim();
+                if (!status) {
+                    followUpError.textContent = "وضعیت سفارش را انتخاب کنید.";
+                    followUpError.classList.remove("d-none");
+                    return;
+                }
+                followUpError.classList.add("d-none");
+                const submitButton = event.currentTarget;
+                submitButton.disabled = true;
+                try {
+                    await axios.post("/OverdueDeal/UpdateFollowUp", {
+                        id: followUpDeal.id, status, followUpDate: followUpDateValue, note,
+                    });
+                    followUpModal?.hide();
+                    await loadOverdueDeals();
+                    toastifySuccess("پیگیری سفارش ثبت شد.");
+                } catch (err) {
+                    followUpError.textContent = err.response?.data?.message || "ثبت پیگیری با خطا مواجه شد.";
+                    followUpError.classList.remove("d-none");
+                } finally {
+                    submitButton.disabled = false;
+                }
+            });
 
             const escapeHtml = (value) => String(value ?? "")
                 .replaceAll("&", "&amp;")
@@ -913,16 +1153,31 @@
                             <td>${escapeHtml(customerName)}</td>
                             <td class="text-nowrap">${escapeHtml(deal.customerCode ?? "—")}</td>
                             <td class="text-nowrap">${escapeHtml(formatDate(deal.createDate))}</td>
+                            <td class="text-nowrap">${escapeHtml(formatDate(deal.overdueFollowUpAt))}</td>
                             <td class="text-nowrap"><span class="badge text-bg-danger">${escapeHtml(new Intl.NumberFormat("fa-IR").format(waitingDays))} روز</span></td>
                             <td>${escapeHtml(deal.userCreator || "—")}</td>
-                            <td style="min-width: 220px; white-space: normal;">${escapeHtml(deal.commentText || "—")}</td>
+                            <td style="min-width: 220px; white-space: normal;">${escapeHtml(deal.description || "—")}</td>
                             <td class="text-center">
-                                <button type="button" class="btn btn-sm overdue-view-button" data-deal-id="${escapeHtml(deal.id)}" title="مشاهده جزئیات" aria-label="مشاهده جزئیات سفارش">
+                                <button type="button" class="btn btn-sm overdue-view-button overdue-details-button" data-deal-id="${escapeHtml(deal.id)}" title="مشاهده جزئیات" aria-label="مشاهده جزئیات سفارش">
                                     <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                         <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"></path>
                                         <circle cx="12" cy="12" r="3"></circle>
                                     </svg>
                                 </button>
+                                <a class="btn btn-sm overdue-view-button" href="/Deal/Index?dealId=${encodeURIComponent(deal.id)}&serialNumber=${encodeURIComponent(deal.serialNumber)}" title="نمایش در صفحه سفارشات" aria-label="نمایش سفارش در صفحه سفارشات">
+                                    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M13 5h6v6M19 5l-9 9" />
+                                        <path d="M19 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" />
+                                    </svg>
+                                </a>
+                                @if (User.IsInRole("مدیر فروش") || User.IsInRole("مدیر ارشد")) {
+                                    <button type="button" class="btn btn-sm overdue-view-button overdue-follow-up-button" data-deal-id="${escapeHtml(deal.id)}" title="پیگیری و تعیین تکلیف سفارش" aria-label="پیگیری و تعیین تکلیف سفارش">
+                                        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <rect x="5" y="4" width="14" height="18" rx="2"/>
+                                            <path d="M9 4.5V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1.5M8 10h5m-5 4h3m1 3 2 2 3-4"/>
+                                        </svg>
+                                    </button>
+                                }
                             </td>
                         </tr>`;
                 }).join("");
@@ -969,22 +1224,93 @@
                 }
                 addPageButton("بعدی", Math.min(totalPages, currentPage + 1), currentPage === totalPages);
 
-                tableBody.querySelectorAll(".overdue-view-button").forEach(button => {
-                    button.addEventListener("click", () => {
-                        const deal = pageDeals.find(item => String(item.id).toLowerCase() === button.dataset.dealId.toLowerCase());
+                tableBody.querySelectorAll(".overdue-follow-up-button").forEach(button => {
+                    button.addEventListener("click", async () => {
+                        const requestId = ++followUpRequestId;
+                        followUpDeal = null;
+                        button.disabled = true;
+                        followUpError.classList.add("d-none");
+                        document.getElementById("overdueFollowUpModalLabel").textContent = "در حال دریافت سفارش...";
+                        followUpModalElement.querySelector('input[name="overdueFollowUpStatus"][value="1"]').checked = true;
+                        const failedStatusRadio = followUpModalElement.querySelector('input[name="overdueFollowUpStatus"][value="2"]');
+                        failedStatusRadio.disabled = false;
+                        document.getElementById("overdueFailedStatusHint").textContent = "سفارش با نتیجه ناموفق بسته می‌شود.";
+                        followUpDate.value = "";
+                        followUpDate.disabled = true;
+                        document.getElementById("overdueFollowUpDateSection").classList.remove("d-none");
+                        document.getElementById("overdueFollowUpDateClear").disabled = true;
+                        followUpDate.classList.remove("overdue-date-expired");
+                        expiredDateNote.classList.add("d-none");
+                        followUpNote.value = "";
+                        dateTimePicker(followUpModalElement);
+                        followUpModal?.show();
+                        try {
+                            const dealResponse = await axios.get("/OverdueDeal/GetOverdueDealDetails", {
+                                params: { id: button.dataset.dealId },
+                            });
+                            if (requestId !== followUpRequestId) return;
+                            followUpDeal = dealResponse.data;
+                            document.getElementById("overdueFollowUpModalLabel").textContent =
+                                `سفارش ${followUpDeal.serialNumber} · ${followUpDeal.title || followUpDeal.customerName || ""}`;
+                            const currentStatus = String(followUpDeal.status);
+                            const statusRadio = followUpModalElement.querySelector(`input[name="overdueFollowUpStatus"][value="${currentStatus}"]`);
+                            if (statusRadio) statusRadio.checked = true;
+                            followUpDate.disabled = currentStatus !== "1";
+                            document.getElementById("overdueFollowUpDateSection").classList.toggle("d-none", currentStatus !== "1");
+                            document.getElementById("overdueFollowUpDateClear").disabled = followUpDate.disabled;
+                            failedStatusRadio.disabled = followUpDeal.factorCount > 0;
+                            document.getElementById("overdueFailedStatusHint").textContent = failedStatusRadio.disabled
+                                ? "این سفارش فاکتور دارد و نمی‌تواند ناموفق شود."
+                                : "سفارش با نتیجه ناموفق بسته می‌شود.";
+                            if (followUpDeal.overdueFollowUpAt) {
+                                const previousDate = new Date(followUpDeal.overdueFollowUpAt);
+                                followUpDate.value = new Intl.DateTimeFormat("fa-IR-u-nu-latn", {
+                                    year: "numeric", month: "2-digit", day: "2-digit",
+                                }).format(previousDate);
+                                const expired = previousDate.getTime() < Date.now();
+                                followUpDate.classList.toggle("overdue-date-expired", expired);
+                                expiredDateNote.classList.toggle("d-none", !expired);
+                            }
+                            followUpNote.value = followUpDeal.overdueFollowUpNote || "";
+                        } catch (err) {
+                            if (requestId !== followUpRequestId) return;
+                            followUpDeal = null;
+                            followUpError.textContent = err.response?.status === 404
+                                ? "این سفارش دیگر در فهرست سفارش‌های معوقه نیست."
+                                : "دریافت اطلاعات پیگیری با خطا مواجه شد.";
+                            followUpError.classList.remove("d-none");
+                        } finally {
+                            button.disabled = false;
+                        }
+                    });
+                });
 
+                tableBody.querySelectorAll(".overdue-details-button").forEach(button => {
+                    button.addEventListener("click", async () => {
+                        const requestId = ++detailsRequestId;
+                        button.disabled = true;
+                        dealCountsContent.innerHTML = "";
+                        dealDetailsContent.textContent = "در حال دریافت جزئیات سفارش...";
+                        dealDetailsModal?.show();
 
-        
+                        let deal;
+                        try {
+                            const response = await axios.get("/OverdueDeal/GetOverdueDealDetails", {
+                                params: { id: button.dataset.dealId },
+                            });
+                            if (requestId !== detailsRequestId) return;
+                            deal = response.data;
+                        } catch (err) {
+                            if (requestId !== detailsRequestId) return;
+                            console.error("Failed to load overdue deal details:", err);
+                            dealDetailsContent.textContent = err.response?.status === 404
+                                ? "این سفارش دیگر در فهرست سفارش‌های معوقه نیست."
+                                : "دریافت جزئیات سفارش با خطا مواجه شد. لطفاً دوباره تلاش کنید.";
+                            return;
+                        } finally {
+                            button.disabled = false;
+                        }
 
-                        if (!deal) return;
-
-                        const hasCustomer = deal.hasCustomer === true;
-                        const moneyFormat = value => new Intl.NumberFormat("fa-IR", {
-                            maximumFractionDigits: 0,
-                        }).format(Number(value ?? 0));
-                        const debtAmount = Number(deal.debtAmount ?? 0) + Number(deal.returnedAmount ?? 0);
-                        const cashReceived = Number(deal.receivableAmount ?? 0);
-                        const remainingReceivable = Math.max(0, debtAmount - cashReceived);
                         const counts = [
                             {
                                 label: "گزارش‌های ثبت‌شده",
@@ -1007,43 +1333,41 @@
                                 icon: "<path d=\"M6 2h9l4 4v16H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z\"/><path d=\"M14 2v5h5M8 12h8M8 16h8\"/>",
                             },
                             {
-                                label: "صورت‌حساب‌های مشتری",
-                                value: hasCustomer ? deal.accountancyCount : "—",
-                                totalAmount: hasCustomer ? (Number(deal.receivableAmount ?? 0) - Number(deal.returnedAmount ?? 0)) : 0,
+                                label: "صورت‌حساب‌های سفارش",
+                                value: deal.accountancyCount,
+                                totalAmount: deal.accountancyTotalAmount,
                                 color: "#0f766e",
                                 icon: "<path d=\"M5 3h14v18H5z\"/><path d=\"M8 7h8M8 11h8M8 15h5\"/>",
                             },
-                            {
-                                label: "مجموع بدهکاری",
-                                value: hasCustomer ? moneyFormat(debtAmount) + " ریال" : "بدون مشتری",
-                                color: "#b45309",
-                                icon: "<path d=\"M12 5v14M5 12h14\"/>",
-                            },
-                            {
-                                label: "مانده طلب از مشتری",
-                                value: hasCustomer ? moneyFormat(remainingReceivable) + " ریال" : "بدون مشتری",
-                                color: "#be123c",
-                                icon: "<path d=\"M4 7h16M6 3h12v18H6z\"/><path d=\"M9 12h6\"/>",
-                            },
                         ];
                         dealCountsContent.innerHTML = counts.map(item => `
-                            <div class="col-12 col-md-4 col-xl-2">
-                                <div class="overdue-count-card ${Number(item.value) > 0 && ["گزارش‌های ثبت‌شده", "پیش‌فاکتورهای صادرشده", "فاکتورها"].includes(item.label) ? "overdue-document-card" : "overdue-count-card-disabled"}"
-                                     data-document-kind="${item.label === "گزارش‌های ثبت‌شده" ? "reports" : item.label === "پیش‌فاکتورهای صادرشده" ? "prefactors" : item.label === "فاکتورها" ? "factors" : ""}"
-                                     ${Number(item.value) > 0 && ["گزارش‌های ثبت‌شده", "پیش‌فاکتورهای صادرشده", "فاکتورها"].includes(item.label) ? 'role="button" tabindex="0" title="برای مشاهده موارد کلیک کنید"' : 'aria-disabled="true"'}>
+                            <div class="col-12 col-md-6 col-xl-3">
+                                <div class="overdue-count-card ${Number(item.value) > 0 ? "overdue-document-card" : "overdue-count-card-disabled"}"
+                                     data-document-kind="${item.label === "گزارش‌های ثبت‌شده" ? "reports" : item.label === "پیش‌فاکتورهای صادرشده" ? "prefactors" : item.label === "فاکتورها" ? "factors" : "payments"}"
+                                     ${Number(item.value) > 0 ? 'role="button" tabindex="0" title="برای مشاهده موارد کلیک کنید"' : 'aria-disabled="true"'}>
                                     <div class="count-icon" style="color:${item.color}">
                                         <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${item.icon}</svg>
                                     </div>
                                     <div class="count-value" style="font-size:1.25rem">${escapeHtml(item.value ?? 0)}</div>
                                     <div class="count-label">${escapeHtml(item.label)}</div>
-                                    ${["پیش‌فاکتورهای صادرشده", "فاکتورها", "صورت‌حساب‌های مشتری"].includes(item.label) && (item.label !== "صورت‌حساب‌های مشتری" || hasCustomer) ? `
-                                        <div class="count-total-label">جمع کل</div>
+                                    ${["پیش‌فاکتورهای صادرشده", "فاکتورها", "صورت‌حساب‌های سفارش"].includes(item.label) ? `
+                                        <div class="count-total-label">${item.label === "صورت‌حساب‌های سفارش" ? "جمع واریزی نقدی و تهاتری" : "جمع کل"}</div>
                                         <div class="count-total-value">${new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(Number(item.totalAmount ?? 0))} ریال</div>
                                     ` : ""}
                                 </div>
                             </div>`).join("");
 
                         const openDocumentModal = async (kind) => {
+
+                            if (kind === "payments") {
+                                returnToDetailsAfterPayments = true;
+                                dealDetailsModalElement.addEventListener("hidden.bs.modal", async () => {
+                                    document.getElementById("TitleListInvoiceId").textContent = `صورت‌حساب‌های سفارش ${deal.serialNumber}`;
+                                    await showModalDealInvoices(deal);
+                                }, { once: true });
+                                dealDetailsModal?.hide();
+                                return;
+                            }
 
                      
 
@@ -1134,7 +1458,6 @@
                                 <span class="overdue-detail-label">${escapeHtml(label)}:</span>
                                 <span class="overdue-detail-value">${escapeHtml(value || "—")}</span>
                             </div>`).join("");
-                        dealDetailsModal?.show();
                     });
                 });
             };
@@ -1148,6 +1471,14 @@
             };
 
             const loadOverdueDeals = async () => {
+                const requestId = ++listRequestId;
+                const withFollowUp = document.getElementById("overdueFilterActive").checked;
+                document.getElementById("overdueDealsSubtitle").textContent = withFollowUp
+                    ? "سفارش‌های ثبت‌شده از ۵ شهریور ۱۴۰۵ با فرصت پیگیری فعال" : "سفارش‌های ثبت‌شده از ۵ شهریور ۱۴۰۵ با بیش از ۱۴ روز انتظار";
+                emptyTitle.textContent = withFollowUp ? "سفارش دارای فرصتی وجود ندارد" : "سفارش معوقه‌ای وجود ندارد";
+                emptyText.textContent = withFollowUp
+                    ? "سفارش ثبت‌شده‌ای در این بازه زمانی با فرصت پیگیری فعال پیدا نشد."
+                    : "سفارش باز معوقه‌ای در این بازه زمانی پیدا نشد.";
 
                 loading.classList.remove("d-none");
                 error.classList.add("d-none");
@@ -1159,9 +1490,27 @@
                 try {
                     const requestModel = { filt: overdueFilter, serVal: searchInput.value.trim() || null };
                     const response = await axios.post("/OverdueDeal/GetOverdueDeals", requestModel, {
-                        params: { sortBy, sortDirection },
+                        params: { sortBy, sortDirection, withFollowUp },
                     });
+                    if (requestId !== listRequestId) return;
                     allDeals = response.data?.data ?? [];
+                    const overdueCount = Number(response.data?.overdueCount);
+                    if (Number.isFinite(overdueCount)) {
+                        document.querySelectorAll('a.menu-link[href="/OverdueDeal/Index"]').forEach(link => {
+                            link.classList.toggle("blink-button", overdueCount > 0);
+                            let badge = link.querySelector(".badge-count-overdue");
+                            if (overdueCount <= 0) {
+                                badge?.remove();
+                                return;
+                            }
+                            if (!badge) {
+                                badge = document.createElement("span");
+                                badge.className = "badge-count badge-count-menuItem badge-count-overdue";
+                                (link.querySelector(".menu-item-title") ?? link).appendChild(badge);
+                            }
+                            badge.textContent = String(overdueCount);
+                        });
+                    }
                     updateSortIndicators();
                     count.textContent = new Intl.NumberFormat("fa-IR").format(allDeals.length);
                     currentPage = Math.min(currentPage, Math.max(1, Math.ceil(allDeals.length / (pageSize || Math.max(allDeals.length, 1)))));
@@ -1175,14 +1524,17 @@
 
                     renderCurrentPage();
                 } catch (err) {
+                    if (requestId !== listRequestId) return;
                     console.error("Failed to load overdue deals:", err);
                     error.textContent = err.response?.status === 403
                         ? "شما مجوز مشاهده این اطلاعات را ندارید."
                         : "دریافت سفارشات معوقه با خطا مواجه شد. لطفاً دوباره تلاش کنید.";
                     error.classList.remove("d-none");
                 } finally {
-                    loading.classList.add("d-none");
-                    refreshButton.disabled = false;
+                    if (requestId === listRequestId) {
+                        loading.classList.add("d-none");
+                        refreshButton.disabled = false;
+                    }
                 }
             };
 
@@ -1220,9 +1572,14 @@
             };
             pageSizeSelect.addEventListener("change", () => onPageSizeChange(pageSizeSelect.value));
             pageSizeSelectTop.addEventListener("change", () => onPageSizeChange(pageSizeSelectTop.value));
+            followUpFilter.forEach(input => input.addEventListener("change", () => {
+                if (!input.checked) return;
+                currentPage = 1;
+                loadOverdueDeals();
+            }));
             refreshButton.addEventListener("click", loadOverdueDeals);
             loadOverdueDeals();
         });
     </script>
-    <script src="~/js/deal/deal-documents.js" asp-append-version="true"></script>
+    <script src="~/js/deal/deal-documents.js?release=6.9.4" data-page-bindings="currentDealDocumentData,showModalDealPreFactors,showModalDealFactors,showModalDealReports,showModalDealOrders,showModalDealSupplyFactors,showModalDealInvoices,getPreFactorFromDeal,getReportFromDeal,getSupplyFactorsFromDeal,getOrdersFromDeal,getInvoicesFromDeal,refreshDealPreFactors,refreshDealFactors,refreshDealReports,refreshDealOrders,refreshDealSupplyFactors,deletedPrefactorToggle" asp-append-version="true"></script>
 }

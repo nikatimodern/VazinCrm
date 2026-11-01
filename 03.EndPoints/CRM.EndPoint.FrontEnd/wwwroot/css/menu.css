@@ -1,0 +1,361 @@
+/* Shared navigation hierarchy; keep bottom navigation unchanged. */
+@media (min-width: 768px) {
+	html:not(.sidebar-collapsed) #desktopSidebar {
+		width: 260px;
+	}
+	
+	html:not(.sidebar-collapsed) #mainWrapper {
+		margin-right: 260px;
+	}
+}
+
+
+.menu-nav {
+	--menu-branch: rgba(169, 230, 218, .3);
+	--menu-muted: #d0e7e3;
+	scrollbar-width: thin;
+	scrollbar-color: #548e87 transparent;
+	padding: 10px;
+}
+
+
+.menu-nav .menu-list {
+	gap: 4px;
+}
+
+
+.menu-nav .menu-item {
+	min-height: 38px;
+	padding: 8px 10px;
+	border: 0;
+	border-radius: 8px;
+	text-align: start;
+	cursor: pointer;
+	background: transparent;
+	position: relative;
+}
+
+
+.menu-nav .menu-item-title {
+	font-size: 14px;
+	gap: 8px;
+}
+
+
+.menu-nav .menu-icon {
+	flex-shrink: 0;
+}
+
+
+.menu-icon-frame {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+
+.menu-nav .menu-icon-frame {
+	position: relative;
+	width: 30px;
+	height: 30px;
+	border-radius: 8px;
+	background: rgba(197, 242, 227, .04);
+	transition: background-color .2s, transform .2s;
+}
+
+
+@property --menu-button-orbit-angle {
+	syntax: "<angle>";
+	inherits: false;
+	initial-value: 0deg;
+}
+
+
+.menu-nav .menu-item::after,
+.menu-nav .menu-icon-frame::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	padding: 1px;
+	border-radius: inherit;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity .3s ease, transform .4s cubic-bezier(.2, .7, .2, 1);
+	background: conic-gradient(from var(--menu-button-orbit-angle), transparent 0deg 245deg, currentColor 320deg, #fff 338deg, currentColor 350deg, transparent 360deg);
+	-webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+	-webkit-mask-composite: xor;
+	mask-composite: exclude;
+}
+
+
+.menu-nav .menu-item::after {
+	transform: scale(.94, .8);
+}
+
+
+.menu-nav .menu-item:hover > .menu-icon-frame::after,
+.menu-nav .menu-item:focus-visible > .menu-icon-frame::after {
+	opacity: 1;
+	animation: menuButtonOrbit 1.8s linear infinite;
+}
+
+
+.menu-nav .menu-item.menu-click-orbit::after {
+	opacity: 1;
+	transform: scale(1);
+	animation: menuButtonOrbit 1.8s linear infinite;
+}
+
+
+.menu-nav .menu-item.menu-click-orbit > .menu-icon-frame::after {
+	opacity: 0;
+	transform: scale(1.2);
+	animation: none;
+}
+
+
+@keyframes menuButtonOrbit {
+	to {
+		--menu-button-orbit-angle: 360deg;
+	}
+}
+
+
+.menu-nav .menu-icon-frame .menu-icon {
+	width: 20px !important;
+	height: 20px;
+	transform-origin: center;
+	transform-box: fill-box;
+}
+
+
+.menu-nav .menu-item:has(> .menu-icon-frame) {
+	padding-block: 4px;
+}
+
+
+.menu-nav .menu-item:hover > .menu-icon-frame,
+.menu-nav .menu-item:focus-visible > .menu-icon-frame {
+	background: rgba(180, 242, 223, .1);
+	transform: translateY(-1px);
+}
+
+
+html.sidebar-collapsed #desktopNavbar .menu-item:has(> .menu-icon-frame) {
+	padding-inline: 0;
+}
+
+
+.menu-nav .menu-item:hover {
+	background: rgba(143, 231, 211, .12);
+}
+
+
+.menu-nav .menu-item:focus-visible {
+	outline: 2px solid #a8f0dd;
+	outline-offset: -2px;
+}
+
+
+.menu-nav .has-submenu {
+	border-radius: 10px;
+	transition: background-color .2s ease;
+}
+
+
+html:not(.sidebar-collapsed) #desktopNavbar .has-submenu.open,
+#mobileDrawerNavbar .has-submenu.open {
+	background-color: rgba(143, 231, 211, .08);
+}
+
+
+.menu-nav .menu-item.active-ancestor {
+	color: #bcf5e5;
+	font-family: IRANSansBold;
+}
+
+
+.menu-nav .menu-item.active-menu {
+	color: #bcf5e5;
+	font-family: IRANSansBold;
+	box-shadow: none;
+	/* 	background-color: #aff0df;
+		color: #003e3a;
+		font-family: IRANSansBold;
+		box-shadow: inset -3px 0 #28a891; */
+}
+
+
+.menu-nav .submenu {
+	padding: 0;
+	margin: 0;
+}
+
+
+.menu-nav .submenu-content {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+
+.menu-nav .submenu-items {
+	list-style: none;
+	margin: 0 19px 6px 8px;
+	padding: 0 13px 0 0;
+}
+
+
+.menu-nav .submenu-items > li {
+	position: relative;
+	margin: 0;
+	padding: 2px 0;
+}
+
+
+.menu-nav .submenu-items > li::before {
+	content: "";
+	position: absolute;
+	right: -13px;
+	top: 0;
+	bottom: 0;
+	border-right: 1px solid var(--menu-branch);
+}
+
+
+.menu-nav .submenu-items > li:last-child::before {
+	bottom: calc(100% - 19px);
+}
+
+
+.menu-nav .submenu-items > li::after {
+	content: "";
+	position: absolute;
+	right: -13px;
+	top: 19px;
+	width: 10px;
+	border-top: 1px solid var(--menu-branch);
+}
+
+
+.menu-nav .submenu .menu-item {
+	min-height: 34px;
+	padding: 7px 9px;
+	color: var(--menu-muted);
+	font-family: IRANSans;
+}
+
+
+.menu-nav .submenu .menu-item-title {
+	font-size: 13px;
+	white-space: normal;
+	line-height: 1.65;
+}
+
+
+.menu-nav .submenu .menu-item::before {
+	content: none;
+}
+
+
+.menu-nav .submenu .menu-item.active-menu {
+	color: #bcf5e5;
+	font-family: IRANSansBold;
+}
+
+
+.menu-nav .submenu .menu-item.active-ancestor {
+	color: #bcf5e5;
+	font-family: IRANSansBold;
+}
+
+
+.menu-nav .submenu-arrow {
+	flex-shrink: 0;
+}
+
+
+/* Collapsed desktop navigation keeps flyouts usable with mouse and keyboard. */
+html.sidebar-collapsed #desktopNavbar .submenu {
+	width: 225px;
+	display: block;
+}
+
+
+html.sidebar-collapsed #desktopNavbar .submenu-items {
+	margin: 0;
+	padding: 0;
+}
+
+
+html.sidebar-collapsed #desktopNavbar .submenu-items > li::before,
+html.sidebar-collapsed #desktopNavbar .submenu-items > li::after {
+	content: none;
+}
+
+
+html.sidebar-collapsed #desktopNavbar .has-submenu:focus-within > .submenu {
+	opacity: 1;
+	visibility: visible;
+	transform: translateX(0);
+}
+
+
+/* A stored desktop collapse preference must not turn mobile groups into flyouts. */
+html #mobileDrawerNavbar .has-submenu > .submenu {
+	position: static;
+	display: grid;
+	width: auto;
+	background: transparent;
+	box-shadow: none;
+	border-radius: 0;
+	grid-template-rows: 0fr;
+	opacity: 0;
+	visibility: hidden;
+	transform: none;
+	padding: 0;
+	margin: 0;
+	transition-delay: 0s;
+}
+
+
+html #mobileDrawerNavbar .has-submenu.open > .submenu {
+	grid-template-rows: 1fr;
+	opacity: 1;
+	visibility: visible;
+	margin-top: 2px;
+}
+
+
+html #mobileDrawerNavbar .submenu-content {
+	min-height: 0;
+	overflow: hidden;
+}
+
+
+html #mobileDrawerNavbar .has-submenu::before {
+	content: none;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+	.menu-nav .has-submenu {
+		transition: none;
+	}
+	
+	.menu-nav .menu-item::after,
+	.menu-nav .menu-item > .menu-icon-frame::after {
+		animation: none;
+		transition: none;
+	}
+	
+	.menu-nav .submenu, .menu-nav .submenu-arrow, .menu-nav .menu-item {
+		transition: none !important;
+	}
+	
+	.menu-nav .menu-icon-frame {
+		transition: none;
+		transform: none !important;
+	}
+}

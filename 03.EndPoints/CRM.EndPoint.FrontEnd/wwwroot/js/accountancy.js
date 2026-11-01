@@ -12,21 +12,16 @@ let invoiceItemId;
 
 window.SanadPayList = [];
 
-document.querySelectorAll("#InvoiceModalId input[type='radio'][name='payType']")?.forEach(radio => {
-    radio.addEventListener("change", (e) => {
-        const type = Number(e.target?.value);
+document.addEventListener("change", (e) => {
+    if (e.target.matches("#InvoiceModalId input[type='radio'][name='payType']")) {
+        const type = Number(e.target.value);
         if (type === 3) {
-            document.getElementById("SanadParId").classList.remove("AlertReqRadio");
+            document.getElementById("SanadParId")?.classList.remove("AlertReqRadio");
         }
         PayFormChange("InvoiceModalId", type);
-    });
-});
-
-document.querySelectorAll("#AttachInvoiceModalId input[type='radio'][name='payTypeAttach']")?.forEach(radio => {
-    radio.addEventListener("change", (e) => {
-        const type = Number(e.target.value);
-        PayAttachFormChange(type);
-    });
+    } else if (e.target.matches("#AttachInvoiceModalId input[type='radio'][name='payTypeAttach']")) {
+        PayAttachFormChange(Number(e.target.value));
+    }
 });
 
 const initPaymentPartial = (type) => {
@@ -499,7 +494,7 @@ const submitInvoice = async () => {
         }
     }
     
-    if (accData.payType !== 3 && !await checkEtebariWarning()) {
+    if (Invo_type !== 5 && accData.payType !== 3 && !await checkEtebariWarning()) {
         return;
     }
     
@@ -510,10 +505,12 @@ const submitInvoice = async () => {
     accData.parentId = AccParentId;
     accData.customerId = customerId;
     
-    if (InvoiceType === 1) {
-        accData.pfid = pfactorID;
-    } else if (InvoiceType === 2) {
-        accData.fid = factorID;
+    if (Invo_type !== 5) { // مشتری نبود
+        if (InvoiceType === 1) {
+            accData.pfid = pfactorID;
+        } else if (InvoiceType === 2) {
+            accData.fid = factorID;
+        }
     }
     
     if (accData.payType === 1) {
@@ -590,12 +587,16 @@ async function refreshInvoiceSuccess() {
 }
 
 
-const closeModalInvoice = () => {
+const resetInvoiceModal = () => {
     const invoiceModalId = document.getElementById("InvoiceModalId");
-    ModalToggle(invoiceModalId, "hide");
+    if (!invoiceModalId) return;
     AccParentId = null;
     isEditInvoiceModal = false;
+    invoiceItemId = null;
+    invoiceModalId.classList.remove("deposit-mode", "backward-mode");
+    invoiceModalId.querySelector(".modalHeader-invoice").textContent = "";
     mySer.emptyForm("PayFactorFormId");
+    PayFormChange("InvoiceModalId", 1);
     window.SanadPayList = [];
     invoiceModalId.querySelector("#SanadParId").classList.remove("AlertReqRadio");
     invoiceModalId.querySelector("#DivEtebariId")?.classList.remove("d-none");
@@ -606,12 +607,22 @@ const closeModalInvoice = () => {
     if (upSanadPay) upSanadPay.value = "";
 };
 
+const closeModalInvoice = () => {
+    ModalToggle("InvoiceModalId", "hide");
+};
 
-const preFactorListModal = document.getElementById("preFactorListModal");
+document.addEventListener("hidden.bs.modal", (e) => {
+    if (e.target.id === "InvoiceModalId") resetInvoiceModal();
+});
+
+
 let accType_pfList;
 async function showModalPreFactorList(accType) {
+    const preFactorListModal = document.getElementById("preFactorListModal");
+    if (!preFactorListModal) return;
     accType_pfList = accType;
     await getAllPreFactorList();
+    if (!preFactorListModal.isConnected) return;
     preFactorListModal.querySelector("#preFactorListSearch").value = "";
     ModalToggle(preFactorListModal);
 }
@@ -620,16 +631,24 @@ const getAllPreFactorList = async (search = "") => {
     await sendApiRequest({
         url: "/Factor/GetAllPreFactorList",
         params: { search },
-        onSuccess: (res) => preFactorListModal.querySelector("#preFactorListContainer").innerHTML = res.data,
+        onSuccess: (res) => {
+            const container = document.querySelector("#preFactorListModal #preFactorListContainer");
+            if (container) container.innerHTML = res.data;
+        },
     });
 };
 
-preFactorListModal?.querySelector("#preFactorListSearch")?.addEventListener("keyup", async (e) => {
-    if (e.key === "Enter") {
-        toggleElementsDisabled(e.target);
-        await getAllPreFactorList(e.target.value.trim());
-        toggleElementsDisabled(e.target, false);
-        e.target.focus();
+document.addEventListener("keyup", async (e) => {
+    if (e.key !== "Enter" || !e.target.matches("#preFactorListModal #preFactorListSearch") || e.target.disabled) return;
+    const searchInput = e.target;
+    toggleElementsDisabled(searchInput);
+    try {
+        await getAllPreFactorList(searchInput.value.trim());
+    } finally {
+        if (searchInput.isConnected) {
+            toggleElementsDisabled(searchInput, false);
+            searchInput.focus();
+        }
     }
 });
 
@@ -662,10 +681,10 @@ async function changeStatusAcc(id) {
     });
 }
 
-document.getElementById("acceptFinancialBtn")?.addEventListener("click", async () => {
+async function acceptFinancialFromModal() {
     await acceptFinancial(pfactorID);
     ModalToggle("#InvoiceListModalId");
-});
+}
 
 
 async function acceptFinancial(pfId) {

@@ -7,34 +7,23 @@ let typeSubmitPfactor;
 
 let dealData = {};
 
-let prePaymentPercentId;
-let descriptionInpId;
-let descriptionListId;
+const preFactorDescriptionSuffix = () => window.innerWidth < 992 ? "Mobile" : window.innerWidth < 1400 ? "Tablet" : "";
+const preFactorDescriptionElement = prefix => document.getElementById(prefix + preFactorDescriptionSuffix());
+const prePaymentPercentElement = () => preFactorDescriptionElement("prePaymentPercent");
 
-if (window.innerWidth >= 992 && window.innerWidth < 1400) {
-    prePaymentPercentId = "prePaymentPercentTablet";
-    descriptionInpId = "descriptionIdTablet";
-    descriptionListId = "PfactorDescIdTablet";
-} else if (window.innerWidth < 992) {
-    prePaymentPercentId = "prePaymentPercentMobile";
-    descriptionInpId = "descriptionIdMobile";
-    descriptionListId = "PfactorDescIdMobile";
-} else {
-    prePaymentPercentId = "prePaymentPercent";
-    descriptionInpId = "descriptionId";
-    descriptionListId = "PfactorDescId";
-}
-const prePaymentPercentElm = document.getElementById(prePaymentPercentId);
-
-document.querySelector("#PreFacItem")?.addEventListener("input", (e) => {
+document.addEventListener("input", (e) => {
+    if (!e.target.closest("#PreFacItem")) return;
     if (e.target.matches("[name='weightCount']") || e.target.matches("[name='unitAmount']") || e.target.matches("[name='discount']")) {
         calculateItem("PreFacItem");
     }
 });
-prePaymentPercentElm?.addEventListener("change", () => calculatePreFactorText());
-document.querySelectorAll("#PreFactor input[type='radio'][name='official']")?.forEach(radio => {
-    const currencyTypeElm = document.querySelector("#PfHeadFormId select[name='currencyType']");
-    radio.addEventListener("change", (e) => {
+document.addEventListener("change", (e) => {
+    if (e.target.matches("#prePaymentPercent, #prePaymentPercentTablet, #prePaymentPercentMobile")) calculatePreFactorText();
+});
+document.addEventListener("change", (e) => {
+    if (e.target.matches("#PreFactor input[type='radio'][name='official']")) {
+        const currencyTypeElm = document.querySelector("#PfHeadFormId select[name='currencyType']");
+        if (!currencyTypeElm) return;
         pFactor.officialType = Number(e.target.value);
         currencyTypeElm.disabled = pFactor.officialType === 1;
         currencyTypeElm.value = 0;
@@ -43,7 +32,7 @@ document.querySelectorAll("#PreFactor input[type='radio'][name='official']")?.fo
         showPFactorItems();
         generatePFactorDescriptions();
         calculatePreFactorText();
-    });
+    }
 });
 
 const showModalAddPfactor = async (type, cusId = null, deal) => {
@@ -153,7 +142,9 @@ const cancelPreFactor = () => {
     document.getElementById("descriptionIdTablet").value = "";
     document.getElementById("descriptionIdMobile").value = "";
     
-    prePaymentPercentElm.value = Array.from(prePaymentPercentElm.children).find(i => i.defaultSelected).value;
+    document.querySelectorAll("#prePaymentPercent, #prePaymentPercentTablet, #prePaymentPercentMobile").forEach(select => {
+        select.value = select.querySelector("option:default")?.value ?? select.options[0]?.value ?? "";
+    });
     
     pFactor = {};
     pFactorItems = [];
@@ -216,7 +207,7 @@ const calculatePreFactorText = () => {
     const model = pFactorItems.filter(f => !f.isDeleted);
     const currencyTypeElm = document.querySelector("#PfHeadFormId select[name='currencyType']");
     const currencyTxt = currencyTypeElm.options[currencyTypeElm.selectedIndex].text.trim();
-    const prePaymentPercent = Number(prePaymentPercentElm.value) || 0;
+    const prePaymentPercent = Number(prePaymentPercentElement()?.value) || 0;
     
     const sumTotal = Number(pFactor.paymentAmount) || 0;
     
@@ -265,7 +256,8 @@ const calculatePreFactorText = () => {
             `در ابتدای کار دریافت می‌شود`;
     }
     
-    document.getElementById(descriptionInpId).value = valueText;
+    const descriptionInput = preFactorDescriptionElement("descriptionId");
+    if (descriptionInput) descriptionInput.value = valueText;
 };
 
 
@@ -483,11 +475,12 @@ const showPfDescriptionItems = () => {
     });
     items = `<ul class="mp">${items}</ul>`;
     
-    document.getElementById(descriptionListId).innerHTML = items;
+    document.querySelectorAll("#PfactorDescId, #PfactorDescIdTablet, #PfactorDescIdMobile").forEach(list => { list.innerHTML = items; });
 };
 
 const addPfDescriptionItem = () => {
-    const inputElement = document.getElementById(descriptionInpId);
+    const inputElement = preFactorDescriptionElement("descriptionId");
+    if (!inputElement) return;
     const val = inputElement.value;
     inputElement.value = "";
     
@@ -497,8 +490,8 @@ const addPfDescriptionItem = () => {
     showPfDescriptionItems();
     
     setTimeout(() => {
-        const listElement = document.getElementById(descriptionListId);
-        listElement.scrollTop = listElement.scrollHeight;
+        const listElement = preFactorDescriptionElement("PfactorDescId");
+        if (listElement) listElement.scrollTop = listElement.scrollHeight;
     }, 100);
 };
 
@@ -656,7 +649,8 @@ const calculatePreFactorTotals = (updateItemsFromDiscount = false) => {
     });
 };
 
-document.getElementById("discount")?.addEventListener("input", () => {
+document.addEventListener("input", (e) => {
+    if (!e.target.matches("#PreFactor #discount")) return;
     calculatePreFactorTotals(true);
     
     showPFactorItems();
@@ -686,8 +680,8 @@ const generatePFactorDescriptions = () => {
     showPfDescriptionItems();
     if (pFactor.officialType === 1) {
         setTimeout(() => {
-            const listElement = document.getElementById(descriptionListId);
-            listElement.scrollTop = listElement.scrollHeight;
+            const listElement = preFactorDescriptionElement("PfactorDescId");
+            if (listElement) listElement.scrollTop = listElement.scrollHeight;
         }, 100);
     }
 };
@@ -761,7 +755,6 @@ const submitPreFactorOk = async () => {
 
 let expirePfModalId = null;
 let expirePfModalPassType = null;
-const expirePFactorSelectElm = document.getElementById("M_ex_Item");
 const ShowModalExpireDescription = (PfId, amount, serial, name, _formCode) => {
     expirePfModalPassType = _formCode;
     expirePfModalId = PfId;
@@ -779,7 +772,7 @@ const SubmitDescExpirePreFactor = async () => {
     
     const description = Number(data.M_ex_Item) === 0
         ? data.des
-        : expirePFactorSelectElm.options[expirePFactorSelectElm.selectedIndex].text;
+        : document.getElementById("M_ex_Item").selectedOptions[0].text;
     
     await sendApiRequest({
         method: "POST",
@@ -797,7 +790,8 @@ const SubmitDescExpirePreFactor = async () => {
     });
 };
 
-expirePFactorSelectElm?.addEventListener("change", (e) => {
+document.addEventListener("change", (e) => {
+    if (!e.target.matches("#ModalExpireDescription #M_ex_Item")) return;
     const textareaWrapper = document.getElementById("descExpirePfactorID");
     const textarea = document.getElementById("descExpirePfactorIdTxt");
     if (Number(e.target.value) === 0) {
@@ -1278,9 +1272,7 @@ const initDeliverDataTable = (tableId) => {
 /* ----------------------------------------------- sendPreFactorToExternalSoftware ----------------------------------------------- */
 let externalSotwarePfId;
 
-const externalSoftwarePreFactorsModal = document.getElementById("externalSoftwarePreFactorsModal");
-const externalPreFactorsContainer = document.getElementById("externalSoftwarePreFactors");
-const sendExternalPreFactorBtn = document.getElementById("sendExternalPreFactorBtn");
+const getExternalSoftwarePreFactorsModal = () => document.getElementById("externalSoftwarePreFactorsModal");
 
 /*renderExternalSoftwarePreFactors([
     {
@@ -1296,7 +1288,7 @@ const sendExternalPreFactorBtn = document.getElementById("sendExternalPreFactorB
 ]);*/
 async function showPreFactorExternalSotwaresModal(id, serialNumber) {
     externalSotwarePfId = id;
-    externalSoftwarePreFactorsModal.querySelector(".modal-title").textContent = `مدیریت ارسال پیش‌فاکتور ${serialNumber}`;
+    getExternalSoftwarePreFactorsModal().querySelector(".modal-title").textContent = `مدیریت ارسال پیش‌فاکتور ${serialNumber}`;
     
     ModalToggle("externalSoftwarePreFactorsModal", "show");
     
@@ -1315,29 +1307,9 @@ async function getPreFactorExternalSotwares(id) {
 
 
 
-sendExternalPreFactorBtn?.addEventListener("click", async () => {
-    await sendPreFactorToExternalSoftware(externalSotwarePfId);
-});
-
-externalPreFactorsContainer?.addEventListener("click", event => {
-    return;
-    
-    const button = event.target.closest("[data-action]");
-    if (!button) return;
-    
-    const { action } = button.dataset;
-    
-    if (action === "view") {
-        const url = button.dataset.url;
-        if (url) window.open(url, "_blank", "noopener,noreferrer");
-        return;
-    }
-    
-    if (action === "invoices") {
-        const externalSoftwareId = button.dataset.softwareId;
-        
-        // اتصال به مودال فاکتورهای مرتبط در مرحله بعد
-        console.log("External software:", externalSoftwareId);
+document.addEventListener("click", async (event) => {
+    if (event.target.closest("#sendExternalPreFactorBtn")) {
+        await sendPreFactorToExternalSoftware(externalSotwarePfId);
     }
 });
 
@@ -1424,10 +1396,10 @@ async function sendPreFactorToExternalSoftware(id) {
 }
 
 
-const externalMappingModal = document.getElementById("sendPreFactorToExternalSoftwareModal");
-const externalMappingList = externalMappingModal?.querySelector("#externalMappingList");
-const confirmExternalMappingBtn = externalMappingModal?.querySelector("#confirmExternalMappingBtn");
-const backExternalMappingBtn = externalMappingModal?.querySelector("#backExternalMappingBtn");
+const getExternalMappingModal = () => document.getElementById("sendPreFactorToExternalSoftwareModal");
+const getExternalMappingList = () => document.querySelector("#sendPreFactorToExternalSoftwareModal #externalMappingList");
+const getConfirmExternalMappingBtn = () => document.querySelector("#sendPreFactorToExternalSoftwareModal #confirmExternalMappingBtn");
+const getBackExternalMappingBtn = () => document.querySelector("#sendPreFactorToExternalSoftwareModal #backExternalMappingBtn");
 
 
 /* -------------------------------------------------------
@@ -1464,18 +1436,20 @@ function exSoftwarePreFactorReset() {
     exSoftwarePreFactorDestroySelects();
     
     externalSoftwareProcess = createExternalSoftwareState();
-    externalMappingModal?.querySelector(".modal-dialog")?.classList.remove("modal-lg");
+    getExternalMappingModal()?.querySelector(".modal-dialog")?.classList.remove("modal-lg");
 }
 
 
 function exSoftwarePreFactorDestroySelects() {
-    externalMappingList?.querySelectorAll("select").forEach(select => {
+    getExternalMappingList()?.querySelectorAll("select").forEach(select => {
         select.tomselect?.destroy();
     });
 }
 
 
-externalMappingModal?.addEventListener("hidden.bs.modal", exSoftwarePreFactorReset);
+document.addEventListener("hidden.bs.modal", event => {
+    if (event.target.id === "sendPreFactorToExternalSoftwareModal") exSoftwarePreFactorReset();
+});
 
 
 /* -------------------------------------------------------
@@ -1505,7 +1479,7 @@ async function exSoftwarePreFactorNext() {
     
     await exSoftwarePreFactorLoadSaleTypes();
     
-    ModalToggle(externalMappingModal, "show");
+    ModalToggle(getExternalMappingModal(), "show");
 }
 
 
@@ -1515,7 +1489,7 @@ async function exSoftwarePreFactorFinish() {
     state.softwareIndex++;
     
     if (state.softwareIndex >= state.softwareIds.length) {
-        ModalToggle(externalMappingModal, "hide");
+        ModalToggle(getExternalMappingModal(), "hide");
         await getPreFactorExternalSotwares(externalSotwarePfId);
         return;
     }
@@ -1548,9 +1522,9 @@ function exSoftwarePreFactorRenderStep({ title, subtitle, icon, step, content, l
     document.getElementById("externalMappingTitle").textContent = software?.externalSoftwareTitle ?? "نرم‌افزار مقصد";
     document.getElementById("externalMappingSubtitle").textContent = `نرم‌افزار ${softwareIndex} از ${softwareCount}`;
     
-    externalMappingModal.querySelector(".modal-dialog").classList.toggle("modal-lg", large);
+    getExternalMappingModal().querySelector(".modal-dialog").classList.toggle("modal-lg", large);
     
-    externalMappingList.innerHTML = `
+    getExternalMappingList().innerHTML = `
         <div class="external-mapping-card">
             <div class="external-mapping-stage-info">
                 <div class="external-mapping-stage-icon">
@@ -1578,8 +1552,8 @@ function exSoftwarePreFactorRenderStep({ title, subtitle, icon, step, content, l
 
 
 function exSoftwarePreFactorSetConfirmButton(text, disabled = false) {
-    confirmExternalMappingBtn.textContent = text;
-    toggleElementsDisabled(confirmExternalMappingBtn, disabled);
+    getConfirmExternalMappingBtn().textContent = text;
+    toggleElementsDisabled(getConfirmExternalMappingBtn(), disabled);
 }
 
 
@@ -1644,7 +1618,7 @@ function exSoftwarePreFactorRenderSaleType() {
         `,
     });
     
-    const select = externalMappingList.querySelector("#externalMappingSaleTypeSelect");
+    const select = getExternalMappingList().querySelector("#externalMappingSaleTypeSelect");
     
     new TomSelect(select, {
         placeholder: "جستجو و انتخاب نوع فروش",
@@ -1658,7 +1632,7 @@ function exSoftwarePreFactorRenderSaleType() {
 async function exSoftwarePreFactorConfirmSaleType() {
     const state = externalSoftwareProcess;
     
-    const saleTypeId = externalMappingList.querySelector("#externalMappingSaleTypeSelect")?.value;
+    const saleTypeId = getExternalMappingList().querySelector("#externalMappingSaleTypeSelect")?.value;
     
     if (!saleTypeId) {
         toastifyError("نوع فروش را انتخاب کنید.");
@@ -1747,7 +1721,7 @@ function exSoftwarePreFactorRenderCustomer() {
         `,
     });
     
-    const select = externalMappingList.querySelector("#externalMappingCustomerSelect");
+    const select = getExternalMappingList().querySelector("#externalMappingCustomerSelect");
     
     new TomSelect(select, {
         placeholder: "جستجو و انتخاب مشتری",
@@ -1760,7 +1734,7 @@ function exSoftwarePreFactorRenderCustomer() {
 
 async function exSoftwarePreFactorConfirmCustomer() {
     const state = externalSoftwareProcess;
-    const customerId = externalMappingList.querySelector("#externalMappingCustomerSelect")?.value;
+    const customerId = getExternalMappingList().querySelector("#externalMappingCustomerSelect")?.value;
     
     if (!customerId) {
         toastifyError("مشتری نرم‌افزار مالی را انتخاب کنید.");
@@ -1873,7 +1847,7 @@ function exSoftwarePreFactorRenderItems() {
         `,
     });
     
-    externalMappingList.querySelectorAll(".external-mapping-item-select").forEach(select => {
+    getExternalMappingList().querySelectorAll(".external-mapping-item-select").forEach(select => {
         new TomSelect(select, {
             placeholder: "جستجو و انتخاب کالا",
             
@@ -2016,7 +1990,7 @@ function exSoftwarePreFactorRenderStock() {
         `,
     });
     
-    externalMappingList.querySelectorAll(".external-mapping-stock-select").forEach(select => {
+    getExternalMappingList().querySelectorAll(".external-mapping-stock-select").forEach(select => {
         new TomSelect(select, {
             placeholder: "جستجو و انتخاب انبار",
             
@@ -2254,7 +2228,7 @@ function exSoftwarePreFactorUpdateBackButton() {
         "preview",
     ].includes(state.step);
     
-    toggleElementsDisabled(backExternalMappingBtn, !canGoBack || state.processing);
+    toggleElementsDisabled(getBackExternalMappingBtn(), !canGoBack || state.processing);
 }
 
 
@@ -2262,37 +2236,37 @@ function exSoftwarePreFactorUpdateConfirmButton() {
     const state = externalSoftwareProcess;
     
     if (state.processing) {
-        toggleElementsDisabled(confirmExternalMappingBtn, true);
+        toggleElementsDisabled(getConfirmExternalMappingBtn(), true);
         return;
     }
     
     switch (state.step) {
         case "saleType": {
-            const selected = externalMappingList?.querySelector("#externalMappingSaleTypeSelect")?.value;
-            toggleElementsDisabled(confirmExternalMappingBtn, !selected);
+            const selected = getExternalMappingList()?.querySelector("#externalMappingSaleTypeSelect")?.value;
+            toggleElementsDisabled(getConfirmExternalMappingBtn(), !selected);
             break;
         }
         
         case "customer": {
-            const selected = externalMappingList?.querySelector("#externalMappingCustomerSelect")?.value;
-            toggleElementsDisabled(confirmExternalMappingBtn, !selected);
+            const selected = getExternalMappingList()?.querySelector("#externalMappingCustomerSelect")?.value;
+            toggleElementsDisabled(getConfirmExternalMappingBtn(), !selected);
             break;
         }
         
         case "items":
-            toggleElementsDisabled(confirmExternalMappingBtn, !exSoftwarePreFactorAreAllItemsMapped());
+            toggleElementsDisabled(getConfirmExternalMappingBtn(), !exSoftwarePreFactorAreAllItemsMapped());
             break;
         
         case "stock":
-            toggleElementsDisabled(confirmExternalMappingBtn, !exSoftwarePreFactorAreAllItemsMappedWithStock());
+            toggleElementsDisabled(getConfirmExternalMappingBtn(), !exSoftwarePreFactorAreAllItemsMappedWithStock());
             break;
         
         case "preview":
-            toggleElementsDisabled(confirmExternalMappingBtn, false);
+            toggleElementsDisabled(getConfirmExternalMappingBtn(), false);
             break;
         
         default:
-            toggleElementsDisabled(confirmExternalMappingBtn, true);
+            toggleElementsDisabled(getConfirmExternalMappingBtn(), true);
     }
 }
 
@@ -2341,7 +2315,8 @@ const externalSoftwareStepHandlers = {
 };
 
 
-confirmExternalMappingBtn?.addEventListener("click", async () => {
+document.addEventListener("click", async event => {
+    if (!event.target.closest("#confirmExternalMappingBtn")) return;
         const state = externalSoftwareProcess;
         
         if (state.processing) return;
@@ -2355,7 +2330,7 @@ confirmExternalMappingBtn?.addEventListener("click", async () => {
         
         state.processing = true;
         
-        toggleElementsDisabled(confirmExternalMappingBtn, true);
+        toggleElementsDisabled(getConfirmExternalMappingBtn(), true);
         
         try {
             await handler();
@@ -2365,25 +2340,26 @@ confirmExternalMappingBtn?.addEventListener("click", async () => {
         } finally {
             state.processing = false;
             
-            if (isModalOpen(externalMappingModal)) {
+            if (isModalOpen(getExternalMappingModal())) {
                 exSoftwarePreFactorUpdateButtons();
             }
         }
     },
 );
 
-backExternalMappingBtn?.addEventListener("click", () => {
+document.addEventListener("click", event => {
+    if (!event.target.closest("#backExternalMappingBtn")) return;
     const state = externalSoftwareProcess;
     if (state.processing) return;
     
     state.processing = true;
     
-    toggleElementsDisabled(backExternalMappingBtn, true);
+    toggleElementsDisabled(getBackExternalMappingBtn(), true);
     
     exSoftwarePreFactorGoBack();
     state.processing = false;
     
-    if (isModalOpen(externalMappingModal)) {
+    if (isModalOpen(getExternalMappingModal())) {
         exSoftwarePreFactorUpdateButtons();
     }
 });
@@ -2391,18 +2367,18 @@ backExternalMappingBtn?.addEventListener("click", () => {
 
 /* --------------------------------------------------- Add Item In Sepidar --------------------------------------------------- */
 
-const addItemInSepidarModal = document.getElementById("addItemInSepidarModal");
+const getAddItemInSepidarModal = () => document.getElementById("addItemInSepidarModal");
 async function showAddItemInSepidarModal() {
     await Promise.all([initSepidarUnitsOp(), initSepidarLastItemCode()]);
     
-    ModalToggle(addItemInSepidarModal);
+    ModalToggle(getAddItemInSepidarModal());
 }
 
 let allSepidarUnitsPromise = null;
 const initSepidarUnitsOp = async () => {
     const state = externalSoftwareProcess;
     
-    const select = addItemInSepidarModal.querySelector("#sepidarItemUnitId");
+    const select = getAddItemInSepidarModal().querySelector("#sepidarItemUnitId");
     if (!select) return;
     
     if (!allSepidarUnitsPromise) {
@@ -2442,7 +2418,7 @@ const initSepidarLastItemCode = async () => {
         },
         onSuccess: async (res) => {
             console.log(res);
-            addItemInSepidarModal.querySelector("#lastSepidarItemCode").innerHTML = `کد آخرین محصول: <b style="font-size: 12px">${res.data}</b>`;
+            getAddItemInSepidarModal().querySelector("#lastSepidarItemCode").innerHTML = `کد آخرین محصول: <b style="font-size: 12px">${res.data}</b>`;
         },
     });
 };
@@ -2471,7 +2447,7 @@ async function showAddStocksModal() {
         
         onSubmit: ({ ids, numbers }) => {
             sepidarStocksSelectedIds = ids;
-            const input = addItemInSepidarModal.querySelector("#sepidarStockId");
+            const input = getAddItemInSepidarModal().querySelector("#sepidarStockId");
             input.value = numbers.join(", ");
             
             input.classList.remove("AlertReq");
@@ -2482,7 +2458,8 @@ async function showAddStocksModal() {
 }
 
 
-addItemInSepidarModal?.addEventListener("hidden.bs.modal", () => {
+document.addEventListener("hidden.bs.modal", event => {
+    if (event.target.id !== "addItemInSepidarModal") return;
     mySer.emptyForm("addItemInSepidarForm");
     modalSelector.reset();
     sepidarStocksSelectedIds = [];
@@ -2509,7 +2486,7 @@ async function submitItemInSepidar() {
         data: model,
         successMsg: "ثبت محصول با موفقیت انجام شد",
         onSuccess: async () => {
-            ModalToggle(addItemInSepidarModal, "hide");
+            ModalToggle(getAddItemInSepidarModal(), "hide");
             await exSoftwarePreFactorLoadItems(true);
         },
     });

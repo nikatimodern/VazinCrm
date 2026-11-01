@@ -1,39 +1,41 @@
-@model CRM.EndPoint.FrontEnd.Models.Menu.MenuItem
+﻿@model CRM.EndPoint.FrontEnd.Models.Menu.MenuItem
 
 @if (Model.SubItems?.Count > 0) {
     // Menu item with submenu
     <div class="has-submenu @(Model.Id)-menu">
-        <span data-tooltip-left="@Model.Title" class="menu-item">
+        <button type="button" data-tooltip-left="@Model.Title" class="menu-item submenu-toggle" aria-expanded="false">
             @Html.Raw(Model.IconHtml)
             <span class="menu-item-title">
                 <span>@Model.Title</span>
-                <svg class="submenu-arrow" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" /></svg>
+                <svg class="submenu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m15 18-6-6 6-6" /></svg>
             </span>
-        </span>
+        </button>
         <ul class="submenu">
-            <div class="submenu-content">
+            <li class="submenu-content">
+                <ul class="submenu-items">
                 @foreach (var sub in Model.SubItems) {
                     <li>
                         <partial name="Menu/_MenuItem" model="sub" />
                     </li>
                 }
-            </div>
+                </ul>
+            </li>
         </ul>
     </div>
 } else if (string.IsNullOrEmpty(Model.Url)) {
     // Menu button
-    <button type="button" id="@Model.ElementId" class="menu-item @Model.ClassName @(Model.Title.Contains("هشدار") ? "menu-alert-live" : "")" data-tooltip-left="@Model.Title" onclick="@Model.OnClick">
+    <button type="button" id="@Model.ElementId" class="menu-item @Model.ClassName @(Model.Id == "warnings" ? "menu-warning-attention" : "")" data-tooltip-left="@Model.Title" onclick="@Model.OnClick">
         @Html.Raw(Model.IconHtml)
         <span class="menu-item-title">
             <span>@Model.Title</span>
             @if (Model.BadgeCount > 0) {
-                <span class="badge-count badge-count-menuItem">@Model.BadgeCount</span>
+                <span class="badge-count badge-count-menuItem @(Model.Id == "warnings" ? "badge-count-warning" : "")">@Model.BadgeCount</span>
             }
         </span>
     </button>
 } else {
     // Menu link
-    <a href="@Model.Url" id="@Model.ElementId" class="menu-item menu-link @Model.ClassName" data-tooltip-left="@Model.Title">
+    <a href="@Model.Url" id="@Model.ElementId" class="menu-item menu-link @(Model.Id == "overdueOpenDeals" ? (Model.BadgeCount.GetValueOrDefault() > 0 ? "menu-overdue-attention" : "") : Model.ClassName)" data-tooltip-left="@Model.Title">
         @Html.Raw(Model.IconHtml)
         <span class="menu-item-title">
             <span>@Model.Title</span>

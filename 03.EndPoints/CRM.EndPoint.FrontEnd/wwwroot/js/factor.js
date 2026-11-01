@@ -6,17 +6,19 @@ let typeSubmitFactor;
 
 let supplyData = [];
 
-document.querySelectorAll("#Factor input[type='radio'][name='f_official']")?.forEach(radio => {
-    const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
-    radio.addEventListener("change", async (e) => {
+document.addEventListener("change", async (e) => {
+    if (e.target.matches("#Factor input[type='radio'][name='f_official']")) {
+        const currencyTypeElm = document.querySelector("#FHeadFormId select[name='currencyType']");
+        if (!currencyTypeElm) return;
         factor.officialType = Number(e.target.value);
         currencyTypeElm.toggleAttribute("disabled", factor.officialType === 1);
         await calculateFactorTotals();
         showFactorItems();
-    });
+    }
 });
 
-document.querySelector("#FacItem")?.addEventListener("input", (e) => {
+document.addEventListener("input", (e) => {
+    if (!e.target.closest("#FacItem")) return;
     if (e.target.matches("[name='weightCount']") || e.target.matches("[name='unitAmount']") || e.target.matches("[name='discount']")) {
         calculateItem("FacItem");
     }
@@ -146,11 +148,11 @@ const upFactor = async (id, type = 1) => {
     showFactorItems();
     showFDescriptionItems();
     
-    document.getElementById("f_sumTotalAmount").textContent = SeperatedNumberGenerate(factor.sumTotalAmount);
-    document.getElementById("f_discount").value = SeperatedNumberGenerate(factor.discount);
-    document.getElementById("f_totalTax").textContent = SeperatedNumberGenerate(factor.totalTax);
-    document.getElementById("f_paymentAmount").textContent = SeperatedNumberGenerate(factor.paymentAmount);
-    //document.getElementById("f_reciveAmount").value = SeperatedNumberGenerate(factor.reciveAmount);
+    document.getElementById("f_sumTotalAmount").textContent = factor.sumTotalAmount.toLocaleString();
+    document.getElementById("f_discount").value = factor.discount.toLocaleString();
+    document.getElementById("f_totalTax").textContent = factor.totalTax.toLocaleString();
+    document.getElementById("f_paymentAmount").textContent = factor.paymentAmount.toLocaleString();
+    //document.getElementById("f_reciveAmount").value = factor.reciveAmount.toLocaleString();
     
     ModalToggle("Factor", "show");
 };
@@ -233,7 +235,8 @@ const showFactorItems = () => {
 };
 
 
-document.getElementById("f_discount")?.addEventListener("input", async () => {
+document.addEventListener("input", async (event) => {
+    if (!event.target.matches("#Factor #f_discount")) return;
     await calculateFactorTotals(true);
     
     showFactorItems();
@@ -397,15 +400,15 @@ const calculateFactorText = () => {
     
     if (kelisheItems.length > 0 && cilandrItems.length > 0) {
         const finalTotalAmount = (totalWithoutBoth / 2) + kelisheTotalAmount + cilandrTotalAmount;
-        valueText = `50 درصد مبلغ کل ${SeperatedNumberGenerate(totalWithoutBoth / 2)} ${currencyTxt} و تمام مبلغ کلیشه و سیلندر ${SeperatedNumberGenerate(kelisheTotalAmount + cilandrTotalAmount)} ${currencyTxt} که جمعا معادل ${SeperatedNumberGenerate(finalTotalAmount)} ${currencyTxt} می‌شود در ابتدای کار دریافت خواهد شد`;
+        valueText = `50 درصد مبلغ کل ${(totalWithoutBoth / 2).toLocaleString()} ${currencyTxt} و تمام مبلغ کلیشه و سیلندر ${(kelisheTotalAmount + cilandrTotalAmount).toLocaleString()} ${currencyTxt} که جمعا معادل ${finalTotalAmount.toLocaleString()} ${currencyTxt} می‌شود در ابتدای کار دریافت خواهد شد`;
     } else if (kelisheItems.length > 0) {
         const finalTotalAmount = (totalWithoutBoth / 2) + kelisheTotalAmount;
-        valueText = `50 درصد مبلغ کل ${SeperatedNumberGenerate(totalWithoutBoth / 2)} ${currencyTxt} و تمام مبلغ کلیشه ${SeperatedNumberGenerate(kelisheTotalAmount)} ${currencyTxt} که جمعا معادل ${SeperatedNumberGenerate(finalTotalAmount)} ${currencyTxt} می‌شود در ابتدای کار دریافت خواهد شد`;
+        valueText = `50 درصد مبلغ کل ${(totalWithoutBoth / 2).toLocaleString()} ${currencyTxt} و تمام مبلغ کلیشه ${kelisheTotalAmount.toLocaleString()} ${currencyTxt} که جمعا معادل ${finalTotalAmount.toLocaleString()} ${currencyTxt} می‌شود در ابتدای کار دریافت خواهد شد`;
     } else if (cilandrItems.length > 0) {
         const finalTotalAmount = (totalWithoutBoth / 2) + cilandrTotalAmount;
-        valueText = `50 درصد مبلغ کل ${SeperatedNumberGenerate(totalWithoutBoth / 2)} ${currencyTxt} و تمام مبلغ سیلندر ${SeperatedNumberGenerate(cilandrTotalAmount)} ${currencyTxt} که جمعا معادل ${SeperatedNumberGenerate(finalTotalAmount)} ${currencyTxt} می‌شود در ابتدای کار دریافت خواهد شد`;
+        valueText = `50 درصد مبلغ کل ${(totalWithoutBoth / 2).toLocaleString()} ${currencyTxt} و تمام مبلغ سیلندر ${cilandrTotalAmount.toLocaleString()} ${currencyTxt} که جمعا معادل ${finalTotalAmount.toLocaleString()} ${currencyTxt} می‌شود در ابتدای کار دریافت خواهد شد`;
     } else {
-        valueText = `50 درصد از مبلغ کل معادل ${SeperatedNumberGenerate(sumTotal / 2)} ${currencyTxt} در ابتدای کار دریافت می‌شود `;
+        valueText = `50 درصد از مبلغ کل معادل ${(sumTotal / 2).toLocaleString()} ${currencyTxt} در ابتدای کار دریافت می‌شود `;
     }
     
     ["f_descriptionId", "f_descriptionIdMobile", "f_descriptionIdTablet"].forEach(id => {
@@ -690,6 +693,7 @@ const GetFactorPartial = async ({ id, element, serialNumber, passType = 0, showL
     
     await sendApiRequest({
         url: "/Cartable/FactorPartial",
+        skeleton: passType === 0 ? { target: "#fAcceptedList" } : null,
         method: "POST",
         showLoading,
         data: model,

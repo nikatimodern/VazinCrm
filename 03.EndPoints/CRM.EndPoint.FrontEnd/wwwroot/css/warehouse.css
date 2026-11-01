@@ -3,6 +3,20 @@
 	 مشترک بین لیست حواله و جزئیات حواله
 	 ========================================================= */
 
+.clickable-card.warehouse-card {
+	--clickable-card-color: #02790c;
+	--clickable-card-bg: #eaf7ec;
+	--clickable-card-bg-border: #b9dfbe;
+	background-color: #f5fbf6;
+}
+
+.clickable-card.warehouse-card.warehouse-card--main {
+	--clickable-card-color: #3a259c;
+	--clickable-card-bg: #eeeafa;
+	--clickable-card-bg-border: #c9bfee;
+	background-color: #f7f5fd;
+}
+
 :root {
 	/* Background */
 	--warehouse-bg: #fafbfc;

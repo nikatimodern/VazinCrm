@@ -1,246 +1,52 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-using CRM.Core.Domain.AppUsers.Entities;
+using CRM.Core.ApplicationServices.Abstractions.Cqrs;
+using CRM.Core.ApplicationServices.Checks.Queries.GetCheckbooks;
+using CRM.Core.ApplicationServices.Checks.Queries.GetChecksByCheckbook;
+using CRM.Core.ApplicationServices.Checks.Queries.GetCheck;
+using CRM.Core.ApplicationServices.Checks.Commands.CreateCheckbook;
+using CRM.Core.ApplicationServices.Checks.Commands.SaveCheck;
+using CRM.Core.ApplicationServices.Checks.Commands.ChangeCheckStatus;
+using CRM.Core.ApplicationServices.Checks.Commands.DeleteCheck;
+using CRM.Core.ApplicationServices.Checks.Commands.DeleteCheckbook;
 using CRM.Core.Domain.Checks.Entities;
 using CRM.Core.Domain.Checks.Enums;
-using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.Models.Check;
-using CRM.EndPoint.FrontEnd.Services;
-using CRM.EndPoint.FrontEnd.Services.LogSystem;
-using CRM.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
-
 [Authorize(Policy = "NotCustomerOnly")]
-public class CheckController(
-    CRMContextDb db,
-    UserManager<AppUser> userManager,
-    DateTimeServices dtService,
-    LogSystemService logSystemService) : Controller {
+public sealed class CheckController(ICqrsDispatcher requests) : Controller
+{
     [HttpGet]
-    public async Task<IActionResult> Index()
-    {
-        var checkbooks = await GetAllCheckbooks();
-        return View(checkbooks);
-    }
-
-    public async Task<IActionResult> Received()
-    {
-        var checkbooks = await GetAllCheckbooks();
-        return View(checkbooks);
-    }
-
-
-    private async Task<List<CheckbookVModel>> GetAllCheckbooks()
-    {
-        var checkbooks = await db.Checkbooks
-            .AsNoTracking()
-            .Include(f => f.BankAccount)
-            .Select(c => new CheckbookVModel {
-                Checkbook = c,
-                ChecksCount = c.Checks.Count
-            })
-            .ToListAsync();
-
-        return checkbooks;
-    }
-
-
-    public async Task<IActionResult> GetAllCheckbooksPartial()
-    {
-        var checkbooks = await GetAllCheckbooks();
-        return PartialView(checkbooks);
-    }
-
+    public async Task<IActionResult> Index(CancellationToken ct) => View((await requests.QueryAsync(new GetCheckbooksQuery(), ct)).Select(row => new CheckbookVModel { Checkbook = row.Checkbook, ChecksCount = row.ChecksCount }).ToList());
+    public async Task<IActionResult> Received(CancellationToken ct) => View((await requests.QueryAsync(new GetCheckbooksQuery(), ct)).Select(row => new CheckbookVModel { Checkbook = row.Checkbook, ChecksCount = row.ChecksCount }).ToList());
+    public async Task<IActionResult> GetAllCheckbooksPartial(CancellationToken ct) => PartialView((await requests.QueryAsync(new GetCheckbooksQuery(), ct)).Select(row => new CheckbookVModel { Checkbook = row.Checkbook, ChecksCount = row.ChecksCount }).ToList());
     [HttpGet]
-    public async Task<IActionResult> GetCheckListByCheckbookId(Guid checkbookId)
-    {
-        var checks = await db.Checks
-            .AsNoTracking()
-            .Where(f => f.CheckbookId == checkbookId)
-            .OrderByDescending(f => f.CreateDate)
-            .ToListAsync();
-
-        var model = new {
-            data = checks,
-            Statuses = Enum.GetValues<CheckStatus>()
-                .Select(x => new {
-                    Value = x,
-                    Text = x.ToString().Replace("_", " ")
-                })
-        };
-        return Ok(model);
-    }
-
+    public async Task<IActionResult> GetCheckListByCheckbookId(Guid checkbookId, CancellationToken ct) => Ok(await requests.QueryAsync(new GetChecksByCheckbookQuery(checkbookId), ct));
     [HttpPost]
-    public async Task<IActionResult> AddCheckbook([FromBody] Checkbook model)
-    {
-        if (model == null) return BadRequest();
-
-        try
-        {
-            var user = await userManager.GetUserAsync(HttpContext.User);
-            model.UserCreator = user.FullName;
-            model.UserCreatorID = user.Id;
-
-            await logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
-
-            await db.Checkbooks.AddAsync(model);
-            await db.SaveChangesAsync();
-            return Ok();
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
-        }
-    }
-
+    public async Task<IActionResult> AddCheckbook([FromBody] Checkbook model, CancellationToken ct) => model == null ? BadRequest() : StatusCode(await requests.CommandAsync(new CreateCheckbookCommand(model), ct));
     [HttpPost]
-    public async Task<IActionResult> AddCheck([FromBody] Check model)
+    public async Task<IActionResult> AddCheck([FromBody] Check model, CancellationToken ct) => model == null ? BadRequest() : StatusCode(await requests.CommandAsync(new SaveCheckCommand(model), ct));
+    public async Task<IActionResult> ChangeStatus(Guid id, CheckStatus status, CancellationToken ct) => StatusCode(await requests.CommandAsync(new ChangeCheckStatusCommand(id, status), ct));
+    public async Task<IActionResult> GetCheck(Guid id, CancellationToken ct)
     {
-        if (model == null) return BadRequest();
-        try
-        {
-            var user = await userManager.GetUserAsync(HttpContext.User);
-            var isCreate = model.Id == Guid.Empty;
-            Check oldCheck = null;
-
-            if (isCreate)
-            {
-                model.UserCreator = user.FullName;
-                model.UserCreatorID = user.Id;
-            } else
-            {
-                oldCheck = await db.Checks.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
-                model.ModifyDate = DateTime.Now;
-                model.ModifyDateTxt = dtService.GetDateTimePersian();
-                model.UserModify = user.FullName;
-                model.UserModifyID = user.Id;
-            }
-
-            model.DueDateMiladi = dtService.GetDateMiladi(model.DueDate);
-
-            db.Checks.Update(model);
-
-            if (isCreate) await logSystemService.LogChange(model, null, LogActionEnum.ثبت, user);
-            else await logSystemService.LogChange(oldCheck, model, LogActionEnum.ویرایش, user);
-
-            await db.SaveChangesAsync();
-            return Ok();
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
-        }
+        var item = await requests.QueryAsync(new GetCheckQuery(id), ct);
+        return item == null ? NotFound("رکوردی یافت نشد!") : Ok(item);
     }
 
-
-    public async Task<IActionResult> ChangeStatus(Guid id, CheckStatus status)
+    public async Task<IActionResult> DeleteCheck(Guid id, CancellationToken ct)
     {
-        if (id == Guid.Empty) return BadRequest();
-        try
-        {
-            var user = await userManager.GetUserAsync(HttpContext.User);
-            var oldCheck = await db.Checks.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
-            var check = await db.Checks.FirstOrDefaultAsync(f => f.Id == id);
-
-            check.ModifyDate = DateTime.Now;
-            check.ModifyDateTxt = dtService.GetDateTimePersian();
-            check.UserModify = user.FullName;
-            check.UserModifyID = user.Id;
-            check.Status = status;
-
-            await logSystemService.LogChange(oldCheck, check, LogActionEnum.تغییر_وضعیت, user);
-
-            await db.SaveChangesAsync();
-            return Ok();
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
-        }
+        var status = await requests.CommandAsync(new DeleteCheckCommand(id), ct);
+        return status == 404 ? NotFound("رکوردی یافت نشد!") : StatusCode(status);
     }
 
-
-    public async Task<IActionResult> GetCheck(Guid id)
+    public async Task<IActionResult> DeleteCheckbook(Guid id, CancellationToken ct)
     {
-        try
-        {
-            var item = await db.Checks.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
-            if (item == null) return NotFound("رکوردی یافت نشد!");
-
-            return Ok(item);
-        }
-        catch (Exception e)
-        {
-            return BadRequest();
-        }
-    }
-
-
-    public async Task<IActionResult> DeleteCheck(Guid id)
-    {
-        try
-        {
-            var user = await userManager.GetUserAsync(HttpContext.User);
-            var item = await db.Checks.FirstOrDefaultAsync(f => f.Id == id);
-            if (item == null) return NotFound("رکوردی یافت نشد!");
-
-            item.IsDeleted = true;
-            item.ModifyDate = DateTime.Now;
-            item.ModifyDateTxt = dtService.GetDateTimePersian();
-            item.UserModify = user.FullName;
-            item.UserModifyID = user.Id;
-
-            await logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
-
-
-            await db.SaveChangesAsync();
-            return Ok();
-        }
-        catch (Exception e)
-        {
-            return BadRequest();
-        }
-    }
-
-    public async Task<IActionResult> DeleteCheckbook(Guid id)
-    {
-        try
-        {
-            var user = await userManager.GetUserAsync(HttpContext.User);
-            var item = await db.Checkbooks.Include(f => f.Checks).FirstOrDefaultAsync(f => f.Id == id);
-            if (item == null) return NotFound("رکوردی یافت نشد!");
-
-            item.IsDeleted = true;
-            item.ModifyDate = DateTime.Now;
-            item.ModifyDateTxt = dtService.GetDateTimePersian();
-            item.UserModify = user.FullName;
-            item.UserModifyID = user.Id;
-
-            foreach (var check in item.Checks ?? [])
-            {
-                check.IsDeleted = true;
-            }
-
-            await logSystemService.LogChange(item, null, LogActionEnum.حذف, user);
-
-
-            await db.SaveChangesAsync();
-            return Ok();
-        }
-        catch (Exception e)
-        {
-            return BadRequest();
-        }
+        var status = await requests.CommandAsync(new DeleteCheckbookCommand(id), ct);
+        return status == 404 ? NotFound("رکوردی یافت نشد!") : StatusCode(status);
     }
 }

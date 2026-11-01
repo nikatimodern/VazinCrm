@@ -179,12 +179,6 @@ const submitSupplyModal = async () => {
     toggleSupplyModal();
 };*/
 
-async function getSuppliesByPfId(pfId) {
-    return await sendApiRequest({
-        url: "/Supply/GetSupplies",
-        params: { pfId },
-    });
-}
 
 let hasSupplyAmountSetting;
 let hasSupplySetting;

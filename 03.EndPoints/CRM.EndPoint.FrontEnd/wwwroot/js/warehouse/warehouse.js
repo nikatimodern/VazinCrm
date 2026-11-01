@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-function syncWarehouseViewWithUrl() {
+async function syncWarehouseViewWithUrl() {
     const { warehouse, title } = getUrlParams();
     
     if (!warehouse) {
@@ -31,7 +31,17 @@ function syncWarehouseViewWithUrl() {
         return;
     }
     
-    warehouseData.id = warehouse;
+    warehouseData = { id: warehouse, isMain: true };
+    setWarehouseManualActions(false);
+    await sendApiRequest({
+        url: `/Warehouse/GetWarehouse/${encodeURIComponent(warehouse)}`,
+        onSuccess: (res) => {
+            if (warehouseData.id !== warehouse) return;
+            warehouseData.isMain = res.data.isMain === true;
+            setWarehouseManualActions(canManuallyManageWarehouse());
+        },
+    });
+    if (warehouseData.id !== warehouse) return;
     
     warehouseProductsSection.querySelector("#selected-warehouse-title").innerText = "محصولات " + decodeURIComponent(title || "انبار");
     warehousesSection.classList.add("d-none");
@@ -45,6 +55,18 @@ function syncWarehouseViewWithUrl() {
     }
     
     showLastWarehouseVouchers();
+}
+
+function canManuallyManageWarehouse() {
+    return warehouseData.isMain === false || warehouseProductsSection?.dataset.isSeniorManager === "true";
+}
+
+function setWarehouseManualActions(allowed) {
+    for (const id of ["warehouseProductBtn", "groupSelectWarehouseProductBtn"]) {
+        document.getElementById(id)?.classList.toggle("d-none", !allowed);
+    }
+    document.getElementById("warehouseSystemNotice")?.classList.toggle("d-none", allowed);
+    if (!allowed) document.getElementById("warehouseSelectionToolbar")?.classList.add("d-none");
 }
 
 warehouseModal?.addEventListener("hidden.bs.modal", cancelWarehouseModal);
@@ -95,6 +117,7 @@ warehouseFormElm?.addEventListener("submit", async (e) => {
     const model = {
         ...warehouseData,
         ...mySer.convertFormToJSON("warehouseForm"),
+        isMain: warehouseFormElm.querySelector("#warehouseIsMain")?.checked ?? false,
     };
     
     await sendApiRequest({
@@ -134,6 +157,8 @@ async function editWarehouse(id) {
         onSuccess: (res) => {
             warehouseData = res.data;
             mySer.convertJsonToForm(warehouseData, "warehouseForm");
+            const mainCheckbox = warehouseFormElm.querySelector("#warehouseIsMain");
+            if (mainCheckbox) mainCheckbox.checked = warehouseData.isMain === true;
         },
     });
 }
@@ -258,7 +283,6 @@ async function submitWarehouseTransactionModal() {
             }
         },
         onError: async (err) => {
-            FLshowLoading(false);
             const status = err.response?.status;
             
             if (status === 409) {
@@ -271,6 +295,7 @@ async function submitWarehouseTransactionModal() {
             }
             await handleApiError(err);
         },
+        showError: false,
     });
 }
 
@@ -306,7 +331,11 @@ function initWarehouseProductsTable(id) {
             {
                 data: "id",
                 orderable: false,
-                render: (data, type, row) => `
+                render: (data, type, row) => !canManuallyManageWarehouse()
+                    ? `<button class="icon-button icon-button--gray" data-title-left="تاریخچه گردش" data-action="warehouse-history">
+                        <svg style="width: 18px !important" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>
+                      </button>`
+                    : `
                     <div class="inline-flex-center gap-2">
                         ${row.stock > 0 ? `
                             <button class="icon-button icon-button--blue" style="width: 32px" data-title-right="ثبت حواله انبار" data-action="warehouse-out">
@@ -368,7 +397,7 @@ function initWarehouseProductsTable(id) {
         getItemKey: item => warehouseProductTbl.row(item).data()?.id,
         isSelectable: item => {
             const data = warehouseProductTbl.row(item).data();
-            return data?.stock > 0;
+            return canManuallyManageWarehouse() && data?.stock > 0;
         },
         onAction: async (ids) => {
             await showWarehouseVoucherModal(ids);
@@ -498,7 +527,7 @@ function initWarehouseTransaction(id) {
                 orderable: false,
                 render: (data, type, row) => `
                     <div class="inline-flex-center gap-1">
-                    ${row.transactionType === 1 ? `
+                    ${canManuallyManageWarehouse() && row.transactionType === 1 ? `
                         <button class="icon-button icon-button--green" data-action="warehouse-edit" onclick="editWarehouseTransaction('${data}')"><i class="fa fa-pencil"></i></button>
                         <button class="icon-button icon-button--red" data-action="warehouse-delete" onclick="deleteWarehouseTransaction('${data}')"><i class="fa fa-trash"></i></button>
                     ` : ""}
@@ -545,6 +574,8 @@ const setWarehouseTransactionHistoryHeader = () => {
     document.getElementById("transactionHistoryStock").textContent =
         (`${warehouseProductsData.stock?.toLocaleString() ?? "0"} ${warehouseProductsData.unitTxt || ""}`);
     
+    document.querySelectorAll('#warehouseTransactionHistoryModal [onclick="editWarehouseProduct()"], #deleteWarehouseProductBtn')
+        .forEach(button => button.classList.toggle("d-none", !canManuallyManageWarehouse()));
     const deleteBtn = document.getElementById("deleteWarehouseProductBtn");
     deleteBtn.classList.toggle("opacity-25", warehouseProductsData.stock > 0);
     toggleElementsDisabled(deleteBtn, warehouseProductsData.stock > 0);

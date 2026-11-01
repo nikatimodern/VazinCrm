@@ -43,12 +43,12 @@
                 <span class="status-text">@Model.StatusTxt</span>
             </div>
 
-            @*@if (Model.Status == WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین) {
+            @*@if ((User.IsAdmin() || Model.Warehouse?.IsMain == false) && Model.Status == WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین) {
                 <button type="button" class="voucher-action-btn voucher-action-confirm" onclick="confirmWarehouseVoucher('@Model.Id')">
                     <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" /></svg>
                     تایید حواله
                 </button>
-            } else if (Model.Status == WarehouseVoucherStatusEnum.در_انتظار_تحویل) {
+            } else if ((User.IsAdmin() || Model.Warehouse?.IsMain == false) && Model.Status == WarehouseVoucherStatusEnum.در_انتظار_تحویل) {
                 <button type="button" class="voucher-action-btn voucher-action-deliver" onclick="deliverWarehouseVoucher('@Model.Id')">
                     <i class="fas fa-box-check"></i>
                     تحویل شد
@@ -272,12 +272,12 @@
         </div>
 
         <div class="d-flex align-items-center">
-            @if (Model.Status == WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین) {
+            @if ((User.IsAdmin() || Model.Warehouse?.IsMain == false) && Model.Status == WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین) {
                 <button type="button" class="voucher-action-btn voucher-action-confirm" onclick="confirmWarehouseVoucher('@Model.Id')">
                     <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" /></svg>
                     تایید حواله
                 </button>
-            } else if (Model.Status == WarehouseVoucherStatusEnum.در_انتظار_تحویل) {
+            } else if ((User.IsAdmin() || Model.Warehouse?.IsMain == false) && Model.Status == WarehouseVoucherStatusEnum.در_انتظار_تحویل) {
                 <button type="button" class="voucher-action-btn voucher-action-deliver" onclick="deliverWarehouseVoucher('@Model.Id')">
                     <i class="fas fa-box-check"></i>
                     تحویل شد
@@ -290,9 +290,9 @@
 
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/warehouse.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/warehouse.css?release=6.9.4" asp-append-version="true" />
 }
 
 @section Scripts {
-    <script src="~/js/warehouse/warehouse-voucher.js" asp-append-version="true"></script>
+    <script src="~/js/warehouse/warehouse-voucher.js?release=6.9.4" data-page-bindings="warehouseVoucherState,warehouseVoucherId,warehouseVoucherModal,loadWarehouseVouchers,refreshWarehouseVouchers,warehouseProductListData,showWarehouseVoucherModal,editWarehouseVoucher,cancelWarehouseVoucherModal,createSetVoucherItem,submitWarehouseVoucherModal,confirmWarehouseVoucher,deliverWarehouseVoucher,deleteWarehouseVoucher" asp-append-version="true"></script>
 }

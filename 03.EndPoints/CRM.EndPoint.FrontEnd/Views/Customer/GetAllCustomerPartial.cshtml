@@ -29,7 +29,7 @@
                             @if (item.Juridical == 1) {
                                 <p class="fbold" style=" text-align:end; width:100%;">حقوقی</p>
                             } else {
-                                <div class="@(item.RoleType != RoleTypeEnum.مشتری ? "overlaySupplier" : "overlay")" ></div>
+                                <div class="@(item.RoleType != RoleTypeEnum.مشتری ? "overlaySupplier" : "overlay")"></div>
                             }
                         </div>
                     </div>
@@ -94,7 +94,7 @@
                                         <i class="fa fa-text"></i>
                                     </button>
                                     @if (ViewBag.AccessAccepte) {
-                                        <a style="width:50%" class="mp buttonPurple buttonCusPartial" href="/Customer/CustomerDetail?Id=@item.Id" target="_blank">
+                                        <a style="width:50%" class="mp buttonPurple buttonCusPartial" href="/Customer/CustomerDetail?id=@item.Id" target="_blank">
                                             <i class="fa fa-search"></i>
                                         </a>
                                     }
@@ -113,10 +113,9 @@
                                             <i class=" fa fa-check"></i>
                                         </button>
                                         <button style=" width:30px;font-size:18px" class="mp buttonPurple buttonCusPartial " title="عدم تایید" onclick="abortCustomer('@item.Id')">×</button>
-                                        <a style="width:30px" class="mp buttonPurple buttonCusPartial " title="مشاهده جزئیات" href="/Customer/CustomerDetail?Id=@item.Id" target="_blank">
+                                        <a style="width:30px" class="mp buttonPurple buttonCusPartial " title="مشاهده جزئیات" href="/Customer/CustomerDetail?id=@item.Id" target="_blank">
                                             <i class="fa fa-search"></i>
                                         </a>
-
                                     </div>
                                 }
                             </div>

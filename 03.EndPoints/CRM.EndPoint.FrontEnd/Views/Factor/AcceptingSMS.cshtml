@@ -15,14 +15,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>سامانه مدیریت مشتری</title>
 
-    <link rel="stylesheet" href="~/lib/Bootstrap/bootstrap5.3.rtl.min.css" />
-    <link rel="stylesheet" href="~/lib/SweetAlert/sweetalert2.min.css" />
-    <link rel="stylesheet" href="~/lib/toastify/toastify.min.css" />
-    <link rel="stylesheet" href="~/lib/viewerJs/css/viewer.min.css" />
+    <link rel="stylesheet" href="~/lib/Bootstrap/bootstrap5.3.rtl.min.css?release=6.9.4" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/SweetAlert/sweetalert2.min.css?release=6.9.4" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/toastify/toastify.min.css?release=6.9.4" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/viewerJs/css/viewer.min.css?release=6.9.4" asp-append-version="true" />
 
-    <link rel="stylesheet" href="~/css/site.css?v=6.8.9" />
-    <link rel="stylesheet" href="~/css/acceptingSms.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/bottom-sheet.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css?release=6.9.4" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/acceptingSms.css?release=6.9.4" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/bottom-sheet.css?release=6.9.4" asp-append-version="true" />
 
 </head>
 <body dir="rtl">
@@ -44,9 +44,9 @@
             <div class="status-box">
                 <img src="~/Img/accept-icon.png" alt="Accepted" class="mb-2" />
                 <h6 class="mt-2" style="font-size: 15px;margin-bottom: 10px;"> پیش‌فاکتور تأیید شد؛ از اعتماد شما سپاسگزاریم.</h6>
-                <button class="btn btn-primary btn-sm rounded-pill px-4 mb-2" onclick="ShowPreviewPfactor('@Model.PreFactor.Id')">
+                <a class="btn btn-primary btn-sm rounded-pill px-4 mb-2" asp-controller="Factor" asp-action="PreviewPfactorPrint" asp-route-id="@pfId" target="_blank">
                     نمایش پیش فاکتور تایید شده
-                </button>
+                </a>
                 <span class="btn btn-secondary btn-sm rounded-pill px-2 mb-3" onclick="showLoginCustomerModal()">
                     ورود به پنل کاربری و پیام رسان
                 </span>
@@ -118,10 +118,10 @@
                 </div>
             </div>
 
-            <div class="pdf-link" onclick="ShowPreviewPfactor('@Model.PreFactor.Id')">
+            <a class="pdf-link" asp-controller="Factor" asp-action="PreviewPfactorPrint" asp-route-id="@pfId" target="_blank">
                 مشاهده پیش‌فاکتور
                 <svg style="width: 24px" fill="currentColor" viewBox="0 0 256 256"><path d="M44,120H212a4,4,0,0,0,4-4V88a8,8,0,0,0-2.34-5.66l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40v76A4,4,0,0,0,44,120ZM152,44l44,44H152Zm72,108.53a8.18,8.18,0,0,1-8.25,7.47H192v16h15.73a8.17,8.17,0,0,1,8.25,7.47,8,8,0,0,1-8,8.53H192v15.73a8.17,8.17,0,0,1-7.47,8.25,8,8,0,0,1-8.53-8V152a8,8,0,0,1,8-8h32A8,8,0,0,1,224,152.53ZM64,144H48a8,8,0,0,0-8,8v55.73A8.17,8.17,0,0,0,47.47,216,8,8,0,0,0,56,208v-8h7.4c15.24,0,28.14-11.92,28.59-27.15A28,28,0,0,0,64,144Zm-.35,40H56V160h8a12,12,0,0,1,12,13.16A12.25,12.25,0,0,1,63.65,184ZM128,144H112a8,8,0,0,0-8,8v56a8,8,0,0,0,8,8h15.32c19.66,0,36.21-15.48,36.67-35.13A36,36,0,0,0,128,144Zm-.49,56H120V160h8a20,20,0,0,1,20,20.77C147.58,191.59,138.34,200,127.51,200Z"></path></svg>
-            </div>
+            </a>
 
             <form id="acceptForm" style="padding: 12px 0">
                 <div class="mb-2">
@@ -180,18 +180,18 @@
 <partial name="~/Views/Account/Modals/_LoginCustomerModal.cshtml" />
 
 
-<script src="~/lib/Signature_pad/signature_pad.umd.min.js"></script>
-<script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js"></script>
-<script src="~/lib/jquery/jquery.min.js"></script>
-<script src="~/lib/SweetAlert/sweetalert2.all.min.js"></script>
-<script src="~/lib/trim-canvas/trim-canvas.js"></script>
-<script src="~/lib/toastify/toastify-js.js"></script>
-@* <script src="~/lib/lightBox2/js/lightbox.min.js"></script> *@
-<script src="~/lib/viewerJs/js/viewer.min.js"></script>
+<script src="~/lib/Signature_pad/signature_pad.umd.min.js?release=6.9.4" asp-append-version="true"></script>
+<script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js?release=6.9.4" asp-append-version="true"></script>
+<script src="~/lib/jquery/jquery.min.js?release=6.9.4" asp-append-version="true"></script>
+<script src="~/lib/SweetAlert/sweetalert2.all.min.js?release=6.9.4" asp-append-version="true"></script>
+<script src="~/lib/trim-canvas/trim-canvas.js?release=6.9.4" asp-append-version="true"></script>
+<script src="~/lib/toastify/toastify-js.js?release=6.9.4" asp-append-version="true"></script>
+@* <script src="~/lib/lightBox2/js/lightbox.min.js?release=6.9.4" asp-append-version="true"></script> *@
+<script src="~/lib/viewerJs/js/viewer.min.js?release=6.9.4" asp-append-version="true"></script>
 
-<script src="~/js/File.js?v=6.8.9"></script>
-<script src="~/js/site.js?v=6.8.9"></script>
-<script src="~/js/bottom-sheet.js" asp-append-version="true"></script>
+<script src="~/js/File.js?release=6.9.4" asp-append-version="true"></script>
+<script src="~/js/site.js?release=6.9.4" asp-append-version="true"></script>
+<script src="~/js/bottom-sheet.js?release=6.9.4" asp-append-version="true"></script>
 
 
 <script>
@@ -539,7 +539,11 @@
 
                             if (targetAfterLogin === "panel") {
                                 goTo(data.url, true);
+                            } else if (targetAfterLogin === "chat") {
+                                goTo(`/Chat/Main`, true);
                             }
+
+
                             if (showLoginCustomerModalBtn && paymentReceiptContainer) {
                                 showLoginCustomerModalBtn.style.display = "none";
                                 paymentReceiptContainer.style.display = "flex";
@@ -590,8 +594,6 @@
 
         document.getElementById("clearBtn").addEventListener("click", () => signaturePad.clear());
     }
-
-
 </script>
 
 

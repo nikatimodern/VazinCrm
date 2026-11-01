@@ -41,9 +41,10 @@
 <partial name="Modals/_InvoiceTransferModal.cshtml" />
 <partial name="Modals/_InvoiceVosolModal.cshtml" />
 <partial name="Modals/_ShowPreFactorsListModal.cshtml" />
+<partial name="Modals/_InvoiceListModal" />
 
 @section Scripts {
-    <script defer>
+    <script defer data-page-bindings="accConfigFilter,modelAcc,searchVarAcc,HeadAccouTBL,Ac_GetCustomersOpId,getAllAccount,callBackAccFilter">
         var accConfigFilter = {};//موارد فیلترینگ accontancy
         let modelAcc = { serVal: null, filt: null, PayType: 0, AccType: 0 };
         var searchVarAcc;
@@ -55,7 +56,7 @@
         });
 
         const Ac_GetCustomersOpId = async () => {
-            $.get(`${baseUrl}order/GetCustomersOpId`, (res) => {
+            $.get(`/order/GetCustomersOpId`, (res) => {
                 $("#customerId").select2({
                     data: res,
                     dir: "rtl",
@@ -314,14 +315,14 @@
             HeadAccouTBL.ajax.reload();
         };
 
-        document.body.addEventListener("change", async (e) => {
+        __page.listen(document.body, "change", async (e) => {
             if (e.target.matches("input[name='acc_type']")) {
                 modelAcc.AccType = Number(e.target.value);
                 HeadAccouTBL.ajax.reload();
             }
         });
 
-        document.body.addEventListener("change", async (e) => {
+        __page.listen(document.body, "change", async (e) => {
             if (e.target.matches("input[name='pay_type']")) {
                 modelAcc.PayType = Number(e.target.value);
                 HeadAccouTBL.ajax.reload();

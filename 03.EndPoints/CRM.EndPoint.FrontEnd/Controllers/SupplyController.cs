@@ -1,3 +1,4 @@
+using CRM.Core.ApplicationServices.Workspaces.Queries.GetWorkspacePage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +15,7 @@ using CRM.Core.ApplicationServices.Supplies.Commands.SaveSalesAllocation;
 using CRM.Core.ApplicationServices.Supplies.Commands.SaveSupplyAllocation;
 using CRM.Core.ApplicationServices.Supplies.Commands.UpdatePayment;
 using CRM.Core.ApplicationServices.Supplies.Commands.UpdateSupplyFactor;
-using CRM.Core.ApplicationServices.Supplies.Dtos;
+using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Supplies.Queries.GetDealSupplies;
 using CRM.Core.ApplicationServices.Supplies.Queries.GetOrderHeadsBySupplier;
 using CRM.Core.ApplicationServices.Supplies.Queries.GetPayment;
@@ -33,22 +34,19 @@ using CRM.Core.ApplicationServices.Supplies.Queries.GetSupplyProfit;
 using CRM.Core.ApplicationServices.Supplies.Queries.SearchAllocationFactorItems;
 using CRM.Core.ApplicationServices.Supplies.Queries.SearchAllocationSupplyItems;
 using CRM.Core.ApplicationServices.Supplies.Queries.SearchSupplyFactors;
-using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Attachments.Entities;
 using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.Core.Domain.Supplies.Models;
 using CRM.EndPoint.FrontEnd.Models;
 using GetAllBySelectedVModel = CRM.EndPoint.FrontEnd.Models.Supply.GetAllBySelectedVModel;
-using CRM.EndPoint.FrontEnd.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 [Authorize(Policy = "NotCustomerOnly")]
-public class SupplyController(ISupplyRequestDispatcher requests, UserManager<AppUser> users, DateTimeServices dates) : Controller
+public class SupplyController(ICqrsDispatcher requests) : Controller
 {
     private const string SalesAllocationRoles = "مدیر تامین,کارشناس تامین,مدیر ارشد,مدیر اجرایی,مدیر عامل,مدیر مالی,کارشناس مالی,مدیر فروش,کارشناس فروش";
     public class SupplyFactorAllocationRequest : CRM.Core.Domain.Supplies.Models.SupplyFactorAllocationRequest
@@ -56,13 +54,13 @@ public class SupplyController(ISupplyRequestDispatcher requests, UserManager<App
     }
 
     [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
-    public IActionResult SupplyFactor() => View();
+    public async Task<IActionResult> SupplyFactor(CancellationToken cancellationToken) => View(await requests.QueryAsync(new GetWorkspacePageQuery("Supply/SupplyFactor"), cancellationToken));
     [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
-    public IActionResult Payment() => View();
+    public async Task<IActionResult> Payment(CancellationToken cancellationToken) => View(await requests.QueryAsync(new GetWorkspacePageQuery("Supply/Payment"), cancellationToken));
     [Authorize(Roles = "مدیر ارشد, مدیر اجرایی")]
-    public IActionResult Profit() => View();
+    public async Task<IActionResult> Profit(CancellationToken cancellationToken) => View(await requests.QueryAsync(new GetWorkspacePageQuery("Supply/Profit"), cancellationToken));
     [Authorize(Roles = "مدیر ارشد, مدیر اجرایی")]
-    public IActionResult Demand() => View();
+    public async Task<IActionResult> Demand(CancellationToken cancellationToken) => View(await requests.QueryAsync(new GetWorkspacePageQuery("Supply/Demand"), cancellationToken));
     [HttpGet]
     [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> GetSupplyFactorAllocations(Guid id, CancellationToken cancellationToken = default)
@@ -205,10 +203,7 @@ public class SupplyController(ISupplyRequestDispatcher requests, UserManager<App
     {
         if (!ModelState.IsValid)
             return BadRequest("مقدار تخصیص باید مثبت و حداکثر دارای دو رقم اعشار باشد.");
-        var user = await users.GetUserAsync(User);
-        if (user == null)
-            return Unauthorized();
-        return Map(await requests.CommandAsync(new SaveSupplyAllocationCommand(model, null, user), cancellationToken));
+        return Map(await requests.CommandAsync(new SaveSupplyAllocationCommand(model, null), cancellationToken));
     }
 
     [HttpPost]
@@ -218,10 +213,7 @@ public class SupplyController(ISupplyRequestDispatcher requests, UserManager<App
     {
         if (!ModelState.IsValid)
             return BadRequest("مقدار تخصیص باید مثبت و حداکثر دارای دو رقم اعشار باشد.");
-        var user = await users.GetUserAsync(User);
-        if (user == null)
-            return Unauthorized();
-        return Map(await requests.CommandAsync(new SaveSupplyAllocationCommand(model, model?.Id ?? Guid.Empty, user), cancellationToken));
+        return Map(await requests.CommandAsync(new SaveSupplyAllocationCommand(model, model?.Id ?? Guid.Empty), cancellationToken));
     }
 
     [HttpPost]
@@ -231,10 +223,7 @@ public class SupplyController(ISupplyRequestDispatcher requests, UserManager<App
     {
         if (!ModelState.IsValid)
             return BadRequest("مقدار تخصیص باید مثبت و حداکثر دارای دو رقم اعشار باشد.");
-        var user = await users.GetUserAsync(User);
-        if (user == null)
-            return Unauthorized();
-        return Map(await requests.CommandAsync(new SaveSalesAllocationCommand(model, null, user), cancellationToken));
+        return Map(await requests.CommandAsync(new SaveSalesAllocationCommand(model, null), cancellationToken));
     }
 
     [HttpPost]
@@ -244,10 +233,7 @@ public class SupplyController(ISupplyRequestDispatcher requests, UserManager<App
     {
         if (!ModelState.IsValid)
             return BadRequest("مقدار تخصیص باید مثبت و حداکثر دارای دو رقم اعشار باشد.");
-        var user = await users.GetUserAsync(User);
-        if (user == null)
-            return Unauthorized();
-        return Map(await requests.CommandAsync(new SaveSalesAllocationCommand(model, model?.Id ?? Guid.Empty, user), cancellationToken));
+        return Map(await requests.CommandAsync(new SaveSalesAllocationCommand(model, model?.Id ?? Guid.Empty), cancellationToken));
     }
 
     [HttpPost]
@@ -257,10 +243,7 @@ public class SupplyController(ISupplyRequestDispatcher requests, UserManager<App
     {
         if (!ModelState.IsValid)
             return BadRequest();
-        var user = await users.GetUserAsync(User);
-        if (user == null)
-            return Unauthorized();
-        return Map(await requests.CommandAsync(new DeleteSupplyAllocationCommand(model, user), cancellationToken));
+        return Map(await requests.CommandAsync(new DeleteSupplyAllocationCommand(model), cancellationToken));
     }
 
     [HttpPost]
@@ -270,10 +253,7 @@ public class SupplyController(ISupplyRequestDispatcher requests, UserManager<App
     {
         if (!ModelState.IsValid)
             return BadRequest();
-        var user = await users.GetUserAsync(User);
-        if (user == null)
-            return Unauthorized();
-        return Map(await requests.CommandAsync(new DeleteSalesAllocationCommand(model, user), cancellationToken));
+        return Map(await requests.CommandAsync(new DeleteSalesAllocationCommand(model), cancellationToken));
     }
 
     [HttpPost]
@@ -281,10 +261,7 @@ public class SupplyController(ISupplyRequestDispatcher requests, UserManager<App
     {
         if (!ModelState.IsValid)
             return BadRequest();
-        var user = await users.GetUserAsync(User);
-        if (user == null)
-            return Unauthorized();
-        return Map(await requests.CommandAsync(new AddSupplyFactorCommand(model, user), cancellationToken));
+        return Map(await requests.CommandAsync(new AddSupplyFactorCommand(model), cancellationToken));
     }
 
     [HttpPost]
@@ -292,20 +269,14 @@ public class SupplyController(ISupplyRequestDispatcher requests, UserManager<App
     {
         if (!ModelState.IsValid)
             return BadRequest();
-        var user = await users.GetUserAsync(User);
-        if (user == null)
-            return Unauthorized();
-        return Map(await requests.CommandAsync(new UpdateSupplyFactorCommand(model, user), cancellationToken));
+        return Map(await requests.CommandAsync(new UpdateSupplyFactorCommand(model), cancellationToken));
     }
 
     public async Task<IActionResult> DeleteSupplyFactor(Guid id, CancellationToken cancellationToken = default)
     {
         if (!ModelState.IsValid)
             return BadRequest();
-        var user = await users.GetUserAsync(User);
-        if (user == null)
-            return Unauthorized();
-        return Map(await requests.CommandAsync(new DeleteSupplyFactorCommand(id, user), cancellationToken));
+        return Map(await requests.CommandAsync(new DeleteSupplyFactorCommand(id), cancellationToken));
     }
 
     [HttpPost]
@@ -313,10 +284,7 @@ public class SupplyController(ISupplyRequestDispatcher requests, UserManager<App
     {
         if (!ModelState.IsValid)
             return BadRequest();
-        var user = await users.GetUserAsync(User);
-        if (user == null)
-            return Unauthorized();
-        return Map(await requests.CommandAsync(new AddPaymentCommand(model, user), cancellationToken));
+        return Map(await requests.CommandAsync(new AddPaymentCommand(model), cancellationToken));
     }
 
     [HttpPost]
@@ -324,10 +292,7 @@ public class SupplyController(ISupplyRequestDispatcher requests, UserManager<App
     {
         if (!ModelState.IsValid)
             return BadRequest();
-        var user = await users.GetUserAsync(User);
-        if (user == null)
-            return Unauthorized();
-        return Map(await requests.CommandAsync(new UpdatePaymentCommand(model, user), cancellationToken));
+        return Map(await requests.CommandAsync(new UpdatePaymentCommand(model), cancellationToken));
     }
 
     [HttpPost]
@@ -335,16 +300,15 @@ public class SupplyController(ISupplyRequestDispatcher requests, UserManager<App
     {
         if (!ModelState.IsValid)
             return BadRequest();
-        var user = await users.GetUserAsync(User);
-        if (user == null)
-            return Unauthorized();
-        return Map(await requests.CommandAsync(new AddSupplyCommand(model, user), cancellationToken));
+        return Map(await requests.CommandAsync(new AddSupplyCommand(model), cancellationToken));
     }
 
     [HttpPost]
     public async Task<IActionResult> ProccessSupplyFactorWithAi([FromBody] Attachment attachment, CancellationToken ct) => Map(await requests.CommandAsync(new ProcessSupplyInvoiceCommand(attachment), ct));
     private IActionResult Map(SupplyResult result, string viewName = null)
     {
+        if (result.Kind == SupplyResultKind.Unauthorized)
+            return Unauthorized();
         if (result.Kind == SupplyResultKind.Invalid)
             return result.Error == null ? BadRequest() : BadRequest(result.Error);
         if (result.Kind == SupplyResultKind.Missing)
@@ -373,8 +337,6 @@ public class SupplyController(ISupplyRequestDispatcher requests, UserManager<App
         var column = form["order[0][column]"].FirstOrDefault();
         var dateFilter = includeFilters && model?.filt?.DateFilterChk == true;
         var userFilter = includeFilters && model?.filt?.SelFilterChd == true;
-        var from = dateFilter ? dates.GetDateMiladi(model.filt.fromDate) ?? dates.GetDateMiladi("1000/01/01") : null;
-        var to = dateFilter ? (dates.GetDateMiladi(model.filt.toDate) ?? DateTime.Today).Date.AddDays(1).AddTicks(-1) : (DateTime? )null;
-        return new SupplyTableRequest(form["draw"].FirstOrDefault(), start, length, tolerantPaging && string.IsNullOrWhiteSpace(column) ? null : form[$"columns[{column}][name]"].FirstOrDefault(), form["order[0][dir]"].FirstOrDefault(), form["search[value]"].FirstOrDefault()?.Trim(), model?._type, dateFilter, from, to, userFilter, model?.filt?.selFilter?.ToString(), includeFilters && model?.filt?.CusFilterChd == true, model?.filt?.customerFilter);
+        return new SupplyTableRequest(form["draw"].FirstOrDefault(), start, length, tolerantPaging && string.IsNullOrWhiteSpace(column) ? null : form[$"columns[{column}][name]"].FirstOrDefault(), form["order[0][dir]"].FirstOrDefault(), form["search[value]"].FirstOrDefault()?.Trim(), model?._type, dateFilter, null, null, userFilter, model?.filt?.selFilter?.ToString(), model?.filt?.fromDate, model?.filt?.toDate, dateFilter);
     }
 }

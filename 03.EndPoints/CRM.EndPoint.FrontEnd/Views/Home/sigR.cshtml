@@ -11,9 +11,9 @@
 <div id="chat"></div>
 
 @section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/3.1.19/signalr.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/3.1.19/signalr.min.js?v=6.9.4"></script>
 
-    <script>
+    <script data-page-bindings="connection,sendMessage">
         // اتصال به SignalR Hub
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/chatHub") // آدرس SignalR Hub

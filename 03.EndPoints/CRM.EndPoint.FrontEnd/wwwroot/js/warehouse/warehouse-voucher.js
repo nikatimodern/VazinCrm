@@ -81,7 +81,7 @@ function cancelWarehouseVoucherModal() {
     warehouseVoucherId = undefined;
 }
 
-document.getElementById("warehouseVoucherForm").addEventListener("keydown", function (e) {
+document.getElementById("warehouseVoucherForm")?.addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
         e.preventDefault();
     }
@@ -179,7 +179,6 @@ async function submitWarehouseVoucherModal() {
             await refreshWarehouseVouchers();
         },
         onError: async (err) => {
-            FLshowLoading(false);
             const status = err.response?.status;
             
             if (status === 409) {
@@ -192,6 +191,7 @@ async function submitWarehouseVoucherModal() {
             }
             await handleApiError(err);
         },
+        showError: false,
     });
 }
 
@@ -222,7 +222,6 @@ async function deliverWarehouseVoucher(id) {
             onSuccess: refreshWarehouseVouchers,
         }),
         onError: async (err) => {
-            FLshowLoading(false);
             const status = err.response?.status;
             
             if (status === 409) {
@@ -235,6 +234,7 @@ async function deliverWarehouseVoucher(id) {
             }
             await handleApiError(err);
         },
+        showError: false,
     });
 }
 

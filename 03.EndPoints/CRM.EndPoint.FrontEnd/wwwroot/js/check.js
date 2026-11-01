@@ -24,17 +24,11 @@ function syncCheckViewWithUrl() {
 }
 
 const GetAllCheckbooks = async () => {
-    try {
-        FLshowLoading();
-        const res = await axios(`/Check/GetAllCheckbooksPartial`);
-        document.getElementById("checkbooksContainer").innerHTML = res.data;
-        
-    } catch (err) {
-        console.log(err);
-        document.getElementById("checkbooksContainer").innerHTML = "خطای دریافت اطلاعات";
-    } finally {
-        FLshowLoading(false);
-    }
+    await sendApiRequest({
+        url: "/Check/GetAllCheckbooksPartial",
+        skeleton: { target: "#checkbooksContainer" },
+        onSuccess: response => { document.getElementById("checkbooksContainer").innerHTML = response.data; },
+    });
 };
 
 async function showNewCheckbookModal() {
@@ -381,11 +375,11 @@ const checkbookDropdown = Dropdown.setupDelegate({
 });
 
 const initSelectTomCheck = async () => {
-    const allPeople = await axios("/Customer/GetAllCustomers");
+    const allPeople = await getCustomersList();
     const select = document.querySelector("#newCheckForm select[name='payeeId']");
     
     payeeCheckTomSelect = new TomSelect(select, {
-        options: allPeople.data.map(c => ({
+        options: allPeople.map(c => ({
             text: `${c.customerName} (کد ${c.roleType === 2 ? "تامین کننده" : "مشتری"}: ${c.customerCode})`,
             value: c.id,
         })),

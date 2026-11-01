@@ -93,10 +93,10 @@
 <partial name="~/Views/Accountancy/Modals/_InvoiceListModal.cshtml" />
 
 @section scripts {
-    <script>
+    <script data-page-bindings="">
         customerId = '@Model.CustomerId';
     </script>
-    <script src="~/js/customerProfile.js" asp-append-version="true"></script>
+    <script src="~/js/customer/customerProfile.js?release=6.9.4" data-page-bindings="focusTargetPf,removeTabFactorsDesktop,getAllDetailAmount,getAllPreFactor,deletedToggleIcon" asp-append-version="true"></script>
 }
 
 

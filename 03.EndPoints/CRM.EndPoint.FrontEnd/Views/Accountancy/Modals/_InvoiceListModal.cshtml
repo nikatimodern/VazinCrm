@@ -1,5 +1,5 @@
 <!-- Modal ListInvoice -->
-<div class="modal fade" id="InvoiceListModalId" tabindex="-1" data-bs-focus="false" data-bs-backdrop="static">
+<div class="modal fade" id="InvoiceListModalId" tabindex="-1" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content col-12" style="padding:10px!important">
             <div class="d-flex justify-content-center position-relative" style="margin-bottom:10px;background-color:var(--DarkColor);color:white;border-radius:5px">
@@ -35,7 +35,7 @@
                     <div class="gap-2" style="width:100%; display:flex;justify-content:center">
                         @* <button class="buttonCancel2" data-bs-dismiss="modal">انصراف</button> *@
                         <button id="changeStatusAllAccBtn" class="buttonGreen3 d-none" onclick="changeStatusAllAcc()">ارسال همه به مالی</button>
-                        <button id="acceptFinancialBtn" class="buttonGreen3 d-none">تایید پیش‌فاکتور</button>
+                        <button id="acceptFinancialBtn" class="buttonGreen3 d-none" onclick="acceptFinancialFromModal()">تایید پیش‌فاکتور</button>
                     </div>
                 }
             </div>

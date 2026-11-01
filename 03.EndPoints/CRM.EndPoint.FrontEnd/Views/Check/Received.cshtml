@@ -57,7 +57,7 @@
 <partial name="Modals/_NotAcceptModal" />
 
 @section Scripts {
-    <script>
+    <script data-page-bindings="getReceivedChecks">
         document.addEventListener("DOMContentLoaded", async () => {
             await getReceivedChecks();
 
@@ -73,6 +73,7 @@
             try {
                 await sendApiRequest({
                     url: `/Accountancy/GetAllPaymentCartablePartial`,
+                    skeleton: { target: "#receivedChecksContentId" },
                     params: { serVal: val, type: type, cartable: 7, payType: 2 },
                     onSuccess: function (res) {
                         const data = res.data;

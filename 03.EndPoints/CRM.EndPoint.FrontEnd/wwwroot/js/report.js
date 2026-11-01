@@ -3,6 +3,8 @@ let dealIdReport = null;
 let dealSerialNumberReport = null;
 let typeReportSubmit = 0;
 
+var filterReportConfig = {};
+
 const SubmitReportForm = async () => {
     if (await mySer.CheckValidForm("#ReportFormId")) {
         let data = mySer.convertFormToJSON("#ReportFormId");
@@ -24,6 +26,7 @@ const SubmitReportForm = async () => {
         data.resultCallTxt = resultCall.value ? resultCall.options[resultCall.selectedIndex].text : "";
         data.finalResultCallTxt = finalResultCall.value ? finalResultCall.options[finalResultCall.selectedIndex].text : "";
         data.reasonCancelTxt = reasonCancel.value ? reasonCancel.options[reasonCancel.selectedIndex].text : "";
+        
         
         FLshowLoading();
         $.post(`/Report/AddReport`, data, async (res) => {
@@ -122,7 +125,7 @@ async function initReportModal() {
 
 
 const initCustomerOpReport = async () => {
-    const customerData = await sendApiRequest({ url: "/Customer/GetAllCustomers" });
+    const customerData = await getCustomersList();
     const repTelElm = document.getElementById("repTel");
     
     const cusTomSelect = new TomSelect("#repCustomerTxt", {
@@ -142,7 +145,7 @@ const initCustomerOpReport = async () => {
                 toggleElementsDisabled(repTelElm, true);
                 cusTomSelect.disable();
                 
-                const data = await sendApiRequest({ url: "/Customer/GetCustomer", params: { id: value } });
+                const data = await getCustomer(value);
                 // repTelElm.tomselect.setValue(res.data.mobile, true);
                 repTelElm.value = data.mobile;
                 flashItem(repTelElm);
@@ -272,6 +275,7 @@ async function getAllReports(showLoading = true) {
     
     await sendApiRequest({
         url: "/Report/GetAllReportPartial",
+        skeleton: { target: containerReport },
         method: "POST",
         successMsg: null,
         data: model,
@@ -297,8 +301,9 @@ async function getAllReports(showLoading = true) {
             }
         },
         onError: (err) => {
-            containerReport.innerHTML = err.response.data; // "خطا در دریافت گزارش ها :(";
+            containerReport.innerHTML = err.response?.data ?? "خطا در دریافت گزارش‌ها!";
         },
+        showError: false
     });
 }
 
