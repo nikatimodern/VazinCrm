@@ -4,6 +4,7 @@ using AccountancyEntity = CRM.Core.Domain.Accountancies.Entities.Accountancy;
 namespace CRM.EndPoint.FrontEnd.Models.Accountancy;
 
 public class PaymentPartialVModel {
+    public bool ReadOnly { get; set; }
     public IList<AccountancyEntity> Items { get; set; }
 
     public string UserId { get; set; }

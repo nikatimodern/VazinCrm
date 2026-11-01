@@ -300,10 +300,13 @@ const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
     }
     
     // Blacklist
+    ["cusFilterItem", "selFilterItem", "dateFilterItem"].forEach(id => {
+        getFilterElement(id)?.style.setProperty("display", "flex");
+    });
     filterItemBlackList.forEach(id => {
         const elm = getFilterElement(id);
         if (elm) {
-            elm.style.display = "none";
+            elm.style.setProperty("display", "none", "important");
         }
     });
     

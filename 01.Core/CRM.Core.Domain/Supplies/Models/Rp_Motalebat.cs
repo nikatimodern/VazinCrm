@@ -1,6 +1,7 @@
 namespace CRM.Core.Domain.Supplies.Models;
 public class Rp_Motalebat
 {
+    public System.Guid? CustomerId { get; set; }
     public string CustomerCode { get; set; }
     public string Customer { get; set; }
     public int PreFactorCount { get; set; }
@@ -12,4 +13,6 @@ public class Rp_Motalebat
     public int RetAccBackCount { get; set; }
     public decimal RetAccBackSum { get; set; }
     public decimal DebitSum { get; set; }
+    public decimal ReceivableSum => System.Math.Max(DebitSum, 0m);
+    public decimal DebtSum => System.Math.Min(DebitSum, 0m);
 }

@@ -5,10 +5,11 @@
 @{
     Layout = null;
 
-    var isAdminOrFinancial = User.IsAdmin() || User.IsFinancial();
+    var isReadOnly = ViewBag.PassType == 7;
+    var isAdminOrFinancial = !isReadOnly && (User.IsAdmin() || User.IsFinancial());
     var canManageAllocations = isAdminOrFinancial;
     var allocationScript = AllocationFileVersions.AddFileVersionToPath(Context.Request.PathBase, Url.Content("~/js/supplyFactor.js"));
-    var passType = ViewBag.PassType; // passType: (0:PreFactor,Factor | 1:CustomerProfile | 5:Supply | 4:Deal | 6:Email)
+    var passType = ViewBag.PassType; // 0: PreFactor/Factor, 1: CustomerProfile, 4: Deal, 5: Supply, 6: Email, 7: Customer approved factors (read-only).
 }
 
 @if (canManageAllocations)
@@ -75,7 +76,7 @@
                                     }
                                     else
                                     {
-                                        if (User.IsAdmin() || User.IsFinancial())
+                                        if (isAdminOrFinancial)
                                         {
                                             <button class="fMedium buttonBlue" style="padding: 2px 6px;font-size: 11px;" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @passType)">
                                                 انتخاب از سپیدار
@@ -255,7 +256,7 @@
                         <i class="fa fa-eye"></i>
                     </button>
 
-                    @if (passType != 1 && !User.IsCustomer() && item.CustomerId != null)
+                    @if (!isReadOnly && passType != 1 && !User.IsCustomer() && item.CustomerId != null)
                     {
                         <button class="flex-center" data-title-right="پروفایل" style="color:var(--DarkColor);" onclick="openCustomerProfile('@item.CustomerId', '@item.PfactorSerialNumber')">
                             <i class="fa fa-user"></i>

@@ -124,10 +124,10 @@ const getAllAmountPartial = async (id, type) => { //type{1=prefactor 2=Factor 3=
     });
 };
 
-const getAllPaymentPartial = async (id, type, passType) => {
+const getAllPaymentPartial = async (id, type, passType, depositsOnly = false, realizedDepositsOnly = false, returnsOnly = false) => {
     return await sendApiRequest({
         url: "/Accountancy/GetAllPaymentPartial",
-        params: { type, id, passType },
+        params: { type, id, passType, depositsOnly, realizedDepositsOnly, returnsOnly },
         showLoading: false,
     });
 };

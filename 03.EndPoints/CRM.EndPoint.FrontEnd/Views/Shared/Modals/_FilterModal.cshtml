@@ -19,7 +19,7 @@
                         </div>
                     </div>
                     @if (User.IsAdmin() || User.IsSalesAdmin() || User.IsTaminAdmin() || User.IsFinancial() || User.IsManagingDirector()) {
-                        <div class="d-flex flex-column">
+                        <div id="selFilterItem" class="d-flex flex-column">
                             <div class="checkbox-wrapper-20">
                                 <div class="switch">
                                     <label id="SelFilterLabel" for="SelFilterChd" style="font-family:IRANSansBold; font-size:clamp(16px,2vw,18px);">کارشناس فروش</label>

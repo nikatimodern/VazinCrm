@@ -27,16 +27,16 @@
             var isCreator = item.UserCreatorID == Model.UserId;
             var isDealClosed = item.Deal?.FinancialStatus == DealFinancialStausEnum.تایید_شده;
 
-            var canManage = !isDealClosed && (isCreator || Model.IsCreatorParent || Model.IsAdmin || Model.IsSalesAdmin);
-            var canViewActions = canManage || Model.IsFinancial;
-            var canEdit = ((Model.IsAdmin || Model.IsFinancial) && isCreator)
-                          || (canManage && item.Status is AccStatusEnum.ثبت_اولیه or AccStatusEnum.رد_شده);
-            var canVosol = item.Status == AccStatusEnum.تایید_شده &&
+            var canManage = !Model.ReadOnly && !isDealClosed && (isCreator || Model.IsCreatorParent || Model.IsAdmin || Model.IsSalesAdmin);
+            var canViewActions = !Model.ReadOnly && (canManage || Model.IsFinancial);
+            var canEdit = !Model.ReadOnly && (((Model.IsAdmin || Model.IsFinancial) && isCreator)
+                          || (canManage && item.Status is AccStatusEnum.ثبت_اولیه or AccStatusEnum.رد_شده));
+            var canVosol = !Model.ReadOnly && item.Status == AccStatusEnum.تایید_شده &&
                            (item.PayType == PayTypeEnum.اعتباری || item.PayType == PayTypeEnum.چکی) &&
                            !item.Vosoled;
 
             var canApproveOrReject =
-                !isDealClosed &&
+                !Model.ReadOnly && !isDealClosed &&
                 (Model.IsAdmin ||
                  (Model.IsFinancial && (item.PayType == PayTypeEnum.نقدی || item.PayType == PayTypeEnum.چکی)) ||
                  ((Model.IsManagingDirector || Model.IsTamin) && item.PayType == PayTypeEnum.تهاتری) ||
@@ -50,7 +50,7 @@
                 _ => "#333"
             };
 
-            <tr class="@((item.PayType == PayTypeEnum.اعتباری || item.PayType == PayTypeEnum.چکی) && item.Vosoled ? "payment-vosoled" : "")">
+            <tr class="@((item.PayType == PayTypeEnum.اعتباری || item.PayType == PayTypeEnum.چکی) && item.Vosoled ? "payment-vosoled" : "") @(Model.PassType == 57 && item.Status != AccStatusEnum.تایید_شده ? "payment-unapproved" : "")">
                 <td>@item.SerialNum</td>
                 <td>@string.Join(" | ", item.CreateDateTxt?.Substring(0, 16).Split(' ').Reverse())</td>
                 @if (fromCartableFinancial) {

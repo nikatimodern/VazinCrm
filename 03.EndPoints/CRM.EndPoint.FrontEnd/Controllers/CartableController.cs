@@ -1,6 +1,7 @@
 ﻿using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.ASettings.Entities;
 using CRM.Core.Domain.Factors.Entities;
+using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.EndPoint.FrontEnd.Models.Factor;
@@ -548,12 +549,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
-                ViewBag.PassType = type; //passType: (0:PreFactor,Factor | 1:CustomerProfile | 5:Supply | 4:Deal | 6:Email)
+                ViewBag.PassType = type; // 0: PreFactor/Factor, 1: CustomerProfile, 4: Deal, 5: Supply, 6: Email, 7: Customer approved factors (read-only).
 
                 var fList = type switch {
                     4 => await db.Factors.Where(f => f.DealId == id).ToListAsync(),
                     5 => await db.Factors.Where(f => f.PfactorID == id).ToListAsync(),
                     6 => await db.Factors.Where(f => f.Id == id).ToListAsync(),
+                    7 => await db.Factors.AsNoTracking()
+                        .Where(f => f.CustomerId == id && f.status == FactorStatus.تایید_شده)
+                        .OrderByDescending(f => f.CreateDate).ToListAsync(),
                     _ => null
                 };
 

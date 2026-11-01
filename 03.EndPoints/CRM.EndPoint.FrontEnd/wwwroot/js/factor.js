@@ -824,6 +824,7 @@ const hideFact = async () => {
 
 const getAllFactorsModal = async (id, type, pfSerialNumber) => {
     if (!id) return;
+    let loaded = false;
     
     const apiUrl = pfSerialNumber
         ? `/Customer/GetSepidarFactors?pfSerialNumber=${pfSerialNumber}`
@@ -834,6 +835,7 @@ const getAllFactorsModal = async (id, type, pfSerialNumber) => {
         onSuccess: async (res) => {
             const factorsWrapper = document.getElementById("factorsBodyModal");
             if (res.status === 200) {
+                loaded = true;
                 if (res.data.count) {
                     factorsWrapper.innerHTML = res.data.html;
                 } else {
@@ -848,6 +850,7 @@ const getAllFactorsModal = async (id, type, pfSerialNumber) => {
             }
         },
     });
+    return loaded;
 };
 
 

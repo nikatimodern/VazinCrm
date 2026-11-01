@@ -3,6 +3,13 @@
     Layout = "_Layout";
 }
 
+<style>
+    #customerDepositsModal .paymentTable tr.payment-unapproved > td {
+        background-color: #fff1f2 !important;
+        box-shadow: none !important;
+    }
+</style>
+
 <div>
     <div style="border-radius:10px;width:99%;">
         @*<table style=" width:100%" class="table table-striped table-hover nowrap" id="supplyDemandTable">
@@ -46,17 +53,51 @@
                 <th>جمع واریزی ها</th>
                 <th>تعداد برگشتی ها</th>
                 <th>جمع برگشتی ها</th>
-                <th>بالانس حساب</th>
+                <th>مطالبات</th>
+                <th>میزان بدهی</th>
             </tr>
             </thead>
             <tbody>
             </tbody>
+            <tfoot class="fbold">
+            <tr>
+                <th>جمع کل</th>
+                <th></th>
+                @for (var column = 2; column < 12; column++) {
+                    <th class="direction-ltr"></th>
+                }
+            </tr>
+            </tfoot>
         </table>
     </div>
 </div>
 
 @*<partial name="~/Views/Factor/Modals/_FactorContainerModal.cshtml" />
 <partial name="~/Views/Accountancy/Modals/_InvoiceListModal.cshtml" />*@
+
+<partial name="~/Views/Factor/Modals/_FactorContainerModal.cshtml" />
+
+<div class="modal fade" id="customerDepositsModal" tabindex="-1" aria-labelledby="customerDepositsTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="customerDepositsTitle">واریزی‌های مشتری</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+            <div class="modal-body">
+                <fieldset id="customerDepositsFilter" class="border-0 p-0 mb-3 d-flex gap-3" aria-label="فیلتر واریزی‌ها">
+                    <label class="d-flex align-items-center gap-1">
+                        <input type="radio" name="customerDepositsFilter" value="all" /> همه
+                    </label>
+                    <label class="d-flex align-items-center gap-1">
+                        <input type="radio" name="customerDepositsFilter" value="realized" checked /> واریزی
+                    </label>
+                </fieldset>
+                <div id="customerDepositsContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section scripts {
     <script>
@@ -67,7 +108,68 @@
             //getAllSupplyDemand();
             //await getRpMotalebat()
             getAllRpMotalebat();
+            document.getElementById("MotalebatTable").addEventListener("click", async (event) => {
+                const button = event.target.closest("[data-factor-customer-id]");
+                if (!button || loadingCustomerFactors) return;
+                loadingCustomerFactors = true;
+                try {
+                    const loaded = await getAllFactorsModal(button.dataset.factorCustomerId, 7);
+                    if (!loaded) return;
+                    document.getElementById("factorsTitleModal").textContent = `فاکتورهای تأییدشده مالیِ ${button.dataset.customerName}`;
+                    ModalToggle("#FactorsModal", "show");
+                } finally {
+                    loadingCustomerFactors = false;
+                }
+            });
+            document.getElementById("customerDepositsModal").addEventListener("shown.bs.modal", () => {
+                const table = document.querySelector("#customerDepositsContent table");
+                if (table && $.fn.dataTable.isDataTable(table))
+                    $(table).DataTable().columns.adjust().responsive.recalc();
+            });
+            document.getElementById("MotalebatTable").addEventListener("click", async (event) => {
+                const button = event.target.closest("[data-deposit-customer-id], [data-return-customer-id]");
+                if (!button || loadingCustomerDeposits) return;
+                const returnsOnly = Boolean(button.dataset.returnCustomerId);
+                const customerId = button.dataset.returnCustomerId || button.dataset.depositCustomerId;
+                if (!await loadCustomerDeposits(customerId, !returnsOnly, returnsOnly)) return;
+                selectedDepositCustomerId = returnsOnly ? null : customerId;
+                document.getElementById("customerDepositsFilter").classList.toggle("d-none", returnsOnly);
+                document.querySelector('input[name="customerDepositsFilter"][value="realized"]').checked = true;
+                document.getElementById("customerDepositsTitle").textContent = `${returnsOnly ? "برگشتی‌های" : "واریزی‌های"} ${button.dataset.customerName}`;
+                ModalToggle("#customerDepositsModal", "show");
+            });
+            document.getElementById("customerDepositsFilter").addEventListener("change", async (event) => {
+                if (!selectedDepositCustomerId || loadingCustomerDeposits) return;
+                const realizedOnly = event.target.value === "realized";
+                if (!await loadCustomerDeposits(selectedDepositCustomerId, realizedOnly))
+                    document.querySelector(`input[name="customerDepositsFilter"][value="${realizedOnly ? "all" : "realized"}"]`).checked = true;
+            });
         });
+
+        let loadingCustomerDeposits = false;
+        let loadingCustomerFactors = false;
+        let selectedDepositCustomerId = null;
+
+        async function loadCustomerDeposits(customerId, realizedOnly, returnsOnly = false) {
+            loadingCustomerDeposits = true;
+            document.getElementById("customerDepositsFilter").disabled = true;
+            FLshowLoading();
+            try {
+                const result = await getAllPaymentPartial(customerId, 5, 57, !returnsOnly, realizedOnly, returnsOnly);
+                if (!result?.html) return false;
+                const content = document.getElementById("customerDepositsContent");
+                const oldTable = content.querySelector("table");
+                if (oldTable && $.fn.dataTable.isDataTable(oldTable))
+                    $(oldTable).DataTable().destroy();
+                content.innerHTML = result.html;
+                if (content.querySelector("table")) initPaymentPartial(57);
+                return true;
+            } finally {
+                loadingCustomerDeposits = false;
+                document.getElementById("customerDepositsFilter").disabled = false;
+                FLshowLoading(false);
+            }
+        }
 
         async function getRpMotalebat() {
             FLshowLoading();
@@ -104,12 +206,47 @@
                         render: (data) => data ? `<span dir="ltr">${data.toLocaleString()}</span>` : "-",
                     },
                     {
-                        targets: [3, 5, 7, 9],
+                        targets: [3],
                         render: (data) => data ? `<span dir="ltr">${data.toLocaleString()}</span>` : "-",
                     },
                     {
-                        targets: [10],
-                        render: data => `<span dir="ltr" class="fbold" style="color: ${data < 0 ? "darkred" : "darkgreen"};font-size: 16px">${data.toLocaleString()}</span>`,
+                        targets: [5],
+                        render: (data, type, row) => {
+                            if (type !== "display") return data;
+                            if (!row.customerId) return data ? `<span dir="ltr">${data.toLocaleString()}</span>` : "-";
+                            const button = document.createElement("button");
+                            button.type = "button";
+                            button.className = "hoverLink main-font border-0 bg-transparent p-0";
+                            button.dir = "ltr";
+                            button.dataset.factorCustomerId = row.customerId;
+                            button.dataset.customerName = row.customer || "مشتری";
+                            button.setAttribute("aria-label", `مشاهده فاکتورهای تأییدشده مالیِ ${row.customer || "مشتری"}`);
+                            button.textContent = (data ?? 0).toLocaleString();
+                            return button.outerHTML;
+                        },
+                    },
+                    {
+                        targets: [7, 9],
+                        render: (data, type, row, meta) => {
+                            if (type !== "display") return data;
+                            if (!row.customerId) return data ? `<span dir="ltr">${data.toLocaleString()}</span>` : "-";
+                            const button = document.createElement("button");
+                            button.type = "button";
+                            button.className = "hoverLink main-font border-0 bg-transparent p-0";
+                            button.dir = "ltr";
+                            const returnsOnly = meta.col === 9;
+                            button.dataset[returnsOnly ? "returnCustomerId" : "depositCustomerId"] = row.customerId;
+                            button.dataset.customerName = row.customer || "مشتری";
+                            button.setAttribute("aria-label", `مشاهده ${returnsOnly ? "برگشتی‌های" : "واریزی‌های"} ${row.customer || "مشتری"}`);
+                            button.textContent = (data ?? 0).toLocaleString();
+                            return button.outerHTML;
+                        },
+                    },
+                    {
+                        targets: [10, 11],
+                        render: (data, type) => type === "display"
+                            ? `<span dir="ltr" class="fbold" style="color: ${data > 0 ? "darkgreen" : data < 0 ? "darkred" : "inherit"};font-size: 16px">${data.toLocaleString()}</span>`
+                            : data,
                     },
                     {
                         targets: [0, 1],
@@ -139,7 +276,8 @@
                     { data: "accSum", name: "AccSum", defaultContent: "-" },
                     { data: "retAccBackCount", name: "RetAccBackCount", defaultContent: "-" },
                     { data: "retAccBackSum", name: "RetAccBackSum", defaultContent: "-" },
-                    { data: "debitSum", name: "DebitSum", defaultContent: "-", className: "direction-ltr" },
+                    { data: "receivableSum", name: "ReceivableSum", defaultContent: "-", className: "direction-ltr" },
+                    { data: "debtSum", name: "DebtSum", defaultContent: "-", className: "direction-ltr" },
                 ],
 
                 layout: {
@@ -176,28 +314,28 @@
                         },
                     },
                 },
-                /*footerCallback: function () {
-                    let api = this.api();
-                    let json = api.ajax.json();
-
-                    let totalAccAmountAll = json.totals.totalAccAmountAll;
-                    let totalFactorsAmountAll = json.totals.totalFactorsAmountAll;
-                    let demandAll = json.totals.demandAll;
-
-                    api.column(5).footer().innerHTML = `<span>${totalAccAmountAll.toLocaleString()}</span>`;
-                    api.column(6).footer().innerHTML = `<span>${totalFactorsAmountAll.toLocaleString()}</span>`;
-                    api.column(7).footer().innerHTML =
-                        `<span style="color: ${demandAll <= 0 ? "darkred" : "darkgreen"};font-size: 16px">${demandAll.toLocaleString()}</span>`;
-                },*/
-                //initComplete: () => initFilterSupplyTable(),
+                footerCallback: function () {
+                    const api = this.api();
+                    const totals = api.ajax.json()?.totals;
+                    api.columns().every(function (index) {
+                        if (index < 2) return;
+                        const footer = this.footer();
+                        if (!footer) return;
+                        const value = totals?.[this.dataSrc()] ?? 0;
+                        footer.textContent = value.toLocaleString();
+                        footer.style.color = index === 10 && value > 0 ? "darkgreen"
+                            : index === 11 && value < 0 ? "darkred" : "inherit";
+                    });
+                },
+                initComplete: () => initFilterSupplyTable(),
             });
 
             function initFilterSupplyTable() {
-                const dtSearch = document.querySelector(".dt-search");
-                const searchInput = dtSearch.querySelector("input");
+                const dtSearch = document.querySelector("#MotalebatTable_wrapper .dt-search");
+                const searchInput = dtSearch?.querySelector("input");
                 if (!searchInput) return;
                 const filterButton = `
-                    <div class="btnFilter pe-md-2" data-filterVarConfig="supplyDemandConfigFilter" data-filterCallBack="callBackSupplyDemandFilter" data-filterContentId="contentSupplyDemandFilterId" data-filterInpSearchId="dt-search-0" onclick="ShowFilterPopup(this, ['cusFilterItem'])">
+                    <div class="btnFilter pe-md-2" data-filterVarConfig="supplyDemandConfigFilter" data-filterCallBack="callBackSupplyDemandFilter" data-filterContentId="contentSupplyDemandFilterId" data-filterInpSearchId="${searchInput.id}" onclick="ShowFilterPopup(this, ['selFilterItem'])">
                         <svg style="width:24px;height:24px;color:#333" viewBox="0 0 24 24" fill="currentColor" ><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd" /></svg>
                     </div>
                 `;
@@ -320,7 +458,7 @@
                 const searchInput = dtSearch.querySelector("input");
                 if (!searchInput) return;
                 const filterButton = `
-                    <div class="btnFilter pe-md-2" data-filterVarConfig="supplyDemandConfigFilter" data-filterCallBack="callBackSupplyDemandFilter" data-filterContentId="contentSupplyDemandFilterId" data-filterInpSearchId="dt-search-0" onclick="ShowFilterPopup(this, ['cusFilterItem'])">
+                    <div class="btnFilter pe-md-2" data-filterVarConfig="supplyDemandConfigFilter" data-filterCallBack="callBackSupplyDemandFilter" data-filterContentId="contentSupplyDemandFilterId" data-filterInpSearchId="dt-search-0" onclick="ShowFilterPopup(this, ['selFilterItem'])">
                         <svg style="width:24px;height:24px;color:#333" viewBox="0 0 24 24" fill="currentColor" ><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd" /></svg>
                     </div>
                 `;

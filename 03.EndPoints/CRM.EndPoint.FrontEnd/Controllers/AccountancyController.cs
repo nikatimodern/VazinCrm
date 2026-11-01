@@ -354,7 +354,7 @@ public class AccountancyController : Controller {
 
 
     [HttpGet]
-    public async Task<IActionResult> GetAllPaymentPartial(int type, Guid id, int passType)
+    public async Task<IActionResult> GetAllPaymentPartial(int type, Guid id, int passType, bool depositsOnly = false, bool realizedDepositsOnly = false, bool returnsOnly = false)
     {
         try
         {
@@ -370,6 +370,7 @@ public class AccountancyController : Controller {
 
             var model = new PaymentPartialVModel {
                 PassType = passType,
+                ReadOnly = depositsOnly || returnsOnly,
                 UserId = user.Id
             };
 
@@ -401,6 +402,19 @@ public class AccountancyController : Controller {
                     accQuery = accQuery.ForCustomer(id);
                     break;
             }
+
+            if (depositsOnly)
+                accQuery = accQuery.Where(a => a.AccType == AcEnum.واریزی);
+
+            if (returnsOnly)
+                accQuery = accQuery.Where(a => a.AccType == AcEnum.برگشتی);
+
+            if (realizedDepositsOnly)
+                accQuery = accQuery.Where(a => a.AccType == AcEnum.واریزی
+                    && a.Status == AccStatusEnum.تایید_شده
+                    && (a.PayType == PayTypeEnum.نقدی
+                        || (a.PayType == PayTypeEnum.چکی && a.Vosoled)
+                        || a.PayType == PayTypeEnum.تهاتری));
 
             var acc = await accQuery.ToListAsync();
             model.Items = acc;

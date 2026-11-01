@@ -178,7 +178,7 @@ public class SupplyController(ISupplyRequestDispatcher requests, UserManager<App
     {
         try
         {
-            var request = await ReadTableRequestAsync(false, false, cancellationToken);
+            var request = await ReadTableRequestAsync(false, true, cancellationToken);
             return Map(await requests.QueryAsync(new GetReceivablesQuery(request), cancellationToken));
         }
         catch (Exception)when (!cancellationToken.IsCancellationRequested)
@@ -375,6 +375,6 @@ public class SupplyController(ISupplyRequestDispatcher requests, UserManager<App
         var userFilter = includeFilters && model?.filt?.SelFilterChd == true;
         var from = dateFilter ? dates.GetDateMiladi(model.filt.fromDate) ?? dates.GetDateMiladi("1000/01/01") : null;
         var to = dateFilter ? (dates.GetDateMiladi(model.filt.toDate) ?? DateTime.Today).Date.AddDays(1).AddTicks(-1) : (DateTime? )null;
-        return new SupplyTableRequest(form["draw"].FirstOrDefault(), start, length, tolerantPaging && string.IsNullOrWhiteSpace(column) ? null : form[$"columns[{column}][name]"].FirstOrDefault(), form["order[0][dir]"].FirstOrDefault(), form["search[value]"].FirstOrDefault()?.Trim(), model?._type, dateFilter, from, to, userFilter, model?.filt?.selFilter?.ToString());
+        return new SupplyTableRequest(form["draw"].FirstOrDefault(), start, length, tolerantPaging && string.IsNullOrWhiteSpace(column) ? null : form[$"columns[{column}][name]"].FirstOrDefault(), form["order[0][dir]"].FirstOrDefault(), form["search[value]"].FirstOrDefault()?.Trim(), model?._type, dateFilter, from, to, userFilter, model?.filt?.selFilter?.ToString(), includeFilters && model?.filt?.CusFilterChd == true, model?.filt?.customerFilter);
     }
 }

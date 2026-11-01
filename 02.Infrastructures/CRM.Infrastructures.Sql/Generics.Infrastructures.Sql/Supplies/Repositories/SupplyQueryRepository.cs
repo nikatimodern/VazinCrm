@@ -491,11 +491,44 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
             var searchValue = request.Search;
             searchValue = searchValue?.ToLower().Trim();
             await using var con = new SqlConnection(db.Database.GetDbConnection().ConnectionString);
-            var result = (await con.QueryAsync<Rp_Motalebat>(new CommandDefinition("Rp_Motalebat", new { CusCode = (int? )null }, commandType: CommandType.StoredProcedure, cancellationToken: cancellationToken))).AsQueryable();
+            var receivables = (await con.QueryAsync<Rp_Motalebat>(new CommandDefinition("Rp_Motalebat", new { CusCode = (int? )null }, commandType: CommandType.StoredProcedure, cancellationToken: cancellationToken))).ToList();
+            foreach (var item in receivables)
+                item.DebitSum = item.FactorSum - (item.AccSum - item.RetAccBackSum);
+            var result = receivables.AsQueryable();
+            if (request.DateFilterEnabled || request.CustomerFilterEnabled)
+            {
+                var customerQuery = db.Customers.AsNoTracking();
+                if (request.DateFilterEnabled)
+                    customerQuery = customerQuery.Where(c => c.CreateDate >= request.FromDate && c.CreateDate <= request.ToDate);
+                if (request.CustomerFilterEnabled)
+                {
+                    if (!request.CustomerId.HasValue)
+                        return SupplyResult.Invalid();
+                    customerQuery = customerQuery.Where(c => c.Id == request.CustomerId.Value);
+                }
+
+                var matchingCodes = (await customerQuery.Select(c => c.CustomerCode).ToListAsync(cancellationToken)).ToHashSet();
+                result = result.AsEnumerable()
+                    .Where(c => int.TryParse(c.CustomerCode, out var code) && matchingCodes.Contains(code))
+                    .AsQueryable();
+            }
             if (!string.IsNullOrEmpty(searchValue))
             {
                 result = result.Where(f => f.CustomerCode == searchValue || f.Customer.Contains(searchValue));
             }
+
+            var totals = new {
+                preFactorCount = result.Sum(f => (long)f.PreFactorCount),
+                preFactorSum = result.Sum(f => f.PreFactorSum),
+                factorCount = result.Sum(f => (long)f.FactorCount),
+                factorSum = result.Sum(f => f.FactorSum),
+                accCount = result.Sum(f => (long)f.AccCount),
+                accSum = result.Sum(f => f.AccSum),
+                retAccBackCount = result.Sum(f => (long)f.RetAccBackCount),
+                retAccBackSum = result.Sum(f => f.RetAccBackSum),
+                receivableSum = result.Sum(f => f.ReceivableSum),
+                debtSum = result.Sum(f => f.DebtSum)
+            };
 
             var recordsTotal = result.Count();
             if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortColumnDirection))
@@ -512,6 +545,8 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
                     "RetAccBackCount" => isAscending ? result.OrderBy(f => f.RetAccBackCount) : result.OrderByDescending(f => f.RetAccBackCount),
                     "RetAccBackSum" => isAscending ? result.OrderBy(f => f.RetAccBackSum) : result.OrderByDescending(f => f.RetAccBackSum),
                     "DebitSum" => isAscending ? result.OrderBy(f => f.DebitSum) : result.OrderByDescending(f => f.DebitSum),
+                    "ReceivableSum" => isAscending ? result.OrderBy(f => f.ReceivableSum) : result.OrderByDescending(f => f.ReceivableSum),
+                    "DebtSum" => isAscending ? result.OrderBy(f => f.DebtSum) : result.OrderByDescending(f => f.DebtSum),
                     _ => result
                 };
             }
@@ -519,7 +554,17 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
             if (length != -1)
                 result = result.Skip(start).Take(length);
             var data = result.ToList();
-            return SupplyResult.Success(new { draw, recordsTotal, recordsFiltered = recordsTotal, data, });
+            var customerCodes = data.Select(f => int.TryParse(f.CustomerCode, out var code) ? (int?)code : null)
+                .Where(code => code.HasValue).Select(code => code.Value).Distinct().ToList();
+            var customers = await db.Customers.AsNoTracking()
+                .Where(c => customerCodes.Contains(c.CustomerCode))
+                .Select(c => new { c.Id, c.CustomerCode })
+                .ToListAsync(cancellationToken);
+            var customerIds = customers.ToDictionary(c => c.CustomerCode, c => c.Id);
+            foreach (var item in data)
+                item.CustomerId = int.TryParse(item.CustomerCode, out var code) && customerIds.TryGetValue(code, out var customerId)
+                    ? customerId : null;
+            return SupplyResult.Success(new { draw, recordsTotal, recordsFiltered = recordsTotal, data, totals });
         }
         catch (Exception) when (!cancellationToken.IsCancellationRequested)
         {
