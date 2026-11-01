@@ -154,6 +154,9 @@
                                 2: "#006400",
                                 3: "#8b0000",
                             };
+                            if ((row.payType === 2 || row.payType === 3) && row.vosoled) {
+                                return `<span class="fbold hoverLink text-decoration-underline" style="color: #0074bb" onclick="showPayment('${row.id}', true)">وصول شده</span>`;
+                            }
                             return `<span class="fbold" style="color: ${colors[row.status]}">${data ?? "-"}</span>`;
                         },
                     },
