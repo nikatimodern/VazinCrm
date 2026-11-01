@@ -38,6 +38,11 @@ public class AccountancyController(ICqrsDispatcher dispatcher) : Controller
 {
     [Authorize(Policy = "NotCustomerOnly")]
     public async Task<IActionResult> Index(CancellationToken ct) => View(await dispatcher.QueryAsync(new GetWorkspacePageQuery("Accountancy"), ct));
+
+
+
+
+
     [HttpGet]
     public async Task<IActionResult> getAccountancy(Guid id, bool parent = false, CancellationToken ct = default)
     {
