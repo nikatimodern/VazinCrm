@@ -89,6 +89,7 @@ async function sendApiRequest(
     }
     if (navigationPage && !navigationPage.isActive && /^(GET|HEAD)$/.test(method)) return null;
     if (localLoading && !localLoading.isCurrent()) return null;
+    
     if (requestError) {
         if (axios.isCancel(requestError) || requestError.code === "ERR_CANCELED") {
             localLoading?.cancel();
@@ -102,14 +103,15 @@ async function sendApiRequest(
             return null;
         }
         try {
+            if (showError && !localLoading) await handleApiError(requestError);
             if (typeof onError === "function") await onError(requestError);
-            else if (showError && !localLoading) await handleApiError(requestError);
         } catch (callbackError) {
             console.error("API Error Callback Error:", callbackError);
         }
         localLoading?.fail(retry);
         return null;
     }
+    
     try {
         if (successMsg) toastifySuccess(successMsg);
         if (typeof onSuccess === "function") await onSuccess(response);
@@ -180,6 +182,7 @@ async function handleApiError(err) {
         toastifyError(errorMessage);
     }
 }
+
 
 
 /**

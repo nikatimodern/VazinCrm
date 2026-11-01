@@ -726,12 +726,14 @@ function dateTimePicker(container = document) {
                     delete timePickerElem.dataset.taskTimePickerOpen;
                     if (!timeConfirmed) timePickerElem.value = timePickerElem.dataset.originalText ?? "";
                 },
-                ...(isTaskTime ? { toolbox: {
-                    enabled: true,
-                    todayButton: { enabled: false },
-                    calendarSwitch: { enabled: false },
-                    submitButton: { enabled: true, text: { fa: "تأیید", en: "Confirm" }, onSubmit: confirmTaskTime }
-                } } : {}),
+                ...(isTaskTime ? {
+                    toolbox: {
+                        enabled: true,
+                        todayButton: { enabled: false },
+                        calendarSwitch: { enabled: false },
+                        submitButton: { enabled: true, text: { fa: "تأیید", en: "Confirm" }, onSubmit: confirmTaskTime },
+                    },
+                } : {}),
                 onSelect: function () {
                     if (isTaskTime) timePickerElem.value = toEnglishDigits(timePickerElem.value);
                     const onSelectCallback = timePickerElem.getAttribute("data-onSelect");
@@ -1509,85 +1511,22 @@ const ShowPreviewFactorSepidar = (id) => {
     });
 });*/
 
-
 const changeJur = (val) => {
+    const isJuridical = val !== 0;
     
-    if (val == 0) {
-        $("#UpJuridicalA").prop("checked", true);
-        $("#UpJuridicalB").prop("checked", false);
-        $("#JuridicalUpDiv").css("display", "none");
-        
-        document.querySelectorAll(".Uhog").forEach(item => item.removeAttribute("required"));
-    } else {
-        $("#UpJuridicalA").prop("checked", false);
-        $("#UpJuridicalB").prop("checked", true);
-        $("#JuridicalUpDiv").css("display", "flex");
-        
-        document.querySelectorAll(".Uhog").forEach(item => item.setAttribute("required"));
-    }
+    document.getElementById("UpJuridicalA").checked = !isJuridical;
+    document.getElementById("UpJuridicalB").checked = isJuridical;
+    document.getElementById("JuridicalUpDiv").style.display = isJuridical ? "flex" : "none";
+    
+    document.querySelectorAll(".Uhog").forEach(item => item.required = isJuridical);
 };
+
 
 
 const cancelUpCustomer = () => {
     mySer.emptyForm("CuInfoUpFormId");
     changeJur(0);
 };
-
-
-const OpenCloseMenu = () => {
-    if (showFlag == 0) {
-        $("#left").css("display", "none");
-        $("#right").css("display", "");
-        OpenMenu();
-        showFlag = 1;
-        
-    } else {
-        $("#left").css("display", "");
-        $("#right").css("display", "none");
-        CloseMenu();
-        showFlag = 0;
-    }
-};
-
-const OpenMenu = () => {
-    $("#desktopSidebar").removeClass("closeMenu");
-    $("#desktopSidebar").addClass("openMenu");
-    
-    $("#profileImage").removeClass("personImageCloseMenu");
-    $("#profileImage").addClass("personImageOpenMenu");
-    
-    $(".ToggleClossMenu").css("display", "");
-    $("#VContent").css("margin-right", "220px");
-    
-};
-const CloseMenu = () => {
-    $("#desktopSidebar").removeClass("openMenu");
-    $("#desktopSidebar").addClass("closeMenu");
-    
-    $("#profileImage").removeClass("personImageOpenMenu");
-    $("#profileImage").addClass("personImageCloseMenu");
-    
-    $(".ToggleClossMenu").css("display", "none");
-    $("#VContent").css("margin-right", "60px");
-};
-
-/*document.querySelectorAll(".sdate").forEach(elm => {
-    elm.addEventListener("blur", (e) => {
-        e.target.classList.toggle("AlertReq", !isValidDate(e.target.value));
-    });
-});*/
-
-
-// $('.Icsdate').on('click', (e) => {
-//     var arr = Array.from(e.delegateTarget.parentElement.children);
-//     arr.forEach((item, index) => {
-//         if (item.type == 'text') {
-//             if (item.classList.contains('sdate') || item.classList.contains('stime')) {
-//                 item.focus();
-//             }
-//         }
-//     })
-// })
 
 
 let cropper;
@@ -2510,10 +2449,11 @@ async function refreshTaskCards(id) {
             targets.filter(target => target.loc === loc).forEach(target => {
                 const container = document.getElementById(target.name + "Id");
                 const column = Number(container.dataset.taskColumn ?? target.column);
-                [...container.children].filter(card => card.dataset.taskId === update.id || card.dataset.taskGroup === update.groupId).forEach(card => {
-                    disposeTaskCardPickers(card);
-                    card.remove();
-                });
+                [...container.children].filter(card => card.dataset.taskId === update.id || card.dataset.taskGroup === update.groupId)
+                                       .forEach(card => {
+                                           disposeTaskCardPickers(card);
+                                           card.remove();
+                                       });
                 update.cards.filter(card => card.column === column).forEach(card => {
                     const template = document.createElement("template");
                     template.innerHTML = card.html.trim();
@@ -2553,10 +2493,16 @@ async function getAllTask(type, systematic = 0, loc = 1) {
     const load = async () => {
         try {
             const res = await sendApiRequest({
-                url: "/Carizo/GetAllTask", params: { type, loc, systematic }, returnFullResponse: true,
-                skeleton: loc === 1 && containerElm ? { target: containerElm, retry: () => getAllTask(type, systematic, loc) } : null, showLoading: false,
+                url: "/Carizo/GetAllTask",
+                params: { type, loc, systematic },
+                returnFullResponse: true,
+                skeleton: loc === 1 && containerElm ? { target: containerElm, retry: () => getAllTask(type, systematic, loc) } : null,
+                showLoading: false,
             });
-            if (!res) { if (loc === 2) throw new Error("Task read failed"); return; }
+            if (!res) {
+                if (loc === 2) throw new Error("Task read failed");
+                return;
+            }
             if (res.status === 200) {
                 if (containerElm) {
                     disposeTaskCardPickers(containerElm);
@@ -2577,8 +2523,11 @@ async function getAllTask(type, systematic = 0, loc = 1) {
     };
     const read = loc === 2 && typeof dashboardLoading !== "undefined" ? dashboardLoading.run("todayTaskDashId", load) : load();
     carizoListReads.set(containerName, read);
-    try { return await read; }
-    finally { if (carizoListReads.get(containerName) === read) carizoListReads.delete(containerName); }
+    try {
+        return await read;
+    } finally {
+        if (carizoListReads.get(containerName) === read) carizoListReads.delete(containerName);
+    }
 }
 
 async function finishTask(id, type, thisBtn, loc = 1) {
@@ -2948,7 +2897,8 @@ const showAttachments = async (id, typeAtt) => {
         },
         onError: () => {
             containerPreview.innerHTML = "خطای دریافت اطلاعات!";
-        }
+        },
+        showError: false
     });
     
     

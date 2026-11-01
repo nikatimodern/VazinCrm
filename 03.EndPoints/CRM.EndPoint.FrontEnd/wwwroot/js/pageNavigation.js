@@ -106,7 +106,14 @@
         loader.className = "workspace-navigation-loader";
         loader.setAttribute("role", "status");
         loader.setAttribute("aria-label", "در حال بارگذاری صفحه");
-        loader.innerHTML = '<div class="workspace-navigation-loader-card" aria-hidden="true"><div class="workspace-navigation-loader-emblem"></div><div class="workspace-navigation-loader-name"></div><div class="workspace-navigation-loader-progress"></div></div>';
+        loader.innerHTML = `
+            <div class="workspace-navigation-loader-card" aria-hidden="true">
+                <div class="workspace-navigation-loader-emblem"></div>
+                <div class="workspace-navigation-loader-name"></div>
+                <div class="workspace-navigation-loader-progress"></div>
+            </div>
+        `;
+        
         const logoIcon = document.querySelector(".menuHeader .logoCompany-icon")?.cloneNode(true);
         const logoText = document.querySelector(".menuHeader .logoCompany-text")?.cloneNode(true);
         if (logoIcon) loader.querySelector(".workspace-navigation-loader-emblem").append(logoIcon);

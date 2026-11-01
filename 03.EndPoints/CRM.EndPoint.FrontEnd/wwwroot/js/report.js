@@ -303,6 +303,7 @@ async function getAllReports(showLoading = true) {
         onError: (err) => {
             containerReport.innerHTML = err.response?.data ?? "خطا در دریافت گزارش‌ها!";
         },
+        showError: false
     });
 }
 

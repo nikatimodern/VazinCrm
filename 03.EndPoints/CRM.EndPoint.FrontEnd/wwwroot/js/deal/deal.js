@@ -132,6 +132,7 @@ const getAllDeals = async ({ showSkeleton = true } = {}) => {
             onError: () => {
                 if (dealListRequest === request && !request.signal.aborted) showReadError();
             },
+            showError: false,
             onSuccess: async (res) => {
                 if (dealListRequest !== request || request.signal.aborted) return;
                 const items = res.data.items;
@@ -708,7 +709,7 @@ function initSortableDeal() {
     });
     
     
-    const tabs = document.querySelectorAll("[data-bs-toggle=\"tab\"]");
+    const tabs = document.querySelectorAll(`[data-bs-toggle="tab"]`);
     
     tabs.forEach(tab => {
         tab.addEventListener("dragover", (e) => {
@@ -756,30 +757,25 @@ async function changeStatusDeal(id, targetStatus, dragEvent = null) {
         const { item, from, oldIndex } = dragEvent;
         from.insertBefore(item, from.children[oldIndex] ?? null);
     };
+    
     if (pendingDealStatusChanges.has(id)) {
         restorePosition();
         return;
     }
+    
     pendingDealStatusChanges.add(id);
+    
     try {
-        const res = await axios(`/Deal/ChangeStatusDeal?id=${id}&status=${targetStatus}`);
-        if (res.status !== 200) throw new Error("Deal status was not saved.");
-    } catch (error) {
-        restorePosition();
-        toastifyError(error.response?.data?.message || "تغییر وضعیت سفارش انجام نشد؛ دوباره تلاش کنید.");
-        return;
+        await sendApiRequest({
+            url: "/Deal/ChangeStatusDeal",
+            params: { id, status: targetStatus },
+            showLoading: false,
+            onError: restorePosition,
+            onSuccess: () => getAllDeals({ showSkeleton: false }),
+        });
     } finally {
         pendingDealStatusChanges.delete(id);
     }
-    
-    /*await sendApiRequest({
-        url: "/Deal/ChangeStatusDeal",
-        params: { id, status: targetStatus },
-    });*/
-    
-    
-    // Keep the board visible while reconciling server data after a status change.
-    await getAllDeals({ showSkeleton: false });
 }
 
 function removeDealsTabsDesktop() {

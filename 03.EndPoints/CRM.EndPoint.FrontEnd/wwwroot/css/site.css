@@ -3154,28 +3154,6 @@ html.sidebar-collapsed .has-submenu:hover > .menu-item > .menu-item-title .subme
 }
 
 
-.openMenu {
-	width: 11%;
-	height: 100% !important;
-	/*    animation-name: _openMenu;
-animation-duration: 0.3s;
-animation-iteration-count: 1;
-animation-timing-function: ease;
-animation-fill-mode: forwards;*/
-}
-
-
-.closeMenu {
-	width: 3%;
-	height: 100% !important;
-	/*    animation-name: _closeMenu;
-animation-duration: 0.3s;
-animation-iteration-count: 1;
-animation-timing-function: ease;
-animation-fill-mode: forwards;*/
-}
-
-
 .openMenuImg {
 	animation-name: _openMenuImg;
 	animation-duration: 0.3s;

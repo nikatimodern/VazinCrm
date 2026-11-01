@@ -29,7 +29,6 @@ const GetCustomer = async () => {
     
     cust = await getCustomer(custId);
     
-    changeJur(cust.juridical);
     
     document.getElementById("juridicalTxt").textContent = cust.juridical === 0 ? "حقیقی" : "حقوقی";
     document.getElementById("agentName").innerHTML = `${cust.sex === 1 ? "جناب آقای " : "سرکار خانم "}<span class="fbold">${cust.agentName ?? ""}</span>`;
@@ -42,7 +41,7 @@ const GetCustomer = async () => {
     const juridicalDiv = document.getElementById("JuridicalUpDiv");
     
     if (cust.juridical === 1) {
-        juridicalDiv.style.display = "";
+        juridicalDiv.style.display = "flex";
         
         document.getElementById("companyName").textContent = cust.companyName || "-";
         document.getElementById("shenaseMeli").textContent = cust.shenaseMeli || "-";
