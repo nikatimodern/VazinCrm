@@ -20,6 +20,11 @@ namespace CRM.Infrastructures.Sql.Accountancies.Configs
                 .WithMany(x => x.Accountancies)
                 .HasForeignKey(x => x.DealId)
                 .OnDelete(DeleteBehavior.NoAction);
+            
+            builder.HasOne(f => f.AccountancyTransfer)
+                .WithOne()
+                .HasForeignKey<Accountancy>(f => f.AccountancyTransferId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

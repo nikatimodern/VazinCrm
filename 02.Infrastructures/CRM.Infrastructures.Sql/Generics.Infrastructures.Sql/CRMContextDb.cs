@@ -113,6 +113,7 @@ namespace CRM.Infrastructures.Sql {
         public DbSet<CashierExternalSoftware> CashierExternalSoftwares { get; set; }
         public DbSet<CashExternalSoftware> CashExternalSoftwares { get; set; }
         public DbSet<ExternalSoftwareSetting> ExternalSoftwareSettings { get; set; }
+        public DbSet<AccountancyTransfer> AccountancyTransfers { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -181,6 +182,7 @@ namespace CRM.Infrastructures.Sql {
             modelBuilder.Entity<SupplyFactorItem>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<ReceivedSms>().HasQueryFilter(f => f.IsDeleted == false);
             modelBuilder.Entity<SentSms>().HasQueryFilter(f => f.IsDeleted == false);
+            modelBuilder.Entity<AccountancyTransfer>().HasQueryFilter(f => f.IsDeleted == false);
 
 
             modelBuilder.Entity<Order>().Ignore(f => f.Row);

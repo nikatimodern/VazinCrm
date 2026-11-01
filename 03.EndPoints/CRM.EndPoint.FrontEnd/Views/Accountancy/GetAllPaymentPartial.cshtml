@@ -35,6 +35,9 @@
                            (item.PayType == PayTypeEnum.اعتباری || item.PayType == PayTypeEnum.چکی) &&
                            !item.Vosoled;
 
+            var canTransfer = !Model.ReadOnly && item.Status == AccStatusEnum.تایید_شده &&
+                           item.PayType == PayTypeEnum.چکی && !item.AccountancyTransferId.HasValue ;
+
             var canApproveOrReject =
                 !Model.ReadOnly && !isDealClosed &&
                 (Model.IsAdmin ||
@@ -96,6 +99,11 @@
                                 @if (canVosol) {
                                     <button class="buttonBlue2" style="padding: 2px 6px !important" onclick="ShowVosolInvoiceModal('@item.Id', '@item.pfid', @((int)item.PayType))">
                                         وصول
+                                    </button>
+                                }
+                                @if (canTransfer) {
+                                    <button class="buttonGreen2" style="padding: 2px 6px !important" onclick="ShowVosolInvoiceModal('@item.Id', '@item.pfid', @((int)item.PayType))">
+                                        انتقال
                                     </button>
                                 }
                             </span>

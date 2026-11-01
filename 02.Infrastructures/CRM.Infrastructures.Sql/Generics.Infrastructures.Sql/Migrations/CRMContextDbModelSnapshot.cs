@@ -108,6 +108,9 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Property<string>("AcceptedUserId")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("AccountancyTransferId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<decimal?>("BackWard")
                         .HasColumnType("decimal(18,2)");
 
@@ -273,6 +276,10 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AccountancyTransferId")
+                        .IsUnique()
+                        .HasFilter("[AccountancyTransferId] IS NOT NULL");
+
                     b.HasIndex("BankAccountId");
 
                     b.HasIndex("CashId")
@@ -288,6 +295,56 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasFilter("[RequestAmountId] IS NOT NULL");
 
                     b.ToTable("Accountancies");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Accountancies.Entities.AccountancyTransfer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AccountancyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Beneficiary")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ToName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AccountancyTransfers");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Accountancies.Entities.BankAccount", b =>
@@ -6051,6 +6108,11 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
             modelBuilder.Entity("CRM.Core.Domain.Accountancies.Entities.Accountancy", b =>
                 {
+                    b.HasOne("CRM.Core.Domain.Accountancies.Entities.AccountancyTransfer", "AccountancyTransfer")
+                        .WithOne()
+                        .HasForeignKey("CRM.Core.Domain.Accountancies.Entities.Accountancy", "AccountancyTransferId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("CRM.Core.Domain.Accountancies.Entities.BankAccount", null)
                         .WithMany("Accountancies")
                         .HasForeignKey("BankAccountId")
@@ -6075,6 +6137,8 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .WithOne("Accountancy")
                         .HasForeignKey("CRM.Core.Domain.Accountancies.Entities.Accountancy", "RequestAmountId")
                         .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("AccountancyTransfer");
 
                     b.Navigation("Deal");
                 });
