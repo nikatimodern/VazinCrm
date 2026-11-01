@@ -4,6 +4,17 @@
 }
 
 <style>
+    #MotalebatTable_wrapper .demand-amount {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 4px;
+        white-space: nowrap;
+    }
+    #MotalebatTable_wrapper .demand-currency {
+        font-size: 10px;
+        font-weight: normal;
+        opacity: .7;
+    }
     #customerDepositsModal .paymentTable tr.payment-unapproved > td {
         background-color: #fff1f2 !important;
         box-shadow: none !important;
@@ -104,6 +115,9 @@
         let supplyDemandTBL;
         var supplyDemandConfigFilter = {};
         let modelSupplyDemand = { serVal: null, filt: null, _type: -1 };
+        function renderDemandAmount(value) {
+            return `<span class="demand-amount" dir="rtl"><bdi dir="ltr">${(value ?? 0).toLocaleString()}</bdi><small class="demand-currency">ریال</small></span>`;
+        }
         document.addEventListener("DOMContentLoaded", async () => {
             //getAllSupplyDemand();
             //await getRpMotalebat()
@@ -207,13 +221,13 @@
                     },
                     {
                         targets: [3],
-                        render: (data) => data ? `<span dir="ltr">${data.toLocaleString()}</span>` : "-",
+                        render: (data, type) => type === "display" ? renderDemandAmount(data) : data,
                     },
                     {
                         targets: [5],
                         render: (data, type, row) => {
                             if (type !== "display") return data;
-                            if (!row.customerId) return data ? `<span dir="ltr">${data.toLocaleString()}</span>` : "-";
+                            if (!row.customerId) return renderDemandAmount(data);
                             const button = document.createElement("button");
                             button.type = "button";
                             button.className = "hoverLink main-font border-0 bg-transparent p-0";
@@ -221,7 +235,7 @@
                             button.dataset.factorCustomerId = row.customerId;
                             button.dataset.customerName = row.customer || "مشتری";
                             button.setAttribute("aria-label", `مشاهده فاکتورهای تأییدشده مالیِ ${row.customer || "مشتری"}`);
-                            button.textContent = (data ?? 0).toLocaleString();
+                            button.innerHTML = renderDemandAmount(data);
                             return button.outerHTML;
                         },
                     },
@@ -229,7 +243,7 @@
                         targets: [7, 9],
                         render: (data, type, row, meta) => {
                             if (type !== "display") return data;
-                            if (!row.customerId) return data ? `<span dir="ltr">${data.toLocaleString()}</span>` : "-";
+                            if (!row.customerId) return renderDemandAmount(data);
                             const button = document.createElement("button");
                             button.type = "button";
                             button.className = "hoverLink main-font border-0 bg-transparent p-0";
@@ -238,14 +252,14 @@
                             button.dataset[returnsOnly ? "returnCustomerId" : "depositCustomerId"] = row.customerId;
                             button.dataset.customerName = row.customer || "مشتری";
                             button.setAttribute("aria-label", `مشاهده ${returnsOnly ? "برگشتی‌های" : "واریزی‌های"} ${row.customer || "مشتری"}`);
-                            button.textContent = (data ?? 0).toLocaleString();
+                            button.innerHTML = renderDemandAmount(data);
                             return button.outerHTML;
                         },
                     },
                     {
                         targets: [10, 11],
-                        render: (data, type) => type === "display"
-                            ? `<span dir="ltr" class="fbold" style="color: ${data > 0 ? "darkgreen" : data < 0 ? "darkred" : "inherit"};font-size: 16px">${data.toLocaleString()}</span>`
+                        render: (data, type, row, meta) => type === "display"
+                            ? `<span class="fbold" style="color: ${data > 0 ? "darkgreen" : data < 0 ? "darkred" : "inherit"};font-size: 16px">${renderDemandAmount(meta.col === 11 ? Math.abs(data) : data)}</span>`
                             : data,
                     },
                     {
@@ -322,7 +336,10 @@
                         const footer = this.footer();
                         if (!footer) return;
                         const value = totals?.[this.dataSrc()] ?? 0;
-                        footer.textContent = value.toLocaleString();
+                        if ([3, 5, 7, 9, 10, 11].includes(index))
+                            footer.innerHTML = renderDemandAmount(index === 11 ? Math.abs(value) : value);
+                        else
+                            footer.textContent = value.toLocaleString();
                         footer.style.color = index === 10 && value > 0 ? "darkgreen"
                             : index === 11 && value < 0 ? "darkred" : "inherit";
                     });
@@ -341,6 +358,20 @@
                 `;
                 const contentFilter = `<div id="contentSupplyDemandFilterId" class="ContentFilter mt-2 mt-md-0 ms-md-2"></div>`;
                 searchInput.insertAdjacentHTML("afterend", filterButton);
+                const refreshButton = document.createElement("button");
+                refreshButton.type = "button";
+                refreshButton.className = "border-0 bg-transparent p-1 ms-2 d-inline-flex align-items-center justify-content-center";
+                refreshButton.setAttribute("aria-label", "بروزرسانی جدول");
+                refreshButton.innerHTML = `<svg style="width: 18px;height: 18px;color: #333" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"></path></svg>`;
+                refreshButton.title = "دریافت مجدد اطلاعات و محاسبه جدول";
+                refreshButton.addEventListener("click", () => {
+                    if (!refreshButton.disabled) supplyDemandTBL.ajax.reload(null, false);
+                });
+                dtSearch.querySelector(".btnFilter").insertAdjacentElement("afterend", refreshButton);
+                $("#MotalebatTable").on("processing.dt", (event, settings, processing) => {
+                    refreshButton.disabled = processing;
+                    refreshButton.setAttribute("aria-busy", String(processing));
+                });
                 dtSearch.insertAdjacentHTML("afterend", contentFilter);
             }
 

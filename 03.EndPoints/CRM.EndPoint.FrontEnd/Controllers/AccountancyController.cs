@@ -413,7 +413,6 @@ public class AccountancyController : Controller {
                 accQuery = accQuery.Where(a => a.AccType == AcEnum.واریزی
                     && a.Status == AccStatusEnum.تایید_شده
                     && (a.PayType == PayTypeEnum.نقدی
-                        || (a.PayType == PayTypeEnum.چکی && a.Vosoled)
                         || a.PayType == PayTypeEnum.تهاتری));
 
             var acc = await accQuery.ToListAsync();
