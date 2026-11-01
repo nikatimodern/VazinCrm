@@ -68,6 +68,8 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
 
             var content = resJson?.Choices?.FirstOrDefault()?.Message?.Content;
 
+            content = content.Replace("```json", "").Replace("```", "");
+
             if (string.IsNullOrWhiteSpace(content))
             {
                 return new AiGapgptResult<SupplyFactorAiDto> {
