@@ -180,12 +180,17 @@ const addInvoiceWalletToPf = async (id) => {
 };
 
 
-const ShowVosolInvoiceModal = async (parentId, pfId, invoiceType) => {
+const ShowVosolInvoiceModal = async (parentId, pfId, payType) => {
     AccParentId = parentId;
-    InvoiceType = invoiceType;
+    InvoiceType = 1;
     pfactorID = pfId;
     
-    document.getElementById("TransferRadioWrapper")?.classList.remove("d-none");
+    if (payType === 2 || payType === 6) { // وصول چکی بود یا ویرایش انتقال بود گزینه انتقال نمایش داده میشود
+        document.getElementById("TransferRadioWrapper")?.classList.remove("d-none");
+    } else {
+        document.getElementById("TransferRadioWrapper")?.classList.add("d-none");
+    }
+    
     document.getElementById("DivEtebariId")?.classList.add("d-none");
     
     await ShowModalInvoice(1);
@@ -226,17 +231,14 @@ const ShowModalListInvoice = async (id, type, ser, passType, hideAddInvoiceBtns 
 
 
 const ShowModalAddInvoice = async () => {
-    FLshowLoading();
     const hasWallet = await CheckWallet();
     
     if (hasWallet) {
         await getAndShowWalletModal();
-        FLshowLoading(false);
         return;
     }
     
     await ShowModalInvoice(1);
-    FLshowLoading(false);
 };
 
 
@@ -284,7 +286,7 @@ const ShowEditModalInvoice = async (id) => {
     }
     
     if (data.parentId) {
-        await ShowVosolInvoiceModal(data.parentId, data.pfid, data.invoiceType);
+        await ShowVosolInvoiceModal(data.parentId, data.pfid, data.payType);
     } else {
         await ShowModalInvoice(data.accType);
     }

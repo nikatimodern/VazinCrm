@@ -1797,7 +1797,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                var setting = await db.ASettings.FirstOrDefaultAsync();
+                var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
                 var roles = await userManager.GetRolesAsync(user);
                 // ================= UPDATE =================
                 if (model.Id != Guid.Empty)
@@ -1838,6 +1838,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                     if (carizos.Any())
                         db.Carizos.RemoveRange(carizos);
+
+                    if (model.PayType == PayTypeEnum.انتقال && parent.PayType == PayTypeEnum.چکی)
+                    {
+                        model.PayTypeTxt = $"انتقال چک {parent.SerialNum}";
+                    }
                 }
 
                 await db.Accountancies.AddAsync(model);
@@ -3633,7 +3638,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (preFactor == null)
                     return NotFound("پیش‌فاکتور پیدا نشد.");
 
-                
+
                 var mappings = await db.ExternalMappings
                     .AsNoTracking()
                     .Where(x => x.EntityId == preFactorId && x.MapType == ExternalMappingTypeEnum.پیش_فاکتور)
