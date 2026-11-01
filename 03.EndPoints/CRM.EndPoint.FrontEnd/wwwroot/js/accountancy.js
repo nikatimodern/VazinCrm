@@ -572,7 +572,7 @@ async function acceptAccountancy(id, status, description = null) {
 }
 
 
-const PayFormChange = (modalId, type) => {
+/*const PayFormChange = (modalId, type) => {
     const modal = document.getElementById(modalId);
     const selectedType = Number(type);
     
@@ -719,8 +719,106 @@ const PayFormChange = (modalId, type) => {
     
     if (elements.uploaderSpan)
         elements.uploaderSpan.textContent = current.uploaderText;
-};
+};*/
 
+
+function PayFormChange(modalId, type) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    
+    // تنظیمات نمایش فیلدها برای هر نوع پرداخت
+    // گزینه‌هایی که تعریف نشده‌اند، به‌صورت پیش‌فرض false در نظر گرفته می‌شوند.
+    const config = {
+        1: { // نقدی
+            transactionTitle: "اطلاعات تراکنش بانکی",
+            vosolDateText: "تاریخ پرداخت",
+            uploaderText: "تصویر رسید را انتخاب کنید یا اینجا رها کنید",
+            showVosolDate: true,
+            showAmount: true,
+            showToBankSelect: true,
+            showSanadPay: true
+        },
+        2: { // چکی
+            transactionTitle: "اطلاعات تراکنش بانکی",
+            vosolDateText: "تاریخ وصول",
+            uploaderText: "تصویر چک را انتخاب کنید یا اینجا رها کنید",
+            showVosolDate: true,
+            showAmount: true,
+            showReceiveDate: true,
+            showSanadPay: true
+        },
+        3: { // اعتباری
+            transactionTitle: "اطلاعات تراکنش بانکی",
+            vosolDateText: "تاریخ وصول",
+            uploaderText: "تصویر رسید را انتخاب کنید یا اینجا رها کنید",
+            showVosolDate: true,
+            showAmount: true,
+            showSanadPay: true
+        },
+        4: { // تهاتری
+            transactionTitle: "اطلاعات تراکنش بانکی",
+            vosolDateText: "تاریخ پرداخت",
+            uploaderText: "تصویر رسید را انتخاب کنید یا اینجا رها کنید",
+            toNamePlaceholder: "نام صاحب حساب واریز شده",
+            showVosolDate: true,
+            showAmount: true,
+            showBeneficiary: true,
+            showToBankText: true,
+            showToName: true,
+            showToNameLabel: true,
+            showSanadPay: true
+        },
+        6: { // انتقال
+            transactionTitle: "انتقال به",
+            toNamePlaceholder: "انتقال به",
+            showBeneficiary: true,
+            showToName: true
+        }
+    };
+    
+    const current = config[Number(type)];
+    if (!current) return;
+    
+    // نمایش یا مخفی کردن فیلد و تنظیم اجباری بودن آن
+    const toggleField = (wrapperSelector, inputSelector, visible) => {
+        const wrapper = modal.querySelector(wrapperSelector);
+        wrapper.classList.toggle("d-none", !visible);
+        
+        if (inputSelector) {
+            const input = modal.querySelector(inputSelector);
+            input.toggleAttribute("required", !!visible);
+        }
+    };
+    
+    // نمایش فیلدها بر اساس نوع پرداخت انتخاب‌شده
+    toggleField(".VosolDateDiv", ".VosolDateDiv input", current.showVosolDate);
+    toggleField(".transactionAmountWrapper", "input[name='reciveAmount']", current.showAmount);
+    toggleField(".ReceiveDateDiv", "input[name='reciveDate']", current.showReceiveDate);
+    toggleField(".beneficiaryWrapper", ".beneficiaryWrapper input", current.showBeneficiary);
+    toggleField(".toBankAccountWrapperSelect", ".toBankAccountWrapperSelect select", current.showToBankSelect);
+    toggleField(".toBankAccountWrapperTxt", ".toBankAccountWrapperTxt input", current.showToBankText);
+    toggleField(".toNameWrapper", ".toNameWrapper input", current.showToName);
+    toggleField(".sanadPayBox", null, current.showSanadPay);
+    
+    // تغییر عنوان بخش اطلاعات تراکنش
+    modal.querySelector(".transactionBankBox .sectionTitle-invoice").textContent = current.transactionTitle || "";
+    
+    // تغییر متن تاریخ پرداخت یا وصول
+    const vosolDate = modal.querySelector(".VosolDateDiv");
+    vosolDate.querySelector("label").textContent = current.vosolDateText || "";
+    vosolDate.querySelector("input").placeholder = current.vosolDateText || "";
+    
+    // تنظیم فیلد نام صاحب حساب
+    const toName = modal.querySelector(".toNameWrapper");
+    toName.querySelector("label").classList.toggle("d-none", !current.showToNameLabel);
+    toName.querySelector("input").placeholder = current.toNamePlaceholder || "";
+    
+    // تغییر متن انتخاب تصویر رسید یا چک
+    const uploaderSpan = modal.querySelector(".sanadPayBox .container-uploader span");
+    if (uploaderSpan) {
+        uploaderSpan.textContent = current.uploaderText;
+    }
+}
 
 const PayAttachFormChange = (type) => {
     switch (type) {
