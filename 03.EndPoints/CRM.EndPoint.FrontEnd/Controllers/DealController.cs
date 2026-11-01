@@ -90,7 +90,8 @@ public class DealController : Controller {
         var sortColumn = Request.Form[$"columns[{sortColumnIndex}][data]"].FirstOrDefault();
         var model = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["model"].FirstOrDefault());
 
-        var baseQuery = db.Deals.AsNoTracking();
+        var baseQuery = db.Deals.AsNoTracking()
+            .Where(d => d.Status == DealStatusEnum.موفق);
 
         if (!string.IsNullOrEmpty(searchValue))
         {
