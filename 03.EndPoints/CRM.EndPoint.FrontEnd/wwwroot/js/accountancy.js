@@ -40,9 +40,9 @@ const initPaymentPartial = (type) => {
         searching: false,
         language: languageDatatable,
         columnDefs: [
-            { 
-                targets: "_all", 
-                render: data => typeof data === "string" ? (data.trim() || "-") : (data ?? "-") 
+            {
+                targets: "_all",
+                render: data => typeof data === "string" ? (data.trim() || "-") : (data ?? "-"),
             },
         ],
         columns: type === 55 || type === 56
@@ -182,8 +182,52 @@ const addInvoiceWalletToPf = async (id) => {
     });
 };
 
+let checkAccId;
+const ShowVosolCheckInvoiceModal = async (itemId, isTransfered) => {
+    const acc = await getAccountancy(itemId);
+    checkAccId = itemId;
+    
+    document.querySelector("#InvoiceVosolModalId input[name='reciveAmount']").value = acc.accData.credit.toLocaleString();
+    document.querySelector("#InvoiceVosolModalId input[name='vosolDate']").value = acc.accData.vosolDate;
+    
+    document.querySelector("#InvoiceVosolModalId .toBankAccountWrapperSelect").classList.toggle("d-none", isTransfered);
+    toggleElementsRequired(document.querySelector("#InvoiceVosolModalId select[name='bankAccountId']"), !isTransfered);
+    
+    await getAllBankAccounts([{ element: "#InvoiceVosolModalId select[name='bankAccountId']", type: [1] }]);
+    
+    ModalToggle("InvoiceVosolModalId");
+};
 
-const ShowVosolInvoiceModal = async (parentId, pfId, payType) => {
+async function submitVosolInvoice() {
+    if (!await mySer.CheckValidForm("PayFactorVosolFormId")) return;
+    const model = {
+        ...mySer.convertFormToJSON("PayFactorVosolFormId"),
+        id: checkAccId,
+        bankAccountTxt: document.querySelector("#InvoiceVosolModalId [name='bankAccountId']").selectedOptions[0].innerText,
+    };
+    
+    model.bankAccountId = model.bankAccountId === "" ? null : model.bankAccountId;
+    model.bankAccountTxt = model.bankAccountId === "" ? null : model.bankAccountTxt;
+       
+    
+    await sendApiRequest({
+        url: "/Factor/VosolCheckInvoice",
+        method: "POST",
+        data: model,
+        onSuccess: async () => {
+            await refreshInvoiceSuccess();
+            closeModalVosolInvoice();
+        },
+    });
+}
+
+function closeModalVosolInvoice() {
+    mySer.emptyForm("PayFactorVosolFormId");
+    ModalToggle("InvoiceVosolModalId", "hide");
+}
+
+
+const ShowVosolEtebariInvoiceModal = async (parentId, pfId, payType) => {
     AccParentId = parentId;
     InvoiceType = 1;
     pfactorID = pfId;
@@ -198,6 +242,56 @@ const ShowVosolInvoiceModal = async (parentId, pfId, payType) => {
     
     await ShowModalInvoice(1);
 };
+
+const ShowVosolInvoiceModal = async (itemId, pfId, payType, isTransfered) => {
+    if (payType === 2) { // چکی
+        await ShowVosolCheckInvoiceModal(itemId, isTransfered);
+    } else {
+        await ShowVosolEtebariInvoiceModal(itemId, pfId, payType);
+    }
+};
+
+/* --------------------- InvoiceTransfer --------------------- */
+
+let invoiceTransferId;
+async function ShowTransferInvoiceModal(itemId) {
+    invoiceTransferId = itemId;
+    ModalToggle("InvoiceTransferModalId");
+}
+async function ShowEditTransferInvoiceModal(itemId) {
+    invoiceTransferId = itemId;
+    const data = await getAccountancy(itemId);
+    console.log(data.accData.accountancyTransfer);
+    mySer.convertJsonToForm(data.accData.accountancyTransfer, "InvoiceTransferFormId");
+    ModalToggle("InvoiceTransferModalId");
+}
+
+
+async function submitTransferInvoice() {
+    if (!await mySer.CheckValidForm("InvoiceTransferFormId")) return;
+    const model = {
+        ...mySer.convertFormToJSON("InvoiceTransferFormId"),
+        accountancyId: invoiceTransferId,
+    };
+    
+    console.log(model);
+    
+    await sendApiRequest({
+        url: "/Accountancy/AddAccountancyTransfer",
+        method: "POST",
+        data: model,
+        onSuccess: async () => {
+            await refreshInvoiceSuccess();
+            closeModalTransferInvoice();
+        },
+    });
+}
+
+function closeModalTransferInvoice() {
+    mySer.emptyForm("InvoiceTransferFormId");
+    ModalToggle("InvoiceTransferModalId", "hide");
+}
+
 
 const ShowModalListInvoice = async (id, type, ser, passType, hideAddInvoiceBtns = false) => {
     invoicePassType = passType;
@@ -306,6 +400,25 @@ const ShowEditModalInvoice = async (id) => {
 };
 
 
+async function removeVosolInvoice(id) {
+    await sendApiRequest({
+        url: "/Accountancy/RemoveVosolInvoice",
+        params: { id: id },
+        onSuccess: () => {
+            refreshInvoiceSuccess();
+        },
+    });
+}
+async function removeTransferInvoice(id) {
+    await sendApiRequest({
+        url: "/Accountancy/RemoveTransferInvoice",
+        params: { id: id },
+        onSuccess: () => {
+            refreshInvoiceSuccess();
+        },
+    });
+}
+
 async function showPayment(id, parent = false) {
     const data = await getAccountancy(id, parent);
     if (!data) return;
@@ -376,10 +489,14 @@ const submitInvoice = async () => {
     if (!await mySer.CheckValidForm("PayFactorFormId")) return;
     
     const accData = mySer.convertFormToJSON("PayFactorFormId");
-    if (setting.attPfPayment && (accData.payType !== 3 && accData.payType !== 6) && window.SanadPayList.every(item => item.isDeleted)) {
-        toastifyError("سند واریزی اجباریست");
-        document.getElementById("SanadParId").classList.add("AlertReqRadio");
-        return;
+    
+    const isSanadRequired = document.getElementById("upSanadPay").required;
+    if (isSanadRequired) {
+        if (setting.attPfPayment && (accData.payType !== 3 && accData.payType !== 6) && window.SanadPayList.every(item => item.isDeleted)) {
+            toastifyError("سند واریزی اجباریست");
+            document.getElementById("SanadParId").classList.add("AlertReqRadio");
+            return;
+        }
     }
     
     if (accData.payType !== 3 && !await checkEtebariWarning()) {
@@ -483,6 +600,7 @@ const closeModalInvoice = () => {
     invoiceModalId.querySelector("#SanadParId").classList.remove("AlertReqRadio");
     invoiceModalId.querySelector("#DivEtebariId")?.classList.remove("d-none");
     invoiceModalId.querySelector("#TransferRadioWrapper")?.classList.add("d-none");
+    toggleElementsRequired(document.getElementById("upSanadPay"), true);
     invoiceModalId.querySelector("#DivShowSanadPar").innerHTML = "";
     const upSanadPay = invoiceModalId.querySelector("#upSanadPay");
     if (upSanadPay) upSanadPay.value = "";
@@ -739,7 +857,8 @@ function PayFormChange(modalId, type) {
             showVosolDate: true,
             showAmount: true,
             showToBankSelect: true,
-            showSanadPay: true
+            showSanadPay: true,
+            showInvoiceTypes: true,
         },
         2: { // چکی
             transactionTitle: "اطلاعات تراکنش بانکی",
@@ -748,7 +867,8 @@ function PayFormChange(modalId, type) {
             showVosolDate: true,
             showAmount: true,
             showReceiveDate: true,
-            showSanadPay: true
+            showSanadPay: true,
+            showInvoiceTypes: true,
         },
         3: { // اعتباری
             transactionTitle: "اطلاعات تراکنش بانکی",
@@ -756,7 +876,8 @@ function PayFormChange(modalId, type) {
             uploaderText: "تصویر رسید را انتخاب کنید یا اینجا رها کنید",
             showVosolDate: true,
             showAmount: true,
-            showSanadPay: true
+            showSanadPay: true,
+            showInvoiceTypes: true,
         },
         4: { // تهاتری
             transactionTitle: "اطلاعات تراکنش بانکی",
@@ -769,14 +890,16 @@ function PayFormChange(modalId, type) {
             showToBankText: true,
             showToName: true,
             showToNameLabel: true,
-            showSanadPay: true
+            showSanadPay: true,
+            showInvoiceTypes: true,
         },
         6: { // انتقال
             transactionTitle: "انتقال به",
             toNamePlaceholder: "انتقال به",
             showBeneficiary: true,
-            showToName: true
-        }
+            showToName: true,
+            showInvoiceTypes: true,
+        },
     };
     
     const current = config[Number(type)];
@@ -785,7 +908,7 @@ function PayFormChange(modalId, type) {
     // نمایش یا مخفی کردن فیلد و تنظیم اجباری بودن آن
     const toggleField = (wrapperSelector, inputSelector, visible) => {
         const wrapper = modal.querySelector(wrapperSelector);
-        wrapper.classList.toggle("d-none", !visible);
+        wrapper?.classList.toggle("d-none", !visible);
         
         if (inputSelector) {
             const input = modal.querySelector(inputSelector);
@@ -802,6 +925,7 @@ function PayFormChange(modalId, type) {
     toggleField(".toBankAccountWrapperTxt", ".toBankAccountWrapperTxt input", current.showToBankText);
     toggleField(".toNameWrapper", ".toNameWrapper input", current.showToName);
     toggleField(".sanadPayBox", null, current.showSanadPay);
+    toggleField("#invoiceTypeBoxId", null, current.showInvoiceTypes);
     
     // تغییر عنوان بخش اطلاعات تراکنش
     modal.querySelector(".transactionBankBox .sectionTitle-invoice").textContent = current.transactionTitle || "";

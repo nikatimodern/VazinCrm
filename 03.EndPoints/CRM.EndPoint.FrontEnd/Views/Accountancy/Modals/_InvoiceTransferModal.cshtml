@@ -1,0 +1,34 @@
+<!-- Modal Transfer -->
+<div class="modal fade invoice-modal deposit-mode" id="InvoiceTransferModalId" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content col-12" style="padding:10px!important">
+            <div class="modalHeader-invoice">ثبت انتقال</div>
+            <div class="modal-body pb-0" style="padding-inline: 10px">
+                <div class="modalContent-invoice">
+                    <form id="InvoiceTransferFormId" class="d-flex flex-column w-100 gap-4 mt-2">
+                        <div class="beneficiaryWrapper sectionBox-invoice">
+                            <span class="sectionTitle-invoice">بابت بدهی به</span>
+                            <div>
+                                <input class="form-control" name="beneficiary" type="text" placeholder="بابت بدهی به" />
+                            </div>
+                        </div>
+                        <div class="transactionBankBox sectionBox-invoice">
+                            <span class="sectionTitle-invoice">اطلاعات انتقال</span>
+                            <div class="toNameWrapper">
+                                <label>واریز به نام</label>
+                                <input class="form-control" name="toName" type="text" placeholder="نام صاحب حساب واریز شده" />
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="px-0 py-3 w-100">
+                <div style="width:100%; height:2px; background-color:var(--DarkColor)"></div>
+            </div>
+            <div class="gap-1 modal-footer p-0 border-0 justify-content-center">
+                <button type="button" class="buttonCancel2 m-0" onclick="closeModalTransferInvoice()">انصراف</button>
+                <button type="button" class="buttonGreen3 m-0" onclick="submitTransferInvoice()">ثبت</button>
+            </div>
+        </div>
+    </div>
+</div>

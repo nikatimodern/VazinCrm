@@ -6,7 +6,7 @@
             <div class="modal-body pb-0" style="padding-inline: 10px">
                 <div class="modalContent-invoice">
                     <form id="PayFactorFormId" class="d-flex flex-column w-100 gap-4 mt-2">
-                        <div class="sectionBox-invoice">
+                        <div id="invoiceTypeBoxId" class="sectionBox-invoice">
                             <span class="sectionTitle-invoice">روش پرداخت</span>
                             <div class="d-flex justify-content-evenly flex-wrap" style="font-size:clamp(14px,2vw,19px)">
 
@@ -85,7 +85,7 @@
                     <div class="sanadPayBox sectionBox-invoice mt-4">
                         <span class="sectionTitle-invoice">رسید پرداخت</span>
                         <div class="container-uploader" id="SanadParId">
-                            <input type="file" class="uploadBtn" data-varList="SanadPayList" data-showList="DivShowSanadPar" id="upSanadPay" accept="*/*" />
+                            <input type="file" class="uploadBtn" data-varList="SanadPayList" data-showList="DivShowSanadPar" id="upSanadPay" accept="*/*" required/>
                             <label for="upSanadPay">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
                                 <span>تصویر رسید را انتخاب کنید یا اینجا رها کنید</span>

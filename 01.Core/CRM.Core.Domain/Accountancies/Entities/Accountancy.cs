@@ -85,7 +85,7 @@ namespace CRM.Core.Domain.Accountancies.Entities {
         public Guid? CashId { get; set; }
         public Guid? CashierId { get; set; }
         public Guid? RequestAmountId { get; set; }
-        public Guid? AccountancyTransferId { get; set; }
+        
         public AccountancyTransfer AccountancyTransfer { get; set; }
     }
 }

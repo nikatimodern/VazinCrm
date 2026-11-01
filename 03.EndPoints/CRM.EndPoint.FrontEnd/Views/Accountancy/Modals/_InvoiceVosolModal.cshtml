@@ -1,0 +1,46 @@
+<!-- Modal InvoiceVosol -->
+<div class="modal fade invoice-modal deposit-mode" id="InvoiceVosolModalId" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content col-12" style="padding:10px!important">
+            <div class="modalHeader-invoice">ثبت واریز</div>
+            <div class="modal-body pb-0" style="padding-inline: 10px">
+                <div class="modalContent-invoice">
+                    <form id="PayFactorVosolFormId" class="d-flex flex-column w-100 gap-4 mt-2">
+                        <div class="transactionBankBox sectionBox-invoice">
+                            <span class="sectionTitle-invoice">اطلاعات تراکنش بانکی</span>
+                            <div class="d-flex flex-wrap row-gap-2 justify-content-center align-items-start w-100">
+                                <div class="transactionAmountWrapper col-12 col-sm-6 col-lg-4 pe-sm-2">
+                                    <label>مبلغ (ریال)</label>
+                                    <input inputmode="numeric" class="currencyNumber form-control inpAmount" name="reciveAmount" type="text" placeholder="مبلغ دریافتی به ریال" required data-currency-hint="next" />
+                                    <span class="currencyHint"></span>
+                                </div>
+
+                                <div class="VosolDateDiv col-12 col-sm-6 col-lg-4">
+                                    <label>تاریخ وصول</label>
+                                    <input class="sdate form-control" name="vosolDate" type="text" placeholder="تاریخ وصول" data-mask-date required />
+                                </div>
+                            </div>
+
+                            <div class="toBankAccountWrapperSelect my-2 w-100">
+                                <label>واریز به حساب بانکی</label>
+                                <select class="form-select" name="bankAccountId" required></select>
+                            </div>
+                            
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+            <div class="px-0 py-3 w-100">
+                <div style="width:100%; height:2px; background-color:var(--DarkColor)"></div>
+            </div>
+
+            <div class="gap-1 modal-footer p-0 border-0 justify-content-center">
+                <button class="buttonCancel2 m-0" onclick="closeModalVosolInvoice()">انصراف</button>
+                <button class="buttonGreen3 m-0" onclick="submitVosolInvoice()">ثبت</button>
+            </div>
+        </div>
+    </div>
+</div>

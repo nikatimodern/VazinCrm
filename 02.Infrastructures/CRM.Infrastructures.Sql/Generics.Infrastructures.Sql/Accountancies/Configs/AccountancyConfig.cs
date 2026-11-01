@@ -23,7 +23,7 @@ namespace CRM.Infrastructures.Sql.Accountancies.Configs
             
             builder.HasOne(f => f.AccountancyTransfer)
                 .WithOne()
-                .HasForeignKey<Accountancy>(f => f.AccountancyTransferId)
+                .HasForeignKey<AccountancyTransfer>(f => f.AccountancyId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

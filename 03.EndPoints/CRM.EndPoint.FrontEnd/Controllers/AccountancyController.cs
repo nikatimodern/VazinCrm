@@ -22,6 +22,7 @@ using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.EndPoint.FrontEnd.Services.SaveChangeCustom;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
+using CRM.Framework;
 using CRM.Infrastructures.Sql;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Microsoft.AspNetCore.Authorization;
@@ -74,7 +75,7 @@ public class AccountancyController : Controller {
     {
         var acc = parent
             ? await db.Accountancies.Where(f => f.ParentId == id).FirstOrDefaultAsync()
-            : await db.Accountancies.Where(f => f.Id == id).FirstOrDefaultAsync();
+            : await db.Accountancies.Where(f => f.Id == id).Include(f => f.AccountancyTransfer).FirstOrDefaultAsync();
 
         if (acc == null) return NotFound("رکوردی یافت نشد!");
 
@@ -354,7 +355,81 @@ public class AccountancyController : Controller {
 
 
     [HttpGet]
-    public async Task<IActionResult> GetAllPaymentPartial(int type, Guid id, int passType, bool depositsOnly = false, bool realizedDepositsOnly = false, bool returnsOnly = false)
+    public async Task<IActionResult> RemoveVosolInvoice(Guid id)
+    {
+        var item = await db.Accountancies.FirstOrDefaultAsync(f => f.Id == id);
+        if (item == null) return NotFound();
+
+
+        item.Vosoled = false;
+
+        await db.SaveChangesAsync();
+
+        return Ok();
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> RemoveTransferInvoice(Guid id)
+    {
+        var item = await db.AccountancyTransfers.FirstOrDefaultAsync(f => f.AccountancyId == id);
+        if (item == null) return NotFound();
+
+
+        db.AccountancyTransfers.Remove(item);
+
+        await db.SaveChangesAsync();
+
+        return Ok();
+    }
+
+
+    [HttpPost]
+    public async Task<IActionResult> AddAccountancyTransfer([FromBody] AccountancyTransfer model)
+    {
+        try
+        {
+            var transfer = await db.AccountancyTransfers
+                .FindAsync(model.AccountancyId);
+
+            if (transfer == null)
+            {
+                db.AccountancyTransfers.Add(model);
+            }
+            else
+            {
+                transfer.Beneficiary = model.Beneficiary;
+                transfer.ToName = model.ToName;
+                transfer.ModifyDate = DateTime.Now;
+                transfer.ModifyDateTxt = BaseServices.GetDateTimePersian();
+            }
+
+            await db.SaveChangesAsync();
+
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            return BadRequest();
+        }
+    }
+
+    public async Task<IActionResult> GetAccountancyTransfer(Guid id)
+    {
+        try
+        {
+            var acc = await db.AccountancyTransfers.FirstOrDefaultAsync(f => f.AccountancyId == id);
+
+            return Ok(acc);
+        }
+        catch (Exception e)
+        {
+            return BadRequest();
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAllPaymentPartial(int type, Guid id, int passType, bool depositsOnly = false,
+        bool realizedDepositsOnly = false, bool returnsOnly = false)
     {
         try
         {
@@ -377,6 +452,7 @@ public class AccountancyController : Controller {
             var accQuery = db.Accountancies
                 .AsNoTracking()
                 .Include(x => x.Deal)
+                .Include(x => x.AccountancyTransfer)
                 .AsQueryable();
 
             switch (type)
@@ -411,9 +487,9 @@ public class AccountancyController : Controller {
 
             if (realizedDepositsOnly)
                 accQuery = accQuery.Where(a => a.AccType == AcEnum.واریزی
-                    && a.Status == AccStatusEnum.تایید_شده
-                    && (a.PayType == PayTypeEnum.نقدی
-                        || a.PayType == PayTypeEnum.تهاتری));
+                                               && a.Status == AccStatusEnum.تایید_شده
+                                               && (a.PayType == PayTypeEnum.نقدی
+                                                   || a.PayType == PayTypeEnum.تهاتری));
 
             var acc = await accQuery.ToListAsync();
             model.Items = acc;

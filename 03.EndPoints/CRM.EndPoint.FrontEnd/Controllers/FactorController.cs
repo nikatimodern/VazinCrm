@@ -1577,6 +1577,26 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
+        public async Task<IActionResult> VosolCheckInvoice([FromBody] Accountancy model)
+        {
+            var item = await db.Accountancies.FirstOrDefaultAsync(f => f.Id == model.Id);
+            if (item == null) return NotFound();
+
+
+            item.credit = model.ReciveAmount;
+            item.VosolDate = model.VosolDate;
+            item.VosolDateM = dtService.GetDateMiladi(model.VosolDate);
+            item.BankAccountId = model.BankAccountId;
+            item.BankAccountTxt = model.BankAccountTxt;
+            item.Vosoled = true;
+
+
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+
+        [Authorize]
+        [HttpPost]
         public async Task<IActionResult> AddPayAttachment([FromBody] AccViewModel model)
         {
             if (model?.AccData == null) return BadRequest();

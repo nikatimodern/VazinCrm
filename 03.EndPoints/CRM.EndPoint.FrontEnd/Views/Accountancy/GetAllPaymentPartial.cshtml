@@ -30,13 +30,13 @@
             var canManage = !Model.ReadOnly && !isDealClosed && (isCreator || Model.IsCreatorParent || Model.IsAdmin || Model.IsSalesAdmin);
             var canViewActions = !Model.ReadOnly && (canManage || Model.IsFinancial);
             var canEdit = !Model.ReadOnly && (((Model.IsAdmin || Model.IsFinancial) && isCreator)
-                          || (canManage && item.Status is AccStatusEnum.ثبت_اولیه or AccStatusEnum.رد_شده));
+                                              || (canManage && item.Status is AccStatusEnum.ثبت_اولیه or AccStatusEnum.رد_شده));
             var canVosol = !Model.ReadOnly && item.Status == AccStatusEnum.تایید_شده &&
                            (item.PayType == PayTypeEnum.اعتباری || item.PayType == PayTypeEnum.چکی) &&
                            !item.Vosoled;
 
             var canTransfer = !Model.ReadOnly && item.Status == AccStatusEnum.تایید_شده &&
-                           item.PayType == PayTypeEnum.چکی && !item.AccountancyTransferId.HasValue ;
+                              item.PayType == PayTypeEnum.چکی && item.AccountancyTransfer == null && !item.Vosoled;
 
             var canApproveOrReject =
                 !Model.ReadOnly && !isDealClosed &&
@@ -53,7 +53,7 @@
                 _ => "#333"
             };
 
-            <tr class="@((item.PayType == PayTypeEnum.اعتباری || item.PayType == PayTypeEnum.چکی) && item.Vosoled ? "payment-vosoled" : "") @(Model.PassType == 57 && item.Status != AccStatusEnum.تایید_شده ? "payment-unapproved" : "")">
+            <tr class="@((item.PayType == PayTypeEnum.اعتباری) && item.Vosoled ? "payment-vosoled" : "") @(Model.PassType == 57 && item.Status != AccStatusEnum.تایید_شده ? "payment-unapproved" : "")">
                 <td>@item.SerialNum</td>
                 <td>@string.Join(" | ", item.CreateDateTxt?.Substring(0, 16).Split(' ').Reverse())</td>
                 @if (fromCartableFinancial) {
@@ -97,15 +97,17 @@
                                 }
 
                                 @if (canVosol) {
-                                    <button class="buttonBlue2" style="padding: 2px 6px !important" onclick="ShowVosolInvoiceModal('@item.Id', '@item.pfid', @((int)item.PayType))">
+                                    var isTransfered = (item.AccountancyTransfer != null).ToString().ToLower();
+                                    <button class="buttonBlue2" style="padding: 2px 6px !important" onclick="ShowVosolInvoiceModal('@item.Id', '@item.pfid', @((int)item.PayType), @isTransfered)">
                                         وصول
                                     </button>
                                 }
-                                @*@if (canTransfer) {
-                                    <button class="buttonGreen2" style="padding: 2px 6px !important" onclick="ShowVosolInvoiceModal('@item.Id', '@item.pfid', @((int)item.PayType))">
+
+                                @if (canTransfer) {
+                                    <button class="buttonGreen2" style="padding: 2px 6px !important" onclick="ShowTransferInvoiceModal('@item.Id', '@item.pfid', @((int)item.PayType))">
                                         انتقال
                                     </button>
-                                }*@
+                                }
                             </span>
                         } else {
                             <button class="buttonGray" onclick="showPayment('@item.Id')">مشاهده</button>
@@ -151,7 +153,19 @@
                                     }
 
                                     if ((item.PayType == PayTypeEnum.اعتباری || item.PayType == PayTypeEnum.چکی) && item.Vosoled) {
-                                        <span class="fbold hoverLink text-decoration-underline" style="color: #0074bb" onclick="showPayment('@item.Id', true)">وصول شده</span>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="fbold hoverLink text-decoration-underline" style="color: #0074bb" onclick="showPayment('@item.Id', true)">
+                                                وصول شده
+                                            </span>
+                                            <button style="font-size: 16px" onclick="removeVosolInvoice('@item.Id')">×</button>
+                                        </div>
+                                    } else if (item.PayType == PayTypeEnum.چکی && item.AccountancyTransfer != null) {
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="fbold hoverLink text-decoration-underline" style="color: #0074bb" onclick="ShowEditTransferInvoiceModal('@item.Id')">
+                                                منتقل شده
+                                            </span>
+                                            <button style="font-size: 16px" onclick="removeTransferInvoice('@item.AccountancyTransfer.AccountancyId')">×</button>
+                                        </div>
                                     } else {
                                         <span class="fbold" style="color: @statusColor">@item.StatusTxt</span>
                                         if (canApproveOrReject) {
