@@ -25,13 +25,17 @@ public interface IAccountancyRepository
     Task<PreFactor?> GetPreFactorAsync(Guid? id, CancellationToken ct);
     Task<InvoiceTotals?> GetTotalsAsync(int type, Guid? id, CancellationToken ct);
     Task<AccountancyCartable> GetCartableAsync(string? search, int searchNumber, CartableEnum cartable, int type, PayTypeEnum? payType, CancellationToken ct);
-    Task<AccountancyPayments> GetPaymentsAsync(int type, Guid id, CancellationToken ct);
+    Task<AccountancyPayments> GetPaymentsAsync(int type, Guid id, bool depositsOnly, bool realizedDepositsOnly, bool returnsOnly, CancellationToken ct);
     Task<List<Accountancy>> GetWalletAsync(Guid customerId, CancellationToken ct);
     Task<AccountancyTable> GetTableAsync(TableRequest table, QueryFilter filter, int accType, int payType, string userId, bool readAll, CancellationToken ct);
     Task<List<BankAccount>> GetBankAccountsAsync(BankAccountTypeEnum? type, CancellationToken ct);
     Task<BankAccountTable> GetBankTableAsync(TableRequest table, int? type, CancellationToken ct);
     Task<BankAccount?> GetBankAsync(Guid id, bool tracking, CancellationToken ct);
     Task<List<Accountancy>> GetPendingAsync(Guid pfId, CancellationToken ct);
+    Task<AccountancyTransfer?> GetTransferAsync(Guid accountancyId, CancellationToken ct);
+    Task SaveTransferAsync(AccountancyTransfer transfer, CancellationToken ct);
+    Task<bool> RemoveTransferAsync(Guid accountancyId, CancellationToken ct);
+    Task<bool> RemoveVosolAsync(Guid accountancyId, CancellationToken ct);
     void SaveBank(BankAccount item, bool create);
     Task RemoveTasksAsync(Guid id, CancellationToken ct);
     Task SaveAsync(CancellationToken ct);

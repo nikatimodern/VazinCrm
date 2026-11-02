@@ -17,7 +17,7 @@ using CRM.Core.ApplicationServices.Accountancies.Dtos;
 using CRM.Core.ApplicationServices.Accountancies.Services;
 
 namespace CRM.Core.ApplicationServices.Accountancies.Queries.GetAccountancyPayments;
-public sealed record GetAccountancyPaymentsQuery(int Type, Guid Id, int PassType) : IQuery<object>;
+public sealed record GetAccountancyPaymentsQuery(int Type, Guid Id, int PassType, bool DepositsOnly = false, bool RealizedDepositsOnly = false, bool ReturnsOnly = false) : IQuery<object>;
 public sealed class GetAccountancyPaymentsQueryHandler(IAccountancyRepository repository, CurrentActor actor, IAccountancyEffects effects) : IQueryHandler<GetAccountancyPaymentsQuery, object>
 {
     public async Task<object> HandleAsync(GetAccountancyPaymentsQuery request, CancellationToken ct)
@@ -38,7 +38,7 @@ public sealed class GetAccountancyPaymentsQueryHandler(IAccountancyRepository re
             PassType = passType,
             UserId = user.Id
         };
-        var data = await repository.GetPaymentsAsync(type, id, ct);
+        var data = await repository.GetPaymentsAsync(type, id, request.DepositsOnly, request.RealizedDepositsOnly, request.ReturnsOnly, ct);
         pf = data.PreFactor;
         deal = data.Deal;
         customerId = type == 1 ? pf?.CustomerId : type == 3 ? deal?.CustomerId : null;

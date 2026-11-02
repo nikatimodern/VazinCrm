@@ -8,6 +8,7 @@ using CRM.EndPoint.FrontEnd.Services.Accountancies;
 using CRM.Infrastructures.Sql.Accountancies.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using CRM.Core.ApplicationServices.Accountancies.Queries.GetAccountancyDetails;
+using CRM.Core.ApplicationServices.Accountancies.Queries.GetAccountancyTransfer;
 using CRM.Core.ApplicationServices.Accountancies.Queries.GetInvoiceTotals;
 using CRM.Core.ApplicationServices.Accountancies.Queries.GetAccountancyCartable;
 using CRM.Core.ApplicationServices.Accountancies.Queries.GetAccountancyPayments;
@@ -25,6 +26,9 @@ using CRM.Core.ApplicationServices.Accountancies.Commands.DelBankAccountItem;
 using CRM.Core.ApplicationServices.Accountancies.Commands.AcceptAccountancy;
 using CRM.Core.ApplicationServices.Accountancies.Commands.ChangeStatusAllAcc;
 using CRM.Core.ApplicationServices.Accountancies.Commands.ChangeStatusAcc;
+using CRM.Core.ApplicationServices.Accountancies.Commands.AddAccountancyTransfer;
+using CRM.Core.ApplicationServices.Accountancies.Commands.RemoveAccountancyTransfer;
+using CRM.Core.ApplicationServices.Accountancies.Commands.RemoveVosolInvoice;
 
 namespace CRM.EndPoint.FrontEnd.Composition;
 public static class AccountancyServicesRegistration
@@ -34,6 +38,7 @@ public static class AccountancyServicesRegistration
         services.AddScoped<IAccountancyRepository, AccountancyRepository>();
         services.AddScoped<IAccountancyEffects, AccountancyEffects>();
         services.AddScoped<IQueryHandler<GetAccountancyDetailsQuery, AccountancyDetails>, GetAccountancyDetailsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetAccountancyTransferQuery, AccountancyTransfer?>, GetAccountancyTransferQueryHandler>();
         services.AddScoped<IQueryHandler<GetInvoiceTotalsQuery, PaymentTotalsData?>, GetInvoiceTotalsQueryHandler>();
         services.AddScoped<IQueryHandler<GetAccountancyCartableQuery, object>, GetAccountancyCartableQueryHandler>();
         services.AddScoped<IQueryHandler<GetAccountancyPaymentsQuery, object>, GetAccountancyPaymentsQueryHandler>();
@@ -51,6 +56,9 @@ public static class AccountancyServicesRegistration
         services.AddScoped<ICommandHandler<AcceptAccountancyCommand, AccountancyOutcome>, AcceptAccountancyCommandHandler>();
         services.AddScoped<ICommandHandler<ChangeStatusAllAccCommand, AccountancyOutcome>, ChangeStatusAllAccCommandHandler>();
         services.AddScoped<ICommandHandler<ChangeStatusAccCommand, AccountancyOutcome>, ChangeStatusAccCommandHandler>();
+        services.AddScoped<ICommandHandler<AddAccountancyTransferCommand, AccountancyOutcome>, AddAccountancyTransferCommandHandler>();
+        services.AddScoped<ICommandHandler<RemoveAccountancyTransferCommand, AccountancyOutcome>, RemoveAccountancyTransferCommandHandler>();
+        services.AddScoped<ICommandHandler<RemoveVosolInvoiceCommand, AccountancyOutcome>, RemoveVosolInvoiceCommandHandler>();
         return services;
     }
 }

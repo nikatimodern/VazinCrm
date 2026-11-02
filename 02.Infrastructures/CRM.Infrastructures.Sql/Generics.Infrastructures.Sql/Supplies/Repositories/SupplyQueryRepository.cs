@@ -562,8 +562,9 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
 
             var accQuery = db.Accountancies
                 .AsNoTracking()
-                .ForPreFactor()
                 .Where(acc =>
+                    acc.InvoiceType == InvoiceTypeEnum.پیش_فاکتور &&
+                    (acc.AccType == AcEnum.واریزی || acc.AccType == AcEnum.برگشتی) &&
                     (acc.PayType == PayTypeEnum.نقدی || acc.PayType == PayTypeEnum.تهاتری) &&
                     acc.Status == AccStatusEnum.تایید_شده
                 )
@@ -642,8 +643,28 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
             var searchValue = request.Search;
             searchValue = searchValue?.ToLower().Trim();
             await using var con = new SqlConnection(db.Database.GetDbConnection().ConnectionString);
-            var result = (await con.QueryAsync<Rp_Motalebat>(new CommandDefinition("Rp_Motalebat", new { CusCode = (int?)null },
-                commandType: CommandType.StoredProcedure, cancellationToken: cancellationToken))).AsQueryable();
+            var receivables = (await con.QueryAsync<Rp_Motalebat>(new CommandDefinition("Rp_Motalebat", new { CusCode = (int?)null },
+                commandType: CommandType.StoredProcedure, cancellationToken: cancellationToken))).ToList();
+            var deposits = await db.Accountancies.AsNoTracking()
+                .Where(a => a.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
+                    && a.AccType == AcEnum.واریزی
+                    && a.Status == AccStatusEnum.تایید_شده
+                    && (a.PayType == PayTypeEnum.نقدی
+                        || a.PayType == PayTypeEnum.تهاتری
+                        || (a.PayType == PayTypeEnum.چکی && a.Vosoled)))
+                .Join(db.Customers.AsNoTracking(), a => a.CustomerId, c => (Guid?)c.Id,
+                    (a, c) => new { c.CustomerCode, a.credit })
+                .GroupBy(a => a.CustomerCode)
+                .Select(g => new { CustomerCode = g.Key, Count = g.Count(), Sum = g.Sum(a => a.credit) ?? 0m })
+                .ToDictionaryAsync(a => a.CustomerCode, cancellationToken);
+            foreach (var item in receivables)
+            {
+                var deposit = int.TryParse(item.CustomerCode, out var code) ? deposits.GetValueOrDefault(code) : null;
+                item.AccSum = deposit?.Sum ?? 0m;
+                item.AccCount = deposit?.Count ?? 0;
+                item.DebitSum = item.FactorSum - (item.AccSum - item.RetAccBackSum);
+            }
+            var result = receivables.AsQueryable();
             if (!string.IsNullOrEmpty(searchValue))
             {
                 result = result.Where(f => f.CustomerCode == searchValue || f.Customer.Contains(searchValue));

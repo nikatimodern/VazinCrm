@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using CRM.Core.ApplicationServices.Accountancies.Queries.GetAccountancyDetails;
+using CRM.Core.ApplicationServices.Accountancies.Queries.GetAccountancyTransfer;
 using CRM.Core.ApplicationServices.Accountancies.Queries.GetInvoiceTotals;
 using CRM.Core.ApplicationServices.Accountancies.Queries.GetAccountancyCartable;
 using CRM.Core.ApplicationServices.Accountancies.Queries.GetAccountancyPayments;
@@ -32,6 +33,9 @@ using CRM.Core.ApplicationServices.Accountancies.Commands.DelBankAccountItem;
 using CRM.Core.ApplicationServices.Accountancies.Commands.AcceptAccountancy;
 using CRM.Core.ApplicationServices.Accountancies.Commands.ChangeStatusAllAcc;
 using CRM.Core.ApplicationServices.Accountancies.Commands.ChangeStatusAcc;
+using CRM.Core.ApplicationServices.Accountancies.Commands.AddAccountancyTransfer;
+using CRM.Core.ApplicationServices.Accountancies.Commands.RemoveAccountancyTransfer;
+using CRM.Core.ApplicationServices.Accountancies.Commands.RemoveVosolInvoice;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 public class AccountancyController(ICqrsDispatcher dispatcher) : Controller
@@ -61,7 +65,22 @@ public class AccountancyController(ICqrsDispatcher dispatcher) : Controller
 
     public async Task<IActionResult> GetAllPaymentCartablePartial(string serVal, CartableEnum cartable, int type = 1, PayTypeEnum? payType = null, CancellationToken ct = default) => Ok(await dispatcher.QueryAsync(new GetAccountancyCartableQuery(serVal, cartable, type, payType), ct));
     [HttpGet]
-    public async Task<IActionResult> GetAllPaymentPartial(int type, Guid id, int passType, CancellationToken ct) => Ok(await dispatcher.QueryAsync(new GetAccountancyPaymentsQuery(type, id, passType), ct));
+    public async Task<IActionResult> GetAllPaymentPartial(int type, Guid id, int passType, bool depositsOnly = false, bool realizedDepositsOnly = false, bool returnsOnly = false, CancellationToken ct = default) => Ok(await dispatcher.QueryAsync(new GetAccountancyPaymentsQuery(type, id, passType, depositsOnly, realizedDepositsOnly, returnsOnly), ct));
+    [HttpPost]
+    public async Task<IActionResult> AddAccountancyTransfer([FromBody] AccountancyTransfer model, CancellationToken ct)
+        => Map(await dispatcher.CommandAsync(new AddAccountancyTransferCommand(model), ct));
+
+    [HttpGet]
+    public async Task<IActionResult> RemoveTransferInvoice(Guid id, CancellationToken ct)
+        => Map(await dispatcher.CommandAsync(new RemoveAccountancyTransferCommand(id), ct));
+
+    [HttpGet]
+    public async Task<IActionResult> RemoveVosolInvoice(Guid id, CancellationToken ct)
+        => Map(await dispatcher.CommandAsync(new RemoveVosolInvoiceCommand(id), ct));
+
+    [HttpGet]
+    public async Task<IActionResult> GetAccountancyTransfer(Guid id, CancellationToken ct)
+        => Ok(await dispatcher.QueryAsync(new GetAccountancyTransferQuery(id), ct));
     [HttpGet]
     public async Task<IActionResult> CheckWallet(Guid cusId, CancellationToken ct) => Ok((await dispatcher.QueryAsync(new GetCustomerWalletQuery(cusId), ct)).Count > 0);
     [HttpGet]

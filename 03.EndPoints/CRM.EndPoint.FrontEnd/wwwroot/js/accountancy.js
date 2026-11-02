@@ -179,26 +179,53 @@ const addInvoiceWalletToPf = async (id) => {
 
 let checkAccId;
 const ShowVosolCheckInvoiceModal = async (itemId, isTransfered) => {
+    suspendPaymentListModal();
     const acc = await getAccountancy(itemId);
     checkAccId = itemId;
     
     document.querySelector("#InvoiceVosolModalId input[name='reciveAmount']").value = acc.accData.credit.toLocaleString();
     document.querySelector("#InvoiceVosolModalId input[name='vosolDate']").value = acc.accData.vosolDate;
     
-    document.querySelector("#InvoiceVosolModalId .toBankAccountWrapperSelect").classList.toggle("d-none", isTransfered);
-    toggleElementsRequired(document.querySelector("#InvoiceVosolModalId select[name='bankAccountId']"), !isTransfered);
+    const vosolModal = document.querySelector("#InvoiceVosolModalId");
+    const transfer = acc.accData.accountancyTransfer;
+    vosolModal.querySelector(".toBankAccountWrapperSelect").classList.toggle("d-none", isTransfered);
+    vosolModal.querySelector(".transferDetailsWrapper").classList.toggle("d-none", !isTransfered);
+    vosolModal.querySelector("input[name='transferBeneficiary']").value = transfer?.beneficiary ?? "";
+    vosolModal.querySelector("input[name='transferToName']").value = transfer?.toName ?? "";
+    toggleElementsRequired(vosolModal.querySelector("select[name='bankAccountId']"), !isTransfered);
     
     await getAllBankAccounts([{ element: "#InvoiceVosolModalId select[name='bankAccountId']", type: [1] }]);
+
+    const bankAccountSelect = document.querySelector("#InvoiceVosolModalId select[name='bankAccountId']");
+    if (!isTransfered && bankAccountSelect) {
+        bankAccountSelect.value = acc.accData.bankAccountId ?? "";
+        bankAccountSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    }
     
     ModalToggle("InvoiceVosolModalId");
 };
 
 async function submitVosolInvoice() {
     if (!await mySer.CheckValidForm("PayFactorVosolFormId")) return;
+    const bankAccountSelect = document.querySelector("#InvoiceVosolModalId [name='bankAccountId']");
+    const transferDetails = document.querySelector("#InvoiceVosolModalId .transferDetailsWrapper");
+    if (transferDetails && !transferDetails.classList.contains("d-none")) {
+        const transferResult = await sendApiRequest({
+            url: "/Accountancy/AddAccountancyTransfer",
+            method: "POST",
+            data: {
+                accountancyId: checkAccId,
+                beneficiary: document.querySelector("#InvoiceVosolModalId [name='transferBeneficiary']").value,
+                toName: document.querySelector("#InvoiceVosolModalId [name='transferToName']").value,
+            },
+            showLoading: false,
+        });
+        if (transferResult === null) return;
+    }
     const model = {
         ...mySer.convertFormToJSON("PayFactorVosolFormId"),
         id: checkAccId,
-        bankAccountTxt: document.querySelector("#InvoiceVosolModalId [name='bankAccountId']").selectedOptions[0].innerText,
+        bankAccountTxt: bankAccountSelect?.selectedOptions[0]?.innerText ?? null,
     };
     
     model.bankAccountId = model.bankAccountId === "" ? null : model.bankAccountId;
@@ -219,10 +246,12 @@ async function submitVosolInvoice() {
 function closeModalVosolInvoice() {
     mySer.emptyForm("PayFactorVosolFormId");
     ModalToggle("InvoiceVosolModalId", "hide");
+    restorePaymentListModal();
 }
 
 
 const ShowVosolEtebariInvoiceModal = async (parentId, pfId, payType) => {
+    suspendPaymentListModal();
     AccParentId = parentId;
     InvoiceType = 1;
     pfactorID = pfId;
@@ -246,14 +275,42 @@ const ShowVosolInvoiceModal = async (itemId, pfId, payType, isTransfered) => {
     }
 };
 
+const ShowEditVosolInvoiceModal = async (itemId) => {
+    const result = await getAccountancy(itemId);
+    const acc = result?.accData;
+    if (!acc) return;
+    if (acc.payType === 2) {
+        await ShowVosolCheckInvoiceModal(itemId, Boolean(acc.accountancyTransfer));
+    } else {
+        await ShowVosolEtebariInvoiceModal(itemId, acc.pfid, acc.payType);
+    }
+};
+
 /* --------------------- InvoiceTransfer --------------------- */
 
 let invoiceTransferId;
+let suspendedPaymentListModal = false;
+
+function suspendPaymentListModal() {
+    const modal = document.getElementById("customerDepositsModal");
+    if (!modal || !modal.classList.contains("show")) return;
+    suspendedPaymentListModal = true;
+    ModalToggle(modal, "hide");
+}
+
+function restorePaymentListModal() {
+    if (!suspendedPaymentListModal) return;
+    suspendedPaymentListModal = false;
+    ModalToggle("customerDepositsModal", "show");
+}
+
 async function ShowTransferInvoiceModal(itemId) {
+    suspendPaymentListModal();
     invoiceTransferId = itemId;
     ModalToggle("InvoiceTransferModalId");
 }
 async function ShowEditTransferInvoiceModal(itemId) {
+    suspendPaymentListModal();
     invoiceTransferId = itemId;
     const data = await getAccountancy(itemId);
     console.log(data.accData.accountancyTransfer);
@@ -285,6 +342,7 @@ async function submitTransferInvoice() {
 function closeModalTransferInvoice() {
     mySer.emptyForm("InvoiceTransferFormId");
     ModalToggle("InvoiceTransferModalId", "hide");
+    restorePaymentListModal();
 }
 
 
@@ -548,6 +606,13 @@ const submitInvoice = async () => {
 
 async function refreshInvoiceSuccess() {
     await RefreshDataInvoice();
+
+    if (typeof window.refreshSupplyDemandDeposits === "function") {
+        await window.refreshSupplyDemandDeposits();
+    }
+    if (typeof window.refreshSupplyDemandTable === "function") {
+        window.refreshSupplyDemandTable();
+    }
     
     const currentPath = window.location.pathname.toLowerCase();
     if (currentPath.includes("customer")) { //1 پروفایل مشتری
@@ -609,6 +674,7 @@ const resetInvoiceModal = () => {
 
 const closeModalInvoice = () => {
     ModalToggle("InvoiceModalId", "hide");
+    restorePaymentListModal();
 };
 
 document.addEventListener("hidden.bs.modal", (e) => {

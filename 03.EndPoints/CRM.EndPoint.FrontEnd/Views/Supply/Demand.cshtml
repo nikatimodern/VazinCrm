@@ -87,6 +87,9 @@
 <partial name="~/Views/Accountancy/Modals/_InvoiceListModal.cshtml" />*@
 
 <partial name="~/Views/Factor/Modals/_FactorContainerModal.cshtml" />
+<partial name="~/Views/Accountancy/Modals/_InvoiceModal.cshtml" />
+<partial name="~/Views/Accountancy/Modals/_InvoiceTransferModal.cshtml" />
+<partial name="~/Views/Accountancy/Modals/_InvoiceVosolModal.cshtml" />
 
 <div class="modal fade" id="customerDepositsModal" tabindex="-1" aria-labelledby="customerDepositsTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
@@ -111,7 +114,7 @@
 </div>
 
 @section scripts {
-    <script data-page-bindings="supplyDemandTBL,supplyDemandConfigFilter,modelSupplyDemand,getRpMotalebat,getAllRpMotalebat,getAllSupplyDemand,showFactors,showInvoices,callBackSupplyDemandFilter">
+    <script>
         let supplyDemandTBL;
         var supplyDemandConfigFilter = {};
         let modelSupplyDemand = { serVal: null, filt: null, _type: -1 };
@@ -145,8 +148,9 @@
                 if (!button || loadingCustomerDeposits) return;
                 const returnsOnly = Boolean(button.dataset.returnCustomerId);
                 const customerId = button.dataset.returnCustomerId || button.dataset.depositCustomerId;
-                if (!await loadCustomerDeposits(customerId, !returnsOnly, returnsOnly)) return;
                 selectedDepositCustomerId = returnsOnly ? null : customerId;
+                selectedDepositsRealizedOnly = !returnsOnly;
+                if (!await loadCustomerDeposits(customerId, !returnsOnly, returnsOnly)) return;
                 document.getElementById("customerDepositsFilter").classList.toggle("d-none", returnsOnly);
                 document.querySelector('input[name="customerDepositsFilter"][value="realized"]').checked = true;
                 document.getElementById("customerDepositsTitle").textContent = `${returnsOnly ? "برگشتی‌های" : "واریزی‌های"} ${button.dataset.customerName}`;
@@ -155,6 +159,7 @@
             document.getElementById("customerDepositsFilter").addEventListener("change", async (event) => {
                 if (!selectedDepositCustomerId || loadingCustomerDeposits) return;
                 const realizedOnly = event.target.value === "realized";
+                selectedDepositsRealizedOnly = realizedOnly;
                 if (!await loadCustomerDeposits(selectedDepositCustomerId, realizedOnly))
                     document.querySelector(`input[name="customerDepositsFilter"][value="${realizedOnly ? "all" : "realized"}"]`).checked = true;
             });
@@ -163,6 +168,17 @@
         let loadingCustomerDeposits = false;
         let loadingCustomerFactors = false;
         let selectedDepositCustomerId = null;
+        let selectedDepositsRealizedOnly = true;
+
+        window.refreshSupplyDemandDeposits = async () => {
+            if (!selectedDepositCustomerId || loadingCustomerDeposits) return;
+            await loadCustomerDeposits(selectedDepositCustomerId, selectedDepositsRealizedOnly);
+        };
+
+        window.refreshSupplyDemandTable = () => {
+            if (supplyDemandTBL)
+                supplyDemandTBL.ajax.reload(null, false);
+        };
 
         async function loadCustomerDeposits(customerId, realizedOnly, returnsOnly = false) {
             loadingCustomerDeposits = true;

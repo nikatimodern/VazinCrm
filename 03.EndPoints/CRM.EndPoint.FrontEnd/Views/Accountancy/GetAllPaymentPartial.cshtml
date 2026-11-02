@@ -154,7 +154,7 @@
 
                                     if ((item.PayType == PayTypeEnum.اعتباری || item.PayType == PayTypeEnum.چکی) && item.Vosoled) {
                                         <div class="d-flex align-items-center gap-2">
-                                            <span class="fbold hoverLink text-decoration-underline" style="color: #0074bb" onclick="showPayment('@item.Id', true)">
+                                            <span class="fbold hoverLink text-decoration-underline" style="color: #0074bb" onclick="@(Model.PassType == 57 ? $"ShowEditVosolInvoiceModal('{item.Id}')" : $"showPayment('{item.Id}', true)")">
                                                 وصول شده
                                             </span>
                                             <button style="font-size: 16px" onclick="removeVosolInvoice('@item.Id')">×</button>

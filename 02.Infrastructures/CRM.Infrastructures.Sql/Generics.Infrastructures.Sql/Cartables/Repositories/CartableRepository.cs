@@ -15,6 +15,7 @@ using CRM.Core.Domain.Supplies.Enums;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using CRM.Infrastructures.Sql.Querying;
 using Microsoft.EntityFrameworkCore;
+using CRM.Core.Domain.Factors.Enum;
 
 namespace CRM.Infrastructures.Sql.Cartables.Repositories;
 public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
@@ -27,6 +28,7 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
         4 => Read(db.Factors.Where(f => f.DealId == id), ct),
         5 => Read(db.Factors.Where(f => f.PfactorID == id), ct),
         6 => Read(db.Factors.Where(f => f.Id == id), ct),
+        7 => Read(db.Factors.Where(f => f.CustomerId == id && f.status == FactorStatus.تایید_شده), ct),
         _ => Task.FromResult<List<Factor>?>(null)};
     private static async Task<List<Factor>?> Read(IQueryable<Factor> query, CancellationToken ct) => await query.AsNoTracking().ToListAsync(ct);
     public async Task<IList<PreFactor>> GetPreFactorsAsync(QueryFilter filter, CartableReadScope scope, int searchNumber, CancellationToken ct)
