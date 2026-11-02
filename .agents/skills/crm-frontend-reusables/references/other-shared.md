@@ -15,6 +15,10 @@ This script holds both shared layout behavior and feature-bound workflows. Share
 
 `onSelectFilterDate` clears the quick-date selection state and removes `bgGreen2` from the filter's preset buttons. It is called by the date picker and by delegated `input`/`change` listeners on `DateFilterDivContent`, covering calendar selection, typing, pasting, and clearing. `getDateFilter` assigns input values directly, so selecting a preset keeps its button highlighted.
 
+## `deal/deal-details-modal.js`
+
+Loaded once by `_Layout.cshtml` with `Modals/_DealDetailsModal`. Add `data-deal-details` to a same-origin link to `/Deal/Details/{id}` to open the shared Bootstrap dialog. Ordinary clicks load the existing document page with `embedded=true` in an isolated iframe, keeping document-modal globals separate from the calling page. Modified clicks preserve normal link navigation. Closing unloads the iframe and restores focus to the link. The server still enforces deal visibility through the existing data endpoint; the attribute grants no access. Embedded-only CSS hides the surrounding application shell.
+
 ## `bottom-sheet.js`
 
 `new BottomSheet({title='',content='',closeOnOverlay=true,closeOnEsc=true,showCloseButton=true,destroyOnClose=false,className='',snapPoints=[],actions=[]})` creates a sheet. Actions accept `{text,html,className,close=true,onClick}`. Instance methods `open`, `close`, `destroy`, `setTitle`, `setContent`, `setActions`, and `on` are synchronous; `on(event,callback)` registers lifecycle events `beforeOpen`, `open`, `beforeClose`, `close`, `drag`, `snap`, and `contentChanged`. Only one active sheet is tracked through `BottomSheet.activeSheet`. The file and its page CSS must be loaded before use; inspect current methods before calling.

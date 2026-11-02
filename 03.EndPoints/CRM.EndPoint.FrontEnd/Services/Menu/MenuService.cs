@@ -80,6 +80,26 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
 
             #endregion
 
+            #region Quality control
+
+            new MenuItem {
+                Id = "qualityControl",
+                Title = "کنترل کیفیت",
+                Url = "/QualityControl/Index",
+                IconHtml = MenuIcons.QualityControl,
+                Roles = [
+                    AppRoles.Admin,
+                    AppRoles.SalesAdmin,
+                    AppRoles.ManagingDirector,
+                    AppRoles.TaminAdmin,
+                    AppRoles.SalesExpert,
+                    AppRoles.TaminExpert
+                ],
+                DisplayOrder = 20
+            },
+
+            #endregion
+
             #region اشخاص
 
             new MenuItem {

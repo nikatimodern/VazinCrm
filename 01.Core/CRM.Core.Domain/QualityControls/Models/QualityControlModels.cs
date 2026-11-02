@@ -1,0 +1,53 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+
+namespace CRM.Core.Domain.QualityControls.Models;
+
+public enum QualityControlStatus
+{
+    NotReviewed = 0,
+    NoDiscrepancy = 1,
+    HasDiscrepancy = 2
+}
+
+public sealed record QualityControlAccess(string UserId, string UserName, bool ReadAll);
+
+public sealed class QualityControlListRequest
+{
+    public int Draw { get; set; }
+    public int Start { get; set; }
+    public int Length { get; set; } = 10;
+    public int? FinancialStatus { get; set; } = 1;
+    public QualityControlStatus? Status { get; set; }
+    public string? Search { get; set; }
+}
+
+public sealed class QualityControlRow
+{
+    public Guid DealId { get; set; }
+    public int SerialNumber { get; set; }
+    public string? Title { get; set; }
+    public string? CustomerName { get; set; }
+    public string? CreateDate { get; set; }
+    public string? UserCreator { get; set; }
+    public int? CustomerCode { get; set; }
+    public bool FinancialApproved { get; set; }
+    public QualityControlStatus Status { get; set; }
+}
+
+public sealed record QualityControlListResult(int Draw, int RecordsTotal, int RecordsFiltered, IReadOnlyList<QualityControlRow> Data);
+public sealed record QualityControlQuestionDto(Guid Id, string Title, string QuestionText, string ZeroAnswerText, string OneAnswerText, int SortOrder, int? Answer);
+public sealed record QualityControlDeal(Guid Id, int SerialNumber, string? Title, string? CustomerName, int? CustomerCode);
+public sealed record QualityControlForm(QualityControlDeal Deal, string? Description, byte[]? RowVersion, IReadOnlyList<QualityControlQuestionDto> Questions);
+
+public sealed class SaveQualityControlRequest
+{
+    public Guid DealId { get; set; }
+    public string? Description { get; set; }
+    public byte[]? RowVersion { get; set; }
+    public List<QualityControlAnswerInput>? Answers { get; set; }
+}
+
+public sealed record QualityControlAnswerInput(Guid QuestionId, int? Answer);
+public sealed record QualityControlSaveResult(int StatusCode, string? Message = null, QualityControlStatus? Status = null, byte[]? RowVersion = null);

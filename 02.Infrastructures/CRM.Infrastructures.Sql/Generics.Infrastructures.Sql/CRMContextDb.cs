@@ -71,6 +71,9 @@ namespace CRM.Infrastructures.Sql {
         public DbSet<Supply> Supplies { get; set; }
         public DbSet<SystemWarning> SystemWarnings { get; set; }
         public DbSet<Deal> Deals { get; set; }
+        public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControl> QualityControls { get; set; }
+        public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControlQuestion> QualityControlQuestions { get; set; }
+        public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControlAnswer> QualityControlAnswers { get; set; }
 
         public DbSet<Agent> Agents { get; set; }
         public DbSet<Contact> Contacts { get; set; }

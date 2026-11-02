@@ -13,7 +13,7 @@ Use for Razor, JavaScript, CSS, modal, select, table, form, and frontend refacto
 
 ## Workflow
 1. Inspect the affected view/partial, JS, CSS, and page layout. Follow [CRM Frontend Reusables](../crm-frontend-reusables/SKILL.md) for shared utilities and HTTP requests.
-2. Prefer native JavaScript and DOM APIs. Use jQuery for genuine plugin interoperability, especially DataTables, not ordinary event handling or selectors.
+2. Write new and changed frontend logic in vanilla JavaScript using native DOM APIs. Do not introduce jQuery code, selectors, event handlers, AJAX calls, or new jQuery dependencies. Follow the legacy integration guidance below for existing plugins.
 3. Use TomSelect for enhanced selects. Never add new Select2 integrations; consider migrating existing Select2 controls when touching them if practical and scoped.
 4. Write scoped, component-specific CSS using existing design tokens and RTL conventions. Use Bootstrap's interactive JavaScript components, such as modals, and suitable lightweight utility classes; prefer custom visual styling over default Bootstrap component appearance.
 5. Check TomSelect lifecycle, dropdown positioning, modal overflow/scroll, focus, cleanup, and repeated modal opening.
@@ -27,6 +27,11 @@ Use for Razor, JavaScript, CSS, modal, select, table, form, and frontend refacto
 
 ## Guardrails
 Do not introduce new frontend dependencies or rewrite global styles without a concrete need and approval.
+
+## Vanilla JavaScript requirement
+- Use native DOM selection, events, class manipulation, and element creation; reuse compatible shared helpers for application HTTP requests and UI behavior.
+- Existing jQuery-dependent plugins such as DataTables do not authorize new jQuery application code. Inspect the installed version and existing adapters for a supported native API before integrating them; do not assume a native-looking API removes the plugin's internal dependency.
+- Preserve existing legacy integrations while making scoped changes. If completing a task requires replacing a jQuery-only integration, explain the affected files, risks, and verification plan before requesting approval for a broader migration. Do not silently add jQuery code or undertake a project-wide rewrite.
 
 ## Project-wide architecture and change policy
 - Whenever CQRS is used, route Commands and Queries through the shared `ICqrsDispatcher`; controllers must not inject or invoke handlers directly. For fully converted controllers, every action must dispatch its operation and the Dispatcher must be the only injected dependency. Follow [the Dispatcher requirement](../crm-backend/SKILL.md#mandatory-dispatcher-for-cqrs).

@@ -1,0 +1,68 @@
+@model System.Guid
+@{
+    ViewData["Title"] = "جزئیات سفارش";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/dealDetails.css" asp-append-version="true" />
+    @if (ViewData["Embedded"] is true) {
+        <link rel="stylesheet" href="~/css/dealDetailsEmbedded.css" asp-append-version="true" />
+    }
+}
+<section id="dealDetailsPage" class="deal-details" dir="rtl" data-deal-id="@Model" aria-labelledby="dealDetailsHeading">
+    <header class="dd-heading">
+        <h1 id="dealDetailsHeading">جزئیات سفارش</h1>
+        @if (ViewData["Embedded"] is not true) {
+            <a class="dd-link" href="@Url.Action("Index", "Deal")">فهرست سفارش‌ها</a>
+        }
+    </header>
+    <div id="dealDetailsFeedback" class="dd-feedback" role="status" aria-live="polite">در حال دریافت اطلاعات سفارش…</div>
+    <button id="dealDetailsRetry" class="dd-link" type="button" hidden>تلاش مجدد</button>
+    <div id="dealDetailsContent" hidden>
+        <section class="dd-summary" aria-labelledby="dealDetailsTitle">
+            <h2 id="dealDetailsTitle"></h2>
+            <dl>
+                <div><dt>شماره سفارش</dt><dd data-deal-field="serialNumber"></dd></div>
+                <div><dt>مشتری</dt><dd data-deal-field="customerName"></dd></div>
+                <div><dt>کد مشتری</dt><dd data-deal-field="customerCode"></dd></div>
+                <div><dt>کارشناس مسئول سفارش</dt><dd data-deal-field="userCreator"></dd></div>
+                <div><dt>تاریخ ثبت</dt><dd data-deal-field="createDateTxt"></dd></div>
+                <div><dt>وضعیت مالی</dt><dd id="dealDetailsFinancial"></dd></div>
+            </dl>
+            <p id="dealDetailsDescription" class="dd-description" hidden></p>
+        </section>
+        <h2>اسناد و سوابق سفارش</h2>
+        <div class="dd-documents">
+            <button type="button" class="dd-document" data-deal-document="prefactors"><span><strong>پیش‌فاکتورها</strong><small>مشاهده پیش‌فاکتورهای مرتبط</small></span><span class="dd-count" data-deal-count="preFactor"></span></button>
+            <button type="button" class="dd-document" data-deal-document="factors"><span><strong>فاکتورها</strong><small>مشاهده فاکتورهای سفارش</small></span><span class="dd-count" data-deal-count="factor"></span></button>
+            <button type="button" class="dd-document" data-deal-document="payments"><span><strong>واریزی‌ها</strong><small>اسناد مالی مرتبط با سفارش</small></span><span class="dd-count" data-deal-count="accountancy"></span></button>
+            <button type="button" class="dd-document" data-deal-document="orders"><span><strong>دستورهای تولید</strong><small>حواله‌ها و مراحل تولید</small></span><span class="dd-count" data-deal-count="orderHead"></span></button>
+            <button type="button" class="dd-document" data-deal-document="reports"><span><strong>گزارش‌های مرتبط</strong><small>گزارش‌ها و پیگیری‌های سفارش</small></span><span class="dd-count" data-deal-count="report"></span></button>
+        </div>
+    </div>
+</section>
+<partial name="~/Views/PreFactor/Modals/_PreFactorModal.cshtml" />
+<partial name="~/Views/PreFactor/Modals/_DeliverModal.cshtml" />
+<partial name="~/Views/PreFactor/Modals/_PreFactorAttachmentsModal.cshtml" />
+<partial name="~/Views/PreFactor/Modals/_PreFactorMobileModal.cshtml" />
+<partial name="~/Views/PreFactor/Modals/_PreFactorChangeUsersModal.cshtml" />
+<partial name="~/Views/PreFactor/Modals/_PreFactorContainerModal.cshtml" />
+<partial name="~/Views/PreFactor/Modals/_SendPreFactorToExternalSoftwareModal.cshtml" />
+
+<partial name="~/Views/Factor/Modals/_FactorContainerModal.cshtml" />
+
+<partial name="~/Views/Order/Modals/_UndeliveredOrderHeadsModal.cshtml" />
+<partial name="~/Views/Order/Modals/_CreateOrderModal.cshtml" />
+<partial name="~/Views/Order/Modals/_OrderHeadsContainerModal.cshtml" />
+
+<partial name="~/Views/Accountancy/Modals/_InvoiceListModal.cshtml" />
+
+<partial name="~/Views/Carizo/Modals/_EditTaskModal.cshtml" />
+
+<partial name="~/Views/Report/Modals/_ReportContainerModal.cshtml" />
+
+
+@section Scripts {
+    <script src="~/js/deal/deal-documents.js?release=6.9.4" data-page-bindings="currentDealDocumentData,showModalDealPreFactors,showModalDealFactors,showModalDealReports,showModalDealOrders,showModalDealSupplyFactors,showModalDealInvoices,getPreFactorFromDeal,getReportFromDeal,getSupplyFactorsFromDeal,getOrdersFromDeal,getInvoicesFromDeal,refreshDealPreFactors,refreshDealFactors,refreshDealReports,refreshDealOrders,refreshDealSupplyFactors,deletedPrefactorToggle" asp-append-version="true"></script>
+    <script src="~/js/deal/deal-details.js" asp-append-version="true"></script>
+}

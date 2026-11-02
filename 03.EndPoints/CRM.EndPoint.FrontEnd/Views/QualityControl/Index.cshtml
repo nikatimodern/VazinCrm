@@ -1,0 +1,135 @@
+@{
+    ViewData["Title"] = "کنترل کیفیت";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/qualityControl.css" asp-append-version="true" />
+}
+
+<section id="qualityControlPage" class="quality-control-page" dir="rtl" aria-labelledby="qualityControlHeading">
+    <h1 id="qualityControlHeading" class="visually-hidden">کنترل کیفیت سفارش‌ها</h1>
+    <div class="qc-results"><div class="qc-table-toolbar">
+        <form id="qcSearchForm" class="qc-search" role="search">
+            <label class="visually-hidden" for="qcSearch">جستجو</label>
+            <input id="qcSearch" type="search" class="form-control" placeholder="جستجوی سفارش یا مشتری" />
+            <button type="submit" class="qc-search-submit" aria-label="جستجو" title="جستجو"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" /></svg></button>
+        </form>
+    <div class="qc-filters">
+        <fieldset class="qc-filter-group">
+            <legend>وضعیت مالی</legend>
+            <ul class="qc-filter-options">
+                <li class="qc-filter-item">
+                    <input type="radio" name="qcFinancialStatus" id="qcFinancialApproved" value="1" checked />
+                    <label for="qcFinancialApproved">تأیید شده</label>
+                </li>
+                <li class="qc-filter-item">
+                    <input type="radio" name="qcFinancialStatus" id="qcFinancialPending" value="0" />
+                    <label for="qcFinancialPending">تأیید نشده</label>
+                </li>
+                <li class="qc-filter-item">
+                    <input type="radio" name="qcFinancialStatus" id="qcFinancialAll" value="" />
+                    <label for="qcFinancialAll">همه سفارش‌ها</label>
+                </li>
+            </ul>
+        </fieldset>
+        <fieldset class="qc-filter-group">
+            <legend>وضعیت کنترل کیفیت</legend>
+            <ul class="qc-filter-options">
+                <li class="qc-filter-item">
+                    <input type="radio" name="qcStatus" id="qcStatusAll" value="" checked />
+                    <label for="qcStatusAll">همه</label>
+                </li>
+                <li class="qc-filter-item">
+                    <input type="radio" name="qcStatus" id="qcStatusUnchecked" value="0" />
+                    <label for="qcStatusUnchecked">بررسی نشده</label>
+                </li>
+                <li class="qc-filter-item">
+                    <input type="radio" name="qcStatus" id="qcStatusMatched" value="1" />
+                    <label for="qcStatusMatched">بدون مغایرت</label>
+                </li>
+                <li class="qc-filter-item">
+                    <input type="radio" name="qcStatus" id="qcStatusMismatched" value="2" />
+                    <label for="qcStatusMismatched">دارای مغایرت</label>
+                </li>
+            </ul>
+        </fieldset>
+    </div>
+
+
+<div class="qc-top-controls">        <label class="qc-page-size" for="qcPageSizeTop">تعداد در صفحه
+            <select id="qcPageSizeTop" class="form-select">
+                <option value="10">۱۰</option>
+                <option value="25">۲۵</option>
+                <option value="50">۵۰</option>
+                <option value="100">۱۰۰</option>
+            </select>
+        </label><nav id="qcPaginationTop" class="qc-pagination" aria-label="صفحه‌بندی بالای سفارش‌ها"></nav></div>
+    </div>
+    <section id="qualityControlRecords" class="qc-records" aria-label="سفارش‌های کنترل کیفیت" aria-describedby="qcTableInfo qcTableFeedback">
+        <div class="qc-records-scroll">
+            <div class="qc-record-header" aria-hidden="true">
+                <span>ردیف</span><span>شماره سفارش</span><span>عنوان سفارش</span><span>مشتری</span><span>تاریخ ثبت</span><span>ثبت‌کننده</span><span>وضعیت مالی</span><span>وضعیت کنترل کیفیت</span><span>عملیات</span>
+            </div>
+            <div id="qcRecordList" class="qc-record-list" role="list"></div>
+        </div>
+    </section>
+    <div id="qcTableFeedback" role="status" aria-live="polite"></div>
+    <button id="qcRetry" type="button" class="qc-button qc-button-primary" hidden>تلاش مجدد</button>
+    <div class="qc-table-footer">
+        <label class="qc-page-size" for="qcPageSize">تعداد در صفحه
+            <select id="qcPageSize" class="form-select">
+                <option value="10">۱۰</option>
+                <option value="25">۲۵</option>
+                <option value="50">۵۰</option>
+                <option value="100">۱۰۰</option>
+            </select>
+        </label>
+        <nav id="qcPagination" class="qc-pagination" aria-label="صفحه‌بندی سفارش‌ها"></nav>
+        <span id="qcTableInfo" role="status" aria-live="polite"></span>
+    </div>
+
+    </div>
+    <div class="modal fade" id="qualityControlModal" tabindex="-1" aria-labelledby="qualityControlModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable modal-fullscreen-sm-down">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="qualityControlModalTitle">کنترل کیفیت سفارش</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="qcOrderSummary" class="qc-order-summary"></div>
+                    <div class="qc-tabs" role="tablist" aria-label="بخش‌های سفارش">
+                        <button id="qcQuestionsTab" class="active" type="button" role="tab" data-bs-toggle="tab" data-bs-target="#qcQuestionsPanel" aria-controls="qcQuestionsPanel" aria-selected="true">سؤال‌های کنترل کیفیت</button>
+                        <button id="qcDetailsTab" type="button" role="tab" data-bs-toggle="tab" data-bs-target="#qcDetailsPanel" aria-controls="qcDetailsPanel" aria-selected="false" tabindex="-1">اطلاعات و اسناد سفارش</button>
+                    </div>
+                    <div class="tab-content">
+                    <div id="qcQuestionsPanel" class="tab-pane active" role="tabpanel" aria-labelledby="qcQuestionsTab">
+                    <form id="qualityControlForm">
+                        @Html.AntiForgeryToken()
+                        <div id="qcFormFeedback" class="qc-feedback" role="status" aria-live="polite"></div>
+                        <fieldset id="qcFormFields" class="qc-form-fields" disabled>
+                            <div id="qcQuestions"></div>
+                            <label for="qcDescription" class="mb-1">توضیحات تکمیلی <small class="text-muted">(اختیاری)</small></label>
+                            <textarea id="qcDescription" name="description" class="form-control" rows="2" maxlength="4000"></textarea>
+                        </fieldset>
+                    </form>
+                    </div>
+                    <div id="qcDetailsPanel" class="tab-pane" role="tabpanel" aria-labelledby="qcDetailsTab">
+                        <p id="qcDetailsFeedback" role="status">برای مشاهده اطلاعات سفارش، این بخش را باز کنید.</p>
+                        <iframe id="qcDetailsFrame" title="اطلاعات و اسناد سفارش انتخاب‌شده" hidden></iframe>
+                    </div>
+                    </div>
+                </div>
+                <div class="modal-footer gap-2">
+                    <button type="submit" form="qualityControlForm" id="qcSubmit" class="qc-button qc-button-primary" disabled>ثبت کنترل کیفیت</button>
+                    <button type="button" class="qc-button qc-button-neutral" data-bs-dismiss="modal">انصراف</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="~/js/qualityControl.js" asp-append-version="true"></script>
+}

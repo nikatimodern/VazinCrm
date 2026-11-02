@@ -75,5 +75,8 @@ For new features, prefer the intended architecture. Do not add business rules to
 - Do not commit, push, merge, create branches, or open PRs unless explicitly asked.
 
 ## Skills
+### UI design standard
+When creating or editing UI (including design previews), load and follow [.agents/skills/project-ui-design-system/SKILL.md](.agents/skills/project-ui-design-system/SKILL.md) and its design-token reference for the official palette and component styling. Apply it alongside the frontend skills below; this does not authorize global restyling or changes outside the requested scope.
+
 Use relevant skills in `.agents/skills/` when the task matches their descriptions. The repository's actual code and explicit user instructions take precedence over examples in skills.
 For every frontend task in any module (including Razor, JavaScript, CSS, and frontend components), load `.agents/skills/crm-frontend-reusables/SKILL.md`. Follow that skill for shared utility reuse and maintenance.

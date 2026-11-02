@@ -15,6 +15,8 @@ Use for reviews of diffs, commits, pull requests, or changed modules.
 5. Distinguish verified defects from assumptions and identify missing tests or unverified runtime behavior.
 6. If no concrete findings exist, say so and note remaining test gaps.
 
+For frontend changes, check compliance with [the vanilla JavaScript requirement](../crm-frontend/SKILL.md#vanilla-javascript-requirement): flag newly introduced jQuery application code or dependencies as an explicit project-rule violation. Distinguish these from unchanged legacy integrations; do not report existing jQuery usage outside the requested diff as a new defect.
+
 ## Guardrails
 Review-only: do not modify files, commit, push, merge, or execute destructive actions unless explicitly asked in a separate instruction.
 
