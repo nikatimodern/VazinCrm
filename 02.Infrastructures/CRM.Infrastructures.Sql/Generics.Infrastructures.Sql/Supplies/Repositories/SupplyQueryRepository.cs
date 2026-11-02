@@ -642,13 +642,14 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
             var sortColumnDirection = request.SortDirection;
             var searchValue = request.Search;
             searchValue = searchValue?.ToLower().Trim();
-            var hasCustomerFilter = Guid.TryParse(request.CustomerId, out var customerId);
-            var customerCode = hasCustomerFilter
-                ? await db.Customers.AsNoTracking()
+            int? customerCode = null;
+            if (Guid.TryParse(request.CustomerId, out var customerId))
+            {
+                customerCode = await db.Customers.AsNoTracking()
                     .Where(c => c.Id == customerId)
                     .Select(c => (int?)c.CustomerCode)
-                    .FirstOrDefaultAsync(cancellationToken)
-                : null;
+                    .FirstOrDefaultAsync(cancellationToken);
+            }
             await using var con = new SqlConnection(db.Database.GetDbConnection().ConnectionString);
             var receivables = (await con.QueryAsync<Rp_Motalebat>(new CommandDefinition("Rp_Motalebat", new { CusCode = (int?)null },
                 commandType: CommandType.StoredProcedure, cancellationToken: cancellationToken))).ToList();
@@ -723,8 +724,8 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
                 .ToListAsync(cancellationToken);
             var customerIds = customers.ToDictionary(c => c.CustomerCode, c => c.Id);
             foreach (var item in data)
-                item.CustomerId = int.TryParse(item.CustomerCode, out var code) && customerIds.TryGetValue(code, out var customerId)
-                    ? customerId : null;
+                item.CustomerId = int.TryParse(item.CustomerCode, out var code) && customerIds.TryGetValue(code, out var matchedCustomerId)
+                    ? matchedCustomerId : null;
             return SupplyResult.Success(new { draw, recordsTotal, recordsFiltered = recordsTotal, data, totals });
         }
         catch (Exception) when (!cancellationToken.IsCancellationRequested)
