@@ -650,7 +650,9 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
                     .Select(c => (int?)c.CustomerCode)
                     .FirstOrDefaultAsync(cancellationToken);
             }
-            await using var con = new SqlConnection(db.Database.GetDbConnection().ConnectionString);
+            // Reuse the context connection: its public connection string can omit credentials after an EF query.
+            // Dapper manages opening/closing as needed; the context retains ownership of the connection.
+            var con = db.Database.GetDbConnection();
             var receivables = (await con.QueryAsync<Rp_Motalebat>(new CommandDefinition("Rp_Motalebat", new { CusCode = (int?)null },
                 commandType: CommandType.StoredProcedure, cancellationToken: cancellationToken))).ToList();
             var deposits = await db.Accountancies.AsNoTracking()
@@ -675,6 +677,19 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
             var result = receivables.AsQueryable();
             if (customerCode.HasValue)
                 result = result.Where(f => f.CustomerCode == customerCode.Value.ToString());
+            if (request.DateFilterEnabled)
+            {
+                var registeredCustomers = db.Customers.AsNoTracking();
+                if (request.FromDate.HasValue)
+                    registeredCustomers = registeredCustomers.Where(c => c.CreateDate >= request.FromDate.Value);
+                if (request.ToDate.HasValue)
+                    registeredCustomers = registeredCustomers.Where(c => c.CreateDate <= request.ToDate.Value);
+                var registeredCustomerCodes = await registeredCustomers
+                    .Select(c => c.CustomerCode)
+                    .ToListAsync(cancellationToken);
+                var matchingCodes = registeredCustomerCodes.Select(code => code.ToString()).ToHashSet();
+                result = result.Where(f => matchingCodes.Contains(f.CustomerCode));
+            }
             if (!string.IsNullOrEmpty(searchValue))
             {
                 result = result.Where(f => f.CustomerCode == searchValue || f.Customer.Contains(searchValue));

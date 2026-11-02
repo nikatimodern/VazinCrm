@@ -11,6 +11,10 @@ Shared upload/preview surface: `processUploadFiles(files,listName,previewIndex,c
 
 This script holds both shared layout behavior and feature-bound workflows. Shared candidates include `dateTimePicker(container=document)` and `Mask()` for date/input initialization; `getAllBankAccountsJson(rerender,type)` and `getAllBankAccounts(selects,rerender=false)` for bank selectors; `buildBankAccountText(item)` / `buildBankAccountUi(item)` for their display;  and `showAttachments(id,typeAtt)` for attachment UI. `ShowFilterPopup(filterBtn,filterItemBlackList=[])` implement the existing filter system. Inspect their required global state/DOM before reuse.
 
+`ShowFilterPopup` resets the shared date checkbox's disabled state on every open. It is locked only for `filterDashboardConfig`, where a date range is required; other pages can toggle the date filter after navigating from the dashboard.
+
+`onSelectFilterDate` clears the quick-date selection state and removes `bgGreen2` from the filter's preset buttons. It is called by the date picker and by delegated `input`/`change` listeners on `DateFilterDivContent`, covering calendar selection, typing, pasting, and clearing. `getDateFilter` assigns input values directly, so selecting a preset keeps its button highlighted.
+
 ## `bottom-sheet.js`
 
 `new BottomSheet({title='',content='',closeOnOverlay=true,closeOnEsc=true,showCloseButton=true,destroyOnClose=false,className='',snapPoints=[],actions=[]})` creates a sheet. Actions accept `{text,html,className,close=true,onClick}`. Instance methods `open`, `close`, `destroy`, `setTitle`, `setContent`, `setActions`, and `on` are synchronous; `on(event,callback)` registers lifecycle events `beforeOpen`, `open`, `beforeClose`, `close`, `drag`, `snap`, and `contentChanged`. Only one active sheet is tracked through `BottomSheet.activeSheet`. The file and its page CSS must be loaded before use; inspect current methods before calling.

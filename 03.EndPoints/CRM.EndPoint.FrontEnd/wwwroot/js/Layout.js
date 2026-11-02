@@ -1094,6 +1094,8 @@ const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
     
     // Date filter
     if (dateChkElm) {
+        // The shared modal survives page navigation; only the dashboard requires an active date filter.
+        dateChkElm.disabled = filterVarConfig === "filterDashboardConfig";
         const toDate = document.querySelector(`#FilterModal [name="toDate"]`);
         const fromDate = document.querySelector(`#FilterModal [name="fromDate"]`);
         
@@ -1345,9 +1347,11 @@ const getDateFilter = async (type, btn) => {
 
 window.onSelectFilterDate = function () {
     currentDateTypeFilter = null;
-    // currentYear = '';
-    // currentMonth = '';
+    document.querySelectorAll("#dateFilterBtnId button").forEach(el => el.classList.remove("bgGreen2"));
 };
+
+document.getElementById("DateFilterDivContent")?.addEventListener("input", window.onSelectFilterDate);
+document.getElementById("DateFilterDivContent")?.addEventListener("change", window.onSelectFilterDate);
 
 
 const AcceptSetting = async () => {
