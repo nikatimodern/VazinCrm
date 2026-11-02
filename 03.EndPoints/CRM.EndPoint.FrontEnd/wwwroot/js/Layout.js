@@ -975,6 +975,7 @@ document.getElementById("DateFilterChk")?.addEventListener("change", () => {
 
 
 let filterVarConfig = null;
+const getFilterElement = (id) => document.getElementById(id);
 
 const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
     if (!filterBtn) return;

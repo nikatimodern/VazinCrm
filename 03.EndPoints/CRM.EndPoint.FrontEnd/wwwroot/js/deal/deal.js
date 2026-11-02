@@ -20,6 +20,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     removeDealsTabsDesktop();
     initSortableDeal();
+    document.querySelectorAll(".btnFilter[data-filterVarConfig='filterDealConfig']")
+        .forEach(button => button.addEventListener("click", () => ShowFilterPopup(button)));
     
     showTaminDropdown();
     const searchDealElm = document.getElementById("dealSearchId");
@@ -38,8 +40,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     await getAllDeals();
 });
-
-
 const dealDropdown = Dropdown.setupDelegate({
     container: document,
     toggleSelector: ".deal-dropdown__toggle",
@@ -62,8 +62,9 @@ const deleteDeal = async (id) => {
 
 async function callbackFilterDeal() {
     modelDeal.EntityId = null;
-    modelDeal.filt = window[filterVarConfig].filterVar;
-    modelDeal.serVal = window[filterVarConfig].varSearch;
+    const dealFilter = window.filterDealConfig;
+    modelDeal.filt = dealFilter?.filterVar ?? null;
+    modelDeal.serVal = dealFilter?.varSearch ?? dealSearchVal;
     
     await getAllDeals();
 }
@@ -814,4 +815,5 @@ dealModalElm.querySelectorAll("input[name='cusJuridical']").forEach((elm) => {
         toggleElementsRequired(juridicalInfoElm.querySelectorAll("input"), showJuridicalInfo);
     });
 });
+
 

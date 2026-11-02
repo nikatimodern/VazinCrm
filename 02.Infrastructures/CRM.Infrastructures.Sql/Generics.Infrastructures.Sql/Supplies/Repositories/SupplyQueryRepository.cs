@@ -642,6 +642,13 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
             var sortColumnDirection = request.SortDirection;
             var searchValue = request.Search;
             searchValue = searchValue?.ToLower().Trim();
+            var hasCustomerFilter = Guid.TryParse(request.CustomerId, out var customerId);
+            var customerCode = hasCustomerFilter
+                ? await db.Customers.AsNoTracking()
+                    .Where(c => c.Id == customerId)
+                    .Select(c => (int?)c.CustomerCode)
+                    .FirstOrDefaultAsync(cancellationToken)
+                : null;
             await using var con = new SqlConnection(db.Database.GetDbConnection().ConnectionString);
             var receivables = (await con.QueryAsync<Rp_Motalebat>(new CommandDefinition("Rp_Motalebat", new { CusCode = (int?)null },
                 commandType: CommandType.StoredProcedure, cancellationToken: cancellationToken))).ToList();
@@ -665,6 +672,8 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
                 item.DebitSum = item.FactorSum - (item.AccSum - item.RetAccBackSum);
             }
             var result = receivables.AsQueryable();
+            if (customerCode.HasValue)
+                result = result.Where(f => f.CustomerCode == customerCode.Value.ToString());
             if (!string.IsNullOrEmpty(searchValue))
             {
                 result = result.Where(f => f.CustomerCode == searchValue || f.Customer.Contains(searchValue));

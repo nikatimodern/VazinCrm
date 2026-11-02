@@ -337,6 +337,6 @@ public class SupplyController(ICqrsDispatcher requests) : Controller
         var column = form["order[0][column]"].FirstOrDefault();
         var dateFilter = includeFilters && model?.filt?.DateFilterChk == true;
         var userFilter = includeFilters && model?.filt?.SelFilterChd == true;
-        return new SupplyTableRequest(form["draw"].FirstOrDefault(), start, length, tolerantPaging && string.IsNullOrWhiteSpace(column) ? null : form[$"columns[{column}][name]"].FirstOrDefault(), form["order[0][dir]"].FirstOrDefault(), form["search[value]"].FirstOrDefault()?.Trim(), model?._type, dateFilter, null, null, userFilter, model?.filt?.selFilter?.ToString(), model?.filt?.fromDate, model?.filt?.toDate, dateFilter);
+        return new SupplyTableRequest(form["draw"].FirstOrDefault(), start, length, tolerantPaging && string.IsNullOrWhiteSpace(column) ? null : form[$"columns[{column}][name]"].FirstOrDefault(), form["order[0][dir]"].FirstOrDefault(), form["search[value]"].FirstOrDefault()?.Trim(), model?._type, dateFilter, null, null, userFilter, model?.filt?.selFilter?.ToString(), model?.filt?.fromDate, model?.filt?.toDate, dateFilter, model?.filt?.CusFilterChd == true ? model.filt.customerFilter?.ToString() : null);
     }
 }

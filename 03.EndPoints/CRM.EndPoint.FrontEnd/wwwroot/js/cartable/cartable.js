@@ -911,5 +911,3 @@ window.addEventListener("resize", removeSalesExpertsTabsDesktop);
 //     }
 // });
 // if(document.querySelector('.dropdown-pFactor-filterList #pfFilterAll').checked)
-
-    
