@@ -12,6 +12,9 @@ using CRM.Core.Domain.QualityControls.Repositories;
 using CRM.Framework.Domain;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
+using CRM.Core.Domain.Accountancies.Enum;
+using System.Globalization;
 
 namespace CRM.Infrastructures.Sql.QualityControls.Repositories;
 
@@ -67,10 +70,42 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
     public async Task<QualityControlForm?> GetFormAsync(Guid dealId, QualityControlAccess access, CancellationToken cancellationToken)
     {
         var deal = await VisibleDeals(access).Where(item => item.Id == dealId)
-            .Select(item => new QualityControlDeal(item.Id, item.SerialNumber, item.Title, item.CustomerName, item.CustomerCode))
+            .Select(item => new QualityControlDeal(item.Id, item.SerialNumber, item.Title, item.CustomerName, item.CustomerCode,
+                item.CustomerId, item.UserCreator, item.CreateDateTxt, item.Description,
+                item.FinancialStatus == DealFinancialStausEnum.تایید_شده,
+                new QualityControlDealCounts(
+                    db.PreFactors.Count(x => x.DealId == item.Id),
+                    db.Factors.Count(x => x.DealId == item.Id),
+                    db.Accountancies.Count(x => x.DealId == item.Id),
+                    db.OrderHeads.Count(x => x.DealId == item.Id),
+                    db.Reports.Count(x => x.DealId == item.Id),
+                    db.SupplyFactors.Count(x => x.DealId == item.Id))))
             .FirstOrDefaultAsync(cancellationToken);
         if (deal == null)
             return null;
+
+        if (deal.CustomerId.HasValue)
+        {
+            var payments = await db.Accountancies.AsNoTracking().ForCustomer(deal.CustomerId).NotVosoled()
+                .Where(payment => payment.AccType == AcEnum.واریزی)
+                .GroupBy(payment => payment.CurrencyType)
+                .Select(group => new { Currency = group.Key, Count = group.Count(), Amount = group.Sum(payment => payment.credit) ?? 0 })
+                .ToListAsync(cancellationToken);
+            deal = deal with {
+                CustomerPaymentCount = payments.Sum(payment => payment.Count),
+                CustomerPaymentTotals = payments.Select(payment => new QualityControlPaymentTotal(
+                    payment.Currency.ToString(), payment.Amount.ToString("#,0.############################", CultureInfo.InvariantCulture))).ToList()
+            };
+        }
+
+        var factorTotals = await db.Factors.AsNoTracking().Where(factor => factor.DealId == dealId)
+            .GroupBy(factor => factor.CurrencyType)
+            .Select(group => new { Currency = group.Key, Amount = group.Sum(factor => factor.SumTotalAmountTax) })
+            .ToListAsync(cancellationToken);
+        deal = deal with {
+            FactorTotals = factorTotals.Select(total => new QualityControlPaymentTotal(total.Currency.ToString(),
+                total.Amount.ToString("#,0.############################", CultureInfo.InvariantCulture))).ToList()
+        };
 
         var control = await db.QualityControls.AsNoTracking().Include(item => item.Answers)
             .FirstOrDefaultAsync(item => item.DealId == dealId, cancellationToken);

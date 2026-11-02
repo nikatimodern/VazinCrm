@@ -38,7 +38,16 @@ public sealed class QualityControlRow
 
 public sealed record QualityControlListResult(int Draw, int RecordsTotal, int RecordsFiltered, IReadOnlyList<QualityControlRow> Data);
 public sealed record QualityControlQuestionDto(Guid Id, string Title, string QuestionText, string ZeroAnswerText, string OneAnswerText, int SortOrder, int? Answer);
-public sealed record QualityControlDeal(Guid Id, int SerialNumber, string? Title, string? CustomerName, int? CustomerCode);
+public sealed record QualityControlDeal(Guid Id, int SerialNumber, string? Title, string? CustomerName, int? CustomerCode,
+    Guid? CustomerId, string? UserCreator, string? CreateDate, string? Description, bool FinancialApproved,
+    QualityControlDealCounts Counts)
+{
+    public int CustomerPaymentCount { get; init; }
+    public IReadOnlyList<QualityControlPaymentTotal> FactorTotals { get; init; } = Array.Empty<QualityControlPaymentTotal>();
+    public IReadOnlyList<QualityControlPaymentTotal> CustomerPaymentTotals { get; init; } = Array.Empty<QualityControlPaymentTotal>();
+}
+public sealed record QualityControlPaymentTotal(string Currency, string Amount);
+public sealed record QualityControlDealCounts(int PreFactor, int Factor, int Accountancy, int OrderHead, int Report, int SupplyFactor);
 public sealed record QualityControlForm(QualityControlDeal Deal, string? Description, byte[]? RowVersion, IReadOnlyList<QualityControlQuestionDto> Questions);
 
 public sealed class SaveQualityControlRequest

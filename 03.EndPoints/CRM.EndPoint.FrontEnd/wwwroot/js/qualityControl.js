@@ -16,7 +16,7 @@
         const submit = page.querySelector("#qcSubmit");
         const questionsTab = page.querySelector("#qcQuestionsTab");
         const detailsTab = page.querySelector("#qcDetailsTab");
-        const detailsFrame = page.querySelector("#qcDetailsFrame");
+        const detailsJson = page.querySelector("#qcDetailsJson");
         const detailsFeedback = page.querySelector("#qcDetailsFeedback");
         const pageSignal = typeof PageRuntime !== "undefined" ? PageRuntime.current?.signal : null;
         const isActive = () => page.isConnected && !pageSignal?.aborted;
@@ -32,6 +32,7 @@
         let rowVersion = null;
         let formReady = false;
         let saving = false;
+        let viewingDocument = false;
 
         const body = page.querySelector("#qcRecordList");
         const paginations = page.querySelectorAll("#qcPagination, #qcPaginationTop");
@@ -89,7 +90,7 @@
                     <div class="qc-record-field qc-customer"><span class="qc-field-label">مشتری</span>${escapeHtml(row.customerName || "-")}${row.customerCode != null ? `<small class="d-block text-muted">کد مشتری: ${escapeHtml(row.customerCode)}</small>` : ""}</div>
                     <div class="qc-record-field "><span class="qc-field-label">تاریخ ثبت</span>${renderDateTimeHtml(escapeHtml(row.createDate || ""))}</div>
                     <div class="qc-record-field "><span class="qc-field-label">ثبت‌کننده</span>${escapeHtml(row.userCreator || "-")}</div>
-                    <div class="qc-record-field "><span class="qc-field-label">وضعیت مالی</span><span class="qc-badge qc-badge-${row.financialApproved ? "green" : "gray"}">${row.financialApproved ? "تأیید شده" : "تأیید نشده"}</span></div>
+                    <div class="qc-record-field "><span class="qc-field-label">وضعیت سفارش</span><span class="qc-badge qc-badge-${row.financialApproved ? "green" : "gray"}">${row.financialApproved ? "تکمیل" : "ناقص"}</span></div>
                     <div class="qc-record-field "><span class="qc-field-label">وضعیت کنترل کیفیت</span><span class="qc-badge qc-quality-status qc-badge-${status.color}">${status.label}</span></div>
                     <div class="qc-record-field qc-actions"><span class="qc-field-label">عملیات</span><button type="button" class="qc-button" data-qc-deal-id="${escapeHtml(row.dealId)}">کنترل کیفیت</button></div>
                 </article>`;
@@ -182,6 +183,7 @@
         loadTable();
 
         modal.addEventListener("hide.bs.modal", event => {
+            if (viewingDocument) return;
             if (saving) {
                 event.preventDefault();
                 return;
@@ -193,22 +195,16 @@
 
         detailsTab.addEventListener("shown.bs.tab", () => {
             submit.hidden = true;
-            if (!selectedDealId || detailsFrame.hasAttribute("src")) return;
-            detailsFeedback.hidden = false;
-            detailsFeedback.textContent = "در حال دریافت اطلاعات سفارش…";
-            const generation = formGeneration;
-            detailsFrame.onload = () => {
-                if (!isActive() || generation !== formGeneration) return;
-                detailsFeedback.hidden = true;
-                detailsFrame.hidden = false;
-            };
-            detailsFrame.src = `/Deal/Details/${encodeURIComponent(selectedDealId)}?embedded=true`;
+            if (!selectedDealId || !formReady) return;
+            detailsFeedback.hidden = true;
+            detailsJson.hidden = false;
+            renderDealDetails(resultDeal);
         });
         questionsTab.addEventListener("shown.bs.tab", () => { submit.hidden = false; });
         modal.addEventListener("hidden.bs.modal", () => {
-            detailsFrame.onload = null;
-            detailsFrame.removeAttribute("src");
-            detailsFrame.hidden = true;
+            if (viewingDocument) return;
+            detailsJson.replaceChildren();
+            detailsJson.hidden = true;
         });
 
         async function openForm(dealId) {
@@ -216,9 +212,8 @@
             const controller = formRequest = new AbortController();
             const generation = ++formGeneration;
             selectedDealId = dealId;
-            detailsFrame.onload = null;
-            detailsFrame.removeAttribute("src");
-            detailsFrame.hidden = true;
+            detailsJson.replaceChildren();
+            detailsJson.hidden = true;
             detailsFeedback.hidden = false;
             bootstrap.Tab.getOrCreateInstance(questionsTab).show();
             submit.hidden = false;
@@ -247,6 +242,7 @@
             }
 
             const deal = result.deal;
+            resultDeal = deal;
             summary.textContent = `سفارش شماره ${deal.serialNumber} — ${deal.title || "بدون عنوان"} | ${deal.customerName || "بدون نام"}${deal.customerCode != null ? ` (کد مشتری: ${deal.customerCode})` : ""}`;
             rowVersion = result.rowVersion ?? null;
             description.value = result.description ?? "";
@@ -256,6 +252,71 @@
             fields.disabled = false;
             submit.disabled = false;
         }
+
+        let resultDeal = null;
+        function renderDealDetails(deal) {
+            if (!deal) return;
+            const fields = [
+                ["شماره سفارش", deal.serialNumber], ["مشتری", deal.customerName], ["کد مشتری", deal.customerCode],
+                ["کارشناس مسئول", deal.userCreator], ["تاریخ ثبت", deal.createDate],
+                ["وضعیت سفارش", deal.financialApproved ? "تکمیل" : "ناقص"],
+            ];
+            const documents = [["پیش‌فاکتور", "preFactor"], ["فاکتور", "factor"], ["واریزی‌ها", "payments"], ["دستور تولید", "orderHead"], ["گزارش", "report"]];
+            const documentButton = (label, key) => `<button type="button" data-qc-document="${key}" ${key === "customerPayments" && !deal.customerId ? 'disabled title="سفارش به مشتری متصل نیست"' : ""}><strong>${label}</strong>${key === "customerPayments" ? "" : `<b>${number.format(deal.counts?.[key] ?? 0)}</b>`}</button>`;
+            detailsJson.innerHTML = `<dl>${fields.map(([label, value]) => `<div><dt>${label}</dt><dd>${escapeHtml(value == null || value === "" ? "—" : value)}</dd></div>`).join("")}</dl><div class="qc-json-documents">${documents.map(([label, key]) => key === "payments"
+                ? `<button type="button" class="qc-customer-payments" data-qc-document="customerPayments" ${!deal.customerId ? 'disabled title="سفارش به مشتری متصل نیست"' : ""}><span><strong>واریزی‌های مشتری</strong><small>تعداد: ${number.format(deal.customerPaymentCount ?? 0)}</small></span><span class="qc-payment-total">جمع کل: ${(deal.customerPaymentTotals ?? []).map(total => `${escapeHtml(total.amount)} ${escapeHtml(total.currency)}`).join(" · ") || "۰"}</span></button>`
+                : key === "factor" ? `<button type="button" class="qc-customer-payments" data-qc-document="factor"><span><strong>فاکتورها</strong><small>تعداد: ${number.format(deal.counts?.factor ?? 0)}</small></span><span class="qc-payment-total">جمع کل: ${(deal.factorTotals ?? []).map(total => `${escapeHtml(total.amount)} ${escapeHtml(total.currency)}`).join(" · ") || "۰"}</span></button>`
+                : documentButton(label, key)).join("")}</div>`;
+        }
+
+        detailsJson.addEventListener("click", async event => {
+            const button = event.target.closest("[data-qc-document]");
+            if (!button || button.disabled || !resultDeal || viewingDocument || saving) return;
+            const deal = resultDeal;
+            const actions = {
+                preFactor: ["dealPreFactorsModal", async () => {
+                    currentDealDocumentData = deal;
+                    document.getElementById("dealPreFactorsTitle").textContent = `پیش‌فاکتورهای سفارش ${deal.serialNumber}`;
+                    document.getElementById("dealPreFactorsAdd").classList.add("d-none");
+                    await getPreFactorFromDeal(deal.id, true);
+                    ModalToggle("dealPreFactorsModal", "show");
+                }],
+                factor: ["FactorsModal", () => showModalDealFactors(deal)],
+                orderHead: ["dealOrdersModal", () => showModalDealOrders(deal)],
+                report: ["dealReportsModal", async () => {
+                    currentDealDocumentData = deal;
+                    document.getElementById("dealReportsTitle").textContent = deal.customerName || "";
+                    document.getElementById("dealReportsAdd").classList.add("d-none");
+                    await getReportFromDeal(deal.id);
+                    ModalToggle("dealReportsModal", "show");
+                }],
+                accountancy: ["InvoiceListModalId", async () => {
+                    await ShowModalListInvoice(deal.id, 3, null, 4, true);
+                    document.getElementById("TitleListInvoiceId").textContent = `واریزی‌های سفارش ${deal.serialNumber}`;
+                }],
+                customerPayments: ["InvoiceListModalId", async () => {
+                    await ShowModalListInvoice(deal.customerId, 5, null, 4, true);
+                    document.getElementById("TitleListInvoiceId").textContent = "واریزی‌های کل مشتری";
+                }],
+            };
+            const action = actions[button.dataset.qcDocument];
+            if (!action) return;
+            viewingDocument = true;
+            const child = document.getElementById(action[0]);
+            modal.inert = true;
+            const restore = () => {
+                child.removeEventListener("hidden.bs.modal", restore);
+                viewingDocument = false;
+                modal.inert = false;
+                if (isActive()) button.focus();
+            };
+            child.addEventListener("hidden.bs.modal", restore);
+            try { await action[1](); }
+            catch {
+                restore();
+                if (isActive()) toastifyError("نمایش اسناد انجام نشد. دوباره تلاش کنید.");
+            }
+        });
 
         function renderQuestions(items) {
             const fragment = document.createDocumentFragment();

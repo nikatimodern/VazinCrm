@@ -17,19 +17,19 @@
         </form>
     <div class="qc-filters">
         <fieldset class="qc-filter-group">
-            <legend>وضعیت مالی</legend>
+            <legend>وضعیت سفارش</legend>
             <ul class="qc-filter-options">
                 <li class="qc-filter-item">
+                    <input type="radio" name="qcFinancialStatus" id="qcFinancialAll" value="" />
+                    <label for="qcFinancialAll">همه</label>
+                </li>
+                <li class="qc-filter-item">
                     <input type="radio" name="qcFinancialStatus" id="qcFinancialApproved" value="1" checked />
-                    <label for="qcFinancialApproved">تأیید شده</label>
+                    <label for="qcFinancialApproved">تکمیل</label>
                 </li>
                 <li class="qc-filter-item">
                     <input type="radio" name="qcFinancialStatus" id="qcFinancialPending" value="0" />
-                    <label for="qcFinancialPending">تأیید نشده</label>
-                </li>
-                <li class="qc-filter-item">
-                    <input type="radio" name="qcFinancialStatus" id="qcFinancialAll" value="" />
-                    <label for="qcFinancialAll">همه سفارش‌ها</label>
+                    <label for="qcFinancialPending">ناقص</label>
                 </li>
             </ul>
         </fieldset>
@@ -69,7 +69,7 @@
     <section id="qualityControlRecords" class="qc-records" aria-label="سفارش‌های کنترل کیفیت" aria-describedby="qcTableInfo qcTableFeedback">
         <div class="qc-records-scroll">
             <div class="qc-record-header" aria-hidden="true">
-                <span>ردیف</span><span>شماره سفارش</span><span>عنوان سفارش</span><span>مشتری</span><span>تاریخ ثبت</span><span>ثبت‌کننده</span><span>وضعیت مالی</span><span>وضعیت کنترل کیفیت</span><span>عملیات</span>
+                <span>ردیف</span><span>شماره سفارش</span><span>عنوان سفارش</span><span>مشتری</span><span>تاریخ ثبت</span><span>ثبت‌کننده</span><span>وضعیت سفارش</span><span>وضعیت کنترل کیفیت</span><span>عملیات</span>
             </div>
             <div id="qcRecordList" class="qc-record-list" role="list"></div>
         </div>
@@ -90,7 +90,7 @@
     </div>
 
     </div>
-    <div class="modal fade" id="qualityControlModal" tabindex="-1" aria-labelledby="qualityControlModalTitle" aria-hidden="true">
+    <div class="modal fade" id="qualityControlModal" tabindex="-1" data-bs-focus="false" aria-labelledby="qualityControlModalTitle" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable modal-fullscreen-sm-down">
             <div class="modal-content">
                 <div class="modal-header">
@@ -103,7 +103,7 @@
                         <button id="qcQuestionsTab" class="active" type="button" role="tab" data-bs-toggle="tab" data-bs-target="#qcQuestionsPanel" aria-controls="qcQuestionsPanel" aria-selected="true">سؤال‌های کنترل کیفیت</button>
                         <button id="qcDetailsTab" type="button" role="tab" data-bs-toggle="tab" data-bs-target="#qcDetailsPanel" aria-controls="qcDetailsPanel" aria-selected="false" tabindex="-1">اطلاعات و اسناد سفارش</button>
                     </div>
-                    <div class="tab-content">
+                    <div class="tab-content bootstrap-only w-100">
                     <div id="qcQuestionsPanel" class="tab-pane active" role="tabpanel" aria-labelledby="qcQuestionsTab">
                     <form id="qualityControlForm">
                         @Html.AntiForgeryToken()
@@ -116,8 +116,8 @@
                     </form>
                     </div>
                     <div id="qcDetailsPanel" class="tab-pane" role="tabpanel" aria-labelledby="qcDetailsTab">
-                        <p id="qcDetailsFeedback" role="status">برای مشاهده اطلاعات سفارش، این بخش را باز کنید.</p>
-                        <iframe id="qcDetailsFrame" title="اطلاعات و اسناد سفارش انتخاب‌شده" hidden></iframe>
+                        <div id="qcDetailsFeedback" role="status">برای مشاهده اطلاعات سفارش، این بخش را باز کنید.</div>
+                        <div id="qcDetailsJson" class="qc-details-json" hidden></div>
                     </div>
                     </div>
                 </div>
@@ -131,5 +131,21 @@
 </section>
 
 @section Scripts {
+    <script src="~/js/deal/deal-documents.js" data-page-bindings="currentDealDocumentData,showModalDealPreFactors,showModalDealFactors,showModalDealReports,showModalDealOrders,showModalDealSupplyFactors,showModalDealInvoices,getPreFactorFromDeal,getReportFromDeal,getSupplyFactorsFromDeal,getOrdersFromDeal,getInvoicesFromDeal,refreshDealPreFactors,refreshDealFactors,refreshDealReports,refreshDealOrders,refreshDealSupplyFactors,deletedPrefactorToggle" asp-append-version="true"></script>
     <script src="~/js/qualityControl.js" asp-append-version="true"></script>
 }
+
+<partial name="~/Views/PreFactor/Modals/_PreFactorModal.cshtml" />
+<partial name="~/Views/PreFactor/Modals/_DeliverModal.cshtml" />
+<partial name="~/Views/PreFactor/Modals/_PreFactorAttachmentsModal.cshtml" />
+<partial name="~/Views/PreFactor/Modals/_PreFactorMobileModal.cshtml" />
+<partial name="~/Views/PreFactor/Modals/_PreFactorChangeUsersModal.cshtml" />
+<partial name="~/Views/PreFactor/Modals/_PreFactorContainerModal.cshtml" />
+<partial name="~/Views/PreFactor/Modals/_SendPreFactorToExternalSoftwareModal.cshtml" />
+<partial name="~/Views/Factor/Modals/_FactorContainerModal.cshtml" />
+<partial name="~/Views/Order/Modals/_UndeliveredOrderHeadsModal.cshtml" />
+<partial name="~/Views/Order/Modals/_CreateOrderModal.cshtml" />
+<partial name="~/Views/Order/Modals/_OrderHeadsContainerModal.cshtml" />
+<partial name="~/Views/Accountancy/Modals/_InvoiceListModal.cshtml" />
+<partial name="~/Views/Carizo/Modals/_EditTaskModal.cshtml" />
+<partial name="~/Views/Report/Modals/_ReportContainerModal.cshtml" />

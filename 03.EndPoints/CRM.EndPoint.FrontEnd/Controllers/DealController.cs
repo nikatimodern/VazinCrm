@@ -48,15 +48,6 @@ public class DealController : Controller {
         return View();
     }
 
-    [HttpGet]
-    [Authorize(Roles = "کارشناس فروش,مدیر ارشد,مدیر تامین,مدیر فروش,کارشناس تامین,مدیر عامل")]
-    public IActionResult Details(Guid id, bool embedded = false)
-    {
-        if (!ModelState.IsValid || id == Guid.Empty) return BadRequest();
-        ViewData["Embedded"] = embedded;
-        return View(id);
-    }
-
 
     public async Task<IActionResult> ToggleFinancialStatusDeal(Guid id, DealFinancialStausEnum status)
     {
