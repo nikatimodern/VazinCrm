@@ -59,7 +59,7 @@ public class SupplyController(ICqrsDispatcher requests) : Controller
     public async Task<IActionResult> Payment(CancellationToken cancellationToken) => View(await requests.QueryAsync(new GetWorkspacePageQuery("Supply/Payment"), cancellationToken));
     [Authorize(Roles = "مدیر ارشد, مدیر اجرایی")]
     public async Task<IActionResult> Profit(CancellationToken cancellationToken) => View(await requests.QueryAsync(new GetWorkspacePageQuery("Supply/Profit"), cancellationToken));
-    [Authorize(Roles = "مدیر ارشد, مدیر اجرایی")]
+    [Authorize(Roles = "مدیر ارشد, مدیر اجرایی, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> Demand(CancellationToken cancellationToken) => View(await requests.QueryAsync(new GetWorkspacePageQuery("Supply/Demand"), cancellationToken));
     [HttpGet]
     [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
