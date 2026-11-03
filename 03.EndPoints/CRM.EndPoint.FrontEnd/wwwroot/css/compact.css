@@ -6,7 +6,7 @@
 	--compact-shell-height: 52px;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 768px) and (max-width: 1599.98px) {
 	html { font-size: 11.34px; }
 	html:not(.sidebar-collapsed) #desktopSidebar { width: var(--compact-sidebar-width); }
 	html:not(.sidebar-collapsed) #mainWrapper { margin-right: var(--compact-sidebar-width); }
@@ -54,6 +54,6 @@
 	div.dt-container tbody td, div.dt-container tbody th { padding: 10px 8px !important; }
 }
 
-@media (min-width: 1200px) { .modal-xxl { max-width: 923px; } }
-@media (min-width: 1400px) { .modal-xxl { max-width: 1069px; } }
-@media (min-width: 1500px) { .modal-xxl { max-width: 1166px; } }
+@media (min-width: 1200px) and (max-width: 1399.98px) { .modal-xxl { max-width: 923px; } }
+@media (min-width: 1400px) and (max-width: 1499.98px) { .modal-xxl { max-width: 1069px; } }
+@media (min-width: 1500px) and (max-width: 1599.98px) { .modal-xxl { max-width: 1166px; } }
