@@ -248,6 +248,8 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                     AppRoles.Admin,
                     AppRoles.ManagingDirector,
                     AppRoles.ExecutiveDirector,
+                    AppRoles.FinancialExpert,
+                    AppRoles.FinancialAdmin
                 ],
                 DisplayOrder = 9,
                 SubItems = [

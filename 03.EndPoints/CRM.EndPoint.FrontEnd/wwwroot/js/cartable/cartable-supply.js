@@ -222,7 +222,7 @@ function toggleSupplyModal() {
 
 
 const addItemSupplyModal = document.getElementById("addItemSupplyModal");
-const weightInputSupplyItemModal = addItemSupplyModal.querySelector("#weightMobile");
+const weightInputSupplyItemModal = addItemSupplyModal?.querySelector("#weightMobile");
 
 let isSetupSupplyModal = false;
 function setupSupplyItemModal() {
