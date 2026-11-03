@@ -50,6 +50,23 @@
         let total = 0;
         let draw = 0;
         let loading = false;
+        let sortBy = "createDate";
+        let sortDescending = true;
+        const sortButtons = page.querySelectorAll("[data-qc-sort]");
+        const mobileSort = page.querySelector("#qcMobileSort");
+        const mobileSortDirection = page.querySelector("#qcMobileSortDirection");
+        function updateSortIndicators() {
+            sortButtons.forEach(button => {
+                const active = button.dataset.qcSort === sortBy;
+                button.setAttribute("aria-label", `${button.textContent.trim()}، ${active ? (sortDescending ? "نزولی" : "صعودی") : "مرتب‌سازی"}`);
+                if (active) button.dataset.direction = sortDescending ? "descending" : "ascending";
+                else delete button.dataset.direction;
+            });
+            mobileSort.value = sortBy;
+            mobileSortDirection.textContent = sortDescending ? "نزولی ↓" : "صعودی ↑";
+            mobileSortDirection.setAttribute("aria-label", sortDescending ? "ترتیب نزولی" : "ترتیب صعودی");
+        }
+        updateSortIndicators();
 
         function renderPagination() {
             const count = Math.ceil(total / length);
@@ -89,7 +106,7 @@
                     <div class="qc-record-field "><span class="qc-field-label">شماره سفارش</span>${escapeHtml(row.serialNumber ?? "-")}</div>
                     <div class="qc-record-field qc-title"><span class="qc-field-label">عنوان سفارش</span>${escapeHtml(row.title || "-")}</div>
                     <div class="qc-record-field qc-customer"><span class="qc-field-label">مشتری</span>${escapeHtml(row.customerName || "-")}${row.customerCode != null ? `<small class="d-block text-muted">کد مشتری: ${escapeHtml(row.customerCode)}</small>` : ""}</div>
-                    <div class="qc-record-field "><span class="qc-field-label">تاریخ ثبت</span>${renderDateTimeHtml(escapeHtml(row.createDate || ""))}</div>
+                    <div class="qc-record-field "><span class="qc-field-label">تاریخ ثبت</span><span dir="ltr">${escapeHtml((row.createDate || "").split(" ")[0] || "-")}</span></div>
                     <div class="qc-record-field "><span class="qc-field-label">ثبت‌کننده</span>${escapeHtml(row.userCreator || "-")}</div>
                     <div class="qc-record-field "><span class="qc-field-label">وضعیت سفارش</span><span class="qc-badge qc-badge-${row.financialApproved ? "green" : "gray"}">${row.financialApproved ? "تحویل شده" : "تحویل نشده"}</span></div>
                     <div class="qc-record-field "><span class="qc-field-label">وضعیت کنترل کیفیت</span><span class="qc-badge qc-quality-status qc-badge-${status.color}">${status.label}</span></div>
@@ -116,6 +133,7 @@
                     url: "/QualityControl/GetDeals",
                     params: {
                         draw: ++draw, start, length, search,
+                        sortBy, sortDescending,
                         financialStatus: page.querySelector('[name="qcFinancialStatus"]:checked').value,
                         status: page.querySelector('[name="qcStatus"]:checked').value,
                     },
@@ -150,6 +168,25 @@
         searchForm.addEventListener("submit", event => {
             event.preventDefault();
             search = searchInput.value.trim();
+            loadTable(true);
+        });
+        page.querySelector(".qc-record-header").addEventListener("click", event => {
+            const button = event.target.closest("[data-qc-sort]");
+            if (!button) return;
+            if (button.dataset.qcSort === sortBy) sortDescending = !sortDescending;
+            else { sortBy = button.dataset.qcSort; sortDescending = false; }
+            updateSortIndicators();
+            loadTable(true);
+        });
+        mobileSort.addEventListener("change", () => {
+            sortBy = mobileSort.value;
+            sortDescending = false;
+            updateSortIndicators();
+            loadTable(true);
+        });
+        mobileSortDirection.addEventListener("click", () => {
+            sortDescending = !sortDescending;
+            updateSortIndicators();
             loadTable(true);
         });
         searchInput.addEventListener("input", () => {
@@ -310,6 +347,7 @@
             if (!deal) return;
             const fields = [
                 ["شماره سفارش", deal.serialNumber], ["مشتری", deal.customerName], ["کد مشتری", deal.customerCode],
+                ["تلفن", deal.customerTel], ["موبایل", deal.customerMobile],
                 ["کارشناس مسئول", deal.userCreator], ["تاریخ ثبت", deal.createDate],
                 ["وضعیت سفارش", deal.financialApproved ? "تحویل شده" : "تحویل نشده"],
             ];
