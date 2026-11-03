@@ -92,7 +92,7 @@ public sealed class CustomerRepository(CRMContextDb db, UserContextDb users) : I
             (filter.Ascending ? query.OrderBy(c => c.CreateDate) : query.OrderByDescending(c => c.CreateDate));
         return new(filter.Draw, count, count, await query.Skip(filter.Skip).Take(filter.Take).ToListAsync(ct));
     }
-    public Task<List<CustomerSummary>> GetSummariesAsync(CancellationToken ct) => db.Customers.AsNoTracking().Select(c => new CustomerSummary(c.Id, c.Mobile, c.Tel, (int)c.RoleType, (c.CompanyName + " " + c.AgentName).Trim(), c.CustomerCode)).ToListAsync(ct);
+    public Task<List<CustomerSummary>> GetSummariesAsync(CancellationToken ct) => db.Customers.AsNoTracking().Select(c => new CustomerSummary(c.Id, c.Mobile, c.Tel, (int)c.RoleType, (c.CompanyName + " " + c.AgentName).Trim(), c.CustomerCode, c.CompanyName, c.AgentName)).ToListAsync(ct);
     public Task<List<CustomerPhone>> GetPhonebookAsync(string search, string[] keywords, CancellationToken ct)
     {
         var query = db.Customers.AsNoTracking().AsQueryable();

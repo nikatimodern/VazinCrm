@@ -295,6 +295,9 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Property<Guid>("AccountancyId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Beneficiary")
                         .HasColumnType("nvarchar(max)");
 

@@ -466,6 +466,9 @@ public class DealController : Controller {
             var deal = await db.Deals.Include(f => f.Factors).Where(f => f.Id == id).FirstOrDefaultAsync();
             if (deal == null) return NotFound("رکوردی یافت نشد!");
 
+            if (status == DealStatusEnum.موفق && !deal.Factors.Any())
+                return BadRequest("سفارش بدون فاکتور نمی‌تواند موفق شود.");
+
             if (deal.Factors.Any() && (status == DealStatusEnum.باز || status == DealStatusEnum.بسته || status == DealStatusEnum.ناموفق))
             {
                 return BadRequest("مجاز به تغییر وضعیت این سفارش نیستید");

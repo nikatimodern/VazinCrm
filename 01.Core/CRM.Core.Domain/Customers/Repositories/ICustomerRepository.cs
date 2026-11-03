@@ -12,7 +12,7 @@ namespace CRM.Core.Domain.Customers.Repositories;
 
 public sealed record CustomerOption(Guid Id, string Text);
 public sealed record CustomerSupplier(Guid Id, string? CompanyName, string? AgentName, int CustomerCode);
-public sealed record CustomerSummary(Guid Id, string? Mobile, string? Tel, int RoleType, string CustomerName, int CustomerCode);
+public sealed record CustomerSummary(Guid Id, string? Mobile, string? Tel, int RoleType, string CustomerName, int CustomerCode, string? CompanyName, string? AgentName);
 public sealed record CustomerPhone(Guid Id, string Name, string? Phone, int CustomerCode, string? Mobile, DateTime? ModifyDate, string? NormalizedAgentName, string? NormalizedCompanyName);
 public sealed record CustomerTableRequest(string? Draw, int Skip, int Take, string? SortColumn, bool Ascending, string? Search, byte Juridical);
 public sealed record CustomerTableResult(string? Draw, int RecordsFiltered, int RecordsTotal, List<Customer> Data);

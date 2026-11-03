@@ -179,6 +179,51 @@ const addInvoiceWalletToPf = async (id) => {
 };
 
 let checkAccId;
+let transferBeneficiaryOptions;
+async function initTransferBeneficiarySelect(select, selectedValue = "") {
+    if (!select) return;
+    if (!transferBeneficiaryOptions) {
+        transferBeneficiaryOptions = getCustomersList().then(customers => {
+            if (!Array.isArray(customers)) throw new Error("Could not load customers.");
+            return customers.map(customer => {
+                const text = [customer.companyName, customer.agentName, customer.customerCode]
+                    .filter(value => value !== null && value !== undefined && String(value).trim() !== "")
+                    .join(" - ");
+                return { value: customer.id, text };
+            }).filter(option => option.value);
+        }).catch(error => {
+            transferBeneficiaryOptions = null;
+            throw error;
+        });
+    }
+    const options = await transferBeneficiaryOptions;
+    if (!select.tomselect) {
+        new TomSelect(select, {
+            options,
+            valueField: "value",
+            labelField: "text",
+            searchField: "text",
+            maxItems: 1,
+            maxOptions: null,
+            openOnFocus: true,
+            placeholder: "انتخاب یا جستجوی شخص...",
+            dropdownParent: "body",
+        });
+        select.tomselect.dropdown.style.zIndex = "2000";
+    }
+    if (selectedValue && !select.tomselect.options[selectedValue]) {
+        select.tomselect.addOption({ value: selectedValue, text: selectedValue });
+    }
+    select.tomselect.setValue(selectedValue, true);
+}
+function transferBeneficiarySelection(select) {
+    const value = select?.value ?? "";
+    return {
+        customerId: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value) ? value : null,
+        beneficiary: select?.tomselect?.options[value]?.text ?? value,
+    };
+}
+
 const ShowVosolCheckInvoiceModal = async (itemId, isTransfered) => {
     suspendPaymentListModal();
     const acc = await getAccountancy(itemId);
@@ -191,7 +236,10 @@ const ShowVosolCheckInvoiceModal = async (itemId, isTransfered) => {
     const transfer = acc.accData.accountancyTransfer;
     vosolModal.querySelector(".toBankAccountWrapperSelect").classList.toggle("d-none", isTransfered);
     vosolModal.querySelector(".transferDetailsWrapper").classList.toggle("d-none", !isTransfered);
-    vosolModal.querySelector("input[name='transferBeneficiary']").value = transfer?.beneficiary ?? "";
+    if (isTransfered) {
+        await initTransferBeneficiarySelect(vosolModal.querySelector("select[name='transferBeneficiary']"), transfer?.customerId ?? transfer?.beneficiary ?? "");
+    }
+    vosolModal.querySelector("select[name='transferBeneficiary']").required = isTransfered;
     vosolModal.querySelector("input[name='transferToName']").value = transfer?.toName ?? "";
     toggleElementsRequired(vosolModal.querySelector("select[name='bankAccountId']"), !isTransfered);
     
@@ -216,7 +264,7 @@ async function submitVosolInvoice() {
             method: "POST",
             data: {
                 accountancyId: checkAccId,
-                beneficiary: document.querySelector("#InvoiceVosolModalId [name='transferBeneficiary']").value,
+                ...transferBeneficiarySelection(document.querySelector("#InvoiceVosolModalId [name='transferBeneficiary']")),
                 toName: document.querySelector("#InvoiceVosolModalId [name='transferToName']").value,
             },
             showLoading: false,
@@ -308,6 +356,7 @@ function restorePaymentListModal() {
 async function ShowTransferInvoiceModal(itemId) {
     suspendPaymentListModal();
     invoiceTransferId = itemId;
+    await initTransferBeneficiarySelect(document.querySelector("#InvoiceTransferFormId select[name='beneficiary']"));
     ModalToggle("InvoiceTransferModalId");
 }
 async function ShowEditTransferInvoiceModal(itemId) {
@@ -315,7 +364,10 @@ async function ShowEditTransferInvoiceModal(itemId) {
     invoiceTransferId = itemId;
     const data = await getAccountancy(itemId);
     console.log(data.accData.accountancyTransfer);
+    const beneficiary = data.accData.accountancyTransfer?.customerId ?? data.accData.accountancyTransfer?.beneficiary;
+    await initTransferBeneficiarySelect(document.querySelector("#InvoiceTransferFormId select[name='beneficiary']"), beneficiary);
     mySer.convertJsonToForm(data.accData.accountancyTransfer, "InvoiceTransferFormId");
+    document.querySelector("#InvoiceTransferFormId select[name='beneficiary']")?.tomselect?.setValue(beneficiary ?? "", true);
     ModalToggle("InvoiceTransferModalId");
 }
 
@@ -326,6 +378,7 @@ async function submitTransferInvoice() {
         ...mySer.convertFormToJSON("InvoiceTransferFormId"),
         accountancyId: invoiceTransferId,
     };
+    Object.assign(model, transferBeneficiarySelection(document.querySelector("#InvoiceTransferFormId select[name='beneficiary']")));
     
     console.log(model);
     

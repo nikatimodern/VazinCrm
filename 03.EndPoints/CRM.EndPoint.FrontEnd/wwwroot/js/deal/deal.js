@@ -179,6 +179,7 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
         const card = document.createElement("div");
         
         card.dataset.id = item.id;
+        card.dataset.hasFactor = item.counts.factor > 0;
         card.className = "deal-card";
         
         if (item.counts.factor > 0 && item.status === 3) {
@@ -250,10 +251,10 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
                             </span>
                         </div>
                         <div class="d-flex align-items-center gap-1 d-xl-none">
-                            <button class="${item.status === 1 ? "buttonGreen2" : "buttonBlue2"}" style="font-size: 11px" onclick="changeStatusDeal('${item.id}', ${item.status === 1 ? "3" : "1"})">
+                            <button class="${item.status === 1 ? "buttonGreen2" : "buttonBlue2"}" style="font-size: 11px" onclick="changeStatusDeal('${item.id}', ${item.status === 1 ? "3" : "1"})" ${item.status === 1 && !item.counts.factor ? "disabled title='ابتدا برای سفارش فاکتور صادر کنید'" : ""}>
                                 ${item.status === 1 ? "موفق" : "باز"}
                             </button>
-                            <button class="${item.status === 2 ? "buttonGreen2" : "buttonCancel3"}" style="font-size: 11px" onclick="changeStatusDeal('${item.id}', ${item.status === 2 ? "3" : "2"})">
+                            <button class="${item.status === 2 ? "buttonGreen2" : "buttonCancel3"}" style="font-size: 11px" onclick="changeStatusDeal('${item.id}', ${item.status === 2 ? "3" : "2"})" ${item.status === 2 && !item.counts.factor ? "disabled title='ابتدا برای سفارش فاکتور صادر کنید'" : ""}>
                                 ${item.status === 2 ? "موفق" : "ناموفق"}
                             </button>
                         </div>
@@ -758,6 +759,12 @@ async function changeStatusDeal(id, targetStatus, dragEvent = null) {
         const { item, from, oldIndex } = dragEvent;
         from.insertBefore(item, from.children[oldIndex] ?? null);
     };
+
+    if (targetStatus === 3 && dragEvent?.item.dataset.hasFactor === "false") {
+        restorePosition();
+        toastifyError("برای موفق شدن سفارش، ابتدا فاکتور صادر کنید.");
+        return;
+    }
     
     if (pendingDealStatusChanges.has(id)) {
         restorePosition();

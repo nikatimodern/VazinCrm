@@ -35,6 +35,7 @@ public sealed class AccountancyRepository(CRMContextDb db) : IAccountancyReposit
             db.AccountancyTransfers.Add(transfer);
         else
         {
+            existing.CustomerId = transfer.CustomerId;
             existing.Beneficiary = transfer.Beneficiary;
             existing.ToName = transfer.ToName;
             existing.ModifyDate = DateTime.Now;
@@ -161,7 +162,7 @@ public sealed class AccountancyRepository(CRMContextDb db) : IAccountancyReposit
 
     public async Task<AccountancyCartable> GetCartableAsync(string? serVal, int searchNumber, CartableEnum cartable, int type, PayTypeEnum? payType, CancellationToken ct)
     {
-        var baseQuery = db.Accountancies.AsNoTracking().Include(x => x.Deal).ForPreFactor().OrderByDescending(x => x.CreateDate).AsQueryable();
+        var baseQuery = db.Accountancies.AsNoTracking().Include(x => x.Deal).Include(x => x.AccountancyTransfer).ForPreFactor().OrderByDescending(x => x.CreateDate).AsQueryable();
         if (cartable == CartableEnum.کارشناس_تامین)
         {
             baseQuery = baseQuery.OnlyTamin();

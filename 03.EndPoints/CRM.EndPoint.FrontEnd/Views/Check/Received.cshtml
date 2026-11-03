@@ -65,6 +65,7 @@
             initSearchInput("receivedChecksSearchId", async () => await getReceivedChecks());
         });
 
+
         const getReceivedChecks = async () => {
             const val = document.getElementById("receivedChecksSearchId")?.value.trim() ?? "";
             const type = document.querySelector("input[type='radio'][name='receivedChecksFilter']:checked")?.value;
