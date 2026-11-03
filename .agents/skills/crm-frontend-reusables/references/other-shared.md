@@ -15,6 +15,14 @@ This script holds both shared layout behavior and feature-bound workflows. Share
 
 `onSelectFilterDate` clears the quick-date selection state and removes `bgGreen2` from the filter's preset buttons. It is called by the date picker and by delegated `input`/`change` listeners on `DateFilterDivContent`, covering calendar selection, typing, pasting, and clearing. `getDateFilter` assigns input values directly, so selecting a preset keeps its button highlighted.
 
+## `deal/deal-documents.js`
+
+`refreshDealFactors()` preserves the return value from `getAllFactorsModal(dealId, 4)`. After attempting to reload the current order's invoice list, it dispatches `crm:deal-factors-changed` on `document` with `{ dealId }` in `event.detail`. Existing successful invoice mutations call this refresh path. The notification is also emitted when the list request returns `false`, because the preceding mutation may already have succeeded. Page-specific listeners must match the order ID and respect the page/modal lifecycle; pages without listeners retain their existing behavior. Quality Control uses this notification to fetch fresh invoice summaries without resetting unsaved questionnaire fields.
+
+## `accountancy.js`
+
+After `refreshInvoiceSuccess()` reloads a customer payment list (`Invo_type === 5`), it dispatches `crm:customer-payments-changed` on `document` with `{ customerId: Invo_id }` in `event.detail`. The Quality Control page matches that customer ID and refetches its summary without clearing unsaved answers. Other payment-list callers do not need to handle the event.
+
 ## `deal/deal-details-modal.js`
 
 Loaded once by `_Layout.cshtml` with `Modals/_DealDetailsModal`. Add `data-deal-details` to a same-origin link to `/Deal/Details/{id}` to open the shared Bootstrap dialog. Ordinary clicks load the existing document page with `embedded=true` in an isolated iframe, keeping document-modal globals separate from the calling page. Modified clicks preserve normal link navigation. Closing unloads the iframe and restores focus to the link. The server still enforces deal visibility through the existing data endpoint; the attribute grants no access. Embedded-only CSS hides the surrounding application shell.

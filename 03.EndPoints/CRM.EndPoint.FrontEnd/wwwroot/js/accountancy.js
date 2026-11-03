@@ -608,6 +608,10 @@ const submitInvoice = async () => {
 async function refreshInvoiceSuccess() {
     await RefreshDataInvoice();
 
+    if (Invo_type === 5 && Invo_id) {
+        document.dispatchEvent(new CustomEvent("crm:customer-payments-changed", { detail: { customerId: Invo_id } }));
+    }
+
     if (typeof window.refreshSupplyDemandDeposits === "function") {
         await window.refreshSupplyDemandDeposits();
     }

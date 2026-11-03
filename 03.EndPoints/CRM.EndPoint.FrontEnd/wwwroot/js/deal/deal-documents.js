@@ -148,7 +148,12 @@ const getInvoicesFromDeal = async (dealId) => {
 
 // refresh
 const refreshDealPreFactors = async () => await getPreFactorFromDeal(currentDealDocumentData?.id);
-const refreshDealFactors = async () => await getAllFactorsModal(currentDealDocumentData?.id, 4);
+const refreshDealFactors = async () => {
+    const dealId = currentDealDocumentData?.id;
+    const loaded = await getAllFactorsModal(dealId, 4);
+    if (dealId) document.dispatchEvent(new CustomEvent("crm:deal-factors-changed", { detail: { dealId } }));
+    return loaded;
+};
 const refreshDealReports = async () => await getReportFromDeal(currentDealDocumentData?.id);
 const refreshDealOrders = async () => await getOrdersFromDeal(currentDealDocumentData?.id);
 const refreshDealSupplyFactors = async () => await getSupplyFactorsFromDeal(currentDealDocumentData?.id);

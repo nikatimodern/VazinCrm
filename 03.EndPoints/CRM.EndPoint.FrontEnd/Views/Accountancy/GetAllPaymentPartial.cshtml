@@ -28,7 +28,9 @@
             var isDealClosed = item.Deal?.FinancialStatus == DealFinancialStausEnum.تایید_شده;
 
             var canManage = !Model.ReadOnly && !isDealClosed && (isCreator || Model.IsCreatorParent || Model.IsAdmin || Model.IsSalesAdmin);
-            var canViewActions = !Model.ReadOnly && (canManage || Model.IsFinancial);
+            // Settlement permissions are independent of order completion; editing remains locked.
+            var canViewActions = !Model.ReadOnly && (canManage || Model.IsAdmin || Model.IsFinancial
+                || (Model.IsManagingDirector && item.PayType == PayTypeEnum.اعتباری));
             var canEdit = !Model.ReadOnly && (((Model.IsAdmin || Model.IsFinancial) && isCreator)
                                               || (canManage && item.Status is AccStatusEnum.ثبت_اولیه or AccStatusEnum.رد_شده));
             var canVosol = !Model.ReadOnly && item.Status == AccStatusEnum.تایید_شده &&
@@ -39,7 +41,7 @@
                               item.PayType == PayTypeEnum.چکی && item.AccountancyTransfer == null && !item.Vosoled;
 
             var canApproveOrReject =
-                !Model.ReadOnly && !isDealClosed &&
+                !Model.ReadOnly &&
                 (Model.IsAdmin ||
                  (Model.IsFinancial && (item.PayType == PayTypeEnum.نقدی || item.PayType == PayTypeEnum.چکی)) ||
                  ((Model.IsManagingDirector || Model.IsTamin) && item.PayType == PayTypeEnum.تهاتری) ||

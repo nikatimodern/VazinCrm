@@ -27,6 +27,7 @@
         };
         let tableRequest = null;
         let formRequest = null;
+        let factorSummaryRequest = null;
         let formGeneration = 0;
         let selectedDealId = null;
         let rowVersion = null;
@@ -90,7 +91,7 @@
                     <div class="qc-record-field qc-customer"><span class="qc-field-label">مشتری</span>${escapeHtml(row.customerName || "-")}${row.customerCode != null ? `<small class="d-block text-muted">کد مشتری: ${escapeHtml(row.customerCode)}</small>` : ""}</div>
                     <div class="qc-record-field "><span class="qc-field-label">تاریخ ثبت</span>${renderDateTimeHtml(escapeHtml(row.createDate || ""))}</div>
                     <div class="qc-record-field "><span class="qc-field-label">ثبت‌کننده</span>${escapeHtml(row.userCreator || "-")}</div>
-                    <div class="qc-record-field "><span class="qc-field-label">وضعیت سفارش</span><span class="qc-badge qc-badge-${row.financialApproved ? "green" : "gray"}">${row.financialApproved ? "تکمیل" : "ناقص"}</span></div>
+                    <div class="qc-record-field "><span class="qc-field-label">وضعیت سفارش</span><span class="qc-badge qc-badge-${row.financialApproved ? "green" : "gray"}">${row.financialApproved ? "تحویل شده" : "تحویل نشده"}</span></div>
                     <div class="qc-record-field "><span class="qc-field-label">وضعیت کنترل کیفیت</span><span class="qc-badge qc-quality-status qc-badge-${status.color}">${status.label}</span></div>
                     <div class="qc-record-field qc-actions"><span class="qc-field-label">عملیات</span><button type="button" class="qc-button" data-qc-deal-id="${escapeHtml(row.dealId)}">کنترل کیفیت</button></div>
                 </article>`;
@@ -179,6 +180,7 @@
         pageSignal?.addEventListener("abort", () => {
             tableRequest?.abort();
             formRequest?.abort();
+            factorSummaryRequest?.abort();
         }, { once: true });
         loadTable();
 
@@ -189,6 +191,7 @@
                 return;
             }
             formRequest?.abort();
+            factorSummaryRequest?.abort();
             formGeneration++;
         });
         form.addEventListener("submit", saveForm);
@@ -209,6 +212,7 @@
 
         async function openForm(dealId) {
             formRequest?.abort();
+            factorSummaryRequest?.abort();
             const controller = formRequest = new AbortController();
             const generation = ++formGeneration;
             selectedDealId = dealId;
@@ -254,18 +258,66 @@
         }
 
         let resultDeal = null;
+        function paymentSummaryHtml(deal) {
+            return `<span><strong>واریزی‌های مشتری</strong><small>تعداد: ${number.format(deal.customerPaymentCount ?? 0)}</small></span><span class="qc-payment-total">جمع کل: ${(deal.customerPaymentTotals ?? []).map(total => `${escapeHtml(total.amount)} ${escapeHtml(total.currency)}`).join(" · ") || "۰"}</span>`;
+        }
+
+        function factorSummaryHtml(deal) {
+            return `<span><strong>فاکتورها</strong><small>تعداد: ${number.format(deal.counts?.factor ?? 0)}</small></span><span class="qc-payment-total">جمع کل: ${(deal.factorTotals ?? []).map(total => `${escapeHtml(total.amount)} ${escapeHtml(total.currency)}`).join(" · ") || "۰"}</span>`;
+        }
+
+        async function refreshDealSummaries() {
+            if (!isActive() || !formReady || !selectedDealId || !modal.classList.contains("show")) return;
+            factorSummaryRequest?.abort();
+            const controller = factorSummaryRequest = new AbortController();
+            const generation = formGeneration;
+            const dealId = selectedDealId;
+            const button = detailsJson.querySelector('[data-qc-document="factor"]');
+            button?.setAttribute("aria-busy", "true");
+            try {
+                const result = await sendApiRequest({
+                    url: "/QualityControl/GetForm",
+                    params: { dealId },
+                    signal: controller.signal,
+                    showLoading: false,
+                });
+                if (!isActive() || controller.signal.aborted || generation !== formGeneration || dealId !== selectedDealId) return;
+                if (!result?.deal) return;
+                // Keep unsaved quality-control answers, description and row version intact.
+                resultDeal = result.deal;
+                const currentButton = detailsJson.querySelector('[data-qc-document="factor"]');
+                if (currentButton) currentButton.innerHTML = factorSummaryHtml(resultDeal);
+                const paymentButton = detailsJson.querySelector('[data-qc-document="customerPayments"]');
+                if (paymentButton) paymentButton.innerHTML = paymentSummaryHtml(resultDeal);
+            } finally {
+                if (factorSummaryRequest === controller) {
+                    button?.removeAttribute("aria-busy");
+                    factorSummaryRequest = null;
+                }
+            }
+        }
+
+        document.addEventListener("crm:deal-factors-changed", event => {
+            if (event.detail?.dealId === selectedDealId) refreshDealSummaries();
+        }, pageSignal ? { signal: pageSignal } : undefined);
+
+        document.addEventListener("crm:customer-payments-changed", event => {
+            if (event.detail?.customerId !== resultDeal?.customerId) return;
+            refreshDealSummaries();
+        }, pageSignal ? { signal: pageSignal } : undefined);
+
         function renderDealDetails(deal) {
             if (!deal) return;
             const fields = [
                 ["شماره سفارش", deal.serialNumber], ["مشتری", deal.customerName], ["کد مشتری", deal.customerCode],
                 ["کارشناس مسئول", deal.userCreator], ["تاریخ ثبت", deal.createDate],
-                ["وضعیت سفارش", deal.financialApproved ? "تکمیل" : "ناقص"],
+                ["وضعیت سفارش", deal.financialApproved ? "تحویل شده" : "تحویل نشده"],
             ];
             const documents = [["پیش‌فاکتور", "preFactor"], ["فاکتور", "factor"], ["واریزی‌ها", "payments"], ["دستور تولید", "orderHead"], ["گزارش", "report"]];
             const documentButton = (label, key) => `<button type="button" data-qc-document="${key}" ${key === "customerPayments" && !deal.customerId ? 'disabled title="سفارش به مشتری متصل نیست"' : ""}><strong>${label}</strong>${key === "customerPayments" ? "" : `<b>${number.format(deal.counts?.[key] ?? 0)}</b>`}</button>`;
             detailsJson.innerHTML = `<dl>${fields.map(([label, value]) => `<div><dt>${label}</dt><dd>${escapeHtml(value == null || value === "" ? "—" : value)}</dd></div>`).join("")}</dl><div class="qc-json-documents">${documents.map(([label, key]) => key === "payments"
-                ? `<button type="button" class="qc-customer-payments" data-qc-document="customerPayments" ${!deal.customerId ? 'disabled title="سفارش به مشتری متصل نیست"' : ""}><span><strong>واریزی‌های مشتری</strong><small>تعداد: ${number.format(deal.customerPaymentCount ?? 0)}</small></span><span class="qc-payment-total">جمع کل: ${(deal.customerPaymentTotals ?? []).map(total => `${escapeHtml(total.amount)} ${escapeHtml(total.currency)}`).join(" · ") || "۰"}</span></button>`
-                : key === "factor" ? `<button type="button" class="qc-customer-payments" data-qc-document="factor"><span><strong>فاکتورها</strong><small>تعداد: ${number.format(deal.counts?.factor ?? 0)}</small></span><span class="qc-payment-total">جمع کل: ${(deal.factorTotals ?? []).map(total => `${escapeHtml(total.amount)} ${escapeHtml(total.currency)}`).join(" · ") || "۰"}</span></button>`
+                ? `<button type="button" class="qc-customer-payments" data-qc-document="customerPayments" ${!deal.customerId ? 'disabled title="سفارش به مشتری متصل نیست"' : ""}>${paymentSummaryHtml(deal)}</button>`
+                : key === "factor" ? `<button type="button" class="qc-customer-payments" data-qc-document="factor">${factorSummaryHtml(deal)}</button>`
                 : documentButton(label, key)).join("")}</div>`;
         }
 

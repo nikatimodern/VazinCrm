@@ -14,6 +14,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using CRM.Core.Domain.Accountancies.Enum;
+using CRM.Core.Domain.Factors.Enum;
 using System.Globalization;
 
 namespace CRM.Infrastructures.Sql.QualityControls.Repositories;
@@ -86,8 +87,11 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
 
         if (deal.CustomerId.HasValue)
         {
-            var payments = await db.Accountancies.AsNoTracking().ForCustomer(deal.CustomerId).NotVosoled()
-                .Where(payment => payment.AccType == AcEnum.واریزی)
+            var payments = await db.Accountancies.AsNoTracking().ForCustomer(deal.CustomerId)
+                .Where(payment => payment.AccType == AcEnum.واریزی
+                    && payment.Status == AccStatusEnum.تایید_شده
+                    && (payment.PayType == PayTypeEnum.نقدی || payment.PayType == PayTypeEnum.تهاتری
+                        || (payment.PayType == PayTypeEnum.چکی && payment.Vosoled)))
                 .GroupBy(payment => payment.CurrencyType)
                 .Select(group => new { Currency = group.Key, Count = group.Count(), Amount = group.Sum(payment => payment.credit) ?? 0 })
                 .ToListAsync(cancellationToken);
@@ -98,9 +102,16 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             };
         }
 
-        var factorTotals = await db.Factors.AsNoTracking().Where(factor => factor.DealId == dealId)
+        var factorTotals = await db.Factors.AsNoTracking()
+            .Where(factor => factor.DealId == dealId && factor.status == FactorStatus.تایید_شده)
             .GroupBy(factor => factor.CurrencyType)
-            .Select(group => new { Currency = group.Key, Amount = group.Sum(factor => factor.SumTotalAmountTax) })
+            // Recalculate the invoice total from its persisted components. Older invoices may
+            // have a zero/stale SumTotalAmountTax value even though their line totals exist.
+            .Select(group => new
+            {
+                Currency = group.Key,
+                Amount = group.Sum(factor => factor.SumTotalAmount + factor.TotalTax - factor.Discount)
+            })
             .ToListAsync(cancellationToken);
         deal = deal with {
             FactorTotals = factorTotals.Select(total => new QualityControlPaymentTotal(total.Currency.ToString(),
