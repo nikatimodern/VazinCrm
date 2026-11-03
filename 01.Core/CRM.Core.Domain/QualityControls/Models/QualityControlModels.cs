@@ -21,6 +21,8 @@ public sealed class QualityControlListRequest
     public int? FinancialStatus { get; set; } = 1;
     public QualityControlStatus? Status { get; set; }
     public string? Search { get; set; }
+    public string? SortBy { get; set; }
+    public bool SortDescending { get; set; } = true;
 }
 
 public sealed class QualityControlRow
@@ -42,6 +44,8 @@ public sealed record QualityControlDeal(Guid Id, int SerialNumber, string? Title
     Guid? CustomerId, string? UserCreator, string? CreateDate, string? Description, bool FinancialApproved,
     QualityControlDealCounts Counts)
 {
+    public string? CustomerTel { get; init; }
+    public string? CustomerMobile { get; init; }
     public int CustomerPaymentCount { get; init; }
     public IReadOnlyList<QualityControlPaymentTotal> FactorTotals { get; init; } = Array.Empty<QualityControlPaymentTotal>();
     public IReadOnlyList<QualityControlPaymentTotal> CustomerPaymentTotals { get; init; } = Array.Empty<QualityControlPaymentTotal>();

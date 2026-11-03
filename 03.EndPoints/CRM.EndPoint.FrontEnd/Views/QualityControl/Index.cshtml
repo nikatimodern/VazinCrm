@@ -67,9 +67,21 @@
         </label><nav id="qcPaginationTop" class="qc-pagination" aria-label="صفحه‌بندی بالای سفارش‌ها"></nav></div>
     </div>
     <section id="qualityControlRecords" class="qc-records" aria-label="سفارش‌های کنترل کیفیت" aria-describedby="qcTableInfo qcTableFeedback">
+        <div class="qc-mobile-sort"><label for="qcMobileSort">مرتب‌سازی</label>
+            <select id="qcMobileSort" class="form-select">
+                <option value="createDate">تاریخ ثبت</option>
+                <option value="serialNumber">شماره سفارش</option>
+                <option value="title">عنوان سفارش</option>
+                <option value="customerName">مشتری</option>
+                <option value="userCreator">ثبت‌کننده</option>
+                <option value="financialApproved">وضعیت سفارش</option>
+                <option value="status">وضعیت کنترل کیفیت</option>
+            </select>
+            <button id="qcMobileSortDirection" type="button" class="qc-button" aria-label="ترتیب نزولی">نزولی ↓</button>
+        </div>
         <div class="qc-records-scroll">
             <div class="qc-record-header" aria-hidden="true">
-                <span>ردیف</span><span>شماره سفارش</span><span>عنوان سفارش</span><span>مشتری</span><span>تاریخ ثبت</span><span>ثبت‌کننده</span><span>وضعیت سفارش</span><span>وضعیت کنترل کیفیت</span><span>عملیات</span>
+                <button type="button" data-qc-sort="createDate">ردیف</button><button type="button" data-qc-sort="serialNumber">شماره سفارش</button><button type="button" data-qc-sort="title">عنوان سفارش</button><button type="button" data-qc-sort="customerName">مشتری</button><button type="button" data-qc-sort="createDate">تاریخ ثبت</button><button type="button" data-qc-sort="userCreator">ثبت‌کننده</button><button type="button" data-qc-sort="financialApproved">وضعیت سفارش</button><button type="button" data-qc-sort="status">وضعیت کنترل کیفیت</button><span>عملیات</span>
             </div>
             <div id="qcRecordList" class="qc-record-list" role="list"></div>
         </div>

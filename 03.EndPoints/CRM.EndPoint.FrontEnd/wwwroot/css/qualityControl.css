@@ -73,6 +73,12 @@
 .quality-control-page .qc-record-header,
 .quality-control-page .qc-record-card { display: grid; grid-template-columns: 40px 90px minmax(130px, 1.5fr) minmax(130px, 1.3fr) 115px minmax(90px, 1fr) 105px 125px 115px; align-items: center; gap: .65rem; min-width: 1120px; padding: .9rem 1rem; border-radius: 11px; }
 .quality-control-page .qc-record-header { background: var(--color-primary); color: var(--color-surface); font-family: IRANSansBold; font-size: .85rem; margin-bottom: .7rem; }
+.quality-control-page .qc-record-header button { padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.quality-control-page .qc-record-header button::after { content: ' ↕'; opacity: .65; }
+.quality-control-page .qc-record-header button[data-direction="ascending"]::after { content: ' ↑'; opacity: 1; }
+.quality-control-page .qc-record-header button[data-direction="descending"]::after { content: ' ↓'; opacity: 1; }
+.quality-control-page .qc-record-header button:focus-visible { outline: 2px solid var(--color-surface); outline-offset: 3px; }
+.quality-control-page .qc-mobile-sort { display: none; }
 .quality-control-page .qc-record-list { display: grid; gap: .6rem; }
 .quality-control-page .qc-record-card { border: 1px solid var(--color-border); background: var(--color-primary-light); font-size: .9rem; }
 .quality-control-page .qc-record-card:nth-child(even) { background: var(--color-secondary-light); }
@@ -80,8 +86,11 @@
 .quality-control-page .qc-record-field { min-width: 0; overflow-wrap: anywhere; }
 .quality-control-page .qc-field-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 @media (max-width: 767.98px) {
+    .quality-control-page .qc-mobile-sort { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin-bottom: .75rem; }
+    .quality-control-page .qc-mobile-sort .form-select { width: auto; min-width: 11rem; }
+    .quality-control-page .qc-mobile-sort .qc-button { min-height: 36px; padding: .3rem .6rem; }
     .quality-control-page .qc-record-header { display: block; min-width: 0; }
-    .quality-control-page .qc-record-header > span { display: none; }
+    .quality-control-page .qc-record-header > :is(span, button) { display: none; }
     .quality-control-page .qc-record-header::before { content: 'سفارش‌های کنترل کیفیت'; }
     .quality-control-page .qc-record-card { min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: .85rem; }
     .quality-control-page .qc-record-field:is(.qc-title, .qc-customer, .qc-actions) { grid-column: 1 / -1; }

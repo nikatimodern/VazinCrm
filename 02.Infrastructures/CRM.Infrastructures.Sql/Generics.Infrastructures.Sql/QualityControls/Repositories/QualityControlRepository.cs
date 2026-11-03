@@ -44,7 +44,22 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             _ => deals
         };
         var recordsFiltered = await deals.CountAsync(cancellationToken);
-        var data = await deals.OrderByDescending(deal => deal.CreateDate).ThenByDescending(deal => deal.Id)
+        var descending = request.SortDescending;
+        var ordered = request.SortBy switch
+        {
+            "serialNumber" => descending ? deals.OrderByDescending(deal => deal.SerialNumber) : deals.OrderBy(deal => deal.SerialNumber),
+            "title" => descending ? deals.OrderByDescending(deal => deal.Title) : deals.OrderBy(deal => deal.Title),
+            "customerName" => descending ? deals.OrderByDescending(deal => deal.CustomerName) : deals.OrderBy(deal => deal.CustomerName),
+            "userCreator" => descending ? deals.OrderByDescending(deal => deal.UserCreator) : deals.OrderBy(deal => deal.UserCreator),
+            "financialApproved" => descending ? deals.OrderByDescending(deal => deal.FinancialStatus) : deals.OrderBy(deal => deal.FinancialStatus),
+            "status" => descending
+                ? deals.OrderByDescending(deal => !db.QualityControls.Any(control => control.DealId == deal.Id) ? 0
+                    : db.QualityControlAnswers.Any(answer => answer.QualityControl.DealId == deal.Id && answer.Answer == 1) ? 2 : 1)
+                : deals.OrderBy(deal => !db.QualityControls.Any(control => control.DealId == deal.Id) ? 0
+                    : db.QualityControlAnswers.Any(answer => answer.QualityControl.DealId == deal.Id && answer.Answer == 1) ? 2 : 1),
+            _ => descending ? deals.OrderByDescending(deal => deal.CreateDate) : deals.OrderBy(deal => deal.CreateDate)
+        };
+        var data = await ordered.ThenByDescending(deal => deal.Id)
             .Skip(Math.Max(0, request.Start)).Take(Math.Clamp(request.Length, 1, 100))
             .Select(deal => new QualityControlRow {
                 DealId = deal.Id, SerialNumber = deal.SerialNumber, Title = deal.Title,
@@ -80,7 +95,9 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                     db.Accountancies.Count(x => x.DealId == item.Id),
                     db.OrderHeads.Count(x => x.DealId == item.Id),
                     db.Reports.Count(x => x.DealId == item.Id),
-                    db.SupplyFactors.Count(x => x.DealId == item.Id))))
+                    db.SupplyFactors.Count(x => x.DealId == item.Id)))
+                { CustomerTel = item.Customer != null && item.Customer.Tel != null && item.Customer.Tel != "" ? item.Customer.Tel : item.CusTel,
+                  CustomerMobile = item.Customer != null && item.Customer.Mobile != null && item.Customer.Mobile != "" ? item.Customer.Mobile : item.MobileNumber })
             .FirstOrDefaultAsync(cancellationToken);
         if (deal == null)
             return null;
