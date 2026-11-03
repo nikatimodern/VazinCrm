@@ -728,13 +728,287 @@
             transition: none !important;
         }
     }
+
+    /* Page-scoped design tokens and compact actions for the overdue-deals table. */
+    .overdue-deal-page {
+        --overdue-primary: #004944;
+        --overdue-primary-action: #00665c;
+        --overdue-primary-light: #e7f3f0;
+        --overdue-secondary: #5811b4;
+        --overdue-secondary-light: #f3edfc;
+        --overdue-danger: #c2185b;
+        --overdue-danger-light: #fce8f0;
+        --overdue-text: #212529;
+        --overdue-muted: #545961;
+        --overdue-border: #dde1e8;
+    }
+
+    .overdue-deal-page .overdue-filter-button {
+        border-color: var(--overdue-secondary);
+        background: var(--overdue-secondary);
+        box-shadow: 0 2px 7px rgb(88 17 180 / 18%);
+    }
+
+    .overdue-deal-page .overdue-filter-button:hover,
+    .overdue-deal-page .overdue-filter-button:focus-visible {
+        border-color: var(--overdue-secondary);
+        background: #45108f;
+    }
+
+    .overdue-deal-page .overdue-sort-button:hover,
+    .overdue-deal-page .overdue-sort-button:focus-visible {
+        color: var(--overdue-secondary);
+    }
+
+    .overdue-deal-page .overdue-sort-button .sort-indicator,
+    .overdue-deal-page .overdue-sort-button[aria-sort="ascending"] .sort-indicator,
+    .overdue-deal-page .overdue-sort-button[aria-sort="descending"] .sort-indicator {
+        color: var(--overdue-secondary);
+    }
+
+    .overdue-deal-page .overdue-refresh-button,
+    .overdue-deal-page .overdue-count-badge {
+        border-color: var(--overdue-primary-action);
+        background: var(--overdue-primary-action) !important;
+    }
+
+    .overdue-deal-page .overdue-refresh-button:hover {
+        border-color: var(--overdue-primary);
+        background: var(--overdue-primary) !important;
+    }
+
+    .overdue-deal-page #overdueDealsTableWrap {
+        scrollbar-color: var(--overdue-border) var(--overdue-primary-light);
+    }
+
+    .overdue-deal-page #overdueDealsTableWrap .table {
+        color: var(--overdue-text);
+    }
+
+    .overdue-deal-page #overdueDealsTableWrap thead th {
+        background: var(--overdue-primary-light);
+        color: var(--overdue-primary);
+        border-bottom-color: var(--overdue-border);
+    }
+
+    .overdue-deal-page #overdueDealsTableWrap tbody tr:nth-child(even) {
+        background-color: #f8fbfa;
+    }
+
+    .overdue-deal-page #overdueDealsTableWrap tbody tr:hover td {
+        background-color: var(--overdue-primary-light);
+    }
+
+    .overdue-deal-page #overdueDealsTableWrap tbody td:last-child {
+        width: 1%;
+        white-space: nowrap;
+    }
+
+    .overdue-deal-page .overdue-view-button {
+        width: 32px;
+        height: 30px;
+        margin-inline: 1px;
+        border-color: var(--overdue-primary-action);
+        border-radius: .5rem;
+        background: var(--overdue-primary-action);
+    }
+
+    .overdue-deal-page .overdue-view-button svg {
+        width: 17px;
+        height: 17px;
+    }
+
+    .overdue-deal-page .overdue-view-button:hover,
+    .overdue-deal-page .overdue-view-button:focus-visible {
+        border-color: var(--overdue-primary);
+        background: var(--overdue-primary);
+        transform: translateY(-1px);
+    }
+
+    .overdue-deal-page #overdueDealsTableWrap .badge.text-bg-danger {
+        background: var(--overdue-danger-light) !important;
+        color: var(--overdue-danger) !important;
+        border: 1px solid rgb(194 24 91 / 20%);
+    }
+
+    .overdue-deal-page .overdue-prefactor-actions button:hover,
+    .overdue-deal-page .overdue-prefactor-actions button:focus-visible,
+    .overdue-deal-page .overdue-date-clear:hover,
+    .overdue-deal-page .overdue-date-clear:focus-visible {
+        background: var(--overdue-secondary-light);
+        color: var(--overdue-secondary);
+    }
+
+    .overdue-deal-page .overdue-date-clear,
+    .overdue-deal-page .overdue-mode-filter.filter-switch {
+        border-color: var(--overdue-border);
+        background: var(--overdue-secondary-light);
+        color: var(--overdue-secondary);
+    }
+
+    .overdue-deal-page .overdue-mode-filter.filter-switch label,
+    .overdue-deal-page .overdue-count-card .count-value,
+    .overdue-deal-page #overdueDealsPagination label,
+    .overdue-deal-page #overdueDealsPaginationTop label {
+        color: var(--overdue-secondary) !important;
+    }
+
+    .overdue-deal-page .overdue-mode-filter .filter-switch-item input:checked + label,
+    .overdue-deal-page #overduePaginationButtons .page-item.active .page-link,
+    .overdue-deal-page #overduePaginationButtonsTop .page-item.active .page-link {
+        background: var(--overdue-secondary);
+        border-color: var(--overdue-secondary);
+        color: #fff !important;
+        box-shadow: none;
+    }
+
+    .overdue-deal-page .overdue-mode-filter .filter-switch-item input:focus-visible + label,
+    .overdue-deal-page :is(.overdue-filter-button, .overdue-view-button, .overdue-refresh-button, .overdue-sort-button):focus-visible {
+        outline: 2px solid var(--overdue-secondary);
+        outline-offset: 2px;
+    }
+
+    .overdue-deal-page .overdue-count-card {
+        border-color: var(--overdue-border);
+        background: #fff;
+    }
+
+    .overdue-deal-page #overdueDealDetailsContent > .overdue-detail-cell {
+        border-color: var(--overdue-border);
+    }
+
+    .overdue-deal-page .overdue-detail-label,
+    .overdue-deal-page .overdue-count-card .count-label,
+    .overdue-deal-page .count-total-label,
+    .overdue-deal-page .overdue-follow-up-option small {
+        color: var(--overdue-muted);
+    }
+
+    .overdue-deal-page .overdue-detail-value,
+    .overdue-deal-page .count-total-value {
+        color: var(--overdue-text);
+    }
+
+    .overdue-deal-page .overdue-count-card .count-icon {
+        color: var(--overdue-primary);
+    }
+
+    .overdue-deal-page :is(.overdue-document-card, .overdue-reports-card):is(:hover, :focus-visible) {
+        border-color: var(--overdue-secondary);
+        box-shadow: 0 3px 12px rgb(88 17 180 / 12%);
+    }
+
+    .overdue-deal-page .overdue-follow-up-modal .modal-header,
+    .overdue-deal-page #overdueDealsPagination,
+    .overdue-deal-page #overdueDealsPaginationTop {
+        background: var(--overdue-secondary-light);
+        border-color: var(--overdue-border) !important;
+    }
+
+    .overdue-deal-page .overdue-follow-up-option {
+        border-color: var(--overdue-border);
+    }
+
+    .overdue-deal-page .overdue-follow-up-option:has(input:checked) {
+        border-color: var(--overdue-primary-action);
+        background: var(--overdue-primary-light);
+        box-shadow: 0 0 0 2px var(--overdue-primary-light);
+    }
+
+    .overdue-deal-page .overdue-follow-up-option input {
+        accent-color: var(--overdue-primary-action);
+    }
+
+    .overdue-deal-page .overdue-date-expired {
+        border-color: var(--overdue-danger) !important;
+        color: var(--overdue-danger) !important;
+        background: var(--overdue-danger-light) !important;
+    }
+
+    .overdue-deal-page .overdue-date-expired-note { color: var(--overdue-danger); }
+
+    .overdue-deal-page #overduePageSize,
+    .overdue-deal-page #overduePageSizeTop,
+    .overdue-deal-page #overduePaginationButtons .page-link,
+    .overdue-deal-page #overduePaginationButtonsTop .page-link {
+        border-color: var(--overdue-border);
+    }
+
+    .overdue-deal-page #overduePaginationInfo,
+    .overdue-deal-page #overduePaginationInfoTop,
+    .overdue-deal-page #overduePaginationButtons .page-link,
+    .overdue-deal-page #overduePaginationButtonsTop .page-link {
+        background: #fff;
+        color: var(--overdue-secondary) !important;
+    }
+
+    .overdue-deal-page #overduePaginationButtons .page-link:hover:not(:disabled),
+    .overdue-deal-page #overduePaginationButtonsTop .page-link:hover:not(:disabled) {
+        background: var(--overdue-secondary-light);
+        border-color: var(--overdue-secondary);
+    }
+
+    .overdue-deal-page #overduePageSize:focus,
+    .overdue-deal-page #overduePageSizeTop:focus {
+        border-color: var(--overdue-secondary);
+        box-shadow: 0 0 0 .2rem rgb(88 17 180 / 12%);
+    }
+
+    @@media (max-width: 767.98px) {
+        .overdue-deal-page #overdueDealsTableWrap { overflow: visible; }
+        .overdue-deal-page #overdueDealsTableWrap .table,
+        .overdue-deal-page #overdueDealsTableWrap tbody,
+        .overdue-deal-page #overdueDealsTableWrap tr { display: block; width: 100%; }
+        .overdue-deal-page #overdueDealsTableWrap thead { display: none; }
+        .overdue-deal-page #overdueDealsTableWrap tbody { padding: .75rem; }
+        .overdue-deal-page #overdueDealsTableWrap tbody tr {
+            margin-bottom: .75rem;
+            padding: .4rem .75rem;
+            border: 1px solid var(--overdue-border);
+            border-radius: .8rem;
+            background: #fff;
+        }
+        .overdue-deal-page #overdueDealsTableWrap tbody td {
+            display: grid;
+            grid-template-columns: minmax(6rem, 38%) minmax(0, 1fr);
+            gap: .5rem;
+            align-items: start;
+            width: 100%;
+            min-width: 0 !important;
+            padding: .5rem 0;
+            border-bottom: 1px solid var(--overdue-border);
+            white-space: normal !important;
+            overflow-wrap: anywhere;
+        }
+        .overdue-deal-page #overdueDealsTableWrap tbody td::before {
+            content: attr(data-label);
+            color: var(--overdue-muted);
+            font-family: IranSansBold;
+        }
+        .overdue-deal-page #overdueDealsTableWrap tbody td:last-child {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: .25rem;
+            width: 100%;
+            border-bottom: 0;
+            text-align: start !important;
+        }
+        .overdue-deal-page #overdueDealsTableWrap tbody td:last-child::before {
+            flex: 0 0 100%;
+        }
+        .overdue-deal-page .overdue-view-button {
+            width: 36px;
+            height: 36px;
+        }
+    }
 </style>
 
-<div class="container-fluid py-3" dir="rtl">
+<div class="container-fluid py-3 overdue-deal-page" dir="rtl">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
         <div class="d-flex align-items-center gap-2">
             <span class="d-inline-flex align-items-center justify-content-center rounded-3 p-2"
-                  style="background: rgba(109, 40, 217, .12); color: #6d28d9;">
+                  style="background: var(--overdue-secondary-light); color: var(--overdue-secondary);">
                 <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true">
                     <path fill-rule="evenodd" d="M12 2.25a9.75 9.75 0 1 0 0 19.5 9.75 9.75 0 0 0 0-19.5ZM12 6a.75.75 0 0 1 .75.75v5.1l3.03 1.82a.75.75 0 1 1-.772 1.286l-3.375-2.025A.75.75 0 0 1 11.25 12V6.75A.75.75 0 0 1 12 6Z" clip-rule="evenodd" />
                 </svg>
@@ -776,7 +1050,7 @@
             <div id="overdueDealsError" class="alert alert-danger m-3 d-none" role="alert"></div>
 
             <div id="overdueDealsEmpty" class="text-center py-5 d-none">
-                <div class="mb-2" style="font-size: 2rem; color: #16a34a;">✓</div>
+                <div class="mb-2" style="font-size: 2rem; color: var(--overdue-primary);">✓</div>
                 <h2 class="h6" id="overdueDealsEmptyTitle">سفارش معوقه‌ای وجود ندارد</h2>
                 <p class="text-muted mb-0" id="overdueDealsEmptyText">سفارش باز معوقه‌ای در این بازه زمانی پیدا نشد.</p>
             </div>
@@ -873,7 +1147,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="overdueDealDetailsModal" tabindex="-1" aria-labelledby="overdueDealDetailsModalLabel" aria-hidden="true" dir="rtl">
+<div class="modal fade overdue-deal-page" id="overdueDealDetailsModal" tabindex="-1" aria-labelledby="overdueDealDetailsModalLabel" aria-hidden="true" dir="rtl">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow">
             <div class="modal-header">
@@ -892,7 +1166,7 @@
 </div>
 
 @if (User.IsInRole("مدیر فروش") || User.IsInRole("مدیر ارشد")) {
-    <div class="modal fade" id="overdueFollowUpModal" tabindex="-1" aria-labelledby="overdueFollowUpModalLabel" aria-hidden="true" dir="rtl">
+    <div class="modal fade overdue-deal-page" id="overdueFollowUpModal" tabindex="-1" aria-labelledby="overdueFollowUpModalLabel" aria-hidden="true" dir="rtl">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content overdue-follow-up-modal">
                 <div class="modal-header">
@@ -944,7 +1218,7 @@
     </div>
 }
 
-<div class="modal fade" id="overdueDealReportsModal" tabindex="-1" aria-labelledby="overdueDealReportsModalLabel" aria-hidden="true" dir="rtl">
+<div class="modal fade overdue-deal-page" id="overdueDealReportsModal" tabindex="-1" aria-labelledby="overdueDealReportsModalLabel" aria-hidden="true" dir="rtl">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow">
             <div class="modal-header">
@@ -1148,16 +1422,16 @@
                     const waitingDays = getWaitingDays(deal.createDate);
                     return `
                         <tr>
-                            <td class="text-nowrap fbold">${escapeHtml(deal.serialNumber)}</td>
-                            <td>${escapeHtml(deal.title || "—")}</td>
-                            <td>${escapeHtml(customerName)}</td>
-                            <td class="text-nowrap">${escapeHtml(deal.customerCode ?? "—")}</td>
-                            <td class="text-nowrap">${escapeHtml(formatDate(deal.createDate))}</td>
-                            <td class="text-nowrap">${escapeHtml(formatDate(deal.overdueFollowUpAt))}</td>
-                            <td class="text-nowrap"><span class="badge text-bg-danger">${escapeHtml(new Intl.NumberFormat("fa-IR").format(waitingDays))} روز</span></td>
-                            <td>${escapeHtml(deal.userCreator || "—")}</td>
-                            <td style="min-width: 220px; white-space: normal;">${escapeHtml(deal.description || "—")}</td>
-                            <td class="text-center">
+                            <td data-label="شماره سفارش" class="text-nowrap fbold">${escapeHtml(deal.serialNumber)}</td>
+                            <td data-label="عنوان سفارش">${escapeHtml(deal.title || "—")}</td>
+                            <td data-label="مشتری">${escapeHtml(customerName)}</td>
+                            <td data-label="کد مشتری" class="text-nowrap">${escapeHtml(deal.customerCode ?? "—")}</td>
+                            <td data-label="تاریخ ثبت" class="text-nowrap">${escapeHtml(formatDate(deal.createDate))}</td>
+                            <td data-label="تاریخ پیگیری مجدد" class="text-nowrap">${escapeHtml(formatDate(deal.overdueFollowUpAt))}</td>
+                            <td data-label="مدت انتظار" class="text-nowrap"><span class="badge text-bg-danger">${escapeHtml(new Intl.NumberFormat("fa-IR").format(waitingDays))} روز</span></td>
+                            <td data-label="ثبت‌کننده">${escapeHtml(deal.userCreator || "—")}</td>
+                            <td data-label="توضیحات" style="min-width: 220px; white-space: normal;">${escapeHtml(deal.description || "—")}</td>
+                            <td data-label="مشاهده" class="text-center">
                                 <button type="button" class="btn btn-sm overdue-view-button overdue-details-button" data-deal-id="${escapeHtml(deal.id)}" title="مشاهده جزئیات" aria-label="مشاهده جزئیات سفارش">
                                     <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                         <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"></path>
@@ -1315,28 +1589,28 @@
                             {
                                 label: "گزارش‌های ثبت‌شده",
                                 value: deal.reportCount,
-                                color: "#4c1d95",
+                                color: "var(--overdue-secondary)",
                                 icon: "<path d=\"M7 3h10a2 2 0 0 1 2 2v14l-7-3-7 3V5a2 2 0 0 1 2-2Z\"/>",
                             },
                             {
                                 label: "پیش‌فاکتورهای صادرشده",
                                 value: deal.preFactorCount,
                                 totalAmount: deal.preFactorTotalAmount,
-                                color: "#0f766e",
+                                color: "var(--overdue-primary)",
                                 icon: "<path d=\"M7 3h10a2 2 0 0 1 2 2v14l-7-3-7 3V5a2 2 0 0 1 2-2Z\"/><path d=\"M9 8h6M9 11h6\"/>",
                             },
                             {
                                 label: "فاکتورها",
                                 value: deal.factorCount,
                                 totalAmount: deal.factorTotalAmount,
-                                color: "#4c1d95",
+                                color: "var(--overdue-secondary)",
                                 icon: "<path d=\"M6 2h9l4 4v16H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z\"/><path d=\"M14 2v5h5M8 12h8M8 16h8\"/>",
                             },
                             {
                                 label: "صورت‌حساب‌های سفارش",
                                 value: deal.accountancyCount,
                                 totalAmount: deal.accountancyTotalAmount,
-                                color: "#0f766e",
+                                color: "var(--overdue-primary)",
                                 icon: "<path d=\"M5 3h14v18H5z\"/><path d=\"M8 7h8M8 11h8M8 15h5\"/>",
                             },
                         ];

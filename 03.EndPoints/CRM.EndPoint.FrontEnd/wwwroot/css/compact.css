@@ -1,50 +1,50 @@
-/* Desktop compact density. Mobile keeps its existing touch targets. */
+/* Desktop density by viewport width. Mobile keeps its existing touch targets. */
 :root {
-	--ui-scale: .81;
-	--compact-sidebar-width: 211px;
-	--compact-sidebar-collapsed-width: 52px;
-	--compact-shell-height: 52px;
+	--ui-scale: .8505;
+	--compact-sidebar-width: 222px;
+	--compact-sidebar-collapsed-width: 55px;
+	--compact-shell-height: 55px;
 }
 
 @media (min-width: 768px) and (max-width: 1599.98px) {
-	html { font-size: 11.34px; }
+	html { font-size: 11.91px; }
 	html:not(.sidebar-collapsed) #desktopSidebar { width: var(--compact-sidebar-width); }
 	html:not(.sidebar-collapsed) #mainWrapper { margin-right: var(--compact-sidebar-width); }
 	html.sidebar-collapsed .sidebar { width: var(--compact-sidebar-collapsed-width) !important; }
 	html.sidebar-collapsed #mainWrapper { margin-right: var(--compact-sidebar-collapsed-width); }
 	#mainHeader, .menuHeader { height: var(--compact-shell-height); }
-	.menuHeader { min-height: var(--compact-shell-height); padding-inline: 8px; }
+	.menuHeader { min-height: var(--compact-shell-height); padding-inline: 8.4px; }
 	#mainHeader { margin-bottom: 10px; }
-	#mainContent { padding-inline: 12px; }
-	.logoCompany-icon { height: 24px; }
-	.logoCompany-text { height: 29px; }
-	.profile-image { width: 36px; }
+	#mainContent { padding-inline: 12.6px; }
+	.logoCompany-icon { height: 25px; }
+	.logoCompany-text { height: 30px; }
+	.profile-image { width: 38px; }
 	.header-profile { gap: 6px; }
-	.header-action-btn { width: 26px; height: 26px; }
-	.header-datetime { font-size: 12.15px; gap: 4.5px; }
+	.header-action-btn { width: 27px; height: 27px; }
+	.header-datetime { font-size: 12.76px; gap: 4.7px; }
 	#collapseMenuIcon svg, #expandMenuIcon svg { width: 16px !important; }
 	.menu-nav { padding: 8px; }
 	.menu-nav .menu-list { gap: 3px; }
-	.menu-nav .menu-item { min-height: 31px; padding: 6px 8px; }
-	.menu-nav .menu-item-title { font-size: 11.34px; gap: 6px; }
-	.menu-nav .menu-icon-frame { width: 24px; height: 24px; }
+	.menu-nav .menu-item { min-height: 33px; padding: 6.3px 8.4px; }
+	.menu-nav .menu-item-title { font-size: 11.91px; gap: 6.3px; }
+	.menu-nav .menu-icon-frame { width: 25px; height: 25px; }
 	.menu-nav .menu-icon-frame .menu-icon { width: 16px !important; height: 16px; }
 	.menu-nav .submenu .menu-item { min-height: 28px; padding: 5px 7px; }
-	.menu-nav .submenu .menu-item-title { font-size: 10.53px; }
-	.menuFooter { height: 39px; padding: 6px 13px; }
+	.menu-nav .submenu .menu-item-title { font-size: 11.06px; }
+	.menuFooter { height: 41px; padding: 6px 13px; }
 	.menuFooter .ownerCompany-link { gap: 10px; }
 	.menuFooter .ownerCompany-logo { width: 23px; }
 	.menuFooter .ownerCompany-name { font-size: 9.72px; }
 	.menuFooter .ownerCompany-subtitle { font-size: 6.48px; }
 	.filter-switch { gap: 3.15px; row-gap: 4.5px; padding: 2.43px; }
-	.filter-switch label { min-height: 20px; padding-inline: 8px; font-size: 10.53px; }
+	.filter-switch label { min-height: 21px; padding-inline: 8px; font-size: 11.06px; }
 	.filter-switch.filter-switch-sm label { min-height: 18px; padding-inline: 6px; font-size: 10.125px; }
 	.ts-control { min-height: 23px; padding: 4px 6px 2px !important; }
 	.buttonExcel, .buttonPrint { height: 23px; }
 	.buttonExcel { font-size: 10.53px; }
 	.buttonExcel svg { width: 21px; }
 	.buttonPrint { width: 28px; }
-	.buttonGreen, .buttonPurple, .buttonOrange, .buttonRed, .buttonCancel, .buttonClose, .buttonUpdate { height: 30px; }
+	.buttonGreen, .buttonPurple, .buttonOrange, .buttonRed, .buttonCancel, .buttonClose, .buttonUpdate { height: 32px; }
 	.buttonGreen, .buttonPurple { padding-inline: 16px; }
 	.buttonGreen1 { width: 113px; height: 28px; padding-inline: 20px; }
 	.buttonGreen0, .buttonBlue, .buttonGreen3, .buttonPurple2 { padding: 4.5px 10px; font-size: 10.53px; }
@@ -54,6 +54,16 @@
 	div.dt-container tbody td, div.dt-container tbody th { padding: 10px 8px !important; }
 }
 
-@media (min-width: 1200px) and (max-width: 1399.98px) { .modal-xxl { max-width: 923px; } }
-@media (min-width: 1400px) and (max-width: 1499.98px) { .modal-xxl { max-width: 1069px; } }
-@media (min-width: 1500px) and (max-width: 1599.98px) { .modal-xxl { max-width: 1166px; } }
+@media (min-width: 1600px) {
+	html { font-size: 15.4px; }
+	html:not(.sidebar-collapsed) #desktopSidebar { width: 286px; }
+	html:not(.sidebar-collapsed) #mainWrapper { margin-right: 286px; }
+	html.sidebar-collapsed .sidebar { width: 70px !important; }
+	html.sidebar-collapsed #mainWrapper { margin-right: 70px; }
+	#mainHeader, .menuHeader { height: 70px; }
+	.menuHeader { min-height: 70px; }
+}
+
+@media (min-width: 1200px) and (max-width: 1399.98px) { .modal-xxl { max-width: 969px; } }
+@media (min-width: 1400px) and (max-width: 1499.98px) { .modal-xxl { max-width: 1122px; } }
+@media (min-width: 1500px) and (max-width: 1599.98px) { .modal-xxl { max-width: 1224px; } }
