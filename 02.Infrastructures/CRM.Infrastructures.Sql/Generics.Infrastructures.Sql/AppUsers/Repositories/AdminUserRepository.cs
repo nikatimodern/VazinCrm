@@ -12,9 +12,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CRM.Infrastructures.Sql.AppUsers.Repositories;
-public sealed class AdminUserRepository(UserContextDb db, UserManager<AppUser> users, RoleManager<IdentityRole> roles, IUserValidator<AppUser> userValidator, IPasswordValidator<AppUser> passwordValidator, IPasswordHasher<AppUser> hasher) : IAdminUserRepository, IAsyncDisposable
+public sealed class AdminUserRepository(UserContextDb db, UserManager<AppUser> users, RoleManager<IdentityRole> roles, IUserValidator<AppUser> userValidator, IPasswordValidator<AppUser> passwordValidator, IPasswordHasher<AppUser> hasher) : IAdminUserRepository
 {
-    private IDbContextTransaction? transaction;
     private static AccountIdentityResult Map(IdentityResult result) => new(result.Succeeded, result.Errors.Select(e => new AccountIdentityError(e.Code, e.Description)).ToList());
     public Task<List<AdminRole>> GetRolesAsync(CancellationToken ct) => roles.Roles.AsNoTracking().Select(r => new AdminRole(r.Id, r.Name ?? "")).ToListAsync(ct);
     public async Task<AdminUserPage> GetPageAsync(AdminUserFilter filter, CancellationToken ct)
@@ -130,20 +129,37 @@ public sealed class AdminUserRepository(UserContextDb db, UserManager<AppUser> u
         return Map(await users.RemoveFromRolesAsync(user, values));
     }
 
-    public async Task BeginRoleUpdateAsync(CancellationToken ct)
+    public async Task<AdminRoleUpdateResult> ReplaceRolesAsync(string userName, IReadOnlyCollection<string> selectedRoles, CancellationToken ct)
     {
-        transaction = await db.Database.BeginTransactionAsync(ct);
-    }
+        var strategy = db.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            ct.ThrowIfCancellationRequested();
+            // This dedicated mutation must reload Identity state after a rolled-back attempt.
+            db.ChangeTracker.Clear();
+            await using var transaction = await db.Database.BeginTransactionAsync(ct);
+            var user = await users.FindByNameAsync(userName);
+            if (user == null)
+                return new AdminRoleUpdateResult(false, null, Array.Empty<string>());
 
-    public async Task CommitRoleUpdateAsync(CancellationToken ct)
-    {
-        if (transaction != null)
+            var current = await users.GetRolesAsync(user);
+            var remove = current.Except(selectedRoles).ToArray();
+            var add = selectedRoles.Except(current).ToArray();
+            if (remove.Length > 0)
+            {
+                var result = await users.RemoveFromRolesAsync(user, remove);
+                if (!result.Succeeded)
+                    return new AdminRoleUpdateResult(true, Map(result), Array.Empty<string>());
+            }
+            if (add.Length > 0)
+            {
+                var result = await users.AddToRolesAsync(user, add);
+                if (!result.Succeeded)
+                    return new AdminRoleUpdateResult(true, Map(result), Array.Empty<string>());
+            }
+            var updated = await users.GetRolesAsync(user);
             await transaction.CommitAsync(ct);
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (transaction != null)
-            await transaction.DisposeAsync();
+            return new AdminRoleUpdateResult(true, null, updated);
+        });
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using CRM.Core.ApplicationServices.QualityControls.Services;
 using CRM.Core.Domain.Deals.Enums;
 using CRM.Core.Domain.Deals;
 using CRM.EndPoint.FrontEnd.IServices.Menu;
@@ -10,6 +11,7 @@ using CRM.EndPoint.FrontEnd.Models.Menu;
 using CRM.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using CRM.Core.ApplicationServices.Security;
 
 namespace CRM.EndPoint.FrontEnd.Services.Menu;
 
@@ -88,12 +90,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                 Url = "/QualityControl/Index",
                 IconHtml = MenuIcons.QualityControl,
                 Roles = [
-                    AppRoles.Admin,
-                    AppRoles.SalesAdmin,
-                    AppRoles.ManagingDirector,
-                    AppRoles.TaminAdmin,
-                    AppRoles.SalesExpert,
-                    AppRoles.TaminExpert
+                    .. QualityControlAccessPolicy.Roles.Split(',')
                 ],
                 DisplayOrder = 20
             },

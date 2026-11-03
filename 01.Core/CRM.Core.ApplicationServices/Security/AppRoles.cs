@@ -1,4 +1,4 @@
-namespace CRM.EndPoint.FrontEnd.Services;
+namespace CRM.Core.ApplicationServices.Security;
 
 public static class AppRoles {
     public const string Admin = "مدیر ارشد";
@@ -18,4 +18,5 @@ public static class AppRoles {
 
     public const string TanKhah = "تنخواه دار";
     public const string Customer = "مشتری";
+    public const string QcExpert = "کارشناس کنترل کیفیت";
 }

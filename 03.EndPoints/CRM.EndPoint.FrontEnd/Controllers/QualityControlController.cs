@@ -14,7 +14,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
-[Authorize(Policy = "NotCustomerOnly")]
 [Authorize(Roles = QualityControlAccessPolicy.Roles)]
 public sealed class QualityControlController(ICqrsDispatcher requests) : Controller
 {

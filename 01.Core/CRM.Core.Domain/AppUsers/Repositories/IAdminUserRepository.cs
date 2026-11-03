@@ -9,6 +9,7 @@ namespace CRM.Core.Domain.AppUsers.Repositories;
 public sealed record AdminRole(string Id, string Name);
 public sealed record AdminUserFilter(int Page, int PageSize, string? Search, string EmployeeType, string AccountStatus, List<string> Roles, DateTimeOffset Now);
 public sealed record AdminUserPage(List<AppUser> Users, int TotalCount, int Page, int PageSize, int TotalPages);
+public sealed record AdminRoleUpdateResult(bool UserFound, AccountIdentityResult? Error, IList<string> Roles);
 public interface IAdminUserRepository
 {
     Task<List<AdminRole>> GetRolesAsync(CancellationToken ct);
@@ -25,6 +26,5 @@ public interface IAdminUserRepository
     string HashPassword(AppUser user, string password);
     Task<AccountIdentityResult> AddRolesAsync(AppUser user, IEnumerable<string> roles, CancellationToken ct);
     Task<AccountIdentityResult> RemoveRolesAsync(AppUser user, IEnumerable<string> roles, CancellationToken ct);
-    Task BeginRoleUpdateAsync(CancellationToken ct);
-    Task CommitRoleUpdateAsync(CancellationToken ct);
+    Task<AdminRoleUpdateResult> ReplaceRolesAsync(string userName, IReadOnlyCollection<string> selectedRoles, CancellationToken ct);
 }

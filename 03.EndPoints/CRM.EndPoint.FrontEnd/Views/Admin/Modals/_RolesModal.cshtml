@@ -7,7 +7,7 @@
                 <h1 class="modal-title fs-5" id="rolesModalTitle">مدیریت نقش‌های کاربر</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form asp-action="UpdateUserRoles" method="post" id="userRolesForm">
+            <form asp-action="UpdateUserRoles" method="post" id="userRolesForm" class="d-flex flex-column overflow-hidden" style="min-height:0;flex:1 1 auto">
                 @Html.AntiForgeryToken()
                 <div class="modal-body" dir="rtl">
                     <input type="hidden" name="userName" id="userName" />

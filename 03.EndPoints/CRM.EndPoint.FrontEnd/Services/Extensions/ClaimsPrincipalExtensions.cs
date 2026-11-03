@@ -1,3 +1,4 @@
+using CRM.Core.ApplicationServices.Security;
 using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
