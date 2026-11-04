@@ -653,8 +653,11 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
             // Reuse the context connection: its public connection string can omit credentials after an EF query.
             // Dapper manages opening/closing as needed; the context retains ownership of the connection.
             var con = db.Database.GetDbConnection();
+            
             var receivables = (await con.QueryAsync<Rp_Motalebat>(new CommandDefinition("Rp_Motalebat", new { CusCode = (int?)null },
                 commandType: CommandType.StoredProcedure, cancellationToken: cancellationToken))).ToList();
+
+
             var deposits = await db.Accountancies.AsNoTracking()
                 .Where(a => a.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
                     && a.AccType == AcEnum.واریزی
