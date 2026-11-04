@@ -52,6 +52,7 @@
   <ItemGroup>
     <Folder Include="wwwroot\Uploaded\CompanyImage\" />
     <Folder Include="wwwroot\Uploaded\LoginImg\" />
+    <Content Include="Deployment\Install-DocumentRenderer.ps1" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   
   

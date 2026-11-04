@@ -6,12 +6,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.IServices.DocumentRender;
 using CRM.EndPoint.FrontEnd.Models.DocumentRender;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Playwright;
 
 namespace CRM.EndPoint.FrontEnd.Services.DocumentRender;
 
-public class DocumentRenderService : IDocumentRenderService {
+public class DocumentRenderService(IWebHostEnvironment environment) : IDocumentRenderService {
     public async Task<byte[]> GeneratePdfAsync(HttpRequest request, string url, PagePdfOptions options = null)
     {
         options ??= new PagePdfOptions();
@@ -76,17 +78,41 @@ public class DocumentRenderService : IDocumentRenderService {
         return (await GenerateImagesAsync(request, url, options)).First();
     }
 
-    private static async Task<T> ExecuteAsync<T>(HttpRequest request, string url, ViewportSize viewport, Func<IPage, Task<T>> action)
+    private async Task<T> ExecuteAsync<T>(HttpRequest request, string url, ViewportSize viewport, Func<IPage, Task<T>> action)
     {
         using var playwright = await Playwright.CreateAsync();
 
-        await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions {
-            Headless = true
-        });
+        IBrowser browser;
+        try
+        {
+            browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
+        }
+        catch (PlaywrightException ex) when (ex.Message.Contains("Executable doesn't exist", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!environment.IsDevelopment())
+                throw new InvalidOperationException(
+                    "The Playwright Chromium browser is not installed for the application account. " +
+                    "On IIS, run Deployment/Install-DocumentRenderer.ps1 from the published application " +
+                    "and recycle the application pool.", ex);
+
+            try
+            {
+                browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true, Channel = "chrome" });
+            }
+            catch (PlaywrightException)
+            {
+                browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true, Channel = "msedge" });
+            }
+        }
+
+        await using var launchedBrowser = browser;
 
         var context = await browser.NewContextAsync(new BrowserNewContextOptions {
             Locale = "fa-IR",
-            DeviceScaleFactor = 3
+            DeviceScaleFactor = 3,
+            IgnoreHTTPSErrors = request.IsHttps &&
+                (request.Host.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                 request.Host.Host == "127.0.0.1")
         });
 
         await context.AddCookiesAsync(
@@ -103,9 +129,12 @@ public class DocumentRenderService : IDocumentRenderService {
         if (viewport != null)
             await page.SetViewportSizeAsync(viewport.Width, viewport.Height);
 
-        await page.GotoAsync(url, new PageGotoOptions {
+        var response = await page.GotoAsync(url, new PageGotoOptions {
             WaitUntil = WaitUntilState.NetworkIdle
         });
+
+        if (response == null || !response.Ok)
+            throw new InvalidOperationException($"Document preview returned HTTP {response?.Status}.");
 
         await page.EmulateMediaAsync(new PageEmulateMediaOptions {
             Media = Media.Print

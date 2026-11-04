@@ -62,6 +62,8 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         var data = await ordered.ThenByDescending(deal => deal.Id)
             .Skip(Math.Max(0, request.Start)).Take(Math.Clamp(request.Length, 1, 100))
             .Select(deal => new QualityControlRow {
+                RowVersion = db.QualityControls.Where(control => control.DealId == deal.Id)
+                    .Select(control => control.RowVersion).FirstOrDefault(),
                 DealId = deal.Id, SerialNumber = deal.SerialNumber, Title = deal.Title,
                 CustomerName = deal.CustomerName, CustomerCode = deal.CustomerCode,
                 CreateDate = deal.CreateDateTxt, UserCreator = deal.UserCreator,
@@ -227,6 +229,29 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         var status = control.Answers.Any(answer => answer.Answer == 1)
             ? QualityControlStatus.HasDiscrepancy : QualityControlStatus.NoDiscrepancy;
         return new(200, "کنترل کیفیت با موفقیت ثبت شد.", status, control.RowVersion);
+    }
+
+    public async Task<QualityControlSaveResult> DeleteAsync(DeleteQualityControlRequest request, QualityControlAccess access, CancellationToken cancellationToken)
+    {
+        if (!await VisibleDeals(access).AnyAsync(deal => deal.Id == request.DealId, cancellationToken))
+            return new(404, "سفارش یافت نشد یا به آن دسترسی ندارید.");
+        var control = await db.QualityControls.Include(item => item.Answers)
+            .FirstOrDefaultAsync(item => item.DealId == request.DealId, cancellationToken);
+        if (control == null)
+            return new(404, "کنترل کیفیت این سفارش قبلاً حذف شده است.");
+        if (request.RowVersion == null || !control.RowVersion.SequenceEqual(request.RowVersion))
+            return Conflict();
+        db.Entry(control).Property(item => item.RowVersion).OriginalValue = request.RowVersion;
+        db.QualityControls.Remove(control);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict();
+        }
+        return new(200, "کنترل کیفیت با موفقیت حذف شد.", QualityControlStatus.NotReviewed);
     }
 
     private IQueryable<Deal> VisibleDeals(QualityControlAccess access) => db.Deals.AsNoTracking()

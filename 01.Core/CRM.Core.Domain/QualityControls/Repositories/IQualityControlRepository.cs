@@ -9,6 +9,7 @@ namespace CRM.Core.Domain.QualityControls.Repositories;
 
 public interface IQualityControlRepository
 {
+    Task<QualityControlSaveResult> DeleteAsync(DeleteQualityControlRequest request, QualityControlAccess access, CancellationToken cancellationToken);
     Task<QualityControlListResult> GetDealsAsync(QualityControlListRequest request, QualityControlAccess access, CancellationToken cancellationToken);
     Task<IReadOnlyList<QualityControlQuestionDto>> GetQuestionsAsync(CancellationToken cancellationToken);
     Task<QualityControlForm?> GetFormAsync(Guid dealId, QualityControlAccess access, CancellationToken cancellationToken);

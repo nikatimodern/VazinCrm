@@ -13,9 +13,11 @@
     --color-border: #DDE1E8;
     color: var(--color-text);
     min-width: 0;
+    width: 100%;
+    container: quality-control / inline-size;
     line-height: 1.8;
 }
-.quality-control-page .qc-results { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 3px 12px rgb(33 37 41 / 4%); }
+.quality-control-page .qc-results { min-width: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 3px 12px rgb(33 37 41 / 4%); }
 .quality-control-page .qc-filters { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: center; gap: .65rem 1.5rem; flex: 1 1 auto; }
 .quality-control-page .qc-filter-group { min-width: 0; border: 0; padding: 0; margin: 0; }
 .quality-control-page .qc-filter-group legend { float: none; width: auto; font: .8rem IRANSansBold; margin-bottom: .35rem; color: var(--color-text-muted); }
@@ -30,7 +32,7 @@
 .quality-control-page :is(button, input, select, textarea):focus-visible, .quality-control-page .qc-filter-item input:focus-visible + label { outline: 2px solid var(--color-secondary); outline-offset: 3px; }
 .quality-control-page .qc-table-toolbar, .quality-control-page .qc-table-footer, .quality-control-page .qc-search, .quality-control-page .qc-page-size { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
 .quality-control-page .qc-table-toolbar, .quality-control-page .qc-table-footer { justify-content: space-between; }
-.quality-control-page .qc-table-toolbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; margin-bottom: .85rem; align-items: center; gap: 1rem; }
+.quality-control-page .qc-table-toolbar { display: grid; grid-template-columns: minmax(160px, 200px) minmax(0, 1fr) auto; margin-bottom: .85rem; align-items: center; gap: 1rem; }
 .quality-control-page .qc-table-toolbar .qc-search { width: 100%; }
 .quality-control-page .qc-table-toolbar .qc-filters { justify-content: center; }
 .quality-control-page .qc-table-toolbar .qc-search,
@@ -67,9 +69,18 @@
 .quality-control-page .qc-button-primary { background: var(--color-primary-action); color: var(--color-surface); border-color: var(--color-primary-action); }
 .quality-control-page .qc-button-primary:hover { background: var(--color-primary); }
 .quality-control-page .qc-button-neutral { color: var(--color-text-muted); border-color: var(--color-border); }
+.quality-control-page .qc-button-danger { color: var(--color-danger); border-color: var(--color-danger); }
+.quality-control-page .qc-button-danger:hover { background: var(--color-danger-light); }
+.quality-control-page .qc-actions { display: flex; flex-wrap: wrap; gap: .35rem; }
+.quality-control-page .qc-actions .qc-button { padding: .4rem .5rem; font-size: .85rem; }
+.quality-control-page .qc-actions .qc-button.qc-icon-button { width: 32px; padding-inline: 0; flex-shrink: 0; }
+@media (max-width: 767px) {
+    .quality-control-page .qc-actions .qc-button.qc-icon-button { width: 44px; }
+}
 .quality-control-page button:disabled { opacity: .5; cursor: not-allowed; background: var(--color-background); color: var(--color-text-muted); border-color: var(--color-border); }
 .quality-control-page .qc-title { font-family: IRANSansBold; }
-.quality-control-page .qc-records-scroll { overflow-x: auto; padding-bottom: .25rem; }
+.quality-control-page .qc-records, .quality-control-page .qc-record-list { min-width: 0; }
+.quality-control-page .qc-records-scroll { min-width: 0; overflow-x: auto; padding-bottom: .25rem; }
 .quality-control-page .qc-record-header,
 .quality-control-page .qc-record-card { display: grid; grid-template-columns: 40px 90px minmax(130px, 1.5fr) minmax(130px, 1.3fr) 115px minmax(90px, 1fr) 105px 125px 115px; align-items: center; gap: .65rem; min-width: 1120px; padding: .9rem 1rem; border-radius: 11px; }
 .quality-control-page .qc-record-header { background: var(--color-primary); color: var(--color-surface); font-family: IRANSansBold; font-size: .85rem; margin-bottom: .7rem; }
@@ -85,17 +96,31 @@
 .quality-control-page .qc-record-card:focus-within { outline: 2px solid var(--color-secondary); outline-offset: -2px; }
 .quality-control-page .qc-record-field { min-width: 0; overflow-wrap: anywhere; }
 .quality-control-page .qc-field-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-@media (max-width: 767.98px) {
+@container quality-control (max-width: 1120px) {
     .quality-control-page .qc-mobile-sort { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin-bottom: .75rem; }
     .quality-control-page .qc-mobile-sort .form-select { width: auto; min-width: 11rem; }
     .quality-control-page .qc-mobile-sort .qc-button { min-height: 36px; padding: .3rem .6rem; }
     .quality-control-page .qc-record-header { display: block; min-width: 0; }
     .quality-control-page .qc-record-header > :is(span, button) { display: none; }
     .quality-control-page .qc-record-header::before { content: 'سفارش‌های کنترل کیفیت'; }
-    .quality-control-page .qc-record-card { min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: .85rem; }
-    .quality-control-page .qc-record-field:is(.qc-title, .qc-customer, .qc-actions) { grid-column: 1 / -1; }
+    .quality-control-page .qc-record-card { min-width: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: .85rem; }
+    .quality-control-page .qc-record-field:is(.qc-title, .qc-customer, .qc-actions) { grid-column: auto; }
     .quality-control-page .qc-field-label { position: static; display: block; width: auto; height: auto; overflow: visible; clip-path: none; font-size: .8rem; color: var(--color-text-muted); margin-bottom: .2rem; }
     .quality-control-page .qc-actions .qc-field-label { display: none; }
+}
+@container quality-control (max-width: 1200px) {
+    .quality-control-page .qc-table-toolbar { grid-template-columns: minmax(140px, 180px) minmax(0, 1fr) auto; gap: .6rem 1rem; }
+    .quality-control-page .qc-table-toolbar .qc-search { grid-column: 1; width: min(100%, 230px); }
+    .quality-control-page .qc-table-toolbar .qc-top-controls { grid-column: 3; grid-row: 2; justify-content: flex-end; flex-wrap: wrap; overflow: visible; }
+    .quality-control-page .qc-table-toolbar .qc-filters { grid-column: 2 / -1; grid-row: 1; justify-content: center; gap: .5rem 1rem; }
+    .quality-control-page .qc-table-toolbar .qc-mobile-sort { grid-column: 1 / 3; grid-row: 2; display: flex; align-items: center; gap: .35rem; min-width: 0; width: 100%; max-width: 320px; margin: 0; flex-wrap: nowrap; }
+    .quality-control-page .qc-mobile-sort label { font-size: .78rem; white-space: nowrap; }
+    .quality-control-page .qc-mobile-sort .form-select { width: 100%; min-width: 0; min-height: 36px; padding-block: .25rem; font-size: .8rem; }
+    .quality-control-page .qc-mobile-sort .qc-button { flex-shrink: 0; min-height: 36px; padding: .25rem .4rem; font-size: .8rem; }
+    .quality-control-page .qc-filter-group { flex: 0 1 auto; }
+    .quality-control-page .qc-filter-options { flex-wrap: nowrap; }
+    .quality-control-page .qc-filter-item { flex: 0 0 auto; }
+    .quality-control-page .qc-filter-item label { white-space: nowrap; min-height: 36px; }
 }
 .quality-control-page .qc-badge { display: inline-flex; align-items: center; gap: .35rem; border-radius: 20px; padding: .3rem .7rem; white-space: nowrap; font-size: .85rem; background: var(--color-background); color: var(--color-text-muted); }
 .quality-control-page .qc-badge-green { background: var(--color-primary-light); color: var(--color-primary); }
@@ -121,6 +146,19 @@
 .quality-control-page .qc-feedback { padding-block: .5rem; color: var(--color-text-muted); font-size: .9rem; }
 .quality-control-page .qc-feedback:empty { display: none; }
 .quality-control-page #qcDescription { resize: vertical; }
+.quality-control-page .qc-readonly-result { display: grid; gap: .75rem; }
+.quality-control-page .qc-readonly-result[hidden], .quality-control-page .qc-form-fields[hidden] { display: none; }
+.quality-control-page .qc-result-heading, .quality-control-page .qc-result-notes h3 { margin: 0; font: 1rem IRANSansBold; }
+.quality-control-page .qc-result-card { padding: .85rem; border: 1px solid var(--color-border); border-radius: 12px; }
+.quality-control-page .qc-result-card h4 { display: flex; align-items: baseline; gap: .65rem; margin: 0 0 .7rem; font: .95rem/1.8 IRANSansBold; overflow-wrap: anywhere; }
+.quality-control-page .qc-result-number { flex-shrink: 0; display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--color-primary-light); color: var(--color-primary); }
+.quality-control-page .qc-result-answer { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem 1rem; padding: .65rem .85rem; border-radius: 8px; background: var(--color-background); line-height: 1.8; overflow-wrap: anywhere; }
+.quality-control-page .qc-result-answer-label { font-size: .8rem; color: var(--color-text-muted); }
+.quality-control-page .qc-result-answer strong { font-weight: normal; font-family: IRANSansMedium; }
+.quality-control-page .qc-result-matched { background: var(--color-primary-light); color: var(--color-primary); }
+.quality-control-page .qc-result-discrepancy { background: var(--color-danger-light); color: var(--color-danger); }
+.quality-control-page .qc-result-notes { padding: 1rem; background: var(--color-background); border-radius: 10px; }
+.quality-control-page .qc-result-notes p { margin: .5rem 0 0; white-space: pre-wrap; line-height: 1.9; overflow-wrap: anywhere; }
 .quality-control-page .qc-tabs { display: flex; gap: .5rem; margin-block: .75rem; border-bottom: 1px solid var(--color-border); padding-bottom: .5rem; }
 .quality-control-page .qc-tabs button { flex: 1; padding: .5rem; min-height: 44px; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text-muted); background: var(--color-surface); }
 .quality-control-page .qc-tabs button.active { color: var(--color-secondary); background: var(--color-secondary-light); border-color: var(--color-secondary); }
@@ -182,4 +220,31 @@
 @media (max-width: 575.98px) {
     .quality-control-page .modal-fullscreen-sm-down .modal-content { border-radius: 0; border: 0; }
     .quality-control-page .modal-footer .qc-button { flex: 1; }
+}
+@container quality-control (max-width: 680px) {
+    .quality-control-page .qc-table-toolbar { grid-template-columns: minmax(0, 1fr); gap: .85rem; }
+    .quality-control-page .qc-table-toolbar .qc-search { width: 100%; }
+    .quality-control-page .qc-table-toolbar .qc-top-controls { grid-column: 1; grid-row: 4; justify-content: space-between; }
+    .quality-control-page .qc-table-toolbar .qc-filters { grid-column: 1; grid-row: 2; gap: .85rem; }
+    .quality-control-page .qc-table-toolbar .qc-mobile-sort { grid-column: 1; grid-row: 3; }
+    .quality-control-page .qc-filter-group { flex: 1 1 100%; }
+    .quality-control-page .qc-filter-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .quality-control-page .qc-filter-group:first-child .qc-filter-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .quality-control-page .qc-filter-item label { white-space: normal; min-height: 44px; }
+    .quality-control-page .qc-filter-item label::before { display: none; }
+    .quality-control-page .qc-record-card { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .quality-control-page .qc-record-field:is(.qc-title, .qc-customer, .qc-actions) { grid-column: 1 / -1; }
+    .quality-control-page .qc-actions .qc-button.qc-icon-button { width: 44px; }
+    .quality-control-page .qc-table-footer { justify-content: center; }
+    .quality-control-page .qc-table-footer > span { flex-basis: 100%; text-align: center; }
+    .quality-control-page .qc-top-controls .qc-pagination { flex-wrap: wrap; justify-content: flex-start; flex-shrink: 1; }
+    .quality-control-page .qc-top-controls .qc-pagination button { min-width: 36px; min-height: 44px; }
+    .quality-control-page .qc-badge { white-space: normal; }
+    .quality-control-page .qc-mobile-sort .form-select { min-width: 0; max-width: 100%; flex: 1 1 140px; }
+}
+@container quality-control (min-width: 681px) and (max-width: 1200px) {
+    .quality-control-page .qc-table-toolbar .qc-filters { width: 100%; }
+    .quality-control-page .qc-table-toolbar .qc-filters .qc-filter-group { flex: 0 1 auto; }
+    .quality-control-page .qc-filters .qc-filter-options { display: flex; flex-wrap: nowrap; }
+    .quality-control-page .qc-filters .qc-filter-item label { min-height: 36px; }
 }

@@ -11,6 +11,7 @@
         const fields = page.querySelector("#qcFormFields");
         const questions = page.querySelector("#qcQuestions");
         const description = page.querySelector("#qcDescription");
+        const readOnlyResult = page.querySelector("#qcReadOnlyResult");
         const summary = page.querySelector("#qcOrderSummary");
         const feedback = page.querySelector("#qcFormFeedback");
         const submit = page.querySelector("#qcSubmit");
@@ -32,7 +33,9 @@
         let selectedDealId = null;
         let rowVersion = null;
         let formReady = false;
+        let readOnly = false;
         let saving = false;
+        let deleting = false;
         let viewingDocument = false;
 
         const body = page.querySelector("#qcRecordList");
@@ -110,7 +113,11 @@
                     <div class="qc-record-field "><span class="qc-field-label">ثبت‌کننده</span>${escapeHtml(row.userCreator || "-")}</div>
                     <div class="qc-record-field "><span class="qc-field-label">وضعیت سفارش</span><span class="qc-badge qc-badge-${row.financialApproved ? "green" : "gray"}">${row.financialApproved ? "تحویل شده" : "تحویل نشده"}</span></div>
                     <div class="qc-record-field "><span class="qc-field-label">وضعیت کنترل کیفیت</span><span class="qc-badge qc-quality-status qc-badge-${status.color}">${status.label}</span></div>
-                    <div class="qc-record-field qc-actions"><span class="qc-field-label">عملیات</span><button type="button" class="qc-button" data-qc-deal-id="${escapeHtml(row.dealId)}">کنترل کیفیت</button></div>
+                    <div class="qc-record-field qc-actions"><span class="qc-field-label">عملیات</span>${row.rowVersion ? `
+                        <button type="button" class="qc-button qc-icon-button" data-qc-deal-id="${escapeHtml(row.dealId)}" data-qc-view="true" title="نمایش کنترل کیفیت" aria-label="نمایش کنترل کیفیت"><i class="fa fa-eye" aria-hidden="true"></i></button>
+                        <button type="button" class="qc-button qc-icon-button" data-qc-deal-id="${escapeHtml(row.dealId)}" title="ویرایش کنترل کیفیت" aria-label="ویرایش کنترل کیفیت"><i class="fa fa-pencil" aria-hidden="true"></i></button>
+                        <button type="button" class="qc-button qc-icon-button qc-button-danger" data-qc-delete-id="${escapeHtml(row.dealId)}" data-qc-version="${escapeHtml(row.rowVersion)}" data-qc-serial="${escapeHtml(row.serialNumber)}" title="حذف کنترل کیفیت" aria-label="حذف کنترل کیفیت"><i class="fa fa-trash" aria-hidden="true"></i></button>`
+                        : `<button type="button" class="qc-button" data-qc-deal-id="${escapeHtml(row.dealId)}">کنترل کیفیت</button>`}</div>
                 </article>`;
             }).join("");
         }
@@ -211,9 +218,39 @@
             if (event.target.matches('[name="qcFinancialStatus"], [name="qcStatus"]')) loadTable(true);
         });
         page.addEventListener("click", event => {
+            const deleteButton = event.target.closest("[data-qc-delete-id]");
+            if (deleteButton) {
+                deleteControl(deleteButton);
+                return;
+            }
             const button = event.target.closest("[data-qc-deal-id]");
-            if (button && !saving) openForm(button.dataset.qcDealId);
+            if (button && !saving && !deleting) openForm(button.dataset.qcDealId, button.dataset.qcView === "true");
         });
+
+        async function deleteControl(button) {
+            if (deleting || saving || loading || !isActive()) return;
+            deleting = true;
+            button.disabled = true;
+            try {
+                const confirmed = await confirmAlert({
+                    title: "حذف کنترل کیفیت",
+                    text: `کنترل کیفیت سفارش ${button.dataset.qcSerial} و پاسخ‌های آن حذف شود؟ سفارش حذف نخواهد شد.`,
+                    confirmText: "حذف کنترل کیفیت",
+                });
+                if (!confirmed || !isActive()) return;
+                await sendApiRequest({
+                    url: "/QualityControl/Delete",
+                    method: "POST",
+                    headers: { RequestVerificationToken: form.querySelector('[name="__RequestVerificationToken"]').value },
+                    data: { dealId: button.dataset.qcDeleteId, rowVersion: button.dataset.qcVersion },
+                    successMsg: "کنترل کیفیت با موفقیت حذف شد.",
+                });
+                if (isActive()) await loadTable();
+            } finally {
+                deleting = false;
+                if (button.isConnected) button.disabled = false;
+            }
+        }
         pageSignal?.addEventListener("abort", () => {
             tableRequest?.abort();
             formRequest?.abort();
@@ -240,14 +277,20 @@
             detailsJson.hidden = false;
             renderDealDetails(resultDeal);
         });
-        questionsTab.addEventListener("shown.bs.tab", () => { submit.hidden = false; });
+        questionsTab.addEventListener("shown.bs.tab", () => { submit.hidden = readOnly; });
         modal.addEventListener("hidden.bs.modal", () => {
             if (viewingDocument) return;
             detailsJson.replaceChildren();
             detailsJson.hidden = true;
         });
 
-        async function openForm(dealId) {
+        async function openForm(dealId, viewOnly = false) {
+            readOnly = viewOnly;
+            fields.hidden = readOnly;
+            readOnlyResult.hidden = true;
+            readOnlyResult.replaceChildren();
+            page.querySelector("#qualityControlModalTitle").textContent = readOnly ? "نمایش کنترل کیفیت سفارش" : "کنترل کیفیت سفارش";
+            questionsTab.textContent = readOnly ? "نتیجه کنترل کیفیت" : "سؤال‌های کنترل کیفیت";
             formRequest?.abort();
             factorSummaryRequest?.abort();
             const controller = formRequest = new AbortController();
@@ -257,7 +300,7 @@
             detailsJson.hidden = true;
             detailsFeedback.hidden = false;
             bootstrap.Tab.getOrCreateInstance(questionsTab).show();
-            submit.hidden = false;
+            submit.hidden = readOnly;
             rowVersion = null;
             formReady = false;
             form.reset();
@@ -287,11 +330,16 @@
             summary.textContent = `سفارش شماره ${deal.serialNumber} — ${deal.title || "بدون عنوان"} | ${deal.customerName || "بدون نام"}${deal.customerCode != null ? ` (کد مشتری: ${deal.customerCode})` : ""}`;
             rowVersion = result.rowVersion ?? null;
             description.value = result.description ?? "";
-            renderQuestions(result.questions);
-            feedback.textContent = "پاسخ به همهٔ سؤال‌ها الزامی است.";
+            if (readOnly) {
+                renderReadOnlyResult(result.questions, result.description);
+                readOnlyResult.hidden = false;
+            } else {
+                renderQuestions(result.questions);
+            }
+            feedback.textContent = readOnly ? "" : "پاسخ به همهٔ سؤال‌ها الزامی است.";
             formReady = true;
-            fields.disabled = false;
-            submit.disabled = false;
+            fields.disabled = readOnly;
+            submit.disabled = readOnly;
         }
 
         let resultDeal = null;
@@ -408,6 +456,44 @@
             }
         });
 
+        function renderReadOnlyResult(items, notes) {
+            const fragment = document.createDocumentFragment();
+            const heading = document.createElement("h3");
+            heading.className = "qc-result-heading";
+            heading.textContent = "سؤال‌ها و پاسخ‌ها";
+            fragment.append(heading);
+            [...items].sort((a, b) => a.sortOrder - b.sortOrder).forEach((item, index) => {
+                const card = document.createElement("article");
+                card.className = "qc-result-card";
+                const question = document.createElement("h4");
+                const counter = document.createElement("span");
+                counter.className = "qc-result-number";
+                counter.textContent = number.format(index + 1);
+                const questionText = document.createElement("span");
+                questionText.textContent = item.questionText || item.title;
+                question.append(counter, questionText);
+                const answer = document.createElement("div");
+                answer.className = `qc-result-answer${item.answer === 1 ? " qc-result-discrepancy" : item.answer === 0 ? " qc-result-matched" : ""}`;
+                const label = document.createElement("span");
+                label.className = "qc-result-answer-label";
+                label.textContent = "پاسخ ثبت‌شده:";
+                const value = document.createElement("strong");
+                value.textContent = item.answer === 0 ? item.zeroAnswerText : item.answer === 1 ? item.oneAnswerText : "پاسخی ثبت نشده است";
+                answer.append(label, value);
+                card.append(question, answer);
+                fragment.append(card);
+            });
+            const noteSection = document.createElement("section");
+            noteSection.className = "qc-result-notes";
+            const noteTitle = document.createElement("h3");
+            noteTitle.textContent = "توضیحات تکمیلی";
+            const noteText = document.createElement("p");
+            noteText.textContent = notes?.trim() || "توضیحی ثبت نشده است.";
+            noteSection.append(noteTitle, noteText);
+            fragment.append(noteSection);
+            readOnlyResult.replaceChildren(fragment);
+        }
+
         function renderQuestions(items) {
             const fragment = document.createDocumentFragment();
             [...items].sort((a, b) => a.sortOrder - b.sortOrder).forEach(item => {
@@ -442,8 +528,8 @@
 
         function setSaving(value) {
             saving = value;
-            fields.disabled = value;
-            submit.disabled = value;
+            fields.disabled = value || readOnly;
+            submit.disabled = value || readOnly;
             submit.textContent = value ? "در حال ثبت…" : "ثبت کنترل کیفیت";
             form.setAttribute("aria-busy", String(value));
             modal.querySelectorAll("[data-bs-dismiss]").forEach(button => { button.disabled = value; });
@@ -451,7 +537,7 @@
 
         async function saveForm(event) {
             event.preventDefault();
-            if (saving || !formReady || !selectedDealId || !form.reportValidity()) return;
+            if (readOnly || saving || !formReady || !selectedDealId || !form.reportValidity()) return;
             const answers = Array.from(questions.querySelectorAll('input[type="radio"]:checked'), radio => ({
                 questionId: radio.dataset.questionId,
                 answer: Number(radio.value),

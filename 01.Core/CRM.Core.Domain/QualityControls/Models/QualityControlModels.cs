@@ -27,6 +27,7 @@ public sealed class QualityControlListRequest
 
 public sealed class QualityControlRow
 {
+    public byte[]? RowVersion { get; set; }
     public Guid DealId { get; set; }
     public int SerialNumber { get; set; }
     public string? Title { get; set; }
@@ -63,4 +64,5 @@ public sealed class SaveQualityControlRequest
 }
 
 public sealed record QualityControlAnswerInput(Guid QuestionId, int? Answer);
+public sealed record DeleteQualityControlRequest(Guid DealId, byte[]? RowVersion);
 public sealed record QualityControlSaveResult(int StatusCode, string? Message = null, QualityControlStatus? Status = null, byte[]? RowVersion = null);

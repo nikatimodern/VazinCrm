@@ -26,6 +26,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -68,6 +69,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly IPushQueue pushQueue;
         private readonly ISmsQueue smsQueue;
         private readonly IDocumentRenderService documentRender;
+        private readonly ILogger<FactorController> logger;
         private readonly PreFactorService preFactorService;
         private readonly CrmSaveCahngeAsync crmSaveCahngeAsync;
         private readonly TaskServices ts;
@@ -82,7 +84,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             FileSaver fileSaver,
             DateTimeServices dtService, CRMContextDb db, UserContextDb Udb,
             IHubContext<TaskHub> hub, LogSystemService logSystemService, IPushQueue pushQueue, ISmsQueue smsQueue,
-            IDocumentRenderService documentRender, PreFactorService preFactorService)
+            IDocumentRenderService documentRender, PreFactorService preFactorService,
+            ILogger<FactorController> logger)
         {
             this.crmSaveCahngeAsync = crmSaveCahngeAsync;
             this.ts = ts;
@@ -100,6 +103,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.pushQueue = pushQueue;
             this.smsQueue = smsQueue;
             this.documentRender = documentRender;
+            this.logger = logger;
             this.preFactorService = preFactorService;
         }
 
@@ -1004,8 +1008,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return File(pdf, "application/pdf", "PreFactor.pdf");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                logger.LogError(ex, "Failed to render pre-factor PDF {PreFactorId}", id);
                 return BadRequest();
             }
         }
@@ -1015,19 +1020,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
                 var url = Url.Action(nameof(PreviewPfactorPrint), "Factor", new { id }, Request.Scheme);
-                var images = await documentRender.GenerateImagesAsync(Request, url, new DocumentRenderImageOptions {
-                        Viewport = ViewportPresets.A4Portrait,
-                        Selectors = [".sheet"],
-                        //                        LocatorOptions = new LocatorScreenshotOptions { Type = ScreenshotType.Jpeg, Quality = 100 }
-                    }
-                );
+                var image = await documentRender.GenerateImageAsync(Request, url, new DocumentRenderImageOptions {
+                    Viewport = ViewportPresets.A4Portrait,
+                    Selectors = ["body.A4"]
+                });
 
-                var zip = await documentRender.CreateZipAsync(images, i => $"PreFactor-{i + 1}.png")!;
-
-                return File(zip, "application/zip", "PreFactorImages.zip");
+                return File(image, "image/png", "PreFactor.png");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                logger.LogError(ex, "Failed to render pre-factor images {PreFactorId}", id);
                 return BadRequest();
             }
         }

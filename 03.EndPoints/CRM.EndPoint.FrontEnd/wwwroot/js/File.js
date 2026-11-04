@@ -515,6 +515,8 @@ function removeUploadProgress(containerUploader) {
 
 async function downloadFile(btn, url, fileName) {
     try {
+        console.log(url);
+
         btn.disabled = true;
         btn.querySelector(".spinner-border")?.classList.remove("d-none");
         
