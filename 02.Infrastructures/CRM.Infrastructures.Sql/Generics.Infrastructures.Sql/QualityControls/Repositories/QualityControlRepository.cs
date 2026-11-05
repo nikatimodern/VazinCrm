@@ -25,8 +25,6 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
     {
         var deals = VisibleDeals(access);
         var recordsTotal = await deals.CountAsync(cancellationToken);
-        if (request.FinancialStatus.HasValue)
-            deals = deals.Where(deal => deal.FinancialStatus == (DealFinancialStausEnum)request.FinancialStatus.Value);
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
             var search = request.Search.Trim();
@@ -41,8 +39,17 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                 && !db.QualityControlAnswers.Any(answer => answer.QualityControl.DealId == deal.Id && answer.Answer == 1)),
             QualityControlStatus.HasDiscrepancy => deals.Where(deal => db.QualityControlAnswers
                 .Any(answer => answer.QualityControl.DealId == deal.Id && answer.Answer == 1)),
+            QualityControlStatus.Reviewed => deals.Where(deal => db.QualityControls.Any(control => control.DealId == deal.Id)),
             _ => deals
         };
+        var financialCounts = await deals.GroupBy(_ => 1)
+            .Select(group => new QualityControlFinancialCounts(
+                group.Count(),
+                group.Count(deal => deal.FinancialStatus == DealFinancialStausEnum.تایید_شده),
+                group.Count(deal => deal.FinancialStatus == DealFinancialStausEnum.تایید_نشده)))
+            .FirstOrDefaultAsync(cancellationToken) ?? new(0, 0, 0);
+        if (request.FinancialStatus.HasValue)
+            deals = deals.Where(deal => deal.FinancialStatus == (DealFinancialStausEnum)request.FinancialStatus.Value);
         var recordsFiltered = await deals.CountAsync(cancellationToken);
         var descending = request.SortDescending;
         var ordered = request.SortBy switch
@@ -73,7 +80,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                     : db.QualityControlAnswers.Any(answer => answer.QualityControl.DealId == deal.Id && answer.Answer == 1)
                         ? QualityControlStatus.HasDiscrepancy : QualityControlStatus.NoDiscrepancy
             }).ToListAsync(cancellationToken);
-        return new QualityControlListResult(request.Draw, recordsTotal, recordsFiltered, data);
+        return new QualityControlListResult(request.Draw, recordsTotal, recordsFiltered, data, financialCounts);
     }
 
     public async Task<IReadOnlyList<QualityControlQuestionDto>> GetQuestionsAsync(CancellationToken cancellationToken)

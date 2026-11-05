@@ -104,7 +104,7 @@
         function renderRows(rows) {
             body.innerHTML = rows.map((row, index) => {
                 const status = statuses[row.status] ?? statuses[0];
-                return `<article class="qc-record-card" role="listitem">
+                return `<article class="qc-record-card qc-record-${status.color}" role="listitem">
                     <div class="qc-record-field "><span class="qc-field-label">ردیف</span>${number.format(start + index + 1)}</div>
                     <div class="qc-record-field "><span class="qc-field-label">شماره سفارش</span>${escapeHtml(row.serialNumber ?? "-")}</div>
                     <div class="qc-record-field qc-title"><span class="qc-field-label">عنوان سفارش</span>${escapeHtml(row.title || "-")}</div>
@@ -117,7 +117,9 @@
                         <button type="button" class="qc-button qc-icon-button" data-qc-deal-id="${escapeHtml(row.dealId)}" data-qc-view="true" title="نمایش کنترل کیفیت" aria-label="نمایش کنترل کیفیت"><i class="fa fa-eye" aria-hidden="true"></i></button>
                         <button type="button" class="qc-button qc-icon-button" data-qc-deal-id="${escapeHtml(row.dealId)}" title="ویرایش کنترل کیفیت" aria-label="ویرایش کنترل کیفیت"><i class="fa fa-pencil" aria-hidden="true"></i></button>
                         <button type="button" class="qc-button qc-icon-button qc-button-danger" data-qc-delete-id="${escapeHtml(row.dealId)}" data-qc-version="${escapeHtml(row.rowVersion)}" data-qc-serial="${escapeHtml(row.serialNumber)}" title="حذف کنترل کیفیت" aria-label="حذف کنترل کیفیت"><i class="fa fa-trash" aria-hidden="true"></i></button>`
-                        : `<button type="button" class="qc-button" data-qc-deal-id="${escapeHtml(row.dealId)}">کنترل کیفیت</button>`}</div>
+                        : row.financialApproved
+                            ? `<button type="button" class="qc-button" data-qc-deal-id="${escapeHtml(row.dealId)}">کنترل کیفیت</button>`
+                            : "—"}</div>
                 </article>`;
             }).join("");
         }
@@ -160,6 +162,10 @@
                 return;
             }
             total = result.recordsFiltered;
+            page.querySelectorAll("[data-qc-financial-count]").forEach(element => {
+                const count = result.financialCounts?.[element.dataset.qcFinancialCount];
+                element.textContent = count == null ? "" : `(${number.format(count)})`;
+            });
             if (start >= total && start > 0) {
                 start = Math.max(0, (Math.ceil(total / length) - 1) * length);
                 return loadTable();

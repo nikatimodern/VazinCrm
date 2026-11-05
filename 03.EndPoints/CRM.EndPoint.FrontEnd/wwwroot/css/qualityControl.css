@@ -82,17 +82,23 @@
 .quality-control-page .qc-records, .quality-control-page .qc-record-list { min-width: 0; }
 .quality-control-page .qc-records-scroll { min-width: 0; overflow-x: auto; padding-bottom: .25rem; }
 .quality-control-page .qc-record-header,
-.quality-control-page .qc-record-card { display: grid; grid-template-columns: 40px 90px minmax(130px, 1.5fr) minmax(130px, 1.3fr) 115px minmax(90px, 1fr) 105px 125px 115px; align-items: center; gap: .65rem; min-width: 1120px; padding: .9rem 1rem; border-radius: 11px; }
+.quality-control-page .qc-record-card { display: grid; grid-template-columns: 40px 90px minmax(130px, 1.5fr) minmax(130px, 1.3fr) 115px minmax(90px, 1fr) 105px 160px 115px; align-items: center; gap: .65rem; min-width: 1155px; padding: .9rem 1rem; border-radius: 11px; }
 .quality-control-page .qc-record-header { background: var(--color-primary); color: var(--color-surface); font-family: IRANSansBold; font-size: .85rem; margin-bottom: .7rem; }
 .quality-control-page .qc-record-header button { padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.quality-control-page .qc-record-header button[data-qc-sort="status"] { white-space: nowrap; }
 .quality-control-page .qc-record-header button::after { content: ' ↕'; opacity: .65; }
 .quality-control-page .qc-record-header button[data-direction="ascending"]::after { content: ' ↑'; opacity: 1; }
 .quality-control-page .qc-record-header button[data-direction="descending"]::after { content: ' ↓'; opacity: 1; }
 .quality-control-page .qc-record-header button:focus-visible { outline: 2px solid var(--color-surface); outline-offset: 3px; }
 .quality-control-page .qc-mobile-sort { display: none; }
-.quality-control-page .qc-record-list { display: grid; gap: .6rem; }
-.quality-control-page .qc-record-card { border: 1px solid var(--color-border); background: var(--color-primary-light); font-size: .9rem; }
-.quality-control-page .qc-record-card:nth-child(even) { background: var(--color-secondary-light); }
+.quality-control-page .qc-record-list { display: grid; gap: .35rem; }
+.quality-control-page .qc-record-card { border: 1px solid var(--color-border); background: var(--color-background); font-size: .9rem; padding-block: .25rem; }
+.quality-control-page .qc-record-card.qc-record-green { background: var(--color-primary-light); }
+.quality-control-page .qc-record-card.qc-record-red { background: var(--color-danger-light); }
+.quality-control-page .qc-record-card .qc-actions .qc-button { min-height: 32px; }
+@media (max-width: 767px) {
+    .quality-control-page .qc-record-card .qc-actions .qc-button { min-height: 44px; }
+}
 .quality-control-page .qc-record-card:focus-within { outline: 2px solid var(--color-secondary); outline-offset: -2px; }
 .quality-control-page .qc-record-field { min-width: 0; overflow-wrap: anywhere; }
 .quality-control-page .qc-field-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }

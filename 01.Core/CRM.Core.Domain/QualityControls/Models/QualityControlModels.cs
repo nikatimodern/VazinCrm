@@ -8,7 +8,8 @@ public enum QualityControlStatus
 {
     NotReviewed = 0,
     NoDiscrepancy = 1,
-    HasDiscrepancy = 2
+    HasDiscrepancy = 2,
+    Reviewed = 3
 }
 
 public sealed record QualityControlAccess(string UserId, string UserName, bool ReadAll);
@@ -39,7 +40,8 @@ public sealed class QualityControlRow
     public QualityControlStatus Status { get; set; }
 }
 
-public sealed record QualityControlListResult(int Draw, int RecordsTotal, int RecordsFiltered, IReadOnlyList<QualityControlRow> Data);
+public sealed record QualityControlFinancialCounts(int All, int Delivered, int Undelivered);
+public sealed record QualityControlListResult(int Draw, int RecordsTotal, int RecordsFiltered, IReadOnlyList<QualityControlRow> Data, QualityControlFinancialCounts FinancialCounts);
 public sealed record QualityControlQuestionDto(Guid Id, string Title, string QuestionText, string ZeroAnswerText, string OneAnswerText, int SortOrder, int? Answer);
 public sealed record QualityControlDeal(Guid Id, int SerialNumber, string? Title, string? CustomerName, int? CustomerCode,
     Guid? CustomerId, string? UserCreator, string? CreateDate, string? Description, bool FinancialApproved,
