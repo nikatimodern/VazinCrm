@@ -1,12 +1,27 @@
 /* Shared navigation hierarchy; keep bottom navigation unchanged. */
 @media (min-width: 768px) {
 	html:not(.sidebar-collapsed) #desktopSidebar {
-		width: 260px;
+		width: clamp(210px, 16vw, 250px);
 	}
 	
 	html:not(.sidebar-collapsed) #mainWrapper {
-		margin-right: 260px;
+		margin-right: clamp(210px, 16vw, 250px);
 	}
+	#desktopNavbar {
+		overflow-x: hidden;
+		overflow-y: auto;
+	}
+	#desktopNavbar .menu-list { gap: clamp(1px, .25vh, 3px); }
+	#desktopNavbar .menu-item {
+		min-width: 0;
+		min-height: clamp(28px, 3.4vh, 34px);
+		padding-block: clamp(2px, .4vh, 5px);
+	}
+	#desktopNavbar .menu-item-title { min-width: 0; font-size: clamp(11px, 1.25vh, 13px); gap: 6px; }
+	#desktopNavbar .menu-item-title > span:first-child { overflow-wrap: anywhere; }
+	#desktopNavbar .menu-icon-frame { width: clamp(22px, 2.6vh, 28px); height: clamp(22px, 2.6vh, 28px); }
+	#desktopNavbar .menu-icon-frame .menu-icon { width: clamp(16px, 1.8vh, 19px) !important; height: auto; }
+	html.sidebar-collapsed #desktopNavbar { overflow: visible; }
 }
 
 
