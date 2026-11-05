@@ -1,59 +1,121 @@
 @using CRM.Core.Domain.ASettings.Entities
 @model PreFactor
 
+
+<style>
+
+    .factor-group {
+        border: 2px solid #dee2e6;
+        border-radius: 10px;
+        padding: 10px;
+        /* background: #fff; */
+        font-size: 13px;
+    }
+
+    .factor-group-title {
+        font-weight: 600;
+        text-align: center;
+        padding-bottom: 8px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .factor-group-items {
+        display: flex;
+        gap: 6px;
+    }
+
+    .factor-group-btn {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+        padding: 8px 4px;
+        border: 1px solid #dee2e6;
+        border-radius: 7px;
+        background: #f0f1f7;
+        color: #333;
+        cursor: pointer;
+        transition: background .15s;
+    }
+
+        .factor-group-btn:hover:not(:disabled) {
+            background: #e5e0f5;
+            border-color: #5811b4;
+        }
+
+        .factor-group-btn:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+    .factor-group-count {
+        font-size: 12px;
+        font-weight: 600;
+        color: #5811b4;
+    }
+
+</style>
+
 @{
     var setting = ViewData["Setting"] as ASetting;
     var passType = ViewData["PassType"] as int? ?? 0;
 
     if (Model == null) return;
+
+    var showInternal = setting?.CrmFactors == true;
+    var showSepidar = !User.IsCustomer()
+                      && setting?.Sepidar == true
+                      && Model.CountFactorSepidar != null;
 }
 
-<div class="col-12 col-md-2 d-flex align-items-center justify-content-evenly flex-row flex-md-column gap-2 flex-wrap px-2" style="font-size: 13px">
-    @if (setting?.CrmFactors == true) {
-        if (Model.CountFactor == 0) {
-            <button class="buttonDisabled" disabled>
-                <span>فاکتور ها</span>
-                <span class="flex-center" style="gap: 2px">
-                    <span>@Model.CountFactor</span>
-                    <span>عدد</span>
-                </span>
-            </button>
-        } else {
-            <button class="buttonGreen0 factorCount-btn"
-                    onclick="GetFactorPartial({id: '@Model.Id', element: this, serialNumber: '@Model.SerialNumber', passType: @passType })">
-                <span>فاکتور ها</span>
-                <span class="flex-center" style="gap: 2px">
-                    <span>@Model.CountFactor</span>
-                    <span>عدد</span>
-                </span>
-            </button>
-        }
+<div class="col-12 col-md-2 d-flex flex-column gap-2 px-2">
+
+    @if (showInternal || showSepidar)
+    {
+        <div class="factor-group">
+            <div class="factor-group-title">فاکتورها</div>
+
+            <div class="factor-group-items">
+
+                @if (showInternal)
+                {
+                    <button type="button"
+                            class="factor-group-btn"
+                            disabled="@(Model.CountFactor == 0)"
+                            onclick="GetFactorPartial({id: '@Model.Id', element: this, serialNumber: '@Model.SerialNumber', passType: @passType})">
+                        <span>داخلی</span>
+                        <span class="factor-group-count">
+                            @Model.CountFactor عدد
+                        </span>
+                    </button>
+                }
+
+                @if (showSepidar)
+                {
+                    <button type="button"
+                            class="factor-group-btn"
+                            disabled="@(Model.CountFactorSepidar == 0)"
+                            onclick="showSepidarFactors('@Model.SerialNumber', this, @passType)">
+                        <span>سپیدار</span>
+                        <span class="factor-group-count">
+                            @Model.CountFactorSepidar عدد
+                        </span>
+                    </button>
+                }
+
+            </div>
+        </div>
     }
 
-    @if (!User.IsCustomer() && setting?.Sepidar == true && Model.CountFactorSepidar != null) {
-        if (Model.CountFactorSepidar == 0) {
-            <button class="buttonDisabled" disabled>
-                <span>فاکتور سپیدار </span>
-                <span class="flex-center" style="gap: 2px">
-                    <span>@Model.CountFactorSepidar</span>
-                    <span>عدد</span>
-                </span>
-            </button>
-        } else {
-            <button class="buttonPurple factorCount-btn" onclick="showSepidarFactors('@Model.SerialNumber', this, @passType)">
-                <span>فاکتور سپیدار</span>
-                <span class="flex-center" style="gap: 2px">
-                    <span>@Model.CountFactorSepidar</span>
-                    <span>عدد</span>
-                </span>
-            </button>
-        }
-    }
-
-    @if (User.IsFinancial() || User.IsAdmin()) {
-        <button class="buttonBlue2 factorCount-btn" onclick="showPreFactorExternalSotwaresModal('@Model.Id', '@Model.SerialNumber')">
-            @* <span>ارتباط با</span> *@
-            <span>ارتباط مالی</span>
+    @if (User.IsFinancial() || User.IsAdmin())
+    {
+        <button class="buttonBlue2 factorCount-btn"
+                onclick="showPreFactorExternalSotwaresModal('@Model.Id', '@Model.SerialNumber')">
+            ارتباط مالی
         </button>
     }
+
 </div>
