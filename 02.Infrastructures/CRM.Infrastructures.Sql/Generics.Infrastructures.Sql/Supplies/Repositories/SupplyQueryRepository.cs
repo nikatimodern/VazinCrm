@@ -631,126 +631,97 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
         }
     }
 
-    public async Task<SupplyResult> GetReceivablesAsync(SupplyTableRequest request, CancellationToken cancellationToken)
+
+    public async Task<SupplyResult> GetReceivablesAsync(
+        SupplyTableRequest request,
+        CancellationToken cancellationToken)
     {
         try
         {
-            var draw = request.Draw;
-            var start = request.Start;
-            var length = request.Length;
-            var sortColumn = request.SortColumn;
-            var sortColumnDirection = request.SortDirection;
-            var searchValue = request.Search;
-            searchValue = searchValue?.ToLower().Trim();
             int? customerCode = null;
-            if (Guid.TryParse(request.CustomerId, out var customerId))
+
+            // تبدیل شناسه مشتری به کد مشتری
+            if (!string.IsNullOrWhiteSpace(request.CustomerId))
             {
-                customerCode = await db.Customers.AsNoTracking()
-                    .Where(c => c.Id == customerId)
+                if (!Guid.TryParse(request.CustomerId, out var customerId))
+                    return SupplyResult.Invalid();
+
+                customerCode = await db.Customers
+                    .AsNoTracking()
+                    .Where(c => c.Id == customerId && !c.IsDeleted)
                     .Select(c => (int?)c.CustomerCode)
                     .FirstOrDefaultAsync(cancellationToken);
-            }
-            // Reuse the context connection: its public connection string can omit credentials after an EF query.
-            // Dapper manages opening/closing as needed; the context retains ownership of the connection.
-            var con = db.Database.GetDbConnection();
-            
-            var receivables = (await con.QueryAsync<Rp_Motalebat>(new CommandDefinition("Rp_Motalebat", new { CusCode = (int?)null },
-                commandType: CommandType.StoredProcedure, cancellationToken: cancellationToken))).ToList();
 
-
-            var deposits = await db.Accountancies.AsNoTracking()
-                .Where(a => a.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
-                    && a.AccType == AcEnum.واریزی
-                    && a.Status == AccStatusEnum.تایید_شده
-                    && (a.PayType == PayTypeEnum.نقدی
-                        || a.PayType == PayTypeEnum.تهاتری
-                        || (a.PayType == PayTypeEnum.چکی && a.Vosoled)))
-                .Join(db.Customers.AsNoTracking(), a => a.CustomerId, c => (Guid?)c.Id,
-                    (a, c) => new { c.CustomerCode, a.credit })
-                .GroupBy(a => a.CustomerCode)
-                .Select(g => new { CustomerCode = g.Key, Count = g.Count(), Sum = g.Sum(a => a.credit) ?? 0m })
-                .ToDictionaryAsync(a => a.CustomerCode, cancellationToken);
-            foreach (var item in receivables)
-            {
-                var deposit = int.TryParse(item.CustomerCode, out var code) ? deposits.GetValueOrDefault(code) : null;
-                item.AccSum = deposit?.Sum ?? 0m;
-                item.AccCount = deposit?.Count ?? 0;
-                item.DebitSum = item.FactorSum - (item.AccSum - item.RetAccBackSum);
-            }
-            var result = receivables.AsQueryable();
-            if (customerCode.HasValue)
-                result = result.Where(f => f.CustomerCode == customerCode.Value.ToString());
-            if (request.DateFilterEnabled)
-            {
-                var registeredCustomers = db.Customers.AsNoTracking();
-                if (request.FromDate.HasValue)
-                    registeredCustomers = registeredCustomers.Where(c => c.CreateDate >= request.FromDate.Value);
-                if (request.ToDate.HasValue)
-                    registeredCustomers = registeredCustomers.Where(c => c.CreateDate <= request.ToDate.Value);
-                var registeredCustomerCodes = await registeredCustomers
-                    .Select(c => c.CustomerCode)
-                    .ToListAsync(cancellationToken);
-                var matchingCodes = registeredCustomerCodes.Select(code => code.ToString()).ToHashSet();
-                result = result.Where(f => matchingCodes.Contains(f.CustomerCode));
-            }
-            if (!string.IsNullOrEmpty(searchValue))
-            {
-                result = result.Where(f => f.CustomerCode == searchValue || f.Customer.Contains(searchValue));
+                if (!customerCode.HasValue)
+                    return SupplyResult.Invalid();
             }
 
-            var totals = new {
-                preFactorCount = result.Sum(f => (long)f.PreFactorCount),
-                preFactorSum = result.Sum(f => f.PreFactorSum),
-                factorCount = result.Sum(f => (long)f.FactorCount),
-                factorSum = result.Sum(f => f.FactorSum),
-                accCount = result.Sum(f => (long)f.AccCount),
-                accSum = result.Sum(f => f.AccSum),
-                retAccBackCount = result.Sum(f => (long)f.RetAccBackCount),
-                retAccBackSum = result.Sum(f => f.RetAccBackSum),
-                receivableSum = result.Sum(f => f.ReceivableSum),
-                debtSum = result.Sum(f => f.DebtSum)
+            var parameters = new
+            {
+                CusCode = customerCode,
+                Start = request.Start,
+                Length = request.Length,
+                Search = request.Search?.Trim(),
+                SortColumn = request.SortColumn,
+                SortDirection = request.SortDirection,
+                DateFilterEnabled = request.DateFilterEnabled,
+                FromDate = request.FromDate,
+                ToDate = request.ToDate,
+
+                CashPayType = (int)PayTypeEnum.نقدی,
+                CheckPayType = (int)PayTypeEnum.چکی,
+                BarterPayType = (int)PayTypeEnum.تهاتری
             };
 
-            var recordsTotal = result.Count();
-            if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortColumnDirection))
-            {
-                var isAscending = sortColumnDirection == "asc";
-                result = sortColumn switch {
-                    "PreFactorCount" => isAscending ? result.OrderBy(f => f.PreFactorCount) : result.OrderByDescending(f => f.PreFactorCount),
-                    "PreFactorSum" => isAscending ? result.OrderBy(f => f.PreFactorSum) : result.OrderByDescending(f => f.PreFactorSum),
-                    "FactorCount" => isAscending ? result.OrderBy(f => f.FactorCount) : result.OrderByDescending(f => f.FactorCount),
-                    "FactorSum" => isAscending ? result.OrderBy(f => f.FactorSum) : result.OrderByDescending(f => f.FactorSum),
-                    "AccCount" => isAscending ? result.OrderBy(f => f.AccCount) : result.OrderByDescending(f => f.AccCount),
-                    "AccSum" => isAscending ? result.OrderBy(f => f.AccSum) : result.OrderByDescending(f => f.AccSum),
-                    "RetAccBackCount" => isAscending ? result.OrderBy(f => f.RetAccBackCount) : result.OrderByDescending(f => f.RetAccBackCount),
-                    "RetAccBackSum" => isAscending ? result.OrderBy(f => f.RetAccBackSum) : result.OrderByDescending(f => f.RetAccBackSum),
-                    "DebitSum" => isAscending ? result.OrderBy(f => f.DebitSum) : result.OrderByDescending(f => f.DebitSum),
-                    "ReceivableSum" => isAscending ? result.OrderBy(f => f.ReceivableSum) : result.OrderByDescending(f => f.ReceivableSum),
-                    "DebtSum" => isAscending ? result.OrderBy(f => f.DebtSum) : result.OrderByDescending(f => f.DebtSum),
-                    _ => result
-                };
-            }
+            var con = db.Database.GetDbConnection();
 
-            if (length != -1)
-                result = result.Skip(start).Take(length);
-            var data = result.ToList();
-            var customerCodes = data.Select(f => int.TryParse(f.CustomerCode, out var code) ? (int?)code : null)
-                .Where(code => code.HasValue).Select(code => code.Value).Distinct().ToList();
-            var customers = await db.Customers.AsNoTracking()
-                .Where(c => customerCodes.Contains(c.CustomerCode))
-                .Select(c => new { c.Id, c.CustomerCode })
-                .ToListAsync(cancellationToken);
-            var customerIds = customers.ToDictionary(c => c.CustomerCode, c => c.Id);
-            foreach (var item in data)
-                item.CustomerId = int.TryParse(item.CustomerCode, out var code) && customerIds.TryGetValue(code, out var matchedCustomerId)
-                    ? matchedCustomerId : null;
-            return SupplyResult.Success(new { draw, recordsTotal, recordsFiltered = recordsTotal, data, totals });
+            using var result = await con.QueryMultipleAsync(
+                new CommandDefinition(
+                    "dbo.Rp_Motalebat",
+                    parameters,
+                    commandType: CommandType.StoredProcedure,
+                    cancellationToken: cancellationToken
+                )
+            );
+
+            // خروجی اول: مشتریان صفحه جاری
+            var data = (await result.ReadAsync<Rp_Motalebat>())
+                .ToList();
+
+            // خروجی دوم: تعداد رکوردها و مجموع مبالغ
+            var summary = await result.ReadFirstAsync<ReceivablesSummary>();
+
+            var totals = new
+            {
+                factorCount = summary.TotalFactorCount,
+                factorSum = summary.TotalFactorSum,
+
+                accCount = summary.TotalAccCount,
+                accSum = summary.TotalAccSum,
+
+                retAccBackCount = summary.TotalRetAccBackCount,
+                retAccBackSum = summary.TotalRetAccBackSum,
+
+                debitSum = summary.TotalDebitSum,
+                receivableSum = summary.TotalReceivableSum,
+                debtSum = summary.TotalDebtSum
+            };
+
+            return SupplyResult.Success(new
+            {
+                draw = request.Draw,
+                recordsTotal = summary.RecordsTotal,
+                recordsFiltered = summary.RecordsFiltered,
+                data,
+                totals
+            });
         }
         catch (Exception) when (!cancellationToken.IsCancellationRequested)
         {
             return SupplyResult.Invalid();
         }
     }
+
 
     public async Task<SupplyResult> GetDealSuppliesAsync(Guid dealId, CancellationToken cancellationToken)
     {

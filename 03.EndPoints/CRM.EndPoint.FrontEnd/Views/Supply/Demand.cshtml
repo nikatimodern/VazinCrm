@@ -56,8 +56,6 @@
             <tr>
                 <th>ردیف</th>
                 <th>مشتری</th>
-                <th>تعداد پیش‌فاکتور</th>
-                <th>جمع مبالغ پیش‌فاکتور</th>
                 <th>تعداد فاکتور</th>
                 <th>جمع مبالغ فاکتور</th>
                 <th>تعداد واریزی ها</th>
@@ -74,7 +72,7 @@
             <tr>
                 <th>جمع کل</th>
                 <th></th>
-                @for (var column = 2; column < 12; column++) {
+                @for (var column = 2; column < 10; column++) {
                     <th class="direction-ltr"></th>
                 }
             </tr>
@@ -122,8 +120,6 @@
             return `<span class="demand-amount" dir="rtl"><bdi dir="ltr">${(value ?? 0).toLocaleString()}</bdi><small class="demand-currency">ریال</small></span>`;
         }
         document.addEventListener("DOMContentLoaded", async () => {
-            //getAllSupplyDemand();
-            //await getRpMotalebat()
             getAllRpMotalebat();
             document.getElementById("MotalebatTable").addEventListener("click", async (event) => {
                 const button = event.target.closest("[data-factor-customer-id]");
@@ -201,24 +197,19 @@
             }
         }
 
-        async function getRpMotalebat() {
-            FLshowLoading();
-            const res = await axios(`/Supply/GetRpMotalebat`);
-            FLshowLoading(false);
-        }
-
         const getAllRpMotalebat = () => {
             supplyDemandTBL = $("#MotalebatTable").DataTable({
                 pageLength: 10,
                 lengthMenu: [5, 10, 20, 50, 100, { label: "همه", value: -1 }],
                 processing: true,
                 serverSide: true,
+                autoWidth: false,
                 searching: true,
                 search: {
                     return: true,
                 },
                 ordering: true,
-                order: [[10, "desc"]],
+                order: [[8, "desc"]],
                 scrollCollapse: true,
                 scrollY: "70dvh",
                 responsive: true,
@@ -232,15 +223,15 @@
                 language: languageDatatable,
                 columnDefs: [
                     {
+                        targets: "_all",
+                        orderSequence: ["desc", "asc"],
+                    },
+                    {
                         targets: [1],
                         render: (data) => data ? `<span dir="ltr">${data.toLocaleString()}</span>` : "-",
                     },
                     {
                         targets: [3],
-                        render: (data, type) => type === "display" ? renderDemandAmount(data) : data,
-                    },
-                    {
-                        targets: [5],
                         render: (data, type, row) => {
                             if (type !== "display") return data;
                             if (!row.customerId) return renderDemandAmount(data);
@@ -256,7 +247,7 @@
                         },
                     },
                     {
-                        targets: [7, 9],
+                        targets: [5, 7],
                         render: (data, type, row, meta) => {
                             if (type !== "display") return data;
                             if (!row.customerId) return renderDemandAmount(data);
@@ -264,7 +255,7 @@
                             button.type = "button";
                             button.className = "hoverLink main-font border-0 bg-transparent p-0";
                             button.dir = "ltr";
-                            const returnsOnly = meta.col === 9;
+                            const returnsOnly = meta.col === 7;
                             button.dataset[returnsOnly ? "returnCustomerId" : "depositCustomerId"] = row.customerId;
                             button.dataset.customerName = row.customer || "مشتری";
                             button.setAttribute("aria-label", `مشاهده ${returnsOnly ? "برگشتی‌های" : "واریزی‌های"} ${row.customer || "مشتری"}`);
@@ -273,9 +264,9 @@
                         },
                     },
                     {
-                        targets: [10, 11],
+                        targets: [8, 9],
                         render: (data, type, row, meta) => type === "display"
-                            ? `<span class="fbold" style="color: ${data > 0 ? "darkgreen" : data < 0 ? "darkred" : "inherit"};font-size: 16px">${renderDemandAmount(meta.col === 11 ? Math.abs(data) : data)}</span>`
+                            ? `<span class="fbold" style="color: ${meta.col === 9 ? "darkred" : data > 0 ? "darkgreen" : data < 0 ? "darkred" : "inherit"};font-size: 16px">${renderDemandAmount(meta.col === 9 ? Math.abs(data) : data)}</span>`
                             : data,
                     },
                     {
@@ -284,7 +275,7 @@
                     },
                 ],
                 columns: [
-                    { data: null, render: (data, type, row, meta) => meta.row + 1 },
+                    { data: null, render: (data, type, row, meta) => meta.settings._iDisplayStart + meta.row + 1 },
                     {
                         data: null,
                         name: "Customer",
@@ -298,8 +289,6 @@
                             return `${name}`;
                         },
                     },
-                    { data: "preFactorCount", name: "PreFactorCount", defaultContent: "-", visible: false },
-                    { data: "preFactorSum", name: "PreFactorSum", defaultContent: "-", visible: false },
                     { data: "factorCount", name: "FactorCount", defaultContent: "-" },
                     { data: "factorSum", name: "FactorSum", defaultContent: "-" },
                     { data: "accCount", name: "AccCount", defaultContent: "-" },
@@ -351,13 +340,18 @@
                         if (index < 2) return;
                         const footer = this.footer();
                         if (!footer) return;
-                        const value = totals?.[this.dataSrc()] ?? 0;
-                        if ([3, 5, 7, 9, 10, 11].includes(index))
-                            footer.innerHTML = renderDemandAmount(index === 11 ? Math.abs(value) : value);
+                        const value = totals?.[this.dataSrc()];
+                        if (value == null) {
+                            footer.textContent = "-";
+                            footer.style.color = "inherit";
+                            return;
+                        }
+                        if ([3, 5, 7, 8, 9].includes(index))
+                            footer.innerHTML = renderDemandAmount(index === 9 ? Math.abs(value) : value);
                         else
                             footer.textContent = value.toLocaleString();
-                        footer.style.color = index === 10 && value > 0 ? "darkgreen"
-                            : index === 11 && value < 0 ? "darkred" : "inherit";
+                        footer.style.color = index === 9 ? "darkred"
+                            : index === 8 && value > 0 ? "darkgreen" : "inherit";
                     });
                 },
                 initComplete: () => initFilterSupplyTable(),
