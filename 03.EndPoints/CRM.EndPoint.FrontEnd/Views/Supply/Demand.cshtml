@@ -4,6 +4,21 @@
 }
 
 <style>
+    #MotalebatTable_wrapper table.dataTable {
+        font-size: 11px;
+    }
+    #MotalebatTable_wrapper table.dataTable thead th,
+    #MotalebatTable_wrapper table.dataTable tfoot th {
+        white-space: normal;
+        line-height: 1.4;
+        padding: 6px 4px;
+    }
+    #MotalebatTable_wrapper table.dataTable tbody td {
+        padding: 6px 4px !important;
+    }
+    #MotalebatTable_wrapper table.dataTable td.wrap-text-minw {
+        min-width: 120px;
+    }
     #MotalebatTable_wrapper .demand-amount {
         display: inline-flex;
         align-items: baseline;
@@ -266,7 +281,7 @@
                     {
                         targets: [8, 9],
                         render: (data, type, row, meta) => type === "display"
-                            ? `<span class="fbold" style="color: ${meta.col === 9 ? "darkred" : data > 0 ? "darkgreen" : data < 0 ? "darkred" : "inherit"};font-size: 16px">${renderDemandAmount(meta.col === 9 ? Math.abs(data) : data)}</span>`
+                            ? `<span class="fbold" style="color: ${meta.col === 9 ? "darkred" : data > 0 ? "darkgreen" : data < 0 ? "darkred" : "inherit"}">${renderDemandAmount(meta.col === 9 ? Math.abs(data) : data)}</span>`
                             : data,
                     },
                     {
