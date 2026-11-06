@@ -14,11 +14,11 @@
         </div>
         <div class="col-12 col-lg-5 d-flex align-items-center gap-2 flex-wrap">
             <div class="d-flex align-items-center flex-grow-1 gap-2">
-                <div class="search-group w-100">
-                    <input type="text" class="form-control form-control-sm" id="dealSearchId" placeholder="جستجو">
-                    <div class="search-icon">
+                <div class="deal-search w-100" role="search">
+                    <input type="text" class="form-control form-control-sm" id="dealSearchId" placeholder="جستجو در سفارش‌ها…" aria-label="جستجو در سفارش‌ها">
+                    <button type="button" class="deal-search__submit" aria-label="جستجو">
                         <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
-                    </div>
+                    </button>
                 </div>
                 <div class="btnFilter d-lg-none" data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterDeal" data-filterContentId="ContentDealFilterId" data-filterInpSearchId="dealSearchId" data-filterVarSearch="dealSearchVal">
                     <svg style="width:24px;color:#333" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
@@ -67,7 +67,7 @@
                 <div class="deal-column open">
                     <div class="deal-column-header">
                         سفارشات باز
-                        <span class="countDeal"></span>
+
                     </div>
                     <div class="deal-column-list" aria-busy="true" data-status="1">
                         @for (var card = 0; card < 3; card++) {
@@ -83,7 +83,7 @@
                 <div class="deal-column success">
                     <div class="deal-column-header">
                         سفارشات موفق
-                        <span class="countDeal"></span>
+
                     </div>
                     <div class="deal-column-list" aria-busy="true" data-status="3">
                         @for (var card = 0; card < 3; card++) {
@@ -99,7 +99,7 @@
                 <div class="deal-column failed">
                     <div class="deal-column-header">
                         سفارشات ناموفق
-                        <span class="countDeal"></span>
+
                     </div>
                     <div class="deal-column-list" aria-busy="true" data-status="2">
                         @for (var card = 0; card < 3; card++) {

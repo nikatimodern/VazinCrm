@@ -1,4 +1,69 @@
-﻿.dashGridContainer {
+.dashboard-theme {
+	--dashboard-primary: #004944;
+	--dashboard-action: #00665C;
+	--dashboard-primary-light: #E7F3F0;
+	--dashboard-secondary: #5811B4;
+	--dashboard-secondary-light: #F3EDFC;
+	--dashboard-muted: #545961;
+	--dashboard-border: #DDE1E8;
+	--dashboard-task-border: color-mix(in srgb, var(--dashboard-secondary) 20%, var(--dashboard-border));
+	color: #212529;
+}
+.dashboard-theme .dashGridItem {
+	border: 1px solid var(--dashboard-border);
+	box-shadow: 0 1px 3px rgb(33 37 41 / 6%);
+}
+.dashboard-theme .dashCardIcon {
+	border-width: 1px;
+	background: var(--dashboard-primary-light);
+}
+.dashboard-theme .dashGridContainer > :nth-child(2) .dashCardIcon,
+.dashboard-theme .dashGridContainer > :nth-child(3) .dashCardIcon {
+	background: var(--dashboard-secondary-light);
+}
+.dashboard-theme .gridItemTasks {
+	border-top-color: var(--dashboard-secondary);
+}
+.dashboard-theme :is(.gridItemReports, .gridItemFinancial, .gridItemLogs) {
+	border-top-color: var(--dashboard-primary);
+}
+.dashboard-theme button:focus-visible,
+.dashboard-theme select:focus-visible {
+	outline: 2px solid var(--dashboard-action);
+	outline-offset: 2px;
+}
+#allReportsDashboardId .report-ai-badge {
+	background: var(--dashboard-secondary);
+}
+#allReportsDashboardId .report-follow-up .report-type-badge {
+	background: var(--dashboard-secondary);
+}
+#allReportsDashboardId .report-call .report-type-badge {
+	background: var(--dashboard-action);
+}
+#allReportsDashboardId .report-follow-up {
+	border-left-color: var(--dashboard-secondary);
+}
+#allReportsDashboardId .report-call {
+	border-left-color: var(--dashboard-action);
+}
+#allReportsDashboardId .report-satisfaction {
+	border-left-color: var(--dashboard-muted);
+}
+#allReportsDashboardId .report-satisfaction .report-type-badge {
+	background: var(--dashboard-muted);
+}
+#allReportsDashboardId .agent-review-box {
+	border-right-color: var(--dashboard-secondary);
+	background: #fff;
+}
+#allReportsDashboardId .agent-review-box:not(.open):hover {
+	background: var(--dashboard-secondary-light);
+}
+#allReportsDashboardId .evaluation-title {
+	color: var(--dashboard-secondary);
+}
+.dashGridContainer {
 	display: grid;
 	grid-template-columns: repeat(5, 1fr);
 	/*    grid-template-rows: auto auto;*/
@@ -20,7 +85,7 @@
 .dashGridItem.gridItemReports {
 	/*    grid-row: 2 / 3;*/
 	grid-column: span 2;
-	border-top: 1px solid #00678b;
+	border-top: 1px solid var(--dashboard-primary, #004944);
 	max-height: 350px;
 }
 
@@ -28,20 +93,20 @@
 .dashGridItem.gridItemTasks {
 	/*    grid-row: 2 / 3;*/
 	grid-column: span 2;
-	border-top: 1px solid #6767fd;
+	border-top: 1px solid var(--dashboard-secondary, #5811B4);
 	max-height: 350px;
 }
 
 
 .dashGridItem.gridItemFinancial {
 	grid-row: span 2;
-	border-top: 1px solid #1f8557;
+	border-top: 1px solid var(--dashboard-primary, #004944);
 }
 
 
 .dashGridItem.gridItemLogs {
 	grid-column: span 4;
-	border-top: 1px solid #1f857c;
+	border-top: 1px solid var(--dashboard-primary, #004944);
 	min-height: 280px;
 	height: calc(100dvh - 624px);
 }
@@ -517,9 +582,9 @@
 	padding: 12px;
 	border-radius: 12px;
 	
-	background: linear-gradient(180deg, rgba(31, 133, 124, .05), transparent);
+	background: linear-gradient(180deg, rgb(0 73 68 / 4%), transparent);
 	
-	border: 1px solid #edf1f4;
+	border: 1px solid var(--dashboard-border, #DDE1E8);
 	
 	transition: .2s;
 }
@@ -549,7 +614,7 @@
 
 
 .financialTitle {
-	color: #7a7a7a;
+	color: var(--dashboard-muted, #545961);
 	
 	font-size: 13px;
 }
@@ -575,14 +640,14 @@
 	
 	font-family: IRANSansBold;
 	
-	color: #20303a;
+	color: #212529;
 }
 
 
 .financialCurrency {
 	font-size: 12px;
 	
-	color: #8f8f8f;
+	color: var(--dashboard-muted, #545961);
 }
 
 
@@ -595,7 +660,7 @@
 
 
 .financialInfoIcon:hover {
-	color: #1f857c;
+	color: var(--dashboard-primary, #004944);
 	transform: scale(1.1);
 }
 

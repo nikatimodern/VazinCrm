@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     removeDealsTabsDesktop();
     initSortableDeal();
+    initDealMomentumScroll();
     document.querySelectorAll(".btnFilter[data-filterVarConfig='filterDealConfig']")
         .forEach(button => button.addEventListener("click", () => ShowFilterPopup(button)));
     
@@ -40,6 +41,97 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     await getAllDeals();
 });
+
+// Local preview for order columns; keep native touch, trackpad and keyboard scrolling.
+function initDealMomentumScroll() {
+    const board = document.getElementById("allDealsContainer");
+    if (!board || board.dataset.momentumScroll) return;
+    board.dataset.momentumScroll = "true";
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const stops = [];
+
+    board.querySelectorAll(".deal-column-list").forEach(list => {
+        let frame = 0;
+        let target = 0;
+        let previousTime = 0;
+        let direction = 0;
+        const stop = () => {
+            cancelAnimationFrame(frame);
+            frame = 0;
+            direction = 0;
+        };
+        stops.push(stop);
+
+        const animate = time => {
+            if (!list.isConnected || !list.clientHeight || reducedMotion.matches || document.hidden) {
+                stop();
+                return;
+            }
+            const elapsed = Math.min(time - previousTime, 40);
+            previousTime = time;
+            target = Math.max(0, Math.min(target, list.scrollHeight - list.clientHeight));
+            const remaining = target - list.scrollTop;
+            if (Math.abs(remaining) < 1) {
+                list.scrollTop = target;
+                stop();
+                return;
+            }
+            const movement = remaining * (1 - Math.exp(-elapsed / 240));
+            list.scrollTop += Math.sign(remaining) * Math.max(1, Math.abs(movement));
+            frame = requestAnimationFrame(animate);
+        };
+
+        list.addEventListener("wheel", event => {
+            if (event.defaultPrevented || !event.cancelable || reducedMotion.matches ||
+                event.ctrlKey || event.metaKey || event.shiftKey ||
+                Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+                stop();
+                return;
+            }
+            // Small pixel deltas generally come from a trackpad with its own inertia.
+            if (event.deltaMode === 0 && Math.abs(event.deltaY) < 40) {
+                stop();
+                return;
+            }
+            for (let child = event.target; child && child !== list; child = child.parentElement) {
+                if (child instanceof HTMLElement && child.scrollHeight > child.clientHeight &&
+                    /auto|scroll/.test(getComputedStyle(child).overflowY)) {
+                    stop();
+                    return;
+                }
+            }
+            const nextDirection = Math.sign(event.deltaY);
+            const maxScroll = list.scrollHeight - list.clientHeight;
+            if (!nextDirection || maxScroll <= 0 ||
+                (nextDirection < 0 && list.scrollTop <= 0) ||
+                (nextDirection > 0 && list.scrollTop >= maxScroll - 1)) {
+                stop();
+                return;
+            }
+            event.preventDefault();
+            if (!frame || nextDirection !== direction) target = list.scrollTop;
+            direction = nextDirection;
+            const unit = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? list.clientHeight : 1;
+            const distance = Math.min(Math.abs(event.deltaY * unit) * 1.4, 220) * direction;
+            target = Math.max(0, Math.min(maxScroll,
+                Math.max(list.scrollTop - 420, Math.min(list.scrollTop + 420, target + distance))));
+            if (!frame) {
+                previousTime = performance.now();
+                frame = requestAnimationFrame(animate);
+            }
+        }, { passive: false });
+        list.addEventListener("pointerdown", stop, { passive: true });
+        list.addEventListener("keydown", stop);
+        list.addEventListener("dragstart", stop);
+    });
+
+    const stopAll = () => stops.forEach(stop => stop());
+    reducedMotion.addEventListener("change", stopAll);
+    window.addEventListener("pagehide", () => {
+        stopAll();
+        reducedMotion.removeEventListener("change", stopAll);
+    }, { once: true });
+}
 const dealDropdown = Dropdown.setupDelegate({
     container: document,
     toggleSelector: ".deal-dropdown__toggle",
@@ -115,7 +207,6 @@ const getAllDeals = async ({ showSkeleton = true } = {}) => {
     const template = document.getElementById("dealSkeletonTemplate").innerHTML;
     if (showSkeleton) lists.forEach(list => {
         list.setAttribute("aria-busy", "true");
-        list.closest(".deal-column").querySelector(".countDeal").textContent = "";
         Skeleton.show({ container: list, count: 3, template: () => template });
     });
     const showReadError = () => {
@@ -166,11 +257,8 @@ const getAllDeals = async ({ showSkeleton = true } = {}) => {
     }
 };
 const createDomAllDeals = (items, containersId, isAdmin) => {
-    const countElm = document.querySelector(`${containersId} .countDeal`);
     const containerElm = document.querySelector(`${containersId} .deal-column-list`);
     if (!containerElm) return;
-    
-    if (countElm) countElm.textContent = `(${items.length})`;
     containerElm.innerHTML = "";
     
     items.forEach((item, index) => {
@@ -203,7 +291,7 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
                             در انتظار تصمیم مدیر فروش
                         </p>
                     </div>` : ""}
-                <div class="d-flex justify-content-between align-items-start gap-2">
+                <div class="deal-card__heading d-flex justify-content-between align-items-center gap-2">
                     <div>
                         <span class="fbold" style="font-size:clamp(13px, 2vw, 14px);color: #333">${item.title}</span>
                     </div>

@@ -163,6 +163,7 @@
 	gap: .5rem;
 	flex-grow: 1;
 	overflow-y: auto;
+	scrollbar-color: var(--deal-status-color) transparent;
 }
 
 
@@ -174,16 +175,67 @@
 
 
 .deal-column-header {
-	padding: 12px;
+	padding: 7px 12px;
 	font-family: IRANSansBold;
-	border-radius: 10px;
+	border-radius: 8px;
 	text-align: center;
-	font-size: 15px;
+	font-size: 14px;
 	border: 1px solid var(--deal-status-border);
 	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-	margin-bottom: 10px;
+	margin-bottom: 8px;
 	background: var(--deal-status-bg);
 	color: var(--deal-status-color);
+}
+.deal-search {
+	position: relative;
+	min-width: 0;
+}
+.deal-search #dealSearchId {
+	width: 100%;
+	min-height: 36px;
+	padding: 6px 12px 6px 42px;
+	border: 1px solid #DDE1E8;
+	border-radius: 8px;
+	background: #fff;
+	color: #212529;
+	font-size: 12px;
+	text-align: start;
+	box-shadow: 0 1px 3px rgb(33 37 41 / 4%);
+}
+.deal-search #dealSearchId::placeholder {
+	color: #545961;
+	opacity: .75;
+}
+.deal-search #dealSearchId:focus {
+	border-color: #5811B4;
+	outline: none;
+	box-shadow: 0 0 0 3px rgb(88 17 180 / 10%);
+}
+.deal-search__submit {
+	position: absolute;
+	inset-inline-end: 3px;
+	top: 3px;
+	bottom: 3px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	border: none;
+	border-radius: 6px;
+	background: #F3EDFC;
+	color: #5811B4;
+}
+.deal-search__submit svg {
+	width: 18px;
+	height: 18px;
+}
+.deal-search__submit:hover {
+	background: #5811B4;
+	color: #fff;
+}
+.deal-search__submit:focus-visible {
+	outline: 2px solid #5811B4;
+	outline-offset: 2px;
 }
 
 
@@ -204,6 +256,22 @@
 
 .deal-card.deal-card--inactive {
 	--deal-status-color-opacity: .55;
+}
+.deal-card__heading {
+	height: 24px;
+	min-height: 24px;
+}
+.deal-card__heading > div:first-child {
+	min-width: 0;
+}
+.deal-card__heading > div:first-child > span {
+	display: block;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.deal-card__heading > :last-child {
+	flex-shrink: 0;
 }
 .deal-card__footer-details {
 	min-width: 0;
@@ -344,7 +412,7 @@ body.drag-active #overlay {
 	display: inline-flex;
 	align-items: center;
 	gap: 5px;
-	height: 28px;
+	height: 24px;
 	padding: 0 9px;
 	border-radius: .5rem;
 	background: var(--deal-status-bg);

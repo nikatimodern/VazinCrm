@@ -1,11 +1,11 @@
 <div class="dashCardItem">
-    <div class="dashCardIcon" style="border-color: #006400;color:#006400;">
+    <div class="dashCardIcon" style="border-color: var(--dashboard-primary);color:var(--dashboard-primary);">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
     </div>
     <div class="dashCardContent">
         <div class="d-flex align-items-center justify-content-between">
-            <span style="font-size: clamp(11px, 3.75cqw, 12px);color:gray">میزان فروش</span>
-            @* <span style="font-size: clamp(11px, 3.75cqw, 12px);color:gray" onclick="notificationChange('پیش فاکتور <b>140432</b> برای مشتری نیروپلاست توسط <b>مهدیه فتحی</b> تایید شد و در کارتابل شما قرار گرفت', '/Cartable/Index?tab=TSalesAdminId', 'actionRequired')">میزان فروش</span> *@
+            <span style="font-size: clamp(11px, 3.75cqw, 12px);color:var(--dashboard-muted)">میزان فروش</span>
+            @* <span style="font-size: clamp(11px, 3.75cqw, 12px);color:var(--dashboard-muted)" onclick="notificationChange('پیش فاکتور <b>140432</b> برای مشتری نیروپلاست توسط <b>مهدیه فتحی</b> تایید شد و در کارتابل شما قرار گرفت', '/Cartable/Index?tab=TSalesAdminId', 'actionRequired')">میزان فروش</span> *@
         </div>
         <div class="d-flex flex-column align-items-start flex-grow-1">
             <div class="d-flex align-items-baseline justify-content-between flex-wrap" style="column-gap:.5rem">
@@ -26,7 +26,7 @@
                     <span style="font-size:12px">فاکتور</span>
                 </div>
                 <div class="d-flex align-items-baseline gap-1" style="font-size:clamp(9px, 2.97cqw, 10px);">
-                    <div style="color:#008100">
+                    <div style="color:var(--dashboard-action)">
                         <span style="font-size:8px;">(</span>
                         <span id="exportFactorsCount" class="dashboard-value fbold" style="font-size: clamp(12px, 3.91cqw, 13px);"></span>
                         <span>صادراتی</span>
@@ -40,7 +40,7 @@
                 </div>
             </div>
         </div>
-        <div id="showFactorsFromDash" onclick="redirectFromDashboard('Cartable')" class="dash-readMore" style="color:#006400;">
+        <div id="showFactorsFromDash" onclick="redirectFromDashboard('Cartable')" class="dash-readMore" style="color:var(--dashboard-primary);">
             <span style="font-size:clamp(10px, 3.3cqw, 11px)">فاکتورها</span>
             <svg style="width:clamp(16px, 5.3cqw, 18px);height:clamp(16px, 5.3cqw, 18px)" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 15.75 3 12m0 0 3.75-3.75M3 12h18" /></svg>
         </div>
