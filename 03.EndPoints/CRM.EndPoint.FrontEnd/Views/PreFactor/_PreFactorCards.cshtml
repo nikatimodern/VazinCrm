@@ -1,0 +1,188 @@
+@using CRM.Core.Domain.Deals.Enums
+@using CRM.Core.Domain.PreFactors.Enum
+@model CRM.EndPoint.FrontEnd.Models.PreFactors.PrefactorViewModel
+
+@{
+    Layout = null;
+    var isDealView = ViewData["DealCards"] as bool? ?? false;
+    var passType = isDealView ? 4 : 0;
+    var invoicePassType = isDealView ? 4 : 2;
+}
+
+<div class="pf-accepted-list">
+    @if (Model != null) {
+        foreach (var item in Model.data ?? Enumerable.Empty<PreFactor>()) {
+            var isInvalid = item.Pftype is (int)PreFactorEnum.فاقد_اعتبار or (int)PreFactorEnum.بسته_شده
+                or (int)PreFactorEnum.حذف_شده or (int)PreFactorEnum.برگشت_خورده_از_طرف_مدیر_فروش;
+            var isDealClosed = item.Deal?.FinancialStatus == DealFinancialStausEnum.تایید_شده;
+            var hasAccess = !isDealClosed && (User.IsAdmin() || User.IsSalesAdmin() || item.UserCreatorID == User.GetUserId());
+            var hideAddInvoiceBtns = isInvalid || !hasAccess;
+            var currency = item.CurrencyTypeTxt ?? "ريال";
+            var showFactors = Model._Setting?.CrmFactors == true
+                || (!User.IsCustomer() && Model._Setting?.Sepidar == true && item.CountFactorSepidar != null);
+
+            <article class="pf-accepted-card @(item.Pftype == (int)PreFactorEnum.فاقد_اعتبار ? "pf-accepted-card--invalid" : "")">
+                @if (isDealView && item.IsDeleted) { <div class="pf-accepted-card__deleted-overlay"><span>حذف شده</span></div> }
+                <partial name="~/Views/PreFactor/_PreFactorSideLabels.cshtml" model="item" />
+                <div data-serialnumber="@item.SerialNumber" class="InfoDataItem_Prefactor pf-accepted-card__content">
+                    <div class="pf-accepted-card__facts" aria-label="مشخصات پیش‌فاکتور">
+                        <div class="pf-accepted-card__fact"><span>سریال پیش‌فاکتور</span><strong>@item.SerialNumber</strong></div>
+                        @if (item.DealSerialNumber != null) {
+                            <div class="pf-accepted-card__fact"><span>سریال سفارش</span><strong>@item.DealSerialNumber</strong></div>
+                        }
+                        <div class="pf-accepted-card__fact"><span>تاریخ</span><strong>@item.Date</strong></div>
+                        <div class="pf-accepted-card__fact"><span>اعتبار</span><strong>@item.ValidityDade</strong></div>
+                    </div>
+
+                    <div class="pf-accepted-card__body @(showFactors ? "pf-accepted-card__body--with-factors" : "")">
+                        <section class="pf-accepted-card__section pf-accepted-card__financial" aria-label="اطلاعات مالی">
+                            <h3><span>اطلاعات مالی</span><i class="fa fa-coins" aria-hidden="true"></i></h3>
+                            <div class="pf-accepted-card__row"><span>مبلغ کل</span><strong><bdi dir="ltr">@($"{(isDealView ? item.SumTotalAmountTax : item.SumTotalAmount + item.TotalTax):n0}")</bdi> <small>@currency</small></strong></div>
+                            <div class="pf-accepted-card__row">
+                                <span>پرداخت شده</span>
+                                @if (item.CustomerId.HasValue) {
+                                    <button type="button" class="pf-accepted-card__amount-link" onclick="ShowModalListInvoice('@item.Id', 1,'@item.SerialNumber', @invoicePassType, @hideAddInvoiceBtns.ToString().ToLower())">
+                                        <bdi dir="ltr">@($"{item.ReciveAmount:n0}")</bdi> <small>@currency</small>
+                                    </button>
+                                } else {
+                                    <strong><bdi dir="ltr">@($"{item.ReciveAmount:n0}")</bdi> <small>@currency</small></strong>
+                                }
+                            </div>
+                            <div class="pf-accepted-card__row"><span>باقی‌مانده</span><strong><bdi dir="ltr">@($"{item.PaymentAmount:n0}")</bdi> <small>@currency</small></strong></div>
+                        </section>
+
+                        <section class="pf-accepted-card__section pf-accepted-card__customer" aria-label="اطلاعات مشتری">
+                            <h3><span>اطلاعات مشتری</span><i class="fa fa-user" aria-hidden="true"></i></h3>
+                            <div class="pf-accepted-card__row"><span>کد مشتری</span><strong>@(item.CustomerEntity?.CustomerCode.ToString() ?? "-")</strong></div>
+                            <div class="pf-accepted-card__row"><span>مشتری</span><strong>@item.Customer @(string.IsNullOrWhiteSpace(item.Customer) || string.IsNullOrWhiteSpace(item.AgentName) ? "" : " | ")@item.AgentName</strong></div>
+                            <div class="pf-accepted-card__row"><span>کارشناس فروش</span><strong>@item.UserCreator</strong></div>
+                        </section>
+
+                        @if (showFactors) {
+                            <section class="pf-accepted-card__factors pf-accepted-card__section" aria-label="فاکتورها">
+                                <partial name="~/Views/PreFactor/_PreFactorFactorsCountPartial.cshtml"
+                                         model="item"
+                                         view-data='new ViewDataDictionary(ViewData) { ["Setting"] = Model._Setting, ["PassType"] = passType, ["AcceptedCard"] = true }' />
+                            </section>
+                        }
+                    </div>
+
+                    <div class="pf-accepted-card__progress">
+                        <partial name="~/Views/PreFactor/_PreFactorProgressTracker.cshtml"
+                                 model="item"
+                                 view-data='new ViewDataDictionary(ViewData) { ["IsInvalid"] = isInvalid, ["AcceptedCard"] = true }' />
+                    </div>
+                    <div class="pf-accepted-card__actions">
+                        <partial name="~/Views/PreFactor/_PreFactorActions.cshtml"
+                                 model="item"
+                                 view-data='new ViewDataDictionary(ViewData) { ["PassType"] = passType, ["HasAccess"] = hasAccess, ["AcceptedCard"] = true }' />
+                        @if (isDealView) {
+                            <div class="pf-accepted-card__workflow" aria-label="عملیات مرحله پیش‌فاکتور">
+                                @if (!isInvalid) {
+                                    <span class="pf-accepted-card__workflow-status">@item.PftypeTxt</span>
+                                }
+                            @switch (item.Pftype) {
+                                case (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین:
+                                    if (hasAccess) {
+                                        <div class="flex-center flex-row flex-md-column gap-2">
+                                            <form id="@item.Id">
+                                                <select aria-label="کارشناس تأمین" style="width:100%;" id="S_@item.Id" name="S_@item.Id" class="test form-select form-select-sm" required>
+                                                    @foreach (var i in Model.UserTamin) {
+                                                        <option value="@i.Id">@i.FullName</option>
+                                                    }
+                                                </select>
+                                            </form>
+                                            <button type="button" style="border-radius:4px;height:auto;width:80px " class="buttonGreen px-2" onclick="regUtamin('@item.Id', @passType)">ثبت</button>
+                                        </div>
+                                    }
+
+                                    break;
+                                case (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین:
+                                    if (hasAccess) {
+                                        <button type="button" style="font-size: 13px;transition: all 0.3s;" class="ToSend w-auto h-auto flex-center gap-1 px-2 py-1" onclick="resendRegUtamin('@item.Id', '@item.UserTaminId', @passType)">
+                                            <i class="mp fa fa-paper-plane" aria-hidden="true"></i>
+                                            <span>ارسال مجدد به تامین</span>
+                                        </button>
+                                    }
+
+                                    break;
+                                case (int)PreFactorEnum.در_انتظار_ارسال_به_مشتری:
+                                    if (hasAccess) {
+                                        <button type="button" style="font-size: 13px;transition: all 0.3s" class="ToSend w-auto h-auto d-flex align-items-center gap-1 px-2 py-1" onclick="showMobileModal('@item.Id', @passType)">
+                                            <i class="mp fa fa-paper-plane" aria-hidden="true"></i> ارسال شود
+                                        </button>
+                                    }
+
+                                    break;
+                                case (int)PreFactorEnum.در_انتظار_تایید_مشتری:
+                                    if (hasAccess) {
+                                        <div class="flex-center flex-wrap flex-row flex-md-column gap-2">
+                                            <button type="button" style="font-size: 13px;transition: all 0.3s;" class="ToSend w-auto h-auto flex-center gap-1 px-2 py-1" onclick="showMobileModal('@item.Id')">
+                                                <i class="mp fa fa-paper-plane" aria-hidden="true"></i>
+                                                <span>ارسال مجدد به مشتری</span>
+                                            </button>
+                                            <button type="button" style="font-size: 13px;transition: all 0.3s;" class="ToSend w-auto h-auto px-2 py-1" onclick="HandAccepting('@item.Id', @passType)"> تایید به صورت دستی</button>
+                                        </div>
+                                    }
+
+                                    break;
+                                case (int)PreFactorEnum.فاقد_اعتبار:
+                                    break;
+                                case (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش:
+                                    if (hasAccess) {
+                                        <div class="flex-center flex-wrap flex-row flex-md-column gap-2" style="font-size: 13px">
+                                            <div style="display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
+                                                <button type="button" style="border-radius:4px;height:auto;width:90px;" class="buttonGreen px-2" onclick="showModalCreateOrder(@((int)Model._Setting.SetAmountByRoleType), '@item.Id','@item.CustomerId', '@item.DealId', @item.DealSerialNumber)">حواله تولید</button>
+                                            </div>
+                                        </div>
+                                    }
+
+                                    break;
+                                case (int)PreFactorEnum.در_انتظار_تایید_مالی:
+                                    if (hasAccess) {
+                                        <div class="flex-center flex-wrap flex-row flex-md-column gap-2" style="font-size: 13px">
+                                            <div style="display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
+                                                <button type="button" style="border-radius:4px;height:auto;width:90px;" class="buttonGreen px-2" onclick="showModalCreateOrder(@((int)Model._Setting.SetAmountByRoleType), '@item.Id','@item.CustomerId', '@item.DealId', @item.DealSerialNumber)">حواله تولید</button>
+                                            </div>
+                                        </div>
+                                    }
+
+                                    break;
+                                case (int)PreFactorEnum.در_انتظار_تولید:
+                                    <div class="flex-center flex-wrap flex-row flex-md-column gap-2" style="font-size: 13px">
+                                        @if (hasAccess) {
+                                            <div style="display:flex;flex-direction:column;align-items:center;justify-content:space-evenly">
+                                                <button type="button" style="border-radius:4px;height:auto;width:90px;" class="buttonGreen px-2" onclick="showModalCreateOrder(@((int)Model._Setting.SetAmountByRoleType), '@item.Id','@item.CustomerId', '@item.DealId', @item.DealSerialNumber)">حواله تولید</button>
+                                            </div>
+                                        }
+                                        <div class="flex-center flex-wrap gap-2">
+                                            <button type="button" style="border-radius:4px;height:auto;width:80px " class="buttonGreen px-2" onclick="showModalDeliver('@item.Id',1 )">مانده تولید</button>
+                                            @if (hasAccess) {
+                                                <button type="button" style="border-radius:4px;height:auto;width:80px" class="buttonGreen px-2" onclick="delivered('@item.Id', @passType)">اتمام کار</button>
+                                            }
+                                        </div>
+                                    </div>
+                                    break;
+                                case (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد:
+                                    if (hasAccess) {
+                                        <button type="button" style="border-radius:4px;height:auto;width:90px;" class="buttonGreen px-2" onclick="backDelivered('@item.Id', @passType)">لغو اتمام کار</button>
+                                    }
+
+                                    break;
+                            }
+
+                            </div>
+                        }
+                    </div>
+                    @if ((!isDealView || !User.IsCustomer()) && (!string.IsNullOrEmpty(item.CommentText) || isDealClosed)) {
+                        <div class="pf-accepted-card__description">
+                            <partial name="~/Views/PreFactor/_PreFactorDescription.cshtml"
+                                     model="item"
+                                     view-data='new ViewDataDictionary(ViewData) { ["IsDealClosed"] = isDealClosed, ["AcceptedCard"] = true }' />
+                        </div>
+                    }
+                </div>
+            </article>
+        }
+    }
+</div>

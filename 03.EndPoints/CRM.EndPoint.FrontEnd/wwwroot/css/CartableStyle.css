@@ -218,6 +218,674 @@
 	z-index: 2;
 }
 
+/* This card responds to the available cartable pane, including split desktop panes. */
+#dealPreFactorsModal {
+	--pf-modal-primary: #004944;
+	--pf-modal-action: #00665C;
+	--pf-modal-light: #E7F3F0;
+	--pf-modal-border: #DDE1E8;
+}
+#dealPreFactorsModal .modal-content {
+	border: 1px solid var(--pf-modal-border);
+	border-radius: 12px;
+	overflow: hidden;
+	box-shadow: 0 8px 28px rgb(0 0 0 / 18%);
+}
+#dealPreFactorsModal .pf-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--pf-modal-border);
+	background: var(--pf-modal-light);
+	color: var(--pf-modal-primary);
+}
+#dealPreFactorsModal .pf-modal-header h2 {
+	margin: 0;
+	font: 15px/1.6 IRANSansBold;
+}
+#dealPreFactorsModal .pf-modal-header__actions {
+	display: flex;
+	gap: 4px;
+	flex-shrink: 0;
+}
+#dealPreFactorsModal .pf-modal-icon-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border: 1px solid transparent;
+	border-radius: 6px;
+	background: transparent;
+	color: var(--pf-modal-primary);
+}
+#dealPreFactorsModal .pf-modal-icon-button:hover {
+	border-color: var(--pf-modal-border);
+	background: #fff;
+}
+#dealPreFactorsModal .pf-modal-footer {
+	justify-content: flex-end;
+	padding: 8px 12px;
+	border-top: 1px solid var(--pf-modal-border);
+	background: #F0F1F7;
+}
+#dealPreFactorsModal .pf-modal-close-button {
+	min-height: 34px;
+	margin: 0;
+	padding: 5px 20px;
+	border: 1px solid var(--pf-modal-border);
+	border-radius: 6px;
+	background: #fff;
+	color: var(--pf-modal-primary);
+	font: 12px/1.5 IRANSansMedium;
+}
+#dealPreFactorsModal .pf-modal-close-button:hover {
+	border-color: var(--pf-modal-action);
+	background: var(--pf-modal-light);
+}
+#dealPreFactorsModal :is(.pf-modal-icon-button, .pf-modal-close-button):focus-visible {
+	outline: 2px solid var(--pf-modal-action);
+	outline-offset: 2px;
+}
+.pf-accepted-list {
+	display: grid;
+	gap: 8px;
+	width: 100%;
+	min-width: 0;
+}
+.pf-accepted-card {
+	position: relative;
+	--pf-primary: #004944;
+	--pf-action: #00665C;
+	--pf-secondary: #5811B4;
+	--pf-secondary-light: #F3EDFC;
+	--pf-border: #DDE1E8;
+	--pf-muted: #545961;
+	--pf-background: #F0F1F7;
+	--pf-card-background: #E7F3F0;
+	--pf-card-accent: var(--pf-primary);
+	--pf-operation-accent: var(--pf-primary);
+	display: flex;
+	width: 100%;
+	min-width: 0;
+	direction: rtl;
+	container: accepted-prefactor / inline-size;
+	color: #212529;
+}
+.pf-accepted-list > .pf-accepted-card:nth-child(even) {
+	--pf-card-background: var(--pf-secondary-light);
+	--pf-card-accent: var(--pf-secondary);
+	--pf-operation-accent: color-mix(in srgb, var(--pf-secondary) 25%, #212529);
+}
+.pf-accepted-list > .pf-accepted-card.pf-accepted-card--invalid {
+	--pf-primary: #545961;
+	--pf-action: #545961;
+	--pf-secondary: #545961;
+	--pf-secondary-light: #F0F1F7;
+	--pf-card-background: #F0F1F7;
+	--pf-card-accent: #545961;
+	--pf-operation-accent: #545961;
+}
+.pf-accepted-card > .InfoDataHead_PrefactorRasmi,
+.pf-accepted-card > .InfoDataHead_PrefactorNonRasmi {
+	flex: 0 0 22px;
+	width: 22px;
+	background: var(--pf-operation-accent);
+	border-start-start-radius: 9px;
+	border-end-start-radius: 9px;
+	font-size: 12px;
+}
+.pf-accepted-card > .InfoDataHead_PrefactorExport {
+	flex: 0 0 22px;
+	background: var(--pf-card-background);
+	border-color: var(--pf-operation-accent);
+	color: var(--pf-operation-accent);
+}
+.pf-accepted-card__content.InfoDataItem_Prefactor {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	grid-template-areas: "facts" "body" "progress" "actions" "description";
+	grid-auto-rows: max-content;
+	align-content: start;
+	gap: 7px;
+	flex: 1 1 0%;
+	min-width: 0;
+	padding: 8px;
+	border: 2px solid var(--pf-operation-accent);
+	border-radius: 9px 0 0 9px;
+	background: var(--pf-card-background);
+}
+.pf-accepted-card__facts {
+	--pf-wide-fact-columns: minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(100px, .7fr) minmax(100px, .7fr);
+	grid-area: facts;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1px;
+	overflow: hidden;
+	border: 1px solid var(--pf-border);
+	border-radius: 7px;
+	background: var(--pf-border);
+}
+.pf-accepted-card__facts:has(> .pf-accepted-card__fact:last-child:nth-child(3)) {
+	--pf-wide-fact-columns: minmax(0, 1.6fr) minmax(100px, 1fr) minmax(100px, 1fr);
+}
+.pf-accepted-card__fact {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 4px;
+	min-width: 0;
+	padding: 5px 6px;
+	background: #fff;
+}
+.pf-accepted-card__fact:last-child:nth-child(odd) {
+	grid-column: 1 / -1;
+}
+.pf-accepted-card__fact > span {
+	color: var(--pf-muted);
+	font-size: 11px;
+	white-space: nowrap;
+}
+.pf-accepted-card__fact > strong {
+	font: 12px/1.7 IRANSansBold;
+	white-space: nowrap;
+	unicode-bidi: isolate;
+}
+.pf-accepted-card__body {
+	grid-area: body;
+	display: grid;
+	gap: 7px;
+	min-width: 0;
+}
+.pf-accepted-card__section {
+	min-width: 0;
+	padding: 7px 9px;
+	border: 1px solid var(--pf-border);
+	border-radius: 7px;
+	background: #fff;
+}
+.pf-accepted-card__section h3 {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+	margin: 0 0 4px;
+	padding-bottom: 6px;
+	border-bottom: 1px solid var(--pf-border);
+	color: var(--pf-primary);
+	font: 13px/1.5 IRANSansBold;
+}
+.pf-accepted-card__section h3 i {
+	font-size: 14px;
+	font-weight: 400;
+}
+.pf-accepted-card__row {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 6px;
+	padding: 4px 0;
+	border-bottom: 1px solid var(--pf-background);
+	font-size: 12px;
+	line-height: 1.7;
+}
+.pf-accepted-card__row:last-child {
+	border-bottom: 0;
+	padding-bottom: 0;
+}
+.pf-accepted-card__row > span {
+	flex-shrink: 0;
+	color: var(--pf-muted);
+	font-size: 11px;
+}
+.pf-accepted-card__row > strong, .pf-accepted-card__amount-link {
+	min-width: 0;
+	overflow-wrap: anywhere;
+	text-align: end;
+	font: 12px/1.7 IRANSansBold;
+}
+.pf-accepted-card__row small {
+	font: 10px IRANSans;
+	white-space: nowrap;
+}
+.pf-accepted-card__amount-link {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--pf-action);
+	text-decoration: underline;
+	cursor: pointer;
+}
+.pf-accepted-card button:focus-visible {
+	outline: 2px solid var(--pf-action);
+	outline-offset: 2px;
+}
+.pf-accepted-card__factors {
+	grid-column: 1 / -1;
+}
+.pf-accepted-card__factor-content {
+	display: grid;
+	gap: 5px;
+	min-width: 0;
+}
+.pf-accepted-card__factor-items {
+	display: flex;
+	flex-direction: row;
+	gap: 4px;
+}
+.pf-accepted-card__factor-button {
+	display: flex;
+	flex: 1 1 0%;
+	flex-direction: row;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	min-width: 0;
+	min-height: 28px;
+	gap: 4px;
+	padding: 3px 4px;
+	border: 1px solid color-mix(in srgb, var(--pf-card-accent) 20%, var(--pf-border));
+	border-radius: 6px;
+	background: var(--pf-card-background);
+	color: var(--pf-operation-accent);
+	font: 11px/1.5 IRANSans;
+	cursor: pointer;
+}
+.pf-accepted-card__factor-count {
+	color: var(--pf-operation-accent);
+	font-family: IRANSansBold;
+	white-space: nowrap;
+}
+.pf-accepted-card__factor-button:disabled {
+	cursor: not-allowed;
+	opacity: .65;
+}
+.pf-accepted-card__factor-button:hover:not(:disabled) {
+	border-color: var(--pf-card-accent);
+}
+.pf-accepted-card__progress {
+	grid-area: progress;
+	align-self: start;
+	min-width: 0;
+	padding: 4px 6px;
+	border: 1px solid var(--pf-border);
+	border-radius: 7px;
+	background: #fff;
+}
+.pf-accepted-card__tracker {
+	position: relative;
+	min-width: 0;
+}
+.pf-accepted-card__tracker > .progressTrackerFilled,
+.pf-accepted-card__tracker > .progressTrackerFilledYellow {
+	display: none;
+}
+.pf-accepted-card__steps {
+	position: relative;
+	display: grid;
+	grid-template-columns: repeat(8, minmax(0, 1fr));
+}
+.pf-accepted-card__step {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 1px;
+	min-width: 0;
+	padding: 1px 0;
+}
+.pf-accepted-card__step:not(:last-child)::before {
+	content: "";
+	position: absolute;
+	top: 8px;
+	inset-inline-start: 50%;
+	width: 100%;
+	height: 2px;
+	background: #838E98;
+}
+.pf-accepted-card__step--completed:not(:last-child)::before {
+	background: var(--pf-operation-accent);
+}
+.pf-accepted-card__step .progressTrackerDots {
+	position: relative;
+	z-index: 1;
+	width: 14px;
+	height: 14px;
+	margin: 2px;
+	border: 2px solid #fff;
+	outline: 1px solid #838E98;
+	background: #838E98;
+}
+.pf-accepted-card__step .completedTrack,
+.pf-accepted-card__step .completedTrackYellow,
+.pf-accepted-card__step .rejectedTrack {
+	width: 18px;
+	height: 18px;
+	margin: 0;
+	border: 0;
+	outline: 0;
+	background: #fff;
+	color: var(--pf-operation-accent);
+}
+.pf-accepted-card__step .rejectedTrack {
+	color: #C2185B;
+}
+.pf-accepted-card__step .activeTrack:not(.rejectedTrack) {
+	outline-color: var(--pf-operation-accent);
+	background: var(--pf-operation-accent);
+}
+.pf-accepted-card__step-caption {
+	width: 100%;
+	padding-inline: 1px;
+}
+.pf-accepted-card__step-label {
+	display: block;
+	color: var(--pf-muted);
+	font: 9px/1.35 IRANSans;
+	text-align: center;
+	overflow-wrap: anywhere;
+}
+.pf-accepted-card__step[aria-current="step"] .pf-accepted-card__step-label {
+	color: var(--pf-operation-accent);
+	font-family: IRANSansBold;
+}
+.pf-accepted-card__step-caption > [data-bs-toggle="popover"] {
+	position: absolute;
+	z-index: 2;
+	top: 1px;
+	inset-inline-start: calc(50% - 27px);
+}
+.pf-accepted-card__status {
+	text-align: center;
+	line-height: 1.4;
+}
+.pf-accepted-card__status > label {
+	display: inline-block;
+	padding: 0 8px;
+	border-radius: 20px;
+	background: var(--pf-background);
+	color: var(--pf-muted);
+	font-size: 11px;
+}
+.pf-accepted-card--invalid .pf-accepted-card__status > label {
+	background: #C2185B;
+	color: #fff;
+}
+.pf-accepted-card__actions {
+	grid-area: actions;
+	align-self: start;
+	min-width: 0;
+	display: grid;
+	gap: 5px;
+}
+.pf-accepted-card__workflow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	color: var(--pf-operation-accent);
+}
+.pf-accepted-card__workflow:empty {
+	display: none;
+}
+.pf-accepted-card__workflow-status {
+	margin-inline-end: auto;
+	font: 11px/1.5 IRANSansMedium;
+}
+.pf-accepted-card__workflow .flex-center {
+	flex-direction: row !important;
+	flex-wrap: wrap;
+}
+.pf-accepted-card__workflow button {
+	width: auto !important;
+	min-height: 30px;
+	padding: 4px 8px !important;
+	border: 1px solid var(--pf-operation-accent);
+	border-radius: 6px !important;
+	background: var(--pf-operation-accent);
+	color: #fff;
+	font: 11px/1.5 IRANSansMedium !important;
+}
+.pf-accepted-card__workflow select {
+	min-height: 30px;
+	border-color: var(--pf-border);
+	font-size: 11px;
+}
+.pf-accepted-card__deleted-overlay {
+	position: absolute;
+	inset: 0;
+	z-index: 22;
+	display: grid;
+	place-items: center;
+	border-radius: 9px;
+	background: rgb(250 250 250 / 65%);
+}
+.pf-accepted-card__deleted-overlay > span {
+	padding: 8px 14px;
+	border-radius: 8px;
+	background: #FCE8F0;
+	color: #C2185B;
+	font-family: IRANSansBold;
+	transform: rotate(-10deg);
+}
+.pf-accepted-card__action-list {
+	position: relative;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-around;
+	gap: 1px;
+	padding: 1px;
+	border: 1px solid var(--pf-border);
+	border-radius: 7px;
+	background: #fff;
+}
+.pf-accepted-card__action-list > button {
+	position: relative;
+	flex: 0 0 30px;
+	width: 30px;
+	height: 28px;
+	min-height: 28px;
+	padding: 2px;
+	border: 0;
+	border-radius: 5px;
+	background: transparent;
+	color: var(--pf-operation-accent) !important;
+	font-size: 15px;
+}
+.pf-accepted-card__action-list > button:hover {
+	background: var(--pf-card-background);
+}
+.pf-accepted-card__action-list > button:is(:hover, :focus-visible) {
+	z-index: 21;
+}
+/* Use the menu's registered orbit angle and keyframes, loaded by the Cartable layout. */
+.pf-accepted-card__action-list .pf-accepted-card__action-icon {
+	position: static;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 22px;
+	height: 22px;
+	border-radius: 5px;
+}
+.pf-accepted-card__action-list .pf-accepted-card__action-icon::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	padding: 1px;
+	border-radius: inherit;
+	pointer-events: none;
+	opacity: 0;
+	background: conic-gradient(from var(--menu-button-orbit-angle), transparent 0deg 245deg, currentColor 320deg, #fff 338deg, currentColor 350deg, transparent 360deg);
+	-webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+	-webkit-mask-composite: xor;
+	mask-composite: exclude;
+}
+.pf-accepted-card__action-list .pf-accepted-card__action-icon > :is(i, svg) {
+	transform-origin: center;
+}
+.pf-accepted-card__action-list > button:is(:hover, :focus-visible) .pf-accepted-card__action-icon::after {
+	opacity: 1;
+}
+@media (prefers-reduced-motion: no-preference) {
+	.pf-accepted-card__action-list > button:is(:hover, :focus-visible) .pf-accepted-card__action-icon::after {
+		animation: menuButtonOrbit 1.8s linear infinite;
+	}
+	.pf-accepted-card__action-list .pf-accepted-card__action-icon::after {
+		transition: opacity .3s ease, transform .4s cubic-bezier(.2, .7, .2, 1);
+	}
+	.pf-accepted-card__action-list > button:is(:hover, :focus-visible) .pf-accepted-card__action-icon > :is(i, svg) {
+		animation: pfActionBounce .7s ease-out infinite;
+	}
+}
+@keyframes pfActionBounce {
+	/* Match the menu's 400ms motion followed by a 300ms pause. */
+	0%, 57.142857%, 100% { transform: translateY(0); }
+	19.047619% { transform: translateY(-3px) rotate(-5deg); }
+	38.095238% { transform: translateY(0) rotate(2deg); }
+}
+.pf-accepted-card__action-list > button[data-title-right]::after,
+.pf-accepted-card__action-list > button[data-title-right]::before {
+	position: absolute;
+	z-index: 20;
+	left: 50%;
+	right: auto;
+	bottom: auto;
+	transform: translateX(-50%);
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition: opacity .15s;
+}
+.pf-accepted-card__action-list > button[data-title-right]::after {
+	content: attr(data-title-right);
+	top: calc(100% + 6px);
+	padding: 3px 7px;
+	border-radius: 4px;
+	background: var(--pf-operation-accent);
+	color: #fff;
+	font: 11px/1.5 IRANSans;
+	white-space: nowrap;
+}
+.pf-accepted-card__action-list > button[data-title-right]::before {
+	content: "";
+	top: calc(100% - 2px);
+	border: 4px solid transparent;
+	border-bottom-color: var(--pf-operation-accent);
+}
+.pf-accepted-card__action-list > button[data-title-right]:is(:hover, :focus-visible)::after,
+.pf-accepted-card__action-list > button[data-title-right]:is(:hover, :focus-visible)::before {
+	opacity: 1;
+	visibility: visible;
+}
+.pf-accepted-card__description {
+	grid-area: description;
+	min-width: 0;
+	padding-top: 5px;
+	border-top: 1px solid var(--pf-border);
+	font-size: 12px;
+	overflow-wrap: anywhere;
+}
+.pf-accepted-card__description > div:first-child {
+	display: none;
+}
+.pf-accepted-card__approval {
+	color: var(--pf-card-accent);
+}
+.pf-accepted-card__approval > svg {
+	flex-shrink: 0;
+}
+@container accepted-prefactor (min-width: 576px) {
+	.pf-accepted-card__factor-items {
+		flex-direction: column;
+	}
+	.pf-accepted-card__body {
+		grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+		grid-template-areas: "customer financial";
+	}
+	.pf-accepted-card__body--with-factors {
+		grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, .7fr);
+		grid-template-areas: "customer financial factors";
+	}
+	.pf-accepted-card__body > .pf-accepted-card__financial {
+		grid-area: financial;
+	}
+	.pf-accepted-card__body--with-factors > .pf-accepted-card__factors {
+		grid-area: factors;
+	}
+	.pf-accepted-card__body > .pf-accepted-card__customer {
+		grid-area: customer;
+	}
+}
+/* Keep four facts together or in balanced pairs; avoid an orphaned fourth cell. */
+@container accepted-prefactor (min-width: 768px) {
+	.pf-accepted-card__facts {
+		grid-template-columns: var(--pf-wide-fact-columns);
+	}
+	.pf-accepted-card__fact:last-child:nth-child(odd) {
+		grid-column: auto;
+	}
+}
+/* Desktop monitors keep a single facts row even when the cartable uses split panes. */
+@media (min-width: 1400px) {
+	.pf-accepted-card__facts {
+		grid-template-columns: var(--pf-wide-fact-columns);
+	}
+	.pf-accepted-card__fact:last-child:nth-child(odd) {
+		grid-column: auto;
+	}
+}
+
+/* Medium split panes keep a bottom toolbar; only wide cards reserve a side rail. */
+@container accepted-prefactor (min-width: 992px) {
+	.pf-accepted-card__content.InfoDataItem_Prefactor {
+		grid-template-columns: minmax(0, 1fr) 32px;
+		grid-template-areas: "facts actions" "body actions" "progress actions" "description description";
+	}
+	.pf-accepted-card__action-list {
+		height: auto;
+		flex-direction: column;
+		flex-wrap: nowrap;
+		justify-content: flex-start;
+		padding: 1px 0;
+	}
+	.pf-accepted-card__action-list > button {
+		flex: 0 0 26px;
+		width: 28px;
+		height: 26px;
+		min-height: 26px;
+	}
+	/* Additional authorized actions use a second column instead of growing the card. */
+	.pf-accepted-card__content:has(.pf-accepted-card__action-list > button:nth-of-type(9)) {
+		grid-template-columns: minmax(0, 1fr) 64px;
+	}
+	.pf-accepted-card__action-list:has(> button:nth-of-type(9)) {
+		display: grid;
+		grid-template-columns: repeat(2, 28px);
+		grid-auto-rows: 26px;
+		align-content: start;
+		justify-content: center;
+		gap: 2px;
+		padding: 2px 0;
+	}
+	.pf-accepted-card__action-list > button[data-title-right]::after,
+	.pf-accepted-card__action-list > button[data-title-right]::before {
+		top: 50%;
+		transform: translateY(-50%);
+	}
+	.pf-accepted-card__action-list > button[data-title-right]::after {
+		left: calc(100% + 6px);
+	}
+	.pf-accepted-card__action-list > button[data-title-right]::before {
+		left: calc(100% - 1px);
+		border-color: transparent var(--pf-operation-accent) transparent transparent;
+	}
+}
 
 @media (max-width: 991px) {
 	.TCar {

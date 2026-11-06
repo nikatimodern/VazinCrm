@@ -1,4 +1,4 @@
-﻿@using CRM.Core.Domain.Deals.Enums
+@using CRM.Core.Domain.Deals.Enums
 @using CRM.Core.Domain.PreFactors.Enum
 @model CRM.EndPoint.FrontEnd.Models.PreFactors.PrefactorViewModel;
 
@@ -7,6 +7,10 @@
     var passType = ViewBag.PassType; // 1: CustomerProfile | 4: Deal
 }
 
+@if (passType == 4) {
+    <partial name="~/Views/PreFactor/_PreFactorCards.cshtml" model="Model"
+             view-data='new ViewDataDictionary(ViewData) { ["DealCards"] = true }' />
+} else {
 <div class="d-flex flex-column w-100" style="gap: 5px">
     @foreach (var item in Model.data) {
         var isInvalid = item.Pftype is (int)PreFactorEnum.فاقد_اعتبار or (int)PreFactorEnum.بسته_شده
@@ -205,3 +209,4 @@
         </div>
     }
 </div>
+}

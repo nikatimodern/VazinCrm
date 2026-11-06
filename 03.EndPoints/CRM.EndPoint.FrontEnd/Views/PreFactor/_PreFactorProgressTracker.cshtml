@@ -3,6 +3,7 @@
 
 @{
     var isInvalid = ViewData["IsInvalid"] as bool? ?? false;
+    var acceptedCard = ViewData["AcceptedCard"] as bool? ?? false;
 }
 
 @{
@@ -19,14 +20,17 @@
 
     var stepOrder = steps.FindIndex(s => s.type == Model.Pftype);
     var progressValue = (stepOrder - 0.3) / (steps.Count - 1.0);
+    if (acceptedCard) {
+        progressValue = Math.Clamp(progressValue, 0, 1);
+    }
 }
 
-<div class="progressTracker">
+<div class="@(acceptedCard ? "pf-accepted-card__tracker" : "progressTracker")">
     <div class="@(stepOrder <= 3 ? "progressTrackerFilledYellow" : "progressTrackerFilled")"
          style="width: @(stepOrder == steps.Count - 1 ? "100%" : $"calc(100% * {progressValue})")">
     </div>
 
-    <div class="d-flex justify-content-between w-100" style="height: 18px;top:-6px">
+    <div class="@(acceptedCard ? "pf-accepted-card__steps" : "d-flex justify-content-between w-100")" style="@(acceptedCard ? null : "height: 18px;top:-6px")">
         @for (var i = 0; i < steps.Count; i++) {
             var (type, label) = steps[i];
             var isCompleted = stepOrder > i || Model.Pftype == (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد;
@@ -43,15 +47,15 @@
                     : "";
             dotClass += isActive ? " activeTrack" : "";
 
-            <div class="d-flex align-items-center justify-content-between flex-column position-relative">
+            <div class="@(acceptedCard ? $"pf-accepted-card__step {(isCompleted ? "pf-accepted-card__step--completed" : "")} {(isActive ? "pf-accepted-card__step--current" : "")}" : "d-flex align-items-center justify-content-between flex-column position-relative")" title="@label" aria-current="@(acceptedCard && (isActive || (isCompleted && i == steps.Count - 1)) ? "step" : null)">
                 <div class="@dotClass">
                     <svg class="completed-svg" style="width:100%;height:100%;display:none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" /></svg>
                     <svg class="rejected-svg" style="width:100%;height:100%;display:none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clip-rule="evenodd" /></svg>
                 </div>
 
 
-                <span style="position:absolute;width: max-content;top: 100%;">
-                    <span class="d-none @(!isInvalid ? "d-md-inline-block" : "")">@label</span>
+                <span class="@(acceptedCard ? "pf-accepted-card__step-caption" : null)" style="@(acceptedCard ? null : "position:absolute;width: max-content;top: 100%;")">
+                    <span class="@(acceptedCard ? "pf-accepted-card__step-label" : $"d-none {(!isInvalid ? "d-md-inline-block" : "")}")">@label</span>
                     @if (!User.IsCustomer() && type == (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین && Model.UserTaminId != null) {
                         var text = "کارشناس تامین: " + Model.UserTaminTxt;
                         <span data-bs-toggle="popover" data-bs-content="@Html?.Raw(text)">
@@ -63,9 +67,11 @@
         }
     </div>
 
-    <div class="mt-3 @(isInvalid ? "d-md-inline-flex" : "d-md-none") flex-center position-absolute" style="top: 0; left: 0; right: 0">
-        <label class="fbold" style="font-size: 13px">
-            @Model.PftypeTxt @(Model.Pftype == (int)PreFactorEnum.بسته_شده ? $"({Model.ExpireValidateDesc})" : "")
-        </label>
-    </div>
+    @if (!acceptedCard || isInvalid || stepOrder < 0) {
+        <div class="@(acceptedCard ? "pf-accepted-card__status" : $"mt-3 {(isInvalid ? "d-md-inline-flex" : "d-md-none")} flex-center position-absolute")" style="@(acceptedCard ? null : "top: 0; left: 0; right: 0")">
+            <label class="fbold" style="@(acceptedCard ? null : "font-size: 13px")">
+                @Model.PftypeTxt @(Model.Pftype == (int)PreFactorEnum.بسته_شده ? $"({Model.ExpireValidateDesc})" : "")
+            </label>
+        </div>
+    }
 </div>

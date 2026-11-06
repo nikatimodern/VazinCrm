@@ -233,16 +233,16 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
                 </div>
                 <p style="font-size:clamp(12px, 2vw, 13px);color:gray;min-height:12px;">${item.description?.trim() ?? ""}</p>
                 <div class="d-flex w-100 justify-content-between align-items-end mt-2" style="column-gap:10px;row-gap:8px;color: #666">
-                    <div class="d-flex gap-2 gap-lg-3 align-items-end justify-content-between flex-grow-1" style="font-size:clamp(10px, 2vw, 11px)">
-                        <div class="d-flex gap-2 gap-lg-3 align-items-center flex-grow-1 flex-wrap" style="row-gap:.5rem !important">
-                            <span class="d-flex align-items-center gap-1 ">
+                    <div class="deal-card__footer-details d-flex gap-2 gap-lg-3 align-items-end justify-content-between flex-grow-1" style="font-size:clamp(10px, 2vw, 11px)">
+                        <div class="deal-card__metadata">
+                            <span class="deal-card__customer d-flex align-items-center gap-1">
                                 <svg class="flex-shrink-0 ${item.customerId ? "icon-hover cursor-pointer" : ""}" style="width: 16px" 
                                       ${item.customerId ? `onclick="openCustomerProfile('${item.customerId}')"` : ""} viewBox="0 0 16 16" fill="currentColor">
                                   <path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0Zm-5-2a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM8 9c-1.825 0-3.422.977-4.295 2.437A5.49 5.49 0 0 0 8 13.5a5.49 5.49 0 0 0 4.294-2.063A4.997 4.997 0 0 0 8 9Z" clip-rule="evenodd"/></svg>
-                                <span>${item.customerName ?? ""}${item.customerCode ? " (کد مشتری: " + item.customerCode + ")" : ""}</span>
+                                <span class="deal-card__customer-name" title="${escapeHtml((item.customerName ?? "") + (item.customerCode ? " (کد مشتری: " + item.customerCode + ")" : ""))}">${escapeHtml(item.customerName ?? "")}${item.customerCode ? " (کد مشتری: " + escapeHtml(item.customerCode) + ")" : ""}</span>
                             </span>
                              <span class="d-flex align-items-center gap-1 ">
-                                <svg style="width: 16px;flex-shrink: 0" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="m3.855 7.286 1.067-.534a1 1 0 0 0 .542-1.046l-.44-2.858A1 1 0 0 0 4.036 2H3a1 1 0 0 0-1 1v2c0 .709.082 1.4.238 2.062a9.012 9.012 0 0 0 6.7 6.7A9.024 9.024 0 0 0 11 14h2a1 1 0 0 0 1-1v-1.036a1 1 0 0 0-.848-.988l-2.858-.44a1 1 0 0 0-1.046.542l-.534 1.067a7.52 7.52 0 0 1-4.86-4.859Z" clip-rule="evenodd" /></svg>
+                                <svg class="deal-card__phone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.69 2.79a2 2 0 0 1-.45 2.11L8.09 9.89a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.89.33 1.83.56 2.79.69A2 2 0 0 1 22 16.92z"/></svg>
                                 <span style="direction: ltr">${item.mobileNumber}</span>
                             </span>
                              <span class="d-flex align-items-center gap-1 ">

@@ -1,7 +1,20 @@
 @using CRM.Core.Domain.ASettings.Entities
 @model PreFactor
 
+@{
+    var setting = ViewData["Setting"] as ASetting;
+    var passType = ViewData["PassType"] as int? ?? 0;
+    var acceptedCard = ViewData["AcceptedCard"] as bool? ?? false;
 
+    if (Model == null) return;
+
+    var showInternal = setting?.CrmFactors == true;
+    var showSepidar = !User.IsCustomer()
+                      && setting?.Sepidar == true
+                      && Model.CountFactorSepidar != null;
+}
+
+@if (!acceptedCard) {
 <style>
 
     .factor-group {
@@ -58,36 +71,30 @@
     }
 
 </style>
-
-@{
-    var setting = ViewData["Setting"] as ASetting;
-    var passType = ViewData["PassType"] as int? ?? 0;
-
-    if (Model == null) return;
-
-    var showInternal = setting?.CrmFactors == true;
-    var showSepidar = !User.IsCustomer()
-                      && setting?.Sepidar == true
-                      && Model.CountFactorSepidar != null;
 }
 
-<div class="col-12 col-md-2 d-flex flex-column gap-2 px-2">
+<div class="@(acceptedCard ? "pf-accepted-card__factor-content" : "col-12 col-md-2 d-flex flex-column gap-2 px-2")">
+    @if (acceptedCard) {
+        <h3><span>فاکتورها</span><i class="fa fa-copy" aria-hidden="true"></i></h3>
+    }
 
     @if (showInternal || showSepidar)
     {
-        <div class="factor-group">
-            <div class="factor-group-title">فاکتورها</div>
+        <div class="@(acceptedCard ? "pf-accepted-card__factor-group" : "factor-group")">
+            @if (!acceptedCard) {
+                <div class="factor-group-title">فاکتورها</div>
+            }
 
-            <div class="factor-group-items">
+            <div class="@(acceptedCard ? "pf-accepted-card__factor-items" : "factor-group-items")">
 
                 @if (showInternal)
                 {
                     <button type="button"
-                            class="factor-group-btn"
+                            class="@(acceptedCard ? "pf-accepted-card__factor-button" : "factor-group-btn")"
                             disabled="@(Model.CountFactor == 0)"
                             onclick="GetFactorPartial({id: '@Model.Id', element: this, serialNumber: '@Model.SerialNumber', passType: @passType})">
                         <span>داخلی</span>
-                        <span class="factor-group-count">
+                        <span class="@(acceptedCard ? "pf-accepted-card__factor-count" : "factor-group-count")">
                             @Model.CountFactor عدد
                         </span>
                     </button>
@@ -96,11 +103,11 @@
                 @if (showSepidar)
                 {
                     <button type="button"
-                            class="factor-group-btn"
+                            class="@(acceptedCard ? "pf-accepted-card__factor-button" : "factor-group-btn")"
                             disabled="@(Model.CountFactorSepidar == 0)"
                             onclick="showSepidarFactors('@Model.SerialNumber', this, @passType)">
                         <span>سپیدار</span>
-                        <span class="factor-group-count">
+                        <span class="@(acceptedCard ? "pf-accepted-card__factor-count" : "factor-group-count")">
                             @Model.CountFactorSepidar عدد
                         </span>
                     </button>
@@ -110,9 +117,9 @@
         </div>
     }
 
-    @if (User.IsFinancial() || User.IsAdmin())
+    @if (!acceptedCard && (User.IsFinancial() || User.IsAdmin()))
     {
-        <button class="buttonBlue2 factorCount-btn"
+        <button type="button" class="buttonBlue2 factorCount-btn"
                 onclick="showPreFactorExternalSotwaresModal('@Model.Id', '@Model.SerialNumber')">
             ارتباط مالی
         </button>
