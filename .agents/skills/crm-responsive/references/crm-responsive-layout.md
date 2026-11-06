@@ -1,0 +1,9 @@
+# Responsive layout decisions
+
+- Build the base layout for a narrow viewport, then progressively add columns or space. Retain Persian RTL order and IRANSans typography; take palette and component appearance from the design-system skill.
+- Use logical properties (`margin-inline`, `padding-inline`, `inset-inline`) when direction matters. Check icons, numeric values, and mixed Persian/Latin text in their rendered direction.
+- Prefer flexible Grid/Flex tracks (`minmax(0, 1fr)`, wrapping, and `min-width: 0` on shrinking children) and content-driven sizes. Avoid unnecessary fixed widths and unexplained `!important`.
+- Diagnose the element causing horizontal overflow. Keep the page within the viewport; allow intentional scrolling inside a wide table, board, or chart instead of hiding clipped actions globally.
+- Scale gaps, padding, content width, and type only when readability or density requires it. Check short viewport heights and mobile virtual-keyboard resize; keep active fields, modal actions, and bottom navigation reachable. Use dynamic viewport units or safe-area insets only where supported and needed.
+- Check portrait and landscape orientation, zoom, long Persian labels, validation messages, and keyboard focus. Make touch controls usable without changing desktop semantics.
+- The actual menu partial has `#desktopSidebar`, `#mobileMenuBottom`, and `#mobileDrawer`; `compact.css` changes `#mainWrapper` with sidebar state. Inspect their CSS and `Layout.js` before changing offsets, visibility, or scroll containment. Preserve menu permissions and navigation destinations.
