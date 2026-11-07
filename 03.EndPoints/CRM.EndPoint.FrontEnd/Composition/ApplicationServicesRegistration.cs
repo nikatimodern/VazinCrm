@@ -87,6 +87,7 @@ public static class ApplicationServicesRegistration
         services.AddWorkspaceServices();
         services.AddPageModules();
         services.AddQualityControlServices();
+        services.AddTargetServices();
         services.AddOrderServices();
         services.AddCartableServices();
         services.AddCarizoServices();

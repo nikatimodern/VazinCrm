@@ -93,6 +93,19 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
 
             #endregion
 
+            #region Targets
+
+            new MenuItem {
+                Id = "target",
+                Title = "مدیریت تارگت‌ها",
+                Url = "/Target/Index",
+                IconHtml = MenuIcons.Targets,
+                Roles = [AppRoles.Admin, AppRoles.SalesAdmin],
+                DisplayOrder = 21
+            },
+
+            #endregion
+
             #region Quality control
 
             new MenuItem {

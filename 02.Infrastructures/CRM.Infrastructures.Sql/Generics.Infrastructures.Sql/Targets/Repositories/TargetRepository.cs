@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CRM.Core.ApplicationServices.Security;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Targets.Entities;
 using CRM.Core.Domain.Targets.Models;
@@ -19,10 +18,10 @@ public sealed class TargetRepository(CRMContextDb db, UserManager<AppUser> users
     public async Task<IReadOnlyList<TargetMetric>> GetMetricsAsync(CancellationToken ct) =>
         await db.TargetMetrics.AsNoTracking().OrderBy(x => x.SortOrder).ToListAsync(ct);
 
-    public async Task<IReadOnlyList<TargetExpert>> GetExpertsAsync(CancellationToken ct)
+    public async Task<IReadOnlyList<TargetExpert>> GetExpertsAsync(string role, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
-        var experts = await users.GetUsersInRoleAsync(AppRoles.SalesExpert);
+        var experts = await users.GetUsersInRoleAsync(role);
         return experts.OrderBy(x => x.FullName)
             .Select(x => new TargetExpert { Id = x.Id, Name = x.FullName }).ToList();
     }
