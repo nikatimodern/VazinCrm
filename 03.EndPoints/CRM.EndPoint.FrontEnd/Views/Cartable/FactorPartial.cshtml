@@ -212,6 +212,15 @@
                     }
 
 
+                    @if (isAdminOrFinancial && Model._Setting?.Sepidar == true
+                        && item.status == FactorStatus.تایید_شده && !isReturnFactor && !item.Returned) {
+                        <button type="button" class="flex-center" data-title-right="ارسال فاکتور به نرم‌افزار مالی"
+                                aria-label="ارسال فاکتور به سپیدار"
+                                onclick="sendFactorToExternalSoftware('@item.Id')">
+                            <i class="fa fa-paper-plane"></i>
+                        </button>
+                    }
+
                     <button class="flex-center" data-title-right="نمایش فاکتور" style="color:var(--DarkColor);" onclick="ShowPreviewFactor('@item.Id')">
                         <i class="fa fa-eye"></i>
                     </button>
