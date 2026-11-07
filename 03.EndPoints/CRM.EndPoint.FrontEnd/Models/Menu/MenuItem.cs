@@ -7,6 +7,7 @@ namespace CRM.EndPoint.FrontEnd.Models.Menu;
 public class MenuItem {
     public string Id { get; init; }
     public string Title { get; set; }
+    public string Subtitle { get; set; }
     public string Url { get; init; }
     public string IconHtml { get; init; }
     public List<string> Roles { get; init; } = [];

@@ -31,9 +31,11 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
         if (versionMenu is not null) {
             var reader = new ReleaseNoteReader(user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "", [.. roles],
                 roles.Contains(AppRoles.Customer), roles.Any(role => role != AppRoles.Customer));
-            var version = await serviceProvider.GetRequiredService<IReleaseNoteRepository>()
-                .GetLatestVisibleVersionAsync(reader, DateTime.UtcNow, default);
-            versionMenu.Title = version is null ? "نسخه" : $"نسخه {version}";
+            var latest = await serviceProvider.GetRequiredService<IReleaseNoteRepository>()
+                .GetLatestVisibleVersionInfoAsync(reader, DateTime.UtcNow, default);
+            versionMenu.Title = latest is null ? "نسخه" : $"نسخه {latest.Version}";
+            if (latest?.PublishDate is DateTime publishDate)
+                versionMenu.Subtitle = $"تاریخ انتشار: {CRM.Framework.BaseServices.GetDatePersian(publishDate)}";
         }
 
         await SetBadgeCountsAsync(filteredMenus);
