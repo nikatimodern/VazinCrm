@@ -44,6 +44,12 @@
         const frac = (value % 100n).toString().padStart(2, '0');
         return frac === '00' ? whole : whole + '.' + frac.replace(/0$/, '');
     };
+    const formatDate = value => {
+        if (!value) return '—';
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? '—' :
+            new Intl.DateTimeFormat('fa-IR-u-ca-persian', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+    };
     const formatted = value => {
         const s = normalize(value);
         if (!validNumber(s)) return s;
@@ -274,7 +280,7 @@
         if (step === 1) renderMonthly();
         if (step === 2) renderExperts();
         if (step === 3) renderReview();
-        form.querySelectorAll('[data-target-panel] input, [data-target-panel] select, #targetYear')
+        form.querySelectorAll('[data-target-panel] input[data-kind], #targetYear')
             .forEach(input => { input.disabled = state.status === 1; });
         el('targetRebalance').disabled = state.status === 1;
         const body = root.querySelector('.target-modal-body');
@@ -302,6 +308,8 @@
                 <span>فروش سالانه: <b>${html(formatted(row.salesTarget))}</b> ریال</span>
                 <span>ماه‌های دارای تخصیص: ${html(row.allocatedMonths)} از ۱۲</span>
                 <span>کارشناسان: ${html(row.expertCount)}</span>
+                <span>تاریخ ثبت: ${html(formatDate(row.createdAtUtc))}</span>
+                <span>آخرین ویرایش: ${html(formatDate(row.updatedAtUtc))}</span>
                 <button type="button" class="target-btn target-btn-outline" data-open-id="${html(row.id)}">
                     ${row.status === 1 ? 'مشاهده' : 'ادامه / ویرایش'}
                 </button>
