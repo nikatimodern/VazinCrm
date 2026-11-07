@@ -604,16 +604,6 @@
         renderExperts();
     });
 
-    // Keep one select element; position it in the header on tablet/mobile widths.
-    const expertPickerLayout = window.matchMedia('(max-width: 1050px)');
-    function positionExpertPicker() {
-        const destination = el(expertPickerLayout.matches ? 'targetExpertHeaderActions' : 'targetExpertPickerSlot');
-        const picker = el('targetExpertPicker');
-        if (picker.parentElement !== destination)
-            destination.appendChild(picker);
-    }
-    expertPickerLayout.addEventListener('change', positionExpertPicker);
-    positionExpertPicker();
     el('targetRebalance').addEventListener('click', async () => {
         const approved = await confirmAlert({
             title: 'تقسیم مجدد اهداف',

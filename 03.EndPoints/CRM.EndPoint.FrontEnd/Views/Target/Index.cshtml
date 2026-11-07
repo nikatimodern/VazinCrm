@@ -90,7 +90,12 @@
                             <div class="target-step-heading">
                                 <div class="target-step-heading-row target-expert-heading-row">
                                     <h3>تخصیص تارگت به کارشناسان</h3>
-                                    <div class="target-expert-heading-actions" id="targetExpertHeaderActions">
+                                    <div class="target-expert-heading-actions">
+                                        <div class="target-expert-picker" id="targetExpertPicker">
+                                            <label for="targetExpertSelect">کارشناس فروش</label>
+                                            <select id="targetExpertSelect" aria-label="انتخاب کارشناس فروش"></select>
+                                            <span id="targetExpertProgress" aria-live="polite"></span>
+                                        </div>
                                         <button type="button" class="target-btn target-btn-outline target-table-toggle" data-target-table-toggle>نمایش همه به‌صورت جدول</button>
                                     </div>
                                 </div>
@@ -98,13 +103,6 @@
                             </div>
                             <div class="target-stage-editor" data-target-editor>
                                 <nav id="targetExpertTabs" class="target-month-tabs" aria-label="انتخاب ماه تخصیص به کارشناسان"></nav>
-                                <div class="target-expert-picker-slot" id="targetExpertPickerSlot">
-                                    <div class="target-expert-picker" id="targetExpertPicker">
-                                        <label for="targetExpertSelect">کارشناس فروش</label>
-                                        <select id="targetExpertSelect" aria-label="انتخاب کارشناس فروش"></select>
-                                        <span id="targetExpertProgress" aria-live="polite"></span>
-                                    </div>
-                                </div>
                                 <details class="target-month-summary">
                                     <summary>مشاهده اهداف ماه انتخاب‌شده</summary>
                                     <div id="targetCurrentMonthTargets" class="target-month-totals"></div>
