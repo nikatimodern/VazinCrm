@@ -17,6 +17,7 @@ using CRM.Core.Domain.Sepidar.Quotations.Entites;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
 using System.Threading;
+using System.Data.SqlTypes;
 using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
@@ -244,23 +245,29 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private async Task<LegacyMappingPlan> BuildLegacySepidarMappingPlanAsync(CancellationToken ct)
         {
             // This method only READS data. It never calls Add/Update/SaveChanges.
+            var readStage = "CRM.PreFactors";
+            try
+            {
             var preFactors = await db.PreFactors.AsNoTracking()
                 .Select(p => new LegacyPreFactorRow(
                     p.Id, p.SerialNumber, p.Date, p.DateMiladi,
                     p.SumTotalAmount, p.PaymentAmount, p.CustomerId))
                 .ToListAsync(ct);
 
+            readStage = "CRM.Factors";
             var factors = await db.Factors.AsNoTracking()
                 .Select(f => new LegacyFactorRow(
                     f.Id, f.PfactorID, f.SepidarId, f.SnFinancial,
                     f.Date, f.DateMiladi, f.PaymentAmount, f.CustomerId))
                 .ToListAsync(ct);
 
+            readStage = "CRM.Customers";
             var financialCustomerIds = await db.Customers.AsNoTracking()
                 .Where(c => c.FinancialCustomerId.HasValue)
                 .Select(c => new { c.Id, c.FinancialCustomerId })
                 .ToDictionaryAsync(x => x.Id, x => x.FinancialCustomerId!.Value, ct);
 
+            readStage = "CRM.ExternalMappings";
             var existing = await db.ExternalMappings.AsNoTracking()
                 .Where(m => m.MapType == ExternalMappingTypeEnum.پیش_فاکتور
                          || m.MapType == ExternalMappingTypeEnum.فاکتور)
@@ -274,11 +281,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 .ToHashSet();
 
             // Historical backfill is restricted to Sepidar 1 only.
+            readStage = "CRM.ExternalSoftwares";
             var configuredSoftwareIds = await db.ExternalSoftwares.AsNoTracking()
                 .Where(x => x.Id == Sepidar1SoftwareId)
                 .Select(x => x.Id)
                 .ToListAsync(ct);
 
+            readStage = "Sepidar1.FMK.FiscalYear";
             var financialYears = await sdb.FiscalYears.AsNoTracking()
                 .Select(x => new { x.FiscalYearId, x.Title, x.StartDate, x.EndDate })
                 .ToListAsync(ct);
@@ -348,6 +357,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var quotations = new List<LegacyQuotationRow>();
                 foreach (var batch in numbers.Chunk(400))
                 {
+                    readStage = "Sepidar1.SLS.Quotation";
                     quotations.AddRange(await sepidar.Quotations.AsNoTracking()
                         .Where(x => batch.Contains(x.Number))
                         .Select(x => new LegacyQuotationRow(
@@ -420,6 +430,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var invoices = new Dictionary<int, LegacyInvoiceRow>();
                 foreach (var batch in quotationIds.Chunk(400))
                 {
+                    readStage = "Sepidar1.SLS.Invoice";
                     var rows = await sepidar.SalesInvoices.AsNoTracking()
                         .Where(x => x.QuotationRef.HasValue && batch.Contains(x.QuotationRef.Value))
                         .Select(x => new LegacyInvoiceRow(
@@ -433,6 +444,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 foreach (var batch in legacyInvoiceIds.Chunk(400))
                 {
+                    readStage = "Sepidar1.SLS.Invoice";
                     var rows = await sepidar.SalesInvoices.AsNoTracking()
                         .Where(x => batch.Contains(x.InvoiceId))
                         .Select(x => new LegacyInvoiceRow(
@@ -500,6 +512,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
 
             return new LegacyMappingPlan(alreadyMapped, notMatched, ambiguous, pending);
+            }
+            catch (SqlNullValueException ex)
+            {
+                throw new InvalidOperationException(
+                    $"A NULL database column was encountered while reading {readStage}. Check EF Core nullability for this query.",
+                    ex);
+            }
         }
 
         // NOT CALLED from Index or any public route.
