@@ -14,6 +14,7 @@ public interface IReleaseNoteRepository
     Task<List<ReleaseNoteData>> GetAdminListAsync(string? search, ReleaseNoteStatus? status, CancellationToken ct);
     Task<ReleaseNoteData?> GetAsync(Guid id, CancellationToken ct);
     Task<List<ReleaseNoteData>> GetVisibleAsync(ReleaseNoteReader reader, bool unseenOnly, DateTime now, CancellationToken ct);
+    Task<string?> GetLatestVisibleVersionAsync(ReleaseNoteReader reader, DateTime now, CancellationToken ct);
     Task<(ReleaseNoteMutation Result, Guid Id)> SaveDraftAsync(ReleaseNote draft, Guid? id, byte[]? expectedVersion, CancellationToken ct);
     Task<ReleaseNoteMutation> ChangeStatusAsync(Guid id, ReleaseNoteStatus target, DateTime now, CancellationToken ct);
     Task<ReleaseNoteMutation> DeleteDraftAsync(Guid id, CancellationToken ct);

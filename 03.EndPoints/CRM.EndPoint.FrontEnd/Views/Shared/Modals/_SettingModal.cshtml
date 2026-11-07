@@ -9,10 +9,12 @@
 
             <div class="modal-body">
                 <div class="d-flex flex-column gap-1">
-                    <a class="buttonGreen-wide" asp-controller="ReleaseNotes" asp-action="Settings">
-                        <i class="fa fa-list-alt" aria-hidden="true"></i>
-                        تنظیمات نسخه‌ها
-                    </a>
+                    @if (User.IsAdmin()) {
+                        <a class="buttonGreen-wide" asp-controller="ReleaseNotesAdmin" asp-action="Index">
+                            <i class="fa fa-list-alt" aria-hidden="true"></i>
+                            مدیریت تغییرات نسخه‌ها
+                        </a>
+                    }
                     @if (User.IsAdmin()) {
                         <a class="buttonGreen-wide" asp-controller="Admin" asp-action="Index">
                             <i class="fa fa-user"></i>

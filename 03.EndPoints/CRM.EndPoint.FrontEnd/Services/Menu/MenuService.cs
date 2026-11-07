@@ -12,6 +12,7 @@ using CRM.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using CRM.Core.ApplicationServices.Security;
+using CRM.Core.Domain.ReleaseNotes.Repositories;
 
 namespace CRM.EndPoint.FrontEnd.Services.Menu;
 
@@ -26,6 +27,14 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
         var menus = BuildMenus(user);
 
         var filteredMenus = Filter(menus, roles);
+        var versionMenu = filteredMenus.FirstOrDefault(x => x.Id == "releaseNotes");
+        if (versionMenu is not null) {
+            var reader = new ReleaseNoteReader(user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "", [.. roles],
+                roles.Contains(AppRoles.Customer), roles.Any(role => role != AppRoles.Customer));
+            var version = await serviceProvider.GetRequiredService<IReleaseNoteRepository>()
+                .GetLatestVisibleVersionAsync(reader, DateTime.UtcNow, default);
+            versionMenu.Title = version is null ? "ورژن" : $"ورژن {version}";
+        }
 
         await SetBadgeCountsAsync(filteredMenus);
 
@@ -478,8 +487,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                     AppRoles.TaminAdmin,
                     AppRoles.SalesAdmin,
                     AppRoles.FinancialAdmin,
-                    AppRoles.FinancialExpert,
-                    AppRoles.Customer
+                    AppRoles.FinancialExpert
                 ],
                 DisplayOrder = 13
             },
@@ -548,6 +556,15 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                     AppRoles.FinancialExpert
                 ],
                 DisplayOrder = 999
+            },
+            new MenuItem {
+                Id = "releaseNotes",
+                Title = "ورژن",
+                OnClick = "showReleaseNotesHistory()",
+                ClassName = "menu-release-notes",
+                IconHtml = "",
+                IsStandalone = true,
+                DisplayOrder = 1000
             }
 
             #endregion

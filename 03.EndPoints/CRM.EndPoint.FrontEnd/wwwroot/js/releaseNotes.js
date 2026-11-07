@@ -44,14 +44,16 @@
         }
         target.replaceChildren(fragment);
     }
-    function show(notes, isPreview = false) {
-        if (busy || !notes.length || document.querySelector(".modal.show")) return false;
+    function show(notes, isPreview = false, heading = null) {
+        if (busy || (!isPreview && !notes.length) || document.querySelector(".modal.show")) return false;
         preview = isPreview; ids = isPreview ? [] : notes.map(x => x.id);
         restoreFocus = document.activeElement;
-        render(notes, content); error.hidden = true;
+        if (notes.length) render(notes, content);
+        else content.replaceChildren(element("p", "هنوز تغییری برای نمایش وجود ندارد.", "rn-empty"));
+        error.hidden = true;
         ack.hidden = isPreview;
-        modal.querySelector("[data-bs-dismiss='modal'].rn-button").textContent = isPreview ? "بستن پیش‌نمایش" : "بعداً";
-        document.getElementById("releaseNotesTitle").textContent = isPreview ? "پیش‌نمایش تغییرات نسخه" : "تازه‌های سامانه";
+        modal.querySelector("[data-bs-dismiss='modal'].rn-button").textContent = isPreview ? "بستن" : "بعداً";
+        document.getElementById("releaseNotesTitle").textContent = heading || (isPreview ? "پیش‌نمایش تغییرات نسخه" : "تازه‌های سامانه");
         ModalToggle(modal, "show");
         return true;
     }
@@ -68,7 +70,12 @@
             else { error.textContent = "ثبت تأیید انجام نشد. دوباره تلاش کنید؛ در صورت تغییر وضعیت نسخه، صفحه را تازه‌سازی کنید."; error.hidden = false; }
         } finally { busy = false; ack.disabled = false; }
     });
-    window.ReleaseNotes = Object.freeze({ preview:notes => show(notes, true), render, safeUrl });
+    window.ReleaseNotes = Object.freeze({ preview:notes => show(notes, true), render, safeUrl,
+        history: async () => {
+            const notes = await sendApiRequest({ url:"/ReleaseNotes/HistoryData", showLoading:false });
+            if (Array.isArray(notes)) show(notes, true, "تغییرات نسخه‌ها");
+        } });
+    window.showReleaseNotesHistory = () => window.ReleaseNotes.history();
     // این کلید فقط مزاحمت تکراری را کم می‌کند؛ وضعیت دیده‌شدن همیشه از پایگاه داده می‌آید.
     const key = "release-notes:" + modal.dataset.user + ":" + (modal.dataset.session || "existing-login");
     const readChecked = () => { try { return sessionStorage.getItem(key) === "checked"; } catch { return false; } };

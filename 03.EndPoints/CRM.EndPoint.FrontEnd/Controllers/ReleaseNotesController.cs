@@ -16,8 +16,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class ReleaseNotesController(ICqrsDispatcher dispatcher) : Controller
 {
-    [HttpGet] public IActionResult Settings() => View();
     [HttpGet] public async Task<IActionResult> History(CancellationToken ct) => View(await dispatcher.QueryAsync(new GetReleaseNoteHistoryQuery(), ct));
+    [HttpGet] public async Task<IActionResult> HistoryData(CancellationToken ct)
+    {
+        var notes = await dispatcher.QueryAsync(new GetReleaseNoteHistoryQuery(), ct);
+        return Json(notes.Select(x => new { x.Id, x.Version, x.Title, x.Description, x.PublishDate, x.IsImportant, x.Items }));
+    }
     [HttpGet] public async Task<IActionResult> Unseen(CancellationToken ct)
     {
         var notes = await dispatcher.QueryAsync(new GetUnseenReleaseNotesQuery(), ct);

@@ -37,6 +37,10 @@ public sealed class ReleaseNoteRepository(CRMContextDb db) : IReleaseNoteReposit
     public async Task<ReleaseNoteData?> GetAsync(Guid id, CancellationToken ct) => (await Project(db.ReleaseNotes.AsNoTracking().Where(x => x.Id == id), ct)).SingleOrDefault();
     public Task<List<ReleaseNoteData>> GetVisibleAsync(ReleaseNoteReader reader, bool unseenOnly, DateTime now, CancellationToken ct) =>
         Project(Visible(db.ReleaseNotes.AsNoTracking(), reader, now, unseenOnly).OrderByDescending(x => unseenOnly && x.IsImportant).ThenByDescending(x => x.PublishDate).ThenByDescending(x => x.CreateDate), ct);
+    public Task<string?> GetLatestVisibleVersionAsync(ReleaseNoteReader reader, DateTime now, CancellationToken ct) =>
+        Visible(db.ReleaseNotes.AsNoTracking(), reader, now, false)
+            .OrderByDescending(x => x.PublishDate).ThenByDescending(x => x.CreateDate)
+            .Select(x => x.Version).FirstOrDefaultAsync(ct);
     public async Task<(ReleaseNoteMutation Result, Guid Id)> SaveDraftAsync(ReleaseNote draft, Guid? id, byte[]? expectedVersion, CancellationToken ct)
     {
         var entity = draft;
