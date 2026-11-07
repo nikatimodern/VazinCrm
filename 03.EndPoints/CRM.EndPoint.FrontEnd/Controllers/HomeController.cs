@@ -421,7 +421,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 foreach (var batch in quotationIds.Chunk(400))
                 {
                     var rows = await sepidar.SalesInvoices.AsNoTracking()
-                        .Where(x => batch.Contains(x.QuotationRef))
+                        .Where(x => x.QuotationRef.HasValue && batch.Contains(x.QuotationRef.Value))
                         .Select(x => new LegacyInvoiceRow(
                             x.InvoiceId, x.Number, x.QuotationRef,
                             x.FiscalYearRef, x.NetPriceInBaseCurrency, x.CustomerPartyRef))
