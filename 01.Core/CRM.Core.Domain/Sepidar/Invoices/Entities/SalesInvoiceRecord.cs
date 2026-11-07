@@ -11,7 +11,7 @@ public class SalesInvoiceRecord
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public int InvoiceId { get; set; }
-    public int QuotationRef { get; set; }
+    public int? QuotationRef { get; set; }
     public int CustomerPartyRef { get; set; }
     public string CustomerRealName { get; set; }
     public string CustomerRealName_En { get; set; }
