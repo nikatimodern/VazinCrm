@@ -46,6 +46,10 @@ public sealed class SaveTargetCommandHandler(ITargetRepository repository, Curre
         static bool DuplicateKeys(IEnumerable<TargetAmountInput> rows, bool assignments) =>
             rows.GroupBy(x => (x.MetricCode, x.Month, assignments ? x.UserId : "")).Any(g => g.Count() > 1);
 
+        if (input.Yearly.Any(x => x == null) || input.Monthly.Any(x => x == null) ||
+            input.Assignments.Any(x => x == null))
+            return new(400, "اطلاعات ناقص یا نامعتبر است.");
+
         if (DuplicateKeys(input.Yearly, false) || DuplicateKeys(input.Monthly, false) ||
             DuplicateKeys(input.Assignments, true))
             return new(400, "مقدار تکراری برای یک شاخص، ماه یا کارشناس ثبت شده است.");
@@ -69,8 +73,9 @@ public sealed class SaveTargetCommandHandler(ITargetRepository repository, Curre
         if (command.Finalize)
         {
             var required = metrics.Values.Where(x => x.IsActive).Select(x => x.Code).ToArray();
-            if (currentExperts.Count == 0)
-                return new(400, "هیچ کارشناس فروش فعالی برای تخصیص وجود ندارد.");
+            var expectedExperts = validExperts.ToArray();
+            if (expectedExperts.Length == 0)
+                return new(400, "هیچ کارشناس فروشی برای تخصیص وجود ندارد.");
 
             foreach (var code in required)
             {
@@ -79,10 +84,10 @@ public sealed class SaveTargetCommandHandler(ITargetRepository repository, Curre
                 var monthly = input.Monthly.Where(x => x.MetricCode == code).ToArray();
                 var assigned = input.Assignments.Where(x => x.MetricCode == code).ToArray();
                 if (yearly.Length != 1 || monthly.Length != 12 ||
-                    assigned.Length != 12 * currentExperts.Count ||
+                    assigned.Length != 12 * expectedExperts.Length ||
                     Enumerable.Range(1, 12).Any(month => monthly.Count(x => x.Month == month) != 1 ||
-                        assigned.Count(x => x.Month == month) != currentExperts.Count ||
-                        currentExperts.Any(user => !assigned.Any(x => x.Month == month && x.UserId == user.Id))))
+                        assigned.Count(x => x.Month == month) != expectedExperts.Length ||
+                        expectedExperts.Any(userId => !assigned.Any(x => x.Month == month && x.UserId == userId))))
                     return new(400, "اهداف سالانه، ماهانه و تخصیص کارشناسان باید برای همه ماه‌ها تکمیل شوند.");
 
                 if (metric.Kind == TargetValueKind.Percentage) continue;

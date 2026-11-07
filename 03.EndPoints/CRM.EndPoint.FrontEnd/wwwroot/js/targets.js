@@ -15,6 +15,7 @@
 
     let state = emptyState();
     let setup = { metrics: [], experts: [] };
+    let activeExperts = [];
     let step = 0;
     let activeMonth = 1;
     let sending = false;
@@ -256,7 +257,7 @@
     function navigate(nextStep) {
         if (nextStep < 0 || nextStep > 3) return;
         step = nextStep;
-        if (step >= 1) fillMonthlyDefaults();
+        if (step >= 1 && state.status !== 1) fillMonthlyDefaults();
         if (step >= 2 && state.status !== 1) fillAssignmentDefaults();
         panels.forEach((panel, index) => { panel.hidden = index !== step; });
         steps.forEach((button, index) => {
@@ -268,13 +269,14 @@
         el('targetFinish').hidden = step !== 3 || state.status === 1;
         el('targetSaveDraft').hidden = state.status === 1;
         el('targetModalStatus').textContent = state.status === 1 ? 'نهایی‌شده' : 'پیش‌نویس';
-        form.querySelectorAll('[data-target-panel] input, [data-target-panel] select, #targetYear')
-            .forEach(input => { input.disabled = state.status === 1; });
         renderSummary();
         if (step === 0) renderAnnual();
         if (step === 1) renderMonthly();
         if (step === 2) renderExperts();
         if (step === 3) renderReview();
+        form.querySelectorAll('[data-target-panel] input, [data-target-panel] select, #targetYear')
+            .forEach(input => { input.disabled = state.status === 1; });
+        el('targetRebalance').disabled = state.status === 1;
         const body = root.querySelector('.target-modal-body');
         body?.scrollTo({ top: 0, behavior: 'instant' });
         if (typeof enableMomentumScrollScope === 'function')
@@ -308,6 +310,7 @@
     }
 
     function openNew() {
+        setup.experts = [...activeExperts];
         state = emptyState();
         step = 0;
         activeMonth = 1;
@@ -325,6 +328,7 @@
             yearly: data.yearly || [], monthly: data.monthly || [], assignments: data.assignments || []
         };
         // Keep previous assignments visible for experts whose role has changed.
+        setup.experts = [...activeExperts];
         const missing = [...new Set(state.assignments.map(x => x.userId))]
             .filter(id => !setup.experts.some(x => x.id === id));
         setup.experts.push(...missing.map(id => ({ id, name: 'کارشناس سابق (' + id + ')' })));
@@ -448,6 +452,7 @@
             return;
         }
         setup = data;
+        activeExperts = [...data.experts];
         await loadList();
     }
     init();
