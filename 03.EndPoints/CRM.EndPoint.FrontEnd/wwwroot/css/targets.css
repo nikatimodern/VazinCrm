@@ -60,8 +60,24 @@
     overflow-y: auto;
     overflow-x: hidden;
 }
-.target-modal-header { padding: 7px 14px; min-height: 43px; }
-.target-modal-title { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; min-width: 0; }
+.target-modal-header {
+    padding: 7px 14px;
+    min-height: 43px;
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.target-modal-title {
+    display: flex;
+    flex-direction: row;
+    direction: ltr;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    min-width: 0;
+}
+.target-modal-title > * { direction: rtl; }
 .target-modal-header h2 { font-size: 16px; font-weight: 700; line-height: 1.4; margin: 0; }
 .target-modal-header #targetModalStatus {
     display: inline-flex; align-items: center;
