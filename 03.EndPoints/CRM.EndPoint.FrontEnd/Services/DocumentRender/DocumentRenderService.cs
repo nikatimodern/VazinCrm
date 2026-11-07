@@ -89,11 +89,11 @@ public class DocumentRenderService(IWebHostEnvironment environment) : IDocumentR
         }
         catch (PlaywrightException ex) when (ex.Message.Contains("Executable doesn't exist", StringComparison.OrdinalIgnoreCase))
         {
-            if (!environment.IsDevelopment())
+            /*if (!environment.IsDevelopment())
                 throw new InvalidOperationException(
                     "The Playwright Chromium browser is not installed for the application account. " +
                     "On IIS, run Deployment/Install-DocumentRenderer.ps1 from the published application " +
-                    "and recycle the application pool.", ex);
+                    "and recycle the application pool.", ex);*/
 
             try
             {
